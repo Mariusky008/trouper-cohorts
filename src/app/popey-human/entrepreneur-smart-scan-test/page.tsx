@@ -1042,10 +1042,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [qualifierAutoOpenPausedUntilMs, setQualifierAutoOpenPausedUntilMs] = useState(0);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [searchInnerTab, setSearchInnerTab] = useState<"search" | "history">("search");
-  const [historyStatusFilter, setHistoryStatusFilter] = useState<"all" | "sent" | "validated">("all");
-  const [historyActionFilter, setHistoryActionFilter] = useState<"all" | Exclude<DailyCategory, "qualifier">>("all");
-  const [historyPeriodFilter, setHistoryPeriodFilter] = useState<"all" | "today" | "7d">("all");
+  const [historyVisualFilter, setHistoryVisualFilter] = useState<"all" | "sent" | "converted" | "passed" | "eclaireur">("all");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [searchSortChip, setSearchSortChip] = useState<"priority" | "potential" | "trust" | "eclaireur" | "qualify">("priority");
   const [showEclaireursPanel, setShowEclaireursPanel] = useState(false);
   const [showAlliancesPanel, setShowAlliancesPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
@@ -1383,6 +1382,45 @@ export default function EntrepreneurSmartScanTestPage() {
   const searchResults = allContactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
+  const searchDisplayResults = useMemo(() => {
+    const trustRank = (level?: TrustLevel) => {
+      if (!level) return 0;
+      if (level === "family") return 5;
+      if (level === "pro-close") return 4;
+      if (level === "acquaintance") return 3;
+      return 1;
+    };
+    const list = [...searchResults];
+    if (searchSortChip === "potential") {
+      list.sort((a, b) => (potentialEurStore[b.id] || 0) - (potentialEurStore[a.id] || 0));
+    } else if (searchSortChip === "trust") {
+      list.sort((a, b) => trustRank(trustLevelStore[b.id]) - trustRank(trustLevelStore[a.id]));
+    } else if (searchSortChip === "eclaireur") {
+      list.sort((a, b) => Number(eclaireurIds.includes(b.id)) - Number(eclaireurIds.includes(a.id)));
+    } else if (searchSortChip === "qualify") {
+      list.sort((a, b) => Number(!trustLevelStore[b.id]) - Number(!trustLevelStore[a.id]));
+    } else {
+      list.sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
+    }
+    return list;
+  }, [searchResults, searchSortChip, potentialEurStore, trustLevelStore, eclaireurIds, priorityScoreStore]);
+  const searchActiveEclaireurs = useMemo(
+    () => searchDisplayResults.filter((contact) => eclaireurIds.includes(contact.id)),
+    [searchDisplayResults, eclaireurIds],
+  );
+  const searchToQualify = useMemo(
+    () => searchDisplayResults.filter((contact) => !trustLevelStore[contact.id]),
+    [searchDisplayResults, trustLevelStore],
+  );
+  const searchPriorityCandidates = useMemo(
+    () =>
+      searchDisplayResults.filter((contact) => {
+        if (eclaireurIds.includes(contact.id)) return false;
+        if (!trustLevelStore[contact.id]) return false;
+        return (priorityScoreStore[contact.id] || 0) >= 68;
+      }),
+    [searchDisplayResults, eclaireurIds, trustLevelStore, priorityScoreStore],
+  );
   const eclaireursList = eclaireurIds
     .map((id) => {
       const fromAllContacts = allContactsData.find((contact) => contact.id === id);
@@ -1694,21 +1732,14 @@ export default function EntrepreneurSmartScanTestPage() {
     return new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   }, []);
   const filteredHistoryEntries = useMemo(() => {
-    const now = Date.now();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayStartMs = todayStart.getTime();
-    const last7dMs = now - 7 * 24 * 60 * 60 * 1000;
-
     return historyEntries.filter((entry) => {
-      if (historyStatusFilter === "sent" && !entry.sent) return false;
-      if (historyStatusFilter === "validated" && entry.sent) return false;
-      if (historyActionFilter !== "all" && entry.action !== historyActionFilter) return false;
-      if (historyPeriodFilter === "today" && entry.atMs < todayStartMs) return false;
-      if (historyPeriodFilter === "7d" && entry.atMs < last7dMs) return false;
+      if (historyVisualFilter === "sent") return entry.sent;
+      if (historyVisualFilter === "converted") return entry.outcomeStatus === "converted";
+      if (historyVisualFilter === "passed") return entry.action === "passer" || !entry.sent;
+      if (historyVisualFilter === "eclaireur") return entry.action === "eclaireur";
       return true;
     });
-  }, [historyEntries, historyStatusFilter, historyActionFilter, historyPeriodFilter]);
+  }, [historyEntries, historyVisualFilter]);
   const historyTimelineDays = useMemo(() => {
     const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
       weekday: "long",
@@ -1752,13 +1783,12 @@ export default function EntrepreneurSmartScanTestPage() {
       });
     return Array.from(buckets.values()).sort((a, b) => b.dayStartMs - a.dayStartMs);
   }, [filteredHistoryEntries]);
-  const historyFiltersActiveCount =
-    (historyStatusFilter !== "all" ? 1 : 0) +
-    (historyActionFilter !== "all" ? 1 : 0) +
-    (historyPeriodFilter !== "all" ? 1 : 0);
-  const isHistoryStatusFilterActive = historyStatusFilter !== "all";
-  const isHistoryActionFilterActive = historyActionFilter !== "all";
-  const isHistoryPeriodFilterActive = historyPeriodFilter !== "all";
+  const monthWindowStartMs = useMemo(() => Date.now() - 30 * 24 * 60 * 60 * 1000, []);
+  const historyMonthlySentCount = historyEntries.filter((entry) => entry.sent && entry.atMs >= monthWindowStartMs).length;
+  const historyMonthlyConvertedCount = historyEntries.filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= monthWindowStartMs).length;
+  const historyMonthlyCommissionEur = historyEntries
+    .filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= monthWindowStartMs)
+    .reduce((total) => total + 18, 0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -6653,40 +6683,41 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       {showSearchPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+            <div className="sticky top-0 z-20 -mx-4 bg-[#07090F] px-4 pb-2">
               <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche</p>
+                <p className="text-[26px] font-black leading-none tracking-[-0.012em] text-white">{searchInnerTab === "search" ? "Recherche" : "Historique"}</p>
                 <button
                   type="button"
                   onClick={() => setShowSearchPanel(false)}
-                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#141C2E] px-3 py-2 text-[12px] font-semibold text-white/75"
                 >
-                  ✕
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
+                  Filtres
                 </button>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 inline-flex w-full rounded-[14px] border border-white/10 bg-[#0E1420] p-1">
               <button
                 type="button"
                 onClick={() => setSearchInnerTab("search")}
-                className={`h-9 rounded-lg border text-[11px] font-black uppercase tracking-wide ${
+                className={`h-10 flex-1 rounded-[11px] text-[13px] font-bold transition ${
                   searchInnerTab === "search"
-                    ? "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
-                    : "border-white/15 bg-black/25 text-white/70"
+                    ? "bg-[#1A2438] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                    : "text-white/45"
                 }`}
               >
-                Recherche
+                Contacts
               </button>
               <button
                 type="button"
                 onClick={() => setSearchInnerTab("history")}
-                className={`h-9 rounded-lg border text-[11px] font-black uppercase tracking-wide ${
+                className={`h-10 flex-1 rounded-[11px] text-[13px] font-bold transition ${
                   searchInnerTab === "history"
-                    ? "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
-                    : "border-white/15 bg-black/25 text-white/70"
+                    ? "bg-[#1A2438] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                    : "text-white/45"
                 }`}
               >
                 Historique
@@ -6694,136 +6725,261 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </div>
             {searchInnerTab === "search" ? (
               <>
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Rechercher un contact..."
-              className="mt-3 h-10 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-sm"
-            />
-            <div className="mt-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Niveau de confiance</p>
-              <p className="mt-1 text-xs text-white/80">
-                Cette jauge est enregistree par contact pour qualifier la force de la relation avant partage croise.
-              </p>
-            </div>
-            <div className="mt-3 max-h-[calc(100dvh-260px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
-              {searchResults.map((contact) => (
-                <div key={contact.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
+                <div className="relative mt-3">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base opacity-60">🔍</span>
+                  <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Rechercher un contact..."
+                    className="h-12 w-full rounded-[14px] border border-white/15 bg-[#141C2E] px-11 text-sm text-white placeholder:text-white/40"
+                  />
+                </div>
+
+                <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {[
+                    { id: "priority" as const, label: "⚡ Priorite" },
+                    { id: "potential" as const, label: "💰 Potentiel" },
+                    { id: "trust" as const, label: "❤️ Confiance" },
+                    { id: "eclaireur" as const, label: "📡 Eclaireurs" },
+                    { id: "qualify" as const, label: "❓ A qualifier" },
+                  ].map((chip) => (
                     <button
+                      key={chip.id}
                       type="button"
-                      onClick={() => {
-                        openContactProfileWithTrustGuard(contact.id);
-                      }}
-                      className="text-left flex-1 min-w-0"
+                      onClick={() => setSearchSortChip(chip.id)}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold ${
+                        searchSortChip === chip.id
+                          ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]"
+                          : "border-white/10 bg-[#0E1420] text-white/45"
+                      }`}
                     >
-                      <p className="text-sm font-black">{contact.name}</p>
-                      <p className="text-xs text-white/70">{contact.city}</p>
-                      <p className="mt-1 text-[10px] text-cyan-100/90">
-                        {trustLevelStore[contact.id]
-                          ? `Confiance: ${trustLevelLabel(trustLevelStore[contact.id])}`
-                          : "Confiance non definie"}
-                      </p>
-                      <p className="mt-1 text-[10px] text-white/75">
-                        Priorite: {priorityScoreStore[contact.id] || 0}/100 • Potentiel: ~{potentialEurStore[contact.id] || 0}€
-                      </p>
-                      {(priorityScoreStore[contact.id] || 0) >= 75 && (
-                        <p className="mt-1 inline-flex rounded-full border border-orange-300/35 bg-orange-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-orange-100">
-                          Priorite Haute
-                        </p>
-                      )}
-                      {eclaireurIds.includes(contact.id) && (
-                        <p className="mt-1 inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                          📡 Eclaireur actif
-                        </p>
-                      )}
+                      {chip.label}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => promoteToEclaireur(contact.id)}
-                      className={`h-8 min-w-[36px] rounded-full border px-2 text-[11px] font-black ${eclaireurIds.includes(contact.id) ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100" : "border-white/20 bg-white/10 text-white/80"}`}
-                      aria-label={eclaireurIds.includes(contact.id) ? "Eclaireur actif" : "Promouvoir en Eclaireur"}
-                    >
-                      📡
-                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 max-h-[calc(100dvh-300px)] overflow-y-auto sm:max-h-[60vh]">
+                  <div className="space-y-3 pb-4">
+                    {[
+                      { label: `Eclaireurs actifs · ${searchActiveEclaireurs.length}`, contacts: searchActiveEclaireurs, variant: "featured" as const },
+                      { label: `A activer en priorite · ${searchPriorityCandidates.length}`, contacts: searchPriorityCandidates, variant: "priority" as const },
+                      { label: `A qualifier · ${searchToQualify.length}`, contacts: searchToQualify, variant: "qualify" as const },
+                    ].map((section) => (
+                      <div key={section.label}>
+                        <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-white/40">
+                          <span>{section.label}</span>
+                          <span className="h-px flex-1 bg-white/10" />
+                        </p>
+                        <div className="space-y-2">
+                          {section.contacts.map((contact) => {
+                            const initials = contact.name
+                              .split(" ")
+                              .filter(Boolean)
+                              .map((token) => token[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase();
+                            const trustLevel = trustLevelStore[contact.id];
+                            const priority = priorityScoreStore[contact.id] || 0;
+                            const potential = potentialEurStore[contact.id] || 0;
+                            return (
+                              <div
+                                key={contact.id}
+                                className={`relative overflow-hidden rounded-[18px] border px-3 py-3 ${
+                                  section.variant === "featured"
+                                    ? "border-emerald-300/30 bg-gradient-to-br from-emerald-300/8 to-[#121B2D]"
+                                    : section.variant === "priority"
+                                      ? "border-amber-300/25 bg-[#121A2C]"
+                                      : "border-white/10 bg-[#101726]"
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div
+                                    className={`relative h-11 w-11 shrink-0 rounded-[14px] border text-center text-sm font-black leading-[44px] ${
+                                      section.variant === "featured"
+                                        ? "border-emerald-300/35 bg-emerald-300/12 text-emerald-100"
+                                        : section.variant === "priority"
+                                          ? "border-amber-300/35 bg-amber-300/12 text-amber-100"
+                                          : "border-white/15 bg-white/5 text-white/70"
+                                    }`}
+                                  >
+                                    {initials || "CT"}
+                                    {eclaireurIds.includes(contact.id) ? (
+                                      <span className="absolute -bottom-0.5 -right-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#101726] bg-[#00D4A0] text-[8px] text-[#05211A]">
+                                        ✓
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      openContactProfileWithTrustGuard(contact.id);
+                                    }}
+                                    className="min-w-0 flex-1 text-left"
+                                  >
+                                    <p className="font-black text-white">{contact.name}</p>
+                                    <p className="mt-0.5 text-[11px] text-white/55">📍 {contact.city || "Inconnue"}{contact.companyHint ? ` · ${contact.companyHint}` : ""}</p>
+                                    <div className="mt-2">
+                                      <div className="mb-1 flex items-center justify-between">
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-white/40">Confiance</span>
+                                        <span
+                                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                            trustLevel === "family"
+                                              ? "bg-emerald-300/12 text-emerald-100"
+                                              : trustLevel === "pro-close"
+                                                ? "bg-violet-300/12 text-violet-100"
+                                                : trustLevel === "acquaintance"
+                                                  ? "bg-amber-300/12 text-amber-100"
+                                                  : "bg-white/8 text-white/55"
+                                          }`}
+                                        >
+                                          {trustLevel ? trustLevelLabel(trustLevel) : "Non definie"}
+                                        </span>
+                                      </div>
+                                      <div className="h-1 overflow-hidden rounded-full bg-black/35">
+                                        <div
+                                          className={`h-1 rounded-full ${
+                                            trustLevel === "family"
+                                              ? "bg-gradient-to-r from-emerald-400 to-emerald-300"
+                                              : trustLevel === "pro-close"
+                                                ? "bg-gradient-to-r from-violet-400 to-violet-300"
+                                                : trustLevel === "acquaintance"
+                                                  ? "bg-gradient-to-r from-amber-400 to-amber-300"
+                                                  : "bg-white/35"
+                                          }`}
+                                          style={{
+                                            width: `${Math.max(
+                                              18,
+                                              Math.min(
+                                                100,
+                                                trustLevel === "family"
+                                                  ? 88
+                                                  : trustLevel === "pro-close"
+                                                    ? 82
+                                                    : trustLevel === "acquaintance"
+                                                      ? 66
+                                                      : 35,
+                                              ),
+                                            )}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-2 text-[11px]">
+                                      <span className="text-[#00D4A0] font-bold">{priority}</span>
+                                      <span className="text-white/45">/100</span>
+                                      <span className="h-2 w-px bg-white/15" />
+                                      <span className="font-bold text-emerald-200">{potential}€</span>
+                                      <span className="text-white/45">potentiel</span>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                      {eclaireurIds.includes(contact.id) ? (
+                                        <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                                          📡 Eclaireur actif
+                                        </span>
+                                      ) : null}
+                                      {priority >= 75 ? (
+                                        <span className="rounded-full border border-amber-300/35 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                                          ⭐ Priorite haute
+                                        </span>
+                                      ) : null}
+                                      {!trustLevel ? (
+                                        <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/60">
+                                          ❓ A qualifier
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => promoteToEclaireur(contact.id)}
+                                    className={`absolute right-3 top-3 h-9 w-9 rounded-full border text-base ${
+                                      eclaireurIds.includes(contact.id)
+                                        ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100"
+                                        : "border-white/20 bg-[#141C2E] text-white/75"
+                                    }`}
+                                    aria-label={eclaireurIds.includes(contact.id) ? "Eclaireur actif" : "Promouvoir en Eclaireur"}
+                                  >
+                                    {eclaireurIds.includes(contact.id) ? "✓" : "→"}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    {searchDisplayResults.length === 0 ? (
+                      <p className="rounded-xl border border-white/10 bg-[#101726] px-3 py-3 text-sm text-white/65">Aucun contact pour cette recherche.</p>
+                    ) : null}
                   </div>
                 </div>
-              ))}
-            </div>
               </>
             ) : (
               <>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-white/75">Filtres</p>
-                  {historyFiltersActiveCount > 0 && (
-                    <span className="rounded-full border border-cyan-300/35 bg-cyan-300/18 px-2 py-0.5 text-[10px] font-black text-cyan-100">
-                      {historyFiltersActiveCount} actif(s)
-                    </span>
-                  )}
+                <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {[
+                    { id: "all" as const, label: "Tous", color: "bg-[#00D4A0]" },
+                    { id: "sent" as const, label: "Envoyes", color: "bg-emerald-300" },
+                    { id: "converted" as const, label: "Convertis", color: "bg-[#00D4A0]" },
+                    { id: "passed" as const, label: "Passes", color: "bg-white/45" },
+                    { id: "eclaireur" as const, label: "Eclaireur", color: "bg-violet-300" },
+                  ].map((chip) => (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setHistoryVisualFilter(chip.id)}
+                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${
+                        historyVisualFilter === chip.id
+                          ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]"
+                          : "border-white/10 bg-[#0E1420] text-white/50"
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${chip.color}`} />
+                      {chip.label}
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  <div className={`relative rounded-lg border ${isHistoryStatusFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
-                    {isHistoryStatusFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
-                    <select
-                      value={historyStatusFilter}
-                      onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
-                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
-                    >
-                      <option value="all">Statut: Tous</option>
-                      <option value="sent">Statut: Envoye</option>
-                      <option value="validated">Statut: Valide</option>
-                    </select>
+
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                    <p className="text-[22px] font-black leading-none text-emerald-200">{historyMonthlySentCount}</p>
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Envoyes ce mois</p>
                   </div>
-                  <div className={`relative rounded-lg border ${isHistoryActionFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
-                    {isHistoryActionFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
-                    <select
-                      value={historyActionFilter}
-                      onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
-                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
-                    >
-                      <option value="all">Action: Toutes</option>
-                      <option value="eclaireur">Eclaireur</option>
-                      <option value="package">Partage Croise</option>
-                      <option value="exclients">Ex-Clients</option>
-                      <option value="passer">Passer</option>
-                    </select>
+                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                    <p className="text-[22px] font-black leading-none text-[#00D4A0]">{historyMonthlyConvertedCount}</p>
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Convertis</p>
                   </div>
-                  <div className={`relative rounded-lg border ${isHistoryPeriodFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
-                    {isHistoryPeriodFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
-                    <select
-                      value={historyPeriodFilter}
-                      onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
-                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
-                    >
-                      <option value="all">Periode: Tout</option>
-                      <option value="today">Periode: Aujourd hui</option>
-                      <option value="7d">Periode: 7 jours</option>
-                    </select>
+                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                    <p className="text-[22px] font-black leading-none text-amber-200">{historyMonthlyCommissionEur}€</p>
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Commissions</p>
                   </div>
                 </div>
                 <p className="mt-2 text-[11px] text-white/65">
                   {filteredHistoryEntries.length} action(s) • lecture chronologique par jour
                 </p>
-                <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-3 overflow-y-auto pb-2 sm:max-h-[60vh]">
+                <div className="mt-3 max-h-[calc(100dvh-390px)] space-y-4 overflow-y-auto pb-2 sm:max-h-[60vh]">
                   {historyTimelineDays.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
                   {historyTimelineDays.map((day) => {
                     const daySentCount = day.entries.filter((entry) => entry.sent).length;
-                    const dayNotSentCount = day.entries.length - daySentCount;
+                    const dayPassedCount = day.entries.filter((entry) => entry.action === "passer" || !entry.sent).length;
                     const dayConvertedCount = day.entries.filter((entry) => entry.outcomeStatus === "converted").length;
                     return (
-                      <section key={`history-day-${day.dayStartMs}`} className="rounded-2xl border border-white/15 bg-black/25 p-2">
-                        <div className="sticky top-0 z-10 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-1">
-                          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{day.dayLabel}</p>
+                      <section key={`history-day-${day.dayStartMs}`} className="rounded-[16px] border border-white/10 bg-[#0E1420] p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[12px] font-black uppercase tracking-[0.08em] text-white/75">{day.dayLabel}</p>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
                               {daySentCount} envoye(s)
                             </span>
-                            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">
-                              {dayNotSentCount} non envoye(s)
-                            </span>
-                            <span className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
+                            <span className="rounded-full border border-[#00D4A0]/30 bg-[#00D4A0]/12 px-2 py-0.5 text-[10px] font-black text-[#8CECD4]">
                               {dayConvertedCount} converti(s)
                             </span>
+                            {dayPassedCount > 0 ? (
+                              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">
+                                {dayPassedCount} passe(s)
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                         <div className="mt-2 space-y-2">
@@ -6835,7 +6991,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                             return (
                               <article
                                 key={`${entry.contactId}-${entry.atMs}-${idx}`}
-                                className="relative overflow-hidden rounded-xl border border-white/15 bg-[#101938] px-3 py-2"
+                                className={`relative overflow-hidden rounded-[14px] border px-3 py-2 ${
+                                  status.key === "converted"
+                                    ? "border-[#00D4A0]/25 bg-gradient-to-br from-[#00D4A0]/10 to-[#101938]"
+                                    : status.key === "sent"
+                                      ? "border-emerald-300/20 bg-[#101938]"
+                                      : status.key === "pending"
+                                        ? "border-amber-300/20 bg-[#101938]"
+                                        : "border-white/12 bg-[#101938]"
+                                }`}
                                 style={{ borderLeftWidth: "3px" }}
                               >
                                 <span className={`absolute inset-y-0 left-0 w-[3px] ${status.leftBar}`} />
