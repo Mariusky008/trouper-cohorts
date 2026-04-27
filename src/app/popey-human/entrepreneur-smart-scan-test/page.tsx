@@ -596,7 +596,7 @@ const ACTION_BUTTON_THEMES: Record<
       "bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(196,181,253,0.92)_22%,rgba(217,70,239,0.55)_42%,rgba(168,85,247,0.15)_66%,transparent_78%)]",
   },
   exclients: {
-    buttonClass: "border-cyan-300/30 bg-cyan-500/12 text-cyan-100",
+    buttonClass: "border-emerald-300/30 bg-cyan-500/12 text-cyan-100",
     idlePulseClass: "animate-pulse ring-2 ring-cyan-300/35",
     launchRingClass: "scale-[1.03] ring-4 ring-cyan-200/65",
     titleClass: "text-cyan-100",
@@ -943,7 +943,7 @@ function allianceMetierTone(metier: string) {
     return "border-emerald-300/35 bg-emerald-300/15 text-emerald-100";
   }
   if (/dev|informat|web|seo|marketing|design/.test(raw)) {
-    return "border-cyan-300/35 bg-cyan-300/15 text-cyan-100";
+    return "border-emerald-300/35 bg-emerald-300/15 text-cyan-100";
   }
   if (/immo|courtier|banque|finance|assurance/.test(raw)) {
     return "border-amber-300/35 bg-amber-300/15 text-amber-100";
@@ -1300,7 +1300,7 @@ export default function EntrepreneurSmartScanTestPage() {
       value: scanDone ? importedTotalCount : liveLocals,
       title: "Importes",
       subtitle: "contacts reels charges",
-      color: "from-cyan-400/25 to-blue-400/20 border-cyan-300/40",
+      color: "from-cyan-400/25 to-blue-400/20 border-emerald-300/40",
       valueColor: "text-cyan-100",
     },
     {
@@ -4719,7 +4719,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.22),rgba(9,11,22,0.97))] px-4 py-5 backdrop-blur-md">
-      <section className="mx-auto max-h-[94dvh] min-h-[78dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-cyan-200/30 bg-[#0B1734]/95 p-6 sm:p-7">
+      <section className="mx-auto max-h-[94dvh] min-h-[78dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-emerald-200/30 bg-[#0B1734]/95 p-6 sm:p-7">
         <div className="flex items-center justify-between">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Onboarding J0</p>
           <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
@@ -4770,7 +4770,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   }}
                   className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold ${
                     onboardingSelectedSectorId === sector.sector_id
-                      ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-100"
+                      ? "border-emerald-300/45 bg-emerald-300/15 text-cyan-100"
                       : "border-white/15 bg-white/5 text-white/85"
                   }`}
                 >
@@ -4884,10 +4884,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Mode demo educatif: aucun message n est envoye ici.
             </p>
-            <div className="relative mt-4 overflow-hidden rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-4">
+            <div className="relative mt-4 overflow-hidden rounded-2xl border border-emerald-200/25 bg-cyan-400/10 p-4">
               <motion.div
                 aria-hidden
-                className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl"
+                className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl"
                 animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -4900,7 +4900,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={openContactImportPicker}
                   disabled={isImportingContacts}
-                  className="h-10 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
+                  className="h-10 rounded-xl border border-emerald-200/35 bg-emerald-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
                 >
                   {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
                 </button>
@@ -4939,7 +4939,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </p>
               )}
               {isImportingContacts && (
-                <div className="mt-3 rounded-xl border border-cyan-200/35 bg-cyan-300/15 px-3 py-2">
+                <div className="mt-3 rounded-xl border border-emerald-200/35 bg-emerald-300/15 px-3 py-2">
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-50">Import en cours...</p>
                     <motion.span
@@ -4984,7 +4984,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               )}
               {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
             </div>
-            <div className="mt-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 py-3">
+            <div className="mt-3 rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3">
               <p className="text-base font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
               {hasImportedContacts && (
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
@@ -5015,7 +5015,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              className="relative mt-3 overflow-hidden rounded-2xl border border-cyan-200/45 bg-gradient-to-r from-cyan-300/20 to-indigo-300/20 p-3"
+              className="relative mt-3 overflow-hidden rounded-2xl border border-emerald-200/45 bg-gradient-to-r from-cyan-300/20 to-indigo-300/20 p-3"
             >
               <motion.div
                 aria-hidden
@@ -5080,7 +5080,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               ))}
               </div>
             </div>
-            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/12 p-3">
+            <div className="mt-3 rounded-2xl border border-emerald-300/30 bg-emerald-300/12 p-3">
               <p className="px-2 pb-3 text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100/95">2. Temperature du contact</p>
               <div className="grid grid-cols-3 gap-2.5">
                 {(["froid", "tiede", "brulant"] as HeatLevel[]).map((heat) => (
@@ -5136,7 +5136,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <p className="mt-2 text-base text-white/80">
               Ici tu decouvres l autre canal: trouver des apporteurs via l onglet Alliances (different du scan de ton annuaire).
             </p>
-            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/12 p-3 text-[12px] text-white/85">
+            <div className="mt-3 rounded-2xl border border-emerald-300/30 bg-emerald-300/12 p-3 text-[12px] text-white/85">
               <p>
                 <span className="font-black text-cyan-100">Ville:</span> {allianceCity || myProfile?.ville || profileForm.ville || "Dax"}
               </p>
@@ -5154,7 +5154,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 void runOnboardingAllianceDemoSearch();
               }}
               disabled={isAlliancesSearching || isOnboardingSaving}
-              className="mt-4 h-12 w-full rounded-2xl border border-cyan-300/40 bg-cyan-300/20 text-base font-black text-cyan-100 disabled:opacity-45"
+              className="mt-4 h-12 w-full rounded-2xl border border-emerald-300/40 bg-emerald-300/20 text-base font-black text-cyan-100 disabled:opacity-45"
             >
               {isAlliancesSearching ? "Recherche alliances en cours..." : "Lancer la demo alliances"}
             </button>
@@ -5234,13 +5234,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <section className="relative w-full text-center">
             <motion.div
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[470px] w-[470px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/25"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[470px] w-[470px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25"
               animate={{ opacity: [0.5, 0.75, 0.5], scale: [1, 1.02, 1] }}
               transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[510px] w-[510px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/12"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[510px] w-[510px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/12"
               animate={{ opacity: [0.35, 0.6, 0.35], scale: [1, 1.015, 1] }}
               transition={{ duration: 6.2, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -5252,17 +5252,17 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             >
               <motion.div
                 aria-hidden
-                className="absolute inset-[-14px] rounded-full border border-cyan-300/25"
+                className="absolute inset-[-14px] rounded-full border border-emerald-300/25"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
               />
               <motion.div
                 aria-hidden
-                className="absolute inset-[-26px] rounded-full border border-cyan-300/10"
+                className="absolute inset-[-26px] rounded-full border border-emerald-300/10"
                 animate={{ rotate: -360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-cyan-300/45 bg-gradient-to-br from-cyan-300/25 to-cyan-300/8 shadow-[0_0_44px_rgba(0,212,160,0.2)]">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-emerald-300/45 bg-gradient-to-br from-cyan-300/25 to-cyan-300/8 shadow-[0_0_44px_rgba(0,212,160,0.2)]">
                 <span className="text-[30px] font-black tracking-[0.08em] text-[#00D4A0]">P</span>
               </div>
             </motion.div>
@@ -5362,7 +5362,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </span>
               </div>
               <div className="mt-2 inline-flex rounded-xl border border-white/10 bg-[#0E1420] p-1">
-                <span className="h-8 rounded-[10px] bg-[#1A2438] px-4 text-[11px] font-black uppercase tracking-[0.08em] text-[#00D4A0] inline-flex items-center">
+                <span className="h-8 rounded-[10px] bg-[#14231F] px-4 text-[11px] font-black uppercase tracking-[0.08em] text-[#00D4A0] inline-flex items-center">
                   Daily scan
                 </span>
                 <span className="h-8 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] text-white/45 inline-flex items-center">
@@ -5371,7 +5371,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="relative mt-4 rounded-[24px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-4">
+            <div className="relative mt-4 rounded-[24px] border border-white/15 bg-gradient-to-br from-[#101A18] via-[#12201D] to-[#14231F] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Import contacts reels</p>
@@ -5385,7 +5385,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </span>
               </div>
 
-              <div className="mt-3 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
+              <div className="mt-3 rounded-2xl border border-emerald-200/25 bg-cyan-400/10 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
                 <p className="mt-1 text-[11px] text-white/70">
                 Fichier .vcf ou .csv. Tous les contacts sont importes, mais seulement {DAILY_CONTACT_LIMIT} sont traites par jour.
@@ -5395,7 +5395,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={openContactImportPicker}
                   disabled={isImportingContacts}
-                  className="h-10 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
+                  className="h-10 rounded-xl border border-emerald-200/35 bg-emerald-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
                 >
                   {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
                 </button>
@@ -5743,7 +5743,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </div>
               )}
               {!isProfileLoading && selfScoutLink && (
-                <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2">
+                <div className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-3 py-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Mon lien Eclaireur perso</p>
                   {selfScoutLink.shortCode ? (
                     <p className="mt-1 text-[11px] text-[#EAC886]">
@@ -5759,7 +5759,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     type="button"
                     onClick={() => copySelfScoutLink(selfScoutLink.previewUrl || selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
                     disabled={isCopyingSelfScoutLink}
-                    className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                    className="mt-2 h-8 rounded-lg border border-emerald-300/40 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                   >
                     {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                   </button>
@@ -5791,7 +5791,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <button
                     type="button"
                     onClick={() => setIsEditingProfile(true)}
-                    className="col-span-2 h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                    className="col-span-2 h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
                   >
                     Modifier le profil
                   </button>
@@ -5801,7 +5801,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={openImportFromProfile}
-                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                  className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
                 >
                   Reimporter contacts
                 </button>
@@ -5870,10 +5870,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             {apiErrorMessage}
           </div>
         )}
-        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#141C2E] via-[#15213C] to-[#0F172A] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
+        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#101A18] via-[#13231F] to-[#0F172A] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#1A2438] to-[#141C2E] p-4">
-              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-cyan-300/12 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#101A18] via-[#14231F] to-[#101A18] p-4">
+              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-emerald-300/12 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-violet-300/10 blur-3xl" />
               <div className="relative flex items-center justify-between gap-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/40">Cockpit mission quotidienne</p>
@@ -5955,7 +5955,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <p className="text-sm font-black text-fuchsia-100">{conversionRateToday}%</p>
               </div>
             </div>
-            <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
+            <div className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-3 py-2">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100">Reporting admin (jour)</p>
@@ -5965,7 +5965,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <button
                     type="button"
                     onClick={copyDailyAdminReport}
-                    className="h-8 rounded-lg border border-cyan-200/40 bg-cyan-200/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                    className="h-8 rounded-lg border border-emerald-200/40 bg-cyan-200/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                   >
                     Copier
                   </button>
@@ -6038,8 +6038,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   disabled={isBatchCopyingFollowups || displayedDueFollowups.length === 0}
                   className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
                     isBatchCopyingFollowups || displayedDueFollowups.length === 0
-                      ? "cursor-not-allowed border border-cyan-200/20 bg-cyan-200/10 text-cyan-100/60"
-                      : "border border-cyan-300/45 bg-cyan-300/20 text-cyan-100 hover:bg-cyan-300/30"
+                      ? "cursor-not-allowed border border-emerald-200/20 bg-cyan-200/10 text-cyan-100/60"
+                      : "border border-emerald-300/45 bg-emerald-300/20 text-cyan-100 hover:bg-emerald-300/30"
                   }`}
                 >
                   {isBatchCopyingFollowups ? "Traitement..." : `Tout copier (${displayedDueFollowups.length})`}
@@ -6101,7 +6101,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${followupUrgencyBadge(item).className}`}>
                         {followupUrgencyBadge(item).label}
                       </span>
-                      <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">
+                      <span className="rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">
                         Outcome pending
                       </span>
                     </div>
@@ -6113,7 +6113,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         type="button"
                         onClick={() => copyFollowupMessage(item.actionId, item.suggestedMessage)}
                         disabled={isBatchCopyingFollowups}
-                        className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                        className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                       >
                         Copier
                       </button>
@@ -6186,7 +6186,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <button
                 type="button"
                 onClick={() => handleExternalConnectorClick("linkedin", "https://www.linkedin.com")}
-                className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-cyan-300/45"
+                className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-emerald-300/45"
               >
                 LinkedIn
                 <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">
@@ -6246,7 +6246,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#27334B] via-[#2F3C57] to-[#253148] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#27334B] via-[#2F3C57] to-[#1B2D29] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
@@ -6310,7 +6310,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                             title: "Ex-client · Relance",
                             subtitle: "Veille et réactivation",
                             icon: "📣",
-                            iconClass: "border-cyan-300/35 bg-cyan-300/18 text-cyan-100",
+                            iconClass: "border-emerald-300/35 bg-emerald-300/18 text-cyan-100",
                           };
                   return (
                     <button
@@ -6320,7 +6320,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
                           ? "h-[82px] border-amber-300/60 bg-gradient-to-r from-[#3E3B34] to-[#3B352D] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.85)]"
-                          : "h-[76px] border-white/20 bg-[#27324A]/35 text-white/80 opacity-95 hover:opacity-100"
+                          : "h-[76px] border-white/20 bg-[#1E302B]/35 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
                       } ${launching ? theme.launchRingClass : ""} ${isPrimary ? "ring-1 ring-white/30" : ""}`}
@@ -6443,7 +6443,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 aria-label={`Ouvrir ${item.label}`}
                 aria-pressed={isActive}
                 className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
-                  isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
+                  isActive ? "bg-emerald-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
                 }`}
               >
                 <span className="text-sm">{item.icon}</span>
@@ -6636,7 +6636,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             )}
             {!isProfileLoading && selfScoutLink && (
-              <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2">
+              <div className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-3 py-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Mon lien Eclaireur perso</p>
                 {selfScoutLink.shortCode ? (
                   <p className="mt-1 text-[11px] text-[#EAC886]">
@@ -6652,7 +6652,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => copySelfScoutLink(selfScoutLink.previewUrl || selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
                   disabled={isCopyingSelfScoutLink}
-                  className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="mt-2 h-8 rounded-lg border border-emerald-300/40 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                 </button>
@@ -6677,7 +6677,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     onClick={() => {
                       void sharePublicProfile("linkedin");
                     }}
-                    className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/15 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                    className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/15 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                   >
                     LinkedIn
                   </button>
@@ -6728,7 +6728,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setIsEditingProfile(true)}
-                  className="col-span-2 h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                  className="col-span-2 h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
                 >
                   Modifier le profil
                 </button>
@@ -6738,7 +6738,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <button
                 type="button"
                 onClick={openImportFromProfile}
-                className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
               >
                 Reimporter contacts
               </button>
@@ -6807,7 +6807,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowSearchPanel(false)}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#141C2E] px-3 py-2 text-[12px] font-semibold text-white/75"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#101A18] px-3 py-2 text-[12px] font-semibold text-white/75"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
                   Filtres
@@ -6820,7 +6820,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 onClick={() => setSearchInnerTab("search")}
                 className={`h-10 flex-1 rounded-[11px] text-[13px] font-bold transition ${
                   searchInnerTab === "search"
-                    ? "bg-[#1A2438] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                    ? "bg-[#14231F] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
                     : "text-white/45"
                 }`}
               >
@@ -6831,7 +6831,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 onClick={() => setSearchInnerTab("history")}
                 className={`h-10 flex-1 rounded-[11px] text-[13px] font-bold transition ${
                   searchInnerTab === "history"
-                    ? "bg-[#1A2438] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                    ? "bg-[#14231F] text-[#00D4A0] shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
                     : "text-white/45"
                 }`}
               >
@@ -6846,7 +6846,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Rechercher un contact..."
-                    className="h-12 w-full rounded-[14px] border border-white/15 bg-[#141C2E] px-11 text-sm text-white placeholder:text-white/40"
+                    className="h-12 w-full rounded-[14px] border border-white/15 bg-[#101A18] px-11 text-sm text-white placeholder:text-white/40"
                   />
                 </div>
 
@@ -7011,7 +7011,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                                     className={`absolute right-3 top-3 h-9 w-9 rounded-full border text-base ${
                                       eclaireurIds.includes(contact.id)
                                         ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100"
-                                        : "border-white/20 bg-[#141C2E] text-white/75"
+                                        : "border-white/20 bg-[#101A18] text-white/75"
                                     }`}
                                     aria-label={eclaireurIds.includes(contact.id) ? "Eclaireur actif" : "Promouvoir en Eclaireur"}
                                   >
@@ -7057,15 +7057,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </div>
 
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                  <div className="rounded-[14px] border border-white/10 bg-[#101A18] p-2 text-center">
                     <p className="text-[22px] font-black leading-none text-emerald-200">{historyMonthlySentCount}</p>
                     <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Envoyes ce mois</p>
                   </div>
-                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                  <div className="rounded-[14px] border border-white/10 bg-[#101A18] p-2 text-center">
                     <p className="text-[22px] font-black leading-none text-[#00D4A0]">{historyMonthlyConvertedCount}</p>
                     <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Convertis</p>
                   </div>
-                  <div className="rounded-[14px] border border-white/10 bg-[#141C2E] p-2 text-center">
+                  <div className="rounded-[14px] border border-white/10 bg-[#101A18] p-2 text-center">
                     <p className="text-[22px] font-black leading-none text-amber-200">{historyMonthlyCommissionEur}€</p>
                     <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-white/45">Commissions</p>
                   </div>
@@ -7157,7 +7157,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                                         <button
                                           type="button"
                                           onClick={() => resendHistoryEntry(entry)}
-                                          className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                                          className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                                         >
                                           Renvoyer
                                         </button>
@@ -7245,7 +7245,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </button>
               </div>
               {showAddScoutTooltip ? (
-                <p className="mb-2 mt-1 inline-flex rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
+                <p className="mb-2 mt-1 inline-flex rounded-lg border border-emerald-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
                   Ajouter un eclaireur
                 </p>
               ) : null}
@@ -7323,8 +7323,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         key={`incoming-${item.id}`}
                         className={`relative w-full overflow-hidden rounded-[20px] border bg-gradient-to-br px-3 py-3 ${
                           item.status === "converted"
-                            ? "border-amber-300/35 from-[#1D213C] to-[#1A2438]"
-                            : "border-white/15 from-[#141C2E] to-[#1A2438]"
+                            ? "border-amber-300/35 from-[#1D213C] to-[#14231F]"
+                            : "border-white/15 from-[#101A18] to-[#14231F]"
                         }`}
                       >
                         <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-amber-300/10 blur-2xl" />
@@ -7347,7 +7347,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                                 : item.status === "offered"
                                   ? "border-violet-300/35 bg-violet-300/15 text-violet-100"
                                   : item.status === "validated"
-                                  ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                                  ? "border-emerald-300/35 bg-emerald-300/15 text-cyan-100"
                                   : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
                             }`}
                           >
@@ -7420,7 +7420,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <p className="text-[17px] font-black text-white">Mes eclaireurs actifs</p>
-                  <span className="rounded-full border border-cyan-300/35 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+                  <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
                     {eclaireurHeaderStats.totalCount} actifs
                   </span>
                 </div>
@@ -7542,7 +7542,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         <button
                           type="button"
                           onClick={() => openEclaireurTemplates(contact.id)}
-                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2.5 text-[12px] font-bold text-white/80"
+                          className="flex-1 rounded-xl border border-white/15 bg-[#14231F] px-2 py-2.5 text-[12px] font-bold text-white/80"
                         >
                           💬 Message
                         </button>
@@ -7550,7 +7550,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           type="button"
                           onClick={() => void removeEclaireur(contact.id)}
                           disabled={isRemovingEclaireurId === contact.id}
-                          className="rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2.5 text-[12px] font-black text-white/65 disabled:opacity-60"
+                          className="rounded-xl border border-white/15 bg-[#14231F] px-2 py-2.5 text-[12px] font-black text-white/65 disabled:opacity-60"
                         >
                           {isRemovingEclaireurId === contact.id ? "..." : "···"}
                         </button>
@@ -7631,8 +7631,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
-              <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-cyan-300/12 blur-3xl" />
+            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#101A18] via-[#12201D] to-[#14231F] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
+              <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-emerald-300/12 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-14 -left-12 h-36 w-36 rounded-full bg-fuchsia-300/10 blur-3xl" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3">
@@ -7846,7 +7846,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {idx === 0 ? (
                     <>
                       <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-emerald-300/20 blur-2xl" />
-                      <div className="pointer-events-none absolute -left-10 -bottom-10 h-24 w-24 rounded-full bg-cyan-300/12 blur-2xl" />
+                      <div className="pointer-events-none absolute -left-10 -bottom-10 h-24 w-24 rounded-full bg-emerald-300/12 blur-2xl" />
                       <span className="absolute right-3 top-3 rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-emerald-100">
                         Top match
                       </span>
@@ -7930,7 +7930,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#0E1420] via-[#141C2E] to-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.22)] sm:p-5">
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#0E1420] via-[#101A18] to-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.22)] sm:p-5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[30px] font-black leading-[0.92] tracking-[-0.02em] text-white sm:text-[34px]">
                 Mes <br className="sm:hidden" />
@@ -7946,7 +7946,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       void loadAllianceInvites();
                     }
                   }}
-                  className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-white/15 bg-[#1A2438] px-5 text-[13px] font-black text-white/85"
+                  className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-white/15 bg-[#14231F] px-5 text-[13px] font-black text-white/85"
                 >
                   <span className="text-white/55">↻</span> Actualiser
                 </button>
@@ -7956,7 +7956,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     setShowAllianceInvitesModal(false);
                     setShowInternalInvitesModal(false);
                   }}
-                  className="h-11 w-11 rounded-full border border-white/15 bg-[#1A2438] text-sm text-white/55"
+                  className="h-11 w-11 rounded-full border border-white/15 bg-[#14231F] text-sm text-white/55"
                 >
                   ✕
                 </button>
@@ -8094,14 +8094,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAddScoutModal && (
         <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/80 px-3 backdrop-blur-md sm:px-4">
-          <section className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
+          <section className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#101A18] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="flex items-center justify-between">
               <p className="text-[22px] font-black tracking-[-0.01em] text-white">Nouvel eclaireur</p>
               <button
                 type="button"
                 onClick={() => setShowAddScoutModal(false)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-[#1A2438] text-xs text-white/85"
+                className="h-8 w-8 rounded-full border border-white/20 bg-[#14231F] text-xs text-white/85"
               >
                 ✕
               </button>
@@ -8113,7 +8113,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <button
                 type="button"
                 onClick={() => setAddScoutType("perso")}
-                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "perso" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#1A2438]"}`}
+                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "perso" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#14231F]"}`}
               >
                 <p className="text-xl">📱</p>
                 <p className={`text-[13px] font-bold ${addScoutType === "perso" ? "text-[#00D4A0]" : "text-white"}`}>Perso</p>
@@ -8122,7 +8122,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <button
                 type="button"
                 onClick={() => setAddScoutType("pro")}
-                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "pro" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#1A2438]"}`}
+                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "pro" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#14231F]"}`}
               >
                 <p className="text-xl">🔍</p>
                 <p className={`text-[13px] font-bold ${addScoutType === "pro" ? "text-[#00D4A0]" : "text-white"}`}>Pro local</p>
@@ -8136,7 +8136,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   value={manualScoutFirstName}
                   onChange={(event) => setManualScoutFirstName(event.target.value)}
                   placeholder="Sophie"
-                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
                 />
               </div>
               <div>
@@ -8145,7 +8145,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   value={manualScoutLastName}
                   onChange={(event) => setManualScoutLastName(event.target.value)}
                   placeholder="Martin"
-                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
                 />
               </div>
             </div>
@@ -8155,7 +8155,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 value={manualScoutMetier}
                 onChange={(event) => setManualScoutMetier(event.target.value)}
                 placeholder="Osteopathe, coach, notaire..."
-                className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
               />
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -8164,7 +8164,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   key={`metier-suggestion-${item}`}
                   type="button"
                   onClick={() => setManualScoutMetier(item.replace(/^[^A-Za-z0-9]+/, "").trim())}
-                  className="rounded-full border border-white/12 bg-[#1A2438] px-3 py-1 text-[11px] text-white/70"
+                  className="rounded-full border border-white/12 bg-[#14231F] px-3 py-1 text-[11px] text-white/70"
                 >
                   {item}
                 </button>
@@ -8177,7 +8177,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   value={manualScoutCity}
                   onChange={(event) => setManualScoutCity(event.target.value)}
                   placeholder="Dax"
-                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
                 />
               </div>
               <div>
@@ -8186,7 +8186,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   value={manualScoutPhone}
                   onChange={(event) => setManualScoutPhone(event.target.value)}
                   placeholder="06 00 00 00"
-                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
                 />
               </div>
             </div>
@@ -8289,7 +8289,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("validated")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer RDV pris"}
                 </button>
@@ -8299,7 +8299,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("offered")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer Offre envoyee"}
                 </button>
@@ -8345,7 +8345,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             >
               <motion.div
                 aria-hidden
-                className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/30 blur-3xl"
+                className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-emerald-300/30 blur-3xl"
                 animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.35, 0.7, 0.35] }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -8380,7 +8380,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {selectedEclaireurTemplateContactId && eclaireurTemplates.length > 0 && (
         <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/65 px-3 backdrop-blur-sm sm:px-4">
-          <section className="w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-3xl border border-cyan-300/25 bg-[#0E1430] p-4">
+          <section className="w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-3xl border border-emerald-300/25 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
                 Messages Eclaireur{selectedEclaireurTemplateContact ? ` • ${selectedEclaireurTemplateContact.name}` : ""}
@@ -8508,7 +8508,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowProfileActions((prev) => !prev)}
-                  className="rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-black text-cyan-100"
+                  className="rounded-xl border border-emerald-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-black text-cyan-100"
                 >
                   ⚡ Demarrer une action
                 </button>
@@ -8542,7 +8542,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Urgence</p>
                   <p className="text-xs font-black">{profileUrgencyLabel}</p>
                 </div>
-                <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-1.5 text-cyan-100">
+                <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-1.5 text-cyan-100">
                   <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Action reco</p>
                   <p className="text-xs font-black">{actionLabel(profileRecommendedAction)}</p>
                 </div>
@@ -8574,7 +8574,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 )
                   .filter(Boolean)
                   .map((id) => (
-                    <span key={`mine-${String(id)}`} className="rounded-full bg-cyan-300/20 px-2 py-1 text-xs font-black text-cyan-100">
+                    <span key={`mine-${String(id)}`} className="rounded-full bg-emerald-300/20 px-2 py-1 text-xs font-black text-cyan-100">
                       {quickLabelMap[String(id)]}
                     </span>
                   ))}
@@ -8641,9 +8641,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && showAllianceMessageModal && selectedAllianceProspect && (
         <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/75 px-3 py-6 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
+          <section className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#142722] via-[#102420] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
             <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
-            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" />
             <div className="relative">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -8723,7 +8723,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   ],
                 }}
                 transition={{ duration: 2.8, ease: "easeInOut" }}
-                className="relative mt-3 overflow-hidden rounded-[20px] border border-cyan-300/25 bg-gradient-to-br from-cyan-500/18 via-[#0E1838] to-[#0A1130] p-3 shadow-[0_18px_40px_-22px_rgba(34,211,238,0.75)]"
+                className="relative mt-3 overflow-hidden rounded-[20px] border border-emerald-300/25 bg-gradient-to-br from-emerald-500/18 via-[#0F221E] to-[#0C1E1A] p-3 shadow-[0_18px_40px_-22px_rgba(34,211,238,0.75)]"
               >
                 <motion.div
                   aria-hidden
@@ -8772,7 +8772,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {liveQualifierSignals.length > 0 ? (
                     liveQualifierSignals.map((signal) => (
-                      <span key={signal} className="rounded-lg bg-cyan-300/15 px-2 py-1 text-xs font-black text-cyan-100">
+                      <span key={signal} className="rounded-lg bg-emerald-300/15 px-2 py-1 text-xs font-black text-cyan-100">
                         🧩 {signal}
                       </span>
                     ))
@@ -9006,7 +9006,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     type="button"
                     onClick={generateAIMessage}
                     disabled={isGeneratingMessage}
-                    className="h-9 rounded-xl border border-cyan-300/40 bg-cyan-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-50"
+                    className="h-9 rounded-xl border border-emerald-300/40 bg-emerald-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-50"
                   >
                     {isGeneratingMessage ? "Generation..." : "Generer message IA"}
                   </button>
@@ -9060,7 +9060,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <button
                       type="button"
                       onClick={() => setIsEditingMessageDraft((prev) => !prev)}
-                      className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                      className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                     >
                       {isEditingMessageDraft ? "Voir apercu" : "Modifier"}
                     </button>
@@ -9205,7 +9205,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAllianceMetricsInfo && (
         <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 py-6">
-          <section className="w-full max-w-md rounded-3xl border border-cyan-300/35 bg-[#0E1430] p-4">
+          <section className="w-full max-w-md rounded-3xl border border-emerald-300/35 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-black text-cyan-100">Score et probabilite</p>
               <button
