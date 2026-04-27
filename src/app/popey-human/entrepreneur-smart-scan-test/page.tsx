@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type DailyCategory = "passer" | "eclaireur" | "package" | "exclients" | "qualifier";
@@ -7114,49 +7114,50 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
             <div className="h-full min-h-0 overflow-y-auto overscroll-contain pb-24">
-              <div className="rounded-[24px] border border-white/10 bg-[#0F1628]/90 p-3 shadow-[0_20px_70px_-40px_rgba(0,0,0,0.95)]">
-                <div className="flex items-center justify-between">
-                  <p className="text-[28px] font-black leading-none tracking-[-0.015em] text-white">Mes Eclaireurs</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddScoutTooltip(false);
-                      setHasSeenAddScoutTooltip(true);
-                      setShowAddScoutModal(true);
-                    }}
-                    className="h-10 w-10 rounded-full border border-[#00D4A0]/45 bg-[#00D4A0]/12 text-xl font-black text-[#00D4A0]"
-                    aria-label="Ajouter un eclaireur"
-                  >
-                    +
-                  </button>
-                </div>
-                {showAddScoutTooltip ? (
-                  <p className="mt-2 inline-flex rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
-                    Ajouter un eclaireur
-                  </p>
-                ) : null}
+              <div className="flex items-center justify-between pb-1">
+                <p className="text-[24px] font-black tracking-[-0.012em] text-white">Mes Eclaireurs</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddScoutTooltip(false);
+                    setHasSeenAddScoutTooltip(true);
+                    setShowAddScoutModal(true);
+                  }}
+                  className="h-[38px] w-[38px] rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[20px] font-medium text-[#00D4A0]"
+                  aria-label="Ajouter un eclaireur"
+                >
+                  +
+                </button>
               </div>
+              {showAddScoutTooltip ? (
+                <p className="mb-2 mt-1 inline-flex rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
+                  Ajouter un eclaireur
+                </p>
+              ) : null}
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-[18px] border border-[#00D4A0]/25 bg-gradient-to-br from-[#00D4A0]/14 to-[#00D4A0]/4 p-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Eclaireurs Pro</p>
-                  <p className="mt-1 text-3xl font-black leading-none text-[#00D4A0]">{eclaireurHeaderStats.proCount}</p>
+                  <p className="mt-1 text-[36px] font-black leading-none text-[#00D4A0]">{eclaireurHeaderStats.proCount}</p>
                   <p className="mt-1 text-[11px] text-white/45">Annuaire local</p>
                 </div>
                 <div className="rounded-[18px] border border-violet-300/25 bg-gradient-to-br from-violet-300/14 to-violet-300/4 p-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-violet-200/85">Eclaireurs Perso</p>
-                  <p className="mt-1 text-3xl font-black leading-none text-violet-200">{eclaireurHeaderStats.persoCount}</p>
+                  <p className="mt-1 text-[36px] font-black leading-none text-violet-200">{eclaireurHeaderStats.persoCount}</p>
                   <p className="mt-1 text-[11px] text-white/45">Repertoire</p>
                 </div>
                 <div className="rounded-[18px] border border-white/15 bg-[#151F31] p-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">Total actifs</p>
-                  <p className="mt-1 text-3xl font-black leading-none text-white">{eclaireurHeaderStats.totalCount}</p>
+                  <p className="mt-1 text-[36px] font-black leading-none text-white">{eclaireurHeaderStats.totalCount}</p>
                   <p className="mt-1 text-[11px] text-white/45">Sur 10 objectif</p>
                 </div>
                 <div className={`rounded-[18px] border border-amber-300/30 bg-gradient-to-br from-amber-300/14 to-amber-300/5 p-3 ${recoAlertPulse ? "animate-pulse" : ""}`}>
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-amber-100/85">Recommandations</p>
-                  <p className="mt-1 text-3xl font-black leading-none text-amber-200">{eclaireurHeaderStats.alertesCount}</p>
-                  <p className="mt-1 text-[11px] text-amber-100/70">{Math.max(0, eclaireurHeaderStats.alertesCount - 2)} alerte(s) a traiter</p>
+                  <p className="mt-1 text-[36px] font-black leading-none text-amber-200">{eclaireurHeaderStats.alertesCount}</p>
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-100/70">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                    {Math.max(0, eclaireurHeaderStats.alertesCount - 2)} alerte(s) a traiter
+                  </p>
                 </div>
               </div>
 
@@ -7166,11 +7167,23 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <p className="text-[17px] font-black text-white">Opportunites entrantes</p>
+                  <p className="text-[16px] font-black tracking-[0.01em] text-white">Opportunites entrantes</p>
                   <span className="rounded-full border border-amber-300/35 bg-amber-300/10 px-2 py-0.5 text-[10px] font-black text-amber-100">
                     {incomingReferrals.length} alertes
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (incomingReferrals[0]) {
+                      setSelectedIncomingReferralId(incomingReferrals[0].id);
+                      setIncomingSignedAmount("");
+                    }
+                  }}
+                  className="text-[12px] font-semibold text-white/45 hover:text-[#00D4A0]"
+                >
+                  Tout voir
+                </button>
               </div>
               {isIncomingReferralsLoading ? (
                 <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
@@ -7179,27 +7192,30 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               ) : (
                 <div className="mt-2 space-y-2">
                   {incomingReferrals.slice(0, 4).map((item) => {
-                    const scoutInitials = (item.scout_name || "EC")
+                    const contactInitials = (item.contact_name || "OP")
                       .split(" ")
                       .filter(Boolean)
                       .map((token) => token[0])
                       .join("")
                       .slice(0, 2)
                       .toUpperCase();
+                    const stepIds = ["submitted", "validated", "offered", "converted"] as const;
+                    const stepLabels = ["Contacte", "RDV pris", "1re seance", "Paye"] as const;
+                    const currentStepIndex = Math.max(0, stepIds.findIndex((status) => status === item.status));
+                    const commissionLabel = item.status === "converted" ? "+18€" : "+18€ en attente";
                     return (
-                      <button
+                      <article
                         key={`incoming-${item.id}`}
-                        type="button"
-                        onClick={() => {
-                          setSelectedIncomingReferralId(item.id);
-                          setIncomingSignedAmount("");
-                        }}
-                        className="w-full rounded-[18px] border border-white/15 bg-gradient-to-br from-[#161F32] to-[#1A2438] px-3 py-3 text-left"
+                        className={`w-full rounded-[20px] border bg-gradient-to-br px-3 py-3 ${
+                          item.status === "converted"
+                            ? "border-amber-300/35 from-[#1D213C] to-[#1A2438]"
+                            : "border-white/15 from-[#141C2E] to-[#1A2438]"
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
                             <div className="h-10 w-10 shrink-0 rounded-xl border border-amber-300/35 bg-amber-300/10 text-center text-xs font-black leading-10 text-amber-100">
-                              {scoutInitials || "EC"}
+                              {contactInitials || "OP"}
                             </div>
                             <div className="min-w-0">
                               <p className="truncate text-[14px] font-black text-white">{item.contact_name}</p>
@@ -7211,27 +7227,75 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           <span
                             className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${
                               item.status === "converted"
-                                ? "border-fuchsia-300/40 bg-fuchsia-300/20 text-fuchsia-100"
+                                ? "border-amber-300/45 bg-amber-300/15 text-amber-100"
                                 : item.status === "offered"
                                   ? "border-violet-300/35 bg-violet-300/15 text-violet-100"
                                   : item.status === "validated"
-                                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
-                                    : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
+                                  ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                                  : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
                             }`}
                           >
                             {item.status === "converted"
-                              ? "Signature finale ✨"
+                              ? "✦ Signature finale"
                               : item.status === "offered"
-                                ? "Offre envoyee 🟣"
+                                ? "Offre envoyee"
                                 : item.status === "validated"
-                                  ? "RDV pris 🔵"
-                                  : "Opportunite recue 🟢"}
+                                  ? "RDV pris"
+                                  : "Opportunite recue"}
                           </span>
                         </div>
-                        <p className="mt-2 text-[11px] text-white/70">
-                          {item.scout_type === "pro" ? "🔍 Eclaireur Pro" : "👥 Eclaireur Perso"} • {referralStatusLabel(item.status)}
-                        </p>
-                      </button>
+                        <div className="mt-2 flex items-center gap-1">
+                          {stepIds.map((step, idx) => {
+                            const isDone = idx < currentStepIndex;
+                            const isActive = idx === currentStepIndex;
+                            return (
+                              <Fragment key={`incoming-step-${item.id}-${step}`}>
+                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                                  <span
+                                    className={`inline-flex h-[22px] w-[22px] items-center justify-center rounded-full text-[10px] ${
+                                      isDone
+                                        ? "border border-emerald-300/40 bg-emerald-300/12 text-emerald-100"
+                                        : isActive
+                                          ? "border border-amber-300/50 bg-amber-300/12 text-amber-100"
+                                          : "border border-white/15 bg-white/5 text-white/45"
+                                    }`}
+                                  >
+                                    {isDone ? "✓" : idx === 3 ? "€" : idx === 1 ? "📅" : "•"}
+                                  </span>
+                                  <span className="text-[8px] leading-none text-white/45">{stepLabels[idx]}</span>
+                                </div>
+                                {idx < stepIds.length - 1 ? (
+                                  <span className={`h-px w-3 ${idx < currentStepIndex ? "bg-emerald-300/35" : "bg-white/12"}`} />
+                                ) : null}
+                              </Fragment>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
+                          <p className="text-[11px] text-white/65">
+                            {item.scout_name || "Eclaireur"} · {item.scout_type === "pro" ? "Eclaireur Pro" : "Eclaireur Perso"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[12px] font-bold ${item.status === "converted" ? "text-emerald-300" : "text-white/50"}`}>
+                              {commissionLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedIncomingReferralId(item.id);
+                                setIncomingSignedAmount("");
+                              }}
+                              className={`rounded-[10px] px-3 py-1.5 text-[11px] font-black ${
+                                item.status === "converted"
+                                  ? "border border-emerald-300/40 bg-emerald-300/15 text-emerald-100"
+                                  : "bg-amber-300 text-[#2A1300]"
+                              }`}
+                            >
+                              {item.status === "converted" ? "✓ Client actif" : "Ouvrir"}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
                     );
                   })}
                 </div>
@@ -7272,8 +7336,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   return (
                     <div
                       key={`eclaireur-${contact.id}`}
-                      className={`rounded-[20px] border px-3 py-3 ${
-                        isProScout ? "border-violet-300/35 bg-[#141D31]" : "border-cyan-300/30 bg-[#101B2A]"
+                      className={`rounded-[20px] border bg-[#0E1420] px-4 py-4 ${
+                        daysSinceActivation !== null && daysSinceActivation <= 2 ? "border-[#00D4A0]/30" : "border-white/10"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -7286,52 +7350,54 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                             className={`relative mt-0.5 h-11 w-11 shrink-0 rounded-[14px] border text-center text-sm font-black leading-[44px] ${
                               isProScout
                                 ? "border-violet-300/30 bg-violet-300/12 text-violet-100"
-                                : "border-cyan-300/30 bg-cyan-300/12 text-cyan-100"
+                                : "border-[#00D4A0]/30 bg-[#00D4A0]/12 text-[#8CECD4]"
                             }`}
                           >
                             {initials || "EC"}
                             <span
-                              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#101B2A] ${
+                              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0E1420] ${
                                 daysSinceActivation !== null && daysSinceActivation <= 2 ? "bg-emerald-400" : "bg-white/45"
                               }`}
                             />
                           </div>
                           <div className="min-w-0">
-                            <p className={`truncate text-[15px] font-black ${isProScout ? "text-violet-50" : "text-cyan-50"}`}>{contact.name}</p>
-                            <p className={`text-[11px] ${isProScout ? "text-violet-100/80" : "text-cyan-100/80"}`}>{contact.city}</p>
-                            <p className="mt-1 text-[10px] text-white/55">
+                            <p className="truncate text-[15px] font-bold text-white">{contact.name}</p>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+                              <span>{contact.city}</span>
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${
+                                  isProScout
+                                    ? "border-violet-300/35 bg-violet-300/12 text-violet-100"
+                                    : "border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[#8CECD4]"
+                                }`}
+                              >
+                                {isProScout ? "🔍 Pro" : "👥 Perso"}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[10px] text-white/45">
                               {daysSinceActivation === null
-                                ? "Activee recemment"
-                                : `Active il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
+                                ? "Active depuis peu"
+                                : `Derniere activite il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
                             </p>
                           </div>
                         </button>
                         <div className="flex flex-col items-end gap-1">
-                          <span
-                            className={`rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] ${
-                              isProScout
-                                ? "border-violet-300/45 bg-violet-300/20 text-violet-100"
-                                : "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
-                            }`}
-                          >
-                            {isProScout ? "🔍 Pro" : "👥 Perso"}
-                          </span>
-                          <p className={`text-lg font-black leading-none ${isProScout ? "text-violet-200" : "text-[#00D4A0]"}`}>{activityScore}</p>
+                          <p className={`text-[20px] font-black leading-none ${isProScout ? "text-violet-200" : "text-[#00D4A0]"}`}>{activityScore}</p>
                           <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">/ 100</p>
                         </div>
                       </div>
 
                       <div className="mt-3 grid grid-cols-3 gap-1.5">
-                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
-                          <p className="text-sm font-black text-cyan-100">{stats.leadsDetected}</p>
+                        <div className="rounded-[10px] bg-black/25 px-2 py-2 text-center">
+                          <p className="text-[16px] font-black text-[#00D4A0]">{stats.leadsDetected}</p>
                           <p className="text-[9px] text-white/55">Reco envoyees</p>
                         </div>
-                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
-                          <p className="text-sm font-black text-emerald-100">{stats.leadsSigned}</p>
+                        <div className="rounded-[10px] bg-black/25 px-2 py-2 text-center">
+                          <p className="text-[16px] font-black text-emerald-100">{stats.leadsSigned}</p>
                           <p className="text-[9px] text-white/55">Abouties</p>
                         </div>
-                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
-                          <p className="text-sm font-black text-amber-100">{Math.round(stats.commissionTotalEur || 0)}€</p>
+                        <div className="rounded-[10px] bg-black/25 px-2 py-2 text-center">
+                          <p className="text-[16px] font-black text-amber-100">{Math.round(stats.commissionTotalEur || 0)}€</p>
                           <p className="text-[9px] text-white/55">Commission</p>
                         </div>
                       </div>
@@ -7340,7 +7406,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         <button
                           type="button"
                           onClick={() => openEclaireurTemplates(contact.id)}
-                          className="flex-1 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-2 py-2 text-[11px] font-black text-cyan-100"
+                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-bold text-white/80"
                         >
                           💬 Message
                         </button>
@@ -7352,7 +7418,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                               : void ensureEclaireurLink(contact.id, { autoCopy: true })
                           }
                           disabled={loadingEclaireurLinkContactId === contact.id || copyingEclaireurLinkContactId === contact.id}
-                          className="flex-1 rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-[11px] font-black text-emerald-100 disabled:opacity-60"
+                          className="flex-1 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-2 py-2 text-[12px] font-bold text-[#8CECD4] disabled:opacity-60"
                         >
                           {loadingEclaireurLinkContactId === contact.id
                             ? "Generation..."
@@ -7366,7 +7432,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           type="button"
                           onClick={() => void removeEclaireur(contact.id)}
                           disabled={isRemovingEclaireurId === contact.id}
-                          className="rounded-xl border border-rose-300/35 bg-rose-300/15 px-2 py-2 text-[11px] font-black text-rose-100 disabled:opacity-60"
+                          className="rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-black text-white/65 disabled:opacity-60"
                         >
                           {isRemovingEclaireurId === contact.id ? "..." : "···"}
                         </button>
