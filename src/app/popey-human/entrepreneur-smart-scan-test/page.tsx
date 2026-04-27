@@ -7984,53 +7984,55 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       {showAlliancesPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
           >
-            <div className="rounded-[34px] border border-transparent bg-[#0E1420] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[44px] font-black leading-[0.9] tracking-[-0.02em] text-white">Eclaireurs</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAllianceInviteFilter("all");
-                    if (allianceDirectoryMode === "internal") {
-                      setShowInternalInvitesModal(true);
-                      void loadInternalAllianceInvites();
-                    } else {
-                      setShowAllianceInvitesModal(true);
-                      void loadAllianceInvites();
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-300/8 px-4 py-2 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/14"
-                >
-                  <span className="text-[30px] font-black leading-none text-emerald-300">{activeAllianceInvites.length}</span>
-                  <span className="text-[11px] text-white/70">actifs</span>
-                </button>
-              </div>
-              <div className="mt-3 flex rounded-[24px] border border-white/10 bg-[#0E1420] p-2">
-                <button
-                  type="button"
-                  onClick={() => setAllianceDirectoryMode("external")}
-                  className={`h-14 flex-1 rounded-[18px] px-4 text-[19px] font-black tracking-[0.01em] transition ${
-                    allianceDirectoryMode === "external"
-                      ? "bg-[#1A2742] text-[#00D4A0]"
-                      : "text-white/42 hover:text-white/65"
-                  }`}
-                >
-                  Annuaire local
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllianceDirectoryMode("internal")}
-                  className={`h-14 flex-1 rounded-[18px] px-4 text-[19px] font-black tracking-[0.01em] transition ${
-                    allianceDirectoryMode === "internal"
-                      ? "bg-[#1A2742] text-[#00D4A0]"
-                      : "text-white/42 hover:text-white/65"
-                  }`}
-                >
-                  Communaute Popey
-                </button>
+            <div className="sticky top-0 z-30 -mx-4 px-4 pb-3 pt-1 bg-[linear-gradient(180deg,#07090F_0%,#07090F_84%,rgba(7,9,15,0)_100%)] backdrop-blur-[2px]">
+              <div className="rounded-[34px] border border-transparent bg-[#0E1420] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[42px] font-black leading-[0.9] tracking-[-0.025em] text-white">Eclaireurs</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAllianceInviteFilter("all");
+                      if (allianceDirectoryMode === "internal") {
+                        setShowInternalInvitesModal(true);
+                        void loadInternalAllianceInvites();
+                      } else {
+                        setShowAllianceInvitesModal(true);
+                        void loadAllianceInvites();
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-300/8 px-4 py-2 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/14"
+                  >
+                    <span className="text-[30px] font-black leading-none text-emerald-300">{activeAllianceInvites.length}</span>
+                    <span className="text-[11px] text-white/70">actifs</span>
+                  </button>
+                </div>
+                <div className="mt-3 flex rounded-[24px] border border-white/10 bg-[#0E1420] p-2">
+                  <button
+                    type="button"
+                    onClick={() => setAllianceDirectoryMode("external")}
+                    className={`h-14 flex-1 rounded-[18px] px-4 text-[18px] font-black tracking-[0.01em] transition ${
+                      allianceDirectoryMode === "external"
+                        ? "bg-[#1A2742] text-[#00D4A0]"
+                        : "text-white/42 hover:text-white/65"
+                    }`}
+                  >
+                    Annuaire local
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllianceDirectoryMode("internal")}
+                    className={`h-14 flex-1 rounded-[18px] px-4 text-[18px] font-black tracking-[0.01em] transition ${
+                      allianceDirectoryMode === "internal"
+                        ? "bg-[#1A2742] text-[#00D4A0]"
+                        : "text-white/42 hover:text-white/65"
+                    }`}
+                  >
+                    Communaute Popey
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -8363,33 +8365,37 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         <div className="fixed inset-0 z-[69] flex items-start justify-center bg-black/70 px-0 pb-0 pt-0 backdrop-blur-sm sm:px-4 sm:pb-0 sm:pt-16">
           <section
             className="relative h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
           >
             <div className="pointer-events-none absolute left-1/2 top-[36%] h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,212,160,0.1)_0%,transparent_62%)]" />
 
-            <header className="relative z-[1] px-0">
+            <header className="sticky top-0 z-20 -mx-4 bg-[linear-gradient(180deg,#07090F_0%,#07090F_86%,rgba(7,9,15,0)_100%)] px-4 pb-3 pt-2">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setShowRadarMode(false)}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#141C2E] text-[16px] text-white/75"
+                  className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#141C2E] text-[18px] text-white/75"
                 >
                   ←
                 </button>
-                <p className="flex-1 text-[40px] font-black leading-[0.85] tracking-[-0.025em] text-white">Mode Radar ⚡</p>
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-1.5 text-[12px] font-black text-[#00D4A0]">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[56px] font-black leading-[0.76] tracking-[-0.028em] text-white">Mode Radar</p>
+                  <p className="-mt-0.5 text-[42px] leading-none text-[#F5A623]">⚡</p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-4 py-2 text-[15px] font-black text-[#00D4A0]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
                   {radarProspects.length} prêts
                 </span>
               </div>
               <p className="mt-2 text-[13px] leading-[1.45] text-white/70">
-                L'IA a analysé votre profil <span className="font-bold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et préparé 10 WhatsApp personnalisés avec les meilleures synergies locales.
+                L'IA a analysé votre profil <span className="font-bold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et préparé 10
+                WhatsApp personnalisés avec les meilleures synergies locales. Sélectionnez et envoyez.
               </p>
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   type="button"
                   onClick={() => setRadarSynergyFilter("all")}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === "all" ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
+                  className={`shrink-0 rounded-full border px-4 py-2 text-[13px] font-black ${radarSynergyFilter === "all" ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
                 >
                   • Tous · {radarProspects.length}
                 </button>
@@ -8398,7 +8404,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     key={`radar-filter-${item.metier}`}
                     type="button"
                     onClick={() => setRadarSynergyFilter(item.metier)}
-                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === item.metier ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-[13px] font-black ${radarSynergyFilter === item.metier ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
                   >
                     • {item.metier} · {item.count}
                   </button>
@@ -8427,8 +8433,26 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="relative z-[1] mt-4 rounded-2xl border border-[#00D4A0]/20 bg-[#0E1420] px-4 py-3.5">
-              <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Message commun (sélection)</p>
+            <button
+              type="button"
+              onClick={openSelectedRadarWhatsApp}
+              disabled={!radarSelectedUnsentCount}
+              className="relative z-[1] mt-4 flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1AAE53] px-4 text-[19px] font-black tracking-[0.01em] text-white shadow-[0_12px_30px_rgba(37,211,102,0.35)] disabled:opacity-45"
+            >
+              <span className="text-[23px]">📱</span>
+              <span>Envoyer les {radarSelectedUnsentCount} sélectionnés</span>
+              <span>→</span>
+            </button>
+
+            <div className="relative z-[1] mt-4">
+              <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
+              <p className="mt-0.5 text-[13px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
+            </div>
+
+            <details className="relative z-[1] mt-3 rounded-2xl border border-[#00D4A0]/20 bg-[#0E1420]/95 px-4 py-3">
+              <summary className="cursor-pointer list-none text-[12px] font-black uppercase tracking-[0.08em] text-[#00D4A0] [&::-webkit-details-marker]:hidden">
+                Personnaliser les messages sélectionnés
+              </summary>
               <p className="mt-1 text-[12px] text-white/55">Utilise {"{prenom}"} pour personnaliser automatiquement chaque message.</p>
               <textarea
                 value={radarBulkMessageDraft}
@@ -8445,23 +8469,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               >
                 Appliquer aux {radarSelectedCount} sélectionnés
               </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={openSelectedRadarWhatsApp}
-              disabled={!radarSelectedUnsentCount}
-              className="relative z-[1] mt-4 flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1AAE53] px-4 text-[19px] font-black tracking-[0.01em] text-white shadow-[0_12px_30px_rgba(37,211,102,0.35)] disabled:opacity-45"
-            >
-              <span className="text-[23px]">📱</span>
-              <span>Envoyer les {radarSelectedUnsentCount} sélectionnés</span>
-              <span>→</span>
-            </button>
-
-            <div className="relative z-[1] mt-4">
-              <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
-              <p className="mt-0.5 text-[13px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
-            </div>
+            </details>
 
             <div className="relative z-[1] mt-3.5 space-y-3.5 pb-2">
               {radarFilteredProspects.map((prospect) => {
