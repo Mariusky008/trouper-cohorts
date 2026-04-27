@@ -1128,6 +1128,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [manualScoutLastName, setManualScoutLastName] = useState("");
   const [manualScoutMetier, setManualScoutMetier] = useState("");
   const [showAddScoutModal, setShowAddScoutModal] = useState(false);
+  const [addScoutType, setAddScoutType] = useState<"perso" | "pro">("perso");
+  const [allianceInviteFilter, setAllianceInviteFilter] = useState<"all" | "sent" | "clicked" | "signed_up">("all");
   const [eclaireurLinksByContactId, setEclaireurLinksByContactId] = useState<Record<string, SmartScanEclaireurLink>>({});
   const [loadingEclaireurLinkContactId, setLoadingEclaireurLinkContactId] = useState<string | null>(null);
   const [copyingEclaireurLinkContactId, setCopyingEclaireurLinkContactId] = useState<string | null>(null);
@@ -1505,6 +1507,10 @@ export default function EntrepreneurSmartScanTestPage() {
     return sortedAllianceProspects.filter((item) => visible.has(item.id));
   }, [isAllianceRevealRunning, revealedAllianceProspectIds, sortedAllianceProspects]);
   const activeAllianceInvites = allianceDirectoryMode === "internal" ? internalAllianceInvites : allianceInvites;
+  const filteredAllianceInvites = useMemo(() => {
+    if (allianceInviteFilter === "all") return activeAllianceInvites;
+    return activeAllianceInvites.filter((item) => item.status === allianceInviteFilter);
+  }, [activeAllianceInvites, allianceInviteFilter]);
   const allianceSelectedMetiers = useMemo(
     () =>
       String(allianceTargetMetiersInput || "")
@@ -7841,11 +7847,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-cyan-300/35 bg-gradient-to-br from-[#101A3D] via-[#0D1736] to-[#101A3D] p-4 shadow-[0_0_55px_rgba(6,182,212,0.22)] sm:p-5">
-            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-violet-300/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl" />
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#101A3D] to-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)] sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white">
                 {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances sollicitees"}
               </p>
               <div className="flex items-center gap-2">
@@ -7858,7 +7862,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       void loadAllianceInvites();
                     }
                   }}
-                  className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.1em] text-white/90"
+                  className="h-9 rounded-xl border border-white/20 bg-[#1A2438] px-4 text-[10px] font-black uppercase tracking-[0.1em] text-white/90"
                 >
                   Refresh
                 </button>
@@ -7868,49 +7872,66 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     setShowAllianceInvitesModal(false);
                     setShowInternalInvitesModal(false);
                   }}
-                  className="h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
+                  className="h-9 w-9 rounded-full border border-white/20 bg-[#1A2438] text-xs text-white/85"
                 >
                   ✕
                 </button>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
-              <div className="rounded-2xl border border-white/20 bg-[#121F45] px-2 py-2 text-center">
-                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
-                <p className="text-sm font-black text-white">{activeAllianceInvites.length}</p>
-              </div>
-              <div className="rounded-2xl border border-cyan-300/35 bg-cyan-300/15 px-2 py-2 text-center">
-                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
-                <p className="text-sm font-black text-cyan-100">{activeAllianceInvites.filter((item) => item.status === "sent").length}</p>
-              </div>
-              <div className="rounded-2xl border border-amber-300/35 bg-amber-300/15 px-2 py-2 text-center">
-                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
-                <p className="text-sm font-black text-amber-100">{activeAllianceInvites.filter((item) => item.status === "clicked").length}</p>
-              </div>
-              <div className="rounded-2xl border border-emerald-300/35 bg-emerald-300/15 px-2 py-2 text-center">
-                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
-                <p className="text-sm font-black text-emerald-100">{activeAllianceInvites.filter((item) => item.status === "signed_up").length}</p>
-              </div>
+              {[
+                { id: "all" as const, label: "Total", value: activeAllianceInvites.length, className: "border-white/20 bg-[#121F45] text-white" },
+                { id: "sent" as const, label: "Envoye", value: activeAllianceInvites.filter((item) => item.status === "sent").length, className: "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" },
+                { id: "clicked" as const, label: "Clique", value: activeAllianceInvites.filter((item) => item.status === "clicked").length, className: "border-amber-300/35 bg-amber-300/15 text-amber-100" },
+                { id: "signed_up" as const, label: "Inscrit", value: activeAllianceInvites.filter((item) => item.status === "signed_up").length, className: "border-emerald-300/35 bg-emerald-300/15 text-emerald-100" },
+              ].map((tab) => (
+                <button
+                  key={`invite-tab-${tab.id}`}
+                  type="button"
+                  onClick={() => setAllianceInviteFilter(tab.id)}
+                  className={`rounded-2xl border px-2 py-2 text-center transition ${tab.className} ${
+                    allianceInviteFilter === tab.id ? "ring-1 ring-white/30" : "opacity-80"
+                  }`}
+                >
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em]">{tab.label}</p>
+                  <p className="text-sm font-black">{tab.value}</p>
+                </button>
+              ))}
             </div>
             {(allianceDirectoryMode === "internal" ? isInternalInvitesLoading : isAllianceInvitesLoading) ? (
               <p className="mt-3 text-[11px] text-white/70">Chargement de tes alliances...</p>
             ) : (
               <div className="mt-3 max-h-[46vh] space-y-1.5 overflow-y-auto pr-1">
-                {activeAllianceInvites.length === 0 ? (
+                {filteredAllianceInvites.length === 0 ? (
                   <p className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
                     Aucune alliance sollicitee pour le moment.
                   </p>
                 ) : null}
-                {activeAllianceInvites.map((invite) => (
-                  <div key={`alliance-modal-invite-${invite.id}`} className="rounded-2xl border border-cyan-300/20 bg-[#132248] px-3 py-2">
-                    <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
-                    <p className="text-[10px] text-white/72">
-                      {invite.prospect_metier}
-                      {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
-                      {` • ${invite.status}`}
-                    </p>
-                  </div>
-                ))}
+                {filteredAllianceInvites.map((invite) => {
+                  const initials = String(invite.prospect_name || "AL")
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((part) => part[0]?.toUpperCase() || "")
+                    .slice(0, 2)
+                    .join("");
+                  return (
+                    <div key={`alliance-modal-invite-${invite.id}`} className="rounded-2xl border border-white/15 bg-[#132248] px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-9 w-9 shrink-0 rounded-xl border border-white/15 bg-white/5 text-center text-[11px] font-black leading-9 text-white/90">
+                          {initials || "AL"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[12px] font-black text-white">{invite.prospect_name}</p>
+                          <p className="truncate text-[10px] text-white/72">
+                            {invite.prospect_metier}
+                            {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
+                            {` • ${invite.status}`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -7918,49 +7939,102 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showAddScoutModal && (
-        <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/70 px-3 backdrop-blur-sm sm:px-4">
-          <section className="w-full max-w-lg rounded-[32px] border border-cyan-300/35 bg-gradient-to-br from-[#0D1736] via-[#0A1432] to-[#0D1736] p-4 shadow-[0_0_55px_rgba(6,182,212,0.2)]">
+        <div className="fixed inset-0 z-[64] flex items-end justify-center bg-black/80 px-3 pb-24 backdrop-blur-md sm:items-center sm:px-4 sm:pb-0">
+          <section className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">Ajouter un Eclaireur</p>
+              <p className="text-[22px] font-black tracking-[-0.01em] text-white">Nouvel eclaireur</p>
               <button
                 type="button"
                 onClick={() => setShowAddScoutModal(false)}
-                className="h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
+                className="h-8 w-8 rounded-full border border-white/20 bg-[#1A2438] text-xs text-white/85"
               >
                 ✕
               </button>
             </div>
+            <p className="mt-1 text-[13px] leading-[1.45] text-white/70">
+              Ajoutez un contact qui deviendra votre <span className="font-semibold text-[#00D4A0]">apporteur d affaires</span> commissionne.
+            </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <input
-                value={manualScoutFirstName}
-                onChange={(event) => setManualScoutFirstName(event.target.value)}
-                placeholder="Prenom"
-                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
-              />
-              <input
-                value={manualScoutLastName}
-                onChange={(event) => setManualScoutLastName(event.target.value)}
-                placeholder="Nom"
-                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
-              />
+              <button
+                type="button"
+                onClick={() => setAddScoutType("perso")}
+                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "perso" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#1A2438]"}`}
+              >
+                <p className="text-xl">📱</p>
+                <p className={`text-[13px] font-bold ${addScoutType === "perso" ? "text-[#00D4A0]" : "text-white"}`}>Perso</p>
+                <p className="text-[10px] text-white/45">Ami, famille, collegue</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddScoutType("pro")}
+                className={`rounded-2xl border px-3 py-2 text-center ${addScoutType === "pro" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12" : "border-white/10 bg-[#1A2438]"}`}
+              >
+                <p className="text-xl">🔍</p>
+                <p className={`text-[13px] font-bold ${addScoutType === "pro" ? "text-[#00D4A0]" : "text-white"}`}>Pro local</p>
+                <p className="text-[10px] text-white/45">Annuaire, partenaire</p>
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div>
+                <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">Prenom</p>
+                <input
+                  value={manualScoutFirstName}
+                  onChange={(event) => setManualScoutFirstName(event.target.value)}
+                  placeholder="Sophie"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">Nom</p>
+                <input
+                  value={manualScoutLastName}
+                  onChange={(event) => setManualScoutLastName(event.target.value)}
+                  placeholder="Martin"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                />
+              </div>
+            </div>
+            <div className="mt-2">
+              <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">Metier / Activite</p>
               <input
                 value={manualScoutMetier}
                 onChange={(event) => setManualScoutMetier(event.target.value)}
-                placeholder="Metier"
-                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
+                placeholder="Osteopathe, coach, notaire..."
+                className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
               />
-              <input
-                value={manualScoutCity}
-                onChange={(event) => setManualScoutCity(event.target.value)}
-                placeholder="Ville"
-                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
-              />
-              <input
-                value={manualScoutPhone}
-                onChange={(event) => setManualScoutPhone(event.target.value)}
-                placeholder="Telephone"
-                className="col-span-2 h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
-              />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {["🦴 Osteopathe", "🏋️ Coach sportif", "⚖️ Notaire", "🌿 Sophrologue", "🏠 Agent immo"].map((item) => (
+                <button
+                  key={`metier-suggestion-${item}`}
+                  type="button"
+                  onClick={() => setManualScoutMetier(item.replace(/^[^A-Za-z0-9]+/, "").trim())}
+                  className="rounded-full border border-white/12 bg-[#1A2438] px-3 py-1 text-[11px] text-white/70"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">Ville</p>
+                <input
+                  value={manualScoutCity}
+                  onChange={(event) => setManualScoutCity(event.target.value)}
+                  placeholder="Dax"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">WhatsApp</p>
+                <input
+                  value={manualScoutPhone}
+                  onChange={(event) => setManualScoutPhone(event.target.value)}
+                  placeholder="06 00 00 00"
+                  className="h-11 w-full rounded-xl border border-white/15 bg-[#1A2438] px-3 text-[13px] text-white placeholder:text-white/35"
+                />
+              </div>
             </div>
             <button
               type="button"
@@ -7975,9 +8049,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 });
               }}
               disabled={!manualScoutFirstName.trim() && !manualScoutLastName.trim()}
-              className="mt-3 h-11 w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/20 text-[12px] font-black uppercase tracking-[0.12em] text-cyan-100 disabled:opacity-60"
+              className="mt-4 h-12 w-full rounded-xl border border-[#00D4A0]/40 bg-gradient-to-r from-[#00D4A0] to-[#00A87E] text-[15px] font-black tracking-[0.02em] text-[#04110D] disabled:opacity-60"
             >
-              Ajouter + Eclaireur
+              Ajouter cet eclaireur
             </button>
           </section>
         </div>
