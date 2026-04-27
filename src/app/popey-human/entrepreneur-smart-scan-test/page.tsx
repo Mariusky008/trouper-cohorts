@@ -5870,11 +5870,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             {apiErrorMessage}
           </div>
         )}
-        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#101A18] via-[#13231F] to-[#0F172A] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
+        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#0A101A] via-[#0D1523] to-[#0A0F18] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#101A18] via-[#14231F] to-[#101A18] p-4">
-              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-emerald-300/12 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-violet-300/10 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#0F192B] via-[#13213A] to-[#101A2E] p-4">
+              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-cyan-300/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-[#00D4A0]/8 blur-3xl" />
               <div className="relative flex items-center justify-between gap-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/40">Cockpit mission quotidienne</p>
                 <span className="rounded-full bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#2B1604]">
@@ -5888,17 +5888,17 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
               </p>
               <div className="relative mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-2">
+                <div className="rounded-2xl border border-[#00D4A0]/30 bg-[#121F33] px-3 py-2">
                   <p className="text-[30px] font-black leading-none text-[#00D4A0]">{opportunitiesActivated}</p>
-                  <p className="mt-1 text-[11px] font-bold text-white/70">Actifs aujourd hui</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/62">Actifs aujourd hui</p>
                 </div>
-                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2">
-                  <p className="text-[30px] font-black leading-none text-amber-100">{dailyGoal}</p>
-                  <p className="mt-1 text-[11px] font-bold text-white/70">Objectif du jour</p>
+                <div className="rounded-2xl border border-[#F5A623]/35 bg-[#121F33] px-3 py-2">
+                  <p className="text-[30px] font-black leading-none text-[#F5A623]">{dailyGoal}</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/62">Objectif du jour</p>
                 </div>
-                <div className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2">
+                <div className="rounded-2xl border border-white/15 bg-[#121F33] px-3 py-2">
                   <p className="text-[30px] font-black leading-none text-white/90">{historyMonthlySentCount}</p>
-                  <p className="mt-1 text-[11px] font-bold text-white/55">Ce mois</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/58">Ce mois</p>
                 </div>
               </div>
               <div className="relative mt-3">
@@ -5920,7 +5920,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowPotentialBreakdownSheet(true)}
-                  className="h-14 rounded-2xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 text-left"
+                  className="h-14 rounded-2xl border border-[#00D4A0]/35 bg-[rgba(0,212,160,0.12)] px-3 text-left"
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Potentiel du jour</p>
                   <p className="mt-1 text-[34px] font-black leading-none text-white">~{latentPotential}€</p>
@@ -5928,7 +5928,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setIsCockpitCollapsed((value) => !value)}
-                  className="h-14 rounded-2xl border border-white/20 bg-white/8 px-3 text-[12px] font-black text-white/85"
+                  className="h-14 rounded-2xl border border-white/20 bg-[#141F34] px-3 text-[12px] font-black text-white/85"
                 >
                   {isCockpitCollapsed ? "▼ Cockpit" : "▲ Cockpit"}
                 </button>
@@ -6209,7 +6209,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
 
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#111C31] via-[#16233D] to-[#10192E] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
+          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#0D1526] via-[#101B2F] to-[#0D1524] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[20px] font-black tracking-[-0.015em] text-white">Daily Card</p>
               <div className="flex items-center gap-2">
@@ -6246,14 +6246,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#27334B] via-[#2F3C57] to-[#1B2D29] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#16243A] via-[#1A2942] to-[#142238] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
-                  className={`h-[72px] w-[72px] rounded-[20px] bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_20px_rgba(56,189,248,0.25)]`}
+                  className={`h-[72px] w-[72px] rounded-[20px] bg-gradient-to-br ${
+                    discoveryLabel.toLowerCase().includes("decouvrir") || discoveryLabel.toLowerCase().includes("inconnu")
+                      ? "from-[#F5A623] via-[#FFB342] to-[#E8961A]"
+                      : sourceRing
+                  } p-[2px] shadow-[0_0_20px_rgba(56,189,248,0.25)]`}
                   style={{ boxShadow: heatScore >= 90 ? "0 0 34px rgba(251,146,60,0.65)" : undefined }}
                 >
-                  <div className="flex h-full w-full items-center justify-center rounded-[18px] bg-[#0D132D] text-[34px] font-black">
+                  <div className={`flex h-full w-full items-center justify-center rounded-[18px] bg-[#0D132D] text-[34px] font-black ${
+                    discoveryLabel.toLowerCase().includes("decouvrir") || discoveryLabel.toLowerCase().includes("inconnu")
+                      ? "text-[#F5A623]"
+                      : "text-white"
+                  }`}>
                     {current.name
                       .split(" ")
                       .map((part) => part[0])
@@ -6266,7 +6274,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/45 bg-[#2C2A30] px-3 py-1 text-[13px] font-black text-[#F5A623]">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#F5A623]/55 bg-[#2A2E3A] px-3 py-1 text-[13px] font-black text-[#F5A623]">
                       <span className="text-[#FF4D6D]">?</span> {discoveryLabel}
                     </span>
                   </div>
@@ -6319,8 +6327,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       onClick={() => triggerAction(button.action)}
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
-                          ? "h-[82px] border-amber-300/60 bg-gradient-to-r from-[#3E3B34] to-[#3B352D] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.85)]"
-                          : "h-[76px] border-white/20 bg-[#1E302B]/35 text-white/80 opacity-95 hover:opacity-100"
+                          ? "h-[82px] border-[#F5A623]/60 bg-gradient-to-r from-[#2A3142] to-[#243247] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.85)]"
+                          : "h-[76px] border-white/20 bg-[#17253A]/88 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
                       } ${launching ? theme.launchRingClass : ""} ${isPrimary ? "ring-1 ring-white/30" : ""}`}
@@ -6350,7 +6358,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </>
                       )}
                       <div className="flex h-full items-center gap-3 px-4 text-left">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${button.action === "eclaireur" ? "border-amber-300/45 bg-[#5A5032]/50 text-[#F5A623]" : actionVisual.iconClass}`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${button.action === "eclaireur" ? "border-[#F5A623]/55 bg-[#2A3142] text-[#F5A623]" : actionVisual.iconClass}`}>
                           {actionVisual.icon}
                         </div>
                         <div className="min-w-0 flex-1">
