@@ -6838,72 +6838,83 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       {showEclaireursPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-hidden rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-hidden rounded-none border-0 bg-[#07090F] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
-            <div className="sticky top-0 z-30 -mx-1 rounded-xl bg-[#0E1430]/95 px-1 pb-3 backdrop-blur">
-              <div className="rounded-xl bg-[#0E1430]/95 pb-2">
+            <div className="h-full min-h-0 overflow-y-auto overscroll-contain pb-24">
+              <div className="rounded-[24px] border border-white/10 bg-[#0F1628]/90 p-3 shadow-[0_20px_70px_-40px_rgba(0,0,0,0.95)]">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddScoutTooltip(false);
-                        setHasSeenAddScoutTooltip(true);
-                        setShowAddScoutModal(true);
-                      }}
-                      className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
-                      aria-label="Ajouter un eclaireur"
-                    >
-                      +
-                    </button>
-                    {showAddScoutTooltip && (
-                      <div className="pointer-events-none absolute right-0 top-11 whitespace-nowrap rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
-                        Ajouter un eclaireur
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-[28px] font-black leading-none tracking-[-0.015em] text-white">Mes Eclaireurs</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddScoutTooltip(false);
+                      setHasSeenAddScoutTooltip(true);
+                      setShowAddScoutModal(true);
+                    }}
+                    className="h-10 w-10 rounded-full border border-[#00D4A0]/45 bg-[#00D4A0]/12 text-xl font-black text-[#00D4A0]"
+                    aria-label="Ajouter un eclaireur"
+                  >
+                    +
+                  </button>
+                </div>
+                {showAddScoutTooltip ? (
+                  <p className="mt-2 inline-flex rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
+                    Ajouter un eclaireur
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-[18px] border border-[#00D4A0]/25 bg-gradient-to-br from-[#00D4A0]/14 to-[#00D4A0]/4 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Eclaireurs Pro</p>
+                  <p className="mt-1 text-3xl font-black leading-none text-[#00D4A0]">{eclaireurHeaderStats.proCount}</p>
+                  <p className="mt-1 text-[11px] text-white/45">Annuaire local</p>
+                </div>
+                <div className="rounded-[18px] border border-violet-300/25 bg-gradient-to-br from-violet-300/14 to-violet-300/4 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-violet-200/85">Eclaireurs Perso</p>
+                  <p className="mt-1 text-3xl font-black leading-none text-violet-200">{eclaireurHeaderStats.persoCount}</p>
+                  <p className="mt-1 text-[11px] text-white/45">Repertoire</p>
+                </div>
+                <div className="rounded-[18px] border border-white/15 bg-[#151F31] p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">Total actifs</p>
+                  <p className="mt-1 text-3xl font-black leading-none text-white">{eclaireurHeaderStats.totalCount}</p>
+                  <p className="mt-1 text-[11px] text-white/45">Sur 10 objectif</p>
+                </div>
+                <div className={`rounded-[18px] border border-amber-300/30 bg-gradient-to-br from-amber-300/14 to-amber-300/5 p-3 ${recoAlertPulse ? "animate-pulse" : ""}`}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-amber-100/85">Recommandations</p>
+                  <p className="mt-1 text-3xl font-black leading-none text-amber-200">{eclaireurHeaderStats.alertesCount}</p>
+                  <p className="mt-1 text-[11px] text-amber-100/70">{Math.max(0, eclaireurHeaderStats.alertesCount - 2)} alerte(s) a traiter</p>
                 </div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-cyan-300/30 bg-cyan-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">Eclaireurs Pro</p>
-                  <p className="text-lg font-black text-cyan-50">{eclaireurHeaderStats.proCount}</p>
-                </div>
-                <div className="rounded-xl border border-emerald-300/30 bg-emerald-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-emerald-100">Eclaireurs Perso</p>
-                  <p className="text-lg font-black text-emerald-50">{eclaireurHeaderStats.persoCount}</p>
-                </div>
-                <div className="rounded-xl border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Total Eclaireurs</p>
-                  <p className="text-lg font-black text-fuchsia-50">{eclaireurHeaderStats.totalCount}</p>
-                </div>
-                <div className={`rounded-xl border border-amber-300/40 bg-amber-200/20 px-2 py-2 text-center ${recoAlertPulse ? "animate-pulse" : ""}`}>
-                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-amber-100">Total Reco (alertes)</p>
-                  <p className="text-2xl font-black text-amber-50">{eclaireurHeaderStats.alertesCount}</p>
-                  <p className="text-[10px] font-black text-amber-100/90">alerte(s)</p>
-                </div>
-              </div>
+
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
               ) : null}
-              <div className="mt-2 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🔥 Opportunites entrantes Eclaireurs</p>
-                  <span className="inline-flex rounded-full border border-fuchsia-200/35 bg-fuchsia-200/20 px-2 py-0.5 text-[10px] font-black text-fuchsia-50">
-                    {incomingReferrals.length} alerte(s)
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <p className="text-[17px] font-black text-white">Opportunites entrantes</p>
+                  <span className="rounded-full border border-amber-300/35 bg-amber-300/10 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                    {incomingReferrals.length} alertes
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] text-fuchsia-100/85">Traite ces opportunites en priorite: RDV, offre puis signature finale.</p>
-                {isIncomingReferralsLoading ? (
-                  <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
-                ) : incomingReferrals.length === 0 ? (
-                  <p className="mt-1 text-[11px] text-white/70">Aucune opportunite recu pour le moment.</p>
-                ) : (
-                  <div className="mt-2 space-y-1">
-                    {incomingReferrals.slice(0, 4).map((item) => (
+              </div>
+              {isIncomingReferralsLoading ? (
+                <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
+              ) : incomingReferrals.length === 0 ? (
+                <p className="mt-1 text-[11px] text-white/70">Aucune opportunite recue pour le moment.</p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {incomingReferrals.slice(0, 4).map((item) => {
+                    const scoutInitials = (item.scout_name || "EC")
+                      .split(" ")
+                      .filter(Boolean)
+                      .map((token) => token[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase();
+                    return (
                       <button
                         key={`incoming-${item.id}`}
                         type="button"
@@ -6911,10 +6922,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           setSelectedIncomingReferralId(item.id);
                           setIncomingSignedAmount("");
                         }}
-                        className="w-full rounded-xl border border-fuchsia-200/25 bg-black/30 px-3 py-2 text-left transition hover:border-fuchsia-300/55 hover:bg-fuchsia-300/12"
+                        className="w-full rounded-[18px] border border-white/15 bg-gradient-to-br from-[#161F32] to-[#1A2438] px-3 py-3 text-left"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[12px] font-black text-white">{item.contact_name}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className="h-10 w-10 shrink-0 rounded-xl border border-amber-300/35 bg-amber-300/10 text-center text-xs font-black leading-10 text-amber-100">
+                              {scoutInitials || "EC"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-[14px] font-black text-white">{item.contact_name}</p>
+                              <p className="truncate text-[11px] text-white/60">
+                                via {item.scout_name || "Eclaireur"} • {formatDateTimeShort(item.updated_at || item.created_at)}
+                              </p>
+                            </div>
+                          </div>
                           <span
                             className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${
                               item.status === "converted"
@@ -6935,116 +6956,167 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                                   : "Opportunite recue 🟢"}
                           </span>
                         </div>
-                        <p className="mt-1 text-[10px] text-white/75">
-                          {item.status === "converted" ? "🏁" : item.status === "offered" ? "🧾" : item.status === "validated" ? "📅" : "📥"}{" "}
-                          {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {referralStatusLabel(item.status)}
+                        <p className="mt-2 text-[11px] text-white/70">
+                          {item.scout_type === "pro" ? "🔍 Eclaireur Pro" : "👥 Eclaireur Perso"} • {referralStatusLabel(item.status)}
                         </p>
-                        <p className="text-[10px] text-white/65">{formatDateTimeShort(item.updated_at || item.created_at)}</p>
                       </button>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <p className="text-[17px] font-black text-white">Mes eclaireurs actifs</p>
+                  <span className="rounded-full border border-cyan-300/35 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+                    {eclaireurHeaderStats.totalCount} actifs
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddScoutModal(true)}
+                  className="text-[12px] font-semibold text-white/50 hover:text-[#00D4A0]"
+                >
+                  Gerer
+                </button>
               </div>
-            </div>
-            <div className="mt-3 space-y-2 pb-24">
-              {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
-              {eclaireursList.map((contact) => {
-                const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
-                const daysSinceActivation = stats.lastNewsAtMs > 0 ? Math.max(0, Math.floor((Date.now() - stats.lastNewsAtMs) / (24 * 60 * 60 * 1000))) : null;
-                const isProScout = contact.scoutType === "pro";
-                return (
-                  <div
-                    key={`eclaireur-${contact.id}`}
-                    className={`rounded-xl border px-3 py-2 ${
-                      isProScout
-                        ? "border-violet-300/35 bg-violet-300/12 shadow-[0_0_20px_rgba(167,139,250,0.18)]"
-                        : "border-cyan-300/30 bg-cyan-300/10"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openEclaireurTemplates(contact.id)}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <p className={`truncate text-sm font-black ${isProScout ? "text-violet-50" : "text-cyan-50"}`}>{contact.name}</p>
-                        <p className={`text-[11px] ${isProScout ? "text-violet-100/80" : "text-cyan-100/80"}`}>{contact.city}</p>
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] ${
-                            isProScout
-                              ? "border-violet-300/45 bg-violet-300/20 text-violet-100"
-                              : "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
-                          }`}
-                        >
-                          {isProScout ? "🤝 Pro" : "👥 Perso"}
-                        </span>
+
+              <div className="mt-2 space-y-2">
+                {eclaireursList.length === 0 ? <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p> : null}
+                {eclaireursList.map((contact) => {
+                  const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
+                  const daysSinceActivation =
+                    stats.lastNewsAtMs > 0 ? Math.max(0, Math.floor((Date.now() - stats.lastNewsAtMs) / (24 * 60 * 60 * 1000))) : null;
+                  const isProScout = contact.scoutType === "pro";
+                  const initials = contact.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((token) => token[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase();
+                  const activityScore = Math.max(40, Math.min(99, Math.round(55 + stats.leadsDetected * 6 + stats.leadsSigned * 10)));
+
+                  return (
+                    <div
+                      key={`eclaireur-${contact.id}`}
+                      className={`rounded-[20px] border px-3 py-3 ${
+                        isProScout ? "border-violet-300/35 bg-[#141D31]" : "border-cyan-300/30 bg-[#101B2A]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
                         <button
                           type="button"
                           onClick={() => openEclaireurTemplates(contact.id)}
-                          className="rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                          className="min-w-0 flex flex-1 items-start gap-2 text-left"
                         >
-                          Messages
+                          <div
+                            className={`relative mt-0.5 h-11 w-11 shrink-0 rounded-[14px] border text-center text-sm font-black leading-[44px] ${
+                              isProScout
+                                ? "border-violet-300/30 bg-violet-300/12 text-violet-100"
+                                : "border-cyan-300/30 bg-cyan-300/12 text-cyan-100"
+                            }`}
+                          >
+                            {initials || "EC"}
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#101B2A] ${
+                                daysSinceActivation !== null && daysSinceActivation <= 2 ? "bg-emerald-400" : "bg-white/45"
+                              }`}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`truncate text-[15px] font-black ${isProScout ? "text-violet-50" : "text-cyan-50"}`}>{contact.name}</p>
+                            <p className={`text-[11px] ${isProScout ? "text-violet-100/80" : "text-cyan-100/80"}`}>{contact.city}</p>
+                            <p className="mt-1 text-[10px] text-white/55">
+                              {daysSinceActivation === null
+                                ? "Activee recemment"
+                                : `Active il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
+                            </p>
+                          </div>
+                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] ${
+                              isProScout
+                                ? "border-violet-300/45 bg-violet-300/20 text-violet-100"
+                                : "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
+                            }`}
+                          >
+                            {isProScout ? "🔍 Pro" : "👥 Perso"}
+                          </span>
+                          <p className={`text-lg font-black leading-none ${isProScout ? "text-violet-200" : "text-[#00D4A0]"}`}>{activityScore}</p>
+                          <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">/ 100</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-3 gap-1.5">
+                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
+                          <p className="text-sm font-black text-cyan-100">{stats.leadsDetected}</p>
+                          <p className="text-[9px] text-white/55">Reco envoyees</p>
+                        </div>
+                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
+                          <p className="text-sm font-black text-emerald-100">{stats.leadsSigned}</p>
+                          <p className="text-[9px] text-white/55">Abouties</p>
+                        </div>
+                        <div className="rounded-lg bg-black/25 px-2 py-2 text-center">
+                          <p className="text-sm font-black text-amber-100">{Math.round(stats.commissionTotalEur || 0)}€</p>
+                          <p className="text-[9px] text-white/55">Commission</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEclaireurTemplates(contact.id)}
+                          className="flex-1 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-2 py-2 text-[11px] font-black text-cyan-100"
+                        >
+                          💬 Message
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            eclaireurLinksByContactId[contact.id]
+                              ? copyEclaireurLink(contact.id)
+                              : void ensureEclaireurLink(contact.id, { autoCopy: true })
+                          }
+                          disabled={loadingEclaireurLinkContactId === contact.id || copyingEclaireurLinkContactId === contact.id}
+                          className="flex-1 rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-[11px] font-black text-emerald-100 disabled:opacity-60"
+                        >
+                          {loadingEclaireurLinkContactId === contact.id
+                            ? "Generation..."
+                            : copyingEclaireurLinkContactId === contact.id
+                              ? "Copie..."
+                              : eclaireurLinksByContactId[contact.id]
+                                ? "📋 Copier lien"
+                                : "🔗 Lien eclaireur"}
                         </button>
                         <button
                           type="button"
                           onClick={() => void removeEclaireur(contact.id)}
                           disabled={isRemovingEclaireurId === contact.id}
-                          className="rounded-lg border border-rose-300/35 bg-rose-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-rose-100 disabled:opacity-60"
+                          className="rounded-xl border border-rose-300/35 bg-rose-300/15 px-2 py-2 text-[11px] font-black text-rose-100 disabled:opacity-60"
                         >
-                          {isRemovingEclaireurId === contact.id ? "Retrait..." : "Supprimer"}
+                          {isRemovingEclaireurId === contact.id ? "..." : "···"}
                         </button>
                       </div>
                     </div>
-                    <p className="mt-1 text-[10px] text-white/80">
-                      {daysSinceActivation === null
-                        ? "Activation: jamais activee"
-                        : `Activation: il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
-                    </p>
-                    <p className="mt-1 text-[12px] text-white/72">
-                      {stats.leadsDetected} reco • {stats.leadsSigned} abouties • {Math.round(stats.commissionTotalEur || 0)}€ generes
-                    </p>
-                    {eclaireurLinksByContactId[contact.id] ? (
-                      <div className="mt-2 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-2">
-                        {eclaireurLinksByContactId[contact.id]?.shortCode ? (
-                          <p className="text-[10px] text-[#EAC886]">
-                            Code court: <span className="font-black tracking-wider">{eclaireurLinksByContactId[contact.id]?.shortCode}</span>
-                          </p>
-                        ) : null}
-                        {eclaireurLinksByContactId[contact.id]?.shortUrl ? (
-                          <p className="mt-1 break-all text-[10px] text-cyan-100">{eclaireurLinksByContactId[contact.id]?.shortUrl}</p>
-                        ) : null}
-                        {eclaireurLinksByContactId[contact.id]?.fullUrl ? (
-                          <p className="mt-1 break-all text-[10px] text-emerald-100/85">{eclaireurLinksByContactId[contact.id]?.fullUrl}</p>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => copyEclaireurLink(contact.id)}
-                          disabled={copyingEclaireurLinkContactId === contact.id}
-                          className="mt-2 h-7 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
-                        >
-                          {copyingEclaireurLinkContactId === contact.id ? "Copie..." : "Copier le lien"}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => ensureEclaireurLink(contact.id, { autoCopy: true })}
-                        disabled={loadingEclaireurLinkContactId === contact.id}
-                        className="mt-2 h-7 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
-                      >
-                        {loadingEclaireurLinkContactId === contact.id
-                          ? "Generation..."
-                          : copyingEclaireurLinkContactId === contact.id
-                            ? "Copie..."
-                            : "Generer lien eclaireur"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddScoutTooltip(false);
+                    setHasSeenAddScoutTooltip(true);
+                    setShowAddScoutModal(true);
+                  }}
+                  className="w-full rounded-[20px] border-2 border-dashed border-white/20 bg-white/[0.02] px-4 py-5 text-center transition hover:border-[#00D4A0]/40 hover:bg-[#00D4A0]/5"
+                >
+                  <p className="text-2xl text-white/35">＋</p>
+                  <p className="text-sm text-white/60">Encore {Math.max(0, 10 - eclaireurHeaderStats.totalCount)} places disponibles</p>
+                  <p className="mt-1 text-xs font-black text-[#00D4A0]">Trouver de nouveaux eclaireurs →</p>
+                </button>
+              </div>
             </div>
           </section>
         </div>
