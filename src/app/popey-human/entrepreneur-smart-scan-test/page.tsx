@@ -7525,6 +7525,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => {
+                    setAllianceInviteFilter("all");
                     if (allianceDirectoryMode === "internal") {
                       setShowInternalInvitesModal(true);
                       void loadInternalAllianceInvites();
@@ -7535,8 +7536,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/18"
                 >
-                  <span className="text-base font-black leading-none text-emerald-300">{eclaireursList.length}</span>
-                  <span className="text-[11px]">actifs</span>
+                  <span className="text-base font-black leading-none text-emerald-300">{activeAllianceInvites.length}</span>
+                  <span className="text-[11px]">sollicitees</span>
                 </button>
               </div>
               <div className="mt-2 inline-flex rounded-full border border-white/15 bg-black/20 p-1">
@@ -7931,8 +7932,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     .map((part) => part[0]?.toUpperCase() || "")
                     .slice(0, 2)
                     .join("");
+                  const statusMeta =
+                    invite.status === "clicked"
+                      ? { label: "👆 Clique", chipClass: "border-amber-300/35 bg-amber-300/12 text-amber-100", rowClass: "border-amber-300/20 bg-[#132248]" }
+                      : invite.status === "signed_up"
+                        ? { label: "✅ Inscrit", chipClass: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100", rowClass: "border-emerald-300/20 bg-[#132248]" }
+                        : { label: "✉ Envoye", chipClass: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100", rowClass: "border-cyan-300/20 bg-[#132248]" };
                   return (
-                    <div key={`alliance-modal-invite-${invite.id}`} className="rounded-2xl border border-white/15 bg-[#132248] px-3 py-2">
+                    <div key={`alliance-modal-invite-${invite.id}`} className={`rounded-2xl border px-3 py-2 ${statusMeta.rowClass}`}>
                       <div className="flex items-center gap-2">
                         <div className="h-9 w-9 shrink-0 rounded-xl border border-white/15 bg-white/5 text-center text-[11px] font-black leading-9 text-white/90">
                           {initials || "AL"}
@@ -7942,9 +7949,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           <p className="truncate text-[10px] text-white/72">
                             {invite.prospect_metier}
                             {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
-                            {` • ${invite.status}`}
                           </p>
                         </div>
+                        <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] ${statusMeta.chipClass}`}>
+                          {statusMeta.label}
+                        </span>
                       </div>
                     </div>
                   );
@@ -7956,7 +7965,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showAddScoutModal && (
-        <div className="fixed inset-0 z-[64] flex items-end justify-center bg-black/80 px-3 pb-24 backdrop-blur-md sm:items-center sm:px-4 sm:pb-0">
+        <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/80 px-3 backdrop-blur-md sm:px-4">
           <section className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="flex items-center justify-between">
