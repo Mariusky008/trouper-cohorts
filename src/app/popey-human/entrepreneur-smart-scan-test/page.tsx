@@ -1253,6 +1253,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [radarBulkMessageDraft, setRadarBulkMessageDraft] = useState("");
   const [radarSynergyFilter, setRadarSynergyFilter] = useState("all");
   const [radarRunId, setRadarRunId] = useState<string | null>(null);
+  const [isRadarFallbackDemo, setIsRadarFallbackDemo] = useState(false);
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -4051,7 +4052,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         metier: item.metier,
         city,
         distanceKm: item.distanceKm,
-        phoneE164: item.phoneE164,
+        // Demo fallback: keep contacts visible but disable direct WhatsApp opening.
+        phoneE164: "",
         synergyReason: item.synergyReason,
         messageDraft,
         colorTone: item.colorTone,
@@ -4191,6 +4193,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarSentIds([]);
       setRadarBulkMessageDraft(finalList[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
+      setIsRadarFallbackDemo(false);
       setShowRadarMode(true);
       await fetch("/api/popey-human/smart-scan/radar/event", {
         method: "POST",
@@ -4211,10 +4214,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     } catch (error) {
       const fallback = buildRadarMockProspects(city, sourceMetier);
       setRadarProspects(fallback);
-      setRadarSelectedIds(fallback.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
+      setRadarSelectedIds([]);
       setRadarSentIds([]);
       setRadarBulkMessageDraft(fallback[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
+      setIsRadarFallbackDemo(true);
       setShowRadarMode(true);
       if (radarRunIdForThisRun) {
         await fetch("/api/popey-human/smart-scan/radar/event", {
@@ -4240,6 +4244,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   function openRadarWhatsApp(prospect: RadarProspect) {
+    if (isRadarFallbackDemo) {
+      setApiErrorMessage("Mode demo actif : numéros fictifs. Relance une recherche live pour ouvrir WhatsApp.");
+      return;
+    }
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
     if (!isLikelyWhatsAppNumber(cleanPhone)) {
       setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
@@ -4283,6 +4291,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   function openSelectedRadarWhatsApp() {
+    if (isRadarFallbackDemo) {
+      setApiErrorMessage("Mode demo actif : numéros fictifs. Relance une recherche live pour envoyer sur WhatsApp.");
+      return;
+    }
     const queue = radarProspects.filter((item) => radarSelectedIds.includes(item.id) && !radarSentIds.includes(item.id));
     if (!queue.length) return;
     const eligibleQueue = queue.filter(
@@ -4304,13 +4316,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       },
       clientEventId: `radar-send-batch-${Date.now()}`,
     });
-    eligibleQueue.forEach((prospect, idx) => {
-      if (typeof window !== "undefined") {
-        window.setTimeout(() => {
-          openRadarWhatsApp(prospect);
-        }, idx * 380);
-      }
-    });
+    // Browsers block multiple popups from one click; open one contact per click.
+    const nextProspect = eligibleQueue[0];
+    if (nextProspect) {
+      openRadarWhatsApp(nextProspect);
+    }
+    if (eligibleQueue.length > 1) {
+      setApiErrorMessage(
+        `WhatsApp s'ouvre contact par contact. Re-clique pour envoyer les ${eligibleQueue.length - 1} restant(s).`,
+      );
+    }
   }
 
   function applyBulkRadarMessageToSelection() {
