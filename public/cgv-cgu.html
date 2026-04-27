@@ -228,6 +228,90 @@
       font-size: 13px;
       line-height: 1.65;
     }
+    .plan-table-wrap {
+      margin: 12px 0;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .plan-table {
+      width: 100%;
+      min-width: 640px;
+      border-collapse: collapse;
+    }
+    .plan-table th,
+    .plan-table td {
+      padding: 10px 12px;
+      border-bottom: 0.5px solid var(--border);
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-sec);
+      vertical-align: middle;
+    }
+    .plan-table th {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: var(--surface-2);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .plan-table td:first-child,
+    .plan-table th:first-child {
+      min-width: 220px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    .plan-table tr:last-child td {
+      border-bottom: none;
+    }
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 74px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 0.5px solid var(--border);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+    .plan-badge.yes {
+      color: #9dffd6;
+      background: rgba(29, 185, 84, 0.18);
+      border-color: rgba(29, 185, 84, 0.45);
+    }
+    .plan-badge.no {
+      color: #ffc1c1;
+      background: rgba(255, 107, 107, 0.14);
+      border-color: rgba(255, 107, 107, 0.4);
+    }
+    .plan-badge.unlimited {
+      color: #c7f8e8;
+      background: rgba(0, 229, 160, 0.14);
+      border-color: rgba(0, 229, 160, 0.4);
+    }
+    .plan-badge.partial {
+      color: #ffe2ad;
+      background: rgba(245, 166, 35, 0.16);
+      border-color: rgba(245, 166, 35, 0.42);
+    }
+    .plan-badge.complete {
+      color: #d1fff0;
+      background: rgba(0, 212, 160, 0.18);
+      border-color: rgba(0, 212, 160, 0.45);
+    }
+    .plan-cell-text {
+      color: var(--text-sec);
+      font-weight: 700;
+    }
     .loading, .error {
       margin: 0;
       padding: 16px;
@@ -313,6 +397,72 @@
           return stripped === stripped.toUpperCase();
         };
 
+        const badgeClassForPlanValue = (value) => {
+          const normalized = String(value || "").toLowerCase();
+          if (normalized === "oui") return "yes";
+          if (normalized === "non") return "no";
+          if (normalized.includes("illimit")) return "unlimited";
+          if (normalized.includes("partiel")) return "partial";
+          if (normalized.includes("complet")) return "complete";
+          return "";
+        };
+
+        const renderPlanValue = (value) => {
+          const safe = String(value || "");
+          const variant = badgeClassForPlanValue(safe);
+          if (!variant) return `<span class="plan-cell-text">${safe}</span>`;
+          return `<span class="plan-badge ${variant}">${safe}</span>`;
+        };
+
+        const buildServicePlanTable = (linesForArticle) => {
+          const start = linesForArticle.findIndex((line) => /^Fonctionnalité$/i.test(line));
+          if (start === -1 || start + 3 >= linesForArticle.length) return null;
+          const headers = linesForArticle.slice(start, start + 4);
+          const rows = [];
+          let idx = start + 4;
+          while (idx + 3 < linesForArticle.length) {
+            if (/^\d+\.\d+/.test(linesForArticle[idx])) break;
+            rows.push(linesForArticle.slice(idx, idx + 4));
+            idx += 4;
+          }
+          return {
+            headers,
+            rows,
+            before: linesForArticle.slice(0, start),
+            after: linesForArticle.slice(idx),
+          };
+        };
+
+        const renderStructuredBlocks = (linesForArticle) => {
+          let html = "";
+          let listBuffer = [];
+          const flushList = () => {
+            if (!listBuffer.length) return;
+            html += `<ul>${listBuffer.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+            listBuffer = [];
+          };
+          linesForArticle.forEach((line) => {
+            if (/^\d+\.\d+/.test(line)) {
+              flushList();
+              html += `<h3>${line}</h3>`;
+              return;
+            }
+            if (isUpperTitle(line) && line.length <= 80) {
+              flushList();
+              html += `<h3>${line}</h3>`;
+              return;
+            }
+            if (line.length <= 85 && !/[.!?]$/.test(line) && !/^\d+[€%]/.test(line)) {
+              listBuffer.push(line);
+            } else {
+              flushList();
+              html += `<p>${line}</p>`;
+            }
+          });
+          flushList();
+          return html;
+        };
+
         const introHtml = `
           <section class="intro">
             ${intro.map((line) => `<p>${line}</p>`).join("")}
@@ -325,32 +475,34 @@
             .map((article) => {
               const id = `article-${article.number}`;
               let html = `<article class="article-card" id="${id}"><p class="article-kicker">Article ${article.number}</p><h2>${article.title}</h2>`;
-              let listBuffer = [];
-              const flushList = () => {
-                if (!listBuffer.length) return "";
-                const out = `<ul>${listBuffer.map((item) => `<li>${item}</li>`).join("")}</ul>`;
-                listBuffer = [];
-                return out;
-              };
-              article.lines.forEach((line) => {
-                if (/^\d+\.\d+/.test(line)) {
-                  html += flushList();
-                  html += `<h3>${line}</h3>`;
-                  return;
-                }
-                if (isUpperTitle(line) && line.length <= 80) {
-                  html += flushList();
-                  html += `<h3>${line}</h3>`;
-                  return;
-                }
-                if (line.length <= 85 && !/[.!?]$/.test(line) && !/^\d+[€%]/.test(line)) {
-                  listBuffer.push(line);
-                } else {
-                  html += flushList();
-                  html += `<p>${line}</p>`;
-                }
-              });
-              html += flushList();
+              const planTable = article.number === "5" ? buildServicePlanTable(article.lines) : null;
+              if (planTable && planTable.rows.length) {
+                html += renderStructuredBlocks(planTable.before);
+                html += `
+                  <div class="plan-table-wrap">
+                    <table class="plan-table">
+                      <thead>
+                        <tr>
+                          ${planTable.headers.map((value) => `<th>${value}</th>`).join("")}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${planTable.rows
+                          .map(
+                            (row) =>
+                              `<tr>${row
+                                .map((value, idx) => `<td>${idx === 0 ? value : renderPlanValue(value)}</td>`)
+                                .join("")}</tr>`,
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `;
+                html += renderStructuredBlocks(planTable.after);
+              } else {
+                html += renderStructuredBlocks(article.lines);
+              }
               html += `</article>`;
               return html;
             })
