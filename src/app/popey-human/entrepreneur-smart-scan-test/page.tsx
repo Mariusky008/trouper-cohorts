@@ -7745,11 +7745,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
-            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
-            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-cyan-300/35 bg-gradient-to-br from-[#101A3D] via-[#0D1736] to-[#101A3D] p-4 shadow-[0_0_55px_rgba(6,182,212,0.22)] sm:p-5">
+            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-violet-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl" />
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
                 {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances sollicitees"}
               </p>
               <div className="flex items-center gap-2">
@@ -7762,7 +7762,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       void loadAllianceInvites();
                     }
                   }}
-                  className="h-8 rounded-lg border border-white/20 bg-white/10 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                  className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.1em] text-white/90"
                 >
                   Refresh
                 </button>
@@ -7772,26 +7772,26 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     setShowAllianceInvitesModal(false);
                     setShowInternalInvitesModal(false);
                   }}
-                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                  className="h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
                 >
                   ✕
                 </button>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
-              <div className="rounded-xl border border-white/20 bg-black/25 px-2 py-2 text-center">
+              <div className="rounded-2xl border border-white/20 bg-[#121F45] px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
                 <p className="text-sm font-black text-white">{activeAllianceInvites.length}</p>
               </div>
-              <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
+              <div className="rounded-2xl border border-cyan-300/35 bg-cyan-300/15 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
                 <p className="text-sm font-black text-cyan-100">{activeAllianceInvites.filter((item) => item.status === "sent").length}</p>
               </div>
-              <div className="rounded-xl border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
+              <div className="rounded-2xl border border-amber-300/35 bg-amber-300/15 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
                 <p className="text-sm font-black text-amber-100">{activeAllianceInvites.filter((item) => item.status === "clicked").length}</p>
               </div>
-              <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
+              <div className="rounded-2xl border border-emerald-300/35 bg-emerald-300/15 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
                 <p className="text-sm font-black text-emerald-100">{activeAllianceInvites.filter((item) => item.status === "signed_up").length}</p>
               </div>
@@ -7799,16 +7799,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             {(allianceDirectoryMode === "internal" ? isInternalInvitesLoading : isAllianceInvitesLoading) ? (
               <p className="mt-3 text-[11px] text-white/70">Chargement de tes alliances...</p>
             ) : (
-              <div className="mt-3 max-h-[46vh] space-y-1 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[46vh] space-y-1.5 overflow-y-auto pr-1">
                 {activeAllianceInvites.length === 0 ? (
-                  <p className="rounded-lg border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
+                  <p className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
                     Aucune alliance sollicitee pour le moment.
                   </p>
                 ) : null}
                 {activeAllianceInvites.map((invite) => (
-                  <div key={`alliance-modal-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
+                  <div key={`alliance-modal-invite-${invite.id}`} className="rounded-2xl border border-cyan-300/20 bg-[#132248] px-3 py-2">
                     <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
-                    <p className="text-[10px] text-white/70">
+                    <p className="text-[10px] text-white/72">
                       {invite.prospect_metier}
                       {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
                       {` • ${invite.status}`}
@@ -7823,13 +7823,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAddScoutModal && (
         <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/70 px-3 backdrop-blur-sm sm:px-4">
-          <section className="w-full max-w-lg rounded-3xl border border-cyan-300/30 bg-[#0E1430] p-4">
+          <section className="w-full max-w-lg rounded-[32px] border border-cyan-300/35 bg-gradient-to-br from-[#0D1736] via-[#0A1432] to-[#0D1736] p-4 shadow-[0_0_55px_rgba(6,182,212,0.2)]">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100">Ajouter un Eclaireur</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">Ajouter un Eclaireur</p>
               <button
                 type="button"
                 onClick={() => setShowAddScoutModal(false)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                className="h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
               >
                 ✕
               </button>
@@ -7839,31 +7839,31 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 value={manualScoutFirstName}
                 onChange={(event) => setManualScoutFirstName(event.target.value)}
                 placeholder="Prenom"
-                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
               />
               <input
                 value={manualScoutLastName}
                 onChange={(event) => setManualScoutLastName(event.target.value)}
                 placeholder="Nom"
-                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
               />
               <input
                 value={manualScoutMetier}
                 onChange={(event) => setManualScoutMetier(event.target.value)}
                 placeholder="Metier"
-                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
               />
               <input
                 value={manualScoutCity}
                 onChange={(event) => setManualScoutCity(event.target.value)}
                 placeholder="Ville"
-                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                className="h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
               />
               <input
                 value={manualScoutPhone}
                 onChange={(event) => setManualScoutPhone(event.target.value)}
                 placeholder="Telephone"
-                className="col-span-2 h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                className="col-span-2 h-11 rounded-2xl border border-white/15 bg-[#101B40] px-3 text-[12px] text-white placeholder:text-white/40"
               />
             </div>
             <button
@@ -7879,7 +7879,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 });
               }}
               disabled={!manualScoutFirstName.trim() && !manualScoutLastName.trim()}
-              className="mt-3 h-10 w-full rounded-xl border border-cyan-300/40 bg-cyan-300/20 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+              className="mt-3 h-11 w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/20 text-[12px] font-black uppercase tracking-[0.12em] text-cyan-100 disabled:opacity-60"
             >
               Ajouter + Eclaireur
             </button>
