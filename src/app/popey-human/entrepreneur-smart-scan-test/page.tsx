@@ -5567,8 +5567,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
           </section>
         </div>
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(env(safe-area-inset-bottom),10px)]">
-          <div className="w-full max-w-3xl border-t border-white/10 bg-gradient-to-b from-[#0A0F17] to-[#090D14] px-2 py-1.5 shadow-[0_26px_56px_-28px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-center">
+          <div className="w-full max-w-3xl border-t border-white/10 bg-[#07090F] px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),10px)] shadow-[0_-8px_22px_-18px_rgba(0,0,0,0.9)]">
             {(() => {
               const activeDockId: "search" | "scan" | "alliances" | "eclaireurs" | "profile" = showAlliancesPanel
                 ? "alliances"
@@ -6414,8 +6414,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[70] flex justify-center px-3 pb-[max(env(safe-area-inset-bottom),10px)]">
-        <div className="w-full max-w-3xl border-t border-white/10 bg-gradient-to-b from-[#0A0F17] to-[#090D14] px-2 py-1.5 shadow-[0_26px_56px_-28px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+      <nav className="fixed inset-x-0 bottom-0 z-[70] flex justify-center">
+        <div className="w-full max-w-3xl border-t border-white/10 bg-[#07090F] px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),10px)] shadow-[0_-8px_22px_-18px_rgba(0,0,0,0.9)]">
           <div className="flex items-center justify-between">
           {([
             { id: "search", icon: "🔍", label: "Recherche" },
