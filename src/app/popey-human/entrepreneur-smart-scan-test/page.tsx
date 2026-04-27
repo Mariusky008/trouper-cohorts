@@ -5831,32 +5831,59 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         )}
         <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#141C2E] via-[#15213C] to-[#0F172A] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Cockpit mission quotidienne</p>
-                <h1 className="mt-1 text-[34px] font-black leading-[0.95] tracking-[-0.015em] text-white">Trio Immo-Dax : Radar Active</h1>
-                <p className="mt-1 text-[13px] text-white/75">
-                  {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
-                </p>
+            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#1A2438] to-[#141C2E] p-4">
+              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-cyan-300/12 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-violet-300/10 blur-3xl" />
+              <div className="relative flex items-center justify-between gap-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/40">Cockpit mission quotidienne</p>
+                <span className="rounded-full bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#2B1604]">
+                  👑 Premium
+                </span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowPotentialBreakdownSheet(true)}
-                    className="rounded-full text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
-                  >
-                    Potentiel du jour : ~{latentPotential}€
-                  </button>
-                </p>
+              <h1 className="relative mt-2 text-[30px] font-black leading-[0.94] tracking-[-0.015em] text-white">
+                Trio Immo-Dax :<br />
+                Radar <span className="text-[#00D4A0]">Active</span>
+              </h1>
+              <p className="relative mt-2 text-[13px] leading-[1.45] text-white/70">
+                {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
+              </p>
+              <div className="relative mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="min-w-[150px] rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Objectif du jour</p>
+                  <p className="text-[28px] font-black leading-none text-white">{dailyGoal}</p>
+                  <p className="text-[11px] text-white/65">contacts cibles</p>
+                </div>
+                <div className="min-w-[150px] rounded-2xl border border-violet-300/30 bg-violet-300/10 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-violet-100/85">Eclaireurs actifs</p>
+                  <p className="text-[28px] font-black leading-none text-violet-100">{eclaireurHeaderStats.totalCount}</p>
+                  <p className="text-[11px] text-white/65">reseau mobilisable</p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setIsCockpitCollapsed((value) => !value)}
-                  className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                  onClick={() => setShowPotentialBreakdownSheet(true)}
+                  className="min-w-[170px] rounded-2xl border border-emerald-300/35 bg-emerald-300/12 px-3 py-2 text-left"
                 >
-                  {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100/85">Potentiel du jour</p>
+                  <p className="text-[28px] font-black leading-none text-emerald-100">~{latentPotential}€</p>
+                  <p className="text-[11px] text-white/65">estimation commissions</p>
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsCockpitCollapsed((value) => !value)}
+                className="relative mt-3 h-10 rounded-full border border-white/20 bg-white/10 px-4 text-[10px] font-black uppercase tracking-[0.1em] text-white/85"
+              >
+                {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
+              </button>
+            </div>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Suivi cockpit</p>
+                <p className="mt-1 text-[13px] text-white/70">Pilote en mode detaille (cockpit deplié).</p>
+              </div>
+              <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100">
+                Mode detail
+              </span>
             </div>
             <div className={isCockpitCollapsed ? "hidden" : "space-y-3"}>
             {showAdvancedOpsInUserCockpit && (
