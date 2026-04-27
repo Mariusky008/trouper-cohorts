@@ -705,8 +705,8 @@ function buildPromptCompliments(qualifier?: QualifierData) {
 }
 
 function resolveAllianceMetiers(ownerProfile?: SmartScanProfile | null) {
-  const metier1 = String(ownerProfile?.buddy_metier || "").trim() || "partenaire binome";
-  const metier2 = String(ownerProfile?.trio_metier || "").trim() || "partenaire trio";
+  const metier1 = String(ownerProfile?.buddy_metier || "").trim() || "Agent immobilier";
+  const metier2 = String(ownerProfile?.trio_metier || "").trim() || "Consultant marketing";
   return { metier1, metier2 };
 }
 
@@ -1532,7 +1532,7 @@ export default function EntrepreneurSmartScanTestPage() {
   );
   const allianceSuggestedMetiers = useMemo(() => {
     const { metier1, metier2 } = resolveAllianceMetiers(myProfile);
-    const base = [metier1, metier2, "Avocat", "Expert-comptable", "DRH", "Banquier", "Consultant RH"];
+    const base = [metier1, metier2, "Avocat", "Expert-comptable", "DRH", "Banquier", "Consultant RH", "Courtier", "Notaire"];
     const seen = new Set<string>();
     return base.filter((item) => {
       const normalized = String(item || "").trim();
@@ -7649,11 +7649,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">
                       {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
                     </p>
-                    <h3 className="mt-2 max-w-[16ch] text-[42px] font-black leading-[0.92] tracking-[-0.015em] text-white">
-                      Trouvez les pros
-                      <br />
-                      qui voient vos clients
-                      <span className="block text-[#00D4A0]">avant vous.</span>
+                    <h3 className="mt-2 max-w-[20ch] text-[42px] font-black leading-[0.92] tracking-[-0.015em] text-white">
+                      <span className="block">Trouvez les</span>
+                      <span className="block">pros qui voient vos</span>
+                      <span className="block">
+                        clients <span className="text-[#00D4A0]">avant vous.</span>
+                      </span>
                     </h3>
                     <p className="mt-3 max-w-[30ch] text-[14px] leading-[1.45] text-white/65">
                       {allianceDirectoryMode === "internal"
@@ -8222,23 +8223,23 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {selectedIncomingReferral && (
         <div className="fixed inset-0 z-[62] flex items-center justify-center bg-black/72 px-3 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl border border-emerald-300/35 bg-[#0B1230] p-5 shadow-[0_30px_120px_-35px_rgba(16,185,129,0.75)] sm:p-6">
+          <section className="relative w-full max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl border border-transparent bg-[#0E1420] p-5 shadow-[0_30px_110px_-40px_rgba(0,0,0,0.96)] sm:p-6">
             <button
               type="button"
               onClick={() => setSelectedIncomingReferralId(null)}
-              className="absolute right-3 top-3 z-10 h-9 w-9 rounded-full border border-white/25 bg-black/35 text-sm text-white"
+              className="absolute right-3 top-3 z-10 h-9 w-9 rounded-full border border-white/10 bg-black/30 text-sm text-white/90"
             >
               ✕
             </button>
-            <div className="rounded-2xl border border-emerald-300/35 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.26),rgba(8,12,28,0.94))] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">Bonne nouvelle</p>
+            <div className="rounded-2xl border border-white/10 bg-[#111B2C] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#00E0BD]">Bonne nouvelle</p>
               <p className="mt-1 text-2xl font-black text-white">Nouvelle opportunite Eclaireur</p>
-              <p className="mt-1 text-sm text-emerald-100/85">
+              <p className="mt-1 text-sm text-white/72">
                 {selectedIncomingReferral.contact_name} • {selectedIncomingReferral.project_type || "Projet non precise"}
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Pipeline de suivi</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Pipeline de suivi</p>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-black uppercase tracking-[0.08em] sm:grid-cols-4">
               {[
@@ -8254,8 +8255,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     key={`incoming-step-${step.id}`}
                     className={`rounded-xl border px-2 py-2 text-center ${
                       isActive
-                        ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100"
-                        : "border-white/15 bg-black/25 text-white/60"
+                        ? "border-[#00E0BD]/38 bg-[#00E0BD]/12 text-[#7EF4DE]"
+                        : "border-white/10 bg-[#111B2C] text-white/55"
                     }`}
                   >
                     {step.label}
@@ -8263,7 +8264,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 );
               })}
             </div>
-            <div className="mt-3 rounded-xl border border-white/15 bg-black/25 px-3 py-3 text-[12px] text-white/90">
+            <div className="mt-3 rounded-xl border border-white/10 bg-[#111B2C] px-3 py-3 text-[12px] text-white/90">
               <p>
                 <span className="text-white/65">Contact:</span> {selectedIncomingReferral.contact_name}
               </p>
@@ -8280,7 +8281,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <span className="text-white/65">Statut:</span> {referralStatusLabel(selectedIncomingReferral.status)}
               </p>
               {selectedIncomingReferral.comment ? (
-                <p className="mt-2 rounded-lg border border-white/10 bg-black/25 px-2 py-1 text-[11px] text-white/85">
+                <p className="mt-2 rounded-lg border border-white/10 bg-[#0E1420] px-2 py-1 text-[11px] text-white/85">
                   {selectedIncomingReferral.comment}
                 </p>
               ) : null}
@@ -8289,7 +8290,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <button
                 type="button"
                 onClick={() => openIncomingReferralWhatsApp(selectedIncomingReferral)}
-                className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                className="h-10 rounded-xl border border-[#00E0BD]/35 bg-[#00E0BD]/14 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-[#7EF4DE]"
               >
                 Alerter Eclaireur (WhatsApp)
               </button>
@@ -8298,7 +8299,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("validated")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-[#00E0BD]/35 bg-[#00E0BD]/14 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-[#7EF4DE] disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer RDV pris"}
                 </button>
@@ -8308,7 +8309,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("offered")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-[#00E0BD]/35 bg-[#00E0BD]/14 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-[#7EF4DE] disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer Offre envoyee"}
                 </button>
@@ -8327,7 +8328,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("converted")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-10 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-[#F5A623]/45 bg-[#F5A623]/14 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-[#F5A623] disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Signature finale"}
                 </button>
