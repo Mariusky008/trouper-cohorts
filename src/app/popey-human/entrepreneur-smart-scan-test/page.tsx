@@ -7568,9 +7568,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="-mx-4 bg-[#07090F] px-4 pb-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xl font-black tracking-[-0.01em] text-white">Eclaireurs</p>
+            <div className="rounded-[34px] border border-white/15 bg-gradient-to-b from-[#0C121E] to-[#0A101A] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[58px] font-black leading-[0.9] tracking-[-0.03em] text-white">Eclaireurs</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -7583,20 +7583,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       void loadAllianceInvites();
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/18"
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-300/8 px-4 py-2 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/14"
                 >
-                  <span className="text-base font-black leading-none text-emerald-300">{activeAllianceInvites.length}</span>
-                  <span className="text-[11px]">sollicitees</span>
+                  <span className="text-[30px] font-black leading-none text-emerald-300">{activeAllianceInvites.length}</span>
+                  <span className="text-[11px] text-white/70">actifs</span>
                 </button>
               </div>
-              <div className="mt-2 inline-flex rounded-full border border-white/15 bg-black/20 p-1">
+              <div className="mt-3 flex rounded-[24px] border border-white/10 bg-[#0E1420] p-2">
                 <button
                   type="button"
                   onClick={() => setAllianceDirectoryMode("external")}
-                  className={`h-9 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] transition ${
+                  className={`h-14 flex-1 rounded-[18px] px-4 text-[19px] font-black tracking-[0.01em] transition ${
                     allianceDirectoryMode === "external"
-                      ? "bg-[#1A2438] text-[#00D4A0]"
-                      : "text-white/70 hover:text-white"
+                      ? "bg-[#1A2742] text-[#00D4A0]"
+                      : "text-white/42 hover:text-white/65"
                   }`}
                 >
                   Annuaire local
@@ -7604,10 +7604,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setAllianceDirectoryMode("internal")}
-                  className={`h-9 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] transition ${
+                  className={`h-14 flex-1 rounded-[18px] px-4 text-[19px] font-black tracking-[0.01em] transition ${
                     allianceDirectoryMode === "internal"
-                      ? "bg-[#1A2438] text-[#00D4A0]"
-                      : "text-white/70 hover:text-white"
+                      ? "bg-[#1A2742] text-[#00D4A0]"
+                      : "text-white/42 hover:text-white/65"
                   }`}
                 >
                   Communaute Popey
