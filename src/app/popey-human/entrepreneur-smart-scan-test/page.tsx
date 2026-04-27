@@ -7985,12 +7985,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+            style={{ paddingTop: "0px" }}
           >
-            <div className="sticky top-0 z-30 -mx-4 px-4 pb-3 pt-1 bg-[linear-gradient(180deg,#07090F_0%,#07090F_84%,rgba(7,9,15,0)_100%)] backdrop-blur-[2px]">
+            <div
+              className="sticky top-0 z-30 -mx-4 border-b border-white/5 px-4 pb-3 backdrop-blur-[1px]"
+              style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)", background: "#07090F" }}
+            >
               <div className="rounded-[34px] border border-transparent bg-[#0E1420] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[42px] font-black leading-[0.9] tracking-[-0.025em] text-white">Eclaireurs</p>
+                  <p className="text-[40px] font-black leading-[0.9] tracking-[-0.025em] text-white">Eclaireurs</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -8365,24 +8368,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         <div className="fixed inset-0 z-[69] flex items-start justify-center bg-black/70 px-0 pb-0 pt-0 backdrop-blur-sm sm:px-4 sm:pb-0 sm:pt-16">
           <section
             className="relative h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
+            style={{ paddingTop: "0px" }}
           >
             <div className="pointer-events-none absolute left-1/2 top-[36%] h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,212,160,0.1)_0%,transparent_62%)]" />
 
-            <header className="sticky top-0 z-20 -mx-4 bg-[linear-gradient(180deg,#07090F_0%,#07090F_86%,rgba(7,9,15,0)_100%)] px-4 pb-3 pt-2">
+            <header
+              className="sticky top-0 z-20 -mx-4 border-b border-white/5 px-4 pb-3"
+              style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)", background: "#07090F" }}
+            >
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setShowRadarMode(false)}
-                  className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#141C2E] text-[18px] text-white/75"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#141C2E] text-[17px] text-white/75"
                 >
                   ←
                 </button>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[56px] font-black leading-[0.76] tracking-[-0.028em] text-white">Mode Radar</p>
-                  <p className="-mt-0.5 text-[42px] leading-none text-[#F5A623]">⚡</p>
+                <div className="min-w-0 flex flex-1 items-center gap-1.5">
+                  <p className="truncate text-[29px] font-black leading-[0.9] tracking-[-0.022em] text-white">Mode Radar</p>
+                  <span className="shrink-0 text-[28px] leading-none text-[#F5A623]">⚡</span>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-4 py-2 text-[15px] font-black text-[#00D4A0]">
+                <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3.5 py-1.5 text-[13px] font-black text-[#00D4A0]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
                   {radarProspects.length} prêts
                 </span>
