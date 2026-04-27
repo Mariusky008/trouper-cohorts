@@ -7946,9 +7946,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       void loadAllianceInvites();
                     }
                   }}
-                  className="h-9 rounded-xl border border-white/20 bg-[#1A2438] px-4 text-[10px] font-black uppercase tracking-[0.1em] text-white/90"
+                  className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-white/15 bg-[#1A2438] px-5 text-[13px] font-black text-white/85"
                 >
-                  Actualiser
+                  <span className="text-white/55">↻</span> Actualiser
                 </button>
                 <button
                   type="button"
@@ -7956,7 +7956,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     setShowAllianceInvitesModal(false);
                     setShowInternalInvitesModal(false);
                   }}
-                  className="h-9 w-9 rounded-full border border-white/20 bg-[#1A2438] text-xs text-white/85"
+                  className="h-11 w-11 rounded-full border border-white/15 bg-[#1A2438] text-sm text-white/55"
                 >
                   ✕
                 </button>
@@ -7964,28 +7964,28 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
               {[
-                { id: "all" as const, label: "Total", value: activeAllianceInvites.length, className: "border-white/20 bg-[#121F45] text-white" },
-                { id: "sent" as const, label: "Envoye", value: activeAllianceInvites.filter((item) => item.status === "sent").length, className: "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" },
-                { id: "clicked" as const, label: "Clique", value: activeAllianceInvites.filter((item) => item.status === "clicked").length, className: "border-amber-300/35 bg-amber-300/15 text-amber-100" },
-                { id: "signed_up" as const, label: "Inscrit", value: activeAllianceInvites.filter((item) => item.status === "signed_up").length, className: "border-emerald-300/35 bg-emerald-300/15 text-emerald-100" },
+                { id: "all" as const, label: "Total", value: activeAllianceInvites.length, colorClass: "text-white", activeClass: "border-white/25 bg-white/[0.03]" },
+                { id: "sent" as const, label: "Envoye", value: activeAllianceInvites.filter((item) => item.status === "sent").length, colorClass: "text-[#00D4A0]", activeClass: "border-[#00D4A0]/40 bg-[#00D4A0]/10" },
+                { id: "clicked" as const, label: "Clique", value: activeAllianceInvites.filter((item) => item.status === "clicked").length, colorClass: "text-[#F5A623]", activeClass: "border-[#F5A623]/40 bg-[#F5A623]/10" },
+                { id: "signed_up" as const, label: "Inscrit", value: activeAllianceInvites.filter((item) => item.status === "signed_up").length, colorClass: "text-[#9B8FFF]", activeClass: "border-[#9B8FFF]/40 bg-[#9B8FFF]/10" },
               ].map((tab) => (
                 <button
                   key={`invite-tab-${tab.id}`}
                   type="button"
                   onClick={() => setAllianceInviteFilter(tab.id)}
-                  className={`rounded-[14px] border px-2 py-2.5 text-center transition ${tab.className} ${
-                    allianceInviteFilter === tab.id ? "ring-1 ring-white/30" : "opacity-80"
+                  className={`rounded-[18px] border px-2 py-2.5 text-center transition ${
+                    allianceInviteFilter === tab.id ? tab.activeClass : "border-white/10 bg-[#101829]"
                   }`}
                 >
-                  <p className="text-[9px] uppercase font-black tracking-[0.08em]">{tab.label}</p>
-                  <p className="text-[34px] font-black leading-none">{tab.value}</p>
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/35">{tab.label}</p>
+                  <p className={`text-[34px] font-black leading-none ${allianceInviteFilter === tab.id ? tab.colorClass : "text-white/90"}`}>{tab.value}</p>
                 </button>
               ))}
             </div>
             {(allianceDirectoryMode === "internal" ? isInternalInvitesLoading : isAllianceInvitesLoading) ? (
               <p className="mt-3 text-[11px] text-white/70">Chargement de tes alliances...</p>
             ) : (
-              <div className="mt-3 max-h-[46vh] space-y-1.5 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[46vh] space-y-2 overflow-y-auto pr-1">
                 {filteredAllianceInvites.length === 0 ? (
                   <p className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
                     Aucune alliance sollicitee pour le moment.
@@ -7997,24 +7997,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     title: `🔥 Ont clique ton lien · ${filteredAllianceInvites.filter((item) => item.status === "clicked").length}`,
                     items: filteredAllianceInvites.filter((item) => item.status === "clicked"),
                     chipLabel: "👆 Clique",
-                    chipClass: "border-amber-300/35 bg-amber-300/12 text-amber-100",
-                    rowClass: "border-amber-300/20 bg-[#132248]",
+                    chipClass: "border-[#F5A623]/50 bg-[#2E2B29] text-[#F5A623]",
+                    rowClass: "border-[#F5A623]/35 bg-[#101826]",
+                    avatarClass: "border-[#F5A623]/20 bg-[#3A3328] text-[#F5A623]",
                   },
                   {
                     key: "sent",
                     title: `✉ Envoyes · ${filteredAllianceInvites.filter((item) => item.status === "sent" || item.status === "drafted").length}`,
                     items: filteredAllianceInvites.filter((item) => item.status === "sent" || item.status === "drafted"),
                     chipLabel: "✉ Envoye",
-                    chipClass: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100",
-                    rowClass: "border-cyan-300/20 bg-[#132248]",
+                    chipClass: "border-[#1DB954]/45 bg-[#15382A] text-[#31D26A]",
+                    rowClass: "border-[#1DB954]/30 bg-[#101C28]",
+                    avatarClass: "border-[#1DB954]/20 bg-[#15382A] text-[#31D26A]",
                   },
                   {
                     key: "signed-up",
                     title: `✅ Inscrits · ${filteredAllianceInvites.filter((item) => item.status === "signed_up").length}`,
                     items: filteredAllianceInvites.filter((item) => item.status === "signed_up"),
                     chipLabel: "✅ Inscrit",
-                    chipClass: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100",
-                    rowClass: "border-emerald-300/20 bg-[#132248]",
+                    chipClass: "border-[#00D4A0]/45 bg-[#0E2A26] text-[#00D4A0]",
+                    rowClass: "border-[#00D4A0]/30 bg-[#101C28]",
+                    avatarClass: "border-[#00D4A0]/20 bg-[#0E2A26] text-[#00D4A0]",
                   },
                 ] as const)
                   .filter((section) => section.items.length > 0)
@@ -8024,7 +8027,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">{section.title}</p>
                         <span className="h-px flex-1 bg-white/10" />
                       </div>
-                      {section.items.map((invite) => {
+                      {(section.key === "sent" && section.items.length > 3 ? section.items.slice(0, 3) : section.items).map((invite) => {
                         const initials = String(invite.prospect_name || "AL")
                           .split(" ")
                           .filter(Boolean)
@@ -8043,22 +8046,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         return (
                           <div
                             key={`alliance-modal-invite-${invite.id}`}
-                            className={`rounded-2xl border px-3 py-2.5 ${section.rowClass}`}
+                            className={`rounded-3xl border px-3 py-2.5 ${section.rowClass}`}
                           >
                             <div className="flex items-center gap-2">
-                              <div className="h-10 w-10 shrink-0 rounded-[13px] border border-white/12 bg-white/5 text-center text-[16px] font-black leading-10 text-white/90">
+                              <div className={`h-12 w-12 shrink-0 rounded-2xl border text-center text-[16px] font-black leading-[48px] ${section.avatarClass}`}>
                                 {initials || "AL"}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-[14px] font-black text-white">{invite.prospect_name}</p>
-                                <p className="truncate text-[11px] text-white/55">
+                                <p className="truncate text-[11px] font-semibold text-white/38">
                                   {invite.prospect_metier}
                                   {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
                                   {` • ${statusDateLabel}`}
                                 </p>
                               </div>
                               <span
-                                className={`rounded-full border px-3 py-1 text-[11px] font-black ${section.chipClass}`}
+                                className={`rounded-full border px-4 py-1.5 text-[13px] font-black ${section.chipClass}`}
                               >
                                 {section.chipLabel}
                               </span>
@@ -8066,6 +8069,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           </div>
                         );
                       })}
+                      {section.key === "sent" && section.items.length > 3 ? (
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#0F1728] px-3 py-3 text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-sm">📋</div>
+                            <div>
+                              <p className="text-[13px] font-bold text-white/80">{section.items.length - 3} autres envois</p>
+                              <p className="text-[11px] text-white/35">Peggy Dubois ×2, Jean Bob ×1, autre</p>
+                            </div>
+                          </div>
+                          <span className="text-lg text-white/30">›</span>
+                        </button>
+                      ) : null}
                     </div>
                   ))}
               </div>
