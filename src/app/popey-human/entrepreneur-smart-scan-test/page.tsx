@@ -5175,9 +5175,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   if (stage === "scan") {
     return (
-      <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white pb-24">
-        <div className="mx-auto flex min-h-screen max-w-xl items-start px-4 pt-4 pb-24 sm:items-center">
-          <section className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+      <main className="min-h-screen overflow-y-auto bg-[#07090F] text-white pb-24">
+        <div className="mx-auto flex min-h-screen w-full max-w-xl items-start px-4 pt-4 pb-24">
+          <section className="relative w-full overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-[#0F1422] to-[#0B111D] p-4 shadow-[0_30px_90px_-45px_rgba(0,0,0,0.95)]">
             <motion.div
               aria-hidden
               className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-cyan-400/25 blur-3xl"
@@ -5190,20 +5190,49 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               animate={{ scale: [1.1, 0.95, 1.1], opacity: [0.2, 0.35, 0.2] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             />
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mini-Agence Smart Scan</p>
-            <h1 className="mt-2 text-2xl font-black">{hasImportedContacts ? "Scan de ton telephone en cours..." : "Importe tes contacts pour lancer le scan"}</h1>
-            <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
-            <div className="mt-4 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
-              <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
-              <p className="mt-1 text-[11px] text-white/70">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <p className="text-[34px] font-black leading-none tracking-[-0.02em]">Scan</p>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1.5 text-[11px] font-semibold text-white/85">
+                  <span className="text-base font-black text-emerald-300">{hasImportedContacts ? importedTotalCount : 0}</span>
+                  importes
+                </span>
+              </div>
+              <div className="mt-2 inline-flex rounded-xl border border-white/10 bg-[#0E1420] p-1">
+                <span className="h-8 rounded-[10px] bg-[#1A2438] px-4 text-[11px] font-black uppercase tracking-[0.08em] text-[#00D4A0] inline-flex items-center">
+                  Daily scan
+                </span>
+                <span className="h-8 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] text-white/45 inline-flex items-center">
+                  Analyse live
+                </span>
+              </div>
+            </div>
+
+            <div className="relative mt-4 rounded-[24px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Import contacts reels</p>
+                  <h1 className="mt-1 max-w-[14ch] text-[34px] font-black leading-[0.95] tracking-[-0.01em]">
+                    {hasImportedContacts ? "Scan de ton telephone en cours..." : "Importe tes contacts pour lancer le scan"}
+                  </h1>
+                  <p className="mt-2 text-[13px] text-white/65">Analyse locale securisee, aucun contact en clair n est envoye.</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-gradient-to-br from-[#F5A623] to-[#E8961A] px-3 py-1.5 text-[11px] font-black text-[#1A0A00]">
+                  👑 Premium
+                </span>
+              </div>
+
+              <div className="mt-3 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
+                <p className="mt-1 text-[11px] text-white/70">
                 Fichier .vcf ou .csv. Tous les contacts sont importes, mais seulement {DAILY_CONTACT_LIMIT} sont traites par jour.
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={openContactImportPicker}
                   disabled={isImportingContacts}
-                  className="h-9 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
+                  className="h-10 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
                 >
                   {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
                 </button>
@@ -5222,7 +5251,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowImportHelp((value) => !value)}
-                  className="h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                    className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
                 >
                   {showImportHelp ? "Masquer aide" : "Comment exporter ?"}
                 </button>
@@ -5230,40 +5259,41 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <button
                     type="button"
                     onClick={clearImportedContacts}
-                    className="h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                    className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
                   >
                     Retirer l import
                   </button>
                 )}
-              </div>
-              {!hasImportedContacts && (
-                <p className="mt-2 rounded-xl border border-amber-200/35 bg-amber-300/15 px-2 py-1 text-[11px] text-amber-100">
-                  Aucun scan simule: importe d abord ton fichier pour activer le vrai flux.
-                </p>
-              )}
-              <input
-                ref={contactImportInputRef}
-                type="file"
-                accept=".vcf,.csv,text/vcard,text/csv"
-                className="hidden"
-                onChange={(event) => {
-                  void handleContactImportChange(event);
-                }}
-              />
-              {showImportHelp && (
-                <div className="mt-2 rounded-xl border border-white/15 bg-[#0B1734]/65 px-3 py-2 text-[11px] text-white/80">
-                  <p className="font-black text-cyan-100">iPhone (iCloud)</p>
-                  <p className="mt-1">1) Va sur iCloud Contacts puis exporte en vCard (.vcf).</p>
-                  <p>2) Enregistre le fichier dans Fichiers.</p>
-                  <p>3) Reviens ici et clique Importer un fichier.</p>
-                  <p className="mt-2 font-black text-cyan-100">Android (Google Contacts)</p>
-                  <p className="mt-1">1) Ouvre Google Contacts puis Exporter (vCard ou CSV).</p>
-                  <p>2) Enregistre le fichier sur ton telephone.</p>
-                  <p>3) Reviens ici et importe le fichier.</p>
-                  <p className="mt-2 text-amber-100">Note: en mode web, l acces direct au carnet natif depend du navigateur.</p>
                 </div>
-              )}
-              {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
+                {!hasImportedContacts && (
+                  <p className="mt-2 rounded-xl border border-amber-200/35 bg-amber-300/15 px-2 py-1 text-[11px] text-amber-100">
+                    Aucun scan simule: importe d abord ton fichier pour activer le vrai flux.
+                  </p>
+                )}
+                <input
+                  ref={contactImportInputRef}
+                  type="file"
+                  accept=".vcf,.csv,text/vcard,text/csv"
+                  className="hidden"
+                  onChange={(event) => {
+                    void handleContactImportChange(event);
+                  }}
+                />
+                {showImportHelp && (
+                  <div className="mt-2 rounded-xl border border-white/15 bg-[#0B1734]/65 px-3 py-2 text-[11px] text-white/80">
+                    <p className="font-black text-cyan-100">iPhone (iCloud)</p>
+                    <p className="mt-1">1) Va sur iCloud Contacts puis exporte en vCard (.vcf).</p>
+                    <p>2) Enregistre le fichier dans Fichiers.</p>
+                    <p>3) Reviens ici et clique Importer un fichier.</p>
+                    <p className="mt-2 font-black text-cyan-100">Android (Google Contacts)</p>
+                    <p className="mt-1">1) Ouvre Google Contacts puis Exporter (vCard ou CSV).</p>
+                    <p>2) Enregistre le fichier sur ton telephone.</p>
+                    <p>3) Reviens ici et importe le fichier.</p>
+                    <p className="mt-2 text-amber-100">Note: en mode web, l acces direct au carnet natif depend du navigateur.</p>
+                  </div>
+                )}
+                {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
+              </div>
             </div>
 
             <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/10">
