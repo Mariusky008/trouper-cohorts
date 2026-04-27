@@ -5847,7 +5847,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </span>
               </div>
               <h1 className="relative mt-2 text-[30px] font-black leading-[0.94] tracking-[-0.015em] text-white">
-                Radar <span className="text-[#00D4A0]">Activee</span>
+                Radar <span className="text-[#00D4A0]">Activé</span>
               </h1>
               <p className="relative mt-2 text-[13px] leading-[1.45] text-white/70">
                 {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
