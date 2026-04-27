@@ -5340,7 +5340,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     return (
       <main className="min-h-screen overflow-y-auto bg-[#07090F] text-white pb-24">
         <div className="mx-auto flex min-h-screen w-full max-w-xl items-start px-4 pt-4 pb-24">
-          <section className="relative w-full overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-[#0F1422] to-[#0B111D] p-4 shadow-[0_30px_90px_-45px_rgba(0,0,0,0.95)]">
+          <section className="relative w-full overflow-hidden rounded-[28px] border border-transparent bg-[#0E1420] p-4 shadow-[0_30px_90px_-45px_rgba(0,0,0,0.95)]">
             <motion.div
               aria-hidden
               className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-cyan-400/25 blur-3xl"
@@ -5371,7 +5371,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="relative mt-4 rounded-[24px] border border-white/15 bg-gradient-to-br from-[#101A18] via-[#12201D] to-[#14231F] p-4">
+            <div className="relative mt-4 rounded-[24px] border border-transparent bg-[#0E1420] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Import contacts reels</p>
@@ -5870,9 +5870,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             {apiErrorMessage}
           </div>
         )}
-        <div className="rounded-[26px] border border-white/10 bg-[#0E1420] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
+        <div className="rounded-[26px] border border-transparent bg-[#0E1420] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-[#0E1420] p-4">
+            <div className="relative overflow-hidden rounded-[24px] border border-transparent bg-[#0E1420] p-4">
               <div className="relative flex items-center justify-between gap-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/40">Cockpit mission quotidienne</p>
                 <span className="rounded-full bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#2B1604]">
@@ -6207,7 +6207,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
 
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-[26px] border border-white/10 bg-[#0E1420] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
+          <section className={`rounded-[26px] border border-transparent bg-[#0E1420] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[20px] font-black tracking-[-0.015em] text-white">Daily Card</p>
               <div className="flex items-center gap-2">
@@ -6244,7 +6244,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-[#0E1420] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-transparent bg-[#0E1420] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
@@ -7593,7 +7593,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="rounded-[34px] border border-white/15 bg-gradient-to-b from-[#0C121E] to-[#0A101A] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
+            <div className="rounded-[34px] border border-transparent bg-[#0E1420] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[44px] font-black leading-[0.9] tracking-[-0.02em] text-white">Eclaireurs</p>
                 <button
@@ -7640,7 +7640,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#101A18] via-[#12201D] to-[#14231F] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
+            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-transparent bg-[#0E1420] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
               <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-emerald-300/12 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-14 -left-12 h-36 w-36 rounded-full bg-fuchsia-300/10 blur-3xl" />
               <div className="relative">
@@ -7939,7 +7939,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#0E1420] via-[#101A18] to-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.22)] sm:p-5">
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-transparent bg-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.22)] sm:p-5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[30px] font-black leading-[0.92] tracking-[-0.02em] text-white sm:text-[34px]">
                 Mes <br className="sm:hidden" />
@@ -8103,7 +8103,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAddScoutModal && (
         <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/80 px-3 backdrop-blur-md sm:px-4">
-          <section className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#101A18] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
+          <section className="w-full max-w-lg rounded-[28px] border border-transparent bg-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)]">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="flex items-center justify-between">
               <p className="text-[22px] font-black tracking-[-0.01em] text-white">Nouvel eclaireur</p>
