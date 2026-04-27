@@ -5870,11 +5870,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             {apiErrorMessage}
           </div>
         )}
-        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#0A101A] via-[#0D1523] to-[#0A0F18] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
+        <div className="rounded-[26px] border border-white/10 bg-[#0E1420] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-[#0F192B] via-[#13213A] to-[#101A2E] p-4">
-              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-cyan-300/10 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-[#00D4A0]/8 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-[#0E1420] p-4">
               <div className="relative flex items-center justify-between gap-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/40">Cockpit mission quotidienne</p>
                 <span className="rounded-full bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#2B1604]">
@@ -6209,7 +6207,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
 
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#0D1526] via-[#101B2F] to-[#0D1524] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
+          <section className={`rounded-[26px] border border-white/10 bg-[#0E1420] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[20px] font-black tracking-[-0.015em] text-white">Daily Card</p>
               <div className="flex items-center gap-2">
@@ -6246,7 +6244,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#16243A] via-[#1A2942] to-[#142238] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-white/10 bg-[#0E1420] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
