@@ -5899,15 +5899,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </button>
               </div>
             </div>
-            <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/10 pt-1">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Suivi cockpit</p>
-                <p className="mt-1 text-[13px] text-white/70">Pilote en mode detaille (cockpit deplié).</p>
-              </div>
-              <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100">
-                Mode detail
-              </span>
-            </div>
             <div className={isCockpitCollapsed ? "hidden" : "space-y-3"}>
             {showAdvancedOpsInUserCockpit && (
               <>
@@ -6185,12 +6176,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
           <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#151D31] via-[#18223C] to-[#111A2D] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[24px] font-black tracking-[-0.015em] text-white">Daily Card</p>
+              <p className="text-[20px] font-black tracking-[-0.015em] text-white">Daily Card</p>
               <div className="flex items-center gap-2">
                 <span className="rounded-full border border-white/15 bg-black/35 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">
                   🟢 Anonymat garanti
                 </span>
-                <span className="text-[34px] font-black leading-none text-white/85">
+                <span className="text-[20px] font-black leading-none text-white/85">
                   {done}/{dailyGoal}
                 </span>
               </div>
@@ -6220,14 +6211,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#242C41] via-[#303B54] to-[#232E45] p-4 sm:p-5 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#242C41] via-[#303B54] to-[#232E45] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
-                  className={`h-[84px] w-[84px] rounded-[24px] bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_28px_rgba(56,189,248,0.35)]`}
+                  className={`h-[72px] w-[72px] rounded-[20px] bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_20px_rgba(56,189,248,0.25)]`}
                   style={{ boxShadow: heatScore >= 90 ? "0 0 34px rgba(251,146,60,0.65)" : undefined }}
                 >
-                  <div className="flex h-full w-full items-center justify-center rounded-[22px] bg-[#0D132D] text-[42px] font-black">
+                  <div className="flex h-full w-full items-center justify-center rounded-[18px] bg-[#0D132D] text-[34px] font-black">
                     {current.name
                       .split(" ")
                       .map((part) => part[0])
@@ -6235,15 +6226,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[56px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                  <p className="text-[24px] font-black leading-[0.95] tracking-[-0.01em] text-white">
                     {current.name.split(" ")[0] || current.name}
                   </p>
-                  <p className="text-[34px] font-bold leading-[0.95] text-white/75">📍 {current.city}</p>
+                  <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {adnPopey.slice(0, 2).map((entry) => (
                       <span
                         key={entry.label}
-                        className={`rounded-full border border-amber-300/30 px-3 py-1 text-[22px] font-black ${adnBadgeClass(entry.label)}`}
+                        className={`rounded-full border border-amber-300/30 px-3 py-1 text-[13px] font-black ${adnBadgeClass(entry.label)}`}
                       >
                         {entry.label}
                       </span>
@@ -6253,8 +6244,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
 
               <div className="mt-5">
-                <p className="text-[54px] font-black leading-[0.9] tracking-[-0.02em] text-white">Comment activer</p>
-                <p className="text-[54px] font-black leading-[0.9] tracking-[-0.02em]">
+                <p className="text-[28px] font-black leading-[0.95] tracking-[-0.01em] text-white">Comment activer</p>
+                <p className="text-[28px] font-black leading-[0.95] tracking-[-0.01em]">
                   <span className="text-[#00D4A0]">{current.name.split(" ")[0] || current.name}</span> ?
                 </p>
                 {actionEngine.cue && (
@@ -6298,8 +6289,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       onClick={() => triggerAction(button.action)}
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
-                          ? `h-[106px] border-amber-300/45 bg-gradient-to-r from-amber-400/35 to-orange-400/28 text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)]`
-                          : "h-[88px] border-white/25 bg-white/5 text-white/80 opacity-90 hover:opacity-100"
+                          ? "h-[82px] border-amber-300/45 bg-gradient-to-r from-amber-300/22 to-orange-300/18 text-amber-100 shadow-[0_14px_28px_-18px_rgba(251,191,36,0.8)]"
+                          : "h-[76px] border-white/20 bg-[#27324A]/40 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
                       } ${launching ? theme.launchRingClass : ""} ${isPrimary ? "ring-1 ring-white/30" : ""}`}
@@ -6329,18 +6320,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </>
                       )}
                       <div className="flex h-full items-center gap-3 px-4 text-left">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border text-xl ${actionVisual.iconClass}`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[20px] ${actionVisual.iconClass}`}>
                           {actionVisual.icon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className={`block ${isPrimary ? "text-[34px]" : "text-[22px]"} font-black leading-[0.95] ${isPrimary ? theme.titleClass : "text-white/90"}`}>
+                          <span className={`block ${isPrimary ? "text-[19px]" : "text-[17px]"} font-black leading-[0.95] ${isPrimary ? theme.titleClass : "text-white/90"}`}>
                             {actionVisual.title}
                           </span>
-                          <span className={`mt-1 block text-[15px] font-semibold leading-tight ${isPrimary ? theme.subtitleClass : "text-white/70"}`}>
+                          <span className={`mt-0.5 block text-[12px] font-semibold leading-tight ${isPrimary ? theme.subtitleClass : "text-white/62"}`}>
                             {actionVisual.subtitle}
                           </span>
                         </div>
-                        <span className={`text-[34px] ${isPrimary ? "text-amber-100/80" : "text-white/35"}`}>→</span>
+                        <span className={`text-[26px] ${isPrimary ? "text-amber-100/80" : "text-white/35"}`}>→</span>
                       </div>
                     </button>
                   );
@@ -6350,7 +6341,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => triggerAction("passer")}
-                  className="h-[72px] rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[28px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                  className="h-14 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[14px] font-black uppercase tracking-[0.08em] text-cyan-100"
                 >
                   Passer · Contact suivant →
                 </button>
