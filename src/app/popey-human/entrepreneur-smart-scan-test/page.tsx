@@ -441,7 +441,6 @@ const PROFILE_REQUEST_TIMEOUT_MS = 12000;
 const PROFILE_BOOTSTRAP_FALLBACK_MS = 14000;
 const RADAR_TARGET_COUNT = 10;
 const RADAR_DEFAULT_SELECTED_COUNT = 8;
-const PERSONNEL_LANDING_URL = "https://popey.academy/personnel";
 const RADAR_MOCK_SEED: Array<{
   fullName: string;
   metier: string;
@@ -3887,7 +3886,7 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
     const myMetier = String(allianceSourceMetier || "").trim() || resolveOwnerMetierLabel(myProfile, "professionnel");
     const city = allianceCity || myProfile?.ville || "ma ville";
     const intro = myFirstName ? `je suis ${myFirstName}, ${myMetier} a ${city}.` : `je suis ${myMetier} a ${city}.`;
-    return appendPersonnelLandingLinkIfEligible(`Bonjour ${firstName}, ${intro}
+    return `Bonjour ${firstName}, ${intro}
 
 Je me permets de t ecrire car on croise souvent des personnes qui auraient besoin d un autre pro de confiance, et je pense que nos activites peuvent se completer.
 
@@ -3895,38 +3894,7 @@ Je te propose un test simple : tu me recommandes a une personne, je lui fais une
 
 Si l experience est bonne, on garde le contact pour de futures recommandations.
 
-Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`);
-  }
-
-  function normalizeIdentityToken(value: string | null | undefined) {
-    return String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function shouldAppendPersonnelLandingLink() {
-    const firstName = normalizeIdentityToken(myProfile?.first_name || profileForm.firstName);
-    const lastName = normalizeIdentityToken(myProfile?.last_name || profileForm.lastName);
-    const fullName = normalizeIdentityToken(`${firstName} ${lastName}`);
-    const metier = normalizeIdentityToken(
-      myProfile?.metier_label || myProfile?.metier || allianceSourceMetier || radarSourceContext.sourceMetier || profileForm.metier,
-    );
-    const city = normalizeIdentityToken(myProfile?.ville || allianceCity || radarSourceContext.city || profileForm.ville);
-    const hasRoth = lastName.includes("roth") || fullName.includes("roth");
-    const hasJeanPhilippe = (firstName.includes("jean") && firstName.includes("philippe")) || (fullName.includes("jean") && fullName.includes("philippe"));
-    return hasRoth && hasJeanPhilippe && metier.includes("coach business") && city.includes("dax");
-  }
-
-  function appendPersonnelLandingLinkIfEligible(message: string) {
-    const trimmed = String(message || "").trim();
-    if (!trimmed) return trimmed;
-    if (!shouldAppendPersonnelLandingLink()) return trimmed;
-    if (trimmed.includes(PERSONNEL_LANDING_URL)) return trimmed;
-    return `${trimmed}\n\n${PERSONNEL_LANDING_URL}`;
+Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`;
   }
 
   function clearAllianceRevealQueue() {
@@ -4078,9 +4046,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   function buildRadarMockProspects(city: string, sourceMetier: string): RadarProspect[] {
     return RADAR_MOCK_SEED.slice(0, RADAR_TARGET_COUNT).map((item, idx) => {
       const firstName = item.fullName.split(" ")[0] || item.fullName;
-      const messageDraft = appendPersonnelLandingLinkIfEligible(
-        `Bonjour ${firstName}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${item.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`,
-      );
+      const messageDraft = `Bonjour ${firstName}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${item.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
       return {
         id: `radar-${idx + 1}`,
         fullName: item.fullName,
@@ -4215,7 +4181,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             companyHint: prospect.metier || null,
           }).catch(() => null)) as { message?: string } | null;
           const fallbackMsg = `Bonjour ${prospect.full_name.split(" ")[0] || prospect.full_name}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${prospect.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
-          const messageDraft = appendPersonnelLandingLinkIfEligible(String(aiResult?.message || fallbackMsg).trim());
+          const messageDraft = String(aiResult?.message || fallbackMsg).trim();
           return {
             id: `radar-live-${prospect.id || idx + 1}`,
             fullName: prospect.full_name,
@@ -4309,7 +4275,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       return;
     }
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
-    const messageDraft = appendPersonnelLandingLinkIfEligible(prospect.messageDraft);
+    const messageDraft = prospect.messageDraft;
     if (!isLikelyWhatsAppNumber(cleanPhone)) {
       setRadarInfoMessage("");
       setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
@@ -4412,7 +4378,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setRadarProspects((currentList) =>
       currentList.map((item) =>
         selectedSet.has(item.id)
-          ? { ...item, messageDraft: appendPersonnelLandingLinkIfEligible(applyRadarMessageTemplate(template, item.fullName).trim()) }
+          ? { ...item, messageDraft: applyRadarMessageTemplate(template, item.fullName).trim() }
           : item,
       ),
     );
@@ -4436,7 +4402,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
-      const messageDraft = appendPersonnelLandingLinkIfEligible(String(messageDraftInput || "").trim());
+      const messageDraft = String(messageDraftInput || "").trim();
       if (!messageDraft) {
         throw new Error("Le message est vide. Ajoute un texte avant envoi.");
       }
