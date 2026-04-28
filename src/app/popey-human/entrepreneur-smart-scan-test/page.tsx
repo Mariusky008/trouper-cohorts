@@ -1254,6 +1254,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [radarSynergyFilter, setRadarSynergyFilter] = useState("all");
   const [radarRunId, setRadarRunId] = useState<string | null>(null);
   const [isRadarFallbackDemo, setIsRadarFallbackDemo] = useState(false);
+  const [radarInfoMessage, setRadarInfoMessage] = useState("");
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -4194,6 +4195,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarBulkMessageDraft(finalList[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
       setIsRadarFallbackDemo(false);
+      setRadarInfoMessage("");
       setShowRadarMode(true);
       await fetch("/api/popey-human/smart-scan/radar/event", {
         method: "POST",
@@ -4219,6 +4221,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarBulkMessageDraft(fallback[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
       setIsRadarFallbackDemo(true);
+      setRadarInfoMessage("Mode démo actif : messages éditables, envoi WhatsApp désactivé.");
       setShowRadarMode(true);
       if (radarRunIdForThisRun) {
         await fetch("/api/popey-human/smart-scan/radar/event", {
@@ -4245,15 +4248,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   function openRadarWhatsApp(prospect: RadarProspect) {
     if (isRadarFallbackDemo) {
+      setRadarInfoMessage("");
       setApiErrorMessage("Mode demo actif : numéros fictifs. Relance une recherche live pour ouvrir WhatsApp.");
       return;
     }
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
     if (!isLikelyWhatsAppNumber(cleanPhone)) {
+      setRadarInfoMessage("");
       setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
       return;
     }
     if (isBlockedRadarWhatsAppNumber(cleanPhone)) {
+      setRadarInfoMessage("");
       setApiErrorMessage(`Numero placeholder detecte pour ${prospect.fullName}. Contact exclu du batch.`);
       return;
     }
@@ -4261,6 +4267,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       if (typeof window !== "undefined" && url) {
         window.open(url, "_blank", "noopener,noreferrer");
       }
+      setApiErrorMessage("");
+      setRadarInfoMessage(`WhatsApp ouvert pour ${prospect.fullName.split(" ")[0] || prospect.fullName}.`);
       setRadarSentIds((currentList) => (currentList.includes(prospect.id) ? currentList : [...currentList, prospect.id]));
       void postRadarEvent({
         eventType: "whatsapp_opened",
@@ -4283,15 +4291,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           openUrl(result.whatsappUrl);
           return;
         }
+        setRadarInfoMessage("");
         setApiErrorMessage(result?.error || `Numero WhatsApp manquant pour ${prospect.fullName}.`);
       })
       .catch(() => {
+        setRadarInfoMessage("");
         setApiErrorMessage(`Verification WhatsApp impossible pour ${prospect.fullName}. Reessaie dans quelques secondes.`);
       });
   }
 
   function openSelectedRadarWhatsApp() {
     if (isRadarFallbackDemo) {
+      setRadarInfoMessage("");
       setApiErrorMessage("Mode demo actif : numéros fictifs. Relance une recherche live pour envoyer sur WhatsApp.");
       return;
     }
@@ -4303,6 +4314,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     const skipped = queue.filter((item) => !eligibleQueue.some((candidate) => candidate.id === item.id));
     if (skipped.length) {
       const skippedNames = skipped.slice(0, 3).map((item) => item.fullName.split(" ")[0] || item.fullName).join(", ");
+      setRadarInfoMessage("");
       setApiErrorMessage(
         `${skipped.length} contact(s) exclus (numero invalide/placeholder): ${skippedNames}${skipped.length > 3 ? "..." : ""}.`,
       );
@@ -4322,6 +4334,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       openRadarWhatsApp(nextProspect);
     }
     if (eligibleQueue.length > 1) {
+      setApiErrorMessage("");
       setApiErrorMessage(
         `WhatsApp s'ouvre contact par contact. Re-clique pour envoyer les ${eligibleQueue.length - 1} restant(s).`,
       );
@@ -4347,6 +4360,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       ),
     );
     setApiErrorMessage("");
+    setRadarInfoMessage(`Message appliqué à ${selectedSet.size} sélectionné(s).`);
   }
 
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
@@ -8464,6 +8478,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <span>Envoyer les {radarSelectedUnsentCount} sélectionnés</span>
               <span>→</span>
             </button>
+            {radarInfoMessage ? (
+              <p className="relative z-[1] mt-2 rounded-xl border border-emerald-300/30 bg-emerald-300/12 px-3 py-2 text-[12px] text-emerald-100">
+                {radarInfoMessage}
+              </p>
+            ) : null}
+            {apiErrorMessage ? (
+              <p className="relative z-[1] mt-2 rounded-xl border border-amber-300/35 bg-amber-300/10 px-3 py-2 text-[12px] text-amber-100">
+                {apiErrorMessage}
+              </p>
+            ) : null}
 
             <div className="relative z-[1] mt-4">
               <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
