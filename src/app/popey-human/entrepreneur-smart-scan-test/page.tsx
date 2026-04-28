@@ -4110,6 +4110,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setRadarSourceContext({ city, sourceMetier });
     setIsRadarLoading(true);
     let radarRunIdForThisRun = "";
+    let radarTrackingUnavailable = false;
     try {
       const targetMetiers = String(allianceTargetMetiersInput || "")
         .split(",")
@@ -4136,10 +4137,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       });
       const runStartPayload = (await runStartResponse.json().catch(() => ({}))) as { error?: string; run?: { id?: string } };
       if (!runStartResponse.ok || !runStartPayload.run?.id) {
-        throw new Error(runStartPayload.error || "Impossible de demarrer le run Radar.");
+        const rawRunError = String(runStartPayload.error || "").trim();
+        const isMissingRadarTable =
+          /human_smart_scan_radar_runs/i.test(rawRunError) ||
+          /schema cache/i.test(rawRunError) ||
+          /could not find the table/i.test(rawRunError);
+        if (isMissingRadarTable) {
+          radarTrackingUnavailable = true;
+          setRadarRunId(null);
+          setRadarInfoMessage("Mode live activé (tracking Radar indisponible tant que la migration SQL n'est pas appliquée).");
+        } else {
+          throw new Error(rawRunError || "Impossible de demarrer le run Radar.");
+        }
+      } else {
+        radarRunIdForThisRun = runStartPayload.run.id;
+        setRadarRunId(runStartPayload.run.id);
       }
-      radarRunIdForThisRun = runStartPayload.run.id;
-      setRadarRunId(runStartPayload.run.id);
       const response = await fetch("/api/popey-human/smart-scan/alliances/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4195,23 +4208,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarBulkMessageDraft(finalList[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
       setIsRadarFallbackDemo(false);
-      setRadarInfoMessage("");
+      if (!radarTrackingUnavailable) {
+        setRadarInfoMessage("");
+      }
       setShowRadarMode(true);
-      await fetch("/api/popey-human/smart-scan/radar/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runId: runStartPayload.run.id,
-          eventType: "run_completed",
-          metadata: {
-            preparedCount: finalList.length,
-            provider: "b2b",
-            fallback: false,
-            targetMetiersCount: targetMetiers.length,
-          },
-          clientEventId: `radar-run-completed-${runStartPayload.run.id}`,
-        }),
-      }).catch(() => null);
+      if (radarRunIdForThisRun) {
+        await fetch("/api/popey-human/smart-scan/radar/event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            runId: radarRunIdForThisRun,
+            eventType: "run_completed",
+            metadata: {
+              preparedCount: finalList.length,
+              provider: "b2b",
+              fallback: false,
+              targetMetiersCount: targetMetiers.length,
+            },
+            clientEventId: `radar-run-completed-${radarRunIdForThisRun}`,
+          }),
+        }).catch(() => null);
+      }
       setApiErrorMessage("");
     } catch (error) {
       const fallback = buildRadarMockProspects(city, sourceMetier);
@@ -4240,7 +4257,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           }),
         }).catch(() => null);
       }
-      setApiErrorMessage(error instanceof Error ? `${error.message} (fallback mock actif)` : "Mode Radar en fallback mock.");
+      const rawMessage = error instanceof Error ? error.message : "Mode Radar en fallback mock.";
+      if (/human_smart_scan_radar_runs|schema cache|could not find the table/i.test(rawMessage)) {
+        setApiErrorMessage("Tracking Radar indisponible : applique la migration SQL puis relance le mode live.");
+      } else {
+        setApiErrorMessage(`${rawMessage} (fallback mock actif)`);
+      }
     } finally {
       setIsRadarLoading(false);
     }
