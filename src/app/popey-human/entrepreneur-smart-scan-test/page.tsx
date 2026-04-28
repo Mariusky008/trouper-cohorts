@@ -8107,12 +8107,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {isRadarLoading ? (
                     <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(0,212,160,0.12),transparent_55%)]" />
                   ) : null}
-                  <span className="inline-flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[24px] border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[38px]">
+                  <span className="inline-flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-[22px] border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[34px]">
                     ⚡
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-[#00D4A0]/85">Mode Radar · IA</span>
-                    <span className="mt-1 block text-[60px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                    <span className="mt-1 block max-w-[14ch] text-[46px] font-black leading-[0.96] tracking-[-0.015em] text-white">
                       {isRadarLoading ? "Analyse en cours..." : "Préparer 10 WhatsApp en 1 tap"}
                     </span>
                     <span className="mt-1.5 block text-[12px] leading-[1.4] text-white/70">
@@ -8154,7 +8154,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/35">
                     {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
                   </p>
-                  <h3 className="mt-2 text-[54px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                  <h3 className="mt-2 text-[48px] font-black leading-[0.92] tracking-[-0.02em] text-white">
                     <span className="block">Trouvez les pros</span>
                     <span className="block">qui voient vos</span>
                     <span className="block">clients</span>
@@ -8531,8 +8531,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             ) : null}
 
             <div className="relative z-[1] mt-4">
-              <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
-              <p className="mt-0.5 text-[13px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
+              <p className="text-[22px] font-black leading-[1] tracking-[-0.012em] text-white">File d'envoi WhatsApp</p>
+              <p className="mt-1 text-[12px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
             </div>
 
             <details className="relative z-[1] mt-3 rounded-2xl border border-[#00D4A0]/20 bg-[#0E1420]/95 px-4 py-3">
