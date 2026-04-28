@@ -441,6 +441,7 @@ const PROFILE_REQUEST_TIMEOUT_MS = 12000;
 const PROFILE_BOOTSTRAP_FALLBACK_MS = 14000;
 const RADAR_TARGET_COUNT = 10;
 const RADAR_DEFAULT_SELECTED_COUNT = 8;
+const PERSONNEL_LANDING_URL = "https://popey.academy/personnel";
 const RADAR_MOCK_SEED: Array<{
   fullName: string;
   metier: string;
@@ -3886,7 +3887,7 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
     const myMetier = String(allianceSourceMetier || "").trim() || resolveOwnerMetierLabel(myProfile, "professionnel");
     const city = allianceCity || myProfile?.ville || "ma ville";
     const intro = myFirstName ? `je suis ${myFirstName}, ${myMetier} a ${city}.` : `je suis ${myMetier} a ${city}.`;
-    return `Bonjour ${firstName}, ${intro}
+    return appendPersonnelLandingLinkIfEligible(`Bonjour ${firstName}, ${intro}
 
 Je me permets de t ecrire car on croise souvent des personnes qui auraient besoin d un autre pro de confiance, et je pense que nos activites peuvent se completer.
 
@@ -3894,7 +3895,38 @@ Je te propose un test simple : tu me recommandes a une personne, je lui fais une
 
 Si l experience est bonne, on garde le contact pour de futures recommandations.
 
-Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`;
+Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`);
+  }
+
+  function normalizeIdentityToken(value: string | null | undefined) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function shouldAppendPersonnelLandingLink() {
+    const firstName = normalizeIdentityToken(myProfile?.first_name || profileForm.firstName);
+    const lastName = normalizeIdentityToken(myProfile?.last_name || profileForm.lastName);
+    const fullName = normalizeIdentityToken(`${firstName} ${lastName}`);
+    const metier = normalizeIdentityToken(
+      myProfile?.metier_label || myProfile?.metier || allianceSourceMetier || radarSourceContext.sourceMetier || profileForm.metier,
+    );
+    const city = normalizeIdentityToken(myProfile?.ville || allianceCity || radarSourceContext.city || profileForm.ville);
+    const hasRoth = lastName.includes("roth") || fullName.includes("roth");
+    const hasJeanPhilippe = (firstName.includes("jean") && firstName.includes("philippe")) || (fullName.includes("jean") && fullName.includes("philippe"));
+    return hasRoth && hasJeanPhilippe && metier.includes("coach business") && city.includes("dax");
+  }
+
+  function appendPersonnelLandingLinkIfEligible(message: string) {
+    const trimmed = String(message || "").trim();
+    if (!trimmed) return trimmed;
+    if (!shouldAppendPersonnelLandingLink()) return trimmed;
+    if (trimmed.includes(PERSONNEL_LANDING_URL)) return trimmed;
+    return `${trimmed}\n\n${PERSONNEL_LANDING_URL}`;
   }
 
   function clearAllianceRevealQueue() {
@@ -4046,7 +4078,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   function buildRadarMockProspects(city: string, sourceMetier: string): RadarProspect[] {
     return RADAR_MOCK_SEED.slice(0, RADAR_TARGET_COUNT).map((item, idx) => {
       const firstName = item.fullName.split(" ")[0] || item.fullName;
-      const messageDraft = `Bonjour ${firstName}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${item.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
+      const messageDraft = appendPersonnelLandingLinkIfEligible(
+        `Bonjour ${firstName}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${item.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`,
+      );
       return {
         id: `radar-${idx + 1}`,
         fullName: item.fullName,
@@ -4181,7 +4215,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             companyHint: prospect.metier || null,
           }).catch(() => null)) as { message?: string } | null;
           const fallbackMsg = `Bonjour ${prospect.full_name.split(" ")[0] || prospect.full_name}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${prospect.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
-          const messageDraft = String(aiResult?.message || fallbackMsg).trim();
+          const messageDraft = appendPersonnelLandingLinkIfEligible(String(aiResult?.message || fallbackMsg).trim());
           return {
             id: `radar-live-${prospect.id || idx + 1}`,
             fullName: prospect.full_name,
@@ -4275,6 +4309,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       return;
     }
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
+    const messageDraft = appendPersonnelLandingLinkIfEligible(prospect.messageDraft);
     if (!isLikelyWhatsAppNumber(cleanPhone)) {
       setRadarInfoMessage("");
       setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
@@ -4305,7 +4340,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       city: prospect.city,
       companyHint: prospect.metier,
       actionType: "eclaireur",
-      messageDraft: prospect.messageDraft,
+      messageDraft,
       phoneE164: cleanPhone || null,
     })
       .then((result: { whatsappUrl?: string; error?: string }) => {
@@ -4377,7 +4412,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setRadarProspects((currentList) =>
       currentList.map((item) =>
         selectedSet.has(item.id)
-          ? { ...item, messageDraft: applyRadarMessageTemplate(template, item.fullName).trim() }
+          ? { ...item, messageDraft: appendPersonnelLandingLinkIfEligible(applyRadarMessageTemplate(template, item.fullName).trim()) }
           : item,
       ),
     );
@@ -4401,7 +4436,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
-      const messageDraft = String(messageDraftInput || "").trim();
+      const messageDraft = appendPersonnelLandingLinkIfEligible(String(messageDraftInput || "").trim());
       if (!messageDraft) {
         throw new Error("Le message est vide. Ajoute un texte avant envoi.");
       }
@@ -8098,7 +8133,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={openRadarMode}
                   disabled={isRadarLoading}
-                  className={`relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-[26px] border px-5 py-5 text-left transition ${
+                  className={`relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-[26px] border px-5 py-6 text-left transition ${
                     isRadarLoading
                       ? "cursor-progress border-[#00D4A0]/70 bg-gradient-to-br from-[#103228] to-[#0B231C] shadow-[0_0_30px_rgba(0,212,160,0.22)]"
                       : "border-[#00D4A0]/40 bg-gradient-to-br from-[#0D2A20] to-[#0A1F18] hover:border-[#00D4A0]/65"
@@ -8107,28 +8142,39 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {isRadarLoading ? (
                     <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(0,212,160,0.12),transparent_55%)]" />
                   ) : null}
-                  <span className="inline-flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-[22px] border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[34px]">
+                  <span className="inline-flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[22px] border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[33px]">
                     ⚡
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 pr-1">
                     <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-[#00D4A0]/85">Mode Radar · IA</span>
-                    <span className="mt-1 block max-w-[14ch] text-[46px] font-black leading-[0.96] tracking-[-0.015em] text-white">
-                      {isRadarLoading ? "Analyse en cours..." : "Préparer 10 WhatsApp en 1 tap"}
+                    <span className="mt-1 block text-[22px] font-black leading-[0.95] tracking-[-0.015em] text-white">
+                      {isRadarLoading ? (
+                        <>
+                          <span className="block">Analyse</span>
+                          <span className="block">en cours...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="block">Préparer 10</span>
+                          <span className="block">WhatsApp</span>
+                          <span className="block">en 1 tap</span>
+                        </>
+                      )}
                     </span>
-                    <span className="mt-1.5 block text-[12px] leading-[1.4] text-white/70">
+                    <span className="mt-2 block text-[11px] leading-[1.4] text-white/70">
                       {isRadarLoading
                         ? "Recherche des meilleures synergies locales en cours (30-60 sec)."
                         : "L'IA trouve les meilleures synergies, récupère les numéros et prépare les messages. Vous n'avez plus qu'à envoyer."}
                     </span>
                   </span>
                   {isRadarLoading ? (
-                    <span className="inline-flex items-center gap-1.5 pr-1">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
+                    <span className="inline-flex min-w-[74px] shrink-0 items-center justify-end gap-2 pr-1">
+                      <span className="h-3.5 w-3.5 rounded-full bg-[#00F1B2] shadow-[0_0_12px_rgba(0,241,178,0.75)] animate-pulse [animation-delay:0ms]" />
+                      <span className="h-3.5 w-3.5 rounded-full bg-[#00F1B2] shadow-[0_0_12px_rgba(0,241,178,0.75)] animate-pulse [animation-delay:140ms]" />
+                      <span className="h-3.5 w-3.5 rounded-full bg-[#00F1B2] shadow-[0_0_12px_rgba(0,241,178,0.75)] animate-pulse [animation-delay:280ms]" />
                     </span>
                   ) : (
-                    <span className="text-[38px] font-black text-[#00D4A0]">→</span>
+                    <span className="shrink-0 pr-1 text-[40px] font-black leading-none text-[#00D4A0]">→</span>
                   )}
                   {isRadarLoading ? (
                     <span className="absolute inset-x-5 bottom-2 h-1 overflow-hidden rounded-full bg-white/10">
@@ -8154,7 +8200,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/35">
                     {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
                   </p>
-                  <h3 className="mt-2 text-[48px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                  <h3 className="mt-2 text-[44px] font-black leading-[0.92] tracking-[-0.02em] text-white">
                     <span className="block">Trouvez les pros</span>
                     <span className="block">qui voient vos</span>
                     <span className="block">clients</span>
