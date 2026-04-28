@@ -8098,21 +8098,43 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={openRadarMode}
                   disabled={isRadarLoading}
-                  className="mb-4 flex w-full items-center gap-3 rounded-[20px] border border-[#00D4A0]/40 bg-gradient-to-br from-[#0D2A20] to-[#0A1F18] px-4 py-4 text-left transition hover:border-[#00D4A0]/65 disabled:opacity-70"
+                  className={`relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-[26px] border px-5 py-5 text-left transition ${
+                    isRadarLoading
+                      ? "cursor-progress border-[#00D4A0]/70 bg-gradient-to-br from-[#103228] to-[#0B231C] shadow-[0_0_30px_rgba(0,212,160,0.22)]"
+                      : "border-[#00D4A0]/40 bg-gradient-to-br from-[#0D2A20] to-[#0A1F18] hover:border-[#00D4A0]/65"
+                  }`}
                 >
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[22px]">
+                  {isRadarLoading ? (
+                    <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(0,212,160,0.12),transparent_55%)]" />
+                  ) : null}
+                  <span className="inline-flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[24px] border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[38px]">
                     ⚡
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Mode Radar · IA</span>
-                    <span className="mt-1 block text-[17px] font-black leading-[1.05] text-white">
-                      {isRadarLoading ? "Analyse en cours..." : "Preparer 10 WhatsApp en 1 tap"}
+                    <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-[#00D4A0]/85">Mode Radar · IA</span>
+                    <span className="mt-1 block text-[60px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                      {isRadarLoading ? "Analyse en cours..." : "Préparer 10 WhatsApp en 1 tap"}
                     </span>
-                    <span className="mt-1 block text-[11px] leading-[1.35] text-white/65">
-                      L IA detecte les synergies locales et prepare les messages. Tu valides puis envoies.
+                    <span className="mt-1.5 block text-[12px] leading-[1.4] text-white/70">
+                      {isRadarLoading
+                        ? "Recherche des meilleures synergies locales en cours (30-60 sec)."
+                        : "L'IA trouve les meilleures synergies, récupère les numéros et prépare les messages. Vous n'avez plus qu'à envoyer."}
                     </span>
                   </span>
-                  <span className="text-[22px] font-black text-[#00D4A0]">{isRadarLoading ? "…" : "→"}</span>
+                  {isRadarLoading ? (
+                    <span className="inline-flex items-center gap-1.5 pr-1">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#00D4A0] animate-pulse" />
+                    </span>
+                  ) : (
+                    <span className="text-[38px] font-black text-[#00D4A0]">→</span>
+                  )}
+                  {isRadarLoading ? (
+                    <span className="absolute inset-x-5 bottom-2 h-1 overflow-hidden rounded-full bg-white/10">
+                      <span className="block h-full w-1/2 rounded-full bg-[#00D4A0]/75 animate-pulse" />
+                    </span>
+                  ) : null}
                 </button>
 
                 <div className="mb-4 flex items-center gap-2">
@@ -8121,31 +8143,28 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <span className="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">
-                      {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
-                    </p>
-                    <h3 className="mt-2 max-w-[20ch] text-[42px] font-black leading-[0.92] tracking-[-0.015em] text-white">
-                      <span className="block">Trouvez les</span>
-                      <span className="block">pros qui voient vos</span>
-                      <span className="block">
-                        clients <span className="text-[#00D4A0]">avant vous.</span>
-                      </span>
-                    </h3>
-                    <p className="mt-3 max-w-[30ch] text-[14px] leading-[1.45] text-white/65">
-                      {allianceDirectoryMode === "internal"
-                        ? "Popey connecte ta communaute locale avec les membres les plus compatibles avec ton metier."
-                        : "Popey scanne les professionnels locaux complementaires et met en avant ceux qui ont le plus de chances de te recommander."}
-                    </p>
-                  </div>
+                <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowBoostInfo(true)}
-                    className="shrink-0 rounded-full bg-gradient-to-br from-[#F5A623] to-[#E8961A] px-3 py-1.5 text-[11px] font-black text-[#1A0A00] shadow-[0_0_18px_rgba(245,158,11,0.2)]"
+                    className="absolute right-0 top-0 z-[1] shrink-0 rounded-full bg-gradient-to-br from-[#F5A623] to-[#E8961A] px-4 py-2 text-[12px] font-black text-[#1A0A00] shadow-[0_0_18px_rgba(245,158,11,0.2)]"
                   >
                     👑 Premium
                   </button>
+                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/35">
+                    {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
+                  </p>
+                  <h3 className="mt-2 text-[54px] font-black leading-[0.92] tracking-[-0.02em] text-white">
+                    <span className="block">Trouvez les pros</span>
+                    <span className="block">qui voient vos</span>
+                    <span className="block">clients</span>
+                    <span className="block text-[#00D4A0]">avant vous.</span>
+                  </h3>
+                  <p className="mt-3 max-w-[33ch] text-[14px] leading-[1.45] text-white/65">
+                    {allianceDirectoryMode === "internal"
+                      ? "Popey connecte ta communaute locale avec les membres les plus compatibles avec ton metier."
+                      : "Popey scanne les professionnels locaux complementaires et met en avant ceux qui ont le plus de chances de te recommander."}
+                  </p>
                 </div>
 
                 <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
