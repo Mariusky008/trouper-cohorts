@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jean-Philippe Roth — Apporteur de Clients</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0A0B0F;
+  --paper:#F5F2EC;
+  --paper2:#EDE9E0;
+  --teal:#00C48C;
+  --teal-dark:#009B6F;
+  --amber:#F5A623;
+  --warm:#C8A882;
+  --text:#1A1A1A;
+  --text-sec:#6B6560;
+  --text-ter:#A09890;
+  --border:#E0DCD4;
+  --fd:'Playfair Display',serif;
+  --fb:'Epilogue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--text);font-family:var(--fb);overflow-x:hidden}
+
+/* ── NOISE TEXTURE ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 56px;background:rgba(245,242,236,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.nav-logo span{color:var(--teal)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-link{font-size:13px;font-weight:500;color:var(--text-sec);text-decoration:none;transition:color .2s;letter-spacing:.02em}
+.nav-link:hover{color:var(--text)}
+.nav-cta{background:var(--ink);color:var(--paper);padding:10px 22px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;letter-spacing:.02em}
+.nav-cta:hover{background:var(--teal);transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:grid;grid-template-columns:1.2fr 0.8fr;gap:0;position:relative;padding-top:80px;align-items:center}
+.hero-left{padding:80px 56px 80px 56px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
+.hero-right{position:relative;display:flex;align-items:center;justify-content:center;padding:60px 40px;background:var(--paper2);border-left:1px solid var(--border)}
+.hero-right::after{display:none}
+
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:24px;position:relative}
+.hero-eyebrow::before{content:'';display:inline-block;width:28px;height:1.5px;background:var(--teal)}
+
+.hero-title{font-family:var(--fd);font-size:clamp(42px,5vw,72px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:24px;color:var(--ink)}
+.hero-title .line2{color:var(--teal);font-style:italic}
+.hero-title .line3{color:var(--text-sec);font-size:.7em}
+
+.hero-sub{font-size:17px;color:var(--text-sec);line-height:1.7;margin-bottom:40px;font-weight:300;max-width:460px}
+.hero-sub strong{color:var(--text);font-weight:600}
+
+.hero-photo{display:none}
+
+.hero-photo-wrap{position:relative;width:100%;height:100%}
+.hero-photo-overlay{position:absolute;bottom:0;left:0;right:0;padding:40px;background:linear-gradient(transparent,rgba(10,11,15,.9));color:var(--paper)}
+.hpo-name{font-family:var(--fd);font-size:28px;font-weight:700;margin-bottom:4px}
+.hpo-role{font-size:14px;color:rgba(245,242,236,.6);font-weight:300;letter-spacing:.05em}
+.hpo-stats{display:flex;gap:24px;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)}
+.hpo-stat{text-align:left}
+.hpo-stat-val{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--teal);line-height:1}
+.hpo-stat-lbl{font-size:11px;color:rgba(245,242,236,.5);margin-top:3px;font-weight:300}
+
+.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.btn-primary{background:var(--ink);color:var(--paper);padding:16px 36px;border-radius:100px;font-size:15px;font-weight:600;text-decoration:none;transition:all .25s;letter-spacing:.02em;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--teal);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,196,140,.25)}
+.btn-secondary{background:transparent;color:var(--text);padding:16px 28px;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all .25s;border:1.5px solid var(--border);display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:var(--ink);background:var(--paper2)}
+
+/* ── SECTION COMMUNE ── */
+.section{padding:100px 56px;position:relative;z-index:1}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-tag::before{content:'';display:inline-block;width:20px;height:1.5px;background:var(--teal)}
+.section-title{font-family:var(--fd);font-size:clamp(32px,4vw,52px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px;color:var(--ink)}
+.section-sub{font-size:16px;color:var(--text-sec);line-height:1.7;font-weight:300;max-width:600px}
+
+/* ── LE CONCEPT ── */
+.concept{background:var(--ink);color:var(--paper)}
+.concept .section-title{color:var(--paper)}
+.concept .section-sub{color:rgba(245,242,236,.6)}
+.concept .section-tag{color:var(--teal)}
+.concept .section-tag::before{background:var(--teal)}
+
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:56px;align-items:start}
+.concept-text{}
+.concept-flow{display:flex;flex-direction:column;gap:0}
+
+.flow-step{display:flex;gap:20px;position:relative;padding-bottom:28px}
+.flow-step:last-child{padding-bottom:0}
+.flow-step::before{content:'';position:absolute;left:20px;top:44px;bottom:0;width:1px;background:rgba(255,255,255,.08)}
+.flow-step:last-child::before{display:none}
+.flow-num{width:40px;height:40px;border-radius:50%;background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.flow-content{}
+.flow-title{font-size:15px;font-weight:700;color:var(--paper);margin-bottom:4px}
+.flow-text{font-size:13px;color:rgba(245,242,236,.55);line-height:1.6}
+.flow-tag{display:inline-flex;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(0,196,140,.12);border:1px solid rgba(0,196,140,.25);color:var(--teal);margin-top:6px}
+
+/* ── OFFRES ── */
+.offres-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.offre-card{background:var(--paper2);border:1px solid var(--border);border-radius:20px;padding:32px;transition:all .3s;position:relative;overflow:hidden}
+.offre-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--border);transition:background .3s}
+.offre-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.08);border-color:var(--teal)}
+.offre-card:hover::before{background:var(--teal)}
+.offre-card.featured{background:var(--ink);border-color:var(--ink)}
+.offre-card.featured .offre-icon-bg{background:rgba(0,196,140,.15);border-color:rgba(0,196,140,.3)}
+.offre-card.featured .offre-name{color:var(--paper)}
+.offre-card.featured .offre-price{color:var(--teal)}
+.offre-card.featured .offre-period{color:rgba(245,242,236,.4)}
+.offre-card.featured .offre-desc{color:rgba(245,242,236,.55)}
+.offre-card.featured .offre-feat{color:rgba(245,242,236,.7)}
+.offre-card.featured .offre-feat::before{color:var(--teal)}
+.offre-card.featured::before{background:var(--teal)}
+
+.offre-icon-bg{width:48px;height:48px;border-radius:14px;background:var(--paper);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px}
+.offre-badge{display:inline-flex;background:var(--teal);color:var(--ink);font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.05em;margin-bottom:12px}
+.offre-name{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.offre-price{font-family:var(--fd);font-size:36px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:2px;letter-spacing:-1px}
+.offre-price .currency{font-size:20px;vertical-align:top;margin-top:6px;display:inline-block}
+.offre-period{font-size:12px;color:var(--text-ter);margin-bottom:20px}
+.offre-desc{font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:20px;font-weight:300;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.offre-card.featured .offre-desc{border-color:rgba(255,255,255,.08)}
+.offre-feats{display:flex;flex-direction:column;gap:8px}
+.offre-feat{font-size:13px;color:var(--text-sec);display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.offre-feat::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0;margin-top:1px}
+.offre-cta{display:block;text-align:center;margin-top:24px;padding:13px;border-radius:100px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s}
+.cta-dark{background:var(--ink);color:var(--paper)}
+.cta-dark:hover{background:var(--teal)}
+.cta-teal{background:var(--teal);color:var(--ink)}
+.cta-teal:hover{background:var(--teal-dark);color:var(--paper)}
+.cta-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.cta-outline:hover{border-color:var(--ink)}
+
+/* ── PROOF — LIVE STATS ── */
+.proof{background:var(--paper2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.proof-inner{max-width:1200px;margin:0 auto}
+.proof-title{font-family:var(--fd);font-size:clamp(28px,3vw,42px);font-weight:900;letter-spacing:-.5px;margin-bottom:8px}
+.proof-sub{font-size:15px;color:var(--text-sec);font-weight:300;margin-bottom:48px}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:48px}
+.stat-card{background:var(--paper);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;transition:all .3s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.06)}
+.stat-val{font-family:var(--fd);font-size:42px;font-weight:900;line-height:1;color:var(--ink);margin-bottom:4px}
+.stat-val.teal{color:var(--teal)}
+.stat-val.amber{color:var(--amber)}
+.stat-label{font-size:12px;color:var(--text-ter);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.stat-trend{font-size:11px;color:var(--teal);font-weight:600;margin-top:6px}
+
+/* LIVE TICKER */
+.ticker-wrap{overflow:hidden;white-space:nowrap;border-top:1px solid var(--border);padding:14px 0}
+.ticker{display:inline-block;animation:ticker 30s linear infinite}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;margin-right:60px;font-size:13px;color:var(--text-sec)}
+.ticker-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── COMMENT ÇA MARCHE ── */
+.comment{background:var(--paper)}
+.comment-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:56px;background:var(--border);border-radius:20px;overflow:hidden}
+.comment-step{background:var(--paper);padding:40px 32px;transition:background .2s}
+.comment-step:hover{background:var(--paper2)}
+.cs-num{font-family:var(--fd);font-size:64px;font-weight:900;color:var(--border);line-height:1;margin-bottom:16px}
+.cs-icon{font-size:28px;margin-bottom:14px;display:block}
+.cs-title{font-size:18px;font-weight:700;margin-bottom:8px;color:var(--ink)}
+.cs-text{font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300}
+.cs-pill{display:inline-flex;margin-top:10px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(0,196,140,.1);color:var(--teal)}
+
+/* ── EXEMPLE CONCRET ── */
+.exemple{background:var(--ink);color:var(--paper)}
+.exemple .section-title{color:var(--paper)}
+.exemple .section-sub{color:rgba(245,242,236,.55)}
+
+.exemple-scenario{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;margin-top:48px}
+.es-header{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.08)}
+.es-av{width:52px;height:52px;border-radius:50%;object-fit:cover;filter:grayscale(30%)}
+.es-info .es-name{font-size:16px;font-weight:700;color:var(--paper);margin-bottom:2px}
+.es-info .es-role{font-size:13px;color:rgba(245,242,236,.45)}
+.es-flow{display:flex;flex-direction:column;gap:12px}
+.es-msg{display:flex;gap:14px;align-items:flex-start}
+.es-msg-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.es-msg-bubble{padding:12px 16px;border-radius:0 14px 14px 14px;font-size:13px;line-height:1.5;max-width:80%}
+.bubble-jpr{background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.2);color:rgba(245,242,236,.9)}
+.bubble-pro{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(245,242,236,.7);border-radius:14px 0 14px 14px;margin-left:auto}
+.bubble-pro-wrap{display:flex;justify-content:flex-end}
+.es-result{background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:12px;padding:16px 20px;margin-top:8px;display:flex;align-items:center;gap:12px}
+.esr-icon{font-size:22px;flex-shrink:0}
+.esr-text{font-size:13px;color:rgba(245,242,236,.8);line-height:1.5}
+.esr-amount{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--teal);margin-left:auto;flex-shrink:0}
+
+/* ── EVENEMENTS ── */
+.events{background:var(--paper2);border-top:1px solid var(--border)}
+.events-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:48px}
+.event-card{background:var(--paper);border:1px solid var(--border);border-radius:16px;padding:28px;display:flex;gap:20px;transition:all .3s;cursor:pointer}
+.event-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.07);border-color:var(--teal)}
+.event-date{flex-shrink:0;text-align:center}
+.ed-day{font-family:var(--fd);font-size:32px;font-weight:900;color:var(--teal);line-height:1}
+.ed-month{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter)}
+.event-info{}
+.ei-title{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.ei-desc{font-size:13px;color:var(--text-sec);line-height:1.5;margin-bottom:10px;font-weight:300}
+.ei-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ei-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--paper2);border:1px solid var(--border);color:var(--text-sec)}
+
+/* ── FAQ ── */
+.faq{background:var(--paper)}
+.faq-list{margin-top:48px;display:flex;flex-direction:column;gap:0;border-top:1px solid var(--border)}
+.faq-item{border-bottom:1px solid var(--border);overflow:hidden}
+.faq-q{padding:24px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:16px}
+.faq-q-text{font-size:16px;font-weight:600;color:var(--ink);flex:1}
+.faq-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-sec);transition:all .3s;flex-shrink:0}
+.faq-item.open .faq-icon{background:var(--ink);border-color:var(--ink);color:var(--paper);transform:rotate(45deg)}
+.faq-a{font-size:14px;color:var(--text-sec);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-weight:300}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:24px}
+
+/* ── CTA FINAL ── */
+.cta-final{background:var(--ink);color:var(--paper);text-align:center;padding:120px 56px}
+.cf-title{font-family:var(--fd);font-size:clamp(36px,5vw,64px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px}
+.cf-title span{color:var(--teal);font-style:italic}
+.cf-sub{font-size:17px;color:rgba(245,242,236,.55);font-weight:300;margin-bottom:48px;line-height:1.7}
+.cf-actions{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+
+/* ── FOOTER ── */
+.footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:40px 56px;display:flex;align-items:center;justify-content:space-between;color:rgba(245,242,236,.35);font-size:13px}
+.footer-logo{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--teal)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .nav{padding:16px 24px}
+  .nav-links{display:none}
+  .hero{grid-template-columns:1fr;min-height:auto;padding-top:80px}
+  .hero-left{padding:48px 24px 32px}
+  .hero-right{height:auto;padding:40px 24px;border-left:none;border-top:1px solid var(--border)}
+  .section{padding:64px 24px}
+  .concept-grid{grid-template-columns:1fr}
+  .offres-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .comment-steps{grid-template-columns:1fr}
+  .events-grid{grid-template-columns:1fr}
+  .cta-final{padding:80px 24px}
+  .footer{flex-direction:column;gap:12px;text-align:center;padding:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Jean-Philippe <span>Roth</span></div>
+  <div class="nav-links">
+    <a href="#concept" class="nav-link">Le concept</a>
+    <a href="#offres" class="nav-link">Offres</a>
+    <a href="#resultats" class="nav-link">Résultats</a>
+    <a href="#evenements" class="nav-link">Événements</a>
+  </div>
+  <a href="#contact" class="nav-cta">Travailler ensemble →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left fade-up visible">
+    <div class="hero-eyebrow">Apporteur de clients · Dax & région</div>
+    <h1 class="hero-title">
+      Je trouve<br>
+      <span class="line2">vos clients.</span><br>
+      <span class="line3">Vous payez si ça signe.</span>
+    </h1>
+    <p class="hero-sub">
+      Chaque jour, j'envoie <strong>50 messages ciblés</strong> à des professionnels de votre secteur. 3 mois à la commission pour que vous voyiez les résultats. Ensuite <strong>149€/mois</strong> pour que le réseau continue de travailler pour vous — indéfiniment. Simple. Transparent. Sans surprise.
+    </p>
+    <div class="hero-actions">
+      <a href="#offres" class="btn-primary">Voir mes offres →</a>
+      <a href="#concept" class="btn-secondary">Comment ça marche</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-photo-wrap">
+      <img class="hero-photo" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=85&fit=crop&crop=face" alt="Jean-Philippe Roth">
+      <div style="position:relative">
+        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=85&fit=crop&crop=face" alt="Jean-Philippe Roth" style="width:220px;height:220px;border-radius:50%;object-fit:cover;object-position:top;border:4px solid var(--paper);box-shadow:0 20px 60px rgba(0,0,0,.15);display:block">
+        <div style="position:absolute;bottom:8px;right:8px;width:36px;height:36px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(0,196,140,.4)">✓</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:4px">Jean-Philippe Roth</div>
+        <div style="font-size:13px;color:var(--text-sec);font-weight:400;margin-bottom:20px">Coach business · Fondateur Popey · Dax</div>
+        <div style="display:flex;justify-content:center;gap:20px">
+          <div style="text-align:center">
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--teal);line-height:1" id="msgCount">0</div>
+            <div style="font-size:10px;color:var(--text-ter);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-top:3px">Messages</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--ink);line-height:1" id="repCount">0</div>
+            <div style="font-size:10px;color:var(--text-ter);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-top:3px">Réponses</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--amber);line-height:1" id="dealCount">0</div>
+            <div style="font-size:10px;color:var(--text-ter);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-top:3px">Deals</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px 20px;width:100%">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Utilisateur #1 de Popey</div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.5;font-weight:300">Je prouve chaque jour que la méthode fonctionne — sur moi-même, avant de la proposer à mes clients.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Sophie M. (Ostéo · Dax) a rejoint le réseau</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Nouveau deal signé — Coach sportif recommandé à un nutritionniste · +180€</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Thomas K. (Notaire · Dax) — premier client transmis</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Commission versée · 3 recommandations abouties cette semaine</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Marc D. (Expert-comptable) — accord à 10% par client signé</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Réseau actif · 47 professionnels dans le secteur de Dax</span>
+    <!-- Repeat for seamless loop -->
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Sophie M. (Ostéo · Dax) a rejoint le réseau</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Nouveau deal signé — Coach sportif recommandé à un nutritionniste · +180€</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Thomas K. (Notaire · Dax) — premier client transmis</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Commission versée · 3 recommandations abouties cette semaine</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Marc D. (Expert-comptable) — accord à 10% par client signé</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Réseau actif · 47 professionnels dans le secteur de Dax</span>
+  </div>
+</div>
+
+<!-- LE CONCEPT -->
+<section class="section concept" id="concept">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="concept-grid">
+      <div class="concept-text fade-up">
+        <div class="section-tag">Le concept</div>
+        <h2 class="section-title">Votre réseau travaille.<br>Vous signez.</h2>
+        <p class="section-sub" style="margin-bottom:32px">Je suis à la fois coach business et fondateur de Popey, la plateforme d'apport d'affaires. J'utilise mes propres outils pour construire un réseau de synergies entre professionnels locaux — et je prouve en direct que ça marche.</p>
+        <p class="section-sub" style="margin-bottom:32px">Le principe est simple : <strong style="color:var(--paper)">je vous trouve des clients</strong> via mon réseau. En échange, vous me transmettez les clients que vous avez signés et qui pourraient avoir besoin d'un autre professionnel après vous. Tout le monde recommande, tout le monde gagne.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;color:var(--teal)">Zéro risque financier</div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;color:rgba(245,242,236,.6)">Payable uniquement si ça signe</div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;color:rgba(245,242,236,.6)">Réseau local Dax et région</div>
+        </div>
+      </div>
+      <div class="concept-flow fade-up">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-content">
+            <div class="flow-title">J'identifie les meilleures synergies pour votre métier</div>
+            <div class="flow-text">Grâce à Popey et à l'IA, j'analyse votre activité et trouve les 5 à 8 métiers qui voient vos clients avant ou après vous — courtiers, notaires, ostéos, coachs... Je vous présente en leur nom dès le 1er message.</div>
+            <span class="flow-tag">IA · Mode Radar Popey</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-content">
+            <div class="flow-title">50 messages ciblés par jour — personnalisés par métier</div>
+            <div class="flow-text">Chaque message cite les professionnels que je représente, leurs spécialités, leurs sites web. Le destinataire sait exactement à qui il a affaire avant de répondre. Pas un message générique — une vraie présentation.</div>
+            <span class="flow-tag">50 messages · 8% de taux de réponse moyen</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-content">
+            <div class="flow-title">La réciprocité s'enclenche naturellement</div>
+            <div class="flow-text">Quand quelqu'un reçoit un client recommandé, il se sent redevable — c'est de la psychologie humaine de base. Il envoie naturellement des clients en retour. Je surveille cet équilibre et je relance si nécessaire pour que personne ne soit lésé.</div>
+            <span class="flow-tag">Je suis le garant de l'équité dans le réseau</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-content">
+            <div class="flow-title">Commissions adaptées à chaque sphère — jamais excessives</div>
+            <div class="flow-text">3 mois à la commission pour prouver la valeur — puis 149€/mois pour que le réseau tourne indéfiniment. Santé : 10% · Digital : 5% · Habitat : 0,5% prix vente · Événementiel : 8% · Finance : 5%.</div>
+            <span class="flow-tag">Payable uniquement sur deals signés</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOULEUR + VALEUR -->
+<section class="section proof" id="resultats">
+  <div class="proof-inner" style="max-width:1200px;margin:0 auto">
+
+    <!-- DOULEUR -->
+    <div class="fade-up" style="margin-bottom:64px">
+      <div class="section-tag">Ce que vous vivez sans doute</div>
+      <h2 class="proof-title" style="max-width:700px">Vous êtes excellent dans votre métier.<br>Mais trouver des clients<br><span style="color:var(--teal)">vous prend un temps fou.</span></h2>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px">
+
+        <div style="background:var(--paper);border:1.5px solid #FFD0D0;border-radius:16px;padding:24px;position:relative">
+          <div style="font-size:28px;margin-bottom:12px">😮‍💨</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px">Trouver de nouveaux clients est épuisant</div>
+          <div style="font-size:13px;color:var(--text-sec);line-height:1.7;font-weight:300">Vous passez des heures sur LinkedIn, Instagram, des groupes Facebook. Vous relancez des anciens clients. Vous assistez à des networking où tout le monde cherche sans personne ne donne. Et au final, votre carnet de commandes reste imprévisible.</div>
+        </div>
+
+        <div style="background:var(--paper);border:1.5px solid #FFD0D0;border-radius:16px;padding:24px">
+          <div style="font-size:28px;margin-bottom:12px">🕐</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px">Contacter 50 personnes par jour ? Impossible seul.</div>
+          <div style="font-size:13px;color:var(--text-sec);line-height:1.7;font-weight:300">Trouver les bons contacts, rédiger un message pertinent pour chaque métier, gérer les réponses, relancer, prendre les appels de qualification… C'est un travail à plein temps. Que vous n'avez pas le temps de faire en plus de votre activité principale.</div>
+        </div>
+
+        <div style="background:var(--paper);border:1.5px solid #FFD0D0;border-radius:16px;padding:24px">
+          <div style="font-size:28px;margin-bottom:12px">🔄</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px">Vos confrères vous envoient rarement des clients spontanément</div>
+          <div style="font-size:13px;color:var(--text-sec);line-height:1.7;font-weight:300">Vous connaissez des ostéos, des coachs, des comptables. Vous savez que vos clients pourraient avoir besoin d'eux — et réciproquement. Mais personne n'a mis en place un système pour que ça se fasse vraiment et régulièrement.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SÉPARATEUR -->
+    <div class="fade-up" style="text-align:center;margin-bottom:64px">
+      <div style="display:inline-flex;align-items:center;gap:16px;font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--ink)">
+        <div style="height:2px;width:60px;background:var(--teal)"></div>
+        Ce que j'apporte à la place
+        <div style="height:2px;width:60px;background:var(--teal)"></div>
+      </div>
+    </div>
+
+    <!-- VALEUR CONCRÈTE -->
+    <div class="fade-up" style="margin-bottom:64px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📨</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">50 messages WhatsApp personnalisés par jour</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Je contacte chaque jour des professionnels complémentaires à votre métier. Chaque message cite votre nom, votre spécialité, votre zone. Pas un copié-collé — une vraie présentation. <strong style="color:var(--text)">Vous n'avez strictement rien à faire.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : 3 à 4h par jour</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤝</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Des partenaires recrutés et activés pour vous</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Je ne vous donne pas une liste de contacts — je vais les chercher, je fais les présentations, je gère les premiers échanges et je vous les présente prêts à recommander. <strong style="color:var(--text)">Vous intervenez seulement pour valider l'accord.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : 5 à 8h de prospection par partenaire</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Je surveille que vous recevez autant que vous donnez</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Sans suivi, les réseaux meurent en 3 mois — toujours les mêmes qui donnent, les mêmes qui prennent. Je surveille les flux, je relance ceux qui ne rendent pas. <strong style="color:var(--text)">Vous êtes protégé de l'asymétrie.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : impossible à faire seul sans outil dédié</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📊</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Un compte-rendu bihebdomadaire complet</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Qui a été contacté, qui a répondu, quels partenaires sont actifs, combien de recommandations sont parties, lesquelles ont abouti. <strong style="color:var(--text)">Vous avez une visibilité totale sur votre réseau.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : 2h de reporting par semaine</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">☕</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Des rencontres physiques organisées</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Cafés réseau, déjeuners synergies, webinaires mensuels. J'organise, j'invite, j'anime. Vous venez juste rencontrer des gens qui peuvent vous envoyer des clients. <strong style="color:var(--text)">Pas de préparation, pas de logistique.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : 4 à 6h d'organisation par événement</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,rgba(0,196,140,.06),var(--paper));border:1.5px solid rgba(0,196,140,.3);border-radius:16px;padding:28px;display:flex;gap:16px;align-items:flex-start">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,196,140,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔁</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Le réseau grossit chaque semaine sans vous</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300">Je recrute en continu de nouveaux métiers dans votre sphère. Plus le réseau est grand, plus les recommandations circulent. Votre retour sur investissement augmente chaque mois <strong style="color:var(--text)">sans effort supplémentaire de votre part.</strong></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)">⏱ Ce que ça vous aurait coûté seul : 1h à 2h de prospection par jour, indéfiniment</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CALCUL ROI -->
+    <div class="fade-up">
+      <div style="background:var(--ink);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:12px">Le calcul qui convainc</div>
+          <h3 style="font-family:var(--fd);font-size:clamp(24px,3vw,38px);font-weight:900;color:var(--paper);line-height:1.05;margin-bottom:16px">149€/mois.<br>Combien ça vaut<br><span style="color:var(--teal)">vraiment ?</span></h3>
+
+          <!-- RAPPEL PHASES -->
+          <div style="background:rgba(0,196,140,.1);border:1.5px solid rgba(0,196,140,.35);border-radius:12px;padding:14px 18px;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:8px">🌱 Et les 3 premiers mois ?</div>
+            <div style="font-size:13px;color:rgba(245,242,236,.75);line-height:1.6">
+              <strong style="color:var(--paper)">Tout ce travail — les 80h/mois — est fourni gratuitement pendant 3 mois.</strong><br>
+              Vous ne payez que sur les deals signés. Pas de fixe, pas de risque.<br>
+              Les 149€/mois ne commencent qu'au 4e mois, une fois que vous avez vu les résultats.
+            </div>
+          </div>
+
+          <p style="font-size:14px;color:rgba(245,242,236,.55);line-height:1.7;font-weight:300">Ce que vous achetez pour 149€/mois à partir du 4e mois, c'est entre 80 et 120 heures de travail mensuel si vous deviez tout faire vous-même. Au tarif d'un commercial junior en freelance (35€/h minimum), c'est 2 800 à 4 200€ de valeur mensuelle.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:rgba(245,242,236,.6)">50 messages/jour × 22 jours</span>
+            <span style="font-size:13px;font-weight:700;color:var(--paper)">~ 40h/mois</span>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:rgba(245,242,236,.6)">Gestion des réponses + calls</span>
+            <span style="font-size:13px;font-weight:700;color:var(--paper)">~ 20h/mois</span>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:rgba(245,242,236,.6)">Suivi réseau + reporting</span>
+            <span style="font-size:13px;font-weight:700;color:var(--paper)">~ 12h/mois</span>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:rgba(245,242,236,.6)">Organisation événements</span>
+            <span style="font-size:13px;font-weight:700;color:var(--paper)">~ 8h/mois</span>
+          </div>
+          <div style="background:rgba(0,196,140,.12);border:1.5px solid rgba(0,196,140,.4);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;font-weight:700;color:var(--teal)">Total heures économisées</span>
+            <span style="font-family:var(--fd);font-size:24px;font-weight:900;color:var(--teal)">~80h/mois</span>
+          </div>
+          <div style="background:rgba(0,196,140,.06);border:1px solid rgba(0,196,140,.2);border-radius:12px;padding:12px 16px;text-align:center">
+            <span style="font-size:12px;color:rgba(245,242,236,.5)">Vous payez </span>
+            <span style="font-size:16px;font-weight:700;color:var(--teal)">149€/mois</span>
+            <span style="font-size:12px;color:rgba(245,242,236,.5)"> pour 80h de travail → </span>
+            <span style="font-size:16px;font-weight:700;color:var(--paper)">1,86€/heure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS LIVE -->
+    <div class="stats-row fade-up" style="margin-top:40px">
+      <div class="stat-card">
+        <div class="stat-val teal" id="stat1">0</div>
+        <div class="stat-label">Messages envoyés ce mois</div>
+        <div class="stat-trend">↑ 50 / jour · en mon nom propre</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat2">0</div>
+        <div class="stat-label">Professionnels dans le réseau</div>
+        <div class="stat-trend">↑ +3 cette semaine</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val amber" id="stat3">0</div>
+        <div class="stat-label">Recommandations transmises</div>
+        <div class="stat-trend">↑ Ce mois</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val teal" id="stat4">0%</div>
+        <div class="stat-label">Taux de réponse moyen</div>
+        <div class="stat-trend">Objectif : 8%</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COMMENT ÇA MARCHE -->
+<section class="section comment" id="fonctionnement">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="section-tag" style="justify-content:center">Fonctionnement</div>
+      <h2 class="section-title">En 3 étapes, votre téléphone<br>commence à sonner.</h2>
+    </div>
+    <div class="comment-steps fade-up">
+      <div class="comment-step">
+        <div class="cs-num">01</div>
+        <span class="cs-icon">🤝</span>
+        <div class="cs-title">On définit l'accord</div>
+        <div class="cs-text">On discute de votre métier, de votre zone, de votre ticket moyen. Je calcule le pourcentage de commission qui a du sens — pour vous et pour moi. Vous validez, c'est lancé. Pas de contrat complexe.</div>
+        <span class="cs-pill">30 min · WhatsApp ou visio</span>
+      </div>
+      <div class="comment-step">
+        <div class="cs-num">02</div>
+        <span class="cs-icon">⚡</span>
+        <div class="cs-title">J'active votre réseau</div>
+        <div class="cs-text">Je cible les métiers complémentaires au vôtre dans votre zone. J'envoie des messages personnalisés, je gère les échanges, je qualifie les intérêts. Vous ne faites rien — vous attendez une recommandation concrète.</div>
+        <span class="cs-pill">Dès J+2 · Entièrement géré</span>
+      </div>
+      <div class="comment-step">
+        <div class="cs-num">03</div>
+        <span class="cs-icon">💰</span>
+        <div class="cs-title">Vous signez, vous payez</div>
+        <div class="cs-text">Je vous transmets un contact qualifié. Vous le rencontrez, vous faites votre métier. Si ça signe, vous me versez la commission convenue. Si ça ne signe pas, vous ne devez rien. Aussi simple que ça.</div>
+        <span class="cs-pill">0 risque · Commission sur résultats</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXEMPLE CONCRET -->
+<section class="section exemple">
+  <div style="max-width:900px;margin:0 auto">
+    <div class="fade-up">
+      <div class="section-tag">Exemple concret</div>
+      <h2 class="section-title">Un échange WhatsApp.<br>Un deal pour tout le monde.</h2>
+      <p class="section-sub">Voici exactement comment une conversation se déroule et comment les commissions se distribuent.</p>
+    </div>
+    <div class="exemple-scenario fade-up">
+      <div class="es-header">
+        <div class="es-av" style="background:rgba(0,196,140,.2);color:var(--teal);font-family:var(--fd);font-size:16px;font-weight:700;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center">JPR</div>
+        <div class="es-info">
+          <div class="es-name">Jean-Philippe → Sophie (Ostéopathe · Dax)</div>
+          <div class="es-role">Lundi 9h14 · WhatsApp · Message Mode Radar</div>
+        </div>
+      </div>
+      <div class="es-flow">
+
+        <!-- MSG 1 — JPR se présente avec ses clients -->
+        <div class="es-msg">
+          <div class="es-msg-av" style="background:rgba(0,196,140,.15);color:#00C48C;font-size:10px">JPR</div>
+          <div class="es-msg-bubble bubble-jpr">
+            Bonjour Sophie, je suis Jean-Philippe, je représente <strong style="color:rgba(0,196,140,.9)">Nicole</strong> (nutritionniste à Dax) et <strong style="color:rgba(0,196,140,.9)">Antonin</strong> (coach sportif à Saint-Paul) qui cherchent à se faire connaître.<br><br>
+            Si vos patients cherchent parfois à reprendre une activité, perdre du poids ou gérer leur stress — on serait ravis de les accueillir.<br><br>
+            Si vous nous les recommandez, Nicole et Antonin reversent <strong style="color:rgba(0,196,140,.9)">10% sur chaque accompagnement signé</strong>. Mais surtout, ils vous envoient leurs clients qui ont besoin d'un ostéo — dans l'autre sens aussi.<br><br>
+            <span style="opacity:.7;font-size:12px">PS : voici leurs sites → nicole-nutritionniste.fr · antonin-coach.fr</span><br><br>
+            On peut s'appeler si vous avez 5 minutes ?
+          </div>
+        </div>
+
+        <!-- MSG 2 — Sophie répond positivement -->
+        <div class="bubble-pro-wrap">
+          <div class="es-msg-bubble bubble-pro">
+            Oui pourquoi pas ! J'ai justement une patiente qui m'a parlé de vouloir reprendre le sport après sa grossesse ce matin ! 😊
+          </div>
+        </div>
+
+        <!-- MSG 3 — JPR conclut -->
+        <div class="es-msg">
+          <div class="es-msg-av" style="background:rgba(0,196,140,.15);color:#00C48C;font-size:10px">JPR</div>
+          <div class="es-msg-bubble bubble-jpr">
+            Ça tombe à pic ! 🎯<br>
+            Demain 10h on organise tout ça ?
+          </div>
+        </div>
+
+        <!-- MSG 4 — Sophie OK -->
+        <div class="bubble-pro-wrap">
+          <div class="es-msg-bubble bubble-pro">
+            Ok 👍
+          </div>
+        </div>
+
+        <div class="es-result">
+          <span class="esr-icon">🎯</span>
+          <div class="esr-text"><strong style="color:rgba(245,242,236,.9)">Le lendemain 10h</strong> — la patiente de Sophie est transmise à Antonin. Antonin signe un suivi de 3 mois. Sophie touche sa commission. Antonin envoie un de ses clients à Sophie. Le réseau tourne.</div>
+          <div class="esr-amount">+180€</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFRES -->
+<section class="section" id="offres" style="background:var(--paper)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center">
+      <div class="section-tag" style="justify-content:center">Mes offres</div>
+      <h2 class="section-title">Choisissez votre niveau<br>d'engagement.</h2>
+      <p class="section-sub" style="margin:0 auto 0;text-align:center">Trois façons de travailler ensemble — du plus flexible au plus complet. Toutes basées sur les résultats.</p>
+    </div>
+    <!-- PHASES TIMELINE -->
+    <div class="fade-up" style="margin-top:48px;margin-bottom:40px">
+      <div style="background:var(--paper2);border:1px solid var(--border);border-radius:20px;padding:28px 32px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-ter);text-align:center;margin-bottom:24px">Le modèle en 2 phases — universel pour tous</div>
+        <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:0;align-items:stretch">
+
+          <div style="padding:24px;background:var(--paper);border:1.5px solid var(--border);border-radius:16px 0 0 16px">
+            <div style="font-size:28px;margin-bottom:8px">🌱</div>
+            <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:4px">Mois 1 — 3</div>
+            <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:12px">Commission uniquement · Zéro fixe</div>
+            <div style="font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:14px;font-weight:300">Vous ne payez que sur les deals signés. Je prouve la valeur du réseau avant de vous demander quoi que ce soit.</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:12px;color:var(--text-sec)">🌿 Santé : <strong style="color:var(--ink)">10%</strong> par deal</div>
+              <div style="font-size:12px;color:var(--text-sec)">💻 Digital : <strong style="color:var(--ink)">5%</strong> par mission</div>
+              <div style="font-size:12px;color:var(--text-sec)">🏠 Habitat : <strong style="color:var(--ink)">0,5%</strong> du prix de vente</div>
+              <div style="font-size:12px;color:var(--text-sec)">💒 Événementiel : <strong style="color:var(--ink)">8%</strong> par contrat</div>
+              <div style="font-size:12px;color:var(--text-sec)">⚖️ Finance : <strong style="color:var(--ink)">5%</strong> par mission</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:var(--ink);font-weight:700;font-size:16px;box-shadow:0 4px 16px rgba(0,196,140,.3)">→</div>
+            <div style="font-size:9px;font-weight:700;color:var(--teal);text-align:center;letter-spacing:.06em">APRÈS<br>3 MOIS</div>
+          </div>
+
+          <div style="padding:24px;background:var(--ink);border:1.5px solid var(--ink);border-radius:0 16px 16px 0">
+            <div style="font-size:28px;margin-bottom:8px">🚀</div>
+            <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--paper);margin-bottom:4px">Mois 4+</div>
+            <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:12px">149€ / mois · Sans commission</div>
+            <div style="font-size:13px;color:rgba(245,242,236,.6);line-height:1.6;margin-bottom:14px;font-weight:300">Le réseau tourne. Je continue d'animer, de recruter et de garantir l'équilibre. Zéro commission.</div>
+            <div style="background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.2);border-radius:10px;padding:10px 12px;font-size:11px;color:rgba(245,242,236,.6);line-height:1.5">
+              <strong style="color:var(--teal)">Exception</strong> : Habitat &amp; Finance → <strong style="color:var(--teal)">149€ + 0,3%</strong> du deal.<br>
+              Ex : vente 250k€ → +750€. Justifié car ticket unitaire élevé.
+            </div>
+          </div>
+
+        </div>
+        <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-ter);font-style:italic">Règle universelle · Sans exception · Si vous sortez du réseau vous perdez l'accès aux nouveaux membres recrutés chaque semaine</div>
+      </div>
+    </div>
+
+    <div class="offres-grid fade-up">
+
+      <!-- OFFRE 1 — Phase Découverte -->
+      <div class="offre-card">
+        <div class="offre-icon-bg">🌱</div>
+        <div class="offre-name">Phase Découverte</div>
+        <div class="offre-price"><span class="currency">%</span> commission</div>
+        <div class="offre-period">Mois 1 à 3 · Zéro fixe · Pour tout nouveau membre</div>
+        <div class="offre-desc">Vous entrez dans le réseau. Je recrute des partenaires pour vous, gère les présentations et organise les premières mises en relation. Vous ne payez que quand ça signe.</div>
+        <div class="offre-feats">
+          <div class="offre-feat">Intégration dans le réseau Dax + région</div>
+          <div class="offre-feat">Recrutement actif de vos éclaireurs</div>
+          <div class="offre-feat">Messages personnalisés par métier</div>
+          <div class="offre-feat">Compte-rendu hebdomadaire WhatsApp</div>
+          <div class="offre-feat">Santé 10% · Digital 5% · Habitat 0,5% · Événementiel 8% · Finance 5%</div>
+          <div class="offre-feat">Passage automatique au forfait après 3 mois</div>
+        </div>
+        <a href="#contact" class="offre-cta cta-outline">Rejoindre le réseau →</a>
+      </div>
+
+      <!-- OFFRE 2 — Réseau Actif 149€ -->
+      <div class="offre-card featured">
+        <div class="offre-badge">Dès le 4e mois</div>
+        <div class="offre-icon-bg">🚀</div>
+        <div class="offre-name">Réseau Actif</div>
+        <div class="offre-price"><span class="currency">€</span>149<span style="font-size:20px;opacity:.5">/mois</span></div>
+        <div class="offre-period">Sans engagement · Résiliable · Zéro commission</div>
+        <div class="offre-desc">Le réseau est lancé, les synergies sont établies. Je continue d'animer, de recruter et de garantir que les échanges restent équilibrés dans les deux sens.</div>
+        <div class="offre-feats">
+          <div class="offre-feat">Animation mensuelle du réseau</div>
+          <div class="offre-feat">Recrutement continu de nouveaux métiers</div>
+          <div class="offre-feat">Café réseau mensuel Dax + région</div>
+          <div class="offre-feat">Compte-rendu bihebdomadaire détaillé</div>
+          <div class="offre-feat">Surveillance de l'équité — personne oublié</div>
+          <div class="offre-feat">Zéro commission (sauf exception Habitat/Finance)</div>
+        </div>
+        <a href="#contact" class="offre-cta cta-teal">Démarrer →</a>
+      </div>
+
+      <!-- OFFRE 3 — Grands Comptes -->
+      <div class="offre-card">
+        <div class="offre-icon-bg">👑</div>
+        <div class="offre-name">Grands Comptes</div>
+        <div class="offre-price"><span class="currency">€</span>149<span style="font-size:20px;opacity:.5"> + 0,3%</span></div>
+        <div class="offre-period">Habitat · Finance · Juridique · Gros tickets uniquement</div>
+        <div class="offre-desc">Pour les métiers à fort ticket unitaire — agent immo, notaire, CGP, avocat. Le forfait seul ne suffit pas à refléter la valeur d'une mise en relation sur 250 000€.</div>
+        <div class="offre-feats">
+          <div class="offre-feat">Tout le Réseau Actif inclus</div>
+          <div class="offre-feat">+ 0,3% du prix de vente ou de la transaction</div>
+          <div class="offre-feat">Sur les deals signés via le réseau uniquement</div>
+          <div class="offre-feat">Tracé via Popey — transparence totale</div>
+          <div class="offre-feat">Exemple : vente 250k€ → +750€</div>
+          <div class="offre-feat">Exemple : mission CGP 100k€ → +300€</div>
+        </div>
+        <a href="#contact" class="offre-cta cta-dark">Me contacter →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- EVENEMENTS -->
+<section class="section events" id="evenements">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up">
+      <div class="section-tag">Réseau & Événements</div>
+      <h2 class="section-title">Le réseau se construit<br>aussi en face-à-face.</h2>
+      <p class="section-sub">Je rassemble régulièrement les membres du réseau autour d'un café ou d'un déjeuner. L'occasion de créer des liens directs, d'échanger des recommandations, et de se connaître vraiment.</p>
+    </div>
+    <div class="events-grid fade-up">
+      <div class="event-card">
+        <div class="event-date">
+          <div class="ed-day">15</div>
+          <div class="ed-month">Mai 2026</div>
+        </div>
+        <div class="event-info">
+          <div class="ei-title">Café Réseau · Dax</div>
+          <div class="ei-desc">Rencontre informelle entre membres du réseau. Présentations croisées, échange de recommandations, et networking décontracté autour d'un café.</div>
+          <div class="ei-tags">
+            <span class="ei-tag">Gratuit membres</span>
+            <span class="ei-tag">Dax Centre</span>
+            <span class="ei-tag">10h → 12h</span>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-date">
+          <div class="ed-day">06</div>
+          <div class="ed-month">Juin 2026</div>
+        </div>
+        <div class="event-info">
+          <div class="ei-title">Déjeuner Synergies · Bayonne</div>
+          <div class="ei-desc">Format déjeuner structuré : chaque membre présente son activité et son profil client idéal. Objectif : repartir avec 3 contacts qualifiés minimum.</div>
+          <div class="ei-tags">
+            <span class="ei-tag">Membres Forfait+</span>
+            <span class="ei-tag">Bayonne</span>
+            <span class="ei-tag">12h → 14h</span>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-date">
+          <div class="ed-day">TBD</div>
+          <div class="ed-month">Mensuel</div>
+        </div>
+        <div class="event-info">
+          <div class="ei-title">Webinaire Réseau · En ligne</div>
+          <div class="ei-desc">Session mensuelle en ligne pour présenter les nouvelles synergies identifiées, les résultats du mois, et les opportunités en cours dans le réseau.</div>
+          <div class="ei-tags">
+            <span class="ei-tag">Tous membres</span>
+            <span class="ei-tag">En ligne · Zoom</span>
+            <span class="ei-tag">18h → 19h</span>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" style="border-style:dashed;cursor:pointer;background:transparent" onclick="this.querySelector('.ei-title').textContent='Demande reçue !'">
+        <div class="event-date">
+          <div class="ed-day" style="color:var(--text-ter)">?</div>
+          <div class="ed-month">Votre date</div>
+        </div>
+        <div class="event-info">
+          <div class="ei-title">Proposer un événement</div>
+          <div class="ei-desc">Vous voulez organiser un café réseau dans votre ville ou votre secteur ? Je co-anime avec vous et j'invite mes contacts locaux.</div>
+          <div class="ei-tags">
+            <span class="ei-tag" style="border-color:var(--teal);color:var(--teal)">Me contacter →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RÉCIPROCITÉ -->
+<section class="section" style="background:var(--ink);color:var(--paper)">
+  <div style="max-width:1000px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:56px">
+      <div class="section-tag" style="justify-content:center;color:var(--teal)">Le principe qui change tout</div>
+      <h2 class="section-title" style="color:var(--paper)">La réciprocité,<br>c'est <span style="color:var(--teal);font-style:italic">automatique.</span><br><span style="font-size:.6em;color:rgba(245,242,236,.45)">Je m'assure juste qu'elle fonctionne dans les deux sens.</span></h2>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px" class="fade-up">
+
+      <!-- La psychologie -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px">
+        <div style="font-size:32px;margin-bottom:16px">🧠</div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--paper);margin-bottom:12px">La psychologie derrière</div>
+        <p style="font-size:14px;color:rgba(245,242,236,.6);line-height:1.7;font-weight:300">
+          Quand vous envoyez un client à un confrère, il ne l'oublie pas. C'est ancré dans la psychologie humaine — le principe de <strong style="color:var(--paper)">réciprocité</strong> (Cialdini, 1984). La personne qui a reçu se sent obligée de rendre. Pas par contrat — par nature humaine.
+        </p>
+        <p style="font-size:14px;color:rgba(245,242,236,.6);line-height:1.7;font-weight:300;margin-top:12px">
+          Dans un réseau professionnel, ce phénomène est encore plus fort. Votre réputation est en jeu. <strong style="color:var(--teal)">On recommande quelqu'un qu'on estime.</strong> Et on lui renvoie l'ascenseur parce qu'on veut que cette estime soit réciproque.
+        </p>
+      </div>
+
+      <!-- Mon rôle -->
+      <div style="background:rgba(0,196,140,.06);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:32px">
+        <div style="font-size:32px;margin-bottom:16px">⚖️</div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--paper);margin-bottom:12px">Mon rôle : garant de l'équité</div>
+        <p style="font-size:14px;color:rgba(245,242,236,.6);line-height:1.7;font-weight:300">
+          Je suis le tiers de confiance qui s'assure que personne n'est lésé. Je surveille les flux de recommandations dans les deux sens. Si un partenaire reçoit sans donner en retour, je le rappelle à l'ordre.
+        </p>
+        <p style="font-size:14px;color:rgba(245,242,236,.6);line-height:1.7;font-weight:300;margin-top:12px">
+          <strong style="color:var(--teal)">C'est la valeur la plus difficile à trouver sur le marché :</strong> quelqu'un qui gère activement que les échanges soient équilibrés. Sans ça, les réseaux meurent en 3 mois parce que les mêmes donnent toujours et les mêmes reçoivent sans rendre.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Schéma flux -->
+    <div style="margin-top:32px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:32px" class="fade-up">
+      <div style="font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-bottom:24px;text-align:center">Exemple de flux — Sphère Santé · Dax</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;row-gap:16px">
+
+        <div style="text-align:center;min-width:110px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px">🥗</div>
+          <div style="font-size:12px;font-weight:700;color:var(--paper)">Nicole</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">Nutritionniste</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px">
+          <div style="font-size:10px;color:var(--teal);font-weight:600">envoie un patient</div>
+          <div style="font-size:20px;color:var(--teal)">→</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">+10% si signé</div>
+        </div>
+
+        <div style="text-align:center;min-width:110px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(155,143,255,.15);border:1px solid rgba(155,143,255,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px">🦴</div>
+          <div style="font-size:12px;font-weight:700;color:var(--paper)">Sophie</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">Ostéopathe</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px">
+          <div style="font-size:10px;color:var(--amber);font-weight:600">renvoie en retour</div>
+          <div style="font-size:20px;color:var(--amber)">→</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">+10% si signé</div>
+        </div>
+
+        <div style="text-align:center;min-width:110px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px">🏋️</div>
+          <div style="font-size:12px;font-weight:700;color:var(--paper)">Antonin</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">Coach sportif</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px">
+          <div style="font-size:10px;color:var(--teal);font-weight:600">boucle le cercle</div>
+          <div style="font-size:20px;color:var(--teal)">→</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">+10% si signé</div>
+        </div>
+
+        <div style="text-align:center;min-width:110px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px">🥗</div>
+          <div style="font-size:12px;font-weight:700;color:var(--paper)">Nicole</div>
+          <div style="font-size:10px;color:rgba(245,242,236,.4)">reçoit en retour</div>
+        </div>
+
+      </div>
+      <div style="text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:13px;color:rgba(245,242,236,.5);font-weight:300">JPR surveille chaque flux · relance si déséquilibre · garantit que personne n'est oublié</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section faq" id="faq">
+  <div style="max-width:800px;margin:0 auto">
+    <div class="fade-up" style="text-align:center">
+      <div class="section-tag" style="justify-content:center">Questions fréquentes</div>
+      <h2 class="section-title">Les vraies questions<br>que vous vous posez.</h2>
+    </div>
+    <div class="faq-list fade-up">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Comment êtes-vous sûr que vous trouverez des clients pour MON métier ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">La réponse honnête : je ne garantis rien à 100%. Mais deux choses jouent en votre faveur. D'abord, je prouve la méthode sur moi-même chaque jour avant de vous la proposer. Ensuite, le principe de réciprocité fait qu'une fois le réseau lancé, les recommandations circulent naturellement — je suis juste là pour m'assurer que l'équilibre est respecté. Et comme vous ne payez qu'à la signature, le risque financier est nul.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Quel pourcentage me proposez-vous ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Le modèle est en deux phases. Mois 1 à 3 : commission uniquement, zéro fixe. Santé : 10% par deal. Digital : 5% par mission. Habitat : 0,5% du prix de vente. Événementiel : 8% par contrat. Finance : 5% par mission. À partir du 4e mois : 149€/mois forfait fixe sans commission — sauf Habitat et Finance où on garde 149€ + 0,3% parce que le ticket unitaire est trop élevé pour l'ignorer.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Combien de temps avant de voir des résultats ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Les premiers contacts répondent généralement dans la première semaine. Les premières recommandations concrètes arrivent en 2 à 4 semaines selon votre secteur. Pour les métiers à cycle de vente long (immo, finance), comptez 6 à 8 semaines avant une signature. Pour les services à démarrage rapide (coach, sophrologie, kiné), parfois 48h suffisent.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Combien de messages envoyez-vous en mon nom ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Je n'envoie pas en votre nom — j'envoie en mon nom propre. Je me présente comme apporteur d'affaires et je propose une collaboration à des professionnels de votre secteur. Quand quelqu'un accepte, je vous transmets ses coordonnées et vous prenez le relais. C'est plus honnête et plus efficace.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Comment se passe le paiement des commissions ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Via Popey, la plateforme que j'ai créée. Quand vous confirmez qu'un client recommandé a signé, la commission est calculée automatiquement et prélevée via votre carte enregistrée. Un récapitulatif mensuel est généré automatiquement. Pour le forfait mensuel, un abonnement mensuel est prélevé le 1er du mois.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Puis-je rejoindre le réseau sans payer de forfait ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Oui, totalement. L'offre Apport d'Affaires est sans aucun fixe — vous ne payez qu'à la signature. C'est l'option la plus courante pour démarrer. Si les résultats sont là et que vous voulez plus de volume, on peut évoluer vers le forfait mensuel.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final" id="contact">
+  <div class="fade-up" style="max-width:800px;margin:0 auto">
+    <h2 class="cf-title">Prêt à recevoir<br>vos <span>premiers clients</span><br>cette semaine ?</h2>
+    <p class="cf-sub">3 mois à la commission — vous voyez les résultats. Puis 149€/mois pour rester dans le réseau. Un message suffit pour démarrer.</p>
+    <div class="cf-actions">
+      <a href="https://wa.me/33768233347?text=Bonjour%20Jean-Philippe%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20votre%20r%C3%A9seau%20d%27apport%20d%27affaires." class="btn-primary" style="font-size:16px;padding:18px 40px">💬 M'écrire sur WhatsApp →</a>
+      <a href="mailto:contact@popey.academy" class="btn-secondary" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:rgba(245,242,236,.7)">contact@popey.academy</a>
+    </div>
+    <p style="margin-top:32px;font-size:13px;color:rgba(245,242,236,.25)">Jean-Philippe Roth · Coach business · Fondateur Popey · Dax (40) · Popey Coffeeshop SAS</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Popey</div>
+  <div>© 2026 Popey Coffeeshop SAS — 9 Rue Sully, 40100 Dax — SIRET 995 014 388 00012</div>
+  <div><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none;margin-right:20px">CGV/CGU</a><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none">Mentions légales</a></div>
+</footer>
+
+<script>
+// ── COUNTER ANIMATIONS ──
+function animateCount(el, target, suffix='', duration=2000) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start += step;
+    if(start >= target) { el.textContent = target + suffix; clearInterval(timer); return; }
+    el.textContent = Math.floor(start) + suffix;
+  }, 16);
+}
+
+// Hero stats
+setTimeout(() => {
+  animateCount(document.getElementById('msgCount'), 1247);
+  animateCount(document.getElementById('repCount'), 89);
+  animateCount(document.getElementById('dealCount'), 12);
+}, 600);
+
+// Proof stats — trigger on scroll
+const proofStats = {
+  stat1: [850, ''],
+  stat2: [47, ''],
+  stat3: [23, ''],
+  stat4: [8, '%'],
+};
+
+// ── SCROLL ANIMATIONS ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Trigger stat counters when proof section visible
+      if(entry.target.closest('.proof')) {
+        Object.entries(proofStats).forEach(([id, [val, suf]]) => {
+          const el = document.getElementById(id);
+          if(el && el.textContent === '0' + suf) animateCount(el, val, suf);
+        });
+      }
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── FAQ ──
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>
