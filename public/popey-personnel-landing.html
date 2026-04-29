@@ -226,6 +226,65 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:40px 56px;display:flex;align-items:center;justify-content:space-between;color:rgba(245,242,236,.35);font-size:13px}
 .footer-logo{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--teal)}
 
+
+/* ── CLUB EXCLUSIVITÉ ── */
+.club-section{background:var(--ink);color:var(--paper);padding:100px 56px}
+.spheres-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:48px}
+.sphere-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:24px 16px;text-align:center;transition:all .3s;cursor:default;
+  position:relative;overflow:hidden}
+.sphere-card:hover{background:rgba(255,255,255,.07);transform:translateY(-4px)}
+.sphere-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc-sante::before{background:linear-gradient(90deg,#00C48C,#00A070)}
+.sc-digital::before{background:linear-gradient(90deg,#4FC3F7,#0288D1)}
+.sc-habitat::before{background:linear-gradient(90deg,#F5A623,#E8961A)}
+.sc-mariage::before{background:linear-gradient(90deg,#F48FB1,#C2185B)}
+.sc-finance::before{background:linear-gradient(90deg,#9B8FFF,#7B5EA7)}
+.sc-icon{font-size:32px;margin-bottom:12px;display:block}
+.sc-name{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--paper);margin-bottom:8px}
+.sc-count{font-size:11px;color:rgba(245,242,236,.4);margin-bottom:14px}
+.sc-metiers{display:flex;flex-direction:column;gap:4px}
+.sc-metier{font-size:10px;padding:3px 0;color:rgba(245,242,236,.55);
+  border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between}
+.sc-metier:last-child{border-bottom:none}
+.sc-dispo{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sc-dispo.ok{background:#00C48C}
+.sc-dispo.taken{background:rgba(255,255,255,.2)}
+.sc-badge{display:inline-flex;background:rgba(0,196,140,.12);border:1px solid rgba(0,196,140,.25);
+  border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--teal);margin-top:12px}
+
+/* ── RECO GÉRÉE ── */
+.reco-section{background:var(--paper2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:100px 56px}
+.reco-flow{display:grid;grid-template-columns:1fr 48px 1fr 48px 1fr;gap:0;align-items:center;margin-top:48px}
+.rf-step{background:var(--paper);border:1.5px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.rf-step.highlight{background:var(--ink);border-color:var(--ink)}
+.rf-icon{font-size:28px;margin-bottom:10px;display:block}
+.rf-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.rf-title.light{color:var(--paper)}
+.rf-text{font-size:12px;color:var(--text-sec);line-height:1.5;font-weight:300}
+.rf-text.light{color:rgba(245,242,236,.55)}
+.rf-arrow{text-align:center;font-size:22px;color:var(--teal)}
+.rf-time{display:inline-flex;margin-top:10px;font-size:10px;font-weight:700;
+  padding:3px 10px;border-radius:20px;background:rgba(0,196,140,.1);color:var(--teal)}
+.charte-box{background:var(--paper);border:2px solid var(--ink);border-radius:20px;
+  padding:36px;margin-top:48px;position:relative}
+.charte-box::before{content:'CHARTE DU MEMBRE';position:absolute;top:-12px;left:32px;
+  background:var(--ink);color:var(--paper);padding:4px 16px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:.08em}
+.charte-items{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.charte-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-sec);line-height:1.5}
+.charte-check{width:20px;height:20px;border-radius:6px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--paper);
+  flex-shrink:0;margin-top:2px}
+
+@media(max-width:900px){
+  .spheres-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .reco-flow{grid-template-columns:1fr;gap:12px}
+  .rf-arrow{transform:rotate(90deg)}
+  .charte-items{grid-template-columns:1fr}
+  .club-section{padding:64px 24px}
+  .reco-section{padding:64px 24px}
+}
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .fade-up{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
@@ -558,6 +617,195 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
         <div class="stat-val teal" id="stat4">0%</div>
         <div class="stat-label">Taux de réponse moyen</div>
         <div class="stat-trend">Objectif : 8%</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- CLUB EXCLUSIVITÉ 150 MÉTIERS -->
+<section class="club-section">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="section-tag" style="justify-content:center;color:var(--teal)">Exclusivité · 1 seul par métier par ville</div>
+      <h2 style="font-family:var(--fd);font-size:clamp(32px,4vw,52px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px;color:var(--paper)">
+        Vous entrez dans une famille<br>de <span style="color:var(--teal)">150 professionnels.</span><br>
+        <span style="font-size:.6em;color:rgba(245,242,236,.4)">Un seul par métier. Un seul par ville. Votre place ou personne d'autre.</span>
+      </h2>
+      <p style="font-size:16px;color:rgba(245,242,236,.55);max-width:640px;margin:0 auto 16px;font-weight:300;line-height:1.7">
+        Ce n'est pas un annuaire. C'est un club fermé de 150 professionnels répartis sur 5 sphères complémentaires — chacun dans son métier, chacun dans sa ville. Tous peuvent vous recommander. Vous pouvez recommander chacun d'eux.
+      </p>
+      <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:10px 20px;font-size:13px;color:rgba(245,242,236,.7)">
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">150</span> métiers ·
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">5</span> sphères ·
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">1</span> seul par métier par ville
+      </div>
+    </div>
+
+    <!-- SPHÈRES GRID -->
+    <div class="spheres-grid fade-up">
+
+      <!-- SANTÉ -->
+      <div class="sphere-card sc-sante">
+        <span class="sc-icon">🌿</span>
+        <div class="sc-name">Santé<br>Bien-être · Sport</div>
+        <div class="sc-count">30 métiers · ~300 villes</div>
+        <div class="sc-metiers">
+          <div class="sc-metier"><span>Ostéopathe</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Coach sportif</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Nutritionniste</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Kinésithérapeute</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Sophrologue</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Médecin généraliste</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 24 métiers</span><span>→</span></div>
+        </div>
+        <div class="sc-badge">Commission : 10%</div>
+      </div>
+
+      <!-- HABITAT -->
+      <div class="sphere-card sc-habitat">
+        <span class="sc-icon">🏠</span>
+        <div class="sc-name">Habitat<br>Patrimoine</div>
+        <div class="sc-count">30 métiers · ~300 villes</div>
+        <div class="sc-metiers">
+          <div class="sc-metier"><span>Agent immobilier</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Courtier crédit</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Notaire</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Architecte</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Plombier</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Électricien</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 24 métiers</span><span>→</span></div>
+        </div>
+        <div class="sc-badge">Commission : 0,5% vente</div>
+      </div>
+
+      <!-- DIGITAL -->
+      <div class="sphere-card sc-digital">
+        <span class="sc-icon">💻</span>
+        <div class="sc-name">Digital<br>Business Services</div>
+        <div class="sc-count">30 métiers · ~300 villes</div>
+        <div class="sc-metiers">
+          <div class="sc-metier"><span>Développeur web</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Designer UX</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Consultant SEO</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Community manager</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Copywriter</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Coach business</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 24 métiers</span><span>→</span></div>
+        </div>
+        <div class="sc-badge">Commission : 5%</div>
+      </div>
+
+      <!-- MARIAGE -->
+      <div class="sphere-card sc-mariage">
+        <span class="sc-icon">💒</span>
+        <div class="sc-name">Mariage<br>Événementiel · Loisirs</div>
+        <div class="sc-count">30 métiers · ~300 villes</div>
+        <div class="sc-metiers">
+          <div class="sc-metier"><span>Wedding planner</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Traiteur</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Photographe mariage</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>DJ / Musicien</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Fleuriste</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Salle de réception</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 24 métiers</span><span>→</span></div>
+        </div>
+        <div class="sc-badge">Commission : 8%</div>
+      </div>
+
+      <!-- FINANCE -->
+      <div class="sphere-card sc-finance">
+        <span class="sc-icon">⚖️</span>
+        <div class="sc-name">Finance<br>Juridique</div>
+        <div class="sc-count">30 métiers · ~300 villes</div>
+        <div class="sc-metiers">
+          <div class="sc-metier"><span>Expert-comptable</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Avocat d'affaires</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>CGP</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Courtier assurance</span><div class="sc-dispo taken"></div></div>
+          <div class="sc-metier"><span>Notaire</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier"><span>Consultant RH</span><div class="sc-dispo ok"></div></div>
+          <div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 24 métiers</span><span>→</span></div>
+        </div>
+        <div class="sc-badge">Commission : 5%</div>
+      </div>
+
+    </div>
+
+    <!-- LÉGENDE + STAT -->
+    <div class="fade-up" style="display:flex;align-items:center;justify-content:center;gap:32px;margin-top:24px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(245,242,236,.5)">
+        <div style="width:8px;height:8px;border-radius:50%;background:#00C48C"></div>Place disponible dans votre ville
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(245,242,236,.5)">
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2)"></div>Place déjà occupée
+      </div>
+      <div style="font-size:12px;color:rgba(245,242,236,.3);font-style:italic">Dax · mise à jour en temps réel</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- RECO GÉRÉE + CHARTE -->
+<section class="reco-section">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up">
+      <div class="section-tag">La pièce qui change tout</div>
+      <h2 class="section-title">Je gère chaque recommandation<br><span style="color:var(--teal)">de A jusqu'à Z.</span><br><span style="font-size:.6em;color:var(--text-ter)">Rien ne tombe dans le vide.</span></h2>
+      <p class="section-sub" style="margin-bottom:48px">La recommandation que vous envoyez ne doit pas rester un numéro dans un WhatsApp. Je la contacte dans les 2 heures, je la qualifie, je transmets un contact chaud et presque prêt à signer. Votre partenaire reçoit une opportunité — pas un nom froid.</p>
+    </div>
+
+    <!-- FLOW -->
+    <div class="reco-flow fade-up">
+
+      <div class="rf-step">
+        <span class="rf-icon">👩‍⚕️</span>
+        <div class="rf-title">Sophie envoie une reco</div>
+        <div class="rf-text">Elle clique sur son lien Éclaireur. Son patient remplit un formulaire en 30 secondes. C'est tout ce qu'on lui demande.</div>
+        <span class="rf-time">30 secondes</span>
+      </div>
+
+      <div class="rf-arrow">→</div>
+
+      <div class="rf-step highlight">
+        <span class="rf-icon">📞</span>
+        <div class="rf-title light">Jean-Philippe rappelle</div>
+        <div class="rf-text light">Dans les 2 heures, j'appelle le contact. Je le qualifie, je présente le partenaire, je propose un créneau. Je transmets un contact chaud.</div>
+        <span class="rf-time">– 2 heures</span>
+      </div>
+
+      <div class="rf-arrow">→</div>
+
+      <div class="rf-step">
+        <span class="rf-icon">🏋️</span>
+        <div class="rf-title">Antonin reçoit un rendez-vous</div>
+        <div class="rf-text">Pas un numéro froid. Un contact qualifié, informé, qui attend son appel. Le taux de conversion passe de 20% à 70%.</div>
+        <span class="rf-time">70% de conversion</span>
+      </div>
+
+    </div>
+
+    <!-- CHARTE -->
+    <div class="charte-box fade-up">
+      <p style="font-size:14px;color:var(--text-sec);margin-bottom:20px;font-weight:300;line-height:1.7">En rejoignant le réseau, vous signez symboliquement une charte de 4 engagements. Pas un contrat lourd — une promesse entre professionnels qui se respectent.</p>
+      <div class="charte-items">
+        <div class="charte-item">
+          <div class="charte-check">✓</div>
+          <span>Je recommande uniquement des contacts que j'estime réellement susceptibles d'être intéressés — pas du remplissage.</span>
+        </div>
+        <div class="charte-item">
+          <div class="charte-check">✓</div>
+          <span>Je déclare mes recommandations via mon lien Éclaireur Popey pour que tout soit tracé et équitable.</span>
+        </div>
+        <div class="charte-item">
+          <div class="charte-check">✓</div>
+          <span>Je réponds aux contacts qualifiés transmis par Jean-Philippe dans les 24 heures.</span>
+        </div>
+        <div class="charte-item">
+          <div class="charte-check">✓</div>
+          <span>Je maintiens l'équilibre — je donne autant que je reçois. Mon score de réciprocité est visible par tous les membres.</span>
+        </div>
       </div>
     </div>
 
