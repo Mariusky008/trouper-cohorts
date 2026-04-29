@@ -1,0 +1,20 @@
+{
+  "name": "Portail Eclaireur Preview",
+  "short_name": "Eclaireur",
+  "description": "Webapp eclaireur Popey Human via lien invite.",
+  "start_url": "/popey-human/eclaireur-webapp-preview",
+  "scope": "/popey-human/eclaireur-webapp-preview",
+  "display": "standalone",
+  "background_color": "#0A0B0C",
+  "theme_color": "#EAC886",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["business", "productivity"]
+}

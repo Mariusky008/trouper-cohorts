@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { DM_Sans, Syne } from "next/font/google";
 
 const syne = Syne({
@@ -206,7 +206,6 @@ function referralStatusLabel(status: string) {
 }
 
 export default function EclaireurWebappPreviewPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const tokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -279,12 +278,6 @@ export default function EclaireurWebappPreviewPage() {
       setMetier(availableMetiers[0] || "");
     }
   }, [availableMetiers, metier]);
-
-  useEffect(() => {
-    if (!tokenOrCode) {
-      router.replace("/popey-human/eclaireur");
-    }
-  }, [router, tokenOrCode]);
 
   useEffect(() => {
     const nav = navigator as Navigator & {
