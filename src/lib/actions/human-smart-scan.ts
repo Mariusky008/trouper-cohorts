@@ -142,6 +142,34 @@ type SmartScanRadarRunRecord = {
   created_at: string;
   updated_at: string;
 };
+type SmartScanRadarRunContactRecord = {
+  id: string;
+  owner_member_id: string;
+  run_id: string;
+  prospect_id: string;
+  full_name: string;
+  normalized_name: string | null;
+  metier: string | null;
+  city: string | null;
+  distance_km: number | null;
+  phone_e164: string | null;
+  synergy_reason: string | null;
+  message_draft: string | null;
+  selected: boolean;
+  whatsapp_opened_at: string | null;
+  sent_declared_at: string | null;
+  is_duplicate: boolean;
+  duplicate_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+type SmartScanRadarHistoryRun = {
+  run: SmartScanRadarRunRecord;
+  contacts: SmartScanRadarRunContactRecord[];
+  duplicate_count: number;
+  opened_count: number;
+  selected_count: number;
+};
 
 type ResultError = { error: string };
 type ContactScoreInputs = {
@@ -261,6 +289,25 @@ function sanitizeSmartScanRadarMetadata(
     output.clientEventId = String(clientEventId).trim().slice(0, 160);
   }
   return output;
+}
+
+function normalizeRadarPhone(value: string | null | undefined): string | null {
+  const clean = String(value || "").replace(/[^\d+]/g, "").trim();
+  if (!clean) return null;
+  if (clean.startsWith("+")) return clean.slice(0, 24);
+  if (clean.startsWith("00")) return `+${clean.slice(2, 24)}`;
+  return clean.slice(0, 24);
+}
+
+function normalizeRadarName(value: string | null | undefined): string | null {
+  const clean = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean || null;
 }
 
 async function getCurrentHumanMember() {
@@ -1857,6 +1904,164 @@ export async function logSmartScanRadarEvent(input: {
     });
   }
   return { success: true };
+}
+
+export async function saveSmartScanRadarRunContacts(input: {
+  runId: string;
+  contacts: Array<{
+    prospectId: string;
+    fullName: string;
+    metier?: string | null;
+    city?: string | null;
+    distanceKm?: number | null;
+    phoneE164?: string | null;
+    synergyReason?: string | null;
+    messageDraft?: string | null;
+    selected?: boolean;
+    opened?: boolean;
+    sentDeclared?: boolean;
+  }>;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+  const runId = String(input.runId || "").trim();
+  if (!runId) return { error: "runId requis." };
+  const contacts = Array.isArray(input.contacts) ? input.contacts.slice(0, 30) : [];
+  if (!contacts.length) return { success: true, inserted: 0, duplicates: 0 };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: runRow, error: runError } = await supabaseAdmin
+    .from("human_smart_scan_radar_runs")
+    .select("id,owner_member_id")
+    .eq("id", runId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+  if (runError || !runRow?.id) {
+    return { error: runError?.message || "Run Radar introuvable." };
+  }
+
+  const { data: priorContacts } = await supabaseAdmin
+    .from("human_smart_scan_radar_run_contacts")
+    .select("phone_e164,normalized_name")
+    .eq("owner_member_id", currentMember.id)
+    .neq("run_id", runId)
+    .limit(4000);
+  const knownPhones = new Set<string>();
+  const knownNames = new Set<string>();
+  (priorContacts || []).forEach((row) => {
+    const phone = normalizeRadarPhone((row as { phone_e164?: string | null }).phone_e164 || null);
+    const name = normalizeRadarName((row as { normalized_name?: string | null }).normalized_name || null);
+    if (phone) knownPhones.add(phone);
+    if (name) knownNames.add(name);
+  });
+
+  const seenPhonesInRun = new Set<string>();
+  const nowIso = new Date().toISOString();
+  const preparedRows = contacts.map((contact) => {
+    const phone = normalizeRadarPhone(contact.phoneE164 || null);
+    const normalizedName = normalizeRadarName(contact.fullName || null);
+    const duplicateByPhone = Boolean(phone && (knownPhones.has(phone) || seenPhonesInRun.has(phone)));
+    const duplicateByName = Boolean(normalizedName && knownNames.has(normalizedName));
+    if (phone) seenPhonesInRun.add(phone);
+    const isDuplicate = duplicateByPhone || duplicateByName;
+    const duplicateReason = duplicateByPhone ? "phone_already_contacted" : duplicateByName ? "name_already_contacted" : null;
+    return {
+      owner_member_id: currentMember.id,
+      run_id: runId,
+      prospect_id: String(contact.prospectId || "").trim().slice(0, 220),
+      full_name: String(contact.fullName || "").trim().slice(0, 180) || "Contact",
+      normalized_name: normalizedName,
+      metier: String(contact.metier || "").trim().slice(0, 160) || null,
+      city: String(contact.city || "").trim().slice(0, 120) || null,
+      distance_km: typeof contact.distanceKm === "number" ? Math.max(0, Math.min(300, Math.round(contact.distanceKm))) : null,
+      phone_e164: phone,
+      synergy_reason: String(contact.synergyReason || "").trim().slice(0, 220) || null,
+      message_draft: String(contact.messageDraft || "").trim().slice(0, 3200) || null,
+      selected: Boolean(contact.selected),
+      whatsapp_opened_at: contact.opened ? nowIso : null,
+      sent_declared_at: contact.sentDeclared ? nowIso : null,
+      is_duplicate: isDuplicate,
+      duplicate_reason: duplicateReason,
+      updated_at: nowIso,
+    };
+  });
+
+  const { error: upsertError } = await supabaseAdmin
+    .from("human_smart_scan_radar_run_contacts")
+    .upsert(preparedRows, { onConflict: "run_id,prospect_id" });
+  if (upsertError) return { error: upsertError.message };
+
+  const duplicateCount = preparedRows.filter((row) => row.is_duplicate).length;
+  return {
+    success: true,
+    inserted: preparedRows.length,
+    duplicates: duplicateCount,
+  };
+}
+
+export async function getSmartScanRadarHistory(input?: {
+  limit?: number;
+  query?: string | null;
+  filter?: "all" | "duplicates" | "sent";
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." as string, runs: [] as SmartScanRadarHistoryRun[] };
+
+  const supabaseAdmin = createAdminClient();
+  const safeLimit = Math.max(5, Math.min(80, Math.round(input?.limit || 40)));
+  const query = String(input?.query || "").trim().toLowerCase();
+  const filter = input?.filter || "all";
+
+  const { data: runsData, error: runsError } = await supabaseAdmin
+    .from("human_smart_scan_radar_runs")
+    .select("id,owner_member_id,city,source_metier,radius_km,target_count,selected_count,sent_count,status,metadata,created_at,updated_at")
+    .eq("owner_member_id", currentMember.id)
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+  if (runsError) return { error: runsError.message, runs: [] as SmartScanRadarHistoryRun[] };
+  const runs = (runsData || []) as SmartScanRadarRunRecord[];
+  if (!runs.length) return { success: true, runs: [] as SmartScanRadarHistoryRun[] };
+
+  const runIds = runs.map((run) => run.id);
+  const { data: contactsData, error: contactsError } = await supabaseAdmin
+    .from("human_smart_scan_radar_run_contacts")
+    .select("id,owner_member_id,run_id,prospect_id,full_name,normalized_name,metier,city,distance_km,phone_e164,synergy_reason,message_draft,selected,whatsapp_opened_at,sent_declared_at,is_duplicate,duplicate_reason,created_at,updated_at")
+    .eq("owner_member_id", currentMember.id)
+    .in("run_id", runIds)
+    .order("created_at", { ascending: false });
+  if (contactsError) return { error: contactsError.message, runs: [] as SmartScanRadarHistoryRun[] };
+  const contacts = (contactsData || []) as SmartScanRadarRunContactRecord[];
+
+  const contactsByRun = new Map<string, SmartScanRadarRunContactRecord[]>();
+  contacts.forEach((contact) => {
+    const previous = contactsByRun.get(contact.run_id) || [];
+    previous.push(contact);
+    contactsByRun.set(contact.run_id, previous);
+  });
+
+  const historyRuns: SmartScanRadarHistoryRun[] = runs.map((run) => {
+    const runContacts = contactsByRun.get(run.id) || [];
+    const duplicateCount = runContacts.filter((item) => item.is_duplicate).length;
+    const openedCount = runContacts.filter((item) => Boolean(item.whatsapp_opened_at)).length;
+    const selectedCount = runContacts.filter((item) => item.selected).length;
+    return {
+      run,
+      contacts: runContacts,
+      duplicate_count: duplicateCount,
+      opened_count: openedCount,
+      selected_count: selectedCount,
+    };
+  });
+
+  const filteredRuns = historyRuns.filter((item) => {
+    if (filter === "duplicates" && item.duplicate_count === 0) return false;
+    if (filter === "sent" && Number(item.run.sent_count || 0) <= 0) return false;
+    if (!query) return true;
+    const haystack = `${item.run.city} ${item.run.source_metier || ""} ${item.contacts.map((contact) => `${contact.full_name} ${contact.metier || ""} ${contact.city || ""}`).join(" ")}`.toLowerCase();
+    return haystack.includes(query);
+  });
+
+  return { success: true, runs: filteredRuns };
 }
 
 export async function getSmartScanExternalClickStatsToday() {

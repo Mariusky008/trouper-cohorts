@@ -259,3 +259,28 @@ export const smartScanRadarEventSchema = z
     clientEventId: optionalNullableString(160),
   })
   .strict();
+
+export const smartScanRadarContactsSnapshotSchema = z
+  .object({
+    runId: z.string().uuid(),
+    contacts: z
+      .array(
+        z
+          .object({
+            prospectId: z.string().trim().min(1).max(220),
+            fullName: z.string().trim().min(1).max(180),
+            metier: z.string().trim().max(160).nullable().optional(),
+            city: z.string().trim().max(120).nullable().optional(),
+            distanceKm: z.number().int().min(0).max(300).nullable().optional(),
+            phoneE164: z.string().trim().max(32).nullable().optional(),
+            synergyReason: z.string().trim().max(220).nullable().optional(),
+            messageDraft: z.string().trim().max(3200).nullable().optional(),
+            selected: z.boolean().optional(),
+            opened: z.boolean().optional(),
+            sentDeclared: z.boolean().optional(),
+          })
+          .strict(),
+      )
+      .max(30),
+  })
+  .strict();

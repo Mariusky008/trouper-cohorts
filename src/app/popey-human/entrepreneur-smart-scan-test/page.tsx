@@ -4082,6 +4082,44 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     }).catch(() => null);
   }
 
+  async function postRadarContactsUpdate(
+    contacts: Array<{
+      prospectId: string;
+      fullName: string;
+      metier: string;
+      city: string;
+      distanceKm: number;
+      phoneE164: string;
+      synergyReason: string;
+      messageDraft: string;
+      selected?: boolean;
+      opened?: boolean;
+      sentDeclared?: boolean;
+    }>,
+  ) {
+    if (!radarRunId || contacts.length === 0) return;
+    await fetch("/api/popey-human/smart-scan/radar/contacts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        runId: radarRunId,
+        contacts: contacts.map((item) => ({
+          prospectId: item.prospectId,
+          fullName: item.fullName,
+          metier: item.metier,
+          city: item.city,
+          distanceKm: item.distanceKm,
+          phoneE164: item.phoneE164,
+          synergyReason: item.synergyReason,
+          messageDraft: item.messageDraft,
+          selected: Boolean(item.selected),
+          opened: Boolean(item.opened),
+          sentDeclared: Boolean(item.sentDeclared),
+        })),
+      }),
+    }).catch(() => null);
+  }
+
   function toggleRadarProspectSelection(prospectId: string) {
     let selected = false;
     setRadarSelectedIds((currentList) => {
@@ -4100,6 +4138,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         },
         clientEventId: `radar-select-${prospectId}-${Date.now()}`,
       });
+      void postRadarContactsUpdate([
+        {
+          prospectId: picked.id,
+          fullName: picked.fullName,
+          metier: picked.metier,
+          city: picked.city,
+          distanceKm: picked.distanceKm,
+          phoneE164: picked.phoneE164,
+          synergyReason: picked.synergyReason,
+          messageDraft: picked.messageDraft,
+          selected,
+          opened: radarSentIds.includes(picked.id),
+        },
+      ]);
     }
   }
 
@@ -4202,6 +4254,28 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       if (!finalList.length) {
         throw new Error("Aucun numero WhatsApp mobile exploitable trouve.");
       }
+      if (radarRunIdForThisRun) {
+        await fetch("/api/popey-human/smart-scan/radar/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            runId: radarRunIdForThisRun,
+            contacts: finalList.map((item) => ({
+              prospectId: item.id,
+              fullName: item.fullName,
+              metier: item.metier,
+              city: item.city,
+              distanceKm: item.distanceKm,
+              phoneE164: item.phoneE164,
+              synergyReason: item.synergyReason,
+              messageDraft: item.messageDraft,
+              selected: false,
+              opened: false,
+              sentDeclared: false,
+            })),
+          }),
+        }).catch(() => null);
+      }
       setRadarProspects(finalList);
       setRadarSelectedIds(finalList.slice(0, Math.min(RADAR_DEFAULT_SELECTED_COUNT, finalList.length)).map((item) => item.id));
       setRadarSentIds([]);
@@ -4299,6 +4373,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         metadata: { metier: prospect.metier, distanceKm: prospect.distanceKm },
         clientEventId: `radar-open-${prospect.id}-${Date.now()}`,
       });
+      void postRadarContactsUpdate([
+        {
+          prospectId: prospect.id,
+          fullName: prospect.fullName,
+          metier: prospect.metier,
+          city: prospect.city,
+          distanceKm: prospect.distanceKm,
+          phoneE164: prospect.phoneE164,
+          synergyReason: prospect.synergyReason,
+          messageDraft: prospect.messageDraft,
+          selected: radarSelectedIds.includes(prospect.id),
+          opened: true,
+          sentDeclared: true,
+        },
+      ]);
     };
     void postSmartScan("prepare-whatsapp-payload", {
       externalContactRef: prospect.id,
@@ -4351,6 +4440,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       },
       clientEventId: `radar-send-batch-${Date.now()}`,
     });
+    void postRadarContactsUpdate(
+      eligibleQueue.map((item) => ({
+        prospectId: item.id,
+        fullName: item.fullName,
+        metier: item.metier,
+        city: item.city,
+        distanceKm: item.distanceKm,
+        phoneE164: item.phoneE164,
+        synergyReason: item.synergyReason,
+        messageDraft: item.messageDraft,
+        selected: true,
+        opened: radarSentIds.includes(item.id),
+        sentDeclared: true,
+      })),
+    );
     // Browsers block multiple popups from one click; open one contact per click.
     const nextProspect = eligibleQueue[0];
     if (nextProspect) {
@@ -8147,6 +8251,31 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       <span className="block h-full w-1/2 rounded-full bg-[#00D4A0]/75 animate-pulse" />
                     </span>
                   ) : null}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.location.href = "/popey-human/entrepreneur-smart-scan-test/historique";
+                    }
+                  }}
+                  className="mb-4 flex w-full items-center gap-3 rounded-[20px] border border-white/10 bg-[#141C2E] px-4 py-3 text-left transition hover:border-white/20"
+                >
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-[#00D4A0]/30 bg-[#00D4A0]/10 text-[18px]">
+                    🕐
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[25px] font-black leading-none text-white">Voir mon historique</span>
+                    <span className="mt-0.5 block text-[11px] leading-[1.35] text-white/58">
+                      Requêtes envoyées · Doublons détectés · Taux de réponse
+                    </span>
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[11px] font-black text-cyan-100">
+                    <span>📈</span>
+                    <span>Historique</span>
+                  </span>
+                  <span className="shrink-0 text-[18px] text-white/45">›</span>
                 </button>
 
                 <div className="mb-4 flex items-center gap-2">
