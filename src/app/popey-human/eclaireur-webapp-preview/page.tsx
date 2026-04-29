@@ -51,6 +51,7 @@ type PortalData = {
   shortCode: string | null;
   sponsorName: string | null;
   sponsorPhone: string | null;
+  scoutFirstName: string | null;
   scoutType: "perso" | "pro";
   availableTargets: Array<{ label: string; type: "metier" | "member" }>;
   referrals: Referral[];
@@ -187,6 +188,21 @@ function buildImportedContacts(rows: ImportedContactRow[]): ImportedContact[] {
     .map(({ dedupKey: _dedupKey, ...safeRow }) => safeRow);
 }
 
+function mergeImportedContacts(existing: ImportedContact[], incoming: ImportedContact[]): ImportedContact[] {
+  const dedup = new Set<string>();
+  const merged: ImportedContact[] = [];
+  [...existing, ...incoming].forEach((item, idx) => {
+    const key = `${String(item.name || "").trim().toLowerCase()}|${String(item.phone || "").replace(/\D/g, "")}`;
+    if (dedup.has(key)) return;
+    dedup.add(key);
+    merged.push({
+      ...item,
+      id: item.id || `contact-${idx + 1}-${String(item.phone || "").replace(/\D/g, "").slice(-4) || "0000"}`,
+    });
+  });
+  return merged;
+}
+
 function contactInitials(name: string) {
   const tokens = String(name || "")
     .trim()
@@ -305,6 +321,7 @@ export default function EclaireurWebappPreviewPage() {
           shortCode?: string | null;
           sponsorName?: string | null;
           sponsorPhone?: string | null;
+          scout?: { first_name?: string | null } | null;
           scoutType?: "perso" | "pro";
           availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
           referrals?: Referral[];
@@ -318,6 +335,7 @@ export default function EclaireurWebappPreviewPage() {
           shortCode: payload.shortCode || null,
           sponsorName: payload.sponsorName || null,
           sponsorPhone: payload.sponsorPhone || null,
+          scoutFirstName: String(payload.scout?.first_name || "").trim() || null,
           scoutType: payload.scoutType === "pro" ? "pro" : "perso",
           availableTargets: payload.availableTargets || [],
           referrals: payload.referrals || [],
@@ -348,6 +366,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode?: string | null;
         sponsorName?: string | null;
         sponsorPhone?: string | null;
+        scout?: { first_name?: string | null } | null;
         scoutType?: "perso" | "pro";
         availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
         referrals?: Referral[];
@@ -358,6 +377,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode: payload.shortCode || null,
         sponsorName: payload.sponsorName || null,
         sponsorPhone: payload.sponsorPhone || null,
+        scoutFirstName: String(payload.scout?.first_name || "").trim() || null,
         scoutType: payload.scoutType === "pro" ? "pro" : "perso",
         availableTargets: payload.availableTargets || [],
         referrals: payload.referrals || [],
@@ -423,7 +443,7 @@ export default function EclaireurWebappPreviewPage() {
     contactImportInputRef.current?.click();
   }
 
-  async function importContactsFromFile(file: File) {
+  async function importContactsFromFile(file: File, mode: "replace" | "append" = "replace") {
     const lowerName = file.name.toLowerCase();
     const raw = await file.text();
     const rows = lowerName.endsWith(".vcf") || raw.includes("BEGIN:VCARD") ? parseVcfContacts(raw) : parseCsvContacts(raw);
@@ -432,9 +452,14 @@ export default function EclaireurWebappPreviewPage() {
       setImportError("Aucun contact exploitable detecte dans le fichier.");
       return;
     }
-    setImportedContacts(contacts);
+    const merged = mode === "append" ? mergeImportedContacts(importedContacts, contacts) : contacts;
+    setImportedContacts(merged);
     setSuggestionIndex(0);
-    setImportSummary(`${contacts.length} contacts charges depuis ${file.name}`);
+    setImportSummary(
+      mode === "append"
+        ? `+${contacts.length} nouveaux contacts depuis ${file.name} · total ${merged.length}`
+        : `${merged.length} contacts charges depuis ${file.name}`,
+    );
     setImportError("");
   }
 
@@ -443,7 +468,7 @@ export default function EclaireurWebappPreviewPage() {
     if (!file) return;
     try {
       setIsImportingContacts(true);
-      await importContactsFromFile(file);
+      await importContactsFromFile(file, importedContacts.length > 0 ? "append" : "replace");
     } catch {
       setImportError("Import impossible. Utilise un fichier .vcf ou .csv valide.");
     } finally {
@@ -452,7 +477,7 @@ export default function EclaireurWebappPreviewPage() {
     }
   }
 
-  async function importContactsFromDirectPicker() {
+  async function importContactsFromDirectPicker(mode: "replace" | "append" = "replace") {
     const nav = navigator as Navigator & {
       contacts?: { select?: (properties: string[], options?: { multiple?: boolean }) => Promise<Array<{ name?: string[]; tel?: string[] }>> };
     };
@@ -474,9 +499,14 @@ export default function EclaireurWebappPreviewPage() {
         setImportError("Aucun contact exploitable recupere en acces direct.");
         return;
       }
-      setImportedContacts(contacts);
+      const merged = mode === "append" ? mergeImportedContacts(importedContacts, contacts) : contacts;
+      setImportedContacts(merged);
       setSuggestionIndex(0);
-      setImportSummary(`${contacts.length} contacts charges via acces direct`);
+      setImportSummary(
+        mode === "append"
+          ? `+${contacts.length} nouveaux contacts via acces direct · total ${merged.length}`
+          : `${merged.length} contacts charges via acces direct`,
+      );
       setImportError("");
     } catch {
       setImportError("Acces direct refuse ou indisponible. Utilise l import .vcf/.csv.");
@@ -502,6 +532,13 @@ export default function EclaireurWebappPreviewPage() {
     setSuggestionIndex((current) => (current + 1) % importedContacts.length);
   }
 
+  function clearImportedContacts() {
+    setImportedContacts([]);
+    setSuggestionIndex(0);
+    setImportSummary("Contacts supprimes. Tu peux reimporter quand tu veux.");
+    setImportError("");
+  }
+
   const screens = [
     {
       label: "Ecran 1",
@@ -512,6 +549,7 @@ export default function EclaireurWebappPreviewPage() {
           isLoadingPortal={isLoadingPortal}
           portalError={portalError}
           sponsorName={portalData?.sponsorName || null}
+          scoutFirstName={portalData?.scoutFirstName || null}
           scoutType={portalData?.scoutType || "perso"}
           dossiersEnCours={referrals.length}
           commissionPrevisionnelle={potential}
@@ -588,9 +626,10 @@ export default function EclaireurWebappPreviewPage() {
           suggestedConversions={suggestedConversions}
           suggestedGain={suggestedGain}
           onImportFile={openContactImportPicker}
-          onImportDirect={importContactsFromDirectPicker}
+          onImportDirect={() => importContactsFromDirectPicker(importedContacts.length > 0 ? "append" : "replace")}
           onRecommend={useSuggestedContact}
           onSkip={skipSuggestion}
+          onClearContacts={clearImportedContacts}
           onGoSubmit={() => setActiveScreen(1)}
         />
       ),
@@ -598,23 +637,18 @@ export default function EclaireurWebappPreviewPage() {
   ];
 
   return (
-    <main className={`${dmSans.className} min-h-screen bg-[#07090F] pb-28 text-[#EEF2F7]`}>
-      <div className="mx-auto max-w-xl px-4 py-7 sm:px-6">
-        <header className="mb-4 text-center">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">Popey · Webapp Eclaireur</p>
-        </header>
-
-        <section className="rounded-[40px] border border-white/15 bg-[#0F1420] p-3 shadow-[0_26px_65px_-35px_rgba(0,0,0,0.85)]">
-          <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-white/10" />
+    <main className={`${dmSans.className} min-h-screen bg-[#07090F] pb-24 text-[#EEF2F7]`}>
+      <div className="mx-auto w-full max-w-2xl px-3 py-3 sm:px-4">
+        <section className="p-0">
           <div
-            className="overflow-hidden rounded-[28px] border border-white/10 bg-[#070B16] p-3"
+            className="overflow-hidden rounded-[24px]"
             onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
             onTouchMove={(event) => setTouchEndX(event.touches[0]?.clientX ?? null)}
             onTouchEnd={onSwipeEnd}
           >
             <div className="flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${activeScreen * 100}%)` }}>
               {screens.map((screen) => (
-                <div key={screen.label} className="w-full shrink-0">
+                <div key={screen.label} className="w-full shrink-0 px-1">
                   <PhoneFrame activeIndex={activeScreen} total={screens.length}>{screen.content}</PhoneFrame>
                 </div>
               ))}
@@ -701,6 +735,7 @@ function ScreenWelcome({
   isLoadingPortal,
   portalError,
   sponsorName,
+  scoutFirstName,
   scoutType,
   dossiersEnCours,
   commissionPrevisionnelle,
@@ -711,52 +746,56 @@ function ScreenWelcome({
   isLoadingPortal: boolean;
   portalError: string;
   sponsorName: string | null;
+  scoutFirstName: string | null;
   scoutType: "perso" | "pro";
   dossiersEnCours: number;
   commissionPrevisionnelle: number;
   commissionGagnee: number;
   onGoSubmit: () => void;
 }) {
+  const greetingName = String(scoutFirstName || "").trim();
   return (
-    <div className="rounded-[20px] bg-[#070B16] p-1">
-      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Popey · Eclaireur</p>
-      <h2 className={`${syne.className} mt-1 text-[24px] font-black leading-[1.05]`}>Salut Sarah, ton reseau vaut de l or</h2>
-      <p className="mt-1 text-xs text-white/65">Recommande les bons pros a tes proches. Ils y gagnent - toi aussi.</p>
+    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
+      <p className="text-[12px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Popey · Eclaireur</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(30px,8vw,44px)] font-black leading-[1.02]`}>
+        {greetingName ? `Salut ${greetingName}, ton reseau vaut de l or` : "Salut, ton reseau vaut de l or"}
+      </h2>
+      <p className="mt-2 text-[clamp(16px,4.2vw,20px)] leading-[1.35] text-white/80">Recommande les bons pros a tes proches. Ils y gagnent - toi aussi.</p>
 
-      <div className="mt-3 rounded-xl border border-white/10 bg-[#161D2E] p-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Comment ca marche</p>
-        <ol className="mt-2 space-y-1.5 text-[12px] text-white/75">
+      <div className="mt-4 rounded-2xl border border-white/10 bg-[#161D2E] p-4">
+        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-white/55">Comment ca marche</p>
+        <ol className="mt-3 space-y-2 text-[clamp(14px,3.8vw,18px)] leading-[1.35] text-white/80">
           <li>1. Tu reperes un besoin chez un proche.</li>
           <li>2. Tu entres son prenom + numero en 20 secondes.</li>
           <li>3. Le pro le contacte, tu suis et tu encaisses.</li>
         </ol>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <StatCard title="Mises en relation" value={String(dossiersEnCours)} sub="ce mois" tone="teal" />
         <StatCard title="Commissions gagnees" value={`${Math.round(commissionGagnee)} EUR`} sub={`+${Math.round(commissionPrevisionnelle)} EUR en attente`} tone="amber" />
       </div>
 
-      <div className="mt-3 rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/10 px-3 py-2">
-        <p className="text-xs font-semibold text-[#00D4A0]">{sponsorName || "Parrain Popey Human"}</p>
-        <p className="text-[11px] text-[#00D4A0]/70">Eclaireur {scoutType === "pro" ? "Pro" : "Perso"} · Commission automatique</p>
+      <div className="mt-4 rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/10 px-4 py-3">
+        <p className="text-[15px] font-semibold text-[#00D4A0]">{sponsorName || "Parrain Popey Human"}</p>
+        <p className="text-[13px] text-[#00D4A0]/70">Eclaireur {scoutType === "pro" ? "Pro" : "Perso"} · Commission automatique</p>
       </div>
 
       {tokenOrCode ? (
-        <p className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-100">
+        <p className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-[13px] text-emerald-100">
           {isLoadingPortal ? "Chargement du portail reel..." : `Lien actif: ${tokenOrCode}`}
         </p>
       ) : (
-        <p className="mt-3 rounded-xl border border-amber-300/35 bg-amber-300/10 px-3 py-2 text-[11px] text-amber-100">
+        <p className="mt-3 rounded-xl border border-amber-300/35 bg-amber-300/10 px-3 py-2 text-[13px] text-amber-100">
           Mode demo. Ouvre avec ?token=... ou ?code=... pour activer le backend.
         </p>
       )}
-      {portalError ? <p className="mt-2 rounded-xl border border-red-300/35 bg-red-500/10 px-3 py-2 text-[11px] text-red-100">{portalError}</p> : null}
+      {portalError ? <p className="mt-2 rounded-xl border border-red-300/35 bg-red-500/10 px-3 py-2 text-[13px] text-red-100">{portalError}</p> : null}
 
       <button
         type="button"
         onClick={onGoSubmit}
-        className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[14px] font-black uppercase tracking-[0.04em] text-[#060B12]"
+        className="mt-4 h-14 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[15px] font-black uppercase tracking-[0.04em] text-[#060B12]"
       >
         Recommander quelqu un
       </button>
@@ -814,13 +853,13 @@ function ScreenSubmit({
   onSubmit: () => void;
 }) {
   return (
-    <div className="rounded-[20px] bg-[#070B16] p-1">
+    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Nouveau contact</p>
-      <h2 className={`${syne.className} mt-1 text-[24px] font-black leading-[1.05]`}>20 secondes. C est tout.</h2>
-      <p className="mt-1 text-xs text-white/65">Pas besoin de vendre, juste de donner un nom.</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>20 secondes. C est tout.</h2>
+      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Pas besoin de vendre, juste de donner un nom.</p>
 
       <form
-        className="mt-3 space-y-2"
+        className="mt-4 space-y-2.5"
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit();
@@ -850,7 +889,7 @@ function ScreenSubmit({
           <select
             value={city}
             onChange={(event) => setCity(event.target.value as keyof typeof OPPORTUNITY_TARGETS)}
-            className="h-10 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-sm text-white/90"
+            className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90"
           >
             {cities.map((item) => (
               <option key={item} value={item} className="bg-[#0C1224]">
@@ -860,19 +899,19 @@ function ScreenSubmit({
           </select>
         </div>
         <InputMock label="Prenom du contact">
-          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Nicolas" className="h-10 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-sm text-white/90" />
+          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Nicolas" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
         </InputMock>
         <InputMock label="Son numero WhatsApp">
-          <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="06 24 78 14 32" className="h-10 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-sm text-white/90" />
+          <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="06 24 78 14 32" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
         </InputMock>
         <InputMock label="Besoin principal">
-          <input value={projectTypeCustom} onChange={(event) => setProjectTypeCustom(event.target.value)} placeholder={metier} className="h-10 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-sm text-white/90" />
+          <input value={projectTypeCustom} onChange={(event) => setProjectTypeCustom(event.target.value)} placeholder={metier} className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
         </InputMock>
         <InputMock label="Valeur estimee (optionnel)">
-          <input value={estimatedDealValue} onChange={(event) => setEstimatedDealValue(event.target.value)} type="number" min="1" placeholder="250000" className="h-10 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-sm text-white/90" />
+          <input value={estimatedDealValue} onChange={(event) => setEstimatedDealValue(event.target.value)} type="number" min="1" placeholder="250000" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
         </InputMock>
         <InputMock label="Commentaire">
-          <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Contexte, urgence..." className="min-h-[72px] w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 py-2 text-sm text-white/90" />
+          <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Contexte, urgence..." className="min-h-[88px] w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 py-2 text-[15px] text-white/90" />
         </InputMock>
       </form>
 
@@ -885,7 +924,7 @@ function ScreenSubmit({
         type="submit"
         onClick={onSubmit}
         disabled={isSubmitting || !tokenOrCode}
-        className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[13px] font-black uppercase tracking-[0.04em] text-[#060B12] disabled:opacity-50"
+        className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[14px] font-black uppercase tracking-[0.04em] text-[#060B12] disabled:opacity-50"
       >
         {isSubmitting ? "Envoi..." : "Envoyer la mise en relation"}
       </button>
@@ -922,10 +961,10 @@ function ScreenTracking({
   const step = first?.status === "converted" ? 3 : first?.status === "offered" ? 2 : first?.status === "validated" ? 1 : 0;
   const labels = ["Contacte", "RDV", "Offre", "Paye"];
   return (
-    <div className="rounded-[20px] bg-[#070B16] p-1">
+    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Mes commissions</p>
-      <h2 className={`${syne.className} mt-1 text-[22px] font-black leading-[1.05]`}>Tout en temps reel.</h2>
-      <p className="mt-1 text-xs text-white/65">Chaque mise en relation suivie jusqu au paiement.</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>Tout en temps reel.</h2>
+      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Chaque mise en relation suivie jusqu au paiement.</p>
 
       <div className="mt-3 flex items-center justify-between rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/10 p-3">
         <div>
@@ -1044,6 +1083,7 @@ function ScreenSuggestion({
   onImportDirect,
   onRecommend,
   onSkip,
+  onClearContacts,
   onGoSubmit,
 }: {
   dayLetters: string[];
@@ -1064,38 +1104,79 @@ function ScreenSuggestion({
   onImportDirect: () => void;
   onRecommend: () => void;
   onSkip: () => void;
+  onClearContacts: () => void;
   onGoSubmit: () => void;
 }) {
+  const hasContacts = importedCount > 0;
   return (
-    <div className="rounded-[20px] bg-[#070B16] p-1">
+    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
-      <h2 className={`${syne.className} mt-1 text-[22px] font-black leading-[1.05]`}>1 contact. 1 opportunite.</h2>
-      <p className="mt-1 text-xs text-white/65">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>1 contact. 1 opportunite.</h2>
+      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
 
       <div className="mt-3 rounded-xl border border-white/10 bg-[#161D2E] p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Importer tous tes contacts</p>
-        <p className="mt-1 text-[11px] text-white/60">Comme Daily Scan: charge ton annuaire complet pour des suggestions fiables.</p>
-        <div className="mt-2 grid grid-cols-1 gap-2">
-          <button
-            type="button"
-            disabled={isImportingContacts}
-            onClick={onImportFile}
-            className="h-10 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[11px] font-bold text-[#00D4A0] disabled:opacity-60"
-          >
-            {isImportingContacts ? "Import..." : "Telecharger mes contacts (.vcf/.csv)"}
-          </button>
-          {supportsDirectContactPicker ? (
-            <button
-              type="button"
-              disabled={isImportingContacts}
-              onClick={onImportDirect}
-              className="h-10 rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
-            >
-              Autoriser acces direct telephone
-            </button>
-          ) : null}
-        </div>
-        <p className="mt-2 text-[11px] text-white/55">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
+        {!hasContacts ? (
+          <>
+            <p className="mt-1 text-[13px] text-white/70">Aucun contact importe pour l instant. Charge ton annuaire pour activer les suggestions.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                disabled={isImportingContacts}
+                onClick={onImportFile}
+                className="h-11 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[12px] font-bold text-[#00D4A0] disabled:opacity-60"
+              >
+                {isImportingContacts ? "Import..." : "Telecharger mes contacts (.vcf/.csv)"}
+              </button>
+              {supportsDirectContactPicker ? (
+                <button
+                  type="button"
+                  disabled={isImportingContacts}
+                  onClick={onImportDirect}
+                  className="h-10 rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
+                >
+                  Autoriser acces direct telephone
+                </button>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mt-2 rounded-xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#00D4A0]/80">Contacts deja importes</p>
+              <p className="mt-1 text-[30px] font-black leading-none text-[#00D4A0]">{importedCount}</p>
+              <p className="text-[12px] text-[#00D4A0]/80">contacts disponibles pour les suggestions</p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={isImportingContacts}
+                onClick={onImportFile}
+                className="h-11 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[12px] font-bold text-[#00D4A0] disabled:opacity-60"
+              >
+                Ajouter d autres
+              </button>
+              <button
+                type="button"
+                onClick={onClearContacts}
+                className="h-11 rounded-xl border border-red-300/35 bg-red-500/10 text-[12px] font-bold text-red-200"
+              >
+                Supprimer contacts
+              </button>
+            </div>
+            {supportsDirectContactPicker ? (
+              <button
+                type="button"
+                disabled={isImportingContacts}
+                onClick={onImportDirect}
+                className="mt-2 h-10 w-full rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
+              >
+                Ajouter depuis acces direct telephone
+              </button>
+            ) : null}
+          </>
+        )}
+        <p className="mt-2 text-[12px] text-white/65">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
         {importError ? <p className="mt-2 rounded-lg border border-red-300/35 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">{importError}</p> : null}
       </div>
 
@@ -1210,10 +1291,9 @@ function PhoneFrame({
   total: number;
 }) {
   return (
-    <article className="rounded-[30px] border border-white/10 bg-[#070B16] p-3 shadow-[0_25px_60px_-45px_rgba(0,0,0,0.95)]">
-      <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-[#1E2640]" />
-      <div className="min-h-[575px]">{children}</div>
-      <div className="mt-3 flex items-center justify-center gap-1.5">
+    <article className="rounded-[30px] bg-transparent p-0 shadow-none">
+      <div className="min-h-[calc(100dvh-140px)]">{children}</div>
+      <div className="mt-2 flex items-center justify-center gap-1.5">
         {Array.from({ length: total }).map((_, idx) => (
           <span
             key={`phone-dot-${idx}`}
@@ -1227,10 +1307,10 @@ function PhoneFrame({
 
 function StatCard({ title, value, sub, tone }: { title: string; value: string; sub: string; tone: "teal" | "amber" }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#161D2E] p-3">
-      <p className="text-[9px] uppercase tracking-[0.08em] text-white/40">{title}</p>
-      <p className={`mt-1 text-[26px] font-black leading-none ${tone === "teal" ? "text-[#00D4A0]" : "text-[#F5A623]"}`}>{value}</p>
-      <p className="mt-1 text-[10px] text-white/45">{sub}</p>
+    <div className="rounded-xl border border-white/10 bg-[#161D2E] p-4">
+      <p className="text-[11px] uppercase tracking-[0.08em] text-white/45">{title}</p>
+      <p className={`mt-1 text-[clamp(26px,6vw,34px)] font-black leading-none ${tone === "teal" ? "text-[#00D4A0]" : "text-[#F5A623]"}`}>{value}</p>
+      <p className="mt-1 text-[12px] text-white/50">{sub}</p>
     </div>
   );
 }
