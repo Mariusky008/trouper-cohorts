@@ -1192,6 +1192,7 @@ export async function submitScoutReferralFromToken(formData: FormData) {
   revalidatePath(`/popey-human/eclaireur/${token}`);
   revalidatePath("/popey-human/app/eclaireurs");
   revalidatePath("/admin/humain/eclaireurs");
+  revalidatePath("/admin/humain");
   return { success: true, referralId: insertedReferral?.id || null };
 }
 

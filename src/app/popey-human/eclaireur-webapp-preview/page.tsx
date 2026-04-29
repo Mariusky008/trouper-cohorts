@@ -262,7 +262,7 @@ export default function EclaireurWebappPreviewPage() {
     return OPPORTUNITY_TARGETS[city].find((item) => item.metier === metier) || OPPORTUNITY_TARGETS[city][0];
   }, [city, metier]);
   const rewardLabel = selectedTarget.rewardType === "percent" ? `${selectedTarget.rewardValue}%` : `fixe ${selectedTarget.rewardValue} EUR`;
-  const projectType = [metier.trim(), projectTypeCustom.trim()].filter(Boolean).join(" • ");
+  const projectType = projectTypeCustom.trim();
 
   const referrals = portalData?.referrals || [];
   const latestReferral = referrals[0] || null;
@@ -566,10 +566,7 @@ export default function EclaireurWebappPreviewPage() {
           tokenOrCode={tokenOrCode}
           city={city}
           setCity={setCity}
-          metier={metier}
-          setMetier={setMetier}
           cities={Object.keys(OPPORTUNITY_TARGETS) as Array<keyof typeof OPPORTUNITY_TARGETS>}
-          metiers={availableMetiers}
           rewardLabel={rewardLabel}
           delayDays={selectedTarget.delayDays}
           contactName={contactName}
@@ -807,10 +804,7 @@ function ScreenSubmit({
   tokenOrCode,
   city,
   setCity,
-  metier,
-  setMetier,
   cities,
-  metiers,
   rewardLabel,
   delayDays,
   contactName,
@@ -831,10 +825,7 @@ function ScreenSubmit({
   tokenOrCode: string;
   city: keyof typeof OPPORTUNITY_TARGETS;
   setCity: (value: keyof typeof OPPORTUNITY_TARGETS) => void;
-  metier: string;
-  setMetier: (value: string) => void;
   cities: Array<keyof typeof OPPORTUNITY_TARGETS>;
-  metiers: string[];
   rewardLabel: string;
   delayDays: number;
   contactName: string;
@@ -856,7 +847,9 @@ function ScreenSubmit({
     <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Nouveau contact</p>
       <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>20 secondes. C est tout.</h2>
-      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Pas besoin de vendre, juste de donner un nom.</p>
+      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">
+        Pas besoin de vendre. Tu indiques le besoin metier, puis Jean-Philippe dispatch manuellement.
+      </p>
 
       <form
         className="mt-4 space-y-2.5"
@@ -865,25 +858,6 @@ function ScreenSubmit({
           onSubmit();
         }}
       >
-        <div>
-          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Pour quel pro ?</p>
-          <div className="flex flex-wrap gap-1.5">
-            {metiers.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setMetier(item)}
-                className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
-                  item === metier
-                    ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]"
-                    : "border-white/15 bg-[#161D2E] text-white/55"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
         <div>
           <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Ville cible</p>
           <select
@@ -904,8 +878,13 @@ function ScreenSubmit({
         <InputMock label="Son numero WhatsApp">
           <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="06 24 78 14 32" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
         </InputMock>
-        <InputMock label="Besoin principal">
-          <input value={projectTypeCustom} onChange={(event) => setProjectTypeCustom(event.target.value)} placeholder={metier} className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
+        <InputMock label="Rentrer de quel metier cette personne a besoin">
+          <input
+            value={projectTypeCustom}
+            onChange={(event) => setProjectTypeCustom(event.target.value)}
+            placeholder="Ex: Courtier, Agent immo, Plombier, Coach..."
+            className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90"
+          />
         </InputMock>
         <InputMock label="Valeur estimee (optionnel)">
           <input value={estimatedDealValue} onChange={(event) => setEstimatedDealValue(event.target.value)} type="number" min="1" placeholder="250000" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
@@ -918,6 +897,7 @@ function ScreenSubmit({
       <div className="mt-3 rounded-xl border border-[#F5A623]/35 bg-[#F5A623]/10 p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#F5A623]">Ta commission si ca aboutit</p>
         <p className="mt-1 text-sm font-bold text-white">{rewardLabel} · delai moyen {delayDays} jours</p>
+        <p className="mt-1 text-[12px] text-white/80">Toutes les soumissions sont envoyees a Jean-Philippe Roth (Coach business, Dax) puis visibles aussi en admin.</p>
       </div>
 
       <button
