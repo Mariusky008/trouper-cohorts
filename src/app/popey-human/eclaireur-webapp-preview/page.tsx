@@ -668,7 +668,7 @@ export default function EclaireurWebappPreviewPage() {
   ];
 
   return (
-    <main className={`${dmSans.className} min-h-screen bg-[#07090F] pb-24 text-[#EEF2F7]`}>
+    <main className={`${dmSans.className} min-h-screen bg-[#07090F] bg-[radial-gradient(1200px_700px_at_50%_-120px,#132035_0%,#07090F_55%)] pb-[calc(env(safe-area-inset-bottom)+112px)] text-[#EEF2F7]`}>
       <div className="mx-auto w-full max-w-2xl px-3 py-3 sm:px-4">
         <section className="p-0">
           <div
@@ -689,7 +689,7 @@ export default function EclaireurWebappPreviewPage() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
-        <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 rounded-2xl border border-white/15 bg-[#0E1213]/95 p-2 backdrop-blur">
+        <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 rounded-[22px] border border-white/15 bg-[#0E1213]/95 p-2 shadow-[0_12px_42px_rgba(0,0,0,0.45)] backdrop-blur">
           {[
             { label: "Accueil", idx: 0 },
             { label: "Soumettre", idx: 1 },
@@ -700,9 +700,9 @@ export default function EclaireurWebappPreviewPage() {
               key={item.label}
               type="button"
               onClick={() => setActiveScreen(item.idx)}
-              className={`h-11 rounded-xl text-[10px] font-black uppercase tracking-[0.06em] ${
+              className={`h-11 rounded-xl text-[11px] font-black uppercase tracking-[0.06em] ${
                 activeScreen === item.idx
-                  ? "bg-[#00D4A0] text-[#060B12]"
+                  ? "bg-[#00D4A0] text-[#060B12] shadow-[0_6px_24px_rgba(0,212,160,0.35)]"
                   : "border border-white/20 bg-black/25 text-white/80"
               }`}
             >
@@ -786,19 +786,28 @@ function ScreenWelcome({
 }) {
   const greetingName = String(scoutFirstName || "").trim();
   return (
-    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
+    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[12px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Popey · Eclaireur</p>
-      <h2 className={`${syne.className} mt-2 text-[clamp(30px,8vw,44px)] font-black leading-[1.02]`}>
+      <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,58px)] font-black leading-[0.98]`}>
         {greetingName ? `Salut ${greetingName}, ton reseau vaut de l or` : "Salut, ton reseau vaut de l or"}
       </h2>
-      <p className="mt-2 text-[clamp(16px,4.2vw,20px)] leading-[1.35] text-white/80">Recommande les bons pros a tes proches. Ils y gagnent - toi aussi.</p>
+      <p className="mt-3 text-[clamp(20px,5.4vw,27px)] leading-[1.28] text-white/85">Recommande les bons pros a tes proches. Ils y gagnent - toi aussi.</p>
 
-      <div className="mt-4 rounded-2xl border border-white/10 bg-[#161D2E] p-4">
+      <div className="mt-5 rounded-2xl border border-white/10 bg-[#161D2E] p-4">
         <p className="text-[12px] font-black uppercase tracking-[0.08em] text-white/55">Comment ca marche</p>
-        <ol className="mt-3 space-y-2 text-[clamp(14px,3.8vw,18px)] leading-[1.35] text-white/80">
-          <li>1. Tu reperes un besoin chez un proche.</li>
-          <li>2. Tu entres son prenom + numero en 20 secondes.</li>
-          <li>3. Le pro le contacte, tu suis et tu encaisses.</li>
+        <ol className="mt-3 space-y-2.5 text-[clamp(16px,4.2vw,22px)] leading-[1.3] text-white/80">
+          <li className="flex items-start gap-2.5">
+            <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-[11px] font-black text-[#00D4A0]">1</span>
+            <span>Tu reperes un besoin chez un proche.</span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-[11px] font-black text-[#00D4A0]">2</span>
+            <span>Tu entres son prenom + numero en 20 secondes.</span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-[11px] font-black text-[#00D4A0]">3</span>
+            <span>Le pro le contacte, tu suis et tu encaisses.</span>
+          </li>
         </ol>
       </div>
 
@@ -807,9 +816,19 @@ function ScreenWelcome({
         <StatCard title="Commissions gagnees" value={`${Math.round(commissionGagnee)} EUR`} sub={`+${Math.round(commissionPrevisionnelle)} EUR en attente`} tone="amber" />
       </div>
 
-      <div className="mt-4 rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/10 px-4 py-3">
-        <p className="text-[15px] font-semibold text-[#00D4A0]">{sponsorName || "Parrain Popey Human"}</p>
-        <p className="text-[13px] text-[#00D4A0]/70">Eclaireur {scoutType === "pro" ? "Pro" : "Perso"} · Commission automatique</p>
+      <div className="mt-4 flex items-center gap-3 rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/10 px-4 py-3">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#00D4A0]/30 bg-[#00D4A0]/15 text-[11px] font-black text-[#00D4A0]">
+          {(sponsorName || "PH")
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((token) => token[0]?.toUpperCase() || "")
+            .join("")}
+        </span>
+        <div>
+          <p className="text-[15px] font-semibold text-[#00D4A0]">{sponsorName || "Parrain Popey Human"}</p>
+          <p className="text-[13px] text-[#00D4A0]/70">Eclaireur {scoutType === "pro" ? "Pro" : "Perso"} · Commission automatique</p>
+        </div>
       </div>
 
       {tokenOrCode ? (
@@ -878,10 +897,10 @@ function ScreenSubmit({
   onSubmit: () => void;
 }) {
   return (
-    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
+    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Nouveau contact</p>
-      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>20 secondes. C est tout.</h2>
-      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">
+      <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>20 secondes. C est tout.</h2>
+      <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">
         Pas besoin de vendre. Tu indiques le besoin metier, puis Jean-Philippe dispatch manuellement.
       </p>
 
@@ -897,7 +916,7 @@ function ScreenSubmit({
           <select
             value={city}
             onChange={(event) => setCity(event.target.value as keyof typeof OPPORTUNITY_TARGETS)}
-            className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90"
+            className="h-12 w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 text-[17px] text-white/90"
           >
             {cities.map((item) => (
               <option key={item} value={item} className="bg-[#0C1224]">
@@ -907,28 +926,28 @@ function ScreenSubmit({
           </select>
         </div>
         <InputMock label="Prenom du contact">
-          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Nicolas" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
+          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Nicolas" className="h-12 w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 text-[17px] text-white/90" />
         </InputMock>
         <InputMock label="Son numero WhatsApp">
-          <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="06 24 78 14 32" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
+          <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="06 24 78 14 32" className="h-12 w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 text-[17px] text-white/90" />
         </InputMock>
         <InputMock label="Rentrer de quel metier cette personne a besoin">
           <input
             value={projectTypeCustom}
             onChange={(event) => setProjectTypeCustom(event.target.value)}
             placeholder="Ex: Courtier, Agent immo, Plombier, Coach..."
-            className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90"
+            className="h-12 w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 text-[17px] text-white/90"
           />
         </InputMock>
         <InputMock label="Valeur estimee (optionnel)">
-          <input value={estimatedDealValue} onChange={(event) => setEstimatedDealValue(event.target.value)} type="number" min="1" placeholder="250000" className="h-11 w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 text-[15px] text-white/90" />
+          <input value={estimatedDealValue} onChange={(event) => setEstimatedDealValue(event.target.value)} type="number" min="1" placeholder="250000" className="h-12 w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 text-[17px] text-white/90" />
         </InputMock>
         <InputMock label="Commentaire">
-          <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Contexte, urgence..." className="min-h-[88px] w-full rounded-xl border border-white/15 bg-[#161D2E] px-3 py-2 text-[15px] text-white/90" />
+          <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Contexte, urgence..." className="min-h-[104px] w-full rounded-xl border border-white/15 bg-[#161D2E] px-4 py-3 text-[17px] text-white/90" />
         </InputMock>
       </form>
 
-      <div className="mt-3 rounded-xl border border-[#F5A623]/35 bg-[#F5A623]/10 p-3">
+      <div className="mt-3 rounded-2xl border border-[#F5A623]/35 bg-[#F5A623]/10 p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#F5A623]">Ta commission si ca aboutit</p>
         <p className="mt-1 text-sm font-bold text-white">{rewardLabel} · delai moyen {delayDays} jours</p>
         <p className="mt-1 text-[12px] text-white/80">Toutes les soumissions sont envoyees a Jean-Philippe Roth (Coach business, Dax) puis visibles aussi en admin.</p>
@@ -938,7 +957,7 @@ function ScreenSubmit({
         type="submit"
         onClick={onSubmit}
         disabled={isSubmitting || !tokenOrCode}
-        className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[14px] font-black uppercase tracking-[0.04em] text-[#060B12] disabled:opacity-50"
+        className="mt-4 h-14 w-full rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[15px] font-black uppercase tracking-[0.04em] text-[#060B12] disabled:opacity-50"
       >
         {isSubmitting ? "Envoi..." : "Envoyer la mise en relation"}
       </button>
@@ -975,12 +994,12 @@ function ScreenTracking({
   const step = first?.status === "converted" ? 3 : first?.status === "offered" ? 2 : first?.status === "validated" ? 1 : 0;
   const labels = ["Contacte", "RDV", "Offre", "Paye"];
   return (
-    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
+    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Mes commissions</p>
-      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>Tout en temps reel.</h2>
-      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Chaque mise en relation suivie jusqu au paiement.</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>Tout en temps reel.</h2>
+      <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Chaque mise en relation suivie jusqu au paiement.</p>
 
-      <div className="mt-3 flex items-center justify-between rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/10 p-3">
+      <div className="mt-3 flex items-center justify-between rounded-2xl border border-[#00D4A0]/35 bg-gradient-to-br from-[#00D4A0]/14 to-[#00D4A0]/6 p-3.5">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Gagne ce mois</p>
           <p className="text-[30px] font-black leading-none text-[#00D4A0]">{Math.round(won)} EUR</p>
@@ -993,7 +1012,7 @@ function ScreenTracking({
       </div>
 
       <p className="mt-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Tes contacts en cours</p>
-      <div className="mt-2 rounded-xl border border-white/12 bg-[#161D2E] p-3">
+      <div className="mt-2 rounded-2xl border border-white/12 bg-[#161D2E] p-3.5">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-white">{first ? `${first.contact_name} -> ${first.project_type || "Projet"}` : "Aucun dossier en cours"}</p>
@@ -1028,7 +1047,7 @@ function ScreenTracking({
       </div>
 
       {second ? (
-        <div className="mt-2 rounded-xl border border-[#F5A623]/30 bg-[#F5A623]/10 p-3">
+        <div className="mt-2 rounded-2xl border border-[#F5A623]/30 bg-[#F5A623]/10 p-3">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-white">
@@ -1043,7 +1062,7 @@ function ScreenTracking({
         </div>
       ) : null}
 
-      <div className="mt-3 rounded-xl border border-fuchsia-300/35 bg-fuchsia-400/10 p-3">
+      <div className="mt-3 rounded-2xl border border-fuchsia-300/35 bg-fuchsia-400/10 p-3.5">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Mon reseau eclaireurs = 0</p>
         <p className="mt-1 text-[11px] text-fuchsia-100/85">
           A partir de 5 opportunites finalisees, tu debloques ton reseau et tu touches 3% de commissions.
@@ -1123,12 +1142,12 @@ function ScreenSuggestion({
 }) {
   const hasContacts = importedCount > 0;
   return (
-    <div className="min-h-[calc(100dvh-140px)] rounded-[24px] bg-[#070B16] p-3 sm:p-4">
+    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
-      <h2 className={`${syne.className} mt-2 text-[clamp(28px,7.2vw,40px)] font-black leading-[1.02]`}>1 contact. 1 opportunite.</h2>
-      <p className="mt-2 text-[clamp(15px,4.1vw,18px)] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>1 contact. 1 opportunite.</h2>
+      <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
 
-      <div className="mt-3 rounded-xl border border-white/10 bg-[#161D2E] p-3">
+      <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Importer tous tes contacts</p>
         {!hasContacts ? (
           <>
@@ -1156,7 +1175,7 @@ function ScreenSuggestion({
           </>
         ) : (
           <>
-            <div className="mt-2 rounded-xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 py-3">
+            <div className="mt-2 rounded-2xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 py-3">
               <p className="text-[10px] uppercase tracking-[0.08em] text-[#00D4A0]/80">Contacts deja importes</p>
               <p className="mt-1 text-[30px] font-black leading-none text-[#00D4A0]">{importedCount}</p>
               <p className="text-[12px] text-[#00D4A0]/80">contacts disponibles pour les suggestions</p>
@@ -1220,7 +1239,7 @@ function ScreenSuggestion({
         </div>
       </div>
 
-      <div className="mt-3 rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/8 p-3">
+      <div className="mt-3 rounded-2xl border border-[#00D4A0]/25 bg-[#00D4A0]/8 p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Contact suggere aujourd hui</p>
         {suggestion ? (
           <>
@@ -1233,7 +1252,7 @@ function ScreenSuggestion({
                 <p className="text-[11px] text-white/50">{[suggestion.city, suggestion.companyHint].filter(Boolean).join(" · ") || "Contact importe"}</p>
               </div>
             </div>
-            <div className="mt-2 rounded-lg bg-black/20 px-3 py-2 text-[12px] text-white/70">
+            <div className="mt-2 rounded-xl bg-black/25 px-3 py-2 text-[13px] text-white/70">
               Popey pense qu il peut etre interesse par: "{selectedTargetLabel}".
             </div>
             <div className="mt-2 flex items-center justify-between">
@@ -1274,7 +1293,7 @@ function ScreenSuggestion({
         )}
       </div>
 
-      <div className="mt-3 rounded-xl border border-white/10 bg-[#161D2E] p-3">
+      <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Ton potentiel si tu joues chaque jour</p>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
           <div>
@@ -1305,8 +1324,9 @@ function PhoneFrame({
   total: number;
 }) {
   return (
-    <article className="rounded-[30px] bg-transparent p-0 shadow-none">
-      <div className="min-h-[calc(100dvh-140px)]">{children}</div>
+    <article className="rounded-[32px] border border-white/10 bg-[#0F1420] p-2 shadow-[0_26px_74px_rgba(0,0,0,0.58)]">
+      <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-[#1E2640]" />
+      <div className="min-h-[calc(100dvh-172px)]">{children}</div>
       <div className="mt-2 flex items-center justify-center gap-1.5">
         {Array.from({ length: total }).map((_, idx) => (
           <span
