@@ -33,6 +33,14 @@ const OPPORTUNITY_TARGETS = {
 } as const;
 
 const SCOUT_PREVIEW_TOKEN_STORAGE_KEY = "popey-human:eclaireur-preview:last-token-or-code";
+const SCOUT_PREVIEW_TOKEN_COOKIE_KEY = "popey_human_eclaireur_preview_token";
+
+function readCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const escaped = name.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
+  const match = document.cookie.match(new RegExp(`(?:^|; )${escaped}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 type Referral = {
   id: string;
@@ -298,6 +306,13 @@ export default function EclaireurWebappPreviewPage() {
     if (fromUrl) {
       setTokenOrCode(fromUrl);
       window.localStorage.setItem(SCOUT_PREVIEW_TOKEN_STORAGE_KEY, fromUrl);
+      document.cookie = `${SCOUT_PREVIEW_TOKEN_COOKIE_KEY}=${encodeURIComponent(fromUrl)}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+      return;
+    }
+    const savedCookie = readCookie(SCOUT_PREVIEW_TOKEN_COOKIE_KEY).trim();
+    if (savedCookie) {
+      setTokenOrCode(savedCookie);
+      window.localStorage.setItem(SCOUT_PREVIEW_TOKEN_STORAGE_KEY, savedCookie);
       return;
     }
     const saved = String(window.localStorage.getItem(SCOUT_PREVIEW_TOKEN_STORAGE_KEY) || "").trim();
