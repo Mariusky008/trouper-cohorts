@@ -1671,6 +1671,20 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [myProfile]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("panel") !== "alliances") return;
+    if (showAlliancesPanel) return;
+    if (stage === "scan") {
+      if (!hasImportedContacts) return;
+      setStage("daily");
+      setTimeout(() => setShowAlliancesPanel(true), 40);
+      return;
+    }
+    setShowAlliancesPanel(true);
+  }, [hasImportedContacts, showAlliancesPanel, stage]);
+
+  useEffect(() => {
     if (showAlliancesPanel) return;
     setShowRadarMode(false);
     setIsRadarLoading(false);
@@ -8257,7 +8271,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   type="button"
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      window.location.href = "/popey-human/entrepreneur-smart-scan-test/historique";
+                      window.history.replaceState(null, "", "/popey-human/entrepreneur-smart-scan-test?panel=alliances");
+                      window.location.assign("/popey-human/entrepreneur-smart-scan-test/historique");
                     }
                   }}
                   className="mb-4 flex w-full items-center gap-3 rounded-[20px] border border-white/10 bg-[#141C2E] px-4 py-3 text-left transition hover:border-white/20"
