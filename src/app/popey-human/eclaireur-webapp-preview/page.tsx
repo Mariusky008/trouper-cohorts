@@ -32,6 +32,8 @@ const OPPORTUNITY_TARGETS = {
   ],
 } as const;
 
+const SCOUT_PREVIEW_TOKEN_STORAGE_KEY = "popey-human:eclaireur-preview:last-token-or-code";
+
 type Referral = {
   id: string;
   contact_name: string;
@@ -223,7 +225,8 @@ function referralStatusLabel(status: string) {
 
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
-  const tokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
+  const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
+  const [tokenOrCode, setTokenOrCode] = useState(urlTokenOrCode);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeScreen, setActiveScreen] = useState(0);
@@ -288,6 +291,22 @@ export default function EclaireurWebappPreviewPage() {
   const dayLetters = ["L", "M", "M", "J", "V", "S", "D"];
   const todayDayIndex = Math.max(0, Math.min(6, (new Date().getDay() + 6) % 7));
   const streak = Math.min(7, Math.max(1, todayDayIndex + 1));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromUrl = urlTokenOrCode.trim();
+    if (fromUrl) {
+      setTokenOrCode(fromUrl);
+      window.localStorage.setItem(SCOUT_PREVIEW_TOKEN_STORAGE_KEY, fromUrl);
+      return;
+    }
+    const saved = String(window.localStorage.getItem(SCOUT_PREVIEW_TOKEN_STORAGE_KEY) || "").trim();
+    if (saved) {
+      setTokenOrCode(saved);
+      return;
+    }
+    setTokenOrCode("");
+  }, [urlTokenOrCode]);
 
   useEffect(() => {
     if (!availableMetiers.includes(metier)) {
