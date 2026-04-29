@@ -605,49 +605,14 @@ export default function EclaireurWebappPreviewPage() {
   ];
 
   return (
-    <main className={`${dmSans.className} min-h-screen bg-[#07090F] text-[#EEF2F7]`}>
+    <main className={`${dmSans.className} min-h-screen bg-[#07090F] pb-28 text-[#EEF2F7]`}>
       <div className="mx-auto max-w-xl px-4 py-7 sm:px-6">
         <header className="mb-4 text-center">
           <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">Popey · Webapp Eclaireur</p>
-          <h1 className={`${syne.className} text-2xl font-black`}>4 ecrans · Interface eclaireur</h1>
         </header>
 
         <section className="rounded-[40px] border border-white/15 bg-[#0F1420] p-3 shadow-[0_26px_65px_-35px_rgba(0,0,0,0.85)]">
           <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-white/10" />
-          <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-2">
-            <button
-              type="button"
-              onClick={() => setActiveScreen((v) => Math.max(0, v - 1))}
-              disabled={activeScreen === 0}
-              className="h-9 rounded-xl border border-white/15 bg-white/5 px-3 text-[11px] font-black uppercase tracking-[0.08em] disabled:opacity-40"
-            >
-              Precedent
-            </button>
-            <div className="flex items-center gap-1.5">
-              {screens.map((screen, index) => (
-                <button
-                  key={screen.label}
-                  type="button"
-                  onClick={() => setActiveScreen(index)}
-                  className={`h-1.5 transition ${index === activeScreen ? "w-5 rounded-md bg-[#00D4A0]" : "w-1.5 rounded-full bg-white/35"}`}
-                  aria-label={`Aller a ${screen.label}`}
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveScreen((v) => Math.min(screens.length - 1, v + 1))}
-              disabled={activeScreen === screens.length - 1}
-              className="h-9 rounded-xl border border-white/15 bg-white/5 px-3 text-[11px] font-black uppercase tracking-[0.08em] disabled:opacity-40"
-            >
-              Suivant
-            </button>
-          </div>
-
-          <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.12em] text-[#00D4A0]">
-            {screens[activeScreen]?.label} · {screens[activeScreen]?.subtitle}
-          </p>
-
           <div
             className="overflow-hidden rounded-[28px] border border-white/10 bg-[#070B16] p-3"
             onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
@@ -664,6 +629,30 @@ export default function EclaireurWebappPreviewPage() {
           </div>
         </section>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
+        <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 rounded-2xl border border-white/15 bg-[#0E1213]/95 p-2 backdrop-blur">
+          {[
+            { label: "Accueil", idx: 0 },
+            { label: "Soumettre", idx: 1 },
+            { label: "Suivi", idx: 2 },
+            { label: "Suggestion", idx: 3 },
+          ].map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => setActiveScreen(item.idx)}
+              className={`h-11 rounded-xl text-[10px] font-black uppercase tracking-[0.06em] ${
+                activeScreen === item.idx
+                  ? "bg-[#00D4A0] text-[#060B12]"
+                  : "border border-white/20 bg-black/25 text-white/80"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       <input
         ref={contactImportInputRef}
