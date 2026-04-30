@@ -22,6 +22,67 @@ function toActionType(actionType: ActionPayload["actionType"]) {
   return "buy_offer";
 }
 
+function getRequestIp(request: NextRequest): string {
+  const fromForwarded = String(request.headers.get("x-forwarded-for") || "").split(",")[0]?.trim();
+  const fromRealIp = String(request.headers.get("x-real-ip") || "").trim();
+  return fromForwarded || fromRealIp || "unknown";
+}
+
+async function enforceRateLimit(supabase: ReturnType<typeof createAdminClient>, requesterIp: string) {
+  if (!requesterIp || requesterIp === "unknown") return null;
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const [hourWindow, dayWindow] = await Promise.all([
+    supabase
+      .from("human_marketplace_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("requester_ip", requesterIp)
+      .gte("submitted_at", oneHourAgo),
+    supabase
+      .from("human_marketplace_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("requester_ip", requesterIp)
+      .gte("submitted_at", oneDayAgo),
+  ]);
+
+  if ((hourWindow.count || 0) >= 6) {
+    return "Trop de demandes en 1h. Reessayez un peu plus tard.";
+  }
+  if ((dayWindow.count || 0) >= 20) {
+    return "Limite quotidienne atteinte. Reessayez demain.";
+  }
+  return null;
+}
+
+async function notifyAdmins(
+  supabase: ReturnType<typeof createAdminClient>,
+  input: { actionType: "acheter" | "vendre" | "rejoindre"; fullName: string; city: string; metier: string; offerId: string | null },
+) {
+  const { data: admins } = await supabase.from("admins").select("user_id");
+  const adminUserIds = Array.from(new Set(((admins as Array<{ user_id: string }> | null) || []).map((row) => row.user_id)));
+  if (adminUserIds.length === 0) return;
+
+  const { data: members } = await supabase.from("human_members").select("id,user_id").in("user_id", adminUserIds);
+  const adminMembers = ((members as Array<{ id: string; user_id: string }> | null) || []).filter((row) => Boolean(row.id));
+  if (adminMembers.length === 0) return;
+
+  const actionLabel =
+    input.actionType === "rejoindre" ? "reservation de place" : input.actionType === "vendre" ? "mise en vente" : "offre d achat";
+  const title = `Marketplace: nouvelle ${actionLabel}`;
+  const message = `${input.fullName} · ${input.metier || "metier n/r"} · ${input.city || "ville n/r"}`;
+
+  await supabase.from("human_notifications").insert(
+    adminMembers.map((member) => ({
+      member_id: member.id,
+      type: "generale",
+      title,
+      message,
+      impact: input.offerId ? `offer:${input.offerId}` : null,
+    })),
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => null)) as ActionPayload | null;
@@ -47,6 +108,12 @@ export async function POST(request: NextRequest) {
     const offerAmountEur = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
 
     const supabase = createAdminClient();
+    const requesterIp = getRequestIp(request);
+    const requesterUserAgent = String(request.headers.get("user-agent") || "").slice(0, 500);
+    const rateLimitError = await enforceRateLimit(supabase, requesterIp);
+    if (rateLimitError) {
+      return NextResponse.json({ error: rateLimitError }, { status: 429 });
+    }
 
     const offerRecord = {
       place_id: placeId,
@@ -61,6 +128,8 @@ export async function POST(request: NextRequest) {
       offer_amount_eur: offerAmountEur,
       status: "pending",
       source: "landing",
+      requester_ip: requesterIp,
+      requester_user_agent: requesterUserAgent || null,
       metadata: {
         ui_action_type: actionType,
       },
@@ -101,6 +170,14 @@ export async function POST(request: NextRequest) {
         city,
         metier,
       },
+    });
+
+    await notifyAdmins(supabase, {
+      actionType,
+      fullName,
+      city,
+      metier,
+      offerId: insertedOffer?.id || null,
     });
 
     return NextResponse.json({

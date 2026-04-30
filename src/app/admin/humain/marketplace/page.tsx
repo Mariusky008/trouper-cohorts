@@ -100,12 +100,25 @@ export default async function AdminHumainMarketplacePage({
                       <p className="text-xs text-black/70">
                         Place: {offer.place?.metier || "N/A"} · {offer.place?.city || "N/A"} · statut demande: {offer.status}
                       </p>
+                      {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
                       <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <form action={adminUpdateMarketplaceOfferStatusAction} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="offer_id" value={offer.id} />
+                      <select
+                        name="assign_member_id"
+                        defaultValue={offer.assigned_member_id || ""}
+                        className="h-9 rounded border bg-background px-2 text-xs"
+                      >
+                        <option value="">Attribuer membre (optionnel)</option>
+                        {snapshot.members.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.label}
+                          </option>
+                        ))}
+                      </select>
                       <select name="next_status" defaultValue={offer.status} className="h-9 rounded border bg-background px-2 text-xs">
                         <option value="pending">pending</option>
                         <option value="reviewing">reviewing</option>
@@ -142,6 +155,18 @@ export default async function AdminHumainMarketplacePage({
                     <form action={adminSetMarketplacePlaceStatusAction} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="place_id" value={place.id} />
+                      <select
+                        name="owner_member_id"
+                        defaultValue={place.owner_member_id || ""}
+                        className="h-9 rounded border bg-background px-2 text-xs"
+                      >
+                        <option value="">Owner membre (optionnel)</option>
+                        {snapshot.members.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.label}
+                          </option>
+                        ))}
+                      </select>
                       <select name="next_status" defaultValue={place.status} className="h-9 rounded border bg-background px-2 text-xs">
                         <option value="dispo">dispo</option>
                         <option value="sale">sale</option>
