@@ -189,40 +189,151 @@ nav {
 
 /* ── INSCRIPTION PREVIEW ── */
 .inscription-preview {
-  max-width: 1300px; margin: 0 auto; padding: 28px 48px;
+  max-width: 1300px; margin: 0 auto; padding: 34px 48px;
 }
 .inscription-box {
-  background: #fff; border: 1px solid var(--border); border-radius: 20px;
-  padding: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  background: radial-gradient(1200px 340px at -10% -30%, rgba(0,200,150,.14), transparent 52%), #fff;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 20px;
+  box-shadow: 0 16px 40px rgba(8,10,15,.08);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
 }
-.inscription-title { font-size: 22px; font-weight: 800; color: var(--ink); }
-.inscription-sub { font-size: 13px; color: var(--t2); margin-top: 6px; line-height: 1.6; }
-.inscription-controls { margin-top: 14px; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+.inscription-box:hover { transform: translateY(-2px); box-shadow: 0 22px 46px rgba(8,10,15,.1); border-color: rgba(0,0,0,.14); }
+.inscription-left {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,241,235,.8));
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.inscription-left:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(8,10,15,.06); }
+.inscription-title { font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -.03em; line-height: 1.05; margin-top: 10px; }
+.inscription-sub { font-size: 14px; color: var(--t2); margin-top: 10px; line-height: 1.65; max-width: 58ch; }
+.inscription-controls { margin-top: 16px; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
 .inscription-controls select {
-  height: 40px; border-radius: 10px; border: 1px solid var(--border2);
-  background: var(--paper); font-family: var(--fd); font-size: 13px; padding: 0 10px;
+  height: 46px; border-radius: 12px; border: 1.5px solid var(--border2);
+  background: #fff; font-family: var(--fd); font-size: 14px; font-weight: 600; padding: 0 12px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.inscription-controls select:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0,200,150,.14);
 }
 .inscription-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.inscription-actions .btn-primary { min-height: 46px; }
 .inscription-chip {
   display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
   padding: 5px 10px; border-radius: 999px; background: var(--teal-l); color: var(--teal-d);
   border: 1px solid var(--teal-g);
 }
-.inscription-preview-card {
-  border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--paper);
+.inscription-points {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
+.inscription-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t2);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  transition: transform .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.inscription-point:hover { transform: translateY(-1px); border-color: var(--teal-g); background: rgba(0,200,150,.08); }
+.inscription-preview-card {
+  border: 1px solid rgba(0,0,0,.09);
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,241,235,.92));
+  box-shadow: 0 10px 26px rgba(8,10,15,.08);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+}
+.inscription-preview-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(8,10,15,.12); border-color: rgba(0,0,0,.14); }
 .ipc-head {
-  padding: 14px; border-bottom: 1px solid var(--border);
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
-.ipc-title { font-size: 15px; font-weight: 800; color: var(--ink); }
+.ipc-title { font-size: 20px; font-weight: 900; color: var(--ink); letter-spacing: -.02em; }
 .ipc-sub { font-size: 12px; color: var(--t2); margin-top: 2px; }
-.ipc-badge { font-size: 10px; font-weight: 700; padding: 5px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--border2); }
-.ipc-grid { display: grid; gap: 1px; grid-template-columns: repeat(3,1fr); background: var(--border); }
-.ipc-cell { background: #fff; padding: 12px; text-align: center; }
-.ipc-val { font-family: var(--fi); font-size: 26px; color: var(--ink); line-height: 1; }
-.ipc-lbl { font-size: 10px; color: var(--t3); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
-.ipc-note { padding: 12px 14px; font-size: 12px; color: var(--t2); line-height: 1.5; }
+.ipc-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,200,150,.14);
+  border: 1px solid rgba(0,200,150,.3);
+  color: var(--teal-d);
+}
+.ipc-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3,1fr);
+  padding: 12px 14px 0;
+}
+.ipc-cell {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ipc-cell:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(8,10,15,.08); border-color: rgba(0,0,0,.14); }
+.ipc-val { font-family: var(--fi); font-size: 36px; color: var(--ink); line-height: .9; }
+.ipc-lbl { font-size: 10px; color: var(--t3); margin-top: 6px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.ipc-note { padding: 12px 16px 10px; font-size: 12px; color: var(--t2); line-height: 1.55; }
+.ipc-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+.ipc-meta-item {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 11px;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ipc-meta-item:hover { transform: translateY(-2px); box-shadow: 0 10px 16px rgba(8,10,15,.08); border-color: rgba(0,0,0,.14); }
+.ipc-meta-label { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; }
+.ipc-meta-value { margin-top: 5px; font-size: 17px; font-weight: 900; color: var(--ink); letter-spacing: -.01em; }
+
+.is-preview-updating .ipc-val,
+.is-preview-updating .ipc-meta-value {
+  animation: popNumber .45s ease;
+}
+@keyframes popNumber {
+  0% { opacity: .5; transform: translateY(5px) scale(.98); }
+  60% { opacity: 1; transform: translateY(-1px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inscription-box,
+  .inscription-left,
+  .inscription-point,
+  .inscription-preview-card,
+  .ipc-cell,
+  .ipc-meta-item {
+    transition: none !important;
+  }
+  .is-preview-updating .ipc-val,
+  .is-preview-updating .ipc-meta-value {
+    animation: none !important;
+  }
+}
 
 /* ── MAIN GRID ── */
 .main { max-width: 1300px; margin: 0 auto; padding: 40px 48px 80px; }
@@ -688,7 +799,9 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
 @media(max-width:640px){
   .nav-center,.nav-right .nav-badge { display:none; }
   .places-grid { grid-template-columns:1fr; }
-  }
+  .inscription-controls { grid-template-columns:1fr; }
+  .ipc-grid,.ipc-meta { grid-template-columns:1fr; }
+}
 
 /* Animations */
 @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
@@ -753,13 +866,19 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
 <!-- ── INSCRIPTION PREVIEW ── -->
 <section class="inscription-preview" id="section-inscription">
   <div class="inscription-box">
-    <div>
+    <div class="inscription-left">
       <div class="inscription-chip">🧩 Inscription marketplace</div>
       <h2 class="inscription-title">Choisissez votre ville et votre metier</h2>
       <p class="inscription-sub">
-        Selectionnez votre zone et votre metier pour visualiser votre future fiche et votre projection de valeur.
+        Selectionnez votre zone et votre metier pour visualiser votre future fiche, votre projection de valeur
+        sur 3 ans et la dynamique locale.
         Offre active: <strong>0€ le 1er mois</strong>, puis 149€/mois.
       </p>
+      <div class="inscription-points">
+        <span class="inscription-point">✅ 1 place par metier</span>
+        <span class="inscription-point">📍 1 ville cible</span>
+        <span class="inscription-point">📈 Projection 3 ans</span>
+      </div>
       <div class="inscription-controls">
         <select id="inscriptionCity" onchange="updateInscriptionPreview()"></select>
         <select id="inscriptionMetier" onchange="updateInscriptionPreview()"></select>
@@ -792,6 +911,16 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       </div>
       <div class="ipc-note" id="previewNote">
         Potentiel de valorisation base sur la dynamique reseau locale et la recursivite des recommandations.
+      </div>
+      <div class="ipc-meta">
+        <div class="ipc-meta-item">
+          <div class="ipc-meta-label">Valeur cumulee 3 ans</div>
+          <div class="ipc-meta-value" id="previewTotal">0€</div>
+        </div>
+        <div class="ipc-meta-item">
+          <div class="ipc-meta-label">Gain potentiel</div>
+          <div class="ipc-meta-value" id="previewGain">0€</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2137,6 +2266,39 @@ function money(value) {
   return `${Math.round(value).toLocaleString("fr-FR")}€`;
 }
 
+function parseMoneyFromText(text) {
+  const cleaned = String(text || "").replace(/[^\d-]/g, "");
+  const parsed = Number(cleaned || "0");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function animateNumberTo(el, targetValue, formatter = (value) => money(value), durationMs = 520) {
+  if (!el) return;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    el.textContent = formatter(targetValue);
+    return;
+  }
+
+  const startValue = parseMoneyFromText(el.textContent);
+  const startedAt = performance.now();
+  const diff = targetValue - startValue;
+  if (Math.abs(diff) < 8) {
+    el.textContent = formatter(targetValue);
+    return;
+  }
+
+  const tick = (now) => {
+    const elapsed = now - startedAt;
+    const progress = Math.min(elapsed / durationMs, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const nextValue = Math.round(startValue + diff * eased);
+    el.textContent = formatter(nextValue);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function getSphereByKey(key) {
   return SPHERES.find((sphere) => sphere.key === key) || SPHERES[0];
 }
@@ -2203,15 +2365,28 @@ function updateInscriptionPreview() {
   const y2El = document.getElementById("previewYear2");
   const y3El = document.getElementById("previewYear3");
   const noteEl = document.getElementById("previewNote");
+  const totalEl = document.getElementById("previewTotal");
+  const gainEl = document.getElementById("previewGain");
+  const previewCardEl = document.querySelector(".inscription-preview-card");
+
+  const total3Y = y1 + y2 + y3;
+  const gain3Y = Math.max(y3 - y1, 0);
 
   if (metierEl) metierEl.textContent = `${sphere.icon} ${metier}`;
   if (villeEl) villeEl.textContent = `${city} · ${sphere.tag}`;
   if (badgeEl) badgeEl.textContent = `Projection +${projection.annualGrowthPct}%/an`;
-  if (y1El) y1El.textContent = money(y1);
-  if (y2El) y2El.textContent = money(y2);
-  if (y3El) y3El.textContent = money(y3);
+  animateNumberTo(y1El, y1, (value) => money(value));
+  animateNumberTo(y2El, y2, (value) => money(value));
+  animateNumberTo(y3El, y3, (value) => money(value));
+  animateNumberTo(totalEl, total3Y, (value) => money(value));
+  animateNumberTo(gainEl, gain3Y, (value) => `+${money(value)}`);
   if (noteEl) {
-    noteEl.textContent = `Prevision 3 ans pour ${metier.toLowerCase()} a ${city}: annee 1 ${money(y1)}, annee 2 ${money(y2)}, annee 3 ${money(y3)}.`;
+    noteEl.textContent = `${metier} a ${city}: annee 1 ${money(y1)}, annee 2 ${money(y2)}, annee 3 ${money(y3)}. Projection basee sur la traction reseau locale et la recurrence des recommandations.`;
+  }
+  if (previewCardEl) {
+    previewCardEl.classList.remove("is-preview-updating");
+    requestAnimationFrame(() => previewCardEl.classList.add("is-preview-updating"));
+    setTimeout(() => previewCardEl.classList.remove("is-preview-updating"), 420);
   }
 }
 

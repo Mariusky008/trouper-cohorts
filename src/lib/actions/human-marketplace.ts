@@ -447,3 +447,51 @@ export async function adminUpdateMarketplaceOfferStatusAction(formData: FormData
   revalidatePath("/popey-human/accueil-test/marketplace");
   redirect(withMarketplaceStatus(currentUrl, "success", "Statut demande mis a jour."));
 }
+
+export async function adminDeleteMarketplaceOfferAction(formData: FormData): Promise<void> {
+  const auth = await requireHumanAdmin();
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
+  if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
+
+  const offerId = String(formData.get("offer_id") || "").trim();
+  if (!offerId) redirect(withMarketplaceStatus(currentUrl, "error", "Demande introuvable."));
+
+  const supabaseAdmin = createAdminClient();
+  const { data: offer, error: offerReadError } = await supabaseAdmin
+    .from("human_marketplace_offers")
+    .select("id,place_id,action_type,full_name")
+    .eq("id", offerId)
+    .maybeSingle();
+  if (offerReadError || !offer) {
+    redirect(withMarketplaceStatus(currentUrl, "error", offerReadError?.message || "Demande introuvable."));
+  }
+
+  const { error: deleteError } = await supabaseAdmin.from("human_marketplace_offers").delete().eq("id", offerId);
+  if (deleteError) {
+    redirect(withMarketplaceStatus(currentUrl, "error", deleteError.message || "Suppression impossible."));
+  }
+
+  await supabaseAdmin.from("human_marketplace_events").insert({
+    place_id: offer.place_id || null,
+    offer_id: null,
+    event_type: "status_changed",
+    payload: {
+      object: "offer",
+      action: "deleted",
+      deleted_offer_id: offerId,
+      deleted_offer_type: offer.action_type,
+      deleted_by_user_id: auth.user.id,
+    },
+  });
+
+  await notifyMarketplaceAdmins(
+    supabaseAdmin,
+    "Marketplace: demande supprimee",
+    `${offer.full_name || "Demande"} (${offer.action_type}) supprimee`,
+    `offer:${offerId}`,
+  );
+
+  revalidatePath("/admin/humain/marketplace");
+  revalidatePath("/admin/humain/marketplace/inscriptions");
+  redirect(withMarketplaceStatus(currentUrl, "success", "Demande supprimee."));
+}
