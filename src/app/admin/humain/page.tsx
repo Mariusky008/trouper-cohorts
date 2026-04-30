@@ -116,6 +116,9 @@ export default async function AdminHumainPage() {
         <Button asChild variant="outline">
           <Link href="/admin/humain/marketplace">Ouvrir le marketplace</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/humain/chat">Ouvrir le chat WhatsApp</Link>
+        </Button>
       </div>
     </section>
   );

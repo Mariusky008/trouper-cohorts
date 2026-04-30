@@ -2748,6 +2748,7 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
       | "generate-message"
       | "followup-job"
       | "prepare-whatsapp-payload"
+      | "send-partner-outreach"
       | "external-click"
       | "analytics-event"
       | "eclaireurs",
@@ -3256,20 +3257,10 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
       return;
     }
     setModalErrorMessage("");
-    const payload = createTransitionPayload(action);
     const profileOriginContactId = actionFromProfileContactId === scopedActionContact.id ? actionFromProfileContactId : null;
-    const awaitingConfirm: TransitionAwaitingConfirmState = {
-      action,
-      actionContactId: scopedActionContact.id,
-      countAsSent: true,
-      sentInHistory: true,
-      stayOnCurrentContact: Boolean(profileOriginContactId),
-      returnToProfileContactId: profileOriginContactId,
-    };
-    let whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`;
 
     try {
-      const prepared = (await postSmartScan("prepare-whatsapp-payload", {
+      await postSmartScan("send-partner-outreach", {
         externalContactRef: scopedActionContact.id,
         fullName: scopedActionContact.name,
         city: scopedActionContact.city,
@@ -3277,35 +3268,27 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
         actionType: action,
         messageDraft: draftMessage,
         phoneE164: cleanPhone,
-      })) as { whatsappUrl?: string };
-      if (prepared?.whatsappUrl) {
-        whatsappUrl = prepared.whatsappUrl;
-      }
+      });
     } catch {
-      // Fallback URL is already set and can still be used.
+      setModalErrorMessage("Envoi WhatsApp Twilio impossible. Vérifie la config Sandbox puis réessaie.");
+      return;
     }
 
     setShowTemplateModal(false);
     setAiGenerationSource(null);
     setAiPromptVersion(null);
     setAiGeneratedAt(null);
-    const pendingContext: PendingWhatsAppContext = {
-      transition: {
-        ...payload,
-        manual: true,
-        ctaLabel: "Passez au prochain profil",
-      },
-      awaitingConfirm,
-      contactId: scopedActionContact.id,
-      createdAt: Date.now(),
-    };
-    savePendingWhatsAppContext(pendingContext);
-    setPendingTransition(payload);
-    setPendingFinalizeAction(action);
-    setPendingReturnProfileContactId(profileOriginContactId);
-    if (typeof window !== "undefined") {
-      window.open(whatsappUrl, "_blank");
-    }
+    setPendingTransition(null);
+    setPendingFinalizeAction(null);
+    setPendingReturnProfileContactId(null);
+    clearPendingWhatsAppContext();
+    finalizeAction(action, 220, {
+      countAsSent: true,
+      sentInHistory: true,
+      stayOnCurrentContact: Boolean(profileOriginContactId),
+      returnToProfileContactId: profileOriginContactId,
+      actionContact: scopedActionContact,
+    });
     if (eclaireurIds.includes(scopedActionContact.id)) {
       setEclaireurStatsStore((prev) => {
         const existing = prev[scopedActionContact.id] || {
