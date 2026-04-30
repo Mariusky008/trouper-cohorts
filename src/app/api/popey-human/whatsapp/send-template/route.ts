@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { enqueueWhatsAppTemplateMessage } from "@/lib/actions/whatsapp-360dialog";
-import { whatsappSendTemplateSchema } from "@/lib/popey-human/whatsapp-360dialog-validation";
+import { enqueueWhatsAppTemplateMessage } from "@/lib/actions/whatsapp-meta";
+import { whatsappSendTemplateSchema } from "@/lib/popey-human/whatsapp-meta-validation";
 
 export const dynamic = "force-dynamic";
 

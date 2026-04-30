@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getWhatsAppQueueMonitoring } from "@/lib/actions/whatsapp-360dialog";
+import { getWhatsAppQueueMonitoring } from "@/lib/actions/whatsapp-meta";
 
 export const dynamic = "force-dynamic";
 

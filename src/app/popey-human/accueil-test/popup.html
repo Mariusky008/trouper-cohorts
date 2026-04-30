@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Alliances & Ajout Éclaireur</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090F;--s1:#0E1420;--s2:#141C2E;--s3:#1A2438;--b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.11);--teal:#00D4A0;--teal-d:rgba(0,212,160,.12);--teal-g:rgba(0,212,160,.25);--amber:#F5A623;--amber-d:rgba(245,166,35,.1);--amber-g:rgba(245,166,35,.3);--purple:#9B8FFF;--purple-d:rgba(155,143,255,.12);--purple-g:rgba(155,143,255,.25);--green:#1DB954;--green-d:rgba(29,185,84,.12);--green-g:rgba(29,185,84,.25);--red:#FF4D6D;--red-d:rgba(255,77,109,.1);--blue:#4FC3F7;--blue-d:rgba(79,195,247,.1);--t:#EEF2F7;--t2:rgba(238,242,247,.55);--t3:rgba(238,242,247,.25);--t4:rgba(238,242,247,.1);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;font-family:var(--fb);color:var(--t)}
+body{display:flex;justify-content:center;gap:40px;align-items:flex-start;padding:40px 20px;flex-wrap:wrap}
+
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:50px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);position:relative;display:flex;flex-direction:column}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 30% at 50% 0%,rgba(0,212,160,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+.phone-label{text-align:center;color:rgba(255,255,255,.3);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 8px;font-size:15px;font-weight:600;position:relative;z-index:1}
+.sb-time{font-family:var(--fd);font-size:18px}
+.sb-batt{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;color:#1DB954}
+
+.scroll{flex:1;overflow-y:auto;padding:8px 20px 100px;position:relative;z-index:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── SCREEN 1 — ALLIANCES SOLLICITÉES ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:6px}
+.page-title{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.3px}
+.page-actions{display:flex;gap:8px}
+.btn-refresh{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .2s}
+.btn-refresh:active{background:var(--s3)}
+.btn-close{width:36px;height:36px;border-radius:50%;background:var(--s2);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t3);cursor:pointer;transition:all .2s}
+
+/* STAT TABS */
+.stat-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.st{border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;border:1px solid var(--b1);background:var(--s1)}
+.st.active{border-color:var(--teal-g);background:var(--teal-d)}
+.st-label{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.st.active .st-label{color:rgba(0,212,160,.7)}
+.st:not(.active) .st-label{color:var(--t3)}
+.st-val{font-family:var(--fd);font-size:24px;font-weight:800;line-height:1}
+.st.active .st-val{color:var(--teal)}
+.st-tot .st-val{color:var(--t)}
+.st-env .st-val{color:var(--green)}
+.st-cli .st-val{color:var(--amber)}
+.st-ins .st-val{color:var(--purple)}
+
+/* SECTION LABEL */
+.sec{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* ALLIANCE CARD */
+.acard{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden;display:flex;align-items:center;gap:12px}
+.acard:active{transform:scale(.98)}
+.acard::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.acard:hover::before{opacity:1}
+.acard.clicked{border-color:rgba(245,166,35,.25)}
+.acard.clicked::before{background:linear-gradient(135deg,rgba(245,166,35,.04),transparent)}
+.acard.sent{border-color:rgba(29,185,84,.2)}
+.acard.sent::before{background:linear-gradient(135deg,rgba(29,185,84,.04),transparent)}
+.acard.inscrit{border-color:rgba(0,212,160,.25);background:linear-gradient(145deg,rgba(0,212,160,.06),var(--s1))}
+
+.ac-av{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:14px;font-weight:800;flex-shrink:0}
+.ac-info{flex:1;min-width:0}
+.ac-name{font-size:14px;font-weight:700;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-meta{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3);flex-wrap:wrap}
+.ac-dot{width:3px;height:3px;border-radius:50%;background:var(--t4);flex-shrink:0}
+.ac-status{flex-shrink:0}
+.ac-chip{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700}
+.chip-sent{background:var(--green-d);border:1px solid var(--green-g);color:var(--green)}
+.chip-clicked{background:var(--amber-d);border:1px solid var(--amber-g);color:var(--amber)}
+.chip-inscrit{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:sticky;bottom:0;background:rgba(7,9,15,.95);backdrop-filter:blur(20px);border-top:1px solid var(--b1);padding:10px 12px 20px;display:flex;z-index:100}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:12px;position:relative}
+.bn.active .bni{color:var(--teal)}.bn.active .bnl{color:var(--teal)}
+.bn:not(.active) .bni{color:var(--t3)}.bn:not(.active) .bnl{color:var(--t3)}
+.bni{font-size:22px}.bnl{font-size:10px;font-weight:600;letter-spacing:.03em}
+.bnpip{width:4px;height:4px;border-radius:50%;background:var(--teal)}
+
+/* ── SCREEN 2 — MODAL AJOUTER ÉCLAIREUR ── */
+.modal-bg{position:absolute;inset:0;background:rgba(7,9,15,.85);backdrop-filter:blur(12px);z-index:50;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 100px}
+.modal{background:var(--s2);border:1px solid var(--b2);border-radius:28px 28px 0 0;padding:24px 22px 28px;position:relative;overflow:hidden}
+.modal::before{content:'';position:absolute;top:-60px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,160,.08) 0%,transparent 65%);pointer-events:none}
+
+.modal-handle{width:40px;height:4px;border-radius:2px;background:var(--b2);margin:0 auto 20px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.modal-title{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.3px}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--t3);cursor:pointer}
+.modal-sub{font-size:13px;color:var(--t2);margin-bottom:22px;line-height:1.5}
+.modal-sub span{color:var(--teal);font-weight:600}
+
+/* TYPE SELECTOR */
+.type-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.type-opt{border-radius:14px;padding:12px;cursor:pointer;transition:all .2s;border:1px solid var(--b1);background:var(--s3);text-align:center}
+.type-opt.selected{border-color:var(--teal-g);background:var(--teal-d)}
+.type-opt:active{transform:scale(.97)}
+.to-icon{font-size:22px;margin-bottom:6px;display:block}
+.to-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.type-opt.selected .to-title{color:var(--teal)}
+.type-opt:not(.selected) .to-title{color:var(--t)}
+.to-sub{font-size:10px;color:var(--t3)}
+
+/* FORM FIELDS */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.field-full{margin-bottom:10px}
+.field-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;display:block}
+.field-input{width:100%;background:var(--s3);border:1px solid var(--b2);border-radius:12px;padding:13px 14px;font-family:var(--fb);font-size:14px;color:var(--t);outline:none;transition:all .2s;-webkit-appearance:none}
+.field-input:focus{border-color:rgba(0,212,160,.4);background:rgba(0,212,160,.04)}
+.field-input::placeholder{color:var(--t3);font-size:13px}
+
+/* METIER CHIPS SUGGESTION */
+.metier-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.ms{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--b1);background:var(--s3);color:var(--t3);transition:all .2s}
+.ms:active{background:var(--teal-d);border-color:var(--teal-g);color:var(--teal)}
+
+/* SUBMIT BTN */
+.submit-btn{width:100%;padding:17px;background:linear-gradient(135deg,var(--teal),#00A87E);border:none;border-radius:14px;font-family:var(--fd);font-size:16px;font-weight:800;letter-spacing:.5px;color:#050D0A;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .25s;position:relative;overflow:hidden}
+.submit-btn::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s}
+.submit-btn:active{transform:scale(.97)}
+.submit-btn:active::before{background:rgba(255,255,255,.08)}
+.submit-arrow{font-size:18px;transition:transform .2s}
+.submit-btn:hover .submit-arrow{transform:translateX(4px)}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.ai{animation:slideUp .35s ease both}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1 LABEL -->
+<div>
+  <div class="phone-label">Écran 1 — Alliances sollicitées</div>
+  <div class="phone">
+    <div class="statusbar">
+      <div class="sb-time" style="font-family:var(--fd)">08:02</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px">
+        <span>▲▲▲</span><span>5G</span>
+        <div class="sb-batt">68%</div>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <div class="page-header ai">
+        <div class="page-title">Mes Alliances</div>
+        <div class="page-actions">
+          <div class="btn-refresh" onclick="refresh(this)">
+            <span id="refreshIcon">↻</span>
+            <span>Actualiser</span>
+          </div>
+          <div class="btn-close">✕</div>
+        </div>
+      </div>
+
+      <!-- STAT TABS -->
+      <div class="stat-tabs ai" style="animation-delay:.05s">
+        <div class="st st-tot" onclick="filterStat(this,'tous')">
+          <div class="st-label">Total</div>
+          <div class="st-val">10</div>
+        </div>
+        <div class="st st-env active" onclick="filterStat(this,'envoyes')">
+          <div class="st-label">Envoyé</div>
+          <div class="st-val">7</div>
+        </div>
+        <div class="st st-cli" onclick="filterStat(this,'cliques')">
+          <div class="st-label">Cliqué</div>
+          <div class="st-val">3</div>
+        </div>
+        <div class="st st-ins" onclick="filterStat(this,'inscrits')">
+          <div class="st-label">Inscrit</div>
+          <div class="st-val">0</div>
+        </div>
+      </div>
+
+      <!-- CLIQUÉS -->
+      <div class="sec ai" style="animation-delay:.08s">🔥 Ont cliqué ton lien · 3</div>
+
+      <div class="acard clicked ai" style="animation-delay:.1s">
+        <div class="ac-av" style="background:rgba(245,166,35,.15);color:var(--amber)">CP</div>
+        <div class="ac-info">
+          <div class="ac-name">Camille Petit</div>
+          <div class="ac-meta">
+            <span>Notaire</span><div class="ac-dot"></div>
+            <span>Dax</span><div class="ac-dot"></div>
+            <span>Il y a 2h</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-clicked">👆 Cliqué</div></div>
+      </div>
+
+      <div class="acard clicked ai" style="animation-delay:.13s">
+        <div class="ac-av" style="background:rgba(245,166,35,.12);color:var(--amber)">NM</div>
+        <div class="ac-info">
+          <div class="ac-name">Nicolas Martin</div>
+          <div class="ac-meta">
+            <span>Notaire</span><div class="ac-dot"></div>
+            <span>Dax</span><div class="ac-dot"></div>
+            <span>Il y a 3h</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-clicked">👆 Cliqué</div></div>
+      </div>
+
+      <div class="acard clicked ai" style="animation-delay:.15s">
+        <div class="ac-av" style="background:rgba(245,166,35,.12);color:var(--amber)">LG</div>
+        <div class="ac-info">
+          <div class="ac-name">Laurent Garens</div>
+          <div class="ac-meta">
+            <span>Coach sportif</span><div class="ac-dot"></div>
+            <span>Pau</span><div class="ac-dot"></div>
+            <span>Il y a 5h</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-clicked">👆 Cliqué</div></div>
+      </div>
+
+      <!-- ENVOYÉS -->
+      <div class="sec ai" style="animation-delay:.17s">✉ Envoyés · 7</div>
+
+      <div class="acard sent ai" style="animation-delay:.19s">
+        <div class="ac-av" style="background:rgba(29,185,84,.12);color:var(--green)">JB</div>
+        <div class="ac-info">
+          <div class="ac-name">Jean Bob</div>
+          <div class="ac-meta">
+            <span>Maçon</span><div class="ac-dot"></div>
+            <span>Dax</span><div class="ac-dot"></div>
+            <span>Hier 14:30</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-sent">✉ Envoyé</div></div>
+      </div>
+
+      <div class="acard sent ai" style="animation-delay:.21s">
+        <div class="ac-av" style="background:rgba(29,185,84,.1);color:var(--green)">NM</div>
+        <div class="ac-info">
+          <div class="ac-name">Nicolas Martin</div>
+          <div class="ac-meta">
+            <span>Sport</span><div class="ac-dot"></div>
+            <span>Dax</span><div class="ac-dot"></div>
+            <span>Hier 11:20</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-sent">✉ Envoyé</div></div>
+      </div>
+
+      <div class="acard sent ai" style="animation-delay:.23s">
+        <div class="ac-av" style="background:rgba(79,195,247,.1);color:var(--blue)">PD</div>
+        <div class="ac-info">
+          <div class="ac-name">Peggy Dubois</div>
+          <div class="ac-meta">
+            <span>Nutritionniste</span><div class="ac-dot"></div>
+            <span>Le Grand Dax</span>
+          </div>
+        </div>
+        <div class="ac-status"><div class="ac-chip chip-sent">✉ Envoyé</div></div>
+      </div>
+
+      <!-- Remaining grouped -->
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px" class="ai" style="animation-delay:.25s" onclick="this.style.opacity='.5'">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:14px">📋</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--t2)">4 autres envois</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:1px">Peggy Dubois ×2, Jean Bob ×1, autre</div>
+          </div>
+        </div>
+        <div style="font-size:18px;color:var(--t3)">›</div>
+      </div>
+
+    </div>
+
+    <div class="bottom-nav">
+      <div class="bn"><div class="bni">🔍</div><div class="bnl">Recherche</div></div>
+      <div class="bn"><div class="bni">⚡</div><div class="bnl">Daily</div></div>
+      <div class="bn active"><div class="bni">🤝</div><div class="bnl">Alliances</div><div class="bnpip"></div></div>
+      <div class="bn"><div class="bni">📡</div><div class="bnl">Éclaireurs</div></div>
+      <div class="bn"><div class="bni">👤</div><div class="bnl">Profil</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2 — MODAL AJOUTER -->
+<div>
+  <div class="phone-label">Écran 2 — Ajouter un éclaireur</div>
+  <div class="phone">
+    <div class="statusbar">
+      <div class="sb-time" style="font-family:var(--fd)">08:02</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px">
+        <span>▲▲▲</span><span>5G</span>
+        <div class="sb-batt">68%</div>
+      </div>
+    </div>
+
+    <!-- BLURRED BG content -->
+    <div style="padding:20px;flex:1;filter:blur(3px);opacity:.3;pointer-events:none;overflow:hidden">
+      <div style="height:60px;background:var(--s2);border-radius:14px;margin-bottom:10px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="height:80px;background:var(--s2);border-radius:14px"></div>
+        <div style="height:80px;background:var(--s2);border-radius:14px"></div>
+        <div style="height:80px;background:var(--s1);border-radius:14px"></div>
+        <div style="height:80px;background:var(--s1);border-radius:14px"></div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-bg">
+      <div class="modal">
+        <div class="modal-handle"></div>
+
+        <div class="modal-header">
+          <div class="modal-title">Nouvel éclaireur</div>
+          <div class="modal-close">✕</div>
+        </div>
+        <div class="modal-sub">
+          Ajoutez un contact qui deviendra votre <span>apporteur d'affaires</span> commissionné.
+        </div>
+
+        <!-- TYPE SELECTOR -->
+        <div class="type-selector">
+          <div class="type-opt selected" onclick="selectType(this)">
+            <span class="to-icon">📱</span>
+            <div class="to-title">Perso</div>
+            <div class="to-sub">Ami · famille · collègue</div>
+          </div>
+          <div class="type-opt" onclick="selectType(this)">
+            <span class="to-icon">🔍</span>
+            <div class="to-title">Pro local</div>
+            <div class="to-sub">Annuaire · partenaire</div>
+          </div>
+        </div>
+
+        <!-- FIELDS -->
+        <div class="field-grid">
+          <div>
+            <label class="field-label">Prénom</label>
+            <input class="field-input" type="text" placeholder="Sophie">
+          </div>
+          <div>
+            <label class="field-label">Nom</label>
+            <input class="field-input" type="text" placeholder="Martin">
+          </div>
+        </div>
+
+        <div class="field-full">
+          <label class="field-label">Métier / Activité</label>
+          <input class="field-input" id="metierInput" type="text" placeholder="Ostéopathe, coach, notaire..." oninput="filterSuggestions(this.value)">
+        </div>
+
+        <!-- SUGGESTIONS -->
+        <div class="metier-suggestions" id="suggestions">
+          <div class="ms" onclick="pickMetier(this)">🦴 Ostéopathe</div>
+          <div class="ms" onclick="pickMetier(this)">🏋️ Coach sportif</div>
+          <div class="ms" onclick="pickMetier(this)">⚖️ Notaire</div>
+          <div class="ms" onclick="pickMetier(this)">🌿 Sophrologue</div>
+          <div class="ms" onclick="pickMetier(this)">🏠 Agent immo</div>
+        </div>
+
+        <div class="field-grid" style="margin-bottom:10px">
+          <div>
+            <label class="field-label">Ville</label>
+            <input class="field-input" type="text" placeholder="Dax">
+          </div>
+          <div>
+            <label class="field-label">WhatsApp</label>
+            <input class="field-input" type="tel" placeholder="06 00 00 00">
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="submitEclaireur(this)">
+          <span>Ajouter cet éclaireur</span>
+          <span class="submit-arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="bn"><div class="bni">🔍</div><div class="bnl">Recherche</div></div>
+      <div class="bn"><div class="bni">⚡</div><div class="bnl">Daily</div></div>
+      <div class="bn"><div class="bni">🤝</div><div class="bnl">Alliances</div></div>
+      <div class="bn active"><div class="bni">📡</div><div class="bnl">Éclaireurs</div><div class="bnpip"></div></div>
+      <div class="bn"><div class="bni">👤</div><div class="bnl">Profil</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterStat(el,f){
+  document.querySelectorAll('.st').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+function refresh(btn){
+  const icon=document.getElementById('refreshIcon');
+  icon.style.display='inline-block';
+  icon.style.animation='spin .7s linear infinite';
+  setTimeout(()=>{icon.style.animation='';icon.textContent='✓'},1500);
+}
+function selectType(el){
+  document.querySelectorAll('.type-opt').forEach(t=>t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function pickMetier(el){
+  document.getElementById('metierInput').value=el.textContent.replace(/^[^\w]+/,'').trim();
+}
+function filterSuggestions(v){
+  const all=['🦴 Ostéopathe','🏋️ Coach sportif','⚖️ Notaire','🌿 Sophrologue','🏠 Agent immo','🥗 Nutritionniste','📊 Comptable','🧘 Sophrologue','🏦 Courtier'];
+  const box=document.getElementById('suggestions');
+  const matches=v?all.filter(m=>m.toLowerCase().includes(v.toLowerCase())):all.slice(0,5);
+  box.innerHTML=matches.slice(0,5).map(m=>`<div class="ms" onclick="pickMetier(this)">${m}</div>`).join('');
+  box.querySelectorAll('.ms').forEach(ms=>ms.addEventListener('click',function(){pickMetier(this)}));
+}
+function submitEclaireur(btn){
+  btn.innerHTML='<div style="width:18px;height:18px;border:2.5px solid rgba(5,13,10,.3);border-top-color:#050D0A;border-radius:50%;animation:spin .7s linear infinite"></div><span>Ajout en cours...</span>';
+  btn.disabled=true;
+  setTimeout(()=>{
+    btn.innerHTML='✓ Éclaireur ajouté avec succès !';
+    btn.style.background='linear-gradient(135deg,var(--green),#149E3F)';
+    btn.disabled=false;
+  },1600);
+}
+</script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</body>
+</html>

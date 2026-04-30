@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popey Éclaireur — Webapp</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090F; --surface:#0F1420; --surface2:#161D2E; --surface3:#1E2640;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --teal:#00D4A0; --teal-dim:rgba(0,212,160,0.1); --teal-glow:rgba(0,212,160,0.2);
+  --amber:#F5A623; --amber-dim:rgba(245,166,35,0.1);
+  --purple:#9B8FFF; --purple-dim:rgba(155,143,255,0.1);
+  --green:#1DB954; --green-dim:rgba(29,185,84,0.1);
+  --red:#FF4D6D; --red-dim:rgba(255,77,109,0.1);
+  --text:#EEF2F7; --text-sec:rgba(238,242,247,0.55); --text-ter:rgba(238,242,247,0.28);
+  --font-d:'Syne',sans-serif; --font-b:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:var(--font-b);color:var(--text);min-height:100vh;padding:40px 20px}
+
+/* LAYOUT — 3 phones côte à côte */
+.phones-row{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;align-items:start;max-width:800px;margin:0 auto}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.screen-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-ter);text-align:center}
+.screen-sublabel{font-size:12px;color:var(--teal);font-weight:600;text-align:center;margin-top:-8px}
+
+/* PHONE FRAME */
+.phone{background:var(--surface);border:1px solid var(--border2);border-radius:40px;padding:14px;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 0.5px rgba(255,255,255,.04);width:100%}
+.phone-notch{width:64px;height:5px;background:var(--surface3);border-radius:3px;margin:0 auto 18px}
+.phone-screen{background:#070B16;border-radius:28px;padding:20px 18px;min-height:580px;position:relative;overflow:hidden}
+
+/* SCREEN 1 — Accueil éclaireur */
+.s1-header{margin-bottom:20px}
+.s1-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.s1-name{font-family:var(--font-d);font-size:22px;font-weight:800;line-height:1.1;margin-bottom:4px}
+.s1-name span{color:var(--teal)}
+.s1-sub{font-size:12px;color:var(--text-sec);line-height:1.5}
+
+.s1-how{background:var(--surface2);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px}
+.s1-how-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:10px}
+.s1-how-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.s1-how-item:last-child{margin-bottom:0}
+.s1-how-num{width:20px;height:20px;border-radius:50%;background:var(--teal-dim);border:0.5px solid rgba(0,212,160,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--teal);flex-shrink:0;margin-top:1px}
+.s1-how-text{font-size:12px;color:var(--text-sec);line-height:1.4}
+
+.s1-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.s1-stat{background:var(--surface2);border:0.5px solid var(--border);border-radius:12px;padding:12px}
+.s1-stat-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:4px}
+.s1-stat-val{font-family:var(--font-d);font-size:24px;font-weight:800;line-height:1}
+.s1-stat-sub{font-size:10px;color:var(--text-ter);margin-top:3px}
+.stat-teal{color:var(--teal)}
+.stat-amber{color:var(--amber)}
+
+.s1-parrain{background:var(--teal-dim);border:0.5px solid rgba(0,212,160,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.s1-parrain-av{width:28px;height:28px;border-radius:50%;background:rgba(0,212,160,.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--teal);flex-shrink:0}
+.s1-parrain-name{font-size:12px;font-weight:600;color:var(--teal);margin-bottom:1px}
+.s1-parrain-role{font-size:10px;color:rgba(0,212,160,.6)}
+
+.s1-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--teal),#00B887);border-radius:14px;text-align:center;font-family:var(--font-d);font-size:15px;letter-spacing:.5px;color:#060B12;font-weight:800;cursor:default;transition:all .2s}
+
+/* SCREEN 2 — Soumettre un contact */
+.s2-header{margin-bottom:18px}
+.s2-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.s2-title{font-family:var(--font-d);font-size:22px;font-weight:800;line-height:1.1;margin-bottom:6px}
+.s2-sub{font-size:12px;color:var(--text-sec)}
+
+.s2-pro-select{margin-bottom:14px}
+.s2-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-ter);margin-bottom:6px;display:block}
+.s2-pro-chips{display:flex;flex-wrap:wrap;gap:6px}
+.s2-chip{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:default;border:1px solid transparent;transition:all .2s}
+.s2-chip.active{background:var(--teal-dim);border-color:rgba(0,212,160,.4);color:var(--teal)}
+.s2-chip.inactive{background:var(--surface2);border-color:var(--border);color:var(--text-ter)}
+
+.s2-field{margin-bottom:12px}
+.s2-input{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:var(--font-b);font-size:13px;color:var(--text);outline:none}
+.s2-input.filled{border-color:rgba(0,212,160,.2);color:var(--text)}
+.s2-input::placeholder{color:var(--text-ter);font-size:12px}
+
+.s2-besoin{margin-bottom:14px}
+.s2-besoin-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.s2-besoin-item{padding:8px 10px;background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;font-size:11px;color:var(--text-sec);cursor:default;text-align:center;transition:all .2s}
+.s2-besoin-item.selected{background:var(--purple-dim);border-color:rgba(155,143,255,.4);color:var(--purple)}
+.s2-besoin-item.active-sel{background:var(--teal-dim);border-color:rgba(0,212,160,.4);color:var(--teal)}
+
+.s2-motivation{background:var(--amber-dim);border:0.5px solid rgba(245,166,35,.3);border-radius:10px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.s2-mot-icon{font-size:18px;flex-shrink:0}
+.s2-mot-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:2px}
+.s2-mot-val{font-size:13px;font-weight:700;color:var(--text)}
+
+.s2-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--teal),#00B887);border-radius:12px;text-align:center;font-family:var(--font-d);font-size:14px;letter-spacing:.5px;color:#060B12;font-weight:800;cursor:default}
+.s2-note{font-size:10px;color:var(--text-ter);text-align:center;margin-top:8px}
+
+/* SCREEN 3 — Suivi commission */
+.s3-header{margin-bottom:16px}
+.s3-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.s3-title{font-family:var(--font-d);font-size:20px;font-weight:800;line-height:1.1;margin-bottom:4px}
+.s3-sub{font-size:12px;color:var(--text-sec)}
+
+.s3-total{background:linear-gradient(135deg,rgba(0,212,160,.12),rgba(0,212,160,.04));border:0.5px solid rgba(0,212,160,.3);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.s3-total-left .s3-total-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:4px}
+.s3-total-left .s3-total-val{font-family:var(--font-d);font-size:32px;font-weight:800;color:var(--teal);line-height:1}
+.s3-total-left .s3-total-sub{font-size:11px;color:var(--text-sec);margin-top:3px}
+.s3-total-right{text-align:right}
+.s3-total-right .s3-total-pend{font-size:11px;color:var(--text-ter);margin-bottom:2px}
+.s3-total-right .s3-total-pend-val{font-size:16px;font-weight:700;color:var(--amber)}
+
+.s3-dossiers-title{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-ter);margin-bottom:10px}
+.s3-dossier{background:var(--surface2);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px}
+.s3-dos-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.s3-dos-info .s3-dos-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.s3-dos-info .s3-dos-meta{font-size:11px;color:var(--text-ter)}
+.s3-dos-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.badge-green{background:var(--green-dim);color:var(--green)}
+.badge-amber{background:var(--amber-dim);color:var(--amber)}
+.badge-teal{background:var(--teal-dim);color:var(--teal)}
+
+.s3-pipeline{display:flex;gap:4px;margin-bottom:10px}
+.s3-pipe-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.s3-pipe-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.pipe-done{background:var(--green-dim);color:var(--green);border:1px solid rgba(29,185,84,.3)}
+.pipe-active{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(0,212,160,.4)}
+.pipe-wait{background:var(--surface3);color:var(--text-ter);border:1px solid var(--border)}
+.s3-pipe-label{font-size:8px;color:var(--text-ter);text-align:center;line-height:1.2}
+.s3-pipe-line{height:1px;background:var(--border);flex:1;margin-top:10px}
+
+.s3-dos-commission{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:0.5px solid var(--border)}
+.s3-dos-com-label{font-size:11px;color:var(--text-ter)}
+.s3-dos-com-val{font-size:14px;font-weight:700;color:var(--green)}
+
+.s3-dos-pending{background:var(--amber-dim);border:0.5px solid rgba(245,166,35,.25);border-radius:12px;padding:12px;margin-bottom:8px}
+.s3-dos-p-top{display:flex;justify-content:space-between;margin-bottom:8px}
+.s3-dos-p-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.s3-dos-p-meta{font-size:11px;color:var(--text-ter)}
+.s3-dos-p-amount{font-size:15px;font-weight:700;color:var(--amber)}
+.s3-dos-p-status{font-size:11px;color:rgba(245,166,35,.7)}
+.s3-progress{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.s3-progress-fill{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--amber),#F8C53A);width:60%}
+.s3-progress-label{font-size:10px;color:var(--text-ter)}
+
+.s3-actions{display:flex;gap:8px;margin-top:14px}
+.s3-btn-sec{flex:1;padding:11px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;text-align:center;font-size:12px;font-weight:600;color:var(--text-sec);cursor:default}
+.s3-btn-main{flex:1;padding:11px;background:var(--teal-dim);border:0.5px solid rgba(0,212,160,.35);border-radius:10px;text-align:center;font-size:12px;font-weight:700;color:var(--teal);cursor:default}
+
+/* NAV DOTS */
+.nav-dots{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--border2)}
+.nav-dot.active{background:var(--teal);width:20px;border-radius:3px}
+
+/* PAGE TITLE */
+.page-title{text-align:center;margin-bottom:40px}
+.page-title h1{font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--text);margin-bottom:6px}
+.page-title p{font-size:14px;color:var(--text-sec)}
+
+
+/* SCREEN 4 — Daily Suggestion */
+.s4-header{margin-bottom:16px}
+.s4-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+.s4-title{font-family:var(--font-d);font-size:20px;font-weight:800;line-height:1.1;margin-bottom:4px}
+.s4-sub{font-size:12px;color:var(--text-sec);line-height:1.5}
+
+.s4-streak{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.s4-streak-days{display:flex;gap:5px}
+.s4-streak-day{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.sd-done{background:rgba(0,212,160,.15);border:1px solid rgba(0,212,160,.4);color:var(--teal)}
+.sd-today{background:var(--teal);color:#070B16}
+.sd-next{background:var(--surface2);border:1px solid var(--border);color:var(--text-ter)}
+.s4-streak-info{text-align:right}
+.s4-streak-num{font-family:var(--font-d);font-size:18px;font-weight:800;color:var(--amber)}
+.s4-streak-label{font-size:9px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em}
+
+.s4-card{background:linear-gradient(135deg,rgba(0,212,160,.08),rgba(0,212,160,.03));border:1px solid rgba(0,212,160,.25);border-radius:16px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.s4-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(0,212,160,.05)}
+.s4-card-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:10px}
+.s4-contact{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.s4-contact-av{width:38px;height:38px;border-radius:50%;background:rgba(0,212,160,.12);border:1px solid rgba(0,212,160,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:13px;font-weight:800;color:var(--teal);flex-shrink:0}
+.s4-contact-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.s4-contact-meta{font-size:11px;color:var(--text-ter)}
+.s4-need{background:rgba(0,0,0,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.s4-need-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-ter);margin-bottom:4px}
+.s4-need-text{font-size:12px;color:var(--text-sec);line-height:1.4;font-style:italic}
+.s4-need-why{font-size:11px;color:var(--amber);margin-top:4px;font-weight:500}
+.s4-earn{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.s4-earn-pro{font-size:12px;color:var(--text-sec)}
+.s4-earn-pro span{color:var(--teal);font-weight:600}
+.s4-earn-amount{font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--teal)}
+.s4-actions{display:flex;gap:8px}
+.s4-btn-yes{flex:2;padding:14px;background:linear-gradient(135deg,var(--teal),#00B887);border-radius:12px;text-align:center;font-family:var(--font-d);font-size:14px;letter-spacing:.5px;color:#060B12;font-weight:800;cursor:default}
+.s4-btn-skip{flex:1;padding:14px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:12px;text-align:center;font-size:12px;font-weight:600;color:var(--text-ter);cursor:default}
+
+.s4-potential{background:var(--surface2);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-top:12px}
+.s4-pot-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:10px}
+.s4-pot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.s4-pot-item{text-align:center}
+.s4-pot-val{font-family:var(--font-d);font-size:18px;font-weight:800;line-height:1;margin-bottom:3px}
+.s4-pot-label{font-size:9px;color:var(--text-ter);line-height:1.2}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.phone-wrap{animation:fadeIn .6s ease both}
+.phone-wrap:nth-child(2){animation-delay:.1s}
+.phone-wrap:nth-child(3){animation-delay:.2s}
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>Popey · Webapp Éclaireur</h1>
+  <p>4 écrans · Interface éclaireur particulier · Conçue pour devenir un réflexe quotidien</p>
+</div>
+
+<div class="phones-row">
+
+  <!-- ═══ SCREEN 1 — ACCUEIL ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Écran 1</div>
+    <div class="screen-sublabel">Accueil éclaireur</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="s1-header">
+          <div class="s1-tag">Popey · Éclaireur</div>
+          <div class="s1-name">Salut <span>Sarah</span> 👋<br>ton réseau vaut de l'or</div>
+          <div class="s1-sub" style="margin-top:6px">Recommande les bons pros à tes proches.<br>Ils y gagnent — toi aussi.</div>
+        </div>
+
+        <div class="s1-how">
+          <div class="s1-how-title">Comment ça marche</div>
+          <div class="s1-how-item">
+            <div class="s1-how-num">1</div>
+            <div class="s1-how-text">Tu repères un besoin chez un ami ou un proche</div>
+          </div>
+          <div class="s1-how-item">
+            <div class="s1-how-num">2</div>
+            <div class="s1-how-text">Tu entres son prénom + numéro en 20 secondes</div>
+          </div>
+          <div class="s1-how-item">
+            <div class="s1-how-num">3</div>
+            <div class="s1-how-text">Le pro le contacte — tu suis et tu encaisses ta commission</div>
+          </div>
+        </div>
+
+        <div class="s1-stats">
+          <div class="s1-stat">
+            <div class="s1-stat-label">Mises en relation</div>
+            <div class="s1-stat-val stat-teal">4</div>
+            <div class="s1-stat-sub">ce mois</div>
+          </div>
+          <div class="s1-stat">
+            <div class="s1-stat-label">Commissions gagnées</div>
+            <div class="s1-stat-val stat-amber">80€</div>
+            <div class="s1-stat-sub">+20€ en attente</div>
+          </div>
+        </div>
+
+        <div class="s1-parrain">
+          <div class="s1-parrain-av">JR</div>
+          <div>
+            <div class="s1-parrain-name">Jean-Philippe · Coach sportif</div>
+            <div class="s1-parrain-role">Ton pro partenaire · Commission : 15€ / client</div>
+          </div>
+        </div>
+
+        <div class="s1-btn">Recommander quelqu'un →</div>
+
+        <div class="nav-dots" style="margin-top:14px">
+          <div class="nav-dot active"></div>
+          <div class="nav-dot"></div>
+          <div class="nav-dot"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 2 — SOUMETTRE UN CONTACT ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Écran 2</div>
+    <div class="screen-sublabel">Soumettre un contact</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="s2-header">
+          <div class="s2-tag">Nouveau contact</div>
+          <div class="s2-title">20 secondes.<br>C'est tout.</div>
+          <div class="s2-sub">Pas besoin de vendre — juste de donner un nom.</div>
+        </div>
+
+        <!-- Choix du pro -->
+        <div class="s2-pro-select">
+          <span class="s2-label">Pour quel pro ?</span>
+          <div class="s2-pro-chips">
+            <div class="s2-chip active">🏋️ Jean-Philippe · Coach</div>
+            <div class="s2-chip inactive">🌿 Marie · Sophrologue</div>
+            <div class="s2-chip inactive">🏠 Thomas · Agent immo</div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="s2-field">
+          <span class="s2-label">Prénom du contact</span>
+          <input class="s2-input filled" value="Nicolas" readonly>
+        </div>
+        <div class="s2-field">
+          <span class="s2-label">Son numéro WhatsApp</span>
+          <input class="s2-input filled" value="06 24 78 14 32" readonly>
+        </div>
+
+        <!-- Besoin -->
+        <div class="s2-besoin">
+          <span class="s2-label" style="display:block;margin-bottom:6px">Son besoin principal</span>
+          <div class="s2-besoin-grid">
+            <div class="s2-besoin-item active-sel">🏋️ Perdre du poids</div>
+            <div class="s2-besoin-item">💪 Se remettre en forme</div>
+            <div class="s2-besoin-item">🧘 Réduire le stress</div>
+            <div class="s2-besoin-item">✏️ Autre besoin</div>
+          </div>
+        </div>
+
+        <!-- Motivation -->
+        <div class="s2-motivation">
+          <div class="s2-mot-icon">💰</div>
+          <div>
+            <div class="s2-mot-title">Ta commission si ça aboutit</div>
+            <div class="s2-mot-val">15€ versés automatiquement</div>
+          </div>
+        </div>
+
+        <div class="s2-btn">Envoyer la mise en relation →</div>
+        <div class="s2-note">Un message est envoyé à Nicolas en ton nom par Jean-Philippe · Aucune démarche supplémentaire</div>
+
+        <div class="nav-dots">
+          <div class="nav-dot"></div>
+          <div class="nav-dot active"></div>
+          <div class="nav-dot"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 3 — SUIVI & COMMISSIONS ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Écran 3</div>
+    <div class="screen-sublabel">Suivi & commissions</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="s3-header">
+          <div class="s3-tag">Mes commissions</div>
+          <div class="s3-title">Tout en temps<br>réel.</div>
+          <div class="s3-sub">Chaque mise en relation suivie jusqu'au paiement.</div>
+        </div>
+
+        <!-- Total -->
+        <div class="s3-total">
+          <div class="s3-total-left">
+            <div class="s3-total-label">Gagné ce mois</div>
+            <div class="s3-total-val">80€</div>
+            <div class="s3-total-sub">sur 4 mises en relation</div>
+          </div>
+          <div class="s3-total-right">
+            <div class="s3-total-pend">En attente</div>
+            <div class="s3-total-pend-val">+35€</div>
+          </div>
+        </div>
+
+        <div class="s3-dossiers-title">Tes contacts en cours</div>
+
+        <!-- Dossier 1 — Converti -->
+        <div class="s3-dossier">
+          <div class="s3-dos-top">
+            <div class="s3-dos-info">
+              <div class="s3-dos-name">Nicolas M. → Coach sportif</div>
+              <div class="s3-dos-meta">Envoyé le 20 avril · 1re séance faite</div>
+            </div>
+            <div class="s3-dos-badge badge-green">✓ Client</div>
+          </div>
+          <div class="s3-pipeline">
+            <div class="s3-pipe-step">
+              <div class="s3-pipe-dot pipe-done">✓</div>
+              <div class="s3-pipe-label">Contacté</div>
+            </div>
+            <div class="s3-pipe-line"></div>
+            <div class="s3-pipe-step">
+              <div class="s3-pipe-dot pipe-done">✓</div>
+              <div class="s3-pipe-label">RDV pris</div>
+            </div>
+            <div class="s3-pipe-line"></div>
+            <div class="s3-pipe-step">
+              <div class="s3-pipe-dot pipe-done">✓</div>
+              <div class="s3-pipe-label">1re séance</div>
+            </div>
+            <div class="s3-pipe-line"></div>
+            <div class="s3-pipe-step">
+              <div class="s3-pipe-dot pipe-done">€</div>
+              <div class="s3-pipe-label">Payé</div>
+            </div>
+          </div>
+          <div class="s3-dos-commission">
+            <span class="s3-dos-com-label">Ta commission</span>
+            <span class="s3-dos-com-val">+15€ versés ✓</span>
+          </div>
+        </div>
+
+        <!-- Dossier 2 — En cours -->
+        <div class="s3-dos-pending">
+          <div class="s3-dos-p-top">
+            <div>
+              <div class="s3-dos-p-name">Sophie L. → Sophrologue</div>
+              <div class="s3-dos-p-meta">Envoyé le 22 avril · RDV prévu jeudi</div>
+            </div>
+            <div>
+              <div class="s3-dos-p-amount">+20€</div>
+              <div class="s3-dos-p-status">En attente</div>
+            </div>
+          </div>
+          <div class="s3-progress">
+            <div class="s3-progress-fill"></div>
+          </div>
+          <div class="s3-progress-label">RDV confirmé · En attente de la 1re séance</div>
+        </div>
+
+        <div class="s3-actions">
+          <div class="s3-btn-sec">Voir tout</div>
+          <div class="s3-btn-main">+ Nouveau contact</div>
+        </div>
+
+        <div class="nav-dots">
+          <div class="nav-dot"></div>
+          <div class="nav-dot"></div>
+          <div class="nav-dot active"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ SCREEN 4 — DAILY SUGGESTION ═══ -->
+  <div class="phone-wrap" style="animation-delay:.3s">
+    <div class="screen-label">Écran 4</div>
+    <div class="screen-sublabel">Suggestion du jour</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="s4-header">
+          <div class="s4-tag">⚡ Popey du jour</div>
+          <div class="s4-title">1 contact.<br>1 opportunité.</div>
+          <div class="s4-sub">Popey analyse ton réseau chaque matin et te suggère le contact le plus prometteur du jour.</div>
+        </div>
+
+        <!-- Streak -->
+        <div class="s4-streak">
+          <div>
+            <div style="font-size:10px;color:var(--text-ter);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700">Cette semaine</div>
+            <div class="s4-streak-days">
+              <div class="s4-streak-day sd-done">L</div>
+              <div class="s4-streak-day sd-done">M</div>
+              <div class="s4-streak-day sd-done">M</div>
+              <div class="s4-streak-day sd-today">J</div>
+              <div class="s4-streak-day sd-next">V</div>
+              <div class="s4-streak-day sd-next">S</div>
+              <div class="s4-streak-day sd-next">D</div>
+            </div>
+          </div>
+          <div class="s4-streak-info">
+            <div class="s4-streak-num">🔥 4</div>
+            <div class="s4-streak-label">jours actifs</div>
+          </div>
+        </div>
+
+        <!-- Contact suggéré du jour -->
+        <div class="s4-card">
+          <div class="s4-card-label">Contact suggéré aujourd'hui</div>
+          <div class="s4-contact">
+            <div class="s4-contact-av">JM</div>
+            <div>
+              <div class="s4-contact-name">Jean-Marc</div>
+              <div class="s4-contact-meta">Collègue · 45 ans · Sédentaire</div>
+            </div>
+          </div>
+          <div class="s4-need">
+            <div class="s4-need-label">Popey pense qu'il a besoin de</div>
+            <div class="s4-need-text">"Reprendre une activité physique après des années sédentaires"</div>
+            <div class="s4-need-why">💡 Tu as mentionné qu'il avait pris du poids récemment</div>
+          </div>
+          <div class="s4-earn">
+            <div class="s4-earn-pro">→ <span>Jean-Philippe · Coach sportif</span></div>
+            <div class="s4-earn-amount">+15€</div>
+          </div>
+          <div class="s4-actions">
+            <div class="s4-btn-yes">✓ Je le recommande →</div>
+            <div class="s4-btn-skip">Pas lui</div>
+          </div>
+        </div>
+
+        <!-- Potentiel mensuel -->
+        <div class="s4-potential">
+          <div class="s4-pot-title">Ton potentiel si tu joues chaque jour</div>
+          <div class="s4-pot-grid">
+            <div class="s4-pot-item">
+              <div class="s4-pot-val" style="color:var(--teal)">30</div>
+              <div class="s4-pot-label">contacts / mois</div>
+            </div>
+            <div class="s4-pot-item">
+              <div class="s4-pot-val" style="color:var(--amber)">8</div>
+              <div class="s4-pot-label">conversions estimées</div>
+            </div>
+            <div class="s4-pot-item">
+              <div class="s4-pot-val" style="color:var(--green)">120€</div>
+              <div class="s4-pot-label">ce mois</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-dots" style="margin-top:12px">
+          <div class="nav-dot"></div>
+          <div class="nav-dot"></div>
+          <div class="nav-dot"></div>
+          <div class="nav-dot active"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

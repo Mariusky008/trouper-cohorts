@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runWhatsAppOutboundQueueSweep } from "@/lib/actions/whatsapp-360dialog";
+import { runWhatsAppOutboundQueueSweep } from "@/lib/actions/whatsapp-meta";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

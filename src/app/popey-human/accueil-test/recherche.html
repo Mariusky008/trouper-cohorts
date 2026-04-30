@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Recherche</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090F;--s1:#0E1420;--s2:#141C2E;--s3:#1A2438;--b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.11);--teal:#00D4A0;--teal-d:rgba(0,212,160,.12);--teal-g:rgba(0,212,160,.25);--amber:#F5A623;--amber-d:rgba(245,166,35,.1);--amber-g:rgba(245,166,35,.3);--purple:#9B8FFF;--purple-d:rgba(155,143,255,.12);--purple-g:rgba(155,143,255,.25);--green:#1DB954;--green-d:rgba(29,185,84,.12);--green-g:rgba(29,185,84,.25);--red:#FF4D6D;--blue:#4FC3F7;--blue-d:rgba(79,195,247,.12);--t:#EEF2F7;--t2:rgba(238,242,247,.55);--t3:rgba(238,242,247,.25);--t4:rgba(238,242,247,.1);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fb)}
+body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 40px}
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:50px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);position:relative;display:flex;flex-direction:column}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 30% at 50% 0%,rgba(0,212,160,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 8px;font-size:15px;font-weight:600;position:relative;z-index:1}
+.sb-time{font-family:var(--fd);font-size:18px}
+.sb-right{display:flex;align-items:center;gap:5px;font-size:12px}
+.sb-batt{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;color:var(--green)}
+.nav-header{padding:8px 20px 0;position:relative;z-index:1}
+.nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.nav-title{font-family:var(--fd);font-size:24px;font-weight:800}
+.nav-filter{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer}
+.nav-filter-dot{width:6px;height:6px;border-radius:50%;background:var(--teal)}
+.tabs{display:flex;background:var(--s1);border-radius:14px;padding:3px;gap:3px;margin-bottom:14px}
+.tab{flex:1;padding:10px;border-radius:11px;text-align:center;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s}
+.tab.active{background:var(--s3);color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:14px;padding:13px 44px;font-family:var(--fb);font-size:14px;color:var(--t);outline:none;transition:all .2s}
+.search-input:focus{border-color:rgba(0,212,160,.4);background:var(--s3)}
+.search-input::placeholder{color:var(--t3)}
+.search-ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:18px;opacity:.5}
+.sort-bar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.sort-bar::-webkit-scrollbar{display:none}
+.sc{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--b1);background:var(--s1);color:var(--t3);transition:all .2s}
+.sc.active{background:var(--teal-d);border-color:var(--teal-g);color:var(--teal)}
+.scroll{flex:1;overflow-y:auto;padding:0 20px 100px;position:relative;z-index:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.sec-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--b1)}
+.ccard{background:var(--s1);border:1px solid var(--b1);border-radius:18px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.ccard:active{transform:scale(.98)}
+.ccard.feat{border-color:rgba(0,212,160,.25);background:linear-gradient(145deg,rgba(0,212,160,.06),var(--s1))}
+.ccard.hipot{border-color:rgba(245,166,35,.2)}
+.ccard.low{opacity:.7}
+.cc-row{display:flex;align-items:flex-start;gap:12px}
+.av{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;font-weight:800;flex-shrink:0;position:relative}
+.av-badge{position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;border:2px solid var(--s1);display:flex;align-items:center;justify-content:center;font-size:8px}
+.ci{flex:1;min-width:0}
+.cname{font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:2px;line-height:1.1}
+.cloc{font-size:11px;color:var(--t3);margin-bottom:7px}
+.conf-row{margin-bottom:7px}
+.conf-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.conf-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+.conf-type{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.bar-bg{height:4px;background:rgba(0,0,0,.3);border-radius:2px;overflow:hidden}
+.bar-fill{height:4px;border-radius:2px;transition:width .7s ease}
+.mets{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.met{display:flex;align-items:center;gap:4px;font-size:11px}
+.mdot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.mval{font-weight:700}
+.mlbl{color:var(--t3)}
+.msep{width:1px;height:10px;background:var(--b2)}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.tag-e{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+.tag-a{background:var(--amber-d);border:1px solid var(--amber-g);color:var(--amber)}
+.tag-p{background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)}
+.tag-g{background:var(--green-d);border:1px solid var(--green-g);color:var(--green)}
+.tag-n{background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--t3)}
+.act-btn{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border:1px solid var(--b2);background:var(--s2);transition:all .2s}
+.act-btn:active{transform:scale(.9)}
+.bottom-nav{position:sticky;bottom:0;background:rgba(7,9,15,.95);backdrop-filter:blur(20px);border-top:1px solid var(--b1);padding:10px 12px 20px;display:flex;z-index:100}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:12px;position:relative}
+.bn.active .bni{color:var(--teal)}.bn.active .bnl{color:var(--teal)}
+.bn:not(.active) .bni{color:var(--t3)}.bn:not(.active) .bnl{color:var(--t3)}
+.bni{font-size:22px;position:relative}
+.bnnotif{position:absolute;top:-3px;right:-5px;width:8px;height:8px;border-radius:50%;background:var(--amber);border:2px solid var(--bg)}
+.bnl{font-size:10px;font-weight:600;letter-spacing:.03em}
+.bnpip{width:4px;height:4px;border-radius:50%;background:var(--teal)}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.ai{animation:slideUp .35s ease both}
+@media(min-width:600px){body{background:#000;padding:40px}.phone{border:1px solid rgba(255,255,255,.1)}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <div class="sb-time">07:06</div>
+    <div class="sb-right"><span>▲▲▲</span><span>5G</span><div class="sb-batt">79%</div></div>
+  </div>
+  <div class="nav-header">
+    <div class="nav-row">
+      <div class="nav-title">Recherche</div>
+      <div class="nav-filter"><div class="nav-filter-dot"></div>Filtres</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'contacts')">Contacts</div>
+      <div class="tab" onclick="switchTab(this,'historique')">Historique</div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-ic">🔍</span>
+      <input class="search-input" id="si" type="text" placeholder="Rechercher un contact..." oninput="doSearch(this.value)">
+    </div>
+    <div class="sort-bar">
+      <div class="sc active" onclick="setSort(this)">⚡ Priorité</div>
+      <div class="sc" onclick="setSort(this)">💰 Potentiel</div>
+      <div class="sc" onclick="setSort(this)">❤️ Confiance</div>
+      <div class="sc" onclick="setSort(this)">📡 Éclaireurs</div>
+      <div class="sc" onclick="setSort(this)">❓ À qualifier</div>
+    </div>
+  </div>
+  <div class="scroll" id="scrollArea">
+
+    <div class="sec-label ai">Éclaireurs actifs · 2</div>
+
+    <!-- Claire R. -->
+    <div class="ccard feat ai" style="animation-delay:.04s">
+      <div class="cc-row">
+        <div class="av" style="background:rgba(0,212,160,.15);color:var(--teal)">CR<div class="av-badge" style="background:var(--teal)">✓</div></div>
+        <div class="ci">
+          <div class="cname">Claire R.</div>
+          <div class="cloc">📍 Saint-Paul-lès-Dax · 3 km</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:var(--teal-d);color:var(--teal)">❤️ Ami/Famille</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:85%;background:linear-gradient(90deg,var(--teal),#00A87E)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><div class="mdot" style="background:var(--teal)"></div><span class="mval" style="color:var(--teal)">73</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><div class="mdot" style="background:var(--green)"></div><span class="mval" style="color:var(--green)">288€</span><span class="mlbl">potentiel</span></div>
+            <div class="msep"></div>
+            <div class="met"><div class="mdot" style="background:var(--amber)"></div><span class="mval" style="color:var(--amber)">3</span><span class="mlbl">reco</span></div>
+          </div>
+          <div class="tags">
+            <span class="tag tag-e">📡 Éclaireur actif</span>
+            <span class="tag tag-a">🏆 Priorité haute</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sophie M. -->
+    <div class="ccard feat ai" style="animation-delay:.08s">
+      <div class="cc-row">
+        <div class="av" style="background:rgba(155,143,255,.15);color:var(--purple)">SM<div class="av-badge" style="background:var(--purple)">✓</div></div>
+        <div class="ci">
+          <div class="cname">Sophie M.</div>
+          <div class="cloc">📍 Dax · 1.2 km · Ostéopathe</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:var(--purple-d);color:var(--purple)">🤝 Partenaire pro</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:92%;background:linear-gradient(90deg,var(--purple),#7B6FE8)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><div class="mdot" style="background:var(--teal)"></div><span class="mval" style="color:var(--teal)">91</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><div class="mdot" style="background:var(--green)"></div><span class="mval" style="color:var(--green)">420€</span><span class="mlbl">potentiel</span></div>
+            <div class="msep"></div>
+            <div class="met"><div class="mdot" style="background:var(--amber)"></div><span class="mval" style="color:var(--amber)">7</span><span class="mlbl">reco</span></div>
+          </div>
+          <div class="tags">
+            <span class="tag tag-e">📡 Éclaireur actif</span>
+            <span class="tag tag-g">🔥 Top performer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-label ai" style="animation-delay:.1s;margin-top:6px">À activer en priorité · 3</div>
+
+    <!-- Céline -->
+    <div class="ccard hipot ai" style="animation-delay:.12s">
+      <div class="cc-row">
+        <div class="av" style="background:rgba(245,166,35,.15);color:var(--amber)">CB</div>
+        <div class="ci">
+          <div class="cname">Céline B.</div>
+          <div class="cloc">📍 Saint-André-de-Seignanx</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:var(--amber-d);color:var(--amber)">👥 Connaissance</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:68%;background:linear-gradient(90deg,var(--amber),#E89C1A)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><span class="mval" style="color:var(--amber)">68</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><span class="mval" style="color:var(--green)">214€</span><span class="mlbl">potentiel</span></div>
+          </div>
+          <div class="tags"><span class="tag tag-a">⭐ À activer</span><span class="tag tag-n">📍 Localisation inconnue</span></div>
+        </div>
+      </div>
+      <div class="act-btn" style="background:var(--amber-d);border-color:var(--amber-g);color:var(--amber)" onclick="activate(this)">→</div>
+    </div>
+
+    <!-- Pascale -->
+    <div class="ccard hipot ai" style="animation-delay:.15s">
+      <div class="cc-row">
+        <div class="av" style="background:rgba(79,195,247,.15);color:var(--blue)">PA</div>
+        <div class="ci">
+          <div class="cname">Pascale A.</div>
+          <div class="cloc">📍 Dax · proximité</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:var(--amber-d);color:var(--amber)">👥 Connaissance</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:68%;background:linear-gradient(90deg,var(--amber),#E89C1A)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><span class="mval" style="color:var(--amber)">68</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><span class="mval" style="color:var(--green)">381€</span><span class="mlbl">potentiel</span></div>
+          </div>
+          <div class="tags"><span class="tag tag-a">⭐ Potentiel élevé</span></div>
+        </div>
+      </div>
+      <div class="act-btn" style="background:var(--amber-d);border-color:var(--amber-g);color:var(--amber)" onclick="activate(this)">→</div>
+    </div>
+
+    <!-- Patricia -->
+    <div class="ccard ai" style="animation-delay:.18s">
+      <div class="cc-row">
+        <div class="av" style="background:rgba(255,77,109,.1);color:var(--red)">PT</div>
+        <div class="ci">
+          <div class="cname">Patricia T.</div>
+          <div class="cloc">📍 Localisation inconnue</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:rgba(255,255,255,.05);color:var(--t3)">❓ Non définie</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:40%;background:var(--t3)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><span class="mval" style="color:var(--t2)">58</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><span class="mval" style="color:var(--green)">448€</span><span class="mlbl">potentiel</span></div>
+          </div>
+          <div class="tags"><span class="tag tag-n">❓ À qualifier</span><span class="tag tag-g">💰 Haut potentiel</span></div>
+        </div>
+      </div>
+      <div class="act-btn" onclick="qualify(this)">✏️</div>
+    </div>
+
+    <div class="sec-label ai" style="animation-delay:.2s;margin-top:6px">À qualifier · 2</div>
+
+    <!-- Pauline -->
+    <div class="ccard low ai" style="animation-delay:.22s">
+      <div class="cc-row">
+        <div class="av" style="background:var(--s2);color:var(--t3)">PD</div>
+        <div class="ci">
+          <div class="cname">Pauline D.</div>
+          <div class="cloc">📍 Inconnue</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:rgba(255,255,255,.05);color:var(--t3)">❓ Non définie</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:35%;background:var(--t3)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><span class="mval" style="color:var(--t2)">58</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><span class="mval" style="color:var(--green)">448€</span><span class="mlbl">potentiel</span></div>
+          </div>
+          <div class="tags"><span class="tag tag-n">❓ À qualifier</span></div>
+        </div>
+      </div>
+      <div class="act-btn" onclick="qualify(this)">✏️</div>
+    </div>
+
+    <!-- Pedro -->
+    <div class="ccard low ai" style="animation-delay:.25s">
+      <div class="cc-row">
+        <div class="av" style="background:var(--s2);color:var(--t3)">PE</div>
+        <div class="ci">
+          <div class="cname">Pedro M.</div>
+          <div class="cloc">📍 Inconnue</div>
+          <div class="conf-row">
+            <div class="conf-head">
+              <span class="conf-lbl">Confiance</span>
+              <span class="conf-type" style="background:rgba(255,255,255,.05);color:var(--t3)">❓ Non définie</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:30%;background:var(--t3)"></div></div>
+          </div>
+          <div class="mets">
+            <div class="met"><span class="mval" style="color:var(--t2)">52</span><span class="mlbl">/ 100</span></div>
+            <div class="msep"></div>
+            <div class="met"><span class="mval" style="color:var(--green)">195€</span><span class="mlbl">potentiel</span></div>
+          </div>
+          <div class="tags"><span class="tag tag-n">❓ À qualifier</span></div>
+        </div>
+      </div>
+      <div class="act-btn" onclick="qualify(this)">✏️</div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bn active" onclick="setNav(this)"><div class="bni">🔍</div><div class="bnl">Recherche</div><div class="bnpip"></div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">⚡<div class="bnnotif"></div></div><div class="bnl">Daily</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">🤝</div><div class="bnl">Alliances</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">📡</div><div class="bnl">Éclaireurs</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">👤</div><div class="bnl">Profil</div></div>
+  </div>
+</div>
+<script>
+function setSort(el){document.querySelectorAll('.sc').forEach(c=>c.classList.remove('active'));el.classList.add('active')}
+function switchTab(el,m){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+function doSearch(v){document.querySelectorAll('.ccard').forEach(c=>{const n=c.querySelector('.cname').textContent.toLowerCase();c.style.display=n.includes(v.toLowerCase())||v===''?'':'none'})}
+function activate(btn){btn.textContent='✓';btn.style.background='var(--green-d)';btn.style.borderColor='var(--green-g)';btn.style.color='var(--green)';const tags=btn.closest('.ccard').querySelector('.tags');const t=document.createElement('span');t.className='tag tag-g';t.textContent='✓ Activé';tags.appendChild(t)}
+function qualify(btn){btn.textContent='→';btn.style.background='var(--amber-d)';btn.style.borderColor='var(--amber-g)';btn.style.color='var(--amber)'}
+function setNav(el){document.querySelectorAll('.bn').forEach(b=>{b.classList.remove('active');const p=b.querySelector('.bnpip');if(p)p.remove()});el.classList.add('active');const p=document.createElement('div');p.className='bnpip';el.appendChild(p)}
+window.addEventListener('load',()=>{document.querySelectorAll('.bar-fill').forEach(b=>{const w=b.style.width;b.style.width='0';setTimeout(()=>{b.style.width=w},200)})})
+</script>
+</body>
+</html>

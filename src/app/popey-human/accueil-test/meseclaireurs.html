@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Mes Éclaireurs</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090F;
+  --s1:#0E1420; --s2:#141C2E; --s3:#1A2438;
+  --b1:rgba(255,255,255,.06); --b2:rgba(255,255,255,.11); --b3:rgba(255,255,255,.18);
+  --teal:#00D4A0; --teal-d:rgba(0,212,160,.12); --teal-g:rgba(0,212,160,.25);
+  --amber:#F5A623; --amber-d:rgba(245,166,35,.1); --amber-g:rgba(245,166,35,.3);
+  --purple:#9B8FFF; --purple-d:rgba(155,143,255,.12); --purple-g:rgba(155,143,255,.25);
+  --green:#1DB954; --green-d:rgba(29,185,84,.12); --green-g:rgba(29,185,84,.25);
+  --red:#FF4D6D; --red-d:rgba(255,77,109,.1);
+  --blue:#4FC3F7; --blue-d:rgba(79,195,247,.1);
+  --t:#EEF2F7; --t2:rgba(238,242,247,.55); --t3:rgba(238,242,247,.25); --t4:rgba(238,242,247,.1);
+  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fb)}
+body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 40px}
+
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:50px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);position:relative;display:flex;flex-direction:column}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 35% at 50% 0%,rgba(0,212,160,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* STATUS BAR */
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 8px;font-size:15px;font-weight:600;position:relative;z-index:1}
+.sb-time{font-family:var(--fd);font-size:18px}
+.sb-right{display:flex;align-items:center;gap:5px;font-size:12px}
+.sb-battery{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;color:var(--green)}
+
+/* NAV HEADER */
+.nav-header{padding:8px 20px 14px;position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between}
+.nav-title{font-family:var(--fd);font-size:24px;font-weight:800;letter-spacing:-.3px}
+.nav-add{width:38px;height:38px;border-radius:50%;background:var(--teal-d);border:1px solid var(--teal-g);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--teal);cursor:pointer;transition:all .2s;font-weight:300}
+.nav-add:active{transform:scale(.93);background:rgba(0,212,160,.2)}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:0 20px 100px;position:relative;z-index:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── STATS BENTO ── */
+.stats-bento{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{border-radius:18px;padding:16px;position:relative;overflow:hidden;cursor:default}
+.stat-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+
+/* Pro */
+.sc-pro{background:linear-gradient(145deg,rgba(0,212,160,.1),rgba(0,212,160,.04));border:1px solid rgba(0,212,160,.2)}
+.sc-pro::before{background:radial-gradient(ellipse at top right,rgba(0,212,160,.08),transparent)}
+/* Perso */
+.sc-perso{background:linear-gradient(145deg,rgba(155,143,255,.1),rgba(155,143,255,.04));border:1px solid rgba(155,143,255,.2)}
+.sc-perso::before{background:radial-gradient(ellipse at top right,rgba(155,143,255,.08),transparent)}
+/* Total */
+.sc-total{background:var(--s2);border:1px solid var(--b2)}
+/* Reco */
+.sc-reco{background:linear-gradient(145deg,rgba(245,166,35,.1),rgba(245,166,35,.04));border:1px solid rgba(245,166,35,.25)}
+.sc-reco::before{background:radial-gradient(ellipse at top right,rgba(245,166,35,.08),transparent)}
+
+.sc-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.sc-pro .sc-label{color:rgba(0,212,160,.7)}
+.sc-perso .sc-label{color:rgba(155,143,255,.7)}
+.sc-total .sc-label{color:var(--t3)}
+.sc-reco .sc-label{color:rgba(245,166,35,.7)}
+
+.sc-num{font-family:var(--fd);font-size:36px;font-weight:800;line-height:1;margin-bottom:2px}
+.sc-pro .sc-num{color:var(--teal)}
+.sc-perso .sc-num{color:var(--purple)}
+.sc-total .sc-num{color:var(--t)}
+.sc-reco .sc-num{color:var(--amber)}
+
+.sc-sub{font-size:11px}
+.sc-pro .sc-sub,.sc-perso .sc-sub,.sc-total .sc-sub{color:var(--t3)}
+.sc-reco .sc-sub{color:rgba(245,166,35,.6);display:flex;align-items:center;gap:4px}
+.sc-reco-notif{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulseDot 2s infinite;flex-shrink:0}
+
+/* ── SECTION TITLE ── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sh-left{display:flex;align-items:center;gap:8px}
+.sh-title{font-family:var(--fd);font-size:16px;font-weight:800;letter-spacing:.2px}
+.sh-count{background:var(--amber-d);border:1px solid var(--amber-g);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--amber)}
+.sh-count.teal{background:var(--teal-d);border-color:var(--teal-g);color:var(--teal)}
+.sh-action{font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;transition:color .2s}
+.sh-action:hover{color:var(--teal)}
+
+/* ── OPPORTUNITE CARD ── */
+.opp-card{background:linear-gradient(145deg,var(--s2),var(--s3));border:1px solid var(--b2);border-radius:20px;padding:16px;margin-bottom:8px;position:relative;overflow:hidden;cursor:pointer;transition:all .22s}
+.opp-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.08) 0%,transparent 65%)}
+.opp-card:active{transform:scale(.98)}
+.opp-card.urgent{border-color:rgba(245,166,35,.35)}
+
+.oc-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;position:relative}
+.oc-av{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;flex-shrink:0}
+.oc-info{flex:1;min-width:0}
+.oc-name{font-size:14px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oc-meta{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px}
+.oc-meta-dot{width:3px;height:3px;border-radius:50%;background:var(--t4);flex-shrink:0}
+.oc-status{flex-shrink:0}
+.oc-status-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:5px 11px;font-size:11px;font-weight:700}
+.chip-amber{background:var(--amber-d);border:1px solid var(--amber-g);color:var(--amber)}
+.chip-green{background:var(--green-d);border:1px solid var(--green-g);color:var(--green)}
+.chip-teal{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+.chip-purple{background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)}
+
+.oc-pipeline{display:flex;align-items:center;gap:4px}
+.oc-pipe-step{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.oc-pipe-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.pipe-done{background:rgba(29,185,84,.15);border:1px solid rgba(29,185,84,.3);color:var(--green)}
+.pipe-active{background:rgba(245,166,35,.15);border:1.5px solid rgba(245,166,35,.5);color:var(--amber)}
+.pipe-wait{background:rgba(255,255,255,.04);border:1px solid var(--b1);color:var(--t3)}
+.oc-pipe-label{font-size:8px;color:var(--t3);text-align:center;line-height:1.2}
+.oc-pipe-line{height:1px;flex:1;margin-top:-9px}
+.pipe-line-done{background:rgba(29,185,84,.3)}
+.pipe-line-wait{background:var(--b1)}
+
+.oc-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--b1)}
+.oc-eclaireur{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px}
+.oc-e-av{width:18px;height:18px;border-radius:50%;background:var(--teal-d);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--teal)}
+.oc-com{font-size:13px;font-weight:700;color:var(--green)}
+.oc-btn-action{background:var(--amber);border:none;border-radius:10px;padding:7px 14px;font-family:var(--fd);font-size:12px;font-weight:800;color:#1A0A00;cursor:pointer;letter-spacing:.3px;transition:all .2s}
+.oc-btn-action:active{transform:scale(.95)}
+
+/* ── ECLAIREUR CARD ── */
+.eclaireur-card{background:var(--s1);border:1px solid var(--b1);border-radius:20px;padding:16px;margin-bottom:10px;position:relative;overflow:hidden;transition:all .22s;cursor:pointer}
+.eclaireur-card::before{content:'';position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,rgba(0,212,160,.03),transparent);transition:opacity .3s}
+.eclaireur-card:hover::before{opacity:1}
+.eclaireur-card:active{transform:scale(.98)}
+.eclaireur-card.active-ec{border-color:rgba(0,212,160,.2)}
+
+.ec-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ec-av{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:800;flex-shrink:0;position:relative}
+.ec-av-status{position:absolute;bottom:-3px;right:-3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--s1)}
+.ec-av-status.online{background:var(--green)}
+.ec-av-status.offline{background:var(--t3)}
+.ec-info{flex:1;min-width:0}
+.ec-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.ec-meta{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ec-type-chip{display:inline-flex;align-items:center;gap:3px;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700}
+.ec-score{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.ec-score-val{font-family:var(--fd);font-size:20px;font-weight:800;color:var(--teal);line-height:1}
+.ec-score-label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+
+.ec-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.ec-stat{background:rgba(0,0,0,.2);border-radius:10px;padding:8px;text-align:center}
+.ec-stat-val{font-family:var(--fd);font-size:16px;font-weight:800;line-height:1;margin-bottom:2px}
+.ec-stat-label{font-size:9px;color:var(--t3);line-height:1.2}
+
+.ec-actions{display:flex;gap:7px}
+.ea-btn{flex:1;padding:10px;border-radius:12px;border:none;font-family:var(--fb);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+.ea-btn:active{transform:scale(.95)}
+.ea-lien{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+.ea-msg{background:var(--s3);border:1px solid var(--b2);color:var(--t2)}
+.ea-more{background:var(--s3);border:1px solid var(--b2);color:var(--t3);flex:0;padding:10px 12px}
+
+/* EMPTY SLOT */
+.empty-slot{border:1.5px dashed var(--b2);border-radius:20px;padding:20px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;min-height:100px}
+.empty-slot:hover{border-color:rgba(0,212,160,.3);background:rgba(0,212,160,.03)}
+.empty-slot:active{transform:scale(.98)}
+.es-icon{font-size:28px;opacity:.3}
+.es-text{font-size:13px;color:var(--t3);font-weight:500;text-align:center}
+.es-cta{font-size:12px;color:var(--teal);font-weight:700;margin-top:2px}
+
+/* BOTTOM NAV */
+.bottom-nav{position:sticky;bottom:0;background:rgba(7,9,15,.95);backdrop-filter:blur(20px);border-top:1px solid var(--b1);padding:10px 12px 20px;display:flex;z-index:100}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:12px;position:relative}
+.bn-item.active .bn-icon{color:var(--teal)}
+.bn-item.active .bn-label{color:var(--teal)}
+.bn-item:not(.active) .bn-icon{color:var(--t3)}
+.bn-item:not(.active) .bn-label{color:var(--t3)}
+.bn-icon{font-size:22px;position:relative}
+.bn-notif{position:absolute;top:-3px;right:-5px;width:8px;height:8px;border-radius:50%;background:var(--amber);border:2px solid var(--bg)}
+.bn-label{font-size:10px;font-weight:600;letter-spacing:.03em}
+.bn-pip{width:4px;height:4px;border-radius:50%;background:var(--teal)}
+
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:slideUp .4s ease both}
+
+@media(min-width:600px){
+  body{background:#000;padding:40px}
+  .phone{border:1px solid rgba(255,255,255,.1)}
+}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- STATUS -->
+  <div class="statusbar">
+    <div class="sb-time">07:06</div>
+    <div class="sb-right">
+      <span>▲▲▲</span><span>5G</span>
+      <div class="sb-battery">79%</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav-header">
+    <div class="nav-title">Mes Éclaireurs</div>
+    <div class="nav-add" onclick="addEclaireur()">＋</div>
+  </div>
+
+  <div class="scroll">
+
+    <!-- ── STATS BENTO ── -->
+    <div class="stats-bento animate-in">
+      <div class="stat-card sc-pro">
+        <div class="sc-label">Éclaireurs Pro</div>
+        <div class="sc-num">3</div>
+        <div class="sc-sub">Annuaire local</div>
+      </div>
+      <div class="stat-card sc-perso">
+        <div class="sc-label">Éclaireurs Perso</div>
+        <div class="sc-num">2</div>
+        <div class="sc-sub">Répertoire</div>
+      </div>
+      <div class="stat-card sc-total">
+        <div class="sc-label">Total actifs</div>
+        <div class="sc-num">5</div>
+        <div class="sc-sub">Sur 10 objectif</div>
+      </div>
+      <div class="stat-card sc-reco">
+        <div class="sc-label">Recommandations</div>
+        <div class="sc-num">4</div>
+        <div class="sc-sub">
+          <div class="sc-reco-notif"></div>
+          2 alertes à traiter
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OPPORTUNITÉS ENTRANTES ── -->
+    <div class="section-head animate-in" style="animation-delay:.08s">
+      <div class="sh-left">
+        <div class="sh-title">Opportunités entrantes</div>
+        <div class="sh-count">2 alertes</div>
+      </div>
+      <div class="sh-action">Tout voir</div>
+    </div>
+
+    <!-- Opportunité 1 — Signature finale -->
+    <div class="opp-card urgent animate-in" style="animation-delay:.1s">
+      <div class="oc-top">
+        <div class="oc-av" style="background:rgba(245,166,35,.15);color:var(--amber)">JR</div>
+        <div class="oc-info">
+          <div class="oc-name">Marie Dupont</div>
+          <div class="oc-meta">
+            <span>via Claire R.</span>
+            <div class="oc-meta-dot"></div>
+            <span>25 avr. · 10:34</span>
+          </div>
+        </div>
+        <div class="oc-status">
+          <div class="oc-status-chip chip-amber">✦ Signature finale</div>
+        </div>
+      </div>
+      <!-- Pipeline -->
+      <div class="oc-pipeline">
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-done">✓</div>
+          <div class="oc-pipe-label">Contacté</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-done"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-done">✓</div>
+          <div class="oc-pipe-label">RDV pris</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-done"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-done">✓</div>
+          <div class="oc-pipe-label">1re séance</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-wait"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-active">€</div>
+          <div class="oc-pipe-label">Payé</div>
+        </div>
+      </div>
+      <div class="oc-bottom">
+        <div class="oc-eclaireur">
+          <div class="oc-e-av">CR</div>
+          <span>Claire R. · Éclaireur</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="oc-com">+18€</div>
+          <button class="oc-btn-action" onclick="confirmClient(this)">✓ Client actif</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opportunité 2 — RDV pris -->
+    <div class="opp-card animate-in" style="animation-delay:.14s">
+      <div class="oc-top">
+        <div class="oc-av" style="background:rgba(155,143,255,.15);color:var(--purple)">PL</div>
+        <div class="oc-info">
+          <div class="oc-name">Pierre Leroy</div>
+          <div class="oc-meta">
+            <span>via Sophie M.</span>
+            <div class="oc-meta-dot"></div>
+            <span>24 avr. · 16:20</span>
+          </div>
+        </div>
+        <div class="oc-status">
+          <div class="oc-status-chip chip-teal">📅 RDV jeudi</div>
+        </div>
+      </div>
+      <div class="oc-pipeline">
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-done">✓</div>
+          <div class="oc-pipe-label">Contacté</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-done"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-active">📅</div>
+          <div class="oc-pipe-label">RDV pris</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-wait"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-wait">—</div>
+          <div class="oc-pipe-label">1re séance</div>
+        </div>
+        <div class="oc-pipe-line pipe-line-wait"></div>
+        <div class="oc-pipe-step">
+          <div class="oc-pipe-dot pipe-wait">€</div>
+          <div class="oc-pipe-label">Payé</div>
+        </div>
+      </div>
+      <div class="oc-bottom">
+        <div class="oc-eclaireur">
+          <div class="oc-e-av" style="background:var(--purple-d);color:var(--purple)">SM</div>
+          <span>Sophie M. · Éclaireur</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="oc-com" style="color:var(--t3)">+18€ en attente</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MES ÉCLAIREURS ── -->
+    <div class="section-head animate-in" style="animation-delay:.18s;margin-top:8px">
+      <div class="sh-left">
+        <div class="sh-title">Mes éclaireurs actifs</div>
+        <div class="sh-count teal">5 actifs</div>
+      </div>
+      <div class="sh-action">Gérer</div>
+    </div>
+
+    <!-- Éclaireur 1 — Claire R. (Pro) -->
+    <div class="eclaireur-card active-ec animate-in" style="animation-delay:.2s">
+      <div class="ec-header">
+        <div class="ec-av" style="background:rgba(0,212,160,.15);color:var(--teal)">
+          CR
+          <div class="ec-av-status online"></div>
+        </div>
+        <div class="ec-info">
+          <div class="ec-name">Claire R.</div>
+          <div class="ec-meta">
+            <span>Saint-Paul-lès-Dax · 3 km</span>
+            <div class="ec-type-chip" style="background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)">👥 Perso</div>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Activée il y a 2 jours</div>
+        </div>
+        <div class="ec-score">
+          <div class="ec-score-val">87</div>
+          <div class="ec-score-label">/ 100</div>
+        </div>
+      </div>
+      <div class="ec-stats">
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--teal)">3</div>
+          <div class="ec-stat-label">Reco envoyées</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--green)">1</div>
+          <div class="ec-stat-label">Abouties</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--amber)">18€</div>
+          <div class="ec-stat-label">Commission due</div>
+        </div>
+      </div>
+      <div class="ec-actions">
+        <div class="ea-btn ea-lien" onclick="genLien(this)">🔗 Lien éclaireur</div>
+        <div class="ea-btn ea-msg">💬 Message</div>
+        <div class="ea-btn ea-more">···</div>
+      </div>
+    </div>
+
+    <!-- Éclaireur 2 — Sophie M. (Pro annuaire) -->
+    <div class="eclaireur-card animate-in" style="animation-delay:.24s">
+      <div class="ec-header">
+        <div class="ec-av" style="background:rgba(155,143,255,.15);color:var(--purple)">
+          SM
+          <div class="ec-av-status online"></div>
+        </div>
+        <div class="ec-info">
+          <div class="ec-name">Sophie M.</div>
+          <div class="ec-meta">
+            <span>Ostéopathe · Dax · 1.2 km</span>
+            <div class="ec-type-chip" style="background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)">🔍 Pro</div>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Active depuis 14 jours</div>
+        </div>
+        <div class="ec-score">
+          <div class="ec-score-val" style="color:var(--purple)">94</div>
+          <div class="ec-score-label">/ 100</div>
+        </div>
+      </div>
+      <div class="ec-stats">
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--teal)">7</div>
+          <div class="ec-stat-label">Reco envoyées</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--green)">2</div>
+          <div class="ec-stat-label">Abouties</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--green)">36€</div>
+          <div class="ec-stat-label">Commission versée</div>
+        </div>
+      </div>
+      <div class="ec-actions">
+        <div class="ea-btn ea-lien" onclick="genLien(this)">🔗 Lien éclaireur</div>
+        <div class="ea-btn ea-msg">💬 Message</div>
+        <div class="ea-btn ea-more">···</div>
+      </div>
+    </div>
+
+    <!-- Éclaireur 3 — Thomas K. -->
+    <div class="eclaireur-card animate-in" style="animation-delay:.28s">
+      <div class="ec-header">
+        <div class="ec-av" style="background:rgba(245,166,35,.15);color:var(--amber)">
+          TK
+          <div class="ec-av-status offline"></div>
+        </div>
+        <div class="ec-info">
+          <div class="ec-name">Thomas K.</div>
+          <div class="ec-meta">
+            <span>Notaire · Dax · 0.8 km</span>
+            <div class="ec-type-chip" style="background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)">🔍 Pro</div>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Dernière reco il y a 5 jours</div>
+        </div>
+        <div class="ec-score">
+          <div class="ec-score-val" style="color:var(--amber)">71</div>
+          <div class="ec-score-label">/ 100</div>
+        </div>
+      </div>
+      <div class="ec-stats">
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--teal)">2</div>
+          <div class="ec-stat-label">Reco envoyées</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--t3)">0</div>
+          <div class="ec-stat-label">Abouties</div>
+        </div>
+        <div class="ec-stat">
+          <div class="ec-stat-val" style="color:var(--t3)">0€</div>
+          <div class="ec-stat-label">Commission</div>
+        </div>
+      </div>
+      <div class="ec-actions">
+        <div class="ea-btn ea-lien" onclick="genLien(this)">🔗 Lien éclaireur</div>
+        <div class="ea-btn ea-msg">💬 Relancer</div>
+        <div class="ea-btn ea-more">···</div>
+      </div>
+    </div>
+
+    <!-- EMPTY SLOT — invite -->
+    <div class="empty-slot animate-in" style="animation-delay:.32s" onclick="addEclaireur()">
+      <div class="es-icon">＋</div>
+      <div class="es-text">Encore 5 places disponibles</div>
+      <div class="es-cta">Trouver de nouveaux éclaireurs →</div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">🔍</div>
+      <div class="bn-label">Recherche</div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">⚡<div class="bn-notif"></div></div>
+      <div class="bn-label">Daily</div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">🤝</div>
+      <div class="bn-label">Alliances</div>
+    </div>
+    <div class="bn-item active" onclick="setNav(this)">
+      <div class="bn-icon">📡</div>
+      <div class="bn-label">Éclaireurs</div>
+      <div class="bn-pip"></div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">👤</div>
+      <div class="bn-label">Profil</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function confirmClient(btn) {
+  btn.textContent = '✓ Confirmé !';
+  btn.style.background = 'var(--green)';
+  btn.style.color = '#fff';
+  btn.disabled = true;
+  // Update commission
+  const card = btn.closest('.opp-card');
+  const com = card.querySelector('.oc-com');
+  com.textContent = '+18€ ✓';
+  com.style.color = 'var(--green)';
+  // Update status chip
+  const chip = card.querySelector('.oc-status-chip');
+  chip.textContent = '✓ Client actif';
+  chip.className = 'oc-status-chip chip-green';
+}
+
+function genLien(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '✓ Lien copié !';
+  btn.style.background = 'rgba(0,212,160,.25)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+  }, 2000);
+}
+
+function addEclaireur() {
+  const notif = document.createElement('div');
+  notif.style.cssText = 'position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:var(--teal);color:#050D0A;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;animation:slideUp .3s ease;white-space:nowrap';
+  notif.textContent = '→ Recherche d\'éclaireurs ouverte';
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 2200);
+}
+
+function setNav(el) {
+  document.querySelectorAll('.bn-item').forEach(b => {
+    b.classList.remove('active');
+    const pip = b.querySelector('.bn-pip');
+    if(pip) pip.remove();
+  });
+  el.classList.add('active');
+  const pip = document.createElement('div');
+  pip.className = 'bn-pip';
+  el.appendChild(pip);
+}
+
+// Animate progress on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.oc-pipe-line').forEach(l => {
+    l.style.transition = 'background .5s';
+  });
+});
+</script>
+</body>
+</html>

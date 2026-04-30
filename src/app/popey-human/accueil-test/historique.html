@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Historique</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090F;--s1:#0E1420;--s2:#141C2E;--s3:#1A2438;--b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.11);--teal:#00D4A0;--teal-d:rgba(0,212,160,.12);--teal-g:rgba(0,212,160,.25);--amber:#F5A623;--amber-d:rgba(245,166,35,.1);--amber-g:rgba(245,166,35,.3);--purple:#9B8FFF;--purple-d:rgba(155,143,255,.12);--purple-g:rgba(155,143,255,.25);--green:#1DB954;--green-d:rgba(29,185,84,.12);--green-g:rgba(29,185,84,.25);--red:#FF4D6D;--red-d:rgba(255,77,109,.1);--blue:#4FC3F7;--blue-d:rgba(79,195,247,.1);--t:#EEF2F7;--t2:rgba(238,242,247,.55);--t3:rgba(238,242,247,.25);--t4:rgba(238,242,247,.1);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fb)}
+body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 40px}
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:50px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);position:relative;display:flex;flex-direction:column}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 30% at 50% 0%,rgba(0,212,160,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 8px;font-size:15px;font-weight:600;position:relative;z-index:1}
+.sb-time{font-family:var(--fd);font-size:18px}
+.sb-right{display:flex;align-items:center;gap:5px;font-size:12px}
+.sb-batt{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;color:var(--green)}
+.nav-header{padding:8px 20px 0;position:relative;z-index:1}
+.nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.nav-title{font-family:var(--fd);font-size:24px;font-weight:800}
+.nav-total{background:var(--s2);border:1px solid var(--b2);border-radius:12px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--t2)}
+.nav-total span{color:var(--teal)}
+.tabs{display:flex;background:var(--s1);border-radius:14px;padding:3px;gap:3px;margin-bottom:14px}
+.tab{flex:1;padding:10px;border-radius:11px;text-align:center;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s}
+.tab.active{background:var(--s3);color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* FILTER CHIPS — horizontal scroll */
+.filter-bar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.fc{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--b1);background:var(--s1);color:var(--t3);transition:all .2s;display:flex;align-items:center;gap:5px}
+.fc.active{background:var(--teal-d);border-color:var(--teal-g);color:var(--teal)}
+.fc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* GLOBAL STATS */
+.global-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.gs{background:var(--s2);border:1px solid var(--b1);border-radius:14px;padding:12px;text-align:center}
+.gs-val{font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;margin-bottom:3px}
+.gs-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;line-height:1.2}
+
+.scroll{flex:1;overflow-y:auto;padding:0 20px 100px;position:relative;z-index:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* DAY GROUP */
+.day-group{margin-bottom:20px}
+.day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.day-title{font-family:var(--fd);font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--t2)}
+.day-pills{display:flex;gap:5px;align-items:center}
+.dp{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.dp-sent{background:var(--green-d);border:1px solid var(--green-g);color:var(--green)}
+.dp-conv{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+.dp-pass{background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--t3)}
+
+/* HISTORY CARD */
+.hcard{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.hcard:active{transform:scale(.98)}
+.hcard::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.hcard:hover::before{opacity:1}
+
+/* Status variants */
+.hcard.sent{border-left:3px solid var(--green);border-color:rgba(29,185,84,.25)}
+.hcard.sent::before{background:linear-gradient(135deg,rgba(29,185,84,.04),transparent)}
+.hcard.converted{border-left:3px solid var(--teal);border-color:rgba(0,212,160,.25);background:linear-gradient(145deg,rgba(0,212,160,.06),var(--s1))}
+.hcard.converted::before{background:linear-gradient(135deg,rgba(0,212,160,.05),transparent)}
+.hcard.passed{opacity:.65}
+.hcard.pending{border-left:3px solid var(--amber);border-color:rgba(245,166,35,.2)}
+.hcard.pending::before{background:linear-gradient(135deg,rgba(245,166,35,.04),transparent)}
+
+.hc-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.hc-av{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;flex-shrink:0}
+.hc-info{flex:1;min-width:0}
+.hc-name{font-size:14px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3)}
+.hc-type-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.hc-status{flex-shrink:0}
+
+/* Status chips */
+.status-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700}
+.sc-sent{background:var(--green-d);border:1px solid var(--green-g);color:var(--green)}
+.sc-converted{background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)}
+.sc-passed{background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--t3)}
+.sc-pending{background:var(--amber-d);border:1px solid var(--amber-g);color:var(--amber)}
+
+/* MESSAGE PREVIEW */
+.hc-preview{font-size:12px;color:var(--t2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-style:italic;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:8px;margin-bottom:8px}
+.hc-preview.empty{color:var(--t3);font-style:normal}
+
+/* BOTTOM ROW */
+.hc-bottom{display:flex;align-items:center;justify-content:space-between}
+.hc-time{font-size:11px;color:var(--t3)}
+.hc-action{font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;padding:5px 10px;background:var(--teal-d);border:1px solid var(--teal-g);border-radius:8px;transition:all .2s}
+.hc-action:active{transform:scale(.95)}
+.hc-send-btn{font-size:11px;font-weight:700;color:var(--amber);cursor:pointer;padding:5px 10px;background:var(--amber-d);border:1px solid var(--amber-g);border-radius:8px;transition:all .2s;display:flex;align-items:center;gap:4px}
+.hc-send-btn:active{transform:scale(.95)}
+
+/* COMMISSION BADGE on converted */
+.hc-commission{display:inline-flex;align-items:center;gap:5px;background:var(--green-d);border:1px solid var(--green-g);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--green)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:sticky;bottom:0;background:rgba(7,9,15,.95);backdrop-filter:blur(20px);border-top:1px solid var(--b1);padding:10px 12px 20px;display:flex;z-index:100}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:12px;position:relative}
+.bn.active .bni{color:var(--teal)}.bn.active .bnl{color:var(--teal)}
+.bn:not(.active) .bni{color:var(--t3)}.bn:not(.active) .bnl{color:var(--t3)}
+.bni{font-size:22px;position:relative}
+.bnnotif{position:absolute;top:-3px;right:-5px;width:8px;height:8px;border-radius:50%;background:var(--amber);border:2px solid var(--bg)}
+.bnl{font-size:10px;font-weight:600;letter-spacing:.03em}
+.bnpip{width:4px;height:4px;border-radius:50%;background:var(--teal)}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.ai{animation:slideUp .35s ease both}
+@media(min-width:600px){body{background:#000;padding:40px}.phone{border:1px solid rgba(255,255,255,.1)}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <div class="sb-time">07:30</div>
+    <div class="sb-right"><span>▲▲▲</span><span>5G</span><div class="sb-batt">74%</div></div>
+  </div>
+  <div class="nav-header">
+    <div class="nav-row">
+      <div class="nav-title">Historique</div>
+      <div class="nav-total"><span>173</span> actions</div>
+    </div>
+    <div class="tabs">
+      <div class="tab" onclick="switchTab(this,'contacts')">Contacts</div>
+      <div class="tab active" onclick="switchTab(this,'historique')">Historique</div>
+    </div>
+
+    <!-- FILTER CHIPS -->
+    <div class="filter-bar">
+      <div class="fc active" onclick="setFilter(this,'tous')"><div class="fc-dot" style="background:var(--teal)"></div>Tous</div>
+      <div class="fc" onclick="setFilter(this,'envoyes')"><div class="fc-dot" style="background:var(--green)"></div>Envoyés</div>
+      <div class="fc" onclick="setFilter(this,'convertis')"><div class="fc-dot" style="background:var(--teal)"></div>Convertis</div>
+      <div class="fc" onclick="setFilter(this,'passes')"><div class="fc-dot" style="background:var(--t3)"></div>Passés</div>
+      <div class="fc" onclick="setFilter(this,'eclaireur')"><div class="fc-dot" style="background:var(--purple)"></div>Éclaireur</div>
+    </div>
+
+    <!-- GLOBAL STATS -->
+    <div class="global-stats ai">
+      <div class="gs">
+        <div class="gs-val" style="color:var(--green)">10</div>
+        <div class="gs-lbl">Envoyés ce mois</div>
+      </div>
+      <div class="gs">
+        <div class="gs-val" style="color:var(--teal)">3</div>
+        <div class="gs-lbl">Convertis</div>
+      </div>
+      <div class="gs">
+        <div class="gs-val" style="color:var(--amber)">54€</div>
+        <div class="gs-lbl">Commissions</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scroll">
+
+    <!-- VENDREDI 25/04/2026 -->
+    <div class="day-group ai" style="animation-delay:.04s">
+      <div class="day-header">
+        <div class="day-title">VENDREDI 25 AVRIL</div>
+        <div class="day-pills">
+          <div class="dp dp-sent">2 envoyés</div>
+          <div class="dp dp-conv">1 converti</div>
+        </div>
+      </div>
+
+      <!-- Converti — Marie Dupont -->
+      <div class="hcard converted">
+        <div class="hc-top">
+          <div class="hc-av" style="background:rgba(0,212,160,.15);color:var(--teal)">MD</div>
+          <div class="hc-info">
+            <div class="hc-name">Marie Dupont</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)">📡 Éclaireur</span>
+              <span>17:45</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-converted">✓ Client</div></div>
+        </div>
+        <div class="hc-preview">"Bonjour Marie, suite à notre échange, Jean-Philippe serait ravi de vous accueillir pour une première séance découverte..."</div>
+        <div class="hc-bottom">
+          <div class="hc-time">Converti il y a 2h</div>
+          <div class="hc-commission">💰 +18€ versés</div>
+        </div>
+      </div>
+
+      <!-- Envoyé — Ludivine -->
+      <div class="hcard sent">
+        <div class="hc-top">
+          <div class="hc-av" style="background:rgba(29,185,84,.12);color:var(--green)">LU</div>
+          <div class="hc-info">
+            <div class="hc-name">Ludivine</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)">✦ Éclaireur</span>
+              <span>17:59</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-sent">✉ Envoyé</div></div>
+        </div>
+        <div class="hc-preview">"Salut Ludivine, j'apprécie vraiment ta réactivité. J'ai une opportunité qui pourrait t'intéresser..."</div>
+        <div class="hc-bottom">
+          <div class="hc-time">Il y a 3h · En attente de réponse</div>
+          <div class="hc-action" onclick="resendMsg(this)">Relancer →</div>
+        </div>
+      </div>
+
+      <!-- Passé — Ludo Etiquettes -->
+      <div class="hcard passed">
+        <div class="hc-top">
+          <div class="hc-av" style="background:var(--s2);color:var(--t3)">LE</div>
+          <div class="hc-info">
+            <div class="hc-name">Ludo Etiquettes Lili Ross</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--t3)">Ex-Client</span>
+              <span>15:50</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-passed">— Passé</div></div>
+        </div>
+        <div class="hc-preview">"Hello Ludo, j'aime notre façon de travailler ensemble..."</div>
+        <div class="hc-bottom">
+          <div class="hc-time">Passé · Non envoyé</div>
+          <div class="hc-send-btn" onclick="sendNow(this)">⚡ Envoyer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JEUDI 24/04/2026 -->
+    <div class="day-group ai" style="animation-delay:.08s">
+      <div class="day-header">
+        <div class="day-title">JEUDI 24 AVRIL</div>
+        <div class="day-pills">
+          <div class="dp dp-sent">5 envoyés</div>
+          <div class="dp dp-conv">1 converti</div>
+          <div class="dp dp-pass">4 passés</div>
+        </div>
+      </div>
+
+      <!-- Envoyé — Stéphane Kent -->
+      <div class="hcard sent">
+        <div class="hc-top">
+          <div class="hc-av" style="background:rgba(79,195,247,.12);color:var(--blue)">SK</div>
+          <div class="hc-info">
+            <div class="hc-name">Stéphane Kent</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:var(--purple-d);border:1px solid var(--purple-g);color:var(--purple)">✦ Éclaireur</span>
+              <span>17:02</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-sent">✉ Envoyé</div></div>
+        </div>
+        <div class="hc-preview">"Salut Stéphane, j'apprécie vraiment le fait qu'on puisse travailler ensemble sur ce projet..."</div>
+        <div class="hc-bottom">
+          <div class="hc-time">Hier · 17:02 · Lu</div>
+          <div class="hc-action" onclick="resendMsg(this)">Relancer →</div>
+        </div>
+      </div>
+
+      <!-- En attente — Nora -->
+      <div class="hcard pending">
+        <div class="hc-top">
+          <div class="hc-av" style="background:rgba(245,166,35,.12);color:var(--amber)">NO</div>
+          <div class="hc-info">
+            <div class="hc-name">Nora</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:var(--amber-d);border:1px solid var(--amber-g);color:var(--amber)">⏳ En attente</span>
+              <span>14:40</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-pending">⏳ À envoyer</div></div>
+        </div>
+        <div class="hc-preview empty">Message en attente de validation — appuyez pour voir et envoyer</div>
+        <div class="hc-bottom">
+          <div class="hc-time">Passé · Non envoyé</div>
+          <div class="hc-send-btn" onclick="sendNow(this)">⚡ Envoyer maintenant</div>
+        </div>
+      </div>
+
+      <!-- Passés groupés -->
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s" onclick="expandPassed(this)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:14px">📋</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--t2)">3 autres actions passées</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px">Non envoyées · Cliquer pour voir</div>
+          </div>
+        </div>
+        <div style="font-size:18px;color:var(--t3)">›</div>
+      </div>
+    </div>
+
+    <!-- MERCREDI 23/04/2026 -->
+    <div class="day-group ai" style="animation-delay:.12s">
+      <div class="day-header">
+        <div class="day-title">MERCREDI 23 AVRIL</div>
+        <div class="day-pills">
+          <div class="dp dp-sent">3 envoyés</div>
+          <div class="dp dp-conv">1 converti</div>
+        </div>
+      </div>
+
+      <!-- Converti — Pierre Leroy -->
+      <div class="hcard converted">
+        <div class="hc-top">
+          <div class="hc-av" style="background:rgba(0,212,160,.15);color:var(--teal)">PL</div>
+          <div class="hc-info">
+            <div class="hc-name">Pierre Leroy</div>
+            <div class="hc-meta">
+              <span class="hc-type-chip" style="background:var(--teal-d);border:1px solid var(--teal-g);color:var(--teal)">📡 Éclaireur</span>
+              <span>10:15</span>
+            </div>
+          </div>
+          <div class="hc-status"><div class="status-chip sc-converted">✓ RDV confirmé</div></div>
+        </div>
+        <div class="hc-preview">"Bonjour Pierre, suite à notre échange avec Sophie, je me permets de vous contacter..."</div>
+        <div class="hc-bottom">
+          <div class="hc-time">RDV jeudi 14h</div>
+          <div class="hc-commission" style="background:var(--amber-d);border-color:var(--amber-g);color:var(--amber)">⏳ +18€ en attente</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bn active" onclick="setNav(this)"><div class="bni">🔍</div><div class="bnl">Recherche</div><div class="bnpip"></div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">⚡<div class="bnnotif"></div></div><div class="bnl">Daily</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">🤝</div><div class="bnl">Alliances</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">📡</div><div class="bnl">Éclaireurs</div></div>
+    <div class="bn" onclick="setNav(this)"><div class="bni">👤</div><div class="bnl">Profil</div></div>
+  </div>
+</div>
+<script>
+function setFilter(el,f){document.querySelectorAll('.fc').forEach(c=>c.classList.remove('active'));el.classList.add('active')}
+function switchTab(el,m){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+function resendMsg(btn){const orig=btn.textContent;btn.textContent='✓ Relancé';btn.style.background='var(--green-d)';btn.style.borderColor='var(--green-g)';btn.style.color='var(--green)';setTimeout(()=>{btn.textContent=orig;btn.style.background='';btn.style.borderColor='';btn.style.color=''},2500)}
+function sendNow(btn){const card=btn.closest('.hcard');btn.textContent='✓ Envoyé !';btn.style.background='var(--green-d)';btn.style.borderColor='var(--green-g)';btn.style.color='var(--green)';card.className='hcard sent';const status=card.querySelector('.status-chip');status.textContent='✉ Envoyé';status.className='status-chip sc-sent'}
+function expandPassed(el){el.querySelector('div:last-child').textContent='↓';el.style.borderColor='rgba(0,212,160,.2)'}
+function setNav(el){document.querySelectorAll('.bn').forEach(b=>{b.classList.remove('active');const p=b.querySelector('.bnpip');if(p)p.remove()});el.classList.add('active');const p=document.createElement('div');p.className='bnpip';el.appendChild(p)}
+</script>
+</body>
+</html>

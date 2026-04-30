@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Alliances</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090F;
+  --s1:#0E1420; --s2:#141C2E; --s3:#1A2438;
+  --b1:rgba(255,255,255,.06); --b2:rgba(255,255,255,.11);
+  --teal:#00D4A0; --teal-d:rgba(0,212,160,.12); --teal-g:rgba(0,212,160,.25);
+  --amber:#F5A623; --amber-d:rgba(245,166,35,.12);
+  --purple:#9B8FFF; --purple-d:rgba(155,143,255,.12);
+  --blue:#4FC3F7; --blue-d:rgba(79,195,247,.12);
+  --t:#EEF2F7; --t2:rgba(238,242,247,.55); --t3:rgba(238,242,247,.25); --t4:rgba(238,242,247,.1);
+  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif;
+  --r:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fb)}
+body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 40px}
+
+/* PHONE SHELL */
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:50px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);position:relative;display:flex;flex-direction:column}
+.phone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(0,212,160,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* STATUS BAR */
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 8px;font-size:15px;font-weight:600;position:relative;z-index:1}
+.sb-time{font-family:var(--fd)}
+.sb-right{display:flex;align-items:center;gap:6px;font-size:12px}
+
+/* NAV HEADER */
+.nav-header{padding:12px 20px 16px;position:relative;z-index:1}
+.nav-h-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.nav-title{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.3px}
+.nav-badge{background:var(--teal-d);border:1px solid var(--teal-g);border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px}
+.nav-badge-num{font-family:var(--fd);font-size:14px;font-weight:800;color:var(--teal)}
+.nav-badge-label{font-size:11px;color:var(--t2)}
+
+/* TABS */
+.tabs{display:flex;background:var(--s1);border-radius:12px;padding:3px;gap:3px}
+.tab{flex:1;padding:9px;border-radius:10px;text-align:center;font-size:13px;font-weight:600;color:var(--t3);cursor:pointer;transition:all .2s}
+.tab.active{background:var(--s3);color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* SCROLL CONTENT */
+.scroll{flex:1;overflow-y:auto;padding:0 20px 100px;position:relative;z-index:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* HERO CARD — the big one */
+.hero-card{background:linear-gradient(145deg,var(--s2) 0%,var(--s3) 100%);border:1px solid var(--b2);border-radius:24px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden;margin-top:16px}
+.hero-card::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,160,.12) 0%,transparent 70%)}
+.hero-card::after{content:'';position:absolute;bottom:-30px;left:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(155,143,255,.08) 0%,transparent 70%)}
+
+.hero-eyebrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative}
+.hero-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.hero-premium{background:linear-gradient(135deg,#F5A623,#E8961A);border-radius:20px;padding:5px 12px;font-size:10px;font-weight:800;color:#1A0A00;letter-spacing:.04em}
+
+.hero-title{font-family:var(--fd);font-size:26px;font-weight:800;line-height:1.1;margin-bottom:8px;position:relative}
+.hero-title .hl{color:var(--teal)}
+.hero-subtitle{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:20px;position:relative}
+
+/* OBJECTIFS HORIZONTAL SCROLL */
+.objectifs{display:flex;gap:10px;margin-bottom:20px;position:relative;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.objectifs::-webkit-scrollbar{display:none}
+.obj{flex-shrink:0;background:rgba(0,0,0,.25);border:1px solid var(--b1);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s}
+.obj.active{background:var(--teal-d);border-color:var(--teal-g)}
+.obj-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.obj.active .obj-icon{background:rgba(0,212,160,.15)}
+.obj:not(.active) .obj-icon{background:rgba(255,255,255,.05)}
+.obj-content{}
+.obj-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.obj.active .obj-label{color:var(--teal)}
+.obj:not(.active) .obj-label{color:var(--t3)}
+.obj-val{font-family:var(--fd);font-size:18px;font-weight:800;line-height:1}
+.obj.active .obj-val{color:var(--t)}
+.obj:not(.active) .obj-val{color:var(--t2)}
+.obj-sub{font-size:10px;color:var(--t3);margin-top:1px}
+
+/* SEARCH FORM */
+.search-form{position:relative;margin-bottom:0}
+.sf-row{display:flex;gap:10px;margin-bottom:10px}
+.sf-field{flex:1;position:relative}
+.sf-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;display:block}
+.sf-input{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--b2);border-radius:12px;padding:13px 16px;font-family:var(--fb);font-size:14px;color:var(--t);outline:none;transition:all .2s}
+.sf-input:focus{border-color:rgba(0,212,160,.4);background:rgba(0,212,160,.04)}
+.sf-input::placeholder{color:var(--t3);font-size:13px}
+.sf-input-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+
+/* MÉTIERS CIBLES — chips */
+.metiers-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mc{padding:7px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--b1);background:rgba(0,0,0,.2);color:var(--t2)}
+.mc.active{background:var(--purple-d);border-color:rgba(155,143,255,.35);color:var(--purple)}
+.mc-add{background:transparent;border-style:dashed;color:var(--t3)}
+
+/* CTA LAUNCH */
+.cta-launch{width:100%;padding:18px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--teal),#00A87E);font-family:var(--fd);font-size:17px;letter-spacing:.5px;color:#050D0A;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .25s;margin-top:16px;position:relative;overflow:hidden}
+.cta-launch::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .2s}
+.cta-launch:active{transform:scale(.97)}
+.cta-launch:active::before{opacity:1}
+.cta-arrow{font-size:20px;transition:transform .2s}
+.cta-launch:hover .cta-arrow{transform:translateX(4px)}
+
+/* RESULTS SECTION */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px}
+.rh-left{}
+.rh-count{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1}
+.rh-count .hl{color:var(--teal)}
+.rh-sub{font-size:12px;color:var(--t2);margin-top:2px}
+.rh-sort{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer}
+
+/* RESULT CARDS */
+.result-card{background:var(--s1);border:1px solid var(--b1);border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.result-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;background:linear-gradient(135deg,rgba(0,212,160,.04),transparent)}
+.result-card:active{transform:scale(.98)}
+.result-card:active::before{opacity:1}
+.result-card.featured{border-color:rgba(0,212,160,.25);background:linear-gradient(145deg,rgba(0,212,160,.05),var(--s1))}
+
+.rc-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.rc-av{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:800;flex-shrink:0}
+.rc-info{flex:1}
+.rc-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.rc-metier{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:5px}
+.rc-dot{width:4px;height:4px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.rc-score-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.rc-score{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--teal);line-height:1}
+.rc-score-label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+
+.rc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.rc-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.tag-t{background:var(--teal-d);color:var(--teal)}
+.tag-a{background:var(--amber-d);color:var(--amber)}
+.tag-p{background:var(--purple-d);color:var(--purple)}
+.tag-b{background:var(--blue-d);color:var(--blue)}
+
+.rc-why{font-size:12px;color:var(--t2);line-height:1.5;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:10px;margin-bottom:12px;font-style:italic}
+.rc-why::before{content:'"';color:var(--teal);font-size:16px;font-family:var(--fd);line-height:0;vertical-align:-4px;margin-right:3px}
+
+.rc-bottom{display:flex;align-items:center;gap:8px}
+.rc-commission{flex:1;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.2);border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between}
+.rc-com-label{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.rc-com-val{font-family:var(--fd);font-size:18px;font-weight:800;color:var(--teal)}
+.rc-btn-contact{background:var(--teal);border:none;border-radius:10px;padding:10px 16px;font-family:var(--fd);font-size:13px;font-weight:800;color:#050D0A;cursor:pointer;white-space:nowrap;letter-spacing:.3px;transition:all .2s}
+.rc-btn-contact:active{transform:scale(.95)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px}
+.es-icon{font-size:48px;margin-bottom:14px;opacity:.4}
+.es-title{font-family:var(--fd);font-size:20px;color:var(--t2);margin-bottom:6px}
+.es-sub{font-size:13px;color:var(--t3);line-height:1.5}
+
+/* BOTTOM NAV */
+.bottom-nav{position:sticky;bottom:0;background:rgba(7,9,15,.95);backdrop-filter:blur(20px);border-top:1px solid var(--b1);padding:10px 12px 20px;display:flex;gap:0;z-index:100}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:12px;transition:all .2s}
+.bn-item.active .bn-icon{color:var(--teal)}
+.bn-item.active .bn-label{color:var(--teal)}
+.bn-item:not(.active) .bn-icon{color:var(--t3)}
+.bn-item:not(.active) .bn-label{color:var(--t3)}
+.bn-icon{font-size:22px;position:relative}
+.bn-notif{position:absolute;top:-3px;right:-5px;width:8px;height:8px;border-radius:50%;background:var(--teal);border:2px solid var(--bg)}
+.bn-label{font-size:10px;font-weight:600;letter-spacing:.03em}
+.bn-active-dot{width:4px;height:4px;border-radius:50%;background:var(--teal);margin-top:-2px}
+
+/* Animations */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.animate-in{animation:slideUp .4s ease both}
+.pulse{animation:pulse 2s infinite}
+
+/* Loading skeleton */
+.skeleton{background:var(--s2);border-radius:10px;position:relative;overflow:hidden}
+.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%);animation:shimmer 1.5s infinite}
+
+/* DESKTOP WRAPPER */
+@media(min-width:600px){
+  body{background:#000;padding:40px}
+  .phone{border:1px solid rgba(255,255,255,.1)}
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <div class="sb-time">10:28</div>
+    <div class="sb-right">
+      <span>▲▲▲▲</span>
+      <span>5G</span>
+      <span>70%</span>
+    </div>
+  </div>
+
+  <!-- NAV HEADER -->
+  <div class="nav-header">
+    <div class="nav-h-top">
+      <div class="nav-title">Éclaireurs</div>
+      <div class="nav-badge">
+        <div class="nav-badge-num" id="countBadge">10</div>
+        <div class="nav-badge-label">actifs</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'externe')">Annuaire local</div>
+      <div class="tab" onclick="switchTab(this,'interne')">Communauté Popey</div>
+    </div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll" id="mainScroll">
+
+    <!-- HERO CARD -->
+    <div class="hero-card animate-in">
+      <div class="hero-eyebrow">
+        <span class="hero-tag">Recrutement d'éclaireurs</span>
+        <span class="hero-premium">👑 Premium</span>
+      </div>
+      <h2 class="hero-title">Trouvez les pros<br>qui voient vos clients<br><span class="hl">avant vous.</span></h2>
+      <p class="hero-subtitle">Popey scanne les professionnels locaux complémentaires à votre métier et vous présente ceux qui ont le plus de chances de vous recommander leurs clients.</p>
+
+      <!-- OBJECTIFS -->
+      <div class="objectifs" id="objectifs">
+        <div class="obj active" onclick="setObj(this)">
+          <div class="obj-icon">🤝</div>
+          <div class="obj-content">
+            <div class="obj-label">Objectif 1</div>
+            <div class="obj-val">10</div>
+            <div class="obj-sub">Éclaireurs pros</div>
+          </div>
+        </div>
+        <div class="obj" onclick="setObj(this)">
+          <div class="obj-icon">📱</div>
+          <div class="obj-content">
+            <div class="obj-label">Objectif 2</div>
+            <div class="obj-val">10</div>
+            <div class="obj-sub">Éclaireurs perso</div>
+          </div>
+        </div>
+        <div class="obj" onclick="setObj(this)">
+          <div class="obj-icon">⚡</div>
+          <div class="obj-content">
+            <div class="obj-label">Résultat visé</div>
+            <div class="obj-val">20+</div>
+            <div class="obj-sub">Reco / mois</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH FORM -->
+      <div class="search-form">
+        <div class="sf-row">
+          <div class="sf-field" style="flex:1.4">
+            <span class="sf-label">Votre ville</span>
+            <div style="position:relative">
+              <input class="sf-input" id="villeInput" type="text" value="Dax" placeholder="Bordeaux, Lyon...">
+              <span class="sf-input-icon">📍</span>
+            </div>
+          </div>
+          <div class="sf-field" style="flex:.6">
+            <span class="sf-label">Rayon</span>
+            <div style="position:relative">
+              <input class="sf-input" id="rayonInput" type="text" value="15 km" placeholder="20 km">
+              <span class="sf-input-icon">↔</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sf-field" style="margin-bottom:14px">
+          <span class="sf-label">Votre métier</span>
+          <div style="position:relative">
+            <input class="sf-input" id="metierInput" type="text" value="Coach business" placeholder="Coach sportif, ostéo...">
+            <span class="sf-input-icon">💼</span>
+          </div>
+        </div>
+
+        <div class="sf-field">
+          <span class="sf-label">Métiers cibles <span style="color:var(--teal);font-weight:700;font-size:10px">· Popey suggère</span></span>
+          <div class="metiers-chips" id="metiersChips">
+            <div class="mc active" onclick="toggleMc(this)">⚖️ Avocat</div>
+            <div class="mc active" onclick="toggleMc(this)">📊 Expert-comptable</div>
+            <div class="mc active" onclick="toggleMc(this)">💼 DRH</div>
+            <div class="mc" onclick="toggleMc(this)">🏦 Banquier</div>
+            <div class="mc" onclick="toggleMc(this)">💡 Consultant RH</div>
+            <div class="mc mc-add" onclick="addMetier()">+ Ajouter</div>
+          </div>
+        </div>
+
+        <button class="cta-launch" onclick="launchSearch()">
+          <span>Trouver mes éclaireurs</span>
+          <span class="cta-arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="resultsArea" style="display:none">
+      <div class="results-header">
+        <div class="rh-left">
+          <div class="rh-count"><span class="hl" id="resultCount">0</span> profils</div>
+          <div class="rh-sub" id="resultSub">dans votre zone · triés par compatibilité</div>
+        </div>
+        <div class="rh-sort" onclick="cycleSortMode()">
+          <span>⚡</span>
+          <span id="sortLabel">Compatibilité</span>
+        </div>
+      </div>
+      <div id="resultsList"></div>
+    </div>
+
+    <!-- LOADING STATE (hidden by default) -->
+    <div id="loadingState" style="display:none;padding:24px 0">
+      <div class="skeleton" style="height:20px;width:60%;margin-bottom:16px"></div>
+      <div style="background:var(--s1);border-radius:18px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div class="skeleton" style="width:44px;height:44px;border-radius:14px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:14px;width:70%;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:12px;width:50%"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="height:48px;border-radius:10px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <div class="skeleton" style="height:40px;flex:1;border-radius:10px"></div>
+          <div class="skeleton" style="height:40px;width:80px;border-radius:10px"></div>
+        </div>
+      </div>
+      <div style="background:var(--s1);border-radius:18px;padding:16px;margin-bottom:10px;opacity:.7">
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div class="skeleton" style="width:44px;height:44px;border-radius:14px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:14px;width:55%;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:12px;width:40%"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="height:36px;border-radius:10px"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">🔍</div>
+      <div class="bn-label">Recherche</div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">⚡<div class="bn-notif"></div></div>
+      <div class="bn-label">Daily</div>
+    </div>
+    <div class="bn-item active" onclick="setNav(this)">
+      <div class="bn-icon">🤝</div>
+      <div class="bn-label">Éclaireurs</div>
+      <div class="bn-active-dot"></div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">📊</div>
+      <div class="bn-label">Suivi</div>
+    </div>
+    <div class="bn-item" onclick="setNav(this)">
+      <div class="bn-icon">👤</div>
+      <div class="bn-label">Profil</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──
+const PROSPECTS = [
+  {
+    name:'Camille Petit', metier:'Avocate d\'affaires', ville:'Dax', dist:'2.1 km',
+    score:96, av:'CP', avBg:'rgba(0,212,160,.15)', avColor:'#00D4A0',
+    tags:['⬅️ Précède votre métier','🔥 Réactif','⭐ Top zone'],
+    tagStyles:['tag-t','tag-a','tag-t'],
+    why:'Ses clients dirigeants cherchent régulièrement un coach business après une création ou transmission d\'entreprise. Elle recommande déjà des coaches informellement.',
+    commission:'10%', commissionVal:'~350€/mois', featured:true,
+  },
+  {
+    name:'Marc Durieux', metier:'Expert-comptable', ville:'Dax', dist:'0.8 km',
+    score:91, av:'MD', avBg:'rgba(155,143,255,.15)', avColor:'#9B8FFF',
+    tags:['⬅️ Précède votre métier','👥 45 clients PME'],
+    tagStyles:['tag-t','tag-p'],
+    why:'Il accompagne 45 PME locales. La moitié de ses clients ont des enjeux de management et de croissance — terrain parfait pour un coach business.',
+    commission:'8%', commissionVal:'~280€/mois', featured:false,
+  },
+  {
+    name:'Sophie Hernandez', metier:'DRH · Cabinet Horizon', ville:'Mont-de-Marsan', dist:'14 km',
+    score:87, av:'SH', avBg:'rgba(79,195,247,.15)', avColor:'#4FC3F7',
+    tags:['💼 Profil RH','📈 Haut potentiel'],
+    tagStyles:['tag-b','tag-a'],
+    why:'Elle gère les plans de formation et de développement des managers. Elle cherche activement des coaches certifiés pour ses entreprises clientes.',
+    commission:'10%', commissionVal:'~200€/mois', featured:false,
+  },
+  {
+    name:'Thomas Lacoste', metier:'Banquier · Crédit Agricole', ville:'Dax', dist:'1.4 km',
+    score:78, av:'TL', avBg:'rgba(245,166,35,.15)', avColor:'#F5A623',
+    tags:['🏦 Réseau entrepreneurs','👋 Proche'],
+    tagStyles:['tag-a','tag-t'],
+    why:'Gère les comptes de nombreux entrepreneurs locaux. Ses clients en phase de croissance sont souvent en manque d\'accompagnement stratégique.',
+    commission:'8%', commissionVal:'~180€/mois', featured:false,
+  },
+];
+
+let sortMode = 0;
+const sortModes = ['Compatibilité','Distance','Potentiel'];
+let searchDone = false;
+
+// ── INTERACTIONS ──
+function switchTab(el, mode) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setObj(el) {
+  document.querySelectorAll('.obj').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleMc(el) {
+  el.classList.toggle('active');
+}
+
+function addMetier() {
+  const input = prompt('Quel métier ajouter ?');
+  if(!input) return;
+  const chips = document.getElementById('metiersChips');
+  const btn = chips.querySelector('.mc-add');
+  const chip = document.createElement('div');
+  chip.className = 'mc active';
+  chip.textContent = input;
+  chip.onclick = () => toggleMc(chip);
+  chips.insertBefore(chip, btn);
+}
+
+function setNav(el) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.bn-active-dot').forEach(d => d.remove());
+  const dot = document.createElement('div');
+  dot.className = 'bn-active-dot';
+  el.appendChild(dot);
+}
+
+function cycleSortMode() {
+  sortMode = (sortMode + 1) % sortModes.length;
+  document.getElementById('sortLabel').textContent = sortModes[sortMode];
+  renderResults();
+}
+
+function launchSearch() {
+  const btn = document.querySelector('.cta-launch');
+  btn.innerHTML = '<div style="width:18px;height:18px;border:2.5px solid rgba(5,13,10,.3);border-top-color:#050D0A;border-radius:50%;animation:spin .7s linear infinite"></div><span>Analyse en cours...</span>';
+  btn.disabled = true;
+
+  const loading = document.getElementById('loadingState');
+  const results = document.getElementById('resultsArea');
+  loading.style.display = 'block';
+  results.style.display = 'none';
+
+  // Simulate search
+  setTimeout(() => {
+    loading.style.display = 'none';
+    renderResults();
+    results.style.display = 'block';
+    searchDone = true;
+    document.getElementById('countBadge').textContent = '14';
+
+    btn.innerHTML = '<span>Relancer la recherche</span><span class="cta-arrow">↺</span>';
+    btn.disabled = false;
+
+    // Scroll to results
+    setTimeout(() => {
+      document.getElementById('mainScroll').scrollTo({top:500,behavior:'smooth'});
+    }, 200);
+  }, 2000);
+}
+
+function renderResults() {
+  const ville = document.getElementById('villeInput').value || 'votre zone';
+  const list = document.getElementById('resultsList');
+  const sorted = [...PROSPECTS].sort((a,b) => {
+    if(sortMode === 0) return b.score - a.score;
+    if(sortMode === 1) return parseFloat(a.dist) - parseFloat(b.dist);
+    return b.commission.localeCompare(a.commission);
+  });
+
+  // Animate count
+  const countEl = document.getElementById('resultCount');
+  let n = 0;
+  const target = sorted.length + 116;
+  const interval = setInterval(() => {
+    n = Math.min(n + 12, target);
+    countEl.textContent = n;
+    if(n >= target) clearInterval(interval);
+  }, 40);
+
+  document.getElementById('resultSub').textContent = `dans un rayon de 15km · triés par ${sortModes[sortMode].toLowerCase()}`;
+
+  list.innerHTML = sorted.map((p, i) => `
+    <div class="result-card ${p.featured ? 'featured':''} animate-in" style="animation-delay:${i*.08}s">
+      ${p.featured ? `<div style="position:absolute;top:14px;right:14px;background:linear-gradient(135deg,var(--teal),#00A87E);border-radius:20px;padding:3px 10px;font-size:9px;font-weight:800;color:#050D0A;letter-spacing:.06em">✦ TOP MATCH</div>` : ''}
+      <div class="rc-top">
+        <div class="rc-av" style="background:${p.avBg};color:${p.avColor}">${p.av}</div>
+        <div class="rc-info">
+          <div class="rc-name">${p.name}</div>
+          <div class="rc-metier">
+            <span>${p.metier}</span>
+            <div class="rc-dot"></div>
+            <span>${p.dist}</span>
+          </div>
+        </div>
+        <div class="rc-score-wrap">
+          <div class="rc-score">${p.score}</div>
+          <div class="rc-score-label">/ 100</div>
+        </div>
+      </div>
+      <div class="rc-tags">
+        ${p.tags.map((t,ti) => `<span class="rc-tag ${p.tagStyles[ti]}">${t}</span>`).join('')}
+      </div>
+      <div class="rc-why">${p.why}</div>
+      <div class="rc-bottom">
+        <div class="rc-commission">
+          <span class="rc-com-label">Commission · ${p.commission}</span>
+          <span class="rc-com-val">${p.commissionVal}</span>
+        </div>
+        <button class="rc-btn-contact" onclick="contactPro('${p.name}')">Contacter →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function contactPro(name) {
+  const btn = event.currentTarget;
+  btn.textContent = '✓ Envoyé';
+  btn.style.background = 'rgba(0,212,160,.2)';
+  btn.style.color = 'var(--teal)';
+  btn.style.border = '1px solid var(--teal-g)';
+  btn.disabled = true;
+  document.getElementById('countBadge').textContent = parseInt(document.getElementById('countBadge').textContent) + 1;
+}
+</script>
+
+</body>
+</html>

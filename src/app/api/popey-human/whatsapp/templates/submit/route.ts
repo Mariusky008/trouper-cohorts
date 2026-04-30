@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { submitWhatsAppTemplateTo360Dialog } from "@/lib/actions/whatsapp-360dialog";
-import { whatsappTemplateSubmitSchema } from "@/lib/popey-human/whatsapp-360dialog-validation";
+import { submitWhatsAppTemplateToMeta } from "@/lib/actions/whatsapp-meta";
+import { whatsappTemplateSubmitSchema } from "@/lib/popey-human/whatsapp-meta-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Payload template invalide." }, { status: 400 });
   }
   const body = parsed.data;
-  const result = await submitWhatsAppTemplateTo360Dialog({
+  const result = await submitWhatsAppTemplateToMeta({
     templateName: body.template_name,
     languageCode: body.language_code,
     category: body.category,
