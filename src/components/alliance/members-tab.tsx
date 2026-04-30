@@ -50,7 +50,7 @@ export function MembersTab() {
                 {[
                     { name: "Sophie L.", role: "Designer UX", status: "Super-Allié", statusColor: "text-purple-400", services: 15, location: "Paris", avatar: "SL", level: 12, topSkill: "Figma" },
                     { name: "Marc P.", role: "Dev Fullstack", status: "Mentor", statusColor: "text-yellow-400", services: 42, location: "Lyon", avatar: "MP", level: 24, topSkill: "React" },
-                    { name: "Karim B.", role: "Avocat Affaires", status: "Allié Actif", statusColor: "text-green-400", services: 8, location: "Bordeaux", avatar: "KB", level: 5, topSkill: "Droit" },
+                    { name: "Karim B.", role: "Consultant business Affaires", status: "Allié Actif", statusColor: "text-green-400", services: 8, location: "Bordeaux", avatar: "KB", level: 5, topSkill: "Droit" },
                     { name: "Julie T.", role: "Coach Sportif", status: "Nouveau", statusColor: "text-blue-400", services: 2, location: "Lille", avatar: "JT", level: 2, topSkill: "Mental" },
                     { name: "Thomas D.", role: "Entrepreneur", status: "Super-Allié", statusColor: "text-purple-400", services: 21, location: "Paris", avatar: "TD", level: 18, topSkill: "Sales" },
                     { name: "Emma R.", role: "Marketing", status: "Allié Actif", statusColor: "text-green-400", services: 11, location: "Nantes", avatar: "ER", level: 9, topSkill: "SEO" },

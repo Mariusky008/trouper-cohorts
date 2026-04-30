@@ -263,10 +263,10 @@ const ONBOARDING_SECTOR_CATALOG: Array<{ sector_id: string; label: string }> = [
   { sector_id: "coach_vie", label: "Coach de vie" },
   { sector_id: "hypno", label: "Hypnotherapeute" },
   { sector_id: "sophrologie", label: "Sophrologue" },
-  { sector_id: "psycho", label: "Psychologue liberal" },
+  { sector_id: "psycho", label: "Coach mental liberal" },
   { sector_id: "psy_therapeute", label: "Psychotherapeute" },
-  { sector_id: "kine", label: "Kinesitherapeute" },
-  { sector_id: "osteo", label: "Osteopathe" },
+  { sector_id: "coach mobilite", label: "Coach mobilite" },
+  { sector_id: "coach postural", label: "Coach postural" },
   { sector_id: "naturo", label: "Naturopathe" },
   { sector_id: "nutrition", label: "Nutritionniste" },
   { sector_id: "dietetique", label: "Dieteticien" },
@@ -285,11 +285,11 @@ const ONBOARDING_SECTOR_CATALOG: Array<{ sector_id: string; label: string }> = [
   { sector_id: "courtier_credit", label: "Courtier en credit" },
   { sector_id: "cgp", label: "Conseiller en gestion de patrimoine" },
   { sector_id: "courtier_assurance", label: "Courtier assurance" },
-  { sector_id: "expert_comptable", label: "Expert-comptable" },
+  { sector_id: "expert_comptable", label: "Consultant pilotage financier" },
   { sector_id: "comptable", label: "Comptable independant" },
-  { sector_id: "avocat", label: "Avocat independant" },
-  { sector_id: "notaire", label: "Notaire" },
-  { sector_id: "huissier", label: "Huissier de justice" },
+  { sector_id: "consultant business", label: "Consultant business independant" },
+  { sector_id: "coordinateur patrimonial", label: "Coordinateur patrimonial" },
+  { sector_id: "consultant recouvrement", label: "Consultant recouvrement" },
   { sector_id: "mediateur", label: "Mediateur" },
   { sector_id: "formateur", label: "Formateur professionnel" },
   { sector_id: "prof_particulier", label: "Professeur particulier" },
@@ -319,8 +319,8 @@ const ONBOARDING_SECTOR_CATALOG: Array<{ sector_id: string; label: string }> = [
   { sector_id: "serrurier", label: "Serrurier" },
   { sector_id: "carreleur", label: "Carreleur" },
   { sector_id: "couvreur", label: "Couvreur" },
-  { sector_id: "infirmier", label: "Infirmier liberal" },
-  { sector_id: "sage_femme", label: "Sage-femme liberale" },
+  { sector_id: "coach accompagnement", label: "Coach accompagnement" },
+  { sector_id: "sage_femme", label: "Coach parental liberale" },
   { sector_id: "podologue", label: "Podologue" },
   { sector_id: "opticien", label: "Opticien independant" },
   { sector_id: "consultant_it", label: "Consultant IT" },
@@ -339,12 +339,12 @@ const ONBOARDING_FEATURED_SECTOR_IDS = [
   "dietetique",
   "immo",
   "courtier_immo",
-  "avocat",
-  "notaire",
+  "consultant business",
+  "coordinateur patrimonial",
   "electricien",
   "plombier",
   "estheticienne",
-  "kine",
+  "coach mobilite",
   "other_custom",
 ];
 type SmartScanSelfScoutLink = {
@@ -449,11 +449,11 @@ const RADAR_MOCK_SEED: Array<{
   synergyReason: string;
   colorTone: RadarProspect["colorTone"];
 }> = [
-  { fullName: "Camille Petit", metier: "Avocate", distanceKm: 1.2, phoneE164: "+33612345678", synergyReason: "ses clients creent des entreprises", colorTone: "violet" },
-  { fullName: "Marc Durieux", metier: "Expert-comptable", distanceKm: 0.8, phoneE164: "+33698765432", synergyReason: "accompagne des dirigeants en decisions", colorTone: "amber" },
+  { fullName: "Camille Petit", metier: "Consultante business", distanceKm: 1.2, phoneE164: "+33612345678", synergyReason: "ses clients creent des entreprises", colorTone: "violet" },
+  { fullName: "Marc Durieux", metier: "Consultant pilotage financier", distanceKm: 0.8, phoneE164: "+33698765432", synergyReason: "accompagne des dirigeants en decisions", colorTone: "amber" },
   { fullName: "Sophie Hernandez", metier: "DRH", distanceKm: 14, phoneE164: "+33677889900", synergyReason: "formation managers et performance equipe", colorTone: "blue" },
   { fullName: "Thomas Lacoste", metier: "Banquier", distanceKm: 1.4, phoneE164: "+33611223344", synergyReason: "finance des projets d entrepreneurs", colorTone: "green" },
-  { fullName: "Julie Barennes", metier: "Notaire", distanceKm: 2.6, phoneE164: "+33645127890", synergyReason: "transactions + structuration patrimoniale", colorTone: "violet" },
+  { fullName: "Julie Barennes", metier: "Coordinateur patrimonial", distanceKm: 2.6, phoneE164: "+33645127890", synergyReason: "transactions + structuration patrimoniale", colorTone: "violet" },
   { fullName: "Romain Farge", metier: "Courtier credit", distanceKm: 3.2, phoneE164: "+33699887766", synergyReason: "cherche des prospects plus qualifies", colorTone: "amber" },
   { fullName: "Lea Vignaux", metier: "Diagnostiqueuse", distanceKm: 4.1, phoneE164: "+33655443322", synergyReason: "voit des vendeurs avant mise en vente", colorTone: "teal" },
   { fullName: "Antoine Cazenave", metier: "Architecte interieur", distanceKm: 5.8, phoneE164: "+33666995511", synergyReason: "intervient post-acquisition sur travaux", colorTone: "blue" },
@@ -990,10 +990,10 @@ function formatDateTimeShort(value?: string | null) {
 
 function allianceMetierTone(metier: string) {
   const raw = String(metier || "").toLowerCase();
-  if (/notaire|avocat|jurid|comptable|fiscal/.test(raw)) {
+  if (/coordinateur patrimonial|consultant business|jurid|comptable|fiscal/.test(raw)) {
     return "border-violet-300/35 bg-violet-300/15 text-violet-100";
   }
-  if (/nutrition|coach|therap|psych|sante|kine|soin/.test(raw)) {
+  if (/nutrition|coach|therap|psych|sante|coach mobilite|soin/.test(raw)) {
     return "border-emerald-300/35 bg-emerald-300/15 text-emerald-100";
   }
   if (/dev|informat|web|seo|marketing|design/.test(raw)) {
@@ -1611,7 +1611,7 @@ export default function EntrepreneurSmartScanTestPage() {
   );
   const allianceSuggestedMetiers = useMemo(() => {
     const { metier1, metier2 } = resolveAllianceMetiers(myProfile);
-    const base = [metier1, metier2, "Avocat", "Expert-comptable", "DRH", "Banquier", "Consultant RH", "Courtier", "Notaire"];
+    const base = [metier1, metier2, "Consultant business", "Consultant pilotage financier", "DRH", "Banquier", "Consultant RH", "Courtier", "Coordinateur patrimonial"];
     const seen = new Set<string>();
     return base.filter((item) => {
       const normalized = String(item || "").trim();
@@ -4033,7 +4033,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   function radarToneFromMetier(metier: string): RadarProspect["colorTone"] {
     const value = String(metier || "").toLowerCase();
-    if (value.includes("avocat") || value.includes("notaire")) return "violet";
+    if (value.includes("consultant business") || value.includes("coordinateur patrimonial")) return "violet";
     if (value.includes("comptable") || value.includes("courtier") || value.includes("assureur")) return "amber";
     if (value.includes("drh") || value.includes("architecte")) return "blue";
     if (value.includes("banquier") || value.includes("demen")) return "green";
@@ -8984,12 +8984,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <input
                 value={manualScoutMetier}
                 onChange={(event) => setManualScoutMetier(event.target.value)}
-                placeholder="Osteopathe, coach, notaire..."
+                placeholder="Coach postural, coach, coordinateur patrimonial..."
                 className="h-11 w-full rounded-xl border border-white/15 bg-[#14231F] px-3 text-[13px] text-white placeholder:text-white/35"
               />
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {["🦴 Osteopathe", "🏋️ Coach sportif", "⚖️ Notaire", "🌿 Sophrologue", "🏠 Agent immo"].map((item) => (
+              {["🦴 Coach postural", "🏋️ Coach sportif", "⚖️ Coordinateur patrimonial", "🌿 Sophrologue", "🏠 Agent immo"].map((item) => (
                 <button
                   key={`metier-suggestion-${item}`}
                   type="button"

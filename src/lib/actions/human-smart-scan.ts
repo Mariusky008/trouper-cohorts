@@ -3062,12 +3062,12 @@ function normalizeTextValue(value: string | null | undefined) {
 
 function resolveDefaultAllianceTargets(sourceMetier?: string | null): string[] {
   const normalized = String(sourceMetier || "").toLowerCase().trim();
-  if (!normalized) return ["courtier", "notaire", "conciergerie"];
-  if (normalized.includes("immo")) return ["courtier", "notaire", "diagnostiqueur", "conciergerie"];
-  if (normalized.includes("coach")) return ["rh", "manager", "kine", "nutritionniste"];
-  if (normalized.includes("courtier")) return ["agent immobilier", "notaire", "gestionnaire patrimoine"];
+  if (!normalized) return ["courtier", "coordinateur patrimonial", "conciergerie"];
+  if (normalized.includes("immo")) return ["courtier", "coordinateur patrimonial", "diagnostiqueur", "conciergerie"];
+  if (normalized.includes("coach")) return ["rh", "manager", "coach mobilite", "nutritionniste"];
+  if (normalized.includes("courtier")) return ["agent immobilier", "coordinateur patrimonial", "gestionnaire patrimoine"];
   if (normalized.includes("freelance") || normalized.includes("web")) return ["agence marketing", "commercial b2b", "cabinet rh"];
-  return ["courtier", "notaire", "conciergerie"];
+  return ["courtier", "coordinateur patrimonial", "conciergerie"];
 }
 
 function computeAllianceFitScore(input: {

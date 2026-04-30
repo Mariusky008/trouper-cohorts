@@ -272,7 +272,7 @@ body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 4
         <div class="sf-field" style="margin-bottom:14px">
           <span class="sf-label">Votre métier</span>
           <div style="position:relative">
-            <input class="sf-input" id="metierInput" type="text" value="Coach business" placeholder="Coach sportif, ostéo...">
+            <input class="sf-input" id="metierInput" type="text" value="Coach business" placeholder="Coach sportif, coach postural...">
             <span class="sf-input-icon">💼</span>
           </div>
         </div>
@@ -280,8 +280,8 @@ body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 4
         <div class="sf-field">
           <span class="sf-label">Métiers cibles <span style="color:var(--teal);font-weight:700;font-size:10px">· Popey suggère</span></span>
           <div class="metiers-chips" id="metiersChips">
-            <div class="mc active" onclick="toggleMc(this)">⚖️ Avocat</div>
-            <div class="mc active" onclick="toggleMc(this)">📊 Expert-comptable</div>
+            <div class="mc active" onclick="toggleMc(this)">⚖️ Consultant business</div>
+            <div class="mc active" onclick="toggleMc(this)">📊 Consultant pilotage financier</div>
             <div class="mc active" onclick="toggleMc(this)">💼 DRH</div>
             <div class="mc" onclick="toggleMc(this)">🏦 Banquier</div>
             <div class="mc" onclick="toggleMc(this)">💡 Consultant RH</div>
@@ -373,7 +373,7 @@ body{display:flex;justify-content:center;align-items:flex-start;padding:20px 0 4
 // ── DATA ──
 const PROSPECTS = [
   {
-    name:'Camille Petit', metier:'Avocate d\'affaires', ville:'Dax', dist:'2.1 km',
+    name:'Camille Petit', metier:'Consultante business d\'affaires', ville:'Dax', dist:'2.1 km',
     score:96, av:'CP', avBg:'rgba(0,212,160,.15)', avColor:'#00D4A0',
     tags:['⬅️ Précède votre métier','🔥 Réactif','⭐ Top zone'],
     tagStyles:['tag-t','tag-a','tag-t'],
@@ -381,7 +381,7 @@ const PROSPECTS = [
     commission:'10%', commissionVal:'~350€/mois', featured:true,
   },
   {
-    name:'Marc Durieux', metier:'Expert-comptable', ville:'Dax', dist:'0.8 km',
+    name:'Marc Durieux', metier:'Consultant pilotage financier', ville:'Dax', dist:'0.8 km',
     score:91, av:'MD', avBg:'rgba(155,143,255,.15)', avColor:'#9B8FFF',
     tags:['⬅️ Précède votre métier','👥 45 clients PME'],
     tagStyles:['tag-t','tag-p'],

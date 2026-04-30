@@ -105,7 +105,7 @@ export default function SecretCohortsLanding() {
             </h1>
             <p className="text-muted-foreground text-lg">
               Exemple: 24 coachs sportifs (1 par département). Mais le format marche aussi pour 24 nutritionnistes, 24
-              profs de yoga, 24 kinés, 24 coiffeurs, 24 agents immo, etc. L’objectif est simple: être vu partout dans ton
+              profs de yoga, 24 coachs mobilité, 24 coiffeurs, 24 agents immo, etc. L’objectif est simple: être vu partout dans ton
               département, avec des missions quotidiennes à forte valeur.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -134,7 +134,7 @@ export default function SecretCohortsLanding() {
                 "Quand: 14 jours",
                 "But: gagner de nouveaux clients et devenir visible",
                 "Chaque jour: missions très spécifiques + preuve",
-                "Cohorte par métier (ex: coachs) + invités complémentaires (nutrition/ostéo/vente) en live",
+                "Cohorte par métier (ex: coachs) + invités complémentaires (nutrition/coach postural/vente) en live",
               ].map((t) => (
                 <div key={t} className="flex gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
@@ -230,7 +230,7 @@ export default function SecretCohortsLanding() {
                   "1 débat trio (format reach) + plan clips pour transformer le live en contenu",
                   "2 retours humains (audit bio/offre + audit DM/CTA) pour corriger ce qui bloque les clients",
                   "Système DM mot-clé: capture de leads + relance post-live → RDV",
-                  "Invités complémentaires selon les cohortes (nutrition, ostéo, vente, tournage) pour mixer les audiences",
+                  "Invités complémentaires selon les cohortes (nutrition, coach postural, vente, tournage) pour mixer les audiences",
                 ].map((t) => (
                   <div key={t} className="flex gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />

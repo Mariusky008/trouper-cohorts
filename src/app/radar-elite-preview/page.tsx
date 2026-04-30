@@ -97,15 +97,15 @@ const adminVocals: AdminVocal[] = [
   { id: "VOC-991", from: "Thomas", metier: "Carreleur", sphere: "habitat", urgent: true, duration: "0:34" },
   { id: "VOC-992", from: "Claire", metier: "Agent Immo", sphere: "habitat", duration: "0:27" },
   { id: "VOC-993", from: "David", metier: "Plombier", sphere: "habitat", duration: "0:42" },
-  { id: "VOC-994", from: "Nora", metier: "Infirmière", sphere: "sante", duration: "0:31" },
+  { id: "VOC-994", from: "Nora", metier: "Coach accompagnement", sphere: "sante", duration: "0:31" },
   { id: "VOC-995", from: "Lucas", metier: "Garagiste", sphere: "auto", duration: "0:29" },
 ];
 
 const dispatchMetiers = [
-  "Agent Immo", "Courtier", "Notaire", "Architecte", "Maître d'Oeuvre", "Cuisiniste", "Plombier", "Électricien",
+  "Agent Immo", "Courtier", "Coordinateur patrimonial", "Architecte", "Maître d'Oeuvre", "Cuisiniste", "Plombier", "Électricien",
   "Menuisier", "Carreleur", "Façadier", "Peintre", "Terrassier", "Pisciniste", "Paysagiste", "Couvreur",
-  "Déménageur", "Conciergerie", "Diagnostiqueur", "Syndic", "Avocat", "CGP", "Expert-Comptable", "Banquier",
-  "Garagiste", "Carrossier", "Contrôle Technique", "Infirmière", "Kiné", "Opticien",
+  "Déménageur", "Conciergerie", "Diagnostiqueur", "Syndic", "Consultant business", "CGP", "Consultant Pilotage Financier", "Banquier",
+  "Garagiste", "Carrossier", "Contrôle Technique", "Coach accompagnement", "Coach mobilité", "Opticien",
 ];
 
 const directoryMembers = dispatchMetiers.map((metier, idx) => ({
@@ -124,7 +124,7 @@ const memberHealth = [
   { name: "Thomas", metier: "Carreleur", status: "ok", overdueDays: 0 },
   { name: "Claire", metier: "Agent Immo", status: "ok", overdueDays: 0 },
   { name: "David", metier: "Plombier", status: "alert", overdueDays: 19 },
-  { name: "Nora", metier: "Infirmière", status: "ok", overdueDays: 0 },
+  { name: "Nora", metier: "Coach accompagnement", status: "ok", overdueDays: 0 },
 ];
 
 const adminMetricsBySphere: Record<Sphere, { leadsQualifies: number; commissionsValidees: number; caTotalReseau: number }> = {

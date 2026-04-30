@@ -180,7 +180,7 @@ body{display:flex;justify-content:center;gap:40px;align-items:flex-start;padding
         <div class="ac-info">
           <div class="ac-name">Camille Petit</div>
           <div class="ac-meta">
-            <span>Notaire</span><div class="ac-dot"></div>
+            <span>Coordinateur patrimonial</span><div class="ac-dot"></div>
             <span>Dax</span><div class="ac-dot"></div>
             <span>Il y a 2h</span>
           </div>
@@ -193,7 +193,7 @@ body{display:flex;justify-content:center;gap:40px;align-items:flex-start;padding
         <div class="ac-info">
           <div class="ac-name">Nicolas Martin</div>
           <div class="ac-meta">
-            <span>Notaire</span><div class="ac-dot"></div>
+            <span>Coordinateur patrimonial</span><div class="ac-dot"></div>
             <span>Dax</span><div class="ac-dot"></div>
             <span>Il y a 3h</span>
           </div>
@@ -343,14 +343,14 @@ body{display:flex;justify-content:center;gap:40px;align-items:flex-start;padding
 
         <div class="field-full">
           <label class="field-label">Métier / Activité</label>
-          <input class="field-input" id="metierInput" type="text" placeholder="Ostéopathe, coach, notaire..." oninput="filterSuggestions(this.value)">
+          <input class="field-input" id="metierInput" type="text" placeholder="Coach postural, coach, coordinateur patrimonial..." oninput="filterSuggestions(this.value)">
         </div>
 
         <!-- SUGGESTIONS -->
         <div class="metier-suggestions" id="suggestions">
-          <div class="ms" onclick="pickMetier(this)">🦴 Ostéopathe</div>
+          <div class="ms" onclick="pickMetier(this)">🦴 Coach postural</div>
           <div class="ms" onclick="pickMetier(this)">🏋️ Coach sportif</div>
-          <div class="ms" onclick="pickMetier(this)">⚖️ Notaire</div>
+          <div class="ms" onclick="pickMetier(this)">⚖️ Coordinateur patrimonial</div>
           <div class="ms" onclick="pickMetier(this)">🌿 Sophrologue</div>
           <div class="ms" onclick="pickMetier(this)">🏠 Agent immo</div>
         </div>
@@ -402,7 +402,7 @@ function pickMetier(el){
   document.getElementById('metierInput').value=el.textContent.replace(/^[^\w]+/,'').trim();
 }
 function filterSuggestions(v){
-  const all=['🦴 Ostéopathe','🏋️ Coach sportif','⚖️ Notaire','🌿 Sophrologue','🏠 Agent immo','🥗 Nutritionniste','📊 Comptable','🧘 Sophrologue','🏦 Courtier'];
+  const all=['🦴 Coach postural','🏋️ Coach sportif','⚖️ Coordinateur patrimonial','🌿 Sophrologue','🏠 Agent immo','🥗 Nutritionniste','📊 Comptable','🧘 Sophrologue','🏦 Courtier'];
   const box=document.getElementById('suggestions');
   const matches=v?all.filter(m=>m.toLowerCase().includes(v.toLowerCase())):all.slice(0,5);
   box.innerHTML=matches.slice(0,5).map(m=>`<div class="ms" onclick="pickMetier(this)">${m}</div>`).join('');

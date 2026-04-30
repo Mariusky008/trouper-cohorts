@@ -722,7 +722,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
             <div class="fcc-pros">
               <span class="fcc-pro taken">Coach sportif ✓</span>
               <span class="fcc-pro taken">Agent immo ✓</span>
-              <span class="fcc-pro free">Ostéopathe — libre</span>
+              <span class="fcc-pro free">Coach postural — libre</span>
               <span class="fcc-pro free">Nutritionniste — libre</span>
             </div>
             <div class="fcc-eclaireurs">→ <span>47 éclaireurs actifs</span> cherchent des pros à recommander</div>
@@ -816,7 +816,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
             </div>
             <div class="ev-map-row">
               <span class="ev-city">Bordeaux</span>
-              <span class="ev-metier">Ostéopathe</span>
+              <span class="ev-metier">Coach postural</span>
               <span class="ev-status ev-free" onclick="alert('Inscrivez-vous pour prendre cette exclusivité !')">Disponible →</span>
             </div>
             <div class="ev-map-row">
@@ -884,7 +884,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
     <div class="testi-grid reveal">
       <div class="testi-card">
         <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Mon répertoire m'a donné 5 éclaireurs en 3 jours. L'annuaire Apify m'a trouvé 12 ostéos et coachs locaux que je ne connaissais pas. Et 2 membres Popey m'ont déjà envoyé des clients."</p>
+        <p class="testi-text">"Mon répertoire m'a donné 5 éclaireurs en 3 jours. L'annuaire Apify m'a trouvé 12 coach posturals et coachs locaux que je ne connaissais pas. Et 2 membres Popey m'ont déjà envoyé des clients."</p>
         <div class="testi-author"><div class="testi-av">SC</div><div><div class="testi-name">Sarah C.</div><div class="testi-role">Nutritionniste · Bordeaux</div></div></div>
       </div>
       <div class="testi-card">
@@ -1070,21 +1070,21 @@ function toggleFaq(btn) {
 
 // ── MÉTIERS DATA ──
 const METIERS = [
-  {id:'coach_sport',emoji:'🏋️',name:'Coach sportif',trio:['Ostéopathe','Nutritionniste','Kiné','Médecin du sport'],gain:18,ticket:150},
-  {id:'nutrition',emoji:'🥗',name:'Nutritionniste',trio:['Coach sportif','Médecin','Endocrinologue','Diététicien'],gain:24,ticket:80},
-  {id:'hypno',emoji:'🌀',name:'Hypnothérapeute',trio:['Médecin généraliste','Psychologue','Sophrologue','Coach vie'],gain:15,ticket:90},
-  {id:'sophrologie',emoji:'🧘',name:'Sophrologue',trio:['Médecin','Coach vie','Psychologue','Kiné'],gain:12,ticket:75},
-  {id:'coach_biz',emoji:'📈',name:'Coach business',trio:['Expert-comptable','Avocat','Consultant RH','CGP'],gain:60,ticket:350},
-  {id:'coach_vie',emoji:'✨',name:'Coach de vie',trio:['Psychologue','Médecin','Coach business','Sophrologue'],gain:20,ticket:120},
-  {id:'immo',emoji:'🏠',name:'Agent immobilier',trio:['Courtier crédit','Notaire','Diagnostiqueur','Chasseur immo'],gain:1800,ticket:8000},
-  {id:'courtier',emoji:'💰',name:'Courtier en crédit',trio:['Agent immo','Notaire','CGP','Expert-comptable'],gain:500,ticket:2500},
-  {id:'osteo',emoji:'🦴',name:'Ostéopathe',trio:['Médecin','Kinésithérapeute','Coach sportif','Sage-femme'],gain:15,ticket:70},
-  {id:'kine',emoji:'💪',name:'Kinésithérapeute',trio:['Médecin','Chirurgien','Ostéopathe','Podologue'],gain:14,ticket:65},
-  {id:'naturo',emoji:'🌿',name:'Naturopathe',trio:['Médecin holistique','Coach vie','Nutritionniste','Ostéopathe'],gain:18,ticket:90},
-  {id:'avocat',emoji:'⚖️',name:'Avocat',trio:['Notaire','Expert-comptable','CGP','Huissier'],gain:120,ticket:800},
-  {id:'comptable',emoji:'📊',name:'Expert-comptable',trio:['Avocat','CGP','Consultant RH','Banquier'],gain:90,ticket:600},
-  {id:'cgp',emoji:'💎',name:'CGP',trio:['Expert-comptable','Notaire','Avocat fiscal','Banquier'],gain:200,ticket:1500},
-  {id:'psycho',emoji:'🧠',name:'Psychologue',trio:['Médecin','Psychiatre','Coach vie','Sophrologue'],gain:22,ticket:90},
+  {id:'coach_sport',emoji:'🏋️',name:'Coach sportif',trio:['Coach postural','Nutritionniste','Coach mobilité','Coach mobilité'],gain:18,ticket:150},
+  {id:'nutrition',emoji:'🥗',name:'Nutritionniste',trio:['Coach sportif','Coach bien-être','Endocrinologue','Diététicien'],gain:24,ticket:80},
+  {id:'hypno',emoji:'🌀',name:'Hypnothérapeute',trio:['Coach bien-être','Coach mental','Sophrologue','Coach vie'],gain:15,ticket:90},
+  {id:'sophrologie',emoji:'🧘',name:'Sophrologue',trio:['Coach bien-être','Coach vie','Coach mental','Coach mobilité'],gain:12,ticket:75},
+  {id:'coach_biz',emoji:'📈',name:'Coach business',trio:['Consultant pilotage financier','Consultant business','Consultant RH','CGP'],gain:60,ticket:350},
+  {id:'coach_vie',emoji:'✨',name:'Coach de vie',trio:['Coach mental','Coach bien-être','Coach business','Sophrologue'],gain:20,ticket:120},
+  {id:'immo',emoji:'🏠',name:'Agent immobilier',trio:['Courtier crédit','Coordinateur patrimonial','Diagnostiqueur','Chasseur immo'],gain:1800,ticket:8000},
+  {id:'courtier',emoji:'💰',name:'Courtier en crédit',trio:['Agent immo','Coordinateur patrimonial','CGP','Consultant pilotage financier'],gain:500,ticket:2500},
+  {id:'coach postural',emoji:'🦴',name:'Coach postural',trio:['Coach bien-être','Coach mobilité','Coach sportif','Coach parental'],gain:15,ticket:70},
+  {id:'coach mobilite',emoji:'💪',name:'Coach mobilité',trio:['Coach bien-être','Chirurgien','Coach postural','Podologue'],gain:14,ticket:65},
+  {id:'naturo',emoji:'🌿',name:'Naturopathe',trio:['Coach bien-être','Coach vie','Nutritionniste','Coach postural'],gain:18,ticket:90},
+  {id:'consultant business',emoji:'⚖️',name:'Consultant business',trio:['Coordinateur patrimonial','Consultant pilotage financier','CGP','Consultant recouvrement'],gain:120,ticket:800},
+  {id:'comptable',emoji:'📊',name:'Consultant pilotage financier',trio:['Consultant business','CGP','Consultant RH','Banquier'],gain:90,ticket:600},
+  {id:'cgp',emoji:'💎',name:'CGP',trio:['Consultant pilotage financier','Coordinateur patrimonial','Consultant business fiscal','Banquier'],gain:200,ticket:1500},
+  {id:'psycho',emoji:'🧠',name:'Coach mental',trio:['Coach bien-être','Coach mental','Coach vie','Sophrologue'],gain:22,ticket:90},
   {id:'photo',emoji:'📸',name:'Photographe',trio:['Wedding planner','Agence événementielle','Fleuriste','Traiteur'],gain:30,ticket:400},
   {id:'wedding',emoji:'💍',name:'Wedding planner',trio:['Photographe','Traiteur','Fleuriste','DJ'],gain:150,ticket:3000},
   {id:'formateur',emoji:'🎓',name:'Formateur',trio:['Consultant RH','Coach business','Manager','DRH'],gain:80,ticket:500},

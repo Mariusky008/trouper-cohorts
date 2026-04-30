@@ -426,7 +426,7 @@ export default function SpheresRegistrationPage() {
                         Quel métier complémentaire vous manque-t-il aujourd&apos;hui pour faire plus de business ? (Facultatif, mais aide l&apos;algo à vous trouver les meilleurs matchs).
                     </p>
                     <Input 
-                        placeholder="Ex: Un notaire, un décorateur, un expert-comptable..." 
+                        placeholder="Ex: Un coordinateur patrimonial, un décorateur, un consultant pilotage financier..." 
                         className="bg-white border-2 border-[#2E130C] h-12 rounded-lg focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm" 
                         value={formData.quickWin}
                         onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
