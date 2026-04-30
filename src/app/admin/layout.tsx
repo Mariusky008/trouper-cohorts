@@ -14,7 +14,7 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=%2Fadmin%2Fhumain");
 
   // Check if admin with explicit status check
   // Using supabaseAdmin (service role) to bypass RLS in case user doesn't have read access to admins table
@@ -45,9 +45,19 @@ export default async function AdminLayout({
           Exécute ce SQL dans Supabase pour devenir admin :<br />
           <code>insert into public.admins (user_id) values (&apos;{user.id}&apos;);</code>
         </p>
-        <Button asChild>
-          <Link href="/app/today">Retour à l&apos;app</Link>
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button asChild>
+            <Link href="/login?next=%2Fadmin%2Fhumain">Se connecter en admin</Link>
+          </Button>
+          <form method="post" action="/auth/signout">
+            <Button type="submit" variant="outline">
+              Changer de compte
+            </Button>
+          </form>
+          <Button asChild variant="outline">
+            <Link href="/app/today">Retour à l&apos;app</Link>
+          </Button>
+        </div>
       </div>
     );
   }

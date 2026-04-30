@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { LoginForm } from "./login-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   let error = typeof params?.error === "string" ? params.error : null;
+  const nextParamRaw = typeof params?.next === "string" ? params.next : "";
+  const postLoginPath = nextParamRaw.startsWith("/") && !nextParamRaw.startsWith("//") ? nextParamRaw : undefined;
 
   // Traduction des erreurs techniques pour l'utilisateur
   if (error?.includes("PKCE code verifier not found")) {
@@ -44,13 +46,16 @@ export default async function LoginPage({
                 Erreur : {error}
               </div>
             )}
-            <LoginForm defaultEmail={typeof params?.email === "string" ? params.email : ""} />
+            <LoginForm
+              defaultEmail={typeof params?.email === "string" ? params.email : ""}
+              postLoginPath={postLoginPath}
+            />
           </CardContent>
         </Card>
 
         <p className="text-center text-sm text-muted-foreground px-4">
           Vous rencontrez des difficultés avec le lien magique ou la connexion ?<br/>
-          N'hésitez pas à m'appeler au <span className="font-semibold text-foreground">07 68 23 33 47</span> pour tout souci.
+          N&apos;hésitez pas à m&apos;appeler au <span className="font-semibold text-foreground">07 68 23 33 47</span> pour tout souci.
         </p>
       </div>
     </div>
