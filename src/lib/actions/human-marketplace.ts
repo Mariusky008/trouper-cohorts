@@ -106,7 +106,8 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data: placesData }, { data: offersData }, { data: membersData }] = await Promise.all([
+  const [{ data: placesData, error: placesError }, { data: offersData, error: offersError }, { data: membersData, error: membersError }] =
+    await Promise.all([
     supabaseAdmin
       .from("human_marketplace_places")
       .select("id,city,sphere_label,metier,status,list_price_eur,monthly_ca_eur,recos_per_year,updated_at,owner_member_id")
@@ -114,9 +115,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       .limit(800),
     supabaseAdmin
       .from("human_marketplace_offers")
-      .select(
-        "id,place_id,action_type,full_name,metier,city,whatsapp,message,offer_amount_eur,status,created_at,requester_ip,assigned_member_id,metadata,place:human_marketplace_places(id,city,metier,status,list_price_eur)",
-      )
+      .select("id,place_id,action_type,full_name,metier,city,whatsapp,message,offer_amount_eur,status,created_at,requester_ip,assigned_member_id,metadata")
       .order("created_at", { ascending: false })
       .limit(500),
     supabaseAdmin
@@ -127,8 +126,39 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       .limit(400),
   ]);
 
+  if (placesError || offersError || membersError) {
+    return {
+      error: [placesError?.message, offersError?.message, membersError?.message].filter(Boolean).join(" | ") || "Chargement admin impossible.",
+      places: [] as MarketplacePlaceRow[],
+      offers: [] as MarketplaceOfferJoined[],
+      timelineEvents: [] as MarketplaceEventRow[],
+      members: [] as Array<{ id: string; label: string }>,
+      filters: {
+        offerStatus: filters.offerStatus || "all",
+        offerActionType: filters.offerActionType || "all",
+        placeCity: filters.placeCity || "all",
+        timelinePlaceId: filters.timelinePlaceId || "",
+      },
+      cities: [] as string[],
+      selectedTimelinePlaceId: "",
+      kpis: null as null | {
+        placesTotal: number;
+        placesSale: number;
+        placesDispo: number;
+        offersPending: number;
+        offersReviewing: number;
+        offersRawTotal: number;
+        offersRawLast24h: number;
+      },
+    };
+  }
+
   const places = (placesData as MarketplacePlaceRow[] | null) || [];
-  const offersRaw = (offersData as MarketplaceOfferJoined[] | null) || [];
+  const placesById = new Map(places.map((place) => [place.id, place]));
+  const offersRaw = ((offersData as MarketplaceOfferRow[] | null) || []).map((offer) => ({
+    ...offer,
+    place: offer.place_id ? (placesById.get(offer.place_id) ?? null) : null,
+  })) as MarketplaceOfferJoined[];
   let offers = offersRaw.slice();
   const members = ((membersData as Array<{ id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) || []).map(
     (member) => {
