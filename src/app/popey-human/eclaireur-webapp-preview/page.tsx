@@ -668,49 +668,25 @@ export default function EclaireurWebappPreviewPage() {
   ];
 
   return (
-    <main className={`${dmSans.className} min-h-screen bg-[#07090F] bg-[radial-gradient(1200px_700px_at_50%_-120px,#132035_0%,#07090F_55%)] pb-[calc(env(safe-area-inset-bottom)+112px)] text-[#EEF2F7]`}>
+    <main className={`${dmSans.className} min-h-screen bg-[#070B16] text-[#EEF2F7]`}>
       <div className="mx-auto w-full max-w-2xl px-3 py-3 sm:px-4">
         <section className="p-0">
           <div
-            className="overflow-hidden rounded-[24px]"
+            className="overflow-hidden"
             onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
             onTouchMove={(event) => setTouchEndX(event.touches[0]?.clientX ?? null)}
             onTouchEnd={onSwipeEnd}
           >
             <div className="flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${activeScreen * 100}%)` }}>
               {screens.map((screen) => (
-                <div key={screen.label} className="w-full shrink-0 px-1">
-                  <PhoneFrame activeIndex={activeScreen} total={screens.length}>{screen.content}</PhoneFrame>
+                <div key={screen.label} className="w-full shrink-0">
+                  <PhoneFrame activeScreen={activeScreen} onChangeScreen={setActiveScreen}>{screen.content}</PhoneFrame>
                 </div>
               ))}
             </div>
           </div>
         </section>
       </div>
-
-      <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
-        <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 rounded-[22px] border border-white/15 bg-[#0E1213]/95 p-2 shadow-[0_12px_42px_rgba(0,0,0,0.45)] backdrop-blur">
-          {[
-            { label: "Accueil", idx: 0 },
-            { label: "Soumettre", idx: 1 },
-            { label: "Suivi", idx: 2 },
-            { label: "Suggestion", idx: 3 },
-          ].map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => setActiveScreen(item.idx)}
-              className={`h-11 rounded-xl text-[11px] font-black uppercase tracking-[0.06em] ${
-                activeScreen === item.idx
-                  ? "bg-[#00D4A0] text-[#060B12] shadow-[0_6px_24px_rgba(0,212,160,0.35)]"
-                  : "border border-white/20 bg-black/25 text-white/80"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
 
       <input
         ref={contactImportInputRef}
@@ -786,7 +762,7 @@ function ScreenWelcome({
 }) {
   const greetingName = String(scoutFirstName || "").trim();
   return (
-    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+    <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[12px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Popey · Eclaireur</p>
       <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,58px)] font-black leading-[0.98]`}>
         {greetingName ? `Salut ${greetingName}, ton reseau vaut de l or` : "Salut, ton reseau vaut de l or"}
@@ -897,7 +873,7 @@ function ScreenSubmit({
   onSubmit: () => void;
 }) {
   return (
-    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+    <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Nouveau contact</p>
       <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>20 secondes. C est tout.</h2>
       <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">
@@ -994,7 +970,7 @@ function ScreenTracking({
   const step = first?.status === "converted" ? 3 : first?.status === "offered" ? 2 : first?.status === "validated" ? 1 : 0;
   const labels = ["Contacte", "RDV", "Offre", "Paye"];
   return (
-    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+    <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Mes commissions</p>
       <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>Tout en temps reel.</h2>
       <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Chaque mise en relation suivie jusqu au paiement.</p>
@@ -1142,7 +1118,7 @@ function ScreenSuggestion({
 }) {
   const hasContacts = importedCount > 0;
   return (
-    <div className="min-h-[calc(100dvh-176px)] rounded-[28px] border border-white/[0.08] bg-[#070B16] bg-[radial-gradient(900px_500px_at_50%_-140px,#132645_0%,#070B16_60%)] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+    <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
       <h2 className={`${syne.className} mt-2 text-[clamp(38px,10vw,56px)] font-black leading-[0.98]`}>1 contact. 1 opportunite.</h2>
       <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
@@ -1316,25 +1292,39 @@ function ScreenSuggestion({
 
 function PhoneFrame({
   children,
-  activeIndex,
-  total,
+  activeScreen,
+  onChangeScreen,
 }: {
   children: ReactNode;
-  activeIndex: number;
-  total: number;
+  activeScreen: number;
+  onChangeScreen: (value: number) => void;
 }) {
   return (
-    <article className="rounded-[32px] border border-white/10 bg-[#0F1420] p-2 shadow-[0_26px_74px_rgba(0,0,0,0.58)]">
-      <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-[#1E2640]" />
-      <div className="min-h-[calc(100dvh-172px)]">{children}</div>
-      <div className="mt-2 flex items-center justify-center gap-1.5">
-        {Array.from({ length: total }).map((_, idx) => (
-          <span
-            key={`phone-dot-${idx}`}
-            className={`h-1.5 transition ${idx === activeIndex ? "w-5 rounded-md bg-[#00D4A0]" : "w-1.5 rounded-full bg-white/30"}`}
-          />
-        ))}
-      </div>
+    <article className="relative min-h-[100dvh] bg-[#070B16]">
+      {children}
+      <nav className="pointer-events-auto absolute inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
+        <div className="grid grid-cols-4 gap-2 rounded-[22px] border border-white/15 bg-[#0E1213]/95 p-2 shadow-[0_12px_42px_rgba(0,0,0,0.45)] backdrop-blur">
+          {[
+            { label: "Accueil", idx: 0 },
+            { label: "Soumettre", idx: 1 },
+            { label: "Suivi", idx: 2 },
+            { label: "Suggestion", idx: 3 },
+          ].map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => onChangeScreen(item.idx)}
+              className={`h-11 rounded-xl text-[11px] font-black uppercase tracking-[0.06em] ${
+                activeScreen === item.idx
+                  ? "bg-[#00D4A0] text-[#060B12] shadow-[0_6px_24px_rgba(0,212,160,0.35)]"
+                  : "border border-white/20 bg-black/25 text-white/80"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </nav>
     </article>
   );
 }
