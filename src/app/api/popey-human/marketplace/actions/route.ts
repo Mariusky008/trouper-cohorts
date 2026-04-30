@@ -32,6 +32,13 @@ function getRequestIp(request: NextRequest): string {
   return fromForwarded || fromRealIp || "unknown";
 }
 
+function maskPhone(value: string): string {
+  const cleaned = String(value || "").replace(/\s+/g, "");
+  if (!cleaned) return "";
+  if (cleaned.length <= 4) return cleaned;
+  return `${cleaned.slice(0, 3)}***${cleaned.slice(-2)}`;
+}
+
 async function enforceRateLimit(supabase: ReturnType<typeof createAdminClient>, requesterIp: string) {
   if (!requesterIp || requesterIp === "unknown") return null;
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -88,15 +95,34 @@ async function notifyAdmins(
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  const startedAt = Date.now();
   try {
     const body = (await request.json().catch(() => null)) as ActionPayload | null;
     const actionType = body?.actionType;
     const fullName = String(body?.fullName || "").trim();
+    const requesterIp = getRequestIp(request);
+    const requesterUserAgent = String(request.headers.get("user-agent") || "").slice(0, 500);
+
+    console.info("[marketplace/actions] received", {
+      requestId,
+      actionType: actionType || null,
+      fullName: fullName || null,
+      city: String(body?.city || "").trim() || null,
+      metier: String(body?.metier || "").trim() || null,
+      whatsapp: maskPhone(String(body?.whatsapp || "").trim()),
+      source: String(body?.source || "").trim() || "marketplace_landing",
+      referralCode: String(body?.referralCode || "").trim() || null,
+      requesterIp,
+      requesterUserAgent: requesterUserAgent || null,
+    });
 
     if (!actionType || !["acheter", "vendre", "rejoindre"].includes(actionType)) {
+      console.warn("[marketplace/actions] invalid action", { requestId, actionType: actionType || null });
       return NextResponse.json({ error: "Action invalide." }, { status: 400 });
     }
     if (!fullName) {
+      console.warn("[marketplace/actions] missing fullName", { requestId, actionType });
       return NextResponse.json({ error: "Nom complet requis." }, { status: 400 });
     }
 
@@ -116,10 +142,9 @@ export async function POST(request: NextRequest) {
     const offerAmountEur = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
 
     const supabase = createAdminClient();
-    const requesterIp = getRequestIp(request);
-    const requesterUserAgent = String(request.headers.get("user-agent") || "").slice(0, 500);
     const rateLimitError = await enforceRateLimit(supabase, requesterIp);
     if (rateLimitError) {
+      console.warn("[marketplace/actions] rate limited", { requestId, requesterIp, rateLimitError });
       return NextResponse.json({ error: rateLimitError }, { status: 429 });
     }
 
@@ -153,6 +178,7 @@ export async function POST(request: NextRequest) {
       .select("id")
       .single();
     if (offerError) {
+      console.error("[marketplace/actions] insert failed", { requestId, error: offerError.message });
       return NextResponse.json({ error: offerError.message }, { status: 500 });
     }
 
@@ -192,6 +218,13 @@ export async function POST(request: NextRequest) {
       offerId: insertedOffer?.id || null,
     });
 
+    console.info("[marketplace/actions] success", {
+      requestId,
+      offerId: insertedOffer?.id || null,
+      actionType,
+      elapsedMs: Date.now() - startedAt,
+    });
+
     return NextResponse.json({
       success: true,
       offerId: insertedOffer?.id || null,
@@ -203,7 +236,11 @@ export async function POST(request: NextRequest) {
             : "Offre envoyee a l equipe Popey.",
     });
   } catch (error) {
-    console.error("[marketplace/actions] unexpected", error);
+    console.error("[marketplace/actions] unexpected", {
+      requestId,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
     return NextResponse.json({ error: "Envoi impossible pour le moment." }, { status: 500 });
   }
 }

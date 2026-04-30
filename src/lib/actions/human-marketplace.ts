@@ -32,6 +32,7 @@ type MarketplaceOfferRow = {
   created_at: string;
   requester_ip?: string | null;
   assigned_member_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 type MarketplaceOfferJoined = MarketplaceOfferRow & {
@@ -98,6 +99,8 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
         placesDispo: number;
         offersPending: number;
         offersReviewing: number;
+        offersRawTotal: number;
+        offersRawLast24h: number;
       },
     };
   }
@@ -112,7 +115,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     supabaseAdmin
       .from("human_marketplace_offers")
       .select(
-        "id,place_id,action_type,full_name,metier,city,whatsapp,message,offer_amount_eur,status,created_at,requester_ip,assigned_member_id,place:human_marketplace_places(id,city,metier,status,list_price_eur)",
+        "id,place_id,action_type,full_name,metier,city,whatsapp,message,offer_amount_eur,status,created_at,requester_ip,assigned_member_id,metadata,place:human_marketplace_places(id,city,metier,status,list_price_eur)",
       )
       .order("created_at", { ascending: false })
       .limit(500),
@@ -125,7 +128,8 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
   ]);
 
   const places = (placesData as MarketplacePlaceRow[] | null) || [];
-  let offers = (offersData as MarketplaceOfferJoined[] | null) || [];
+  const offersRaw = (offersData as MarketplaceOfferJoined[] | null) || [];
+  let offers = offersRaw.slice();
   const members = ((membersData as Array<{ id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) || []).map(
     (member) => {
       const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
@@ -158,6 +162,11 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     .limit(40);
   const timelineEvents = (eventsData as MarketplaceEventRow[] | null) || [];
   const cities = Array.from(new Set(places.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
+  const offersRawLast24h = offersRaw.filter((offer) => {
+    const createdAt = Date.parse(String(offer.created_at || ""));
+    if (!Number.isFinite(createdAt)) return false;
+    return createdAt >= Date.now() - 24 * 60 * 60 * 1000;
+  }).length;
 
   return {
     error: null as string | null,
@@ -179,6 +188,8 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       placesDispo: filteredPlaces.filter((p) => p.status === "dispo").length,
       offersPending: offers.filter((o) => o.status === "pending").length,
       offersReviewing: offers.filter((o) => o.status === "reviewing").length,
+      offersRawTotal: offersRaw.length,
+      offersRawLast24h,
     },
   };
 }

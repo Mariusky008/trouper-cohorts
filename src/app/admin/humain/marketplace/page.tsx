@@ -114,6 +114,9 @@ export default async function AdminHumainMarketplacePage({
               <button className="h-10 rounded border px-3 text-xs font-black uppercase tracking-wide">Filtrer pipeline</button>
             </div>
             <div className="mt-2">
+              <Link href="/admin/humain/marketplace" className="mr-4 text-xs font-black uppercase tracking-wide underline">
+                Reinitialiser les filtres
+              </Link>
               <Link
                 href={`/admin/humain/marketplace/export/offers?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}`}
                 className="text-xs font-black uppercase tracking-wide underline"
@@ -144,10 +147,26 @@ export default async function AdminHumainMarketplacePage({
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Demandes reviewing</p>
               <p className="mt-1 text-2xl font-black">{snapshot.kpis.offersReviewing}</p>
             </div>
+            <div className="rounded-xl border bg-card p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Demandes brutes (500)</p>
+              <p className="mt-1 text-2xl font-black">{snapshot.kpis.offersRawTotal}</p>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Demandes brutes 24h</p>
+              <p className="mt-1 text-2xl font-black">{snapshot.kpis.offersRawLast24h}</p>
+            </div>
           </div>
 
           <div className="rounded-xl border bg-white p-4">
             <h2 className="text-lg font-black">Demandes marketplace</h2>
+            {snapshot.offers.length === 0 && snapshot.kpis.offersRawTotal > 0 ? (
+              <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Des demandes existent, mais vos filtres actuels masquent tout.
+                <Link href="/admin/humain/marketplace" className="ml-1 underline">
+                  Reinitialiser
+                </Link>
+              </p>
+            ) : null}
             <div className="mt-3 space-y-3">
               {snapshot.offers.map((offer) => (
                 <article key={offer.id} className="rounded-lg border p-3">
@@ -162,6 +181,9 @@ export default async function AdminHumainMarketplacePage({
                       </p>
                       <p className="text-xs text-black/70">
                         Place: {offer.place?.metier || "N/A"} · {offer.place?.city || "N/A"} · statut demande: {offer.status}
+                      </p>
+                      <p className="text-xs text-black/70">
+                        Source: {String(offer.metadata?.source || "n/a")} · Referral: {String(offer.metadata?.referral_code || "n/a")}
                       </p>
                       {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
                       <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>

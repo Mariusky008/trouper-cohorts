@@ -103,6 +103,12 @@ export default async function AdminLayout({
         <div className="flex items-center gap-4">
           <span className="text-xs text-muted-foreground hidden sm:inline-block">Admin: {user.email}</span>
           <Button asChild variant="outline" size="sm">
+            <Link href="/admin/humain/marketplace">Marketplace</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/humain/chat">Chat WhatsApp</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link href="/app/today">Voir App</Link>
           </Button>
         </div>
