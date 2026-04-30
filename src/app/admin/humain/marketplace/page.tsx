@@ -19,12 +19,24 @@ function actionLabel(type: "buy_offer" | "sell_request" | "join_request") {
 export default async function AdminHumainMarketplacePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ marketStatus?: string; marketMessage?: string }>;
+  searchParams?: Promise<{
+    marketStatus?: string;
+    marketMessage?: string;
+    offerStatus?: string;
+    offerActionType?: string;
+    placeCity?: string;
+    timelinePlaceId?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
   const marketStatus = typeof params.marketStatus === "string" ? params.marketStatus : "";
   const marketMessage = typeof params.marketMessage === "string" ? params.marketMessage : "";
-  const snapshot = await getAdminMarketplaceSnapshot();
+  const snapshot = await getAdminMarketplaceSnapshot({
+    offerStatus: typeof params.offerStatus === "string" ? params.offerStatus : "all",
+    offerActionType: typeof params.offerActionType === "string" ? params.offerActionType : "all",
+    placeCity: typeof params.placeCity === "string" ? params.placeCity : "all",
+    timelinePlaceId: typeof params.timelinePlaceId === "string" ? params.timelinePlaceId : "",
+  });
 
   return (
     <section className="space-y-5">
@@ -60,6 +72,57 @@ export default async function AdminHumainMarketplacePage({
 
       {!snapshot.error && snapshot.kpis && (
         <>
+          <form method="get" className="rounded-xl border bg-card p-4">
+            <div className="grid gap-2 md:grid-cols-5">
+              <select name="offerStatus" defaultValue={snapshot.filters.offerStatus} className="h-10 rounded border bg-background px-2 text-sm">
+                <option value="all">Toutes demandes</option>
+                <option value="pending">pending</option>
+                <option value="reviewing">reviewing</option>
+                <option value="accepted">accepted</option>
+                <option value="rejected">rejected</option>
+                <option value="cancelled">cancelled</option>
+              </select>
+              <select
+                name="offerActionType"
+                defaultValue={snapshot.filters.offerActionType}
+                className="h-10 rounded border bg-background px-2 text-sm"
+              >
+                <option value="all">Tous types</option>
+                <option value="buy_offer">offre achat</option>
+                <option value="sell_request">mise en vente</option>
+                <option value="join_request">rejoindre</option>
+              </select>
+              <select name="placeCity" defaultValue={snapshot.filters.placeCity} className="h-10 rounded border bg-background px-2 text-sm">
+                <option value="all">Toutes villes</option>
+                {snapshot.cities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="timelinePlaceId"
+                defaultValue={snapshot.filters.timelinePlaceId}
+                className="h-10 rounded border bg-background px-2 text-sm"
+              >
+                {snapshot.places.slice(0, 200).map((place) => (
+                  <option key={place.id} value={place.id}>
+                    {place.metier} · {place.city}
+                  </option>
+                ))}
+              </select>
+              <button className="h-10 rounded border px-3 text-xs font-black uppercase tracking-wide">Filtrer pipeline</button>
+            </div>
+            <div className="mt-2">
+              <Link
+                href={`/admin/humain/marketplace/export/offers?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}`}
+                className="text-xs font-black uppercase tracking-wide underline"
+              >
+                Export CSV demandes (filtres actifs)
+              </Link>
+            </div>
+          </form>
+
           <div className="grid gap-3 sm:grid-cols-5">
             <div className="rounded-xl border bg-card p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Places total</p>
@@ -132,6 +195,21 @@ export default async function AdminHumainMarketplacePage({
                 </article>
               ))}
               {snapshot.offers.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande marketplace pour le moment.</p> : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4">
+            <h2 className="text-lg font-black">Historique de la place selectionnee</h2>
+            <div className="mt-3 space-y-2">
+              {snapshot.timelineEvents.map((event) => (
+                <article key={event.id} className="rounded border p-2 text-xs">
+                  <p className="font-black">
+                    {event.event_type} · {event.place?.metier || "Place"} · {event.place?.city || "N/A"}
+                  </p>
+                  <p className="text-black/70">{new Date(event.created_at).toLocaleString("fr-FR")}</p>
+                </article>
+              ))}
+              {snapshot.timelineEvents.length === 0 ? <p className="text-sm text-muted-foreground">Aucun evenement sur cette place.</p> : null}
             </div>
           </div>
 

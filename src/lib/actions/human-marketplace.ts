@@ -38,6 +38,23 @@ type MarketplaceOfferJoined = MarketplaceOfferRow & {
   place: Pick<MarketplacePlaceRow, "id" | "city" | "metier" | "status" | "list_price_eur"> | null;
 };
 
+type MarketplaceEventRow = {
+  id: string;
+  place_id: string | null;
+  offer_id: string | null;
+  event_type: string;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+  place: Pick<MarketplacePlaceRow, "id" | "city" | "metier"> | null;
+};
+
+type MarketplaceSnapshotFilters = {
+  offerStatus?: string;
+  offerActionType?: string;
+  placeCity?: string;
+  timelinePlaceId?: string;
+};
+
 function withMarketplaceStatus(currentUrl: string, status: "success" | "error", message: string) {
   const base = currentUrl || "/admin/humain/marketplace";
   const sep = base.includes("?") ? "&" : "?";
@@ -58,14 +75,23 @@ async function requireHumanAdmin() {
   return { user };
 }
 
-export async function getAdminMarketplaceSnapshot() {
+export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFilters = {}) {
   const auth = await requireHumanAdmin();
   if ("error" in auth) {
     return {
       error: auth.error,
       places: [] as MarketplacePlaceRow[],
       offers: [] as MarketplaceOfferJoined[],
+      timelineEvents: [] as MarketplaceEventRow[],
       members: [] as Array<{ id: string; label: string }>,
+      filters: {
+        offerStatus: filters.offerStatus || "all",
+        offerActionType: filters.offerActionType || "all",
+        placeCity: filters.placeCity || "all",
+        timelinePlaceId: filters.timelinePlaceId || "",
+      },
+      cities: [] as string[],
+      selectedTimelinePlaceId: "",
       kpis: null as null | {
         placesTotal: number;
         placesSale: number;
@@ -89,7 +115,7 @@ export async function getAdminMarketplaceSnapshot() {
         "id,place_id,action_type,full_name,metier,city,whatsapp,message,offer_amount_eur,status,created_at,requester_ip,assigned_member_id,place:human_marketplace_places(id,city,metier,status,list_price_eur)",
       )
       .order("created_at", { ascending: false })
-      .limit(250),
+      .limit(500),
     supabaseAdmin
       .from("human_members")
       .select("id,first_name,last_name,metier")
@@ -99,7 +125,7 @@ export async function getAdminMarketplaceSnapshot() {
   ]);
 
   const places = (placesData as MarketplacePlaceRow[] | null) || [];
-  const offers = (offersData as MarketplaceOfferJoined[] | null) || [];
+  let offers = (offersData as MarketplaceOfferJoined[] | null) || [];
   const members = ((membersData as Array<{ id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) || []).map(
     (member) => {
       const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
@@ -107,20 +133,77 @@ export async function getAdminMarketplaceSnapshot() {
       return { id: member.id, label };
     },
   );
+  if (filters.offerStatus && filters.offerStatus !== "all") {
+    offers = offers.filter((offer) => offer.status === filters.offerStatus);
+  }
+  if (filters.offerActionType && filters.offerActionType !== "all") {
+    offers = offers.filter((offer) => offer.action_type === filters.offerActionType);
+  }
+
+  let filteredPlaces = places.slice();
+  if (filters.placeCity && filters.placeCity !== "all") {
+    filteredPlaces = filteredPlaces.filter((place) => place.city === filters.placeCity);
+  }
+
+  const selectedTimelinePlaceId =
+    (filters.timelinePlaceId && filteredPlaces.find((place) => place.id === filters.timelinePlaceId)?.id) ||
+    filteredPlaces[0]?.id ||
+    "";
+
+  const { data: eventsData } = await supabaseAdmin
+    .from("human_marketplace_events")
+    .select("id,place_id,offer_id,event_type,payload,created_at,place:human_marketplace_places(id,city,metier)")
+    .eq("place_id", selectedTimelinePlaceId)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const timelineEvents = (eventsData as MarketplaceEventRow[] | null) || [];
+  const cities = Array.from(new Set(places.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
 
   return {
     error: null as string | null,
-    places,
+    places: filteredPlaces,
     offers,
+    timelineEvents,
     members,
+    cities,
+    selectedTimelinePlaceId,
+    filters: {
+      offerStatus: filters.offerStatus || "all",
+      offerActionType: filters.offerActionType || "all",
+      placeCity: filters.placeCity || "all",
+      timelinePlaceId: selectedTimelinePlaceId,
+    },
     kpis: {
-      placesTotal: places.length,
-      placesSale: places.filter((p) => p.status === "sale").length,
-      placesDispo: places.filter((p) => p.status === "dispo").length,
+      placesTotal: filteredPlaces.length,
+      placesSale: filteredPlaces.filter((p) => p.status === "sale").length,
+      placesDispo: filteredPlaces.filter((p) => p.status === "dispo").length,
       offersPending: offers.filter((o) => o.status === "pending").length,
       offersReviewing: offers.filter((o) => o.status === "reviewing").length,
     },
   };
+}
+
+function canTransitionPlaceStatus(fromStatus: string, toStatus: string) {
+  if (fromStatus === toStatus) return true;
+  const allowed: Record<string, string[]> = {
+    dispo: ["reserved", "occupied", "sale"],
+    reserved: ["occupied", "dispo", "sale"],
+    occupied: ["sale", "dispo"],
+    sale: ["occupied", "reserved", "dispo"],
+  };
+  return (allowed[fromStatus] || []).includes(toStatus);
+}
+
+function canTransitionOfferStatus(fromStatus: string, toStatus: string) {
+  if (fromStatus === toStatus) return true;
+  const allowed: Record<string, string[]> = {
+    pending: ["reviewing", "rejected", "cancelled"],
+    reviewing: ["accepted", "rejected", "cancelled"],
+    accepted: [],
+    rejected: [],
+    cancelled: [],
+  };
+  return (allowed[fromStatus] || []).includes(toStatus);
 }
 
 async function notifyMarketplaceAdmins(
@@ -191,6 +274,23 @@ export async function adminSetMarketplacePlaceStatusAction(formData: FormData): 
   patch.owner_member_id = ownerMemberIdRaw || null;
 
   const supabaseAdmin = createAdminClient();
+  const { data: currentPlace, error: placeReadError } = await supabaseAdmin
+    .from("human_marketplace_places")
+    .select("id,status")
+    .eq("id", placeId)
+    .maybeSingle();
+  if (placeReadError || !currentPlace) {
+    redirect(withMarketplaceStatus(currentUrl, "error", placeReadError?.message || "Place introuvable."));
+  }
+  if (!canTransitionPlaceStatus(String(currentPlace.status || ""), nextStatus)) {
+    redirect(
+      withMarketplaceStatus(
+        currentUrl,
+        "error",
+        `Transition invalide: ${String(currentPlace.status)} -> ${nextStatus}.`,
+      ),
+    );
+  }
   const { error } = await supabaseAdmin.from("human_marketplace_places").update(patch).eq("id", placeId);
   if (error) {
     redirect(withMarketplaceStatus(currentUrl, "error", error.message || "Mise a jour impossible."));
@@ -230,11 +330,20 @@ export async function adminUpdateMarketplaceOfferStatusAction(formData: FormData
   const supabaseAdmin = createAdminClient();
   const { data: offer, error: offerReadError } = await supabaseAdmin
     .from("human_marketplace_offers")
-    .select("id,place_id,action_type")
+    .select("id,place_id,action_type,status")
     .eq("id", offerId)
     .maybeSingle();
   if (offerReadError || !offer) {
     redirect(withMarketplaceStatus(currentUrl, "error", offerReadError?.message || "Demande introuvable."));
+  }
+  if (!canTransitionOfferStatus(String(offer.status || ""), nextStatus)) {
+    redirect(
+      withMarketplaceStatus(
+        currentUrl,
+        "error",
+        `Transition demande invalide: ${String(offer.status)} -> ${nextStatus}.`,
+      ),
+    );
   }
 
   const { error } = await supabaseAdmin
