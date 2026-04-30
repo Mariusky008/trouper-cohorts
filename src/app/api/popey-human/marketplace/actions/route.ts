@@ -14,6 +14,10 @@ type ActionPayload = {
   website?: string;
   message?: string;
   offerAmountEur?: number | string | null;
+  source?: string;
+  referralCode?: string;
+  referralLabel?: string;
+  selectedPlan?: string;
 };
 
 function toActionType(actionType: ActionPayload["actionType"]) {
@@ -103,6 +107,10 @@ export async function POST(request: NextRequest) {
     const website = String(body?.website || "").trim();
     const message = String(body?.message || "").trim();
     const placeId = String(body?.placeId || "").trim() || null;
+    const source = String(body?.source || "").trim().slice(0, 80);
+    const referralCode = String(body?.referralCode || "").trim().slice(0, 120);
+    const referralLabel = String(body?.referralLabel || "").trim().slice(0, 160);
+    const selectedPlan = String(body?.selectedPlan || "").trim().slice(0, 80);
 
     const parsedAmount = Number(body?.offerAmountEur ?? 0);
     const offerAmountEur = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
@@ -132,6 +140,10 @@ export async function POST(request: NextRequest) {
       requester_user_agent: requesterUserAgent || null,
       metadata: {
         ui_action_type: actionType,
+        source: source || "marketplace_landing",
+        referral_code: referralCode || null,
+        referral_label: referralLabel || null,
+        selected_plan: selectedPlan || null,
       },
     };
 

@@ -81,6 +81,12 @@ nav {
   border: none; transition: all .2s;
 }
 .btn-cta-nav:hover { background: var(--teal-d); }
+.btn-cta-nav-light {
+  background: transparent; color: var(--ink); padding: 8px 16px;
+  border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: 1.5px solid var(--border2); transition: all .2s;
+}
+.btn-cta-nav-light:hover { border-color: var(--ink); background: #fff; }
 
 /* ── HERO ── */
 .hero {
@@ -180,6 +186,43 @@ nav {
 .status-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
 .filter-divider { width: 1px; height: 28px; background: var(--border2); }
+
+/* ── INSCRIPTION PREVIEW ── */
+.inscription-preview {
+  max-width: 1300px; margin: 0 auto; padding: 28px 48px;
+}
+.inscription-box {
+  background: #fff; border: 1px solid var(--border); border-radius: 20px;
+  padding: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+}
+.inscription-title { font-size: 22px; font-weight: 800; color: var(--ink); }
+.inscription-sub { font-size: 13px; color: var(--t2); margin-top: 6px; line-height: 1.6; }
+.inscription-controls { margin-top: 14px; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+.inscription-controls select {
+  height: 40px; border-radius: 10px; border: 1px solid var(--border2);
+  background: var(--paper); font-family: var(--fd); font-size: 13px; padding: 0 10px;
+}
+.inscription-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.inscription-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+  padding: 5px 10px; border-radius: 999px; background: var(--teal-l); color: var(--teal-d);
+  border: 1px solid var(--teal-g);
+}
+.inscription-preview-card {
+  border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--paper);
+}
+.ipc-head {
+  padding: 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ipc-title { font-size: 15px; font-weight: 800; color: var(--ink); }
+.ipc-sub { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.ipc-badge { font-size: 10px; font-weight: 700; padding: 5px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--border2); }
+.ipc-grid { display: grid; gap: 1px; grid-template-columns: repeat(3,1fr); background: var(--border); }
+.ipc-cell { background: #fff; padding: 12px; text-align: center; }
+.ipc-val { font-family: var(--fi); font-size: 26px; color: var(--ink); line-height: 1; }
+.ipc-lbl { font-size: 10px; color: var(--t3); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.ipc-note { padding: 12px 14px; font-size: 12px; color: var(--t2); line-height: 1.5; }
 
 /* ── MAIN GRID ── */
 .main { max-width: 1300px; margin: 0 auto; padding: 40px 48px 80px; }
@@ -610,6 +653,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
 /* ── RESPONSIVE ── */
 @media(max-width:1024px){
   .hero,.portfolio-grid,.places-grid { grid-template-columns:1fr; }
+  .inscription-box { grid-template-columns:1fr; }
   .portfolio-header { flex-direction:column; gap:20px; }
   .portfolio-total { text-align:left; }
   .how-grid { grid-template-columns:1fr; }
@@ -643,6 +687,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
   </div>
   <div class="nav-right">
     <div class="nav-badge" id="navBadge">0 places actives</div>
+    <button class="btn-cta-nav-light" onclick="document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">S'inscrire</button>
     <button class="btn-cta-nav" onclick="openModal('vendre')">Mettre en vente</button>
   </div>
 </nav>
@@ -656,6 +701,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <p class="hero-sub">1 seul professionnel par métier par ville. La place que vous occupez aujourd'hui peut valoir 5 000€ à 10 000€ dans 3 ans. Achetez, vendez, suivez votre portefeuille.</p>
       <div class="hero-actions">
         <button class="btn-primary" onclick="document.querySelector('.main').scrollIntoView({behavior:'smooth'})">Voir les places disponibles →</button>
+        <button class="btn-secondary" onclick="document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">S'inscrire</button>
         <button class="btn-secondary" onclick="document.querySelector('.portfolio-section').scrollIntoView({behavior:'smooth'})">Mon portefeuille</button>
       </div>
     </div>
@@ -679,6 +725,53 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
   </div>
 </section>
 
+
+<!-- ── INSCRIPTION PREVIEW ── -->
+<section class="inscription-preview" id="section-inscription">
+  <div class="inscription-box">
+    <div>
+      <div class="inscription-chip">🧩 Inscription marketplace</div>
+      <h2 class="inscription-title">Choisissez votre ville et votre metier</h2>
+      <p class="inscription-sub">
+        Selectionnez votre zone et votre metier pour visualiser votre future fiche et votre projection de valeur.
+        Offre active: <strong>0€ le 1er mois</strong>, puis 149€/mois.
+      </p>
+      <div class="inscription-controls">
+        <select id="inscriptionCity" onchange="updateInscriptionPreview()"></select>
+        <select id="inscriptionMetier" onchange="updateInscriptionPreview()"></select>
+      </div>
+      <div class="inscription-actions">
+        <button class="btn-primary" type="button" onclick="openSignupFromPreview()">S'inscrire maintenant →</button>
+      </div>
+    </div>
+    <div class="inscription-preview-card">
+      <div class="ipc-head">
+        <div>
+          <div class="ipc-title" id="previewMetier">Metier</div>
+          <div class="ipc-sub" id="previewVille">Ville</div>
+        </div>
+        <span class="ipc-badge" id="previewStatut">Projection 3 ans</span>
+      </div>
+      <div class="ipc-grid">
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear1">0€</div>
+          <div class="ipc-lbl">Annee 1</div>
+        </div>
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear2">0€</div>
+          <div class="ipc-lbl">Annee 2</div>
+        </div>
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear3">0€</div>
+          <div class="ipc-lbl">Annee 3</div>
+        </div>
+      </div>
+      <div class="ipc-note" id="previewNote">
+        Potentiel de valorisation base sur la dynamique reseau locale et la recursivite des recommandations.
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ── FILTERS ── -->
 <div class="filters-bar">
@@ -985,7 +1078,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-price-block">
         <div>
           <div class="pc-price" style="color:var(--teal-d)">Gratuit</div>
-          <div class="pc-price-sub">Entrée phase commission 3 mois</div>
+          <div class="pc-price-sub">0€ le 1er mois · puis 149€/mois</div>
         </div>
         <div class="pc-valeur-tag">
           <div class="pc-valeur-num" style="color:var(--t3)">Valeur J0</div>
@@ -1469,7 +1562,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-price-block">
         <div>
           <div class="pc-price" style="color:var(--teal-d)">Gratuit</div>
-          <div class="pc-price-sub">Entrée commission · 3 mois puis 149€/mois</div>
+          <div class="pc-price-sub">0€ le 1er mois · puis 149€/mois</div>
         </div>
         <div class="pc-valeur-tag">
           <div class="pc-valeur-num" style="color:var(--t3)">Valeur J0</div>
@@ -1992,6 +2085,14 @@ let activeStatus = "all";
 let allPlaces = [];
 let currentModalType = null;
 let currentModalPlaceId = null;
+const funnelParams = new URLSearchParams(window.location.search);
+const funnelSource = String(funnelParams.get("source") || "").trim();
+const funnelReferralCode = String(funnelParams.get("referralCode") || "").trim();
+const funnelReferralLabel = String(funnelParams.get("referralLabel") || "").trim();
+const prefillCity = String(funnelParams.get("city") || "").trim();
+const prefillMetier = String(funnelParams.get("metier") || "").trim();
+let currentPrefillCity = prefillCity;
+let currentPrefillMetier = prefillMetier;
 
 function hashCode(value) {
   let h = 0;
@@ -2001,6 +2102,111 @@ function hashCode(value) {
 
 function money(value) {
   return `${Math.round(value).toLocaleString("fr-FR")}€`;
+}
+
+function getSphereByKey(key) {
+  return SPHERES.find((sphere) => sphere.key === key) || SPHERES[0];
+}
+
+function getProjectionFromSelection(city, metier) {
+  const key = `${city}|${metier}|projection`;
+  const h = hashCode(key);
+  const base = 1300 + (h % 1800);
+  const annualGrowthPct = 24 + (h % 22);
+  const y1 = Math.round(base);
+  const y2 = Math.round(y1 * (1 + annualGrowthPct / 100));
+  const y3 = Math.round(y2 * (1 + annualGrowthPct / 100));
+  return { y1, y2, y3, annualGrowthPct };
+}
+
+function populateInscriptionMetiers() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+  const selectedCity = citySelect.value;
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const metiers = Array.from(
+    new Set(
+      source
+        .filter((place) => (selectedCity ? place.city === selectedCity : true))
+        .map((place) => place.metier),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "fr"));
+
+  metierSelect.innerHTML = metiers.map((metier) => `<option value="${metier}">${metier}</option>`).join("");
+  if (currentPrefillMetier && metiers.includes(currentPrefillMetier)) {
+    metierSelect.value = currentPrefillMetier;
+  }
+}
+
+function updateInscriptionPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+
+  const city = citySelect.value;
+  if (metierSelect.options.length === 0) {
+    populateInscriptionMetiers();
+  }
+  const metier = metierSelect.value;
+  if (!city || !metier) return;
+
+  currentPrefillCity = city;
+  currentPrefillMetier = metier;
+
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const place = source.find((item) => item.city === city && item.metier === metier) || null;
+  const projection = getProjectionFromSelection(city, metier);
+  const sphere = getSphereByKey(place?.sphere || "digital");
+
+  const y1 = Math.max(projection.y1, place?.status === "sale" ? Math.round((place.value || projection.y1) * 0.6) : projection.y1);
+  const y2 = Math.max(projection.y2, Math.round(y1 * 1.22));
+  const y3 = Math.max(projection.y3, Math.round(y2 * 1.24));
+
+  const metierEl = document.getElementById("previewMetier");
+  const villeEl = document.getElementById("previewVille");
+  const badgeEl = document.getElementById("previewStatut");
+  const y1El = document.getElementById("previewYear1");
+  const y2El = document.getElementById("previewYear2");
+  const y3El = document.getElementById("previewYear3");
+  const noteEl = document.getElementById("previewNote");
+
+  if (metierEl) metierEl.textContent = `${sphere.icon} ${metier}`;
+  if (villeEl) villeEl.textContent = `${city} · ${sphere.tag}`;
+  if (badgeEl) badgeEl.textContent = `Projection +${projection.annualGrowthPct}%/an`;
+  if (y1El) y1El.textContent = money(y1);
+  if (y2El) y2El.textContent = money(y2);
+  if (y3El) y3El.textContent = money(y3);
+  if (noteEl) {
+    noteEl.textContent = `Prevision 3 ans pour ${metier.toLowerCase()} a ${city}: annee 1 ${money(y1)}, annee 2 ${money(y2)}, annee 3 ${money(y3)}.`;
+  }
+}
+
+function initInscriptionPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const cities = Array.from(new Set(source.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
+  citySelect.innerHTML = cities.map((city) => `<option value="${city}">${city}</option>`).join("");
+  if (currentPrefillCity && cities.includes(currentPrefillCity)) {
+    citySelect.value = currentPrefillCity;
+  }
+  populateInscriptionMetiers();
+  updateInscriptionPreview();
+}
+
+function openSignupFromPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  const city = String(citySelect?.value || "").trim();
+  const metier = String(metierSelect?.value || "").trim();
+  if (city) currentPrefillCity = city;
+  if (metier) currentPrefillMetier = metier;
+
+  const place = allPlaces.find((item) => item.city === city && item.metier === metier) || null;
+  openModal("rejoindre", place?.id || null);
 }
 
 function getActiveSpheres() {
@@ -2064,7 +2270,7 @@ function renderCards(items) {
       const stripe = `background:linear-gradient(90deg,${p.sphereColor}, color-mix(in srgb, ${p.sphereColor} 70%, black 30%))`;
       const stars = Array.from({ length: 5 }).map((_, i) => `<span class="star ${i < p.score ? "" : "empty"}">★</span>`).join("");
       const price = p.status === "sale" ? money(p.value) : "Gratuit";
-      const priceSub = p.status === "sale" ? "Prix vendeur · Cote Popey" : "Entrée commission 3 mois";
+      const priceSub = p.status === "sale" ? "Prix vendeur · Cote Popey" : "0€ le 1er mois · puis 149€/mois";
       const action = p.status === "sale" ? "Faire une offre →" : "Prendre cette place →";
       const actionType = p.status === "sale" ? "acheter" : "rejoindre";
       const caText = p.status === "sale" ? money(p.ca) : "—";
@@ -2200,8 +2406,8 @@ function getModalConfig(type) {
       body: `
         <form id="marketplaceActionForm">
           <div class="modal-commission-note">
-            Cette place est <strong>gratuite</strong> a l'entree. Les 3 premiers mois fonctionnent a la commission uniquement.
-            A partir du 4e mois: <strong>149€/mois</strong>.
+            Cette place est a <strong>0€ le 1er mois</strong> pour demarrer.
+            A partir du 2e mois: <strong>149€/mois</strong>.
           </div>
           ${placeHint}
           <div class="modal-field"><label>Votre prenom et nom</label><input name="fullName" required type="text" placeholder="Sophie Dupont"></div>
@@ -2247,6 +2453,10 @@ async function submitMarketplaceAction(type, form) {
     website: String(form.get("website") || "").trim(),
     message: String(form.get("message") || "").trim(),
     offerAmountEur: String(form.get("offerAmountEur") || "").trim() || null,
+    source: funnelSource || "marketplace_landing",
+    referralCode: funnelReferralCode || null,
+    referralLabel: funnelReferralLabel || null,
+    selectedPlan: type === "rejoindre" ? "zero_euro_premier_mois" : null,
   };
 
   const response = await fetch("/api/popey-human/marketplace/actions", {
@@ -2262,6 +2472,11 @@ async function submitMarketplaceAction(type, form) {
 function wireModalForm(type) {
   const formElement = document.getElementById("marketplaceActionForm");
   if (!formElement) return;
+  const cityInput = formElement.querySelector('input[name="city"]');
+  const metierInput = formElement.querySelector('input[name="metier"]');
+  if (cityInput && currentPrefillCity && !cityInput.value.trim()) cityInput.value = currentPrefillCity;
+  if (metierInput && currentPrefillMetier && !metierInput.value.trim()) metierInput.value = currentPrefillMetier;
+
   formElement.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submitButton = formElement.querySelector('button[type="submit"]');
@@ -2360,6 +2575,7 @@ async function loadPlacesFromApi() {
       if (result.cities.includes(current)) citySelect.value = current;
     }
     filterCards();
+    initInscriptionPreview();
     return;
   } catch (error) {
     console.warn("[marketplace] fallback local data", error);
@@ -2367,6 +2583,7 @@ async function loadPlacesFromApi() {
 
   allPlaces = buildPlacesData();
   filterCards();
+  initInscriptionPreview();
 }
 
 function initMarketplace() {

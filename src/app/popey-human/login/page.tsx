@@ -18,7 +18,8 @@ export default async function PopeyHumanLoginPage({
   const defaultEmail = typeof params?.email === "string" ? params.email : "";
   const requestedNext = typeof params?.next === "string" ? params.next : "";
   const postLoginPath =
-    requestedNext.startsWith("/popey-human/") && !requestedNext.startsWith("/popey-human/login")
+    ((requestedNext.startsWith("/popey-human/") && !requestedNext.startsWith("/popey-human/login")) ||
+      requestedNext.startsWith("/admin/humain"))
       ? requestedNext
       : "/popey-human/app";
 

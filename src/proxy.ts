@@ -34,7 +34,7 @@ export default async function proxy(request: NextRequest) {
   const isHumanLogin = pathname.startsWith("/popey-human/login");
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {
-    const loginPath = isHumanMemberArea ? "/popey-human/login" : "/login";
+    const loginPath = "/popey-human/login";
     const loginUrl = new URL(loginPath, request.url);
     loginUrl.searchParams.set("next", pathname);
     return copyResponseCookies(NextResponse.redirect(loginUrl), response);
