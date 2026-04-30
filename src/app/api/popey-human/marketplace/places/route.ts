@@ -23,6 +23,36 @@ type PlaceRow = {
   value_growth_pct: number;
 };
 
+const BLOCKED_METIER_KEYWORDS = [
+  "notaire",
+  "avocat",
+  "huissier",
+  "expert-comptable",
+  "commissaire aux comptes",
+  "medecin",
+  "dentiste",
+  "kine",
+  "pharmacien",
+  "sage-femme",
+  "pediatre",
+  "gynecologue",
+  "psychiatre",
+  "cardiologue",
+  "dermatologue",
+  "rhumatologue",
+  "orthophoniste",
+  "infirmier",
+  "osteopathe",
+  "orthoptiste",
+  "orthodontiste",
+  "podologue",
+  "audioprothesiste",
+  "ergotherapeute",
+  "psychomotricien",
+  "chiropracteur",
+  "acupuncteur",
+];
+
 const SPHERE_UI: Record<
   string,
   { tag: string; color: string; icon: string }
@@ -92,6 +122,19 @@ function toClientPlace(row: PlaceRow) {
   };
 }
 
+function normalizeMetier(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function isBlockedMetier(value: string): boolean {
+  const normalized = normalizeMetier(value);
+  return BLOCKED_METIER_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
@@ -132,8 +175,9 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = (data || []) as PlaceRow[];
-    const places = rows.map(toClientPlace);
-    const cities = Array.from(new Set(rows.map((row) => row.city))).sort((a, b) => a.localeCompare(b, "fr"));
+    const filteredRows = rows.filter((row) => !isBlockedMetier(row.metier || ""));
+    const places = filteredRows.map(toClientPlace);
+    const cities = Array.from(new Set(filteredRows.map((row) => row.city))).sort((a, b) => a.localeCompare(b, "fr"));
     const summary = {
       total: places.length,
       sale: places.filter((item) => item.status === "sale").length,
