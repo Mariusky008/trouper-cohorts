@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateMarketplacePlaces } from "@/lib/popey-marketplace";
+import { generateMarketplacePlaces, slugify } from "@/lib/popey-marketplace";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +135,10 @@ function isBlockedMetier(value: string): boolean {
   return BLOCKED_METIER_KEYWORDS.some((keyword) => normalized.includes(keyword));
 }
 
+function makePlaceKey(city: string, sphere: string, metier: string): string {
+  return `${slugify(city)}|${sphere.toLowerCase()}|${normalizeMetier(metier)}`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
@@ -176,8 +180,49 @@ export async function GET(request: NextRequest) {
 
     const rows = (data || []) as PlaceRow[];
     const filteredRows = rows.filter((row) => !isBlockedMetier(row.metier || ""));
-    const places = filteredRows.map(toClientPlace);
-    const cities = Array.from(new Set(filteredRows.map((row) => row.city))).sort((a, b) => a.localeCompare(b, "fr"));
+    let places = filteredRows.map(toClientPlace);
+
+    // Complete with safe catalog so each city/sphere keeps full coverage even if legacy DB rows are filtered out.
+    const generated = generateMarketplacePlaces()
+      .filter((item) => !city || city === "Toutes les villes" || item.city === city)
+      .filter((item) => (status === "sale" ? item.status === "sale" : status === "dispo" ? item.status === "dispo" : true))
+      .filter((item) => (spheres.length > 0 ? spheres.includes(item.sphereKey) : true))
+      .filter((item) => !isBlockedMetier(item.metier));
+
+    const existingKeys = new Set(places.map((item) => makePlaceKey(item.city, item.sphere, item.metier)));
+    const generatedSupplements = generated
+      .filter((item) => !existingKeys.has(makePlaceKey(item.city, item.sphereKey, item.metier)))
+      .map((item) => {
+        const ui = SPHERE_UI[item.sphereKey] || SPHERE_UI.digital;
+        return {
+          id: `generated-${slugify(item.city)}-${item.sphereKey}-${slugify(item.metier)}`,
+          city: item.city,
+          sphere: item.sphereKey,
+          sphereTag: ui.tag,
+          sphereColor: ui.color,
+          icon: ui.icon,
+          metier: item.metier,
+          status: item.status,
+          months: item.monthsActive,
+          partners: item.partnersCount,
+          reco: item.recosPerYear,
+          conversion: item.conversionRate,
+          ca: item.monthlyCaEur,
+          value: item.listPriceEur || 0,
+          growth: item.valueGrowthPct,
+          score: item.reciprocityScore,
+        };
+      });
+
+    places = [...places, ...generatedSupplements];
+
+    if (sort === "value_asc") places.sort((a, b) => (a.value || 0) - (b.value || 0));
+    else if (sort === "reco_desc") places.sort((a, b) => (b.reco || 0) - (a.reco || 0));
+    else if (sort === "anciennete_desc") places.sort((a, b) => (b.months || 0) - (a.months || 0));
+    else if (sort === "ca_desc") places.sort((a, b) => (b.ca || 0) - (a.ca || 0));
+    else places.sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    const cities = Array.from(new Set(places.map((row) => row.city))).sort((a, b) => a.localeCompare(b, "fr"));
     const summary = {
       total: places.length,
       sale: places.filter((item) => item.status === "sale").length,
