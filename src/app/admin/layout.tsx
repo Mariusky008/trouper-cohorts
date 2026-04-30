@@ -49,7 +49,7 @@ export default async function AdminLayout({
           <Button asChild>
             <Link href="/login?next=%2Fadmin%2Fhumain">Se connecter en admin</Link>
           </Button>
-          <form method="post" action="/auth/signout">
+          <form method="post" action="/auth/signout?next=%2Flogin%3Fnext%3D%252Fadmin%252Fhumain">
             <Button type="submit" variant="outline">
               Changer de compte
             </Button>

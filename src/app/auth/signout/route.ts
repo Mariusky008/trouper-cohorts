@@ -14,8 +14,14 @@ export async function POST(req: NextRequest) {
     await supabase.auth.signOut();
   }
 
+  const nextRaw = req.nextUrl.searchParams.get("next");
+  const safeNext =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/";
+
   revalidatePath("/", "layout");
-  return NextResponse.redirect(new URL("/", req.url), {
+  return NextResponse.redirect(new URL(safeNext, req.url), {
     status: 302,
   });
 }
