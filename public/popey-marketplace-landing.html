@@ -508,6 +508,30 @@ nav {
 .modal-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-family: var(--fd); font-size: 15px; font-weight: 700; cursor: pointer; background: var(--ink); color: var(--paper); transition: all .2s; }
 .modal-btn:hover { background: var(--teal-d); }
 
+/* ── FEEDBACK TOAST ── */
+.feedback-toast {
+  position: fixed; right: 20px; bottom: 20px; z-index: 1200;
+  width: min(420px, calc(100vw - 32px));
+  background: #fff; border: 1px solid var(--border2); border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.16); padding: 14px 14px 12px;
+  transform: translateY(18px); opacity: 0; pointer-events: none;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.feedback-toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.feedback-toast.success { border-color: rgba(0,160,112,.35); }
+.feedback-toast.error { border-color: rgba(229,83,75,.35); }
+.ft-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ft-title { font-size: 13px; font-weight: 800; color: var(--ink); }
+.ft-close { border: 0; background: transparent; cursor: pointer; font-size: 14px; color: var(--t3); }
+.ft-body { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--t2); }
+.ft-body strong { color: var(--ink); }
+.ft-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+.ft-btn {
+  border: 1px solid var(--border2); background: transparent; color: var(--ink);
+  border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.ft-btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
 /* ── FOOTER ── */
 footer { background: var(--ink); padding: 40px 48px; display: flex; align-items: center; justify-content: space-between; }
 .footer-logo { font-size: 16px; font-weight: 800; color: var(--teal); font-family: var(--fd); }
@@ -2062,6 +2086,15 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
   </div>
 </div>
 
+<div class="feedback-toast" id="feedbackToast" role="status" aria-live="polite">
+  <div class="ft-head">
+    <div class="ft-title" id="feedbackToastTitle">Information</div>
+    <button class="ft-close" type="button" onclick="hideFeedbackToast()">✕</button>
+  </div>
+  <div class="ft-body" id="feedbackToastBody"></div>
+  <div class="ft-actions" id="feedbackToastActions"></div>
+</div>
+
 <script>
 const SPHERES = [
   { key: "sante", label: "🌿 Santé", color: "#00A070", tag: "🌿 Santé · Bien-être", icon: "🦴" },
@@ -2469,6 +2502,50 @@ async function submitMarketplaceAction(type, form) {
   return result;
 }
 
+let feedbackToastTimer = null;
+
+function hideFeedbackToast() {
+  const toast = document.getElementById("feedbackToast");
+  if (!toast) return;
+  toast.classList.remove("show");
+  if (feedbackToastTimer) {
+    clearTimeout(feedbackToastTimer);
+    feedbackToastTimer = null;
+  }
+}
+
+function showFeedbackToast({ type = "success", title, body, actionLabel = "", actionHref = "" }) {
+  const toast = document.getElementById("feedbackToast");
+  const titleEl = document.getElementById("feedbackToastTitle");
+  const bodyEl = document.getElementById("feedbackToastBody");
+  const actionsEl = document.getElementById("feedbackToastActions");
+  if (!toast || !titleEl || !bodyEl || !actionsEl) return;
+
+  toast.classList.remove("success", "error");
+  toast.classList.add(type === "error" ? "error" : "success");
+  titleEl.textContent = title || (type === "error" ? "Envoi impossible" : "Demande envoyee");
+  bodyEl.innerHTML = body || "";
+  actionsEl.innerHTML = "";
+
+  if (actionLabel && actionHref) {
+    const link = document.createElement("a");
+    link.className = "ft-btn primary";
+    link.href = actionHref;
+    link.textContent = actionLabel;
+    actionsEl.appendChild(link);
+  }
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "ft-btn";
+  closeBtn.textContent = "Fermer";
+  closeBtn.onclick = hideFeedbackToast;
+  actionsEl.appendChild(closeBtn);
+
+  toast.classList.add("show");
+  if (feedbackToastTimer) clearTimeout(feedbackToastTimer);
+  feedbackToastTimer = setTimeout(() => hideFeedbackToast(), type === "error" ? 7000 : 6000);
+}
+
 function wireModalForm(type) {
   const formElement = document.getElementById("marketplaceActionForm");
   if (!formElement) return;
@@ -2483,11 +2560,20 @@ function wireModalForm(type) {
     if (submitButton) submitButton.disabled = true;
     try {
       const result = await submitMarketplaceAction(type, new FormData(formElement));
-      alert(result.message || "Demande envoyee.");
+      const offerId = result?.offerId ? String(result.offerId) : "";
+      showFeedbackToast({
+        type: "success",
+        title: "Demande envoyee",
+        body: `${result.message || "Demande envoyee a l equipe Popey."}${offerId ? `<br><strong>Reference:</strong> ${offerId}` : ""}`,
+      });
       closeModalDirect();
       loadPlacesFromApi();
     } catch (error) {
-      alert(error?.message || "Envoi impossible.");
+      showFeedbackToast({
+        type: "error",
+        title: "Envoi impossible",
+        body: String(error?.message || "Une erreur est survenue. Merci de reessayer."),
+      });
     } finally {
       if (submitButton) submitButton.disabled = false;
     }

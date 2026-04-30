@@ -32,7 +32,7 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = (await searchParams) || {};
-  const sourceFilter = typeof params.source === "string" ? params.source.trim() : "personnel_landing";
+  const sourceFilter = typeof params.source === "string" ? params.source.trim() : "all";
   const referralFilter = typeof params.referral === "string" ? params.referral.trim().toLowerCase() : "";
 
   const supabaseAdmin = createAdminClient();
@@ -46,7 +46,7 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
   const rows = ((data as MarketplaceOfferRow[] | null) || []).filter((row) => {
     const source = extractMetaValue(row.metadata, "source");
     const referralCode = extractMetaValue(row.metadata, "referral_code").toLowerCase();
-    if (sourceFilter && source !== sourceFilter) return false;
+    if (sourceFilter && sourceFilter !== "all" && source !== sourceFilter) return false;
     if (referralFilter && !referralCode.includes(referralFilter)) return false;
     return true;
   });
@@ -84,7 +84,7 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
           <input
             name="source"
             defaultValue={sourceFilter}
-            placeholder="source (ex: personnel_landing)"
+            placeholder="source (all|personnel_landing|marketplace_landing)"
             className="h-10 rounded border bg-background px-3 text-sm"
           />
           <input
@@ -104,7 +104,7 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Source active</p>
-          <p className="mt-1 text-lg font-black">{sourceFilter || "toutes"}</p>
+          <p className="mt-1 text-lg font-black">{sourceFilter || "all"}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Referrals détectés</p>
