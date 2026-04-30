@@ -1,0 +1,2857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popey — Marketplace des Places</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #080A0F;
+  --paper: #F4F1EB;
+  --paper2: #EAE6DC;
+  --teal: #00C896;
+  --teal-d: #008F6A;
+  --teal-l: rgba(0,200,150,.1);
+  --teal-g: rgba(0,200,150,.25);
+  --amber: #F5A623;
+  --amber-l: rgba(245,166,35,.1);
+  --red: #E5534B;
+  --red-l: rgba(229,83,75,.1);
+  --purple: #8B5CF6;
+  --purple-l: rgba(139,92,246,.1);
+  --blue: #3B82F6;
+  --blue-l: rgba(59,130,246,.1);
+  --t: #1A1A1A;
+  --t2: #555;
+  --t3: #999;
+  --border: rgba(0,0,0,.08);
+  --border2: rgba(0,0,0,.14);
+  --fd: 'Cabinet Grotesk', sans-serif;
+  --fi: 'Instrument Serif', serif;
+  --fm: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--paper); color: var(--t); font-family: var(--fd); overflow-x: hidden; }
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: .5;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 90;
+  background: rgba(244,241,235,.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo-mark {
+  width: 32px; height: 32px; background: var(--ink); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: var(--teal);
+}
+.nav-logo-text { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -.3px; }
+.nav-logo-text span { color: var(--teal); }
+.nav-center { display: flex; gap: 4px; background: var(--paper2); border-radius: 20px; padding: 3px; }
+.nav-tab {
+  padding: 6px 18px; border-radius: 17px; font-size: 13px; font-weight: 600;
+  color: var(--t3); cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.nav-tab.active { background: var(--ink); color: var(--paper); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-badge {
+  background: var(--teal-l); border: 1px solid var(--teal-g);
+  border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--teal-d);
+  display: flex; align-items: center; gap: 6px;
+}
+.nav-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.btn-cta-nav {
+  background: var(--ink); color: var(--paper); padding: 8px 20px;
+  border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: none; transition: all .2s;
+}
+.btn-cta-nav:hover { background: var(--teal-d); }
+.btn-cta-nav-light {
+  background: transparent; color: var(--ink); padding: 8px 16px;
+  border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: 1.5px solid var(--border2); transition: all .2s;
+}
+.btn-cta-nav-light:hover { border-color: var(--ink); background: #fff; }
+
+/* ── HERO ── */
+.hero {
+  padding: 80px 48px 60px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  max-width: 1300px; margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--teal-d); margin-bottom: 20px;
+}
+.hero-eyebrow::before { content: ''; width: 24px; height: 1.5px; background: var(--teal); }
+.hero-title {
+  font-family: var(--fi); font-size: clamp(40px,4vw,64px);
+  line-height: .95; letter-spacing: -1px; margin-bottom: 20px; color: var(--ink);
+}
+.hero-title em { font-style: italic; color: var(--teal-d); }
+.hero-sub {
+  font-size: 16px; color: var(--t2); line-height: 1.7; font-weight: 400;
+  margin-bottom: 32px; max-width: 480px;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--ink); color: var(--paper); padding: 14px 28px;
+  border-radius: 100px; font-size: 14px; font-weight: 700; cursor: pointer;
+  border: none; transition: all .25s; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: var(--teal-d); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,143,106,.25); }
+.btn-secondary {
+  background: transparent; color: var(--t); padding: 14px 24px;
+  border-radius: 100px; font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--border2); transition: all .2s;
+}
+.btn-secondary:hover { border-color: var(--ink); }
+
+/* HERO STATS */
+.hero-stats { display: flex; gap: 8px; }
+.hstat {
+  flex: 1; background: var(--paper2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 16px; text-align: center;
+}
+.hstat-val { font-family: var(--fi); font-size: 36px; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+.hstat-val.teal { color: var(--teal-d); }
+.hstat-val.amber { color: var(--amber); }
+.hstat-lbl { font-size: 11px; color: var(--t3); font-weight: 500; letter-spacing: .04em; }
+.hstat-trend { font-size: 11px; color: var(--teal-d); font-weight: 600; margin-top: 6px; }
+
+/* ── PHASE TABS ── */
+/* phase tabs removed */
+
+/* ── FILTERS BAR ── */
+.filters-bar {
+  padding: 24px 48px; background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); }
+
+/* CITY SELECT */
+.city-select-wrap { position: relative; }
+.city-select {
+  appearance: none; background: var(--paper2); border: 1.5px solid var(--border2);
+  border-radius: 12px; padding: 10px 40px 10px 16px;
+  font-family: var(--fd); font-size: 14px; font-weight: 600; color: var(--ink);
+  cursor: pointer; outline: none; min-width: 200px;
+  transition: border-color .2s;
+}
+.city-select:focus { border-color: var(--teal); }
+.city-select-arrow {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; font-size: 10px; color: var(--t3);
+}
+
+/* SPHERE FILTER CHIPS */
+.sphere-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.sphere-chip {
+  padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; border: 1.5px solid var(--border2);
+  background: transparent; color: var(--t2);
+}
+.sphere-chip.active { border-color: currentColor; }
+.sc-green.active { color: #00A070; background: rgba(0,160,112,.08); border-color: rgba(0,160,112,.3); }
+.sc-amber.active { color: #C07800; background: rgba(192,120,0,.08); border-color: rgba(192,120,0,.3); }
+.sc-blue.active  { color: #1D6FA4; background: rgba(29,111,164,.08); border-color: rgba(29,111,164,.3); }
+.sc-pink.active  { color: #B5376A; background: rgba(181,55,106,.08); border-color: rgba(181,55,106,.3); }
+.sc-purple.active{ color: #6D3FCB; background: rgba(109,63,203,.08); border-color: rgba(109,63,203,.3); }
+
+/* STATUS FILTER */
+.status-chips { display: flex; gap: 6px; }
+.status-chip {
+  padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; border: 1.5px solid var(--border);
+  background: transparent; color: var(--t3);
+}
+.status-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.filter-divider { width: 1px; height: 28px; background: var(--border2); }
+
+/* ── INSCRIPTION PREVIEW ── */
+.inscription-preview {
+  max-width: 1300px; margin: 0 auto; padding: 34px 48px;
+}
+.inscription-box {
+  background: radial-gradient(1200px 340px at -10% -30%, rgba(0,200,150,.14), transparent 52%), #fff;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 20px;
+  box-shadow: 0 16px 40px rgba(8,10,15,.08);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+}
+.inscription-box:hover { transform: translateY(-2px); box-shadow: 0 22px 46px rgba(8,10,15,.1); border-color: rgba(0,0,0,.14); }
+.inscription-left {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,241,235,.8));
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.inscription-left:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(8,10,15,.06); }
+.inscription-title { font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -.03em; line-height: 1.05; margin-top: 10px; }
+.inscription-sub { font-size: 14px; color: var(--t2); margin-top: 10px; line-height: 1.65; max-width: 58ch; }
+.inscription-controls { margin-top: 16px; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.inscription-controls select {
+  height: 46px; border-radius: 12px; border: 1.5px solid var(--border2);
+  background: #fff; font-family: var(--fd); font-size: 14px; font-weight: 600; padding: 0 12px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.inscription-controls select:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0,200,150,.14);
+}
+.inscription-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.inscription-actions .btn-primary { min-height: 46px; }
+.inscription-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+  padding: 5px 10px; border-radius: 999px; background: var(--teal-l); color: var(--teal-d);
+  border: 1px solid var(--teal-g);
+}
+.inscription-points {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.inscription-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t2);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  transition: transform .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.inscription-point:hover { transform: translateY(-1px); border-color: var(--teal-g); background: rgba(0,200,150,.08); }
+.inscription-preview-card {
+  border: 1px solid rgba(0,0,0,.09);
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,241,235,.92));
+  box-shadow: 0 10px 26px rgba(8,10,15,.08);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+}
+.inscription-preview-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(8,10,15,.12); border-color: rgba(0,0,0,.14); }
+.ipc-head {
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ipc-title { font-size: 20px; font-weight: 900; color: var(--ink); letter-spacing: -.02em; }
+.ipc-sub { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.ipc-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,200,150,.14);
+  border: 1px solid rgba(0,200,150,.3);
+  color: var(--teal-d);
+}
+.ipc-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3,1fr);
+  padding: 12px 14px 0;
+}
+.ipc-cell {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ipc-cell:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(8,10,15,.08); border-color: rgba(0,0,0,.14); }
+.ipc-val { font-family: var(--fi); font-size: 36px; color: var(--ink); line-height: .9; }
+.ipc-lbl { font-size: 10px; color: var(--t3); margin-top: 6px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.ipc-note { padding: 12px 16px 10px; font-size: 12px; color: var(--t2); line-height: 1.55; }
+.ipc-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+.ipc-meta-item {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 11px;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ipc-meta-item:hover { transform: translateY(-2px); box-shadow: 0 10px 16px rgba(8,10,15,.08); border-color: rgba(0,0,0,.14); }
+.ipc-meta-label { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; }
+.ipc-meta-value { margin-top: 5px; font-size: 17px; font-weight: 900; color: var(--ink); letter-spacing: -.01em; }
+
+.is-preview-updating .ipc-val,
+.is-preview-updating .ipc-meta-value {
+  animation: popNumber .45s ease;
+}
+@keyframes popNumber {
+  0% { opacity: .5; transform: translateY(5px) scale(.98); }
+  60% { opacity: 1; transform: translateY(-1px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inscription-box,
+  .inscription-left,
+  .inscription-point,
+  .inscription-preview-card,
+  .ipc-cell,
+  .ipc-meta-item {
+    transition: none !important;
+  }
+  .is-preview-updating .ipc-val,
+  .is-preview-updating .ipc-meta-value {
+    animation: none !important;
+  }
+}
+
+/* ── MAIN GRID ── */
+.main { max-width: 1300px; margin: 0 auto; padding: 40px 48px 80px; }
+.grid-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.grid-title { font-size: 20px; font-weight: 800; color: var(--ink); }
+.grid-sub { font-size: 13px; color: var(--t3); margin-top: 2px; }
+.sort-select {
+  appearance: none; background: var(--paper2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 8px 32px 8px 14px; font-family: var(--fd);
+  font-size: 13px; font-weight: 600; color: var(--t2); cursor: pointer; outline: none;
+}
+
+/* ── PLACE CARD ── */
+.places-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+
+.place-card {
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: 20px; overflow: hidden; transition: all .3s; cursor: pointer;
+  position: relative;
+}
+.place-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,.08); border-color: var(--border2); }
+.place-card.featured { border-color: var(--teal); }
+.place-card.featured::after {
+  content: '⭐ En vedette'; position: absolute; top: 14px; right: 14px;
+  background: var(--teal); color: #fff; font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+}
+
+/* Card top stripe */
+.pc-stripe { height: 4px; width: 100%; }
+
+/* Card header */
+.pc-header { padding: 20px 20px 16px; display: flex; align-items: flex-start; gap: 14px; }
+.pc-icon {
+  width: 48px; height: 48px; border-radius: 14px; display: flex;
+  align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.pc-info { flex: 1; min-width: 0; }
+.pc-metier { font-size: 16px; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
+.pc-ville { font-size: 13px; color: var(--t2); display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+.pc-sphere-tag {
+  display: inline-flex; font-size: 10px; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+
+/* Price block */
+.pc-price-block {
+  margin: 0 20px 16px; padding: 16px; background: var(--paper);
+  border-radius: 14px; display: flex; align-items: center; justify-content: space-between;
+}
+.pc-price { font-family: var(--fi); font-size: 32px; color: var(--ink); line-height: 1; }
+.pc-price-sub { font-size: 11px; color: var(--t3); margin-top: 3px; font-weight: 500; }
+.pc-valeur-tag {
+  text-align: right;
+}
+.pc-valeur-num { font-family: var(--fm); font-size: 13px; font-weight: 500; }
+.pc-valeur-lbl { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+/* Stats row */
+.pc-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
+.pc-stat { background: #fff; padding: 12px; text-align: center; }
+.pc-stat-val { font-family: var(--fm); font-size: 15px; font-weight: 500; color: var(--ink); }
+.pc-stat-lbl { font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+/* Phase 2+ extras */
+.pc-chart-wrap { padding: 16px 20px; border-top: 1px solid var(--border); }
+.pc-chart-label { font-size: 11px; font-weight: 600; color: var(--t3); margin-bottom: 8px; }
+.sparkline { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+.spark-bar { flex: 1; border-radius: 3px 3px 0 0; transition: opacity .2s; }
+.spark-bar:hover { opacity: .7; }
+
+/* Reco score */
+.pc-score-wrap { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.pc-score-label { font-size: 12px; color: var(--t2); font-weight: 500; }
+.pc-score-stars { display: flex; gap: 2px; }
+.star { font-size: 14px; }
+.star.empty { opacity: .2; }
+
+/* Algo valeur (Phase 3) */
+.pc-algo { padding: 14px 20px; border-top: 1px solid var(--border); background: linear-gradient(135deg, rgba(0,200,150,.04), transparent); }
+.pc-algo-title { font-size: 11px; font-weight: 700; color: var(--teal-d); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.pc-algo-bars { display: flex; flex-direction: column; gap: 5px; }
+.algo-bar-row { display: flex; align-items: center; gap: 8px; }
+.algo-bar-label { font-size: 10px; color: var(--t3); width: 80px; flex-shrink: 0; }
+.algo-bar-track { flex: 1; height: 5px; background: var(--paper2); border-radius: 3px; overflow: hidden; }
+.algo-bar-fill { height: 100%; border-radius: 3px; background: var(--teal); }
+.algo-bar-val { font-family: var(--fm); font-size: 10px; color: var(--t2); width: 30px; text-align: right; flex-shrink: 0; }
+
+/* Card footer */
+.pc-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.pc-btn-contact {
+  flex: 1; padding: 11px; border-radius: 12px; font-family: var(--fd);
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; border: none;
+  background: var(--ink); color: var(--paper);
+}
+.pc-btn-contact:hover { background: var(--teal-d); }
+.pc-btn-save {
+  width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid var(--border2);
+  background: transparent; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; transition: all .2s;
+}
+.pc-btn-save:hover { background: var(--paper2); }
+
+/* ── PORTEFEUILLE SECTION ── */
+.portfolio-section {
+  background: var(--ink); padding: 80px 48px;
+}
+.portfolio-inner { max-width: 1300px; margin: 0 auto; }
+.portfolio-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 48px; }
+.portfolio-title {
+  font-family: var(--fi); font-size: clamp(32px,3vw,48px);
+  color: #fff; line-height: 1; letter-spacing: -.5px; margin-bottom: 12px;
+}
+.portfolio-title em { font-style: italic; color: var(--teal); }
+.portfolio-sub { font-size: 15px; color: rgba(255,255,255,.45); font-weight: 300; line-height: 1.6; max-width: 480px; }
+.portfolio-total {
+  text-align: right;
+}
+.pt-val { font-family: var(--fi); font-size: 52px; color: var(--teal); line-height: 1; }
+.pt-lbl { font-size: 13px; color: rgba(255,255,255,.3); margin-top: 4px; }
+.pt-trend { font-size: 13px; color: var(--teal); font-weight: 700; margin-top: 6px; }
+
+/* Portfolio cards */
+.portfolio-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.pf-card {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px; padding: 20px; transition: all .3s;
+}
+.pf-card:hover { background: rgba(255,255,255,.08); }
+.pf-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.pf-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.pf-meta { flex: 1; }
+.pf-metier { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.pf-ville { font-size: 11px; color: rgba(255,255,255,.35); }
+.pf-since { font-family: var(--fm); font-size: 10px; color: rgba(255,255,255,.25); }
+
+/* Value evolution */
+.pf-value-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
+.pf-val-current { font-family: var(--fi); font-size: 28px; color: #fff; line-height: 1; }
+.pf-val-growth { font-size: 12px; font-weight: 700; color: var(--teal); }
+.pf-val-initial { font-size: 11px; color: rgba(255,255,255,.25); }
+
+/* Mini sparkline dark */
+.mini-spark { display: flex; align-items: flex-end; gap: 2px; height: 28px; margin-bottom: 14px; }
+.ms-bar { flex: 1; border-radius: 2px 2px 0 0; background: rgba(0,200,150,.3); transition: background .2s; }
+.ms-bar.peak { background: var(--teal); }
+
+/* Estimation algo */
+.pf-algo { background: rgba(0,200,150,.06); border: 1px solid rgba(0,200,150,.15); border-radius: 10px; padding: 10px 12px; }
+.pf-algo-lbl { font-size: 10px; color: rgba(255,255,255,.35); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.pf-algo-val { font-family: var(--fm); font-size: 13px; color: var(--teal); font-weight: 500; }
+
+/* ── HOW IT WORKS ── */
+.how-section { padding: 80px 48px; background: var(--paper2); border-top: 1px solid var(--border); }
+.how-inner { max-width: 1300px; margin: 0 auto; }
+.how-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 48px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.how-step { background: var(--paper); padding: 36px 28px; position: relative; }
+.how-step::before { content: attr(data-phase); position: absolute; top: 24px; right: 24px; font-family: var(--fm); font-size: 10px; color: var(--t3); letter-spacing: .08em; }
+.hs-num { font-family: var(--fi); font-size: 72px; color: var(--border2); line-height: 1; margin-bottom: 16px; }
+.hs-icon { font-size: 28px; margin-bottom: 14px; }
+.hs-title { font-size: 18px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.hs-text { font-size: 13px; color: var(--t2); line-height: 1.6; font-weight: 400; }
+.hs-pill { display: inline-flex; margin-top: 14px; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+.hp-now { background: rgba(0,160,112,.1); color: var(--teal-d); }
+.hp-6m { background: rgba(245,166,35,.1); color: #A07000; }
+.hp-2y { background: rgba(139,92,246,.1); color: var(--purple); }
+.hs-commission { margin-top: 16px; padding: 12px; background: var(--paper2); border-radius: 10px; font-size: 12px; color: var(--t2); }
+
+
+/* ── RECO VALUE BADGE ── */
+.pc-reco-value {
+  margin: 0 20px 12px;
+  background: linear-gradient(135deg, rgba(0,200,150,.06), rgba(0,200,150,.02));
+  border: 1px solid rgba(0,200,150,.2);
+  border-radius: 12px; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.prv-left { display: flex; align-items: center; gap: 8px; }
+.prv-icon { font-size: 16px; }
+.prv-text { font-size: 12px; color: var(--t2); line-height: 1.4; }
+.prv-text strong { color: var(--teal-d); }
+.prv-val { font-family: var(--fm); font-size: 15px; font-weight: 500; color: var(--teal-d); white-space: nowrap; }
+
+/* ── EXPLAIN BTN ── */
+.pc-btn-explain {
+  flex: 1; padding: 11px; border-radius: 12px; font-family: var(--fd);
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s;
+  background: transparent; color: var(--teal-d);
+  border: 1.5px solid rgba(0,200,150,.35);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.pc-btn-explain:hover { background: rgba(0,200,150,.08); border-color: var(--teal); }
+
+/* ── VALUE PANEL (slide-down) ── */
+.value-panel {
+  display: none; border-top: 1px solid var(--border);
+  background: var(--paper2);
+  animation: panelIn .25s ease;
+}
+.value-panel.open { display: block; }
+@keyframes panelIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+.vp-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.vp-title { font-size: 14px; font-weight: 800; color: var(--ink); }
+.vp-close { font-size: 11px; color: var(--t3); cursor: pointer; padding: 4px 8px;
+  border-radius: 8px; border: 1px solid var(--border); background: var(--paper); }
+
+.vp-total-row {
+  padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--ink); border-bottom: 1px solid var(--border);
+}
+.vp-total-label { font-size: 12px; color: rgba(255,255,255,.5); font-weight: 600; }
+.vp-total-val { font-family: var(--fi); font-size: 28px; color: var(--teal); }
+
+.vp-criteria { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.vpc-row { display: flex; flex-direction: column; gap: 5px; }
+.vpc-top { display: flex; align-items: center; justify-content: space-between; }
+.vpc-label { font-size: 12px; font-weight: 700; color: var(--t); display: flex; align-items: center; gap: 6px; }
+.vpc-weight { font-family: var(--fm); font-size: 10px; color: var(--t3); }
+.vpc-amount { font-family: var(--fm); font-size: 13px; font-weight: 500; }
+.vpc-desc { font-size: 11px; color: var(--t3); line-height: 1.4; }
+.vpc-track { height: 5px; background: var(--border2); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.vpc-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+.vp-reco-block {
+  margin: 0 20px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(0,200,150,.06); border: 1px solid rgba(0,200,150,.18);
+  margin-bottom: 12px;
+}
+.vrb-title { font-size: 11px; font-weight: 700; color: var(--teal-d); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: .06em; }
+.vrb-rows { display: flex; flex-direction: column; gap: 5px; }
+.vrb-row { display: flex; justify-content: space-between; font-size: 12px; }
+.vrb-key { color: var(--t2); }
+.vrb-val { font-family: var(--fm); font-weight: 500; color: var(--ink); }
+.vrb-val.positive { color: var(--teal-d); }
+
+.vp-formula {
+  margin: 0 20px 16px; padding: 10px 14px; border-radius: 10px;
+  background: var(--paper); border: 1px solid var(--border);
+  font-family: var(--fm); font-size: 11px; color: var(--t3); line-height: 1.6;
+}
+.vp-formula strong { color: var(--ink); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  backdrop-filter: blur(8px); z-index: 500;
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--paper); border-radius: 24px; width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 40px 120px rgba(0,0,0,.3);
+  animation: modal-in .25s ease;
+}
+@keyframes modal-in { from{opacity:0;transform:scale(.96) translateY(12px)} to{opacity:1;transform:none} }
+.modal-header { padding: 28px 28px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; }
+.modal-title { font-size: 22px; font-weight: 800; }
+.modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--paper2); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 24px 28px; }
+.modal-field { margin-bottom: 16px; }
+.modal-field label { display: block; font-size: 12px; font-weight: 700; color: var(--t2); margin-bottom: 6px; letter-spacing: .04em; text-transform: uppercase; }
+.modal-field input, .modal-field textarea, .modal-field select {
+  width: 100%; background: #fff; border: 1.5px solid var(--border2);
+  border-radius: 12px; padding: 12px 16px; font-family: var(--fd);
+  font-size: 14px; color: var(--ink); outline: none; transition: border-color .2s;
+}
+.modal-field input:focus, .modal-field textarea:focus { border-color: var(--teal); }
+.modal-field textarea { min-height: 80px; resize: vertical; }
+.modal-price-hint { font-size: 11px; color: var(--t3); margin-top: 6px; }
+.modal-commission-note {
+  background: var(--paper2); border-radius: 12px; padding: 14px 16px;
+  font-size: 13px; color: var(--t2); margin-bottom: 20px; line-height: 1.5;
+}
+.modal-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-family: var(--fd); font-size: 15px; font-weight: 700; cursor: pointer; background: var(--ink); color: var(--paper); transition: all .2s; }
+.modal-btn:hover { background: var(--teal-d); }
+
+/* ── FEEDBACK TOAST ── */
+.feedback-toast {
+  position: fixed; right: 20px; bottom: 20px; z-index: 1200;
+  width: min(420px, calc(100vw - 32px));
+  background: #fff; border: 1px solid var(--border2); border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.16); padding: 14px 14px 12px;
+  transform: translateY(18px); opacity: 0; pointer-events: none;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.feedback-toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.feedback-toast.success { border-color: rgba(0,160,112,.35); }
+.feedback-toast.error { border-color: rgba(229,83,75,.35); }
+.ft-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ft-title { font-size: 13px; font-weight: 800; color: var(--ink); }
+.ft-close { border: 0; background: transparent; cursor: pointer; font-size: 14px; color: var(--t3); }
+.ft-body { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--t2); }
+.ft-body strong { color: var(--ink); }
+.ft-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+.ft-btn {
+  border: 1px solid var(--border2); background: transparent; color: var(--ink);
+  border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.ft-btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* ── FOOTER ── */
+footer { background: var(--ink); padding: 40px 48px; display: flex; align-items: center; justify-content: space-between; }
+.footer-logo { font-size: 16px; font-weight: 800; color: var(--teal); font-family: var(--fd); }
+.footer-info { font-size: 12px; color: rgba(255,255,255,.3); }
+
+
+
+/* ── MÉTRIQUES AVANCÉES ── */
+.pc-metrics {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--border);
+  border-top: 1px solid var(--border);
+}
+.pc-metric {
+  background: #fff; padding: 11px 10px; text-align: center;
+  transition: background .2s;
+}
+.pc-metric:hover { background: var(--paper); }
+.pc-m-val {
+  font-family: var(--fm); font-size: 14px; font-weight: 500;
+  color: var(--ink); line-height: 1; margin-bottom: 3px;
+}
+.pc-m-val.good { color: var(--teal-d); }
+.pc-m-val.warn { color: var(--amber); }
+.pc-m-lbl { font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: .05em; }
+.pc-m-trend { font-size: 9px; color: var(--teal-d); font-weight: 600; margin-top: 2px; }
+
+/* Activity pulse */
+.pc-activity {
+  padding: 10px 20px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, rgba(0,200,150,.03), #fff);
+}
+.pca-left { display: flex; align-items: center; gap: 8px; }
+.pca-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.pca-dot.alive { background: var(--teal); animation: pulse2 2s ease-in-out infinite; }
+.pca-dot.slow { background: var(--amber); }
+@keyframes pulse2 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+.pca-text { font-size: 11px; color: var(--t2); font-weight: 500; }
+.pca-right { font-size: 11px; color: var(--t3); }
+
+/* Diversity bar */
+.pc-diversity {
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.pcd-label { font-size: 10px; font-weight: 700; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 7px;
+  display: flex; justify-content: space-between; align-items: center; }
+.pcd-spheres { display: flex; gap: 4px; }
+.pcd-sphere {
+  flex: 1; height: 6px; border-radius: 3px; transition: opacity .2s;
+  position: relative;
+}
+.pcd-sphere:hover { opacity: .7; }
+.pcd-sphere-labels { display: flex; gap: 4px; margin-top: 4px; }
+.pcd-sphere-lbl { flex: 1; font-size: 8px; color: var(--t3); text-align: center; }
+
+/* Fidélité badge */
+.pc-fidelite {
+  padding: 10px 20px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.pcf-icon { font-size: 14px; flex-shrink: 0; }
+.pcf-text { font-size: 12px; color: var(--t2); flex: 1; line-height: 1.4; }
+.pcf-pct { font-family: var(--fm); font-size: 15px; font-weight: 500; color: var(--teal-d); flex-shrink: 0; }
+
+/* Drawer extras */
+.vd-metrics-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  padding: 0 20px 16px;
+}
+.vdm-item {
+  background: var(--paper2); border-radius: 10px; padding: 12px;
+}
+.vdm-val { font-family: var(--fm); font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+.vdm-val.good { color: var(--teal-d); }
+.vdm-lbl { font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.vdm-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.vdm-fill { height: 100%; border-radius: 2px; background: var(--teal); }
+.vdm-note { font-size: 10px; color: var(--t3); margin-top: 5px; line-height: 1.4; }
+/* ── VALEUR DETAIL BUTTON ── */
+.pc-valeur-btn {
+  width:100%; padding:10px; border:none; border-radius:0;
+  background:linear-gradient(135deg,rgba(0,200,150,.06),rgba(0,200,150,.02));
+  border-top:1px solid rgba(0,200,150,.15);
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--fd);font-size:12px;font-weight:700;color:var(--teal-d);
+  cursor:pointer;transition:all .2s;
+}
+.pc-valeur-btn:hover{background:rgba(0,200,150,.1);}
+.pvb-left{display:flex;align-items:center;gap:7px;}
+.pvb-arrow{font-size:14px;transition:transform .3s;}
+.pvb-arrow.open{transform:rotate(180deg);}
+
+/* ── VALEUR DRAWER ── */
+.valeur-drawer{
+  display:none;border-top:1px solid rgba(0,200,150,.12);
+  background:linear-gradient(135deg,rgba(0,200,150,.03),#fff);
+}
+.valeur-drawer.open{display:block;}
+.vd-header{padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
+.vd-title{font-size:13px;font-weight:800;color:var(--ink);}
+.vd-price{font-family:var(--fi);font-size:22px;color:var(--teal-d);}
+
+/* Score breakdown table */
+.vd-table{width:100%;border-collapse:collapse;margin:0 0 0;}
+.vd-table td{padding:9px 20px;font-size:12px;border-bottom:1px solid var(--border);}
+.vd-table tr:last-child td{border-bottom:none;}
+.vd-td-label{color:var(--t2);font-weight:500;width:55%;}
+.vd-td-val{text-align:right;font-weight:700;color:var(--ink);font-family:var(--fm);}
+.vd-td-poids{text-align:right;font-size:10px;color:var(--t3);}
+.vd-td-bar{padding:6px 20px;}
+.vd-mini-bar{height:5px;border-radius:3px;background:var(--paper2);overflow:hidden;margin-top:3px;}
+.vd-mini-fill{height:100%;border-radius:3px;}
+
+/* Reco contribution block */
+.vd-reco-block{margin:0 20px 16px;padding:14px;background:rgba(0,200,150,.06);
+  border:1px solid rgba(0,200,150,.15);border-radius:12px;}
+.vrb-title{font-size:11px;font-weight:700;color:var(--teal-d);margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.06em;}
+.vrb-rows{display:flex;flex-direction:column;gap:6px;}
+.vrb-row{display:flex;align-items:center;justify-content:space-between;}
+.vrb-lbl{font-size:12px;color:var(--t2);}
+.vrb-val{font-size:12px;font-weight:700;color:var(--ink);font-family:var(--fm);}
+.vrb-val.pos{color:var(--teal-d);}
+
+/* Formula display */
+.vd-formula{margin:0 20px 16px;padding:12px 14px;background:var(--paper);
+  border:1px dashed var(--border2);border-radius:10px;font-size:11px;color:var(--t2);
+  font-family:var(--fm);line-height:1.8;}
+.vdf-title{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:6px;font-family:var(--fd);}
+
+/* Projection block */
+.vd-projection{margin:0 20px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.vdp-item{background:var(--paper2);border-radius:10px;padding:10px;text-align:center;}
+.vdp-val{font-family:var(--fi);font-size:18px;color:var(--ink);margin-bottom:2px;}
+.vdp-lbl{font-size:10px;color:var(--t3);letter-spacing:.04em;}
+.vdp-trend{font-size:11px;font-weight:700;color:var(--teal-d);margin-top:3px;}
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){
+  .hero,.portfolio-grid,.places-grid { grid-template-columns:1fr; }
+  .inscription-box { grid-template-columns:1fr; }
+  .portfolio-header { flex-direction:column; gap:20px; }
+  .portfolio-total { text-align:left; }
+  .how-grid { grid-template-columns:1fr; }
+  nav,.filters-bar,.main,.how-section,.portfolio-section,footer { padding-left:24px; padding-right:24px; }
+  .hero { padding:48px 24px; }
+  .spheres-grid { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:640px){
+  .nav-center,.nav-right .nav-badge { display:none; }
+  .places-grid { grid-template-columns:1fr; }
+  .inscription-controls { grid-template-columns:1fr; }
+  .ipc-grid,.ipc-meta { grid-template-columns:1fr; }
+}
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { opacity:0; transition:opacity .7s ease,transform .7s ease; transform:translateY(20px); }
+.fade-up.visible { opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-mark">P</div>
+    <div class="nav-logo-text">Popey <span>Market</span></div>
+  </div>
+  <div class="nav-center">
+    <div class="nav-tab active" onclick="navScroll('section-places',this)">Acheter une place</div>
+    <div class="nav-tab" onclick="navScroll('section-portfolio',this)">Mon portefeuille</div>
+    <div class="nav-tab" onclick="navScroll('section-how',this)">Comment ça marche</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge" id="navBadge">0 places actives</div>
+    <button class="btn-cta-nav-light" onclick="document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">S'inscrire</button>
+    <button class="btn-cta-nav" onclick="openModal('vendre')">Mettre en vente</button>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section style="background:var(--paper);border-bottom:1px solid var(--border)">
+  <div class="hero">
+    <div class="fade-up visible">
+      <div class="hero-eyebrow">Marketplace · Places exclusives</div>
+      <h1 class="hero-title">Votre place dans<br>le réseau est <em>un actif.</em><br>Elle prend de la valeur.</h1>
+      <p class="hero-sub">1 seul professionnel par métier par ville. La place que vous occupez aujourd'hui peut valoir 5 000€ à 10 000€ dans 3 ans. Achetez, vendez, suivez votre portefeuille.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="document.querySelector('.main').scrollIntoView({behavior:'smooth'})">Voir les places disponibles →</button>
+        <button class="btn-secondary" onclick="document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">S'inscrire</button>
+        <button class="btn-secondary" onclick="document.querySelector('.portfolio-section').scrollIntoView({behavior:'smooth'})">Mon portefeuille</button>
+      </div>
+    </div>
+    <div class="hero-stats fade-up visible" style="animation-delay:.1s">
+      <div class="hstat">
+        <div class="hstat-val teal" id="statPlaces">47</div>
+        <div class="hstat-lbl">Places en vente</div>
+        <div class="hstat-trend">+12 ce mois</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val amber" id="statValMoy">3 840€</div>
+        <div class="hstat-lbl">Valeur moyenne</div>
+        <div class="hstat-trend">↑ +23% / an</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" id="statTransac">18</div>
+        <div class="hstat-lbl">Transactions</div>
+        <div class="hstat-trend">Ce trimestre</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── INSCRIPTION PREVIEW ── -->
+<section class="inscription-preview" id="section-inscription">
+  <div class="inscription-box">
+    <div class="inscription-left">
+      <div class="inscription-chip">🧩 Inscription marketplace</div>
+      <h2 class="inscription-title">Choisissez votre ville et votre metier</h2>
+      <p class="inscription-sub">
+        Selectionnez votre zone et votre metier pour visualiser votre future fiche, votre projection de valeur
+        sur 3 ans et la dynamique locale.
+        Offre active: <strong>0€ le 1er, 2eme, 3eme mois</strong> (seulement commissions sur les apports d'affaires), puis 149€/mois.
+      </p>
+      <div class="inscription-points">
+        <span class="inscription-point">✅ 1 place par metier</span>
+        <span class="inscription-point">📍 1 ville cible</span>
+        <span class="inscription-point">📈 Projection 3 ans</span>
+      </div>
+      <div class="inscription-controls">
+        <select id="inscriptionCity" onchange="updateInscriptionPreview()"></select>
+        <select id="inscriptionMetier" onchange="updateInscriptionPreview()"></select>
+      </div>
+      <div class="inscription-actions">
+        <button class="btn-primary" type="button" onclick="openSignupFromPreview()">Reserver ma place →</button>
+      </div>
+    </div>
+    <div class="inscription-preview-card">
+      <div class="ipc-head">
+        <div>
+          <div class="ipc-title" id="previewMetier">Metier</div>
+          <div class="ipc-sub" id="previewVille">Ville</div>
+        </div>
+        <span class="ipc-badge" id="previewStatut">Projection 3 ans</span>
+      </div>
+      <div class="ipc-grid">
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear1">0€</div>
+          <div class="ipc-lbl">Annee 1</div>
+        </div>
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear2">0€</div>
+          <div class="ipc-lbl">Annee 2</div>
+        </div>
+        <div class="ipc-cell">
+          <div class="ipc-val" id="previewYear3">0€</div>
+          <div class="ipc-lbl">Annee 3</div>
+        </div>
+      </div>
+      <div class="ipc-note" id="previewNote">
+        Potentiel de valorisation base sur la dynamique reseau locale et la recursivite des recommandations.
+      </div>
+      <div class="ipc-meta">
+        <div class="ipc-meta-item">
+          <div class="ipc-meta-label">Valeur cumulee 3 ans</div>
+          <div class="ipc-meta-value" id="previewTotal">0€</div>
+        </div>
+        <div class="ipc-meta-item">
+          <div class="ipc-meta-label">Gain potentiel</div>
+          <div class="ipc-meta-value" id="previewGain">0€</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FILTERS ── -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <span class="filter-label">Ville</span>
+    <div class="city-select-wrap">
+      <select class="city-select" id="citySelect" onchange="filterCards()">
+        <option>Toutes les villes</option>
+        <option selected>Dax (40)</option>
+        <option>Bayonne (64)</option>
+        <option>Mont-de-Marsan (40)</option>
+        <option>Pau (64)</option>
+        <option>Bordeaux (33)</option>
+        <option>Hossegor (40)</option>
+        <option>Saint-Paul-lès-Dax (40)</option>
+        <option>Hagetmau (40)</option>
+      </select>
+      <span class="city-select-arrow">▼</span>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Sphère</span>
+    <div class="sphere-chips">
+      <div class="sphere-chip sc-green active" onclick="toggleChip(this)">🌿 Santé</div>
+      <div class="sphere-chip sc-amber active" onclick="toggleChip(this)">🏠 Habitat</div>
+      <div class="sphere-chip sc-blue active" onclick="toggleChip(this)">💻 Digital</div>
+      <div class="sphere-chip sc-pink active" onclick="toggleChip(this)">💒 Mariage</div>
+      <div class="sphere-chip sc-purple active" onclick="toggleChip(this)">⚖️ Finance</div>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Statut</span>
+    <div class="status-chips">
+      <div class="status-chip active" onclick="filterStatus(this,'all')">Toutes</div>
+      <div class="status-chip" onclick="filterStatus(this,'sale')">En vente</div>
+      <div class="status-chip" onclick="filterStatus(this,'dispo')">Disponibles</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLACES GRID ── -->
+<div class="main" id="section-places">
+  <div class="grid-header">
+    <div>
+      <div class="grid-title" id="gridTitle">12 places à Dax</div>
+      <div class="grid-sub" id="gridSub">3 en vente · 9 disponibles · mise à jour il y a 2 min · <span style="color:var(--teal-d);font-weight:600">Votre place est unique</span></div>
+    </div>
+    <select class="sort-select" id="sortSelect" onchange="filterCards()">
+      <option>Trier : Valeur ↑</option>
+      <option>Trier : Valeur ↓</option>
+      <option>Trier : Recos / an ↓</option>
+      <option>Trier : Ancienneté</option>
+      <option>Trier : CA généré</option>
+    </select>
+  </div>
+
+  <div class="places-grid" id="placesGrid">
+
+    <!-- CARD 1 — VENTE (Phase 2+) -->
+    <div class="place-card featured" data-sphere="sante" data-status="sale">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(0,200,150,.1)">🦴</div>
+        <div class="pc-info">
+          <div class="pc-metier">Coach bien-être</div>
+          <div class="pc-ville">📍 Dax (40) · Exclusive</div>
+          <span class="pc-sphere-tag" style="background:rgba(0,160,112,.08);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Bien-être</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price">4 200€</div>
+          <div class="pc-price-sub">Prix demandé · Net vendeur</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:var(--teal-d)">↑ +68%</div>
+          <div class="pc-valeur-lbl">depuis M1</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">38</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--teal-d)">142</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val">2 900€</div>
+          <div class="pc-stat-lbl">CA / mois</div>
+        </div>
+      </div>
+      <div class="pc-chart-wrap">
+        <div class="pc-chart-label">Évolution valeur estimée (12 mois)</div>
+        <div class="sparkline" id="spark1"></div>
+      </div>
+      <!-- RECO VALUE BADGE -->
+      <div class="pc-reco-value">
+        <div class="prv-left">
+          <span class="prv-icon">🔗</span>
+          <div class="prv-text">Recos données/an <strong>116</strong> · Reçues <strong>142</strong><br>Valeur nette apportée au réseau</div>
+        </div>
+        <div class="prv-val">+34 800€</div>
+      </div>
+      
+      <div class="pc-metrics">
+        <div class="pc-metric">
+          <div class="pc-m-val good">42%</div>
+          <div class="pc-m-lbl">Taux conversion</div>
+          <div class="pc-m-trend">recos → deals</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val good">2.7/sem</div>
+          <div class="pc-m-lbl">Régularité</div>
+          <div class="pc-m-trend">par semaine</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val">68%</div>
+          <div class="pc-m-lbl">Fidélité réseau</div>
+          <div class="pc-m-trend">+6 mois</div>
+        </div>
+      </div>
+      <div class="pc-activity">
+        <div class="pca-left">
+          <div class="pca-dot alive"></div>
+          <div class="pca-text">Dernière reco : <strong>il y a 2j</strong></div>
+        </div>
+        <div class="pca-right">12 témoignages · 186 connexions 2°</div>
+      </div>
+      <div class="pc-diversity">
+        <div class="pcd-label">
+          <span>Diversité des sources de recos</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/5 sphères actives</span>
+        </div>
+        <div class="pcd-spheres">
+          <div class="pcd-sphere" style="background:#00C896;opacity:0.85" title="Santé 85%"></div>
+          <div class="pcd-sphere" style="background:#F5A623;opacity:0.2" title="Habitat 20%"></div>
+          <div class="pcd-sphere" style="background:#3B82F6;opacity:0.1" title="Digital 10%"></div>
+          <div class="pcd-sphere" style="background:#F48FB1;opacity:0.05" title="Mariage 5%"></div>
+          <div class="pcd-sphere" style="background:#9B8FFF;opacity:0.15" title="Finance 15%"></div>
+        </div>
+        <div class="pcd-sphere-labels">
+          <div class="pcd-sphere-lbl">🌿</div>
+          <div class="pcd-sphere-lbl">🏠</div>
+          <div class="pcd-sphere-lbl">💻</div>
+          <div class="pcd-sphere-lbl">💒</div>
+          <div class="pcd-sphere-lbl">⚖️</div>
+        </div>
+      </div>
+      <div class="pc-score-wrap">
+        <span class="pc-score-label">Score réciprocité</span>
+        <div class="pc-score-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star empty">★</span>
+        </div>
+      </div>
+      
+      <button class="pc-valeur-btn" onclick="toggleDrawer('card1')">
+        <span class="pvb-left">📊 Décomposition de la valeur</span>
+        <span class="pvb-arrow" id="arrow-card1">▼</span>
+      </button>
+      <div class="valeur-drawer" id="drawer-card1">
+        <div class="vd-header">
+          <div class="vd-title">📊 Comment est calculée cette valeur</div>
+          <div class="vd-price" style="font-family:var(--fi);font-size:22px;color:var(--teal-d)">4,200€</div>
+        </div>
+        <table class="vd-table">
+          <tr style="background:var(--paper2)"><td class="vd-td-label" style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Critère</td><td class="vd-td-val" style="font-size:11px;text-transform:uppercase">Valeur</td><td class="vd-td-poids" style="font-size:11px;text-transform:uppercase">Poids</td></tr>
+          <tr><td class="vd-td-label">CA généré via recos (12 mois)</td><td class="vd-td-val" style="color:var(--teal)">34 800€</td><td class="vd-td-poids">50% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:88%;background:var(--teal)"></div></div></td></tr><tr><td class="vd-td-label">Recos données (142/an)</td><td class="vd-td-val" style="color:var(--teal)">+22% bonus valeur</td><td class="vd-td-poids">20% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:72%;background:var(--teal)"></div></div></td></tr><tr><td class="vd-td-label">Ancienneté réseau (18 mois)</td><td class="vd-td-val" style="color:var(--amber)">×1.8</td><td class="vd-td-poids">20% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:72%;background:var(--amber)"></div></div></td></tr><tr><td class="vd-td-label">Dynamique ville · Dax</td><td class="vd-td-val" style="color:#8B5CF6">Moyenne+</td><td class="vd-td-poids">10% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:65%;background:#8B5CF6"></div></div></td></tr>
+        </table>
+        <div style="height:12px"></div>
+        <div class="vd-reco-block">
+          <div class="vrb-title">🔗 Apport des recommandations à la valeur</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-lbl">Recos données / an</span><span class="vrb-val pos">142 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Recos reçues / an</span><span class="vrb-val">118 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Score réciprocité</span><span class="vrb-val pos">1.20 — Top Éclaireur 🏆</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">CA généré par vos recos données</span><span class="vrb-val pos">12 400€</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Commissions perçues sur ces recos</span><span class="vrb-val pos">1 240€</span></div>
+            <div class="vrb-row" style="border-top:1px solid rgba(0,200,150,.2);padding-top:6px;margin-top:3px"><span class="vrb-lbl" style="font-weight:700;color:var(--ink)">Bonus valeur lié aux recos</span><span class="vrb-val pos">+21%</span></div>
+          </div>
+        </div>
+        <div class="vd-formula">
+          <div class="vdf-title">Formule Popey</div>
+          Valeur = (CA généré × 0.5) + (Recos données × 0.2)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (Ancienneté × 0.2) + (Dynamique ville × 0.1)<br>
+          Multiplicateur séniorité : ×1.8 — Bonus recos : +21%<br>
+          <strong>= 4,200€</strong>
+        </div>
+        <div style="padding:0 20px 8px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Si vous conservez cette place</div>
+        <div class="vd-projection">
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">4,900€</div><div class="vdp-lbl">Dans 3 mois</div><div class="vdp-trend">↑ +16%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">5,800€</div><div class="vdp-lbl">Dans 6 mois</div><div class="vdp-trend">↑ +38%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">7,200€</div><div class="vdp-lbl">Dans 12 mois</div><div class="vdp-trend">↑ +71%</div></div>
+        </div>
+        
+        <div style="padding:0 20px 8px;margin-top:4px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Métriques avancées de qualité</div>
+        <div class="vd-metrics-grid">
+        <div class="vdm-item">
+          <div class="vdm-lbl">Taux conversion recos</div>
+          <div class="vdm-val good">42%</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:84%"></div></div>
+          <div class="vdm-note">1 deal signé sur 2,4 recos transmises</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Régularité recos</div>
+          <div class="vdm-val good">2.7/sem</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:78%"></div></div>
+          <div class="vdm-note">Flux stable sur 18 mois — très rassurant</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Partenaires fidèles +6 mois</div>
+          <div class="vdm-val good">26/38</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:68%"></div></div>
+          <div class="vdm-note">68% du réseau est stable et durable</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Connexions 2e degré</div>
+          <div class="vdm-val good">186</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:72%"></div></div>
+          <div class="vdm-note">Réseau dense — vos partenaires ont des partenaires</div>
+        </div></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="pc-footer">
+        <button class="pc-btn-explain" onclick="togglePanel('panel1',this)">⚙ Comprendre la valeur</button>
+        <button class="pc-btn-contact" onclick="openModal('acheter')" style="flex:1.2">Contacter →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+
+      <!-- VALUE PANEL -->
+      <div class="value-panel" id="panel1">
+        <div class="vp-header">
+          <div class="vp-title">Détail de la valorisation — Coach bien-être · Dax</div>
+          <div class="vp-close" onclick="togglePanel('panel1',null)">Fermer ✕</div>
+        </div>
+        <div class="vp-total-row">
+          <div class="vp-total-label">Valeur totale estimée (Cote Popey)</div>
+          <div class="vp-total-val">4 200€</div>
+        </div>
+        <div class="vp-criteria">
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">💰 CA généré via le réseau <span class="vpc-weight">Poids 50%</span></span>
+              <span class="vpc-amount" style="color:var(--teal-d)">2 100€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:88%;background:var(--teal)"></div></div>
+            <div class="vpc-desc">2 900€/mois de CA moyen générés via les recommandations Popey × coefficient 0,72. Représente la moitié de la valeur totale.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">📅 Ancienneté & profondeur réseau <span class="vpc-weight">Poids 30%</span></span>
+              <span class="vpc-amount" style="color:var(--amber)">1 260€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:72%;background:var(--amber)"></div></div>
+            <div class="vpc-desc">14 mois dans le réseau · 38 partenaires actifs · Score réciprocité 4/5. Un réseau mature qui se réchauffe sans effort supplémentaire.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">🏙 Dynamique de la ville <span class="vpc-weight">Poids 20%</span></span>
+              <span class="vpc-amount" style="color:var(--purple)">840€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:65%;background:#8B5CF6"></div></div>
+            <div class="vpc-desc">Dax : 20 000 hab · Zone thermale · Forte densité de pros bien-être · Bassin de 120 000 hab à 30km. Potentiel de croissance élevé.</div>
+          </div>
+        </div>
+
+        <div class="vp-reco-block">
+          <div class="vrb-title">🔗 Valeur des recommandations données</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-key">Recos données / an</span><span class="vrb-val">116</span></div>
+            <div class="vrb-row"><span class="vrb-key">Recos reçues / an</span><span class="vrb-val">142</span></div>
+            <div class="vrb-row"><span class="vrb-key">Taux de conversion moyen</span><span class="vrb-val">30%</span></div>
+            <div class="vrb-row"><span class="vrb-key">Deals générés pour le réseau</span><span class="vrb-val">35 deals / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">CA apporté au réseau via ses recos</span><span class="vrb-val positive">+34 800€ / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">Score réciprocité</span><span class="vrb-val positive">★★★★☆ · Équilibré</span></div>
+            <div class="vrb-row"><span class="vrb-key">Impact sur la valeur de la place</span><span class="vrb-val positive">+420€ (bonus donneur actif)</span></div>
+          </div>
+        </div>
+
+        <div class="vp-formula">
+          <strong>Formule Popey :</strong><br>
+          Valeur = (CA mensuel × 0.72 × 50%) + (Score ancienneté × 30%) + (Score ville × 20%) + bonus réciprocité<br>
+          = 2 088€ + 1 260€ + 840€ + 420€ bonnes recos<br>
+          = <strong>4 200€ net vendeur · Commission Popey 15% → prix acheteur : 4 830€</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CARD 2 — DISPONIBLE Phase 1 -->
+    <div class="place-card" data-sphere="digital" data-status="dispo">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0288D1)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(59,130,246,.1)">💻</div>
+        <div class="pc-info">
+          <div class="pc-metier">Développeur web</div>
+          <div class="pc-ville">📍 Dax (40) · Place libre</div>
+          <span class="pc-sphere-tag" style="background:rgba(29,111,164,.08);color:#1D6FA4;border:1px solid rgba(29,111,164,.2)">💻 Digital · Business</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price" style="color:var(--teal-d)">Gratuit</div>
+          <div class="pc-price-sub">0€ le 1er mois · puis 149€/mois</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:var(--t3)">Valeur J0</div>
+          <div class="pc-valeur-lbl">à construire</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">—</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--t3)">0</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--t3)">—</div>
+          <div class="pc-stat-lbl">CA / mois</div>
+        </div>
+      </div>
+      <div class="pc-score-wrap">
+        <span class="pc-score-label">Place non occupée</span>
+        <span style="font-size:12px;color:var(--teal-d);font-weight:700">Disponible maintenant ✓</span>
+      </div>
+      <div class="pc-footer">
+        <button class="pc-btn-contact" onclick="openModal('rejoindre')">Prendre cette place →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+    </div>
+
+    <!-- CARD 3 — VENTE Phase 3 avec ALGO -->
+    <div class="place-card" data-sphere="habitat" data-status="sale">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#F5A623,#E8961A)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(245,166,35,.1)">🏠</div>
+        <div class="pc-info">
+          <div class="pc-metier">Agent immobilier</div>
+          <div class="pc-ville">📍 Dax (40) · Exclusive</div>
+          <span class="pc-sphere-tag" style="background:rgba(192,120,0,.08);color:#C07800;border:1px solid rgba(192,120,0,.2)">🏠 Habitat · Patrimoine</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price">8 900€</div>
+          <div class="pc-price-sub">Valorisation algorithme · Cote Popey</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:var(--amber)">↑ +156%</div>
+          <div class="pc-valeur-lbl">depuis M1 (24 mois)</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">52</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--amber)">89</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val">6 200€</div>
+          <div class="pc-stat-lbl">CA / mois</div>
+        </div>
+      </div>
+      <div class="pc-chart-wrap">
+        <div class="pc-chart-label">Évolution valeur (24 mois)</div>
+        <div class="sparkline" id="spark2"></div>
+      </div>
+      <!-- RECO VALUE BADGE -->
+      <div class="pc-reco-value">
+        <div class="prv-left">
+          <span class="prv-icon">🔗</span>
+          <div class="prv-text">Recos données/an <strong>74</strong> · Reçues <strong>89</strong><br>CA apporté au réseau via ses recos</div>
+        </div>
+        <div class="prv-val">+157 500€</div>
+      </div>
+      
+      <div class="pc-metrics">
+        <div class="pc-metric">
+          <div class="pc-m-val good">38%</div>
+          <div class="pc-m-lbl">Taux conversion</div>
+          <div class="pc-m-trend">recos → deals</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val good">1.7/sem</div>
+          <div class="pc-m-lbl">Régularité</div>
+          <div class="pc-m-trend">par semaine</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val">79%</div>
+          <div class="pc-m-lbl">Fidélité réseau</div>
+          <div class="pc-m-trend">+6 mois</div>
+        </div>
+      </div>
+      <div class="pc-activity">
+        <div class="pca-left">
+          <div class="pca-dot alive"></div>
+          <div class="pca-text">Dernière reco : <strong>hier</strong></div>
+        </div>
+        <div class="pca-right">19 témoignages · 284 connexions 2°</div>
+      </div>
+      <div class="pc-diversity">
+        <div class="pcd-label">
+          <span>Diversité des sources de recos</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">3/5 sphères actives</span>
+        </div>
+        <div class="pcd-spheres">
+          <div class="pcd-sphere" style="background:#00C896;opacity:0.9" title="Santé 90%"></div>
+          <div class="pcd-sphere" style="background:#F5A623;opacity:0.6" title="Habitat 60%"></div>
+          <div class="pcd-sphere" style="background:#3B82F6;opacity:0.15" title="Digital 15%"></div>
+          <div class="pcd-sphere" style="background:#F48FB1;opacity:0.1" title="Mariage 10%"></div>
+          <div class="pcd-sphere" style="background:#9B8FFF;opacity:0.3" title="Finance 30%"></div>
+        </div>
+        <div class="pcd-sphere-labels">
+          <div class="pcd-sphere-lbl">🌿</div>
+          <div class="pcd-sphere-lbl">🏠</div>
+          <div class="pcd-sphere-lbl">💻</div>
+          <div class="pcd-sphere-lbl">💒</div>
+          <div class="pcd-sphere-lbl">⚖️</div>
+        </div>
+      </div>
+      <div class="pc-algo">
+        <div class="pc-algo-title">⚙ Calcul algorithmique Popey</div>
+        <div class="pc-algo-bars">
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">CA généré</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:88%"></div></div>
+            <span class="algo-bar-val">88%</span>
+          </div>
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">Ancienneté</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:72%;background:var(--amber)"></div></div>
+            <span class="algo-bar-val">72%</span>
+          </div>
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">Dynamique ville</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:65%;background:#A78BFA"></div></div>
+            <span class="algo-bar-val">65%</span>
+          </div>
+        </div>
+      </div>
+      
+      <button class="pc-valeur-btn" onclick="toggleDrawer('card3')">
+        <span class="pvb-left">📊 Décomposition de la valeur</span>
+        <span class="pvb-arrow" id="arrow-card3">▼</span>
+      </button>
+      <div class="valeur-drawer" id="drawer-card3">
+        <div class="vd-header">
+          <div class="vd-title">📊 Comment est calculée cette valeur</div>
+          <div class="vd-price" style="font-family:var(--fi);font-size:22px;color:var(--teal-d)">8,900€</div>
+        </div>
+        <table class="vd-table">
+          <tr style="background:var(--paper2)"><td class="vd-td-label" style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Critère</td><td class="vd-td-val" style="font-size:11px;text-transform:uppercase">Valeur</td><td class="vd-td-poids" style="font-size:11px;text-transform:uppercase">Poids</td></tr>
+          <tr><td class="vd-td-label">CA généré via recos (24 mois)</td><td class="vd-td-val" style="color:var(--teal)">148 800€</td><td class="vd-td-poids">50% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:88%;background:var(--teal)"></div></div></td></tr><tr><td class="vd-td-label">Recos données (89/an)</td><td class="vd-td-val" style="color:var(--teal)">+18% bonus valeur</td><td class="vd-td-poids">20% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:62%;background:var(--teal)"></div></div></td></tr><tr><td class="vd-td-label">Ancienneté réseau (24 mois)</td><td class="vd-td-val" style="color:var(--amber)">×2.4</td><td class="vd-td-poids">20% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:80%;background:var(--amber)"></div></div></td></tr><tr><td class="vd-td-label">Dynamique ville · Dax</td><td class="vd-td-val" style="color:#8B5CF6">Moyenne+</td><td class="vd-td-poids">10% du score</td></tr><tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:65%;background:#8B5CF6"></div></div></td></tr>
+        </table>
+        <div style="height:12px"></div>
+        <div class="vd-reco-block">
+          <div class="vrb-title">🔗 Apport des recommandations à la valeur</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-lbl">Recos données / an</span><span class="vrb-val pos">89 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Recos reçues / an</span><span class="vrb-val">74 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Score réciprocité</span><span class="vrb-val pos">1.20 — Top Éclaireur 🏆</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">CA généré par vos recos données</span><span class="vrb-val pos">89 000€</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Commissions perçues sur ces recos</span><span class="vrb-val pos">4 450€</span></div>
+            <div class="vrb-row" style="border-top:1px solid rgba(0,200,150,.2);padding-top:6px;margin-top:3px"><span class="vrb-lbl" style="font-weight:700;color:var(--ink)">Bonus valeur lié aux recos</span><span class="vrb-val pos">+13%</span></div>
+          </div>
+        </div>
+        <div class="vd-formula">
+          <div class="vdf-title">Formule Popey</div>
+          Valeur = (CA généré × 0.5) + (Recos données × 0.2)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (Ancienneté × 0.2) + (Dynamique ville × 0.1)<br>
+          Multiplicateur séniorité : ×2.4 — Bonus recos : +13%<br>
+          <strong>= 8,900€</strong>
+        </div>
+        <div style="padding:0 20px 8px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Si vous conservez cette place</div>
+        <div class="vd-projection">
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">9,800€</div><div class="vdp-lbl">Dans 3 mois</div><div class="vdp-trend">↑ +10%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">11,200€</div><div class="vdp-lbl">Dans 6 mois</div><div class="vdp-trend">↑ +25%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">14,500€</div><div class="vdp-lbl">Dans 12 mois</div><div class="vdp-trend">↑ +62%</div></div>
+        </div>
+        
+        <div style="padding:0 20px 8px;margin-top:4px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Métriques avancées de qualité</div>
+        <div class="vd-metrics-grid">
+        <div class="vdm-item">
+          <div class="vdm-lbl">Taux conversion recos</div>
+          <div class="vdm-val good">38%</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:76%"></div></div>
+          <div class="vdm-note">1 deal immobilier signé sur 2.6 recos</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Régularité recos</div>
+          <div class="vdm-val good">1.7/sem</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:65%"></div></div>
+          <div class="vdm-note">Flux solide malgré les cycles longs de l'immo</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Partenaires fidèles +6 mois</div>
+          <div class="vdm-val good">41/52</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:79%"></div></div>
+          <div class="vdm-note">Réseau très stable — 79% présents depuis 6 mois+</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Connexions 2e degré</div>
+          <div class="vdm-val good">284</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:88%"></div></div>
+          <div class="vdm-note">Réseau très dense — 52 partenaires bien connectés</div>
+        </div></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="pc-footer">
+        <button class="pc-btn-explain" onclick="togglePanel('panel3',this)">⚙ Comprendre la valeur</button>
+        <button class="pc-btn-contact" onclick="openModal('acheter')" style="flex:1.2">Faire une offre →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+
+      <!-- VALUE PANEL -->
+      <div class="value-panel" id="panel3">
+        <div class="vp-header">
+          <div class="vp-title">Détail valorisation — Agent immobilier · Dax</div>
+          <div class="vp-close" onclick="togglePanel('panel3',null)">Fermer ✕</div>
+        </div>
+        <div class="vp-total-row">
+          <div class="vp-total-label">Cote Popey algorithmique</div>
+          <div class="vp-total-val">8 900€</div>
+        </div>
+        <div class="vp-criteria">
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">💰 CA généré via le réseau <span class="vpc-weight">Poids 50%</span></span>
+              <span class="vpc-amount" style="color:var(--teal-d)">4 450€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:88%;background:var(--teal)"></div></div>
+            <div class="vpc-desc">6 200€/mois de CA moyen via Popey. Ticket élevé (0,5% du prix vente). 1 deal Habitat = 1 250€ en moyenne. Puissance des grands tickets.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">📅 Ancienneté & profondeur réseau <span class="vpc-weight">Poids 30%</span></span>
+              <span class="vpc-amount" style="color:var(--amber)">2 670€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:72%;background:var(--amber)"></div></div>
+            <div class="vpc-desc">24 mois dans le réseau · 52 partenaires actifs (artisans, décorateurs, home stagers). Réseau Habitat le plus dense de la région.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">🏙 Dynamique de la ville <span class="vpc-weight">Poids 20%</span></span>
+              <span class="vpc-amount" style="color:var(--purple)">1 780€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:65%;background:#8B5CF6"></div></div>
+            <div class="vpc-desc">Dax : marché immobilier dynamique · Prix médian 2 100€/m² · Forte demande résidentielle · Zone attractive retraite active.</div>
+          </div>
+        </div>
+
+        <div class="vp-reco-block">
+          <div class="vrb-title">🔗 Valeur des recommandations données</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-key">Recos données / an</span><span class="vrb-val">74</span></div>
+            <div class="vrb-row"><span class="vrb-key">Recos reçues / an</span><span class="vrb-val">89</span></div>
+            <div class="vrb-row"><span class="vrb-key">Ticket moyen recommandé</span><span class="vrb-val">250 000€ prix vente</span></div>
+            <div class="vrb-row"><span class="vrb-key">CA apporté au réseau (recos données)</span><span class="vrb-val positive">+157 500€ / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">Deals générés pour partenaires</span><span class="vrb-val">22 deals / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">Score réciprocité</span><span class="vrb-val positive">★★★★☆ · Actif</span></div>
+            <div class="vrb-row"><span class="vrb-key">Bonus donneur actif</span><span class="vrb-val positive">+890€ intégré dans la cote</span></div>
+          </div>
+        </div>
+
+        <div class="vp-formula">
+          <strong>Formule Popey :</strong><br>
+          Valeur = (CA mensuel 6 200€ × 0.72 × 50%) + (Score ancienneté × 30%) + (Score ville × 20%) + bonus recos<br>
+          = 4 450€ + 2 670€ + 1 780€ + 890€ bonus recos données<br>
+          = <strong>8 900€ net vendeur · Prix acheteur avec commission 15% : 10 235€</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CARD 4 — VENTE Phase 1 simple -->
+    <div class="place-card" data-sphere="mariage" data-status="sale">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#F48FB1,#C2185B)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(181,55,106,.1)">📸</div>
+        <div class="pc-info">
+          <div class="pc-metier">Photographe mariage</div>
+          <div class="pc-ville">📍 Dax + Bayonne (40/64)</div>
+          <span class="pc-sphere-tag" style="background:rgba(181,55,106,.08);color:#B5376A;border:1px solid rgba(181,55,106,.2)">💒 Mariage · Événementiel</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price">1 800€</div>
+          <div class="pc-price-sub">Prix vendeur · Phase 1 manuel</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:#B5376A">↑ +38%</div>
+          <div class="pc-valeur-lbl">depuis M1 (8 mois)</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">22</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:#B5376A">67</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val">1 400€</div>
+          <div class="pc-stat-lbl">CA / mois</div>
+        </div>
+      </div>
+      
+      <div class="pc-metrics">
+        <div class="pc-metric">
+          <div class="pc-m-val good">29%</div>
+          <div class="pc-m-lbl">Taux conversion</div>
+          <div class="pc-m-trend">recos → deals</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val good">1.3/sem</div>
+          <div class="pc-m-lbl">Régularité</div>
+          <div class="pc-m-trend">par semaine</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val">64%</div>
+          <div class="pc-m-lbl">Fidélité réseau</div>
+          <div class="pc-m-trend">+6 mois</div>
+        </div>
+      </div>
+      <div class="pc-activity">
+        <div class="pca-left">
+          <div class="pca-dot alive"></div>
+          <div class="pca-text">Dernière reco : <strong>il y a 4j</strong></div>
+        </div>
+        <div class="pca-right">7 témoignages · 98 connexions 2°</div>
+      </div>
+      <div class="pc-diversity">
+        <div class="pcd-label">
+          <span>Diversité des sources de recos</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/5 sphères actives</span>
+        </div>
+        <div class="pcd-spheres">
+          <div class="pcd-sphere" style="background:#00C896;opacity:0.15" title="Santé 15%"></div>
+          <div class="pcd-sphere" style="background:#F5A623;opacity:0.05" title="Habitat 5%"></div>
+          <div class="pcd-sphere" style="background:#3B82F6;opacity:0.1" title="Digital 10%"></div>
+          <div class="pcd-sphere" style="background:#F48FB1;opacity:0.9" title="Mariage 90%"></div>
+          <div class="pcd-sphere" style="background:#9B8FFF;opacity:0.2" title="Finance 20%"></div>
+        </div>
+        <div class="pcd-sphere-labels">
+          <div class="pcd-sphere-lbl">🌿</div>
+          <div class="pcd-sphere-lbl">🏠</div>
+          <div class="pcd-sphere-lbl">💻</div>
+          <div class="pcd-sphere-lbl">💒</div>
+          <div class="pcd-sphere-lbl">⚖️</div>
+        </div>
+      </div>
+      <div class="pc-score-wrap">
+        <span class="pc-score-label">Score réciprocité</span>
+        <div class="pc-score-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star empty">★</span><span class="star empty">★</span>
+        </div>
+      </div>
+
+      <button class="pc-valeur-btn" onclick="toggleDrawer('card4')">
+        <span class="pvb-left">📊 Voir la décomposition de la valeur</span>
+        <span class="pvb-arrow" id="arrow-card4">▼</span>
+      </button>
+      
+    <div class="valeur-drawer" id="drawer-card4">
+      <div class="vd-header">
+        <div class="vd-title">📊 Décomposition de la valeur</div>
+        <div class="vd-price">1,800€".replace(",","&nbsp;")</div>
+      </div>
+
+      <!-- CRITÈRES ALGO -->
+      <table class="vd-table">
+        <tr style="background:var(--paper2)">
+          <td class="vd-td-label" style="font-weight:700;color:var(--t);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Critère de valorisation</td>
+          <td class="vd-td-val" style="color:var(--t);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Valeur</td>
+          <td class="vd-td-poids" style="color:var(--t);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Poids</td>
+        </tr>
+        
+        <tr>
+          <td class="vd-td-label">CA généré via recos (8 mois)</td>
+          <td class="vd-td-val" style="color:var(--teal)">11 200€</td>
+          <td class="vd-td-poids">50% du score</td>
+        </tr>
+        <tr><td class="vd-td-bar" colspan="3">
+          <div class="vd-mini-bar"><div class="vd-mini-fill" style="width:55%;background:var(--teal)"></div></div>
+        </td></tr>
+        <tr>
+          <td class="vd-td-label">Recos données (67/an)</td>
+          <td class="vd-td-val" style="color:var(--teal)">+15% valeur</td>
+          <td class="vd-td-poids">20% du score</td>
+        </tr>
+        <tr><td class="vd-td-bar" colspan="3">
+          <div class="vd-mini-bar"><div class="vd-mini-fill" style="width:52%;background:var(--teal)"></div></div>
+        </td></tr>
+        <tr>
+          <td class="vd-td-label">Ancienneté réseau (8 mois)</td>
+          <td class="vd-td-val" style="color:var(--amber)">×0.8 multiplicateur</td>
+          <td class="vd-td-poids">20% du score</td>
+        </tr>
+        <tr><td class="vd-td-bar" colspan="3">
+          <div class="vd-mini-bar"><div class="vd-mini-fill" style="width:35%;background:var(--amber)"></div></div>
+        </td></tr>
+        <tr>
+          <td class="vd-td-label">Dynamique ville · Dax+Bayonne</td>
+          <td class="vd-td-val" style="color:#8B5CF6">Bonne</td>
+          <td class="vd-td-poids">10% du score</td>
+        </tr>
+        <tr><td class="vd-td-bar" colspan="3">
+          <div class="vd-mini-bar"><div class="vd-mini-fill" style="width:72%;background:#8B5CF6"></div></div>
+        </td></tr>
+      </table>
+
+      <!-- RECOS CONTRIBUTION -->
+      <div style="height:12px"></div>
+      <div class="vd-reco-block">
+        <div class="vrb-title">🔗 Contribution des recommandations à la valeur</div>
+        <div class="vrb-rows">
+          <div class="vrb-row"><span class="vrb-lbl">Recos données / an</span><span class="vrb-val pos">67 recos</span></div>
+          <div class="vrb-row"><span class="vrb-lbl">Recos reçues / an</span><span class="vrb-val">48 recos</span></div>
+          <div class="vrb-row"><span class="vrb-lbl">Score réciprocité</span><span class="vrb-val pos">1.40 · Top Éclaireur 🏆</span></div>
+          <div class="vrb-row"><span class="vrb-lbl">CA généré par les recos données</span><span class="vrb-val pos">5 360€</span></div>
+          <div class="vrb-row"><span class="vrb-lbl">Commission perçue sur recos</span><span class="vrb-val pos">429€</span></div>
+          <div class="vrb-row" style="border-top:1px solid rgba(0,200,150,.2);padding-top:6px;margin-top:2px">
+            <span class="vrb-lbl" style="font-weight:700;color:var(--ink)">Impact valeur place (+%)</span>
+            <span class="vrb-val pos">+10% bonus valeur</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULE -->
+      <div class="vd-formula">
+        <div class="vdf-title">Formule de calcul Popey</div>
+        Valeur = (CA généré × 0.5) + (Ancienneté × 0.2) + (Dynamique ville × 0.1)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (Score réciprocité × 0.2)<br>
+        Multiplicateur séniorité : ×0.8 · Bonus recos données : +10%<br>
+        <strong>= 1,800€</strong>
+      </div>
+
+      <!-- PROJECTIONS -->
+      <div style="padding:0 20px;margin-bottom:6px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Projections si vous conservez</div>
+      <div class="vd-projection">
+        <div class="vdp-item">
+          <div class="vdp-val">2,100€</div>
+          <div class="vdp-lbl">Dans 3 mois</div>
+          <div class="vdp-trend">↑ +16%</div>
+        </div>
+        <div class="vdp-item">
+          <div class="vdp-val">2,600€</div>
+          <div class="vdp-lbl">Dans 6 mois</div>
+          <div class="vdp-trend">↑ +44%</div>
+        </div>
+        <div class="vdp-item">
+          <div class="vdp-val">3,400€</div>
+          <div class="vdp-lbl">Dans 12 mois</div>
+          <div class="vdp-trend">↑ +88%</div>
+        </div>
+      </div>
+      <div style="height:4px"></div>
+    </div>
+      <div class="pc-footer">
+        <button class="pc-btn-contact" onclick="openModal('acheter')">Contacter le vendeur →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+    </div>
+
+    <!-- CARD 5 — DISPONIBLE Phase 2 -->
+    <div class="place-card" data-sphere="finance" data-status="dispo">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#7B5EA7)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(139,92,246,.1)">⚖️</div>
+        <div class="pc-info">
+          <div class="pc-metier">Consultant pilotage financier</div>
+          <div class="pc-ville">📍 Mont-de-Marsan (40)</div>
+          <span class="pc-sphere-tag" style="background:rgba(109,63,203,.08);color:#6D3FCB;border:1px solid rgba(109,63,203,.2)">⚖️ Finance · Conseil</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price" style="color:var(--teal-d)">Gratuit</div>
+          <div class="pc-price-sub">0€ le 1er mois · puis 149€/mois</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:var(--t3)">Valeur J0</div>
+          <div class="pc-valeur-lbl">potentiel élevé</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">—</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--t3)">0</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--purple)">~3 000€</div>
+          <div class="pc-stat-lbl">Potentiel / mois</div>
+        </div>
+      </div>
+      <div class="pc-score-wrap">
+        <span class="pc-score-label">Place non occupée</span>
+        <span style="font-size:12px;color:var(--teal-d);font-weight:700">Disponible ✓</span>
+      </div>
+      <div class="pc-footer">
+        <button class="pc-btn-contact" onclick="openModal('rejoindre')">Prendre cette place →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+    </div>
+
+    <!-- CARD 6 — VENTE Phase 3 -->
+    <div class="place-card" data-sphere="sante" data-status="sale">
+      <div class="pc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+      <div class="pc-header">
+        <div class="pc-icon" style="background:rgba(0,200,150,.1)">🏃</div>
+        <div class="pc-info">
+          <div class="pc-metier">Coach sportif</div>
+          <div class="pc-ville">📍 Dax (40) · Exclusive 36 mois</div>
+          <span class="pc-sphere-tag" style="background:rgba(0,160,112,.08);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Bien-être</span>
+        </div>
+      </div>
+      <div class="pc-price-block">
+        <div>
+          <div class="pc-price">12 500€</div>
+          <div class="pc-price-sub">Cote algorithme Popey · Premium</div>
+        </div>
+        <div class="pc-valeur-tag">
+          <div class="pc-valeur-num" style="color:var(--teal-d)">↑ +312%</div>
+          <div class="pc-valeur-lbl">depuis M1 (36 mois)</div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat">
+          <div class="pc-stat-val">71</div>
+          <div class="pc-stat-lbl">Partenaires</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--teal-d)">218</div>
+          <div class="pc-stat-lbl">Recos / an</div>
+        </div>
+        <div class="pc-stat">
+          <div class="pc-stat-val">9 400€</div>
+          <div class="pc-stat-lbl">CA / mois</div>
+        </div>
+      </div>
+      <div class="pc-chart-wrap">
+        <div class="pc-chart-label">Évolution valeur (36 mois)</div>
+        <div class="sparkline" id="spark3"></div>
+      </div>
+      
+      <div class="pc-metrics">
+        <div class="pc-metric">
+          <div class="pc-m-val good">51%</div>
+          <div class="pc-m-lbl">Taux conversion</div>
+          <div class="pc-m-trend">recos → deals</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val good">4.2/sem</div>
+          <div class="pc-m-lbl">Régularité</div>
+          <div class="pc-m-trend">par semaine</div>
+        </div>
+        <div class="pc-metric">
+          <div class="pc-m-val">82%</div>
+          <div class="pc-m-lbl">Fidélité réseau</div>
+          <div class="pc-m-trend">+6 mois</div>
+        </div>
+      </div>
+      <div class="pc-activity">
+        <div class="pca-left">
+          <div class="pca-dot alive"></div>
+          <div class="pca-text">Dernière reco : <strong>aujourd'hui</strong></div>
+        </div>
+        <div class="pca-right">31 témoignages · 412 connexions 2°</div>
+      </div>
+      <div class="pc-diversity">
+        <div class="pcd-label">
+          <span>Diversité des sources de recos</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">4/5 sphères actives</span>
+        </div>
+        <div class="pcd-spheres">
+          <div class="pcd-sphere" style="background:#00C896;opacity:0.95" title="Santé 95%"></div>
+          <div class="pcd-sphere" style="background:#F5A623;opacity:0.4" title="Habitat 40%"></div>
+          <div class="pcd-sphere" style="background:#3B82F6;opacity:0.25" title="Digital 25%"></div>
+          <div class="pcd-sphere" style="background:#F48FB1;opacity:0.2" title="Mariage 20%"></div>
+          <div class="pcd-sphere" style="background:#9B8FFF;opacity:0.35" title="Finance 35%"></div>
+        </div>
+        <div class="pcd-sphere-labels">
+          <div class="pcd-sphere-lbl">🌿</div>
+          <div class="pcd-sphere-lbl">🏠</div>
+          <div class="pcd-sphere-lbl">💻</div>
+          <div class="pcd-sphere-lbl">💒</div>
+          <div class="pcd-sphere-lbl">⚖️</div>
+        </div>
+      </div>
+      <div class="pc-algo">
+        <div class="pc-algo-title">⚙ Calcul algorithmique Popey</div>
+        <div class="pc-algo-bars">
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">CA généré</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:96%"></div></div>
+            <span class="algo-bar-val">96%</span>
+          </div>
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">Ancienneté</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:92%;background:var(--amber)"></div></div>
+            <span class="algo-bar-val">92%</span>
+          </div>
+          <div class="algo-bar-row">
+            <span class="algo-bar-label">Dynamique ville</span>
+            <div class="algo-bar-track"><div class="algo-bar-fill" style="width:78%;background:#A78BFA"></div></div>
+            <span class="algo-bar-val">78%</span>
+          </div>
+        </div>
+      </div>
+      <!-- RECO VALUE BADGE -->
+      <div class="pc-reco-value">
+        <div class="prv-left">
+          <span class="prv-icon">🔗</span>
+          <div class="prv-text">Recos données/an <strong>198</strong> · Reçues <strong>218</strong><br>CA apporté au réseau via ses recos</div>
+        </div>
+        <div class="prv-val">+89 100€</div>
+      </div>
+      
+      <button class="pc-valeur-btn" onclick="toggleDrawer('card6')">
+        <span class="pvb-left">📊 Décomposition de la valeur</span>
+        <span class="pvb-arrow" id="arrow-card6">▼</span>
+      </button>
+      <div class="valeur-drawer" id="drawer-card6">
+        <div class="vd-header">
+          <div class="vd-title">📊 Comment est calculée cette valeur</div>
+          <div class="vd-price" style="font-family:var(--fi);font-size:22px;color:var(--teal-d)">12 500€</div>
+        </div>
+        <table class="vd-table">
+          <tr style="background:var(--paper2)"><td class="vd-td-label" style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Critère</td><td class="vd-td-val" style="font-size:11px;text-transform:uppercase">Valeur</td><td class="vd-td-poids" style="font-size:11px;text-transform:uppercase">Poids</td></tr>
+          <tr><td class="vd-td-label">CA généré via recos (36 mois)</td><td class="vd-td-val" style="color:var(--teal)">339 840€</td><td class="vd-td-poids">50% du score</td></tr>
+          <tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:96%;background:var(--teal)"></div></div></td></tr>
+          <tr><td class="vd-td-label">Recos données (218/an)</td><td class="vd-td-val" style="color:var(--teal)">+31% bonus valeur</td><td class="vd-td-poids">20% du score</td></tr>
+          <tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:90%;background:var(--teal)"></div></div></td></tr>
+          <tr><td class="vd-td-label">Ancienneté réseau (36 mois)</td><td class="vd-td-val" style="color:var(--amber)">×3.6 multiplicateur</td><td class="vd-td-poids">20% du score</td></tr>
+          <tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:92%;background:var(--amber)"></div></div></td></tr>
+          <tr><td class="vd-td-label">Dynamique ville · Dax</td><td class="vd-td-val" style="color:#8B5CF6">Élevée</td><td class="vd-td-poids">10% du score</td></tr>
+          <tr><td class="vd-td-bar" colspan="3"><div class="vd-mini-bar"><div class="vd-mini-fill" style="width:78%;background:#8B5CF6"></div></div></td></tr>
+        </table>
+        <div style="height:12px"></div>
+        <div class="vd-reco-block">
+          <div class="vrb-title">🔗 Apport des recommandations à la valeur</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-lbl">Recos données / an</span><span class="vrb-val pos">218 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Recos reçues / an</span><span class="vrb-val">184 recos</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Score réciprocité</span><span class="vrb-val pos">1.18 — Équilibré ✓</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">CA généré par vos recos données</span><span class="vrb-val pos">32 700€</span></div>
+            <div class="vrb-row"><span class="vrb-lbl">Commissions perçues sur ces recos</span><span class="vrb-val pos">3 270€</span></div>
+            <div class="vrb-row" style="border-top:1px solid rgba(0,200,150,.2);padding-top:6px;margin-top:3px"><span class="vrb-lbl" style="font-weight:700;color:var(--ink)">Bonus valeur lié aux recos</span><span class="vrb-val pos">+32%</span></div>
+          </div>
+        </div>
+        <div class="vd-formula">
+          <div class="vdf-title">Formule Popey</div>
+          Valeur = (CA généré × 0.5) + (Recos données × 0.2)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (Ancienneté × 0.2) + (Dynamique ville × 0.1)<br>
+          Multiplicateur séniorité : ×3.6 — Bonus recos : +32%<br>
+          <strong>= 12 500€</strong>
+        </div>
+        <div style="padding:0 20px 8px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Si vous conservez cette place</div>
+        <div class="vd-projection">
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">13 800€</div><div class="vdp-lbl">Dans 3 mois</div><div class="vdp-trend">↑ +10%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">16 000€</div><div class="vdp-lbl">Dans 6 mois</div><div class="vdp-trend">↑ +28%</div></div>
+          <div class="vdp-item"><div class="vdp-val" style="font-family:var(--fi)">21 000€</div><div class="vdp-lbl">Dans 12 mois</div><div class="vdp-trend">↑ +68%</div></div>
+        </div>
+        
+        <div style="padding:0 20px 8px;margin-top:4px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Métriques avancées de qualité</div>
+        <div class="vd-metrics-grid">
+        <div class="vdm-item">
+          <div class="vdm-lbl">Taux conversion recos</div>
+          <div class="vdm-val good">29%</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:58%"></div></div>
+          <div class="vdm-note">Correct pour l'événementiel — saisonnier</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Régularité recos</div>
+          <div class="vdm-val good">1.3/sem</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:45%"></div></div>
+          <div class="vdm-note">Flux variable selon la saison mariages</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Partenaires fidèles +6 mois</div>
+          <div class="vdm-val good">14/22</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:64%"></div></div>
+          <div class="vdm-note">Réseau jeune (8 mois) — encore en construction</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Connexions 2e degré</div>
+          <div class="vdm-val good">98</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:48%"></div></div>
+          <div class="vdm-note">Réseau à densifier — potentiel de croissance élevé</div>
+        </div></div>
+        
+        <div style="padding:0 20px 8px;margin-top:4px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Métriques avancées de qualité</div>
+        <div class="vd-metrics-grid">
+        <div class="vdm-item">
+          <div class="vdm-lbl">Taux conversion recos</div>
+          <div class="vdm-val good">51%</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:96%"></div></div>
+          <div class="vdm-note">Exceptionnel — coach sportif = réseau pivot ultra-qualifié</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Régularité recos</div>
+          <div class="vdm-val good">4.2/sem</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:95%"></div></div>
+          <div class="vdm-note">Flux quotidien — la place la plus active du réseau</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Partenaires fidèles +6 mois</div>
+          <div class="vdm-val good">58/71</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:82%"></div></div>
+          <div class="vdm-note">Réseau très solide — 82% de fidélité sur 36 mois</div>
+        </div>
+        <div class="vdm-item">
+          <div class="vdm-lbl">Connexions 2e degré</div>
+          <div class="vdm-val good">412</div>
+          <div class="vdm-bar"><div class="vdm-fill" style="width:96%"></div></div>
+          <div class="vdm-note">Réseau exceptionnel — place pivot du réseau Dax</div>
+        </div></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="pc-footer">
+        <button class="pc-btn-explain" onclick="togglePanel('panel6',this)">⚙ Comprendre la valeur</button>
+        <button class="pc-btn-contact" onclick="openModal('acheter')" style="flex:1.2">Faire une offre →</button>
+        <button class="pc-btn-save">♡</button>
+      </div>
+
+      <!-- VALUE PANEL -->
+      <div class="value-panel" id="panel6">
+        <div class="vp-header">
+          <div class="vp-title">Détail valorisation — Coach sportif · Dax · 36 mois</div>
+          <div class="vp-close" onclick="togglePanel('panel6',null)">Fermer ✕</div>
+        </div>
+        <div class="vp-total-row">
+          <div class="vp-total-label">Cote Popey · Place Premium</div>
+          <div class="vp-total-val">12 500€</div>
+        </div>
+        <div class="vp-criteria">
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">💰 CA généré via le réseau <span class="vpc-weight">Poids 50%</span></span>
+              <span class="vpc-amount" style="color:var(--teal-d)">6 250€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:96%;background:var(--teal)"></div></div>
+            <div class="vpc-desc">9 400€/mois via Popey · Le coach sportif est un connecteur central du réseau bien-être. Chaque client peut être orienté vers nutrition, sommeil, relaxation et mobilité. Volume maximal.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">📅 Ancienneté & profondeur réseau <span class="vpc-weight">Poids 30%</span></span>
+              <span class="vpc-amount" style="color:var(--amber)">3 750€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:92%;background:var(--amber)"></div></div>
+            <div class="vpc-desc">36 mois · 71 partenaires actifs · Le réseau le plus ancien de Dax sur Popey. Habitudes de recommandation solidement établies. Valeur réelle = valeur du temps investi.</div>
+          </div>
+          <div class="vpc-row">
+            <div class="vpc-top">
+              <span class="vpc-label">🏙 Dynamique de la ville <span class="vpc-weight">Poids 20%</span></span>
+              <span class="vpc-amount" style="color:var(--purple)">2 500€</span>
+            </div>
+            <div class="vpc-track"><div class="vpc-fill" style="width:78%;background:#8B5CF6"></div></div>
+            <div class="vpc-desc">Dax : ville thermale · Forte culture remise en forme et prévention · Demande bien-être croissante · Bassin local actif = forte valeur des places premium.</div>
+          </div>
+        </div>
+
+        <div class="vp-reco-block">
+          <div class="vrb-title">🔗 Valeur des recommandations données — LE FACTEUR CLEF</div>
+          <div class="vrb-rows">
+            <div class="vrb-row"><span class="vrb-key">Recos données / an</span><span class="vrb-val">198</span></div>
+            <div class="vrb-row"><span class="vrb-key">Recos reçues / an</span><span class="vrb-val">218</span></div>
+            <div class="vrb-row"><span class="vrb-key">Ticket moyen des recos données</span><span class="vrb-val">75€ / consultation</span></div>
+            <div class="vrb-row"><span class="vrb-key">Deals générés pour les partenaires</span><span class="vrb-val">59 deals / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">CA total apporté au réseau</span><span class="vrb-val positive">+89 100€ / an</span></div>
+            <div class="vrb-row"><span class="vrb-key">Commission générée pour éclaireurs</span><span class="vrb-val positive">+8 910€ / an versés</span></div>
+            <div class="vrb-row"><span class="vrb-key">Score réciprocité</span><span class="vrb-val positive">★★★★★ · Top Éclaireur</span></div>
+            <div class="vrb-row"><span class="vrb-key">Bonus Top Éclaireur intégré dans la cote</span><span class="vrb-val positive">+1 250€ (score 5/5)</span></div>
+          </div>
+        </div>
+
+        <div class="vp-formula">
+          <strong>Formule Popey :</strong><br>
+          Valeur = (CA 9 400€ × 0.72 × 50%) + (Score ancienneté 36 mois × 30%) + (Score ville Dax × 20%) + bonus Top Éclaireur<br>
+          = 6 250€ + 3 750€ + 2 500€ + 1 250€ bonus recos<br>
+          = <strong>12 500€ net vendeur · Prix acheteur : 14 375€ · ROI acheteur estimé M+18 : ×2,4</strong>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MON PORTEFEUILLE ── -->
+<section class="portfolio-section" id="section-portfolio">
+  <div class="portfolio-inner">
+    <div class="portfolio-header fade-up">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,200,150,.7);margin-bottom:12px">Mon portefeuille Popey</div>
+        <h2 class="portfolio-title">Vos places sont<br>des <em>actifs qui croissent.</em></h2>
+        <p class="portfolio-sub">Suivez la valeur de vos places en temps réel. Chaque mois que vous restez dans le réseau, votre actif prend de la valeur.</p>
+      </div>
+      <div class="portfolio-total fade-up">
+        <div class="pt-lbl">Valeur totale du portefeuille</div>
+        <div class="pt-val">14 200€</div>
+        <div class="pt-trend">↑ +2 800€ ce trimestre</div>
+      </div>
+    </div>
+
+    <div class="portfolio-grid fade-up">
+
+      <!-- PF 1 -->
+      <div class="pf-card">
+        <div class="pf-top">
+          <div class="pf-icon" style="background:rgba(0,200,150,.12)">🦴</div>
+          <div class="pf-meta">
+            <div class="pf-metier">Coach bien-être · Dax</div>
+            <div class="pf-ville">🌿 Santé · Bien-être</div>
+          </div>
+          <div class="pf-since">Depuis M1</div>
+        </div>
+        <div class="pf-value-row">
+          <div>
+            <div class="pf-val-current">4 200€</div>
+            <div class="pf-val-initial">Valeur initiale : 0€</div>
+          </div>
+          <div class="pf-val-growth">+4 200€ ↑</div>
+        </div>
+        <div class="mini-spark">
+          <div class="ms-bar" style="height:20%"></div>
+          <div class="ms-bar" style="height:30%"></div>
+          <div class="ms-bar" style="height:35%"></div>
+          <div class="ms-bar" style="height:45%"></div>
+          <div class="ms-bar" style="height:50%"></div>
+          <div class="ms-bar" style="height:60%"></div>
+          <div class="ms-bar" style="height:65%"></div>
+          <div class="ms-bar" style="height:72%"></div>
+          <div class="ms-bar" style="height:80%"></div>
+          <div class="ms-bar" style="height:88%"></div>
+          <div class="ms-bar" style="height:95%"></div>
+          <div class="ms-bar peak" style="height:100%"></div>
+        </div>
+        <div class="pf-algo">
+          <div class="pf-algo-lbl">Valeur estimée M+6</div>
+          <div class="pf-algo-val">~5 800€ à ~7 200€</div>
+        </div>
+      </div>
+
+      <!-- PF 2 -->
+      <div class="pf-card">
+        <div class="pf-top">
+          <div class="pf-icon" style="background:rgba(59,130,246,.12)">💻</div>
+          <div class="pf-meta">
+            <div class="pf-metier">Développeur web · Bayonne</div>
+            <div class="pf-ville">💻 Digital · Business</div>
+          </div>
+          <div class="pf-since">Depuis M3</div>
+        </div>
+        <div class="pf-value-row">
+          <div>
+            <div class="pf-val-current">2 100€</div>
+            <div class="pf-val-initial">Valeur initiale : 0€</div>
+          </div>
+          <div class="pf-val-growth">+2 100€ ↑</div>
+        </div>
+        <div class="mini-spark">
+          <div class="ms-bar" style="height:15%"></div>
+          <div class="ms-bar" style="height:22%"></div>
+          <div class="ms-bar" style="height:30%"></div>
+          <div class="ms-bar" style="height:40%"></div>
+          <div class="ms-bar" style="height:48%"></div>
+          <div class="ms-bar" style="height:56%"></div>
+          <div class="ms-bar" style="height:62%"></div>
+          <div class="ms-bar" style="height:70%"></div>
+          <div class="ms-bar" style="height:78%"></div>
+          <div class="ms-bar peak" style="height:85%"></div>
+        </div>
+        <div class="pf-algo">
+          <div class="pf-algo-lbl">Valeur estimée M+6</div>
+          <div class="pf-algo-val">~3 200€ à ~4 000€</div>
+        </div>
+      </div>
+
+      <!-- PF 3 -->
+      <div class="pf-card">
+        <div class="pf-top">
+          <div class="pf-icon" style="background:rgba(245,166,35,.12)">🏠</div>
+          <div class="pf-meta">
+            <div class="pf-metier">Courtier crédit · Dax</div>
+            <div class="pf-ville">🏠 Habitat · Patrimoine</div>
+          </div>
+          <div class="pf-since">Depuis M2</div>
+        </div>
+        <div class="pf-value-row">
+          <div>
+            <div class="pf-val-current">7 900€</div>
+            <div class="pf-val-initial">Valeur initiale : 0€</div>
+          </div>
+          <div class="pf-val-growth">+7 900€ ↑</div>
+        </div>
+        <div class="mini-spark">
+          <div class="ms-bar" style="height:10%"></div>
+          <div class="ms-bar" style="height:18%"></div>
+          <div class="ms-bar" style="height:28%"></div>
+          <div class="ms-bar" style="height:38%"></div>
+          <div class="ms-bar" style="height:50%"></div>
+          <div class="ms-bar" style="height:58%"></div>
+          <div class="ms-bar" style="height:65%"></div>
+          <div class="ms-bar" style="height:74%"></div>
+          <div class="ms-bar" style="height:82%"></div>
+          <div class="ms-bar" style="height:89%"></div>
+          <div class="ms-bar peak" style="height:100%"></div>
+        </div>
+        <div class="pf-algo">
+          <div class="pf-algo-lbl">Valeur estimée M+6</div>
+          <div class="pf-algo-val">~10 000€ à ~13 500€</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="how-section" id="section-how">
+  <div class="how-inner">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-d);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="display:inline-block;width:20px;height:1.5px;background:var(--teal)"></span>Comment ça marche</div>
+      <h2 style="font-family:var(--fi);font-size:clamp(32px,4vw,52px);line-height:.95;letter-spacing:-1px;color:var(--ink);margin-bottom:16px">Le marketplace en <em>3 phases</em></h2>
+      <p style="font-size:16px;color:var(--t2);max-width:560px;margin:0 auto;line-height:1.7;font-weight:400">Simple aujourd'hui. Automatisé demain. Intelligent après-demain. À chaque phase, votre place prend plus de valeur.</p>
+    </div>
+    <div class="how-grid fade-up">
+      <div class="how-step" data-phase="ÉTAPE 01">
+        <div class="hs-num">01</div>
+        <div class="hs-icon">📍</div>
+        <h3 class="hs-title">Vous prenez une place</h3>
+        <p class="hs-text">Vous fixez votre prix. Jean-Philippe est l'intermédiaire entre vendeur et acheteur. Il vérifie la qualité du réseau, organise la transition, et s'assure que l'acheteur comprend ce qu'il reprend.</p>
+        <div class="hs-commission">Commission Popey : <strong>15%</strong> sur le montant de la transaction. Net vendeur = prix affiché − 15%.</div>
+        <span class="hs-pill hp-now">Pour toutes les places en vente</span>
+      </div>
+      <div class="how-step" data-phase="ÉTAPE 02">
+        <div class="hs-num">02</div>
+        <div class="hs-icon">📈</div>
+        <h3 class="hs-title">Votre place prend de la valeur</h3>
+        <p class="hs-text">Chaque mois dans le réseau, votre place vaut davantage. Le CA généré par vos recos, l'ancienneté de vos partenariats et le dynamisme de votre ville alimentent la Cote Popey de votre place.</p>
+        <div class="hs-commission">Visible dans votre portefeuille Popey. Projection sur 3, 6 et 12 mois.</div>
+        <span class="hs-pill hp-6m">Valeur calculée en temps réel</span>
+      </div>
+      <div class="how-step" data-phase="ÉTAPE 03">
+        <div class="hs-num">03</div>
+        <div class="hs-icon">💸</div>
+        <h3 class="hs-title">Vous vendez quand vous voulez</h3>
+        <p class="hs-text">Après 6 mois, vous pouvez mettre votre place en vente sur ce marketplace. Vous fixez votre prix, Jean-Philippe organise la transition, l'acheteur reprend votre réseau de partenaires constitué.</p>
+        <div class="hs-commission">Commission Popey : 15% sur la transaction. Vous recevez 85% du prix de vente.</div>
+        <span class="hs-pill hp-2y">Disponible après 6 mois dans le réseau</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">Popey Market</div>
+  <div class="footer-info">Popey Coffeeshop SAS · 9 Rue Sully · 40100 Dax · SIRET 995 014 388 00012</div>
+  <div class="footer-info">contact@popey.academy · +33 7 68 23 33 47</div>
+</footer>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Contacter le vendeur</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="feedback-toast" id="feedbackToast" role="status" aria-live="polite">
+  <div class="ft-head">
+    <div class="ft-title" id="feedbackToastTitle">Information</div>
+    <button class="ft-close" type="button" onclick="hideFeedbackToast()">✕</button>
+  </div>
+  <div class="ft-body" id="feedbackToastBody"></div>
+  <div class="ft-actions" id="feedbackToastActions"></div>
+</div>
+
+<script>
+const SPHERES = [
+  { key: "sante", label: "🌿 Santé", color: "#00A070", tag: "🌿 Santé · Bien-être", icon: "🦴" },
+  { key: "habitat", label: "🏠 Habitat", color: "#C07800", tag: "🏠 Habitat · Patrimoine", icon: "🏠" },
+  { key: "digital", label: "💻 Digital", color: "#1D6FA4", tag: "💻 Digital · Business", icon: "💻" },
+  { key: "mariage", label: "💒 Mariage", color: "#B5376A", tag: "💒 Mariage · Événementiel", icon: "📸" },
+  { key: "finance", label: "⚖️ Finance", color: "#6D3FCB", tag: "⚖️ Finance · Juridique", icon: "⚖️" },
+];
+
+const METIERS = {
+  sante: ["Coach bien-être", "Coach sportif", "Naturopathe", "Sophrologue", "Praticien en hypnose", "Réflexologue", "Praticien en relaxation", "Professeur de yoga", "Professeur de pilates", "Praticien shiatsu bien-être", "Masseur bien-être", "Spa manager", "Coach respiration", "Professeur de méditation", "Éducateur sportif", "Préparateur mental", "Coach sommeil", "Coach nutrition bien-être", "Praticien EFT", "Praticien sonothérapie", "Praticien aromathérapie", "Praticien ayurveda bien-être", "Coach mobilité", "Coach postural", "Coach anti-stress", "Coach burn-out prévention", "Praticien drainage bien-être", "Praticien massage assis", "Praticien relaxation aquatique", "Coach remise en forme"],
+  habitat: ["Maître d'oeuvre", "Promoteur immobilier", "Constructeur maison", "Plombier", "Électricien", "Menuisier", "Serrurier", "Peintre", "Carreleur", "Maçon", "Couvreur", "Charpentier", "Chauffagiste", "Climaticien", "Paysagiste", "Jardinier", "Pisciniste", "Cuisiniste", "Agenceur intérieur", "Décorateur d'intérieur", "Home stager", "Expert rénovation énergétique", "Installateur panneaux solaires", "Installateur borne de recharge", "Façadier", "Terrassier", "Étancheur", "Solier", "Plaquiste", "Domoticien"],
+  digital: ["Développeur web", "Développeur mobile", "Designer UI", "Designer UX", "Motion designer", "Monteur vidéo", "Photographe pro", "Community manager", "Traffic manager", "Consultant SEO", "Consultant SEA", "Copywriter", "Ghostwriter", "Closer", "Setter", "Media buyer", "Expert IA", "Automatisation no-code", "Intégrateur Webflow", "Expert CRM", "Growth marketer", "Data analyst", "Consultant cybersécurité", "Hébergeur web", "Infographiste", "Brand designer", "Formateur digital", "Coach LinkedIn", "Podcasteur", "Attaché de presse digital"],
+  mariage: ["Photographe mariage", "Vidéaste mariage", "Wedding planner", "Officiant cérémonie", "Traiteur mariage", "Pâtissier wedding cake", "Fleuriste mariage", "DJ mariage", "Groupe live", "Animateur soirée", "Loueur salle", "Décorateur événementiel", "Location mobilier", "Créateur robe", "Costumier mariage", "Coiffeur mariage", "Maquilleuse mariage", "Bijoutier alliances", "Papeterie mariage", "Location voiture", "Chauffeur privé", "Baby-sitter événement", "Magicien close-up", "Feux d'artifice", "Voyage de noces", "Coach danse mariage", "Photobooth", "Sonorisateur", "Éclairagiste", "Coordinateur jour J"],
+  finance: ["Consultant gestion d'entreprise", "Consultant pilotage financier", "DAF externalisé", "Contrôleur de gestion externalisé", "Consultant trésorerie", "Consultant pricing", "Consultant business plan", "Consultant organisation", "Consultant achats", "Consultant process", "Consultant subventions", "Consultant financement entreprise", "Consultant performance commerciale", "Consultant stratégie PME", "Consultant growth B2B", "Consultant transformation digitale", "Consultant data business", "Consultant CRM", "Consultant onboarding clients", "Consultant fidélisation", "Consultant excellence opérationnelle", "Consultant gestion de projet", "Consultant qualité", "Consultant recouvrement amiable", "Consultant gestion des risques", "Consultant conformité opérationnelle", "Consultant RGPD", "Consultant RSE", "Consultant formation management", "Consultant franchise"],
+};
+
+const CITY_OPTIONS = ["Dax (40)", "Bayonne (64)", "Mont-de-Marsan (40)", "Pau (64)", "Bordeaux (33)", "Hossegor (40)", "Saint-Paul-lès-Dax (40)", "Hagetmau (40)"];
+
+let activeStatus = "all";
+let allPlaces = [];
+let currentModalType = null;
+let currentModalPlaceId = null;
+const funnelParams = new URLSearchParams(window.location.search);
+const funnelSource = String(funnelParams.get("source") || "").trim();
+const funnelReferralCode = String(funnelParams.get("referralCode") || "").trim();
+const funnelReferralLabel = String(funnelParams.get("referralLabel") || "").trim();
+const prefillCity = String(funnelParams.get("city") || "").trim();
+const prefillMetier = String(funnelParams.get("metier") || "").trim();
+let currentPrefillCity = prefillCity;
+let currentPrefillMetier = prefillMetier;
+
+function hashCode(value) {
+  let h = 0;
+  for (let i = 0; i < value.length; i += 1) h = (h << 5) - h + value.charCodeAt(i);
+  return Math.abs(h);
+}
+
+function money(value) {
+  return `${Math.round(value).toLocaleString("fr-FR")}€`;
+}
+
+function parseMoneyFromText(text) {
+  const cleaned = String(text || "").replace(/[^\d-]/g, "");
+  const parsed = Number(cleaned || "0");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function animateNumberTo(el, targetValue, formatter = (value) => money(value), durationMs = 520) {
+  if (!el) return;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    el.textContent = formatter(targetValue);
+    return;
+  }
+
+  const startValue = parseMoneyFromText(el.textContent);
+  const startedAt = performance.now();
+  const diff = targetValue - startValue;
+  if (Math.abs(diff) < 8) {
+    el.textContent = formatter(targetValue);
+    return;
+  }
+
+  const tick = (now) => {
+    const elapsed = now - startedAt;
+    const progress = Math.min(elapsed / durationMs, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const nextValue = Math.round(startValue + diff * eased);
+    el.textContent = formatter(nextValue);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function getSphereByKey(key) {
+  return SPHERES.find((sphere) => sphere.key === key) || SPHERES[0];
+}
+
+function getProjectionFromSelection(city, metier) {
+  const key = `${city}|${metier}|projection`;
+  const h = hashCode(key);
+  const base = 1300 + (h % 1800);
+  const annualGrowthPct = 24 + (h % 22);
+  const y1 = Math.round(base);
+  const y2 = Math.round(y1 * (1 + annualGrowthPct / 100));
+  const y3 = Math.round(y2 * (1 + annualGrowthPct / 100));
+  return { y1, y2, y3, annualGrowthPct };
+}
+
+function populateInscriptionMetiers() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+  const selectedCity = citySelect.value;
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const metiers = Array.from(
+    new Set(
+      source
+        .filter((place) => (selectedCity ? place.city === selectedCity : true))
+        .map((place) => place.metier),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "fr"));
+
+  metierSelect.innerHTML = metiers.map((metier) => `<option value="${metier}">${metier}</option>`).join("");
+  if (currentPrefillMetier && metiers.includes(currentPrefillMetier)) {
+    metierSelect.value = currentPrefillMetier;
+  }
+}
+
+function updateInscriptionPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+
+  const city = citySelect.value;
+  if (metierSelect.options.length === 0) {
+    populateInscriptionMetiers();
+  }
+  const metier = metierSelect.value;
+  if (!city || !metier) return;
+
+  currentPrefillCity = city;
+  currentPrefillMetier = metier;
+
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const place = source.find((item) => item.city === city && item.metier === metier) || null;
+  const projection = getProjectionFromSelection(city, metier);
+  const sphere = getSphereByKey(place?.sphere || "digital");
+
+  const y1 = Math.max(projection.y1, place?.status === "sale" ? Math.round((place.value || projection.y1) * 0.6) : projection.y1);
+  const y2 = Math.max(projection.y2, Math.round(y1 * 1.22));
+  const y3 = Math.max(projection.y3, Math.round(y2 * 1.24));
+
+  const metierEl = document.getElementById("previewMetier");
+  const villeEl = document.getElementById("previewVille");
+  const badgeEl = document.getElementById("previewStatut");
+  const y1El = document.getElementById("previewYear1");
+  const y2El = document.getElementById("previewYear2");
+  const y3El = document.getElementById("previewYear3");
+  const noteEl = document.getElementById("previewNote");
+  const totalEl = document.getElementById("previewTotal");
+  const gainEl = document.getElementById("previewGain");
+  const previewCardEl = document.querySelector(".inscription-preview-card");
+
+  const total3Y = y1 + y2 + y3;
+  const gain3Y = Math.max(y3 - y1, 0);
+
+  if (metierEl) metierEl.textContent = `${sphere.icon} ${metier}`;
+  if (villeEl) villeEl.textContent = `${city} · ${sphere.tag}`;
+  if (badgeEl) badgeEl.textContent = `Projection +${projection.annualGrowthPct}%/an`;
+  animateNumberTo(y1El, y1, (value) => money(value));
+  animateNumberTo(y2El, y2, (value) => money(value));
+  animateNumberTo(y3El, y3, (value) => money(value));
+  animateNumberTo(totalEl, total3Y, (value) => money(value));
+  animateNumberTo(gainEl, gain3Y, (value) => `+${money(value)}`);
+  if (noteEl) {
+    noteEl.textContent = `${metier} a ${city}: annee 1 ${money(y1)}, annee 2 ${money(y2)}, annee 3 ${money(y3)}. Projection basee sur la traction reseau locale et la recurrence des recommandations.`;
+  }
+  if (previewCardEl) {
+    previewCardEl.classList.remove("is-preview-updating");
+    requestAnimationFrame(() => previewCardEl.classList.add("is-preview-updating"));
+    setTimeout(() => previewCardEl.classList.remove("is-preview-updating"), 420);
+  }
+}
+
+function initInscriptionPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  if (!citySelect || !metierSelect) return;
+
+  const source = allPlaces.length > 0 ? allPlaces : buildPlacesData();
+  const cities = Array.from(new Set(source.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
+  citySelect.innerHTML = cities.map((city) => `<option value="${city}">${city}</option>`).join("");
+  if (currentPrefillCity && cities.includes(currentPrefillCity)) {
+    citySelect.value = currentPrefillCity;
+  }
+  populateInscriptionMetiers();
+  updateInscriptionPreview();
+}
+
+function openSignupFromPreview() {
+  const citySelect = document.getElementById("inscriptionCity");
+  const metierSelect = document.getElementById("inscriptionMetier");
+  const city = String(citySelect?.value || "").trim();
+  const metier = String(metierSelect?.value || "").trim();
+  if (city) currentPrefillCity = city;
+  if (metier) currentPrefillMetier = metier;
+
+  const place = allPlaces.find((item) => item.city === city && item.metier === metier) || null;
+  openModal("rejoindre", place?.id || null);
+}
+
+function getActiveSpheres() {
+  return Array.from(document.querySelectorAll(".sphere-chip.active")).map((chip) => {
+    if (chip.classList.contains("sc-green")) return "sante";
+    if (chip.classList.contains("sc-amber")) return "habitat";
+    if (chip.classList.contains("sc-blue")) return "digital";
+    if (chip.classList.contains("sc-pink")) return "mariage";
+    return "finance";
+  });
+}
+
+function buildPlacesData() {
+  const places = [];
+  CITY_OPTIONS.forEach((city) => {
+    SPHERES.forEach((sphere) => {
+      METIERS[sphere.key].forEach((metier) => {
+        const key = `${city}|${sphere.key}|${metier}`;
+        const h = hashCode(key);
+        const status = h % 100 < 42 ? "sale" : "dispo";
+        const months = 6 + (h % 31);
+        const reco = 20 + (h % 220);
+        const partners = 12 + (h % 75);
+        const conversion = 18 + (h % 36);
+        const ca = status === "sale" ? 900 + (h % 8600) : 0;
+        const value = status === "sale" ? 1300 + Math.round(ca * 0.72 + months * 38 + reco * 6) : 0;
+        places.push({
+          id: key,
+          city,
+          sphere: sphere.key,
+          sphereTag: sphere.tag,
+          sphereColor: sphere.color,
+          icon: sphere.icon,
+          metier,
+          status,
+          months,
+          partners,
+          reco,
+          conversion,
+          ca,
+          value,
+          growth: 12 + (h % 220),
+          score: 2 + (h % 4),
+        });
+      });
+    });
+  });
+  return places;
+}
+
+function renderCards(items) {
+  const grid = document.getElementById("placesGrid");
+  if (!grid) return;
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;color:var(--t2)">Aucun résultat avec ces filtres. Active au moins une sphère ou change la ville.</div>`;
+    return;
+  }
+  grid.innerHTML = items
+    .map((p) => {
+      const tagBg = `background:color-mix(in srgb, ${p.sphereColor} 10%, white 90%);color:${p.sphereColor};border:1px solid color-mix(in srgb, ${p.sphereColor} 25%, transparent)`;
+      const stripe = `background:linear-gradient(90deg,${p.sphereColor}, color-mix(in srgb, ${p.sphereColor} 70%, black 30%))`;
+      const stars = Array.from({ length: 5 }).map((_, i) => `<span class="star ${i < p.score ? "" : "empty"}">★</span>`).join("");
+      const price = p.status === "sale" ? money(p.value) : "Gratuit";
+      const priceSub = p.status === "sale" ? "Prix vendeur · Cote Popey" : "0€ le 1er mois · puis 149€/mois";
+      const action = p.status === "sale" ? "Faire une offre →" : "Prendre cette place →";
+      const actionType = p.status === "sale" ? "acheter" : "rejoindre";
+      const caText = p.status === "sale" ? money(p.ca) : "—";
+      return `
+        <div class="place-card ${p.status === "sale" ? "featured" : ""}" data-sphere="${p.sphere}" data-status="${p.status}">
+          <div class="pc-stripe" style="${stripe}"></div>
+          <div class="pc-header">
+            <div class="pc-icon" style="background:color-mix(in srgb, ${p.sphereColor} 12%, white 88%)">${p.icon}</div>
+            <div class="pc-info">
+              <div class="pc-metier">${p.metier}</div>
+              <div class="pc-ville">📍 ${p.city} · 1 place unique</div>
+              <span class="pc-sphere-tag" style="${tagBg}">${p.sphereTag}</span>
+            </div>
+          </div>
+          <div class="pc-price-block">
+            <div>
+              <div class="pc-price">${price}</div>
+              <div class="pc-price-sub">${priceSub}</div>
+            </div>
+            <div class="pc-valeur-tag">
+              <div class="pc-valeur-num" style="color:${p.status === "sale" ? p.sphereColor : "var(--t3)"}">${p.status === "sale" ? `↑ +${p.growth}%` : "Valeur J0"}</div>
+              <div class="pc-valeur-lbl">${p.status === "sale" ? `depuis M${p.months}` : "à construire"}</div>
+            </div>
+          </div>
+          <div class="pc-stats">
+            <div class="pc-stat"><div class="pc-stat-val">${p.partners}</div><div class="pc-stat-lbl">Partenaires</div></div>
+            <div class="pc-stat"><div class="pc-stat-val" style="color:${p.sphereColor}">${p.reco}</div><div class="pc-stat-lbl">Recos / an</div></div>
+            <div class="pc-stat"><div class="pc-stat-val">${caText}</div><div class="pc-stat-lbl">CA / mois</div></div>
+          </div>
+          <div class="pc-score-wrap">
+            <span class="pc-score-label">${p.status === "sale" ? `Score réciprocité · ${p.conversion}% conv.` : "Place non occupée"}</span>
+            <div class="pc-score-stars">${p.status === "sale" ? stars : `<span style="font-size:12px;color:var(--teal-d);font-weight:700">Disponible ✓</span>`}</div>
+          </div>
+          <div class="pc-footer">
+            <button class="pc-btn-contact" onclick="openModal('${actionType}','${p.id}')">${action}</button>
+            <button class="pc-btn-save">♡</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function refreshHeaderStats(filtered, selectedCity) {
+  const sale = filtered.filter((p) => p.status === "sale");
+  const dispo = filtered.filter((p) => p.status === "dispo");
+  const avgValue = sale.length > 0 ? Math.round(sale.reduce((sum, p) => sum + p.value, 0) / sale.length) : 0;
+  const cityLabel = selectedCity === "Toutes les villes" ? "toutes villes" : selectedCity;
+  const gridTitle = document.getElementById("gridTitle");
+  const gridSub = document.getElementById("gridSub");
+  const navBadge = document.getElementById("navBadge");
+  const statPlaces = document.getElementById("statPlaces");
+  const statValMoy = document.getElementById("statValMoy");
+  if (gridTitle) gridTitle.textContent = `${filtered.length} places à ${cityLabel}`;
+  if (gridSub) gridSub.innerHTML = `${sale.length} en vente · ${dispo.length} disponibles · 150 métiers par ville (30 × 5 sphères) · <span style="color:var(--teal-d);font-weight:600">1 place unique par métier/ville</span>`;
+  if (navBadge) navBadge.textContent = `${sale.length} places actives`;
+  if (statPlaces) statPlaces.textContent = String(sale.length);
+  if (statValMoy) statValMoy.textContent = avgValue ? money(avgValue) : "0€";
+}
+
+function filterCards() {
+  const city = document.getElementById("citySelect")?.value || "Toutes les villes";
+  const sortValue = document.getElementById("sortSelect")?.value || "Trier : Valeur ↑";
+  const activeSpheres = getActiveSpheres();
+  let filtered = allPlaces.filter((p) => (city === "Toutes les villes" ? true : p.city === city));
+  filtered = filtered.filter((p) => activeSpheres.includes(p.sphere));
+  filtered = filtered.filter((p) => (activeStatus === "all" ? true : p.status === activeStatus));
+
+  if (sortValue.includes("Valeur ↑")) filtered.sort((a, b) => b.value - a.value);
+  else if (sortValue.includes("Valeur ↓")) filtered.sort((a, b) => a.value - b.value);
+  else if (sortValue.includes("Recos")) filtered.sort((a, b) => b.reco - a.reco);
+  else if (sortValue.includes("Ancienneté")) filtered.sort((a, b) => b.months - a.months);
+  else if (sortValue.includes("CA")) filtered.sort((a, b) => b.ca - a.ca);
+
+  renderCards(filtered);
+  refreshHeaderStats(filtered, city);
+}
+
+function navScroll(id, el) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelectorAll(".nav-tab").forEach((t) => t.classList.remove("active"));
+  el.classList.add("active");
+}
+
+function toggleChip(el) {
+  el.classList.toggle("active");
+  filterCards();
+}
+
+function filterStatus(el, status) {
+  activeStatus = status;
+  document.querySelectorAll(".status-chip").forEach((c) => c.classList.remove("active"));
+  el.classList.add("active");
+  filterCards();
+}
+
+// ── MODAL ──
+function getSelectedPlace() {
+  if (!currentModalPlaceId) return null;
+  return allPlaces.find((place) => place.id === currentModalPlaceId) || null;
+}
+
+function getModalConfig(type) {
+  const selected = getSelectedPlace();
+  const placeHint = selected
+    ? `<div class="modal-price-hint" style="margin-bottom:10px">Place cible: <strong>${selected.metier}</strong> · ${selected.city}</div>`
+    : "";
+
+  if (type === "vendre") {
+    return {
+      title: "Mettre ma place en vente",
+      body: `
+        <form id="marketplaceActionForm">
+          <div class="modal-commission-note">
+            Votre place doit avoir au moins <strong>6 mois</strong> d'anciennete pour etre mise en vente.
+            Popey prend <strong>15%</strong> · vous recevez 85% du prix final.
+          </div>
+          ${placeHint}
+          <div class="modal-field"><label>Votre prenom et nom</label><input name="fullName" required type="text" placeholder="Sophie Dupont"></div>
+          <div class="modal-field"><label>Votre metier</label><input name="metier" required type="text" placeholder="Coach bien-etre"></div>
+          <div class="modal-field"><label>Votre ville</label><input name="city" required type="text" placeholder="Dax (40)"></div>
+          <div class="modal-field"><label>Votre WhatsApp</label><input name="whatsapp" type="tel" placeholder="+33 6 XX XX XX XX"></div>
+          <div class="modal-field"><label>Votre prix de vente (€)</label><input name="offerAmountEur" type="number" min="1" placeholder="Ex : 4200"></div>
+          <div class="modal-field"><label>Raison de la vente (optionnel)</label><textarea name="message" placeholder="Retraite, demenagement, changement d'activite..."></textarea></div>
+          <button class="modal-btn" type="submit">Soumettre a Jean-Philippe →</button>
+        </form>
+      `,
+    };
+  }
+  if (type === "rejoindre") {
+    return {
+      title: "Prendre cette place · Rejoindre le reseau",
+      body: `
+        <form id="marketplaceActionForm">
+          <div class="modal-commission-note">
+            Cette place est a <strong>0€ le 1er mois</strong> pour demarrer.
+            A partir du 2e mois: <strong>149€/mois</strong>.
+          </div>
+          ${placeHint}
+          <div class="modal-field"><label>Votre prenom et nom</label><input name="fullName" required type="text" placeholder="Sophie Dupont"></div>
+          <div class="modal-field"><label>Votre metier exact</label><input name="metier" required type="text" placeholder="Developpeur web freelance"></div>
+          <div class="modal-field"><label>Votre ville</label><input name="city" required type="text" placeholder="Dax (40)"></div>
+          <div class="modal-field"><label>Votre numero WhatsApp</label><input name="whatsapp" required type="tel" placeholder="+33 6 XX XX XX XX"></div>
+          <div class="modal-field"><label>Votre site web (optionnel)</label><input name="website" type="url" placeholder="https://votre-site.fr"></div>
+          <div class="modal-field"><label>Pourquoi rejoindre Popey ?</label><textarea name="message" placeholder="En 2-3 phrases, ce que vous cherchez..."></textarea></div>
+          <button class="modal-btn" type="submit">Reserver ma place →</button>
+        </form>
+      `,
+    };
+  }
+  return {
+    title: "Faire une offre · Contacter le vendeur",
+    body: `
+      <form id="marketplaceActionForm">
+        <div class="modal-commission-note">
+          Jean-Philippe est l'intermediaire. Il verifie la qualite du reseau et organise la transition.
+          La commission Popey de <strong>15%</strong> est prelevee sur le montant final.
+        </div>
+        ${placeHint}
+        <div class="modal-field"><label>Votre prenom et nom</label><input name="fullName" required type="text" placeholder="Sophie Dupont"></div>
+        <div class="modal-field"><label>Votre metier</label><input name="metier" required type="text" placeholder="Coach bien-etre"></div>
+        <div class="modal-field"><label>Votre ville</label><input name="city" required type="text" placeholder="Dax (40)"></div>
+        <div class="modal-field"><label>Votre WhatsApp</label><input name="whatsapp" required type="tel" placeholder="+33 6 XX XX XX XX"></div>
+        <div class="modal-field"><label>Votre offre (€)</label><input name="offerAmountEur" type="number" min="1" placeholder="Ex : 3800"></div>
+        <div class="modal-field"><label>Message</label><textarea name="message" placeholder="Presentez-vous et expliquez pourquoi vous souhaitez cette place..."></textarea></div>
+        <button class="modal-btn" type="submit">Envoyer ma demande a Jean-Philippe →</button>
+      </form>
+    `,
+  };
+}
+
+async function submitMarketplaceAction(type, form) {
+  const payload = {
+    actionType: type,
+    placeId: currentModalPlaceId || undefined,
+    fullName: String(form.get("fullName") || "").trim(),
+    metier: String(form.get("metier") || "").trim(),
+    city: String(form.get("city") || "").trim(),
+    whatsapp: String(form.get("whatsapp") || "").trim(),
+    website: String(form.get("website") || "").trim(),
+    message: String(form.get("message") || "").trim(),
+    offerAmountEur: String(form.get("offerAmountEur") || "").trim() || null,
+    source: funnelSource || "marketplace_landing",
+    referralCode: funnelReferralCode || null,
+    referralLabel: funnelReferralLabel || null,
+    selectedPlan: type === "rejoindre" ? "zero_euro_premier_mois" : null,
+  };
+
+  const response = await fetch("/api/popey-human/marketplace/actions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Envoi impossible.");
+  return result;
+}
+
+let feedbackToastTimer = null;
+
+function hideFeedbackToast() {
+  const toast = document.getElementById("feedbackToast");
+  if (!toast) return;
+  toast.classList.remove("show");
+  if (feedbackToastTimer) {
+    clearTimeout(feedbackToastTimer);
+    feedbackToastTimer = null;
+  }
+}
+
+function showFeedbackToast({ type = "success", title, body, actionLabel = "", actionHref = "" }) {
+  const toast = document.getElementById("feedbackToast");
+  const titleEl = document.getElementById("feedbackToastTitle");
+  const bodyEl = document.getElementById("feedbackToastBody");
+  const actionsEl = document.getElementById("feedbackToastActions");
+  if (!toast || !titleEl || !bodyEl || !actionsEl) return;
+
+  toast.classList.remove("success", "error");
+  toast.classList.add(type === "error" ? "error" : "success");
+  titleEl.textContent = title || (type === "error" ? "Envoi impossible" : "Demande envoyee");
+  bodyEl.innerHTML = body || "";
+  actionsEl.innerHTML = "";
+
+  if (actionLabel && actionHref) {
+    const link = document.createElement("a");
+    link.className = "ft-btn primary";
+    link.href = actionHref;
+    link.textContent = actionLabel;
+    actionsEl.appendChild(link);
+  }
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "ft-btn";
+  closeBtn.textContent = "Fermer";
+  closeBtn.onclick = hideFeedbackToast;
+  actionsEl.appendChild(closeBtn);
+
+  toast.classList.add("show");
+  if (feedbackToastTimer) clearTimeout(feedbackToastTimer);
+  feedbackToastTimer = setTimeout(() => hideFeedbackToast(), type === "error" ? 7000 : 6000);
+}
+
+function wireModalForm(type) {
+  const formElement = document.getElementById("marketplaceActionForm");
+  if (!formElement) return;
+  const cityInput = formElement.querySelector('input[name="city"]');
+  const metierInput = formElement.querySelector('input[name="metier"]');
+  if (cityInput && currentPrefillCity && !cityInput.value.trim()) cityInput.value = currentPrefillCity;
+  if (metierInput && currentPrefillMetier && !metierInput.value.trim()) metierInput.value = currentPrefillMetier;
+
+  formElement.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = formElement.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+    try {
+      const result = await submitMarketplaceAction(type, new FormData(formElement));
+      const offerId = result?.offerId ? String(result.offerId) : "";
+      showFeedbackToast({
+        type: "success",
+        title: "Demande envoyee",
+        body: `${result.message || "Demande envoyee a l equipe Popey."}${offerId ? `<br><strong>Reference:</strong> ${offerId}` : ""}`,
+      });
+      closeModalDirect();
+      loadPlacesFromApi();
+    } catch (error) {
+      showFeedbackToast({
+        type: "error",
+        title: "Envoi impossible",
+        body: String(error?.message || "Une erreur est survenue. Merci de reessayer."),
+      });
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+}
+
+function openModal(type, placeId = null) {
+  currentModalType = type;
+  currentModalPlaceId = placeId;
+  const m = getModalConfig(type);
+  document.getElementById("modalTitle").textContent = m.title;
+  document.getElementById("modalBody").innerHTML = m.body;
+  document.getElementById("modalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  wireModalForm(type);
+}
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentModalType = null;
+  currentModalPlaceId = null;
+}
+
+// ── SCROLL ANIMATIONS ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── TOGGLE VALUE PANEL ──
+function togglePanel(id, btn) {
+  const panel = document.getElementById(id);
+  const isOpen = panel.classList.contains('open');
+  // Close all panels first
+  document.querySelectorAll('.value-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.pc-btn-explain').forEach(b => {
+    b.style.background = '';
+    b.style.color = '';
+    b.textContent = '⚙ Comprendre la valeur';
+  });
+  if (!isOpen && btn) {
+    panel.classList.add('open');
+    btn.style.background = 'rgba(0,200,150,.15)';
+    btn.style.color = 'var(--teal-d)';
+    btn.textContent = '⚙ Masquer le détail';
+    // Scroll panel into view
+    setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+  }
+}
+
+
+function toggleDrawer(id) {
+  const drawer = document.getElementById('drawer-' + id);
+  const arrow  = document.getElementById('arrow-' + id);
+  const isOpen = drawer.classList.contains('open');
+  // Close all first
+  document.querySelectorAll('.valeur-drawer').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.pvb-arrow').forEach(a => a.classList.remove('open'));
+  // Toggle this one
+  if (!isOpen) {
+    drawer.classList.add('open');
+    arrow.classList.add('open');
+    drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+async function loadPlacesFromApi() {
+  try {
+    const response = await fetch("/api/popey-human/marketplace/places", { cache: "no-store" });
+    if (!response.ok) throw new Error("api not ready");
+    const result = await response.json();
+    if (!Array.isArray(result.places)) throw new Error("bad payload");
+    allPlaces = result.places;
+
+    const citySelect = document.getElementById("citySelect");
+    if (citySelect && Array.isArray(result.cities) && result.cities.length > 0) {
+      const current = citySelect.value;
+      citySelect.innerHTML = [
+        '<option>Toutes les villes</option>',
+        ...result.cities.map((city) => `<option>${city}</option>`),
+      ].join("");
+      if (result.cities.includes(current)) citySelect.value = current;
+    }
+    filterCards();
+    initInscriptionPreview();
+    return;
+  } catch (error) {
+    console.warn("[marketplace] fallback local data", error);
+  }
+
+  allPlaces = buildPlacesData();
+  filterCards();
+  initInscriptionPreview();
+}
+
+function initMarketplace() {
+  loadPlacesFromApi();
+}
+
+initMarketplace();
+</script>
+</body>
+</html>
