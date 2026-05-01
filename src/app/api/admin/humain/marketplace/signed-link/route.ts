@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { signMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
+import { isMarketplaceLandingTokenConfigured, signMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +54,13 @@ export async function POST(request: Request) {
   const admin = await requireAdminUser();
   if ("error" in admin) return NextResponse.json({ success: false, error: admin.error }, { status: 401 });
 
+  if (!isMarketplaceLandingTokenConfigured()) {
+    return NextResponse.json(
+      { success: false, error: "Configuration manquante: MARKETPLACE_LANDING_TOKEN_SECRET." },
+      { status: 500 },
+    );
+  }
+
   const body = (await request.json().catch(() => null)) as SignedLinkPayload | null;
   const clientName = trim(body?.clientName);
   const referrerName = trim(body?.referrerName);
@@ -100,6 +107,13 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[admin/marketplace/signed-link] unexpected", error);
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("Missing MARKETPLACE_LANDING_TOKEN_SECRET")) {
+      return NextResponse.json(
+        { success: false, error: "Configuration manquante: MARKETPLACE_LANDING_TOKEN_SECRET." },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({ success: false, error: "Impossible de générer le lien signé." }, { status: 500 });
   }
 }
