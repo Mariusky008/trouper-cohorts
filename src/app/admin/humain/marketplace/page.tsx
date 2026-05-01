@@ -231,7 +231,7 @@ export default async function AdminHumainMarketplacePage({
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <div className="space-y-2">
-                      <form action={adminUpdateMarketplaceOfferStatusAction} className="flex flex-wrap items-center gap-2">
+                      <form action={adminUpdateMarketplaceOfferStatusAction} method="post" className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                         <input type="hidden" name="offer_id" value={offer.id} />
                         <select
@@ -253,12 +253,14 @@ export default async function AdminHumainMarketplacePage({
                           <option value="rejected">rejected</option>
                           <option value="cancelled">cancelled</option>
                         </select>
-                        <button className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">MAJ demande</button>
+                        <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
+                          MAJ demande
+                        </button>
                       </form>
-                      <form action={adminDeleteMarketplaceOfferAction} className="flex justify-end">
+                      <form action={adminDeleteMarketplaceOfferAction} method="post" className="flex justify-end">
                         <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                         <input type="hidden" name="offer_id" value={offer.id} />
-                        <button className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
+                        <button type="submit" className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
                           Supprimer
                         </button>
                       </form>
@@ -343,7 +345,7 @@ export default async function AdminHumainMarketplacePage({
                         <p className="text-xs text-amber-700">Assigne un owner membre pour générer son lien personnel stable.</p>
                       )}
                     </div>
-                    <form action={adminSetMarketplacePlaceStatusAction} className="flex flex-wrap items-center gap-2">
+                    <form action={adminSetMarketplacePlaceStatusAction} method="post" className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="place_id" value={place.id} />
                       <select
@@ -402,7 +404,9 @@ export default async function AdminHumainMarketplacePage({
                         placeholder="Reference externe"
                         className="h-9 w-40 rounded border bg-background px-2 text-xs"
                       />
-                      <button className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">MAJ place</button>
+                      <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
+                        MAJ place
+                      </button>
                     </form>
                   </div>
                 </article>
