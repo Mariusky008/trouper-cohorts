@@ -1,8 +1,6 @@
 import Link from "next/link";
 import {
-  adminDeleteMarketplaceOfferAction,
   adminSetMarketplacePlaceStatusAction,
-  adminUpdateMarketplaceOfferStatusAction,
   getAdminMarketplaceSnapshot,
 } from "@/lib/actions/human-marketplace";
 
@@ -231,7 +229,7 @@ export default async function AdminHumainMarketplacePage({
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <div className="space-y-2">
-                      <form action={adminUpdateMarketplaceOfferStatusAction} method="post" className="flex flex-wrap items-center gap-2">
+                      <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                         <input type="hidden" name="offer_id" value={offer.id} />
                         <select
@@ -257,7 +255,7 @@ export default async function AdminHumainMarketplacePage({
                           MAJ demande
                         </button>
                       </form>
-                      <form action={adminDeleteMarketplaceOfferAction} method="post" className="flex justify-end">
+                      <form action="/api/admin/humain/marketplace/offers/delete" method="post" className="flex justify-end">
                         <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                         <input type="hidden" name="offer_id" value={offer.id} />
                         <button type="submit" className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
