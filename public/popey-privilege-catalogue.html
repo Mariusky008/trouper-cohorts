@@ -1020,6 +1020,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 <script>
 const __params = new URLSearchParams(window.location.search);
 const __refName = (__params.get('ref_name') || __params.get('referrer') || __params.get('pro') || 'Jean Moreau').trim();
+const __refMetier = (__params.get('ref_metier') || __params.get('metier') || '').trim();
 const __refId = (__params.get('ref_id') || '').trim();
 const __refCode = (__params.get('ref') || '').trim();
 const __clientName = (__params.get('client_name') || __params.get('client') || 'Client').trim();
@@ -1190,14 +1191,22 @@ async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const __firstName = (__refName.split(' ')[0] || 'Votre pro').trim();
+  const __safeMetier = __refMetier || 'Professionnel Popey';
   const badgeName = document.querySelector('.mb-name');
   if (badgeName) badgeName.textContent = __refName;
+  const badgeMeta = document.querySelector('.mb-meta');
+  if (badgeMeta) badgeMeta.textContent = `${__safeMetier} · ${__cityLabel} · Membre Popey`;
+  const badgeAvatar = document.querySelector('.mb-avatar');
+  if (badgeAvatar) badgeAvatar.textContent = initials(__refName);
+  const heroTitle = document.querySelector('.hero-title');
+  if (heroTitle) heroTitle.innerHTML = `Vos avantages<br><em>exclusifs</em> grâce<br>à ${escapeHtml(__firstName)}.`;
   const heroSub = document.querySelector('.hero-sub');
   if (heroSub) {
-    heroSub.textContent = `${__refName.split(' ')[0] || 'Votre pro'} fait partie du réseau Popey — un club de professionnels de confiance sur ${__cityLabel}. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.`;
+    heroSub.textContent = `${__firstName} (${__safeMetier}) fait partie du réseau Popey — un club de professionnels de confiance sur ${__cityLabel}. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.`;
   }
   const catSub = document.querySelector('.cat-sub');
-  if (catSub) catSub.textContent = `Privilèges activables sur ${__cityLabel}`;
+  if (catSub) catSub.textContent = `Offres réservées aux contacts de ${__firstName} · Activation sur ${__cityLabel}`;
   await loadPlaces();
 });
 

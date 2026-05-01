@@ -25,15 +25,26 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string) {
+function splitMemberLabel(label: string) {
+  const raw = String(label || "").trim();
+  const parts = raw.split("·").map((part) => part.trim()).filter(Boolean);
+  return {
+    displayName: parts[0] || raw || "Membre Popey",
+    metier: parts[1] || "",
+  };
+}
+
+function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string, refMetier?: string) {
   const citySlug = slugify(city || "dax") || "dax";
-  const relativeUrl = `/privilege/${citySlug}?ref_id=${encodeURIComponent(refId)}&ref_name=${encodeURIComponent(refLabel)}`;
+  const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
+  const relativeUrl = `/privilege/${citySlug}?ref_id=${encodeURIComponent(refId)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
-function buildReferralCodeLink(baseUrl: string, city: string, referralCode: string, refLabel: string) {
+function buildReferralCodeLink(baseUrl: string, city: string, referralCode: string, refLabel: string, refMetier?: string) {
   const citySlug = slugify(city || "dax") || "dax";
-  const relativeUrl = `/privilege/${citySlug}?ref=${encodeURIComponent(referralCode)}&ref_name=${encodeURIComponent(refLabel)}`;
+  const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
+  const relativeUrl = `/privilege/${citySlug}?ref=${encodeURIComponent(referralCode)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
@@ -218,12 +229,15 @@ export default async function AdminHumainMarketplacePage({
                       {(() => {
                         const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
                         const referralCode = String(offer.metadata?.referral_code || "").trim();
-                        const refLabel = refId ? membersById.get(refId) || "Membre Popey" : offer.full_name || "Membre Popey";
+                        const rawLabel = refId ? membersById.get(refId) || "Membre Popey" : offer.full_name || "Membre Popey";
+                        const parsed = splitMemberLabel(rawLabel);
+                        const refLabel = parsed.displayName;
+                        const refMetier = parsed.metier || offer.metier || "";
                         const city = offer.city || offer.place?.city || "dax";
                         const link = refId
-                          ? buildPersonalLink(appBase, city, refId, refLabel)
+                          ? buildPersonalLink(appBase, city, refId, refLabel, refMetier)
                           : offer.status === "accepted" && referralCode
-                            ? buildReferralCodeLink(appBase, city, referralCode, refLabel)
+                            ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier)
                             : "";
                         if (!link) return null;
                         return (
@@ -347,7 +361,14 @@ export default async function AdminHumainMarketplacePage({
                           Lien perso:{" "}
                           {(() => {
                             const refLabel = membersById.get(place.owner_member_id || "") || "Membre Popey";
-                            const fullUrl = buildPersonalLink(appBase, place.city, place.owner_member_id || "", refLabel);
+                            const parsed = splitMemberLabel(refLabel);
+                            const fullUrl = buildPersonalLink(
+                              appBase,
+                              place.city,
+                              place.owner_member_id || "",
+                              parsed.displayName,
+                              parsed.metier || place.metier,
+                            );
                             return (
                               <a href={fullUrl} target="_blank" rel="noreferrer" className="underline">
                                 {fullUrl}
