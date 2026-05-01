@@ -28,6 +28,15 @@ function normalizePhone(raw: string): string {
   return `+${clean.slice(0, 24)}`;
 }
 
+function slugifyCity(value: string): string {
+  return trim(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 async function requireAdminUser() {
   const supabase = await createClient();
   const {
@@ -71,7 +80,9 @@ export async function POST(request: Request) {
     });
     const baseUrl = trim(process.env.NEXT_PUBLIC_APP_URL || "");
     const safeBase = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
-    const landingUrl = safeBase ? `${safeBase}/dax?ctx=${encodeURIComponent(ctx)}` : `/dax?ctx=${encodeURIComponent(ctx)}`;
+    const citySlug = slugifyCity(city || "dax") || "dax";
+    const landingPath = `/privilege/${citySlug}?ctx=${encodeURIComponent(ctx)}`;
+    const landingUrl = safeBase ? `${safeBase}${landingPath}` : landingPath;
     const waText = `Bonjour ${clientName}, voici ton catalogue de privilèges Popey offert par ${referrerName} : ${landingUrl}`;
     return NextResponse.json({
       success: true,
