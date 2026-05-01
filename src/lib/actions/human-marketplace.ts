@@ -41,7 +41,20 @@ type MarketplaceOfferRow = {
 };
 
 type MarketplaceOfferJoined = MarketplaceOfferRow & {
-  place: Pick<MarketplacePlaceRow, "id" | "city" | "metier" | "status" | "list_price_eur" | "owner_member_id"> | null;
+  place: Pick<
+    MarketplacePlaceRow,
+    | "id"
+    | "city"
+    | "metier"
+    | "status"
+    | "list_price_eur"
+    | "owner_member_id"
+    | "company_name"
+    | "privilege_badge"
+    | "partner_whatsapp"
+    | "category_key"
+    | "external_ref"
+  > | null;
 };
 
 type MarketplaceEventRow = {

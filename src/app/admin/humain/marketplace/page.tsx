@@ -294,6 +294,77 @@ export default async function AdminHumainMarketplacePage({
                       </form>
                     </div>
                   </div>
+                  {offer.place ? (
+                    <form
+                      action={adminSetMarketplacePlaceStatusAction}
+                      method="post"
+                      className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3"
+                    >
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-800">
+                        Configurer l&apos;offre privilège de ce professionnel
+                      </p>
+                      <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                      <input type="hidden" name="place_id" value={offer.place.id} />
+                      <input type="hidden" name="next_status" value={offer.place.status || "reserved"} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          name="owner_member_id"
+                          defaultValue={offer.assigned_member_id || offer.place.owner_member_id || ""}
+                          className="h-9 rounded border bg-background px-2 text-xs"
+                        >
+                          <option value="">Owner membre (optionnel)</option>
+                          {snapshot.members.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.label}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          name="company_name"
+                          defaultValue={offer.place.company_name || offer.full_name || ""}
+                          placeholder="Nom affiché pro"
+                          className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                        />
+                        <input
+                          name="privilege_badge"
+                          defaultValue={offer.place.privilege_badge || ""}
+                          placeholder="Offre privilège (ex: Diagnostic offert)"
+                          className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                        />
+                        <input
+                          name="partner_whatsapp"
+                          defaultValue={offer.place.partner_whatsapp || offer.whatsapp || ""}
+                          placeholder="WhatsApp pro cible"
+                          className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                        />
+                        <select
+                          name="category_key"
+                          defaultValue={offer.place.category_key || ""}
+                          className="h-9 rounded border bg-background px-2 text-xs"
+                        >
+                          <option value="">Catégorie auto</option>
+                          <option value="maison">maison</option>
+                          <option value="sante">sante</option>
+                          <option value="travaux">travaux</option>
+                          <option value="bien-etre">bien-etre</option>
+                          <option value="services">services</option>
+                        </select>
+                        <input
+                          name="external_ref"
+                          defaultValue={offer.place.external_ref || String(offer.metadata?.referral_code || "")}
+                          placeholder="Reference externe"
+                          className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                        />
+                        <button type="submit" className="h-9 rounded border border-amber-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-amber-900">
+                          Enregistrer offre privilège
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <p className="mt-3 text-xs text-amber-700">
+                      Cette demande n&apos;est pas encore reliée à une place marketplace, donc impossible de configurer son offre privilège ici.
+                    </p>
+                  )}
                 </article>
               ))}
               {snapshot.offers.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande marketplace pour le moment.</p> : null}
