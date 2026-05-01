@@ -1137,7 +1137,12 @@ async function loadPlaces() {
   const grid = document.getElementById('privGrid');
   if (grid) grid.innerHTML = `<div class="priv-card"><div style="padding:20px;font-size:14px;color:#555">Chargement des privileges…</div></div>`;
   try {
-    const response = await fetch(`/api/popey-human/marketplace/places?catalog=privilege&city=${encodeURIComponent(__cityLabel)}`, { cache: 'no-store' });
+    const query = new URLSearchParams();
+    query.set('catalog', 'privilege');
+    query.set('city', __cityLabel);
+    if (__refId) query.set('ref_id', __refId);
+    if (__refCode) query.set('ref', __refCode);
+    const response = await fetch(`/api/popey-human/marketplace/places?${query.toString()}`, { cache: 'no-store' });
     const payload = await response.json().catch(() => ({}));
     __places = Array.isArray(payload?.places) ? payload.places : [];
   } catch {

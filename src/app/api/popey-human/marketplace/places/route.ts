@@ -197,6 +197,8 @@ export async function GET(request: NextRequest) {
     const status = String(request.nextUrl.searchParams.get("status") || "all").trim();
     const catalog = String(request.nextUrl.searchParams.get("catalog") || "").trim().toLowerCase();
     const isPrivilegeCatalog = catalog === "privilege";
+    const refId = String(request.nextUrl.searchParams.get("ref_id") || "").trim();
+    const refCode = String(request.nextUrl.searchParams.get("ref") || "").trim();
     const spheresCsv = String(request.nextUrl.searchParams.get("spheres") || "").trim();
     const category = String(request.nextUrl.searchParams.get("category") || "").trim().toLowerCase();
     const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
@@ -214,6 +216,38 @@ export async function GET(request: NextRequest) {
       .map((item) => item.trim())
       .filter(Boolean);
     if (spheres.length > 0) query = query.in("sphere_key", spheres);
+
+    // Strict referral filtering for privilege catalogue:
+    // - `ref_id` => owner member link
+    // - `ref` => accepted offer referral code link
+    if (isPrivilegeCatalog && refId) {
+      query = query.eq("owner_member_id", refId);
+    }
+    if (isPrivilegeCatalog && !refId && refCode) {
+      const { data: linkedOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("place_id,status,metadata")
+        .eq("status", "accepted")
+        .limit(200);
+      const linkedPlaceIds = Array.from(
+        new Set(
+          ((linkedOffers as Array<{ place_id: string | null; metadata?: unknown }> | null) || [])
+            .filter((offer) => {
+              const metadata =
+                offer.metadata && typeof offer.metadata === "object" && !Array.isArray(offer.metadata)
+                  ? (offer.metadata as Record<string, unknown>)
+                  : {};
+              return String(metadata.referral_code || "").trim() === refCode;
+            })
+            .map((offer) => String(offer.place_id || "").trim())
+            .filter(Boolean),
+        ),
+      );
+      if (linkedPlaceIds.length === 0) {
+        return NextResponse.json({ places: [], cities: [], summary: { total: 0, sale: 0, dispo: 0 } });
+      }
+      query = query.in("id", linkedPlaceIds);
+    }
 
     if (sort === "value_asc") query = query.order("list_price_eur", { ascending: true, nullsFirst: true });
     else if (sort === "reco_desc") query = query.order("recos_per_year", { ascending: false });
