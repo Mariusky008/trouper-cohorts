@@ -67,6 +67,12 @@ export default async function AdminHumainMarketplacePage({
     placeCity: typeof params.placeCity === "string" ? params.placeCity : "all",
     timelinePlaceId: typeof params.timelinePlaceId === "string" ? params.timelinePlaceId : "",
   });
+  const managedPlaceIds = new Set(snapshot.offers.map((offer) => offer.place?.id).filter(Boolean));
+  const manualPlaces = snapshot.places.filter(
+    (place) =>
+      managedPlaceIds.has(place.id) ||
+      Boolean(place.owner_member_id || place.company_name || place.privilege_badge || place.partner_whatsapp || place.external_ref),
+  );
   const membersById = new Map(snapshot.members.map((member) => [member.id, member.label]));
 
   return (
@@ -410,7 +416,7 @@ export default async function AdminHumainMarketplacePage({
           <div className="rounded-xl border bg-white p-4">
             <h2 className="text-lg font-black">Places (controle manuel)</h2>
             <div className="mt-3 space-y-3">
-              {snapshot.places.slice(0, 120).map((place) => (
+              {manualPlaces.slice(0, 120).map((place) => (
                 <article key={place.id} className="rounded-lg border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -516,7 +522,9 @@ export default async function AdminHumainMarketplacePage({
                   </div>
                 </article>
               ))}
-              {snapshot.places.length === 0 ? <p className="text-sm text-muted-foreground">Aucune place marketplace.</p> : null}
+              {manualPlaces.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucune place réellement configurée pour le moment.</p>
+              ) : null}
             </div>
           </div>
         </>
