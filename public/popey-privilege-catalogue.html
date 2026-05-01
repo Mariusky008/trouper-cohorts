@@ -386,12 +386,6 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 </head>
 <body>
 
-<!-- VIEW TOGGLE -->
-<div class="view-toggle">
-  <button class="vt-btn active" onclick="switchView('client',this)">👤 Vue Client</button>
-  <button class="vt-btn" onclick="switchView('admin',this)">⚙️ Admin JPR</button>
-</div>
-
 <!-- ══════════════════════════════
      CLIENT VIEW
 ══════════════════════════════ -->
@@ -1206,14 +1200,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (catSub) catSub.textContent = `Privilèges activables sur ${__cityLabel}`;
   await loadPlaces();
 });
-
-// ── VIEW SWITCH ──
-function switchView(view, btn) {
-  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('client-view').style.display = view === 'client' ? 'block' : 'none';
-  document.getElementById('admin-view').style.display = view === 'admin' ? 'block' : 'none';
-}
 
 // ── SPHERE FILTER ──
 document.addEventListener('click', (event) => {
