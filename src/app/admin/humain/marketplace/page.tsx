@@ -5,6 +5,7 @@ import {
   adminUpdateMarketplaceOfferStatusAction,
   getAdminMarketplaceSnapshot,
 } from "@/lib/actions/human-marketplace";
+import { SignedLinkGenerator } from "./_components/signed-link-generator";
 
 function euros(value?: number | null) {
   const safe = Number(value || 0);
@@ -73,6 +74,8 @@ export default async function AdminHumainMarketplacePage({
 
       {!snapshot.error && snapshot.kpis && (
         <>
+          <SignedLinkGenerator members={snapshot.members.map((member) => ({ id: member.id, label: member.label }))} />
+
           <form method="get" className="rounded-xl border bg-card p-4">
             <div className="grid gap-2 md:grid-cols-5">
               <select name="offerStatus" defaultValue={snapshot.filters.offerStatus} className="h-10 rounded border bg-background px-2 text-sm">

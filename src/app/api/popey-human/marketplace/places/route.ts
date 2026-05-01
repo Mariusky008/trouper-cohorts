@@ -12,6 +12,10 @@ type PlaceRow = {
   sphere_label: string;
   metier: string;
   metier_slug: string;
+  company_name: string | null;
+  privilege_badge: string | null;
+  logo_url: string | null;
+  category_key: string | null;
   status: "dispo" | "sale" | "occupied" | "reserved";
   list_price_eur: number | null;
   monthly_ca_eur: number;
@@ -110,6 +114,10 @@ function toClientPlace(row: PlaceRow) {
     sphereColor: ui.color,
     icon: ui.icon,
     metier: row.metier,
+    companyName: row.company_name || null,
+    badge: row.privilege_badge || null,
+    logoUrl: row.logo_url || null,
+    category: row.category_key || null,
     status: row.status === "sale" ? "sale" : "dispo",
     months: Number(row.months_active || 0),
     partners: Number(row.partners_count || 0),
@@ -120,6 +128,16 @@ function toClientPlace(row: PlaceRow) {
     growth: Number(row.value_growth_pct || 0),
     score: Number(row.reciprocity_score || 0),
   };
+}
+
+function inferCategoryFromSphere(sphereKey: string): string {
+  const value = String(sphereKey || "").toLowerCase().trim();
+  if (value === "habitat") return "maison";
+  if (value === "sante") return "sante";
+  if (value === "digital") return "services";
+  if (value === "mariage") return "services";
+  if (value === "finance") return "services";
+  return "services";
 }
 
 function normalizeMetier(value: string): string {
@@ -151,10 +169,12 @@ export async function GET(request: NextRequest) {
     const city = String(request.nextUrl.searchParams.get("city") || "").trim();
     const status = String(request.nextUrl.searchParams.get("status") || "all").trim();
     const spheresCsv = String(request.nextUrl.searchParams.get("spheres") || "").trim();
+    const category = String(request.nextUrl.searchParams.get("category") || "").trim().toLowerCase();
+    const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const sort = String(request.nextUrl.searchParams.get("sort") || "value_desc").trim();
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
     );
 
     if (city && city !== "Toutes les villes") query = query.eq("city", city);
@@ -180,7 +200,12 @@ export async function GET(request: NextRequest) {
 
     const rows = (data || []) as PlaceRow[];
     const filteredRows = rows.filter((row) => !isBlockedMetier(row.metier || ""));
-    let places = filteredRows.map(toClientPlace);
+    let places = filteredRows
+      .map(toClientPlace)
+      .map((item) => ({
+        ...item,
+        category: item.category || inferCategoryFromSphere(item.sphere),
+      }));
 
     // Complete with safe catalog so each city/sphere keeps full coverage even if legacy DB rows are filtered out.
     const generated = generateMarketplacePlaces()
@@ -202,6 +227,10 @@ export async function GET(request: NextRequest) {
           sphereColor: ui.color,
           icon: ui.icon,
           metier: item.metier,
+          companyName: null,
+          badge: null,
+          logoUrl: null,
+          category: inferCategoryFromSphere(item.sphereKey),
           status: item.status,
           months: item.monthsActive,
           partners: item.partnersCount,
@@ -215,6 +244,17 @@ export async function GET(request: NextRequest) {
       });
 
     places = [...places, ...generatedSupplements];
+
+    if (category && category !== "all") {
+      places = places.filter((item) => String(item.category || "").toLowerCase() === category);
+    }
+    if (queryText) {
+      places = places.filter((item) => {
+        const metier = String(item.metier || "").toLowerCase();
+        const company = String(item.companyName || "").toLowerCase();
+        return metier.includes(queryText) || company.includes(queryText);
+      });
+    }
 
     if (sort === "value_asc") places.sort((a, b) => (a.value || 0) - (b.value || 0));
     else if (sort === "reco_desc") places.sort((a, b) => (b.reco || 0) - (a.reco || 0));
