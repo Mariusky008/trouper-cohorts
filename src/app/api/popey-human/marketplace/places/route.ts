@@ -27,6 +27,29 @@ type PlaceRow = {
   value_growth_pct: number;
 };
 
+type CobrandOfferRow = {
+  id: string;
+  city: string;
+  city_slug: string;
+  primary_member_id: string;
+  secondary_member_id: string;
+  primary_place_id: string | null;
+  secondary_place_id: string | null;
+  pack_title: string;
+  pack_subtitle: string | null;
+  primary_offer_label: string;
+  primary_offer_value_eur: number | null;
+  secondary_offer_label: string;
+  secondary_offer_value_eur: number | null;
+  commission_note: string | null;
+  status: "active" | "inactive";
+  updated_at: string;
+};
+
+function trim(value: unknown): string {
+  return String(value || "").trim();
+}
+
 const BLOCKED_METIER_KEYWORDS = [
   "notaire",
   "avocat",
@@ -204,6 +227,7 @@ export async function GET(request: NextRequest) {
     const category = String(request.nextUrl.searchParams.get("category") || "").trim().toLowerCase();
     const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const sort = String(request.nextUrl.searchParams.get("sort") || "value_desc").trim();
+    const refMemberIds = new Set<string>();
 
     let query = supabase.from("human_marketplace_places").select(
       "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
@@ -227,7 +251,7 @@ export async function GET(request: NextRequest) {
     if (isPrivilegeCatalog && !refId && refCode) {
       const { data: linkedOffers } = await supabase
         .from("human_marketplace_offers")
-        .select("place_id,status,metadata")
+        .select("place_id,status,assigned_member_id,metadata")
         .eq("status", "accepted")
         .limit(200);
       const linkedPlaceIds = Array.from(
@@ -238,7 +262,12 @@ export async function GET(request: NextRequest) {
                 offer.metadata && typeof offer.metadata === "object" && !Array.isArray(offer.metadata)
                   ? (offer.metadata as Record<string, unknown>)
                   : {};
-              return String(metadata.referral_code || "").trim() === refCode;
+              const isMatch = String(metadata.referral_code || "").trim() === refCode;
+              if (isMatch) {
+                const assigned = String((offer as { assigned_member_id?: string | null }).assigned_member_id || "").trim();
+                if (assigned) refMemberIds.add(assigned);
+              }
+              return isMatch;
             })
             .map((offer) => String(offer.place_id || "").trim())
             .filter(Boolean),
@@ -343,7 +372,147 @@ export async function GET(request: NextRequest) {
       dispo: places.filter((item) => item.status === "dispo").length,
     };
 
-    return NextResponse.json({ places, cities, summary });
+    let cobrandOffers: Array<{
+      id: string;
+      city: string;
+      packTitle: string;
+      packSubtitle: string | null;
+      primaryMember: { id: string; name: string; metier: string };
+      secondaryMember: { id: string; name: string; metier: string };
+      primaryOffer: { label: string; valueEur: number; placeLabel: string };
+      secondaryOffer: { label: string; valueEur: number; placeLabel: string };
+      totalSavingsEur: number;
+      commissionNote: string | null;
+    }> = [];
+
+    try {
+      const { data: cobrandData, error: cobrandError } = await supabase
+        .from("human_marketplace_cobrand_offers")
+        .select(
+          "id,city,city_slug,primary_member_id,secondary_member_id,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
+        )
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(150);
+
+      if (cobrandError) {
+        throw cobrandError;
+      }
+
+      const cobrandRows = (cobrandData as CobrandOfferRow[] | null) || [];
+      const filteredCobrandRows = cobrandRows
+        .filter((row) => matchCity(city, row.city, row.city_slug))
+        .filter((row) => {
+          if (!isPrivilegeCatalog) return true;
+          if (refId) return row.primary_member_id === refId || row.secondary_member_id === refId;
+          if (refCode && refMemberIds.size > 0) {
+            return refMemberIds.has(row.primary_member_id) || refMemberIds.has(row.secondary_member_id);
+          }
+          if (isPrivilegeCatalog && (refCode || refId)) return false;
+          return true;
+        });
+
+      const memberIds = Array.from(
+        new Set(
+          filteredCobrandRows
+            .flatMap((row) => [row.primary_member_id, row.secondary_member_id])
+            .map((id) => String(id || "").trim())
+            .filter(Boolean),
+        ),
+      );
+      const placeIds = Array.from(
+        new Set(
+          filteredCobrandRows
+            .flatMap((row) => [row.primary_place_id, row.secondary_place_id])
+            .map((id) => String(id || "").trim())
+            .filter(Boolean),
+        ),
+      );
+
+      const [{ data: membersData }, { data: packPlacesData }] = await Promise.all([
+        memberIds.length > 0
+          ? supabase.from("human_members").select("id,first_name,last_name,metier").in("id", memberIds)
+          : Promise.resolve({ data: [] as Array<{ id: string; first_name: string | null; last_name: string | null; metier: string | null }> }),
+        placeIds.length > 0
+          ? supabase.from("human_marketplace_places").select("id,metier,company_name,privilege_badge").in("id", placeIds)
+          : Promise.resolve({ data: [] as Array<{ id: string; metier: string; company_name: string | null; privilege_badge: string | null }> }),
+      ]);
+
+      const membersRows = (membersData || []) as Array<{
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        metier: string | null;
+      }>;
+      const packPlaceRows = (packPlacesData || []) as Array<{
+        id: string;
+        metier: string;
+        company_name: string | null;
+        privilege_badge: string | null;
+      }>;
+
+      const memberMap = new Map(
+        membersRows.map((row) => {
+          const fullName = [trim(row.first_name), trim(row.last_name)].filter(Boolean).join(" ").trim() || "Membre Popey";
+          return [
+            row.id,
+            {
+              id: row.id,
+              name: fullName,
+              metier: trim(row.metier) || "Professionnel",
+            },
+          ] as const;
+        }),
+      );
+
+      const placeMap = new Map(
+        packPlaceRows.map((row) => [
+          row.id,
+          {
+            label: trim(row.privilege_badge) || trim(row.company_name) || trim(row.metier) || "Offre privilège",
+          },
+        ]),
+      );
+
+      cobrandOffers = filteredCobrandRows.map((row) => {
+        const primaryMember = memberMap.get(row.primary_member_id) || {
+          id: row.primary_member_id,
+          name: "Membre Popey",
+          metier: "Professionnel",
+        };
+        const secondaryMember = memberMap.get(row.secondary_member_id) || {
+          id: row.secondary_member_id,
+          name: "Membre Popey",
+          metier: "Professionnel",
+        };
+        const primaryValue = Number(row.primary_offer_value_eur || 0);
+        const secondaryValue = Number(row.secondary_offer_value_eur || 0);
+        return {
+          id: row.id,
+          city: row.city,
+          packTitle: trim(row.pack_title) || "Pack co-brandé",
+          packSubtitle: trim(row.pack_subtitle) || null,
+          primaryMember,
+          secondaryMember,
+          primaryOffer: {
+            label: trim(row.primary_offer_label) || "Offre membre 1",
+            valueEur: primaryValue,
+            placeLabel: (row.primary_place_id && placeMap.get(row.primary_place_id)?.label) || "Offre privilège",
+          },
+          secondaryOffer: {
+            label: trim(row.secondary_offer_label) || "Offre membre 2",
+            valueEur: secondaryValue,
+            placeLabel: (row.secondary_place_id && placeMap.get(row.secondary_place_id)?.label) || "Offre privilège",
+          },
+          totalSavingsEur: Math.max(0, Math.round(primaryValue + secondaryValue)),
+          commissionNote: trim(row.commission_note) || null,
+        };
+      });
+    } catch (cobrandError) {
+      console.warn("[marketplace/places] cobrand unavailable", cobrandError);
+    }
+
+    return NextResponse.json({ places, cities, summary, cobrandOffers });
   } catch (error) {
     console.error("[marketplace/places] unexpected", error);
     return NextResponse.json({ error: "Impossible de charger les places marketplace." }, { status: 500 });

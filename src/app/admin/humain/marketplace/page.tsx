@@ -55,6 +55,7 @@ export default async function AdminHumainMarketplacePage({
     offerActionType?: string;
     placeCity?: string;
     timelinePlaceId?: string;
+    cobrandPrimaryMemberId?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -74,6 +75,27 @@ export default async function AdminHumainMarketplacePage({
       Boolean(place.owner_member_id || place.company_name || place.privilege_badge || place.partner_whatsapp || place.external_ref),
   );
   const membersById = new Map(snapshot.members.map((member) => [member.id, member.label]));
+  const requestedPrimaryMemberId = typeof params.cobrandPrimaryMemberId === "string" ? params.cobrandPrimaryMemberId : "";
+  const acceptedMemberIds = new Set<string>();
+  snapshot.offers
+    .filter((offer) => offer.status === "accepted")
+    .forEach((offer) => {
+      const assigned = String(offer.assigned_member_id || "").trim();
+      const owner = String(offer.place?.owner_member_id || "").trim();
+      if (assigned) acceptedMemberIds.add(assigned);
+      if (owner) acceptedMemberIds.add(owner);
+    });
+  snapshot.places.forEach((place) => {
+    const owner = String(place.owner_member_id || "").trim();
+    if (owner) acceptedMemberIds.add(owner);
+  });
+  const acceptedMembers = snapshot.members.filter((member) => acceptedMemberIds.has(member.id));
+  const selectableMembers = acceptedMembers.length > 0 ? acceptedMembers : snapshot.members;
+  const defaultPrimaryMemberId = selectableMembers.some((member) => member.id === requestedPrimaryMemberId)
+    ? requestedPrimaryMemberId
+    : selectableMembers[0]?.id || "";
+  const defaultCity = manualPlaces[0]?.city || "Dax";
+  const activeCobrandOffers = snapshot.cobrandOffers.filter((row) => row.status === "active").length;
 
   return (
     <section className="space-y-5">
@@ -524,6 +546,144 @@ export default async function AdminHumainMarketplacePage({
               ))}
               {manualPlaces.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucune place réellement configurée pour le moment.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4">
+            <h2 className="text-lg font-black">Offres co-brandées (2 membres)</h2>
+            <p className="mt-1 text-xs text-black/70">
+              Crée un pack à deux entre membres acceptés. Le pack s&apos;affiche ensuite dans le catalogue `privilege` sous la section dédiée.
+            </p>
+            <p className="mt-2 text-xs text-black/70">
+              Packs enregistrés: {snapshot.cobrandOffers.length} · actifs: {activeCobrandOffers}
+            </p>
+
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
+              <p className="text-xs font-black uppercase tracking-wide text-amber-900">Bouton rapide par membre accepté</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectableMembers.map((member) => (
+                  <Link
+                    key={member.id}
+                    href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(member.id)}`}
+                    className={`rounded border px-2 py-1 text-xs font-bold ${
+                      member.id === defaultPrimaryMemberId
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                        : "border-black/20 bg-white text-black/70"
+                    }`}
+                  >
+                    Créer à partir de: {member.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <form action="/api/admin/humain/marketplace/cobrand" method="post" className="mt-3 rounded-lg border p-3">
+              <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+              <input type="hidden" name="intent" value="create" />
+              <div className="grid gap-2 md:grid-cols-2">
+                <select name="primary_member_id" defaultValue={defaultPrimaryMemberId} className="h-9 rounded border bg-background px-2 text-xs">
+                  <option value="">Membre 1 (accepté)</option>
+                  {selectableMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.label}
+                    </option>
+                  ))}
+                </select>
+                <select name="secondary_member_id" defaultValue="" className="h-9 rounded border bg-background px-2 text-xs">
+                  <option value="">Membre 2 (accepté)</option>
+                  {selectableMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.label}
+                    </option>
+                  ))}
+                </select>
+                <select name="primary_place_id" defaultValue="" className="h-9 rounded border bg-background px-2 text-xs">
+                  <option value="">Place membre 1 (optionnel)</option>
+                  {manualPlaces.map((place) => (
+                    <option key={place.id} value={place.id}>
+                      {place.metier} · {place.city}
+                    </option>
+                  ))}
+                </select>
+                <select name="secondary_place_id" defaultValue="" className="h-9 rounded border bg-background px-2 text-xs">
+                  <option value="">Place membre 2 (optionnel)</option>
+                  {manualPlaces.map((place) => (
+                    <option key={place.id} value={place.id}>
+                      {place.metier} · {place.city}
+                    </option>
+                  ))}
+                </select>
+                <input name="city" defaultValue={defaultCity} className="h-9 rounded border bg-background px-2 text-xs" placeholder="Ville (ex: Dax)" />
+                <input
+                  name="pack_title"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Titre du pack (ex: Pack Installation Maison)"
+                />
+                <input
+                  name="pack_subtitle"
+                  className="h-9 rounded border bg-background px-2 text-xs md:col-span-2"
+                  placeholder="Sous-titre (optionnel)"
+                />
+                <input
+                  name="primary_offer_label"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Offre membre 1 (ex: 500€ honoraires offerts)"
+                />
+                <input
+                  name="primary_offer_value_eur"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Valeur membre 1 (EUR)"
+                />
+                <input
+                  name="secondary_offer_label"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Offre membre 2 (ex: Diagnostic offert)"
+                />
+                <input
+                  name="secondary_offer_value_eur"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Valeur membre 2 (EUR)"
+                />
+                <input
+                  name="commission_note"
+                  className="h-9 rounded border bg-background px-2 text-xs md:col-span-2"
+                  placeholder="Note commissions (optionnel)"
+                />
+              </div>
+              <button type="submit" className="mt-3 h-9 rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900">
+                Créer l&apos;offre co-brandée
+              </button>
+            </form>
+
+            <div className="mt-3 space-y-2">
+              {snapshot.cobrandOffers.slice(0, 80).map((pack) => {
+                const firstLabel = membersById.get(pack.primary_member_id) || "Membre 1";
+                const secondLabel = membersById.get(pack.secondary_member_id) || "Membre 2";
+                const total = Number(pack.primary_offer_value_eur || 0) + Number(pack.secondary_offer_value_eur || 0);
+                return (
+                  <article key={pack.id} className="rounded border p-2 text-xs">
+                    <p className="font-black">
+                      {pack.pack_title} · {pack.city} · {pack.status}
+                    </p>
+                    <p className="text-black/70">
+                      {firstLabel} + {secondLabel} · {pack.primary_offer_label} + {pack.secondary_offer_label}
+                    </p>
+                    <p className="text-black/70">Valeur totale: {euros(total)}</p>
+                    <form action="/api/admin/humain/marketplace/cobrand" method="post" className="mt-2 flex items-center gap-2">
+                      <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                      <input type="hidden" name="intent" value="toggle" />
+                      <input type="hidden" name="cobrand_id" value={pack.id} />
+                      <input type="hidden" name="next_status" value={pack.status === "active" ? "inactive" : "active"} />
+                      <button type="submit" className="h-8 rounded border px-3 text-[11px] font-black uppercase tracking-wide">
+                        {pack.status === "active" ? "Désactiver" : "Activer"}
+                      </button>
+                    </form>
+                  </article>
+                );
+              })}
+              {snapshot.cobrandOffers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucune offre co-brandée créée pour le moment.</p>
               ) : null}
             </div>
           </div>

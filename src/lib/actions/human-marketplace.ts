@@ -81,6 +81,25 @@ type MarketplaceLandingActivationRow = {
   place: Pick<MarketplacePlaceRow, "id" | "city" | "metier"> | null;
 };
 
+type MarketplaceCobrandRow = {
+  id: string;
+  city: string;
+  city_slug: string;
+  primary_member_id: string;
+  secondary_member_id: string;
+  primary_place_id: string | null;
+  secondary_place_id: string | null;
+  pack_title: string;
+  pack_subtitle: string | null;
+  primary_offer_label: string;
+  primary_offer_value_eur: number | null;
+  secondary_offer_label: string;
+  secondary_offer_value_eur: number | null;
+  commission_note: string | null;
+  status: "active" | "inactive";
+  updated_at: string;
+};
+
 type MarketplaceSnapshotFilters = {
   offerStatus?: string;
   offerActionType?: string;
@@ -117,6 +136,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       offers: [] as MarketplaceOfferJoined[],
       timelineEvents: [] as MarketplaceEventRow[],
       recentActivations: [] as MarketplaceLandingActivationRow[],
+      cobrandOffers: [] as MarketplaceCobrandRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -166,6 +186,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       offers: [] as MarketplaceOfferJoined[],
       timelineEvents: [] as MarketplaceEventRow[],
       recentActivations: [] as MarketplaceLandingActivationRow[],
+      cobrandOffers: [] as MarketplaceCobrandRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -231,6 +252,22 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     .order("created_at", { ascending: false })
     .limit(80);
   const recentActivations = (activationsData as MarketplaceLandingActivationRow[] | null) || [];
+  let cobrandOffers: MarketplaceCobrandRow[] = [];
+  try {
+    const { data: cobrandData, error: cobrandError } = await supabaseAdmin
+      .from("human_marketplace_cobrand_offers")
+      .select(
+        "id,city,city_slug,primary_member_id,secondary_member_id,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    if (cobrandError) {
+      throw cobrandError;
+    }
+    cobrandOffers = (cobrandData as MarketplaceCobrandRow[] | null) || [];
+  } catch (error) {
+    console.warn("[admin marketplace] cobrand snapshot unavailable", error);
+  }
   const cities = Array.from(new Set(places.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
   const offersRawLast24h = offersRaw.filter((offer) => {
     const createdAt = Date.parse(String(offer.created_at || ""));
@@ -244,6 +281,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     offers,
     timelineEvents,
     recentActivations,
+    cobrandOffers,
     members,
     cities,
     selectedTimelinePlaceId,

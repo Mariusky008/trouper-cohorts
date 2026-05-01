@@ -368,6 +368,123 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 }
 .msg-preview strong { color: var(--gold); font-style: normal; }
 
+
+/* ── MODE TOGGLE (B2C / B2B) ── */
+.mode-toggle {
+  display: flex; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; padding: 4px; gap: 3px; margin: 0 24px 20px;
+  position: relative; z-index: 1;
+}
+.mt-opt {
+  flex: 1; padding: 10px 12px; border-radius: 10px; text-align: center;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .25s;
+  color: rgba(255,255,255,.4); line-height: 1.3;
+}
+.mt-opt.active { background: var(--gold); color: var(--ink); }
+.mt-opt .mt-sub { font-size: 9px; font-weight: 500; opacity: .7; margin-top: 2px; display: block; }
+.b2b-banner {
+  margin: 0 24px 20px; padding: 14px 16px;
+  background: rgba(201,168,76,.08); border: 1px solid var(--gold-g);
+  border-radius: 14px; font-size: 12px; color: rgba(255,255,255,.65);
+  line-height: 1.6; position: relative; z-index: 1; display: none;
+}
+.b2b-banner strong { color: var(--gold); }
+
+/* ── CO-BRAND PACKS ── */
+.cobrand-section { padding: 60px 24px; background: var(--cream2); border-top: 1px solid var(--border); }
+.cb-inner { max-width: 900px; margin: 0 auto; }
+.cb-header { margin-bottom: 32px; }
+.cb-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.cb-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
+.cb-title { font-family: var(--fd); font-size: clamp(26px,4vw,40px); font-weight: 900; color: var(--ink); line-height: .95; letter-spacing: -1px; margin-bottom: 10px; }
+.cb-title em { font-style: italic; color: var(--gold); }
+.cb-sub { font-size: 14px; color: var(--t2); max-width: 520px; line-height: 1.7; }
+
+/* Co-brand card */
+.cobrand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.cobrand-card {
+  background: #fff; border: 2px solid var(--gold-g);
+  border-radius: 20px; overflow: hidden; transition: all .3s;
+  position: relative;
+}
+.cobrand-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(201,168,76,.12); }
+.cc-stripe { height: 4px; background: linear-gradient(90deg, var(--gold), #E8961A, var(--gold)); }
+.cc-badge {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--gold); color: var(--ink); font-size: 9px; font-weight: 800;
+  padding: 4px 10px; border-radius: 20px; letter-spacing: .06em; text-transform: uppercase;
+}
+.cc-members { display: flex; align-items: center; gap: -8px; padding: 18px 18px 10px; }
+.cc-member {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--t2);
+}
+.cc-av {
+  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.cc-plus { font-size: 18px; color: var(--gold); font-weight: 700; margin: 0 8px; }
+.cc-pack-name {
+  font-family: var(--fd); font-size: 19px; font-weight: 700; color: var(--ink);
+  padding: 0 18px 6px; line-height: 1.2;
+}
+.cc-offers { padding: 10px 18px 14px; display: flex; flex-direction: column; gap: 6px; }
+.cc-offer {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-radius: 10px; background: var(--cream2); font-size: 12px; color: var(--t);
+}
+.cc-offer-icon { font-size: 14px; flex-shrink: 0; }
+.cc-offer-text { flex: 1; }
+.cc-offer-val { font-weight: 700; color: var(--gold); font-size: 11px; flex-shrink: 0; }
+.cc-total {
+  margin: 0 18px 14px; padding: 10px 14px;
+  background: var(--gold-l); border: 1.5px solid var(--gold-g); border-radius: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cc-total-label { font-size: 11px; color: var(--t2); font-weight: 600; }
+.cc-total-val { font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--gold); }
+.cc-cta {
+  margin: 0 18px 18px; width: calc(100% - 36px); padding: 13px;
+  border: none; border-radius: 12px; background: #25D366; color: #fff;
+  font-family: var(--fd); font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.cc-cta:hover { background: #1aaa52; transform: translateY(-1px); }
+.cc-commissions {
+  padding: 0 18px 16px; font-size: 10px; color: var(--t3); text-align: center; line-height: 1.5;
+}
+
+/* B2B member card */
+.b2b-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; }
+.b2b-card {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: flex-start;
+  cursor: pointer; transition: all .2s;
+}
+.b2b-card:hover { background: rgba(201,168,76,.06); border-color: var(--gold-g); }
+.b2b-card-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.b2b-card-info { flex: 1; }
+.b2b-card-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.b2b-card-meta { font-size: 11px; color: rgba(255,255,255,.4); margin-bottom: 8px; }
+.b2b-card-offer {
+  font-size: 12px; font-weight: 600; color: var(--gold);
+  background: var(--gold-l); border: 1px solid var(--gold-g);
+  border-radius: 8px; padding: 4px 10px; display: inline-block;
+}
+.b2b-card-cta {
+  align-self: center; padding: 8px 14px; border: none; border-radius: 10px;
+  background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.25);
+  color: #25D366; font-size: 11px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: all .2s;
+}
+.b2b-card-cta:hover { background: rgba(37,211,102,.2); }
 /* Responsive */
 @media(max-width:768px) {
   .priv-grid { grid-template-columns: 1fr; }
@@ -425,6 +542,24 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hs-item"><div class="hs-val">5</div><div class="hs-lbl">Sphères</div></div>
       <div class="hs-item"><div class="hs-val">100%</div><div class="hs-lbl">Vérifiés</div></div>
       <div class="hs-item"><div class="hs-val">Dax</div><div class="hs-lbl">Zone</div></div>
+    </div>
+  </div>
+
+  <!-- MODE TOGGLE B2C / B2B -->
+  <div style="padding:16px 0 0;position:relative;z-index:1">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.5);text-align:center;margin-bottom:10px">Vous êtes...</div>
+    <div class="mode-toggle">
+      <div class="mt-opt active" id="opt-b2c" onclick="switchMode('b2c')">
+        👤 Un client particulier
+        <span class="mt-sub">Je veux activer un privilège</span>
+      </div>
+      <div class="mt-opt" id="opt-b2b" onclick="switchMode('b2b')">
+        🤝 Un professionnel Popey
+        <span class="mt-sub">J'envoie à mes confrères</span>
+      </div>
+    </div>
+    <div class="b2b-banner" id="b2b-banner">
+      <strong>Mode Professionnel activé.</strong> Vous êtes un membre Popey ? Partagez ce catalogue à vos confrères professionnels — pas seulement à vos clients. Un agent immo qui envoie le lien "électricien" à un nouveau propriétaire vous génère une commission sans effort. <strong>Cliquez sur une offre ci-dessous pour envoyer directement à un collègue.</strong>
     </div>
   </div>
 
@@ -693,34 +828,129 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
     </div>
   </div>
 
-  <!-- HOW IT WORKS -->
-  <div class="how-section">
-    <div class="how-inner">
-      <h2 class="how-title">Comment <em>ça marche</em> ?</h2>
-      <p class="how-sub">3 étapes · 30 secondes · Zéro inscription requise</p>
-      <div class="how-steps">
-        <div class="how-step">
-          <div class="hs-num">1</div>
-          <div class="hs-content">
-            <div class="hs-title">Vous cliquez sur "Activer mon privilège"</div>
-            <div class="hs-text">Votre WhatsApp s'ouvre avec un message pré-rempli. Le professionnel, Jean et Jean-Philippe (Popey) reçoivent une notification automatique.</div>
-            <div class="hs-code">wa.me/33612345678?text=Bonjour+Marc+Fontaine+%21+Je+souhaite+activer+mon+privilège+Popey+%28500€+de+remise%29+offert+par+<span class="ft-highlight">Jean+Moreau</span>+%5BID-TRACKING%3A+<span class="ft-highlight">PRIV-MF-JM-003</span>%5D</div>
+  <!-- CO-BRAND PACKS -->
+  <div class="cobrand-section">
+    <div class="cb-inner">
+      <div class="cb-header fade-up">
+        <div class="cb-eyebrow">🤝 Offres co-brandées · Deux membres · Un seul clic</div>
+        <h2 class="cb-title">Deux pros.<br>Une offre <em>groupée.</em><br>Un clic.</h2>
+        <p class="cb-sub">Jean et Marc créent ensemble un Pack Installation Maison Neuve. Le client active les deux privilèges simultanément. Les deux membres touchent leur commission. L'offre est plus forte — et elle se partage davantage.</p>
+      </div>
+
+      <div class="cobrand-grid fade-up">
+
+        <!-- Pack 1 — Installation Maison Neuve -->
+        <div class="cobrand-card">
+          <div class="cc-stripe"></div>
+          <div class="cc-badge">⭐ Pack vedette</div>
+          <div class="cc-members">
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(245,166,35,.1);color:#C07800">MF</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Marc Fontaine</div><div style="font-size:9px;color:var(--t3)">Agent immo</div></div>
+            </div>
+            <div class="cc-plus">+</div>
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(59,130,246,.1);color:#1D6FA4">JM</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Jean Moreau</div><div style="font-size:9px;color:var(--t3)">Électricien</div></div>
+            </div>
           </div>
-        </div>
-        <div class="how-step">
-          <div class="hs-num">2</div>
-          <div class="hs-content">
-            <div class="hs-title">Jean-Philippe rappelle le professionnel dans les 2h</div>
-            <div class="hs-text">Il valide que votre demande est bien prise en compte et que le privilège sera appliqué. Vous recevez une confirmation par message.</div>
+          <div class="cc-pack-name">Pack Installation<br>Maison Neuve</div>
+          <div class="cc-offers">
+            <div class="cc-offer">
+              <div class="cc-offer-icon">🔑</div>
+              <div class="cc-offer-text">500€ remise honoraires agence</div>
+              <div class="cc-offer-val">Marc · 500€</div>
+            </div>
+            <div class="cc-offer">
+              <div class="cc-offer-icon">⚡</div>
+              <div class="cc-offer-text">Devis électricité + diagnostic offerts</div>
+              <div class="cc-offer-val">Jean · 180€</div>
+            </div>
           </div>
-        </div>
-        <div class="how-step">
-          <div class="hs-num">3</div>
-          <div class="hs-content">
-            <div class="hs-title">Vous bénéficiez de votre privilège</div>
-            <div class="hs-text">Le professionnel vous accueille avec votre avantage déjà activé. Jean reçoit automatiquement sa commission si la mission aboutit.</div>
+          <div class="cc-total">
+            <div class="cc-total-label">Valeur totale du pack</div>
+            <div class="cc-total-val">680€ d'économies</div>
           </div>
+          <button class="cc-cta" onclick="activateCobrand('Pack Installation Maison Neuve','Marc Fontaine + Jean Moreau','680€ économisés','COBRAND-MF-JM-001')">
+            💬 Activer le pack complet →
+          </button>
+          <div class="cc-commissions">Commission Marc : 0,5% · Commission Jean : 5% · Versées automatiquement si deals signés</div>
         </div>
+
+        <!-- Pack 2 — Rénovation Complète -->
+        <div class="cobrand-card">
+          <div class="cc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#F5A623,#9B8FFF)"></div>
+          <div class="cc-members">
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(245,166,35,.1);color:#C07800">SR</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Sophie Ravel</div><div style="font-size:9px;color:var(--t3)">Architecte</div></div>
+            </div>
+            <div class="cc-plus">+</div>
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(109,63,203,.1);color:#6D3FCB">TL</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Thomas Laurent</div><div style="font-size:9px;color:var(--t3)">Avocat</div></div>
+            </div>
+          </div>
+          <div class="cc-pack-name">Pack Rénovation<br>& Sécurité Juridique</div>
+          <div class="cc-offers">
+            <div class="cc-offer">
+              <div class="cc-offer-icon">🔨</div>
+              <div class="cc-offer-text">Visite conseil + étude faisabilité</div>
+              <div class="cc-offer-val">Sophie · 180€</div>
+            </div>
+            <div class="cc-offer">
+              <div class="cc-offer-icon">⚖️</div>
+              <div class="cc-offer-text">Vérification contrats prestataires offerte</div>
+              <div class="cc-offer-val">Thomas · 120€</div>
+            </div>
+          </div>
+          <div class="cc-total">
+            <div class="cc-total-label">Valeur totale du pack</div>
+            <div class="cc-total-val">300€ d'économies</div>
+          </div>
+          <button class="cc-cta" onclick="activateCobrand('Pack Rénovation & Sécurité Juridique','Sophie Ravel + Thomas Laurent','300€ économisés','COBRAND-SR-TL-002')">
+            💬 Activer le pack complet →
+          </button>
+          <div class="cc-commissions">Commission Sophie : 8% · Commission Thomas : 5% · Versées automatiquement si deals signés</div>
+        </div>
+
+        <!-- Pack 3 — Lancement Business -->
+        <div class="cobrand-card">
+          <div class="cc-stripe" style="background:linear-gradient(90deg,#4FC3F7,#9B8FFF,#4FC3F7)"></div>
+          <div class="cc-members">
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(59,130,246,.1);color:#1D6FA4">LB</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Lucas Bernard</div><div style="font-size:9px;color:var(--t3)">Dev web</div></div>
+            </div>
+            <div class="cc-plus">+</div>
+            <div class="cc-member">
+              <div class="cc-av" style="background:rgba(59,130,246,.1);color:#1D6FA4">IM</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--t)">Inès Martin</div><div style="font-size:9px;color:var(--t3)">Designer</div></div>
+            </div>
+          </div>
+          <div class="cc-pack-name">Pack Lancement<br>Business Digital</div>
+          <div class="cc-offers">
+            <div class="cc-offer">
+              <div class="cc-offer-icon">💻</div>
+              <div class="cc-offer-text">-15% + maintenance 3 mois offerte</div>
+              <div class="cc-offer-val">Lucas · 450€</div>
+            </div>
+            <div class="cc-offer">
+              <div class="cc-offer-icon">🎨</div>
+              <div class="cc-offer-text">Audit identité visuelle offert</div>
+              <div class="cc-offer-val">Inès · 240€</div>
+            </div>
+          </div>
+          <div class="cc-total">
+            <div class="cc-total-label">Valeur totale du pack</div>
+            <div class="cc-total-val">690€ d'économies</div>
+          </div>
+          <button class="cc-cta" onclick="activateCobrand('Pack Lancement Business Digital','Lucas Bernard + Inès Martin','690€ économisés','COBRAND-LB-IM-003')">
+            💬 Activer le pack complet →
+          </button>
+          <div class="cc-commissions">Commission Lucas : 5% · Commission Inès : 5% · Versées automatiquement si deals signés</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1094,6 +1324,41 @@ function copyLink(link) {
   });
 }
 
+
+// ── MODE B2C / B2B ──
+function switchMode(mode) {
+  const isB2B = mode === 'b2b';
+  document.getElementById('opt-b2c').classList.toggle('active', !isB2B);
+  document.getElementById('opt-b2b').classList.toggle('active', isB2B);
+  document.getElementById('b2b-banner').style.display = isB2B ? 'block' : 'none';
+  document.getElementById('b2b-grid').style.display = isB2B ? 'block' : 'none';
+  document.getElementById('privGrid').style.opacity = isB2B ? '.4' : '1';
+  document.getElementById('privGrid').style.pointerEvents = isB2B ? 'none' : 'auto';
+}
+
+// ── COBRAND ACTIVATION ──
+function activateCobrand(packName, members, savings, trackingId) {
+  const tel = '33768233347';
+  const msg = `Bonjour ! Je souhaite activer le ${packName} Popey (${savings}) proposé par ${members}. [ID-TRACKING: ${trackingId}]`;
+  const waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:24px';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:24px;padding:28px;width:100%;max-width:480px">
+      <div style="font-size:28px;margin-bottom:12px;text-align:center">🤝</div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#0C0D0F;text-align:center;margin-bottom:8px">${packName}</div>
+      <div style="font-size:13px;color:#555;text-align:center;margin-bottom:16px">par <strong>${members}</strong></div>
+      <div style="background:#fffbeb;border:1.5px solid #C9A84C44;border-radius:14px;padding:14px;margin-bottom:16px;font-size:12px;color:#92400e;font-style:italic;line-height:1.6">"${msg}"</div>
+      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:16px">Les 2 membres et Jean-Philippe Roth (Popey) sont notifiés automatiquement</div>
+      <a href="${waUrl}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none">
+        📱 Activer le pack →
+      </a>
+      <button onclick="this.closest('div').parentElement.remove()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1.5px solid #e5e7eb;border-radius:14px;font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#555;cursor:pointer">Annuler</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+}
 // ── SCROLL ANIMATIONS ──
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });

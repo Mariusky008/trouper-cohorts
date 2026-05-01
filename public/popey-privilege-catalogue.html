@@ -197,6 +197,69 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 .priv-cta:hover { background: #1aaa52; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,211,102,.3); }
 .priv-cta-note { text-align: center; font-size: 10px; color: var(--t3); margin: -8px 18px 14px; line-height: 1.4; }
 
+/* ── COBRAND PACKS ── */
+.cobrand-section { padding: 0 24px 64px; max-width: 1200px; margin: 0 auto; }
+.cb-inner {
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  background: linear-gradient(180deg,#fff,#fbf9f4);
+  padding: 24px;
+}
+.cb-header { margin-bottom: 18px; }
+.cb-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #7B5EA7; margin-bottom: 8px; }
+.cb-title { font-family: var(--fd); font-size: 34px; line-height: .95; color: var(--ink); letter-spacing: -.02em; }
+.cb-title em { color: var(--gold); font-style: italic; }
+.cb-sub { margin-top: 10px; font-size: 13px; color: var(--t2); max-width: 820px; line-height: 1.6; }
+.cobrand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.cobrand-card {
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+}
+.cc-stripe { height: 4px; background: linear-gradient(90deg,#F5A623,#7B5EA7,#4FC3F7); }
+.cc-body { padding: 14px; }
+.cc-members { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cc-member { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.cc-av {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(0,0,0,.05);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 12px; font-weight: 700;
+}
+.cc-plus { width: 22px; text-align: center; font-size: 14px; color: #7B5EA7; font-weight: 700; }
+.cc-member-name { font-size: 11px; font-weight: 700; color: var(--t); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-member-meta { font-size: 9px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-pack-name { font-family: var(--fd); font-size: 20px; line-height: 1; margin-bottom: 10px; }
+.cc-offers { display: grid; gap: 8px; margin-bottom: 10px; }
+.cc-offer { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #fcfcfc; }
+.cc-offer-text { font-size: 11px; color: var(--t2); line-height: 1.35; }
+.cc-offer-val { margin-top: 3px; font-size: 10px; font-weight: 700; color: #7B5EA7; }
+.cc-total {
+  border: 1px dashed var(--gold-g);
+  border-radius: 10px;
+  padding: 8px;
+  background: var(--gold-l);
+  margin-bottom: 10px;
+}
+.cc-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #8A6B1F; font-weight: 700; }
+.cc-total-val { font-family: var(--fd); font-size: 19px; line-height: 1.1; color: #7A5A14; margin-top: 2px; }
+.cc-cta {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: #25D366;
+  color: #fff;
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px;
+  cursor: pointer;
+}
+.cc-cta:hover { background: #1aaa52; }
+.cc-commissions { margin-top: 8px; font-size: 10px; color: var(--t3); line-height: 1.4; }
+.cobrand-empty { border: 1.5px dashed var(--border2); border-radius: 14px; padding: 14px; font-size: 13px; color: var(--t2); background: #fff; }
+
 /* ── HOW IT WORKS ── */
 .how-section { background: var(--ink); padding: 60px 24px; }
 .how-inner { max-width: 900px; margin: 0 auto; }
@@ -371,6 +434,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 /* Responsive */
 @media(max-width:768px) {
   .priv-grid { grid-template-columns: 1fr; }
+  .cobrand-grid { grid-template-columns: 1fr; }
   .kpi-strip { grid-template-columns: 1fr 1fr; }
   .admin-main { grid-template-columns: 1fr; }
   .admin-sidebar { display: none; }
@@ -679,6 +743,20 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
         <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- CO-BRAND PACKS -->
+  <div class="cobrand-section" id="cobrandSection">
+    <div class="cb-inner">
+      <div class="cb-header fade-up">
+        <div class="cb-eyebrow">🤝 Offres co-brandées · Deux membres · Un seul clic</div>
+        <h2 class="cb-title">Deux pros.<br>Une offre <em>groupée.</em><br>Un clic.</h2>
+        <p class="cb-sub">Deux membres Popey combinent leurs privilèges en un pack unique pour créer plus de valeur client en une seule activation.</p>
+      </div>
+      <div class="cobrand-grid fade-up" id="cobrandGrid">
+        <div class="cobrand-empty">Chargement des packs co-brandés…</div>
+      </div>
     </div>
   </div>
 
@@ -1027,6 +1105,7 @@ const __clientName = (__params.get('client_name') || __params.get('client') || '
 const __citySlug = (__params.get('ville') || 'dax').trim();
 const __cityLabel = __citySlug ? __citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Dax';
 let __places = [];
+let __cobrandOffers = [];
 let __activeSphere = 'all';
 
 const SPHERE_META = {
@@ -1133,6 +1212,84 @@ function renderCards() {
     .join('');
 }
 
+function euros(value) {
+  const safe = Number(value || 0);
+  return safe.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
+
+function buildCobrandWhatsAppUrl(offer) {
+  const message = [
+    `Bonjour ${offer.primaryMember?.name || 'membre Popey'} et ${offer.secondaryMember?.name || 'membre Popey'} !`,
+    `Je souhaite activer le pack co-brandé "${offer.packTitle || 'Pack co-brandé'}".`,
+    `Offre 1: ${offer.primaryOffer?.label || 'Offre membre 1'}.`,
+    `Offre 2: ${offer.secondaryOffer?.label || 'Offre membre 2'}.`,
+    `Valeur totale: ${euros(offer.totalSavingsEur || 0)}.`,
+    `[ID-TRACKING: COBRAND-${String(offer.id || '').slice(0, 8)}]`,
+  ].join('\n');
+  return `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+}
+
+function renderCobrandOffers() {
+  const section = document.getElementById('cobrandSection');
+  const grid = document.getElementById('cobrandGrid');
+  if (!section || !grid) return;
+  if (!Array.isArray(__cobrandOffers) || __cobrandOffers.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  grid.innerHTML = __cobrandOffers
+    .map((offer) => {
+      const primaryName = String(offer?.primaryMember?.name || 'Membre 1').trim();
+      const secondaryName = String(offer?.secondaryMember?.name || 'Membre 2').trim();
+      const primaryMetier = String(offer?.primaryMember?.metier || 'Professionnel').trim();
+      const secondaryMetier = String(offer?.secondaryMember?.metier || 'Professionnel').trim();
+      const primaryInitials = initials(primaryName);
+      const secondaryInitials = initials(secondaryName);
+      return `
+        <div class="cobrand-card">
+          <div class="cc-stripe"></div>
+          <div class="cc-body">
+            <div class="cc-members">
+              <div class="cc-member">
+                <div class="cc-av">${escapeHtml(primaryInitials)}</div>
+                <div>
+                  <div class="cc-member-name">${escapeHtml(primaryName)}</div>
+                  <div class="cc-member-meta">${escapeHtml(primaryMetier)}</div>
+                </div>
+              </div>
+              <div class="cc-plus">+</div>
+              <div class="cc-member">
+                <div class="cc-av">${escapeHtml(secondaryInitials)}</div>
+                <div>
+                  <div class="cc-member-name">${escapeHtml(secondaryName)}</div>
+                  <div class="cc-member-meta">${escapeHtml(secondaryMetier)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="cc-pack-name">${escapeHtml(offer.packTitle || 'Pack co-brandé')}</div>
+            <div class="cc-offers">
+              <div class="cc-offer">
+                <div class="cc-offer-text">${escapeHtml(offer.primaryOffer?.label || 'Offre membre 1')}</div>
+                <div class="cc-offer-val">${escapeHtml(primaryName)} · ${escapeHtml(euros(offer.primaryOffer?.valueEur || 0))}</div>
+              </div>
+              <div class="cc-offer">
+                <div class="cc-offer-text">${escapeHtml(offer.secondaryOffer?.label || 'Offre membre 2')}</div>
+                <div class="cc-offer-val">${escapeHtml(secondaryName)} · ${escapeHtml(euros(offer.secondaryOffer?.valueEur || 0))}</div>
+              </div>
+            </div>
+            <div class="cc-total">
+              <div class="cc-total-label">Valeur totale du pack</div>
+              <div class="cc-total-val">${escapeHtml(euros(offer.totalSavingsEur || 0))} d'économies</div>
+            </div>
+            <a class="cc-cta" href="${buildCobrandWhatsAppUrl(offer)}" target="_blank" rel="noreferrer">💬 Activer le pack complet →</a>
+            <div class="cc-commissions">${escapeHtml(String(offer.commissionNote || 'Commissions partagées automatiquement selon la configuration Popey.'))}</div>
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
 async function loadPlaces() {
   const grid = document.getElementById('privGrid');
   if (grid) grid.innerHTML = `<div class="priv-card"><div style="padding:20px;font-size:14px;color:#555">Chargement des privileges…</div></div>`;
@@ -1145,11 +1302,14 @@ async function loadPlaces() {
     const response = await fetch(`/api/popey-human/marketplace/places?${query.toString()}`, { cache: 'no-store' });
     const payload = await response.json().catch(() => ({}));
     __places = Array.isArray(payload?.places) ? payload.places : [];
+    __cobrandOffers = Array.isArray(payload?.cobrandOffers) ? payload.cobrandOffers : [];
   } catch {
     __places = [];
+    __cobrandOffers = [];
   }
   renderSphereFilter();
   renderCards();
+  renderCobrandOffers();
 }
 
 async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
