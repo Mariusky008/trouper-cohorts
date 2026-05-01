@@ -195,6 +195,8 @@ export async function GET(request: NextRequest) {
 
     const city = String(request.nextUrl.searchParams.get("city") || "").trim();
     const status = String(request.nextUrl.searchParams.get("status") || "all").trim();
+    const catalog = String(request.nextUrl.searchParams.get("catalog") || "").trim().toLowerCase();
+    const isPrivilegeCatalog = catalog === "privilege";
     const spheresCsv = String(request.nextUrl.searchParams.get("spheres") || "").trim();
     const category = String(request.nextUrl.searchParams.get("category") || "").trim().toLowerCase();
     const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
@@ -225,9 +227,16 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = (data || []) as PlaceRow[];
-    const filteredRows = rows
+    let filteredRows = rows
       .filter((row) => !isBlockedMetier(row.metier || ""))
       .filter((row) => matchCity(city, row.city, row.city_slug));
+    if (isPrivilegeCatalog) {
+      filteredRows = filteredRows.filter((row) => {
+        const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
+        const hasConfiguredOffer = Boolean(String(row.privilege_badge || "").trim());
+        return hasConfiguredIdentity || hasConfiguredOffer;
+      });
+    }
     let places = filteredRows
       .map(toClientPlace)
       .map((item) => ({
@@ -271,7 +280,9 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    places = [...places, ...generatedSupplements];
+    if (!isPrivilegeCatalog) {
+      places = [...places, ...generatedSupplements];
+    }
 
     if (category && category !== "all") {
       places = places.filter((item) => String(item.category || "").toLowerCase() === category);
