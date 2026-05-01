@@ -1,14 +1,19 @@
 type PrivilegePageProps = {
-  params: {
-    ville: string;
-  };
+  params:
+    | {
+        ville: string;
+      }
+    | Promise<{
+        ville: string;
+      }>;
   searchParams?: Promise<{
     [key: string]: string | string[] | undefined;
   }>;
 };
 
 export default async function PrivilegeByCityPage({ params, searchParams }: PrivilegePageProps) {
-  const citySlug = String(params.ville || "dax").trim().toLowerCase() || "dax";
+  const resolvedParams = await Promise.resolve(params);
+  const citySlug = String(resolvedParams?.ville || "dax").trim().toLowerCase() || "dax";
   const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
