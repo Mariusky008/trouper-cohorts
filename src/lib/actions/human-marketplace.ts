@@ -432,16 +432,28 @@ export async function adminUpdateMarketplaceOfferStatusAction(formData: FormData
     );
   }
 
-  const { error } = await supabaseAdmin
+  const fullPatch = {
+    status: nextStatus,
+    assigned_member_id: assignMemberIdRaw || null,
+    processed_at: new Date().toISOString(),
+    processed_by_user_id: auth.user.id,
+    updated_at: new Date().toISOString(),
+  };
+  let { error } = await supabaseAdmin
     .from("human_marketplace_offers")
-    .update({
-      status: nextStatus,
-      assigned_member_id: assignMemberIdRaw || null,
-      processed_at: new Date().toISOString(),
-      processed_by_user_id: auth.user.id,
-      updated_at: new Date().toISOString(),
-    })
+    .update(fullPatch)
     .eq("id", offerId);
+  // Compatibility fallback: older DBs may not yet have processed_* / updated_at columns.
+  if (error && /column/i.test(String(error.message || ""))) {
+    const fallback = await supabaseAdmin
+      .from("human_marketplace_offers")
+      .update({
+        status: nextStatus,
+        assigned_member_id: assignMemberIdRaw || null,
+      })
+      .eq("id", offerId);
+    error = fallback.error;
+  }
   if (error) redirect(withMarketplaceStatus(currentUrl, "error", error.message || "Mise a jour impossible."));
 
   if (offer.place_id && nextStatus === "accepted") {
