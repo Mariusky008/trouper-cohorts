@@ -2,25 +2,24 @@ type PrivilegePageProps = {
   params: {
     ville: string;
   };
-  searchParams?: {
+  searchParams?: Promise<{
     [key: string]: string | string[] | undefined;
-  };
+  }>;
 };
 
-export default function PrivilegeByCityPage({ params, searchParams }: PrivilegePageProps) {
+export default async function PrivilegeByCityPage({ params, searchParams }: PrivilegePageProps) {
   const citySlug = String(params.ville || "dax").trim().toLowerCase() || "dax";
+  const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
-  if (searchParams) {
-    for (const [key, rawValue] of Object.entries(searchParams)) {
-      if (!rawValue) continue;
-      if (Array.isArray(rawValue)) {
-        for (const item of rawValue) {
-          if (typeof item === "string" && item.length > 0) query.append(key, item);
-        }
-      } else if (typeof rawValue === "string" && rawValue.length > 0) {
-        query.set(key, rawValue);
+  for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
+    if (!rawValue) continue;
+    if (Array.isArray(rawValue)) {
+      for (const item of rawValue) {
+        if (typeof item === "string" && item.length > 0) query.append(key, item);
       }
+    } else if (typeof rawValue === "string" && rawValue.length > 0) {
+      query.set(key, rawValue);
     }
   }
   return (
