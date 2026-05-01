@@ -157,12 +157,31 @@ function makePlaceKey(city: string, sphere: string, metier: string): string {
   return `${slugify(city)}|${sphere.toLowerCase()}|${normalizeMetier(metier)}`;
 }
 
+function stripDepartmentSuffix(slug: string): string {
+  return String(slug || "").replace(/-\d{2,3}$/, "");
+}
+
 function matchCity(cityFilter: string, rowCity: string, rowCitySlug?: string | null): boolean {
   const raw = String(cityFilter || "").trim();
   if (!raw || raw === "Toutes les villes") return true;
   const filterSlug = slugify(raw);
   if (!filterSlug) return true;
-  return filterSlug === slugify(rowCity || "") || filterSlug === slugify(rowCitySlug || "");
+  const filterBase = stripDepartmentSuffix(filterSlug);
+  const rowCityNorm = slugify(rowCity || "");
+  const rowCitySlugNorm = slugify(rowCitySlug || "");
+  const rowCityBase = stripDepartmentSuffix(rowCityNorm);
+  const rowCitySlugBase = stripDepartmentSuffix(rowCitySlugNorm);
+
+  return (
+    filterSlug === rowCityNorm ||
+    filterSlug === rowCitySlugNorm ||
+    filterBase === rowCityNorm ||
+    filterBase === rowCitySlugNorm ||
+    filterSlug === rowCityBase ||
+    filterSlug === rowCitySlugBase ||
+    filterBase === rowCityBase ||
+    filterBase === rowCitySlugBase
+  );
 }
 
 export async function GET(request: NextRequest) {
