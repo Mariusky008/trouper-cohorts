@@ -284,6 +284,14 @@ export default async function AdminHumainMarketplacePage({
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <div className="space-y-2">
+                      {offer.status === "accepted" && (offer.assigned_member_id || offer.place?.owner_member_id) ? (
+                        <Link
+                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(String(offer.assigned_member_id || offer.place?.owner_member_id || ""))}#duo-offer-form`}
+                          className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
+                        >
+                          Creer offre duo
+                        </Link>
+                      ) : null}
                       <Link
                         href={`/admin/humain/marketplace/offres/${offer.id}`}
                         className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-900"
@@ -550,8 +558,8 @@ export default async function AdminHumainMarketplacePage({
             </div>
           </div>
 
-          <div className="rounded-xl border bg-white p-4">
-            <h2 className="text-lg font-black">Offres co-brandées (2 membres)</h2>
+          <div id="duo-offer-form" className="rounded-xl border bg-white p-4">
+            <h2 className="text-lg font-black">Creation Offre Duo (catalogue privilege)</h2>
             <p className="mt-1 text-xs text-black/70">
               Crée un pack à deux entre membres acceptés. Le pack s&apos;affiche ensuite dans le catalogue `privilege` sous la section dédiée.
             </p>
