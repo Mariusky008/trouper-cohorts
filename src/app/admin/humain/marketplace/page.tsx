@@ -27,6 +27,12 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string) {
+  const citySlug = slugify(city || "dax") || "dax";
+  const relativeUrl = `/privilege/${citySlug}?ref_id=${encodeURIComponent(refId)}&ref_name=${encodeURIComponent(refLabel)}`;
+  return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
+}
+
 export default async function AdminHumainMarketplacePage({
   searchParams,
 }: {
@@ -205,6 +211,21 @@ export default async function AdminHumainMarketplacePage({
                       <p className="text-xs text-black/70">
                         Source: {String(offer.metadata?.source || "n/a")} · Referral: {String(offer.metadata?.referral_code || "n/a")}
                       </p>
+                      {(() => {
+                        const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
+                        if (!refId) return null;
+                        const refLabel = membersById.get(refId) || "Membre Popey";
+                        const city = offer.city || offer.place?.city || "dax";
+                        const link = buildPersonalLink(appBase, city, refId, refLabel);
+                        return (
+                          <p className="text-xs text-emerald-700">
+                            Lien perso pro:{" "}
+                            <a href={link} target="_blank" rel="noreferrer" className="underline">
+                              {link}
+                            </a>
+                          </p>
+                        );
+                      })()}
                       {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
                       <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
@@ -310,11 +331,7 @@ export default async function AdminHumainMarketplacePage({
                           Lien perso:{" "}
                           {(() => {
                             const refLabel = membersById.get(place.owner_member_id || "") || "Membre Popey";
-                            const refName = encodeURIComponent(refLabel);
-                            const refId = encodeURIComponent(place.owner_member_id || "");
-                            const citySlug = slugify(place.city || "dax") || "dax";
-                            const relativeUrl = `/privilege/${citySlug}?ref_id=${refId}&ref_name=${refName}`;
-                            const fullUrl = appBase ? `${appBase}${relativeUrl}` : relativeUrl;
+                            const fullUrl = buildPersonalLink(appBase, place.city, place.owner_member_id || "", refLabel);
                             return (
                               <a href={fullUrl} target="_blank" rel="noreferrer" className="underline">
                                 {fullUrl}

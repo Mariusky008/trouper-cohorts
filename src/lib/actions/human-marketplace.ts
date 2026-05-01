@@ -41,7 +41,7 @@ type MarketplaceOfferRow = {
 };
 
 type MarketplaceOfferJoined = MarketplaceOfferRow & {
-  place: Pick<MarketplacePlaceRow, "id" | "city" | "metier" | "status" | "list_price_eur"> | null;
+  place: Pick<MarketplacePlaceRow, "id" | "city" | "metier" | "status" | "list_price_eur" | "owner_member_id"> | null;
 };
 
 type MarketplaceEventRow = {
@@ -266,11 +266,11 @@ function canTransitionPlaceStatus(fromStatus: string, toStatus: string) {
 function canTransitionOfferStatus(fromStatus: string, toStatus: string) {
   if (fromStatus === toStatus) return true;
   const allowed: Record<string, string[]> = {
-    pending: ["reviewing", "rejected", "cancelled"],
+    pending: ["reviewing", "accepted", "rejected", "cancelled"],
     reviewing: ["accepted", "rejected", "cancelled"],
-    accepted: [],
-    rejected: [],
-    cancelled: [],
+    accepted: ["reviewing", "cancelled"],
+    rejected: ["reviewing", "cancelled"],
+    cancelled: ["reviewing"],
   };
   return (allowed[fromStatus] || []).includes(toStatus);
 }
@@ -509,6 +509,15 @@ export async function adminDeleteMarketplaceOfferAction(formData: FormData): Pro
     .maybeSingle();
   if (offerReadError || !offer) {
     redirect(withMarketplaceStatus(currentUrl, "error", offerReadError?.message || "Demande introuvable."));
+  }
+
+  // Safety: neutralize references first in case FK is strict in legacy environments.
+  const { error: nullifyError } = await supabaseAdmin
+    .from("human_marketplace_events")
+    .update({ offer_id: null })
+    .eq("offer_id", offerId);
+  if (nullifyError) {
+    redirect(withMarketplaceStatus(currentUrl, "error", nullifyError.message || "Suppression impossible (events)."));
   }
 
   const { error: deleteError } = await supabaseAdmin.from("human_marketplace_offers").delete().eq("id", offerId);
