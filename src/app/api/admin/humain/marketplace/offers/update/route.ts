@@ -28,6 +28,16 @@ function canTransitionOfferStatus(fromStatus: string, toStatus: string) {
   return (allowed[fromStatus] || []).includes(toStatus);
 }
 
+function slugify(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
@@ -55,7 +65,7 @@ export async function POST(request: Request) {
 
   const { data: offer, error: offerReadError } = await supabaseAdmin
     .from("human_marketplace_offers")
-    .select("id,place_id,action_type,status")
+    .select("id,place_id,action_type,status,full_name,city,metadata")
     .eq("id", offerId)
     .maybeSingle();
   if (offerReadError || !offer) return fail(offerReadError?.message || "Demande introuvable.");
@@ -63,9 +73,23 @@ export async function POST(request: Request) {
     return fail(`Transition demande invalide: ${String(offer.status)} -> ${nextStatus}.`);
   }
 
+  const currentMeta =
+    offer.metadata && typeof offer.metadata === "object" && !Array.isArray(offer.metadata)
+      ? (offer.metadata as Record<string, unknown>)
+      : {};
+  const referralCodeExisting = String(currentMeta.referral_code || "").trim();
+  const referralCodeGenerated =
+    referralCodeExisting ||
+    [slugify(offer.full_name || "pro"), slugify(offer.city || "ville"), String(offer.id).slice(0, 8)].filter(Boolean).join("-");
+  const nextMeta = {
+    ...currentMeta,
+    referral_code: referralCodeGenerated,
+  };
+
   const fullPatch = {
     status: nextStatus,
     assigned_member_id: assignMemberIdRaw || null,
+    metadata: nextMeta,
     processed_at: new Date().toISOString(),
     processed_by_user_id: user.id,
     updated_at: new Date().toISOString(),
@@ -78,6 +102,7 @@ export async function POST(request: Request) {
       .update({
         status: nextStatus,
         assigned_member_id: assignMemberIdRaw || null,
+        metadata: nextMeta,
       })
       .eq("id", offerId);
     error = fallback.error;
@@ -117,4 +142,3 @@ export async function POST(request: Request) {
     status: 303,
   });
 }
-

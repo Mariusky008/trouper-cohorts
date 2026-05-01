@@ -31,6 +31,12 @@ function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabe
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
+function buildReferralCodeLink(baseUrl: string, city: string, referralCode: string, refLabel: string) {
+  const citySlug = slugify(city || "dax") || "dax";
+  const relativeUrl = `/privilege/${citySlug}?ref=${encodeURIComponent(referralCode)}&ref_name=${encodeURIComponent(refLabel)}`;
+  return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
+}
+
 export default async function AdminHumainMarketplacePage({
   searchParams,
 }: {
@@ -211,10 +217,15 @@ export default async function AdminHumainMarketplacePage({
                       </p>
                       {(() => {
                         const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
-                        if (!refId) return null;
-                        const refLabel = membersById.get(refId) || "Membre Popey";
+                        const referralCode = String(offer.metadata?.referral_code || "").trim();
+                        const refLabel = refId ? membersById.get(refId) || "Membre Popey" : offer.full_name || "Membre Popey";
                         const city = offer.city || offer.place?.city || "dax";
-                        const link = buildPersonalLink(appBase, city, refId, refLabel);
+                        const link = refId
+                          ? buildPersonalLink(appBase, city, refId, refLabel)
+                          : offer.status === "accepted" && referralCode
+                            ? buildReferralCodeLink(appBase, city, referralCode, refLabel)
+                            : "";
+                        if (!link) return null;
                         return (
                           <p className="text-xs text-emerald-700">
                             Lien perso pro:{" "}
@@ -224,6 +235,11 @@ export default async function AdminHumainMarketplacePage({
                           </p>
                         );
                       })()}
+                      {offer.status === "accepted" && !offer.assigned_member_id && !offer.place?.owner_member_id ? (
+                        <p className="text-xs text-amber-700">
+                          Astuce: attribue un membre pour obtenir un lien strictement stable via `ref_id`.
+                        </p>
+                      ) : null}
                       {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
                       <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
