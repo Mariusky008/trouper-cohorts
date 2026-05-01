@@ -7,16 +7,17 @@ type MemberOption = {
   label: string;
 };
 
-type SignedLinkResponse = {
-  success: boolean;
-  landingUrl?: string;
-  whatsappText?: string;
-  tokenExpiresAt?: string;
-  error?: string;
-};
-
 function trim(value: string): string {
   return String(value || "").trim();
+}
+
+function slugify(value: string): string {
+  return trim(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function normalizePhone(raw: string): string {
@@ -29,17 +30,13 @@ function normalizePhone(raw: string): string {
 }
 
 export function SignedLinkGenerator({ members }: { members: MemberOption[] }) {
-  const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [referrerId, setReferrerId] = useState("");
   const [referrerName, setReferrerName] = useState("");
   const [city, setCity] = useState("Dax");
-  const [expiresInHours, setExpiresInHours] = useState(168);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [clientName, setClientName] = useState("");
   const [landingUrl, setLandingUrl] = useState("");
   const [whatsappText, setWhatsappText] = useState("");
-  const [tokenExpiresAt, setTokenExpiresAt] = useState("");
   const [copiedField, setCopiedField] = useState<"" | "link" | "text">("");
 
   const selectedMember = useMemo(() => members.find((member) => member.id === referrerId) || null, [members, referrerId]);
@@ -69,49 +66,37 @@ export function SignedLinkGenerator({ members }: { members: MemberOption[] }) {
   };
 
   const generateSignedLink = async () => {
-    setError("");
     setCopiedField("");
-    setIsSubmitting(true);
-    const response = await fetch("/api/admin/humain/marketplace/signed-link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientName: trim(clientName),
-        clientPhone: trim(clientPhone),
-        referrerName: trim(referrerName || selectedMember?.label || ""),
-        referrerId: trim(referrerId || ""),
-        city: trim(city || "Dax"),
-        expiresInHours: Number(expiresInHours || 168),
-      }),
-    }).catch(() => null);
-    setIsSubmitting(false);
+    const refName = trim(referrerName || selectedMember?.label || "");
+    if (!refName) return;
 
-    if (!response) {
-      setError("Connexion impossible. Réessaie.");
-      return;
-    }
-    const data = (await response.json().catch(() => ({}))) as SignedLinkResponse;
-    if (!response.ok || !data.success) {
-      setError(data.error || "Génération impossible.");
-      return;
-    }
-    setLandingUrl(trim(data.landingUrl || ""));
-    setWhatsappText(trim(data.whatsappText || ""));
-    setTokenExpiresAt(trim(data.tokenExpiresAt || ""));
+    const cityLabel = trim(city || "Dax") || "Dax";
+    const citySlug = slugify(cityLabel || "dax") || "dax";
+    const referralCode = slugify(`${refName}-${cityLabel}`) || slugify(refName) || "ref-popey";
+    const base =
+      trim(process.env.NEXT_PUBLIC_APP_URL || "") ||
+      (typeof window !== "undefined" && window.location?.origin ? window.location.origin : "");
+    const cleanBase = base.replace(/\/+$/, "");
+    const query = new URLSearchParams({
+      ref: referralCode,
+      ref_id: trim(referrerId || ""),
+      ref_name: refName,
+      client_name: trim(clientName || "") || "Client",
+    });
+    const relativeUrl = `/privilege/${citySlug}?${query.toString()}`;
+    const finalLandingUrl = cleanBase ? `${cleanBase}${relativeUrl}` : relativeUrl;
+    const waText = `Bonjour, voici ton catalogue de privilèges Popey offert par ${refName} : ${finalLandingUrl}`;
+
+    setLandingUrl(finalLandingUrl);
+    setWhatsappText(waText);
   };
 
   return (
     <div className="rounded-xl border bg-white p-4">
-      <h2 className="text-lg font-black">Générateur de lien WhatsApp signé</h2>
-      <p className="mt-1 text-xs text-black/70">Crée un lien sécurisé prêt à copier-coller dans WhatsApp.</p>
+      <h2 className="text-lg font-black">Générateur de lien membre (privilèges)</h2>
+      <p className="mt-1 text-xs text-black/70">Crée un lien referral simple à envoyer au client via WhatsApp.</p>
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
-        <input
-          value={clientName}
-          onChange={(event) => setClientName(event.target.value)}
-          placeholder="Nom client (ex: Sophie)"
-          className="h-10 rounded border bg-background px-3 text-sm"
-        />
         <input
           value={clientPhone}
           onChange={(event) => setClientPhone(event.target.value)}
@@ -136,32 +121,30 @@ export function SignedLinkGenerator({ members }: { members: MemberOption[] }) {
           placeholder="Nom pro referrer"
           className="h-10 rounded border bg-background px-3 text-sm"
         />
-        <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ville" className="h-10 rounded border bg-background px-3 text-sm" />
         <input
-          value={String(expiresInHours)}
-          onChange={(event) => setExpiresInHours(Number(event.target.value || 168))}
-          placeholder="Expiration (heures)"
+          value={clientName}
+          onChange={(event) => setClientName(event.target.value)}
+          placeholder="Nom client (optionnel)"
           className="h-10 rounded border bg-background px-3 text-sm"
         />
+        <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ville" className="h-10 rounded border bg-background px-3 text-sm" />
       </div>
 
       <div className="mt-3">
         <button
           type="button"
           onClick={generateSignedLink}
-          disabled={isSubmitting || !trim(clientName) || !trim(referrerName || selectedMember?.label || "")}
+          disabled={!trim(referrerName || selectedMember?.label || "")}
           className="h-10 rounded border px-4 text-xs font-black uppercase tracking-wide disabled:opacity-50"
         >
-          {isSubmitting ? "Génération..." : "Générer le lien signé"}
+          Générer le lien membre
         </button>
       </div>
-
-      {error ? <p className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p> : null}
 
       {landingUrl ? (
         <div className="mt-4 space-y-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-black/70">Lien signé</p>
+            <p className="text-xs font-black uppercase tracking-wide text-black/70">Lien referral</p>
             <textarea value={landingUrl} readOnly rows={2} className="mt-1 w-full rounded border bg-background p-2 text-xs" />
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -204,8 +187,6 @@ export function SignedLinkGenerator({ members }: { members: MemberOption[] }) {
               )}
             </div>
           </div>
-
-          {tokenExpiresAt ? <p className="text-xs text-black/60">Expiration: {new Date(tokenExpiresAt).toLocaleString("fr-FR")}</p> : null}
         </div>
       ) : null}
     </div>

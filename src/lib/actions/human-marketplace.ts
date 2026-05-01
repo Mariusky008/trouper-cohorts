@@ -49,6 +49,20 @@ type MarketplaceEventRow = {
   place: Pick<MarketplacePlaceRow, "id" | "city" | "metier"> | null;
 };
 
+type MarketplaceLandingActivationRow = {
+  id: string;
+  city: string;
+  category_key: string;
+  client_name: string;
+  referrer_name: string;
+  partner_name: string | null;
+  partner_phone: string | null;
+  source: string;
+  created_at: string;
+  metadata: Record<string, unknown> | null;
+  place: Pick<MarketplacePlaceRow, "id" | "city" | "metier"> | null;
+};
+
 type MarketplaceSnapshotFilters = {
   offerStatus?: string;
   offerActionType?: string;
@@ -84,6 +98,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       places: [] as MarketplacePlaceRow[],
       offers: [] as MarketplaceOfferJoined[],
       timelineEvents: [] as MarketplaceEventRow[],
+      recentActivations: [] as MarketplaceLandingActivationRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -132,6 +147,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       places: [] as MarketplacePlaceRow[],
       offers: [] as MarketplaceOfferJoined[],
       timelineEvents: [] as MarketplaceEventRow[],
+      recentActivations: [] as MarketplaceLandingActivationRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -191,6 +207,12 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     .order("created_at", { ascending: false })
     .limit(40);
   const timelineEvents = (eventsData as MarketplaceEventRow[] | null) || [];
+  const { data: activationsData } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select("id,city,category_key,client_name,referrer_name,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)")
+    .order("created_at", { ascending: false })
+    .limit(80);
+  const recentActivations = (activationsData as MarketplaceLandingActivationRow[] | null) || [];
   const cities = Array.from(new Set(places.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
   const offersRawLast24h = offersRaw.filter((offer) => {
     const createdAt = Date.parse(String(offer.created_at || ""));
@@ -203,6 +225,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     places: filteredPlaces,
     offers,
     timelineEvents,
+    recentActivations,
     members,
     cities,
     selectedTimelinePlaceId,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { verifyMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +11,10 @@ type ActivatePayload = {
   city?: string;
   category?: string;
   clientPhone?: string;
+  clientName?: string;
+  referrerName?: string;
+  referrerId?: string;
+  referralCode?: string;
 };
 
 function trim(value: unknown): string {
@@ -41,6 +44,10 @@ function inferCategoryFromSphere(sphere: string): string {
   return "services";
 }
 
+function toWhatsAppDigits(raw: string): string {
+  return trim(raw).replace(/[^\d]/g, "");
+}
+
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
   try {
@@ -50,18 +57,18 @@ export async function POST(request: NextRequest) {
     const source = trim(body?.source || "whatsapp_landing").slice(0, 64) || "whatsapp_landing";
     const declaredCity = trim(body?.city).slice(0, 120);
     const declaredCategory = trim(body?.category).toLowerCase().slice(0, 32);
-    const fallbackClientPhone = trim(body?.clientPhone);
+    const fallbackClientName = trim(body?.clientName) || "Client";
+    const fallbackReferrerName = trim(body?.referrerName);
+    const fallbackReferrerId = trim(body?.referrerId);
+    const fallbackReferralCode = trim(body?.referralCode);
 
     if (!placeId) {
       return NextResponse.json({ error: "Place manquante." }, { status: 400 });
     }
-    if (!contextToken) {
-      return NextResponse.json({ error: "Lien invalide (contexte manquant)." }, { status: 401 });
-    }
-
-    const verified = verifyMarketplaceLandingContext(contextToken);
-    if (!verified.valid || !verified.payload) {
-      return NextResponse.json({ error: "Lien invalide ou expiré.", reason: verified.reason || "invalid" }, { status: 401 });
+    const verified = contextToken ? verifyMarketplaceLandingContext(contextToken) : { valid: false as const };
+    const hasVerifiedContext = Boolean(verified.valid && "payload" in verified && verified.payload);
+    if (!hasVerifiedContext && !fallbackReferrerName) {
+      return NextResponse.json({ error: "Lien invalide. Referrer manquant." }, { status: 401 });
     }
 
     const supabase = createAdminClient();
@@ -95,15 +102,23 @@ export async function POST(request: NextRequest) {
     });
 
     const category = declaredCategory || inferCategoryFromSphere(trim(place.sphere_key));
-    const resolvedClientPhone = verified.payload.client_phone || fallbackClientPhone || null;
+    const clientId =
+      hasVerifiedContext && "payload" in verified && verified.payload
+        ? verified.payload.client_id
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const resolvedClientName = hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.client_name : fallbackClientName;
+    const resolvedReferrerName =
+      hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_name : fallbackReferrerName;
+    const resolvedReferrerId =
+      hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_id : fallbackReferrerId || fallbackReferralCode || "referral";
     const leadPayload = {
       place_id: place.id,
-      city: trim(place.city) || declaredCity || verified.payload.city,
+      city: trim(place.city) || declaredCity || (hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.city : declaredCity || "Dax"),
       category_key: category,
-      client_id: verified.payload.client_id,
-      client_name: verified.payload.client_name,
-      referrer_id: verified.payload.referrer_id,
-      referrer_name: verified.payload.referrer_name,
+      client_id: clientId,
+      client_name: resolvedClientName,
+      referrer_id: resolvedReferrerId,
+      referrer_name: resolvedReferrerName,
       partner_member_id: ownerMemberId || null,
       partner_name: partnerName,
       partner_phone: partnerPhone || null,
@@ -112,6 +127,7 @@ export async function POST(request: NextRequest) {
         metier: trim(place.metier),
         company_name: trim(place.company_name),
         request_id: requestId,
+        referral_code: fallbackReferralCode || null,
       },
     };
 
@@ -135,13 +151,14 @@ export async function POST(request: NextRequest) {
       city: leadPayload.city,
       category_key: category,
       place_id: place.id,
-      client_id: verified.payload.client_id,
-      referrer_id: verified.payload.referrer_id,
+      client_id: leadPayload.client_id,
+      referrer_id: leadPayload.referrer_id,
       partner_member_id: ownerMemberId || null,
       source,
       metadata: {
         activation_id: activationId,
         request_id: requestId,
+        referral_code: fallbackReferralCode || null,
       },
     };
     const { error: trackingError } = await supabase.from("human_marketplace_landing_events").insert(activationEvent);
@@ -152,40 +169,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    let twilioResult: { success: boolean; error?: string } = { success: false, error: "missing_partner_phone" };
-    if (partnerPhone) {
-      const message = `Salut ! Un prospect de la part de ${verified.payload.referrer_name} vient de choisir ton offre (${trim(place.metier)}). Client: ${verified.payload.client_name}.`;
-      const twilioSend = await sendWhatsAppTextMessage(partnerPhone, message, {
-        ownerMemberId: ownerMemberId || null,
-        source: "marketplace_landing_activation",
-        metadata: {
-          place_id: place.id,
-          activation_id: activationId,
-          client_id: verified.payload.client_id,
-          referrer_id: verified.payload.referrer_id,
-          category,
-        },
-      });
-      twilioResult = twilioSend.success ? { success: true } : { success: false, error: twilioSend.error };
-    }
-
-    let clientConfirmationSent = false;
-    if (resolvedClientPhone) {
-      const clientConfirmation = await sendWhatsAppTextMessage(
-        resolvedClientPhone,
-        `Bien reçu ! ${partnerName} vous rappelle demain. Merci pour votre confiance.`,
-        {
-          ownerMemberId: ownerMemberId || null,
-          source: "marketplace_landing_client_confirmation",
-          metadata: {
-            place_id: place.id,
-            activation_id: activationId,
-            city: leadPayload.city,
-          },
-        },
-      );
-      clientConfirmationSent = Boolean(clientConfirmation.success);
-    }
+    const trackingId = activationId || requestId;
+    const rawMessage = `Bonjour ${partnerName} ! Je souhaite activer mon privilege Popey (${trim(place.metier)}) offert par ${leadPayload.referrer_name}. [ID-TRACKING: ${trackingId}]`;
+    const waPhone = toWhatsAppDigits(partnerPhone || "");
+    const whatsappUrl = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(rawMessage)}` : null;
 
     let cityWeeklyActivations = 0;
     const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -201,12 +188,14 @@ export async function POST(request: NextRequest) {
       partnerName,
       partnerPhone: partnerPhone || null,
       activationId,
-      message: `C'est envoyé ! ${partnerName} va vous contacter.`,
+      message: waPhone ? `Ouverture WhatsApp pre-rempli vers ${partnerName}.` : `Activation enregistree pour ${partnerName}.`,
       cityWeeklyActivations,
-      clientConfirmationSent,
-      referrerName: verified.payload.referrer_name,
-      clientName: verified.payload.client_name,
-      twilio: twilioResult,
+      clientConfirmationSent: false,
+      referrerName: leadPayload.referrer_name,
+      clientName: leadPayload.client_name,
+      whatsappUrl,
+      whatsappMessage: rawMessage,
+      trackingId,
     });
   } catch (error) {
     console.error("[marketplace/activate] unexpected", { requestId, error });

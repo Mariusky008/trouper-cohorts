@@ -249,6 +249,28 @@ export default async function AdminHumainMarketplacePage({
           </div>
 
           <div className="rounded-xl border bg-white p-4">
+            <h2 className="text-lg font-black">Mises en relation privilèges (recent)</h2>
+            <div className="mt-3 space-y-2">
+              {snapshot.recentActivations.map((activation) => (
+                <article key={activation.id} className="rounded border p-2 text-xs">
+                  <p className="font-black">
+                    {activation.client_name} ← {activation.referrer_name} → {activation.partner_name || activation.place?.metier || "Partenaire"}
+                  </p>
+                  <p className="text-black/70">
+                    {activation.city} · {activation.category_key} · {activation.source}
+                  </p>
+                  <p className="text-black/70">
+                    {new Date(activation.created_at).toLocaleString("fr-FR")} · tracking: {activation.id}
+                  </p>
+                </article>
+              ))}
+              {snapshot.recentActivations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucune activation privilège pour le moment.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4">
             <h2 className="text-lg font-black">Places (controle manuel)</h2>
             <div className="mt-3 space-y-3">
               {snapshot.places.slice(0, 120).map((place) => (

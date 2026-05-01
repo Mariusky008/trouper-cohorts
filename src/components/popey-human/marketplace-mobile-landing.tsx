@@ -29,6 +29,9 @@ type ActivationResponse = {
   clientConfirmationSent?: boolean;
   message?: string;
   error?: string;
+  whatsappUrl?: string | null;
+  whatsappMessage?: string;
+  trackingId?: string;
 };
 
 type SuccessModalData = {
@@ -91,8 +94,10 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
   const hasTrackedView = useRef(false);
 
   const clientName = String(searchParams.get("client") || searchParams.get("client_name") || "Client").trim();
-  const referrerName = String(searchParams.get("referrer") || searchParams.get("pro") || "votre pro").trim();
+  const referrerName = String(searchParams.get("referrer") || searchParams.get("pro") || searchParams.get("ref_name") || "votre pro").trim();
   const contextToken = String(searchParams.get("ctx") || "").trim();
+  const referrerId = String(searchParams.get("ref_id") || "").trim();
+  const referralCode = String(searchParams.get("ref") || "").trim();
 
   const trackEvent = useCallback(
     async (eventType: "landing_view" | "category_view" | "search_used", metadata?: Record<string, unknown>) => {
@@ -157,10 +162,6 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
   const activateOffer = async (place: LandingPlace) => {
     setErrorMessage("");
     setSuccessModal(null);
-    if (!contextToken) {
-      setErrorMessage("Ce lien n'est pas sécurisé. Utilise le lien WhatsApp complet.");
-      return;
-    }
     setIsActivatingPlaceId(place.id);
     const response = await fetch("/api/popey-human/marketplace/places/activate", {
       method: "POST",
@@ -171,6 +172,10 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
         city,
         category: mapToUiCategory(place),
         clientPhone: String(searchParams.get("client_phone") || searchParams.get("phone") || "").trim() || null,
+        clientName,
+        referrerName,
+        referrerId: referrerId || null,
+        referralCode: referralCode || null,
         source: "whatsapp_landing",
       }),
     }).catch(() => null);
@@ -184,6 +189,9 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
     if (!response.ok || !data.success) {
       setErrorMessage(data.error || "Activation impossible pour le moment.");
       return;
+    }
+    if (data.whatsappUrl) {
+      window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
     }
     setSuccessModal({
       partnerName: data.partnerName || "le partenaire",
@@ -294,11 +302,11 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
                 </div>
 
                 <p className="text-sm text-gray-800">
-                  Bravo {clientName} ! Votre demande a bien été transmise à {successModal.partnerName}.
+                  Bravo {clientName} ! Votre demande est enregistrée pour {successModal.partnerName}.
                 </p>
                 <p className="mt-2 text-sm text-gray-700">
-                  Il/Elle a été prévenu(e) que vous venez de la part de {referrerName} et vous recontactera personnellement sous
-                  24h pour valider votre avantage. Vous n&apos;avez plus rien à faire !
+                  WhatsApp vient de s&apos;ouvrir avec un message pré-rempli indiquant que vous venez de la part de {referrerName}.
+                  Envoyez ce message pour activer votre privilège.
                 </p>
 
                 <p className="mt-3 rounded-lg bg-[#f6f7fb] px-3 py-2 text-xs text-gray-600">
@@ -310,9 +318,7 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
                   Déjà {Math.max(0, successModal.cityWeeklyActivations)} personnes ont profité de ce privilège cette semaine à Dax.
                 </p>
 
-                {successModal.clientConfirmationSent ? (
-                  <p className="mt-1 text-xs text-emerald-700">Confirmation WhatsApp envoyée, vous avez une trace écrite.</p>
-                ) : null}
+                <p className="mt-1 text-xs text-emerald-700">Le tracking Popey est enregistré dans l&apos;admin.</p>
 
                 <div className="mt-4 grid gap-2">
                   {successModal.partnerPhone ? (
