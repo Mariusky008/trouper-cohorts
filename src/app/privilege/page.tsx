@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function DaxLandingPage() {
+export default function PrivilegeIndexPage() {
   redirect("/privilege/dax");
 }

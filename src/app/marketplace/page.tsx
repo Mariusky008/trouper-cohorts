@@ -1,5 +1,6 @@
-import { MarketplaceMobileLanding } from "@/components/popey-human/marketplace-mobile-landing";
+import { MarketplaceHub } from "@/components/popey-human/marketplace-hub";
 
 export default function MarketplaceLandingPage() {
-  return <MarketplaceMobileLanding city="Dax" />;
+  // Product guardrail: `/marketplace` must remain the primary marketplace hub.
+  return <MarketplaceHub city="Dax" />;
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 type LandingPlace = {
   id: string;
@@ -196,6 +197,11 @@ export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
     <main className="min-h-screen bg-[#f6f7fb] text-[#111827]">
       <div className="mx-auto w-full max-w-md px-4 pb-20 pt-5">
         <header className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="mb-2">
+            <Link href="/marketplace" className="inline-flex rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700">
+              ← Retour Marketplace
+            </Link>
+          </div>
           <p className="text-base font-semibold">
             Bonjour {clientName}, voici vos privilèges Popey offerts par {referrerName}.
           </p>
