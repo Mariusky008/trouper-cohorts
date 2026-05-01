@@ -438,13 +438,8 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
     </div>
 
     <!-- Sphere filter -->
-    <div class="sphere-filter fade-up">
-      <button class="sf-chip active" onclick="filterSphere('all',this)">Tous · 8</button>
-      <button class="sf-chip" onclick="filterSphere('sante',this)">🌿 Santé · 2</button>
-      <button class="sf-chip" onclick="filterSphere('habitat',this)">🏠 Habitat · 2</button>
-      <button class="sf-chip" onclick="filterSphere('digital',this)">💻 Digital · 2</button>
-      <button class="sf-chip" onclick="filterSphere('mariage',this)">💒 Mariage · 1</button>
-      <button class="sf-chip" onclick="filterSphere('finance',this)">⚖️ Finance · 1</button>
+    <div class="sphere-filter fade-up" id="sphereFilter">
+      <button class="sf-chip active">Chargement…</button>
     </div>
 
     <!-- Cards grid -->
@@ -1031,10 +1026,176 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 <script>
 const __params = new URLSearchParams(window.location.search);
 const __refName = (__params.get('ref_name') || __params.get('referrer') || __params.get('pro') || 'Jean Moreau').trim();
+const __refId = (__params.get('ref_id') || '').trim();
+const __refCode = (__params.get('ref') || '').trim();
+const __clientName = (__params.get('client_name') || __params.get('client') || 'Client').trim();
 const __citySlug = (__params.get('ville') || 'dax').trim();
 const __cityLabel = __citySlug ? __citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Dax';
+let __places = [];
+let __activeSphere = 'all';
 
-document.addEventListener('DOMContentLoaded', () => {
+const SPHERE_META = {
+  sante: { label: 'Sante', icon: '🌿', color: '#00A070', gradient: 'linear-gradient(90deg,#00C896,#00A070)', category: 'sante' },
+  habitat: { label: 'Habitat', icon: '🏠', color: '#C07800', gradient: 'linear-gradient(90deg,#F5A623,#E8961A)', category: 'maison' },
+  digital: { label: 'Digital', icon: '💻', color: '#1D6FA4', gradient: 'linear-gradient(90deg,#4FC3F7,#0288D1)', category: 'services' },
+  mariage: { label: 'Mariage', icon: '💒', color: '#B5376A', gradient: 'linear-gradient(90deg,#F48FB1,#C2185B)', category: 'services' },
+  finance: { label: 'Finance', icon: '⚖️', color: '#6D3FCB', gradient: 'linear-gradient(90deg,#9B8FFF,#7B5EA7)', category: 'services' },
+};
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  if (!parts.length) return 'PP';
+  return parts.map((part) => part[0]?.toUpperCase() || '').join('');
+}
+
+function inferSphereFromCategory(category) {
+  const value = String(category || '').toLowerCase().trim();
+  if (value === 'sante' || value === 'bien-etre') return 'sante';
+  if (value === 'maison' || value === 'travaux') return 'habitat';
+  return 'digital';
+}
+
+function sphereForPlace(place) {
+  const sphere = String(place?.sphere || '').toLowerCase().trim();
+  if (SPHERE_META[sphere]) return sphere;
+  return inferSphereFromCategory(place?.category);
+}
+
+function renderSphereFilter() {
+  const root = document.getElementById('sphereFilter');
+  if (!root) return;
+  const counts = __places.reduce((acc, place) => {
+    const sphere = sphereForPlace(place);
+    acc[sphere] = (acc[sphere] || 0) + 1;
+    return acc;
+  }, {});
+  const chips = [
+    { key: 'all', label: `Tous · ${__places.length}` },
+    ...Object.entries(counts).map(([sphere, count]) => ({
+      key: sphere,
+      label: `${SPHERE_META[sphere]?.icon || '✨'} ${SPHERE_META[sphere]?.label || sphere} · ${count}`,
+    })),
+  ];
+  root.innerHTML = chips
+    .map((chip) => `<button class="sf-chip ${chip.key === __activeSphere ? 'active' : ''}" data-sphere="${chip.key}">${escapeHtml(chip.label)}</button>`)
+    .join('');
+}
+
+function renderCards() {
+  const grid = document.getElementById('privGrid');
+  if (!grid) return;
+  const visible = __activeSphere === 'all' ? __places : __places.filter((place) => sphereForPlace(place) === __activeSphere);
+  if (!visible.length) {
+    grid.innerHTML = `<div class="priv-card"><div style="padding:20px;font-size:14px;color:#555">Aucun privilege disponible pour ce filtre.</div></div>`;
+    return;
+  }
+  grid.innerHTML = visible
+    .map((place) => {
+      const sphere = sphereForPlace(place);
+      const meta = SPHERE_META[sphere] || SPHERE_META.digital;
+      const proName = String(place.companyName || place.metier || 'Partenaire Popey').trim();
+      const privilege = String(place.badge || 'Offre privilege').trim();
+      const trackingId = `PRIV-${String(place.id || '').slice(0, 8) || 'NA'}`;
+      return `
+      <div class="priv-card ${place.badge ? 'premium' : ''}" data-sphere="${escapeHtml(sphere)}">
+        <div class="pc-gold-stripe" style="background:${meta.gradient}"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(0,0,0,.04)">${meta.icon}</div>
+          <div class="pch-info">
+            <div class="pch-metier">${escapeHtml(place.metier || 'Metier')}</div>
+            <div class="pch-pro">${escapeHtml(proName)} · ${escapeHtml(__cityLabel)}</div>
+            <span class="pch-sphere" style="background:rgba(0,0,0,.04);color:${meta.color};border:1px solid rgba(0,0,0,.12)">${meta.icon} ${escapeHtml(meta.label)}</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">Privilège exclusif via ${escapeHtml(__refName)}</div>
+          <div class="priv-value">${escapeHtml(privilege)}</div>
+          <div class="priv-desc">Activation rapide via WhatsApp avec tracking Popey.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar">${escapeHtml(initials(proName))}</div>
+          <div>
+            <div class="pi-name">${escapeHtml(proName)}</div>
+            <div class="pi-meta">📍 ${escapeHtml(__cityLabel)} · reseau Popey</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta js-activate" data-place-id="${escapeHtml(place.id)}" data-tracking-id="${escapeHtml(trackingId)}">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Message pré-rempli · Envoi en 1 tap · Tracking admin</div>
+      </div>`;
+    })
+    .join('');
+}
+
+async function loadPlaces() {
+  const grid = document.getElementById('privGrid');
+  if (grid) grid.innerHTML = `<div class="priv-card"><div style="padding:20px;font-size:14px;color:#555">Chargement des privileges…</div></div>`;
+  try {
+    const response = await fetch(`/api/popey-human/marketplace/places?city=${encodeURIComponent(__cityLabel)}`, { cache: 'no-store' });
+    const payload = await response.json().catch(() => ({}));
+    __places = Array.isArray(payload?.places) ? payload.places : [];
+  } catch {
+    __places = [];
+  }
+  renderSphereFilter();
+  renderCards();
+}
+
+async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
+  const place = __places.find((item) => String(item.id) === String(placeId));
+  if (!place) return;
+  const trackingId = String(fallbackTrackingId || `PRIV-${String(place.id || '').slice(0, 8)}`);
+  const response = await fetch('/api/popey-human/marketplace/places/activate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      placeId: place.id,
+      city: __cityLabel,
+      category: place.category || null,
+      clientName: __clientName,
+      referrerName: __refName,
+      referrerId: __refId || null,
+      referralCode: __refCode || null,
+      source: 'whatsapp_landing',
+    }),
+  }).catch(() => null);
+  if (!response) return;
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data?.success) return;
+  const msg = String(data.whatsappMessage || `Bonjour ! Je souhaite activer mon privilège Popey. [ID-TRACKING: ${trackingId}]`);
+  const waUrl = String(data.whatsappUrl || '').trim();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:24px;animation:fadeIn .2s ease';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:24px;padding:28px;width:100%;max-width:480px;animation:slideUp .3s ease">
+      <div style="font-size:28px;margin-bottom:12px;text-align:center">💬</div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#0C0D0F;text-align:center;margin-bottom:8px">Votre WhatsApp va s'ouvrir</div>
+      <div style="font-size:13px;color:#555;text-align:center;margin-bottom:20px;line-height:1.6">Le message ci-dessous est pré-rempli. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</div>
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:16px;margin-bottom:20px;font-size:13px;color:#166534;line-height:1.6;font-style:italic">"${escapeHtml(msg)}"</div>
+      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:20px">${escapeHtml(__refName)} et Popey reçoivent automatiquement une trace de cette mise en relation.</div>
+      ${
+        waUrl
+          ? `<a href="${waUrl}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none;transition:all .2s" onclick="overlay.remove()">📱 Ouvrir WhatsApp →</a>`
+          : `<div style="padding:12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px;text-align:center">WhatsApp du partenaire non configuré. Demandez à l'admin de renseigner le numero.</div>`
+      }
+      <button onclick="this.closest('div[style]').remove()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1.5px solid #e5e7eb;border-radius:14px;font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#555;cursor:pointer">Fermer</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
   const badgeName = document.querySelector('.mb-name');
   if (badgeName) badgeName.textContent = __refName;
   const heroSub = document.querySelector('.hero-sub');
@@ -1043,6 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const catSub = document.querySelector('.cat-sub');
   if (catSub) catSub.textContent = `Privilèges activables sur ${__cityLabel}`;
+  await loadPlaces();
 });
 
 // ── VIEW SWITCH ──
@@ -1054,51 +1216,19 @@ function switchView(view, btn) {
 }
 
 // ── SPHERE FILTER ──
-function filterSphere(sphere, btn) {
-  document.querySelectorAll('.sf-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.priv-card').forEach(card => {
-    card.style.display = (sphere === 'all' || card.dataset.sphere === sphere) ? 'block' : 'none';
-  });
-}
-
-// ── ACTIVATE PRIVILEGE ──
-function activatePrivilege(proName, metier, referent, privilege, trackingId) {
-  const tel = '33768233347'; // JPR's number — in real app each pro has their own
-  const telMap = {
-    'Antonin Lemaire': '33600000001',
-    'Marie Dubois': '33600000002',
-    'Marc Fontaine': '33600000003',
-    'Sophie Ravel': '33600000004',
-    'Lucas Bernard': '33600000005',
-    'Inès Martin': '33600000006',
-    'Clara Petit': '33600000007',
-    "Thomas Laurent": '33600000008',
-  };
-  const proTel = telMap[proName] || tel;
-  
-  const effectiveReferent = __refName || referent;
-  const msg = `Bonjour ${proName} ! Je souhaite activer mon privilège Popey (${privilege}) offert par ${effectiveReferent}. [ID-TRACKING: ${trackingId}]`;
-  const waUrl = `https://wa.me/${proTel}?text=${encodeURIComponent(msg)}`;
-  
-  // Show confirmation modal
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:24px;animation:fadeIn .2s ease';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:24px;padding:28px;width:100%;max-width:480px;animation:slideUp .3s ease">
-      <div style="font-size:28px;margin-bottom:12px;text-align:center">💬</div>
-      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#0C0D0F;text-align:center;margin-bottom:8px">Votre WhatsApp va s'ouvrir</div>
-      <div style="font-size:13px;color:#555;text-align:center;margin-bottom:20px;line-height:1.6">Le message ci-dessous est pré-rempli. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</div>
-      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:16px;margin-bottom:20px;font-size:13px;color:#166534;line-height:1.6;font-style:italic">"${msg}"</div>
-      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:20px">Jean Moreau et Jean-Philippe Roth (Popey) recevront automatiquement une copie de cette mise en relation.</div>
-      <a href="${waUrl}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none;transition:all .2s" onclick="overlay.remove()">
-        📱 Ouvrir WhatsApp →
-      </a>
-      <button onclick="this.closest('div[style]').remove()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1.5px solid #e5e7eb;border-radius:14px;font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#555;cursor:pointer">Annuler</button>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
-}
+document.addEventListener('click', (event) => {
+  const sphereBtn = event.target.closest('.sf-chip[data-sphere]');
+  if (sphereBtn) {
+    __activeSphere = sphereBtn.dataset.sphere || 'all';
+    renderSphereFilter();
+    renderCards();
+    return;
+  }
+  const activateBtn = event.target.closest('.js-activate[data-place-id]');
+  if (activateBtn) {
+    void activatePrivilegeByPlace(activateBtn.dataset.placeId, activateBtn.dataset.trackingId || '');
+  }
+});
 
 // ── COPY LINK ──
 function copyLink(link) {
