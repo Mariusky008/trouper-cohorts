@@ -1,8 +1,5 @@
 import Link from "next/link";
-import {
-  adminSetMarketplacePlaceStatusAction,
-  getAdminMarketplaceSnapshot,
-} from "@/lib/actions/human-marketplace";
+import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 
 function euros(value?: number | null) {
   const safe = Number(value || 0);
@@ -301,11 +298,7 @@ export default async function AdminHumainMarketplacePage({
                     </div>
                   </div>
                   {offer.place ? (
-                    <form
-                      action={adminSetMarketplacePlaceStatusAction}
-                      method="post"
-                      className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3"
-                    >
+                    <form action="/api/admin/humain/marketplace/places/update" method="post" className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
                       <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-800">
                         Configurer l&apos;offre privilège de ce professionnel
                       </p>
@@ -457,7 +450,7 @@ export default async function AdminHumainMarketplacePage({
                         <p className="text-xs text-amber-700">Assigne un owner membre pour générer son lien personnel stable.</p>
                       )}
                     </div>
-                    <form action={adminSetMarketplacePlaceStatusAction} method="post" className="flex flex-wrap items-center gap-2">
+                    <form action="/api/admin/humain/marketplace/places/update" method="post" className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="place_id" value={place.id} />
                       <select

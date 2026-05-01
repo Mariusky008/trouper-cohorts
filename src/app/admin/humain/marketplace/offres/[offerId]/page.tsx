@@ -1,15 +1,21 @@
 import Link from "next/link";
 import {
-  adminSetMarketplacePlaceStatusAction,
   getAdminMarketplaceSnapshot,
 } from "@/lib/actions/human-marketplace";
 
 type OfferConfigPageProps = {
   params: Promise<{ offerId: string }>;
+  searchParams?: Promise<{
+    marketStatus?: string;
+    marketMessage?: string;
+  }>;
 };
 
-export default async function AdminMarketplaceOfferConfigPage({ params }: OfferConfigPageProps) {
+export default async function AdminMarketplaceOfferConfigPage({ params, searchParams }: OfferConfigPageProps) {
   const { offerId } = await params;
+  const qp = (await searchParams) || {};
+  const marketStatus = typeof qp.marketStatus === "string" ? qp.marketStatus : "";
+  const marketMessage = typeof qp.marketMessage === "string" ? qp.marketMessage : "";
   const snapshot = await getAdminMarketplaceSnapshot({
     offerStatus: "all",
     offerActionType: "all",
@@ -70,9 +76,15 @@ export default async function AdminMarketplaceOfferConfigPage({ params }: OfferC
       </div>
 
       <article className="rounded-2xl border bg-white p-4 sm:p-6">
+        {marketStatus === "success" ? (
+          <p className="mb-3 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{marketMessage || "Action effectuée."}</p>
+        ) : null}
+        {marketStatus === "error" ? (
+          <p className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{marketMessage || "Action impossible."}</p>
+        ) : null}
         <p className="mb-4 text-xs font-black uppercase tracking-wide text-amber-800">Éditeur offre privilège (plein format)</p>
-        <form action={adminSetMarketplacePlaceStatusAction} method="post" className="grid gap-3 md:grid-cols-2">
-          <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+        <form action="/api/admin/humain/marketplace/places/update" method="post" className="grid gap-3 md:grid-cols-2">
+          <input type="hidden" name="current_url" value={`/admin/humain/marketplace/offres/${offer.id}`} />
           <input type="hidden" name="place_id" value={offer.place.id} />
           <input type="hidden" name="next_status" value={offer.place.status || "reserved"} />
 
@@ -143,4 +155,3 @@ export default async function AdminMarketplaceOfferConfigPage({ params }: OfferC
     </section>
   );
 }
-

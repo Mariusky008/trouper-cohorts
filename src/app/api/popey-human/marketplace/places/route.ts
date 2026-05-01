@@ -157,6 +157,14 @@ function makePlaceKey(city: string, sphere: string, metier: string): string {
   return `${slugify(city)}|${sphere.toLowerCase()}|${normalizeMetier(metier)}`;
 }
 
+function matchCity(cityFilter: string, rowCity: string, rowCitySlug?: string | null): boolean {
+  const raw = String(cityFilter || "").trim();
+  if (!raw || raw === "Toutes les villes") return true;
+  const filterSlug = slugify(raw);
+  if (!filterSlug) return true;
+  return filterSlug === slugify(rowCity || "") || filterSlug === slugify(rowCitySlug || "");
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
@@ -177,7 +185,6 @@ export async function GET(request: NextRequest) {
       "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
     );
 
-    if (city && city !== "Toutes les villes") query = query.eq("city", city);
     if (status === "sale") query = query.eq("status", "sale");
     if (status === "dispo") query = query.eq("status", "dispo");
 
@@ -199,7 +206,9 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = (data || []) as PlaceRow[];
-    const filteredRows = rows.filter((row) => !isBlockedMetier(row.metier || ""));
+    const filteredRows = rows
+      .filter((row) => !isBlockedMetier(row.metier || ""))
+      .filter((row) => matchCity(city, row.city, row.city_slug));
     let places = filteredRows
       .map(toClientPlace)
       .map((item) => ({
@@ -209,7 +218,7 @@ export async function GET(request: NextRequest) {
 
     // Complete with safe catalog so each city/sphere keeps full coverage even if legacy DB rows are filtered out.
     const generated = generateMarketplacePlaces()
-      .filter((item) => !city || city === "Toutes les villes" || item.city === city)
+      .filter((item) => matchCity(city, item.city, item.citySlug))
       .filter((item) => (status === "sale" ? item.status === "sale" : status === "dispo" ? item.status === "dispo" : true))
       .filter((item) => (spheres.length > 0 ? spheres.includes(item.sphereKey) : true))
       .filter((item) => !isBlockedMetier(item.metier));
