@@ -259,6 +259,12 @@ export default async function AdminHumainMarketplacePage({
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <div className="space-y-2">
+                      <Link
+                        href={`/admin/humain/marketplace/offres/${offer.id}`}
+                        className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-900"
+                      >
+                        Configurer cette offre
+                      </Link>
                       <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                         <input type="hidden" name="offer_id" value={offer.id} />
