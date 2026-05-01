@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popey — Catalogue Privilège</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;0,900;1,300;1,700&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-l: rgba(201,168,76,.12);
+  --gold-g: rgba(201,168,76,.3);
+  --ink: #0C0D0F;
+  --ink2: #1A1C20;
+  --cream: #F8F5EE;
+  --cream2: #F0ECE3;
+  --teal: #00C896;
+  --teal-d: #00916E;
+  --teal-l: rgba(0,200,150,.1);
+  --red: #E5534B;
+  --border: rgba(0,0,0,.08);
+  --border2: rgba(0,0,0,.14);
+  --t: #1A1A1A;
+  --t2: #555;
+  --t3: #999;
+  --fd: 'Fraunces', serif;
+  --fb: 'Instrument Sans', sans-serif;
+  --fm: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--cream); color: var(--t); font-family: var(--fb); }
+
+/* ── VIEW TOGGLE ── */
+.view-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 999;
+  display: flex; background: var(--ink); border-radius: 100px; padding: 4px; gap: 2px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+.vt-btn {
+  padding: 8px 18px; border-radius: 100px; font-family: var(--fb);
+  font-size: 12px; font-weight: 600; cursor: pointer; border: none;
+  transition: all .2s; color: rgba(255,255,255,.4); background: transparent;
+}
+.vt-btn.active { background: var(--gold); color: var(--ink); }
+
+/* ══════════════════════════════
+   CLIENT VIEW
+══════════════════════════════ */
+#client-view { display: block; }
+#admin-view { display: none; }
+
+/* CLIENT HERO */
+.client-hero {
+  background: var(--ink);
+  padding: 0 0 60px;
+  position: relative; overflow: hidden;
+}
+.client-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-noise {
+  position: absolute; inset: 0; opacity: .03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Member badge */
+.member-badge {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px; padding: 16px 20px; margin: 0 24px 32px;
+  position: relative; z-index: 1;
+}
+.mb-avatar {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: var(--gold-l); border: 1.5px solid var(--gold-g);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.mb-info { flex: 1; }
+.mb-name { font-family: var(--fd); font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.mb-meta { font-size: 12px; color: rgba(255,255,255,.45); }
+.mb-tag {
+  background: var(--gold-l); border: 1px solid var(--gold-g);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: .06em;
+}
+
+/* Hero title */
+.hero-content { padding: 0 24px; position: relative; z-index: 1; }
+.hero-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
+.hero-title {
+  font-family: var(--fd); font-size: clamp(32px, 6vw, 52px);
+  font-weight: 900; color: #fff; line-height: .95; letter-spacing: -1px;
+  margin-bottom: 14px;
+}
+.hero-title em { font-style: italic; color: var(--gold); }
+.hero-sub { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.7; margin-bottom: 24px; max-width: 480px; }
+
+/* Stats strip */
+.hero-stats {
+  display: flex; gap: 1px; background: rgba(255,255,255,.08);
+  border-radius: 14px; overflow: hidden; position: relative; z-index: 1; margin: 0 24px;
+}
+.hs-item { flex: 1; background: rgba(255,255,255,.04); padding: 14px 12px; text-align: center; }
+.hs-val { font-family: var(--fd); font-size: 24px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+.hs-lbl { font-size: 9px; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .08em; }
+
+/* ── CATALOGUE GRID ── */
+.catalogue-section { padding: 40px 24px 80px; max-width: 1200px; margin: 0 auto; }
+.cat-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.cat-title { font-family: var(--fd); font-size: 28px; font-weight: 700; color: var(--ink); }
+.cat-sub { font-size: 13px; color: var(--t2); margin-top: 4px; }
+
+/* Sphere filter */
+.sphere-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 28px; }
+.sf-chip {
+  padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border2); background: transparent; color: var(--t2);
+  transition: all .2s; font-family: var(--fb);
+}
+.sf-chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* Privilege cards */
+.priv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+.priv-card {
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: 20px; overflow: hidden; transition: all .3s; position: relative;
+}
+.priv-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,.08); }
+.priv-card.premium { border-color: var(--gold-g); }
+
+/* Gold stripe */
+.pc-gold-stripe { height: 3px; width: 100%; }
+
+/* Card header */
+.pch { display: flex; align-items: flex-start; gap: 14px; padding: 18px 18px 14px; }
+.pch-icon {
+  width: 52px; height: 52px; border-radius: 16px; display: flex;
+  align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+}
+.pch-info { flex: 1; }
+.pch-metier { font-family: var(--fd); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.pch-pro { font-size: 12px; color: var(--t2); margin-bottom: 8px; }
+.pch-sphere {
+  display: inline-flex; font-size: 10px; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+
+/* Privilege box */
+.priv-box {
+  margin: 0 18px 14px; padding: 14px 16px;
+  background: linear-gradient(135deg, var(--gold-l), rgba(201,168,76,.05));
+  border: 1.5px solid var(--gold-g); border-radius: 14px;
+}
+.priv-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.priv-value { font-family: var(--fd); font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+.priv-desc { font-size: 12px; color: var(--t2); line-height: 1.5; }
+
+/* Pro info */
+.pro-info {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.pi-avatar {
+  width: 34px; height: 34px; border-radius: 10px; background: var(--cream2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 12px; font-weight: 700; color: var(--t2); flex-shrink: 0;
+}
+.pi-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.pi-meta { font-size: 11px; color: var(--t3); margin-top: 1px; }
+.pi-rating { margin-left: auto; font-size: 11px; color: var(--gold); }
+
+/* CTA Button */
+.priv-cta {
+  margin: 14px 18px 18px; width: calc(100% - 36px);
+  padding: 14px; border: none; border-radius: 14px;
+  background: #25D366; color: #fff;
+  font-family: var(--fd); font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all .25s; display: flex; align-items: center;
+  justify-content: center; gap: 8px;
+}
+.priv-cta:hover { background: #1aaa52; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,211,102,.3); }
+.priv-cta-note { text-align: center; font-size: 10px; color: var(--t3); margin: -8px 18px 14px; line-height: 1.4; }
+
+/* ── HOW IT WORKS ── */
+.how-section { background: var(--ink); padding: 60px 24px; }
+.how-inner { max-width: 900px; margin: 0 auto; }
+.how-title { font-family: var(--fd); font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.how-title em { font-style: italic; color: var(--gold); }
+.how-sub { font-size: 14px; color: rgba(255,255,255,.45); margin-bottom: 40px; }
+.how-steps { display: flex; flex-direction: column; gap: 1px; }
+.how-step {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px; padding: 20px 24px; display: flex; gap: 20px; align-items: flex-start;
+  margin-bottom: 8px;
+}
+.hs-num {
+  font-family: var(--fd); font-size: 32px; font-weight: 900; color: rgba(201,168,76,.3);
+  line-height: 1; flex-shrink: 0; width: 40px;
+}
+.hs-content {}
+.hs-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.hs-text { font-size: 13px; color: rgba(255,255,255,.45); line-height: 1.6; }
+.hs-code {
+  margin-top: 10px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px; padding: 10px 14px; font-family: var(--fm); font-size: 11px;
+  color: var(--gold); line-height: 1.6;
+}
+
+/* ══════════════════════════════
+   ADMIN VIEW
+══════════════════════════════ */
+#admin-view {
+  min-height: 100vh; background: #0D0E12; color: #E8EAF0;
+  font-family: var(--fb);
+}
+
+.admin-nav {
+  background: #13141A; border-bottom: 1px solid rgba(255,255,255,.06);
+  padding: 0 32px; height: 56px; display: flex; align-items: center;
+  justify-content: space-between;
+}
+.an-logo { font-family: var(--fd); font-size: 16px; font-weight: 700; }
+.an-logo span { color: var(--gold); }
+.an-tabs { display: flex; gap: 2px; }
+.an-tab {
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; color: rgba(255,255,255,.4); transition: all .2s;
+}
+.an-tab.active { background: rgba(201,168,76,.12); color: var(--gold); }
+.an-badge-red {
+  display: inline-block; background: var(--red); color: #fff;
+  border-radius: 20px; padding: 1px 7px; font-size: 10px; font-weight: 700;
+  margin-left: 6px;
+}
+
+/* Admin main */
+.admin-main { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 56px); }
+.admin-sidebar { background: #13141A; border-right: 1px solid rgba(255,255,255,.06); padding: 24px 16px; }
+.sidebar-section { margin-bottom: 28px; }
+.ss-title { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.25); margin-bottom: 12px; padding: 0 8px; }
+.ss-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,.55); cursor: pointer;
+  transition: all .2s; margin-bottom: 2px;
+}
+.ss-item.active { background: rgba(201,168,76,.1); color: var(--gold); }
+.ss-item:hover:not(.active) { background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
+.ss-icon { font-size: 16px; flex-shrink: 0; }
+.ss-count { margin-left: auto; font-family: var(--fm); font-size: 11px; opacity: .6; }
+
+/* Admin content */
+.admin-content { padding: 28px 32px; }
+
+/* KPI strip */
+.kpi-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 28px; }
+.kpi-card {
+  background: #13141A; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px; padding: 16px 18px;
+}
+.kpi-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 8px; }
+.kpi-val { font-family: var(--fd); font-size: 28px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 4px; }
+.kpi-trend { font-size: 12px; font-weight: 600; }
+.kpi-trend.up { color: var(--teal); }
+.kpi-trend.gold { color: var(--gold); }
+
+/* Section title */
+.content-title {
+  font-family: var(--fd); font-size: 20px; font-weight: 700; color: #fff;
+  margin-bottom: 4px;
+}
+.content-sub { font-size: 13px; color: rgba(255,255,255,.35); margin-bottom: 20px; }
+
+/* Live feed */
+.live-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.feed-item {
+  background: #13141A; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px; padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start;
+  transition: all .2s; cursor: pointer;
+}
+.feed-item:hover { border-color: rgba(201,168,76,.2); background: rgba(201,168,76,.04); }
+.feed-item.new { border-color: rgba(0,200,150,.25); background: rgba(0,200,150,.04); }
+.feed-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.fd-new { background: var(--teal); animation: blink 2s ease-in-out infinite; }
+.fd-done { background: rgba(255,255,255,.2); }
+.fd-gold { background: var(--gold); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.feed-content { flex: 1; min-width: 0; }
+.fc-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; line-height: 1.4; }
+.fc-meta { font-size: 11px; color: rgba(255,255,255,.35); display: flex; gap: 12px; flex-wrap: wrap; }
+.fc-tag {
+  display: inline-flex; font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; margin-left: auto; flex-shrink: 0; align-self: flex-start;
+}
+.ft-new { background: rgba(0,200,150,.12); color: var(--teal); border: 1px solid rgba(0,200,150,.25); }
+.ft-sent { background: rgba(201,168,76,.1); color: var(--gold); border: 1px solid rgba(201,168,76,.2); }
+.ft-conv { background: rgba(29,185,84,.12); color: #1DB954; border: 1px solid rgba(29,185,84,.2); }
+
+.feed-tracking {
+  margin-top: 8px; background: rgba(0,0,0,.2); border-radius: 8px;
+  padding: 8px 12px; font-family: var(--fm); font-size: 10px; color: rgba(255,255,255,.4);
+  line-height: 1.6;
+}
+.ft-highlight { color: var(--gold); }
+
+/* Members table */
+.members-table {
+  background: #13141A; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px; overflow: hidden;
+}
+.mt-header {
+  display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
+  padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+}
+.mt-row {
+  display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
+  padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .15s; cursor: pointer;
+}
+.mt-row:hover { background: rgba(255,255,255,.02); }
+.mt-row:last-child { border-bottom: none; }
+.mr-name { font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+.mr-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.mr-meta { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.mr-val { font-size: 13px; color: rgba(255,255,255,.7); align-self: center; }
+.mr-val.gold { color: var(--gold); font-weight: 600; }
+.mr-val.teal { color: var(--teal); font-weight: 600; }
+.mr-link {
+  font-family: var(--fm); font-size: 10px; color: rgba(255,255,255,.3);
+  background: rgba(255,255,255,.04); border-radius: 6px; padding: 4px 8px;
+  align-self: center; cursor: pointer; transition: all .2s;
+}
+.mr-link:hover { color: var(--gold); background: var(--gold-l); }
+.mr-status { align-self: center; }
+
+/* Status pills */
+.pill {
+  display: inline-flex; font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+}
+.pill-active { background: rgba(0,200,150,.1); color: var(--teal); border: 1px solid rgba(0,200,150,.2); }
+.pill-trial { background: rgba(201,168,76,.1); color: var(--gold); border: 1px solid rgba(201,168,76,.2); }
+.pill-inactive { background: rgba(255,255,255,.06); color: rgba(255,255,255,.3); border: 1px solid rgba(255,255,255,.08); }
+
+/* Message preview modal */
+.msg-preview {
+  background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px; padding: 14px 16px; margin-top: 12px;
+  font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.7; font-style: italic;
+}
+.msg-preview strong { color: var(--gold); font-style: normal; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .priv-grid { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .admin-main { grid-template-columns: 1fr; }
+  .admin-sidebar { display: none; }
+  .mt-header,.mt-row { grid-template-columns: 2fr 1fr 1fr; }
+  .mt-header > *:nth-child(n+4), .mt-row > *:nth-child(n+4) { display: none; }
+}
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.fade-up { opacity: 0; transition: opacity .6s ease, transform .6s ease; transform: translateY(16px); }
+.fade-up.visible { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<!-- VIEW TOGGLE -->
+<div class="view-toggle">
+  <button class="vt-btn active" onclick="switchView('client',this)">👤 Vue Client</button>
+  <button class="vt-btn" onclick="switchView('admin',this)">⚙️ Admin JPR</button>
+</div>
+
+<!-- ══════════════════════════════
+     CLIENT VIEW
+══════════════════════════════ -->
+<div id="client-view">
+
+  <!-- HERO -->
+  <div class="client-hero">
+    <div class="hero-noise"></div>
+
+    <!-- Member who sent the link -->
+    <div style="padding:20px 24px 0;position:relative;z-index:1">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,.6);margin-bottom:12px">Invitation personnelle de</div>
+    </div>
+    <div class="member-badge">
+      <div class="mb-avatar">⚡</div>
+      <div class="mb-info">
+        <div class="mb-name">Jean Moreau</div>
+        <div class="mb-meta">Électricien · Dax (40) · Membre Popey depuis 14 mois</div>
+      </div>
+      <div class="mb-tag">Éclaireur certifié</div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Catalogue Privilège Popey</div>
+      <h1 class="hero-title">Vos avantages<br><em>exclusifs</em> grâce<br>à Jean.</h1>
+      <p class="hero-sub">Jean fait partie du réseau Popey — un club de 150 professionnels de confiance sur le Grand Dax. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.</p>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hs-item"><div class="hs-val">29</div><div class="hs-lbl">Professionnels</div></div>
+      <div class="hs-item"><div class="hs-val">5</div><div class="hs-lbl">Sphères</div></div>
+      <div class="hs-item"><div class="hs-val">100%</div><div class="hs-lbl">Vérifiés</div></div>
+      <div class="hs-item"><div class="hs-val">Dax</div><div class="hs-lbl">Zone</div></div>
+    </div>
+  </div>
+
+  <!-- CATALOGUE -->
+  <div class="catalogue-section">
+    <div class="cat-header fade-up">
+      <div>
+        <div class="cat-title">Vos privilèges disponibles</div>
+        <div class="cat-sub">Offres réservées aux contacts de Jean · Non cumulables · Sur présentation de ce lien</div>
+      </div>
+    </div>
+
+    <!-- Sphere filter -->
+    <div class="sphere-filter fade-up">
+      <button class="sf-chip active" onclick="filterSphere('all',this)">Tous · 8</button>
+      <button class="sf-chip" onclick="filterSphere('sante',this)">🌿 Santé · 2</button>
+      <button class="sf-chip" onclick="filterSphere('habitat',this)">🏠 Habitat · 2</button>
+      <button class="sf-chip" onclick="filterSphere('digital',this)">💻 Digital · 2</button>
+      <button class="sf-chip" onclick="filterSphere('mariage',this)">💒 Mariage · 1</button>
+      <button class="sf-chip" onclick="filterSphere('finance',this)">⚖️ Finance · 1</button>
+    </div>
+
+    <!-- Cards grid -->
+    <div class="priv-grid" id="privGrid">
+
+      <!-- SANTÉ 1 — Coach sportif -->
+      <div class="priv-card premium" data-sphere="sante">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(0,200,150,.1)">🏋️</div>
+          <div class="pch-info">
+            <div class="pch-metier">Coach sportif</div>
+            <div class="pch-pro">Antonin Lemaire · Personal trainer · Dax</div>
+            <span class="pch-sphere" style="background:rgba(0,160,112,.08);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Sport</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">-20% sur le 1er mois</div>
+          <div class="priv-desc">Bilan forme offert + programme personnalisé dès la 1re séance. Valable 30 jours.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(0,200,150,.1);color:#007A56">AL</div>
+          <div>
+            <div class="pi-name">Antonin Lemaire</div>
+            <div class="pi-meta">📍 Dax · Disponible cette semaine</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Antonin Lemaire','Coach sportif','Jean Moreau','20% sur le 1er mois','PRIV-AL-JM-001')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- SANTÉ 2 — Sophrologue -->
+      <div class="priv-card" data-sphere="sante">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(0,200,150,.1)">🧘</div>
+          <div class="pch-info">
+            <div class="pch-metier">Sophrologue</div>
+            <div class="pch-pro">Marie Dubois · Gestion du stress · Dax</div>
+            <span class="pch-sphere" style="background:rgba(0,160,112,.08);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Bien-être</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">1re séance offerte</div>
+          <div class="priv-desc">Séance découverte de 45 min offerte (valeur 65€). Techniques de gestion du stress et du sommeil.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(0,200,150,.1);color:#007A56">MD</div>
+          <div>
+            <div class="pi-name">Marie Dubois</div>
+            <div class="pi-meta">📍 Dax · RDV sous 48h</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Marie Dubois','Sophrologue','Jean Moreau','1re séance offerte','PRIV-MD-JM-002')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- HABITAT 1 — Agent immobilier -->
+      <div class="priv-card premium" data-sphere="habitat">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#F5A623,#E8961A)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(245,166,35,.1)">🔑</div>
+          <div class="pch-info">
+            <div class="pch-metier">Agent immobilier</div>
+            <div class="pch-pro">Marc Fontaine · Transaction & Location · Dax</div>
+            <span class="pch-sphere" style="background:rgba(192,120,0,.08);color:#C07800;border:1px solid rgba(192,120,0,.2)">🏠 Habitat · Patrimoine</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">500€ de remise sur honoraires</div>
+          <div class="priv-desc">Réduction de 500€ sur les honoraires d'agence pour toute transaction signée avant le 31/12. Estimation gratuite incluse.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(245,166,35,.1);color:#C07800">MF</div>
+          <div>
+            <div class="pi-name">Marc Fontaine</div>
+            <div class="pi-meta">📍 Dax · Disponible aujourd'hui</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Marc Fontaine','Agent immobilier','Jean Moreau','500€ de remise sur honoraires','PRIV-MF-JM-003')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- HABITAT 2 — Architecte -->
+      <div class="priv-card" data-sphere="habitat">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#F5A623,#E8961A)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(245,166,35,.1)">🔨</div>
+          <div class="pch-info">
+            <div class="pch-metier">Architecte</div>
+            <div class="pch-pro">Sophie Ravel · Rénovation & Construction · Dax</div>
+            <span class="pch-sphere" style="background:rgba(192,120,0,.08);color:#C07800;border:1px solid rgba(192,120,0,.2)">🏠 Habitat · Patrimoine</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">Visite conseil offerte</div>
+          <div class="priv-desc">Consultation sur site de 1h offerte (valeur 180€). Étude de faisabilité + chiffrage estimatif inclus.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(245,166,35,.1);color:#C07800">SR</div>
+          <div>
+            <div class="pi-name">Sophie Ravel</div>
+            <div class="pi-meta">📍 Dax · Agenda cette semaine</div>
+          </div>
+          <div class="pi-rating">★★★★☆</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Sophie Ravel','Architecte','Jean Moreau','Visite conseil offerte','PRIV-SR-JM-004')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- DIGITAL 1 — Développeur web -->
+      <div class="priv-card" data-sphere="digital">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0288D1)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(59,130,246,.1)">💻</div>
+          <div class="pch-info">
+            <div class="pch-metier">Développeur web</div>
+            <div class="pch-pro">Lucas Bernard · Sites & Apps · Bayonne</div>
+            <span class="pch-sphere" style="background:rgba(29,111,164,.08);color:#1D6FA4;border:1px solid rgba(29,111,164,.2)">💻 Digital · Business</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">-15% + maintenance 3 mois offerte</div>
+          <div class="priv-desc">15% de réduction sur tout projet web + maintenance mensuelle offerte les 3 premiers mois (valeur 450€).</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(59,130,246,.1);color:#1D6FA4">LB</div>
+          <div>
+            <div class="pi-name">Lucas Bernard</div>
+            <div class="pi-meta">📍 Bayonne · Nouveau projet possible</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Lucas Bernard','Développeur web','Jean Moreau','-15% + maintenance offerte','PRIV-LB-JM-005')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- DIGITAL 2 — Designer -->
+      <div class="priv-card" data-sphere="digital">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0288D1)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(59,130,246,.1)">🎨</div>
+          <div class="pch-info">
+            <div class="pch-metier">Designer UX/UI</div>
+            <div class="pch-pro">Inès Martin · Identité visuelle · Bordeaux</div>
+            <span class="pch-sphere" style="background:rgba(29,111,164,.08);color:#1D6FA4;border:1px solid rgba(29,111,164,.2)">💻 Digital · Business</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">Audit identité visuelle offert</div>
+          <div class="priv-desc">Audit complet de votre identité visuelle actuelle offert (valeur 240€). Recommandations écrites incluses.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(59,130,246,.1);color:#1D6FA4">IM</div>
+          <div>
+            <div class="pi-name">Inès Martin</div>
+            <div class="pi-meta">📍 Bordeaux · En remote possible</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Inès Martin','Designer UX/UI','Jean Moreau','Audit identité visuelle offert','PRIV-IM-JM-006')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- MARIAGE -->
+      <div class="priv-card" data-sphere="mariage">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#F48FB1,#C2185B)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(181,55,106,.1)">📸</div>
+          <div class="pch-info">
+            <div class="pch-metier">Photographe mariage</div>
+            <div class="pch-pro">Clara Petit · Mariage & Événements · Dax</div>
+            <span class="pch-sphere" style="background:rgba(181,55,106,.08);color:#B5376A;border:1px solid rgba(181,55,106,.2)">💒 Mariage · Événementiel</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">Album photo offert</div>
+          <div class="priv-desc">Album photo 30×30cm offert pour toute prestation mariage signée (valeur 280€). Photos HD livrées en 4 semaines.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(181,55,106,.1);color:#B5376A">CP</div>
+          <div>
+            <div class="pi-name">Clara Petit</div>
+            <div class="pi-meta">📍 Dax · Dates 2025 disponibles</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Clara Petit','Photographe mariage','Jean Moreau','Album photo offert','PRIV-CP-JM-007')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+      <!-- FINANCE -->
+      <div class="priv-card" data-sphere="finance">
+        <div class="pc-gold-stripe" style="background:linear-gradient(90deg,#9B8FFF,#7B5EA7)"></div>
+        <div class="pch">
+          <div class="pch-icon" style="background:rgba(139,92,246,.1)">⚖️</div>
+          <div class="pch-info">
+            <div class="pch-metier">Avocat d'affaires</div>
+            <div class="pch-pro">Thomas Laurent · Droit commercial · Bayonne</div>
+            <span class="pch-sphere" style="background:rgba(109,63,203,.08);color:#6D3FCB;border:1px solid rgba(109,63,203,.2)">⚖️ Finance · Juridique</span>
+          </div>
+        </div>
+        <div class="priv-box">
+          <div class="priv-label">🎁 Privilège exclusif via Jean</div>
+          <div class="priv-value">1re consultation offerte</div>
+          <div class="priv-desc">Consultation juridique de 30 min offerte (valeur 120€). Contrats, statuts, litiges commerciaux. Réponse sous 24h.</div>
+        </div>
+        <div class="pro-info">
+          <div class="pi-avatar" style="background:rgba(139,92,246,.1);color:#6D3FCB">TL</div>
+          <div>
+            <div class="pi-name">Thomas Laurent</div>
+            <div class="pi-meta">📍 Bayonne · Visio possible</div>
+          </div>
+          <div class="pi-rating">★★★★★</div>
+        </div>
+        <button class="priv-cta" onclick="activatePrivilege('Thomas Laurent','Avocat d\'affaires','Jean Moreau','1re consultation offerte','PRIV-TL-JM-008')">
+          💬 Activer mon privilège via WhatsApp
+        </button>
+        <div class="priv-cta-note">Votre message WhatsApp sera pré-rempli · Envoi en 1 tap · Jean est notifié automatiquement</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <div class="how-inner">
+      <h2 class="how-title">Comment <em>ça marche</em> ?</h2>
+      <p class="how-sub">3 étapes · 30 secondes · Zéro inscription requise</p>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="hs-num">1</div>
+          <div class="hs-content">
+            <div class="hs-title">Vous cliquez sur "Activer mon privilège"</div>
+            <div class="hs-text">Votre WhatsApp s'ouvre avec un message pré-rempli. Le professionnel, Jean et Jean-Philippe (Popey) reçoivent une notification automatique.</div>
+            <div class="hs-code">wa.me/33612345678?text=Bonjour+Marc+Fontaine+%21+Je+souhaite+activer+mon+privilège+Popey+%28500€+de+remise%29+offert+par+<span class="ft-highlight">Jean+Moreau</span>+%5BID-TRACKING%3A+<span class="ft-highlight">PRIV-MF-JM-003</span>%5D</div>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="hs-num">2</div>
+          <div class="hs-content">
+            <div class="hs-title">Jean-Philippe rappelle le professionnel dans les 2h</div>
+            <div class="hs-text">Il valide que votre demande est bien prise en compte et que le privilège sera appliqué. Vous recevez une confirmation par message.</div>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="hs-num">3</div>
+          <div class="hs-content">
+            <div class="hs-title">Vous bénéficiez de votre privilège</div>
+            <div class="hs-text">Le professionnel vous accueille avec votre avantage déjà activé. Jean reçoit automatiquement sa commission si la mission aboutit.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end client-view -->
+
+
+<!-- ══════════════════════════════
+     ADMIN VIEW
+══════════════════════════════ -->
+<div id="admin-view">
+
+  <nav class="admin-nav">
+    <div class="an-logo">Popey <span>Admin</span></div>
+    <div class="an-tabs">
+      <div class="an-tab active">📡 Tour de contrôle</div>
+      <div class="an-tab">👥 Membres</div>
+      <div class="an-tab">🏪 Marketplace</div>
+      <div class="an-tab">💰 Commissions</div>
+      <div class="an-tab">⚙️ Paramètres</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,.4)">
+      <div style="width:7px;height:7px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite"></div>
+      3 nouveaux aujourd'hui
+    </div>
+  </nav>
+
+  <div class="admin-main">
+
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar">
+      <div class="sidebar-section">
+        <div class="ss-title">Tableau de bord</div>
+        <div class="ss-item active"><span class="ss-icon">📡</span>Live feed<span class="ss-count">47</span></div>
+        <div class="ss-item"><span class="ss-icon">🔗</span>Liens envoyés<span class="ss-count">312</span></div>
+        <div class="ss-item"><span class="ss-icon">✅</span>Activations<span class="ss-count">89</span></div>
+        <div class="ss-item"><span class="ss-icon">💬</span>Messages traités<span class="ss-count">76</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="ss-title">Membres</div>
+        <div class="ss-item"><span class="ss-icon">🌿</span>Santé<span class="ss-count">12</span></div>
+        <div class="ss-item"><span class="ss-icon">🏠</span>Habitat<span class="ss-count">9</span></div>
+        <div class="ss-item"><span class="ss-icon">💻</span>Digital<span class="ss-count">8</span></div>
+        <div class="ss-item"><span class="ss-icon">💒</span>Mariage<span class="ss-count">6</span></div>
+        <div class="ss-item"><span class="ss-icon">⚖️</span>Finance<span class="ss-count">5</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="ss-title">Ce mois</div>
+        <div class="ss-item"><span class="ss-icon">💰</span>Commissions dues<span class="ss-count" style="color:var(--gold)">2 340€</span></div>
+        <div class="ss-item"><span class="ss-icon">📊</span>Taux conversion<span class="ss-count">28%</span></div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+
+      <!-- KPI -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-label">Liens actifs</div>
+          <div class="kpi-val">312</div>
+          <div class="kpi-trend up">↑ +24 cette semaine</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Activations aujourd'hui</div>
+          <div class="kpi-val">3</div>
+          <div class="kpi-trend up">↑ dont 2 nouvelles</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Commissions à verser</div>
+          <div class="kpi-val">2 340€</div>
+          <div class="kpi-trend gold">Le 1er du mois</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Taux de conversion</div>
+          <div class="kpi-val">28%</div>
+          <div class="kpi-trend up">↑ +4 pts vs M-1</div>
+        </div>
+      </div>
+
+      <!-- LIVE FEED -->
+      <div class="content-title">📡 Live feed — Activations en temps réel</div>
+      <div class="content-sub">Chaque clic sur "Activer mon privilège" génère une ligne ici automatiquement</div>
+
+      <div class="live-feed">
+
+        <!-- NEW -->
+        <div class="feed-item new">
+          <div class="feed-dot fd-new"></div>
+          <div class="feed-content">
+            <div class="fc-title">
+              <strong>Mise en relation :</strong> Client A (Pierre Martin) 
+              <span style="color:var(--gold)"> ← de la part de Jean Moreau (Élec)</span> 
+              → <span style="color:var(--teal)">Marc Fontaine (Agent immo)</span>
+            </div>
+            <div class="fc-meta">
+              <span>⏰ il y a 4 min</span>
+              <span>📍 Dax (40)</span>
+              <span>🎁 Privilège : 500€ remise honoraires</span>
+            </div>
+            <div class="feed-tracking">
+              ID : <span class="ft-highlight">PRIV-MF-JM-003</span> · 
+              Référent : <span class="ft-highlight">jean-elec-dax</span> · 
+              Message WA envoyé à : +33 6 12 34 56 78 · 
+              JPR notifié : ✓
+            </div>
+            <div class="msg-preview">
+              "Bonjour Marc Fontaine ! Je souhaite activer mon privilège Popey (<strong>500€ de remise</strong>) offert par <strong>Jean Moreau</strong>. [ID-TRACKING: <strong>PRIV-MF-JM-003</strong>]"
+            </div>
+          </div>
+          <div class="fc-tag ft-new">🔴 Nouveau</div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="feed-item">
+          <div class="feed-dot fd-gold"></div>
+          <div class="feed-content">
+            <div class="fc-title">
+              <strong>Mise en relation :</strong> Client B (Lucie Bonnet) 
+              <span style="color:var(--gold)"> ← de la part de Sophie Ravel (Archi)</span> 
+              → <span style="color:var(--teal)">Lucas Bernard (Dev web)</span>
+            </div>
+            <div class="fc-meta">
+              <span>⏰ il y a 2h</span>
+              <span>📍 Bayonne (64)</span>
+              <span>🎁 Privilège : -15% + maintenance offerte</span>
+            </div>
+            <div class="feed-tracking">
+              ID : <span class="ft-highlight">PRIV-LB-SR-012</span> · 
+              Référent : <span class="ft-highlight">sophie-archi-dax</span> · 
+              JPR a rappelé : ✓ · RDV pris : ✓
+            </div>
+          </div>
+          <div class="fc-tag ft-sent">⏳ RDV pris</div>
+        </div>
+
+        <!-- CONVERTED -->
+        <div class="feed-item">
+          <div class="feed-dot fd-done"></div>
+          <div class="feed-content">
+            <div class="fc-title">
+              <strong>Mise en relation :</strong> Client C (Paul Vidal) 
+              <span style="color:var(--gold)"> ← de la part de Marc Fontaine (Immo)</span> 
+              → <span style="color:var(--teal)">Antonin Lemaire (Coach sportif)</span>
+            </div>
+            <div class="fc-meta">
+              <span>⏰ Il y a 3 jours</span>
+              <span>📍 Dax (40)</span>
+              <span>🎁 Privilège : -20% 1er mois</span>
+              <span style="color:var(--teal);font-weight:600">✓ Deal signé · 120€ de commission</span>
+            </div>
+            <div class="feed-tracking">
+              ID : <span class="ft-highlight">PRIV-AL-MF-008</span> · 
+              Commission Marc Fontaine : <span class="ft-highlight">120€</span> · 
+              Versement : 1er du mois ✓
+            </div>
+          </div>
+          <div class="fc-tag ft-conv">✓ Signé</div>
+        </div>
+
+        <!-- Another new -->
+        <div class="feed-item">
+          <div class="feed-dot fd-new"></div>
+          <div class="feed-content">
+            <div class="fc-title">
+              <strong>Mise en relation :</strong> Client D (Émilie Poirier) 
+              <span style="color:var(--gold)"> ← de la part de Jean Moreau (Élec)</span> 
+              → <span style="color:var(--teal)">Thomas Laurent (Avocat)</span>
+            </div>
+            <div class="fc-meta">
+              <span>⏰ il y a 1h</span>
+              <span>📍 Bayonne (64)</span>
+              <span>🎁 Privilège : 1re consultation offerte</span>
+            </div>
+            <div class="feed-tracking">
+              ID : <span class="ft-highlight">PRIV-TL-JM-008</span> · 
+              Référent : <span class="ft-highlight">jean-elec-dax</span> · 
+              JPR notifié : ✓ · Rappel prévu : dans 45 min
+            </div>
+          </div>
+          <div class="fc-tag ft-new">🔴 Nouveau</div>
+        </div>
+
+      </div>
+
+      <!-- MEMBERS TABLE -->
+      <div class="content-title">👥 Membres · Liens personnalisés</div>
+      <div class="content-sub">Chaque membre a un lien unique qui trace toutes ses recommandations</div>
+
+      <div class="members-table">
+        <div class="mt-header">
+          <div>Membre</div>
+          <div>Lien personnalisé</div>
+          <div>Liens envoyés</div>
+          <div>Activations</div>
+          <div>Commission due</div>
+          <div>Statut</div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(0,200,150,.12);color:#007A56">JM</div>
+              <div>
+                <div>Jean Moreau</div>
+                <div class="mr-meta">⚡ Électricien · Dax · 14 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link" onclick="copyLink('popey.academy/marketplace?ref=jean-elec-dax')">jean-elec-dax 📋</div>
+          <div class="mr-val teal">47</div>
+          <div class="mr-val">12</div>
+          <div class="mr-val gold">340€</div>
+          <div class="mr-status"><span class="pill pill-active">Actif</span></div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(245,166,35,.12);color:#C07800">MF</div>
+              <div>
+                <div>Marc Fontaine</div>
+                <div class="mr-meta">🔑 Agent immo · Dax · 24 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link" onclick="copyLink('popey.academy/marketplace?ref=marc-immo-dax')">marc-immo-dax 📋</div>
+          <div class="mr-val teal">89</div>
+          <div class="mr-val">31</div>
+          <div class="mr-val gold">780€</div>
+          <div class="mr-status"><span class="pill pill-active">Actif</span></div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(245,166,35,.12);color:#C07800">SR</div>
+              <div>
+                <div>Sophie Ravel</div>
+                <div class="mr-meta">🔨 Architecte · Dax · 15 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link" onclick="copyLink('popey.academy/marketplace?ref=sophie-archi-dax')">sophie-archi-dax 📋</div>
+          <div class="mr-val teal">34</div>
+          <div class="mr-val">8</div>
+          <div class="mr-val gold">240€</div>
+          <div class="mr-status"><span class="pill pill-active">Actif</span></div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(59,130,246,.12);color:#1D6FA4">LB</div>
+              <div>
+                <div>Lucas Bernard</div>
+                <div class="mr-meta">💻 Dev web · Bayonne · 10 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link" onclick="copyLink('popey.academy/marketplace?ref=lucas-dev-bayonne')">lucas-dev-bayonne 📋</div>
+          <div class="mr-val teal">22</div>
+          <div class="mr-val">5</div>
+          <div class="mr-val gold">150€</div>
+          <div class="mr-status"><span class="pill pill-trial">3 mois</span></div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(181,55,106,.12);color:#B5376A">CP</div>
+              <div>
+                <div>Clara Petit</div>
+                <div class="mr-meta">📸 Photo mariage · Dax · 8 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link" onclick="copyLink('popey.academy/marketplace?ref=clara-photo-dax')">clara-photo-dax 📋</div>
+          <div class="mr-val teal">18</div>
+          <div class="mr-val">4</div>
+          <div class="mr-val gold">112€</div>
+          <div class="mr-status"><span class="pill pill-trial">3 mois</span></div>
+        </div>
+
+        <div class="mt-row">
+          <div>
+            <div class="mr-name">
+              <div class="mr-avatar" style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)">AT</div>
+              <div>
+                <div style="color:rgba(255,255,255,.4)">Antonin Lemaire</div>
+                <div class="mr-meta">🏋️ Coach sportif · Dax · 2 mois</div>
+              </div>
+            </div>
+          </div>
+          <div class="mr-link">antonin-coach-dax 📋</div>
+          <div class="mr-val" style="color:rgba(255,255,255,.3)">3</div>
+          <div class="mr-val" style="color:rgba(255,255,255,.3)">0</div>
+          <div class="mr-val" style="color:rgba(255,255,255,.3)">0€</div>
+          <div class="mr-status"><span class="pill pill-inactive">Inactif</span></div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div><!-- end admin-view -->
+
+<script>
+// ── VIEW SWITCH ──
+function switchView(view, btn) {
+  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('client-view').style.display = view === 'client' ? 'block' : 'none';
+  document.getElementById('admin-view').style.display = view === 'admin' ? 'block' : 'none';
+}
+
+// ── SPHERE FILTER ──
+function filterSphere(sphere, btn) {
+  document.querySelectorAll('.sf-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.priv-card').forEach(card => {
+    card.style.display = (sphere === 'all' || card.dataset.sphere === sphere) ? 'block' : 'none';
+  });
+}
+
+// ── ACTIVATE PRIVILEGE ──
+function activatePrivilege(proName, metier, referent, privilege, trackingId) {
+  const tel = '33768233347'; // JPR's number — in real app each pro has their own
+  const telMap = {
+    'Antonin Lemaire': '33600000001',
+    'Marie Dubois': '33600000002',
+    'Marc Fontaine': '33600000003',
+    'Sophie Ravel': '33600000004',
+    'Lucas Bernard': '33600000005',
+    'Inès Martin': '33600000006',
+    'Clara Petit': '33600000007',
+    "Thomas Laurent": '33600000008',
+  };
+  const proTel = telMap[proName] || tel;
+  
+  const msg = `Bonjour ${proName} ! Je souhaite activer mon privilège Popey (${privilege}) offert par ${referent}. [ID-TRACKING: ${trackingId}]`;
+  const waUrl = `https://wa.me/${proTel}?text=${encodeURIComponent(msg)}`;
+  
+  // Show confirmation modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:24px;animation:fadeIn .2s ease';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:24px;padding:28px;width:100%;max-width:480px;animation:slideUp .3s ease">
+      <div style="font-size:28px;margin-bottom:12px;text-align:center">💬</div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#0C0D0F;text-align:center;margin-bottom:8px">Votre WhatsApp va s'ouvrir</div>
+      <div style="font-size:13px;color:#555;text-align:center;margin-bottom:20px;line-height:1.6">Le message ci-dessous est pré-rempli. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</div>
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:16px;margin-bottom:20px;font-size:13px;color:#166534;line-height:1.6;font-style:italic">"${msg}"</div>
+      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:20px">Jean Moreau et Jean-Philippe Roth (Popey) recevront automatiquement une copie de cette mise en relation.</div>
+      <a href="${waUrl}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none;transition:all .2s" onclick="overlay.remove()">
+        📱 Ouvrir WhatsApp →
+      </a>
+      <button onclick="this.closest('div[style]').remove()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1.5px solid #e5e7eb;border-radius:14px;font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#555;cursor:pointer">Annuler</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+}
+
+// ── COPY LINK ──
+function copyLink(link) {
+  navigator.clipboard?.writeText('https://' + link).then(() => {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#13141A;color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;border:1px solid rgba(255,255,255,.1)';
+    toast.textContent = '✓ Lien copié : ' + link;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  });
+}
+
+// ── SCROLL ANIMATIONS ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+// ── CSS KEYFRAMES ──
+const style = document.createElement('style');
+style.textContent = `
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:none;opacity:1} }
+`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
