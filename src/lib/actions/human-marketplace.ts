@@ -540,3 +540,53 @@ export async function adminDeleteMarketplaceOfferAction(formData: FormData): Pro
   revalidatePath("/admin/humain/marketplace/inscriptions");
   redirect(withMarketplaceStatus(currentUrl, "success", "Demande supprimee."));
 }
+
+export async function adminUpdatePrivilegeActivationStatusAction(formData: FormData): Promise<void> {
+  const auth = await requireHumanAdmin();
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/privileges");
+  if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
+
+  const activationId = String(formData.get("activation_id") || "").trim();
+  const nextStatus = String(formData.get("next_status") || "").trim().toLowerCase();
+  const note = String(formData.get("note") || "").trim();
+
+  const allowed = ["new", "contacted", "rdv", "signed", "closed"];
+  if (!activationId) redirect(withMarketplaceStatus(currentUrl, "error", "Activation introuvable."));
+  if (!allowed.includes(nextStatus)) {
+    redirect(withMarketplaceStatus(currentUrl, "error", "Statut activation invalide."));
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: activation, error: activationReadError } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select("id,metadata")
+    .eq("id", activationId)
+    .maybeSingle();
+  if (activationReadError || !activation) {
+    redirect(withMarketplaceStatus(currentUrl, "error", activationReadError?.message || "Activation introuvable."));
+  }
+
+  const currentMeta =
+    activation.metadata && typeof activation.metadata === "object" && !Array.isArray(activation.metadata)
+      ? (activation.metadata as Record<string, unknown>)
+      : {};
+  const nextMeta = {
+    ...currentMeta,
+    workflow_status: nextStatus,
+    workflow_note: note || null,
+    workflow_updated_at: new Date().toISOString(),
+    workflow_updated_by_user_id: auth.user.id,
+  };
+
+  const { error } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .update({ metadata: nextMeta })
+    .eq("id", activationId);
+  if (error) {
+    redirect(withMarketplaceStatus(currentUrl, "error", error.message || "Mise a jour activation impossible."));
+  }
+
+  revalidatePath("/admin/humain/privileges");
+  revalidatePath("/admin/humain/marketplace");
+  redirect(withMarketplaceStatus(currentUrl, "success", "Statut activation mis a jour."));
+}

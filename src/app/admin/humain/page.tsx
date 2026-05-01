@@ -117,6 +117,9 @@ export default async function AdminHumainPage() {
           <Link href="/admin/humain/marketplace">Ouvrir le marketplace</Link>
         </Button>
         <Button asChild variant="outline">
+          <Link href="/admin/humain/privileges">Ouvrir le pilotage privilèges</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/admin/humain/marketplace/inscriptions">Inscriptions marketplace (page perso)</Link>
         </Button>
         <Button asChild variant="outline">
