@@ -199,6 +199,7 @@ export async function GET(request: NextRequest) {
     const isPrivilegeCatalog = catalog === "privilege";
     const refId = String(request.nextUrl.searchParams.get("ref_id") || "").trim();
     const refCode = String(request.nextUrl.searchParams.get("ref") || "").trim();
+    const hasReferralContext = Boolean(refId || refCode);
     const spheresCsv = String(request.nextUrl.searchParams.get("spheres") || "").trim();
     const category = String(request.nextUrl.searchParams.get("category") || "").trim().toLowerCase();
     const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
@@ -264,7 +265,7 @@ export async function GET(request: NextRequest) {
     let filteredRows = rows
       .filter((row) => !isBlockedMetier(row.metier || ""))
       .filter((row) => matchCity(city, row.city, row.city_slug));
-    if (isPrivilegeCatalog) {
+    if (isPrivilegeCatalog && !hasReferralContext) {
       filteredRows = filteredRows.filter((row) => {
         const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
         const hasConfiguredOffer = Boolean(String(row.privilege_badge || "").trim());
