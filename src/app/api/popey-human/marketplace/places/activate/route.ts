@@ -45,7 +45,17 @@ function inferCategoryFromSphere(sphere: string): string {
 }
 
 function toWhatsAppDigits(raw: string): string {
-  return trim(raw).replace(/[^\d]/g, "");
+  let digits = trim(raw).replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+  }
+  // French local format fallback (06/07...) -> E.164 without "+"
+  if (digits.length === 10 && digits.startsWith("0")) {
+    digits = `33${digits.slice(1)}`;
+  }
+  if (digits.length < 8 || digits.length > 15) return "";
+  return digits;
 }
 
 export async function POST(request: NextRequest) {
@@ -172,7 +182,9 @@ export async function POST(request: NextRequest) {
     const trackingId = activationId || requestId;
     const rawMessage = `Bonjour ${partnerName} ! Je souhaite activer mon privilege Popey (${trim(place.metier)}) offert par ${leadPayload.referrer_name}. [ID-TRACKING: ${trackingId}]`;
     const waPhone = toWhatsAppDigits(partnerPhone || "");
-    const whatsappUrl = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(rawMessage)}` : null;
+    const whatsappUrl = waPhone
+      ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(rawMessage)}`
+      : null;
 
     let cityWeeklyActivations = 0;
     const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
