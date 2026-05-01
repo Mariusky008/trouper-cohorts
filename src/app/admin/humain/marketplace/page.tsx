@@ -5,7 +5,6 @@ import {
   adminUpdateMarketplaceOfferStatusAction,
   getAdminMarketplaceSnapshot,
 } from "@/lib/actions/human-marketplace";
-import { SignedLinkGenerator } from "./_components/signed-link-generator";
 
 function euros(value?: number | null) {
   const safe = Number(value || 0);
@@ -16,6 +15,16 @@ function actionLabel(type: "buy_offer" | "sell_request" | "join_request") {
   if (type === "sell_request") return "Mise en vente";
   if (type === "join_request") return "Rejoindre";
   return "Offre achat";
+}
+
+function slugify(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export default async function AdminHumainMarketplacePage({
@@ -33,12 +42,14 @@ export default async function AdminHumainMarketplacePage({
   const params = (await searchParams) || {};
   const marketStatus = typeof params.marketStatus === "string" ? params.marketStatus : "";
   const marketMessage = typeof params.marketMessage === "string" ? params.marketMessage : "";
+  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
   const snapshot = await getAdminMarketplaceSnapshot({
     offerStatus: typeof params.offerStatus === "string" ? params.offerStatus : "all",
     offerActionType: typeof params.offerActionType === "string" ? params.offerActionType : "all",
     placeCity: typeof params.placeCity === "string" ? params.placeCity : "all",
     timelinePlaceId: typeof params.timelinePlaceId === "string" ? params.timelinePlaceId : "",
   });
+  const membersById = new Map(snapshot.members.map((member) => [member.id, member.label]));
 
   return (
     <section className="space-y-5">
@@ -74,7 +85,12 @@ export default async function AdminHumainMarketplacePage({
 
       {!snapshot.error && snapshot.kpis && (
         <>
-          <SignedLinkGenerator members={snapshot.members.map((member) => ({ id: member.id, label: member.label }))} />
+          <div className="rounded-xl border bg-white p-4">
+            <h2 className="text-lg font-black">Liens personnels des professionnels</h2>
+            <p className="mt-1 text-xs text-black/70">
+              Chaque pro rattaché à une place dispose d&apos;un lien stable à partager à tous ses clients.
+            </p>
+          </div>
 
           <form method="get" className="rounded-xl border bg-card p-4">
             <div className="grid gap-2 md:grid-cols-5">
@@ -286,6 +302,29 @@ export default async function AdminHumainMarketplacePage({
                       <p className="text-xs text-black/70">
                         CA/mois: {euros(place.monthly_ca_eur)} · Recos/an: {place.recos_per_year}
                       </p>
+                      <p className="text-xs text-black/70">
+                        Privilège: {place.privilege_badge || "—"} · WhatsApp partenaire: {place.partner_whatsapp || "—"}
+                      </p>
+                      {place.owner_member_id ? (
+                        <p className="text-xs text-emerald-700">
+                          Lien perso:{" "}
+                          {(() => {
+                            const refLabel = membersById.get(place.owner_member_id || "") || "Membre Popey";
+                            const refName = encodeURIComponent(refLabel);
+                            const refId = encodeURIComponent(place.owner_member_id || "");
+                            const citySlug = slugify(place.city || "dax") || "dax";
+                            const relativeUrl = `/privilege/${citySlug}?ref_id=${refId}&ref_name=${refName}`;
+                            const fullUrl = appBase ? `${appBase}${relativeUrl}` : relativeUrl;
+                            return (
+                              <a href={fullUrl} target="_blank" rel="noreferrer" className="underline">
+                                {fullUrl}
+                              </a>
+                            );
+                          })()}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-amber-700">Assigne un owner membre pour générer son lien personnel stable.</p>
+                      )}
                     </div>
                     <form action={adminSetMarketplacePlaceStatusAction} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
@@ -313,6 +352,38 @@ export default async function AdminHumainMarketplacePage({
                         defaultValue={place.list_price_eur ? String(place.list_price_eur) : ""}
                         placeholder="Prix EUR"
                         className="h-9 w-28 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="company_name"
+                        defaultValue={place.company_name || ""}
+                        placeholder="Nom entreprise"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="privilege_badge"
+                        defaultValue={place.privilege_badge || ""}
+                        placeholder="Privilege (ex: -500€)"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="partner_whatsapp"
+                        defaultValue={place.partner_whatsapp || ""}
+                        placeholder="WhatsApp partenaire"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <select name="category_key" defaultValue={place.category_key || ""} className="h-9 rounded border bg-background px-2 text-xs">
+                        <option value="">Catégorie auto</option>
+                        <option value="maison">maison</option>
+                        <option value="sante">sante</option>
+                        <option value="travaux">travaux</option>
+                        <option value="bien-etre">bien-etre</option>
+                        <option value="services">services</option>
+                      </select>
+                      <input
+                        name="external_ref"
+                        defaultValue={place.external_ref || ""}
+                        placeholder="Reference externe"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
                       />
                       <button className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">MAJ place</button>
                     </form>

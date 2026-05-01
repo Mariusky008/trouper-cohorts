@@ -16,6 +16,11 @@ type MarketplacePlaceRow = {
   recos_per_year: number;
   updated_at: string;
   owner_member_id?: string | null;
+  company_name?: string | null;
+  privilege_badge?: string | null;
+  partner_whatsapp?: string | null;
+  category_key?: "maison" | "sante" | "travaux" | "bien-etre" | "services" | null;
+  external_ref?: string | null;
 };
 
 type MarketplaceOfferRow = {
@@ -125,7 +130,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     await Promise.all([
     supabaseAdmin
       .from("human_marketplace_places")
-      .select("id,city,sphere_label,metier,status,list_price_eur,monthly_ca_eur,recos_per_year,updated_at,owner_member_id")
+      .select("id,city,sphere_label,metier,status,list_price_eur,monthly_ca_eur,recos_per_year,updated_at,owner_member_id,company_name,privilege_badge,partner_whatsapp,category_key,external_ref")
       .order("updated_at", { ascending: false })
       .limit(800),
     supabaseAdmin
@@ -321,6 +326,11 @@ export async function adminSetMarketplacePlaceStatusAction(formData: FormData): 
   const nextStatus = String(formData.get("next_status") || "").trim();
   const listPriceRaw = String(formData.get("list_price_eur") || "").trim();
   const ownerMemberIdRaw = String(formData.get("owner_member_id") || "").trim();
+  const companyNameRaw = String(formData.get("company_name") || "").trim();
+  const privilegeBadgeRaw = String(formData.get("privilege_badge") || "").trim();
+  const partnerWhatsappRaw = String(formData.get("partner_whatsapp") || "").trim();
+  const categoryKeyRaw = String(formData.get("category_key") || "").trim().toLowerCase();
+  const externalRefRaw = String(formData.get("external_ref") || "").trim();
 
   if (!placeId) redirect(withMarketplaceStatus(currentUrl, "error", "Place introuvable."));
   if (!["dispo", "sale", "occupied", "reserved"].includes(nextStatus)) {
@@ -336,6 +346,18 @@ export async function adminSetMarketplacePlaceStatusAction(formData: FormData): 
     if (Number.isFinite(parsed) && parsed >= 0) patch.list_price_eur = parsed;
   }
   patch.owner_member_id = ownerMemberIdRaw || null;
+  patch.company_name = companyNameRaw || null;
+  patch.privilege_badge = privilegeBadgeRaw || null;
+  patch.partner_whatsapp = partnerWhatsappRaw || null;
+  if (categoryKeyRaw) {
+    if (!["maison", "sante", "travaux", "bien-etre", "services"].includes(categoryKeyRaw)) {
+      redirect(withMarketplaceStatus(currentUrl, "error", "Categorie privilege invalide."));
+    }
+    patch.category_key = categoryKeyRaw;
+  } else {
+    patch.category_key = null;
+  }
+  patch.external_ref = externalRefRaw || null;
 
   const supabaseAdmin = createAdminClient();
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin
