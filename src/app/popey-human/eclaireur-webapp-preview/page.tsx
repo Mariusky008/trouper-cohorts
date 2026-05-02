@@ -252,7 +252,7 @@ function normalizePhoneForWhatsApp(raw: string) {
   return digits;
 }
 
-function buildSuggestionWhatsappHref(contact: ImportedContact, privilegeCatalogHref: string) {
+function buildBulkOfferWhatsappHref(contact: ImportedContact, privilegeCatalogHref: string) {
   if (!contact.phone) return null;
   const phone = normalizePhoneForWhatsApp(contact.phone);
   if (!phone) return null;
@@ -260,6 +260,25 @@ function buildSuggestionWhatsappHref(contact: ImportedContact, privilegeCatalogH
     ? privilegeCatalogHref
     : `https://www.popey.academy${privilegeCatalogHref}`;
   const message = `Salut a tous ! Pour vous remercier de votre fidelite, j'ai rejoint le reseau Popey a Dax. Desormais, en passant par moi, vous avez acces a des cadeaux exclusifs chez les meilleurs commercants et artisans de la ville. Cliquez ici pour voir vos avantages : ${catalogUrl}`;
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+}
+
+function buildEclaireurRecruitmentWhatsappHref(input: {
+  contact: ImportedContact;
+  sponsorName?: string | null;
+  sponsorVille?: string | null;
+  rewardLabel: string;
+}) {
+  if (!input.contact.phone) return null;
+  const phone = normalizePhoneForWhatsApp(input.contact.phone);
+  if (!phone) return null;
+  const senderName = String(input.sponsorName || "moi").trim();
+  const city = String(input.sponsorVille || "").trim();
+  const cityPart = city ? ` sur ${city}` : "";
+  const message =
+    `Salut ${input.contact.name}, j'ai pense a toi pour devenir eclaireur dans mon reseau pro${cityPart}. ` +
+    `Le principe: tu me recommandes des personnes qui ont un vrai besoin, je m'occupe du suivi, et tu touches une commission (${input.rewardLabel}) ` +
+    `quand la mise en relation aboutit. Tu veux que je t'explique en 2 minutes comment ca marche ? - ${senderName}`;
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
@@ -418,7 +437,7 @@ export default function EclaireurWebappPreviewPage() {
       if (current.length === 0) return current;
       const available = new Set(
         importedContacts
-          .filter((item) => Boolean(buildSuggestionWhatsappHref(item, privilegeCatalogHref)))
+          .filter((item) => Boolean(buildBulkOfferWhatsappHref(item, privilegeCatalogHref)))
           .map((item) => item.id),
       );
       const filtered = current.filter((id) => available.has(id));
@@ -765,7 +784,7 @@ export default function EclaireurWebappPreviewPage() {
   function toggleSelectAllContacts() {
     setSelectionMessage("");
     const selectableIds = importedContacts
-      .filter((contact) => Boolean(buildSuggestionWhatsappHref(contact, privilegeCatalogHref)))
+      .filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref)))
       .map((contact) => contact.id);
     if (selectableIds.length === 0) {
       setSelectionMessage("Aucun contact avec numero WhatsApp valide.");
@@ -784,7 +803,7 @@ export default function EclaireurWebappPreviewPage() {
     }
     const selectedContacts = importedContacts.filter((contact) => selectedContactIds.includes(contact.id));
     const whatsappLinks = selectedContacts
-      .map((contact) => buildSuggestionWhatsappHref(contact, privilegeCatalogHref))
+      .map((contact) => buildBulkOfferWhatsappHref(contact, privilegeCatalogHref))
       .filter((href): href is string => Boolean(href));
 
     if (whatsappLinks.length === 0) {
@@ -802,7 +821,7 @@ export default function EclaireurWebappPreviewPage() {
     }
 
     const queuedIds = selectedContacts
-      .filter((contact) => Boolean(buildSuggestionWhatsappHref(contact, privilegeCatalogHref)))
+      .filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref)))
       .map((contact) => contact.id);
     setQueuedContactIds(queuedIds);
     setQueueCursor(0);
@@ -837,7 +856,7 @@ export default function EclaireurWebappPreviewPage() {
       queueActionLockRef.current = false;
       return;
     }
-    const href = buildSuggestionWhatsappHref(currentContact, privilegeCatalogHref);
+    const href = buildBulkOfferWhatsappHref(currentContact, privilegeCatalogHref);
     if (!href) {
       setSelectionMessage("Numero invalide pour ce contact. Passage au suivant.");
       skipNextQueuedContact();
@@ -976,6 +995,8 @@ export default function EclaireurWebappPreviewPage() {
           streak={streak}
           suggestion={suggestion}
           selectedTargetReward={selectedTarget.rewardType === "fixed" ? `${selectedTarget.rewardValue} EUR` : `${selectedTarget.rewardValue}%`}
+          sponsorName={portalData?.sponsorName || null}
+          sponsorVille={portalData?.sponsorVille || null}
           importedCount={importedContacts.length}
           importedContacts={importedContacts}
           importSummary={importSummary}
@@ -1497,6 +1518,8 @@ function ScreenSuggestion({
   streak,
   suggestion,
   selectedTargetReward,
+  sponsorName,
+  sponsorVille,
   importedCount,
   importedContacts,
   importSummary,
@@ -1532,6 +1555,8 @@ function ScreenSuggestion({
   streak: number;
   suggestion: ImportedContact | null;
   selectedTargetReward: string;
+  sponsorName: string | null;
+  sponsorVille: string | null;
   importedCount: number;
   importedContacts: ImportedContact[];
   importSummary: string;
@@ -1563,12 +1588,17 @@ function ScreenSuggestion({
   onGoSubmit: () => void;
 }) {
   const hasContacts = importedCount > 0;
-  const suggestionWhatsappHref = useMemo(() => {
+  const suggestionRecruitmentHref = useMemo(() => {
     if (!suggestion) return null;
-    return buildSuggestionWhatsappHref(suggestion, privilegeCatalogHref);
-  }, [privilegeCatalogHref, suggestion]);
+    return buildEclaireurRecruitmentWhatsappHref({
+      contact: suggestion,
+      sponsorName,
+      sponsorVille,
+      rewardLabel: selectedTargetReward,
+    });
+  }, [selectedTargetReward, sponsorName, sponsorVille, suggestion]);
   const selectableContacts = useMemo(
-    () => importedContacts.filter((contact) => Boolean(buildSuggestionWhatsappHref(contact, privilegeCatalogHref))),
+    () => importedContacts.filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref))),
     [importedContacts, privilegeCatalogHref],
   );
   const allSelectableSelected =
@@ -1709,7 +1739,7 @@ function ScreenSuggestion({
             </div>
             <div className="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
               {importedContacts.map((contact) => {
-                const contactHref = buildSuggestionWhatsappHref(contact, privilegeCatalogHref);
+                const contactHref = buildBulkOfferWhatsappHref(contact, privilegeCatalogHref);
                 const isSelected = selectedContactIds.includes(contact.id);
                 return (
                   <label
@@ -1797,35 +1827,46 @@ function ScreenSuggestion({
                   <p className="text-[12px] text-white/75">Commission cible</p>
                   <p className="text-[20px] font-black text-[#00D4A0]">+{selectedTargetReward}</p>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-col gap-2">
+                  {suggestionRecruitmentHref ? (
+                    <a
+                      href={suggestionRecruitmentHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#25D366]/55 bg-[#25D366]/20 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366]"
+                    >
+                      Envoyer message eclaireur
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onRecommend}
+                      className="h-11 w-full rounded-xl border border-amber-300/45 bg-amber-300/12 text-[12px] font-bold text-amber-100"
+                    >
+                      Numero WhatsApp manquant · Remplir manuellement
+                    </button>
+                  )}
+                  {!suggestionRecruitmentHref ? (
+                    <p className="text-[10px] text-amber-100/85">
+                      Ce contact n a pas de numero WhatsApp valide. Utilise &quot;Remplir manuellement&quot; ou &quot;Pas lui&quot;.
+                    </p>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={onRecommend}
-                    className="h-11 flex-[2] rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[12px] font-black uppercase tracking-[0.04em] text-[#060B12]"
+                    className="h-11 rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[12px] font-black uppercase tracking-[0.04em] text-[#060B12]"
                   >
-                    Je le recommande
+                    Recommandation manuelle
                   </button>
-                  {suggestionWhatsappHref ? (
-                    <a
-                      href={suggestionWhatsappHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[12px] font-bold text-[#25D366]"
-                    >
-                      Recommandation eclaireur
-                    </a>
-                  ) : (
-                    <span className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/45">
-                      Recommandation eclaireur
-                    </span>
-                  )}
                   <button
                     type="button"
                     onClick={onSkip}
-                    className="h-11 flex-1 rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/70"
+                    className="h-11 rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/70"
                   >
                     Pas lui
                   </button>
+                  </div>
                 </div>
               </>
             ) : (
