@@ -22,7 +22,7 @@ export default async function PopeyHumanLoginPage({
       !requestedNext.startsWith("/popey-human/login") &&
       !requestedNext.startsWith("/popey-human/admin-login"))
       ? requestedNext
-      : "/popey-human/app";
+      : "/popey-human/entrepreneur-smart-scan-test";
 
   return (
     <div className={cn("min-h-screen bg-black text-white px-4 py-8 md:py-12", poppins.variable, "font-poppins")}>

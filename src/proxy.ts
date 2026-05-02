@@ -52,7 +52,7 @@ export default async function proxy(request: NextRequest) {
           !requestedNext.startsWith("/popey-human/login") &&
           !requestedNext.startsWith("/popey-human/admin-login")
         ? requestedNext
-        : "/popey-human/app";
+        : "/popey-human/entrepreneur-smart-scan-test";
     const appUrl = new URL(nextPath, request.url);
     return copyResponseCookies(NextResponse.redirect(appUrl), response);
   }
