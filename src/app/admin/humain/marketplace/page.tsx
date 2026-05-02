@@ -121,8 +121,7 @@ export default async function AdminHumainMarketplacePage({
   const acceptedOfferCandidates = snapshot.offers
     .filter((offer) => offer.status === "accepted")
     .map((offer) => {
-      const resolvedId = resolveMemberIdForOffer(offer);
-      const selectorValue = resolvedId || `offer:${offer.id}`;
+      const selectorValue = `offer:${offer.id}`;
       const baseName = String(offer.full_name || "Membre Popey").trim();
       const metier = String(offer.metier || "").trim();
       const label = metier ? `${baseName} · ${metier}` : baseName;
@@ -130,7 +129,9 @@ export default async function AdminHumainMarketplacePage({
     });
   const candidateMap = new Map<string, { id: string; label: string }>();
   acceptedMembers.forEach((member) => {
-    candidateMap.set(member.id, { id: member.id, label: member.label });
+    const parsed = splitMemberLabel(member.label);
+    const label = parsed.metier ? `${parsed.displayName} · ${parsed.metier}` : parsed.displayName;
+    candidateMap.set(member.id, { id: member.id, label });
   });
   acceptedOfferCandidates.forEach((candidate) => {
     if (!candidateMap.has(candidate.id)) candidateMap.set(candidate.id, candidate);
@@ -337,7 +338,7 @@ export default async function AdminHumainMarketplacePage({
                     <div className="space-y-2">
                       {offer.status === "accepted" ? (
                         <Link
-                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(resolveMemberIdForOffer(offer))}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
+                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(`offer:${offer.id}`)}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
                           className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
                         >
                           Creer offre duo

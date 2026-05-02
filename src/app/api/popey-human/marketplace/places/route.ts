@@ -233,6 +233,7 @@ export async function GET(request: NextRequest) {
     const sort = String(request.nextUrl.searchParams.get("sort") || "value_desc").trim();
     const refMemberIds = new Set<string>();
     const acceptedLinkedPlaceIds = new Set<string>();
+    const acceptedPlaceIdsAll = new Set<string>();
 
     let query = supabase.from("human_marketplace_places").select(
       "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
@@ -290,6 +291,17 @@ export async function GET(request: NextRequest) {
         if (placeId) acceptedLinkedPlaceIds.add(placeId);
       }));
     }
+    if (isPrivilegeCatalog && hasReferralContext) {
+      const { data: acceptedOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("place_id,status")
+        .eq("status", "accepted")
+        .limit(500);
+      (((acceptedOffers as Array<{ place_id: string | null }> | null) || []).forEach((offer) => {
+        const placeId = String(offer.place_id || "").trim();
+        if (placeId) acceptedPlaceIdsAll.add(placeId);
+      }));
+    }
 
     if (sort === "value_asc") query = query.order("list_price_eur", { ascending: true, nullsFirst: true });
     else if (sort === "reco_desc") query = query.order("recos_per_year", { ascending: false });
@@ -306,6 +318,9 @@ export async function GET(request: NextRequest) {
     let filteredRows = rows
       .filter((row) => !isBlockedMetier(row.metier || ""))
       .filter((row) => matchCity(city, row.city, row.city_slug));
+    if (isPrivilegeCatalog && hasReferralContext) {
+      filteredRows = filteredRows.filter((row) => acceptedPlaceIdsAll.has(String(row.id || "")));
+    }
     if (isPrivilegeCatalog && !hasReferralContext) {
       filteredRows = filteredRows.filter((row) => {
         const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
