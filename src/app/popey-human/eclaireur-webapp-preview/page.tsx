@@ -35,6 +35,7 @@ const OPPORTUNITY_TARGETS = {
 const SCOUT_PREVIEW_TOKEN_STORAGE_KEY = "popey-human:eclaireur-preview:last-token-or-code";
 const SCOUT_PREVIEW_TOKEN_COOKIE_KEY = "popey_human_eclaireur_preview_token";
 const SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX = "popey-human:eclaireur-preview:imported-contacts:";
+const SCOUT_PREVIEW_QUEUE_STORAGE_PREFIX = "popey-human:eclaireur-preview:guided-queue:";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
@@ -262,6 +263,14 @@ function buildSuggestionWhatsappHref(contact: ImportedContact, privilegeCatalogH
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
+function openWhatsAppFromGesture(href: string) {
+  if (typeof window === "undefined") return false;
+  const opened = window.open(href, "_blank", "noopener,noreferrer");
+  if (opened) return true;
+  window.location.assign(href);
+  return true;
+}
+
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
   const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
@@ -297,10 +306,16 @@ export default function EclaireurWebappPreviewPage() {
   const [queueInitialCount, setQueueInitialCount] = useState(0);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const queueActionLockRef = useRef(false);
+  const [showImportHelp, setShowImportHelp] = useState(false);
+  const [helpPlatform, setHelpPlatform] = useState<"ios" | "android">("ios");
 
   const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>("Dax");
   const importedContactsStorageKey = useMemo(
     () => `${SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX}${(tokenOrCode || "demo").toLowerCase()}`,
+    [tokenOrCode],
+  );
+  const queueStorageKey = useMemo(
+    () => `${SCOUT_PREVIEW_QUEUE_STORAGE_PREFIX}${(tokenOrCode || "demo").toLowerCase()}`,
     [tokenOrCode],
   );
   const fallbackMetiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
@@ -504,6 +519,35 @@ export default function EclaireurWebappPreviewPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      const raw = window.sessionStorage.getItem(queueStorageKey);
+      if (!raw) {
+        clearGuidedQueue(true);
+        return;
+      }
+      const parsed = JSON.parse(raw) as {
+        queuedContactIds?: string[];
+        queueCursor?: number;
+        queueSentCount?: number;
+        queueInitialCount?: number;
+      };
+      const queuedIds = Array.isArray(parsed.queuedContactIds)
+        ? parsed.queuedContactIds.map((id) => String(id || "").trim()).filter(Boolean)
+        : [];
+      const initialCount = Math.max(0, Number(parsed.queueInitialCount || 0));
+      const sentCount = Math.max(0, Number(parsed.queueSentCount || 0));
+      const cursor = Math.max(0, Number(parsed.queueCursor || 0));
+      setQueuedContactIds(queuedIds);
+      setQueueInitialCount(initialCount);
+      setQueueSentCount(sentCount);
+      setQueueCursor(queuedIds.length > 0 ? Math.min(cursor, queuedIds.length - 1) : 0);
+    } catch {
+      clearGuidedQueue(true);
+    }
+  }, [queueStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
       if (importedContacts.length === 0) {
         window.localStorage.removeItem(importedContactsStorageKey);
         return;
@@ -513,6 +557,27 @@ export default function EclaireurWebappPreviewPage() {
       // Ignore storage quota / privacy errors.
     }
   }, [importedContacts, importedContactsStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (queuedContactIds.length === 0 && queueInitialCount === 0 && queueSentCount === 0) {
+        window.sessionStorage.removeItem(queueStorageKey);
+        return;
+      }
+      window.sessionStorage.setItem(
+        queueStorageKey,
+        JSON.stringify({
+          queuedContactIds,
+          queueCursor,
+          queueSentCount,
+          queueInitialCount,
+        }),
+      );
+    } catch {
+      // Ignore privacy/storage quota errors.
+    }
+  }, [queuedContactIds, queueCursor, queueSentCount, queueInitialCount, queueStorageKey]);
 
   async function refreshPortal() {
     if (!tokenOrCode) return;
@@ -728,12 +793,11 @@ export default function EclaireurWebappPreviewPage() {
     }
 
     if (whatsappLinks.length === 1) {
-      const opened = window.open(whatsappLinks[0], "_blank", "noopener,noreferrer");
-      if (opened) {
-        setQueueInitialCount(1);
-        setQueueSentCount(1);
-      }
-      setSelectionMessage(opened ? "WhatsApp ouvert pour 1 contact." : "Popup bloquee. Autorise les popups puis reessaie.");
+      setQueueInitialCount(1);
+      setQueueSentCount(1);
+      setSelectedContactIds([]);
+      setSelectionMessage("Ouverture WhatsApp pour 1 contact...");
+      openWhatsAppFromGesture(whatsappLinks[0]);
       return;
     }
 
@@ -780,25 +844,23 @@ export default function EclaireurWebappPreviewPage() {
       queueActionLockRef.current = false;
       return;
     }
-    const opened = window.open(href, "_blank", "noopener,noreferrer");
-    if (!opened) {
-      setSelectionMessage("Popup bloquee. Autorise les popups puis clique a nouveau.");
-      queueActionLockRef.current = false;
-      return;
-    }
     setSelectedContactIds((current) => current.filter((id) => id !== currentId));
     const isLast = queueCursor >= queuedContactIds.length - 1;
     if (isLast) {
       const sentCount = queueSentCount + 1;
       clearGuidedQueue();
       setQueueSentCount(sentCount);
-      setSelectionMessage(`Envoi guide termine: ${sentCount} contacts envoyes.`);
+      setSelectionMessage(`Envoi guide termine: ${sentCount} contacts envoyes. Ouverture WhatsApp...`);
+      openWhatsAppFromGesture(href);
       queueActionLockRef.current = false;
       return;
     }
-    setQueueSentCount((current) => current + 1);
-    setQueueCursor((current) => current + 1);
-    setSelectionMessage(`Envoye. Prochain contact: ${queueCursor + 2}/${queuedContactIds.length}.`);
+    const nextSentCount = queueSentCount + 1;
+    const nextCursor = queueCursor + 1;
+    setQueueSentCount(nextSentCount);
+    setQueueCursor(nextCursor);
+    setSelectionMessage(`Envoye. Prochain contact: ${nextCursor + 1}/${queuedContactIds.length}. Ouverture WhatsApp...`);
+    openWhatsAppFromGesture(href);
     queueActionLockRef.current = false;
   }
 
@@ -913,7 +975,6 @@ export default function EclaireurWebappPreviewPage() {
           todayDayIndex={todayDayIndex}
           streak={streak}
           suggestion={suggestion}
-          selectedTargetLabel={metier}
           selectedTargetReward={selectedTarget.rewardType === "fixed" ? `${selectedTarget.rewardValue} EUR` : `${selectedTarget.rewardValue}%`}
           importedCount={importedContacts.length}
           importedContacts={importedContacts}
@@ -942,6 +1003,7 @@ export default function EclaireurWebappPreviewPage() {
           onSkipNextQueuedContact={skipNextQueuedContact}
           onStopQueuedContacts={clearGuidedQueue}
           onClearContacts={clearImportedContacts}
+          onOpenImportHelp={() => setShowImportHelp(true)}
           onGoSubmit={() => setActiveScreen(1)}
         />
       ),
@@ -1014,6 +1076,71 @@ export default function EclaireurWebappPreviewPage() {
           </section>
         </div>
       )}
+      {showImportHelp ? (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/65 px-3 pb-4 pt-8 backdrop-blur-sm sm:items-center">
+          <section className="w-full max-w-lg rounded-2xl border border-white/20 bg-[#0B1224] p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Comment importer mes contacts</p>
+              <button
+                type="button"
+                onClick={() => setShowImportHelp(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                x
+              </button>
+            </div>
+            <p className="mt-2 text-[12px] text-white/70">
+              Objectif: exporter tes contacts depuis ton telephone puis les importer ici avec le bouton <strong>.vcf/.csv</strong>.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setHelpPlatform("ios")}
+                className={`h-9 rounded-lg border text-[11px] font-bold ${
+                  helpPlatform === "ios"
+                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                    : "border-white/15 bg-white/5 text-white/75"
+                }`}
+              >
+                iPhone (iOS)
+              </button>
+              <button
+                type="button"
+                onClick={() => setHelpPlatform("android")}
+                className={`h-9 rounded-lg border text-[11px] font-bold ${
+                  helpPlatform === "android"
+                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                    : "border-white/15 bg-white/5 text-white/75"
+                }`}
+              >
+                Android
+              </button>
+            </div>
+            {helpPlatform === "ios" ? (
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
+                <p className="font-semibold text-white">Etapes iPhone:</p>
+                <p className="mt-2">1. Ouvre <strong>Contacts</strong> puis verifie que tes contacts sont bien synchronises (iCloud ou Gmail).</p>
+                <p className="mt-1">2. Va sur iCloud.com ou ton compte Google Contacts depuis Safari/Chrome.</p>
+                <p className="mt-1">3. Exporte les contacts au format <strong>.vcf</strong> (ou <strong>.csv</strong> via Google Contacts).</p>
+                <p className="mt-1">4. Reviens ici et clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
+                <p className="mt-1">5. Selectionne le fichier exporte pour charger tes contacts.</p>
+              </div>
+            ) : (
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
+                <p className="font-semibold text-white">Etapes Android:</p>
+                <p className="mt-2">1. Ouvre l app <strong>Contacts</strong> Google ou Samsung.</p>
+                <p className="mt-1">2. Menu <strong>Exporter</strong> / <strong>Gerer les contacts</strong>.</p>
+                <p className="mt-1">3. Exporte un fichier <strong>.vcf</strong> (memoire du telephone ou Google Drive).</p>
+                <p className="mt-1">4. Reviens sur cet ecran puis clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
+                <p className="mt-1">5. Choisis le fichier .vcf pour importer toute ta liste.</p>
+              </div>
+            )}
+            <p className="mt-3 text-[11px] text-white/55">
+              Astuce: si l export mobile est bloque, utilise <strong>contacts.google.com</strong> pour exporter en quelques clics.
+            </p>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -1369,7 +1496,6 @@ function ScreenSuggestion({
   todayDayIndex,
   streak,
   suggestion,
-  selectedTargetLabel,
   selectedTargetReward,
   importedCount,
   importedContacts,
@@ -1398,13 +1524,13 @@ function ScreenSuggestion({
   onSkipNextQueuedContact,
   onStopQueuedContacts,
   onClearContacts,
+  onOpenImportHelp,
   onGoSubmit,
 }: {
   dayLetters: string[];
   todayDayIndex: number;
   streak: number;
   suggestion: ImportedContact | null;
-  selectedTargetLabel: string;
   selectedTargetReward: string;
   importedCount: number;
   importedContacts: ImportedContact[];
@@ -1433,11 +1559,10 @@ function ScreenSuggestion({
   onSkipNextQueuedContact: () => void;
   onStopQueuedContacts: () => void;
   onClearContacts: () => void;
+  onOpenImportHelp: () => void;
   onGoSubmit: () => void;
 }) {
   const hasContacts = importedCount > 0;
-  const [showImportHelp, setShowImportHelp] = useState(false);
-  const [helpPlatform, setHelpPlatform] = useState<"ios" | "android">("ios");
   const suggestionWhatsappHref = useMemo(() => {
     if (!suggestion) return null;
     return buildSuggestionWhatsappHref(suggestion, privilegeCatalogHref);
@@ -1462,11 +1587,39 @@ function ScreenSuggestion({
       <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
 
       <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Cette semaine</p>
+            <div className="mt-1 flex gap-1">
+              {dayLetters.map((day, idx) => {
+                const isDone = idx < todayDayIndex;
+                const isToday = idx === todayDayIndex;
+                return (
+                  <span
+                    key={day + idx}
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-[10px] font-black ${
+                      isToday ? "bg-[#00D4A0] text-[#070B16]" : isDone ? "border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-[#00D4A0]" : "border border-white/10 bg-white/5 text-white/45"
+                    }`}
+                  >
+                    {day}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[22px] font-black leading-none text-[#F5A623]">🔥 {streak}</p>
+            <p className="text-[10px] uppercase tracking-[0.08em] text-white/40">jours actifs</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Importer tous tes contacts</p>
           <button
             type="button"
-            onClick={() => setShowImportHelp(true)}
+            onClick={onOpenImportHelp}
             className="inline-flex h-7 items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 text-[10px] font-bold uppercase tracking-[0.04em] text-cyan-100"
           >
             Info
@@ -1474,7 +1627,7 @@ function ScreenSuggestion({
         </div>
         {!hasContacts ? (
           <>
-            <p className="mt-1 text-[13px] text-white/70">Aucun contact importe pour l instant. Charge ton annuaire pour activer les suggestions.</p>
+            <p className="mt-1 text-[13px] text-white/70">Aucun contact importe pour l instant. Charge ton annuaire pour activer les actions A et B.</p>
             <div className="mt-3 grid grid-cols-1 gap-2">
               <button
                 type="button"
@@ -1501,7 +1654,7 @@ function ScreenSuggestion({
             <div className="mt-2 rounded-2xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 py-3">
               <p className="text-[10px] uppercase tracking-[0.08em] text-[#00D4A0]/80">Contacts deja importes</p>
               <p className="mt-1 text-[30px] font-black leading-none text-[#00D4A0]">{importedCount}</p>
-              <p className="text-[12px] text-[#00D4A0]/80">contacts disponibles pour les suggestions</p>
+              <p className="text-[12px] text-[#00D4A0]/80">contacts disponibles</p>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
@@ -1530,263 +1683,165 @@ function ScreenSuggestion({
                 Ajouter depuis acces direct telephone
               </button>
             ) : null}
-            <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-2.5">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">Selection multiple</p>
-                <button
-                  type="button"
-                  onClick={onToggleSelectAllContacts}
-                  className="h-8 rounded-lg border border-white/15 bg-white/5 px-2.5 text-[10px] font-semibold text-white/80"
-                >
-                  {allSelectableSelected ? "Tout decocher" : "Tout cocher"}
-                </button>
-              </div>
-              <div className="mb-2.5 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-2">
-                <p className="text-[11px] font-bold text-cyan-100">Choisis les contacts a qui envoyer ton message.</p>
-                <p className="mt-1 text-[10px] text-cyan-100/85">
-                  Selectionne les contacts de ton choix pour partager ton offre, ton offre duo ou le catalogue privilege.
-                </p>
-              </div>
-              <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                {importedContacts.map((contact) => {
-                  const contactHref = buildSuggestionWhatsappHref(contact, privilegeCatalogHref);
-                  const isSelected = selectedContactIds.includes(contact.id);
-                  return (
-                    <label
-                      key={contact.id}
-                      className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
-                        contactHref
-                          ? "border-white/10 bg-white/5 text-white/85"
-                          : "border-white/5 bg-white/[0.03] text-white/40"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        disabled={!contactHref}
-                        onChange={() => onToggleContactSelection(contact.id)}
-                        className="h-3.5 w-3.5 accent-[#00D4A0]"
-                      />
-                      <span className="truncate">{contact.name}</span>
-                    </label>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={onSendSelectedContacts}
-                className="mt-2 h-10 w-full rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[11px] font-bold text-[#25D366]"
-              >
-                Envoyer la selection ({selectedValidCount})
-              </button>
-              {queuedContacts.length > 0 && queuedCurrent ? (
-                <div className="mt-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 p-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#25D366]">
-                    Envoi guide {Math.min(queueCursor + 1, queuedContacts.length)}/{queuedContacts.length}
-                  </p>
-                  <p className="mt-1 text-[11px] text-white/75">Envoyes: {queueSentCount} · Restants: {queueRemainingCount}</p>
-                  <p className="mt-1 text-[11px] text-white/85">Prochain: {queuedCurrent.name}</p>
-                  <div className="mt-2 grid grid-cols-3 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={onSendNextQueuedContact}
-                      className="h-8 rounded-md border border-[#25D366]/45 bg-[#25D366]/20 text-[10px] font-bold text-[#25D366]"
-                    >
-                      Envoyer suivant
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onSkipNextQueuedContact}
-                      className="h-8 rounded-md border border-white/15 bg-white/5 text-[10px] font-semibold text-white/80"
-                    >
-                      Ignorer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onStopQueuedContacts}
-                      className="h-8 rounded-md border border-red-300/35 bg-red-500/10 text-[10px] font-semibold text-red-200"
-                    >
-                      Stop
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              {queueInitialCount > 0 ? (
-                <p className="mt-2 text-[11px] text-white/65">Session envoi: {queueSentCount}/{queueInitialCount} envoyes</p>
-              ) : null}
-              {selectionMessage ? <p className="mt-2 text-[11px] text-white/70">{selectionMessage}</p> : null}
-            </div>
           </>
         )}
         <p className="mt-2 text-[12px] text-white/65">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
         {importError ? <p className="mt-2 rounded-lg border border-red-300/35 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">{importError}</p> : null}
       </div>
-      {showImportHelp ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 px-3 pb-4 pt-8 backdrop-blur-sm sm:items-center">
-          <section className="w-full max-w-lg rounded-2xl border border-white/20 bg-[#0B1224] p-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Comment importer mes contacts</p>
-              <button
-                type="button"
-                onClick={() => setShowImportHelp(false)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
-              >
-                x
-              </button>
-            </div>
-            <p className="mt-2 text-[12px] text-white/70">
-              Objectif: exporter tes contacts depuis ton telephone puis les importer ici avec le bouton <strong>.vcf/.csv</strong>.
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setHelpPlatform("ios")}
-                className={`h-9 rounded-lg border text-[11px] font-bold ${
-                  helpPlatform === "ios"
-                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
-                    : "border-white/15 bg-white/5 text-white/75"
-                }`}
-              >
-                iPhone (iOS)
-              </button>
-              <button
-                type="button"
-                onClick={() => setHelpPlatform("android")}
-                className={`h-9 rounded-lg border text-[11px] font-bold ${
-                  helpPlatform === "android"
-                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
-                    : "border-white/15 bg-white/5 text-white/75"
-                }`}
-              >
-                Android
-              </button>
-            </div>
-            {helpPlatform === "ios" ? (
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
-                <p className="font-semibold text-white">Etapes iPhone:</p>
-                <p className="mt-2">1. Ouvre <strong>Contacts</strong> puis verifie que tes contacts sont bien synchronises (iCloud ou Gmail).</p>
-                <p className="mt-1">2. Va sur iCloud.com ou ton compte Google Contacts depuis Safari/Chrome.</p>
-                <p className="mt-1">3. Exporte les contacts au format <strong>.vcf</strong> (ou <strong>.csv</strong> via Google Contacts).</p>
-                <p className="mt-1">4. Reviens ici et clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
-                <p className="mt-1">5. Selectionne le fichier exporte pour charger tes contacts.</p>
-              </div>
-            ) : (
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
-                <p className="font-semibold text-white">Etapes Android:</p>
-                <p className="mt-2">1. Ouvre l app <strong>Contacts</strong> Google ou Samsung.</p>
-                <p className="mt-1">2. Menu <strong>Exporter</strong> / <strong>Gerer les contacts</strong>.</p>
-                <p className="mt-1">3. Exporte un fichier <strong>.vcf</strong> (memoire du telephone ou Google Drive).</p>
-                <p className="mt-1">4. Reviens sur cet ecran puis clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
-                <p className="mt-1">5. Choisis le fichier .vcf pour importer toute ta liste.</p>
-              </div>
-            )}
-            <p className="mt-3 text-[11px] text-white/55">
-              Astuce: si l export mobile est bloque, utilise <strong>contacts.google.com</strong> pour exporter en quelques clics.
-            </p>
-          </section>
-        </div>
-      ) : null}
 
-      <div className="mt-3 flex items-start justify-between">
-        <div>
-          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Cette semaine</p>
-          <div className="flex gap-1">
-            {dayLetters.map((day, idx) => {
-              const isDone = idx < todayDayIndex;
-              const isToday = idx === todayDayIndex;
-              return (
-                <span
-                  key={day + idx}
-                  className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-[10px] font-black ${
-                    isToday ? "bg-[#00D4A0] text-[#070B16]" : isDone ? "border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-[#00D4A0]" : "border border-white/10 bg-white/5 text-white/45"
-                  }`}
-                >
-                  {day}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-[22px] font-black leading-none text-[#F5A623]">🔥 {streak}</p>
-          <p className="text-[10px] uppercase tracking-[0.08em] text-white/40">jours actifs</p>
-        </div>
-      </div>
-
-      <div className="mt-3 rounded-2xl border border-[#00D4A0]/25 bg-[#00D4A0]/8 p-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Contact suggere aujourd hui</p>
-        {suggestion ? (
-          <>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-sm font-black text-[#00D4A0]">
-                {contactInitials(suggestion.name)}
-              </span>
-              <div>
-                <p className="text-[15px] font-bold text-white">{suggestion.name}</p>
-                <p className="text-[11px] text-white/50">{[suggestion.city, suggestion.companyHint].filter(Boolean).join(" · ") || "Contact importe"}</p>
-              </div>
-            </div>
-            <div className="mt-2 rounded-xl bg-black/25 px-3 py-2 text-[13px] text-white/70">
-              Popey pense qu il peut etre interesse par: {selectedTargetLabel}.
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-[12px] text-white/75">
-                {"-> "}
-                {selectedTargetLabel}
-              </p>
-              <p className="text-[20px] font-black text-[#00D4A0]">+{selectedTargetReward}</p>
-            </div>
-            <div className="mt-3 flex gap-2">
+      <div className="mt-3 rounded-2xl border border-[#00D4A0]/20 bg-[#0D1424] p-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">2 types d action a mener</p>
+        <div className="mt-2 space-y-3">
+          <div className="rounded-xl border border-white/10 bg-black/20 p-2.5">
+            <p className="text-[11px] font-bold text-white">A. Envoi en masse</p>
+            <p className="mt-1 text-[10px] text-white/70">
+              Envoie ton offre, ton offre duo ou le catalogue privilege a plusieurs contacts.
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">Selection multiple</p>
               <button
                 type="button"
-                onClick={onRecommend}
-                className="h-11 flex-[2] rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[12px] font-black uppercase tracking-[0.04em] text-[#060B12]"
+                onClick={onToggleSelectAllContacts}
+                className="h-8 rounded-lg border border-white/15 bg-white/5 px-2.5 text-[10px] font-semibold text-white/80"
               >
-                Je le recommande
-              </button>
-              {suggestionWhatsappHref ? (
-                <a
-                  href={suggestionWhatsappHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[12px] font-bold text-[#25D366]"
-                >
-                  Envoyer
-                </a>
-              ) : (
-                <span className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/45">
-                  Envoyer
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={onSkip}
-                className="h-11 flex-1 rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/70"
-              >
-                Pas lui
+                {allSelectableSelected ? "Tout decocher" : "Tout cocher"}
               </button>
             </div>
-            <a
-              href={privilegeCatalogHref}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2 inline-flex h-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-white/80"
-            >
-              Ouvrir le catalogue privilege de ma ville
-            </a>
-          </>
-        ) : (
-          <div className="mt-2 rounded-lg border border-white/10 bg-black/25 px-3 py-4 text-center">
-            <p className="text-sm text-white/70">Importe tes contacts pour lancer la suggestion quotidienne.</p>
+            <div className="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
+              {importedContacts.map((contact) => {
+                const contactHref = buildSuggestionWhatsappHref(contact, privilegeCatalogHref);
+                const isSelected = selectedContactIds.includes(contact.id);
+                return (
+                  <label
+                    key={contact.id}
+                    className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
+                      contactHref
+                        ? "border-white/10 bg-white/5 text-white/85"
+                        : "border-white/5 bg-white/[0.03] text-white/40"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      disabled={!contactHref}
+                      onChange={() => onToggleContactSelection(contact.id)}
+                      className="h-3.5 w-3.5 accent-[#00D4A0]"
+                    />
+                    <span className="truncate">{contact.name}</span>
+                  </label>
+                );
+              })}
+            </div>
             <button
               type="button"
-              onClick={onGoSubmit}
-              className="mt-2 h-9 rounded-lg border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 text-[11px] font-bold text-[#00D4A0]"
+              onClick={onSendSelectedContacts}
+              className="mt-2 h-10 w-full rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[11px] font-bold text-[#25D366]"
             >
-              Aller au formulaire manuel
+              Envoyer la selection ({selectedValidCount})
             </button>
+            {queuedContacts.length > 0 && queuedCurrent ? (
+              <div className="mt-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 p-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#25D366]">
+                  Envoi guide {Math.min(queueCursor + 1, queuedContacts.length)}/{queuedContacts.length}
+                </p>
+                <p className="mt-1 text-[11px] text-white/75">Envoyes: {queueSentCount} · Restants: {queueRemainingCount}</p>
+                <p className="mt-1 text-[11px] text-white/85">Prochain: {queuedCurrent.name}</p>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={onSendNextQueuedContact}
+                    className="h-8 rounded-md border border-[#25D366]/45 bg-[#25D366]/20 text-[10px] font-bold text-[#25D366]"
+                  >
+                    Envoyer suivant
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSkipNextQueuedContact}
+                    className="h-8 rounded-md border border-white/15 bg-white/5 text-[10px] font-semibold text-white/80"
+                  >
+                    Ignorer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onStopQueuedContacts}
+                    className="h-8 rounded-md border border-red-300/35 bg-red-500/10 text-[10px] font-semibold text-red-200"
+                  >
+                    Stop
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {queueInitialCount > 0 ? (
+              <p className="mt-2 text-[11px] text-white/65">Session envoi: {queueSentCount}/{queueInitialCount} envoyes</p>
+            ) : null}
+            {selectionMessage ? <p className="mt-2 text-[11px] text-white/70">{selectionMessage}</p> : null}
           </div>
-        )}
+
+          <div className="rounded-xl border border-[#00D4A0]/25 bg-[#00D4A0]/8 p-2.5">
+            <p className="text-[11px] font-bold text-white">B. Recommandation eclaireur</p>
+            <p className="mt-1 text-[10px] text-white/70">
+              Envoie un message WhatsApp a quelqu un pour qu il devienne apporteur d affaires contre commission.
+            </p>
+            {suggestion ? (
+              <>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 text-sm font-black text-[#00D4A0]">
+                    {contactInitials(suggestion.name)}
+                  </span>
+                  <div>
+                    <p className="text-[15px] font-bold text-white">{suggestion.name}</p>
+                    <p className="text-[11px] text-white/50">{[suggestion.city, suggestion.companyHint].filter(Boolean).join(" · ") || "Contact importe"}</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-[12px] text-white/75">Commission cible</p>
+                  <p className="text-[20px] font-black text-[#00D4A0]">+{selectedTargetReward}</p>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onRecommend}
+                    className="h-11 flex-[2] rounded-xl bg-gradient-to-r from-[#00D4A0] to-[#00B887] text-[12px] font-black uppercase tracking-[0.04em] text-[#060B12]"
+                  >
+                    Je le recommande
+                  </button>
+                  {suggestionWhatsappHref ? (
+                    <a
+                      href={suggestionWhatsappHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[12px] font-bold text-[#25D366]"
+                    >
+                      Recommandation eclaireur
+                    </a>
+                  ) : (
+                    <span className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/45">
+                      Recommandation eclaireur
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onSkip}
+                    className="h-11 flex-1 rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/70"
+                  >
+                    Pas lui
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-2 rounded-lg border border-white/10 bg-black/25 px-3 py-4 text-center">
+                <p className="text-sm text-white/70">Importe tes contacts pour activer la recommandation eclaireur.</p>
+                <button
+                  type="button"
+                  onClick={onGoSubmit}
+                  className="mt-2 h-9 rounded-lg border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 text-[11px] font-bold text-[#00D4A0]"
+                >
+                  Aller au formulaire manuel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
