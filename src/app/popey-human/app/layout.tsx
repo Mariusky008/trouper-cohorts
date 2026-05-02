@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { PopeyHumanMemberShell } from "./_components/member-shell";
 
 export default async function PopeyHumanAppLayout({
@@ -15,17 +14,6 @@ export default async function PopeyHumanAppLayout({
 
   if (!user) {
     redirect("/popey-human/login");
-  }
-
-  const supabaseAdmin = createAdminClient();
-  const { data: adminData } = await supabaseAdmin
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (adminData) {
-    redirect("/admin/humain");
   }
 
   return <PopeyHumanMemberShell>{children}</PopeyHumanMemberShell>;

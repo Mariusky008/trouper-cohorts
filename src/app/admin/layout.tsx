@@ -111,6 +111,11 @@ export default async function AdminLayout({
           <Button asChild variant="outline" size="sm">
             <Link href="/app/today">Voir App</Link>
           </Button>
+          <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
+            <Button type="submit" variant="outline" size="sm">
+              Déconnexion
+            </Button>
+          </form>
         </div>
       </header>
       <main className="flex-1 p-6 w-full max-w-none">{children}</main>
