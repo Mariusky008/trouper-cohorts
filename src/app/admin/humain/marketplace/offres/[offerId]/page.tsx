@@ -83,7 +83,7 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
           <p className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{marketMessage || "Action impossible."}</p>
         ) : null}
         <p className="mb-4 text-xs font-black uppercase tracking-wide text-amber-800">Éditeur offre privilège (plein format)</p>
-        <form action="/api/admin/humain/marketplace/places/update" method="post" className="grid gap-3 md:grid-cols-2">
+        <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="grid gap-3 md:grid-cols-2">
           <input type="hidden" name="current_url" value={`/admin/humain/marketplace/offres/${offer.id}`} />
           <input type="hidden" name="place_id" value={offer.place.id} />
           <input type="hidden" name="next_status" value={offer.place.status || "reserved"} />
@@ -150,6 +150,11 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
           <label className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Photo (URL, optionnel)</span>
             <input name="offer_photo_url" defaultValue={offer.place.offer_photo_url || ""} placeholder="https://.../photo.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Photo (upload direct)</span>
+            <input name="offer_photo_file" type="file" accept="image/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
           </label>
 
           <label className="space-y-1 md:col-span-2">

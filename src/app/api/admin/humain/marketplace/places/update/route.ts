@@ -3,6 +3,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const MARKETPLACE_PRIVILEGE_PHOTO_BUCKET = "marketplace-privilege-offers";
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
 function withStatus(base: string, status: "success" | "error", message: string) {
   const sep = base.includes("?") ? "&" : "?";
   return `${base}${sep}marketStatus=${encodeURIComponent(status)}&marketMessage=${encodeURIComponent(message)}`;
@@ -28,6 +31,17 @@ function canTransitionPlaceStatus(fromStatus: string, toStatus: string) {
   return (allowed[fromStatus] || []).includes(toStatus);
 }
 
+function safePhotoExtension(file: File): string {
+  const fromName = String(file.name || "").split(".").pop()?.toLowerCase() || "";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(fromName)) return fromName;
+  const mime = String(file.type || "").toLowerCase();
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
+  if (mime.includes("png")) return "png";
+  if (mime.includes("webp")) return "webp";
+  if (mime.includes("gif")) return "gif";
+  return "jpg";
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
@@ -46,6 +60,7 @@ export async function POST(request: Request) {
   const offerDescriptionRaw = String(formData.get("offer_description") || "").trim();
   const directContactRaw = String(formData.get("direct_contact") || "").trim();
   const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
+  const offerPhotoFileRaw = formData.get("offer_photo_file");
 
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
@@ -109,6 +124,30 @@ export async function POST(request: Request) {
     patch.partner_offer_value_eur = parsed;
   } else if (intent !== "clear_privilege") {
     patch.partner_offer_value_eur = null;
+  }
+  if (intent !== "clear_privilege" && offerPhotoFileRaw instanceof File && offerPhotoFileRaw.size > 0) {
+    if (!String(offerPhotoFileRaw.type || "").startsWith("image/")) {
+      return fail("Le fichier photo doit être une image.");
+    }
+    if (offerPhotoFileRaw.size > MAX_PHOTO_BYTES) {
+      return fail("La photo dépasse 8MB.");
+    }
+    const ext = safePhotoExtension(offerPhotoFileRaw);
+    const filePath = `marketplace-offers/${placeId}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+      .upload(filePath, offerPhotoFileRaw, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: offerPhotoFileRaw.type || undefined,
+      });
+    if (uploadError) {
+      return fail(`Upload photo impossible: ${uploadError.message || "erreur storage"}`);
+    }
+    const { data: publicData } = supabaseAdmin.storage
+      .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+      .getPublicUrl(filePath);
+    patch.offer_photo_url = String(publicData?.publicUrl || "").trim() || null;
   }
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin

@@ -387,7 +387,7 @@ export default async function AdminHumainMarketplacePage({
                   </div>
                   {offer.place ? (
                     <>
-                      <form action="/api/admin/humain/marketplace/places/update" method="post" className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
+                      <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
                         <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-800">
                           Configurer l&apos;offre privilège de ce professionnel
                         </p>
@@ -469,6 +469,12 @@ export default async function AdminHumainMarketplacePage({
                             defaultValue={offer.place.offer_photo_url || ""}
                             placeholder="Photo URL"
                             className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                          />
+                          <input
+                            name="offer_photo_file"
+                            type="file"
+                            accept="image/*"
+                            className="h-9 w-56 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
                           />
                           <input
                             name="offer_description"
@@ -637,7 +643,7 @@ export default async function AdminHumainMarketplacePage({
                         <p className="text-xs text-amber-700">Assigne un owner membre pour générer son lien personnel stable.</p>
                       )}
                     </div>
-                    <form action="/api/admin/humain/marketplace/places/update" method="post" className="flex flex-wrap items-center gap-2">
+                    <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="place_id" value={place.id} />
                       <select
@@ -722,6 +728,12 @@ export default async function AdminHumainMarketplacePage({
                         defaultValue={place.offer_photo_url || ""}
                         placeholder="Photo URL"
                         className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="offer_photo_file"
+                        type="file"
+                        accept="image/*"
+                        className="h-9 w-44 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
                       />
                       <input
                         name="offer_description"
