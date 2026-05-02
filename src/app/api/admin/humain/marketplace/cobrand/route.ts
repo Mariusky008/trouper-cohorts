@@ -40,6 +40,19 @@ function normalizeName(value: string) {
     .trim();
 }
 
+function parseEuroAmount(raw: string): number {
+  const value = String(raw || "").trim();
+  if (!value) return 0;
+  const cleaned = value
+    .replace(/\s+/g, "")
+    .replace(/[€$]/g, "")
+    .replace(",", ".")
+    .replace(/[^0-9.-]/g, "");
+  const parsed = Number(cleaned);
+  if (!Number.isFinite(parsed) || parsed < 0) return NaN;
+  return parsed;
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = trim(formData.get("current_url")) || "/admin/humain/marketplace";
@@ -109,8 +122,8 @@ export async function POST(request: Request) {
   const commissionNote = trim(formData.get("commission_note")) || null;
   const primaryValueRaw = trim(formData.get("primary_offer_value_eur"));
   const secondaryValueRaw = trim(formData.get("secondary_offer_value_eur"));
-  const primaryValue = Number(primaryValueRaw.replace(",", "."));
-  const secondaryValue = Number(secondaryValueRaw.replace(",", "."));
+  const primaryValue = parseEuroAmount(primaryValueRaw);
+  const secondaryValue = parseEuroAmount(secondaryValueRaw);
 
   if (!primarySelector || !secondarySelector) return fail("Sélectionne deux membres acceptés.");
   if (!packTitle) return fail("Nom du pack obligatoire.");
