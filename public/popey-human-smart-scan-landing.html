@@ -30,6 +30,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 .nav-links{display:flex;gap:32px}
 .nav-links a{color:var(--text-sec);text-decoration:none;font-size:13px;font-weight:500;letter-spacing:.03em;transition:color .2s}
 .nav-links a:hover{color:var(--teal)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.nav-login{background:transparent;color:var(--text);padding:10px 18px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:.06em;text-decoration:none;text-transform:uppercase;border:0.5px solid var(--border2);transition:all .2s}
+.nav-login:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-1px)}
 .nav-cta{background:var(--teal);color:var(--black);padding:10px 22px;border-radius:4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-decoration:none;text-transform:uppercase;transition:all .2s}
 .nav-cta:hover{background:#fff;transform:translateY(-1px)}
 
@@ -275,7 +278,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
 .reveal.visible{opacity:1;transform:translateY(0)}
 .reveal-d1{transition-delay:.1s}.reveal-d2{transition-delay:.2s}.reveal-d3{transition-delay:.3s}
 
-@media(max-width:960px){nav{padding:14px 20px}.nav-links{display:none}.hero{padding:110px 20px 60px}section{padding:70px 20px}.sim-section{padding:70px 20px}.sliders-grid{grid-template-columns:1fr}.results-grid{grid-template-columns:1fr 1fr}.two-cards{flex-direction:column}.plus-sep{transform:rotate(90deg);min-width:auto}.testi-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr}.metrics-band{grid-template-columns:1fr 1fr}footer{flex-direction:column;text-align:center}.sim-step{padding:24px 20px}.results-wrap{padding:24px 20px}.legal-section{padding:56px 20px}.legal-title{font-size:30px}}
+@media(max-width:960px){nav{padding:14px 20px}.nav-links{display:none}.nav-actions{gap:8px}.nav-login,.nav-cta{padding:8px 12px;font-size:10px}.hero{padding:110px 20px 60px}section{padding:70px 20px}.sim-section{padding:70px 20px}.sliders-grid{grid-template-columns:1fr}.results-grid{grid-template-columns:1fr 1fr}.two-cards{flex-direction:column}.plus-sep{transform:rotate(90deg);min-width:auto}.testi-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr}.metrics-band{grid-template-columns:1fr 1fr}footer{flex-direction:column;text-align:center}.sim-step{padding:24px 20px}.results-wrap{padding:24px 20px}.legal-section{padding:56px 20px}.legal-title{font-size:30px}}
 
 /* ── FOMO SECTION ── */
 .fomo-section{padding:100px 48px;background:var(--ink);color:var(--text);position:relative;overflow:hidden}
@@ -372,7 +375,10 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
     <a href="#tarifs">Tarifs</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a href="/popey-human/accueil-test/inscription" class="nav-cta">Inscription</a>
+  <div class="nav-actions">
+    <a href="/popey-human/login" class="nav-login">Connexion</a>
+    <a href="/popey-human/accueil-test/inscription" class="nav-cta">Inscription</a>
+  </div>
 </nav>
 
 <!-- ═══ HERO ═══ -->

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 export default function PopeyHumanAccueilTestPage() {
-  const landingVersion = "20260427-accueil-v6";
+  const landingVersion = "20260501-accueil-v7";
 
   useEffect(() => {
     if (window.location.hash === "#hero-demo") {

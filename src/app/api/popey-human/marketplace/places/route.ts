@@ -228,6 +228,7 @@ export async function GET(request: NextRequest) {
     const queryText = String(request.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const sort = String(request.nextUrl.searchParams.get("sort") || "value_desc").trim();
     const refMemberIds = new Set<string>();
+    const acceptedLinkedPlaceIds = new Set<string>();
 
     let query = supabase.from("human_marketplace_places").select(
       "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
@@ -266,6 +267,8 @@ export async function GET(request: NextRequest) {
               if (isMatch) {
                 const assigned = String((offer as { assigned_member_id?: string | null }).assigned_member_id || "").trim();
                 if (assigned) refMemberIds.add(assigned);
+                const placeId = String(offer.place_id || "").trim();
+                if (placeId) acceptedLinkedPlaceIds.add(placeId);
               }
               return isMatch;
             })
@@ -277,6 +280,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ places: [], cities: [], summary: { total: 0, sale: 0, dispo: 0 } });
       }
       query = query.in("id", linkedPlaceIds);
+    }
+
+    if (isPrivilegeCatalog && !hasReferralContext) {
+      const { data: acceptedOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("place_id,status")
+        .eq("status", "accepted")
+        .limit(500);
+      (((acceptedOffers as Array<{ place_id: string | null }> | null) || []).forEach((offer) => {
+        const placeId = String(offer.place_id || "").trim();
+        if (placeId) acceptedLinkedPlaceIds.add(placeId);
+      }));
     }
 
     if (sort === "value_asc") query = query.order("list_price_eur", { ascending: true, nullsFirst: true });
@@ -298,7 +313,8 @@ export async function GET(request: NextRequest) {
       filteredRows = filteredRows.filter((row) => {
         const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
         const hasConfiguredOffer = Boolean(String(row.privilege_badge || "").trim());
-        return hasConfiguredIdentity || hasConfiguredOffer;
+        const isAcceptedLinkedPlace = acceptedLinkedPlaceIds.has(String(row.id || ""));
+        return hasConfiguredIdentity || hasConfiguredOffer || isAcceptedLinkedPlace;
       });
     }
     let places = filteredRows

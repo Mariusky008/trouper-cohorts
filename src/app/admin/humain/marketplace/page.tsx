@@ -31,6 +31,16 @@ function splitMemberLabel(label: string) {
   };
 }
 
+function normalizePersonName(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string, refMetier?: string) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
@@ -80,19 +90,33 @@ export default async function AdminHumainMarketplacePage({
   const requestedPrimaryMemberId = typeof params.cobrandPrimaryMemberId === "string" ? params.cobrandPrimaryMemberId : "";
   const requestedCobrandCity = typeof params.cobrandCity === "string" ? params.cobrandCity : "";
   const requestedPrimaryPlaceId = typeof params.cobrandPrimaryPlaceId === "string" ? params.cobrandPrimaryPlaceId : "";
+  const memberNameToId = new Map<string, string>();
+  snapshot.members.forEach((member) => {
+    const parsed = splitMemberLabel(member.label);
+    const key = normalizePersonName(parsed.displayName);
+    if (key && !memberNameToId.has(key)) memberNameToId.set(key, member.id);
+  });
+  const resolveMemberIdForOffer = (offer: (typeof snapshot.offers)[number]) => {
+    const assigned = String(offer.assigned_member_id || "").trim();
+    if (assigned) return assigned;
+    const owner = String(offer.place?.owner_member_id || "").trim();
+    if (owner) return owner;
+    const byName = memberNameToId.get(normalizePersonName(String(offer.full_name || ""))) || "";
+    return byName;
+  };
   const acceptedMemberIds = new Set<string>();
   snapshot.offers
     .filter((offer) => offer.status === "accepted")
     .forEach((offer) => {
-      const assigned = String(offer.assigned_member_id || "").trim();
-      const owner = String(offer.place?.owner_member_id || "").trim();
-      if (assigned) acceptedMemberIds.add(assigned);
+      const resolvedId = resolveMemberIdForOffer(offer);
+      if (resolvedId) acceptedMemberIds.add(resolvedId);
+    });
+  if (acceptedMemberIds.size === 0) {
+    snapshot.places.forEach((place) => {
+      const owner = String(place.owner_member_id || "").trim();
       if (owner) acceptedMemberIds.add(owner);
     });
-  snapshot.places.forEach((place) => {
-    const owner = String(place.owner_member_id || "").trim();
-    if (owner) acceptedMemberIds.add(owner);
-  });
+  }
   const acceptedMembers = snapshot.members.filter((member) => acceptedMemberIds.has(member.id));
   const selectableMembers = acceptedMembers.length > 0 ? acceptedMembers : snapshot.members;
   const defaultPrimaryMemberId = selectableMembers.some((member) => member.id === requestedPrimaryMemberId)
@@ -291,7 +315,7 @@ export default async function AdminHumainMarketplacePage({
                     <div className="space-y-2">
                       {offer.status === "accepted" ? (
                         <Link
-                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(String(offer.assigned_member_id || offer.place?.owner_member_id || ""))}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
+                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(resolveMemberIdForOffer(offer))}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
                           className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
                         >
                           Creer offre duo
