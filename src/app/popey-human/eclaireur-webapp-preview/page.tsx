@@ -723,26 +723,17 @@ export default function EclaireurWebappPreviewPage() {
       return;
     }
     const message = buildBulkOfferShareMessage(privilegeCatalogHref);
-    try {
-      const nav = navigator as Navigator & {
-        share?: (data: { text?: string; url?: string; title?: string }) => Promise<void>;
-      };
-      if (typeof nav.share === "function") {
-        await nav.share({ text: message });
-        setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
-        return;
+    // Force l'ouverture directe de WhatsApp (pas la feuille de partage iOS).
+    const encoded = encodeURIComponent(message);
+    const appHref = `whatsapp://send?text=${encoded}`;
+    const webHref = `https://api.whatsapp.com/send?text=${encoded}`;
+    openWhatsAppFromGesture(appHref);
+    setTimeout(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        openWhatsAppFromGesture(webHref);
       }
-      openWhatsAppFromGesture(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`);
-      setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
-    } catch (error) {
-      const err = error as { name?: string };
-      if (err?.name === "AbortError") {
-        setSelectionMessage("Envoi annule.");
-        return;
-      }
-      openWhatsAppFromGesture(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`);
-      setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
-    }
+    }, 450);
+    setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
   }
 
   function skipSuggestion() {
