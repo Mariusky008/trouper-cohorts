@@ -733,15 +733,22 @@ export default function EclaireurWebappPreviewPage() {
     }
     const message = buildBulkOfferShareMessage(privilegeCatalogHref);
     // Force l'ouverture WhatsApp avec texte pre-rempli sur l'ecran multi-selection.
+    // Les URLs canoniques wa.me / api.whatsapp.com sont les plus stables selon les devices.
     const encoded = encodeURIComponent(message);
-    const webHref = `https://api.whatsapp.com/send/?text=${encoded}&type=custom_url&app_absent=0`;
-    const appHref = `whatsapp://send?text=${encoded}&type=custom_url&app_absent=0`;
-    openWhatsAppFromGesture(webHref);
+    const webHrefPrimary = `https://wa.me/?text=${encoded}`;
+    const webHrefFallback = `https://api.whatsapp.com/send?text=${encoded}`;
+    const appHrefFallback = `whatsapp://send?text=${encoded}`;
+    openWhatsAppFromGesture(webHrefPrimary);
     setTimeout(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        openWhatsAppFromGesture(appHref);
+        openWhatsAppFromGesture(webHrefFallback);
       }
     }, 450);
+    setTimeout(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        openWhatsAppFromGesture(appHrefFallback);
+      }
+    }, 900);
     setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
   }
 
