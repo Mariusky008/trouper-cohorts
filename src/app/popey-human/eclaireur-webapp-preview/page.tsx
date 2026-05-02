@@ -1168,15 +1168,7 @@ function ScreenSuggestion({
     const catalogUrl = privilegeCatalogHref.startsWith("http")
       ? privilegeCatalogHref
       : `https://www.popey.academy${privilegeCatalogHref}`;
-    const message = [
-      `Salut ${suggestion.name},`,
-      "",
-      "Je te partage le catalogue privilege Popey de notre ville.",
-      "Tu y trouveras des offres locales + des offres duo exclusives :",
-      catalogUrl,
-      "",
-      "Dis-moi si tu veux, je peux t aider a choisir la meilleure offre pour toi.",
-    ].join("\n");
+    const message = `Salut à tous ! Pour vous remercier de votre fidélité, j'ai rejoint le réseau Popey à Dax. Désormais, en passant par moi, vous avez accès à des cadeaux exclusifs chez les meilleurs commerçants et artisans de la ville. Cliquez ici pour voir vos avantages : ${catalogUrl}`;
     return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
   }, [privilegeCatalogHref, suggestion]);
   return (
