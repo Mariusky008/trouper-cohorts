@@ -318,10 +318,15 @@ function openWhatsAppFromGesture(href: string) {
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
   const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
+  const initialScreenFromUrl = useMemo(() => {
+    const raw = Number(searchParams.get("screen") || "1");
+    if (Number.isFinite(raw) && raw >= 1 && raw <= 4) return raw - 1;
+    return 0;
+  }, [searchParams]);
   const [tokenOrCode, setTokenOrCode] = useState(urlTokenOrCode);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [activeScreen, setActiveScreen] = useState(0);
+  const [activeScreen, setActiveScreen] = useState(initialScreenFromUrl);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
@@ -424,6 +429,10 @@ export default function EclaireurWebappPreviewPage() {
     }
     setTokenOrCode("");
   }, [urlTokenOrCode]);
+
+  useEffect(() => {
+    setActiveScreen(initialScreenFromUrl);
+  }, [initialScreenFromUrl]);
 
   useEffect(() => {
     if (!availableMetiers.includes(metier)) {

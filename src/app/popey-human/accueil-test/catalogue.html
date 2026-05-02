@@ -390,6 +390,117 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 }
 .b2b-banner strong { color: var(--gold); }
 
+/* Demo partnership module */
+.demo-partnership {
+  margin: 14px 24px 0;
+  border: 1px solid rgba(0,200,150,.3);
+  background: linear-gradient(145deg, rgba(6,18,26,.98), rgba(8,35,28,.96));
+  border-radius: 16px;
+  padding: 14px;
+  position: relative;
+  z-index: 1;
+}
+.demo-partnership-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,212,160,.35);
+  background: rgba(0,212,160,.08);
+  color: #7EF3D3;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.demo-partnership-copy { margin-top: 8px; color: rgba(255,255,255,.78); font-size: 12px; line-height: 1.55; }
+.demo-partnership-btn {
+  margin-top: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(95deg,#00D4A0,#00BD8E);
+  color: #062018;
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.demo-partnership-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,200,150,.3); }
+
+.demo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(3, 8, 16, 0.72);
+  backdrop-filter: blur(8px);
+}
+.demo-modal.open { display: flex; }
+.demo-panel {
+  width: 100%;
+  max-width: 620px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: linear-gradient(155deg, #0D1220 0%, #0A1524 55%, #0B1A1F 100%);
+  color: #EEF3FF;
+  padding: 22px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
+}
+.demo-title { font-family: var(--fd); font-size: 40px; line-height: .92; letter-spacing: -.02em; }
+.demo-sub { margin-top: 10px; font-size: 15px; color: rgba(238,243,255,.76); line-height: 1.45; }
+.demo-form { margin-top: 14px; display: grid; gap: 10px; }
+.demo-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(238,243,255,.55); font-weight: 700; }
+.demo-input {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.04);
+  color: #EEF3FF;
+  font-family: var(--fb);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0 14px;
+}
+.demo-actions { margin-top: 12px; display: grid; gap: 8px; }
+.demo-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.06);
+  color: #EEF3FF;
+  font-weight: 700;
+  font-family: var(--fb);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.demo-cta.primary { border: 0; background: linear-gradient(95deg,#00D4A0,#00BD8E); color: #062018; }
+.demo-result {
+  margin-top: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,212,160,.3);
+  background: rgba(0,212,160,.1);
+  padding: 12px;
+}
+.demo-link {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9EE9D3;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
 /* ── CO-BRAND PACKS ── */
 .cobrand-section { padding: 60px 24px; background: var(--cream2); border-top: 1px solid var(--border); }
 .cb-inner { max-width: 900px; margin: 0 auto; }
@@ -542,6 +653,11 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hs-item"><div class="hs-val">5</div><div class="hs-lbl">Sphères</div></div>
       <div class="hs-item"><div class="hs-val">100%</div><div class="hs-lbl">Vérifiés</div></div>
       <div class="hs-item"><div class="hs-val">Dax</div><div class="hs-lbl">Zone</div></div>
+    </div>
+    <div class="demo-partnership">
+      <div class="demo-partnership-kicker">Partenariat demo</div>
+      <div class="demo-partnership-copy">Crée un lien d'éclaireur en live pour ta démonstration. En 20 secondes tu obtiens le lien catalogue + l'accès webapp screen 4.</div>
+      <button class="demo-partnership-btn" id="openDemoPartnershipBtn" type="button">Devenir partenaire apporteur (demo)</button>
     </div>
   </div>
 
@@ -957,6 +1073,44 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 
 </div><!-- end client-view -->
 
+<div class="demo-modal" id="demoPartnershipModal" aria-hidden="true">
+  <div class="demo-panel">
+    <div class="demo-title">Partenariat démo</div>
+    <p class="demo-sub">Entre nom + WhatsApp, puis génère un lien instantané pour ouvrir la webapp éclaireur directement sur le screen 4.</p>
+    <form class="demo-form" id="demoPartnershipForm">
+      <div>
+        <label class="demo-label" for="demoPartnerName">Nom complet</label>
+        <input id="demoPartnerName" class="demo-input" type="text" placeholder="Ex: Camille Dupont" />
+      </div>
+      <div>
+        <label class="demo-label" for="demoPartnerPhone">Numéro WhatsApp</label>
+        <input id="demoPartnerPhone" class="demo-input" type="tel" placeholder="06 12 34 56 78" />
+      </div>
+      <div>
+        <label class="demo-label" for="demoPartnerCity">Ville catalogue</label>
+        <input id="demoPartnerCity" class="demo-input" type="text" placeholder="Dax" value="Dax" />
+      </div>
+      <button class="demo-cta primary" type="submit">Générer mes liens de démo</button>
+    </form>
+    <div id="demoPartnershipResult" class="demo-result" style="display:none">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#00D4A0">Lien catalogue</div>
+      <div id="demoCatalogueLink" class="demo-link"></div>
+      <div class="demo-actions">
+        <button type="button" class="demo-cta" id="demoCopyCatalogueBtn">Copier le lien catalogue</button>
+      </div>
+      <div style="margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#00D4A0">Lien webapp (screen 4)</div>
+      <div id="demoWebappLink" class="demo-link"></div>
+      <div class="demo-actions">
+        <button type="button" class="demo-cta" id="demoCopyWebappBtn">Copier le lien webapp</button>
+        <a class="demo-cta primary" id="demoOpenWebappBtn" target="_blank" rel="noreferrer">Ouvrir la webapp écran 4</a>
+      </div>
+    </div>
+    <div class="demo-actions">
+      <button class="demo-cta" id="demoClosePartnershipBtn" type="button">Fermer</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ══════════════════════════════
      ADMIN VIEW
@@ -1359,6 +1513,119 @@ function activateCobrand(packName, members, savings, trackingId) {
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
 }
+
+// ── DEMO PARTNERSHIP (POPUP + LIENS) ──
+let __demoPartnershipPayload = null;
+
+function slugifyCity(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function sanitizeName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+}
+
+function makeDemoToken() {
+  const base = Date.now().toString(36);
+  const rnd = Math.random().toString(36).slice(2, 12);
+  return `${base}${rnd}`;
+}
+
+function makeRefCode(name) {
+  const first = sanitizeName(name).split(' ')[0] || 'scout';
+  const clean = first.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${clean || 'scout'}${suffix}`;
+}
+
+function openDemoPartnershipModal() {
+  const modal = document.getElementById('demoPartnershipModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeDemoPartnershipModal() {
+  const modal = document.getElementById('demoPartnershipModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function copyDemoText(text) {
+  if (!text) return;
+  navigator.clipboard?.writeText(text).then(() => {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#13141A;color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;border:1px solid rgba(255,255,255,.1)';
+    toast.textContent = '✓ Lien copié';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2200);
+  });
+}
+
+function submitDemoPartnership(event) {
+  event.preventDefault();
+  const nameInput = document.getElementById('demoPartnerName');
+  const phoneInput = document.getElementById('demoPartnerPhone');
+  const cityInput = document.getElementById('demoPartnerCity');
+  const name = sanitizeName(nameInput?.value || '');
+  const phone = String(phoneInput?.value || '').trim();
+  const city = String(cityInput?.value || '').trim() || 'Dax';
+  if (!name || !phone) return;
+
+  const citySlug = slugifyCity(city) || 'dax';
+  const token = makeDemoToken();
+  const refCode = makeRefCode(name);
+  const firstName = name.split(' ')[0] || name;
+  const base = 'https://www.popey.academy';
+  const catalogueLink = `${base}/privilege/${citySlug}?ref=${encodeURIComponent(refCode)}&ref_name=${encodeURIComponent(firstName)}&sponsor=${encodeURIComponent(name)}&demo=1`;
+  const webappLink = `${base}/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(token)}&screen=4`;
+
+  __demoPartnershipPayload = { catalogueLink, webappLink };
+
+  const result = document.getElementById('demoPartnershipResult');
+  const catalogueNode = document.getElementById('demoCatalogueLink');
+  const webappNode = document.getElementById('demoWebappLink');
+  const openWebappBtn = document.getElementById('demoOpenWebappBtn');
+  if (result && catalogueNode && webappNode && openWebappBtn) {
+    catalogueNode.textContent = catalogueLink;
+    webappNode.textContent = webappLink;
+    openWebappBtn.setAttribute('href', webappLink);
+    result.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const openBtn = document.getElementById('openDemoPartnershipBtn');
+  const closeBtn = document.getElementById('demoClosePartnershipBtn');
+  const modal = document.getElementById('demoPartnershipModal');
+  const form = document.getElementById('demoPartnershipForm');
+  const copyCatalogueBtn = document.getElementById('demoCopyCatalogueBtn');
+  const copyWebappBtn = document.getElementById('demoCopyWebappBtn');
+
+  if (openBtn) openBtn.addEventListener('click', openDemoPartnershipModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeDemoPartnershipModal);
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeDemoPartnershipModal();
+    });
+  }
+  if (form) form.addEventListener('submit', submitDemoPartnership);
+  if (copyCatalogueBtn) {
+    copyCatalogueBtn.addEventListener('click', () => copyDemoText(__demoPartnershipPayload?.catalogueLink || ''));
+  }
+  if (copyWebappBtn) {
+    copyWebappBtn.addEventListener('click', () => copyDemoText(__demoPartnershipPayload?.webappLink || ''));
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeDemoPartnershipModal();
+  });
+});
 // ── SCROLL ANIMATIONS ──
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
