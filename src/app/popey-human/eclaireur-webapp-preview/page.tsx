@@ -35,7 +35,6 @@ const OPPORTUNITY_TARGETS = {
 const SCOUT_PREVIEW_TOKEN_STORAGE_KEY = "popey-human:eclaireur-preview:last-token-or-code";
 const SCOUT_PREVIEW_TOKEN_COOKIE_KEY = "popey_human_eclaireur_preview_token";
 const SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX = "popey-human:eclaireur-preview:imported-contacts:";
-const SCOUT_PREVIEW_QUEUE_STORAGE_PREFIX = "popey-human:eclaireur-preview:guided-queue:";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
@@ -282,15 +281,11 @@ function normalizePhoneForWhatsApp(raw: string) {
   return digits;
 }
 
-function buildBulkOfferWhatsappHref(contact: ImportedContact, privilegeCatalogHref: string) {
-  if (!contact.phone) return null;
-  const phone = normalizePhoneForWhatsApp(contact.phone);
-  if (!phone) return null;
+function buildBulkOfferShareMessage(privilegeCatalogHref: string) {
   const catalogUrl = privilegeCatalogHref.startsWith("http")
     ? privilegeCatalogHref
     : `https://www.popey.academy${privilegeCatalogHref}`;
-  const message = `Salut a tous ! Pour vous remercier de votre fidelite, j'ai rejoint le reseau Popey a Dax. Desormais, en passant par moi, vous avez acces a des cadeaux exclusifs chez les meilleurs commercants et artisans de la ville. Cliquez ici pour voir vos avantages : ${catalogUrl}`;
-  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+  return `Salut ! J'ai trouve ce catalogue de privileges exclusifs a prix reduits sur Dax (sante/bien etre, Osteo, Coach...). C'est cadeau, et en plus, ca nous permet de soutenir les commercants locaux ! Regarde ici : ${catalogUrl}`;
 }
 
 function buildEclaireurRecruitmentWhatsappHref(input: {
@@ -348,23 +343,13 @@ export default function EclaireurWebappPreviewPage() {
   const [importSummary, setImportSummary] = useState("");
   const [importError, setImportError] = useState("");
   const [selectionMessage, setSelectionMessage] = useState("");
-  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
-  const [queuedContactIds, setQueuedContactIds] = useState<string[]>([]);
-  const [queueCursor, setQueueCursor] = useState(0);
-  const [queueSentCount, setQueueSentCount] = useState(0);
-  const [queueInitialCount, setQueueInitialCount] = useState(0);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const queueActionLockRef = useRef(false);
   const [showImportHelp, setShowImportHelp] = useState(false);
   const [helpPlatform, setHelpPlatform] = useState<"ios" | "android">("ios");
 
   const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>("Dax");
   const importedContactsStorageKey = useMemo(
     () => `${SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX}${(tokenOrCode || "demo").toLowerCase()}`,
-    [tokenOrCode],
-  );
-  const queueStorageKey = useMemo(
-    () => `${SCOUT_PREVIEW_QUEUE_STORAGE_PREFIX}${(tokenOrCode || "demo").toLowerCase()}`,
     [tokenOrCode],
   );
   const fallbackMetiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
@@ -460,31 +445,6 @@ export default function EclaireurWebappPreviewPage() {
   }, [suggestionCandidates.length, suggestionIndex]);
 
   useEffect(() => {
-    setSelectedContactIds((current) => {
-      const available = new Set(importedContacts.map((item) => item.id));
-      return current.filter((id) => available.has(id));
-    });
-  }, [importedContacts]);
-
-  useEffect(() => {
-    setQueuedContactIds((current) => {
-      if (current.length === 0) return current;
-      const available = new Set(
-        importedContacts
-          .filter((item) => Boolean(buildBulkOfferWhatsappHref(item, privilegeCatalogHref)))
-          .map((item) => item.id),
-      );
-      const filtered = current.filter((id) => available.has(id));
-      if (filtered.length === 0) {
-        setQueueCursor(0);
-      } else if (queueCursor >= filtered.length) {
-        setQueueCursor(Math.max(0, filtered.length - 1));
-      }
-      return filtered;
-    });
-  }, [importedContacts, privilegeCatalogHref, queueCursor]);
-
-  useEffect(() => {
     if (!tokenOrCode) return;
     let cancelled = false;
     async function loadPortal() {
@@ -572,35 +532,6 @@ export default function EclaireurWebappPreviewPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw = window.sessionStorage.getItem(queueStorageKey);
-      if (!raw) {
-        clearGuidedQueue(true);
-        return;
-      }
-      const parsed = JSON.parse(raw) as {
-        queuedContactIds?: string[];
-        queueCursor?: number;
-        queueSentCount?: number;
-        queueInitialCount?: number;
-      };
-      const queuedIds = Array.isArray(parsed.queuedContactIds)
-        ? parsed.queuedContactIds.map((id) => String(id || "").trim()).filter(Boolean)
-        : [];
-      const initialCount = Math.max(0, Number(parsed.queueInitialCount || 0));
-      const sentCount = Math.max(0, Number(parsed.queueSentCount || 0));
-      const cursor = Math.max(0, Number(parsed.queueCursor || 0));
-      setQueuedContactIds(queuedIds);
-      setQueueInitialCount(initialCount);
-      setQueueSentCount(sentCount);
-      setQueueCursor(queuedIds.length > 0 ? Math.min(cursor, queuedIds.length - 1) : 0);
-    } catch {
-      clearGuidedQueue(true);
-    }
-  }, [queueStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
       if (importedContacts.length === 0) {
         window.localStorage.removeItem(importedContactsStorageKey);
         return;
@@ -610,27 +541,6 @@ export default function EclaireurWebappPreviewPage() {
       // Ignore storage quota / privacy errors.
     }
   }, [importedContacts, importedContactsStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      if (queuedContactIds.length === 0 && queueInitialCount === 0 && queueSentCount === 0) {
-        window.sessionStorage.removeItem(queueStorageKey);
-        return;
-      }
-      window.sessionStorage.setItem(
-        queueStorageKey,
-        JSON.stringify({
-          queuedContactIds,
-          queueCursor,
-          queueSentCount,
-          queueInitialCount,
-        }),
-      );
-    } catch {
-      // Ignore privacy/storage quota errors.
-    }
-  }, [queuedContactIds, queueCursor, queueSentCount, queueInitialCount, queueStorageKey]);
 
   async function refreshPortal() {
     if (!tokenOrCode) return;
@@ -805,138 +715,34 @@ export default function EclaireurWebappPreviewPage() {
     setActiveScreen(1);
   }
 
-  function toggleContactSelection(contactId: string) {
+  async function sendMassCatalogueToWhatsApp() {
     setSelectionMessage("");
-    setSelectedContactIds((current) => {
-      if (current.includes(contactId)) {
-        return current.filter((id) => id !== contactId);
+    const validCount = importedContacts.filter((contact) => hasValidWhatsappNumber(contact.phone)).length;
+    if (validCount === 0) {
+      setSelectionMessage("Aucun numero WhatsApp valide importe pour l envoi en masse.");
+      return;
+    }
+    const message = buildBulkOfferShareMessage(privilegeCatalogHref);
+    try {
+      const nav = navigator as Navigator & {
+        share?: (data: { text?: string; url?: string; title?: string }) => Promise<void>;
+      };
+      if (typeof nav.share === "function") {
+        await nav.share({ text: message });
+        setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
+        return;
       }
-      return [...current, contactId];
-    });
-  }
-
-  function toggleSelectAllContacts() {
-    setSelectionMessage("");
-    const selectableIds = importedContacts
-      .filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref)))
-      .map((contact) => contact.id);
-    if (selectableIds.length === 0) {
-      setSelectionMessage("Aucun contact avec numero WhatsApp valide.");
-      return;
+      openWhatsAppFromGesture(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`);
+      setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
+    } catch (error) {
+      const err = error as { name?: string };
+      if (err?.name === "AbortError") {
+        setSelectionMessage("Envoi annule.");
+        return;
+      }
+      openWhatsAppFromGesture(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`);
+      setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
     }
-    setSelectedContactIds((current) => {
-      const allSelected = selectableIds.every((id) => current.includes(id));
-      return allSelected ? current.filter((id) => !selectableIds.includes(id)) : Array.from(new Set([...current, ...selectableIds]));
-    });
-  }
-
-  function sendSelectedContacts() {
-    if (selectedContactIds.length === 0) {
-      setSelectionMessage("Coche au moins un contact pour lancer l envoi.");
-      return;
-    }
-    const selectedContacts = importedContacts.filter((contact) => selectedContactIds.includes(contact.id));
-    const whatsappLinks = selectedContacts
-      .map((contact) => buildBulkOfferWhatsappHref(contact, privilegeCatalogHref))
-      .filter((href): href is string => Boolean(href));
-
-    if (whatsappLinks.length === 0) {
-      setSelectionMessage("Aucun numero WhatsApp valide dans la selection.");
-      return;
-    }
-
-    if (whatsappLinks.length === 1) {
-      setQueueInitialCount(1);
-      setQueueSentCount(1);
-      setSelectedContactIds([]);
-      setSelectionMessage("Ouverture WhatsApp pour 1 contact...");
-      openWhatsAppFromGesture(whatsappLinks[0]);
-      return;
-    }
-
-    const queuedIds = selectedContacts
-      .filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref)))
-      .map((contact) => contact.id);
-    setQueuedContactIds(queuedIds);
-    setQueueCursor(0);
-    setQueueInitialCount(queuedIds.length);
-    setQueueSentCount(0);
-    setSelectionMessage(`Mode guide actif: ${queuedIds.length} contacts prets. Clique sur Envoyer suivant.`);
-  }
-
-  function clearGuidedQueue(resetCounters = false) {
-    setQueuedContactIds([]);
-    setQueueCursor(0);
-    if (resetCounters) {
-      setQueueInitialCount(0);
-      setQueueSentCount(0);
-    }
-  }
-
-  function sendNextQueuedContact() {
-    if (queueActionLockRef.current) {
-      return;
-    }
-    if (queuedContactIds.length === 0) {
-      setSelectionMessage("Aucune file d envoi active.");
-      return;
-    }
-    queueActionLockRef.current = true;
-    const currentId = queuedContactIds[queueCursor];
-    const currentContact = importedContacts.find((item) => item.id === currentId);
-    if (!currentContact) {
-      setSelectionMessage("Contact introuvable. File rafraichie.");
-      clearGuidedQueue();
-      queueActionLockRef.current = false;
-      return;
-    }
-    const href = buildBulkOfferWhatsappHref(currentContact, privilegeCatalogHref);
-    if (!href) {
-      setSelectionMessage("Numero invalide pour ce contact. Passage au suivant.");
-      skipNextQueuedContact();
-      queueActionLockRef.current = false;
-      return;
-    }
-    setSelectedContactIds((current) => current.filter((id) => id !== currentId));
-    const isLast = queueCursor >= queuedContactIds.length - 1;
-    if (isLast) {
-      const sentCount = queueSentCount + 1;
-      clearGuidedQueue();
-      setQueueSentCount(sentCount);
-      setSelectionMessage(`Envoi guide termine: ${sentCount} contacts envoyes. Ouverture WhatsApp...`);
-      openWhatsAppFromGesture(href);
-      queueActionLockRef.current = false;
-      return;
-    }
-    const nextSentCount = queueSentCount + 1;
-    const nextCursor = queueCursor + 1;
-    setQueueSentCount(nextSentCount);
-    setQueueCursor(nextCursor);
-    setSelectionMessage(`Envoye. Prochain contact: ${nextCursor + 1}/${queuedContactIds.length}. Ouverture WhatsApp...`);
-    openWhatsAppFromGesture(href);
-    queueActionLockRef.current = false;
-  }
-
-  function skipNextQueuedContact() {
-    if (queueActionLockRef.current) {
-      return;
-    }
-    if (queuedContactIds.length === 0) return;
-    queueActionLockRef.current = true;
-    const isLast = queueCursor >= queuedContactIds.length - 1;
-    if (isLast) {
-      clearGuidedQueue();
-      setSelectionMessage("File terminee.");
-      queueActionLockRef.current = false;
-      return;
-    }
-    const currentId = queuedContactIds[queueCursor];
-    if (currentId) {
-      setSelectedContactIds((current) => current.filter((id) => id !== currentId));
-    }
-    setQueueCursor((current) => current + 1);
-    setSelectionMessage(`Contact ignore. Prochain: ${queueCursor + 2}/${queuedContactIds.length}.`);
-    queueActionLockRef.current = false;
   }
 
   function skipSuggestion() {
@@ -946,12 +752,10 @@ export default function EclaireurWebappPreviewPage() {
 
   function clearImportedContacts() {
     setImportedContacts([]);
-    setSelectedContactIds([]);
     setSuggestionIndex(0);
     setImportSummary("Contacts supprimes. Tu peux reimporter quand tu veux.");
     setImportError("");
     setSelectionMessage("");
-    clearGuidedQueue(true);
   }
 
   const screens = [
@@ -1037,27 +841,16 @@ export default function EclaireurWebappPreviewPage() {
           importSummary={importSummary}
           importError={importError}
           selectionMessage={selectionMessage}
-          selectedContactIds={selectedContactIds}
-          queuedContactIds={queuedContactIds}
-          queueCursor={queueCursor}
-          queueSentCount={queueSentCount}
-          queueInitialCount={queueInitialCount}
           supportsDirectContactPicker={supportsDirectContactPicker}
           isImportingContacts={isImportingContacts}
           suggestedMonthlyContacts={suggestedMonthlyContacts}
           suggestedConversions={suggestedConversions}
           suggestedGain={suggestedGain}
-          privilegeCatalogHref={privilegeCatalogHref}
           onImportFile={openContactImportPicker}
           onImportDirect={() => importContactsFromDirectPicker(importedContacts.length > 0 ? "append" : "replace")}
           onRecommend={useSuggestedContact}
           onSkip={skipSuggestion}
-          onToggleContactSelection={toggleContactSelection}
-          onToggleSelectAllContacts={toggleSelectAllContacts}
-          onSendSelectedContacts={sendSelectedContacts}
-          onSendNextQueuedContact={sendNextQueuedContact}
-          onSkipNextQueuedContact={skipNextQueuedContact}
-          onStopQueuedContacts={clearGuidedQueue}
+          onSendMassCatalogue={sendMassCatalogueToWhatsApp}
           onClearContacts={clearImportedContacts}
           onOpenImportHelp={() => setShowImportHelp(true)}
           onGoSubmit={() => setActiveScreen(1)}
@@ -1561,27 +1354,16 @@ function ScreenSuggestion({
   importSummary,
   importError,
   selectionMessage,
-  selectedContactIds,
-  queuedContactIds,
-  queueCursor,
-  queueSentCount,
-  queueInitialCount,
   supportsDirectContactPicker,
   isImportingContacts,
   suggestedMonthlyContacts,
   suggestedConversions,
   suggestedGain,
-  privilegeCatalogHref,
   onImportFile,
   onImportDirect,
   onRecommend,
   onSkip,
-  onToggleContactSelection,
-  onToggleSelectAllContacts,
-  onSendSelectedContacts,
-  onSendNextQueuedContact,
-  onSkipNextQueuedContact,
-  onStopQueuedContacts,
+  onSendMassCatalogue,
   onClearContacts,
   onOpenImportHelp,
   onGoSubmit,
@@ -1599,27 +1381,16 @@ function ScreenSuggestion({
   importSummary: string;
   importError: string;
   selectionMessage: string;
-  selectedContactIds: string[];
-  queuedContactIds: string[];
-  queueCursor: number;
-  queueSentCount: number;
-  queueInitialCount: number;
   supportsDirectContactPicker: boolean;
   isImportingContacts: boolean;
   suggestedMonthlyContacts: number;
   suggestedConversions: number;
   suggestedGain: number;
-  privilegeCatalogHref: string;
   onImportFile: () => void;
   onImportDirect: () => void;
   onRecommend: () => void;
   onSkip: () => void;
-  onToggleContactSelection: (contactId: string) => void;
-  onToggleSelectAllContacts: () => void;
-  onSendSelectedContacts: () => void;
-  onSendNextQueuedContact: () => void;
-  onSkipNextQueuedContact: () => void;
-  onStopQueuedContacts: () => void;
+  onSendMassCatalogue: () => void;
   onClearContacts: () => void;
   onOpenImportHelp: () => void;
   onGoSubmit: () => void;
@@ -1634,19 +1405,11 @@ function ScreenSuggestion({
       rewardLabel: selectedTargetReward,
     });
   }, [selectedTargetReward, sponsorName, sponsorVille, suggestion]);
-  const selectableContacts = useMemo(
-    () => importedContacts.filter((contact) => Boolean(buildBulkOfferWhatsappHref(contact, privilegeCatalogHref))),
-    [importedContacts, privilegeCatalogHref],
+  const validWhatsappCount = useMemo(
+    () => importedContacts.filter((contact) => hasValidWhatsappNumber(contact.phone)).length,
+    [importedContacts],
   );
-  const allSelectableSelected =
-    selectableContacts.length > 0 && selectableContacts.every((contact) => selectedContactIds.includes(contact.id));
-  const selectedValidCount = selectableContacts.filter((contact) => selectedContactIds.includes(contact.id)).length;
-  const queuedContacts = useMemo(
-    () => queuedContactIds.map((id) => importedContacts.find((contact) => contact.id === id)).filter((contact): contact is ImportedContact => Boolean(contact)),
-    [importedContacts, queuedContactIds],
-  );
-  const queuedCurrent = queuedContacts[queueCursor] || null;
-  const queueRemainingCount = Math.max(0, queuedContacts.length - queueCursor);
+  const showStickyMassCta = hasContacts && validWhatsappCount > 0;
   return (
     <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
@@ -1762,95 +1525,19 @@ function ScreenSuggestion({
           <div className="rounded-xl border border-white/10 bg-black/20 p-2.5">
             <p className="text-[11px] font-bold text-white">A. Envoi en masse</p>
             <p className="mt-1 text-[10px] text-white/70">
-              Envoie ton offre, ton offre duo ou le catalogue privilege a plusieurs contacts.
+              Clique pour ouvrir WhatsApp puis selectionner plusieurs contacts d un coup.
             </p>
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">Selection multiple</p>
-              <button
-                type="button"
-                onClick={onToggleSelectAllContacts}
-                className="h-8 rounded-lg border border-white/15 bg-white/5 px-2.5 text-[10px] font-semibold text-white/80"
-              >
-                {allSelectableSelected ? "Tout decocher" : "Tout cocher"}
-              </button>
-            </div>
-            <div className="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
-              {importedContacts.map((contact) => {
-                const contactHref = buildBulkOfferWhatsappHref(contact, privilegeCatalogHref);
-                const isSelected = selectedContactIds.includes(contact.id);
-                  const hasValidNumber = hasValidWhatsappNumber(contact.phone);
-                return (
-                  <label
-                    key={contact.id}
-                    className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
-                      contactHref
-                        ? "border-white/10 bg-white/5 text-white/85"
-                        : "border-white/5 bg-white/[0.03] text-white/40"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      disabled={!contactHref}
-                      onChange={() => onToggleContactSelection(contact.id)}
-                      className="h-3.5 w-3.5 accent-[#00D4A0]"
-                    />
-                      <span className="truncate flex-1">{contact.name}</span>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] ${
-                          hasValidNumber
-                            ? "border border-emerald-300/35 bg-emerald-400/15 text-emerald-200"
-                            : "border border-amber-300/40 bg-amber-300/15 text-amber-100"
-                        }`}
-                      >
-                        {hasValidNumber ? "Numero OK" : "Numero invalide"}
-                      </span>
-                  </label>
-                );
-              })}
-            </div>
             <button
               type="button"
-              onClick={onSendSelectedContacts}
-              className="mt-2 h-10 w-full rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[11px] font-bold text-[#25D366]"
+              onClick={onSendMassCatalogue}
+              className="mt-2 h-12 w-full rounded-xl border border-[#25D366]/55 bg-gradient-to-r from-[#25D366]/30 to-[#1FAA54]/20 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366] shadow-[0_8px_22px_rgba(37,211,102,0.18)]"
             >
-              Envoyer la selection ({selectedValidCount})
+              💬 Envoyer le catalogue a plusieurs contacts
             </button>
-            {queuedContacts.length > 0 && queuedCurrent ? (
-              <div className="mt-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 p-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#25D366]">
-                  Envoi guide {Math.min(queueCursor + 1, queuedContacts.length)}/{queuedContacts.length}
-                </p>
-                <p className="mt-1 text-[11px] text-white/75">Envoyes: {queueSentCount} · Restants: {queueRemainingCount}</p>
-                <p className="mt-1 text-[11px] text-white/85">Prochain: {queuedCurrent.name}</p>
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={onSendNextQueuedContact}
-                    className="h-8 rounded-md border border-[#25D366]/45 bg-[#25D366]/20 text-[10px] font-bold text-[#25D366]"
-                  >
-                    Envoyer suivant
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onSkipNextQueuedContact}
-                    className="h-8 rounded-md border border-white/15 bg-white/5 text-[10px] font-semibold text-white/80"
-                  >
-                    Ignorer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onStopQueuedContacts}
-                    className="h-8 rounded-md border border-red-300/35 bg-red-500/10 text-[10px] font-semibold text-red-200"
-                  >
-                    Stop
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            {queueInitialCount > 0 ? (
-              <p className="mt-2 text-[11px] text-white/65">Session envoi: {queueSentCount}/{queueInitialCount} envoyes</p>
-            ) : null}
+            <p className="mt-2 text-[10px] text-white/55">Tu choisis les destinataires directement dans WhatsApp, puis tu envoies en 1 fois.</p>
+            <p className="mt-2 text-[11px] text-white/65">
+              {validWhatsappCount} contact(s) avec numero WhatsApp valide detecte(s).
+            </p>
             {selectionMessage ? <p className="mt-2 text-[11px] text-white/70">{selectionMessage}</p> : null}
           </div>
 
@@ -1953,6 +1640,18 @@ function ScreenSuggestion({
           </div>
         </div>
       </div>
+
+      {showStickyMassCta ? (
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+86px)] z-20 mt-3 rounded-2xl border border-[#25D366]/45 bg-[#0A1322]/92 p-2 backdrop-blur">
+          <button
+            type="button"
+            onClick={onSendMassCatalogue}
+            className="h-11 w-full rounded-xl border border-[#25D366]/60 bg-gradient-to-r from-[#25D366]/35 to-[#1FAA54]/22 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366] shadow-[0_8px_24px_rgba(37,211,102,0.18)] animate-[pulse_2.2s_ease-in-out_infinite]"
+          >
+            💬 Envoyer le catalogue maintenant
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
