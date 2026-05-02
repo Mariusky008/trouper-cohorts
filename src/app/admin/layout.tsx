@@ -14,7 +14,7 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/popey-human/login?next=%2Fadmin%2Fhumain");
+  if (!user) redirect("/popey-human/admin-login?next=%2Fadmin%2Fhumain");
 
   // Check if admin with explicit status check
   // Using supabaseAdmin (service role) to bypass RLS in case user doesn't have read access to admins table
@@ -47,9 +47,9 @@ export default async function AdminLayout({
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button asChild>
-            <Link href="/popey-human/login?next=%2Fadmin%2Fhumain">Se connecter en admin</Link>
+            <Link href="/popey-human/admin-login?next=%2Fadmin%2Fhumain">Se connecter en admin</Link>
           </Button>
-          <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin%3Fnext%3D%252Fadmin%252Fhumain">
+          <form method="post" action="/auth/signout?next=%2Fpopey-human%2Fadmin-login%3Fnext%3D%252Fadmin%252Fhumain">
             <Button type="submit" variant="outline">
               Changer de compte
             </Button>

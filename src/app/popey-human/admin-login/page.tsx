@@ -9,7 +9,7 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-export default async function PopeyHumanLoginPage({
+export default async function PopeyHumanAdminLoginPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -17,12 +17,7 @@ export default async function PopeyHumanLoginPage({
   const params = await searchParams;
   const defaultEmail = typeof params?.email === "string" ? params.email : "";
   const requestedNext = typeof params?.next === "string" ? params.next : "";
-  const postLoginPath =
-    (requestedNext.startsWith("/popey-human/") &&
-      !requestedNext.startsWith("/popey-human/login") &&
-      !requestedNext.startsWith("/popey-human/admin-login"))
-      ? requestedNext
-      : "/popey-human/app";
+  const postLoginPath = requestedNext.startsWith("/admin/") ? requestedNext : "/admin/humain";
 
   return (
     <div className={cn("min-h-screen bg-black text-white px-4 py-8 md:py-12", poppins.variable, "font-poppins")}>
@@ -35,17 +30,11 @@ export default async function PopeyHumanLoginPage({
         </Link>
 
         <div className="rounded-2xl border border-white/15 bg-white/5 p-5 backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.14em] font-black text-[#B6FF2B]/90">Connexion</p>
-          <h1 className="mt-1 text-3xl font-black leading-tight">Connexion Popey Human</h1>
-          <p className="mt-2 text-sm text-white/75">
-            Connectez-vous à votre espace privé Popey Human.
-          </p>
+          <p className="text-xs uppercase tracking-[0.14em] font-black text-[#B6FF2B]/90">Connexion Admin</p>
+          <h1 className="mt-1 text-3xl font-black leading-tight">Popey Human Admin</h1>
+          <p className="mt-2 text-sm text-white/75">Connexion dédiée à l&apos;espace administrateur.</p>
           <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-3">
-            <LoginForm
-              defaultEmail={defaultEmail}
-              isNetworkLogin
-              postLoginPath={postLoginPath}
-            />
+            <LoginForm defaultEmail={defaultEmail} isNetworkLogin postLoginPath={postLoginPath} />
           </div>
         </div>
       </div>

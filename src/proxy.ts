@@ -32,20 +32,25 @@ export default async function proxy(request: NextRequest) {
   const isHumanMemberArea = pathname.startsWith("/popey-human/app");
   const isHumanAdminArea = pathname.startsWith("/admin/humain");
   const isHumanLogin = pathname.startsWith("/popey-human/login");
+  const isHumanAdminLogin = pathname.startsWith("/popey-human/admin-login");
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {
-    const loginPath = "/popey-human/login";
+    const loginPath = isHumanAdminArea ? "/popey-human/admin-login" : "/popey-human/login";
     const loginUrl = new URL(loginPath, request.url);
     loginUrl.searchParams.set("next", pathname);
     return copyResponseCookies(NextResponse.redirect(loginUrl), response);
   }
 
-  if (user && isHumanLogin) {
+  if (user && (isHumanLogin || isHumanAdminLogin)) {
     const requestedNext = request.nextUrl.searchParams.get("next");
-    const nextPath =
-      requestedNext &&
-      requestedNext.startsWith("/popey-human/") &&
-      !requestedNext.startsWith("/popey-human/login")
+    const nextPath = isHumanAdminLogin
+      ? requestedNext && requestedNext.startsWith("/admin/")
+        ? requestedNext
+        : "/admin/humain"
+      : requestedNext &&
+          requestedNext.startsWith("/popey-human/") &&
+          !requestedNext.startsWith("/popey-human/login") &&
+          !requestedNext.startsWith("/popey-human/admin-login")
         ? requestedNext
         : "/popey-human/app";
     const appUrl = new URL(nextPath, request.url);
