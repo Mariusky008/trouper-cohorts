@@ -425,6 +425,12 @@ export default async function AdminHumainMarketplacePage({
                             placeholder="WhatsApp pro cible"
                             className="h-9 w-44 rounded border bg-background px-2 text-xs"
                           />
+                          <input
+                            name="direct_contact"
+                            defaultValue={offer.place.direct_contact || ""}
+                            placeholder="Contact direct (tel/email)"
+                            className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                          />
                           <select
                             name="category_key"
                             defaultValue={offer.place.category_key || ""}
@@ -442,6 +448,33 @@ export default async function AdminHumainMarketplacePage({
                             defaultValue={offer.place.external_ref || String(offer.metadata?.referral_code || "")}
                             placeholder="Reference externe"
                             className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                          />
+                          <input
+                            name="partner_offer_value_eur"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={offer.place.partner_offer_value_eur ? String(offer.place.partner_offer_value_eur) : ""}
+                            placeholder="Offre partenaire €"
+                            className="h-9 w-36 rounded border bg-background px-2 text-xs"
+                          />
+                          <input
+                            name="offer_website_url"
+                            defaultValue={offer.place.offer_website_url || ""}
+                            placeholder="Site web (https://...)"
+                            className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                          />
+                          <input
+                            name="offer_photo_url"
+                            defaultValue={offer.place.offer_photo_url || ""}
+                            placeholder="Photo URL"
+                            className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                          />
+                          <input
+                            name="offer_description"
+                            defaultValue={offer.place.offer_description || ""}
+                            placeholder="Descriptif offre"
+                            className="h-9 w-[28rem] rounded border bg-background px-2 text-xs"
                           />
                           <button type="submit" className="h-9 rounded border border-amber-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-amber-900">
                             Enregistrer offre privilège
@@ -574,6 +607,12 @@ export default async function AdminHumainMarketplacePage({
                       <p className="text-xs text-black/70">
                         Privilège: {place.privilege_badge || "—"} · WhatsApp partenaire: {place.partner_whatsapp || "—"}
                       </p>
+                      <p className="text-xs text-black/70">
+                        Contact direct: {place.direct_contact || "—"} · Site: {place.offer_website_url || "—"} · Offre partenaire: {place.partner_offer_value_eur ? `${euros(place.partner_offer_value_eur)}` : "—"}
+                      </p>
+                      <p className="text-xs text-black/70">
+                        Descriptif: {place.offer_description || "—"}
+                      </p>
                       {place.owner_member_id ? (
                         <p className="text-xs text-emerald-700">
                           Lien perso:{" "}
@@ -643,6 +682,12 @@ export default async function AdminHumainMarketplacePage({
                         placeholder="WhatsApp partenaire"
                         className="h-9 w-40 rounded border bg-background px-2 text-xs"
                       />
+                      <input
+                        name="direct_contact"
+                        defaultValue={place.direct_contact || ""}
+                        placeholder="Contact direct"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
                       <select name="category_key" defaultValue={place.category_key || ""} className="h-9 rounded border bg-background px-2 text-xs">
                         <option value="">Catégorie auto</option>
                         <option value="maison">maison</option>
@@ -656,6 +701,33 @@ export default async function AdminHumainMarketplacePage({
                         defaultValue={place.external_ref || ""}
                         placeholder="Reference externe"
                         className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="partner_offer_value_eur"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={place.partner_offer_value_eur ? String(place.partner_offer_value_eur) : ""}
+                        placeholder="Offre partenaire €"
+                        className="h-9 w-32 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="offer_website_url"
+                        defaultValue={place.offer_website_url || ""}
+                        placeholder="Site web"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="offer_photo_url"
+                        defaultValue={place.offer_photo_url || ""}
+                        placeholder="Photo URL"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="offer_description"
+                        defaultValue={place.offer_description || ""}
+                        placeholder="Descriptif offre"
+                        className="h-9 w-56 rounded border bg-background px-2 text-xs"
                       />
                       <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
                         MAJ place

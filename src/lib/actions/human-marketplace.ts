@@ -22,6 +22,11 @@ type MarketplacePlaceRow = {
   partner_whatsapp?: string | null;
   category_key?: "maison" | "sante" | "travaux" | "bien-etre" | "services" | null;
   external_ref?: string | null;
+  offer_photo_url?: string | null;
+  offer_website_url?: string | null;
+  offer_description?: string | null;
+  direct_contact?: string | null;
+  partner_offer_value_eur?: number | null;
 };
 
 type MarketplaceOfferRow = {
@@ -55,6 +60,11 @@ type MarketplaceOfferJoined = MarketplaceOfferRow & {
     | "partner_whatsapp"
     | "category_key"
     | "external_ref"
+    | "offer_photo_url"
+    | "offer_website_url"
+    | "offer_description"
+    | "direct_contact"
+    | "partner_offer_value_eur"
   > | null;
 };
 
@@ -182,7 +192,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     await Promise.all([
     supabaseAdmin
       .from("human_marketplace_places")
-      .select("id,city,sphere_label,metier,status,list_price_eur,monthly_ca_eur,recos_per_year,updated_at,owner_member_id,company_name,privilege_badge,partner_whatsapp,category_key,external_ref")
+      .select("id,city,sphere_label,metier,status,list_price_eur,monthly_ca_eur,recos_per_year,updated_at,owner_member_id,company_name,privilege_badge,partner_whatsapp,category_key,external_ref,offer_photo_url,offer_website_url,offer_description,direct_contact,partner_offer_value_eur")
       .order("updated_at", { ascending: false })
       .limit(800),
     supabaseAdmin

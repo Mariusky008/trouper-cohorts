@@ -16,6 +16,12 @@ type PlaceRow = {
   privilege_badge: string | null;
   logo_url: string | null;
   category_key: string | null;
+  partner_whatsapp: string | null;
+  direct_contact: string | null;
+  offer_photo_url: string | null;
+  offer_website_url: string | null;
+  offer_description: string | null;
+  partner_offer_value_eur: number | null;
   status: "dispo" | "sale" | "occupied" | "reserved";
   list_price_eur: number | null;
   monthly_ca_eur: number;
@@ -145,6 +151,12 @@ function toClientPlace(row: PlaceRow) {
     badge: row.privilege_badge || null,
     logoUrl: row.logo_url || null,
     category: row.category_key || null,
+    partnerWhatsapp: row.partner_whatsapp || null,
+    directContact: row.direct_contact || null,
+    photoUrl: row.offer_photo_url || null,
+    websiteUrl: row.offer_website_url || null,
+    description: row.offer_description || null,
+    partnerOfferValueEur: row.partner_offer_value_eur == null ? null : Number(row.partner_offer_value_eur),
     status: row.status === "sale" ? "sale" : "dispo",
     months: Number(row.months_active || 0),
     partners: Number(row.partners_count || 0),
@@ -236,7 +248,7 @@ export async function GET(request: NextRequest) {
     const acceptedPlaceIdsAll = new Set<string>();
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -325,8 +337,15 @@ export async function GET(request: NextRequest) {
       filteredRows = filteredRows.filter((row) => {
         const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
         const hasConfiguredOffer = Boolean(String(row.privilege_badge || "").trim());
+        const hasConfiguredDetails = Boolean(
+          String(row.offer_description || "").trim() ||
+            String(row.offer_website_url || "").trim() ||
+            String(row.offer_photo_url || "").trim() ||
+            String(row.direct_contact || "").trim() ||
+            Number(row.partner_offer_value_eur || 0) > 0,
+        );
         const isAcceptedLinkedPlace = acceptedLinkedPlaceIds.has(String(row.id || ""));
-        return hasConfiguredIdentity || hasConfiguredOffer || isAcceptedLinkedPlace;
+        return hasConfiguredIdentity || hasConfiguredOffer || hasConfiguredDetails || isAcceptedLinkedPlace;
       });
     }
     let places = filteredRows
@@ -360,6 +379,12 @@ export async function GET(request: NextRequest) {
           badge: null,
           logoUrl: null,
           category: inferCategoryFromSphere(item.sphereKey),
+          partnerWhatsapp: null,
+          directContact: null,
+          photoUrl: null,
+          websiteUrl: null,
+          description: null,
+          partnerOfferValueEur: null,
           status: item.status,
           months: item.monthsActive,
           partners: item.partnersCount,

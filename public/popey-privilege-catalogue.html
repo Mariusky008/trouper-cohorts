@@ -334,6 +334,9 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 .priv-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
 .priv-value { font-family: var(--fd); font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1; margin-bottom: 4px; }
 .priv-desc { font-size: 12px; color: var(--t2); line-height: 1.5; }
+.priv-website { margin-top: 8px; font-size: 11px; color: #1D6FA4; text-decoration: underline; display: inline-block; }
+.priv-photo { margin: 0 18px 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); height: 140px; background: #f7f7f7; }
+.priv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* Pro info */
 .pro-info {
@@ -349,6 +352,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 .pi-name { font-size: 13px; font-weight: 600; color: var(--ink); }
 .pi-meta { font-size: 11px; color: var(--t3); margin-top: 1px; }
 .pi-rating { margin-left: auto; font-size: 11px; color: var(--gold); }
+.pi-partner { font-size: 11px; color: #7B5EA7; margin-top: 2px; }
 
 /* CTA Button */
 .priv-cta {
@@ -1379,6 +1383,11 @@ function renderCards() {
       const meta = SPHERE_META[sphere] || SPHERE_META.digital;
       const proName = String(place.companyName || place.metier || 'Partenaire Popey').trim();
       const privilege = String(place.badge || 'Offre privilege').trim();
+      const description = String(place.description || 'Activation rapide via WhatsApp avec tracking Popey.').trim();
+      const photoUrl = String(place.photoUrl || '').trim();
+      const websiteUrl = String(place.websiteUrl || '').trim();
+      const directContact = String(place.directContact || place.partnerWhatsapp || '').trim();
+      const partnerOfferValue = Number(place.partnerOfferValueEur || 0);
       const trackingId = `PRIV-${String(place.id || '').slice(0, 8) || 'NA'}`;
       return `
       <div class="priv-card ${place.badge ? 'premium' : ''}" data-sphere="${escapeHtml(sphere)}">
@@ -1391,16 +1400,20 @@ function renderCards() {
             <span class="pch-sphere" style="background:rgba(0,0,0,.04);color:${meta.color};border:1px solid rgba(0,0,0,.12)">${meta.icon} ${escapeHtml(meta.label)}</span>
           </div>
         </div>
+        ${photoUrl ? `<div class="priv-photo"><img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(proName)}" loading="lazy"/></div>` : ''}
         <div class="priv-box">
           <div class="priv-label">Privilège exclusif via ${escapeHtml(__refName)}</div>
           <div class="priv-value">${escapeHtml(privilege)}</div>
-          <div class="priv-desc">Activation rapide via WhatsApp avec tracking Popey.</div>
+          <div class="priv-desc">${escapeHtml(description)}</div>
+          ${websiteUrl ? `<a class="priv-website" href="${escapeHtml(websiteUrl)}" target="_blank" rel="noreferrer">Voir le site du partenaire</a>` : ''}
         </div>
         <div class="pro-info">
           <div class="pi-avatar">${escapeHtml(initials(proName))}</div>
           <div>
             <div class="pi-name">${escapeHtml(proName)}</div>
             <div class="pi-meta">📍 ${escapeHtml(__cityLabel)} · reseau Popey</div>
+            ${directContact ? `<div class="pi-meta">📞 Contact direct: ${escapeHtml(directContact)}</div>` : ''}
+            ${partnerOfferValue > 0 ? `<div class="pi-partner">🎁 Offre partenaire: ${escapeHtml(euros(partnerOfferValue))} / recommandation</div>` : ''}
           </div>
           <div class="pi-rating">★★★★★</div>
         </div>

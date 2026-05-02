@@ -121,6 +121,11 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
           </label>
 
           <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Contact direct (optionnel)</span>
+            <input name="direct_contact" defaultValue={offer.place.direct_contact || ""} placeholder="Ex: +33..., email, secrétariat..." className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Catégorie</span>
             <select name="category_key" defaultValue={offer.place.category_key || ""} className="h-10 w-full rounded border bg-background px-2 text-sm">
               <option value="">Catégorie auto</option>
@@ -130,6 +135,31 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
               <option value="bien-etre">bien-etre</option>
               <option value="services">services</option>
             </select>
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Offre partenaire (€ / recommandation)</span>
+            <input name="partner_offer_value_eur" type="number" min="0" step="0.01" defaultValue={offer.place.partner_offer_value_eur ? String(offer.place.partner_offer_value_eur) : ""} placeholder="Ex: 30" className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Lien site internet (optionnel)</span>
+            <input name="offer_website_url" defaultValue={offer.place.offer_website_url || ""} placeholder="https://..." className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Photo (URL, optionnel)</span>
+            <input name="offer_photo_url" defaultValue={offer.place.offer_photo_url || ""} placeholder="https://.../photo.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1 md:col-span-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Descriptif de l'offre</span>
+            <textarea
+              name="offer_description"
+              defaultValue={offer.place.offer_description || ""}
+              placeholder="Décris précisément le bénéfice client, les conditions, la durée, etc."
+              className="min-h-24 w-full rounded border bg-background px-3 py-2 text-sm"
+            />
           </label>
 
           <label className="space-y-1 md:col-span-2">

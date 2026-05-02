@@ -41,6 +41,11 @@ export async function POST(request: Request) {
   const partnerWhatsappRaw = String(formData.get("partner_whatsapp") || "").trim();
   const categoryKeyRaw = String(formData.get("category_key") || "").trim().toLowerCase();
   const externalRefRaw = String(formData.get("external_ref") || "").trim();
+  const offerPhotoUrlRaw = String(formData.get("offer_photo_url") || "").trim();
+  const offerWebsiteUrlRaw = String(formData.get("offer_website_url") || "").trim();
+  const offerDescriptionRaw = String(formData.get("offer_description") || "").trim();
+  const directContactRaw = String(formData.get("direct_contact") || "").trim();
+  const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
 
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
@@ -68,12 +73,21 @@ export async function POST(request: Request) {
     patch.partner_whatsapp = null;
     patch.category_key = null;
     patch.external_ref = null;
+    patch.offer_photo_url = null;
+    patch.offer_website_url = null;
+    patch.offer_description = null;
+    patch.direct_contact = null;
+    patch.partner_offer_value_eur = null;
   } else {
     patch.owner_member_id = ownerMemberIdRaw || null;
     patch.company_name = companyNameRaw || null;
     patch.privilege_badge = privilegeBadgeRaw || null;
     patch.partner_whatsapp = partnerWhatsappRaw || null;
     patch.external_ref = externalRefRaw || null;
+    patch.offer_photo_url = offerPhotoUrlRaw || null;
+    patch.offer_website_url = offerWebsiteUrlRaw || null;
+    patch.offer_description = offerDescriptionRaw || null;
+    patch.direct_contact = directContactRaw || null;
   }
   if (listPriceRaw) {
     const parsed = Number(listPriceRaw.replace(",", "."));
@@ -86,6 +100,15 @@ export async function POST(request: Request) {
     patch.category_key = categoryKeyRaw;
   } else if (intent !== "clear_privilege") {
     patch.category_key = null;
+  }
+  if (intent !== "clear_privilege" && partnerOfferValueRaw) {
+    const parsed = Number(partnerOfferValueRaw.replace(",", "."));
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return fail("Montant offre partenaire invalide.");
+    }
+    patch.partner_offer_value_eur = parsed;
+  } else if (intent !== "clear_privilege") {
+    patch.partner_offer_value_eur = null;
   }
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin
