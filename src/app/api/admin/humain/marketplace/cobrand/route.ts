@@ -69,6 +69,24 @@ export async function POST(request: Request) {
     });
   }
 
+  if (intent === "delete") {
+    const cobrandId = trim(formData.get("cobrand_id"));
+    if (!cobrandId) return fail("Offre co-brandée introuvable.");
+    const { data: row, error: deleteError } = await supabaseAdmin
+      .from("human_marketplace_cobrand_offers")
+      .delete()
+      .eq("id", cobrandId)
+      .select("city_slug")
+      .maybeSingle();
+    if (deleteError) return fail(deleteError.message || "Suppression co-brandée impossible.");
+    revalidatePath("/admin/humain/marketplace");
+    revalidatePath("/privilege");
+    if (trim(row?.city_slug)) revalidatePath(`/privilege/${trim(row?.city_slug)}`);
+    return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", "Offre co-brandée supprimée.")), {
+      status: 303,
+    });
+  }
+
   const primaryMemberId = trim(formData.get("primary_member_id"));
   const secondaryMemberId = trim(formData.get("secondary_member_id"));
   const primaryPlaceId = trim(formData.get("primary_place_id")) || null;

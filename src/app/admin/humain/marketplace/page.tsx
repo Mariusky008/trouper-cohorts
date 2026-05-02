@@ -56,6 +56,8 @@ export default async function AdminHumainMarketplacePage({
     placeCity?: string;
     timelinePlaceId?: string;
     cobrandPrimaryMemberId?: string;
+    cobrandCity?: string;
+    cobrandPrimaryPlaceId?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -76,6 +78,8 @@ export default async function AdminHumainMarketplacePage({
   );
   const membersById = new Map(snapshot.members.map((member) => [member.id, member.label]));
   const requestedPrimaryMemberId = typeof params.cobrandPrimaryMemberId === "string" ? params.cobrandPrimaryMemberId : "";
+  const requestedCobrandCity = typeof params.cobrandCity === "string" ? params.cobrandCity : "";
+  const requestedPrimaryPlaceId = typeof params.cobrandPrimaryPlaceId === "string" ? params.cobrandPrimaryPlaceId : "";
   const acceptedMemberIds = new Set<string>();
   snapshot.offers
     .filter((offer) => offer.status === "accepted")
@@ -94,7 +98,8 @@ export default async function AdminHumainMarketplacePage({
   const defaultPrimaryMemberId = selectableMembers.some((member) => member.id === requestedPrimaryMemberId)
     ? requestedPrimaryMemberId
     : selectableMembers[0]?.id || "";
-  const defaultCity = manualPlaces[0]?.city || "Dax";
+  const defaultCity = requestedCobrandCity || manualPlaces[0]?.city || "Dax";
+  const defaultPrimaryPlaceId = manualPlaces.some((place) => place.id === requestedPrimaryPlaceId) ? requestedPrimaryPlaceId : "";
   const activeCobrandOffers = snapshot.cobrandOffers.filter((row) => row.status === "active").length;
 
   return (
@@ -284,9 +289,9 @@ export default async function AdminHumainMarketplacePage({
                       {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                     </div>
                     <div className="space-y-2">
-                      {offer.status === "accepted" && (offer.assigned_member_id || offer.place?.owner_member_id) ? (
+                      {offer.status === "accepted" ? (
                         <Link
-                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(String(offer.assigned_member_id || offer.place?.owner_member_id || ""))}#duo-offer-form`}
+                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(String(offer.assigned_member_id || offer.place?.owner_member_id || ""))}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
                           className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
                         >
                           Creer offre duo
@@ -392,6 +397,14 @@ export default async function AdminHumainMarketplacePage({
                         />
                         <button type="submit" className="h-9 rounded border border-amber-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-amber-900">
                           Enregistrer offre privilège
+                        </button>
+                        <button
+                          type="submit"
+                          name="intent"
+                          value="clear_privilege"
+                          className="h-9 rounded border border-red-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-red-700"
+                        >
+                          Supprimer offre privilège
                         </button>
                       </div>
                     </form>
@@ -606,7 +619,7 @@ export default async function AdminHumainMarketplacePage({
                     </option>
                   ))}
                 </select>
-                <select name="primary_place_id" defaultValue="" className="h-9 rounded border bg-background px-2 text-xs">
+                <select name="primary_place_id" defaultValue={defaultPrimaryPlaceId} className="h-9 rounded border bg-background px-2 text-xs">
                   <option value="">Place membre 1 (optionnel)</option>
                   {manualPlaces.map((place) => (
                     <option key={place.id} value={place.id}>
@@ -685,6 +698,14 @@ export default async function AdminHumainMarketplacePage({
                       <input type="hidden" name="next_status" value={pack.status === "active" ? "inactive" : "active"} />
                       <button type="submit" className="h-8 rounded border px-3 text-[11px] font-black uppercase tracking-wide">
                         {pack.status === "active" ? "Désactiver" : "Activer"}
+                      </button>
+                    </form>
+                    <form action="/api/admin/humain/marketplace/cobrand" method="post" className="mt-2 flex items-center gap-2">
+                      <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                      <input type="hidden" name="intent" value="delete" />
+                      <input type="hidden" name="cobrand_id" value={pack.id} />
+                      <button type="submit" className="h-8 rounded border border-red-300 px-3 text-[11px] font-black uppercase tracking-wide text-red-700">
+                        Supprimer offre duo
                       </button>
                     </form>
                   </article>

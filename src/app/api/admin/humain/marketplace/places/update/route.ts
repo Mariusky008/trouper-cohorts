@@ -33,6 +33,7 @@ export async function POST(request: Request) {
   const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
   const placeId = String(formData.get("place_id") || "").trim();
   const nextStatus = String(formData.get("next_status") || "").trim();
+  const intent = String(formData.get("intent") || "save").trim();
   const listPriceRaw = String(formData.get("list_price_eur") || "").trim();
   const ownerMemberIdRaw = String(formData.get("owner_member_id") || "").trim();
   const companyNameRaw = String(formData.get("company_name") || "").trim();
@@ -60,22 +61,30 @@ export async function POST(request: Request) {
   const patch: Record<string, unknown> = {
     status: nextStatus,
     updated_at: new Date().toISOString(),
-    owner_member_id: ownerMemberIdRaw || null,
-    company_name: companyNameRaw || null,
-    privilege_badge: privilegeBadgeRaw || null,
-    partner_whatsapp: partnerWhatsappRaw || null,
-    external_ref: externalRefRaw || null,
   };
+  if (intent === "clear_privilege") {
+    patch.company_name = null;
+    patch.privilege_badge = null;
+    patch.partner_whatsapp = null;
+    patch.category_key = null;
+    patch.external_ref = null;
+  } else {
+    patch.owner_member_id = ownerMemberIdRaw || null;
+    patch.company_name = companyNameRaw || null;
+    patch.privilege_badge = privilegeBadgeRaw || null;
+    patch.partner_whatsapp = partnerWhatsappRaw || null;
+    patch.external_ref = externalRefRaw || null;
+  }
   if (listPriceRaw) {
     const parsed = Number(listPriceRaw.replace(",", "."));
     if (Number.isFinite(parsed) && parsed >= 0) patch.list_price_eur = parsed;
   }
-  if (categoryKeyRaw) {
+  if (intent !== "clear_privilege" && categoryKeyRaw) {
     if (!["maison", "sante", "travaux", "bien-etre", "services"].includes(categoryKeyRaw)) {
       return fail("Categorie privilege invalide.");
     }
     patch.category_key = categoryKeyRaw;
-  } else {
+  } else if (intent !== "clear_privilege") {
     patch.category_key = null;
   }
 
@@ -113,7 +122,7 @@ export async function POST(request: Request) {
   if (targetCitySlug) revalidatePath(`/privilege/${targetCitySlug}`);
   revalidatePath("/popey-human/accueil-test/marketplace");
 
-  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", "Offre privilège enregistrée.")), {
+  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", intent === "clear_privilege" ? "Offre privilège supprimée." : "Offre privilège enregistrée.")), {
     status: 303,
   });
 }
