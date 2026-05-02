@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     scoutType: data.scout?.scout_type || "perso",
     sponsorName: data.sponsorName || null,
     sponsorPhone: data.sponsor?.phone || null,
+    sponsorVille: data.sponsor?.ville || null,
     availableTargets,
     referrals: data.referrals || [],
     inviteToken: data.invite?.invite_token || null,

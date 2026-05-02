@@ -61,6 +61,7 @@ type PortalData = {
   shortCode: string | null;
   sponsorName: string | null;
   sponsorPhone: string | null;
+  sponsorVille: string | null;
   scoutFirstName: string | null;
   scoutType: "perso" | "pro";
   availableTargets: Array<{ label: string; type: "metier" | "member" }>;
@@ -231,6 +232,24 @@ function referralStatusLabel(status: string) {
   return "En attente";
 }
 
+function slugifyCity(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizePhoneForWhatsApp(raw: string) {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith("0")) digits = `33${digits.slice(1)}`;
+  if (digits.length < 8 || digits.length > 15) return "";
+  return digits;
+}
+
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
   const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
@@ -293,6 +312,13 @@ export default function EclaireurWebappPreviewPage() {
   }, [latestReferral, portalData?.sponsorPhone]);
 
   const suggestion = importedContacts[suggestionIndex] || null;
+  const privilegeCatalogHref = useMemo(() => {
+    const fallbackCity = city || "Dax";
+    const cityLabel = String(portalData?.sponsorVille || fallbackCity || "").trim();
+    const citySlug = slugifyCity(cityLabel);
+    if (!citySlug) return "/privilege";
+    return `/privilege/${citySlug}`;
+  }, [city, portalData?.sponsorVille]);
   const suggestedMonthlyContacts = Math.min(30, importedContacts.length || 30);
   const suggestedConversions = Math.max(1, Math.round(suggestedMonthlyContacts * 0.27));
   const suggestedGain = Math.round(suggestedConversions * (selectedTarget.rewardType === "fixed" ? selectedTarget.rewardValue : 15));
@@ -355,6 +381,7 @@ export default function EclaireurWebappPreviewPage() {
           shortCode?: string | null;
           sponsorName?: string | null;
           sponsorPhone?: string | null;
+          sponsorVille?: string | null;
           scout?: { first_name?: string | null } | null;
           scoutType?: "perso" | "pro";
           availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
@@ -369,6 +396,7 @@ export default function EclaireurWebappPreviewPage() {
           shortCode: payload.shortCode || null,
           sponsorName: payload.sponsorName || null,
           sponsorPhone: payload.sponsorPhone || null,
+          sponsorVille: payload.sponsorVille || null,
           scoutFirstName: String(payload.scout?.first_name || "").trim() || null,
           scoutType: payload.scoutType === "pro" ? "pro" : "perso",
           availableTargets: payload.availableTargets || [],
@@ -400,6 +428,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode?: string | null;
         sponsorName?: string | null;
         sponsorPhone?: string | null;
+        sponsorVille?: string | null;
         scout?: { first_name?: string | null } | null;
         scoutType?: "perso" | "pro";
         availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
@@ -411,6 +440,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode: payload.shortCode || null,
         sponsorName: payload.sponsorName || null,
         sponsorPhone: payload.sponsorPhone || null,
+        sponsorVille: payload.sponsorVille || null,
         scoutFirstName: String(payload.scout?.first_name || "").trim() || null,
         scoutType: payload.scoutType === "pro" ? "pro" : "perso",
         availableTargets: payload.availableTargets || [],
@@ -588,6 +618,7 @@ export default function EclaireurWebappPreviewPage() {
           dossiersEnCours={referrals.length}
           commissionPrevisionnelle={potential}
           commissionGagnee={won}
+          privilegeCatalogHref={privilegeCatalogHref}
           onGoSubmit={() => setActiveScreen(1)}
         />
       ),
@@ -656,6 +687,7 @@ export default function EclaireurWebappPreviewPage() {
           suggestedMonthlyContacts={suggestedMonthlyContacts}
           suggestedConversions={suggestedConversions}
           suggestedGain={suggestedGain}
+          privilegeCatalogHref={privilegeCatalogHref}
           onImportFile={openContactImportPicker}
           onImportDirect={() => importContactsFromDirectPicker(importedContacts.length > 0 ? "append" : "replace")}
           onRecommend={useSuggestedContact}
@@ -747,6 +779,7 @@ function ScreenWelcome({
   dossiersEnCours,
   commissionPrevisionnelle,
   commissionGagnee,
+  privilegeCatalogHref,
   onGoSubmit,
 }: {
   tokenOrCode: string;
@@ -758,6 +791,7 @@ function ScreenWelcome({
   dossiersEnCours: number;
   commissionPrevisionnelle: number;
   commissionGagnee: number;
+  privilegeCatalogHref: string;
   onGoSubmit: () => void;
 }) {
   const greetingName = String(scoutFirstName || "").trim();
@@ -825,6 +859,14 @@ function ScreenWelcome({
       >
         Recommander quelqu un
       </button>
+      <a
+        href={privilegeCatalogHref}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold uppercase tracking-[0.04em] text-white/85"
+      >
+        Voir le catalogue privilege de ma ville
+      </a>
     </div>
   );
 }
@@ -1088,6 +1130,7 @@ function ScreenSuggestion({
   suggestedMonthlyContacts,
   suggestedConversions,
   suggestedGain,
+  privilegeCatalogHref,
   onImportFile,
   onImportDirect,
   onRecommend,
@@ -1109,6 +1152,7 @@ function ScreenSuggestion({
   suggestedMonthlyContacts: number;
   suggestedConversions: number;
   suggestedGain: number;
+  privilegeCatalogHref: string;
   onImportFile: () => void;
   onImportDirect: () => void;
   onRecommend: () => void;
@@ -1117,6 +1161,18 @@ function ScreenSuggestion({
   onGoSubmit: () => void;
 }) {
   const hasContacts = importedCount > 0;
+  const suggestionWhatsappHref = useMemo(() => {
+    if (!suggestion || !suggestion.phone) return null;
+    const phone = normalizePhoneForWhatsApp(suggestion.phone);
+    if (!phone) return null;
+    const message = [
+      `Salut ${suggestion.name},`,
+      "",
+      "Je te partage le catalogue privilege Popey de notre ville :",
+      privilegeCatalogHref.startsWith("http") ? privilegeCatalogHref : `https://www.popey.academy${privilegeCatalogHref}`,
+    ].join("\n");
+    return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+  }, [privilegeCatalogHref, suggestion]);
   return (
     <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
@@ -1246,6 +1302,20 @@ function ScreenSuggestion({
               >
                 Je le recommande
               </button>
+              {suggestionWhatsappHref ? (
+                <a
+                  href={suggestionWhatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-[#25D366]/45 bg-[#25D366]/15 text-[12px] font-bold text-[#25D366]"
+                >
+                  Envoyer
+                </a>
+              ) : (
+                <span className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[12px] font-semibold text-white/45">
+                  Envoyer
+                </span>
+              )}
               <button
                 type="button"
                 onClick={onSkip}
@@ -1254,6 +1324,14 @@ function ScreenSuggestion({
                 Pas lui
               </button>
             </div>
+            <a
+              href={privilegeCatalogHref}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex h-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-white/80"
+            >
+              Ouvrir le catalogue privilege de ma ville
+            </a>
           </>
         ) : (
           <div className="mt-2 rounded-lg border border-white/10 bg-black/25 px-3 py-4 text-center">
