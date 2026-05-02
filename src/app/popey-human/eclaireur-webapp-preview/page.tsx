@@ -34,6 +34,7 @@ const OPPORTUNITY_TARGETS = {
 
 const SCOUT_PREVIEW_TOKEN_STORAGE_KEY = "popey-human:eclaireur-preview:last-token-or-code";
 const SCOUT_PREVIEW_TOKEN_COOKIE_KEY = "popey_human_eclaireur_preview_token";
+const SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX = "popey-human:eclaireur-preview:imported-contacts:";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
@@ -280,6 +281,10 @@ export default function EclaireurWebappPreviewPage() {
   const [suggestionIndex, setSuggestionIndex] = useState(0);
 
   const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>("Dax");
+  const importedContactsStorageKey = useMemo(
+    () => `${SCOUT_PREVIEW_IMPORTED_CONTACTS_STORAGE_PREFIX}${(tokenOrCode || "demo").toLowerCase()}`,
+    [tokenOrCode],
+  );
   const fallbackMetiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
   const availableMetiers = useMemo(() => {
     const fromMember = (portalData?.availableTargets || []).map((item) => item.label.trim()).filter(Boolean);
@@ -417,6 +422,54 @@ export default function EclaireurWebappPreviewPage() {
       cancelled = true;
     };
   }, [tokenOrCode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(importedContactsStorageKey);
+      if (!raw) {
+        setImportedContacts([]);
+        setSuggestionIndex(0);
+        return;
+      }
+      const parsed = JSON.parse(raw) as ImportedContact[];
+      if (!Array.isArray(parsed)) {
+        setImportedContacts([]);
+        setSuggestionIndex(0);
+        return;
+      }
+      const safeContacts = parsed
+        .map((item, idx) => ({
+          id: String(item?.id || `contact-${idx + 1}`),
+          name: String(item?.name || "").trim(),
+          phone: item?.phone ? String(item.phone) : null,
+          city: item?.city ? String(item.city) : null,
+          companyHint: item?.companyHint ? String(item.companyHint) : null,
+        }))
+        .filter((item) => item.name.length > 0);
+      setImportedContacts(safeContacts);
+      setSuggestionIndex(0);
+      if (safeContacts.length > 0) {
+        setImportSummary(`${safeContacts.length} contacts restaurés automatiquement`);
+      }
+    } catch {
+      setImportedContacts([]);
+      setSuggestionIndex(0);
+    }
+  }, [importedContactsStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (importedContacts.length === 0) {
+        window.localStorage.removeItem(importedContactsStorageKey);
+        return;
+      }
+      window.localStorage.setItem(importedContactsStorageKey, JSON.stringify(importedContacts));
+    } catch {
+      // Ignore storage quota / privacy errors.
+    }
+  }, [importedContacts, importedContactsStorageKey]);
 
   async function refreshPortal() {
     if (!tokenOrCode) return;
