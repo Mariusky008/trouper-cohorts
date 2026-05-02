@@ -85,6 +85,10 @@ type ImportedContact = {
   companyHint: string | null;
 };
 
+function hasValidWhatsappNumber(raw: string | null | undefined) {
+  return normalizePhoneForWhatsApp(String(raw || "")).length > 0;
+}
+
 function splitCsvRow(line: string, delimiter: string): string[] {
   const cols: string[] = [];
   let current = "";
@@ -178,7 +182,7 @@ function parseCsvContacts(raw: string): ImportedContactRow[] {
 
 function buildImportedContacts(rows: ImportedContactRow[]): ImportedContact[] {
   const dedup = new Set<string>();
-  return rows
+  const mapped = rows
     .map((row, idx) => {
       const name = String(row.fullName || "").trim();
       const phoneRaw = String(row.phone || "").trim();
@@ -193,6 +197,22 @@ function buildImportedContacts(rows: ImportedContactRow[]): ImportedContact[] {
       };
     })
     .filter((row) => row.name.length > 0)
+    .filter((row) => row.name.length > 0);
+
+  // If the same contact name exists with and without a valid number,
+  // keep only entries that have a usable WhatsApp number.
+  const namesWithValidPhone = new Set(
+    mapped.filter((row) => hasValidWhatsappNumber(row.phone)).map((row) => row.name.toLowerCase()),
+  );
+
+  return mapped
+    .filter((row) => {
+      const nameKey = row.name.toLowerCase();
+      if (namesWithValidPhone.has(nameKey) && !hasValidWhatsappNumber(row.phone)) {
+        return false;
+      }
+      return true;
+    })
     .filter((row) => {
       if (dedup.has(row.dedupKey)) return false;
       dedup.add(row.dedupKey);
@@ -203,17 +223,27 @@ function buildImportedContacts(rows: ImportedContactRow[]): ImportedContact[] {
 
 function mergeImportedContacts(existing: ImportedContact[], incoming: ImportedContact[]): ImportedContact[] {
   const dedup = new Set<string>();
-  const merged: ImportedContact[] = [];
+  const mergedRaw: ImportedContact[] = [];
   [...existing, ...incoming].forEach((item, idx) => {
     const key = `${String(item.name || "").trim().toLowerCase()}|${String(item.phone || "").replace(/\D/g, "")}`;
     if (dedup.has(key)) return;
     dedup.add(key);
-    merged.push({
+    mergedRaw.push({
       ...item,
       id: item.id || `contact-${idx + 1}-${String(item.phone || "").replace(/\D/g, "").slice(-4) || "0000"}`,
     });
   });
-  return merged;
+  const namesWithValidPhone = new Set(
+    mergedRaw.filter((row) => hasValidWhatsappNumber(row.phone)).map((row) => String(row.name || "").trim().toLowerCase()),
+  );
+  return mergedRaw.filter((row) => {
+    const nameKey = String(row.name || "").trim().toLowerCase();
+    if (!nameKey) return false;
+    if (namesWithValidPhone.has(nameKey) && !hasValidWhatsappNumber(row.phone)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 function contactInitials(name: string) {
@@ -368,7 +398,11 @@ export default function EclaireurWebappPreviewPage() {
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
   }, [latestReferral, portalData?.sponsorPhone]);
 
-  const suggestion = importedContacts[suggestionIndex] || null;
+  const suggestionCandidates = useMemo(
+    () => importedContacts.filter((contact) => hasValidWhatsappNumber(contact.phone)),
+    [importedContacts],
+  );
+  const suggestion = suggestionCandidates[suggestionIndex] || null;
   const privilegeCatalogHref = useMemo(() => {
     const fallbackCity = city || "Dax";
     const cityLabel = String(portalData?.sponsorVille || fallbackCity || "").trim();
@@ -420,10 +454,10 @@ export default function EclaireurWebappPreviewPage() {
   }, []);
 
   useEffect(() => {
-    if (suggestionIndex > 0 && suggestionIndex >= importedContacts.length) {
+    if (suggestionIndex > 0 && suggestionIndex >= suggestionCandidates.length) {
       setSuggestionIndex(0);
     }
-  }, [importedContacts.length, suggestionIndex]);
+  }, [suggestionCandidates.length, suggestionIndex]);
 
   useEffect(() => {
     setSelectedContactIds((current) => {
@@ -906,8 +940,8 @@ export default function EclaireurWebappPreviewPage() {
   }
 
   function skipSuggestion() {
-    if (importedContacts.length === 0) return;
-    setSuggestionIndex((current) => (current + 1) % importedContacts.length);
+    if (suggestionCandidates.length === 0) return;
+    setSuggestionIndex((current) => (current + 1) % suggestionCandidates.length);
   }
 
   function clearImportedContacts() {
@@ -999,6 +1033,7 @@ export default function EclaireurWebappPreviewPage() {
           sponsorVille={portalData?.sponsorVille || null}
           importedCount={importedContacts.length}
           importedContacts={importedContacts}
+          suggestionCandidatesCount={suggestionCandidates.length}
           importSummary={importSummary}
           importError={importError}
           selectionMessage={selectionMessage}
@@ -1522,6 +1557,7 @@ function ScreenSuggestion({
   sponsorVille,
   importedCount,
   importedContacts,
+  suggestionCandidatesCount,
   importSummary,
   importError,
   selectionMessage,
@@ -1559,6 +1595,7 @@ function ScreenSuggestion({
   sponsorVille: string | null;
   importedCount: number;
   importedContacts: ImportedContact[];
+  suggestionCandidatesCount: number;
   importSummary: string;
   importError: string;
   selectionMessage: string;
@@ -1741,6 +1778,7 @@ function ScreenSuggestion({
               {importedContacts.map((contact) => {
                 const contactHref = buildBulkOfferWhatsappHref(contact, privilegeCatalogHref);
                 const isSelected = selectedContactIds.includes(contact.id);
+                  const hasValidNumber = hasValidWhatsappNumber(contact.phone);
                 return (
                   <label
                     key={contact.id}
@@ -1757,7 +1795,16 @@ function ScreenSuggestion({
                       onChange={() => onToggleContactSelection(contact.id)}
                       className="h-3.5 w-3.5 accent-[#00D4A0]"
                     />
-                    <span className="truncate">{contact.name}</span>
+                      <span className="truncate flex-1">{contact.name}</span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] ${
+                          hasValidNumber
+                            ? "border border-emerald-300/35 bg-emerald-400/15 text-emerald-200"
+                            : "border border-amber-300/40 bg-amber-300/15 text-amber-100"
+                        }`}
+                      >
+                        {hasValidNumber ? "Numero OK" : "Numero invalide"}
+                      </span>
                   </label>
                 );
               })}
@@ -1871,7 +1918,11 @@ function ScreenSuggestion({
               </>
             ) : (
               <div className="mt-2 rounded-lg border border-white/10 bg-black/25 px-3 py-4 text-center">
-                <p className="text-sm text-white/70">Importe tes contacts pour activer la recommandation eclaireur.</p>
+                <p className="text-sm text-white/70">
+                  {importedCount > 0 && suggestionCandidatesCount === 0
+                    ? "Contacts importes, mais aucun numero WhatsApp exploitable. Verifie le format du numero ou reimporte en .vcf."
+                    : "Importe tes contacts pour activer la recommandation eclaireur."}
+                </p>
                 <button
                   type="button"
                   onClick={onGoSubmit}
