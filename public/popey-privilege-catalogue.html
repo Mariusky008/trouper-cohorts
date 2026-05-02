@@ -115,6 +115,119 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 .hs-val { font-family: var(--fd); font-size: 24px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
 .hs-lbl { font-size: 9px; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .08em; }
 
+/* Public affiliation module */
+.affiliate-strip {
+  margin: 16px 24px 0;
+  border: 1px solid rgba(0,200,150,.35);
+  background: rgba(0,200,150,.1);
+  border-radius: 16px;
+  padding: 14px;
+  position: relative;
+  z-index: 1;
+}
+.affiliate-copy { color: rgba(255,255,255,.78); font-size: 12px; line-height: 1.55; margin-top: 4px; }
+.affiliate-btn {
+  margin-top: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(90deg,#00D4A0,#00B887);
+  color: #04140F;
+  font-family: var(--fd);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.affiliate-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,200,150,.35); }
+.affiliate-note { margin-top: 8px; font-size: 10px; color: rgba(255,255,255,.5); text-align: center; }
+
+.aff-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(3, 8, 16, 0.72);
+  backdrop-filter: blur(8px);
+}
+.aff-modal.open { display: flex; }
+.aff-panel {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: #0D1220;
+  color: #EEF3FF;
+  padding: 20px;
+}
+.aff-title { font-family: var(--fd); font-size: 30px; line-height: .95; }
+.aff-sub { margin-top: 8px; font-size: 13px; color: rgba(238,243,255,.7); line-height: 1.6; }
+.aff-form { margin-top: 14px; display: grid; gap: 10px; }
+.aff-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(238,243,255,.55); font-weight: 700; }
+.aff-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.05);
+  color: #EEF3FF;
+  font-family: var(--fb);
+  font-size: 15px;
+  padding: 0 12px;
+}
+.aff-result {
+  margin-top: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,212,160,.35);
+  background: rgba(0,212,160,.12);
+  padding: 12px;
+}
+.aff-link {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9EE9D3;
+  word-break: break-all;
+}
+.aff-actions { margin-top: 12px; display: grid; gap: 8px; }
+.aff-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.06);
+  color: #EEF3FF;
+  font-weight: 700;
+  font-family: var(--fb);
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.aff-cta.primary {
+  border: 0;
+  background: linear-gradient(90deg,#25D366,#1FAA54);
+  color: #fff;
+}
+.aff-cta.ghost {
+  background: transparent;
+  color: rgba(238,243,255,.75);
+}
+.aff-error {
+  margin-top: 10px;
+  border: 1px solid rgba(248,113,113,.45);
+  background: rgba(248,113,113,.14);
+  color: #FECACA;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
 /* ── CATALOGUE GRID ── */
 .catalogue-section { padding: 40px 24px 80px; max-width: 1200px; margin: 0 auto; }
 .cat-header {
@@ -484,6 +597,12 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hs-item"><div class="hs-val">100%</div><div class="hs-lbl">Vérifiés</div></div>
       <div class="hs-item"><div class="hs-val">Dax</div><div class="hs-lbl">Zone</div></div>
     </div>
+    <div class="affiliate-strip">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#00D4A0">Module d'affiliation grand public</div>
+      <div class="affiliate-copy">Partagez ces bons plans avec vos proches et gagnez de l'argent ! Créez votre lien personnel en 20 secondes, même sans abonnement.</div>
+      <button class="affiliate-btn" id="openAffiliateModalBtn" type="button">Devenir Apporteur d'Affaires</button>
+      <div class="affiliate-note">Nom + WhatsApp · ID unique généré instantanément · Lien traçable</div>
+    </div>
   </div>
 
   <!-- CATALOGUE -->
@@ -793,6 +912,35 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
   </div>
 
 </div><!-- end client-view -->
+
+<div class="aff-modal" id="affiliateModal" aria-hidden="true">
+  <div class="aff-panel">
+    <div class="aff-title">Devenir apporteur</div>
+    <p class="aff-sub">Entrez votre nom et votre numéro WhatsApp. Popey génère votre ID, votre lien affilié et votre accès Éclaireur automatiquement.</p>
+    <form class="aff-form" id="affiliateForm">
+      <div>
+        <label class="aff-label" for="affiliateFullName">Nom complet</label>
+        <input id="affiliateFullName" class="aff-input" type="text" placeholder="Ex: Camille Dupont" autocomplete="name" />
+      </div>
+      <div>
+        <label class="aff-label" for="affiliatePhone">Numéro WhatsApp</label>
+        <input id="affiliatePhone" class="aff-input" type="tel" placeholder="06 12 34 56 78" autocomplete="tel" />
+      </div>
+      <button class="aff-cta primary" id="affiliateSubmitBtn" type="submit">Générer mon lien affilié</button>
+    </form>
+    <div id="affiliateErrorBox" class="aff-error" style="display:none"></div>
+    <div id="affiliateResultBox" class="aff-result" style="display:none">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#00D4A0">Lien généré</div>
+      <div id="affiliateReferralLink" class="aff-link"></div>
+      <div class="aff-actions">
+        <button type="button" class="aff-cta" id="affiliateCopyBtn">Copier le lien catalogue</button>
+        <a class="aff-cta primary" id="affiliateShareBtn" target="_blank" rel="noreferrer">Partager via WhatsApp</a>
+        <a class="aff-cta" id="affiliateOpenPreviewBtn" target="_blank" rel="noreferrer">Ouvrir ma webapp Éclaireur</a>
+      </div>
+    </div>
+    <button class="aff-cta ghost" id="affiliateCloseBtn" type="button">Fermer</button>
+  </div>
+</div>
 
 
 <!-- ══════════════════════════════
@@ -1107,6 +1255,7 @@ const __cityLabel = __citySlug ? __citySlug.replace(/-/g, ' ').replace(/\b\w/g, 
 let __places = [];
 let __cobrandOffers = [];
 let __activeSphere = 'all';
+let __affiliatePayload = null;
 
 const SPHERE_META = {
   sante: { label: 'Sante', icon: '🌿', color: '#00A070', gradient: 'linear-gradient(90deg,#00C896,#00A070)', category: 'sante' },
@@ -1290,6 +1439,115 @@ function renderCobrandOffers() {
     .join('');
 }
 
+function setAffiliateLoading(isLoading) {
+  const submitBtn = document.getElementById('affiliateSubmitBtn');
+  if (!submitBtn) return;
+  submitBtn.disabled = !!isLoading;
+  submitBtn.textContent = isLoading ? 'Génération…' : 'Générer mon lien affilié';
+}
+
+function showAffiliateError(message) {
+  const box = document.getElementById('affiliateErrorBox');
+  if (!box) return;
+  const text = String(message || '').trim();
+  if (!text) {
+    box.style.display = 'none';
+    box.textContent = '';
+    return;
+  }
+  box.textContent = text;
+  box.style.display = 'block';
+}
+
+function showAffiliateResult(payload) {
+  __affiliatePayload = payload || null;
+  const result = document.getElementById('affiliateResultBox');
+  const referralLink = document.getElementById('affiliateReferralLink');
+  const shareBtn = document.getElementById('affiliateShareBtn');
+  const previewBtn = document.getElementById('affiliateOpenPreviewBtn');
+  if (!result || !referralLink || !shareBtn || !previewBtn) return;
+  if (!payload?.referralUrl) {
+    result.style.display = 'none';
+    referralLink.textContent = '';
+    shareBtn.removeAttribute('href');
+    previewBtn.removeAttribute('href');
+    return;
+  }
+  referralLink.textContent = payload.referralUrl;
+  shareBtn.setAttribute('href', payload.whatsappShareUrl || '#');
+  previewBtn.setAttribute('href', payload.previewUrl || '#');
+  result.style.display = 'block';
+}
+
+function openAffiliateModal() {
+  const modal = document.getElementById('affiliateModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAffiliateModal() {
+  const modal = document.getElementById('affiliateModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+async function submitAffiliateForm(event) {
+  event.preventDefault();
+  const nameInput = document.getElementById('affiliateFullName');
+  const phoneInput = document.getElementById('affiliatePhone');
+  const fullName = String(nameInput?.value || '').trim();
+  const phone = String(phoneInput?.value || '').trim();
+  if (!fullName || !phone) {
+    showAffiliateError('Merci de renseigner votre nom et votre numéro WhatsApp.');
+    return;
+  }
+  showAffiliateError('');
+  setAffiliateLoading(true);
+  try {
+    const response = await fetch('/api/popey-human/affiliation/public/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName,
+        phone,
+        city: __cityLabel,
+        sponsorName: __refName,
+        sponsorRefCode: __refCode || null,
+        sponsorMemberId: __refId || null,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.error || "Impossible de générer le lien d'affiliation.");
+    }
+    showAffiliateResult(payload);
+    showAffiliateError('');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Impossible de générer le lien d'affiliation.";
+    showAffiliateError(message);
+    showAffiliateResult(null);
+  } finally {
+    setAffiliateLoading(false);
+  }
+}
+
+function copyAffiliateLink() {
+  const link = String(__affiliatePayload?.referralUrl || '').trim();
+  if (!link) {
+    showAffiliateError("Aucun lien à copier pour l'instant.");
+    return;
+  }
+  navigator.clipboard?.writeText(link).then(() => {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#13141A;color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;border:1px solid rgba(255,255,255,.1)';
+    toast.textContent = '✓ Lien affilié copié';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  });
+}
+
 async function loadPlaces() {
   const grid = document.getElementById('privGrid');
   if (grid) grid.innerHTML = `<div class="priv-card"><div style="padding:20px;font-size:14px;color:#555">Chargement des privileges…</div></div>`;
@@ -1333,8 +1591,9 @@ async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
   if (!response) return;
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data?.success) return;
-  const msg = String(data.whatsappMessage || `Bonjour ! Je souhaite activer mon privilège Popey. [ID-TRACKING: ${trackingId}]`);
+  const msg = String(data.whatsappMessage || `Bonjour ! Je souhaite activer mon privilège Popey. Code de suivi : #${trackingId}.`);
   const waUrl = String(data.whatsappUrl || '').trim();
+  const ticketCode = String(data.ticketCode || '').trim();
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:24px;animation:fadeIn .2s ease';
   overlay.innerHTML = `
@@ -1343,7 +1602,7 @@ async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
       <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#0C0D0F;text-align:center;margin-bottom:8px">Votre WhatsApp va s'ouvrir</div>
       <div style="font-size:13px;color:#555;text-align:center;margin-bottom:20px;line-height:1.6">Le message ci-dessous est pré-rempli. Il vous suffit d'appuyer sur <strong>Envoyer</strong>.</div>
       <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:16px;margin-bottom:20px;font-size:13px;color:#166534;line-height:1.6;font-style:italic">"${escapeHtml(msg)}"</div>
-      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:20px">${escapeHtml(__refName)} et Popey reçoivent automatiquement une trace de cette mise en relation.</div>
+      <div style="font-size:11px;color:#999;text-align:center;margin-bottom:20px">${escapeHtml(__refName)} et Popey reçoivent automatiquement une trace de cette mise en relation.${ticketCode ? ` Ticket: #${escapeHtml(ticketCode)}` : ''}</div>
       ${
         waUrl
           ? `<a href="${waUrl}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;text-decoration:none;transition:all .2s" onclick="overlay.remove()">📱 Ouvrir WhatsApp →</a>`
@@ -1372,6 +1631,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   const catSub = document.querySelector('.cat-sub');
   if (catSub) catSub.textContent = `Offres réservées aux contacts de ${__firstName} · Activation sur ${__cityLabel}`;
+  const openAffiliateBtn = document.getElementById('openAffiliateModalBtn');
+  if (openAffiliateBtn) openAffiliateBtn.addEventListener('click', openAffiliateModal);
+  const closeAffiliateBtn = document.getElementById('affiliateCloseBtn');
+  if (closeAffiliateBtn) closeAffiliateBtn.addEventListener('click', closeAffiliateModal);
+  const affiliateForm = document.getElementById('affiliateForm');
+  if (affiliateForm) affiliateForm.addEventListener('submit', submitAffiliateForm);
+  const affiliateCopyBtn = document.getElementById('affiliateCopyBtn');
+  if (affiliateCopyBtn) affiliateCopyBtn.addEventListener('click', copyAffiliateLink);
+  const affiliateModal = document.getElementById('affiliateModal');
+  if (affiliateModal) {
+    affiliateModal.addEventListener('click', (event) => {
+      if (event.target === affiliateModal) closeAffiliateModal();
+    });
+  }
   await loadPlaces();
 });
 
@@ -1388,6 +1661,10 @@ document.addEventListener('click', (event) => {
   if (activateBtn) {
     void activatePrivilegeByPlace(activateBtn.dataset.placeId, activateBtn.dataset.trackingId || '');
   }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeAffiliateModal();
 });
 
 // ── COPY LINK ──

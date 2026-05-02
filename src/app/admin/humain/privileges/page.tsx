@@ -26,10 +26,14 @@ function slugify(value: string) {
 
 function readWorkflowStatus(metadata: unknown): string {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "new";
-  const value = String((metadata as Record<string, unknown>).workflow_status || "new")
+  const value = String((metadata as Record<string, unknown>).workflow_status || "pending")
     .trim()
     .toLowerCase();
-  if (!["new", "contacted", "rdv", "signed", "closed"].includes(value)) return "new";
+  if (value === "new") return "pending";
+  if (value === "rdv") return "in_progress";
+  if (value === "signed") return "validated";
+  if (value === "closed") return "refused";
+  if (!["pending", "contacted", "in_progress", "validated", "refused"].includes(value)) return "pending";
   return value;
 }
 
@@ -39,26 +43,27 @@ function readWorkflowNote(metadata: unknown): string {
 }
 
 function statusLabel(status: string) {
+  if (status === "pending") return "En attente";
   if (status === "contacted") return "Contacte";
-  if (status === "rdv") return "RDV pris";
-  if (status === "signed") return "Signe";
-  if (status === "closed") return "Cloture";
-  return "Nouveau";
+  if (status === "in_progress") return "En cours";
+  if (status === "validated") return "Valide";
+  if (status === "refused") return "Refuse";
+  return "En attente";
 }
 
 function statusBadgeClass(status: string) {
-  if (status === "signed") return "border-emerald-400/40 bg-emerald-500/15 text-emerald-200";
-  if (status === "rdv") return "border-amber-400/40 bg-amber-500/15 text-amber-200";
+  if (status === "validated") return "border-emerald-400/40 bg-emerald-500/15 text-emerald-200";
+  if (status === "in_progress") return "border-amber-400/40 bg-amber-500/15 text-amber-200";
   if (status === "contacted") return "border-cyan-400/40 bg-cyan-500/15 text-cyan-200";
-  if (status === "closed") return "border-slate-500/40 bg-slate-700/40 text-slate-200";
+  if (status === "refused") return "border-slate-500/40 bg-slate-700/40 text-slate-200";
   return "border-red-400/40 bg-red-500/15 text-red-200";
 }
 
 function statusDotClass(status: string) {
-  if (status === "signed") return "bg-emerald-400";
-  if (status === "rdv") return "bg-amber-400";
+  if (status === "validated") return "bg-emerald-400";
+  if (status === "in_progress") return "bg-amber-400";
   if (status === "contacted") return "bg-cyan-400";
-  if (status === "closed") return "bg-slate-400";
+  if (status === "refused") return "bg-slate-400";
   return "bg-red-400";
 }
 
@@ -90,7 +95,7 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
     if (!Number.isFinite(created)) return false;
     return created >= now - 24 * 60 * 60 * 1000;
   }).length;
-  const signedCount = activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "signed").length;
+  const signedCount = activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "validated").length;
   const conversion = activationsRaw.length > 0 ? Math.round((signedCount / activationsRaw.length) * 100) : 0;
   const cityOptions = Array.from(new Set(activationsRaw.map((item) => String(item.city || "").trim()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b, "fr"),
@@ -186,7 +191,7 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
             <article className="rounded-xl border border-slate-700 bg-gradient-to-b from-[#0D1320] to-[#0A0F18] p-4">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Activations aujourd&apos;hui</p>
               <p className="mt-1 text-3xl font-black text-cyan-200">{todayCount}</p>
-              <p className="text-xs text-cyan-300">dont {activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "new").length} nouvelles</p>
+              <p className="text-xs text-cyan-300">dont {activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "pending").length} nouvelles</p>
             </article>
             <article className="rounded-xl border border-slate-700 bg-gradient-to-b from-[#0D1320] to-[#0A0F18] p-4">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Commissions a verser</p>
@@ -204,11 +209,11 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
             <div className="grid gap-2 md:grid-cols-4">
               <select name="status" defaultValue={selectedStatus} className="h-10 rounded border border-slate-600 bg-[#0A0D14] px-2 text-sm">
                 <option value="all">Tous statuts</option>
-                <option value="new">Nouveau</option>
+                <option value="pending">En attente</option>
                 <option value="contacted">Contacte</option>
-                <option value="rdv">RDV pris</option>
-                <option value="signed">Signe</option>
-                <option value="closed">Cloture</option>
+                <option value="in_progress">En cours</option>
+                <option value="validated">Valide</option>
+                <option value="refused">Refuse</option>
               </select>
               <select name="city" defaultValue={selectedCity} className="h-10 rounded border border-slate-600 bg-[#0A0D14] px-2 text-sm">
                 <option value="all">Toutes villes</option>
@@ -258,11 +263,11 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
                       <input type="hidden" name="current_url" value={`/admin/humain/privileges?status=${encodeURIComponent(selectedStatus)}&city=${encodeURIComponent(selectedCity)}&q=${encodeURIComponent(queryText)}`} />
                       <input type="hidden" name="activation_id" value={activation.id} />
                       <select name="next_status" defaultValue={workflowStatus} className="h-9 rounded border border-slate-600 bg-[#0A0D14] px-2 text-xs">
-                        <option value="new">Nouveau</option>
+                        <option value="pending">En attente</option>
                         <option value="contacted">Contacte</option>
-                        <option value="rdv">RDV pris</option>
-                        <option value="signed">Signe</option>
-                        <option value="closed">Cloture</option>
+                        <option value="in_progress">En cours</option>
+                        <option value="validated">Valide</option>
+                        <option value="refused">Refuse</option>
                       </select>
                       <input name="note" defaultValue={workflowNote} placeholder="Note admin (optionnel)" className="h-9 rounded border border-slate-600 bg-[#0A0D14] px-2 text-xs md:col-span-2" />
                       <button className="h-9 rounded border border-slate-500 bg-slate-700/40 px-3 text-[11px] font-black uppercase tracking-wide">

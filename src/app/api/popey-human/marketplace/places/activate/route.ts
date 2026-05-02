@@ -58,6 +58,15 @@ function toWhatsAppDigits(raw: string): string {
   return digits;
 }
 
+function makeCommissionTicketCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i += 1) {
+    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `POPEY-${suffix}`;
+}
+
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
   try {
@@ -121,6 +130,7 @@ export async function POST(request: NextRequest) {
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_name : fallbackReferrerName;
     const resolvedReferrerId =
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_id : fallbackReferrerId || fallbackReferralCode || "referral";
+    const ticketCode = makeCommissionTicketCode();
     const leadPayload = {
       place_id: place.id,
       city: trim(place.city) || declaredCity || (hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.city : declaredCity || "Dax"),
@@ -138,6 +148,10 @@ export async function POST(request: NextRequest) {
         company_name: trim(place.company_name),
         request_id: requestId,
         referral_code: fallbackReferralCode || null,
+        ticket_code: ticketCode,
+        workflow_status: "pending",
+        ticket_status: "pending",
+        ticket_created_at: new Date().toISOString(),
       },
     };
 
@@ -169,6 +183,7 @@ export async function POST(request: NextRequest) {
         activation_id: activationId,
         request_id: requestId,
         referral_code: fallbackReferralCode || null,
+        ticket_code: ticketCode,
       },
     };
     const { error: trackingError } = await supabase.from("human_marketplace_landing_events").insert(activationEvent);
@@ -180,7 +195,7 @@ export async function POST(request: NextRequest) {
     }
 
     const trackingId = activationId || requestId;
-    const rawMessage = `Bonjour ${partnerName} ! Je souhaite activer mon privilege Popey (${trim(place.metier)}) offert par ${leadPayload.referrer_name}. [ID-TRACKING: ${trackingId}]`;
+    const rawMessage = `Bonjour ${partnerName}, je souhaite activer mon privilège offert par ${leadPayload.referrer_name}. Code de suivi : #${ticketCode}.`;
     const waPhone = toWhatsAppDigits(partnerPhone || "");
     const whatsappUrl = waPhone
       ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(rawMessage)}`
@@ -208,6 +223,7 @@ export async function POST(request: NextRequest) {
       whatsappUrl,
       whatsappMessage: rawMessage,
       trackingId,
+      ticketCode,
     });
   } catch (error) {
     console.error("[marketplace/activate] unexpected", { requestId, error });

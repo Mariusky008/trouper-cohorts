@@ -114,6 +114,9 @@ export default async function AdminHumainPage() {
           <Link href="/admin/humain/eclaireurs">Ouvrir les éclaireurs</Link>
         </Button>
         <Button asChild variant="outline">
+          <Link href="/admin/humain/affiliation">Ouvrir l'affiliation publique</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/admin/humain/marketplace">Ouvrir le marketplace</Link>
         </Button>
         <Button asChild variant="outline">

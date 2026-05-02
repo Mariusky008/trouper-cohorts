@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 
 type MarketplacePlaceRow = {
   id: string;
@@ -115,6 +116,20 @@ function withMarketplaceStatus(currentUrl: string, status: "success" | "error", 
   const base = currentUrl || "/admin/humain/marketplace";
   const sep = base.includes("?") ? "&" : "?";
   return `${base}${sep}marketStatus=${encodeURIComponent(status)}&marketMessage=${encodeURIComponent(message)}`;
+}
+
+function normalizePhone(raw: string) {
+  let digits = String(raw || "").trim().replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith("0")) digits = `33${digits.slice(1)}`;
+  if (digits.length < 8 || digits.length > 15) return "";
+  return `+${digits}`;
+}
+
+function asMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
 }
 
 async function requireHumanAdmin() {
@@ -623,10 +638,23 @@ export async function adminUpdatePrivilegeActivationStatusAction(formData: FormD
   if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
 
   const activationId = String(formData.get("activation_id") || "").trim();
-  const nextStatus = String(formData.get("next_status") || "").trim().toLowerCase();
+  const nextStatusRaw = String(formData.get("next_status") || "").trim().toLowerCase();
   const note = String(formData.get("note") || "").trim();
 
-  const allowed = ["new", "contacted", "rdv", "signed", "closed"];
+  const statusAlias: Record<string, string> = {
+    new: "pending",
+    pending: "pending",
+    contacted: "contacted",
+    rdv: "in_progress",
+    "in-progress": "in_progress",
+    in_progress: "in_progress",
+    signed: "validated",
+    validated: "validated",
+    closed: "refused",
+    refused: "refused",
+  };
+  const nextStatus = statusAlias[nextStatusRaw] || nextStatusRaw;
+  const allowed = ["pending", "contacted", "in_progress", "validated", "refused"];
   if (!activationId) redirect(withMarketplaceStatus(currentUrl, "error", "Activation introuvable."));
   if (!allowed.includes(nextStatus)) {
     redirect(withMarketplaceStatus(currentUrl, "error", "Statut activation invalide."));
@@ -665,4 +693,92 @@ export async function adminUpdatePrivilegeActivationStatusAction(formData: FormD
   revalidatePath("/admin/humain/privileges");
   revalidatePath("/admin/humain/marketplace");
   redirect(withMarketplaceStatus(currentUrl, "success", "Statut activation mis a jour."));
+}
+
+export async function adminSendPrivilegeActivationFollowupNowAction(formData: FormData): Promise<void> {
+  const auth = await requireHumanAdmin();
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/affiliation");
+  if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
+
+  const activationId = String(formData.get("activation_id") || "").trim();
+  if (!activationId) redirect(withMarketplaceStatus(currentUrl, "error", "Activation introuvable."));
+
+  const supabaseAdmin = createAdminClient();
+  const { data: activation, error: activationError } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select("id,city,client_name,referrer_name,partner_name,partner_phone,partner_member_id,metadata")
+    .eq("id", activationId)
+    .maybeSingle();
+  if (activationError || !activation) {
+    redirect(withMarketplaceStatus(currentUrl, "error", activationError?.message || "Activation introuvable."));
+  }
+
+  const partnerPhone = normalizePhone(String(activation.partner_phone || ""));
+  const ownerMemberId = String(activation.partner_member_id || "").trim();
+  if (!partnerPhone || !ownerMemberId) {
+    redirect(withMarketplaceStatus(currentUrl, "error", "Le pro n'a pas de téléphone WhatsApp exploitable."));
+  }
+
+  const metadata = asMetadata(activation.metadata);
+  const ticketCode = String(metadata.ticket_code || "").trim() || `POPEY-${activation.id.slice(0, 6).toUpperCase()}`;
+  const partnerName = String(activation.partner_name || "").trim() || "Partenaire";
+  const referrerName = String(activation.referrer_name || "").trim() || "apporteur";
+  const message =
+    `Salut ${partnerName} ! Relance Popey pour le privilège #${ticketCode} (via ${referrerName}). ` +
+    "La vente a-t-elle été conclue ? Réponds : OUI VALIDE ou NON EN COURS.";
+
+  const send = await sendWhatsAppTextMessage(partnerPhone, message, {
+    ownerMemberId,
+    source: "marketplace_ticket_followup_manual_admin",
+    metadata: {
+      flow: "marketplace_ticket_followup_j1",
+      trigger: "manual_admin",
+      marketplace_activation_id: activation.id,
+      ticket_code: ticketCode,
+      city: String(activation.city || "").trim(),
+      referrer_name: referrerName,
+      client_name: String(activation.client_name || "").trim(),
+    },
+  });
+  if (!send.success) {
+    redirect(withMarketplaceStatus(currentUrl, "error", send.error || "Envoi Twilio impossible."));
+  }
+
+  const nowIso = new Date().toISOString();
+  const nextMetadata = {
+    ...metadata,
+    ticket_code: ticketCode,
+    pro_followup_sent_at: nowIso,
+    pro_followup_provider: "twilio",
+    pro_followup_status: "sent",
+    pro_followup_message_sid: send.sid || null,
+    pro_followup_last_trigger: "manual_admin",
+    pro_followup_last_triggered_by_user_id: auth.user.id,
+    pro_followup_last_triggered_at: nowIso,
+  };
+  await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .update({ metadata: nextMetadata })
+    .eq("id", activation.id);
+
+  await supabaseAdmin.from("human_marketplace_landing_events").insert({
+    event_type: "pro_followup_sent",
+    city: String(activation.city || "").trim() || null,
+    category_key: null,
+    place_id: null,
+    client_id: null,
+    referrer_id: null,
+    partner_member_id: ownerMemberId,
+    source: "marketplace_ticket_followup_manual_admin",
+    metadata: {
+      activation_id: activation.id,
+      ticket_code: ticketCode,
+      provider_message_sid: send.sid || null,
+      trigger: "manual_admin",
+    },
+  });
+
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/admin/humain/privileges");
+  redirect(withMarketplaceStatus(currentUrl, "success", "Relance WhatsApp envoyée au pro."));
 }

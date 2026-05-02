@@ -185,6 +185,95 @@ async function updateSmartScanOutcomeByClassification(input: {
   return actionId;
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function normalizeMarketplaceWorkflowStatus(value: string): "pending" | "contacted" | "in_progress" | "validated" | "refused" {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "new") return "pending";
+  if (raw === "rdv") return "in_progress";
+  if (raw === "signed") return "validated";
+  if (raw === "closed") return "refused";
+  if (raw === "contacted") return "contacted";
+  if (raw === "in_progress" || raw === "in-progress") return "in_progress";
+  if (raw === "validated") return "validated";
+  if (raw === "refused") return "refused";
+  return "pending";
+}
+
+async function updateMarketplaceActivationByClassification(input: {
+  queueMetadata: Record<string, unknown> | null | undefined;
+  classification: InboundClassification;
+  messageText: string;
+  phoneE164: string | null;
+}) {
+  const metadata = asRecord(input.queueMetadata);
+  const flow = String(metadata.flow || "").trim();
+  if (flow !== "marketplace_ticket_followup_j1") return null;
+  const activationId = String(metadata.marketplace_activation_id || "").trim();
+  if (!activationId) return null;
+
+  const supabaseAdmin = createAdminClient();
+  const { data: activation } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select("id,city,metadata,partner_member_id")
+    .eq("id", activationId)
+    .maybeSingle();
+  if (!activation?.id) return null;
+
+  const currentMetadata = asRecord(activation.metadata);
+  const currentStatus = normalizeMarketplaceWorkflowStatus(String(currentMetadata.workflow_status || "pending"));
+  let nextStatus = currentStatus;
+  if (input.classification === "positive") nextStatus = "validated";
+  if (input.classification === "negative") nextStatus = "in_progress";
+  if (input.classification === "stop") nextStatus = "refused";
+  if (input.classification === "neutral") return null;
+
+  const nowIso = new Date().toISOString();
+  const nextMetadata: Record<string, unknown> = {
+    ...currentMetadata,
+    workflow_status: nextStatus,
+    ticket_status: nextStatus,
+    workflow_note: `Réponse pro Twilio: ${input.messageText || input.classification}`,
+    workflow_updated_at: nowIso,
+    pro_followup_last_reply_at: nowIso,
+    pro_followup_last_reply_classification: input.classification,
+    pro_followup_last_reply_text: input.messageText || null,
+    pro_followup_last_reply_phone: input.phoneE164 || null,
+  };
+
+  await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .update({ metadata: nextMetadata })
+    .eq("id", activation.id);
+
+  await supabaseAdmin.from("human_marketplace_landing_events").insert({
+    event_type: "pro_followup_reply",
+    city: String(activation.city || "").trim() || null,
+    category_key: null,
+    place_id: null,
+    client_id: null,
+    referrer_id: null,
+    partner_member_id: String(activation.partner_member_id || "").trim() || null,
+    source: "twilio_webhook",
+    metadata: {
+      activation_id: activation.id,
+      ticket_code: String(currentMetadata.ticket_code || metadata.ticket_code || "").trim() || null,
+      classification: input.classification,
+      previous_status: currentStatus,
+      next_status: nextStatus,
+    },
+  });
+
+  return {
+    activationId: activation.id,
+    previousStatus: currentStatus,
+    nextStatus,
+  };
+}
+
 export async function sendPartnerOutreach(
   targetPhone: string,
   variables: PartnerOutreachVariables,
@@ -347,6 +436,7 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
   const queueId = queueRow?.id || null;
   const queuePhone = queueRow?.phone_e164 || fromPhone || null;
 
+  const queueMetadata = queueRow?.metadata || null;
   const smartScanActionId =
     ownerMemberId && queuePhone
       ? await updateSmartScanOutcomeByClassification({
@@ -354,9 +444,15 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
           phoneE164: queuePhone,
           classification,
           buttonText: body,
-          queueMetadata: queueRow?.metadata || null,
+          queueMetadata,
         })
       : null;
+  const marketplaceUpdate = await updateMarketplaceActivationByClassification({
+    queueMetadata,
+    classification,
+    messageText: body || buttonPayload || "",
+    phoneE164: queuePhone,
+  });
 
   await supabaseAdmin.from("human_whatsapp_events").insert({
     queue_id: queueId,
@@ -372,6 +468,8 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
       button_payload: buttonPayload,
       params,
       smart_scan_action_id: smartScanActionId,
+        marketplace_activation_id: marketplaceUpdate?.activationId || null,
+        marketplace_status: marketplaceUpdate?.nextStatus || null,
     },
   });
 
@@ -414,6 +512,7 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
     processed: "inbound" as const,
     classification,
     smartScanActionUpdated: Boolean(smartScanActionId),
+    marketplaceTicketUpdated: Boolean(marketplaceUpdate?.activationId),
   };
 }
 

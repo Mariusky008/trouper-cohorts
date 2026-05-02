@@ -106,6 +106,9 @@ export default async function AdminLayout({
             <Link href="/admin/humain/marketplace">Marketplace</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
+            <Link href="/admin/humain/affiliation">Affiliation</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link href="/admin/humain/chat">Chat WhatsApp</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
