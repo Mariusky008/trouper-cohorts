@@ -296,6 +296,7 @@ export default function EclaireurWebappPreviewPage() {
   const [queueSentCount, setQueueSentCount] = useState(0);
   const [queueInitialCount, setQueueInitialCount] = useState(0);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const queueActionLockRef = useRef(false);
 
   const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>("Dax");
   const importedContactsStorageKey = useMemo(
@@ -743,7 +744,7 @@ export default function EclaireurWebappPreviewPage() {
     setQueueCursor(0);
     setQueueInitialCount(queuedIds.length);
     setQueueSentCount(0);
-    setSelectionMessage(`Mode guide actif: ${queuedIds.length} contacts prets. Clique sur "Envoyer suivant".`);
+    setSelectionMessage(`Mode guide actif: ${queuedIds.length} contacts prets. Clique sur Envoyer suivant.`);
   }
 
   function clearGuidedQueue(resetCounters = false) {
@@ -756,52 +757,71 @@ export default function EclaireurWebappPreviewPage() {
   }
 
   function sendNextQueuedContact() {
+    if (queueActionLockRef.current) {
+      return;
+    }
     if (queuedContactIds.length === 0) {
       setSelectionMessage("Aucune file d envoi active.");
       return;
     }
+    queueActionLockRef.current = true;
     const currentId = queuedContactIds[queueCursor];
     const currentContact = importedContacts.find((item) => item.id === currentId);
     if (!currentContact) {
       setSelectionMessage("Contact introuvable. File rafraichie.");
       clearGuidedQueue();
+      queueActionLockRef.current = false;
       return;
     }
     const href = buildSuggestionWhatsappHref(currentContact, privilegeCatalogHref);
     if (!href) {
       setSelectionMessage("Numero invalide pour ce contact. Passage au suivant.");
       skipNextQueuedContact();
+      queueActionLockRef.current = false;
       return;
     }
     const opened = window.open(href, "_blank", "noopener,noreferrer");
     if (!opened) {
       setSelectionMessage("Popup bloquee. Autorise les popups puis clique a nouveau.");
+      queueActionLockRef.current = false;
       return;
     }
+    setSelectedContactIds((current) => current.filter((id) => id !== currentId));
     const isLast = queueCursor >= queuedContactIds.length - 1;
     if (isLast) {
       const sentCount = queueSentCount + 1;
       clearGuidedQueue();
-      setSelectedContactIds([]);
       setQueueSentCount(sentCount);
       setSelectionMessage(`Envoi guide termine: ${sentCount} contacts envoyes.`);
+      queueActionLockRef.current = false;
       return;
     }
     setQueueSentCount((current) => current + 1);
     setQueueCursor((current) => current + 1);
     setSelectionMessage(`Envoye. Prochain contact: ${queueCursor + 2}/${queuedContactIds.length}.`);
+    queueActionLockRef.current = false;
   }
 
   function skipNextQueuedContact() {
+    if (queueActionLockRef.current) {
+      return;
+    }
     if (queuedContactIds.length === 0) return;
+    queueActionLockRef.current = true;
     const isLast = queueCursor >= queuedContactIds.length - 1;
     if (isLast) {
       clearGuidedQueue();
       setSelectionMessage("File terminee.");
+      queueActionLockRef.current = false;
       return;
+    }
+    const currentId = queuedContactIds[queueCursor];
+    if (currentId) {
+      setSelectedContactIds((current) => current.filter((id) => id !== currentId));
     }
     setQueueCursor((current) => current + 1);
     setSelectionMessage(`Contact ignore. Prochain: ${queueCursor + 2}/${queuedContactIds.length}.`);
+    queueActionLockRef.current = false;
   }
 
   function skipSuggestion() {
@@ -1416,6 +1436,8 @@ function ScreenSuggestion({
   onGoSubmit: () => void;
 }) {
   const hasContacts = importedCount > 0;
+  const [showImportHelp, setShowImportHelp] = useState(false);
+  const [helpPlatform, setHelpPlatform] = useState<"ios" | "android">("ios");
   const suggestionWhatsappHref = useMemo(() => {
     if (!suggestion) return null;
     return buildSuggestionWhatsappHref(suggestion, privilegeCatalogHref);
@@ -1440,7 +1462,16 @@ function ScreenSuggestion({
       <p className="mt-2 text-[clamp(20px,5.2vw,25px)] leading-[1.28] text-white/75">Popey analyse ton reseau et te suggere le contact le plus prometteur du jour.</p>
 
       <div className="mt-3 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Importer tous tes contacts</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Importer tous tes contacts</p>
+          <button
+            type="button"
+            onClick={() => setShowImportHelp(true)}
+            className="inline-flex h-7 items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 text-[10px] font-bold uppercase tracking-[0.04em] text-cyan-100"
+          >
+            Info
+          </button>
+        </div>
         {!hasContacts ? (
           <>
             <p className="mt-1 text-[13px] text-white/70">Aucun contact importe pour l instant. Charge ton annuaire pour activer les suggestions.</p>
@@ -1509,6 +1540,12 @@ function ScreenSuggestion({
                 >
                   {allSelectableSelected ? "Tout decocher" : "Tout cocher"}
                 </button>
+              </div>
+              <div className="mb-2.5 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-2">
+                <p className="text-[11px] font-bold text-cyan-100">Choisis les contacts a qui envoyer ton message.</p>
+                <p className="mt-1 text-[10px] text-cyan-100/85">
+                  Selectionne les contacts de ton choix pour partager ton offre, ton offre duo ou le catalogue privilege.
+                </p>
               </div>
               <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
                 {importedContacts.map((contact) => {
@@ -1584,6 +1621,71 @@ function ScreenSuggestion({
         <p className="mt-2 text-[12px] text-white/65">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
         {importError ? <p className="mt-2 rounded-lg border border-red-300/35 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">{importError}</p> : null}
       </div>
+      {showImportHelp ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 px-3 pb-4 pt-8 backdrop-blur-sm sm:items-center">
+          <section className="w-full max-w-lg rounded-2xl border border-white/20 bg-[#0B1224] p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Comment importer mes contacts</p>
+              <button
+                type="button"
+                onClick={() => setShowImportHelp(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                x
+              </button>
+            </div>
+            <p className="mt-2 text-[12px] text-white/70">
+              Objectif: exporter tes contacts depuis ton telephone puis les importer ici avec le bouton <strong>.vcf/.csv</strong>.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setHelpPlatform("ios")}
+                className={`h-9 rounded-lg border text-[11px] font-bold ${
+                  helpPlatform === "ios"
+                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                    : "border-white/15 bg-white/5 text-white/75"
+                }`}
+              >
+                iPhone (iOS)
+              </button>
+              <button
+                type="button"
+                onClick={() => setHelpPlatform("android")}
+                className={`h-9 rounded-lg border text-[11px] font-bold ${
+                  helpPlatform === "android"
+                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                    : "border-white/15 bg-white/5 text-white/75"
+                }`}
+              >
+                Android
+              </button>
+            </div>
+            {helpPlatform === "ios" ? (
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
+                <p className="font-semibold text-white">Etapes iPhone:</p>
+                <p className="mt-2">1. Ouvre <strong>Contacts</strong> puis verifie que tes contacts sont bien synchronises (iCloud ou Gmail).</p>
+                <p className="mt-1">2. Va sur iCloud.com ou ton compte Google Contacts depuis Safari/Chrome.</p>
+                <p className="mt-1">3. Exporte les contacts au format <strong>.vcf</strong> (ou <strong>.csv</strong> via Google Contacts).</p>
+                <p className="mt-1">4. Reviens ici et clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
+                <p className="mt-1">5. Selectionne le fichier exporte pour charger tes contacts.</p>
+              </div>
+            ) : (
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-[12px] text-white/80">
+                <p className="font-semibold text-white">Etapes Android:</p>
+                <p className="mt-2">1. Ouvre l app <strong>Contacts</strong> Google ou Samsung.</p>
+                <p className="mt-1">2. Menu <strong>Exporter</strong> / <strong>Gerer les contacts</strong>.</p>
+                <p className="mt-1">3. Exporte un fichier <strong>.vcf</strong> (memoire du telephone ou Google Drive).</p>
+                <p className="mt-1">4. Reviens sur cet ecran puis clique <strong>Telecharger mes contacts (.vcf/.csv)</strong>.</p>
+                <p className="mt-1">5. Choisis le fichier .vcf pour importer toute ta liste.</p>
+              </div>
+            )}
+            <p className="mt-3 text-[11px] text-white/55">
+              Astuce: si l export mobile est bloque, utilise <strong>contacts.google.com</strong> pour exporter en quelques clics.
+            </p>
+          </section>
+        </div>
+      ) : null}
 
       <div className="mt-3 flex items-start justify-between">
         <div>
@@ -1625,7 +1727,7 @@ function ScreenSuggestion({
               </div>
             </div>
             <div className="mt-2 rounded-xl bg-black/25 px-3 py-2 text-[13px] text-white/70">
-              Popey pense qu il peut etre interesse par: "{selectedTargetLabel}".
+              Popey pense qu il peut etre interesse par: {selectedTargetLabel}.
             </div>
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[12px] text-white/75">
