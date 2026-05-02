@@ -723,14 +723,14 @@ export default function EclaireurWebappPreviewPage() {
       return;
     }
     const message = buildBulkOfferShareMessage(privilegeCatalogHref);
-    // Force l'ouverture directe de WhatsApp (pas la feuille de partage iOS).
+    // Force l'ouverture WhatsApp avec texte pre-rempli sur l'ecran multi-selection.
     const encoded = encodeURIComponent(message);
-    const appHref = `whatsapp://send?text=${encoded}`;
-    const webHref = `https://api.whatsapp.com/send?text=${encoded}`;
-    openWhatsAppFromGesture(appHref);
+    const webHref = `https://api.whatsapp.com/send/?text=${encoded}&type=custom_url&app_absent=0`;
+    const appHref = `whatsapp://send?text=${encoded}&type=custom_url&app_absent=0`;
+    openWhatsAppFromGesture(webHref);
     setTimeout(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        openWhatsAppFromGesture(webHref);
+        openWhatsAppFromGesture(appHref);
       }
     }, 450);
     setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
