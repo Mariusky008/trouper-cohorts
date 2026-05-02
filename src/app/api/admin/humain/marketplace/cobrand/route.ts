@@ -193,7 +193,22 @@ export async function POST(request: Request) {
   };
 
   const { error: insertError } = await supabaseAdmin.from("human_marketplace_cobrand_offers").insert(payload);
-  if (insertError) return fail(insertError.message || "Création co-brandée impossible.");
+  if (insertError) {
+    const msg = String(insertError.message || "");
+    const isSchemaMissing =
+      /column/i.test(msg) ||
+      /primary_member_name/i.test(msg) ||
+      /secondary_member_name/i.test(msg);
+    const isNullConstraint =
+      /null value in column/i.test(msg) &&
+      (/primary_member_id/i.test(msg) || /secondary_member_id/i.test(msg));
+    if (isSchemaMissing || isNullConstraint) {
+      return fail(
+        "Schema SQL co-brandé incomplet en production. Exécutez la migration `20260501124500_update_human_marketplace_cobrand_offers_nullable_members.sql` puis recommencez.",
+      );
+    }
+    return fail(insertError.message || "Création co-brandée impossible.");
+  }
 
   revalidatePath("/admin/humain/marketplace");
   revalidatePath("/privilege");

@@ -430,15 +430,7 @@ export async function GET(request: NextRequest) {
       const cobrandRows = (cobrandData as CobrandOfferRow[] | null) || [];
       const filteredCobrandRows = cobrandRows
         .filter((row) => matchCity(city, row.city, row.city_slug))
-        .filter((row) => {
-          if (!isPrivilegeCatalog) return true;
-          if (refId) return true;
-          if (refCode && refMemberIds.size > 0) {
-            return refMemberIds.has(String(row.primary_member_id || "")) || refMemberIds.has(String(row.secondary_member_id || ""));
-          }
-          if (isPrivilegeCatalog && (refCode || refId)) return true;
-          return true;
-        });
+        .filter(() => true);
 
       const memberIds = Array.from(
         new Set(
