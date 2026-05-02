@@ -392,13 +392,14 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 
 /* Demo partnership module */
 .demo-partnership {
-  margin: 14px 24px 0;
+  margin-top: 18px;
   border: 1px solid rgba(0,200,150,.3);
   background: linear-gradient(145deg, rgba(6,18,26,.98), rgba(8,35,28,.96));
   border-radius: 16px;
   padding: 14px;
   position: relative;
   z-index: 1;
+  max-width: 560px;
 }
 .demo-partnership-kicker {
   display: inline-flex;
@@ -646,6 +647,11 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hero-eyebrow">Catalogue Privilège Popey</div>
       <h1 class="hero-title">Vos avantages<br><em>exclusifs</em> grâce<br>à Jean.</h1>
       <p class="hero-sub">Jean fait partie du réseau Popey — un club de 150 professionnels de confiance sur le Grand Dax. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.</p>
+      <div class="demo-partnership">
+        <div class="demo-partnership-kicker">Partenariat demo</div>
+        <div class="demo-partnership-copy">Crée un lien d'éclaireur en live pour ta démonstration. En 20 secondes tu obtiens le lien catalogue + l'accès webapp screen 4.</div>
+        <button class="demo-partnership-btn" id="openDemoPartnershipBtn" type="button">Devenir partenaire apporteur (demo)</button>
+      </div>
     </div>
 
     <div class="hero-stats">
@@ -653,11 +659,6 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hs-item"><div class="hs-val">5</div><div class="hs-lbl">Sphères</div></div>
       <div class="hs-item"><div class="hs-val">100%</div><div class="hs-lbl">Vérifiés</div></div>
       <div class="hs-item"><div class="hs-val">Dax</div><div class="hs-lbl">Zone</div></div>
-    </div>
-    <div class="demo-partnership">
-      <div class="demo-partnership-kicker">Partenariat demo</div>
-      <div class="demo-partnership-copy">Crée un lien d'éclaireur en live pour ta démonstration. En 20 secondes tu obtiens le lien catalogue + l'accès webapp screen 4.</div>
-      <button class="demo-partnership-btn" id="openDemoPartnershipBtn" type="button">Devenir partenaire apporteur (demo)</button>
     </div>
   </div>
 

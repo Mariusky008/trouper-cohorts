@@ -309,6 +309,12 @@ function buildEclaireurRecruitmentWhatsappHref(input: {
 
 function openWhatsAppFromGesture(href: string) {
   if (typeof window === "undefined") return false;
+  const isWhatsAppLink = /^(whatsapp:\/\/|https?:\/\/(?:wa\.me|api\.whatsapp\.com))/i.test(href);
+  if (isWhatsAppLink) {
+    // Deep-link direct: plus fiable pour conserver le message pre-rempli.
+    window.location.assign(href);
+    return true;
+  }
   const opened = window.open(href, "_blank", "noopener,noreferrer");
   if (opened) return true;
   window.location.assign(href);
@@ -732,23 +738,10 @@ export default function EclaireurWebappPreviewPage() {
       return;
     }
     const message = buildBulkOfferShareMessage(privilegeCatalogHref);
-    // Force l'ouverture WhatsApp avec texte pre-rempli sur l'ecran multi-selection.
-    // Les URLs canoniques wa.me / api.whatsapp.com sont les plus stables selon les devices.
+    // Ouvre une seule URL WhatsApp pour eviter qu'un fallback "ecrase" le message.
     const encoded = encodeURIComponent(message);
-    const webHrefPrimary = `https://wa.me/?text=${encoded}`;
-    const webHrefFallback = `https://api.whatsapp.com/send?text=${encoded}`;
-    const appHrefFallback = `whatsapp://send?text=${encoded}`;
-    openWhatsAppFromGesture(webHrefPrimary);
-    setTimeout(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        openWhatsAppFromGesture(webHrefFallback);
-      }
-    }, 450);
-    setTimeout(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        openWhatsAppFromGesture(appHrefFallback);
-      }
-    }, 900);
+    const whatsappHref = `https://api.whatsapp.com/send?text=${encoded}&app_absent=0`;
+    openWhatsAppFromGesture(whatsappHref);
     setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
   }
 
