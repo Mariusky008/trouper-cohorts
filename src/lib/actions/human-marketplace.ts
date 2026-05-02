@@ -85,8 +85,12 @@ type MarketplaceCobrandRow = {
   id: string;
   city: string;
   city_slug: string;
-  primary_member_id: string;
-  secondary_member_id: string;
+  primary_member_id: string | null;
+  secondary_member_id: string | null;
+  primary_member_name: string | null;
+  primary_member_metier: string | null;
+  secondary_member_name: string | null;
+  secondary_member_metier: string | null;
   primary_place_id: string | null;
   secondary_place_id: string | null;
   pack_title: string;
@@ -257,7 +261,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     const { data: cobrandData, error: cobrandError } = await supabaseAdmin
       .from("human_marketplace_cobrand_offers")
       .select(
-        "id,city,city_slug,primary_member_id,secondary_member_id,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
+        "id,city,city_slug,primary_member_id,secondary_member_id,primary_member_name,primary_member_metier,secondary_member_name,secondary_member_metier,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
       )
       .order("updated_at", { ascending: false })
       .limit(200);

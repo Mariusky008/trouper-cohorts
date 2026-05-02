@@ -31,8 +31,12 @@ type CobrandOfferRow = {
   id: string;
   city: string;
   city_slug: string;
-  primary_member_id: string;
-  secondary_member_id: string;
+  primary_member_id: string | null;
+  secondary_member_id: string | null;
+  primary_member_name: string | null;
+  primary_member_metier: string | null;
+  secondary_member_name: string | null;
+  secondary_member_metier: string | null;
   primary_place_id: string | null;
   secondary_place_id: string | null;
   pack_title: string;
@@ -243,12 +247,6 @@ export async function GET(request: NextRequest) {
       .filter(Boolean);
     if (spheres.length > 0) query = query.in("sphere_key", spheres);
 
-    // Strict referral filtering for privilege catalogue:
-    // - `ref_id` => owner member link
-    // - `ref` => accepted offer referral code link
-    if (isPrivilegeCatalog && refId) {
-      query = query.eq("owner_member_id", refId);
-    }
     if (isPrivilegeCatalog && !refId && refCode) {
       const { data: linkedOffers } = await supabase
         .from("human_marketplace_offers")
@@ -277,9 +275,8 @@ export async function GET(request: NextRequest) {
         ),
       );
       if (linkedPlaceIds.length === 0) {
-        return NextResponse.json({ places: [], cities: [], summary: { total: 0, sale: 0, dispo: 0 } });
+        // Keep city-wide catalogue visible even when referral code has no linked accepted places yet.
       }
-      query = query.in("id", linkedPlaceIds);
     }
 
     if (isPrivilegeCatalog && !hasReferralContext) {
@@ -405,7 +402,7 @@ export async function GET(request: NextRequest) {
       const { data: cobrandData, error: cobrandError } = await supabase
         .from("human_marketplace_cobrand_offers")
         .select(
-          "id,city,city_slug,primary_member_id,secondary_member_id,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
+          "id,city,city_slug,primary_member_id,secondary_member_id,primary_member_name,primary_member_metier,secondary_member_name,secondary_member_metier,primary_place_id,secondary_place_id,pack_title,pack_subtitle,primary_offer_label,primary_offer_value_eur,secondary_offer_label,secondary_offer_value_eur,commission_note,status,updated_at",
         )
         .eq("status", "active")
         .order("updated_at", { ascending: false })
@@ -420,11 +417,11 @@ export async function GET(request: NextRequest) {
         .filter((row) => matchCity(city, row.city, row.city_slug))
         .filter((row) => {
           if (!isPrivilegeCatalog) return true;
-          if (refId) return row.primary_member_id === refId || row.secondary_member_id === refId;
+          if (refId) return true;
           if (refCode && refMemberIds.size > 0) {
-            return refMemberIds.has(row.primary_member_id) || refMemberIds.has(row.secondary_member_id);
+            return refMemberIds.has(String(row.primary_member_id || "")) || refMemberIds.has(String(row.secondary_member_id || ""));
           }
-          if (isPrivilegeCatalog && (refCode || refId)) return false;
+          if (isPrivilegeCatalog && (refCode || refId)) return true;
           return true;
         });
 
@@ -491,15 +488,15 @@ export async function GET(request: NextRequest) {
       );
 
       cobrandOffers = filteredCobrandRows.map((row) => {
-        const primaryMember = memberMap.get(row.primary_member_id) || {
-          id: row.primary_member_id,
-          name: "Membre Popey",
-          metier: "Professionnel",
+        const primaryMember = (row.primary_member_id ? memberMap.get(row.primary_member_id) : null) || {
+          id: row.primary_member_id || `anonymous-${row.id}-1`,
+          name: trim(row.primary_member_name) || "Membre Popey",
+          metier: trim(row.primary_member_metier) || "Professionnel",
         };
-        const secondaryMember = memberMap.get(row.secondary_member_id) || {
-          id: row.secondary_member_id,
-          name: "Membre Popey",
-          metier: "Professionnel",
+        const secondaryMember = (row.secondary_member_id ? memberMap.get(row.secondary_member_id) : null) || {
+          id: row.secondary_member_id || `anonymous-${row.id}-2`,
+          name: trim(row.secondary_member_name) || "Membre Popey",
+          metier: trim(row.secondary_member_metier) || "Professionnel",
         };
         const primaryValue = Number(row.primary_offer_value_eur || 0);
         const secondaryValue = Number(row.secondary_offer_value_eur || 0);

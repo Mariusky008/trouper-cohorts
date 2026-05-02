@@ -118,10 +118,32 @@ export default async function AdminHumainMarketplacePage({
     });
   }
   const acceptedMembers = snapshot.members.filter((member) => acceptedMemberIds.has(member.id));
-  const selectableMembers = acceptedMembers.length > 0 ? acceptedMembers : snapshot.members;
-  const defaultPrimaryMemberId = selectableMembers.some((member) => member.id === requestedPrimaryMemberId)
+  const acceptedOfferCandidates = snapshot.offers
+    .filter((offer) => offer.status === "accepted")
+    .map((offer) => {
+      const resolvedId = resolveMemberIdForOffer(offer);
+      const selectorValue = resolvedId || `offer:${offer.id}`;
+      const baseName = String(offer.full_name || "Membre Popey").trim();
+      const metier = String(offer.metier || "").trim();
+      const label = metier ? `${baseName} · ${metier}` : baseName;
+      return { id: selectorValue, label };
+    });
+  const candidateMap = new Map<string, { id: string; label: string }>();
+  acceptedMembers.forEach((member) => {
+    candidateMap.set(member.id, { id: member.id, label: member.label });
+  });
+  acceptedOfferCandidates.forEach((candidate) => {
+    if (!candidateMap.has(candidate.id)) candidateMap.set(candidate.id, candidate);
+  });
+  if (candidateMap.size === 0) {
+    snapshot.members.forEach((member) => {
+      candidateMap.set(member.id, { id: member.id, label: member.label });
+    });
+  }
+  const selectableCandidates = Array.from(candidateMap.values());
+  const defaultPrimaryMemberId = selectableCandidates.some((member) => member.id === requestedPrimaryMemberId)
     ? requestedPrimaryMemberId
-    : selectableMembers[0]?.id || "";
+    : selectableCandidates[0]?.id || "";
   const defaultCity = requestedCobrandCity || manualPlaces[0]?.city || "Dax";
   const defaultPrimaryPlaceId = manualPlaces.some((place) => place.id === requestedPrimaryPlaceId) ? requestedPrimaryPlaceId : "";
   const activeCobrandOffers = snapshot.cobrandOffers.filter((row) => row.status === "active").length;
@@ -607,7 +629,7 @@ export default async function AdminHumainMarketplacePage({
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
               <p className="text-xs font-black uppercase tracking-wide text-amber-900">Bouton rapide par membre accepté</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {selectableMembers.map((member) => (
+                {selectableCandidates.map((member) => (
                   <Link
                     key={member.id}
                     href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(member.id)}`}
@@ -629,7 +651,7 @@ export default async function AdminHumainMarketplacePage({
               <div className="grid gap-2 md:grid-cols-2">
                 <select name="primary_member_id" defaultValue={defaultPrimaryMemberId} className="h-9 rounded border bg-background px-2 text-xs">
                   <option value="">Membre 1 (accepté)</option>
-                  {selectableMembers.map((member) => (
+                  {selectableCandidates.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.label}
                     </option>
@@ -637,7 +659,7 @@ export default async function AdminHumainMarketplacePage({
                 </select>
                 <select name="secondary_member_id" defaultValue="" className="h-9 rounded border bg-background px-2 text-xs">
                   <option value="">Membre 2 (accepté)</option>
-                  {selectableMembers.map((member) => (
+                  {selectableCandidates.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.label}
                     </option>
@@ -703,8 +725,14 @@ export default async function AdminHumainMarketplacePage({
 
             <div className="mt-3 space-y-2">
               {snapshot.cobrandOffers.slice(0, 80).map((pack) => {
-                const firstLabel = membersById.get(pack.primary_member_id) || "Membre 1";
-                const secondLabel = membersById.get(pack.secondary_member_id) || "Membre 2";
+                const firstLabel =
+                  (pack.primary_member_id ? membersById.get(pack.primary_member_id) : "") ||
+                  pack.primary_member_name ||
+                  "Membre 1";
+                const secondLabel =
+                  (pack.secondary_member_id ? membersById.get(pack.secondary_member_id) : "") ||
+                  pack.secondary_member_name ||
+                  "Membre 2";
                 const total = Number(pack.primary_offer_value_eur || 0) + Number(pack.secondary_offer_value_eur || 0);
                 return (
                   <article key={pack.id} className="rounded border p-2 text-xs">

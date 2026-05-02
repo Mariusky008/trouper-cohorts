@@ -30,6 +30,16 @@ function trim(value: unknown): string {
   return String(value || "").trim();
 }
 
+function normalizeName(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = trim(formData.get("current_url")) || "/admin/humain/marketplace";
@@ -87,10 +97,10 @@ export async function POST(request: Request) {
     });
   }
 
-  const primaryMemberId = trim(formData.get("primary_member_id"));
-  const secondaryMemberId = trim(formData.get("secondary_member_id"));
-  const primaryPlaceId = trim(formData.get("primary_place_id")) || null;
-  const secondaryPlaceId = trim(formData.get("secondary_place_id")) || null;
+  const primarySelector = trim(formData.get("primary_member_id"));
+  const secondarySelector = trim(formData.get("secondary_member_id"));
+  let primaryPlaceId = trim(formData.get("primary_place_id")) || null;
+  let secondaryPlaceId = trim(formData.get("secondary_place_id")) || null;
   const cityRaw = trim(formData.get("city"));
   const packTitle = trim(formData.get("pack_title"));
   const packSubtitle = trim(formData.get("pack_subtitle")) || null;
@@ -102,21 +112,72 @@ export async function POST(request: Request) {
   const primaryValue = Number(primaryValueRaw.replace(",", "."));
   const secondaryValue = Number(secondaryValueRaw.replace(",", "."));
 
-  if (!primaryMemberId || !secondaryMemberId) return fail("Sélectionne deux membres acceptés.");
-  if (primaryMemberId === secondaryMemberId) return fail("Les deux membres doivent être différents.");
+  if (!primarySelector || !secondarySelector) return fail("Sélectionne deux membres acceptés.");
   if (!packTitle) return fail("Nom du pack obligatoire.");
   if (!primaryOfferLabel || !secondaryOfferLabel) return fail("Les deux offres doivent être renseignées.");
   if (!Number.isFinite(primaryValue) || primaryValue < 0 || !Number.isFinite(secondaryValue) || secondaryValue < 0) {
     return fail("Montants co-brandés invalides.");
   }
 
+  const resolveSelector = async (selector: string) => {
+    if (selector.startsWith("offer:")) {
+      const offerId = selector.replace(/^offer:/, "").trim();
+      const { data: offer } = await supabaseAdmin
+        .from("human_marketplace_offers")
+        .select("id,full_name,metier,place_id")
+        .eq("id", offerId)
+        .eq("status", "accepted")
+        .maybeSingle();
+      return {
+        memberId: null as string | null,
+        name: trim(offer?.full_name) || "Membre Popey",
+        metier: trim(offer?.metier) || "Professionnel",
+        placeId: trim(offer?.place_id) || null,
+      };
+    }
+    const { data: member } = await supabaseAdmin
+      .from("human_members")
+      .select("id,first_name,last_name,metier")
+      .eq("id", selector)
+      .maybeSingle();
+    if (!member) {
+      return {
+        memberId: null as string | null,
+        name: "Membre Popey",
+        metier: "Professionnel",
+        placeId: null as string | null,
+      };
+    }
+    const name = [trim(member.first_name), trim(member.last_name)].filter(Boolean).join(" ").trim() || "Membre Popey";
+    return {
+      memberId: trim(member.id) || null,
+      name,
+      metier: trim(member.metier) || "Professionnel",
+      placeId: null as string | null,
+    };
+  };
+
+  const [primaryResolved, secondaryResolved] = await Promise.all([resolveSelector(primarySelector), resolveSelector(secondarySelector)]);
+  if (
+    (primaryResolved.memberId && secondaryResolved.memberId && primaryResolved.memberId === secondaryResolved.memberId) ||
+    (!primaryResolved.memberId && !secondaryResolved.memberId && normalizeName(primaryResolved.name) === normalizeName(secondaryResolved.name))
+  ) {
+    return fail("Les deux membres doivent être différents.");
+  }
+  if (!primaryPlaceId && primaryResolved.placeId) primaryPlaceId = primaryResolved.placeId;
+  if (!secondaryPlaceId && secondaryResolved.placeId) secondaryPlaceId = secondaryResolved.placeId;
+
   const citySlug = slugify(cityRaw || "dax");
   const cityLabel = cityRaw || "Dax";
   const payload = {
     city: cityLabel,
     city_slug: citySlug,
-    primary_member_id: primaryMemberId,
-    secondary_member_id: secondaryMemberId,
+    primary_member_id: primaryResolved.memberId,
+    secondary_member_id: secondaryResolved.memberId,
+    primary_member_name: primaryResolved.name,
+    primary_member_metier: primaryResolved.metier,
+    secondary_member_name: secondaryResolved.name,
+    secondary_member_metier: secondaryResolved.metier,
     primary_place_id: primaryPlaceId,
     secondary_place_id: secondaryPlaceId,
     pack_title: packTitle,
