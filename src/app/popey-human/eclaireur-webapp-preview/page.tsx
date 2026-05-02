@@ -324,6 +324,8 @@ function openWhatsAppFromGesture(href: string) {
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
   const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
+  const mode = (searchParams.get("mode") || "").trim().toLowerCase();
+  const isPublicApporteurMode = mode === "public_apporteur";
   const initialScreenFromUrl = useMemo(() => {
     const raw = Number(searchParams.get("screen") || "1");
     if (Number.isFinite(raw) && raw >= 1 && raw <= 4) return raw - 1;
@@ -636,7 +638,7 @@ export default function EclaireurWebappPreviewPage() {
   function onSwipeEnd() {
     if (touchStartX === null || touchEndX === null) return;
     const delta = touchStartX - touchEndX;
-    if (delta > 45) setActiveScreen((v) => Math.min(3, v + 1));
+    if (delta > 45) setActiveScreen((v) => Math.min(screens.length - 1, v + 1));
     if (delta < -45) setActiveScreen((v) => Math.max(0, v - 1));
     setTouchStartX(null);
     setTouchEndX(null);
@@ -745,6 +747,17 @@ export default function EclaireurWebappPreviewPage() {
     setSelectionMessage("WhatsApp ouvert. Selectionne plusieurs contacts puis envoie.");
   }
 
+  async function copyMassCatalogueMessage() {
+    const message = buildBulkOfferShareMessage(privilegeCatalogHref);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable");
+      await navigator.clipboard.writeText(message);
+      setSelectionMessage("Message + lien copies. Si WhatsApp n affiche rien, colle ce texte en bas.");
+    } catch {
+      setSelectionMessage("Copie auto indisponible ici. Ouvre WhatsApp puis copie-colle le texte du partage manuellement.");
+    }
+  }
+
   function skipSuggestion() {
     if (suggestionCandidates.length === 0) return;
     setSuggestionIndex((current) => (current + 1) % suggestionCandidates.length);
@@ -758,7 +771,62 @@ export default function EclaireurWebappPreviewPage() {
     setSelectionMessage("");
   }
 
-  const screens = [
+  const screens = isPublicApporteurMode
+    ? [
+        {
+          label: "Accueil",
+          subtitle: "Mode apporteur",
+          content: (
+            <ScreenPublicAffiliateWelcome
+              sponsorName={portalData?.sponsorName || null}
+              scoutFirstName={portalData?.scoutFirstName || null}
+              importedCount={importedContacts.length}
+              onImportFile={openContactImportPicker}
+              onImportDirect={() => importContactsFromDirectPicker(importedContacts.length > 0 ? "append" : "replace")}
+              onGoShare={() => setActiveScreen(1)}
+              supportsDirectContactPicker={supportsDirectContactPicker}
+              isImportingContacts={isImportingContacts}
+            />
+          ),
+        },
+        {
+          label: "Partage",
+          subtitle: "Envoi WhatsApp",
+          content: (
+            <ScreenSuggestion
+              dayLetters={dayLetters}
+              todayDayIndex={todayDayIndex}
+              streak={streak}
+              suggestion={suggestion}
+              selectedTargetReward={selectedTarget.rewardType === "fixed" ? `${selectedTarget.rewardValue} EUR` : `${selectedTarget.rewardValue}%`}
+              sponsorName={portalData?.sponsorName || null}
+              sponsorVille={portalData?.sponsorVille || null}
+              importedCount={importedContacts.length}
+              importedContacts={importedContacts}
+              suggestionCandidatesCount={suggestionCandidates.length}
+              importSummary={importSummary}
+              importError={importError}
+              selectionMessage={selectionMessage}
+              supportsDirectContactPicker={supportsDirectContactPicker}
+              isImportingContacts={isImportingContacts}
+              suggestedMonthlyContacts={suggestedMonthlyContacts}
+              suggestedConversions={suggestedConversions}
+              suggestedGain={suggestedGain}
+              onImportFile={openContactImportPicker}
+              onImportDirect={() => importContactsFromDirectPicker(importedContacts.length > 0 ? "append" : "replace")}
+              onRecommend={useSuggestedContact}
+              onSkip={skipSuggestion}
+              onSendMassCatalogue={sendMassCatalogueToWhatsApp}
+              onCopyMassCatalogueMessage={copyMassCatalogueMessage}
+              onClearContacts={clearImportedContacts}
+              onOpenImportHelp={() => setShowImportHelp(true)}
+              onGoSubmit={() => setActiveScreen(1)}
+              publicApporteurMode
+            />
+          ),
+        },
+      ]
+    : [
     {
       label: "Ecran 1",
       subtitle: "Accueil eclaireur",
@@ -851,13 +919,19 @@ export default function EclaireurWebappPreviewPage() {
           onRecommend={useSuggestedContact}
           onSkip={skipSuggestion}
           onSendMassCatalogue={sendMassCatalogueToWhatsApp}
+          onCopyMassCatalogueMessage={copyMassCatalogueMessage}
           onClearContacts={clearImportedContacts}
           onOpenImportHelp={() => setShowImportHelp(true)}
           onGoSubmit={() => setActiveScreen(1)}
+          publicApporteurMode={false}
         />
       ),
     },
   ];
+
+  useEffect(() => {
+    setActiveScreen((current) => Math.min(Math.max(current, 0), Math.max(0, screens.length - 1)));
+  }, [screens.length]);
 
   return (
     <main className={`${dmSans.className} min-h-screen bg-[#070B16] text-[#EEF2F7]`}>
@@ -872,7 +946,13 @@ export default function EclaireurWebappPreviewPage() {
             <div className="flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${activeScreen * 100}%)` }}>
               {screens.map((screen) => (
                 <div key={screen.label} className="w-full shrink-0">
-                  <PhoneFrame activeScreen={activeScreen} onChangeScreen={setActiveScreen}>{screen.content}</PhoneFrame>
+                  <PhoneFrame
+                    activeScreen={activeScreen}
+                    onChangeScreen={setActiveScreen}
+                    tabs={screens.map((screen, idx) => ({ label: screen.label, idx }))}
+                  >
+                    {screen.content}
+                  </PhoneFrame>
                 </div>
               ))}
             </div>
@@ -1364,9 +1444,11 @@ function ScreenSuggestion({
   onRecommend,
   onSkip,
   onSendMassCatalogue,
+  onCopyMassCatalogueMessage,
   onClearContacts,
   onOpenImportHelp,
   onGoSubmit,
+  publicApporteurMode = false,
 }: {
   dayLetters: string[];
   todayDayIndex: number;
@@ -1391,9 +1473,11 @@ function ScreenSuggestion({
   onRecommend: () => void;
   onSkip: () => void;
   onSendMassCatalogue: () => void;
+  onCopyMassCatalogueMessage: () => void;
   onClearContacts: () => void;
   onOpenImportHelp: () => void;
   onGoSubmit: () => void;
+  publicApporteurMode?: boolean;
 }) {
   const hasContacts = importedCount > 0;
   const suggestionRecruitmentHref = useMemo(() => {
@@ -1410,6 +1494,86 @@ function ScreenSuggestion({
     [importedContacts],
   );
   const showStickyMassCta = hasContacts && validWhatsappCount > 0;
+  if (publicApporteurMode) {
+    return (
+      <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Mode apporteur</p>
+        <h2 className={`${syne.className} mt-2 text-[clamp(34px,9.5vw,52px)] font-black leading-[0.98]`}>Envoyer le catalogue<br />a plusieurs contacts.</h2>
+        <p className="mt-2 text-[clamp(18px,4.8vw,22px)] leading-[1.3] text-white/75">Importe tes contacts, puis partage en 1 clic sur WhatsApp.</p>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-[#161D2E] p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/45">Contacts importes</p>
+          <p className="mt-1 text-[30px] font-black leading-none text-[#00D4A0]">{importedCount}</p>
+          <p className="text-[12px] text-white/60">Disponible(s) pour le partage</p>
+          <div className="mt-3 grid grid-cols-1 gap-2">
+            <button
+              type="button"
+              disabled={isImportingContacts}
+              onClick={onImportFile}
+              className="h-11 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[12px] font-bold text-[#00D4A0] disabled:opacity-60"
+            >
+              {isImportingContacts ? "Import..." : importedCount > 0 ? "Ajouter d autres contacts" : "Telecharger mes contacts (.vcf/.csv)"}
+            </button>
+            {supportsDirectContactPicker ? (
+              <button
+                type="button"
+                disabled={isImportingContacts}
+                onClick={onImportDirect}
+                className="h-10 rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
+              >
+                Autoriser acces direct telephone
+              </button>
+            ) : null}
+            {importedCount > 0 ? (
+              <button
+                type="button"
+                onClick={onClearContacts}
+                className="h-10 rounded-xl border border-red-300/35 bg-red-500/10 text-[11px] font-bold text-red-200"
+              >
+                Supprimer mes contacts importes
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-2 text-[12px] text-white/65">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
+          {importError ? <p className="mt-2 rounded-lg border border-red-300/35 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">{importError}</p> : null}
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-[#00D4A0]/20 bg-[#0D1424] p-3">
+          <p className="text-[11px] font-bold text-white">Partage en masse</p>
+          <button
+            type="button"
+            onClick={onCopyMassCatalogueMessage}
+            className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/8 text-[11px] font-bold uppercase tracking-[0.04em] text-white/85"
+          >
+            Copier message + lien (secours)
+          </button>
+          <button
+            type="button"
+            onClick={onSendMassCatalogue}
+            className="mt-2 h-12 w-full rounded-xl border border-[#25D366]/55 bg-gradient-to-r from-[#25D366]/30 to-[#1FAA54]/20 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366] shadow-[0_8px_22px_rgba(37,211,102,0.18)]"
+          >
+            💬 Envoyer le catalogue a plusieurs contacts
+          </button>
+          <p className="mt-2 text-[10px] text-white/55">Si le message n apparait pas dans WhatsApp, coche un contact puis colle le texte copie.</p>
+          <p className="mt-2 text-[11px] text-white/65">{validWhatsappCount} contact(s) avec numero WhatsApp valide detecte(s).</p>
+          {selectionMessage ? <p className="mt-2 text-[11px] text-white/70">{selectionMessage}</p> : null}
+        </div>
+
+        {showStickyMassCta ? (
+          <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+86px)] z-20 mt-3 rounded-2xl border border-[#25D366]/45 bg-[#0A1322]/92 p-2 backdrop-blur">
+            <button
+              type="button"
+              onClick={onSendMassCatalogue}
+              className="h-11 w-full rounded-xl border border-[#25D366]/60 bg-gradient-to-r from-[#25D366]/35 to-[#1FAA54]/22 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366] shadow-[0_8px_24px_rgba(37,211,102,0.18)]"
+            >
+              💬 Envoyer le catalogue maintenant
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#F5A623]">Popey du jour</p>
@@ -1529,12 +1693,21 @@ function ScreenSuggestion({
             </p>
             <button
               type="button"
+              onClick={onCopyMassCatalogueMessage}
+              className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/8 text-[11px] font-bold uppercase tracking-[0.04em] text-white/85"
+            >
+              Copier message + lien (secours)
+            </button>
+            <button
+              type="button"
               onClick={onSendMassCatalogue}
               className="mt-2 h-12 w-full rounded-xl border border-[#25D366]/55 bg-gradient-to-r from-[#25D366]/30 to-[#1FAA54]/20 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366] shadow-[0_8px_22px_rgba(37,211,102,0.18)]"
             >
               💬 Envoyer le catalogue a plusieurs contacts
             </button>
-            <p className="mt-2 text-[10px] text-white/55">Tu choisis les destinataires directement dans WhatsApp, puis tu envoies en 1 fois.</p>
+            <p className="mt-2 text-[10px] text-white/55">
+              Tu choisis les destinataires dans WhatsApp. Si le message n apparait pas, coche un contact puis colle le texte copie.
+            </p>
             <p className="mt-2 text-[11px] text-white/65">
               {validWhatsappCount} contact(s) avec numero WhatsApp valide detecte(s).
             </p>
@@ -1660,22 +1833,19 @@ function PhoneFrame({
   children,
   activeScreen,
   onChangeScreen,
+  tabs,
 }: {
   children: ReactNode;
   activeScreen: number;
   onChangeScreen: (value: number) => void;
+  tabs: Array<{ label: string; idx: number }>;
 }) {
   return (
     <article className="relative min-h-[100dvh] bg-[#070B16]">
       {children}
       <nav className="pointer-events-auto absolute inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
-        <div className="grid grid-cols-4 gap-2 rounded-[22px] border border-white/15 bg-[#0E1213]/95 p-2 shadow-[0_12px_42px_rgba(0,0,0,0.45)] backdrop-blur">
-          {[
-            { label: "Accueil", idx: 0 },
-            { label: "Soumettre", idx: 1 },
-            { label: "Suivi", idx: 2 },
-            { label: "Suggestion", idx: 3 },
-          ].map((item) => (
+        <div className={`grid gap-2 rounded-[22px] border border-white/15 bg-[#0E1213]/95 p-2 shadow-[0_12px_42px_rgba(0,0,0,0.45)] backdrop-blur ${tabs.length <= 2 ? "grid-cols-2" : tabs.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
+          {tabs.map((item) => (
             <button
               key={item.label}
               type="button"
@@ -1692,6 +1862,74 @@ function PhoneFrame({
         </div>
       </nav>
     </article>
+  );
+}
+
+function ScreenPublicAffiliateWelcome({
+  sponsorName,
+  scoutFirstName,
+  importedCount,
+  onImportFile,
+  onImportDirect,
+  onGoShare,
+  supportsDirectContactPicker,
+  isImportingContacts,
+}: {
+  sponsorName: string | null;
+  scoutFirstName: string | null;
+  importedCount: number;
+  onImportFile: () => void;
+  onImportDirect: () => void;
+  onGoShare: () => void;
+  supportsDirectContactPicker: boolean;
+  isImportingContacts: boolean;
+}) {
+  return (
+    <div className="min-h-[100dvh] bg-[#070B16] px-4 pb-[calc(env(safe-area-inset-bottom)+96px)] pt-[calc(env(safe-area-inset-top)+16px)] sm:px-5">
+      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#00D4A0]">Nouveau mode apporteur</p>
+      <h2 className={`${syne.className} mt-2 text-[clamp(36px,10vw,54px)] font-black leading-[0.98]`}>
+        Partage tes
+        <br />
+        bons plans.
+      </h2>
+      <p className="mt-2 text-[clamp(18px,5vw,24px)] leading-[1.3] text-white/75">
+        {scoutFirstName ? `${scoutFirstName},` : "Tu"} importes tes contacts puis tu envoies ton catalogue en masse sur WhatsApp.
+      </p>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-[#161D2E] p-4">
+        <p className="text-[11px] text-white/70">Parrain actuel</p>
+        <p className="mt-1 text-[20px] font-black text-white">{sponsorName || "Popey"}</p>
+        <p className="mt-2 text-[11px] text-white/55">Contacts deja importes: {importedCount}</p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-2">
+        <button
+          type="button"
+          disabled={isImportingContacts}
+          onClick={onImportFile}
+          className="h-12 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[12px] font-bold text-[#00D4A0] disabled:opacity-60"
+        >
+          {isImportingContacts ? "Import..." : "Telecharger mes contacts (.vcf/.csv)"}
+        </button>
+        {supportsDirectContactPicker ? (
+          <button
+            type="button"
+            disabled={isImportingContacts}
+            onClick={onImportDirect}
+            className="h-11 rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
+          >
+            Autoriser acces direct telephone
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onGoShare}
+          className="h-12 rounded-xl border border-[#25D366]/55 bg-gradient-to-r from-[#25D366]/30 to-[#1FAA54]/20 text-[12px] font-black uppercase tracking-[0.04em] text-[#25D366]"
+        >
+          Aller a l ecran partage
+        </button>
+      </div>
+    </div>
   );
 }
 

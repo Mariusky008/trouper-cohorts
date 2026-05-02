@@ -105,6 +105,26 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
 }
 .hero-title em { font-style: italic; color: var(--gold); }
 .hero-sub { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.7; margin-bottom: 24px; max-width: 480px; }
+.hero-validity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(201,168,76,.35);
+  background: rgba(201,168,76,.12);
+  color: #F4E3B3;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.hero-validity span {
+  color: rgba(255,255,255,.82);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
 
 /* Stats strip */
 .hero-stats {
@@ -621,6 +641,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); }
       <div class="hero-eyebrow">Catalogue Privilège Popey</div>
       <h1 class="hero-title">Vos avantages<br><em>exclusifs</em> grâce<br>à Jean.</h1>
       <p class="hero-sub">Jean fait partie du réseau Popey — un club de 150 professionnels de confiance sur le Grand Dax. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.</p>
+      <div class="hero-validity" id="heroValidityLabel">Catalogue du mois de Mai 2026 <span>Ce catalogue est valable seulement pour le mois de Mai 2026</span></div>
     </div>
 
     <div class="hero-stats">
@@ -1656,6 +1677,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const heroSub = document.querySelector('.hero-sub');
   if (heroSub) {
     heroSub.textContent = `${__firstName} (${__safeMetier}) fait partie du réseau Popey — un club de professionnels de confiance sur ${__cityLabel}. Il vous partage ses accès privilèges. Cliquez sur "Activer mon privilège" et votre demande lui est transmise directement.`;
+  }
+  const heroValidity = document.getElementById('heroValidityLabel');
+  if (heroValidity) {
+    const monthLabelRaw = new Date().toLocaleDateString('fr-FR', { month: 'long' });
+    const monthLabel = monthLabelRaw ? monthLabelRaw.charAt(0).toUpperCase() + monthLabelRaw.slice(1) : "Mai";
+    heroValidity.innerHTML = `Catalogue du mois de ${monthLabel} 2026 <span>Ce catalogue est valable seulement pour le mois de ${monthLabel} 2026</span>`;
   }
   const catSub = document.querySelector('.cat-sub');
   if (catSub) catSub.textContent = `Offres réservées aux contacts de ${__firstName} · Activation sur ${__cityLabel}`;
