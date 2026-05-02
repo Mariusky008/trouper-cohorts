@@ -333,6 +333,7 @@ export default function EclaireurWebappPreviewPage() {
   }, [searchParams]);
   const [tokenOrCode, setTokenOrCode] = useState(urlTokenOrCode);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
+  const hasTrackedModeRef = useRef(false);
 
   const [activeScreen, setActiveScreen] = useState(initialScreenFromUrl);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -592,6 +593,31 @@ export default function EclaireurWebappPreviewPage() {
     }
   }
 
+  async function trackPublicApporteurEvent(eventType: "mode_entered" | "contacts_imported" | "mass_share_clicked" | "fallback_copy_clicked", payload: Record<string, unknown> = {}) {
+    if (!isPublicApporteurMode || !tokenOrCode) return;
+    try {
+      await fetch("/api/popey-human/eclaireur-preview/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tokenOrCode,
+          eventType,
+          payload,
+        }),
+      });
+    } catch {
+      // Silent telemetry failure.
+    }
+  }
+
+  useEffect(() => {
+    if (!isPublicApporteurMode || !tokenOrCode || hasTrackedModeRef.current) return;
+    hasTrackedModeRef.current = true;
+    void trackPublicApporteurEvent("mode_entered", {
+      initial_screen: activeScreen + 1,
+    });
+  }, [isPublicApporteurMode, tokenOrCode, activeScreen]);
+
   async function submitOpportunity() {
     if (!tokenOrCode) {
       setSubmitMessage("Ajoute ?token=... ou ?code=... dans l URL pour activer l envoi reel.");
@@ -666,6 +692,13 @@ export default function EclaireurWebappPreviewPage() {
         : `${merged.length} contacts charges depuis ${file.name}`,
     );
     setImportError("");
+    if (isPublicApporteurMode) {
+      void trackPublicApporteurEvent("contacts_imported", {
+        source: "file",
+        imported_count: contacts.length,
+        total_count: merged.length,
+      });
+    }
   }
 
   async function handleContactImportChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -713,6 +746,13 @@ export default function EclaireurWebappPreviewPage() {
           : `${merged.length} contacts charges via acces direct`,
       );
       setImportError("");
+      if (isPublicApporteurMode) {
+        void trackPublicApporteurEvent("contacts_imported", {
+          source: "direct",
+          imported_count: contacts.length,
+          total_count: merged.length,
+        });
+      }
     } catch {
       setImportError("Acces direct refuse ou indisponible. Utilise l import .vcf/.csv.");
     } finally {
@@ -739,6 +779,12 @@ export default function EclaireurWebappPreviewPage() {
       setSelectionMessage("Aucun numero WhatsApp valide importe pour l envoi en masse.");
       return;
     }
+    if (isPublicApporteurMode) {
+      void trackPublicApporteurEvent("mass_share_clicked", {
+        valid_whatsapp_count: validCount,
+        imported_count: importedContacts.length,
+      });
+    }
     const message = buildBulkOfferShareMessage(privilegeCatalogHref);
     // Ouvre une seule URL WhatsApp pour eviter qu'un fallback "ecrase" le message.
     const encoded = encodeURIComponent(message);
@@ -753,8 +799,18 @@ export default function EclaireurWebappPreviewPage() {
       if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable");
       await navigator.clipboard.writeText(message);
       setSelectionMessage("Message + lien copies. Si WhatsApp n affiche rien, colle ce texte en bas.");
+      if (isPublicApporteurMode) {
+        void trackPublicApporteurEvent("fallback_copy_clicked", {
+          success: true,
+        });
+      }
     } catch {
       setSelectionMessage("Copie auto indisponible ici. Ouvre WhatsApp puis copie-colle le texte du partage manuellement.");
+      if (isPublicApporteurMode) {
+        void trackPublicApporteurEvent("fallback_copy_clicked", {
+          success: false,
+        });
+      }
     }
   }
 
@@ -1514,28 +1570,12 @@ function ScreenSuggestion({
             >
               {isImportingContacts ? "Import..." : importedCount > 0 ? "Ajouter d autres contacts" : "Telecharger mes contacts (.vcf/.csv)"}
             </button>
-            {supportsDirectContactPicker ? (
-              <button
-                type="button"
-                disabled={isImportingContacts}
-                onClick={onImportDirect}
-                className="h-10 rounded-xl border border-white/15 bg-white/5 text-[11px] font-semibold text-white/80 disabled:opacity-60"
-              >
-                Autoriser acces direct telephone
-              </button>
-            ) : null}
-            {importedCount > 0 ? (
-              <button
-                type="button"
-                onClick={onClearContacts}
-                className="h-10 rounded-xl border border-red-300/35 bg-red-500/10 text-[11px] font-bold text-red-200"
-              >
-                Supprimer mes contacts importes
-              </button>
-            ) : null}
           </div>
           <p className="mt-2 text-[12px] text-white/65">{importSummary || `${importedCount} contact(s) importe(s)`}</p>
           {importError ? <p className="mt-2 rounded-lg border border-red-300/35 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">{importError}</p> : null}
+          {!supportsDirectContactPicker ? (
+            <p className="mt-2 text-[10px] text-white/45">Astuce: utilise un export .vcf ou .csv depuis ton telephone pour importer vite.</p>
+          ) : null}
         </div>
 
         <div className="mt-3 rounded-2xl border border-[#00D4A0]/20 bg-[#0D1424] p-3">
@@ -1543,7 +1583,7 @@ function ScreenSuggestion({
           <button
             type="button"
             onClick={onCopyMassCatalogueMessage}
-            className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/8 text-[11px] font-bold uppercase tracking-[0.04em] text-white/85"
+            className="mt-2 inline-flex text-[11px] font-semibold text-white/75 underline underline-offset-4"
           >
             Copier message + lien (secours)
           </button>
