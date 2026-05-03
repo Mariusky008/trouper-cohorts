@@ -324,6 +324,8 @@ function openWhatsAppFromGesture(href: string) {
 export default function EclaireurWebappPreviewPage() {
   const searchParams = useSearchParams();
   const urlTokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
+  const urlCity = (searchParams.get("city") || "").trim();
+  const urlCatalogue = (searchParams.get("catalogue_url") || "").trim();
   const mode = (searchParams.get("mode") || "").trim().toLowerCase();
   const isPublicApporteurMode = mode === "public_apporteur";
   const initialScreenFromUrl = useMemo(() => {
@@ -403,12 +405,13 @@ export default function EclaireurWebappPreviewPage() {
   );
   const suggestion = suggestionCandidates[suggestionIndex] || null;
   const privilegeCatalogHref = useMemo(() => {
+    if (urlCatalogue) return urlCatalogue;
     const fallbackCity = city || "Dax";
-    const cityLabel = String(portalData?.sponsorVille || fallbackCity || "").trim();
+    const cityLabel = String(urlCity || portalData?.sponsorVille || fallbackCity || "").trim();
     const citySlug = slugifyCity(cityLabel);
     if (!citySlug) return "/privilege";
     return `/privilege/${citySlug}`;
-  }, [city, portalData?.sponsorVille]);
+  }, [city, portalData?.sponsorVille, urlCatalogue, urlCity]);
   const publicApporteurRefCode = useMemo(() => {
     const shortCode = String(portalData?.shortCode || "")
       .toLowerCase()
@@ -435,10 +438,10 @@ export default function EclaireurWebappPreviewPage() {
     const query = new URLSearchParams();
     if (tokenOrCode) query.set("token", tokenOrCode);
     query.set("catalogue_url", publicApporteurCatalogueUrl);
-    query.set("city", String(portalData?.sponsorVille || city || "Dax"));
+    query.set("city", String(urlCity || portalData?.sponsorVille || city || "Dax"));
     if (portalData?.scoutFirstName) query.set("ref_name", portalData.scoutFirstName);
     return `/popey-eclaireurs-design.html?${query.toString()}`;
-  }, [city, portalData?.scoutFirstName, portalData?.sponsorVille, publicApporteurCatalogueUrl, tokenOrCode]);
+  }, [city, portalData?.scoutFirstName, portalData?.sponsorVille, publicApporteurCatalogueUrl, tokenOrCode, urlCity]);
   const suggestedMonthlyContacts = Math.min(30, importedContacts.length || 30);
   const suggestedConversions = Math.max(1, Math.round(suggestedMonthlyContacts * 0.27));
   const suggestedGain = Math.round(suggestedConversions * (selectedTarget.rewardType === "fixed" ? selectedTarget.rewardValue : 15));

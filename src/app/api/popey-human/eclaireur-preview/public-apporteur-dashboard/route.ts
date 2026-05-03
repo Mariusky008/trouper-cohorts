@@ -40,6 +40,48 @@ function normalizeRefCode(value: unknown) {
   return txt(value).toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function slugify(value: string) {
+  return txt(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function stripDepartmentSuffix(slug: string) {
+  return String(slug || "").replace(/-\d{2,3}$/, "");
+}
+
+function parseCitySlugFromCatalogueUrl(rawUrl: string) {
+  const value = txt(rawUrl);
+  if (!value) return "";
+  try {
+    const parsed = new URL(value.startsWith("http") ? value : `https://www.popey.academy${value.startsWith("/") ? value : `/${value}`}`);
+    const match = parsed.pathname.match(/\/privilege\/([^/?#]+)/i);
+    return slugify(match?.[1] || "");
+  } catch {
+    return "";
+  }
+}
+
+function cityMatch(input: { requestedCity: string; rowCity: string }) {
+  const requestedSlug = slugify(input.requestedCity);
+  if (!requestedSlug) return true;
+  const requestedBase = stripDepartmentSuffix(requestedSlug);
+  const rowSlug = slugify(input.rowCity);
+  const rowBase = stripDepartmentSuffix(rowSlug);
+  return requestedSlug === rowSlug || requestedBase === rowSlug || requestedSlug === rowBase || requestedBase === rowBase;
+}
+
+function displayCityFromSlug(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function readWorkflowStatus(metadata: Record<string, unknown> | null): "pending" | "contacted" | "in_progress" | "validated" | "refused" {
   const raw = txt(metadata?.workflow_status || metadata?.ticket_status || "pending").toLowerCase();
   if (raw === "signed") return "validated";
@@ -116,7 +158,11 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient();
   const scout = portal.scout;
   const invite = portal.invite;
-  const cityLabel = txt(portal.sponsor?.ville || scout.ville || "Dax");
+  const requestedCity = txt(request.nextUrl.searchParams.get("city"));
+  const requestedCatalogueUrl = txt(request.nextUrl.searchParams.get("catalogue_url"));
+  const cityFromCatalogueSlug = parseCitySlugFromCatalogueUrl(requestedCatalogueUrl);
+  const cityFromCatalogue = cityFromCatalogueSlug ? displayCityFromSlug(cityFromCatalogueSlug) : "";
+  const cityLabel = requestedCity || cityFromCatalogue || txt(scout.ville || portal.sponsor?.ville || "Dax");
 
   const refCodeCandidates = new Set<string>();
   const shortCode = normalizeRefCode(invite.short_code || "");
@@ -140,17 +186,18 @@ export async function GET(request: NextRequest) {
     supabase
       .from("human_marketplace_places")
       .select("id,city,sphere_key,metier,company_name,privilege_badge,offer_description,partner_offer_value_eur,status")
-      .eq("city", cityLabel)
       .order("updated_at", { ascending: false })
-      .limit(120),
+      .limit(3000),
   ]);
 
   const activations = (activationsData as ActivationRow[] | null) || [];
   const logs = (logsData as EventLogRow[] | null) || [];
-  const cityOffers = ((cityOffersData as PlaceRow[] | null) || []).filter((row) => {
-    const hasContent = txt(row.company_name) || txt(row.privilege_badge) || txt(row.offer_description);
-    return Boolean(hasContent);
-  });
+  const cityOffers = ((cityOffersData as PlaceRow[] | null) || [])
+    .filter((row) => cityMatch({ requestedCity: cityLabel, rowCity: row.city }))
+    .filter((row) => {
+      const hasContent = txt(row.company_name) || txt(row.privilege_badge) || txt(row.offer_description);
+      return Boolean(hasContent);
+    });
   const placeById = new Map(cityOffers.map((row) => [row.id, row]));
 
   const ownActivations = activations.filter((row) => {

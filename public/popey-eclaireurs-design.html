@@ -680,7 +680,11 @@ function statusClass(status) {
 
 function fetchPublicApporteurDashboard() {
   if (!__tokenOrCode) return Promise.resolve(null);
-  return fetch('/api/popey-human/eclaireur-preview/public-apporteur-dashboard?token=' + encodeURIComponent(__tokenOrCode), { cache: 'no-store' })
+  var qs = new URLSearchParams();
+  qs.set('token', __tokenOrCode);
+  if (__cityLabel) qs.set('city', __cityLabel);
+  if (__catalogueUrl) qs.set('catalogue_url', __catalogueUrl);
+  return fetch('/api/popey-human/eclaireur-preview/public-apporteur-dashboard?' + qs.toString(), { cache: 'no-store' })
     .then(function(response) {
       return response.json().catch(function() { return {}; }).then(function(payload) {
         if (!response.ok || !payload || payload.success !== true) throw new Error(payload && payload.error ? payload.error : 'Dashboard indisponible');
