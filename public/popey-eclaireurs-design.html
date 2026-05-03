@@ -103,6 +103,7 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
 .st-pending { background: var(--amber-l); color: var(--amber); border: 1px solid var(--amber-g); }
 .st-paid { background: var(--teal-l); color: var(--teal); border: 1px solid var(--teal-g); }
 .st-progress { background: var(--gold-l); color: var(--gold); border: 1px solid rgba(201,168,76,.25); }
+.st-refused { background: var(--red-l); color: var(--red); border: 1px solid rgba(229,83,75,.28); }
 
 /* OFFER CARD */
 .offer-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
@@ -174,18 +175,18 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
     <div class="wallet-card">
       <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:8px">Ton wallet Popey</div>
       <div style="font-family:var(--fd);font-size:40px;font-weight:900;color:var(--teal);line-height:1;margin-bottom:4px" id="walletAmt">180€</div>
-      <div style="font-size:12px;color:var(--t3)">Prochain versement le <strong style="color:var(--t2)">1er juin</strong></div>
+        <div style="font-size:12px;color:var(--t3)">Prochain versement le <strong style="color:var(--t2)" id="walletPayoutLabel">1er juin</strong></div>
       <div style="margin-top:16px;display:flex;gap:8px">
         <div style="flex:1;background:rgba(0,212,160,.08);border:1px solid var(--teal-g);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal)" id="nbDeals">3</div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal)" id="nbDeals">0</div>
           <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Deals signés</div>
         </div>
         <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--amber)" id="nbEnvois">47</div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--amber)" id="nbEnvois">0</div>
           <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Catalogues envoyés</div>
         </div>
         <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--t2)" id="txConv">6.4%</div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--t2)" id="txConv">0%</div>
           <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Taux conv.</div>
         </div>
       </div>
@@ -199,13 +200,13 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div style="width:36px;height:36px;border-radius:12px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📤</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:var(--t)">Envoie le catalogue de mai</div>
-          <div style="font-size:11px;color:var(--t3)">23 contacts pas encore touchés</div>
+          <div style="font-size:14px;font-weight:600;color:var(--t)" id="actionTitle">Envoie le catalogue du mois</div>
+          <div style="font-size:11px;color:var(--t3)" id="actionSubtitle">0 contact restant ce mois</div>
         </div>
       </div>
       <div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px"><span>Progression ce mois</span><span style="color:var(--teal)">24/47</span></div>
-        <div class="progress-wrap"><div class="progress-fill" style="width:51%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px"><span>Progression ce mois</span><span style="color:var(--teal)" id="progressRatio">0/0</span></div>
+        <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
       </div>
       <button class="btn btn-wa" onclick="showScreen('s-partage')">
         <span style="font-size:16px">💬</span> Envoyer le catalogue
@@ -219,17 +220,17 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
     <div class="offer-card" data-sphere="habitat">
       <div class="oc-stripe" style="background:linear-gradient(90deg,#F5A623,#C9A84C)"></div>
       <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(245,166,35,.1)">🔑</div>
+        <div class="oc-icon" style="background:rgba(245,166,35,.1)" id="featuredIcon">🎁</div>
         <div class="oc-info">
-          <div class="oc-metier">Agent immobilier</div>
-          <div class="oc-pro">Marc Fontaine · Dax</div>
-          <div class="oc-priv">🎁 500€ de remise honoraires</div>
+          <div class="oc-metier" id="featuredMetier">Aucune offre active</div>
+          <div class="oc-pro" id="featuredPro">Popey · Dax</div>
+          <div class="oc-priv" id="featuredPrivilege">🎁 Offre à venir</div>
         </div>
       </div>
       <div class="oc-share">
         <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
-          <div style="font-size:11px;color:var(--t3)">Ta comm si ça signe : <strong style="color:var(--teal)">+75€</strong></div>
-          <button class="btn btn-sm btn-wa" onclick="openShareSheet('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-CAM-003')" style="width:auto">💬 Partager</button>
+          <div style="font-size:11px;color:var(--t3)">Ta comm si ça signe : <strong style="color:var(--teal)" id="featuredCommission">+0€</strong></div>
+          <button class="btn btn-sm btn-wa" id="featuredShareBtn" onclick="openShareSheet('Popey','Offre','Offre à venir','PRIV-FEATURED-000')" style="width:auto">💬 Partager</button>
         </div>
       </div>
     </div>
@@ -242,8 +243,8 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
       <div style="width:42px;height:42px;border-radius:13px;background:rgba(0,212,160,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏋️</div>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:600;color:var(--t)">Coach sportif · Antonin L.</div>
-        <div style="font-size:11px;color:var(--t3)">Via ton lien · il y a 3 jours</div>
-        <div style="font-size:11px;color:var(--teal);margin-top:4px;font-weight:600">+60€ — versement le 1er juin</div>
+      <div style="font-size:11px;color:var(--t3)" id="lastDealMeta">Via ton lien · pas encore de deal signé</div>
+      <div style="font-size:11px;color:var(--teal);margin-top:4px;font-weight:600" id="lastDealAmount">+0€ — en attente</div>
       </div>
       <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">✓</div>
     </div>
@@ -278,13 +279,13 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-lbl">Deals sur la plateforme</div>
-        <div class="stat-val" style="color:var(--t2)">47</div>
-        <div class="stat-sub">signés ce mois · tous membres</div>
+        <div class="stat-val" style="color:var(--t2)" id="platformDealsCount">0</div>
+        <div class="stat-sub" id="platformDealsSub">signés ce mois · tous membres</div>
       </div>
       <div class="stat-card">
         <div class="stat-lbl">Tes deals à toi</div>
-        <div class="stat-val" style="color:var(--teal)">3</div>
-        <div class="stat-sub" style="color:var(--teal)">+180€ en route</div>
+        <div class="stat-val" style="color:var(--teal)" id="myDealsCount">0</div>
+        <div class="stat-sub" style="color:var(--teal)" id="myDealsSub">+0€ en route</div>
       </div>
     </div>
   </div>
@@ -370,7 +371,7 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
 <div class="screen" id="s-catalogue">
   <div class="sbar">
     <div class="sbar-time">17:14</div>
-    <div style="font-size:11px;color:var(--t3)">Dax · Mai 2025</div>
+    <div style="font-size:11px;color:var(--t3)" id="catalogueHeaderMeta">Dax · Ce mois</div>
   </div>
 
   <div class="screen-hdr">
@@ -381,7 +382,7 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
 
   <!-- FILTER -->
   <div style="padding:0 20px 14px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
-    <button onclick="filterCat(this,'all')" class="cat-chip active" style="padding:10px 4px;border-radius:12px;border:1px solid var(--teal);background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.04em;cursor:pointer;text-align:center;line-height:1.4">Tous<br><span style="font-size:11px;font-weight:900">8</span></button>
+    <button onclick="filterCat(this,'all')" class="cat-chip active" style="padding:10px 4px;border-radius:12px;border:1px solid var(--teal);background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.04em;cursor:pointer;text-align:center;line-height:1.4">Tous<br><span style="font-size:11px;font-weight:900" id="chipAllCount">0</span></button>
     <button onclick="filterCat(this,'sante')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">🌿<br><span style="font-size:10px">Santé</span></button>
     <button onclick="filterCat(this,'habitat')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">🏠<br><span style="font-size:10px">Habitat</span></button>
     <button onclick="filterCat(this,'digital')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">💻<br><span style="font-size:10px">Digital</span></button>
@@ -389,96 +390,14 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
   </div>
 
   <!-- OFFERS LIST -->
-  <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-
-    <div class="offer-card">
-      <div class="oc-stripe" style="background:linear-gradient(90deg,#F5A623,#C9A84C)"></div>
-      <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(245,166,35,.1)">🔑</div>
-        <div class="oc-info">
-          <div class="oc-metier">Agent immobilier</div>
-          <div class="oc-pro">Marc Fontaine · Dax</div>
-          <div class="oc-priv">🎁 500€ remise honoraires</div>
-        </div>
-      </div>
-      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~75€</strong></div>
-        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-CAM-001')">💬 Partager</button>
-      </div>
-    </div>
-
-    <div class="offer-card" data-sphere="sante">
-      <div class="oc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
-      <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(0,200,150,.1)">🏋️</div>
-        <div class="oc-info">
-          <div class="oc-metier">Coach sportif</div>
-          <div class="oc-pro">Antonin Lemaire · Dax</div>
-          <div class="oc-priv">🎁 -20% sur le 1er mois</div>
-        </div>
-      </div>
-      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~40€</strong></div>
-        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Antonin Lemaire','Coach sportif','-20% sur le 1er mois','PRIV-AL-CAM-002')">💬 Partager</button>
-      </div>
-    </div>
-
-    <div class="offer-card" data-sphere="digital">
-      <div class="oc-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0288D1)"></div>
-      <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(59,130,246,.1)">💻</div>
-        <div class="oc-info">
-          <div class="oc-metier">Développeur web</div>
-          <div class="oc-pro">Lucas Bernard · Bayonne</div>
-          <div class="oc-priv">🎁 -15% + maintenance offerte</div>
-        </div>
-      </div>
-      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~90€</strong></div>
-        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Lucas Bernard','Développeur web','-15% + maintenance','PRIV-LB-CAM-003')">💬 Partager</button>
-      </div>
-    </div>
-
-    <div class="offer-card" data-sphere="finance">
-      <div class="oc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#7B5EA7)"></div>
-      <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(139,92,246,.1)">⚖️</div>
-        <div class="oc-info">
-          <div class="oc-metier">Avocat d'affaires</div>
-          <div class="oc-pro">Thomas Laurent · Bayonne</div>
-          <div class="oc-priv">🎁 1re consultation offerte</div>
-        </div>
-      </div>
-      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~60€</strong></div>
-        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Thomas Laurent','Avocat','1re consultation offerte','PRIV-TL-CAM-004')">💬 Partager</button>
-      </div>
-    </div>
-
-    <div class="offer-card" data-sphere="mariage">
-      <div class="oc-stripe" style="background:linear-gradient(90deg,#F48FB1,#C2185B)"></div>
-      <div class="oc-body">
-        <div class="oc-icon" style="background:rgba(181,55,106,.1)">📸</div>
-        <div class="oc-info">
-          <div class="oc-metier">Photographe mariage</div>
-          <div class="oc-pro">Clara Petit · Dax</div>
-          <div class="oc-priv">🎁 Album photo offert</div>
-        </div>
-      </div>
-      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~112€</strong></div>
-        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Clara Petit','Photographe','Album photo offert','PRIV-CP-CAM-005')">💬 Partager</button>
-      </div>
-    </div>
-
-  </div>
+  <div id="catalogueOffersList" style="padding:0 20px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
 </div>
 
 <!-- ══ SCREEN 4 : COMMISSIONS ══ -->
 <div class="screen" id="s-commissions">
   <div class="sbar">
     <div class="sbar-time">17:14</div>
-    <div style="font-size:11px;color:var(--t3)">Mai 2025</div>
+    <div style="font-size:11px;color:var(--t3)" id="commissionsHeaderMeta">Ce mois</div>
   </div>
 
   <div class="screen-hdr">
@@ -492,17 +411,17 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
       <div style="display:flex;align-items:flex-start;justify-content:space-between">
         <div>
           <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:6px">Total à percevoir</div>
-          <div style="font-family:var(--fd);font-size:44px;font-weight:900;color:var(--teal);line-height:1">180€</div>
-          <div style="font-size:12px;color:var(--t3);margin-top:4px">Versement le <strong style="color:var(--t2)">1er juin</strong></div>
+          <div style="font-family:var(--fd);font-size:44px;font-weight:900;color:var(--teal);line-height:1" id="commTotalWallet">0€</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:4px">Versement le <strong style="color:var(--t2)" id="commPayoutLabel">1er du mois</strong></div>
         </div>
         <div style="text-align:right">
           <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Ce mois</div>
-          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--amber)">+180€</div>
-          <div style="font-size:10px;color:var(--teal);margin-top:2px">↑ vs 60€ en avril</div>
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--amber)" id="commThisMonth">+0€</div>
+          <div style="font-size:10px;color:var(--teal);margin-top:2px" id="commVsPrevious">—</div>
         </div>
       </div>
       <div style="margin-top:14px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden">
-        <div style="height:100%;width:60%;background:var(--teal);border-radius:2px"></div>
+        <div style="height:100%;width:0%;background:var(--teal);border-radius:2px" id="commGoalFill"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:6px">
         <span>0€</span><span style="color:var(--teal)">Objectif : 300€/mois</span>
@@ -515,84 +434,34 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-lbl">Total gagné</div>
-        <div class="stat-val" style="color:var(--teal)">540€</div>
+        <div class="stat-val" style="color:var(--teal)" id="commTotalWon">0€</div>
         <div class="stat-trend">depuis le début</div>
       </div>
       <div class="stat-card">
         <div class="stat-lbl">Deals signés</div>
-        <div class="stat-val">9</div>
-        <div class="stat-sub">3 ce mois</div>
+        <div class="stat-val" id="commDealsSigned">0</div>
+        <div class="stat-sub" id="commDealsSignedSub">0 ce mois</div>
       </div>
     </div>
   </div>
 
   <!-- TIMELINE COMMISSIONS -->
   <div class="pad" style="margin-bottom:12px">
-    <div class="sec-lbl">Détail mai 2025 · En cours</div>
-    <div class="card card-pad">
-      <div class="comm-row">
-        <div class="comm-av" style="background:rgba(245,166,35,.12);color:var(--amber)">MF</div>
-        <div class="comm-info">
-          <div class="comm-name">Marc Fontaine · Agent immo</div>
-          <div class="comm-meta">Via : Pierre Martin · il y a 4j</div>
-          <span class="comm-status st-pending">En attente validation</span>
-        </div>
-        <div>
-          <div class="comm-amount" style="color:var(--amber)">+75€</div>
-        </div>
-      </div>
-      <div class="comm-row">
-        <div class="comm-av" style="background:rgba(0,200,150,.12);color:var(--teal)">AL</div>
-        <div class="comm-info">
-          <div class="comm-name">Antonin Lemaire · Coach</div>
-          <div class="comm-meta">Via : Lucie Bonnet · il y a 3j</div>
-          <span class="comm-status st-paid">✓ Validé · versement J+1</span>
-        </div>
-        <div>
-          <div class="comm-amount" style="color:var(--teal)">+60€</div>
-        </div>
-      </div>
-      <div class="comm-row">
-        <div class="comm-av" style="background:rgba(59,130,246,.12);color:#4FC3F7">LB</div>
-        <div class="comm-info">
-          <div class="comm-name">Lucas Bernard · Dev web</div>
-          <div class="comm-meta">Via : Paul Vidal · il y a 1j</div>
-          <span class="comm-status st-progress">RDV pris — en cours</span>
-        </div>
-        <div>
-          <div class="comm-amount" style="color:var(--t3)">+90€ ?</div>
-        </div>
-      </div>
-    </div>
+    <div class="sec-lbl" id="commDetailTitle">Détail du mois · En cours</div>
+    <div class="card card-pad" id="commTimelineList"></div>
   </div>
 
   <!-- HISTORIQUE -->
   <div class="pad" style="margin-bottom:12px">
     <div class="sec-lbl">Historique · Versements confirmés</div>
-    <div class="card card-pad">
-      <div class="comm-row">
-        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Avril</div>
-        <div class="comm-info"><div class="comm-name">3 deals signés</div><div class="comm-meta">Versé le 1er mai</div></div>
-        <div class="comm-amount" style="color:var(--teal)">+180€</div>
-      </div>
-      <div class="comm-row">
-        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Mars</div>
-        <div class="comm-info"><div class="comm-name">2 deals signés</div><div class="comm-meta">Versé le 1er avril</div></div>
-        <div class="comm-amount" style="color:var(--teal)">+120€</div>
-      </div>
-      <div class="comm-row">
-        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Fév.</div>
-        <div class="comm-info"><div class="comm-name">1 deal signé</div><div class="comm-meta">Versé le 1er mars</div></div>
-        <div class="comm-amount" style="color:var(--teal)">+60€</div>
-      </div>
-    </div>
+    <div class="card card-pad" id="commHistoryList"></div>
   </div>
 
   <!-- BOOST -->
   <div class="pad" style="margin-bottom:20px">
     <div style="background:var(--bg3);border:1px solid var(--amber-g);border-radius:16px;padding:16px;text-align:center">
       <div style="font-size:20px;margin-bottom:8px">🎯</div>
-      <div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px">Il te manque 120€ pour atteindre 300€ ce mois</div>
+      <div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px" id="commBoostTitle">Objectif 300€ ce mois</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Envoie le catalogue à 5 contacts de plus pour y arriver</div>
       <button class="btn btn-primary" onclick="showScreen('s-partage')">Envoyer maintenant →</button>
     </div>
@@ -791,6 +660,250 @@ function addManual() {
   if (num) alert('Contact ajouté : ' + num);
 }
 
+function formatEur(value) {
+  var amount = Number(value || 0);
+  if (!Number.isFinite(amount)) amount = 0;
+  return amount.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + '€';
+}
+
+function asNumber(value) {
+  var amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function statusClass(status) {
+  if (status === 'validated') return 'st-paid';
+  if (status === 'in_progress') return 'st-progress';
+  if (status === 'refused') return 'st-refused';
+  return 'st-pending';
+}
+
+function fetchPublicApporteurDashboard() {
+  if (!__tokenOrCode) return Promise.resolve(null);
+  return fetch('/api/popey-human/eclaireur-preview/public-apporteur-dashboard?token=' + encodeURIComponent(__tokenOrCode), { cache: 'no-store' })
+    .then(function(response) {
+      return response.json().catch(function() { return {}; }).then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) throw new Error(payload && payload.error ? payload.error : 'Dashboard indisponible');
+        return payload;
+      });
+    })
+    .catch(function() { return null; });
+}
+
+function renderCatalogueOffers(offers) {
+  var container = document.getElementById('catalogueOffersList');
+  if (!container) return;
+  if (!Array.isArray(offers) || offers.length === 0) {
+    container.innerHTML = '<div class="card card-pad" style="text-align:center;color:var(--t3)">Aucune offre active pour le moment dans ta ville.</div>';
+    return;
+  }
+  container.innerHTML = offers.map(function(offer) {
+    var sphere = String(offer.sphere || 'all');
+    var color = String(offer.color || '#00A070');
+    var icon = String(offer.icon || '🎁');
+    var metier = String(offer.metier || 'Offre');
+    var pro = String(offer.pro_name || 'Partenaire Popey');
+    var privilege = String(offer.privilege || 'Offre privilège');
+    var city = String(offer.city || __cityLabel);
+    var id = String(offer.id || '');
+    var comm = Number(offer.commission_hint_eur || 0);
+    return '' +
+      '<div class="offer-card" data-sphere="' + sphere + '">' +
+      '  <div class="oc-stripe" style="background:linear-gradient(90deg,' + color + ',#0EA5A5)"></div>' +
+      '  <div class="oc-body">' +
+      '    <div class="oc-icon" style="background:rgba(255,255,255,.06)">' + icon + '</div>' +
+      '    <div class="oc-info">' +
+      '      <div class="oc-metier">' + metier + '</div>' +
+      '      <div class="oc-pro">' + pro + ' · ' + city + '</div>' +
+      '      <div class="oc-priv">🎁 ' + privilege + '</div>' +
+      '    </div>' +
+      '  </div>' +
+      '  <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">' +
+      '    <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">+' + formatEur(comm) + '</strong></div>' +
+      '    <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet(\'' + pro.replace(/'/g, "\\'") + '\',\'' + metier.replace(/'/g, "\\'") + '\',\'' + privilege.replace(/'/g, "\\'") + '\',\'' + id.replace(/'/g, "\\'") + '\')">💬 Partager</button>' +
+      '  </div>' +
+      '</div>';
+  }).join('');
+  var allCount = document.getElementById('chipAllCount');
+  if (allCount) allCount.textContent = String(offers.length);
+}
+
+function renderCommissionTimeline(rows) {
+  var list = document.getElementById('commTimelineList');
+  if (!list) return;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--t3);text-align:center;padding:8px 0">Aucune mise en relation pour le moment.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function(row) {
+    var partner = String(row.partner_name || 'Partenaire');
+    var metier = String(row.metier || 'Offre');
+    var client = String(row.client_name || 'Client');
+    var statusLabel = String(row.status_label || 'En attente');
+    var createdAt = String(row.created_at || '');
+    var dateLabel = createdAt ? new Date(createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '';
+    var initials = partner.split(/\s+/).filter(Boolean).slice(0, 2).map(function(p) { return p.charAt(0).toUpperCase(); }).join('') || 'PP';
+    var amount = Number(row.commission_eur || 0);
+    var status = String(row.status || 'pending');
+    return '' +
+      '<div class="comm-row">' +
+      '  <div class="comm-av" style="background:rgba(0,212,160,.12);color:var(--teal)">' + initials + '</div>' +
+      '  <div class="comm-info">' +
+      '    <div class="comm-name">' + partner + ' · ' + metier + '</div>' +
+      '    <div class="comm-meta">Via : ' + client + (dateLabel ? ' · ' + dateLabel : '') + '</div>' +
+      '    <span class="comm-status ' + statusClass(status) + '">' + statusLabel + '</span>' +
+      '  </div>' +
+      '  <div><div class="comm-amount" style="color:var(--teal)">+' + formatEur(amount) + '</div></div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderCommissionHistory(rows) {
+  var list = document.getElementById('commHistoryList');
+  if (!list) return;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--t3);text-align:center;padding:8px 0">Aucun versement confirmé pour le moment.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function(row) {
+    return '' +
+      '<div class="comm-row">' +
+      '  <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:72px">' + String(row.period_label || 'Mois') + '</div>' +
+      '  <div class="comm-info"><div class="comm-name">' + String(row.title || 'Versement') + '</div><div class="comm-meta">' + String(row.subtitle || '') + '</div></div>' +
+      '  <div class="comm-amount" style="color:var(--teal)">+' + formatEur(Number(row.amount_eur || 0)) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function applyDashboardData(payload) {
+  if (!payload || !payload.kpis) return;
+  var kpis = payload.kpis || {};
+  var period = payload.period || {};
+  var featured = payload.featured_offer || null;
+  var offers = Array.isArray(payload.offers) ? payload.offers : [];
+  var timeline = payload.commissions && Array.isArray(payload.commissions.timeline) ? payload.commissions.timeline : [];
+  var history = payload.commissions && Array.isArray(payload.commissions.history) ? payload.commissions.history : [];
+
+  var monthLabel = String(period.month_label || 'Ce mois');
+  var payoutLabel = String(period.payout_label || '1er du mois');
+  var city = String(payload.scout && payload.scout.city ? payload.scout.city : __cityLabel);
+
+  var hdrTag = document.querySelector('.hdr-tag');
+  if (hdrTag) hdrTag.textContent = 'Bonjour ' + (__refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Apporteur') + ' 👋';
+
+  var walletAmt = document.getElementById('walletAmt');
+  var walletPending = asNumber(kpis.wallet_pending_eur);
+  var pipelineEur = asNumber(kpis.wallet_pipeline_eur);
+  var thisMonthEur = asNumber(kpis.this_month_eur);
+  var previousMonthEur = asNumber(kpis.previous_month_eur);
+  if (walletAmt) walletAmt.textContent = formatEur(walletPending);
+  var payoutA = document.getElementById('walletPayoutLabel');
+  if (payoutA) payoutA.textContent = payoutLabel;
+  var payoutB = document.getElementById('commPayoutLabel');
+  if (payoutB) payoutB.textContent = payoutLabel;
+
+  var nbDeals = document.getElementById('nbDeals');
+  if (nbDeals) nbDeals.textContent = String(asNumber(kpis.my_deals_signed));
+  var nbEnvois = document.getElementById('nbEnvois');
+  if (nbEnvois) nbEnvois.textContent = String(asNumber(kpis.catalogues_sent_month));
+  var txConv = document.getElementById('txConv');
+  if (txConv) txConv.textContent = String(asNumber(kpis.conversion_rate_pct).toFixed(1)).replace('.0', '') + '%';
+
+  var platformDeals = document.getElementById('platformDealsCount');
+  if (platformDeals) platformDeals.textContent = String(asNumber(kpis.platform_deals_signed_month));
+  var platformDealsSub = document.getElementById('platformDealsSub');
+  if (platformDealsSub) platformDealsSub.textContent = 'signés en ' + monthLabel.toLowerCase() + ' · tous membres';
+  var myDeals = document.getElementById('myDealsCount');
+  if (myDeals) myDeals.textContent = String(asNumber(kpis.my_deals_signed));
+  var myDealsSub = document.getElementById('myDealsSub');
+  if (myDealsSub) myDealsSub.textContent = '+' + formatEur(walletPending) + ' en route';
+
+  var actionSubtitle = document.getElementById('actionSubtitle');
+  if (actionSubtitle) actionSubtitle.textContent = String(Math.max(0, asNumber(kpis.catalogues_sent_month) - asNumber(kpis.my_deals_signed_month))) + ' contacts à relancer ce mois';
+  var progressRatio = document.getElementById('progressRatio');
+  if (progressRatio) progressRatio.textContent = String(asNumber(kpis.my_deals_signed_month)) + '/' + String(asNumber(kpis.catalogues_sent_month));
+  var progressFill = document.getElementById('progressFill');
+  if (progressFill) {
+    var den = asNumber(kpis.catalogues_sent_month);
+    var num = asNumber(kpis.my_deals_signed_month);
+    var pct = den > 0 ? Math.max(0, Math.min(100, Math.round((num / den) * 100))) : 0;
+    progressFill.style.width = pct + '%';
+  }
+
+  if (featured) {
+    var featuredIcon = document.getElementById('featuredIcon');
+    if (featuredIcon) featuredIcon.textContent = String(featured.icon || '🎁');
+    var featuredMetier = document.getElementById('featuredMetier');
+    if (featuredMetier) featuredMetier.textContent = String(featured.metier || 'Offre');
+    var featuredPro = document.getElementById('featuredPro');
+    if (featuredPro) featuredPro.textContent = String(featured.pro_name || 'Partenaire') + ' · ' + String(featured.city || city);
+    var featuredPrivilege = document.getElementById('featuredPrivilege');
+    if (featuredPrivilege) featuredPrivilege.textContent = '🎁 ' + String(featured.privilege || 'Offre privilège');
+    var featuredCommission = document.getElementById('featuredCommission');
+    if (featuredCommission) featuredCommission.textContent = '+' + formatEur(Number(featured.commission_hint_eur || 0));
+    var featuredShareBtn = document.getElementById('featuredShareBtn');
+    if (featuredShareBtn) {
+      featuredShareBtn.setAttribute('onclick', "openShareSheet('" + String(featured.pro_name || 'Partenaire').replace(/'/g, "\\'") + "','" + String(featured.metier || 'Offre').replace(/'/g, "\\'") + "','" + String(featured.privilege || 'Offre').replace(/'/g, "\\'") + "','" + String(featured.id || 'PRIV-FEATURED-000').replace(/'/g, "\\'") + "')");
+    }
+  }
+
+  var catalogueHeaderMeta = document.getElementById('catalogueHeaderMeta');
+  if (catalogueHeaderMeta) catalogueHeaderMeta.textContent = city + ' · ' + monthLabel;
+  var commissionsHeaderMeta = document.getElementById('commissionsHeaderMeta');
+  if (commissionsHeaderMeta) commissionsHeaderMeta.textContent = monthLabel;
+  var commDetailTitle = document.getElementById('commDetailTitle');
+  if (commDetailTitle) commDetailTitle.textContent = 'Détail ' + monthLabel.toLowerCase() + ' · En cours';
+
+  var commTotalWallet = document.getElementById('commTotalWallet');
+  if (commTotalWallet) commTotalWallet.textContent = formatEur(walletPending);
+  var commThisMonth = document.getElementById('commThisMonth');
+  if (commThisMonth) commThisMonth.textContent = '+' + formatEur(thisMonthEur);
+  var commVsPrevious = document.getElementById('commVsPrevious');
+  if (commVsPrevious) {
+    var prev = previousMonthEur;
+    var curr = thisMonthEur;
+    if (prev <= 0 && curr <= 0) commVsPrevious.textContent = '—';
+    else if (prev <= 0) commVsPrevious.textContent = '↑ nouveau';
+    else commVsPrevious.textContent = (curr >= prev ? '↑ ' : '↓ ') + 'vs ' + formatEur(prev) + ' mois dernier';
+  }
+  var commTotalWon = document.getElementById('commTotalWon');
+  if (commTotalWon) commTotalWon.textContent = formatEur(asNumber(kpis.validated_total_eur));
+  var commDealsSigned = document.getElementById('commDealsSigned');
+  if (commDealsSigned) commDealsSigned.textContent = String(asNumber(kpis.my_deals_signed));
+  var commDealsSignedSub = document.getElementById('commDealsSignedSub');
+  if (commDealsSignedSub) commDealsSignedSub.textContent = String(asNumber(kpis.my_deals_signed_month)) + ' ce mois';
+  var commGoalFill = document.getElementById('commGoalFill');
+  if (commGoalFill) {
+    var current = thisMonthEur;
+    var target = 300;
+    commGoalFill.style.width = Math.max(0, Math.min(100, Math.round((current / target) * 100))) + '%';
+  }
+  var commBoostTitle = document.getElementById('commBoostTitle');
+  if (commBoostTitle) {
+    var remaining = Math.max(0, 300 - thisMonthEur);
+    if (remaining > 0 && pipelineEur > 0) {
+      commBoostTitle.textContent = 'Il te manque ' + formatEur(remaining) + ' pour 300€ ce mois · Pipeline: ' + formatEur(pipelineEur);
+    } else {
+      commBoostTitle.textContent = remaining > 0 ? ('Il te manque ' + formatEur(remaining) + ' pour atteindre 300€ ce mois') : 'Objectif 300€ atteint ce mois ✅';
+    }
+  }
+
+  renderCatalogueOffers(offers);
+  renderCommissionTimeline(timeline);
+  renderCommissionHistory(history);
+
+  var lastDealMeta = document.getElementById('lastDealMeta');
+  var lastDealAmount = document.getElementById('lastDealAmount');
+  if (timeline.length > 0) {
+    var first = timeline[0];
+    if (lastDealMeta) lastDealMeta.textContent = (first.metier || 'Offre') + ' · via ton lien';
+    if (lastDealAmount) lastDealAmount.textContent = '+' + formatEur(Number(first.commission_eur || 0)) + ' — ' + String(first.status_label || 'En attente');
+  } else {
+    if (lastDealMeta) lastDealMeta.textContent = 'Via ton lien · pas encore de deal signé';
+    if (lastDealAmount) lastDealAmount.textContent = '+0€ — en attente';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var safeName = __refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Camille';
   var hdrTag = document.querySelector('.hdr-tag');
@@ -801,6 +914,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (massPreview) {
     massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + __cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
   }
+  fetchPublicApporteurDashboard().then(function(payload) {
+    if (payload) applyDashboardData(payload);
+  });
   trackEvent('mode_entered', { source: 'popey_eclaireurs_design_html' });
 });
 </script>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
+import { getScoutPortalByToken } from "@/lib/actions/human-scouts";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ type ActivatePayload = {
   referrerName?: string;
   referrerId?: string;
   referralCode?: string;
+  scoutToken?: string;
 };
 
 function trim(value: unknown): string {
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
     const fallbackReferrerName = trim(body?.referrerName);
     const fallbackReferrerId = trim(body?.referrerId);
     const fallbackReferralCode = trim(body?.referralCode);
+    const fallbackScoutToken = trim(body?.scoutToken).toLowerCase();
 
     if (!placeId) {
       return NextResponse.json({ error: "Place manquante." }, { status: 400 });
@@ -130,6 +133,13 @@ export async function POST(request: NextRequest) {
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_name : fallbackReferrerName;
     const resolvedReferrerId =
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_id : fallbackReferrerId || fallbackReferralCode || "referral";
+    let resolvedScoutId: string | null = null;
+    if (fallbackScoutToken) {
+      const portal = await getScoutPortalByToken(fallbackScoutToken);
+      if (!portal.error && portal.scout?.id) {
+        resolvedScoutId = portal.scout.id;
+      }
+    }
     const ticketCode = makeCommissionTicketCode();
     const leadPayload = {
       place_id: place.id,
@@ -148,6 +158,8 @@ export async function POST(request: NextRequest) {
         company_name: trim(place.company_name),
         request_id: requestId,
         referral_code: fallbackReferralCode || null,
+        scout_token: fallbackScoutToken || null,
+        scout_id: resolvedScoutId || null,
         ticket_code: ticketCode,
         workflow_status: "pending",
         ticket_status: "pending",

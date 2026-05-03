@@ -409,15 +409,28 @@ export default function EclaireurWebappPreviewPage() {
     if (!citySlug) return "/privilege";
     return `/privilege/${citySlug}`;
   }, [city, portalData?.sponsorVille]);
+  const publicApporteurRefCode = useMemo(() => {
+    const shortCode = String(portalData?.shortCode || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+    if (shortCode) return shortCode;
+    const token = String(portalData?.inviteToken || tokenOrCode || "")
+      .toLowerCase()
+      .trim();
+    if (token.length >= 10) return token.slice(0, 10);
+    return token;
+  }, [portalData?.inviteToken, portalData?.shortCode, tokenOrCode]);
   const publicApporteurCatalogueUrl = useMemo(() => {
     const absoluteHref = privilegeCatalogHref.startsWith("http")
       ? privilegeCatalogHref
       : `https://www.popey.academy${privilegeCatalogHref.startsWith("/") ? privilegeCatalogHref : `/${privilegeCatalogHref}`}`;
     const url = new URL(absoluteHref);
+    if (publicApporteurRefCode) url.searchParams.set("ref", publicApporteurRefCode);
     if (tokenOrCode) url.searchParams.set("scout_token", tokenOrCode);
     if (portalData?.scoutFirstName) url.searchParams.set("ref_name", portalData.scoutFirstName);
     return url.toString();
-  }, [privilegeCatalogHref, tokenOrCode, portalData?.scoutFirstName]);
+  }, [privilegeCatalogHref, publicApporteurRefCode, tokenOrCode, portalData?.scoutFirstName]);
   const publicApporteurDesignUrl = useMemo(() => {
     const query = new URLSearchParams();
     if (tokenOrCode) query.set("token", tokenOrCode);

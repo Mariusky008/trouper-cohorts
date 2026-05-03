@@ -1305,6 +1305,7 @@ const __refName = (__params.get('ref_name') || __params.get('referrer') || __par
 const __refMetier = (__params.get('ref_metier') || __params.get('metier') || '').trim();
 const __refId = (__params.get('ref_id') || '').trim();
 const __refCode = (__params.get('ref') || '').trim();
+const __scoutToken = (__params.get('scout_token') || '').trim();
 const __clientName = (__params.get('client_name') || __params.get('client') || 'Client').trim();
 const __citySlug = (__params.get('ville') || 'dax').trim();
 const __cityLabel = __citySlug ? __citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Dax';
@@ -1647,6 +1648,7 @@ async function activatePrivilegeByPlace(placeId, fallbackTrackingId) {
       referrerName: __refName,
       referrerId: __refId || null,
       referralCode: __refCode || null,
+      scoutToken: __scoutToken || null,
       source: 'whatsapp_landing',
     }),
   }).catch(() => null);
