@@ -409,6 +409,23 @@ export default function EclaireurWebappPreviewPage() {
     if (!citySlug) return "/privilege";
     return `/privilege/${citySlug}`;
   }, [city, portalData?.sponsorVille]);
+  const publicApporteurCatalogueUrl = useMemo(() => {
+    const absoluteHref = privilegeCatalogHref.startsWith("http")
+      ? privilegeCatalogHref
+      : `https://www.popey.academy${privilegeCatalogHref.startsWith("/") ? privilegeCatalogHref : `/${privilegeCatalogHref}`}`;
+    const url = new URL(absoluteHref);
+    if (tokenOrCode) url.searchParams.set("scout_token", tokenOrCode);
+    if (portalData?.scoutFirstName) url.searchParams.set("ref_name", portalData.scoutFirstName);
+    return url.toString();
+  }, [privilegeCatalogHref, tokenOrCode, portalData?.scoutFirstName]);
+  const publicApporteurDesignUrl = useMemo(() => {
+    const query = new URLSearchParams();
+    if (tokenOrCode) query.set("token", tokenOrCode);
+    query.set("catalogue_url", publicApporteurCatalogueUrl);
+    query.set("city", String(portalData?.sponsorVille || city || "Dax"));
+    if (portalData?.scoutFirstName) query.set("ref_name", portalData.scoutFirstName);
+    return `/popey-eclaireurs-design.html?${query.toString()}`;
+  }, [city, portalData?.scoutFirstName, portalData?.sponsorVille, publicApporteurCatalogueUrl, tokenOrCode]);
   const suggestedMonthlyContacts = Math.min(30, importedContacts.length || 30);
   const suggestedConversions = Math.max(1, Math.round(suggestedMonthlyContacts * 0.27));
   const suggestedGain = Math.round(suggestedConversions * (selectedTarget.rewardType === "fixed" ? selectedTarget.rewardValue : 15));
@@ -988,6 +1005,18 @@ export default function EclaireurWebappPreviewPage() {
   useEffect(() => {
     setActiveScreen((current) => Math.min(Math.max(current, 0), Math.max(0, screens.length - 1)));
   }, [screens.length]);
+
+  if (isPublicApporteurMode) {
+    return (
+      <main className={`${dmSans.className} h-screen w-full overflow-hidden bg-[#07090F]`}>
+        <iframe
+          title="Popey Espace Apporteur"
+          src={publicApporteurDesignUrl}
+          className="h-full w-full border-0"
+        />
+      </main>
+    );
+  }
 
   return (
     <main className={`${dmSans.className} min-h-screen bg-[#070B16] text-[#EEF2F7]`}>

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey — Espace Apporteur</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090F;
+  --bg2: #0D1018;
+  --bg3: #131620;
+  --bg4: #1A1E2C;
+  --teal: #00D4A0;
+  --teal-d: #00916E;
+  --teal-l: rgba(0,212,160,.12);
+  --teal-g: rgba(0,212,160,.28);
+  --amber: #F5A623;
+  --amber-l: rgba(245,166,35,.1);
+  --amber-g: rgba(245,166,35,.25);
+  --gold: #C9A84C;
+  --gold-l: rgba(201,168,76,.1);
+  --green: #25D366;
+  --red: #E5534B;
+  --red-l: rgba(229,83,75,.1);
+  --border: rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.12);
+  --t: #EEF0F6;
+  --t2: rgba(238,240,246,.55);
+  --t3: rgba(238,240,246,.28);
+  --fd: 'Unbounded', sans-serif;
+  --fb: 'DM Sans', sans-serif;
+  --fm: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--t); font-family: var(--fb); overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; overflow: hidden; height: 100vh; }
+
+/* SCREENS */
+.screen { position: absolute; inset: 0; bottom: 64px; overflow-y: auto; overflow-x: hidden; display: none; flex-direction: column; scrollbar-width: none; }
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { display: flex; }
+
+/* BOTTOM NAV */
+.bnav { position: absolute; bottom: 0; left: 0; right: 0; height: 64px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; z-index: 50; }
+.bn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; position: relative; transition: all .2s; }
+.bn-icon { font-size: 20px; transition: transform .2s; }
+.bn-lbl { font-size: 10px; font-weight: 500; letter-spacing: .04em; color: var(--t3); transition: color .2s; }
+.bn.active .bn-lbl { color: var(--teal); }
+.bn.active .bn-icon { transform: scale(1.1); }
+.bn-pip { position: absolute; top: 10px; right: 26px; width: 5px; height: 5px; border-radius: 50%; background: var(--amber); }
+
+/* STATUS BAR */
+.sbar { padding: 12px 20px 6px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.sbar-time { font-family: var(--fd); font-size: 15px; font-weight: 700; }
+.sbar-pill { background: rgba(0,212,160,.15); border: 1px solid var(--teal-g); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--teal); }
+
+/* HEADER */
+.screen-hdr { padding: 8px 20px 16px; flex-shrink: 0; }
+.hdr-tag { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); margin-bottom: 6px; }
+.hdr-title { font-family: var(--fd); font-size: 26px; font-weight: 900; line-height: .95; letter-spacing: -.02em; }
+.hdr-sub { font-size: 14px; color: var(--t2); font-weight: 300; line-height: 1.55; margin-top: 6px; }
+
+/* CARDS */
+.card { background: var(--bg3); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+.card-pad { padding: 16px; }
+.pad { padding: 0 20px; }
+
+/* STATS GRID */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.stat-lbl { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 6px; }
+.stat-val { font-family: var(--fd); font-size: 28px; font-weight: 900; line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--t3); margin-top: 4px; }
+.stat-trend { font-size: 11px; font-weight: 600; color: var(--teal); margin-top: 2px; }
+
+/* BUTTONS */
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 15px; border-radius: 14px; border: none; font-family: var(--fd); font-size: 13px; font-weight: 700; letter-spacing: .06em; cursor: pointer; transition: all .22s; }
+.btn-primary { background: var(--teal); color: #040D0A; }
+.btn-primary:active { transform: scale(.98); background: var(--teal-d); }
+.btn-wa { background: var(--green); color: #fff; }
+.btn-wa:active { transform: scale(.98); }
+.btn-ghost { background: transparent; color: var(--t); border: 1px solid var(--border2); }
+.btn-ghost:active { background: var(--bg4); }
+.btn-sm { padding: 10px 16px; font-size: 11px; border-radius: 10px; }
+
+/* STEP INDICATOR */
+.steps { display: flex; gap: 6px; align-items: center; padding: 0 20px; }
+.step-dot { height: 3px; border-radius: 2px; transition: all .3s; }
+.step-dot.done { background: var(--teal); }
+.step-dot.active { background: var(--teal); flex: 2; }
+.step-dot.todo { background: var(--border); flex: 1; }
+
+/* COMMISSION ROW */
+.comm-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.comm-row:last-child { border-bottom: none; }
+.comm-av { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.comm-info { flex: 1; min-width: 0; }
+.comm-name { font-size: 13px; font-weight: 600; color: var(--t); margin-bottom: 2px; }
+.comm-meta { font-size: 11px; color: var(--t3); }
+.comm-amount { font-family: var(--fm); font-size: 15px; font-weight: 500; text-align: right; flex-shrink: 0; }
+.comm-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; margin-top: 3px; display: inline-block; }
+.st-pending { background: var(--amber-l); color: var(--amber); border: 1px solid var(--amber-g); }
+.st-paid { background: var(--teal-l); color: var(--teal); border: 1px solid var(--teal-g); }
+.st-progress { background: var(--gold-l); color: var(--gold); border: 1px solid rgba(201,168,76,.25); }
+
+/* OFFER CARD */
+.offer-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.oc-stripe { height: 3px; }
+.oc-body { padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.oc-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.oc-info { flex: 1; }
+.oc-metier { font-size: 14px; font-weight: 600; color: var(--t); }
+.oc-pro { font-size: 11px; color: var(--t3); margin-top: 1px; margin-bottom: 8px; }
+.oc-priv { display: inline-flex; align-items: center; gap: 6px; background: var(--gold-l); border: 1px solid rgba(201,168,76,.25); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--gold); }
+.oc-share { padding: 10px 16px; border-top: 1px solid var(--border); }
+
+/* CONTACT LIST */
+.contact-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.contact-item:last-child { border-bottom: none; }
+.ci-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.ci-name { font-size: 13px; font-weight: 500; color: var(--t); flex: 1; }
+.ci-sent { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--teal); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.ci-sent.done { background: var(--teal); color: #040D0A; border-color: var(--teal); }
+
+/* SECTION LABEL */
+.sec-lbl { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+.sec-lbl-r { font-size: 11px; color: var(--teal); font-weight: 600; letter-spacing: 0; cursor: pointer; }
+
+/* PROGRESS BAR */
+.progress-wrap { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; background: var(--teal); transition: width .5s ease; }
+
+/* WALLET CARD */
+.wallet-card { background: linear-gradient(135deg, #0B2018, #081510); border: 1.5px solid var(--teal-g); border-radius: 20px; padding: 20px; position: relative; overflow: hidden; }
+.wallet-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; border-radius: 50%; background: rgba(0,212,160,.06); }
+
+/* ANIMATION */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.slide-up { animation: slideUp .35s ease both; }
+
+/* SHARE MODAL */
+.share-overlay { position: fixed; inset: 0; bottom: 64px; background: rgba(0,0,0,.7); backdrop-filter: blur(8px); z-index: 40; display: none; align-items: flex-end; justify-content: center; padding: 16px; }
+.share-overlay.open { display: flex; }
+.share-sheet { background: var(--bg2); border: 1px solid var(--border2); border-radius: 24px; width: 100%; padding: 24px; animation: slideUp .25s ease; }
+.share-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+
+/* ONBOARDING BADGE */
+.badge-earned { display: flex; flex-direction: column; align-items: center; padding: 24px; background: var(--bg3); border: 1px solid var(--teal-g); border-radius: 20px; text-align: center; }
+.badge-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--teal-l); border: 2px solid var(--teal-g); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN 1 : ACCUEIL / TABLEAU DE BORD ══ -->
+<div class="screen active" id="s-home">
+  <div class="sbar">
+    <div class="sbar-time">17:14</div>
+    <div class="sbar-pill">Apporteur actif</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="screen-hdr">
+    <div class="hdr-tag">Bonjour Camille 👋</div>
+    <h1 class="hdr-title">Ton espace<br>Apporteur.</h1>
+    <p class="hdr-sub">Partage le catalogue de ta ville, touche une commission sur chaque deal. Simple.</p>
+  </div>
+
+  <!-- WALLET -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="wallet-card">
+      <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:8px">Ton wallet Popey</div>
+      <div style="font-family:var(--fd);font-size:40px;font-weight:900;color:var(--teal);line-height:1;margin-bottom:4px" id="walletAmt">180€</div>
+      <div style="font-size:12px;color:var(--t3)">Prochain versement le <strong style="color:var(--t2)">1er juin</strong></div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <div style="flex:1;background:rgba(0,212,160,.08);border:1px solid var(--teal-g);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal)" id="nbDeals">3</div>
+          <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Deals signés</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--amber)" id="nbEnvois">47</div>
+          <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Catalogues envoyés</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--t2)" id="txConv">6.4%</div>
+          <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Taux conv.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION PRINCIPALE -->
+  <div class="pad" style="margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Action du moment</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📤</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--t)">Envoie le catalogue de mai</div>
+          <div style="font-size:11px;color:var(--t3)">23 contacts pas encore touchés</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px"><span>Progression ce mois</span><span style="color:var(--teal)">24/47</span></div>
+        <div class="progress-wrap"><div class="progress-fill" style="width:51%"></div></div>
+      </div>
+      <button class="btn btn-wa" onclick="showScreen('s-partage')">
+        <span style="font-size:16px">💬</span> Envoyer le catalogue
+      </button>
+    </div>
+  </div>
+
+  <!-- OFFRE DU MOIS -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">Offre vedette du mois <span class="sec-lbl-r" onclick="showScreen('s-catalogue')">Tout voir →</span></div>
+    <div class="offer-card" data-sphere="habitat">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#F5A623,#C9A84C)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(245,166,35,.1)">🔑</div>
+        <div class="oc-info">
+          <div class="oc-metier">Agent immobilier</div>
+          <div class="oc-pro">Marc Fontaine · Dax</div>
+          <div class="oc-priv">🎁 500€ de remise honoraires</div>
+        </div>
+      </div>
+      <div class="oc-share">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;color:var(--t3)">Ta comm si ça signe : <strong style="color:var(--teal)">+75€</strong></div>
+          <button class="btn btn-sm btn-wa" onclick="openShareSheet('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-CAM-003')" style="width:auto">💬 Partager</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DERNIER DEAL -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Dernier deal signé</div>
+    <div style="background:var(--bg3);border:1px solid var(--teal-g);border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center">
+      <div style="width:42px;height:42px;border-radius:13px;background:rgba(0,212,160,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏋️</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--t)">Coach sportif · Antonin L.</div>
+        <div style="font-size:11px;color:var(--t3)">Via ton lien · il y a 3 jours</div>
+        <div style="font-size:11px;color:var(--teal);margin-top:4px;font-weight:600">+60€ — versement le 1er juin</div>
+      </div>
+      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">✓</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2 : CATALOGUE PARTAGE ══ -->
+<div class="screen" id="s-partage">
+  <div class="sbar">
+    <div class="sbar-time">17:14</div>
+    <div style="font-size:11px;color:var(--t3)">Mai 2025</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Mode Apporteur</div>
+    <h1 class="hdr-title">Partage.<br>Touche ta comm.</h1>
+    <p class="hdr-sub">Envoie le catalogue à tes contacts. Pour chaque deal qui signe via ton lien, tu touches 10% automatiquement.</p>
+  </div>
+
+  <!-- TON LIEN -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">Ton lien personnel</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px">
+      <div id="catalogLinkLabel" style="flex:1;font-family:var(--fm);font-size:12px;color:var(--t2)">popey.academy/catalogue?ref=camille</div>
+      <button class="btn btn-sm btn-ghost" style="width:auto" onclick="copyLink()">📋 Copier</button>
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:8px;line-height:1.5">Tous les clics et deals via ce lien te sont automatiquement attribués — même si tu n'es pas là.</div>
+  </div>
+
+  <!-- STATS ENVOI -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Deals sur la plateforme</div>
+        <div class="stat-val" style="color:var(--t2)">47</div>
+        <div class="stat-sub">signés ce mois · tous membres</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Tes deals à toi</div>
+        <div class="stat-val" style="color:var(--teal)">3</div>
+        <div class="stat-sub" style="color:var(--teal)">+180€ en route</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 1 : IMPORT CONTACTS -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">1</span>
+        Importe tes contacts
+      </span>
+    </div>
+    <div class="card card-pad">
+      <!-- STATUS -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="font-size:32px">📱</div>
+        <div style="flex:1">
+          <div id="import-count-lbl" style="font-size:15px;font-weight:600;color:var(--t)">47 contacts importés</div>
+          <div id="import-count-sub" style="font-size:11px;color:var(--t3);margin-top:2px">24 envoyés · 23 restants ce mois</div>
+          <div style="margin-top:6px"><div class="progress-wrap"><div class="progress-fill" id="import-progress" style="width:0%"></div></div></div>
+        </div>
+      </div>
+
+      <!-- BOUTONS IMPORT -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-sm btn-primary" style="flex:1" onclick="importContacts()">📥 Importer .vcf/.csv</button>
+        <button class="btn btn-sm btn-ghost" style="flex:1" onclick="addManual()">+ Manuel</button>
+      </div>
+
+      <!-- LIEN TUTO -->
+      <button onclick="openTuto()" style="display:flex;align-items:center;gap:8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:10px 14px;width:100%;cursor:pointer;transition:all .2s">
+        <span style="width:22px;height:22px;border-radius:50%;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">?</span>
+        <span style="font-size:13px;font-weight:500;color:var(--amber)">Comment exporter mes contacts depuis mon téléphone ?</span>
+        <span style="margin-left:auto;font-size:14px;color:var(--amber)">›</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ÉTAPE 2 : ENVOYER -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">2</span>
+        Envoie le catalogue
+      </span>
+    </div>
+    <div class="card card-pad">
+      <div style="margin-bottom:12px;padding:12px;background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.2);border-radius:12px;font-size:12px;color:var(--t2);line-height:1.65">
+        <div style="font-weight:600;color:rgba(37,211,102,.8);margin-bottom:5px">Message pré-rédigé pour toi :</div>
+        <div id="massMsgPreview" style="font-style:italic">"Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de Dax avec des offres exclusives. Agent immo, coach sportif, architecte... Clique ici 👉 popey.academy/catalogue?ref=camille"</div>
+      </div>
+      <button class="btn btn-wa" style="margin-bottom:8px" onclick="openWAMass()">
+        <span style="font-size:16px">💬</span> ENVOYER LE CATALOGUE EN MASSE
+      </button>
+      <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5">WhatsApp s'ouvre avec le message pré-rempli.<br>Sélectionne tes contacts et envoie.</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Comment ça marche</div>
+    <div class="card card-pad">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--teal);color:#040D0A;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:700;flex-shrink:0">1</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--t)">Tu envoies le lien à tes contacts</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Message pré-rédigé, 1 tap sur WhatsApp</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,212,160,.2);color:var(--teal);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:700;flex-shrink:0">2</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--t)">Ton contact active un privilège</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Jean-Philippe qualifie sous 2h · tu es notifiée</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,212,160,.12);color:var(--teal);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:700;flex-shrink:0">3</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--t)">Le deal signe → 10% pour toi</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Versé le 1er du mois sur ton wallet Popey</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3 : CATALOGUE OFFRES ══ -->
+<div class="screen" id="s-catalogue">
+  <div class="sbar">
+    <div class="sbar-time">17:14</div>
+    <div style="font-size:11px;color:var(--t3)">Dax · Mai 2025</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Catalogue privilèges</div>
+    <h1 class="hdr-title">Les offres<br>de ta ville.</h1>
+    <p class="hdr-sub">Partage directement une offre à un contact ciblé. Plus tu cibles, plus tu convertis.</p>
+  </div>
+
+  <!-- FILTER -->
+  <div style="padding:0 20px 14px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+    <button onclick="filterCat(this,'all')" class="cat-chip active" style="padding:10px 4px;border-radius:12px;border:1px solid var(--teal);background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.04em;cursor:pointer;text-align:center;line-height:1.4">Tous<br><span style="font-size:11px;font-weight:900">8</span></button>
+    <button onclick="filterCat(this,'sante')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">🌿<br><span style="font-size:10px">Santé</span></button>
+    <button onclick="filterCat(this,'habitat')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">🏠<br><span style="font-size:10px">Habitat</span></button>
+    <button onclick="filterCat(this,'digital')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">💻<br><span style="font-size:10px">Digital</span></button>
+    <button onclick="filterCat(this,'finance')" class="cat-chip" style="padding:10px 4px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-family:var(--fd);font-size:9px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4">⚖️<br><span style="font-size:10px">Finance</span></button>
+  </div>
+
+  <!-- OFFERS LIST -->
+  <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+
+    <div class="offer-card">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#F5A623,#C9A84C)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(245,166,35,.1)">🔑</div>
+        <div class="oc-info">
+          <div class="oc-metier">Agent immobilier</div>
+          <div class="oc-pro">Marc Fontaine · Dax</div>
+          <div class="oc-priv">🎁 500€ remise honoraires</div>
+        </div>
+      </div>
+      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~75€</strong></div>
+        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-CAM-001')">💬 Partager</button>
+      </div>
+    </div>
+
+    <div class="offer-card" data-sphere="sante">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(0,200,150,.1)">🏋️</div>
+        <div class="oc-info">
+          <div class="oc-metier">Coach sportif</div>
+          <div class="oc-pro">Antonin Lemaire · Dax</div>
+          <div class="oc-priv">🎁 -20% sur le 1er mois</div>
+        </div>
+      </div>
+      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~40€</strong></div>
+        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Antonin Lemaire','Coach sportif','-20% sur le 1er mois','PRIV-AL-CAM-002')">💬 Partager</button>
+      </div>
+    </div>
+
+    <div class="offer-card" data-sphere="digital">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0288D1)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(59,130,246,.1)">💻</div>
+        <div class="oc-info">
+          <div class="oc-metier">Développeur web</div>
+          <div class="oc-pro">Lucas Bernard · Bayonne</div>
+          <div class="oc-priv">🎁 -15% + maintenance offerte</div>
+        </div>
+      </div>
+      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~90€</strong></div>
+        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Lucas Bernard','Développeur web','-15% + maintenance','PRIV-LB-CAM-003')">💬 Partager</button>
+      </div>
+    </div>
+
+    <div class="offer-card" data-sphere="finance">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#7B5EA7)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(139,92,246,.1)">⚖️</div>
+        <div class="oc-info">
+          <div class="oc-metier">Avocat d'affaires</div>
+          <div class="oc-pro">Thomas Laurent · Bayonne</div>
+          <div class="oc-priv">🎁 1re consultation offerte</div>
+        </div>
+      </div>
+      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~60€</strong></div>
+        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Thomas Laurent','Avocat','1re consultation offerte','PRIV-TL-CAM-004')">💬 Partager</button>
+      </div>
+    </div>
+
+    <div class="offer-card" data-sphere="mariage">
+      <div class="oc-stripe" style="background:linear-gradient(90deg,#F48FB1,#C2185B)"></div>
+      <div class="oc-body">
+        <div class="oc-icon" style="background:rgba(181,55,106,.1)">📸</div>
+        <div class="oc-info">
+          <div class="oc-metier">Photographe mariage</div>
+          <div class="oc-pro">Clara Petit · Dax</div>
+          <div class="oc-priv">🎁 Album photo offert</div>
+        </div>
+      </div>
+      <div class="oc-share" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--t3)">Ta comm : <strong style="color:var(--teal)">~112€</strong></div>
+        <button class="btn btn-sm btn-wa" style="width:auto" onclick="openShareSheet('Clara Petit','Photographe','Album photo offert','PRIV-CP-CAM-005')">💬 Partager</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ SCREEN 4 : COMMISSIONS ══ -->
+<div class="screen" id="s-commissions">
+  <div class="sbar">
+    <div class="sbar-time">17:14</div>
+    <div style="font-size:11px;color:var(--t3)">Mai 2025</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Mes commissions</div>
+    <h1 class="hdr-title">Ton argent<br>en route.</h1>
+  </div>
+
+  <!-- TOTAL WALLET -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="wallet-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,212,160,.6);margin-bottom:6px">Total à percevoir</div>
+          <div style="font-family:var(--fd);font-size:44px;font-weight:900;color:var(--teal);line-height:1">180€</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:4px">Versement le <strong style="color:var(--t2)">1er juin</strong></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Ce mois</div>
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--amber)">+180€</div>
+          <div style="font-size:10px;color:var(--teal);margin-top:2px">↑ vs 60€ en avril</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:60%;background:var(--teal);border-radius:2px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:6px">
+        <span>0€</span><span style="color:var(--teal)">Objectif : 300€/mois</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS COMMISSIONS -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Total gagné</div>
+        <div class="stat-val" style="color:var(--teal)">540€</div>
+        <div class="stat-trend">depuis le début</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Deals signés</div>
+        <div class="stat-val">9</div>
+        <div class="stat-sub">3 ce mois</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE COMMISSIONS -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">Détail mai 2025 · En cours</div>
+    <div class="card card-pad">
+      <div class="comm-row">
+        <div class="comm-av" style="background:rgba(245,166,35,.12);color:var(--amber)">MF</div>
+        <div class="comm-info">
+          <div class="comm-name">Marc Fontaine · Agent immo</div>
+          <div class="comm-meta">Via : Pierre Martin · il y a 4j</div>
+          <span class="comm-status st-pending">En attente validation</span>
+        </div>
+        <div>
+          <div class="comm-amount" style="color:var(--amber)">+75€</div>
+        </div>
+      </div>
+      <div class="comm-row">
+        <div class="comm-av" style="background:rgba(0,200,150,.12);color:var(--teal)">AL</div>
+        <div class="comm-info">
+          <div class="comm-name">Antonin Lemaire · Coach</div>
+          <div class="comm-meta">Via : Lucie Bonnet · il y a 3j</div>
+          <span class="comm-status st-paid">✓ Validé · versement J+1</span>
+        </div>
+        <div>
+          <div class="comm-amount" style="color:var(--teal)">+60€</div>
+        </div>
+      </div>
+      <div class="comm-row">
+        <div class="comm-av" style="background:rgba(59,130,246,.12);color:#4FC3F7">LB</div>
+        <div class="comm-info">
+          <div class="comm-name">Lucas Bernard · Dev web</div>
+          <div class="comm-meta">Via : Paul Vidal · il y a 1j</div>
+          <span class="comm-status st-progress">RDV pris — en cours</span>
+        </div>
+        <div>
+          <div class="comm-amount" style="color:var(--t3)">+90€ ?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">Historique · Versements confirmés</div>
+    <div class="card card-pad">
+      <div class="comm-row">
+        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Avril</div>
+        <div class="comm-info"><div class="comm-name">3 deals signés</div><div class="comm-meta">Versé le 1er mai</div></div>
+        <div class="comm-amount" style="color:var(--teal)">+180€</div>
+      </div>
+      <div class="comm-row">
+        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Mars</div>
+        <div class="comm-info"><div class="comm-name">2 deals signés</div><div class="comm-meta">Versé le 1er avril</div></div>
+        <div class="comm-amount" style="color:var(--teal)">+120€</div>
+      </div>
+      <div class="comm-row">
+        <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:50px">Fév.</div>
+        <div class="comm-info"><div class="comm-name">1 deal signé</div><div class="comm-meta">Versé le 1er mars</div></div>
+        <div class="comm-amount" style="color:var(--teal)">+60€</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOST -->
+  <div class="pad" style="margin-bottom:20px">
+    <div style="background:var(--bg3);border:1px solid var(--amber-g);border-radius:16px;padding:16px;text-align:center">
+      <div style="font-size:20px;margin-bottom:8px">🎯</div>
+      <div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px">Il te manque 120€ pour atteindre 300€ ce mois</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Envoie le catalogue à 5 contacts de plus pour y arriver</div>
+      <button class="btn btn-primary" onclick="showScreen('s-partage')">Envoyer maintenant →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SHARE SHEET ══ -->
+<div class="share-overlay" id="shareOverlay" onclick="closeShareSheet(event)">
+  <div class="share-sheet" id="shareSheet">
+    <div class="share-handle"></div>
+    <div style="font-size:22px;text-align:center;margin-bottom:10px">💬</div>
+    <div style="font-family:var(--fd);font-size:18px;font-weight:900;text-align:center;margin-bottom:4px" id="ssTitle">Partager l'offre</div>
+    <div style="font-size:13px;color:var(--t3);text-align:center;margin-bottom:20px" id="ssMeta">Marc Fontaine · Agent immobilier</div>
+
+    <div style="background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.2);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;color:var(--t2);line-height:1.7;font-style:italic" id="ssMsg">
+      "Salut ! Je voulais te partager une offre exclusive via Popey — 500€ de remise chez Marc Fontaine (agent immo à Dax). Tu peux activer cette offre ici : popey.academy/catalogue?ref=camille [ID: PRIV-MF-CAM-001]"
+    </div>
+
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:16px">Jean Roth (Popey) recevra une copie · Ta commission sera tracée automatiquement</div>
+
+    <button class="btn btn-wa" style="margin-bottom:8px" id="ssBtn" onclick="sendWA()">
+      <span style="font-size:16px">💬</span> Ouvrir WhatsApp
+    </button>
+    <button class="btn btn-ghost" onclick="closeShareSheet()">Annuler</button>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav">
+  <div class="bn active" onclick="showScreen('s-home')" id="bn-home">
+    <div class="bn-icon">🏠</div>
+    <div class="bn-lbl">Accueil</div>
+  </div>
+  <div class="bn" onclick="showScreen('s-partage')" id="bn-partage">
+    <div class="bn-icon">📤</div>
+    <div class="bn-lbl">Partage</div>
+  </div>
+  <div class="bn" onclick="showScreen('s-catalogue')" id="bn-catalogue">
+    <div class="bn-icon">🎁</div>
+    <div class="bn-lbl">Catalogue</div>
+  </div>
+  <div class="bn" onclick="showScreen('s-commissions')" id="bn-commissions">
+    <div class="bn-icon">💰</div>
+    <div class="bn-lbl">Commissions</div>
+    <div class="bn-pip"></div>
+  </div>
+</div>
+
+<script>
+var currentScreen = 's-home';
+var qp = new URLSearchParams(window.location.search);
+var __tokenOrCode = String(qp.get('token') || qp.get('code') || '').trim();
+var __catalogueUrl = String(qp.get('catalogue_url') || 'https://www.popey.academy/privilege/dax').trim();
+var __cityLabel = String(qp.get('city') || 'Dax').trim();
+var __refName = String(qp.get('ref_name') || 'camille').trim();
+
+function trackEvent(eventType, payload) {
+  if (!__tokenOrCode) return;
+  fetch('/api/popey-human/eclaireur-preview/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tokenOrCode: __tokenOrCode,
+      eventType: eventType,
+      payload: payload || {}
+    })
+  }).catch(function() {});
+}
+
+function filterCat(btn, sphere) {
+  document.querySelectorAll('.cat-chip').forEach(function(b) {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--t2)';
+    b.style.borderColor = 'var(--border2)';
+  });
+  btn.style.background = 'var(--teal)';
+  btn.style.color = '#040D0A';
+  btn.style.borderColor = 'var(--teal)';
+  document.querySelectorAll('#s-catalogue .offer-card').forEach(function(card) {
+    card.style.display = (sphere === 'all' || card.dataset.sphere === sphere) ? 'block' : 'none';
+  });
+}
+
+var currentShareData = {};
+
+function showScreen(id) {
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+  var navMap = { 's-home': 'bn-home', 's-partage': 'bn-partage', 's-catalogue': 'bn-catalogue', 's-commissions': 'bn-commissions' };
+  document.querySelectorAll('.bn').forEach(function(b) { b.classList.remove('active'); });
+  if (navMap[id]) document.getElementById(navMap[id]).classList.add('active');
+}
+
+function openShareSheet(pro, metier, offre, id) {
+  currentShareData = { pro: pro, metier: metier, offre: offre, id: id };
+  document.getElementById('ssTitle').textContent = 'Partager — ' + metier;
+  document.getElementById('ssMeta').textContent = pro + ' · ' + offre;
+  document.getElementById('ssMsg').innerHTML = '"Salut ! Je voulais te partager une offre exclusive via Popey — ' + offre + ' chez ' + pro + ' (' + metier + ' à ' + __cityLabel + '). Tu peux activer cette offre ici : ' + __catalogueUrl + ' [ID: ' + id + ']"';
+  document.getElementById('shareOverlay').classList.add('open');
+}
+
+function closeShareSheet(e) {
+  if (!e || e.target === document.getElementById('shareOverlay')) {
+    document.getElementById('shareOverlay').classList.remove('open');
+  }
+}
+
+function sendWA() {
+  var msg = 'Salut ! Je voulais te partager une offre exclusive via Popey — ' + currentShareData.offre + ' chez ' + currentShareData.pro + ' (' + currentShareData.metier + ' à ' + __cityLabel + '). Tu peux activer cette offre ici : ' + __catalogueUrl + ' [ID: ' + currentShareData.id + ']';
+  var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  trackEvent('mass_share_clicked', { source: 'offer_share_sheet', offer_id: currentShareData.id || null });
+  window.open(url, '_blank');
+  document.getElementById('shareOverlay').classList.remove('open');
+}
+
+function openWAMass() {
+  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + __cityLabel + " avec des offres exclusives. Agent immo, coach sportif, architecte... Clique ici pour en profiter : " + __catalogueUrl;
+  trackEvent('mass_share_clicked', { source: 'mass_catalogue' });
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function copyLink() {
+  var link = __catalogueUrl;
+  trackEvent('fallback_copy_clicked', { source: 'copy_catalogue_link' });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function() {
+      var btn = document.querySelector('[onclick="copyLink()"]');
+      if (btn) { var orig = btn.textContent; btn.textContent = '✓ Copié !'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+    });
+  }
+}
+
+function openTuto() {
+  document.getElementById('tutoOverlay').style.display = 'flex';
+}
+function closeTuto(e) {
+  if (!e || e.target === document.getElementById('tutoOverlay')) {
+    document.getElementById('tutoOverlay').style.display = 'none';
+  }
+}
+function switchTuto(os) {
+  var isIos = os === 'ios';
+  document.getElementById('tuto-ios').style.display = isIos ? 'flex' : 'none';
+  document.getElementById('tuto-android').style.display = !isIos ? 'flex' : 'none';
+  var iosBtn = document.getElementById('tos-ios');
+  var andBtn = document.getElementById('tos-and');
+  iosBtn.style.background = isIos ? 'var(--amber)' : 'transparent';
+  iosBtn.style.color = isIos ? '#0a0800' : 'var(--t3)';
+  andBtn.style.background = !isIos ? 'var(--amber)' : 'transparent';
+  andBtn.style.color = !isIos ? '#0a0800' : 'var(--t3)';
+}
+
+function importContacts() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.vcf,.csv';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var text = ev.target.result;
+      // Count contacts in vcf (BEGIN:VCARD occurrences) or csv lines
+      var count = 0;
+      if (file.name.endsWith('.vcf')) {
+        count = (text.match(/BEGIN:VCARD/gi) || []).length;
+      } else {
+        count = text.split('\n').filter(function(l){ return l.trim().length > 5; }).length - 1;
+      }
+      count = Math.max(count, 1);
+      // Update UI
+      var lbl = document.getElementById('import-count-lbl');
+      var sub = document.getElementById('import-count-sub');
+      var nb = document.getElementById('nb-contacts');
+      var bar = document.getElementById('import-progress');
+      if (lbl) lbl.textContent = count + ' contact' + (count > 1 ? 's' : '') + ' importé' + (count > 1 ? 's' : '');
+      if (sub) sub.textContent = 'Prêt à envoyer le catalogue';
+      if (nb) nb.textContent = count;
+      if (bar) bar.style.width = Math.min(100, Math.round(count / 250 * 100)) + '%';
+      trackEvent('contacts_imported', { source: 'file', imported_count: count });
+      // Toast
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--teal);color:#040D0A;padding:10px 20px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;z-index:999;white-space:nowrap';
+      toast.textContent = '✓ ' + count + ' contacts importés !';
+      document.body.appendChild(toast);
+      setTimeout(function(){ toast.remove(); }, 2500);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function addManual() {
+  var num = prompt('Numéro WhatsApp à ajouter :');
+  if (num) alert('Contact ajouté : ' + num);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var safeName = __refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Camille';
+  var hdrTag = document.querySelector('.hdr-tag');
+  if (hdrTag && currentScreen === 's-home') hdrTag.textContent = 'Bonjour ' + safeName + ' 👋';
+  var linkLbl = document.getElementById('catalogLinkLabel');
+  if (linkLbl) linkLbl.textContent = __catalogueUrl.replace(/^https?:\/\//, '');
+  var massPreview = document.getElementById('massMsgPreview');
+  if (massPreview) {
+    massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + __cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
+  }
+  trackEvent('mode_entered', { source: 'popey_eclaireurs_design_html' });
+});
+</script>
+
+<!-- TUTO MODAL -->
+<div id="tutoOverlay" style="position:fixed;inset:0;bottom:64px;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);z-index:60;display:none;align-items:flex-end;justify-content:center;padding:12px" onclick="closeTuto(event)">
+  <div id="tutoSheet" style="background:var(--bg2);border:1px solid var(--border2);border-radius:24px;width:100%;max-height:80%;overflow-y:auto;animation:slideUp .25s ease;scrollbar-width:none">
+    <!-- Handle -->
+    <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:16px auto 0"></div>
+    <!-- Header -->
+    <div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+      <div style="font-family:var(--fd);font-size:16px;font-weight:900;color:var(--t)">Exporter mes contacts</div>
+      <button onclick="closeTuto()" style="width:28px;height:28px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <!-- OS Tabs -->
+    <div style="display:flex;gap:0;margin:14px 20px 16px;background:var(--bg3);border-radius:12px;padding:3px">
+      <button id="tos-ios" onclick="switchTuto('ios')" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s"> iPhone</button>
+      <button id="tos-and" onclick="switchTuto('android')" style="flex:1;padding:9px;border-radius:10px;border:none;background:transparent;color:var(--t3);font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s"> Android</button>
+    </div>
+    <!-- iOS steps -->
+    <div id="tuto-ios" style="padding:0 20px 24px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;color:var(--t3);margin-bottom:4px">Suis ces étapes sur ton iPhone :</div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Ouvre l'app <strong style="color:var(--t)">Contacts</strong> sur ton iPhone</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Tape sur un contact → <strong style="color:var(--t)">Partager le contact</strong> → <strong style="color:var(--t)">Enregistrer sur Fichiers</strong></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Pour exporter <strong style="color:var(--t)">TOUS</strong> tes contacts d'un coup : connecte-toi sur <strong style="color:var(--t)">iCloud.com</strong> depuis Safari → Contacts → Tout sélectionner → <strong style="color:var(--t)">Exporter vCard</strong></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Reviens ici et tape <strong style="color:var(--t)">Importer .vcf</strong></div>
+      </div>
+      <button onclick="closeTuto();importContacts();" class="btn btn-primary" style="margin-top:8px">📥 Importer maintenant</button>
+    </div>
+    <!-- Android steps -->
+    <div id="tuto-android" style="padding:0 20px 24px;display:none;flex-direction:column;gap:12px">
+      <div style="font-size:12px;color:var(--t3);margin-bottom:4px">Suis ces étapes sur ton Android :</div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Ouvre <strong style="color:var(--t)">Contacts</strong> → appuie sur le menu <strong style="color:var(--t)">⋮</strong> en haut à droite → <strong style="color:var(--t)">Gérer les contacts</strong></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Appuie sur <strong style="color:var(--t)">Importer/Exporter</strong> → <strong style="color:var(--t)">Exporter vers stockage</strong></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Un fichier <strong style="color:var(--t)">.vcf</strong> est créé automatiquement dans tes <strong style="color:var(--t)">Fichiers / Téléchargements</strong></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(245,166,35,.2);color:var(--amber);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.55">Reviens ici et tape <strong style="color:var(--t)">Importer .vcf</strong></div>
+      </div>
+      <button onclick="closeTuto();importContacts();" class="btn btn-primary" style="margin-top:8px">📥 Importer maintenant</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
