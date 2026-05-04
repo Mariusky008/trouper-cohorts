@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AdminNoServiceWorkerGuard } from "@/components/admin/admin-no-sw-guard";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminLayout({
   children,
