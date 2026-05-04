@@ -254,6 +254,14 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
   if (filters.offerActionType && filters.offerActionType !== "all") {
     offers = offers.filter((offer) => offer.action_type === filters.offerActionType);
   }
+  // City filter should apply to offers too (either explicit offer city or linked place city).
+  if (filters.placeCity && filters.placeCity !== "all") {
+    offers = offers.filter((offer) => {
+      const offerCity = String(offer.city || "").trim();
+      const placeCity = String(offer.place?.city || "").trim();
+      return offerCity === filters.placeCity || placeCity === filters.placeCity;
+    });
+  }
 
   let filteredPlaces = places.slice();
   if (filters.placeCity && filters.placeCity !== "all") {
@@ -265,13 +273,14 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     filteredPlaces[0]?.id ||
     "";
 
-  const { data: eventsData } = await supabaseAdmin
-    .from("human_marketplace_events")
-    .select("id,place_id,offer_id,event_type,payload,created_at,place:human_marketplace_places(id,city,metier)")
-    .eq("place_id", selectedTimelinePlaceId)
-    .order("created_at", { ascending: false })
-    .limit(40);
-  const timelineEvents = (eventsData as MarketplaceEventRow[] | null) || [];
+  const timelineEvents = selectedTimelinePlaceId
+    ? (((await supabaseAdmin
+        .from("human_marketplace_events")
+        .select("id,place_id,offer_id,event_type,payload,created_at,place:human_marketplace_places(id,city,metier)")
+        .eq("place_id", selectedTimelinePlaceId)
+        .order("created_at", { ascending: false })
+        .limit(40)).data as MarketplaceEventRow[] | null) || [])
+    : [];
   const { data: activationsData } = await supabaseAdmin
     .from("human_marketplace_landing_activations")
     .select("id,city,category_key,client_name,referrer_name,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)")
