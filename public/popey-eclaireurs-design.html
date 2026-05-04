@@ -514,8 +514,8 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
 var currentScreen = 's-home';
 var qp = new URLSearchParams(window.location.search);
 var __tokenOrCode = String(qp.get('token') || qp.get('code') || '').trim();
-var __catalogueUrl = String(qp.get('catalogue_url') || 'https://www.popey.academy/privilege/dax').trim();
-var __cityLabel = String(qp.get('city') || 'Dax').trim();
+var __catalogueUrl = String(qp.get('catalogue_url') || 'https://www.popey.academy/privilege').trim();
+var __cityLabel = String(qp.get('city') || '').trim();
 var __refName = String(qp.get('ref_name') || 'camille').trim();
 var __screenParam = String(qp.get('screen') || '').trim();
 var __scoutFirstName = '';
@@ -581,7 +581,8 @@ function sendWA() {
 }
 
 function openWAMass() {
-  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + __cityLabel + " avec des offres exclusives. Agent immo, coach sportif, architecte... Clique ici pour en profiter : " + __catalogueUrl;
+  var cityLabel = __cityLabel || 'ta ville';
+  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + cityLabel + " avec des offres exclusives. Agent immo, coach sportif, architecte... Clique ici pour en profiter : " + __catalogueUrl;
   trackEvent('mass_share_clicked', { source: 'mass_catalogue' });
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
@@ -923,7 +924,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (linkLbl) linkLbl.textContent = __catalogueUrl.replace(/^https?:\/\//, '');
   var massPreview = document.getElementById('massMsgPreview');
   if (massPreview) {
-    massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + __cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
+    var cityLabel = __cityLabel || 'ta ville';
+    massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
   }
   if (__screenParam === '2') showScreen('s-partage');
   if (__screenParam === '3') showScreen('s-catalogue');

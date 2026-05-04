@@ -950,6 +950,14 @@ export async function getScoutPortalByToken(token: string) {
   const supabaseAdmin = createAdminClient();
   const normalizedToken = inviteTokenOrCode.toLowerCase();
   const normalizedShortCode = normalizeScoutShortCode(inviteTokenOrCode);
+  const compactToken = inviteTokenOrCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const shortCodeCandidates = Array.from(
+    new Set(
+      [normalizedShortCode, normalizeScoutShortCode(compactToken.slice(0, 8))]
+        .map((value) => value.trim())
+        .filter(Boolean)
+    )
+  );
 
   let invite: any = null;
   let shortCodeEnabled = true;
@@ -971,13 +979,18 @@ export async function getScoutPortalByToken(token: string) {
     invite = fallbackInviteByToken.data;
   }
 
-  if (!invite && normalizedShortCode && shortCodeEnabled) {
-    const inviteByCode = await supabaseAdmin
-      .from("human_scout_invites")
-      .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
-      .eq("short_code", normalizedShortCode)
-      .maybeSingle();
-    invite = inviteByCode.data;
+  if (!invite && shortCodeEnabled && shortCodeCandidates.length > 0) {
+    for (const shortCodeCandidate of shortCodeCandidates) {
+      const inviteByCode = await supabaseAdmin
+        .from("human_scout_invites")
+        .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+        .eq("short_code", shortCodeCandidate)
+        .maybeSingle();
+      if (inviteByCode.data) {
+        invite = inviteByCode.data;
+        break;
+      }
+    }
   }
 
   if (!invite || !invite.scout_id) {
