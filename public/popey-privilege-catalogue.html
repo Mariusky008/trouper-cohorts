@@ -1209,7 +1209,7 @@ function renderLiveOffers() {
       var oldPrice = p.value > 0 ? euros(p.value) : 'Plein tarif';
       var initials = p.name.split(' ').map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
       var image = p.image
-        ? '<img class="oc-img-strip" src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'">'
+        ? '<img class="oc-img-strip" src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
         : '';
       image += '<div class="oc-img-placeholder" style="background:rgba(0,0,0,.04);display:' + (p.image ? 'none' : 'flex') + '">' + meta.icon + '</div>';
 
@@ -1218,7 +1218,7 @@ function renderLiveOffers() {
         + '  <div class="oc-stripe" style="background:' + meta.grad + '"></div>'
         + '  <div class="oc-header-new">'
         + '    <div class="oc-profile-row">'
-        + '      <img class="pro-photo" src="' + (p.image || '') + '" alt="' + p.name + '" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'">'
+        + '      <img class="pro-photo" src="' + (p.image || '') + '" alt="' + p.name + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
         + '      <div class="pro-photo-fallback" style="background:rgba(0,0,0,.06);color:#1f2937;display:' + (p.image ? 'none' : 'flex') + '">' + initials + '</div>'
         + '      <div class="oc-profile-info">'
         + '        <div class="oc-sphere-tag" style="color:' + meta.color + ';border:1px solid rgba(0,0,0,.12)">' + meta.icon + ' ' + meta.label + '</div>'
