@@ -10,7 +10,16 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const { response, user } = await updateSession(request);
+  let response: NextResponse;
+  let user: { id: string } | null = null;
+  try {
+    const updatedSession = await updateSession(request);
+    response = updatedSession.response;
+    user = updatedSession.user ? { id: updatedSession.user.id } : null;
+  } catch (error) {
+    console.error("[proxy] unexpected updateSession crash", error);
+    response = NextResponse.next();
+  }
   const host = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
   const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);
