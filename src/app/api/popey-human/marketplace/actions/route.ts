@@ -20,6 +20,8 @@ type ActionPayload = {
   selectedPlan?: string;
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function toActionType(actionType: ActionPayload["actionType"]) {
   if (actionType === "vendre") return "sell_request";
   if (actionType === "rejoindre") return "join_request";
@@ -37,6 +39,46 @@ function maskPhone(value: string): string {
   if (!cleaned) return "";
   if (cleaned.length <= 4) return cleaned;
   return `${cleaned.slice(0, 3)}***${cleaned.slice(-2)}`;
+}
+
+function slugifyLoose(value: string): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function stripDepartmentSuffix(value: string): string {
+  return String(value || "").replace(/-\d{2,3}$/, "");
+}
+
+async function resolvePlaceIdForSubmission(
+  supabase: ReturnType<typeof createAdminClient>,
+  input: { placeId: string | null; city: string; metier: string },
+) {
+  const rawPlaceId = String(input.placeId || "").trim();
+  if (!rawPlaceId) return null;
+  if (UUID_REGEX.test(rawPlaceId)) return rawPlaceId;
+
+  const citySlug = stripDepartmentSuffix(slugifyLoose(input.city));
+  const metierSlug = slugifyLoose(input.metier);
+  if (!citySlug || !metierSlug) return null;
+
+  const { data, error } = await supabase
+    .from("human_marketplace_places")
+    .select("id,city,metier")
+    .limit(800);
+  if (error || !data) return null;
+
+  const rows = data as Array<{ id: string; city: string; metier: string }>;
+  const found = rows.find((row) => {
+    const rowCitySlug = stripDepartmentSuffix(slugifyLoose(row.city));
+    const rowMetierSlug = slugifyLoose(row.metier);
+    return rowCitySlug === citySlug && rowMetierSlug === metierSlug;
+  });
+  return found?.id || null;
 }
 
 async function enforceRateLimit(supabase: ReturnType<typeof createAdminClient>, requesterIp: string) {
@@ -142,6 +184,7 @@ export async function POST(request: NextRequest) {
     const offerAmountEur = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
 
     const supabase = createAdminClient();
+    const resolvedPlaceId = await resolvePlaceIdForSubmission(supabase, { placeId, city, metier });
     const rateLimitError = await enforceRateLimit(supabase, requesterIp);
     if (rateLimitError) {
       console.warn("[marketplace/actions] rate limited", { requestId, requesterIp, rateLimitError });
@@ -149,7 +192,7 @@ export async function POST(request: NextRequest) {
     }
 
     const offerRecord = {
-      place_id: placeId,
+      place_id: resolvedPlaceId,
       action_type: toActionType(actionType),
       full_name: fullName,
       metier: metier || null,
@@ -169,6 +212,7 @@ export async function POST(request: NextRequest) {
         referral_code: referralCode || null,
         referral_label: referralLabel || null,
         selected_plan: selectedPlan || null,
+        requested_place_id_raw: placeId,
       },
     };
 
@@ -182,24 +226,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: offerError.message }, { status: 500 });
     }
 
-    if (placeId) {
+    if (resolvedPlaceId) {
       if (actionType === "rejoindre") {
         await supabase
           .from("human_marketplace_places")
           .update({ status: "reserved" })
-          .eq("id", placeId)
+          .eq("id", resolvedPlaceId)
           .eq("status", "dispo");
       }
 
       if (actionType === "vendre") {
         const patch: Record<string, unknown> = { status: "sale" };
         if (offerAmountEur) patch.list_price_eur = offerAmountEur;
-        await supabase.from("human_marketplace_places").update(patch).eq("id", placeId);
+        await supabase.from("human_marketplace_places").update(patch).eq("id", resolvedPlaceId);
       }
     }
 
     await supabase.from("human_marketplace_events").insert({
-      place_id: placeId,
+      place_id: resolvedPlaceId,
       offer_id: insertedOffer?.id || null,
       event_type:
         actionType === "rejoindre" ? "join_requested" : actionType === "vendre" ? "sell_requested" : "offer_submitted",
