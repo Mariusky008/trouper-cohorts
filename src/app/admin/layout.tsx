@@ -66,30 +66,12 @@ export default async function AdminLayout({
     <div className="min-h-screen flex flex-col">
       <header className="border-b px-6 py-3 flex items-center justify-between bg-muted/20">
         <div className="flex items-center gap-6">
-          <Link href="/admin/cohorts" className="font-bold text-lg">
+          <Link href="/admin/humain" className="font-bold text-lg">
             Trouper Admin
           </Link>
           <nav className="flex gap-4 text-sm font-medium">
-            <Link href="/admin/cohorts" className="hover:underline">
-              Cohortes
-            </Link>
-            <Link href="/admin/registrations" className="hover:underline">
-              Inscriptions
-            </Link>
-            <Link href="/admin/members" className="hover:underline">
-              Membres
-            </Link>
-            <Link href="/admin/sessions" className="hover:underline">
-              Sessions (Dates)
-            </Link>
-            <Link href="/admin/program" className="hover:underline text-blue-600">
-              Programme
-            </Link>
             <Link href="/admin/network" className="hover:underline text-purple-600">
               Réseau
-            </Link>
-            <Link href="/admin/commando" className="hover:underline text-amber-700">
-              Commando
             </Link>
             <Link href="/admin/humain" className="hover:underline text-emerald-700">
               100% Humain
