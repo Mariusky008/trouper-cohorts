@@ -79,7 +79,25 @@ export async function POST(request: Request) {
     status: nextStatus,
     updated_at: new Date().toISOString(),
   };
-  if (intent === "clear_privilege") {
+  if (intent === "reset_place") {
+    // Reset the "manual" fields so the place disappears from the manual control list.
+    patch.status = "dispo";
+    patch.owner_member_id = null;
+    patch.list_price_eur = null;
+    patch.company_name = null;
+    patch.privilege_badge = null;
+    patch.partner_whatsapp = null;
+    patch.category_key = null;
+    patch.external_ref = null;
+    patch.offer_photo_url = null;
+    patch.offer_website_url = null;
+    patch.offer_description = null;
+    patch.direct_contact = null;
+    patch.partner_offer_value_eur = null;
+    // Best-effort cleanup for claimed fields (ignore if DB doesn't have them).
+    patch.claimed_at = null;
+    patch.claimed_by_offer_id = null;
+  } else if (intent === "clear_privilege") {
     patch.company_name = null;
     patch.privilege_badge = null;
     patch.partner_whatsapp = null;
@@ -158,7 +176,18 @@ export async function POST(request: Request) {
   }
 
   const { error } = await supabaseAdmin.from("human_marketplace_places").update(patch).eq("id", placeId);
-  if (error) return fail(error.message || "Mise a jour impossible.");
+  if (error) {
+    // Compatibility fallback: older DBs may not have claimed_* columns.
+    if (intent === "reset_place" && /column/i.test(String(error.message || ""))) {
+      const retryPatch = { ...patch };
+      delete (retryPatch as any).claimed_at;
+      delete (retryPatch as any).claimed_by_offer_id;
+      const retry = await supabaseAdmin.from("human_marketplace_places").update(retryPatch).eq("id", placeId);
+      if (retry.error) return fail(retry.error.message || "Mise a jour impossible.");
+    } else {
+      return fail(error.message || "Mise a jour impossible.");
+    }
+  }
 
   await supabaseAdmin.from("human_marketplace_events").insert({
     place_id: placeId,

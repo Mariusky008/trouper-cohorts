@@ -662,7 +662,20 @@ export default async function AdminHumainMarketplacePage({
                         <p className="text-xs text-amber-700">Assigne un owner membre pour générer son lien personnel stable.</p>
                       )}
                     </div>
-                    <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col items-end gap-2">
+                      <form action="/api/admin/humain/marketplace/places/update" method="post" className="flex justify-end">
+                        <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                        <input type="hidden" name="place_id" value={place.id} />
+                        <input type="hidden" name="intent" value="reset_place" />
+                        <input type="hidden" name="next_status" value="dispo" />
+                        <button
+                          type="submit"
+                          className="h-9 rounded border border-red-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-red-700"
+                        >
+                          Retirer (reset)
+                        </button>
+                      </form>
+                      <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                       <input type="hidden" name="place_id" value={place.id} />
                       <select
@@ -763,7 +776,8 @@ export default async function AdminHumainMarketplacePage({
                       <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
                         MAJ place
                       </button>
-                    </form>
+                      </form>
+                    </div>
                   </div>
                 </article>
               ))}
