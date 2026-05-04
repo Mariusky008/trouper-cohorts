@@ -210,7 +210,13 @@ export async function POST(request: Request) {
   if (targetCitySlug) revalidatePath(`/privilege/${targetCitySlug}`);
   revalidatePath("/popey-human/accueil-test/marketplace");
 
-  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", intent === "clear_privilege" ? "Offre privilège supprimée." : "Offre privilège enregistrée.")), {
+  const successMessage =
+    intent === "reset_place"
+      ? "Place retiree du controle manuel."
+      : intent === "clear_privilege"
+        ? "Offre privilège supprimée."
+        : "Offre privilège enregistrée.";
+  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", successMessage)), {
     status: 303,
   });
 }

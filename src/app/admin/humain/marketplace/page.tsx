@@ -82,12 +82,23 @@ export default async function AdminHumainMarketplacePage({
     placeCity: typeof params.placeCity === "string" ? params.placeCity : "all",
     timelinePlaceId: typeof params.timelinePlaceId === "string" ? params.timelinePlaceId : "",
   });
-  const managedPlaceIds = new Set(snapshot.offers.map((offer) => offer.place?.id).filter(Boolean));
-  const manualPlaces = snapshot.places.filter(
-    (place) =>
-      managedPlaceIds.has(place.id) ||
-      Boolean(place.owner_member_id || place.company_name || place.privilege_badge || place.partner_whatsapp || place.external_ref),
-  );
+  const manualPlaces = snapshot.places.filter((place) => {
+    const hasManualContent = Boolean(
+      place.owner_member_id ||
+        place.company_name ||
+        place.privilege_badge ||
+        place.partner_whatsapp ||
+        place.external_ref ||
+        place.direct_contact ||
+        place.offer_website_url ||
+        place.offer_photo_url ||
+        place.offer_description ||
+        place.partner_offer_value_eur ||
+        place.list_price_eur,
+    );
+    const isOperationallyActive = place.status === "reserved" || place.status === "occupied" || place.status === "sale";
+    return hasManualContent || isOperationallyActive;
+  });
   const membersById = new Map(snapshot.members.map((member) => [member.id, member.label]));
   const requestedPrimaryMemberId = typeof params.cobrandPrimaryMemberId === "string" ? params.cobrandPrimaryMemberId : "";
   const requestedCobrandCity = typeof params.cobrandCity === "string" ? params.cobrandCity : "";
