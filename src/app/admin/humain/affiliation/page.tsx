@@ -81,7 +81,12 @@ function webhookBadge(input: string) {
   return { label: "Sans réponse", className: "border-slate-300 bg-slate-50 text-slate-600" };
 }
 
-export default async function AdminHumainAffiliationPage() {
+export default async function AdminHumainAffiliationPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = (await searchParams) || {};
   const supabaseAdmin = createAdminClient();
   const snapshot = await getAdminMarketplaceSnapshot({ placeCity: "all" });
   const { data: logsData, error } = await supabaseAdmin
@@ -113,6 +118,10 @@ export default async function AdminHumainAffiliationPage() {
     scoutById = new Map(scouts.map((scout) => [scout.id, scout]));
   }
 
+  // Read status feedback coming from admin POST routes.
+  const affStatus = typeof params.affStatus === "string" ? params.affStatus : "";
+  const affMessage = typeof params.affMessage === "string" ? params.affMessage : "";
+
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -131,6 +140,15 @@ export default async function AdminHumainAffiliationPage() {
       {error ? (
         <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           Impossible de charger le suivi affiliation: {error.message}
+        </p>
+      ) : null}
+      {affMessage ? (
+        <p
+          className={`rounded border px-3 py-2 text-sm ${
+            affStatus === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {affMessage}
         </p>
       ) : null}
 
@@ -210,6 +228,17 @@ export default async function AdminHumainAffiliationPage() {
                       Ouvrir webapp éclaireur
                     </a>
                   ) : null}
+                  <form action="/api/admin/humain/affiliation/scouts/delete" method="post">
+                    <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
+                    <input type="hidden" name="scout_id" value={txt(row.scout_id)} />
+                    <input type="hidden" name="log_id" value={row.id} />
+                    <button
+                      type="submit"
+                      className="inline-flex h-9 items-center rounded border border-red-300 bg-red-50 px-3 text-xs font-black uppercase tracking-wide text-red-700"
+                    >
+                      Supprimer compte fictif
+                    </button>
+                  </form>
                 </div>
               </div>
             </article>
