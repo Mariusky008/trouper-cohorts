@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -19,13 +19,24 @@ export function LoginForm({
   isNetworkLogin = false,
   postLoginPath,
 }: LoginFormProps) {
-  const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
   // If isNetworkLogin is true, default to password mode and hide toggle
   const [isPasswordMode, setIsPasswordMode] = useState(isNetworkLogin);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function getSupabaseClient() {
+    try {
+      return createClient();
+    } catch (error) {
+      console.error("Supabase client init failed in LoginForm", error);
+      toast.error("Configuration indisponible", {
+        description: "Connexion temporairement indisponible. Vérifiez la configuration Supabase.",
+      });
+      return null;
+    }
+  }
 
   async function onForgotPassword() {
     if (!email) {
@@ -37,6 +48,8 @@ export function LoginForm({
 
     setIsSubmitting(true);
     try {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/update-password`,
       });
@@ -57,6 +70,8 @@ export function LoginForm({
     event.preventDefault();
     setIsSubmitting(true);
     try {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
       if (isPasswordMode) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
