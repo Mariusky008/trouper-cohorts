@@ -42,6 +42,7 @@ export default async function proxy(request: NextRequest) {
   const isHumanAdminArea = pathname.startsWith("/admin/humain");
   const isHumanLogin = pathname.startsWith("/popey-human/login");
   const isHumanAdminLogin = pathname.startsWith("/popey-human/admin-login");
+  const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {
     const loginPath = isHumanAdminArea ? "/popey-human/admin-login" : "/popey-human/login";
@@ -50,7 +51,7 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.redirect(loginUrl), response);
   }
 
-  if (user && (isHumanLogin || isHumanAdminLogin)) {
+  if (user && (isHumanLogin || isHumanAdminLogin) && !forceAuthScreen) {
     const requestedNext = request.nextUrl.searchParams.get("next");
     const nextPath = isHumanAdminLogin
       ? requestedNext && requestedNext.startsWith("/admin/")

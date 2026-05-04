@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ export function LoginForm({
   isNetworkLogin = false,
   postLoginPath,
 }: LoginFormProps) {
-  const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
   // If isNetworkLogin is true, default to password mode and hide toggle
@@ -81,7 +79,9 @@ export function LoginForm({
         toast.success("Connexion réussie", {
           description: "Bienvenue !",
         });
-        router.push(postLoginPath ?? "/mon-reseau-local/dashboard");
+        const destination = postLoginPath ?? "/mon-reseau-local/dashboard";
+        // Hard navigation ensures SSR receives freshly persisted auth cookies.
+        window.location.assign(destination);
       } else {
         const callbackUrl = new URL("/auth/callback", window.location.origin);
         if (postLoginPath) {

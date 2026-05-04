@@ -223,12 +223,12 @@ export default async function AdminHumainMarketplacePage({
       {snapshot.error === "Session requise." && (
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
           <p>Tu dois te reconnecter avec la session admin pour accéder au marketplace.</p>
-          <Link
-            href="/popey-human/admin-login?next=%2Fadmin%2Fhumain%2Fmarketplace"
+          <a
+            href="/popey-human/admin-login?force=1&next=%2Fadmin%2Fhumain%2Fmarketplace"
             className="mt-2 inline-flex h-9 items-center rounded border border-amber-400 bg-white px-3 text-xs font-black uppercase tracking-wide"
           >
             Se connecter en admin
-          </Link>
+          </a>
         </div>
       )}
       {snapshot.error === "Acces admin requis." && (
