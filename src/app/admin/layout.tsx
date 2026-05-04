@@ -131,31 +131,24 @@ export default async function AdminLayout({
             Trouper Admin
           </Link>
           <nav className="flex gap-4 text-sm font-medium">
-            <Link href="/admin/network" className="hover:underline text-purple-600">
-              Réseau
-            </Link>
-            <Link href="/admin/humain" className="hover:underline text-emerald-700">
+            <Link href="/admin/humain" className="hover:underline text-emerald-700" prefetch={false}>
               100% Humain
             </Link>
-            <Link href="/admin/settings" className="hover:underline">
-              Équipe
-            </Link>
-            {/* Add more links later */}
           </nav>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-muted-foreground hidden sm:inline-block">Admin: {user.email}</span>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/humain/marketplace">Marketplace</Link>
+            <Link href="/admin/humain/marketplace" prefetch={false}>Marketplace</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/humain/affiliation">Affiliation</Link>
+            <Link href="/admin/humain/affiliation" prefetch={false}>Affiliation</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/humain/chat">Chat WhatsApp</Link>
+            <Link href="/admin/humain/chat" prefetch={false}>Chat WhatsApp</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/app/today">Voir App</Link>
+            <Link href="/app/today" prefetch={false}>Voir App</Link>
           </Button>
           <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
             <Button type="submit" variant="outline" size="sm">
