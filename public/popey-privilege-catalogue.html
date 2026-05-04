@@ -937,7 +937,14 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
       <label class="modal-label">Votre WhatsApp</label>
       <input class="modal-input" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel">
     </div>
-    <button class="modal-submit" onclick="createApporteurLink()">Créer mon lien apporteur →</button>
+    <button class="modal-submit" id="apporteurSubmitBtn" onclick="createApporteurLink()">Créer mon lien apporteur →</button>
+    <button
+      id="apporteurCopyBtn"
+      onclick="copyApporteurWebappLink()"
+      style="display:none;width:100%;padding:14px;background:transparent;border:1.5px solid var(--border-l);border-radius:14px;font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t2);cursor:pointer;margin-top:8px;"
+    >
+      Copier mon lien web app
+    </button>
     <div class="modal-fine">Lien unique généré instantanément · Tous vos deals tracés automatiquement · Commission versée le 1er du mois</div>
   </div>
 </div>
@@ -970,6 +977,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 <script>
 var currentWA = {};
 var clientLeadResolver = null;
+var generatedApporteurLinks = null;
 
 function loadClientLeadDraft() {
   try {
@@ -1101,11 +1109,13 @@ async function ensureClientLeadInfo(params) {
 async function createApporteurLink() {
   var prenom = document.getElementById('apporteurPrenom').value.trim();
   var tel = document.getElementById('apporteurTel').value.trim();
-  var submit = document.querySelector('.modal-submit');
+  var submit = document.getElementById('apporteurSubmitBtn');
+  var copyBtn = document.getElementById('apporteurCopyBtn');
   var titleEl = document.querySelector('#apporteurModal .modal-title');
   var subEl = document.querySelector('#apporteurModal .modal-sub');
   if (!prenom || !tel) { alert('Merci de renseigner votre prénom et WhatsApp.'); return; }
   if (submit) { submit.textContent = 'Génération…'; submit.disabled = true; }
+  if (copyBtn) { copyBtn.style.display = 'none'; }
   try {
     var params = new URLSearchParams(window.location.search);
     var sponsorName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Jean Roth').trim();
@@ -1131,21 +1141,46 @@ async function createApporteurLink() {
     if (!response.ok || !payload.success) throw new Error(payload.error || 'Impossible de générer le lien');
 
     var referral = String(payload.referralUrl || '').trim();
-    if (!referral) throw new Error('Lien de parrainage introuvable');
+    var previewWebapp = String(payload.previewUrl || '').trim();
+    if (!referral && !previewWebapp) throw new Error('Lien de parrainage introuvable');
+    generatedApporteurLinks = {
+      webapp: previewWebapp,
+      catalogue: referral
+    };
     if (titleEl) titleEl.textContent = 'Votre lien est prêt !';
-    if (subEl) subEl.textContent = 'Votre lien personnel : ' + referral;
+    if (subEl) subEl.textContent = 'Accès web app : ' + (previewWebapp || referral);
     if (submit) {
       submit.disabled = false;
-      submit.textContent = 'Copier mon lien →';
+      submit.textContent = 'Ouvrir ma web app ↗';
       submit.onclick = function() {
-        navigator.clipboard && navigator.clipboard.writeText(referral);
-        submit.textContent = '✓ Lien copié !';
+        var target = (generatedApporteurLinks && generatedApporteurLinks.webapp) || (generatedApporteurLinks && generatedApporteurLinks.catalogue) || '';
+        if (target) window.open(target, '_blank');
       };
+    }
+    if (copyBtn) {
+      copyBtn.style.display = '';
+      copyBtn.textContent = 'Copier mon lien web app';
     }
   } catch (error) {
     alert((error && error.message) ? error.message : 'Erreur de génération du lien');
     if (submit) { submit.disabled = false; submit.textContent = 'Créer mon lien apporteur →'; }
+    if (copyBtn) { copyBtn.style.display = 'none'; }
   }
+}
+
+function copyApporteurWebappLink() {
+  var copyBtn = document.getElementById('apporteurCopyBtn');
+  var target = (generatedApporteurLinks && generatedApporteurLinks.webapp) || (generatedApporteurLinks && generatedApporteurLinks.catalogue) || '';
+  if (!target) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(target).then(function() {
+      if (copyBtn) copyBtn.textContent = '✓ Lien web app copié !';
+    }).catch(function() {
+      if (copyBtn) copyBtn.textContent = 'Copie impossible';
+    });
+    return;
+  }
+  if (copyBtn) copyBtn.textContent = 'Copie impossible';
 }
 
 (function hydrateReferralContext(){
