@@ -54,6 +54,46 @@ export async function getServerUserIdWithProxyFallback() {
     // Continue with proxy header fallback.
   }
 
+  // Last-resort fallback: decode Supabase auth cookie and read JWT `sub`.
+  // Useful when `getUser/getSession` are transiently unavailable in SSR.
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+  const authCookieCandidates = allCookies
+    .filter(({ name }) => name.includes("-auth-token"))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const authCookieSingle = authCookieCandidates.find(({ name }) => !/\.\d+$/.test(name))?.value;
+  let authCookieValue = authCookieSingle || "";
+  if (!authCookieValue) {
+    const chunked = authCookieCandidates
+      .filter(({ name }) => /\.\d+$/.test(name))
+      .sort((a, b) => {
+        const ai = Number((a.name.match(/\.([0-9]+)$/) || [])[1] || "0");
+        const bi = Number((b.name.match(/\.([0-9]+)$/) || [])[1] || "0");
+        return ai - bi;
+      })
+      .map(({ value }) => value)
+      .join("");
+    authCookieValue = chunked;
+  }
+  if (authCookieValue) {
+    try {
+      const decodedCookie = decodeURIComponent(authCookieValue);
+      const parsedCookie = JSON.parse(decodedCookie);
+      const accessToken = String(parsedCookie?.access_token || "").trim();
+      if (accessToken) {
+        const payloadPart = accessToken.split(".")[1] || "";
+        if (payloadPart) {
+          const payloadJson = Buffer.from(payloadPart, "base64url").toString("utf8");
+          const payload = JSON.parse(payloadJson);
+          const sub = String(payload?.sub || "").trim();
+          if (sub) return sub;
+        }
+      }
+    } catch {
+      // Ignore malformed cookie payload and continue.
+    }
+  }
+
   const requestHeaders = await headers();
   const proxyUserId = String(requestHeaders.get("x-popey-auth-user-id") || "").trim();
   return proxyUserId || null;
