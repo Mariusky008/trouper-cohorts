@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 type MarketplaceOfferRow = {
   id: string;
   full_name: string;

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 
+export const dynamic = "force-dynamic";
+
 function euros(value?: number | null) {
   const safe = Number(value || 0);
   return safe.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -170,6 +172,36 @@ export default async function AdminHumainMarketplacePage({
         </div>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-3">
+        <article className="rounded-xl border bg-white p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 1</p>
+          <p className="mt-1 text-sm font-semibold">Gérer les inscrits web marketplace</p>
+          <p className="mt-1 text-xs text-black/70">Liste dédiée des personnes venues de la page publique `marketplace`.</p>
+          <Link
+            href="/admin/humain/marketplace/inscriptions"
+            className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide"
+          >
+            Ouvrir Inscriptions
+          </Link>
+        </article>
+        <article className="rounded-xl border bg-white p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 2</p>
+          <p className="mt-1 text-sm font-semibold">Accepter/Rejeter + créer offre pro</p>
+          <p className="mt-1 text-xs text-black/70">Section “Demandes marketplace” puis bouton “MAJ demande” et “Configurer cette offre”.</p>
+          <a href="#demandes-marketplace" className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide">
+            Aller aux demandes
+          </a>
+        </article>
+        <article className="rounded-xl border bg-white p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 3</p>
+          <p className="mt-1 text-sm font-semibold">Créer une offre duo</p>
+          <p className="mt-1 text-xs text-black/70">Depuis une demande “accepted” (bouton “Créer offre duo”) ou en bas de page.</p>
+          <a href="#duo-offer-form" className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide">
+            Aller à Offre Duo
+          </a>
+        </article>
+      </div>
+
       {marketStatus === "success" && (
         <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {marketMessage || "Action effectuee."}{" "}
@@ -188,6 +220,22 @@ export default async function AdminHumainMarketplacePage({
       )}
 
       {snapshot.error && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{snapshot.error}</p>}
+      {snapshot.error === "Session requise." && (
+        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+          <p>Tu dois te reconnecter avec la session admin pour accéder au marketplace.</p>
+          <Link
+            href="/popey-human/admin-login?next=%2Fadmin%2Fhumain%2Fmarketplace"
+            className="mt-2 inline-flex h-9 items-center rounded border border-amber-400 bg-white px-3 text-xs font-black uppercase tracking-wide"
+          >
+            Se connecter en admin
+          </Link>
+        </div>
+      )}
+      {snapshot.error === "Acces admin requis." && (
+        <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          Ce compte est connecté mais n&apos;a pas le rôle admin.
+        </p>
+      )}
 
       {!snapshot.error && snapshot.kpis && (
         <>
@@ -283,7 +331,7 @@ export default async function AdminHumainMarketplacePage({
             </div>
           </div>
 
-          <div className="rounded-xl border bg-white p-4">
+          <div id="demandes-marketplace" className="rounded-xl border bg-white p-4">
             <h2 className="text-lg font-black">Demandes marketplace</h2>
             {snapshot.offers.length === 0 && snapshot.kpis.offersRawTotal > 0 ? (
               <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">

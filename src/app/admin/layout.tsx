@@ -25,9 +25,6 @@ export default async function AdminLayout({
             <Link href="/admin/humain/marketplace" className="hover:underline" prefetch={false}>
               Marketplace
             </Link>
-            <Link href="/admin/humain/privileges" className="hover:underline" prefetch={false}>
-              Privilèges
-            </Link>
             <Link href="/admin/humain/affiliation" className="hover:underline" prefetch={false}>
               Affiliation
             </Link>
@@ -37,9 +34,6 @@ export default async function AdminLayout({
             <span className="hidden text-xs text-muted-foreground sm:inline-block">Admin</span>
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/humain/chat" prefetch={false}>Chat WhatsApp</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/app/today" prefetch={false}>Voir App</Link>
             </Button>
             <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
               <Button type="submit" variant="outline" size="sm">

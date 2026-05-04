@@ -6,7 +6,6 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/marketplace", label: "Marketplace" },
         { href: "/admin/humain/marketplace/inscriptions", label: "Inscriptions marketplace" },
         { href: "/admin/humain/marketplace/tour-de-controle", label: "Tour de controle" },
-        { href: "/admin/humain/privileges", label: "Privilèges" },
         { href: "/admin/humain/affiliation", label: "Affiliation publique" },
       ],
     },
@@ -27,7 +26,6 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/commissions", label: "Commissions" },
         { href: "/admin/humain/permissions", label: "Permissions" },
         { href: "/admin/humain/sphere", label: "Sphère" },
-        { href: "/app/today", label: "Voir l'app" },
       ],
     },
   ];
