@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  adminDecideAffiliateCommissionAction,
   adminSendPrivilegeActivationFollowupNowAction,
   adminUpdatePrivilegeActivationStatusAction,
   getAdminMarketplaceSnapshot,
@@ -20,6 +21,25 @@ type ScoutRow = {
   last_name: string | null;
   phone: string | null;
   status: string | null;
+};
+
+type MemberMiniRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  metier: string | null;
+};
+
+type CommissionDecisionRow = {
+  activation_id: string;
+  decision_status: "pending" | "approved" | "rejected";
+  commission_amount_eur: number | null;
+  apporteur_type: "scout_public" | "member_pro" | "unknown";
+  apporteur_name: string | null;
+  apporteur_phone: string | null;
+  note: string | null;
+  decided_at: string | null;
 };
 
 function txt(value: unknown) {
@@ -81,6 +101,16 @@ function webhookBadge(input: string) {
   return { label: "Sans réponse", className: "border-slate-300 bg-slate-50 text-slate-600" };
 }
 
+function looksLikeUuid(value: unknown) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(txt(value));
+}
+
+function commissionDecisionLabel(value: string) {
+  if (value === "approved") return "Commission validée";
+  if (value === "rejected") return "Commission refusée";
+  return "Décision en attente";
+}
+
 export default async function AdminHumainAffiliationPage({
   searchParams,
 }: {
@@ -106,7 +136,20 @@ export default async function AdminHumainAffiliationPage({
     if (!Number.isFinite(sentTs)) return false;
     return Date.now() - sentTs > 48 * 60 * 60 * 1000;
   }).length;
-  const scoutIds = Array.from(new Set(logs.map((row) => txt(row.scout_id)).filter(Boolean)));
+  const scoutIds = Array.from(
+    new Set(
+      [...logs.map((row) => txt(row.scout_id)), ...activationTickets.map((ticket) => readMetaText(ticket.metadata, "scout_id"))]
+        .filter(Boolean),
+    ),
+  );
+  const memberIds = Array.from(
+    new Set(
+      activationTickets
+        .flatMap((ticket) => [txt(ticket.referrer_id), txt(ticket.partner_member_id)])
+        .filter((value) => looksLikeUuid(value)),
+    ),
+  );
+  const activationIds = activationTickets.map((ticket) => ticket.id);
 
   let scoutById = new Map<string, ScoutRow>();
   if (scoutIds.length > 0) {
@@ -117,10 +160,29 @@ export default async function AdminHumainAffiliationPage({
     const scouts = (scoutsData as ScoutRow[] | null) || [];
     scoutById = new Map(scouts.map((scout) => [scout.id, scout]));
   }
+  let memberById = new Map<string, MemberMiniRow>();
+  if (memberIds.length > 0) {
+    const { data: membersData } = await supabaseAdmin
+      .from("human_members")
+      .select("id,first_name,last_name,phone,metier")
+      .in("id", memberIds);
+    const members = (membersData as MemberMiniRow[] | null) || [];
+    memberById = new Map(members.map((member) => [member.id, member]));
+  }
+
+  let decisionByActivationId = new Map<string, CommissionDecisionRow>();
+  if (activationIds.length > 0) {
+    const { data: decisionsData } = await supabaseAdmin
+      .from("human_affiliate_commission_decisions")
+      .select("activation_id,decision_status,commission_amount_eur,apporteur_type,apporteur_name,apporteur_phone,note,decided_at")
+      .in("activation_id", activationIds);
+    const decisions = (decisionsData as CommissionDecisionRow[] | null) || [];
+    decisionByActivationId = new Map(decisions.map((decision) => [decision.activation_id, decision]));
+  }
 
   // Read status feedback coming from admin POST routes.
-  const affStatus = typeof params.affStatus === "string" ? params.affStatus : "";
-  const affMessage = typeof params.affMessage === "string" ? params.affMessage : "";
+  const affStatus = typeof params.affStatus === "string" ? params.affStatus : typeof params.marketStatus === "string" ? params.marketStatus : "";
+  const affMessage = typeof params.affMessage === "string" ? params.affMessage : typeof params.marketMessage === "string" ? params.marketMessage : "";
 
   return (
     <section className="space-y-5">
@@ -286,6 +348,27 @@ export default async function AdminHumainAffiliationPage({
           const lastReplyClassif = readMetaText(ticket.metadata, "pro_followup_last_reply_classification");
           const replyBadge = webhookBadge(lastReplyClassif);
           const ticketCode = readTicketCode(ticket.metadata, ticket.id);
+          const decision = decisionByActivationId.get(ticket.id) || null;
+          const scoutId = readMetaText(ticket.metadata, "scout_id");
+          const scout = scoutId ? scoutById.get(scoutId) || null : null;
+          const refMember = looksLikeUuid(ticket.referrer_id) ? memberById.get(ticket.referrer_id) || null : null;
+          const apporteurType = scout?.id ? "scout_public" : refMember?.id ? "member_pro" : "unknown";
+          const apporteurSourceLabel =
+            apporteurType === "scout_public"
+              ? "Particulier (webapp éclaireur)"
+              : apporteurType === "member_pro"
+                ? "Pro (webapp membre)"
+                : "Source non déterminée";
+          const apporteurName =
+            decision?.apporteur_name ||
+            (scout ? scoutLabel(scout) : [txt(refMember?.first_name), txt(refMember?.last_name)].filter(Boolean).join(" ").trim()) ||
+            ticket.referrer_name ||
+            "Apporteur inconnu";
+          const apporteurPhone = decision?.apporteur_phone || txt(scout?.phone) || txt(refMember?.phone) || "Non renseigné";
+          const commissionPrefill =
+            decision?.commission_amount_eur !== null && decision?.commission_amount_eur !== undefined
+              ? String(decision.commission_amount_eur)
+              : readMetaText(ticket.metadata, "commission_amount_eur");
           return (
             <article key={ticket.id} className="rounded-lg border p-3">
               <p className="font-black">
@@ -299,12 +382,61 @@ export default async function AdminHumainAffiliationPage({
                   {replyBadge.label}
                 </span>
               </div>
+              <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/60 p-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-cyan-800">Source du contact</p>
+                <p className="mt-1 text-xs text-cyan-900">
+                  {apporteurSourceLabel} · {apporteurName} · {apporteurPhone}
+                </p>
+              </div>
               <p className="mt-1 text-xs text-black/60">
                 Dernière relance: {lastFollowupAt ? toDate(lastFollowupAt) : "Jamais"}
                 {" · "}
                 Dernière réponse pro: {lastReplyAt ? `${toDate(lastReplyAt)} (${lastReplyClassif || "message"})` : "Aucune"}
               </p>
               {lastReplyText ? <p className="mt-1 text-xs text-black/55">Message pro: “{lastReplyText}”</p> : null}
+              <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-black uppercase tracking-wide text-emerald-800">Décision commission</p>
+                  <span
+                    className={`inline-flex h-7 items-center rounded border px-2 text-[11px] font-black uppercase tracking-wide ${
+                      decision?.decision_status === "approved"
+                        ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                        : decision?.decision_status === "rejected"
+                          ? "border-rose-300 bg-rose-100 text-rose-800"
+                          : "border-slate-300 bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    {commissionDecisionLabel(String(decision?.decision_status || "pending"))}
+                  </span>
+                </div>
+                <form action={adminDecideAffiliateCommissionAction} className="mt-2 grid gap-2 md:grid-cols-4">
+                  <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
+                  <input type="hidden" name="activation_id" value={ticket.id} />
+                  <select
+                    name="decision_status"
+                    defaultValue={String(decision?.decision_status || "approved")}
+                    className="h-9 rounded border bg-white px-2 text-xs"
+                  >
+                    <option value="approved">Commission validée</option>
+                    <option value="rejected">Commission refusée</option>
+                  </select>
+                  <input
+                    name="commission_amount_eur"
+                    defaultValue={commissionPrefill}
+                    placeholder="Montant € (règle pro)"
+                    className="h-9 rounded border bg-white px-2 text-xs"
+                  />
+                  <input
+                    name="commission_note"
+                    defaultValue={txt(decision?.note)}
+                    placeholder="Note décision commission"
+                    className="h-9 rounded border bg-white px-2 text-xs md:col-span-2"
+                  />
+                  <button className="h-9 rounded border border-emerald-300 bg-white px-3 text-[11px] font-black uppercase tracking-wide text-emerald-800">
+                    Valider décision commission
+                  </button>
+                </form>
+              </div>
               <form action={adminUpdatePrivilegeActivationStatusAction} className="mt-2 grid gap-2 md:grid-cols-4">
                 <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
                 <input type="hidden" name="activation_id" value={ticket.id} />

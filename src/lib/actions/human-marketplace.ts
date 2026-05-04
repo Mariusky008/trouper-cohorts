@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 type MarketplacePlaceRow = {
   id: string;
   city: string;
@@ -83,7 +85,9 @@ type MarketplaceLandingActivationRow = {
   city: string;
   category_key: string;
   client_name: string;
+  referrer_id: string;
   referrer_name: string;
+  partner_member_id: string | null;
   partner_name: string | null;
   partner_phone: string | null;
   source: string;
@@ -135,6 +139,10 @@ function normalizePhone(raw: string) {
   if (digits.length === 10 && digits.startsWith("0")) digits = `33${digits.slice(1)}`;
   if (digits.length < 8 || digits.length > 15) return "";
   return `+${digits}`;
+}
+
+function looksLikeUuid(value: string) {
+  return UUID_REGEX.test(String(value || "").trim());
 }
 
 function asMetadata(value: unknown): Record<string, unknown> {
@@ -283,7 +291,9 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     : [];
   const { data: activationsData } = await supabaseAdmin
     .from("human_marketplace_landing_activations")
-    .select("id,city,category_key,client_name,referrer_name,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)")
+    .select(
+      "id,city,category_key,client_name,referrer_id,referrer_name,partner_member_id,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)",
+    )
     .order("created_at", { ascending: false })
     .limit(80);
   const recentActivations = (activationsData as MarketplaceLandingActivationRow[] | null) || [];
@@ -709,6 +719,151 @@ export async function adminUpdatePrivilegeActivationStatusAction(formData: FormD
   revalidatePath("/admin/humain/privileges");
   revalidatePath("/admin/humain/marketplace");
   redirect(withMarketplaceStatus(currentUrl, "success", "Statut activation mis a jour."));
+}
+
+export async function adminDecideAffiliateCommissionAction(formData: FormData): Promise<void> {
+  const auth = await requireHumanAdmin();
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/affiliation");
+  if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
+
+  const activationId = String(formData.get("activation_id") || "").trim();
+  const decisionRaw = String(formData.get("decision_status") || "").trim().toLowerCase();
+  const note = String(formData.get("commission_note") || "").trim();
+  const amountRaw = String(formData.get("commission_amount_eur") || "").trim().replace(",", ".");
+  if (!activationId) redirect(withMarketplaceStatus(currentUrl, "error", "Ticket commission introuvable."));
+
+  const decisionStatus = decisionRaw === "approved" ? "approved" : "rejected";
+  let requestedAmount: number | null = null;
+  if (amountRaw) {
+    const parsed = Number(amountRaw);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      redirect(withMarketplaceStatus(currentUrl, "error", "Montant commission invalide."));
+    }
+    requestedAmount = Math.round(parsed * 100) / 100;
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: activation, error: activationError } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select(
+      "id,referrer_id,referrer_name,partner_member_id,partner_name,metadata,place:human_marketplace_places(id,metier,city,partner_offer_value_eur)",
+    )
+    .eq("id", activationId)
+    .maybeSingle();
+  if (activationError || !activation) {
+    redirect(withMarketplaceStatus(currentUrl, "error", activationError?.message || "Activation introuvable."));
+  }
+
+  const metadata = asMetadata(activation.metadata);
+  const scoutIdRaw = String(metadata.scout_id || "").trim();
+  const referrerIdRaw = String(activation.referrer_id || "").trim();
+  let apporteurType: "scout_public" | "member_pro" | "unknown" = "unknown";
+  let apporteurScoutId: string | null = null;
+  let apporteurMemberId: string | null = null;
+  let apporteurName = String(activation.referrer_name || "").trim() || "Apporteur";
+  let apporteurPhone = "";
+
+  if (looksLikeUuid(scoutIdRaw)) {
+    const { data: scout } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id,first_name,last_name,phone")
+      .eq("id", scoutIdRaw)
+      .maybeSingle();
+    if (scout?.id) {
+      apporteurType = "scout_public";
+      apporteurScoutId = scout.id;
+      const full = [String(scout.first_name || "").trim(), String(scout.last_name || "").trim()].filter(Boolean).join(" ").trim();
+      apporteurName = full || apporteurName;
+      apporteurPhone = String(scout.phone || "").trim();
+    }
+  }
+
+  if (apporteurType === "unknown" && looksLikeUuid(referrerIdRaw)) {
+    const { data: member } = await supabaseAdmin
+      .from("human_members")
+      .select("id,first_name,last_name,phone,metier")
+      .eq("id", referrerIdRaw)
+      .maybeSingle();
+    if (member?.id) {
+      apporteurType = "member_pro";
+      apporteurMemberId = member.id;
+      const full = [String(member.first_name || "").trim(), String(member.last_name || "").trim()].filter(Boolean).join(" ").trim();
+      const metier = String(member.metier || "").trim();
+      apporteurName = [full || apporteurName, metier || null].filter(Boolean).join(" · ");
+      apporteurPhone = String(member.phone || "").trim();
+    }
+  }
+
+  const proMemberId = String(activation.partner_member_id || "").trim() || null;
+  let proName = String(activation.partner_name || "").trim() || "Pro";
+  if (proMemberId) {
+    const { data: member } = await supabaseAdmin
+      .from("human_members")
+      .select("id,first_name,last_name,metier")
+      .eq("id", proMemberId)
+      .maybeSingle();
+    if (member?.id) {
+      const full = [String(member.first_name || "").trim(), String(member.last_name || "").trim()].filter(Boolean).join(" ").trim();
+      const metier = String(member.metier || "").trim();
+      proName = [full || proName, metier || null].filter(Boolean).join(" · ");
+    }
+  }
+
+  const configuredPartnerValue = Number((activation.place as { partner_offer_value_eur?: number | null } | null)?.partner_offer_value_eur || 0);
+  const fallbackAmount = Number.isFinite(configuredPartnerValue) && configuredPartnerValue > 0 ? configuredPartnerValue : null;
+  const commissionAmount = decisionStatus === "approved" ? requestedAmount ?? fallbackAmount : null;
+  if (decisionStatus === "approved" && (commissionAmount === null || !Number.isFinite(commissionAmount))) {
+    redirect(withMarketplaceStatus(currentUrl, "error", "Montant commission manquant. Renseigne un montant ou configure l'offre pro."));
+  }
+
+  const commissionRuleLabel =
+    String(metadata.commission_rule_label || "").trim() ||
+    (fallbackAmount ? `Règle pro (valeur configurée): ${fallbackAmount} EUR` : "Règle pro non renseignée");
+
+  const upsertPayload = {
+    activation_id: activation.id,
+    decision_status: decisionStatus,
+    commission_amount_eur: commissionAmount,
+    currency: "EUR",
+    apporteur_type: apporteurType,
+    apporteur_scout_id: apporteurScoutId,
+    apporteur_member_id: apporteurMemberId,
+    apporteur_name: apporteurName || null,
+    apporteur_phone: apporteurPhone || null,
+    pro_member_id: proMemberId,
+    pro_name: proName || null,
+    commission_rule_label: commissionRuleLabel,
+    note: note || null,
+    decided_by_user_id: auth.user.id,
+    decided_at: new Date().toISOString(),
+  };
+
+  const { error: upsertError } = await supabaseAdmin
+    .from("human_affiliate_commission_decisions")
+    .upsert(upsertPayload, { onConflict: "activation_id" });
+  if (upsertError) {
+    const raw = String(upsertError.message || "").toLowerCase();
+    if (raw.includes("human_affiliate_commission_decisions")) {
+      redirect(withMarketplaceStatus(currentUrl, "error", "Table commissions absente. Exécute la migration SQL du sprint commission."));
+    }
+    redirect(withMarketplaceStatus(currentUrl, "error", upsertError.message || "Impossible d'enregistrer la décision commission."));
+  }
+
+  const nextMeta = {
+    ...metadata,
+    commission_decision_status: decisionStatus,
+    commission_amount_eur: commissionAmount,
+    commission_decided_at: new Date().toISOString(),
+    commission_decided_by_user_id: auth.user.id,
+    commission_apporteur_type: apporteurType,
+    commission_apporteur_name: apporteurName || null,
+  };
+  await supabaseAdmin.from("human_marketplace_landing_activations").update({ metadata: nextMeta }).eq("id", activation.id);
+
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/admin/humain/marketplace");
+  revalidatePath("/admin/humain/privileges");
+  redirect(withMarketplaceStatus(currentUrl, "success", decisionStatus === "approved" ? "Commission validée." : "Commission refusée."));
 }
 
 export async function adminSendPrivilegeActivationFollowupNowAction(formData: FormData): Promise<void> {
