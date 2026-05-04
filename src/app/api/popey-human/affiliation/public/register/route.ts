@@ -260,9 +260,7 @@ export async function POST(request: NextRequest) {
     : invite.inviteToken.slice(0, 10);
   const referralUrl = `${normalizedBase}/privilege/${citySlug}?ref=${encodeURIComponent(rawRef)}&ref_name=${encodeURIComponent(firstName)}&sponsor=${encodeURIComponent(sponsorName)}&scout_token=${encodeURIComponent(invite.inviteToken)}`;
   const previewCatalogUrl = `${normalizedBase}/privilege/${citySlug}?ref=${encodeURIComponent(rawRef)}&scout_token=${encodeURIComponent(invite.inviteToken)}`;
-  const previewUrl =
-    `${normalizedBase}/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(invite.inviteToken)}&mode=public_apporteur` +
-    `&city=${encodeURIComponent(cityLabel)}&catalogue_url=${encodeURIComponent(previewCatalogUrl)}`;
+  const previewUrl = `${normalizedBase}/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(invite.inviteToken)}`;
   const whatsappMessage = buildWhatsappShareMessage({ referralUrl });
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
 
