@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Popey Pro — Espace Professionnel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090C; --bg2:#0C0F15; --bg3:#12151D; --bg4:#181C26;
+  --teal:#00D49A; --teal-d:#009B70; --teal-l:rgba(0,212,154,.1); --teal-g:rgba(0,212,154,.22);
+  --gold:#E8B84B; --gold-l:rgba(232,184,75,.1); --gold-g:rgba(232,184,75,.24);
+  --red:#F04E45; --red-l:rgba(240,78,69,.1); --red-g:rgba(240,78,69,.22);
+  --amber:#F59B38; --amber-l:rgba(245,155,56,.1);
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+  --t:#ECF0F8; --t2:rgba(236,240,248,.55); --t3:rgba(236,240,248,.28);
+  --fd:'Syne',sans-serif; --fi:'Lora',serif; --fm:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fi);overflow:hidden}
+body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;bottom:66px;overflow-y:auto;overflow-x:hidden;
+  display:none;flex-direction:column;scrollbar-width:none;background:var(--bg)}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{display:flex}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:absolute;bottom:0;left:0;right:0;height:66px;
+  background:rgba(7,9,12,.96);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);display:flex;z-index:50}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;position:relative;transition:all .2s;padding-bottom:4px}
+.bn-icon{font-size:22px;transition:transform .25s}
+.bn-lbl{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t3);transition:color .2s}
+.bn.active .bn-lbl{color:var(--teal)}
+.bn.active .bn-icon{transform:translateY(-2px) scale(1.1)}
+.bn-badge{position:absolute;top:10px;right:20px;width:16px;height:16px;border-radius:50%;
+  background:var(--red);border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:8px;font-weight:700;color:#fff}
+
+/* ── SHARED ── */
+.sbar{padding:14px 20px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sbar-time{font-family:var(--fd);font-size:15px;font-weight:800}
+.live-dot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
+.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.screen-hdr{padding:8px 20px 18px;flex-shrink:0}
+.hdr-tag{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--teal);margin-bottom:6px;
+  display:flex;align-items:center;gap:8px}
+.hdr-tag::before{content:'';width:14px;height:1.5px;background:var(--teal)}
+.hdr-title{font-family:var(--fd);font-size:28px;font-weight:800;line-height:.95;
+  letter-spacing:-.02em;color:var(--t)}
+.hdr-sub{font-size:13px;color:var(--t2);line-height:1.6;margin-top:6px;font-weight:400}
+
+.pad{padding:0 16px}
+.gap{margin-bottom:12px}
+
+/* ── CARDS ── */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.card-p{padding:16px}
+
+/* ── METRIC HIGHLIGHT ── */
+.metric-hero{background:linear-gradient(135deg,#0A1A10,#061009);
+  border:1.5px solid var(--teal-g);border-radius:20px;padding:20px;
+  position:relative;overflow:hidden}
+.metric-hero::before{content:'';position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,154,.12),transparent 70%)}
+.mh-label{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(0,212,154,.6);margin-bottom:8px}
+.mh-val{font-family:var(--fd);font-size:48px;font-weight:800;color:var(--teal);
+  line-height:1;margin-bottom:4px}
+.mh-sub{font-size:12px;color:var(--t2);font-style:italic}
+.mh-trend{font-family:var(--fm);font-size:11px;color:var(--teal);margin-top:8px;
+  display:flex;align-items:center;gap:6px}
+
+/* ── STATS GRID ── */
+.stats2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.sc-label{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.sc-val{font-family:var(--fd);font-size:26px;font-weight:800;line-height:1;color:var(--t)}
+.sc-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.sc-trend{font-size:11px;font-weight:600;margin-top:3px}
+.up{color:var(--teal)}.down{color:var(--red)}.amber{color:var(--amber)}
+
+/* ── CATALOGUE STATS ── */
+.cat-stats-card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.csc-header{padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border)}
+.csc-title{font-family:var(--fd);font-size:14px;font-weight:800;color:var(--t)}
+.csc-month{font-family:var(--fm);font-size:10px;color:var(--t3)}
+.csc-funnel{padding:16px;display:flex;flex-direction:column;gap:8px}
+.funnel-row{display:flex;align-items:center;gap:12px}
+.fr-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0}
+.fr-info{flex:1;min-width:0}
+.fr-label{font-size:12px;color:var(--t2);margin-bottom:4px}
+.fr-bar-wrap{height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.fr-bar{height:100%;border-radius:2px;transition:width .8s ease}
+.fr-val{font-family:var(--fd);font-size:16px;font-weight:800;flex-shrink:0;min-width:36px;text-align:right}
+.fr-arrow{font-size:11px;color:var(--t3);flex-shrink:0}
+
+/* ── PIPELINE ── */
+.pipeline-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.pipeline-item:last-child{border-bottom:none}
+.pi-av{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;flex-shrink:0}
+.pi-info{flex:1;min-width:0}
+.pi-name{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t);margin-bottom:2px}
+.pi-meta{font-size:11px;color:var(--t3);margin-bottom:6px}
+.pi-steps{display:flex;gap:4px}
+.step-dot{width:6px;height:6px;border-radius:50%}
+.step-done{background:var(--teal)}
+.step-active{background:var(--gold);animation:pulse 1.5s ease-in-out infinite}
+.step-todo{background:rgba(255,255,255,.15)}
+.step-lbl{font-size:9px;color:var(--t3);margin-top:3px;font-family:var(--fd);letter-spacing:.04em}
+.pi-right{text-align:right;flex-shrink:0}
+.pi-comm{font-family:var(--fd);font-size:15px;font-weight:800}
+.pi-tag{display:inline-flex;font-size:9px;font-weight:700;font-family:var(--fd);
+  padding:3px 8px;border-radius:20px;letter-spacing:.04em;margin-top:4px}
+.t-pending{background:var(--amber-l);color:var(--amber);border:1px solid rgba(245,155,56,.25)}
+.t-signed{background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-g)}
+.t-progress{background:var(--gold-l);color:var(--gold);border:1px solid var(--gold-g)}
+.t-rdv{background:rgba(129,140,248,.1);color:#818CF8;border:1px solid rgba(129,140,248,.2)}
+
+/* ── RECOS ── */
+.reco-form{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:16px}
+.rf-field{margin-bottom:12px}
+.rf-label{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:7px;display:block}
+.rf-input{width:100%;background:var(--bg4);border:1.5px solid var(--border);
+  border-radius:12px;padding:13px 16px;font-family:var(--fi);font-size:14px;
+  color:var(--t);outline:none;transition:border-color .2s;-webkit-appearance:none}
+.rf-input:focus{border-color:var(--teal)}
+.rf-input::placeholder{color:var(--t3)}
+.rf-select{width:100%;background:var(--bg4);border:1.5px solid var(--border);
+  border-radius:12px;padding:13px 16px;font-family:var(--fi);font-size:14px;
+  color:var(--t);outline:none;appearance:none;cursor:pointer}
+.rf-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.comm-preview{background:linear-gradient(135deg,var(--gold-l),transparent);
+  border:1px solid var(--gold-g);border-radius:12px;padding:14px;margin-bottom:12px}
+.cp-label{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.cp-val{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--t);margin-bottom:4px}
+.cp-sub{font-size:11px;color:var(--t2);line-height:1.5}
+
+/* ── BUTTONS ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:15px;border-radius:14px;border:none;font-family:var(--fd);font-size:13px;
+  font-weight:800;letter-spacing:.06em;cursor:pointer;transition:all .22s}
+.btn-teal{background:var(--teal);color:#040E0A}
+.btn-teal:active{transform:scale(.98);background:var(--teal-d)}
+.btn-gold{background:var(--gold);color:#1A1000}
+.btn-gold:active{transform:scale(.98)}
+.btn-ghost{background:transparent;color:var(--t);border:1px solid var(--border2)}
+.btn-ghost:active{background:var(--bg4)}
+.btn-sm{padding:10px 16px;font-size:11px;border-radius:10px}
+
+/* ── WEEKLY STRIP ── */
+.week-strip{display:flex;gap:6px;padding:0 16px 12px}
+.day{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--fd);font-size:11px;font-weight:700;
+  color:var(--t3);background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
+.day.today{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+.day.active{background:rgba(0,212,154,.12);color:var(--teal);border-color:var(--teal-g)}
+
+/* ── NETWORK UNLOCK ── */
+.network-card{background:linear-gradient(135deg,#100A20,#0C0818);
+  border:1.5px solid rgba(129,140,248,.25);border-radius:18px;padding:16px}
+.nc-label{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:#818CF8;margin-bottom:8px}
+.nc-bar-wrap{height:6px;background:rgba(255,255,255,.07);border-radius:3px;
+  overflow:hidden;margin:10px 0 6px}
+.nc-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#818CF8,#A78BFA)}
+.nc-legend{display:flex;justify-content:space-between;font-family:var(--fm);
+  font-size:10px;color:var(--t3)}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between}
+.sec-lbl-r{color:var(--teal);letter-spacing:0;text-transform:none;cursor:pointer;
+  font-size:11px;font-weight:600}
+
+/* ── NOTIFICATIONS ── */
+.notif-item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
+.notif-item:last-child{border-bottom:none}
+.ni-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.ni-content{flex:1}
+.ni-title{font-size:13px;font-weight:500;color:var(--t);line-height:1.4}
+.ni-time{font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:3px}
+.ni-new{background:var(--teal-l);border:1px solid var(--teal-g);border-radius:4px;
+  padding:1px 6px;font-family:var(--fd);font-size:8px;font-weight:700;color:var(--teal);
+  margin-left:6px}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .4s ease both}
+.delay-1{animation-delay:.05s}.delay-2{animation-delay:.1s}
+.delay-3{animation-delay:.15s}.delay-4{animation-delay:.2s}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     ÉCRAN 1 — TABLEAU DE BORD
+════════════════════════════ -->
+<div class="screen active" id="s1">
+  <div class="sbar">
+    <div class="sbar-time">09:41</div>
+    <div class="live-dot">En direct</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag" id="hdrTag">Bonjour 👋</div>
+    <div class="hdr-title">Ton réseau<br>travaille pour toi.</div>
+    <div class="hdr-sub" id="hdrSub">Membre Popey Human</div>
+  </div>
+
+  <!-- WALLET HERO -->
+  <div class="pad gap fade-up">
+    <div class="metric-hero">
+      <div class="mh-label">Commissions à percevoir</div>
+      <div class="mh-val" id="mhVal">0€</div>
+      <div class="mh-sub">Versement automatique le 1er juin</div>
+      <div class="mh-trend">↑ +180€ vs le mois dernier</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px">
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--teal)" id="dealsSignedVal">0</div>
+          <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Deals signés</div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--gold)" id="recosSentVal">0</div>
+          <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Recos envoyées</div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--t2)" id="convRateVal">0%</div>
+          <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Taux conv.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOGUE STATS — LA NOUVEAUTÉ -->
+  <div class="pad gap fade-up delay-1">
+    <div class="sec-lbl">Ton privilège ce mois <span class="sec-lbl-r" onclick="showScreen('s2')">Détail →</span></div>
+    <div class="cat-stats-card">
+      <div class="csc-header">
+        <div class="csc-title">🔧 Diagnostic chaudière offert</div>
+        <div class="csc-month">Mai 2026</div>
+      </div>
+      <div class="csc-funnel">
+        <div class="funnel-row">
+          <div class="fr-icon" style="background:rgba(129,140,248,.1)">👁</div>
+          <div class="fr-info">
+            <div class="fr-label">Personnes qui ont vu ton offre</div>
+            <div class="fr-bar-wrap"><div class="fr-bar" style="width:100%;background:#818CF8"></div></div>
+          </div>
+          <div class="fr-val" style="color:#818CF8">1 247</div>
+        </div>
+        <div class="funnel-row">
+          <div class="fr-icon" style="background:rgba(232,184,75,.1)">👆</div>
+          <div class="fr-info">
+            <div class="fr-label">Ont cliqué "Activer mon privilège"</div>
+            <div class="fr-bar-wrap"><div class="fr-bar" style="width:55%;background:var(--gold)"></div></div>
+          </div>
+          <div class="fr-val" style="color:var(--gold)">68</div>
+        </div>
+        <div class="funnel-row">
+          <div class="fr-icon" style="background:rgba(0,212,154,.1)">💬</div>
+          <div class="fr-info">
+            <div class="fr-label">T'ont contacté via WhatsApp</div>
+            <div class="fr-bar-wrap"><div class="fr-bar" style="width:35%;background:var(--teal)"></div></div>
+          </div>
+          <div class="fr-val" style="color:var(--teal)">24</div>
+        </div>
+        <div class="funnel-row">
+          <div class="fr-icon" style="background:rgba(0,212,154,.15)">✅</div>
+          <div class="fr-info">
+            <div class="fr-label">Devis → Chantier signé</div>
+            <div class="fr-bar-wrap"><div class="fr-bar" style="width:18%;background:var(--teal)"></div></div>
+          </div>
+          <div class="fr-val" style="color:var(--teal)">8</div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;color:var(--t2)">Taux de conversion contact → chantier</div>
+        <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">33%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION DU JOUR -->
+  <div class="pad gap fade-up delay-2">
+    <div class="sec-lbl">Action du jour</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:center">
+      <div style="font-size:28px">💡</div>
+      <div style="flex:1">
+        <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t);margin-bottom:4px">Marc (agent immo) attend ta réponse</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.5">Il veut envoyer 2 nouveaux propriétaires qui ont besoin d'un plombier de confiance.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT NOTIF -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Dernières notifications <span class="sec-lbl-r">Tout voir →</span></div>
+    <div class="card card-p">
+      <div class="notif-item">
+        <div class="ni-dot" style="background:var(--teal)"></div>
+        <div class="ni-content">
+          <div class="ni-title">Nouveau contact via catalogue <span class="ni-new">NOUVEAU</span></div>
+          <div style="font-size:12px;color:var(--t2);margin-top:2px">Pierre M. veut activer ton diagnostic chaudière — JPR te l'envoie préqualifié</div>
+          <div class="ni-time">Il y a 12 min</div>
+        </div>
+      </div>
+      <div class="notif-item">
+        <div class="ni-dot" style="background:var(--gold)"></div>
+        <div class="ni-content">
+          <div class="ni-title">Deal signé · Lucie B. → Chaudière complète</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:2px">Commission : +180€ · Via la recommandation de Marc (agent immo)</div>
+          <div class="ni-time">Il y a 3 jours</div>
+        </div>
+      </div>
+      <div class="notif-item">
+        <div class="ni-dot" style="background:#818CF8"></div>
+        <div class="ni-content">
+          <div class="ni-title">1 247 personnes ont vu ton offre ce mois</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:2px">Ton catalogue a été partagé par 6 pros différents + 14 apporteurs d'affaires</div>
+          <div class="ni-time">Mis à jour ce matin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     ÉCRAN 2 — MON PRIVILÈGE + STATS
+════════════════════════════ -->
+<div class="screen" id="s2">
+  <div class="sbar">
+    <div class="sbar-time">09:41</div>
+    <div style="font-size:11px;color:var(--t2);font-family:var(--fd)">Mai 2026</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Mon offre · Partage</div>
+    <div class="hdr-title">Ton offre,<br>tes contacts, ton catalogue.</div>
+  </div>
+
+  <!-- MON OFFRE -->
+  <div class="pad gap">
+    <div class="sec-lbl">Ton offre ce mois</div>
+    <div style="background:linear-gradient(135deg,#0A1A10,#061009);border:1.5px solid var(--teal-g);border-radius:18px;padding:18px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.06">🔧</div>
+      <div style="font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,212,154,.6);margin-bottom:10px" id="offerMeta">Privilège actif</div>
+      <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:var(--t);margin-bottom:6px;line-height:1.1" id="offerTitle">Offre du mois</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.55;margin-bottom:14px">Diagnostic complet avant l'hiver + devis sans engagement. Valeur réelle : 120€. Disponible uniquement via le réseau Popey.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openModal('editOffer')">Modifier →</button>
+        <button class="btn btn-teal btn-sm" style="flex:1" onclick="openModal('renewOffer')">Renouveler pour juin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT CONTACTS + ENVOI CATALOGUE -->
+  <div class="pad gap">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">1</span>
+        Importe tes contacts
+      </span>
+    </div>
+    <div class="card card-p">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="font-size:32px">📱</div>
+        <div style="flex:1">
+          <div style="font-family:var(--fd);font-size:15px;font-weight:800;color:var(--t)" id="importLbl">Aucun contact importé</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px" id="importSub">Importe ton .vcf pour commencer</div>
+          <div style="margin-top:7px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">
+            <div id="importBar" style="height:100%;width:0%;background:var(--teal);border-radius:2px;transition:width .6s ease"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-teal btn-sm" style="flex:1" onclick="importContacts()">📥 Importer .vcf/.csv</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;font-size:10px" onclick="openTuto()">❓ Comment faire</button>
+      </div>
+      <div style="font-size:11px;color:var(--t3);line-height:1.5">Contacts importés une fois, disponibles chaque mois pour les nouveaux catalogues.</div>
+    </div>
+  </div>
+
+  <div class="pad gap">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">2</span>
+        Envoie le catalogue de mai
+      </span>
+    </div>
+    <div class="card card-p">
+      <div style="margin-bottom:12px;padding:12px;background:rgba(0,212,154,.06);border:1px solid var(--teal-g);border-radius:12px;font-size:12px;color:var(--t2);line-height:1.65">
+        <div style="font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:5px">Message pré-rédigé</div>
+      <div id="massMessagePreview" style="font-style:italic">"Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de Dax. Clique ici pour profiter de mes avantages."</div>
+      </div>
+      <button class="btn btn-teal" style="margin-bottom:8px" onclick="openWAMass()">
+        <span style="font-size:16px">💬</span> ENVOYER LE CATALOGUE EN MASSE
+      </button>
+      <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5">WhatsApp s'ouvre · Tu sélectionnes tes contacts · 1 tap</div>
+    </div>
+  </div>
+
+  <!-- SOURCE DES CONTACTS -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">D'où viennent tes contacts ce mois</div>
+    <div class="card card-p" style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:14px;flex-shrink:0">🔑</div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--t);font-weight:500;margin-bottom:3px">Marc Fontaine · Agent immo</div>
+          <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden"><div style="height:100%;width:45%;background:var(--gold);border-radius:2px"></div></div>
+        </div>
+        <div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--gold)">11</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:14px;flex-shrink:0">🏋️</div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--t);font-weight:500;margin-bottom:3px">Antonin · Coach sportif</div>
+          <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden"><div style="height:100%;width:30%;background:var(--teal);border-radius:2px"></div></div>
+        </div>
+        <div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--teal)">7</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:14px;flex-shrink:0">💸</div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--t);font-weight:500;margin-bottom:3px">Apporteurs d'affaires (×14)</div>
+          <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden"><div style="height:100%;width:25%;background:#818CF8;border-radius:2px"></div></div>
+        </div>
+        <div style="font-family:var(--fd);font-size:14px;font-weight:800;color:#818CF8">6</div>
+      </div>
+    </div>
+  </div>
+  <!-- VOIR CATALOGUE + PARTAGER OFFRES AUTRES -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Offres des autres membres <span class="sec-lbl-r">5 sphères →</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+        <div style="height:3px;background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+        <div style="padding:14px 16px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:13px;background:rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔑</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t)">Agent immobilier</div>
+            <div style="font-size:11px;color:var(--t3)">Marc Fontaine · Dax · 500€ de remise</div>
+            <div style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600">Ta comm si ça signe : ~75€</div>
+          </div>
+          <button class="btn btn-sm" style="width:auto;background:#25D366;color:#fff;border:none;font-family:var(--fd);font-size:11px;font-weight:800;padding:10px 14px;border-radius:10px;cursor:pointer;flex-shrink:0" onclick="shareOffer('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-FP-001')">💬 Partager</button>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+        <div style="height:3px;background:linear-gradient(90deg,#00C896,#00A070)"></div>
+        <div style="padding:14px 16px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:13px;background:rgba(0,200,150,.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏋️</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t)">Coach sportif</div>
+            <div style="font-size:11px;color:var(--t3)">Antonin Lemaire · Dax · 1er mois offert</div>
+            <div style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600">Ta comm si ça signe : ~40€</div>
+          </div>
+          <button class="btn btn-sm" style="width:auto;background:#25D366;color:#fff;border:none;font-family:var(--fd);font-size:11px;font-weight:800;padding:10px 14px;border-radius:10px;cursor:pointer;flex-shrink:0" onclick="shareOffer('Antonin Lemaire','Coach sportif','1er mois offert','PRIV-AL-FP-002')">💬 Partager</button>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+        <div style="height:3px;background:linear-gradient(90deg,#60A5FA,#3B82F6)"></div>
+        <div style="padding:14px 16px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:13px;background:rgba(96,165,250,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💻</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t)">Développeur web</div>
+            <div style="font-size:11px;color:var(--t3)">Lucas Bernard · Bayonne · -15% + maintenance</div>
+            <div style="font-size:11px;color:var(--gold);margin-top:3px;font-weight:600">Ta comm si ça signe : ~90€</div>
+          </div>
+          <button class="btn btn-sm" style="width:auto;background:#25D366;color:#fff;border:none;font-family:var(--fd);font-size:11px;font-weight:800;padding:10px 14px;border-radius:10px;cursor:pointer;flex-shrink:0" onclick="shareOffer('Lucas Bernard','Développeur web','-15% + maintenance offerte','PRIV-LB-FP-003')">💬 Partager</button>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" onclick="openModal('allOffers')">Voir toutes les offres du réseau →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════
+     ÉCRAN 3 — RECOMMANDER QUELQU'UN
+════════════════════════════ -->
+<div class="screen" id="s3">
+  <div class="sbar">
+    <div class="sbar-time">09:41</div>
+    <div style="font-size:11px;color:var(--t2);font-family:var(--fd)">Mise en relation</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Recommander</div>
+    <div class="hdr-title">20 secondes.<br>C'est tout.</div>
+    <div class="hdr-sub">Tu repères le besoin, tu entres le contact. Jean-Philippe s'occupe du reste — il qualifie et dispatch dans les 2h.</div>
+  </div>
+
+  <!-- COMMISSION PREVIEW -->
+  <div class="pad gap">
+    <div class="comm-preview">
+      <div class="cp-label">Ta commission si ça signe</div>
+      <div class="cp-val" id="commPreview">12% · délai moyen 45 jours</div>
+      <div class="cp-sub">Toutes les soumissions sont envoyées à Jean-Philippe Roth et visibles en admin. Ton lien de tracking est généré automatiquement.</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="pad gap">
+    <div class="reco-form">
+      <div class="rf-field">
+        <label class="rf-label">Ville cible</label>
+        <select class="rf-select" id="recoCity">
+          <option>Dax (40)</option>
+          <option>Bayonne (64)</option>
+          <option>Pau (64)</option>
+          <option>Mont-de-Marsan (40)</option>
+          <option>Bordeaux (33)</option>
+        </select>
+      </div>
+      <div class="rf-row">
+        <div class="rf-field">
+          <label class="rf-label">Prénom du contact</label>
+          <input class="rf-input" type="text" id="recoContactName" placeholder="Nicolas">
+        </div>
+        <div class="rf-field">
+          <label class="rf-label">Son WhatsApp</label>
+          <input class="rf-input" type="tel" id="recoContactPhone" placeholder="06 24 78 14 32">
+        </div>
+      </div>
+      <div class="rf-field">
+        <label class="rf-label">Besoin métier</label>
+        <input class="rf-input" type="text" id="recoProjectType" placeholder="Ex : Architecte, Coach sportif, Agent immo…">
+      </div>
+      <div class="rf-row">
+        <div class="rf-field">
+          <label class="rf-label">Valeur estimée (optionnel)</label>
+          <input class="rf-input" type="number" id="recoEstimatedValue" placeholder="Ex : 250 000">
+        </div>
+        <div class="rf-field">
+          <label class="rf-label">Urgence</label>
+          <select class="rf-select" id="recoUrgency">
+            <option>Normale</option>
+            <option>Rapide (< 1 semaine)</option>
+            <option>Urgent (aujourd'hui)</option>
+          </select>
+        </div>
+      </div>
+      <div class="rf-field">
+        <label class="rf-label">Contexte · Commentaire</label>
+        <textarea class="rf-input" id="recoComment" rows="3" placeholder="Contexte utile pour JPR : situation du contact, ce qui a déclenché son besoin…" style="resize:none;line-height:1.5"></textarea>
+      </div>
+      <button class="btn btn-teal" onclick="sendReco()">
+        <span>📨</span> Envoyer la mise en relation
+      </button>
+    </div>
+  </div>
+
+  <!-- MON RÉSEAU ÉCLAIREURS -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Mon réseau éclaireurs</div>
+    <div class="network-card">
+      <div class="nc-label">Statut de déblocage</div>
+      <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--t);margin-bottom:4px">3 / 5 opportunités finalisées</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Encore 2 deals signés pour débloquer ton réseau éclaireurs — et gagner +3% sur leurs commissions automatiquement.</div>
+      <div class="nc-bar-wrap"><div class="nc-bar" style="width:60%"></div></div>
+      <div class="nc-legend"><span>0</span><span style="color:#818CF8">Débloqué à 5</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     ÉCRAN 4 — PIPELINE + COMMISSIONS
+════════════════════════════ -->
+<div class="screen" id="s4">
+  <div class="sbar">
+    <div class="sbar-time">09:41</div>
+    <div style="font-size:11px;color:var(--t2);font-family:var(--fd)">Mai 2026</div>
+  </div>
+
+  <div class="screen-hdr">
+    <div class="hdr-tag">Pipeline · Commissions</div>
+    <div class="hdr-title">Chaque mise en relation<br>suivie jusqu'au paiement.</div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="pad gap">
+    <div class="stats2">
+      <div class="metric-hero" style="padding:16px">
+        <div class="mh-label" style="font-size:8px">Gagné ce mois</div>
+        <div class="mh-val" style="font-size:36px">540€</div>
+        <div class="mh-trend">↑ +180€ vs avril</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="stat-card">
+          <div class="sc-label">En attente</div>
+          <div class="sc-val amber">180€</div>
+          <div class="sc-sub">3 deals en cours</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Objectif</div>
+          <div class="sc-val" style="font-size:18px">600€</div>
+          <div class="sc-trend up">90% atteint</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE ACTIF -->
+  <div class="pad gap">
+    <div class="sec-lbl">Contacts en cours</div>
+    <div class="card">
+
+      <div class="pipeline-item">
+        <div class="pi-av" style="background:rgba(0,212,154,.12);color:var(--teal)">PM</div>
+        <div class="pi-info">
+          <div class="pi-name">Pierre Martin</div>
+          <div class="pi-meta">Via Marc (agent immo) · il y a 12 min</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <div style="display:flex;gap:3px">
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-active"></div>
+              <div class="step-dot step-todo"></div>
+              <div class="step-dot step-todo"></div>
+            </div>
+            <div style="font-size:9px;color:var(--t3);font-family:var(--fd)">CONTACTÉ · RDV · OFFRE · SIGNÉ</div>
+          </div>
+          <div style="font-size:11px;color:var(--teal)">JPR rappelle dans 2h · Chaudière urgente</div>
+        </div>
+        <div class="pi-right">
+          <div class="pi-comm" style="color:var(--amber)">+180€</div>
+          <div class="pi-tag t-pending">En cours</div>
+        </div>
+      </div>
+
+      <div class="pipeline-item">
+        <div class="pi-av" style="background:rgba(232,184,75,.12);color:var(--gold)">LB</div>
+        <div class="pi-info">
+          <div class="pi-name">Lucie Bonnet</div>
+          <div class="pi-meta">Via apporteur · il y a 2 jours</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <div style="display:flex;gap:3px">
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-active"></div>
+              <div class="step-dot step-todo"></div>
+            </div>
+            <div style="font-size:9px;color:var(--t3);font-family:var(--fd)">CONTACTÉ · RDV · OFFRE · SIGNÉ</div>
+          </div>
+          <div style="font-size:11px;color:var(--gold)">RDV fait · Devis envoyé · Attente réponse</div>
+        </div>
+        <div class="pi-right">
+          <div class="pi-comm" style="color:var(--gold)">+120€</div>
+          <div class="pi-tag t-rdv">Devis envoyé</div>
+        </div>
+      </div>
+
+      <div class="pipeline-item">
+        <div class="pi-av" style="background:rgba(0,212,154,.15);color:var(--teal)">SV</div>
+        <div class="pi-info">
+          <div class="pi-name">Sophie Vidal</div>
+          <div class="pi-meta">Via Antonin (coach) · il y a 3 jours</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <div style="display:flex;gap:3px">
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-done"></div>
+              <div class="step-dot step-done"></div>
+            </div>
+            <div style="font-size:9px;color:var(--t3);font-family:var(--fd)">CONTACTÉ · RDV · OFFRE · SIGNÉ</div>
+          </div>
+          <div style="font-size:11px;color:var(--teal)">✓ Chantier signé · 2 800€ · Versement 1er juin</div>
+        </div>
+        <div class="pi-right">
+          <div class="pi-comm" style="color:var(--teal)">+240€</div>
+          <div class="pi-tag t-signed">✓ Signé</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div class="pad" style="margin-bottom:20px">
+    <div class="sec-lbl">Historique · Versements confirmés</div>
+    <div class="card card-p">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--fm);font-size:11px;color:var(--t3);width:44px;flex-shrink:0">Avril</div>
+        <div style="flex:1"><div style="font-size:13px;color:var(--t);font-weight:500">5 deals signés</div><div style="font-size:11px;color:var(--t3)">Versé le 1er mai</div></div>
+        <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">+360€</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--fm);font-size:11px;color:var(--t3);width:44px;flex-shrink:0">Mars</div>
+        <div style="flex:1"><div style="font-size:13px;color:var(--t);font-weight:500">3 deals signés</div><div style="font-size:11px;color:var(--t3)">Versé le 1er avril</div></div>
+        <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">+180€</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+        <div style="font-family:var(--fm);font-size:11px;color:var(--t3);width:44px;flex-shrink:0">Fév.</div>
+        <div style="flex:1"><div style="font-size:13px;color:var(--t);font-weight:500">1er deal signé</div><div style="font-size:11px;color:var(--t3)">Versé le 1er mars</div></div>
+        <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">+60€</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ BOTTOM NAV ════ -->
+<div class="bnav">
+  <div class="bn active" id="bn1" onclick="showScreen('s1','bn1')">
+    <div class="bn-icon">🏠</div>
+    <div class="bn-lbl">Accueil</div>
+  </div>
+  <div class="bn" id="bn2" onclick="showScreen('s2','bn2')">
+    <div class="bn-icon">📊</div>
+    <div class="bn-lbl">Mon offre</div>
+  </div>
+  <div class="bn" id="bn3" onclick="showScreen('s3','bn3')">
+    <div class="bn-icon">📨</div>
+    <div class="bn-lbl">Recommander</div>
+  </div>
+  <div class="bn" id="bn4" onclick="showScreen('s4','bn4')">
+    <div class="bn-icon">💰</div>
+    <div class="bn-lbl">Pipeline</div>
+    <div class="bn-badge">3</div>
+  </div>
+</div>
+
+
+<!-- ═══════════ MODAL SYSTÈME ═══════════ -->
+<div id="modalOverlay" style="position:fixed;inset:0;bottom:66px;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:70;display:none;align-items:flex-end;justify-content:center;padding:10px" onclick="if(event.target===this)closeModal()">
+  <div id="modalBox" style="background:var(--bg2);border:1px solid var(--border2);border-radius:24px;width:100%;max-height:88%;overflow-y:auto;scrollbar-width:none">
+
+    <!-- ─── MODIFIER OFFRE ─── -->
+    <div id="modal-editOffer" style="display:none;flex-direction:column">
+      <div style="padding:20px 20px 0">
+        <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800;color:var(--t)">Modifier mon privilège</div>
+          <button onclick="closeModal()" style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.5">Ton offre est visible par tous les membres du réseau et leurs contacts. Elle s'applique ce mois-ci.</div>
+      </div>
+      <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label style="font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:7px">Titre de l'offre</label>
+          <input style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;font-family:var(--fi);font-size:14px;color:var(--t);outline:none" value="Diagnostic chaudière offert">
+        </div>
+        <div>
+          <label style="font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:7px">Description (1 phrase bénéfice)</label>
+          <textarea rows="3" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;font-family:var(--fi);font-size:14px;color:var(--t);outline:none;resize:none;line-height:1.5">Diagnostic complet avant l'hiver + devis sans engagement. Valeur réelle : 120€.</textarea>
+        </div>
+        <div>
+          <label style="font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:7px">Valeur réelle (€)</label>
+          <input type="number" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;font-family:var(--fi);font-size:14px;color:var(--t);outline:none" value="120">
+        </div>
+        <!-- Commission apporteur -->
+        <div style="background:linear-gradient(135deg,rgba(0,212,154,.08),transparent);border:1.5px solid var(--teal-g);border-radius:14px;padding:16px">
+          <div style="font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:14px">Ce que gagnent tes apporteurs d'affaires</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+
+            <!-- Si deal payant -->
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--t)">Si le deal est payant</div>
+                <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">6% du montant</div>
+              </div>
+              <div style="font-size:11px;color:var(--t3);line-height:1.5">Exemple : chantier à 800€ → <strong style="color:var(--teal)">+48€</strong> versés à l'apporteur le 1er du mois</div>
+            </div>
+
+            <!-- Si gratuité -->
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--t)">Si ton offre est une gratuité</div>
+                <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--gold)">15€ fixe</div>
+              </div>
+              <div style="font-size:11px;color:var(--t3);line-height:1.5">15€ versés dès que le contact qualifié arrive chez toi — que ça signe ou pas. Ça motive quand même à recommander.</div>
+            </div>
+
+            <!-- Combo -->
+            <div style="background:rgba(232,184,75,.06);border:1px solid var(--gold-g);border-radius:12px;padding:12px">
+              <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--gold);margin-bottom:5px">💡 Les deux peuvent s'additionner</div>
+              <div style="font-size:11px;color:var(--t2);line-height:1.5">Diagnostic gratuit apporté → <strong style="color:var(--gold)">15€</strong> immédiat. Si le chantier signe ensuite → <strong style="color:var(--teal)">+6%</strong> en bonus dans les 60 jours.</div>
+            </div>
+
+            <div style="font-size:11px;color:var(--t3);line-height:1.5;text-align:center">Tout est calculé et versé automatiquement par Popey · Tu n'as rien à gérer</div>
+          </div>
+        </div>
+        <button class="btn btn-teal" onclick="closeModal();showToast('✓ Offre mise à jour')">Enregistrer les modifications</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      </div>
+    </div>
+
+    <!-- ─── RENOUVELER POUR JUIN ─── -->
+    <div id="modal-renewOffer" style="display:none;flex-direction:column">
+      <div style="padding:20px">
+        <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800;color:var(--t)">Renouveler pour juin</div>
+          <button onclick="closeModal()" style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.5">Le catalogue de juin sera envoyé dès le 1er juin à tous les contacts du réseau. Confirme ou adapte ton offre.</div>
+
+        <!-- Bilan mai -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px">Bilan de ton offre en mai</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+            <div>
+              <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#818CF8">1 247</div>
+              <div style="font-size:9px;color:var(--t3);margin-top:2px">Vues</div>
+            </div>
+            <div>
+              <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:var(--gold)">68</div>
+              <div style="font-size:9px;color:var(--t3);margin-top:2px">Clics</div>
+            </div>
+            <div>
+              <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:var(--teal)">8</div>
+              <div style="font-size:9px;color:var(--t3);margin-top:2px">Signés</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:rgba(0,212,154,.06);border:1px solid var(--teal-g);border-radius:10px;font-size:12px;color:var(--t2);line-height:1.5">
+            💡 <strong style="color:var(--teal)">Conseil JPR :</strong> ton offre a bien fonctionné. Garde-la identique pour juin ou augmente légèrement la valeur offerte pour booster le taux de clic.
+          </div>
+        </div>
+
+        <!-- Choix renouvellement -->
+        <div style="font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Option pour juin</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div id="renew-same" onclick="selectRenew('same')" style="padding:14px;background:rgba(0,212,154,.08);border:1.5px solid var(--teal-g);border-radius:14px;cursor:pointer;transition:all .2s">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);font-weight:700;flex-shrink:0">✓</div>
+              <div>
+                <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t)">Reconduire à l'identique</div>
+                <div style="font-size:11px;color:var(--t2);margin-top:2px">Diagnostic chaudière offert · Valeur 120€</div>
+              </div>
+            </div>
+          </div>
+          <div id="renew-new" onclick="selectRenew('new')" style="padding:14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all .2s">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--bg4);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--t3);flex-shrink:0" id="renew-new-dot">○</div>
+              <div>
+                <div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--t)">Nouvelle offre pour juin</div>
+                <div style="font-size:11px;color:var(--t2);margin-top:2px">Je veux changer le titre ou la valeur offerte</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-teal" onclick="closeModal();showToast('✓ Offre reconduite pour juin !')">Confirmer pour juin →</button>
+        <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:10px;line-height:1.5">Ton offre apparaîtra dans le catalogue de juin dès le 1er juin · Envoi automatique à tous les contacts du réseau</div>
+      </div>
+    </div>
+
+    <!-- ─── TOUTES LES OFFRES DU RÉSEAU ─── -->
+    <div id="modal-allOffers" style="display:none;flex-direction:column">
+      <div style="padding:20px 20px 0">
+        <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800;color:var(--t)">Catalogue réseau · Mai 2026</div>
+          <button onclick="closeModal()" style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:16px">Partage une offre à un contact précis. Ta commission est tracée automatiquement.</div>
+      </div>
+      <div style="padding:0 16px 20px;display:flex;flex-direction:column;gap:10px">
+
+        <!-- Offer row template -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="height:3px;background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+          <div style="padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:13px;background:rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔑</div>
+            <div style="flex:1">
+              <div style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t)">Agent immobilier</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px">Marc Fontaine · Dax</div>
+              <div style="margin-top:6px;display:inline-flex;background:var(--gold-l);border:1px solid var(--gold-g);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--gold)">500€ de remise honoraires</div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--teal);font-weight:600">Ta comm : ~75€</div>
+            <button onclick="shareOffer('Marc Fontaine','Agent immobilier','500€ de remise','PRIV-MF-FP-001');closeModal();" style="background:#25D366;color:#fff;padding:9px 16px;border-radius:10px;border:none;font-family:var(--fd);font-size:11px;font-weight:800;cursor:pointer">💬 Partager</button>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="height:3px;background:linear-gradient(90deg,#00C896,#00A070)"></div>
+          <div style="padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:13px;background:rgba(0,200,150,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏋️</div>
+            <div style="flex:1">
+              <div style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t)">Coach sportif</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px">Antonin Lemaire · Dax</div>
+              <div style="margin-top:6px;display:inline-flex;background:var(--teal-l);border:1px solid var(--teal-g);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--teal)">1er mois de coaching offert</div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--teal);font-weight:600">Ta comm : ~40€</div>
+            <button onclick="shareOffer('Antonin Lemaire','Coach sportif','1er mois offert','PRIV-AL-FP-002');closeModal();" style="background:#25D366;color:#fff;padding:9px 16px;border-radius:10px;border:none;font-family:var(--fd);font-size:11px;font-weight:800;cursor:pointer">💬 Partager</button>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="height:3px;background:linear-gradient(90deg,#60A5FA,#3B82F6)"></div>
+          <div style="padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:13px;background:rgba(96,165,250,.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">💻</div>
+            <div style="flex:1">
+              <div style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t)">Développeur web</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px">Lucas Bernard · Bayonne</div>
+              <div style="margin-top:6px;display:inline-flex;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#60A5FA">-15% + 3 mois maintenance offerts</div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--teal);font-weight:600">Ta comm : ~90€</div>
+            <button onclick="shareOffer('Lucas Bernard','Développeur web','-15% + maintenance','PRIV-LB-FP-003');closeModal();" style="background:#25D366;color:#fff;padding:9px 16px;border-radius:10px;border:none;font-family:var(--fd);font-size:11px;font-weight:800;cursor:pointer">💬 Partager</button>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="height:3px;background:linear-gradient(90deg,#A78BFA,#7C3AED)"></div>
+          <div style="padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:13px;background:rgba(167,139,250,.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
+            <div style="flex:1">
+              <div style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t)">Avocat d'affaires</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px">Thomas Laurent · Bayonne</div>
+              <div style="margin-top:6px;display:inline-flex;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#A78BFA">Consultation juridique 45 min offerte</div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--teal);font-weight:600">Ta comm : ~60€</div>
+            <button onclick="shareOffer('Thomas Laurent','Avocat d affaires','Consultation 45min offerte','PRIV-TL-FP-004');closeModal();" style="background:#25D366;color:#fff;padding:9px 16px;border-radius:10px;border:none;font-family:var(--fd);font-size:11px;font-weight:800;cursor:pointer">💬 Partager</button>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="height:3px;background:linear-gradient(90deg,#F48FB1,#C2185B)"></div>
+          <div style="padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:13px;background:rgba(181,55,106,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📸</div>
+            <div style="flex:1">
+              <div style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t)">Photographe mariage</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px">Clara Petit · Dax</div>
+              <div style="margin-top:6px;display:inline-flex;background:rgba(181,55,106,.08);border:1px solid rgba(181,55,106,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#F48FB1">Album photo offert (valeur 280€)</div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--teal);font-weight:600">Ta comm : ~112€</div>
+            <button onclick="shareOffer('Clara Petit','Photographe mariage','Album photo offert','PRIV-CP-FP-005');closeModal();" style="background:#25D366;color:#fff;padding:9px 16px;border-radius:10px;border:none;font-family:var(--fd);font-size:11px;font-weight:800;cursor:pointer">💬 Partager</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end modalBox -->
+</div><!-- end modalOverlay -->
+<!-- TUTO MODAL -->
+<div id="tutoModal" style="position:fixed;inset:0;bottom:66px;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);z-index:60;display:none;align-items:flex-end;justify-content:center;padding:12px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:24px;width:100%;max-height:80%;overflow-y:auto;padding:24px;animation:fadeUp .25s ease;scrollbar-width:none">
+    <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:var(--fd);font-size:17px;font-weight:800;color:var(--t)">Exporter mes contacts</div>
+      <button onclick="document.getElementById('tutoModal').style.display='none'" style="width:28px;height:28px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:0;background:var(--bg3);border-radius:12px;padding:3px;margin-bottom:18px">
+      <button id="tos-ios" onclick="switchTuto('ios')" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s"> iPhone</button>
+      <button id="tos-and" onclick="switchTuto('android')" style="flex:1;padding:9px;border-radius:10px;border:none;background:transparent;color:var(--t3);font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s"> Android</button>
+    </div>
+    <div id="tuto-ios" style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-family:var(--fd);letter-spacing:.08em;text-transform:uppercase">Sur iPhone</div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Ouvre <strong style="color:var(--t)">iCloud.com</strong> depuis Safari sur ton iPhone</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Va dans <strong style="color:var(--t)">Contacts</strong> → Tout sélectionner → <strong style="color:var(--t)">Exporter vCard</strong></div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Enregistre le fichier <strong style="color:var(--t)">.vcf</strong> sur ton téléphone</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Reviens ici → <strong style="color:var(--t)">Importer .vcf</strong></div></div>
+      <button onclick="document.getElementById('tutoModal').style.display='none';importContacts();" class="btn btn-teal" style="margin-top:8px">📥 Importer maintenant</button>
+    </div>
+    <div id="tuto-android" style="display:none;flex-direction:column;gap:12px">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-family:var(--fd);letter-spacing:.08em;text-transform:uppercase">Sur Android</div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Ouvre <strong style="color:var(--t)">Contacts</strong> → menu <strong style="color:var(--t)">⋮</strong> → <strong style="color:var(--t)">Gérer les contacts</strong></div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:14px;color:var(--t2);line-height:1.55"><strong style="color:var(--t)">Importer/Exporter</strong> → <strong style="color:var(--t)">Exporter vers stockage</strong></div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Fichier <strong style="color:var(--t)">.vcf</strong> créé dans tes Téléchargements</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:rgba(0,212,154,.2);color:var(--teal);font-family:var(--fd);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div style="font-size:14px;color:var(--t2);line-height:1.55">Reviens ici → <strong style="color:var(--t)">Importer .vcf</strong></div></div>
+      <button onclick="document.getElementById('tutoModal').style.display='none';importContacts();" class="btn btn-teal" style="margin-top:8px">📥 Importer maintenant</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS TOAST -->
+<div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--teal);color:var(--bg);padding:12px 24px;border-radius:100px;
+  font-family:var(--fd);font-size:13px;font-weight:800;z-index:99;
+  opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none">
+  ✓ Mise en relation envoyée à JPR
+</div>
+
+<script>
+var cur = 's1';
+var liveCtx = {
+  tokenOrCode: '',
+  portal: null,
+  privilegeCatalogHref: '/privilege',
+  refCode: '',
+  city: 'dax',
+};
+
+function normalizePhone(raw) {
+  var digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith('0')) digits = '33' + digits.slice(1);
+  return digits;
+}
+
+function slugifyCity(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function referralStatusLabel(status) {
+  if (status === 'converted') return '✓ Signé';
+  if (status === 'offered') return 'Devis envoyé';
+  if (status === 'validated') return 'RDV';
+  if (status === 'submitted') return 'Contacté';
+  return 'En cours';
+}
+
+function euros(value) {
+  var safe = Number(value || 0);
+  return safe.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
+
+function portalRefCode() {
+  var shortCode = String((liveCtx.portal && liveCtx.portal.shortCode) || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+  if (shortCode) return shortCode;
+  var token = String((liveCtx.portal && liveCtx.portal.inviteToken) || liveCtx.tokenOrCode || '').toLowerCase().trim();
+  if (token.length >= 10) return token.slice(0, 10);
+  return token;
+}
+
+function buildPrivilegeCatalogueHref() {
+  var cityLabel =
+    (liveCtx.portal && liveCtx.portal.sponsorVille) ||
+    (new URLSearchParams(window.location.search).get('city') || '') ||
+    'Dax';
+  var citySlug = slugifyCity(cityLabel);
+  var href = citySlug ? '/privilege/' + citySlug : '/privilege';
+  var params = new URLSearchParams();
+  var refCode = portalRefCode();
+  if (refCode) params.set('ref', refCode);
+  if (liveCtx.tokenOrCode) params.set('scout_token', liveCtx.tokenOrCode);
+  var scoutName = (liveCtx.portal && liveCtx.portal.scoutFirstName) || '';
+  if (scoutName) params.set('ref_name', scoutName);
+  var qs = params.toString();
+  liveCtx.refCode = refCode;
+  liveCtx.privilegeCatalogHref = qs ? href + '?' + qs : href;
+  return liveCtx.privilegeCatalogHref;
+}
+
+function updateLiveHeader() {
+  var hdrTag = document.getElementById('hdrTag');
+  var hdrSub = document.getElementById('hdrSub');
+  if (hdrTag) {
+    var firstName = String((liveCtx.portal && liveCtx.portal.scoutFirstName) || '').trim();
+    hdrTag.textContent = firstName ? ('Bonjour ' + firstName + ' 👋') : 'Bonjour 👋';
+  }
+  if (hdrSub) {
+    var sponsorName = String((liveCtx.portal && liveCtx.portal.sponsorName) || 'Réseau Popey').trim();
+    var sponsorVille = String((liveCtx.portal && liveCtx.portal.sponsorVille) || '').trim();
+    hdrSub.textContent = sponsorVille ? (sponsorName + ' · ' + sponsorVille) : sponsorName;
+  }
+}
+
+function updateLiveStats() {
+  var referrals = (liveCtx.portal && Array.isArray(liveCtx.portal.referrals)) ? liveCtx.portal.referrals : [];
+  var converted = referrals.filter(function(r){ return r.status === 'converted'; }).length;
+  var submitted = referrals.length;
+  var estimated = referrals.reduce(function(sum, r){ return sum + Number(r.estimated_commission || 0); }, 0);
+  var finalWon = referrals.reduce(function(sum, r){ return sum + Number(r.final_commission || 0); }, 0);
+  var convPct = submitted > 0 ? Math.round((converted / submitted) * 100) : 0;
+
+  var mhVal = document.getElementById('mhVal');
+  var dealsSignedVal = document.getElementById('dealsSignedVal');
+  var recosSentVal = document.getElementById('recosSentVal');
+  var convRateVal = document.getElementById('convRateVal');
+  if (mhVal) mhVal.textContent = euros(finalWon || estimated || 0).replace(',00', '');
+  if (dealsSignedVal) dealsSignedVal.textContent = String(converted);
+  if (recosSentVal) recosSentVal.textContent = String(submitted);
+  if (convRateVal) convRateVal.textContent = String(convPct) + '%';
+
+  var latest = referrals[0] || null;
+  var offerTitle = document.getElementById('offerTitle');
+  if (offerTitle) offerTitle.textContent = latest && latest.project_type ? latest.project_type : 'Offre du mois';
+}
+
+function importContacts() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.vcf,.csv';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var count = file.name.endsWith('.vcf')
+        ? (ev.target.result.match(/BEGIN:VCARD/gi)||[]).length
+        : Math.max(1, ev.target.result.split('\n').filter(function(l){return l.trim().length>5}).length - 1);
+      document.getElementById('importLbl').textContent = count + ' contact' + (count>1?'s':'') + ' importé' + (count>1?'s':'');
+      document.getElementById('importSub').textContent = 'Prêts à recevoir le catalogue de ce mois';
+      document.getElementById('importBar').style.width = Math.min(100, Math.round(count/250*100)) + '%';
+      showToast('✓ ' + count + ' contacts importés !');
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function openWAMass() {
+  var target = buildPrivilegeCatalogueHref();
+  var msg = "Salut ! J'ai accès au catalogue privilège Popey. Regarde ici : " + (window.location.origin + target);
+  var preview = document.getElementById('massMessagePreview');
+  if (preview) preview.textContent = '"' + msg + '"';
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function shareOffer(pro, metier, offre, id) {
+  var target = buildPrivilegeCatalogueHref();
+  var msg = "Salut ! Je voulais te partager une offre exclusive via Popey — " + offre + " chez " + pro + " (" + metier + "). Active-la ici : " + (window.location.origin + target) + " [ID: " + id + "]";
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function openTuto() {
+  document.getElementById('tutoModal').style.display = 'flex';
+}
+
+function openModal(id) {
+  document.getElementById('modalOverlay').style.display = 'flex';
+  ['editOffer','renewOffer','allOffers'].forEach(function(m){
+    var el = document.getElementById('modal-' + m);
+    if (el) el.style.display = (m === id) ? 'flex' : 'none';
+  });
+}
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+function selectRenew(type) {
+  var sameDot = document.getElementById('renew-same');
+  var newDot = document.getElementById('renew-new');
+  if (type === 'same') {
+    sameDot.style.borderColor = 'var(--teal-g)';
+    sameDot.style.background = 'rgba(0,212,154,.08)';
+    newDot.style.borderColor = 'var(--border)';
+    newDot.style.background = 'var(--bg3)';
+  } else {
+    newDot.style.borderColor = 'var(--teal-g)';
+    newDot.style.background = 'rgba(0,212,154,.08)';
+    sameDot.style.borderColor = 'var(--border)';
+    sameDot.style.background = 'var(--bg3)';
+  }
+}
+function switchTuto(os) {
+  var isIos = os === 'ios';
+  document.getElementById('tuto-ios').style.display = isIos ? 'flex' : 'none';
+  document.getElementById('tuto-android').style.display = !isIos ? 'flex' : 'none';
+  document.getElementById('tos-ios').style.background = isIos ? 'var(--teal)' : 'transparent';
+  document.getElementById('tos-ios').style.color = isIos ? 'var(--bg)' : 'var(--t3)';
+  document.getElementById('tos-and').style.background = !isIos ? 'var(--teal)' : 'transparent';
+  document.getElementById('tos-and').style.color = !isIos ? 'var(--bg)' : 'var(--t3)';
+}
+
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  t.style.background = isError ? 'var(--red)' : 'var(--teal)';
+  t.style.color = isError ? '#fff' : 'var(--bg)';
+  setTimeout(function(){
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2400);
+}
+
+function showScreen(id, bnId) {
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  cur = id;
+  document.querySelectorAll('.bn').forEach(function(b){ b.classList.remove('active'); });
+  if (bnId) document.getElementById(bnId).classList.add('active');
+  else {
+    var map = {'s1':'bn1','s2':'bn2','s3':'bn3','s4':'bn4'};
+    if (map[id]) document.getElementById(map[id]).classList.add('active');
+  }
+}
+
+async function sendReco() {
+  try {
+    var name = (document.getElementById('recoContactName').value || '').trim();
+    var phone = (document.getElementById('recoContactPhone').value || '').trim();
+    var projectType = (document.getElementById('recoProjectType').value || '').trim();
+    var estimated = (document.getElementById('recoEstimatedValue').value || '').trim();
+    var urgency = (document.getElementById('recoUrgency').value || '').trim();
+    var comment = (document.getElementById('recoComment').value || '').trim();
+    if (!liveCtx.tokenOrCode) {
+      showToast('Lien tokenisé requis (?token=... ou ?code=...)', true);
+      return;
+    }
+    if (!name || !phone) {
+      showToast('Prénom + WhatsApp sont obligatoires.', true);
+      return;
+    }
+    var response = await fetch('/api/popey-human/eclaireur-preview/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tokenOrCode: liveCtx.tokenOrCode,
+        contactName: name,
+        contactPhone: phone,
+        projectType: projectType || null,
+        estimatedDealValue: estimated || null,
+        comment: [urgency ? ('Urgence: ' + urgency) : '', comment].filter(Boolean).join(' · ')
+      })
+    });
+    var payload = await response.json().catch(function(){ return {}; });
+    if (!response.ok) {
+      showToast(payload.error || 'Envoi impossible.', true);
+      return;
+    }
+    showToast('✓ Mise en relation envoyée à JPR');
+    document.getElementById('recoContactName').value = '';
+    document.getElementById('recoContactPhone').value = '';
+    document.getElementById('recoProjectType').value = '';
+    document.getElementById('recoEstimatedValue').value = '';
+    document.getElementById('recoComment').value = '';
+    showScreen('s4','bn4');
+    await loadPortal();
+  } catch (_error) {
+    showToast('Erreur réseau. Réessaie.', true);
+  }
+}
+
+async function loadPortal() {
+  if (!liveCtx.tokenOrCode) return;
+  try {
+    var response = await fetch('/api/popey-human/eclaireur-preview/portal?token=' + encodeURIComponent(liveCtx.tokenOrCode), { cache: 'no-store' });
+    var payload = await response.json().catch(function(){ return {}; });
+    if (!response.ok) {
+      showToast(payload.error || 'Portail indisponible.', true);
+      return;
+    }
+    liveCtx.portal = {
+      inviteToken: payload.inviteToken || null,
+      shortCode: payload.shortCode || null,
+      sponsorName: payload.sponsorName || null,
+      sponsorPhone: payload.sponsorPhone || null,
+      sponsorVille: payload.sponsorVille || null,
+      scoutFirstName: (payload.scout && payload.scout.first_name) || null,
+      referrals: payload.referrals || []
+    };
+    buildPrivilegeCatalogueHref();
+    updateLiveHeader();
+    updateLiveStats();
+  } catch (_error) {
+    showToast('Impossible de charger les données live.', true);
+  }
+}
+
+function initPreview() {
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2, '0');
+  var mm = String(now.getMinutes()).padStart(2, '0');
+  document.querySelectorAll('.sbar-time').forEach(function(el){ el.textContent = hh + ':' + mm; });
+  var params = new URLSearchParams(window.location.search);
+  liveCtx.tokenOrCode = (params.get('token') || params.get('code') || '').trim();
+  liveCtx.city = (params.get('city') || 'dax').trim();
+  if (params.get('screen')) {
+    var s = String(params.get('screen'));
+    if (s === '2') showScreen('s2', 'bn2');
+    if (s === '3') showScreen('s3', 'bn3');
+    if (s === '4') showScreen('s4', 'bn4');
+  }
+  void loadPortal();
+}
+
+document.addEventListener('DOMContentLoaded', initPreview);
+</script>
+</body>
+</html>
