@@ -36,10 +36,23 @@ export async function createClient() {
 
 export async function getServerUserIdWithProxyFallback() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user?.id) return user.id;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id) return user.id;
+  } catch {
+    // Continue with session/header fallbacks when user lookup is transiently unavailable.
+  }
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user?.id) return session.user.id;
+  } catch {
+    // Continue with proxy header fallback.
+  }
 
   const requestHeaders = await headers();
   const proxyUserId = String(requestHeaders.get("x-popey-auth-user-id") || "").trim();
