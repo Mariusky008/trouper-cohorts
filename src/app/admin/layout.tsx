@@ -4,12 +4,35 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch (supabaseError) {
+    if ((supabaseError as { digest?: string } | null)?.digest === "DYNAMIC_SERVER_USAGE") {
+      throw supabaseError;
+    }
+    console.error("Admin Supabase client init failed:", supabaseError);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
+        <h1 className="text-2xl font-bold">Configuration admin manquante</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Les variables Supabase publiques ne sont pas disponibles en production. Ajoutez
+          `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` puis redeployez.
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/">Retour accueil</Link>
+        </Button>
+      </div>
+    );
+  }
+
   let user: { id: string; email?: string | null } | null = null;
   try {
     const authResult = await supabase.auth.getUser();

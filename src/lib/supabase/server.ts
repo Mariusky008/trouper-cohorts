@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { env } from "../env";
 
 export async function createClient() {
+  if (!env.supabaseUrl || !env.supabaseAnonKey) {
+    throw new Error("Missing Supabase public environment variables");
+  }
+
   const cookieStore = await cookies();
 
   return createServerClient(

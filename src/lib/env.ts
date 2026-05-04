@@ -19,7 +19,11 @@ export const env = (() => {
     const issues = parsed.error.issues
       .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Invalid environment variables:\n${issues}`);
+    console.error(`Invalid environment variables:\n${issues}`);
+    return {
+      supabaseUrl: "",
+      supabaseAnonKey: "",
+    };
   }
 
   return {
