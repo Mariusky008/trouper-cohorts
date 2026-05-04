@@ -3,10 +3,16 @@ import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export default async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isHumanMemberArea = pathname.startsWith("/popey-human/app");
+  const isHumanAdminArea = pathname.startsWith("/admin/humain");
+  const isHumanLogin = pathname.startsWith("/popey-human/login");
+  const isHumanAdminLogin = pathname.startsWith("/popey-human/admin-login");
+  const isProtectedAuthRoute = isHumanMemberArea || isHumanAdminArea || isHumanLogin || isHumanAdminLogin;
   const isPrefetchRequest =
     request.headers.get("next-router-prefetch") === "1" ||
     request.headers.get("purpose") === "prefetch";
-  if (isPrefetchRequest) {
+  if (isPrefetchRequest && !isProtectedAuthRoute) {
     return NextResponse.next();
   }
 
@@ -35,7 +41,6 @@ export default async function proxy(request: NextRequest) {
     response,
   );
   const host = request.headers.get("host") || "";
-  const pathname = request.nextUrl.pathname;
   const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);
 
   const isPopeyLinkHost = /(^|\.)popey\.link$/i.test(host);
@@ -52,10 +57,6 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
   }
 
-  const isHumanMemberArea = pathname.startsWith("/popey-human/app");
-  const isHumanAdminArea = pathname.startsWith("/admin/humain");
-  const isHumanLogin = pathname.startsWith("/popey-human/login");
-  const isHumanAdminLogin = pathname.startsWith("/popey-human/admin-login");
   const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {

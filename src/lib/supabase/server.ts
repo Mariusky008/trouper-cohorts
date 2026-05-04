@@ -3,6 +3,33 @@ import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { env } from "../env";
 
+function readJwtSubject(accessToken: string) {
+  const payloadPart = String(accessToken || "").split(".")[1] || "";
+  if (!payloadPart) return "";
+  try {
+    const payloadJson = Buffer.from(payloadPart, "base64url").toString("utf8");
+    const payload = JSON.parse(payloadJson);
+    return String(payload?.sub || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function readAccessTokenFromCookiePayload(payload: unknown) {
+  if (!payload) return "";
+  if (typeof payload === "string") return payload;
+  if (typeof payload !== "object") return "";
+  if (Array.isArray(payload)) {
+    const firstTokenCandidate = payload.find((entry) => typeof entry === "string" && entry.split(".").length === 3);
+    return typeof firstTokenCandidate === "string" ? firstTokenCandidate : "";
+  }
+  const record = payload as Record<string, unknown>;
+  const directToken = String(record.access_token || "").trim();
+  if (directToken) return directToken;
+  const currentSession = record.currentSession as Record<string, unknown> | undefined;
+  return String(currentSession?.access_token || "").trim();
+}
+
 export async function createClient() {
   if (!env.supabaseUrl || !env.supabaseAnonKey) {
     throw new Error("Missing Supabase public environment variables");
@@ -35,6 +62,14 @@ export async function createClient() {
 }
 
 export async function getServerUserIdWithProxyFallback() {
+  const requestHeaders = await headers();
+  const proxyUserId = String(
+    requestHeaders.get("x-popey-auth-user-id") ||
+      requestHeaders.get("x-middleware-request-x-popey-auth-user-id") ||
+      "",
+  ).trim();
+  if (proxyUserId) return proxyUserId;
+
   const supabase = await createClient();
   try {
     const {
@@ -79,22 +114,13 @@ export async function getServerUserIdWithProxyFallback() {
     try {
       const decodedCookie = decodeURIComponent(authCookieValue);
       const parsedCookie = JSON.parse(decodedCookie);
-      const accessToken = String(parsedCookie?.access_token || "").trim();
-      if (accessToken) {
-        const payloadPart = accessToken.split(".")[1] || "";
-        if (payloadPart) {
-          const payloadJson = Buffer.from(payloadPart, "base64url").toString("utf8");
-          const payload = JSON.parse(payloadJson);
-          const sub = String(payload?.sub || "").trim();
-          if (sub) return sub;
-        }
-      }
+      const accessToken = readAccessTokenFromCookiePayload(parsedCookie);
+      const sub = readJwtSubject(accessToken);
+      if (sub) return sub;
     } catch {
       // Ignore malformed cookie payload and continue.
     }
   }
 
-  const requestHeaders = await headers();
-  const proxyUserId = String(requestHeaders.get("x-popey-auth-user-id") || "").trim();
-  return proxyUserId || null;
+  return null;
 }
