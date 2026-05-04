@@ -520,6 +520,7 @@ var __refName = String(qp.get('ref_name') || 'camille').trim();
 var __screenParam = String(qp.get('screen') || '').trim();
 var __scoutFirstName = '';
 var __contactsStoragePrefix = 'popey-eclaireur:import-count:';
+var __contactsStorageGlobalKey = 'popey-eclaireur:import-count:global';
 
 function getContactsStorageKey() {
   return __contactsStoragePrefix + ((__tokenOrCode || 'demo').toLowerCase());
@@ -539,14 +540,16 @@ function applyImportedContactsCount(count, subtitle) {
 }
 
 function persistImportedContactsCount(count) {
+  var safe = String(Math.max(0, Number(count || 0)));
   try {
-    localStorage.setItem(getContactsStorageKey(), String(Math.max(0, Number(count || 0))));
+    localStorage.setItem(getContactsStorageKey(), safe);
+    localStorage.setItem(__contactsStorageGlobalKey, safe);
   } catch (e) {}
 }
 
 function restoreImportedContactsCount() {
   try {
-    var raw = localStorage.getItem(getContactsStorageKey());
+    var raw = localStorage.getItem(getContactsStorageKey()) || localStorage.getItem(__contactsStorageGlobalKey);
     if (!raw) return;
     var saved = Number(raw);
     if (!Number.isFinite(saved) || saved <= 0) return;
