@@ -157,9 +157,17 @@ export default async function AdminHumainMarketplacePage({
           <h1 className="text-3xl font-black">Admin Marketplace</h1>
           <p className="text-sm text-muted-foreground">Validation des demandes et pilotage des statuts de places par ville/metier.</p>
         </div>
-        <Link href="/admin/humain" className="rounded border px-3 py-2 text-xs font-black uppercase tracking-wide">
-          Retour admin humain
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/humain/marketplace/tour-de-controle"
+            className="rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-emerald-700"
+          >
+            Tour de contrôle leads
+          </Link>
+          <Link href="/admin/humain" className="rounded border px-3 py-2 text-xs font-black uppercase tracking-wide">
+            Retour admin humain
+          </Link>
+        </div>
       </div>
 
       {marketStatus === "success" && (

@@ -60,6 +60,14 @@ function toWhatsAppDigits(raw: string): string {
   return digits;
 }
 
+function getAdminWhatsappDigits(): string {
+  const envPhone =
+    trim(process.env.MARKETPLACE_ADMIN_WHATSAPP_PHONE) ||
+    trim(process.env.POPEY_ADMIN_WHATSAPP_PHONE) ||
+    "33768233347";
+  return toWhatsAppDigits(envPhone);
+}
+
 function makeCommissionTicketCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let suffix = "";
@@ -207,10 +215,21 @@ export async function POST(request: NextRequest) {
     }
 
     const trackingId = activationId || requestId;
-    const rawMessage = `Bonjour ${partnerName}, je souhaite activer mon privilège offert par ${leadPayload.referrer_name}. Code de suivi : #${ticketCode}.`;
-    const waPhone = toWhatsAppDigits(partnerPhone || "");
-    const whatsappUrl = waPhone
-      ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(rawMessage)}`
+    const adminWaPhone = getAdminWhatsappDigits();
+    const rawMessage = [
+      `NOUVEAU LEAD CATALOGUE POPEY`,
+      `ID: ${ticketCode}`,
+      `Client: ${leadPayload.client_name}`,
+      `Referrer: ${leadPayload.referrer_name}`,
+      `Pro cible: ${partnerName} (${trim(place.metier) || "metier non precise"})`,
+      `Ville: ${leadPayload.city}`,
+      `Source: ${source}`,
+      ``,
+      `Action demandee: qualification + dispatch manuel (tour de controle).`,
+      `Tracking: ${trackingId}`,
+    ].join("\n");
+    const whatsappUrl = adminWaPhone
+      ? `https://api.whatsapp.com/send?phone=${adminWaPhone}&text=${encodeURIComponent(rawMessage)}`
       : null;
 
     let cityWeeklyActivations = 0;
@@ -227,7 +246,9 @@ export async function POST(request: NextRequest) {
       partnerName,
       partnerPhone: partnerPhone || null,
       activationId,
-      message: waPhone ? `Ouverture WhatsApp pre-rempli vers ${partnerName}.` : `Activation enregistree pour ${partnerName}.`,
+      message: whatsappUrl
+        ? `Ouverture WhatsApp pre-rempli vers le numero admin (tour de controle).`
+        : `Activation enregistree (numero admin WhatsApp non configure).`,
       cityWeeklyActivations,
       clientConfirmationSent: false,
       referrerName: leadPayload.referrer_name,
@@ -236,6 +257,7 @@ export async function POST(request: NextRequest) {
       whatsappMessage: rawMessage,
       trackingId,
       ticketCode,
+      routingMode: "admin_first",
     });
   } catch (error) {
     console.error("[marketplace/activate] unexpected", { requestId, error });

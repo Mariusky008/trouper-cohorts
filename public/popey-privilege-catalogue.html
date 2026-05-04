@@ -982,21 +982,53 @@ function closeApporteur(e) {
   }
 }
 
-function createApporteurLink() {
+async function createApporteurLink() {
   var prenom = document.getElementById('apporteurPrenom').value.trim();
   var tel = document.getElementById('apporteurTel').value.trim();
+  var submit = document.querySelector('.modal-submit');
+  var titleEl = document.querySelector('#apporteurModal .modal-title');
+  var subEl = document.querySelector('#apporteurModal .modal-sub');
   if (!prenom || !tel) { alert('Merci de renseigner votre prénom et WhatsApp.'); return; }
-  var slug = prenom.toLowerCase().replace(/\s+/g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  var link = 'https://popey.academy/catalogue?ref=' + slug + '-' + Date.now().toString(36);
-  var msg = document.querySelector('.modal-sub');
-  if (msg) {
-    document.querySelector('#apporteurModal .modal-title').textContent = 'Votre lien est prêt !';
-    document.querySelector('#apporteurModal .modal-sub').textContent = 'Votre lien personnel : ' + link;
-    document.querySelector('.modal-submit').textContent = 'Copier mon lien →';
-    document.querySelector('.modal-submit').onclick = function() {
-      navigator.clipboard && navigator.clipboard.writeText(link);
-      document.querySelector('.modal-submit').textContent = '✓ Lien copié !';
-    };
+  if (submit) { submit.textContent = 'Génération…'; submit.disabled = true; }
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var sponsorName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Jean Roth').trim();
+    var sponsorRefCode = (params.get('ref') || '').trim();
+    var sponsorMemberId = (params.get('ref_id') || '').trim();
+    var citySlug = (params.get('ville') || 'dax').trim();
+    var cityLabel = citySlug.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    var fullName = prenom;
+
+    var response = await fetch('/api/popey-human/affiliation/public/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: fullName,
+        phone: tel,
+        city: cityLabel,
+        sponsorName: sponsorName,
+        sponsorRefCode: sponsorRefCode || null,
+        sponsorMemberId: sponsorMemberId || null
+      })
+    });
+    var payload = await response.json().catch(function() { return {}; });
+    if (!response.ok || !payload.success) throw new Error(payload.error || 'Impossible de générer le lien');
+
+    var referral = String(payload.referralUrl || '').trim();
+    if (!referral) throw new Error('Lien de parrainage introuvable');
+    if (titleEl) titleEl.textContent = 'Votre lien est prêt !';
+    if (subEl) subEl.textContent = 'Votre lien personnel : ' + referral;
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = 'Copier mon lien →';
+      submit.onclick = function() {
+        navigator.clipboard && navigator.clipboard.writeText(referral);
+        submit.textContent = '✓ Lien copié !';
+      };
+    }
+  } catch (error) {
+    alert((error && error.message) ? error.message : 'Erreur de génération du lien');
+    if (submit) { submit.disabled = false; submit.textContent = 'Créer mon lien apporteur →'; }
   }
 }
 
@@ -1205,15 +1237,17 @@ async function initLiveCatalog() {
   if (refCode) qs.set('ref', refCode);
 
   var response = await fetch('/api/popey-human/marketplace/places?' + qs.toString(), { cache: 'no-store' }).catch(function () { return null; });
-  if (!response || !response.ok) return;
-  var payload = await response.json().catch(function () { return {}; });
-  var rows = Array.isArray(payload.places) ? payload.places : [];
-  if (!rows.length) return;
+  var rows = [];
+  if (response && response.ok) {
+    var payload = await response.json().catch(function () { return {}; });
+    rows = Array.isArray(payload.places) ? payload.places : [];
+  }
 
   liveState.places = rows.map(normalizePlace);
   liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
   liveState.loaded = true;
 
+  // Always remove static mock cards once live init runs.
   document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
   refreshLiveCounters();
   renderLiveOffers();

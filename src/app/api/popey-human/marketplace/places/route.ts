@@ -401,8 +401,8 @@ export async function GET(request: NextRequest) {
       places = [...places, ...generatedSupplements];
     }
     if (isPrivilegeCatalog && places.length === 0) {
-      // Fallback: keep catalogue usable even if referral/accepted filters return no row yet.
-      places = generatedSupplements.slice(0, 80);
+      // Intentionally keep empty: privilege catalogue must show only real configured/admin offers.
+      places = [];
     }
 
     if (category && category !== "all") {
