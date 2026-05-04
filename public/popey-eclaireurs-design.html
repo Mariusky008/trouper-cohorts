@@ -517,6 +517,8 @@ var __tokenOrCode = String(qp.get('token') || qp.get('code') || '').trim();
 var __catalogueUrl = String(qp.get('catalogue_url') || 'https://www.popey.academy/privilege/dax').trim();
 var __cityLabel = String(qp.get('city') || 'Dax').trim();
 var __refName = String(qp.get('ref_name') || 'camille').trim();
+var __screenParam = String(qp.get('screen') || '').trim();
+var __scoutFirstName = '';
 
 function trackEvent(eventType, payload) {
   if (!__tokenOrCode) return;
@@ -792,8 +794,13 @@ function applyDashboardData(payload) {
   var payoutLabel = String(period.payout_label || '1er du mois');
   var city = String(payload.scout && payload.scout.city ? payload.scout.city : __cityLabel);
 
+  __scoutFirstName = String(payload.scout && payload.scout.first_name ? payload.scout.first_name : '').trim();
   var hdrTag = document.querySelector('.hdr-tag');
-  if (hdrTag) hdrTag.textContent = 'Bonjour ' + (__refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Apporteur') + ' 👋';
+  if (hdrTag) {
+    var displayName = __scoutFirstName || __refName;
+    var safeDisplayName = displayName ? displayName.charAt(0).toUpperCase() + displayName.slice(1) : 'Apporteur';
+    hdrTag.textContent = 'Bonjour ' + safeDisplayName + ' 👋';
+  }
 
   var walletAmt = document.getElementById('walletAmt');
   var walletPending = asNumber(kpis.wallet_pending_eur);
@@ -909,7 +916,7 @@ function applyDashboardData(payload) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var safeName = __refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Camille';
+  var safeName = __refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Apporteur';
   var hdrTag = document.querySelector('.hdr-tag');
   if (hdrTag && currentScreen === 's-home') hdrTag.textContent = 'Bonjour ' + safeName + ' 👋';
   var linkLbl = document.getElementById('catalogLinkLabel');
@@ -918,6 +925,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (massPreview) {
     massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + __cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
   }
+  if (__screenParam === '2') showScreen('s-partage');
+  if (__screenParam === '3') showScreen('s-catalogue');
+  if (__screenParam === '4') showScreen('s-commissions');
   fetchPublicApporteurDashboard().then(function(payload) {
     if (payload) applyDashboardData(payload);
   });

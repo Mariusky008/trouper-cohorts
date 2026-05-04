@@ -26,7 +26,7 @@ export default async function EclaireurWebappPreviewPage({ searchParams }: Scout
     <main className="h-screen w-full overflow-hidden bg-[#07090C]">
       <iframe
         title="Popey Eclaireur Webapp Preview"
-        src={`/popey-eclaireur-webapp-preview.html${query}`}
+        src={`/popey-eclaireurs-design.html${query}`}
         className="h-full w-full border-0"
       />
     </main>
