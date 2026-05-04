@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
 export default async function AdminHumainPage() {
   return (
     <section className="space-y-4">
@@ -9,54 +6,21 @@ export default async function AdminHumainPage() {
         <h1 className="text-3xl font-black">Admin Popey Human</h1>
       </div>
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Espace dédié au pilotage Popey Human: permissions réseau, binômes, sphère, éclaireurs et notifications.
+        Point d&apos;entrée simplifié pour stabiliser l&apos;admin.
       </p>
-      <div className="rounded-xl border bg-card p-5 text-sm">
-        Sprint 1 livré: routage indépendant et redirection post-login vers cet espace pour les admins.
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button asChild>
-          <Link href="/admin/humain/cockpit">Ouvrir le cockpit KPI</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/clients">Ouvrir les leads clients</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/membres">Ouvrir la gestion des membres</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/sphere">Ouvrir la vue sphère</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/admin/humain/permissions">Ouvrir la gestion des permissions</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/notifications">Ouvrir les notifications</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/commissions">Ouvrir les commissions</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/eclaireurs">Ouvrir les éclaireurs</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/affiliation">Ouvrir l'affiliation publique</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/marketplace">Ouvrir le marketplace</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/admin/humain/marketplace/tour-de-controle">Tour de contrôle leads catalogue</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/privileges">Ouvrir le pilotage privilèges</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/marketplace/inscriptions">Inscriptions marketplace (page perso)</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain/chat">Ouvrir le chat WhatsApp</Link>
-        </Button>
+      <div className="grid gap-2 rounded-xl border bg-card p-5 text-sm">
+        <a href="/admin/humain/marketplace" className="underline underline-offset-2">
+          Ouvrir le marketplace
+        </a>
+        <a href="/admin/humain/privileges" className="underline underline-offset-2">
+          Ouvrir le pilotage privilèges
+        </a>
+        <a href="/admin/humain/affiliation" className="underline underline-offset-2">
+          Ouvrir l&apos;affiliation publique
+        </a>
+        <a href="/admin/humain/chat" className="underline underline-offset-2">
+          Ouvrir le chat WhatsApp
+        </a>
       </div>
     </section>
   );

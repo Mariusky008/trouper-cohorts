@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AdminNoServiceWorkerGuard } from "@/components/admin/admin-no-sw-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AdminNoServiceWorkerGuard />
       <header className="border-b px-6 py-3 flex items-center justify-between bg-muted/20">
         <div className="flex items-center gap-6">
           <Link href="/admin/humain" className="font-bold text-lg">
