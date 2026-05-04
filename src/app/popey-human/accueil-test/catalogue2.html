@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Catalogue Privilège Popey — Jean Roth · Mai 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #080A0D;
+  --ink2: #0F1117;
+  --cream: #F6F3EC;
+  --cream2: #EDEAE0;
+  --gold: #C8A84B;
+  --gold-l: rgba(200,168,75,.1);
+  --gold-g: rgba(200,168,75,.28);
+  --teal: #00C896;
+  --teal-d: #008F6A;
+  --teal-l: rgba(0,200,150,.1);
+  --teal-g: rgba(0,200,150,.25);
+  --red: #E8423A;
+  --border: rgba(255,255,255,.07);
+  --border-l: rgba(0,0,0,.08);
+  --t: #1A1C22;
+  --t2: #5A5D68;
+  --t3: #9A9DAA;
+  --fd: 'Fraunces', serif;
+  --fb: 'Instrument Sans', sans-serif;
+  --fm: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body { background: var(--cream); color: var(--t); font-family: var(--fb); max-width: 480px; margin: 0 auto; min-height: 100vh; overflow-x: hidden; }
+
+/* ── HERO BAND ── */
+.hero { background: var(--ink); position: relative; overflow: hidden; }
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(200,168,75,.1) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 90% 20%, rgba(0,200,150,.07) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-noise {
+  position: absolute; inset: 0; opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Sender strip */
+.sender-strip {
+  padding: 14px 20px 12px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  position: relative; z-index: 1;
+}
+.sender-av {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: var(--gold-l); border: 1.5px solid var(--gold-g);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sender-info { flex: 1; }
+.sender-from { font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 2px; }
+.sender-name { font-family: var(--fd); font-size: 16px; font-weight: 700; color: #fff; line-height: 1; }
+.sender-meta { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
+.certified-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--gold-l); border: 1px solid var(--gold-g);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 10px; font-weight: 700; color: var(--gold); flex-shrink: 0;
+}
+.certified-badge::before { content: '✓'; font-family: var(--fd); }
+
+/* Hero content */
+.hero-body { padding: 24px 20px 0; position: relative; z-index: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px;
+}
+.hero-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--gold); }
+
+.hero-title {
+  font-family: var(--fd); font-size: 38px; font-weight: 900;
+  line-height: .9; letter-spacing: -.02em; color: #fff; margin-bottom: 16px;
+}
+.hero-title em { font-style: italic; color: var(--gold); }
+
+.hero-desc { font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.65; font-weight: 300; margin-bottom: 20px; max-width: 320px; }
+
+/* Urgency band */
+.urgency-band {
+  background: rgba(232,66,58,.12); border: 1px solid rgba(232,66,58,.3);
+  border-radius: 10px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.ub-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: pulse 1.8s ease-in-out infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+.ub-text { font-size: 12px; color: rgba(255,255,255,.7); line-height: 1.4; }
+.ub-text strong { color: #fff; }
+
+/* Value totale */
+.total-value {
+  background: linear-gradient(135deg, rgba(200,168,75,.12), rgba(200,168,75,.04));
+  border: 1px solid var(--gold-g); border-radius: 14px;
+  padding: 16px 18px; margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tv-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(200,168,75,.7); margin-bottom: 4px; }
+.tv-val { font-family: var(--fd); font-size: 28px; font-weight: 900; color: var(--gold); line-height: 1; }
+.tv-sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 3px; }
+.tv-icon { font-size: 32px; }
+
+/* Stats strip */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1px; background: rgba(255,255,255,.06);
+  border-top: 1px solid rgba(255,255,255,.06);
+  margin: 0 -0px;
+}
+.stat-item { padding: 14px 8px; text-align: center; background: transparent; }
+.stat-val { font-family: var(--fd); font-size: 18px; font-weight: 900; color: var(--gold); line-height: 1; margin-bottom: 3px; }
+.stat-lbl { font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.3); }
+
+/* ── MAIN CONTENT ── */
+.main { padding: 24px 16px 100px; }
+
+/* Filters */
+.filter-wrap { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-bottom: 20px; }
+.f-chip {
+  padding: 10px 4px; border-radius: 12px; text-align: center; cursor: pointer;
+  border: 1.5px solid var(--border-l); background: #fff;
+  transition: all .2s; font-family: var(--fb);
+}
+.f-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.f-chip:not(.active) { color: var(--t2); }
+.fc-icon { font-size: 16px; display: block; margin-bottom: 3px; }
+.fc-lbl { font-size: 9px; font-weight: 700; letter-spacing: .04em; display: block; }
+.fc-count { font-family: var(--fm); font-size: 10px; font-weight: 500; opacity: .6; display: block; }
+
+/* Apporteur CTA inline */
+.apporteur-cta {
+  background: linear-gradient(135deg, var(--ink), #1A2030);
+  border: 1.5px solid var(--teal-g); border-radius: 16px;
+  padding: 18px; margin-bottom: 24px; position: relative; overflow: hidden;
+}
+.apporteur-cta::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+}
+.ac-tag { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.ac-tag::before { content: ''; width: 14px; height: 1px; background: var(--teal); }
+.ac-title { font-family: var(--fd); font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.1; }
+.ac-desc { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 14px; line-height: 1.5; font-weight: 300; }
+.ac-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--teal); color: var(--ink); padding: 12px;
+  border-radius: 10px; border: none; width: 100%;
+  font-family: var(--fd); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.ac-btn:active { transform: scale(.98); background: var(--teal-d); }
+.ac-meta { font-size: 10px; color: rgba(255,255,255,.25); margin-top: 8px; text-align: center; }
+
+/* ── OFFER CARD — full redesign ── */
+.offer-card {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  margin-bottom: 14px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  transition: transform .22s, box-shadow .22s;
+  border: 1.5px solid var(--border-l);
+}
+.offer-card:active { transform: scale(.99); box-shadow: 0 1px 8px rgba(0,0,0,.04); }
+
+/* Top stripe color */
+.oc-stripe { height: 3px; width: 100%; }
+
+/* Header */
+.oc-header { padding: 16px 16px 12px; display: flex; gap: 12px; align-items: flex-start; }
+.oc-icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.oc-meta { flex: 1; min-width: 0; }
+.oc-sphere { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 4px; }
+.oc-metier { font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--t); line-height: 1.1; margin-bottom: 2px; }
+.oc-pro { font-size: 12px; color: var(--t2); display: flex; align-items: center; gap: 5px; }
+
+/* THE PRIVILEGE — heart of the card */
+.oc-privilege {
+  margin: 0 16px 14px;
+  background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
+  border: 1.5px solid rgba(200,168,75,.25);
+  border-radius: 14px; padding: 16px;
+  position: relative; overflow: hidden;
+}
+.oc-privilege::before {
+  content: '🎁';
+  position: absolute; right: -8px; top: -8px; font-size: 48px; opacity: .08;
+}
+.priv-label { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.priv-label::before { content: ''; width: 12px; height: 1px; background: var(--gold); }
+.priv-value-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.priv-struck { font-family: var(--fm); font-size: 16px; color: rgba(90,93,104,.4); text-decoration: line-through; }
+.priv-free { font-family: var(--fd); font-size: 28px; font-weight: 900; color: var(--t); line-height: 1; }
+.priv-free.teal { color: var(--teal-d); }
+.priv-desc { font-size: 13px; color: var(--t2); line-height: 1.55; font-weight: 300; }
+
+/* Social proof row */
+.oc-social { padding: 10px 16px; border-top: 1px solid rgba(0,0,0,.05); display: flex; align-items: center; gap: 10px; }
+.oc-avatars { display: flex; }
+.oc-av { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: -7px; }
+.oc-activated { font-size: 11px; color: var(--t2); font-weight: 300; padding-left: 16px; }
+.oc-activated strong { color: var(--t); font-weight: 600; }
+.oc-stars { margin-left: auto; display: flex; gap: 1px; font-size: 12px; }
+
+/* CTA */
+.oc-cta { padding: 12px 16px 14px; }
+.btn-wa {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 15px; border-radius: 14px; border: none;
+  background: #25D366; color: #fff;
+  font-family: var(--fd); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .22s;
+}
+.btn-wa:active { transform: scale(.98); background: #1aaa52; }
+.btn-wa-icon { font-size: 18px; }
+.oc-cta-note { font-size: 10px; color: var(--t3); text-align: center; margin-top: 7px; line-height: 1.4; }
+
+/* Pro info — minimal below CTA */
+.oc-pro-info {
+  padding: 10px 16px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(0,0,0,.04);
+}
+.pro-av {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.pro-name { font-size: 12px; font-weight: 600; color: var(--t); }
+.pro-loc { font-size: 11px; color: var(--t3); }
+.pro-verified { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--teal-d); display: flex; align-items: center; gap: 4px; }
+.pro-verified::before { content: '✓'; }
+
+/* DIVIDER between spheres */
+.sphere-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 16px; }
+.sd-line { flex: 1; height: 1px; background: var(--border-l); }
+.sd-label { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+
+/* STICKY BOTTOM — become apporteur */
+.sticky-bottom {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; padding: 12px 16px;
+  background: rgba(8,10,13,.92); backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,.08); z-index: 50;
+}
+.sb-inner { display: flex; align-items: center; gap: 12px; }
+.sb-text { flex: 1; font-size: 12px; color: rgba(255,255,255,.6); line-height: 1.4; }
+.sb-text strong { color: var(--teal); }
+.sb-btn {
+  background: var(--teal); color: var(--ink); padding: 11px 18px;
+  border-radius: 100px; border: none; font-family: var(--fd);
+  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: all .2s; flex-shrink: 0;
+}
+.sb-btn:active { background: var(--teal-d); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  backdrop-filter: blur(10px); z-index: 100;
+  display: none; align-items: flex-end; justify-content: center; padding: 12px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--cream); border-radius: 24px; width: 100%;
+  max-height: 85vh; overflow-y: auto; padding: 24px;
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
+.modal-handle { width: 36px; height: 4px; background: rgba(0,0,0,.15); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: var(--fd); font-size: 22px; font-weight: 900; color: var(--t); margin-bottom: 6px; }
+.modal-sub { font-size: 14px; color: var(--t2); margin-bottom: 20px; line-height: 1.55; font-weight: 300; }
+.modal-field { margin-bottom: 14px; }
+.modal-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); margin-bottom: 7px; display: block; }
+.modal-input { width: 100%; background: #fff; border: 1.5px solid var(--border-l); border-radius: 12px; padding: 13px 16px; font-family: var(--fb); font-size: 15px; color: var(--t); outline: none; transition: border-color .2s; }
+.modal-input:focus { border-color: var(--teal); }
+.modal-input::placeholder { color: var(--t3); }
+.modal-submit { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; border-radius: 14px; font-family: var(--fd); font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: all .2s; }
+.modal-submit:active { background: var(--teal-d); }
+.modal-fine { font-size: 11px; color: var(--t3); text-align: center; margin-top: 12px; line-height: 1.5; }
+.modal-close { float: right; background: rgba(0,0,0,.06); border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* WA CONFIRM SHEET */
+.wa-sheet { background: #fff; border-radius: 24px; width: 100%; padding: 24px; animation: slideUp .25s ease; }
+.wa-msg { background: #e8f5e9; border: 1px solid rgba(37,211,102,.25); border-radius: 14px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #1b5e20; line-height: 1.65; font-style: italic; }
+.wa-msg strong { font-style: normal; color: #145c25; }
+
+
+/* ── PHOTO PROFILE ── */
+.pro-photo {
+  width: 52px; height: 52px; border-radius: 50%;
+  object-fit: cover; border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12); flex-shrink: 0;
+}
+.pro-photo-fallback {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
+  border: 2.5px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  flex-shrink: 0;
+}
+.oc-header-new { padding: 16px 16px 0; }
+.oc-profile-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.oc-profile-info { flex: 1; min-width: 0; }
+.oc-sphere-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 4px; }
+.oc-name { font-family: var(--fd); font-size: 17px; font-weight: 700; color: var(--t); line-height: 1.1; margin-bottom: 2px; }
+.oc-role { font-size: 11px; color: var(--t2); margin-bottom: 2px; }
+.oc-site { font-family: var(--fm); font-size: 10px; color: var(--t3); display: flex; align-items: center; gap: 4px; }
+.oc-site::before { content: '🌐'; font-size: 9px; }
+/* Service image strip */
+.oc-img-strip { width: 100%; height: 110px; object-fit: cover; display: block; }
+.oc-img-placeholder { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+
+/* ── PHOTOS ── */
+.oc-photos { display:flex; gap:6px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; }
+.oc-photos::-webkit-scrollbar { display:none; }
+.oc-photo {
+  width:110px; height:80px; border-radius:12px; flex-shrink:0;
+  object-fit:cover; background:var(--cream2);
+  overflow:hidden; position:relative;
+}
+.oc-photo-img {
+  width:100%; height:100%; object-fit:cover;
+  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; border-radius:12px;
+}
+.oc-photo-real {
+  width:100%; height:100%; object-fit:cover; border-radius:12px;
+}
+
+/* Pro profile row — redesigned */
+.oc-pro-info {
+  padding:12px 16px 14px;
+  display:flex; align-items:center; gap:10px;
+  border-top:1px solid rgba(0,0,0,.04);
+}
+.pro-av-photo {
+  width:42px; height:42px; border-radius:50%;
+  object-fit:cover; flex-shrink:0; border:2px solid #fff;
+  box-shadow:0 0 0 2px rgba(0,0,0,.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; background:var(--cream2);
+}
+.pro-site {
+  font-size:10px; color:var(--t3); margin-top:2px;
+  display:flex; align-items:center; gap:4px;
+}
+.pro-site::before { content:'🌐'; font-size:9px; }
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+.offer-card { animation: fadeUp .35s ease both; }
+.offer-card:nth-child(2) { animation-delay:.05s }
+.offer-card:nth-child(3) { animation-delay:.1s }
+.offer-card:nth-child(4) { animation-delay:.15s }
+.offer-card:nth-child(5) { animation-delay:.2s }
+.offer-card:nth-child(6) { animation-delay:.25s }
+.offer-card:nth-child(7) { animation-delay:.3s }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="hero-noise"></div>
+
+  <!-- Sender -->
+  <div class="sender-strip">
+    <div class="sender-av">👤</div>
+    <div class="sender-info">
+      <div class="sender-from">Invitation personnelle de</div>
+      <div class="sender-name">Jean Roth</div>
+      <div class="sender-meta">Coach business · Bayonne 64 · Membre Popey</div>
+    </div>
+    <div class="certified-badge">Éclaireur certifié</div>
+  </div>
+
+  <!-- Hero body -->
+  <div class="hero-body">
+    <div class="hero-eyebrow">Catalogue Privilège · Mai 2026</div>
+    <h1 class="hero-title">Vos avantages<br><em>exclusifs</em><br>grâce à Jean.</h1>
+    <p class="hero-desc">Jean fait partie du réseau Popey — 150 professionnels de confiance sur le Grand Bayonne. Il vous partage ses accès. Activez en 1 tap, profitez immédiatement.</p>
+
+    <!-- Urgency -->
+    <div class="urgency-band">
+      <div class="ub-dot"></div>
+      <div class="ub-text"><strong>Catalogue de mai 2026 — expire le 31 mai.</strong> Ces offres disparaissent le 1er juin et sont remplacées par de nouvelles.</div>
+    </div>
+
+    <!-- Total value -->
+    <div class="total-value">
+      <div>
+        <div class="tv-label">Valeur totale disponible</div>
+        <div class="tv-val">1 620€</div>
+        <div class="tv-sub">d'avantages exclusifs ce mois</div>
+      </div>
+      <div class="tv-icon">🎁</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat-item"><div class="stat-val">8</div><div class="stat-lbl">Offres</div></div>
+    <div class="stat-item"><div class="stat-val">5</div><div class="stat-lbl">Sphères</div></div>
+    <div class="stat-item"><div class="stat-val">100%</div><div class="stat-lbl">Vérifiés</div></div>
+    <div class="stat-item"><div class="stat-val">Bay.</div><div class="stat-lbl">Zone</div></div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- FILTERS -->
+  <div class="filter-wrap">
+    <div class="f-chip active" onclick="filterOffers('all',this)">
+      <span class="fc-icon">✦</span>
+      <span class="fc-lbl">Tous</span>
+      <span class="fc-count">8</span>
+    </div>
+    <div class="f-chip" onclick="filterOffers('sante',this)">
+      <span class="fc-icon">🌿</span>
+      <span class="fc-lbl">Santé</span>
+      <span class="fc-count">2</span>
+    </div>
+    <div class="f-chip" onclick="filterOffers('habitat',this)">
+      <span class="fc-icon">🏠</span>
+      <span class="fc-lbl">Habitat</span>
+      <span class="fc-count">2</span>
+    </div>
+    <div class="f-chip" onclick="filterOffers('digital',this)">
+      <span class="fc-icon">💻</span>
+      <span class="fc-lbl">Digital</span>
+      <span class="fc-count">2</span>
+    </div>
+    <div class="f-chip" onclick="filterOffers('finance',this)">
+      <span class="fc-icon">⚖️</span>
+      <span class="fc-lbl">Juridique</span>
+      <span class="fc-count">2</span>
+    </div>
+  </div>
+
+  <!-- APPORTEUR CTA -->
+  <div class="apporteur-cta">
+    <div class="ac-tag">Opportunité · Devenez apporteur</div>
+    <div class="ac-title">Partagez ce catalogue.<br>Touchez 10% sur chaque deal.</div>
+    <div class="ac-desc">Envoyez ce lien à vos proches. Chaque fois que quelqu'un active un privilège via votre lien et que ça signe, vous recevez une commission automatique. Votre lien en 20 secondes.</div>
+    <button class="ac-btn" onclick="openApporteurModal()">
+      <span>💸</span> Créer mon lien apporteur
+    </button>
+    <div class="ac-meta">Nom + WhatsApp · ID unique instantané · Lien traçable</div>
+  </div>
+
+  <!-- ─── SPHÈRE SANTÉ ─── -->
+  <div class="sphere-divider" data-sphere="sante">
+    <div class="sd-line"></div>
+    <div class="sd-label"><span>🌿</span> Santé · Bien-être</div>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- CARD 1 — Coach sportif -->
+  <div class="offer-card" data-sphere="sante">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&h=200&fit=crop&crop=faces" alt="Antonin Lemaire" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(0,200,150,.15);color:#007A56;display:none">AL</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(0,200,150,.1);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Sport</div>
+          <div class="oc-name">Antonin Lemaire</div>
+          <div class="oc-role">Coach sportif personnel · 📍 Bayonne · Disponible cette semaine</div>
+          <div class="oc-site">antonin-coach-bayonne.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=480&h=220&fit=crop" alt="Coach sportif personnel" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(0,200,150,.08);display:none">🏋️</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">240€</div>
+        <div class="priv-free teal">1er mois offert</div>
+      </div>
+      <div class="priv-desc">Un mois complet de suivi personnalisé offert — programme sur-mesure, bilan forme initial et accès à toutes les séances. Sans engagement. Valeur réelle : 240€.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#dcfce7;color:#166534">SB</div>
+        <div class="oc-av" style="background:#dbeafe;color:#1e40af">ML</div>
+        <div class="oc-av" style="background:#fef3c7;color:#92400e">TC</div>
+      </div>
+      <div class="oc-activated"><strong>14 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Antonin Lemaire','Coach sportif','1er mois de coaching offert (valeur 240€)','PRIV-AL-JR-001')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)">🏋️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#bbf7d0,#6ee7b7)">🏃</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0)">💪</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#6ee7b7,#34d399)">🏋️</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Antonin Lemaire</div>
+        <div class="pro-loc">Coach sportif · Bayonne · réseau Popey</div>
+        <div class="pro-site">antonin-coach-bayonne.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- CARD 2 — Sophrologue -->
+  <div class="offer-card" data-sphere="sante">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#6EE7B7,#34D399)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces" alt="Marie Dubois" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(110,231,183,.2);color:#065f46;display:none">MD</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(0,200,150,.1);color:#007A56;border:1px solid rgba(0,160,112,.2)">🌿 Santé · Bien-être</div>
+          <div class="oc-name">Marie Dubois</div>
+          <div class="oc-role">Sophrologue certifiée · 📍 Bayonne · RDV sous 48h</div>
+          <div class="oc-site">marie-sophrologie.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=480&h=220&fit=crop" alt="Sophrologue certifiée" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(110,231,183,.08);display:none">🧘</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">75€</div>
+        <div class="priv-free teal">Gratuit</div>
+      </div>
+      <div class="priv-desc">Première séance de sophrologie offerte (45 min). Gestion du stress, troubles du sommeil, anxiété, confiance en soi. Aucun engagement après. Valeur réelle : 75€.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#ede9fe;color:#4c1d95">PV</div>
+        <div class="oc-av" style="background:#fce7f3;color:#831843">EL</div>
+      </div>
+      <div class="oc-activated"><strong>7 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Marie Dubois','Sophrologue','1re séance offerte (valeur 75€)','PRIV-MD-JR-002')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)">🧘</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5)">🌿</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">☮️</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#6ee7b7,#34d399)">🧘</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Marie Dubois</div>
+        <div class="pro-loc">Sophrologue · Bayonne · réseau Popey</div>
+        <div class="pro-site">marie-sophrologie-bayonne.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- ─── SPHÈRE HABITAT ─── -->
+  <div class="sphere-divider" data-sphere="habitat">
+    <div class="sd-line"></div>
+    <div class="sd-label"><span>🏠</span> Habitat · Patrimoine</div>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- CARD 3 — Agent immobilier -->
+  <div class="offer-card" data-sphere="habitat">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=faces" alt="Marc Fontaine" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(245,158,11,.15);color:#B45309;display:none">MF</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(192,120,0,.08);color:#C07800;border:1px solid rgba(192,120,0,.2)">🏠 Habitat · Patrimoine</div>
+          <div class="oc-name">Marc Fontaine</div>
+          <div class="oc-role">Agent immobilier · 📍 Bayonne · Disponible aujourd'hui</div>
+          <div class="oc-site">marcfontaine-immo.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=480&h=220&fit=crop" alt="Agent immobilier" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(245,158,11,.08);display:none">🔑</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">Plein tarif</div>
+        <div class="priv-free" style="font-size:22px;color:#B45309">500€ de remise</div>
+      </div>
+      <div class="priv-desc">500€ déduits directement sur les honoraires d'agence pour toute transaction signée avant le 31 mai. Estimation gratuite de votre bien incluse, sans engagement.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#fef3c7;color:#78350f">FR</div>
+        <div class="oc-av" style="background:#fde68a;color:#92400e">CP</div>
+        <div class="oc-av" style="background:#fef9c3;color:#713f12">LB</div>
+        <div class="oc-av" style="background:#fff7ed;color:#7c2d12">+5</div>
+      </div>
+      <div class="oc-activated"><strong>9 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Marc Fontaine','Agent immobilier','500€ de remise sur honoraires','PRIV-MF-JR-003')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fef3c7,#fde68a)">🏡</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fff7ed,#fed7aa)">🔑</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fffbeb,#fef3c7)">🏙️</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">🔑</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Marc Fontaine</div>
+        <div class="pro-loc">Agent immobilier · Bayonne · réseau Popey</div>
+        <div class="pro-site">fontaine-immobilier-bayonne.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- CARD 4 — Architecte -->
+  <div class="offer-card" data-sphere="habitat">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#FBBF24,#F59E0B)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=faces" alt="Sophie Ravel" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(251,191,36,.15);color:#92400e;display:none">SR</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(192,120,0,.08);color:#C07800;border:1px solid rgba(192,120,0,.2)">🏠 Habitat · Travaux</div>
+          <div class="oc-name">Sophie Ravel</div>
+          <div class="oc-role">Architecte DPLG · 📍 Bayonne · Agenda cette semaine</div>
+          <div class="oc-site">sophieravel-architecture.com</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=480&h=220&fit=crop" alt="Architecte DPLG" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(251,191,36,.08);display:none">🔨</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">180€</div>
+        <div class="priv-free teal">Gratuit</div>
+      </div>
+      <div class="priv-desc">Visite-conseil à domicile offerte (1h). On repense votre pièce principale ensemble — agencement, lumière, matériaux. Étude de faisabilité et chiffrage estimatif inclus. Sans engagement.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#fef3c7;color:#78350f">SB</div>
+        <div class="oc-av" style="background:#fde68a;color:#92400e">NL</div>
+      </div>
+      <div class="oc-activated"><strong>4 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★☆</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Sophie Ravel','Architecte','Visite-conseil à domicile offerte (valeur 180€)','PRIV-SR-JR-004')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fef3c7,#fde68a)">🏗️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fff7ed,#fed7aa)">🛋️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fffbeb,#fef3c7)">✏️</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">🔨</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Sophie Ravel</div>
+        <div class="pro-loc">Architecte · Bayonne · réseau Popey</div>
+        <div class="pro-site">sophie-ravel-architecte.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- ─── SPHÈRE DIGITAL ─── -->
+  <div class="sphere-divider" data-sphere="digital">
+    <div class="sd-line"></div>
+    <div class="sd-label"><span>💻</span> Digital · Business</div>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- CARD 5 — Développeur web -->
+  <div class="offer-card" data-sphere="digital">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#60A5FA,#3B82F6)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces" alt="Lucas Bernard" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(96,165,250,.15);color:#1D4ED8;display:none">LB</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(29,111,164,.08);color:#1D6FA4;border:1px solid rgba(29,111,164,.2)">💻 Digital · Web</div>
+          <div class="oc-name">Lucas Bernard</div>
+          <div class="oc-role">Développeur web freelance · 📍 Bayonne · Nouveau projet possible</div>
+          <div class="oc-site">lucas-dev.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=480&h=220&fit=crop" alt="Développeur web freelance" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(96,165,250,.06);display:none">💻</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">450€</div>
+        <div class="priv-free" style="color:#1D4ED8">-15% + 3 mois maintenance</div>
+      </div>
+      <div class="priv-desc">15% de réduction sur votre projet web, plus 3 mois de maintenance mensuelle offerts (valeur 450€). Site vitrine, e-commerce, application — tout projet accepté.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#dbeafe;color:#1e40af">PD</div>
+        <div class="oc-av" style="background:#e0e7ff;color:#3730a3">CR</div>
+        <div class="oc-av" style="background:#ede9fe;color:#4c1d95">FT</div>
+      </div>
+      <div class="oc-activated"><strong>6 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Lucas Bernard','Développeur web','-15% + 3 mois maintenance offerts (valeur 450€)','PRIV-LB-JR-005')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe)">🖥️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe)">📱</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">⚡</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)">💻</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Lucas Bernard</div>
+        <div class="pro-loc">Développeur web · Bayonne · réseau Popey</div>
+        <div class="pro-site">lucas-dev-web.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- CARD 6 — Designer -->
+  <div class="offer-card" data-sphere="digital">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#A78BFA,#7C3AED)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces" alt="Inès Martin" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(167,139,250,.15);color:#5B21B6;display:none">IM</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(109,63,203,.08);color:#6D3FCB;border:1px solid rgba(109,63,203,.2)">💻 Digital · Design</div>
+          <div class="oc-name">Inès Martin</div>
+          <div class="oc-role">Designer UX/UI & identité visuelle · 📍 Bayonne · En remote possible</div>
+          <div class="oc-site">ines-martin-design.com</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1626785774625-0b1c2c4eab67?w=480&h=220&fit=crop" alt="Designer UX/UI & identité visuelle" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(167,139,250,.06);display:none">🎨</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">240€</div>
+        <div class="priv-free teal">Gratuit</div>
+      </div>
+      <div class="priv-desc">Audit complet de votre identité visuelle actuelle offert — logo, couleurs, typographies, cohérence globale. Rapport écrit avec recommandations concrètes. Valeur réelle : 240€.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#ede9fe;color:#4c1d95">AR</div>
+        <div class="oc-av" style="background:#fae8ff;color:#701a75">BT</div>
+      </div>
+      <div class="oc-activated"><strong>5 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Inès Martin','Designer UX/UI','Audit identité visuelle offert (valeur 240€)','PRIV-IM-JR-006')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">🎨</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fae8ff,#f5d0fe)">✏️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#f5f3ff,#ede9fe)">🖌️</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🎨</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Inès Martin</div>
+        <div class="pro-loc">Designer UX/UI · Bayonne · réseau Popey</div>
+        <div class="pro-site">ines-martin-design.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- ─── SPHÈRE JURIDIQUE ─── -->
+  <div class="sphere-divider" data-sphere="finance">
+    <div class="sd-line"></div>
+    <div class="sd-label"><span>⚖️</span> Finance · Juridique</div>
+    <div class="sd-line"></div>
+  </div>
+
+  <!-- CARD 7 — Avocat -->
+  <div class="offer-card" data-sphere="finance">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#818CF8,#4F46E5)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1556157382-97eda2f9e2bf?w=200&h=200&fit=crop&crop=faces" alt="Thomas Laurent" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(129,140,248,.15);color:#3730A3;display:none">TL</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(109,63,203,.08);color:#6D3FCB;border:1px solid rgba(109,63,203,.2)">⚖️ Juridique · Affaires</div>
+          <div class="oc-name">Thomas Laurent</div>
+          <div class="oc-role">Avocat d'affaires · 📍 Bayonne · Visio possible</div>
+          <div class="oc-site">laurent-avocat-bayonne.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=480&h=220&fit=crop" alt="Avocat d'affaires" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(129,140,248,.06);display:none">⚖️</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">150€</div>
+        <div class="priv-free teal">Gratuit</div>
+      </div>
+      <div class="priv-desc">Consultation juridique de 45 min offerte — contrats, statuts, litiges commerciaux, protection de marque, ou toute question de droit des affaires. Réponse garantie sous 24h. Valeur réelle : 150€.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#e0e7ff;color:#3730a3">PL</div>
+        <div class="oc-av" style="background:#ede9fe;color:#4c1d95">MH</div>
+        <div class="oc-av" style="background:#ddd6fe;color:#5b21b6">GS</div>
+      </div>
+      <div class="oc-activated"><strong>8 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Thomas Laurent','Avocat d\'affaires','Consultation juridique 45 min offerte (valeur 150€)','PRIV-TL-JR-007')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe)">⚖️</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">📋</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff)">🏛️</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#818cf8,#4f46e5)">⚖️</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Thomas Laurent</div>
+        <div class="pro-loc">Avocat d'affaires · Bayonne · réseau Popey</div>
+        <div class="pro-site">cabinet-laurent-bayonne.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+  <!-- CARD 8 — CGP -->
+  <div class="offer-card" data-sphere="finance">
+    <div class="oc-stripe" style="background:linear-gradient(90deg,#C084FC,#9333EA)"></div>
+    <div class="oc-header-new">
+      <div class="oc-profile-row">
+        <img class="pro-photo" src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=200&h=200&fit=crop&crop=faces" alt="Claire Moreau" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="pro-photo-fallback" style="background:rgba(192,132,252,.15);color:#7E22CE;display:none">CM</div>
+        <div class="oc-profile-info">
+          <div class="oc-sphere-tag" style="background:rgba(109,63,203,.08);color:#6D3FCB;border:1px solid rgba(109,63,203,.2)">⚖️ Finance · Patrimoine</div>
+          <div class="oc-name">Claire Moreau</div>
+          <div class="oc-role">Conseillère en gestion de patrimoine · 📍 Bayonne · Agenda la semaine</div>
+          <div class="oc-site">claire-moreau-cgp.fr</div>
+        </div>
+      </div>
+    </div>
+    <img class="oc-img-strip" src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=480&h=220&fit=crop" alt="Conseillère en gestion de patrimoine" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="oc-img-placeholder" style="background:rgba(192,132,252,.06);display:none">🏦</div>
+    <div class="oc-privilege">
+      <div class="priv-label">Privilège exclusif via Jean Roth</div>
+      <div class="priv-value-row">
+        <div class="priv-struck">300€</div>
+        <div class="priv-free teal">Gratuit</div>
+      </div>
+      <div class="priv-desc">Bilan patrimonial complet offert (2h) — épargne, investissements, fiscalité, retraite, assurance-vie. Recommandations personnalisées écrites. Sans aucun engagement commercial. Valeur réelle : 300€.</div>
+    </div>
+    <div class="oc-social">
+      <div class="oc-avatars">
+        <div class="oc-av" style="background:#fae8ff;color:#701a75">CC</div>
+        <div class="oc-av" style="background:#ede9fe;color:#4c1d95">JM</div>
+      </div>
+      <div class="oc-activated"><strong>3 personnes</strong> ont activé ce mois</div>
+      <div class="oc-stars">★★★★★</div>
+    </div>
+    <div class="oc-cta">
+      <button class="btn-wa" onclick="openWA('Claire Moreau','CGP','Bilan patrimonial complet offert 2h (valeur 300€)','PRIV-CM-JR-008')">
+        <span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp
+      </button>
+      <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · Jean Roth est notifié automatiquement</div>
+    </div>
+<div class="oc-photos"><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#fae8ff,#f5d0fe)">📊</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">💰</div></div><div class="oc-photo"><div class="oc-photo-img" style="background:linear-gradient(135deg,#f5f3ff,#ede9fe)">🏦</div></div></div><div class="oc-pro-info">
+      <div class="pro-av-photo" style="background:linear-gradient(135deg,#c084fc,#9333ea)">🏦</div>
+      <div style="flex:1;min-width:0">
+        <div class="pro-name">Claire Moreau</div>
+        <div class="pro-loc">Conseillère patrimoniale · Bayonne · réseau Popey</div>
+        <div class="pro-site">claire-moreau-patrimoine.fr</div>
+      </div>
+      <div class="pro-verified">Membre vérifié</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- STICKY BOTTOM -->
+<div class="sticky-bottom">
+  <div class="sb-inner">
+    <div class="sb-text">Partagez ce catalogue · Touchez <strong>10% sur chaque deal signé</strong></div>
+    <button class="sb-btn" onclick="openApporteurModal()">Devenir apporteur →</button>
+  </div>
+</div>
+
+<!-- WA SHEET -->
+<div class="modal-overlay" id="waOverlay" onclick="closeWA(event)">
+  <div class="wa-sheet" id="waSheet">
+    <div class="modal-handle"></div>
+    <div style="font-size:28px;text-align:center;margin-bottom:12px">💬</div>
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;text-align:center;color:var(--t);margin-bottom:4px" id="waTitle">Activer le privilège</div>
+    <div style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:18px" id="waMeta">Pro · Offre</div>
+    <div class="wa-msg" id="waMsg"></div>
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:16px">Jean Roth (Popey) recevra une copie · Votre commission sera tracée automatiquement</div>
+    <button class="btn-wa" style="margin-bottom:10px" id="waBtn">
+      <span class="btn-wa-icon">💬</span> Ouvrir WhatsApp
+    </button>
+    <button onclick="closeWA()" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-l);border-radius:14px;font-family:var(--fd);font-size:14px;font-weight:600;color:var(--t2);cursor:pointer">Annuler</button>
+  </div>
+</div>
+
+<!-- APPORTEUR MODAL -->
+<div class="modal-overlay" id="apporteurOverlay" onclick="closeApporteur(event)">
+  <div class="modal" id="apporteurModal">
+    <button class="modal-close" onclick="closeApporteur()">✕</button>
+    <div class="modal-handle"></div>
+    <div style="font-size:28px;margin-bottom:12px">💸</div>
+    <div class="modal-title">Devenez apporteur d'affaires</div>
+    <div class="modal-sub">Partagez ce catalogue à vos proches. Chaque fois qu'un deal signe via votre lien, vous touchez 10% automatiquement — versés le 1er du mois.</div>
+    <div class="modal-field">
+      <label class="modal-label">Votre prénom</label>
+      <input class="modal-input" type="text" placeholder="Camille" id="apporteurPrenom">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Votre WhatsApp</label>
+      <input class="modal-input" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel">
+    </div>
+    <button class="modal-submit" onclick="createApporteurLink()">Créer mon lien apporteur →</button>
+    <div class="modal-fine">Lien unique généré instantanément · Tous vos deals tracés automatiquement · Commission versée le 1er du mois</div>
+  </div>
+</div>
+
+<script>
+var currentWA = {};
+
+function filterOffers(sphere, btn) {
+  document.querySelectorAll('.f-chip').forEach(function(c) { c.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.offer-card, .sphere-divider').forEach(function(el) {
+    el.style.display = (sphere === 'all' || el.dataset.sphere === sphere) ? '' : 'none';
+  });
+}
+
+function openWA(pro, metier, offre, id) {
+  currentWA = { pro: pro, metier: metier, offre: offre, id: id };
+  document.getElementById('waTitle').textContent = metier;
+  document.getElementById('waMeta').textContent = pro + ' · ' + offre;
+  var msg = 'Bonjour ' + pro + ' ! Je souhaite activer mon privilège Popey (' + offre + ') offert par Jean Roth. [ID-TRACKING: ' + id + ']';
+  document.getElementById('waMsg').innerHTML = '"' + msg + '"';
+  document.getElementById('waBtn').onclick = function() {
+    window.open('https://wa.me/33768233347?text=' + encodeURIComponent(msg), '_blank');
+    document.getElementById('waOverlay').classList.remove('open');
+  };
+  document.getElementById('waOverlay').classList.add('open');
+}
+
+function closeWA(e) {
+  if (!e || e.target === document.getElementById('waOverlay')) {
+    document.getElementById('waOverlay').classList.remove('open');
+  }
+}
+
+function openApporteurModal() {
+  document.getElementById('apporteurOverlay').classList.add('open');
+}
+
+function closeApporteur(e) {
+  if (!e || e.target === document.getElementById('apporteurOverlay')) {
+    document.getElementById('apporteurOverlay').classList.remove('open');
+  }
+}
+
+function createApporteurLink() {
+  var prenom = document.getElementById('apporteurPrenom').value.trim();
+  var tel = document.getElementById('apporteurTel').value.trim();
+  if (!prenom || !tel) { alert('Merci de renseigner votre prénom et WhatsApp.'); return; }
+  var slug = prenom.toLowerCase().replace(/\s+/g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var link = 'https://popey.academy/catalogue?ref=' + slug + '-' + Date.now().toString(36);
+  var msg = document.querySelector('.modal-sub');
+  if (msg) {
+    document.querySelector('#apporteurModal .modal-title').textContent = 'Votre lien est prêt !';
+    document.querySelector('#apporteurModal .modal-sub').textContent = 'Votre lien personnel : ' + link;
+    document.querySelector('.modal-submit').textContent = 'Copier mon lien →';
+    document.querySelector('.modal-submit').onclick = function() {
+      navigator.clipboard && navigator.clipboard.writeText(link);
+      document.querySelector('.modal-submit').textContent = '✓ Lien copié !';
+    };
+  }
+}
+</script>
+</body>
+</html>
