@@ -10,24 +10,62 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: { id: string; email?: string | null } | null = null;
+  try {
+    const authResult = await supabase.auth.getUser();
+    user = authResult.data.user as { id: string; email?: string | null } | null;
+  } catch (authError) {
+    console.error("Admin auth check failed:", authError);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
+        <h1 className="text-2xl font-bold">Admin temporairement indisponible</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Impossible de vérifier votre session pour le moment. Réessayez dans quelques instants.
+        </p>
+        <Button asChild>
+          <Link href="/popey-human/admin-login?next=%2Fadmin%2Fhumain">Retour connexion admin</Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (!user) redirect("/popey-human/admin-login?next=%2Fadmin%2Fhumain");
 
   // Check if admin with explicit status check
   // Using supabaseAdmin (service role) to bypass RLS in case user doesn't have read access to admins table
-  const supabaseAdmin = createAdminClient();
-  
-  const { data: adminData, error: adminError } = await supabaseAdmin
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  let adminData: { user_id: string } | null = null;
+  let adminError: unknown = null;
+  try {
+    const supabaseAdmin = createAdminClient();
+    const result = await supabaseAdmin
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    adminData = (result.data as { user_id: string } | null) || null;
+    adminError = result.error;
+  } catch (error) {
+    adminError = error;
+  }
 
   if (adminError) {
-      console.error("Admin Check Error:", adminError);
+    console.error("Admin Check Error:", adminError);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
+        <h1 className="text-2xl font-bold">Contrôle admin indisponible</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Le service de vérification des droits admin ne répond pas. Réessayez dans quelques minutes.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button asChild>
+            <Link href="/popey-human/admin-login?next=%2Fadmin%2Fhumain">Se reconnecter</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/">Retour accueil</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!adminData) {
