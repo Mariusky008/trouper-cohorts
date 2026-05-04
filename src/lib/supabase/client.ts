@@ -11,6 +11,7 @@ function cookieDomainForHost(hostname: string) {
 export function createClient() {
   const domain = typeof window !== "undefined" ? cookieDomainForHost(window.location.hostname) : undefined;
   return createBrowserClient(env.supabaseUrl, env.supabaseAnonKey, {
-    cookieOptions: domain ? { domain } : undefined,
+    // Important: ensure cookies are sent on both `/popey-human/*` and `/admin/*`.
+    cookieOptions: { path: "/", ...(domain ? { domain } : {}) },
   })
 }

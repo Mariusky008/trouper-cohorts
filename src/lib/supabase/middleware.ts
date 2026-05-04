@@ -22,7 +22,8 @@ export async function updateSession(request: NextRequest) {
       env.supabaseUrl,
       env.supabaseAnonKey,
       {
-        cookieOptions: domain ? { domain } : undefined,
+        // Important: ensure cookies are sent on both `/popey-human/*` and `/admin/*`.
+        cookieOptions: { path: "/", ...(domain ? { domain } : {}) },
         cookies: {
           getAll() {
             return request.cookies.getAll()
