@@ -618,42 +618,52 @@ nav {
 }
 .modal-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-family: var(--fd); font-size: 15px; font-weight: 700; cursor: pointer; background: var(--ink); color: var(--paper); transition: all .2s; }
 .modal-btn:hover { background: var(--teal-d); }
+.modal-btn[disabled] { opacity: .72; cursor: not-allowed; }
 
 /* ── FEEDBACK POPUP (CENTERED) ── */
 .feedback-toast {
   position: fixed; left: 50%; top: 50%; z-index: 1200;
-  width: min(760px, calc(100vw - 28px));
-  background: #fff; border: 1px solid var(--border2); border-radius: 24px;
-  box-shadow: 0 28px 80px rgba(0,0,0,.24), 0 0 0 9999px rgba(15, 23, 42, .32);
-  padding: 24px;
-  transform: translate(-50%, calc(-50% + 14px)); opacity: 0; pointer-events: none;
-  transition: transform .2s ease, opacity .2s ease;
+  width: min(640px, calc(100vw - 28px));
+  background: #fff; border: 1px solid var(--border2); border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.20), 0 0 0 9999px rgba(15, 23, 42, .28);
+  padding: 18px 18px 16px;
+  transform: translate(-50%, calc(-50% + 10px)); opacity: 0; pointer-events: none;
+  transition: transform .18s ease, opacity .18s ease;
 }
 .feedback-toast.show { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
 .feedback-toast.success { border-color: rgba(0,160,112,.35); }
 .feedback-toast.error { border-color: rgba(229,83,75,.35); }
 .ft-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.ft-title { font-size: 42px; font-weight: 800; color: var(--ink); line-height: 1.05; }
-.ft-close { border: 0; background: transparent; cursor: pointer; font-size: 28px; color: var(--t3); line-height: 1; }
-.ft-body { margin-top: 10px; font-size: 34px; line-height: 1.2; color: var(--t2); }
+.ft-title { font-size: 20px; font-weight: 900; color: var(--ink); line-height: 1.1; letter-spacing: -.2px; }
+.ft-close { border: 0; background: transparent; cursor: pointer; font-size: 18px; color: var(--t3); line-height: 1; padding: 4px; }
+.ft-body { margin-top: 8px; font-size: 14px; line-height: 1.55; color: var(--t2); }
 .ft-body strong { color: var(--ink); }
-.ft-actions { margin-top: 22px; display: flex; gap: 10px; justify-content: flex-end; }
+.ft-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
 .ft-btn {
   border: 1px solid var(--border2); background: transparent; color: var(--ink);
-  border-radius: 14px; padding: 12px 22px; font-size: 26px; font-weight: 700; cursor: pointer;
+  border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 800; cursor: pointer;
 }
 .ft-btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 @media (max-width: 900px) {
   .feedback-toast {
     width: calc(100vw - 18px);
-    border-radius: 18px;
-    padding: 16px;
+    border-radius: 16px;
+    padding: 16px 14px 14px;
   }
-  .ft-title { font-size: 28px; }
-  .ft-close { font-size: 24px; }
-  .ft-body { font-size: 24px; line-height: 1.25; }
-  .ft-btn { font-size: 20px; padding: 10px 16px; border-radius: 12px; }
+  .ft-title { font-size: 18px; }
+  .ft-close { font-size: 18px; }
+  .ft-body { font-size: 14px; line-height: 1.5; }
+  .ft-btn { font-size: 12px; padding: 8px 12px; border-radius: 10px; }
 }
+
+.btn-spinner {
+  width: 14px; height: 14px; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: rgba(255,255,255,.95);
+  display: inline-block;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── FOOTER ── */
 footer { background: var(--ink); padding: 40px 48px; display: flex; align-items: center; justify-content: space-between; }
@@ -2635,7 +2645,6 @@ function getModalConfig(type) {
           <div class="modal-field"><label>Votre ville</label><input name="city" required type="text" placeholder="Dax (40)"></div>
           <div class="modal-field"><label>Votre numero WhatsApp</label><input name="whatsapp" required type="tel" placeholder="+33 6 XX XX XX XX"></div>
           <div class="modal-field"><label>Votre site web (optionnel)</label><input name="website" type="url" placeholder="https://votre-site.fr"></div>
-          <div class="modal-field"><label>Pourquoi rejoindre Popey ?</label><textarea name="message" placeholder="En 2-3 phrases, ce que vous cherchez..."></textarea></div>
           <button class="modal-btn" type="submit">Reserver ma place →</button>
         </form>
       `,
@@ -2749,7 +2758,11 @@ function wireModalForm(type) {
   formElement.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submitButton = formElement.querySelector('button[type="submit"]');
-    if (submitButton) submitButton.disabled = true;
+    const originalLabel = submitButton ? submitButton.textContent : "";
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span style="margin-left:10px">Envoi en cours...</span>`;
+    }
     try {
       const result = await submitMarketplaceAction(type, new FormData(formElement));
       const offerId = result?.offerId ? String(result.offerId) : "";
@@ -2767,7 +2780,10 @@ function wireModalForm(type) {
         body: String(error?.message || "Une erreur est survenue. Merci de reessayer."),
       });
     } finally {
-      if (submitButton) submitButton.disabled = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalLabel || "Envoyer →";
+      }
     }
   });
 }

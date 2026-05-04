@@ -342,273 +342,319 @@ export default async function AdminHumainMarketplacePage({
               </p>
             ) : null}
             <div className="mt-3 space-y-3">
-              {snapshot.offers.map((offer) => (
-                <article key={offer.id} className="rounded-lg border p-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="font-black">
-                        {actionLabel(offer.action_type)} · {offer.full_name}
-                      </p>
-                      <p className="text-xs text-black/70">
-                        {offer.metier || "Metier non renseigne"} · {offer.city || "Ville non renseignee"} ·{" "}
-                        {offer.whatsapp || "WhatsApp non renseigne"}
-                      </p>
-                      <p className="text-xs text-black/70">
-                        Place: {offer.place?.metier || "N/A"} · {offer.place?.city || "N/A"} · statut demande: {offer.status}
-                      </p>
-                      <p className="text-xs text-black/70">
-                        Source: {String(offer.metadata?.source || "n/a")} · Referral: {String(offer.metadata?.referral_code || "n/a")}
-                      </p>
-                      {(() => {
-                        const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
-                        const referralCode = String(offer.metadata?.referral_code || "").trim();
-                        const rawLabel = refId ? membersById.get(refId) || "Membre Popey" : offer.full_name || "Membre Popey";
-                        const parsed = splitMemberLabel(rawLabel);
-                        const refLabel = parsed.displayName;
-                        const refMetier = parsed.metier || offer.metier || "";
-                        const city = offer.city || offer.place?.city || "dax";
-                        const link = refId
-                          ? buildPersonalLink(appBase, city, refId, refLabel, refMetier)
-                          : offer.status === "accepted" && referralCode
-                            ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier)
-                            : "";
-                        if (!link) return null;
-                        return (
-                          <p className="text-xs text-emerald-700">
-                            Lien perso pro:{" "}
-                            <a href={link} target="_blank" rel="noreferrer" className="underline">
-                              {link}
-                            </a>
+              {snapshot.offers.map((offer) => {
+                const statusTone =
+                  offer.status === "accepted"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : offer.status === "reviewing"
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : offer.status === "rejected" || offer.status === "cancelled"
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : "border-slate-200 bg-slate-50 text-slate-800";
+
+                const shortMeta = [
+                  offer.metier || "Metier non renseigne",
+                  offer.city || "Ville non renseignee",
+                  offer.whatsapp || "WhatsApp non renseigne",
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+
+                const offerMemberSelector = resolveMemberIdForOffer(offer);
+                const offerMemberName = normalizePersonName(String(offer.full_name || ""));
+                const relatedCobrandOffers = snapshot.cobrandOffers.filter((pack) => {
+                  const byPlace = pack.primary_place_id === offer.place?.id || pack.secondary_place_id === offer.place?.id;
+                  const byMemberId =
+                    (offerMemberSelector && (pack.primary_member_id === offerMemberSelector || pack.secondary_member_id === offerMemberSelector)) ||
+                    false;
+                  const byMemberName =
+                    (offerMemberName &&
+                      (normalizePersonName(String(pack.primary_member_name || "")) === offerMemberName ||
+                        normalizePersonName(String(pack.secondary_member_name || "")) === offerMemberName)) ||
+                    false;
+                  return byPlace || byMemberId || byMemberName;
+                });
+
+                return (
+                  <details key={offer.id} className="group rounded-lg border bg-white">
+                    <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black">
+                          {actionLabel(offer.action_type)} · {offer.full_name}
+                        </p>
+                        <p className="truncate text-xs text-black/60">{shortMeta}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full border px-2 py-1 text-[11px] font-black uppercase tracking-wide ${statusTone}`}>
+                          {offer.status}
+                        </span>
+                        <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">
+                          Ouvrir &gt;
+                        </span>
+                      </div>
+                    </summary>
+
+                    <div className="border-t px-3 py-3">
+                      <div className="grid gap-3 lg:grid-cols-2">
+                        <div className="space-y-1">
+                          <p className="text-xs text-black/70">
+                            Place: {offer.place?.metier || "N/A"} · {offer.place?.city || "N/A"} · statut demande: {offer.status}
                           </p>
-                        );
-                      })()}
-                      {offer.status === "accepted" && !offer.assigned_member_id && !offer.place?.owner_member_id ? (
-                        <p className="text-xs text-amber-700">
-                          Astuce: attribue un membre pour obtenir un lien strictement stable via `ref_id`.
-                        </p>
-                      ) : null}
-                      {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
-                      <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
-                      {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
-                    </div>
-                    <div className="space-y-2">
-                      {offer.status === "accepted" ? (
-                        <Link
-                          href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(`offer:${offer.id}`)}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
-                          className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
-                        >
-                          Creer offre duo
-                        </Link>
-                      ) : null}
-                      <Link
-                        href={`/admin/humain/marketplace/offres/${offer.id}`}
-                        className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-900"
-                      >
-                        Configurer cette offre
-                      </Link>
-                      <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2">
-                        <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
-                        <input type="hidden" name="offer_id" value={offer.id} />
-                        <select
-                          name="assign_member_id"
-                          defaultValue={offer.assigned_member_id || ""}
-                          className="h-9 rounded border bg-background px-2 text-xs"
-                        >
-                          <option value="">Attribuer membre (optionnel)</option>
-                          {snapshot.members.map((member) => (
-                            <option key={member.id} value={member.id}>
-                              {member.label}
-                            </option>
-                          ))}
-                        </select>
-                        <select name="next_status" defaultValue={offer.status} className="h-9 rounded border bg-background px-2 text-xs">
-                          <option value="pending">pending</option>
-                          <option value="reviewing">reviewing</option>
-                          <option value="accepted">accepted</option>
-                          <option value="rejected">rejected</option>
-                          <option value="cancelled">cancelled</option>
-                        </select>
-                        <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
-                          MAJ demande
-                        </button>
-                      </form>
-                      <form action="/api/admin/humain/marketplace/offers/delete" method="post" className="flex justify-end">
-                        <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
-                        <input type="hidden" name="offer_id" value={offer.id} />
-                        <button type="submit" className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
-                          Supprimer
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                  {offer.place ? (
-                    <>
-                      <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
-                        <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-800">
-                          Configurer l&apos;offre privilège de ce professionnel
-                        </p>
-                        <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
-                        <input type="hidden" name="place_id" value={offer.place.id} />
-                        <input type="hidden" name="next_status" value={offer.place.status || "reserved"} />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <select
-                            name="owner_member_id"
-                            defaultValue={offer.assigned_member_id || offer.place.owner_member_id || ""}
-                            className="h-9 rounded border bg-background px-2 text-xs"
-                          >
-                            <option value="">Owner membre (optionnel)</option>
-                            {snapshot.members.map((member) => (
-                              <option key={member.id} value={member.id}>
-                                {member.label}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            name="company_name"
-                            defaultValue={offer.place.company_name || offer.full_name || ""}
-                            placeholder="Nom affiché pro"
-                            className="h-9 w-40 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="privilege_badge"
-                            defaultValue={offer.place.privilege_badge || ""}
-                            placeholder="Offre privilège (ex: Diagnostic offert)"
-                            className="h-9 w-56 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="partner_whatsapp"
-                            defaultValue={offer.place.partner_whatsapp || offer.whatsapp || ""}
-                            placeholder="WhatsApp pro cible"
-                            className="h-9 w-44 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="direct_contact"
-                            defaultValue={offer.place.direct_contact || ""}
-                            placeholder="Contact direct (tel/email)"
-                            className="h-9 w-44 rounded border bg-background px-2 text-xs"
-                          />
-                          <select
-                            name="category_key"
-                            defaultValue={offer.place.category_key || ""}
-                            className="h-9 rounded border bg-background px-2 text-xs"
-                          >
-                            <option value="">Catégorie auto</option>
-                            <option value="maison">maison</option>
-                            <option value="sante">sante</option>
-                            <option value="travaux">travaux</option>
-                            <option value="bien-etre">bien-etre</option>
-                            <option value="services">services</option>
-                          </select>
-                          <input
-                            name="external_ref"
-                            defaultValue={offer.place.external_ref || String(offer.metadata?.referral_code || "")}
-                            placeholder="Reference externe"
-                            className="h-9 w-44 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="partner_offer_value_eur"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            defaultValue={offer.place.partner_offer_value_eur ? String(offer.place.partner_offer_value_eur) : ""}
-                            placeholder="Offre partenaire €"
-                            className="h-9 w-36 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="offer_website_url"
-                            defaultValue={offer.place.offer_website_url || ""}
-                            placeholder="Site web (https://...)"
-                            className="h-9 w-56 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="offer_photo_url"
-                            defaultValue={offer.place.offer_photo_url || ""}
-                            placeholder="Photo URL"
-                            className="h-9 w-56 rounded border bg-background px-2 text-xs"
-                          />
-                          <input
-                            name="offer_photo_file"
-                            type="file"
-                            accept="image/*"
-                            className="h-9 w-56 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
-                          />
-                          <input
-                            name="offer_description"
-                            defaultValue={offer.place.offer_description || ""}
-                            placeholder="Descriptif offre"
-                            className="h-9 w-[28rem] rounded border bg-background px-2 text-xs"
-                          />
-                          <button type="submit" className="h-9 rounded border border-amber-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-amber-900">
-                            Enregistrer offre privilège
-                          </button>
-                          <button
-                            type="submit"
-                            name="intent"
-                            value="clear_privilege"
-                            className="h-9 rounded border border-red-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-red-700"
-                          >
-                            Supprimer offre privilège
-                          </button>
+                          <p className="text-xs text-black/70">
+                            Source: {String(offer.metadata?.source || "n/a")} · Referral: {String(offer.metadata?.referral_code || "n/a")}
+                          </p>
+                          {(() => {
+                            const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
+                            const referralCode = String(offer.metadata?.referral_code || "").trim();
+                            const rawLabel = refId ? membersById.get(refId) || "Membre Popey" : offer.full_name || "Membre Popey";
+                            const parsed = splitMemberLabel(rawLabel);
+                            const refLabel = parsed.displayName;
+                            const refMetier = parsed.metier || offer.metier || "";
+                            const city = offer.city || offer.place?.city || "dax";
+                            const link = refId
+                              ? buildPersonalLink(appBase, city, refId, refLabel, refMetier)
+                              : offer.status === "accepted" && referralCode
+                                ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier)
+                                : "";
+                            if (!link) return null;
+                            return (
+                              <p className="text-xs text-emerald-700">
+                                Lien perso pro:{" "}
+                                <a href={link} target="_blank" rel="noreferrer" className="underline">
+                                  {link}
+                                </a>
+                              </p>
+                            );
+                          })()}
+                          {offer.status === "accepted" && !offer.assigned_member_id && !offer.place?.owner_member_id ? (
+                            <p className="text-xs text-amber-700">
+                              Astuce: attribue un membre pour obtenir un lien strictement stable via `ref_id`.
+                            </p>
+                          ) : null}
+                          {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
+                          <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
+                          {offer.message ? <p className="text-xs text-black/80">Message: {offer.message}</p> : null}
                         </div>
-                      </form>
-                      {(() => {
-                        const offerMemberSelector = resolveMemberIdForOffer(offer);
-                        const offerMemberName = normalizePersonName(String(offer.full_name || ""));
-                        const relatedCobrandOffers = snapshot.cobrandOffers.filter((pack) => {
-                          const byPlace = pack.primary_place_id === offer.place?.id || pack.secondary_place_id === offer.place?.id;
-                          const byMemberId =
-                            (offerMemberSelector && (pack.primary_member_id === offerMemberSelector || pack.secondary_member_id === offerMemberSelector)) ||
-                            false;
-                          const byMemberName =
-                            (offerMemberName &&
-                              (normalizePersonName(String(pack.primary_member_name || "")) === offerMemberName ||
-                                normalizePersonName(String(pack.secondary_member_name || "")) === offerMemberName)) ||
-                            false;
-                          return byPlace || byMemberId || byMemberName;
-                        });
-                        if (relatedCobrandOffers.length === 0) return null;
-                        return (
-                          <div className="mt-2 space-y-2 rounded-lg border border-teal-200 bg-teal-50/40 p-3">
-                            <p className="text-xs font-black uppercase tracking-wide text-teal-800">Offres duo liees a ce membre</p>
-                            {relatedCobrandOffers.map((pack) => {
-                              const leftName =
-                                (pack.primary_member_id ? membersById.get(pack.primary_member_id) : "") ||
-                                pack.primary_member_name ||
-                                "Membre 1";
-                              const rightName =
-                                (pack.secondary_member_id ? membersById.get(pack.secondary_member_id) : "") ||
-                                pack.secondary_member_name ||
-                                "Membre 2";
-                              return (
-                                <article key={`member-pack-${offer.id}-${pack.id}`} className="rounded border border-teal-200 bg-white/80 p-2 text-xs">
-                                  <p className="font-black">
-                                    {pack.pack_title} · {leftName} + {rightName}
-                                  </p>
-                                  <p className="text-black/70">
-                                    {pack.primary_offer_label} + {pack.secondary_offer_label}
-                                  </p>
-                                  <form action="/api/admin/humain/marketplace/cobrand" method="post" className="mt-2">
-                                    <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
-                                    <input type="hidden" name="intent" value="delete" />
-                                    <input type="hidden" name="cobrand_id" value={pack.id} />
-                                    <button type="submit" className="h-8 rounded border border-red-300 px-3 text-[11px] font-black uppercase tracking-wide text-red-700">
-                                      Supprimer offre duo
-                                    </button>
-                                  </form>
-                                </article>
-                              );
-                            })}
+
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {offer.status === "accepted" ? (
+                              <Link
+                                href={`/admin/humain/marketplace?offerStatus=${encodeURIComponent(snapshot.filters.offerStatus)}&offerActionType=${encodeURIComponent(snapshot.filters.offerActionType)}&placeCity=${encodeURIComponent(snapshot.filters.placeCity)}&timelinePlaceId=${encodeURIComponent(snapshot.filters.timelinePlaceId)}&cobrandPrimaryMemberId=${encodeURIComponent(`offer:${offer.id}`)}&cobrandCity=${encodeURIComponent(String(offer.city || offer.place?.city || ""))}&cobrandPrimaryPlaceId=${encodeURIComponent(String(offer.place?.id || ""))}#duo-offer-form`}
+                                className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900"
+                              >
+                                Creer offre duo
+                              </Link>
+                            ) : null}
+                            <Link
+                              href={`/admin/humain/marketplace/offres/${offer.id}`}
+                              className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-900"
+                            >
+                              Configurer cette offre
+                            </Link>
                           </div>
-                        );
-                      })()}
-                    </>
-                  ) : (
-                    <p className="mt-3 text-xs text-amber-700">
-                      Cette demande n&apos;est pas encore reliée à une place marketplace, donc impossible de configurer son offre privilège ici.
-                    </p>
-                  )}
-                </article>
-              ))}
+
+                          <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                            <input type="hidden" name="offer_id" value={offer.id} />
+                            <select
+                              name="assign_member_id"
+                              defaultValue={offer.assigned_member_id || ""}
+                              className="h-9 rounded border bg-background px-2 text-xs"
+                            >
+                              <option value="">Attribuer membre (optionnel)</option>
+                              {snapshot.members.map((member) => (
+                                <option key={member.id} value={member.id}>
+                                  {member.label}
+                                </option>
+                              ))}
+                            </select>
+                            <select name="next_status" defaultValue={offer.status} className="h-9 rounded border bg-background px-2 text-xs">
+                              <option value="pending">pending</option>
+                              <option value="reviewing">reviewing</option>
+                              <option value="accepted">accepted</option>
+                              <option value="rejected">rejected</option>
+                              <option value="cancelled">cancelled</option>
+                            </select>
+                            <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
+                              MAJ demande
+                            </button>
+                          </form>
+
+                          <form action="/api/admin/humain/marketplace/offers/delete" method="post" className="flex justify-end">
+                            <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                            <input type="hidden" name="offer_id" value={offer.id} />
+                            <button type="submit" className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
+                              Supprimer
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+
+                      {offer.place ? (
+                        <>
+                          <details className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40">
+                            <summary className="cursor-pointer list-none px-3 py-2 text-xs font-black uppercase tracking-wide text-amber-800 [&::-webkit-details-marker]:hidden">
+                              Offre privilège (deplier)
+                            </summary>
+                            <div className="px-3 pb-3">
+                              <form action="/api/admin/humain/marketplace/places/update" method="post" encType="multipart/form-data" className="rounded-lg border border-amber-200 bg-white/70 p-3">
+                                <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                                <input type="hidden" name="place_id" value={offer.place.id} />
+                                <input type="hidden" name="next_status" value={offer.place.status || "reserved"} />
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <select
+                                    name="owner_member_id"
+                                    defaultValue={offer.assigned_member_id || offer.place.owner_member_id || ""}
+                                    className="h-9 rounded border bg-background px-2 text-xs"
+                                  >
+                                    <option value="">Owner membre (optionnel)</option>
+                                    {snapshot.members.map((member) => (
+                                      <option key={member.id} value={member.id}>
+                                        {member.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    name="company_name"
+                                    defaultValue={offer.place.company_name || offer.full_name || ""}
+                                    placeholder="Nom affiché pro"
+                                    className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="privilege_badge"
+                                    defaultValue={offer.place.privilege_badge || ""}
+                                    placeholder="Offre privilège (ex: Diagnostic offert)"
+                                    className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="partner_whatsapp"
+                                    defaultValue={offer.place.partner_whatsapp || offer.whatsapp || ""}
+                                    placeholder="WhatsApp pro cible"
+                                    className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="direct_contact"
+                                    defaultValue={offer.place.direct_contact || ""}
+                                    placeholder="Contact direct (tel/email)"
+                                    className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <select
+                                    name="category_key"
+                                    defaultValue={offer.place.category_key || ""}
+                                    className="h-9 rounded border bg-background px-2 text-xs"
+                                  >
+                                    <option value="">Catégorie auto</option>
+                                    <option value="maison">maison</option>
+                                    <option value="sante">sante</option>
+                                    <option value="travaux">travaux</option>
+                                    <option value="bien-etre">bien-etre</option>
+                                    <option value="services">services</option>
+                                  </select>
+                                  <input
+                                    name="external_ref"
+                                    defaultValue={offer.place.external_ref || String(offer.metadata?.referral_code || "")}
+                                    placeholder="Reference externe"
+                                    className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="partner_offer_value_eur"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    defaultValue={offer.place.partner_offer_value_eur ? String(offer.place.partner_offer_value_eur) : ""}
+                                    placeholder="Offre partenaire €"
+                                    className="h-9 w-36 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="offer_website_url"
+                                    defaultValue={offer.place.offer_website_url || ""}
+                                    placeholder="Site web (https://...)"
+                                    className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="offer_photo_url"
+                                    defaultValue={offer.place.offer_photo_url || ""}
+                                    placeholder="Photo URL"
+                                    className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="offer_photo_file"
+                                    type="file"
+                                    accept="image/*"
+                                    className="h-9 w-56 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
+                                  />
+                                  <input
+                                    name="offer_description"
+                                    defaultValue={offer.place.offer_description || ""}
+                                    placeholder="Descriptif offre"
+                                    className="h-9 w-[28rem] rounded border bg-background px-2 text-xs"
+                                  />
+                                  <button
+                                    type="submit"
+                                    className="h-9 rounded border border-amber-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-amber-900"
+                                  >
+                                    Enregistrer offre privilège
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    name="intent"
+                                    value="clear_privilege"
+                                    className="h-9 rounded border border-red-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-red-700"
+                                  >
+                                    Supprimer offre privilège
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          </details>
+
+                          {relatedCobrandOffers.length ? (
+                            <details className="mt-2 rounded-lg border border-teal-200 bg-teal-50/40">
+                              <summary className="cursor-pointer list-none px-3 py-2 text-xs font-black uppercase tracking-wide text-teal-800 [&::-webkit-details-marker]:hidden">
+                                Offres duo liees a ce membre ({relatedCobrandOffers.length}) (deplier)
+                              </summary>
+                              <div className="space-y-2 px-3 pb-3">
+                                {relatedCobrandOffers.map((pack) => {
+                                  const leftName =
+                                    (pack.primary_member_id ? membersById.get(pack.primary_member_id) : "") || pack.primary_member_name || "Membre 1";
+                                  const rightName =
+                                    (pack.secondary_member_id ? membersById.get(pack.secondary_member_id) : "") || pack.secondary_member_name || "Membre 2";
+                                  return (
+                                    <article key={`member-pack-${offer.id}-${pack.id}`} className="rounded border border-teal-200 bg-white/80 p-2 text-xs">
+                                      <p className="font-black">
+                                        {pack.pack_title} · {leftName} + {rightName}
+                                      </p>
+                                      <p className="text-black/70">
+                                        {pack.primary_offer_label} + {pack.secondary_offer_label}
+                                      </p>
+                                      <form action="/api/admin/humain/marketplace/cobrand" method="post" className="mt-2">
+                                        <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                                        <input type="hidden" name="intent" value="delete" />
+                                        <input type="hidden" name="cobrand_id" value={pack.id} />
+                                        <button
+                                          type="submit"
+                                          className="h-8 rounded border border-red-300 px-3 text-[11px] font-black uppercase tracking-wide text-red-700"
+                                        >
+                                          Supprimer offre duo
+                                        </button>
+                                      </form>
+                                    </article>
+                                  );
+                                })}
+                              </div>
+                            </details>
+                          ) : null}
+                        </>
+                      ) : (
+                        <p className="mt-3 text-xs text-amber-700">
+                          Cette demande n&apos;est pas encore reliée à une place marketplace, donc impossible de configurer son offre privilège ici.
+                        </p>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
               {snapshot.offers.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande marketplace pour le moment.</p> : null}
             </div>
           </div>
