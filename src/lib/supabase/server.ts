@@ -15,6 +15,17 @@ function readJwtSubject(accessToken: string) {
   }
 }
 
+function decodeSupabaseCookiePayload(rawCookieValue: string) {
+  const uriDecoded = decodeURIComponent(String(rawCookieValue || ""));
+  if (!uriDecoded) return "";
+  if (!uriDecoded.startsWith("base64-")) return uriDecoded;
+  try {
+    return Buffer.from(uriDecoded.slice("base64-".length), "base64url").toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
 function readAccessTokenFromCookiePayload(payload: unknown) {
   if (!payload) return "";
   if (typeof payload === "string") return payload;
@@ -112,13 +123,16 @@ export async function getServerUserIdWithProxyFallback() {
   }
   if (authCookieValue) {
     try {
-      const decodedCookie = decodeURIComponent(authCookieValue);
+      const decodedCookie = decodeSupabaseCookiePayload(authCookieValue);
       const parsedCookie = JSON.parse(decodedCookie);
-      const accessToken = readAccessTokenFromCookiePayload(parsedCookie);
+      const accessToken = readAccessTokenFromCookiePayload(parsedCookie) || decodedCookie;
       const sub = readJwtSubject(accessToken);
       if (sub) return sub;
     } catch {
       // Ignore malformed cookie payload and continue.
+      const decodedCookie = decodeSupabaseCookiePayload(authCookieValue);
+      const sub = readJwtSubject(decodedCookie);
+      if (sub) return sub;
     }
   }
 
