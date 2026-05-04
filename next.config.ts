@@ -95,9 +95,9 @@ const config: NextConfig = {
 
 export default withPWA({
   dest: "public",
-  register: true,
+  register: false,
   // skipWaiting is now part of workboxOptions in newer versions or handled automatically
-  disable: false, 
+  disable: true,
   // Custom workbox options
   workboxOptions: {
     skipWaiting: true, // Moved here
