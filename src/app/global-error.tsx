@@ -28,6 +28,11 @@ export default function GlobalError({
                 <p className="text-slate-400 mb-8 leading-relaxed">
                 Une erreur inattendue s'est produite.
                 </p>
+                {error?.digest ? (
+                  <p className="mb-4 rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-left font-mono text-xs text-slate-300">
+                    Digest: {error.digest}
+                  </p>
+                ) : null}
 
                 <Button 
                     onClick={() => {

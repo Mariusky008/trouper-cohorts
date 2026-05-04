@@ -1,33 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
 
 export default async function AdminHumainPage() {
-  let signalSnapshot: Awaited<ReturnType<typeof getAdminSignalDispatchSnapshot>>;
-  try {
-    signalSnapshot = await getAdminSignalDispatchSnapshot();
-  } catch (error) {
-    console.error("AdminHumainPage/getAdminSignalDispatchSnapshot failed", error);
-    signalSnapshot = {
-      error: "Impossible de charger les signaux pour le moment.",
-      signals: [],
-      candidates: [],
-    };
-  }
-  const signalsCount = signalSnapshot.error ? null : signalSnapshot.signals.length;
-  const recordingsCount = signalSnapshot.error
-    ? null
-    : signalSnapshot.signals.filter((signal) => Boolean(signal.audio_url && String(signal.audio_url).trim())).length;
-  const withoutAudioCount =
-    signalSnapshot.error || recordingsCount === null || signalsCount === null
-      ? null
-      : Math.max(0, signalsCount - recordingsCount);
-  const newVocalsCount = signalSnapshot.error
-    ? null
-    : signalSnapshot.signals.filter(
-        (signal) => Boolean(signal.audio_url) && signal.status !== "closed" && signal.dispatchTargets.length === 0
-      ).length;
-
   return (
     <section className="space-y-4">
       <div>
@@ -37,31 +11,6 @@ export default async function AdminHumainPage() {
       <p className="max-w-2xl text-sm text-muted-foreground">
         Espace dédié au pilotage Popey Human: permissions réseau, binômes, sphère, éclaireurs et notifications.
       </p>
-      <div className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 p-5">
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-900">Enregistrements vocaux reçus</p>
-        <p className="mt-1 text-sm text-cyan-900">
-          {signalSnapshot.error
-            ? "Impossible de charger le compteur vocal pour le moment."
-            : `${recordingsCount} enregistrement(s) audio sur ${signalsCount} signal(aux) total.`}
-        </p>
-        {!signalSnapshot.error && (
-          <p className="mt-1 text-xs text-cyan-900/85">
-            Sans audio exploitable: {withoutAudioCount} (upload manquant ou signal texte).
-          </p>
-        )}
-        <div className="mt-3">
-          <Button asChild>
-            <Link href="/admin/humain/sphere" className="inline-flex items-center gap-2">
-              Ouvrir la timeline des vocaux
-              {newVocalsCount && newVocalsCount > 0 ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
-                  {newVocalsCount}
-                </span>
-              ) : null}
-            </Link>
-          </Button>
-        </div>
-      </div>
       <div className="rounded-xl border bg-card p-5 text-sm">
         Sprint 1 livré: routage indépendant et redirection post-login vers cet espace pour les admins.
       </div>
@@ -76,14 +25,7 @@ export default async function AdminHumainPage() {
           <Link href="/admin/humain/membres">Ouvrir la gestion des membres</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/admin/humain/sphere" className="inline-flex items-center gap-2">
-            Ouvrir la vue sphère
-            {newVocalsCount && newVocalsCount > 0 ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
-                {newVocalsCount}
-              </span>
-            ) : null}
-          </Link>
+          <Link href="/admin/humain/sphere">Ouvrir la vue sphère</Link>
         </Button>
         <Button asChild>
           <Link href="/admin/humain/permissions">Ouvrir la gestion des permissions</Link>
