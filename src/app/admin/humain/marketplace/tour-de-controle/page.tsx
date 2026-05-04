@@ -139,6 +139,12 @@ export default async function AdminHumainMarketplaceTourControlePage({ searchPar
           <Link href="/admin/humain/marketplace" className="rounded border px-3 py-2 text-xs font-black uppercase tracking-wide">
             Retour marketplace
           </Link>
+          <Link
+            href="/admin/humain/chat"
+            className="rounded border border-cyan-300 bg-cyan-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-cyan-700"
+          >
+            Voir messages WhatsApp
+          </Link>
           <Link href="/admin/humain" className="rounded border px-3 py-2 text-xs font-black uppercase tracking-wide">
             Retour admin
           </Link>
@@ -265,6 +271,10 @@ export default async function AdminHumainMarketplaceTourControlePage({ searchPar
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {txt(activation.city)} · {new Date(activation.created_at).toLocaleString("fr-FR")} · {code}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Tel: {readMetaText(activation.metadata, "client_phone") || "Non renseigné"} · Message:{" "}
+                      {readMetaText(activation.metadata, "client_message") || "Aucun message client"}
                     </p>
                   </div>
                   <span className={`rounded-full border px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${badgeClass(status)}`}>

@@ -12,6 +12,7 @@ type ActivatePayload = {
   city?: string;
   category?: string;
   clientPhone?: string;
+  clientMessage?: string;
   clientName?: string;
   referrerName?: string;
   referrerId?: string;
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest) {
     const declaredCity = trim(body?.city).slice(0, 120);
     const declaredCategory = trim(body?.category).toLowerCase().slice(0, 32);
     const fallbackClientName = trim(body?.clientName) || "Client";
+    const fallbackClientPhone = trim(body?.clientPhone);
+    const fallbackClientMessage = trim(body?.clientMessage).slice(0, 500);
     const fallbackReferrerName = trim(body?.referrerName);
     const fallbackReferrerId = trim(body?.referrerId);
     const fallbackReferralCode = trim(body?.referralCode);
@@ -137,6 +140,9 @@ export async function POST(request: NextRequest) {
         ? verified.payload.client_id
         : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const resolvedClientName = hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.client_name : fallbackClientName;
+    const resolvedClientPhone =
+      (hasVerifiedContext && "payload" in verified && verified.payload ? trim((verified.payload as Record<string, unknown>).client_phone) : "") ||
+      fallbackClientPhone;
     const resolvedReferrerName =
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_name : fallbackReferrerName;
     const resolvedReferrerId =
@@ -164,6 +170,8 @@ export async function POST(request: NextRequest) {
       metadata: {
         metier: trim(place.metier),
         company_name: trim(place.company_name),
+        client_phone: resolvedClientPhone || null,
+        client_message: fallbackClientMessage || null,
         request_id: requestId,
         referral_code: fallbackReferralCode || null,
         scout_token: fallbackScoutToken || null,
@@ -220,6 +228,8 @@ export async function POST(request: NextRequest) {
       `NOUVEAU LEAD CATALOGUE POPEY`,
       `ID: ${ticketCode}`,
       `Client: ${leadPayload.client_name}`,
+      resolvedClientPhone ? `Tel client: ${resolvedClientPhone}` : null,
+      fallbackClientMessage ? `Message client: ${fallbackClientMessage}` : null,
       `Referrer: ${leadPayload.referrer_name}`,
       `Pro cible: ${partnerName} (${trim(place.metier) || "metier non precise"})`,
       `Ville: ${leadPayload.city}`,
@@ -253,6 +263,7 @@ export async function POST(request: NextRequest) {
       clientConfirmationSent: false,
       referrerName: leadPayload.referrer_name,
       clientName: leadPayload.client_name,
+      clientPhone: resolvedClientPhone || null,
       whatsappUrl,
       whatsappMessage: rawMessage,
       trackingId,

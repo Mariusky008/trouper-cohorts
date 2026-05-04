@@ -942,8 +942,34 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   </div>
 </div>
 
+<!-- CLIENT LEAD MODAL -->
+<div class="modal-overlay" id="clientLeadOverlay" onclick="closeClientLeadModal(event)">
+  <div class="modal" id="clientLeadModal">
+    <button class="modal-close" onclick="closeClientLeadModal()">✕</button>
+    <div class="modal-handle"></div>
+    <div style="font-size:28px;margin-bottom:12px">📝</div>
+    <div class="modal-title">Avant de continuer</div>
+    <div class="modal-sub">Pour que Jean-Philippe vous rappelle et vous mette en relation, il nous faut votre prénom et votre WhatsApp.</div>
+    <div class="modal-field">
+      <label class="modal-label">Votre prénom *</label>
+      <input class="modal-input" type="text" placeholder="Sophie" id="clientLeadName">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Votre WhatsApp *</label>
+      <input class="modal-input" type="tel" placeholder="+33 6 XX XX XX XX" id="clientLeadPhone">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Votre message (optionnel)</label>
+      <input class="modal-input" type="text" placeholder="Je veux activer l'offre cette semaine" id="clientLeadMessage">
+    </div>
+    <button class="modal-submit" id="clientLeadSubmit">Continuer vers WhatsApp →</button>
+    <div class="modal-fine">Vos infos servent uniquement au suivi de votre demande et à la mise en relation.</div>
+  </div>
+</div>
+
 <script>
 var currentWA = {};
+var clientLeadResolver = null;
 
 function filterOffers(sphere, btn) {
   document.querySelectorAll('.f-chip').forEach(function(c) { c.classList.remove('active'); });
@@ -980,6 +1006,70 @@ function closeApporteur(e) {
   if (!e || e.target === document.getElementById('apporteurOverlay')) {
     document.getElementById('apporteurOverlay').classList.remove('open');
   }
+}
+
+function openClientLeadModal(defaults) {
+  var overlay = document.getElementById('clientLeadOverlay');
+  var nameInput = document.getElementById('clientLeadName');
+  var phoneInput = document.getElementById('clientLeadPhone');
+  var messageInput = document.getElementById('clientLeadMessage');
+  var submit = document.getElementById('clientLeadSubmit');
+  if (!overlay || !nameInput || !phoneInput || !submit) return Promise.resolve(null);
+
+  nameInput.value = (defaults && defaults.name) || '';
+  phoneInput.value = (defaults && defaults.phone) || '';
+  if (messageInput) messageInput.value = (defaults && defaults.message) || '';
+  overlay.classList.add('open');
+
+  return new Promise(function(resolve) {
+    clientLeadResolver = resolve;
+    submit.onclick = function() {
+      var name = nameInput.value.trim();
+      var phone = phoneInput.value.trim();
+      var message = messageInput ? messageInput.value.trim() : '';
+      if (!name || !phone) {
+        alert('Merci de renseigner votre prénom et votre WhatsApp.');
+        return;
+      }
+      overlay.classList.remove('open');
+      var payload = { name: name, phone: phone, message: message };
+      if (window.sessionStorage) {
+        sessionStorage.setItem('popey_client_name', name);
+        sessionStorage.setItem('popey_client_phone', phone);
+        sessionStorage.setItem('popey_client_message', message || '');
+      }
+      var fn = clientLeadResolver;
+      clientLeadResolver = null;
+      if (fn) fn(payload);
+    };
+  });
+}
+
+function closeClientLeadModal(e) {
+  var overlay = document.getElementById('clientLeadOverlay');
+  if (!overlay) return;
+  if (!e || e.target === overlay) {
+    overlay.classList.remove('open');
+    var fn = clientLeadResolver;
+    clientLeadResolver = null;
+    if (fn) fn(null);
+  }
+}
+
+async function ensureClientLeadInfo(params) {
+  var savedName = (window.sessionStorage && sessionStorage.getItem('popey_client_name')) || '';
+  var savedPhone = (window.sessionStorage && sessionStorage.getItem('popey_client_phone')) || '';
+  var savedMessage = (window.sessionStorage && sessionStorage.getItem('popey_client_message')) || '';
+  var fromQueryName = (params.get('client_name') || params.get('client') || '').trim();
+  var fromQueryPhone = (params.get('client_phone') || '').trim();
+  var fromQueryMessage = (params.get('client_message') || '').trim();
+  var current = {
+    name: fromQueryName || savedName,
+    phone: fromQueryPhone || savedPhone,
+    message: fromQueryMessage || savedMessage
+  };
+  if (current.name && current.phone) return current;
+  return openClientLeadModal(current);
 }
 
 async function createApporteurLink() {
@@ -1051,6 +1141,10 @@ async function createApporteurLink() {
 })();
 
 var liveState = { loaded: false, places: [], activeSphere: 'all', byId: {} };
+function euros(value) {
+  var num = Number(value || 0);
+  return num.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
 var sphereMeta = {
   sante: { icon: '🌿', label: 'Santé · Bien-être', color: '#007A56', grad: 'linear-gradient(90deg,#00C896,#00A070)' },
   habitat: { icon: '🏠', label: 'Habitat', color: '#B45309', grad: 'linear-gradient(90deg,#F59E0B,#D97706)' },
@@ -1196,11 +1290,18 @@ async function activateLive(placeId, trackingCode) {
   var place = liveState.byId[placeId];
   if (!place) return;
   var params = new URLSearchParams(window.location.search);
+  var leadInfo = await ensureClientLeadInfo(params);
+  if (!leadInfo) return;
+  var clientName = String(leadInfo.name || '').trim();
+  var clientPhone = String(leadInfo.phone || '').trim();
+  var clientMessage = String(leadInfo.message || '').trim();
   var body = {
     placeId: place.id,
     city: (params.get('ville') || 'dax'),
     category: place.sphere,
-    clientName: (params.get('client_name') || params.get('client') || 'Client').trim(),
+    clientName: clientName,
+    clientPhone: clientPhone,
+    clientMessage: clientMessage || null,
     referrerName: (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Jean Roth').trim(),
     referrerId: (params.get('ref_id') || null),
     referralCode: (params.get('ref') || null),
@@ -1228,29 +1329,33 @@ async function activateLive(placeId, trackingCode) {
 }
 
 async function initLiveCatalog() {
-  var params = new URLSearchParams(window.location.search);
-  var city = (params.get('ville') || 'dax').trim();
-  var refId = (params.get('ref_id') || '').trim();
-  var refCode = (params.get('ref') || '').trim();
-  var qs = new URLSearchParams({ catalog: 'privilege', city: city });
-  if (refId) qs.set('ref_id', refId);
-  if (refCode) qs.set('ref', refCode);
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var city = (params.get('ville') || 'dax').trim();
+    var refId = (params.get('ref_id') || '').trim();
+    var refCode = (params.get('ref') || '').trim();
+    var qs = new URLSearchParams({ catalog: 'privilege', city: city });
+    if (refId) qs.set('ref_id', refId);
+    if (refCode) qs.set('ref', refCode);
 
-  var response = await fetch('/api/popey-human/marketplace/places?' + qs.toString(), { cache: 'no-store' }).catch(function () { return null; });
-  var rows = [];
-  if (response && response.ok) {
-    var payload = await response.json().catch(function () { return {}; });
-    rows = Array.isArray(payload.places) ? payload.places : [];
+    var response = await fetch('/api/popey-human/marketplace/places?' + qs.toString(), { cache: 'no-store' }).catch(function () { return null; });
+    var rows = [];
+    if (response && response.ok) {
+      var payload = await response.json().catch(function () { return {}; });
+      rows = Array.isArray(payload.places) ? payload.places : [];
+    }
+
+    liveState.places = rows.map(normalizePlace);
+    liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
+    liveState.loaded = true;
+
+    // Always remove static mock cards once live init runs.
+    document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
+    refreshLiveCounters();
+    renderLiveOffers();
+  } catch (error) {
+    console.error('[privilege-live] init failed', error);
   }
-
-  liveState.places = rows.map(normalizePlace);
-  liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
-  liveState.loaded = true;
-
-  // Always remove static mock cards once live init runs.
-  document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
-  refreshLiveCounters();
-  renderLiveOffers();
 }
 
 document.addEventListener('click', function (event) {

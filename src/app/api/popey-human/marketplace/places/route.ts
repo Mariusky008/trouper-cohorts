@@ -331,7 +331,24 @@ export async function GET(request: NextRequest) {
       .filter((row) => !isBlockedMetier(row.metier || ""))
       .filter((row) => matchCity(city, row.city, row.city_slug));
     if (isPrivilegeCatalog && hasReferralContext) {
-      filteredRows = filteredRows.filter((row) => acceptedPlaceIdsAll.has(String(row.id || "")));
+      filteredRows = filteredRows.filter((row) => {
+        const placeId = String(row.id || "");
+        const hasConfiguredIdentity = Boolean(String(row.company_name || "").trim());
+        const hasConfiguredOffer = Boolean(String(row.privilege_badge || "").trim());
+        const hasConfiguredDetails = Boolean(
+          String(row.offer_description || "").trim() ||
+            String(row.offer_website_url || "").trim() ||
+            String(row.offer_photo_url || "").trim() ||
+            String(row.direct_contact || "").trim() ||
+            Number(row.partner_offer_value_eur || 0) > 0,
+        );
+        const isAcceptedLinkedPlace = acceptedLinkedPlaceIds.has(placeId);
+        const isAcceptedAny = acceptedPlaceIdsAll.has(placeId);
+        if (acceptedLinkedPlaceIds.size > 0) {
+          return isAcceptedLinkedPlace || (hasConfiguredIdentity && hasConfiguredOffer);
+        }
+        return hasConfiguredIdentity || hasConfiguredOffer || hasConfiguredDetails || isAcceptedAny;
+      });
     }
     if (isPrivilegeCatalog && !hasReferralContext) {
       filteredRows = filteredRows.filter((row) => {
