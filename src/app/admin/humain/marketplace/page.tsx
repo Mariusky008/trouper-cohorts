@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 
 export const dynamic = "force-dynamic";
@@ -83,9 +82,6 @@ export default async function AdminHumainMarketplacePage({
     placeCity: typeof params.placeCity === "string" ? params.placeCity : "all",
     timelinePlaceId: typeof params.timelinePlaceId === "string" ? params.timelinePlaceId : "",
   });
-  if (snapshot.error === "Session requise.") {
-    redirect("/popey-human/admin-login?next=%2Fadmin%2Fhumain%2Fmarketplace");
-  }
   const managedPlaceIds = new Set(snapshot.offers.map((offer) => offer.place?.id).filter(Boolean));
   const manualPlaces = snapshot.places.filter(
     (place) =>

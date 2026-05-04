@@ -19,15 +19,15 @@ export default async function AdminLayout({
             Trouper Admin
           </Link>
           <nav className="hidden gap-4 text-sm font-medium md:flex">
-            <Link href="/admin/humain" className="hover:underline text-emerald-700" prefetch={false}>
+            <a href="/admin/humain" className="hover:underline text-emerald-700">
               100% Humain
-            </Link>
-            <Link href="/admin/humain/marketplace" className="hover:underline" prefetch={false}>
+            </a>
+            <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
-            </Link>
-            <Link href="/admin/humain/affiliation" className="hover:underline" prefetch={false}>
+            </a>
+            <a href="/admin/humain/affiliation" className="hover:underline">
               Affiliation
-            </Link>
+            </a>
           </nav>
         </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
