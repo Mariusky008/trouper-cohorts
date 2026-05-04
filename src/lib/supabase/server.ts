@@ -3,6 +3,13 @@ import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { env } from "../env";
 
+function cookieDomainForHost(host: string) {
+  const hostname = String(host || "").split(":")[0].toLowerCase();
+  // Share auth cookies between `popey.academy` and `www.popey.academy`.
+  if (/(^|\.)popey\.academy$/.test(hostname)) return ".popey.academy";
+  return undefined;
+}
+
 function readJwtSubject(accessToken: string) {
   const payloadPart = String(accessToken || "").split(".")[1] || "";
   if (!payloadPart) return "";
@@ -47,11 +54,14 @@ export async function createClient() {
   }
 
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const domain = cookieDomainForHost(requestHeaders.get("host") || "");
 
   return createServerClient(
     env.supabaseUrl,
     env.supabaseAnonKey,
     {
+      cookieOptions: domain ? { domain } : undefined,
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '../env'
 
+function cookieDomainForHost(host: string) {
+  const hostname = String(host || "").split(":")[0].toLowerCase();
+  // Share auth cookies between `popey.academy` and `www.popey.academy`.
+  if (/(^|\.)popey\.academy$/.test(hostname)) return ".popey.academy";
+  return undefined;
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -10,10 +17,12 @@ export async function updateSession(request: NextRequest) {
   })
 
   try {
+    const domain = cookieDomainForHost(request.headers.get("host") || "")
     const supabase = createServerClient(
       env.supabaseUrl,
       env.supabaseAnonKey,
       {
+        cookieOptions: domain ? { domain } : undefined,
         cookies: {
           getAll() {
             return request.cookies.getAll()
