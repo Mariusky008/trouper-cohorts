@@ -519,6 +519,40 @@ var __cityLabel = String(qp.get('city') || '').trim();
 var __refName = String(qp.get('ref_name') || 'camille').trim();
 var __screenParam = String(qp.get('screen') || '').trim();
 var __scoutFirstName = '';
+var __contactsStoragePrefix = 'popey-eclaireur:import-count:';
+
+function getContactsStorageKey() {
+  return __contactsStoragePrefix + ((__tokenOrCode || 'demo').toLowerCase());
+}
+
+function applyImportedContactsCount(count, subtitle) {
+  var safeCount = Number(count || 0);
+  if (!Number.isFinite(safeCount) || safeCount < 0) safeCount = 0;
+  var lbl = document.getElementById('import-count-lbl');
+  var sub = document.getElementById('import-count-sub');
+  var nb = document.getElementById('nb-contacts');
+  var bar = document.getElementById('import-progress');
+  if (lbl) lbl.textContent = safeCount + ' contact' + (safeCount > 1 ? 's' : '') + ' importé' + (safeCount > 1 ? 's' : '');
+  if (sub) sub.textContent = subtitle || 'Prêt à envoyer le catalogue';
+  if (nb) nb.textContent = safeCount;
+  if (bar) bar.style.width = Math.min(100, Math.round(safeCount / 250 * 100)) + '%';
+}
+
+function persistImportedContactsCount(count) {
+  try {
+    localStorage.setItem(getContactsStorageKey(), String(Math.max(0, Number(count || 0))));
+  } catch (e) {}
+}
+
+function restoreImportedContactsCount() {
+  try {
+    var raw = localStorage.getItem(getContactsStorageKey());
+    if (!raw) return;
+    var saved = Number(raw);
+    if (!Number.isFinite(saved) || saved <= 0) return;
+    applyImportedContactsCount(saved, 'Restauré automatiquement');
+  } catch (e) {}
+}
 
 function trackEvent(eventType, payload) {
   if (!__tokenOrCode) return;
@@ -636,15 +670,8 @@ function importContacts() {
         count = text.split('\n').filter(function(l){ return l.trim().length > 5; }).length - 1;
       }
       count = Math.max(count, 1);
-      // Update UI
-      var lbl = document.getElementById('import-count-lbl');
-      var sub = document.getElementById('import-count-sub');
-      var nb = document.getElementById('nb-contacts');
-      var bar = document.getElementById('import-progress');
-      if (lbl) lbl.textContent = count + ' contact' + (count > 1 ? 's' : '') + ' importé' + (count > 1 ? 's' : '');
-      if (sub) sub.textContent = 'Prêt à envoyer le catalogue';
-      if (nb) nb.textContent = count;
-      if (bar) bar.style.width = Math.min(100, Math.round(count / 250 * 100)) + '%';
+      applyImportedContactsCount(count, 'Prêt à envoyer le catalogue');
+      persistImportedContactsCount(count);
       trackEvent('contacts_imported', { source: 'file', imported_count: count });
       // Toast
       var toast = document.createElement('div');
@@ -930,6 +957,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (__screenParam === '2') showScreen('s-partage');
   if (__screenParam === '3') showScreen('s-catalogue');
   if (__screenParam === '4') showScreen('s-commissions');
+  restoreImportedContactsCount();
   fetchPublicApporteurDashboard().then(function(payload) {
     if (payload) applyDashboardData(payload);
   });

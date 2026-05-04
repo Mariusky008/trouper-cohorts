@@ -21,7 +21,7 @@ function toQueryString(searchParams: Record<string, string | string[] | undefine
 
 export default async function EclaireurWebappPreviewPage({ searchParams }: ScoutPreviewPageProps) {
   const resolved = (await searchParams) || {};
-  const query = toQueryString(resolved);
+  const query = toQueryString({ ...resolved, v: "20260501-eclaireur-v2" });
   return (
     <main className="h-screen w-full overflow-hidden bg-[#07090C]">
       <iframe
