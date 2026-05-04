@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -26,16 +26,13 @@ type ChatMessage = {
 };
 
 async function requireAdminUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.id) return { error: "Session requise." as const };
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return { error: "Session requise." as const };
   const supabaseAdmin = createAdminClient();
-  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!adminRow?.user_id) return { error: "Acces admin requis." as const };
-  const { data: memberRow } = await supabaseAdmin.from("human_members").select("id").eq("user_id", user.id).maybeSingle();
-  return { userId: user.id, ownerMemberId: memberRow?.id || null } as const;
+  const { data: memberRow } = await supabaseAdmin.from("human_members").select("id").eq("user_id", userId).maybeSingle();
+  return { userId, ownerMemberId: memberRow?.id || null } as const;
 }
 
 function extractTextFallback(payload: Record<string, unknown> | null | undefined): string | null {

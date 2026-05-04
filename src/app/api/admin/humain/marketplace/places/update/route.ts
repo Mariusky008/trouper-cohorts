@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MARKETPLACE_PRIVILEGE_PHOTO_BUCKET = "marketplace-privilege-offers";
@@ -68,14 +68,11 @@ export async function POST(request: Request) {
   if (!placeId) return fail("Place introuvable.");
   if (!["dispo", "sale", "occupied", "reserved"].includes(nextStatus)) return fail("Statut de place invalide.");
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return fail("Session requise.");
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return fail("Session requise.");
 
   const supabaseAdmin = createAdminClient();
-  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!adminRow) return fail("Acces admin requis.");
 
   const patch: Record<string, unknown> = {

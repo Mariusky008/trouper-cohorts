@@ -20,6 +20,20 @@ export default async function proxy(request: NextRequest) {
     console.error("[proxy] unexpected updateSession crash", error);
     response = NextResponse.next();
   }
+  const downstreamHeaders = new Headers(request.headers);
+  if (user?.id) {
+    downstreamHeaders.set("x-popey-auth-user-id", user.id);
+  } else {
+    downstreamHeaders.delete("x-popey-auth-user-id");
+  }
+  response = copyResponseCookies(
+    NextResponse.next({
+      request: {
+        headers: downstreamHeaders,
+      },
+    }),
+    response,
+  );
   const host = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
   const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);

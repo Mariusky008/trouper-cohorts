@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { isMarketplaceLandingTokenConfigured, signMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
 
 export const dynamic = "force-dynamic";
@@ -38,16 +38,13 @@ function slugifyCity(value: string): string {
 }
 
 async function requireAdminUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.id) return { error: "Session requise." as const };
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return { error: "Session requise." as const };
 
   const supabaseAdmin = createAdminClient();
-  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!adminRow?.user_id) return { error: "Accès admin requis." as const };
-  return { userId: user.id } as const;
+  return { userId } as const;
 }
 
 export async function POST(request: Request) {

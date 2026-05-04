@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function withStatus(base: string, status: "success" | "error", message: string) {
@@ -61,14 +61,11 @@ export async function POST(request: Request) {
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return fail("Session requise.");
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return fail("Session requise.");
 
   const supabaseAdmin = createAdminClient();
-  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!adminRow) return fail("Acces admin requis.");
 
   if (intent === "toggle") {
@@ -201,7 +198,7 @@ export async function POST(request: Request) {
     secondary_offer_value_eur: secondaryValue,
     commission_note: commissionNote,
     status: "active",
-    created_by_user_id: user.id,
+    created_by_user_id: userId,
     updated_at: new Date().toISOString(),
   };
 

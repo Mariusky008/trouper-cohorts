@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 
 type MarketplacePlaceRow = {
@@ -143,17 +143,14 @@ function asMetadata(value: unknown): Record<string, unknown> {
 }
 
 async function requireHumanAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Session requise." };
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return { error: "Session requise." };
 
   const supabaseAdmin = createAdminClient();
-  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!adminRow) return { error: "Acces admin requis." };
 
-  return { user };
+  return { user: { id: userId } };
 }
 
 export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFilters = {}) {

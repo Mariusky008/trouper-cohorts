@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { env } from "../env";
 
 export async function createClient() {
@@ -31,4 +32,16 @@ export async function createClient() {
       },
     }
   );
+}
+
+export async function getServerUserIdWithProxyFallback() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.id) return user.id;
+
+  const requestHeaders = await headers();
+  const proxyUserId = String(requestHeaders.get("x-popey-auth-user-id") || "").trim();
+  return proxyUserId || null;
 }
