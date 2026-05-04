@@ -971,6 +971,37 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 var currentWA = {};
 var clientLeadResolver = null;
 
+function loadClientLeadDraft() {
+  try {
+    var raw =
+      (window.localStorage && localStorage.getItem('popey_client_lead')) ||
+      (window.sessionStorage && sessionStorage.getItem('popey_client_lead')) ||
+      '';
+    if (!raw) return { name: '', phone: '', message: '' };
+    var parsed = JSON.parse(raw);
+    return {
+      name: String((parsed && parsed.name) || '').trim(),
+      phone: String((parsed && parsed.phone) || '').trim(),
+      message: String((parsed && parsed.message) || '').trim()
+    };
+  } catch (_error) {
+    return { name: '', phone: '', message: '' };
+  }
+}
+
+function saveClientLeadDraft(payload) {
+  var safe = {
+    name: String((payload && payload.name) || '').trim(),
+    phone: String((payload && payload.phone) || '').trim(),
+    message: String((payload && payload.message) || '').trim(),
+    updatedAt: Date.now()
+  };
+  try {
+    if (window.localStorage) localStorage.setItem('popey_client_lead', JSON.stringify(safe));
+    if (window.sessionStorage) sessionStorage.setItem('popey_client_lead', JSON.stringify(safe));
+  } catch (_error) {}
+}
+
 function filterOffers(sphere, btn) {
   document.querySelectorAll('.f-chip').forEach(function(c) { c.classList.remove('active'); });
   btn.classList.add('active');
@@ -1033,11 +1064,7 @@ function openClientLeadModal(defaults) {
       }
       overlay.classList.remove('open');
       var payload = { name: name, phone: phone, message: message };
-      if (window.sessionStorage) {
-        sessionStorage.setItem('popey_client_name', name);
-        sessionStorage.setItem('popey_client_phone', phone);
-        sessionStorage.setItem('popey_client_message', message || '');
-      }
+      saveClientLeadDraft(payload);
       var fn = clientLeadResolver;
       clientLeadResolver = null;
       if (fn) fn(payload);
@@ -1057,17 +1084,16 @@ function closeClientLeadModal(e) {
 }
 
 async function ensureClientLeadInfo(params) {
-  var savedName = (window.sessionStorage && sessionStorage.getItem('popey_client_name')) || '';
-  var savedPhone = (window.sessionStorage && sessionStorage.getItem('popey_client_phone')) || '';
-  var savedMessage = (window.sessionStorage && sessionStorage.getItem('popey_client_message')) || '';
+  var draft = loadClientLeadDraft();
   var fromQueryName = (params.get('client_name') || params.get('client') || '').trim();
   var fromQueryPhone = (params.get('client_phone') || '').trim();
   var fromQueryMessage = (params.get('client_message') || '').trim();
   var current = {
-    name: fromQueryName || savedName,
-    phone: fromQueryPhone || savedPhone,
-    message: fromQueryMessage || savedMessage
+    name: fromQueryName || draft.name,
+    phone: fromQueryPhone || draft.phone,
+    message: fromQueryMessage || draft.message
   };
+  if (current.name || current.phone || current.message) saveClientLeadDraft(current);
   if (current.name && current.phone) return current;
   return openClientLeadModal(current);
 }
