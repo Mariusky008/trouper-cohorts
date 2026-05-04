@@ -5,30 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Catalogue Privilège Popey</title>
 <style>
-:root{--ink:#080A0D;--cream:#F6F3EC;--gold:#C8A84B;--teal:#00C896;--teal-d:#008F6A;--red:#E8423A;--line:rgba(0,0,0,.08);--t:#1A1C22;--t2:#5A5D68;--t3:#9A9DAA;--fd:ui-serif,Georgia;--fb:Inter,system-ui,sans-serif}
+:root{--ink:#080A0D;--ink2:#0f141c;--cream:#F6F3EC;--gold:#C8A84B;--teal:#00C896;--teal-d:#008F6A;--red:#E8423A;--line:rgba(0,0,0,.08);--t:#1A1C22;--t2:#5A5D68;--t3:#9A9DAA;--fd:ui-serif,Georgia;--fb:Inter,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--cream);color:var(--t);font-family:var(--fb);max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden}
-.hero{background:var(--ink);color:#fff;padding-bottom:8px}
-.sender{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:center}
+.hero{background:radial-gradient(160% 120% at 10% 0%,#18212f 0%,var(--ink) 45%,#07090c 100%);color:#fff;padding:8px 6px 10px;border-bottom-left-radius:20px;border-bottom-right-radius:20px}
+.hero-shell{border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))}
+.sender{padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:center}
 .av{width:38px;height:38px;border-radius:10px;background:rgba(200,168,75,.16);display:flex;align-items:center;justify-content:center;font-weight:700}
 .sender small{display:block;font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.08em}
 .sender b{font-family:var(--fd);font-size:16px}
 .sender span{font-size:11px;opacity:.65}
-.hero-body{padding:18px 16px}
+.hero-badge{border:1px solid rgba(200,168,75,.4);background:rgba(200,168,75,.12);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:700;white-space:nowrap}
+.hero-body{padding:14px 12px}
 .eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:10px}
-h1{font-family:var(--fd);font-size:35px;line-height:.92;margin-bottom:12px}
+h1{font-family:var(--fd);font-size:45px;line-height:.9;margin-bottom:10px}
 h1 em{color:var(--gold);font-style:italic}
-.hero p{font-size:13px;opacity:.68;line-height:1.6}
-.urgent{margin-top:12px;padding:10px;border:1px solid rgba(232,66,58,.4);background:rgba(232,66,58,.12);border-radius:10px;font-size:12px;line-height:1.45}
+.hero p{font-size:12px;opacity:.72;line-height:1.55}
+.urgent{margin-top:10px;padding:10px;border:1px solid rgba(232,66,58,.4);background:rgba(232,66,58,.12);border-radius:10px;font-size:12px;line-height:1.45}
+.value{margin-top:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.2);border-radius:10px;display:flex;align-items:center;justify-content:space-between}
+.value small{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:#a7afbe}
+.value b{display:block;font-family:var(--fd);font-size:28px;line-height:1}
+.value span{font-size:10px;color:#9aa3b4}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.08);margin-top:12px}
 .stat{padding:10px 6px;text-align:center}
 .stat b{display:block;font-family:var(--fd);color:var(--gold);font-size:18px}
 .stat span{font-size:9px;opacity:.55;text-transform:uppercase;letter-spacing:.08em}
 .main{padding:16px 14px 90px}
 .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px}
-.chip{border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px 4px;text-align:center;font-size:10px;cursor:pointer}
+.chip{border:1px solid #d9dde7;border-radius:10px;background:#fff;padding:8px 4px;text-align:center;font-size:10px;cursor:pointer;box-shadow:0 2px 0 rgba(20,20,20,.03)}
 .chip b{display:block;font-size:14px}
-.chip.active{background:#0f1216;color:#fff;border-color:#0f1216}
+.chip.active{background:#0f1216;color:#fff;border-color:#0f1216;box-shadow:none}
 .cta{background:linear-gradient(135deg,#0f1216,#1a2130);padding:14px;border:1px solid rgba(0,200,150,.25);border-radius:14px;margin-bottom:16px;color:#fff}
 .cta small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
 .cta h2{font-family:var(--fd);font-size:19px;line-height:1.1}
@@ -38,17 +44,18 @@ h1 em{color:var(--gold);font-style:italic}
 .divider{display:flex;align-items:center;gap:10px;margin:18px 0 10px}
 .divider i{flex:1;height:1px;background:var(--line)}
 .divider span{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:12px}
+.card{background:#fff;border:1px solid #e2e6ee;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 6px rgba(20,24,31,.05)}
 .stripe{height:3px}
-.head{padding:12px;display:flex;gap:10px}
-.icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.head h3{font-family:var(--fd);font-size:17px}
+.head{padding:10px 12px;display:flex;gap:10px;align-items:center}
+.icon{width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.head h3{font-family:var(--fd);font-size:18px;line-height:1.02}
 .head p{font-size:11px;color:var(--t2);margin-top:2px}
-.priv{margin:0 12px 10px;background:#fdf7e5;border:1px solid rgba(200,168,75,.35);border-radius:12px;padding:12px}
+.pro-badge{margin-left:auto;border:1px solid #9be5c3;background:#eafff4;color:#0d8a57;border-radius:999px;padding:4px 7px;font-size:9px;font-weight:700;white-space:nowrap}
+.priv{margin:0 12px 10px;background:#fdf7e5;border:1px solid rgba(200,168,75,.35);border-radius:12px;padding:11px}
 .priv small{font-size:9px;color:#8a6b1f;text-transform:uppercase;letter-spacing:.1em}
 .priv b{display:block;font-family:var(--fd);font-size:23px;margin:3px 0}
 .priv p{font-size:12px;color:var(--t2);line-height:1.5}
-.img{height:102px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:32px}
+.img{height:130px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:32px}
 .img img{width:100%;height:100%;object-fit:cover}
 .wa{padding:12px}
 .wa .btn{background:#25D366;color:#fff}
@@ -57,6 +64,9 @@ h1 em{color:var(--gold);font-style:italic}
 .foot .mini{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f1f1f1}
 .foot .meta{font-size:11px;color:var(--t3)}
 .verify{margin-left:auto;font-size:10px;color:var(--teal-d);font-weight:700}
+.micro{padding:0 12px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.micro span{font-size:10px;color:#9298a5}
+.micro b{font-size:11px}
 .cobrand{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px}
 .cobrand .k{font-size:10px;color:#7B5EA7;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .cobrand h2{font-family:var(--fd);font-size:28px;line-height:.95;margin:6px 0}
@@ -96,26 +106,36 @@ h1 em{color:var(--gold);font-style:italic}
 </head>
 <body>
 <div class="hero">
-  <div class="sender">
-    <div class="av" id="senderAv">JR</div>
-    <div style="flex:1">
-      <small>Invitation personnelle de</small>
-      <b id="senderName">Jean Roth</b>
-      <span id="senderMeta">Membre Popey</span>
+  <div class="hero-shell">
+    <div class="sender">
+      <div class="av" id="senderAv">JR</div>
+      <div style="flex:1">
+        <small>Invitation personnelle de</small>
+        <b id="senderName">Jean Roth</b>
+        <span id="senderMeta">Membre Popey</span>
+      </div>
+      <div class="hero-badge">Éclaireur certifié</div>
     </div>
-    <small style="color:var(--gold);font-weight:700">Éclaireur certifié</small>
-  </div>
-  <div class="hero-body">
-    <div class="eyebrow" id="heroEyebrow">Catalogue privilège</div>
-    <h1 id="heroTitle">Vos avantages<br><em>exclusifs</em><br>grâce à Popey.</h1>
-    <p id="heroDesc">Catalogue local d'offres partenaires.</p>
-    <div class="urgent" id="urgentText"><strong>Catalogue du mois.</strong> Ces offres expirent en fin de mois.</div>
-  </div>
-  <div class="stats">
-    <div class="stat"><b id="statOffers">0</b><span>Offres</span></div>
-    <div class="stat"><b id="statSpheres">0</b><span>Sphères</span></div>
-    <div class="stat"><b>100%</b><span>Vérifiés</span></div>
-    <div class="stat"><b id="statCity">Ville</b><span>Zone</span></div>
+    <div class="hero-body">
+      <div class="eyebrow" id="heroEyebrow">Catalogue privilège</div>
+      <h1 id="heroTitle">Vos avantages<br><em>exclusifs</em><br>grâce à Popey.</h1>
+      <p id="heroDesc">Catalogue local d'offres partenaires.</p>
+      <div class="urgent" id="urgentText"><strong>Catalogue du mois.</strong> Ces offres expirent en fin de mois.</div>
+      <div class="value">
+        <div>
+          <small>Valeur totale épargne</small>
+          <b id="statSavings">0€</b>
+          <span>Avantages exclusifs ce mois</span>
+        </div>
+        <div style="font-size:24px">🎁</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="statOffers">0</b><span>Offres</span></div>
+      <div class="stat"><b id="statSpheres">0</b><span>Sphères</span></div>
+      <div class="stat"><b>100%</b><span>Vérifiés</span></div>
+      <div class="stat"><b id="statCity">Ville</b><span>Zone</span></div>
+    </div>
   </div>
 </div>
 
@@ -172,15 +192,15 @@ const citySlug=(params.get('ville')||'dax').trim();
 const cityLabel=citySlug?citySlug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()):'Dax';
 let activeSphere='all';let places=[];let cobrandOffers=[];
 const SPHERE={sante:['🌿','Santé','linear-gradient(90deg,#00C896,#00A070)','rgba(0,200,150,.12)','#007A56'],habitat:['🏠','Habitat','linear-gradient(90deg,#F59E0B,#D97706)','rgba(245,158,11,.12)','#B45309'],digital:['💻','Digital','linear-gradient(90deg,#60A5FA,#3B82F6)','rgba(59,130,246,.12)','#1D4ED8'],finance:['⚖️','Juridique','linear-gradient(90deg,#818CF8,#4F46E5)','rgba(129,140,248,.12)','#4338CA'],mariage:['💒','Mariage','linear-gradient(90deg,#F48FB1,#C2185B)','rgba(244,143,177,.12)','#9D174D']};
-const esc=(v)=>String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#039;');
+const esc=(v)=>String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
 const initials=(n)=>{const p=String(n||'').trim().split(/\s+/).filter(Boolean).slice(0,2);return p.length?p.map(x=>x[0].toUpperCase()).join(''):'PP'};
 const euros=(n)=>Number(n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 function sphereForPlace(p){const s=String(p?.sphere||'').toLowerCase();if(SPHERE[s])return s;const c=String(p?.category||'').toLowerCase();if(c==='sante'||c==='bien-etre')return'sante';if(c==='maison'||c==='travaux')return'habitat';if(c==='finance'||c==='juridique')return'finance';if(c==='mariage')return'mariage';return'digital'}
 function renderChips(){const root=document.getElementById('sphereFilter');const counts=places.reduce((a,p)=>{const s=sphereForPlace(p);a[s]=(a[s]||0)+1;return a},{});const chips=[['all','✦','Tous',places.length],...Object.entries(counts).map(([k,v])=>[k,SPHERE[k]?.[0]||'✨',SPHERE[k]?.[1]||k,v])];root.innerHTML=chips.map(c=>`<button class="chip ${c[0]===activeSphere?'active':''}" data-s="${c[0]}"><b>${c[1]}</b>${esc(c[2])}<br><span>${c[3]}</span></button>`).join('')}
-function renderOffers(){const root=document.getElementById('offersRoot');const vis=activeSphere==='all'?places:places.filter(p=>sphereForPlace(p)===activeSphere);if(!vis.length){root.innerHTML='<div class=\"divider\"><i></i><span>Aucune offre sur ce filtre</span><i></i></div>';return}const grp=vis.reduce((a,p)=>{const s=sphereForPlace(p);(a[s]||(a[s]=[])).push(p);return a},{});root.innerHTML=Object.entries(grp).map(([s,rows])=>{const m=SPHERE[s]||SPHERE.digital;const cards=rows.map(p=>{const name=String(p.companyName||p.metier||'Partenaire Popey').trim();const metier=String(p.metier||'Professionnel').trim();const badge=String(p.badge||'Offre privilège').trim();const desc=String(p.description||'Activation rapide via WhatsApp avec tracking Popey.').trim();const photo=String(p.photoUrl||'').trim();const id=`PRIV-${String(p.id||'').slice(0,8)||'NA'}`;return `<div class=\"card\"><div class=\"stripe\" style=\"background:${m[2]}\"></div><div class=\"head\"><div class=\"icon\" style=\"background:${m[3]}\">${m[0]}</div><div><h3>${esc(name)}</h3><p>${esc(metier)} · 📍 ${esc(cityLabel)}</p></div></div>${photo?`<div class=\"img\"><img src=\"${esc(photo)}\" alt=\"${esc(name)}\" loading=\"lazy\"></div>`:`<div class=\"img\">${m[0]}</div>`}<div class=\"priv\"><small>Privilège exclusif via ${esc(refName)}</small><b>${esc(badge)}</b><p>${esc(desc)}</p></div><div class=\"wa\"><button class=\"btn js-activate\" data-place=\"${esc(p.id)}\" data-code=\"${esc(id)}\">💬 Activer mon privilège via WhatsApp</button><div class=\"wa-note\">Message pré-rempli · Envoi en 1 tap · Tracking admin</div></div><div class=\"foot\"><div class=\"mini\">${esc(initials(name))}</div><div><div>${esc(name)}</div><div class=\"meta\">${esc(metier)} · ${esc(cityLabel)} · réseau Popey</div></div><div class=\"verify\">Membre vérifié</div></div></div>`}).join('');return `<div class=\"divider\"><i></i><span>${m[0]} ${esc(m[1])}</span><i></i></div>${cards}`}).join('')}
+function renderOffers(){const root=document.getElementById('offersRoot');const vis=activeSphere==='all'?places:places.filter(p=>sphereForPlace(p)===activeSphere);if(!vis.length){root.innerHTML='<div class=\"divider\"><i></i><span>Aucune offre sur ce filtre</span><i></i></div>';return}const grp=vis.reduce((a,p)=>{const s=sphereForPlace(p);(a[s]||(a[s]=[])).push(p);return a},{});root.innerHTML=Object.entries(grp).map(([s,rows])=>{const m=SPHERE[s]||SPHERE.digital;const cards=rows.map(p=>{const name=String(p.companyName||p.metier||'Partenaire Popey').trim();const metier=String(p.metier||'Professionnel').trim();const badge=String(p.badge||'Offre privilège').trim();const desc=String(p.description||'Activation rapide via WhatsApp avec tracking Popey.').trim();const photo=String(p.photoUrl||'').trim();const id=`PRIV-${String(p.id||'').slice(0,8)||'NA'}`;const valueEur=Number(p.partnerOfferValueEur||0);const valueLabel=valueEur>0?`Jusqu'à ${euros(valueEur)}`:'Offre vérifiée';return `<div class=\"card\"><div class=\"stripe\" style=\"background:${m[2]}\"></div><div class=\"head\"><div class=\"icon\" style=\"background:${m[3]}\">${m[0]}</div><div><h3>${esc(name)}</h3><p>${esc(metier)} · 📍 ${esc(cityLabel)}</p></div><div class=\"pro-badge\">Statut pro</div></div>${photo?`<div class=\"img\"><img src=\"${esc(photo)}\" alt=\"${esc(name)}\" loading=\"lazy\"></div>`:`<div class=\"img\">${m[0]}</div>`}<div class=\"priv\"><small>Privilège exclusif via ${esc(refName)}</small><b>${esc(badge)}</b><p>${esc(desc)}</p></div><div class=\"micro\"><span>🎁 ${esc(valueLabel)}</span><b>★★★★★</b></div><div class=\"wa\"><button class=\"btn js-activate\" data-place=\"${esc(p.id)}\" data-code=\"${esc(id)}\">💬 Activer mon privilège via WhatsApp</button><div class=\"wa-note\">Réponse pro en général sous 24h</div></div><div class=\"foot\"><div class=\"mini\">${esc(initials(name))}</div><div><div>${esc(name)}</div><div class=\"meta\">${esc(metier)} · ${esc(cityLabel)} · réseau Popey</div></div><div class=\"verify\">Membre vérifié</div></div></div>`}).join('');return `<div class=\"divider\"><i></i><span>${m[0]} ${esc(m[1])}</span><i></i></div>${cards}`}).join('')}
 function cobrandUrl(o){const msg=[`Bonjour ${o.primaryMember?.name||'membre Popey'} et ${o.secondaryMember?.name||'membre Popey'} !`,`Je souhaite activer le pack co-brandé \"${o.packTitle||'Pack co-brandé'}\".`,`Offre 1: ${o.primaryOffer?.label||'Offre membre 1'}.`,`Offre 2: ${o.secondaryOffer?.label||'Offre membre 2'}.`,`Valeur totale: ${euros(o.totalSavingsEur||0)}.`,`[ID-TRACKING: COBRAND-${String(o.id||'').slice(0,8)}]`].join('\\n');return `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`}
 function renderCobrand(){const section=document.getElementById('cobrandSection');const grid=document.getElementById('cobrandGrid');if(!Array.isArray(cobrandOffers)||!cobrandOffers.length){section.style.display='none';return}section.style.display='block';grid.innerHTML=cobrandOffers.map(o=>{const p=String(o?.primaryMember?.name||'Membre 1').trim();const s=String(o?.secondaryMember?.name||'Membre 2').trim();return `<div class=\"co-card\"><div class=\"top\"></div><div class=\"co-body\"><div class=\"row\"><div class=\"m\"><div class=\"a\">${esc(initials(p))}</div><div><b>${esc(p)}</b><span>${esc(o?.primaryMember?.metier||'Professionnel')}</span></div></div><div class=\"plus\">+</div><div class=\"m\"><div class=\"a\">${esc(initials(s))}</div><div><b>${esc(s)}</b><span>${esc(o?.secondaryMember?.metier||'Professionnel')}</span></div></div></div><div class=\"pack\">${esc(o.packTitle||'Pack co-brandé')}</div><div class=\"o\"><small>${esc(o.primaryOffer?.label||'Offre membre 1')}</small><b>${esc(p)} · ${esc(euros(o.primaryOffer?.valueEur||0))}</b></div><div class=\"o\"><small>${esc(o.secondaryOffer?.label||'Offre membre 2')}</small><b>${esc(s)} · ${esc(euros(o.secondaryOffer?.valueEur||0))}</b></div><div class=\"sum\"><span>Valeur totale du pack</span><b>${esc(euros(o.totalSavingsEur||0))} d'économies</b></div><a class=\"btn\" href=\"${cobrandUrl(o)}\" target=\"_blank\" rel=\"noreferrer\" style=\"background:#25D366;color:#fff;text-decoration:none;text-align:center;display:block\">💬 Activer le pack complet</a></div></div>`}).join('')}
-async function loadPlaces(){try{const q=new URLSearchParams();q.set('catalog','privilege');q.set('city',cityLabel);if(refId)q.set('ref_id',refId);if(refCode)q.set('ref',refCode);const r=await fetch(`/api/popey-human/marketplace/places?${q.toString()}`,{cache:'no-store'});const p=await r.json().catch(()=>({}));places=Array.isArray(p?.places)?p.places:[];cobrandOffers=Array.isArray(p?.cobrandOffers)?p.cobrandOffers:[]}catch{places=[];cobrandOffers=[]}document.getElementById('statOffers').textContent=String(places.length);document.getElementById('statSpheres').textContent=String(new Set(places.map(x=>sphereForPlace(x))).size||0);renderChips();renderOffers();renderCobrand()}
+async function loadPlaces(){try{const q=new URLSearchParams();q.set('catalog','privilege');q.set('city',cityLabel);if(refId)q.set('ref_id',refId);if(refCode)q.set('ref',refCode);const r=await fetch(`/api/popey-human/marketplace/places?${q.toString()}`,{cache:'no-store'});const p=await r.json().catch(()=>({}));places=Array.isArray(p?.places)?p.places:[];cobrandOffers=Array.isArray(p?.cobrandOffers)?p.cobrandOffers:[]}catch{places=[];cobrandOffers=[]}const savings=places.reduce((acc,row)=>acc+Math.max(0,Number(row?.partnerOfferValueEur||0)),0);document.getElementById('statOffers').textContent=String(places.length);document.getElementById('statSpheres').textContent=String(new Set(places.map(x=>sphereForPlace(x))).size||0);document.getElementById('statSavings').textContent=euros(savings);renderChips();renderOffers();renderCobrand()}
 async function activate(placeId,code){const place=places.find(x=>String(x.id)===String(placeId));if(!place)return;const r=await fetch('/api/popey-human/marketplace/places/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({placeId:place.id,city:cityLabel,category:place.category||null,clientName:(params.get('client_name')||params.get('client')||'Client').trim(),referrerName:refName,referrerId:refId||null,referralCode:refCode||null,scoutToken:scoutToken||null,source:'whatsapp_landing'})}).catch(()=>null);if(!r)return;const d=await r.json().catch(()=>({}));if(!r.ok||!d?.success)return;document.getElementById('waTitle').textContent=String(place.metier||'Activer le privilège');document.getElementById('waMeta').textContent=`${String(place.companyName||place.metier||'Partenaire')} · ${String(place.badge||'Offre privilège')}`;document.getElementById('waMsg').textContent=`\"${String(d.whatsappMessage||`Bonjour ! Je souhaite activer mon privilège Popey. Code de suivi : #${code}.`)}\"`;const waBtn=document.getElementById('waBtn');const waUrl=String(d.whatsappUrl||'').trim();if(waUrl){waBtn.href=waUrl}else{waBtn.removeAttribute('href')}document.getElementById('waOverlay').classList.add('open')}
 function openAff(){document.getElementById('apporteurOverlay').classList.add('open')}
 async function submitAff(){const name=document.getElementById('affName').value.trim();const phone=document.getElementById('affPhone').value.trim();const status=document.getElementById('affStatus');const btn=document.getElementById('affSubmit');if(!name||!phone){status.textContent='Merci de renseigner votre nom et votre WhatsApp.';return}btn.disabled=true;btn.textContent='Génération…';try{const r=await fetch('/api/popey-human/affiliation/public/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fullName:name,phone,city:cityLabel,sponsorName:refName,sponsorRefCode:refCode||null,sponsorMemberId:refId||null})});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.success)throw new Error(d?.error||'Impossible de générer le lien');const referral=String(d.referralUrl||'');const preview=String(d.previewUrl||'');status.textContent=referral;btn.disabled=false;btn.textContent='Copier mon lien →';btn.onclick=function(){navigator.clipboard?.writeText(referral);btn.textContent='✓ Lien copié';if(preview)window.open(preview,'_blank')}}catch(e){status.textContent=e instanceof Error?e.message:'Erreur';btn.disabled=false;btn.textContent='Créer mon lien apporteur →'}}

@@ -400,6 +400,10 @@ export async function GET(request: NextRequest) {
     if (!isPrivilegeCatalog) {
       places = [...places, ...generatedSupplements];
     }
+    if (isPrivilegeCatalog && places.length === 0) {
+      // Fallback: keep catalogue usable even if referral/accepted filters return no row yet.
+      places = generatedSupplements.slice(0, 80);
+    }
 
     if (category && category !== "all") {
       places = places.filter((item) => String(item.category || "").toLowerCase() === category);
