@@ -1,3 +1,7 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { AdminNoServiceWorkerGuard } from "@/components/admin/admin-no-sw-guard";
+
 export const dynamic = "force-static";
 
 export default async function AdminLayout({
@@ -7,24 +11,40 @@ export default async function AdminLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
+      <AdminNoServiceWorkerGuard />
       <header className="border-b px-6 py-3 flex items-center justify-between bg-muted/20">
         <div className="flex items-center gap-6">
-          <a href="/admin/humain" className="font-bold text-lg">
+          <Link href="/admin/humain" className="font-bold text-lg" prefetch={false}>
             Trouper Admin
-          </a>
+          </Link>
           <nav className="flex gap-4 text-sm font-medium">
-            <a href="/admin/humain" className="hover:underline text-emerald-700">
+            <Link href="/admin/humain" className="hover:underline text-emerald-700" prefetch={false}>
               100% Humain
-            </a>
+            </Link>
+            <Link href="/admin/humain/marketplace" className="hover:underline" prefetch={false}>
+              Marketplace
+            </Link>
+            <Link href="/admin/humain/privileges" className="hover:underline" prefetch={false}>
+              Privilèges
+            </Link>
+            <Link href="/admin/humain/affiliation" className="hover:underline" prefetch={false}>
+              Affiliation
+            </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-xs text-muted-foreground hidden sm:inline-block">Admin</span>
-          <a href="/admin/humain/marketplace" className="text-sm underline underline-offset-2">Marketplace</a>
-          <a href="/admin/humain/affiliation" className="text-sm underline underline-offset-2">Affiliation</a>
-          <a href="/admin/humain/chat" className="text-sm underline underline-offset-2">Chat WhatsApp</a>
-          <a href="/app/today" className="text-sm underline underline-offset-2">Voir App</a>
-          <a href="/popey-human/login" className="text-sm underline underline-offset-2">Déconnexion</a>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/humain/chat" prefetch={false}>Chat WhatsApp</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/app/today" prefetch={false}>Voir App</Link>
+          </Button>
+          <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
+            <Button type="submit" variant="outline" size="sm">
+              Déconnexion
+            </Button>
+          </form>
         </div>
       </header>
       <main className="flex-1 p-6 w-full max-w-none">{children}</main>
