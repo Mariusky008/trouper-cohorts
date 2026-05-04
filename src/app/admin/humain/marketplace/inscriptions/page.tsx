@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,14 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/popey-human/admin-login?next=%2Fadmin%2Fhumain%2Fmarketplace%2Finscriptions");
+  }
+
   const params = (await searchParams) || {};
   const sourceFilter = typeof params.source === "string" ? params.source.trim() : "all";
   const referralFilter = typeof params.referral === "string" ? params.referral.trim().toLowerCase() : "";
