@@ -32,27 +32,53 @@ export default async function AdminHumainPage() {
     },
   ];
 
+  const quickActions = [
+    { href: "/admin/humain/marketplace", label: "Suivre les places", description: "Demandes, offres et statuts en cours." },
+    { href: "/admin/humain/chat", label: "Lire les messages WhatsApp", description: "Boîte de réception admin et réponses." },
+    { href: "/admin/humain/affiliation", label: "Valider les tickets affiliation", description: "Suivi des apporteurs et commissions." },
+    { href: "/admin/humain/cockpit", label: "Contrôler le cockpit", description: "Vue synthèse des signaux et exports." },
+  ];
+
   return (
     <section className="space-y-6">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">100% Humain</p>
-        <h1 className="text-3xl font-black">Admin Popey Human</h1>
+      <div className="rounded-2xl border bg-white p-5 shadow-sm sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">100% Humain</p>
+        <h1 className="mt-1 text-2xl font-black sm:text-3xl">Admin Popey Human</h1>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
+          Espace de pilotage organisé pour accéder rapidement aux actions quotidiennes importantes.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {quickActions.map((action) => (
+            <a
+              key={action.href}
+              href={action.href}
+              className="rounded-xl border bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"
+            >
+              <p className="text-sm font-semibold">{action.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{action.description}</p>
+            </a>
+          ))}
+        </div>
       </div>
-      <p className="max-w-3xl text-sm text-muted-foreground">
-        Tableau de bord admin rétabli avec accès rapide aux modules utiles webapp, sans chargement serveur
-        additionnel au niveau de cette page.
-      </p>
+
       <div className="grid gap-4 md:grid-cols-3">
-        {sections.map((section) => (
-          <article key={section.title} className="rounded-xl border bg-card p-5">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              {section.title}
-            </h2>
-            <ul className="space-y-2 text-sm">
+        {sections.map((section, index) => (
+          <article key={section.title} className="rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-muted-foreground">{section.title}</h2>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                Bloc {index + 1}
+              </span>
+            </div>
+            <ul className="space-y-2.5 text-sm">
               {section.links.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="underline underline-offset-2">
-                    {link.label}
+                  <a
+                    href={link.href}
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 transition hover:bg-slate-100"
+                  >
+                    <span>{link.label}</span>
+                    <span className="text-muted-foreground">Ouvrir</span>
                   </a>
                 </li>
               ))}

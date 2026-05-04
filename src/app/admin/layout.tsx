@@ -10,14 +10,15 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50/40">
       <AdminNoServiceWorkerGuard />
-      <header className="border-b px-6 py-3 flex items-center justify-between bg-muted/20">
-        <div className="flex items-center gap-6">
+      <header className="sticky top-0 z-30 border-b bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-6">
           <Link href="/admin/humain" className="font-bold text-lg" prefetch={false}>
             Trouper Admin
           </Link>
-          <nav className="flex gap-4 text-sm font-medium">
+          <nav className="hidden gap-4 text-sm font-medium md:flex">
             <Link href="/admin/humain" className="hover:underline text-emerald-700" prefetch={false}>
               100% Humain
             </Link>
@@ -32,22 +33,23 @@ export default async function AdminLayout({
             </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xs text-muted-foreground hidden sm:inline-block">Admin</span>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/humain/chat" prefetch={false}>Chat WhatsApp</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/app/today" prefetch={false}>Voir App</Link>
-          </Button>
-          <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
-            <Button type="submit" variant="outline" size="sm">
-              Déconnexion
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="hidden text-xs text-muted-foreground sm:inline-block">Admin</span>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/humain/chat" prefetch={false}>Chat WhatsApp</Link>
             </Button>
-          </form>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/app/today" prefetch={false}>Voir App</Link>
+            </Button>
+            <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
+              <Button type="submit" variant="outline" size="sm">
+                Déconnexion
+              </Button>
+            </form>
+          </div>
         </div>
       </header>
-      <main className="flex-1 p-6 w-full max-w-none">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">{children}</main>
     </div>
   );
 }
