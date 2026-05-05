@@ -91,7 +91,7 @@ nav {
 /* ── HERO ── */
 .hero {
   padding: 80px 48px 60px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  display: grid; grid-template-columns: 1fr; gap: 0; align-items: center;
   max-width: 1300px; margin: 0 auto;
 }
 .hero-eyebrow {
@@ -862,23 +862,6 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
         <button class="btn-primary" onclick="document.querySelector('.main').scrollIntoView({behavior:'smooth'})">Voir les places disponibles →</button>
         <button class="btn-secondary" onclick="document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">S'inscrire</button>
         <button class="btn-secondary" onclick="document.querySelector('.portfolio-section').scrollIntoView({behavior:'smooth'})">Mon portefeuille</button>
-      </div>
-    </div>
-    <div class="hero-stats fade-up visible" style="animation-delay:.1s">
-      <div class="hstat">
-        <div class="hstat-val teal" id="statPlaces">47</div>
-        <div class="hstat-lbl">Places en vente</div>
-        <div class="hstat-trend">+12 ce mois</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-val amber" id="statValMoy">3 840€</div>
-        <div class="hstat-lbl">Valeur moyenne</div>
-        <div class="hstat-trend">↑ +23% / an</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-val" id="statTransac">18</div>
-        <div class="hstat-lbl">Transactions</div>
-        <div class="hstat-trend">Ce trimestre</div>
       </div>
     </div>
   </div>
