@@ -82,7 +82,7 @@ function truncate(value: string, max = 56): string {
   return `${text.slice(0, max - 1)}…`;
 }
 
-export function MarketplaceMobileLanding({ city = "Dax" }: { city?: string }) {
+export function MarketplaceMobileLanding({ city = "Grand Dax" }: { city?: string }) {
   const searchParams = useSearchParams();
   const [allPlaces, setAllPlaces] = useState<LandingPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);

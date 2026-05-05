@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const payload = {
       event_type: eventType,
-      city: trim(body?.city || "Dax").slice(0, 120) || "Dax",
+      city: trim(body?.city || "Grand Dax").slice(0, 120) || "Grand Dax",
       category_key: trim(body?.category).toLowerCase().slice(0, 32) || null,
       place_id: trim(body?.placeId) || null,
       source: trim(body?.source || "whatsapp_landing").slice(0, 64) || "whatsapp_landing",

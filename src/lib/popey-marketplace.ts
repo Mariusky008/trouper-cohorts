@@ -50,14 +50,10 @@ const SPHERES: Record<MarketplaceSphereKey, string> = {
 };
 
 const CITY_OPTIONS = [
-  "Dax (40)",
-  "Bayonne (64)",
-  "Mont-de-Marsan (40)",
-  "Pau (64)",
-  "Bordeaux (33)",
-  "Hossegor (40)",
-  "Saint-Paul-les-Dax (40)",
-  "Hagetmau (40)",
+  "Bayonne-Anglet-Biarritz",
+  "Bordeaux",
+  "Grand Dax",
+  "Pau",
 ] as const;
 
 const METIERS: Record<MarketplaceSphereKey, string[]> = {
