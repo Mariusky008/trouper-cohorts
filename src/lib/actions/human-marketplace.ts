@@ -156,6 +156,12 @@ function asMetadata(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function firstDayOfCurrentMonthIso() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return start.toISOString().slice(0, 10);
+}
+
 async function requireHumanAdmin() {
   const userId = await getServerUserIdWithProxyFallback();
   if (!userId) return { error: "Session requise." };
@@ -832,6 +838,17 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     String(metadata.commission_rule_label || "").trim() ||
     (fallbackAmount ? `Règle pro (valeur configurée): ${fallbackAmount} EUR` : "Règle pro non renseignée");
 
+  let popeyFeeEur = 0;
+  if (proMemberId) {
+    const { data: popeyRule } = await supabaseAdmin
+      .from("human_marketplace_pro_commission_rules")
+      .select("popey_fee_eur")
+      .eq("pro_member_id", proMemberId)
+      .maybeSingle();
+    const parsedRule = Number(popeyRule?.popey_fee_eur || 0);
+    popeyFeeEur = Number.isFinite(parsedRule) && parsedRule >= 0 ? Math.round(parsedRule * 100) / 100 : 0;
+  }
+
   const upsertPayload = {
     activation_id: activation.id,
     decision_status: decisionStatus,
@@ -873,12 +890,114 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     ...metadata,
     commission_decision_status: decisionStatus,
     commission_amount_eur: commissionAmount,
+    commission_popey_fee_eur: popeyFeeEur,
     commission_decided_at: new Date().toISOString(),
     commission_decided_by_user_id: auth.user.id,
     commission_apporteur_type: apporteurType,
     commission_apporteur_name: apporteurName || null,
   };
   await supabaseAdmin.from("human_marketplace_landing_activations").update({ metadata: nextMeta }).eq("id", activation.id);
+
+  // Accounting ledger rows: one for apporteur and one for Popey fixed fee per pro.
+  const ticketCode = String(metadata.ticket_code || "").trim() || `POPEY-${activation.id.slice(0, 6).toUpperCase()}`;
+  const periodMonth = firstDayOfCurrentMonthIso();
+  let ledgerTableMissing = false;
+  if (decisionStatus === "approved") {
+    const ledgerBase = {
+      activation_id: activation.id,
+      period_month: periodMonth,
+      ticket_code: ticketCode,
+      city: String((activation.place as { city?: string | null } | null)?.city || "").trim() || null,
+      payer_member_id: proMemberId,
+      decision_status: "approved",
+      payment_status: "pending",
+      note: note || null,
+      metadata: {
+        source: "admin_decision",
+        commission_rule_label: commissionRuleLabel,
+      },
+    };
+    const { error: apporteurLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .upsert(
+        {
+          ...ledgerBase,
+          row_kind: "apporteur",
+          receiver_member_id: apporteurMemberId,
+          receiver_scout_id: apporteurScoutId,
+          receiver_name: apporteurName || null,
+          amount_eur: commissionAmount || 0,
+          currency: "EUR",
+        },
+        { onConflict: "activation_id,row_kind" },
+      );
+    if (apporteurLedgerError) {
+      const raw = String(apporteurLedgerError.message || "").toLowerCase();
+      if (raw.includes("human_marketplace_commission_ledger")) {
+        ledgerTableMissing = true;
+      } else {
+        redirect(
+          withMarketplaceStatus(
+            withMarketplaceFocus(currentUrl, activationId),
+            "error",
+            apporteurLedgerError.message || "Impossible d'écrire la ligne commission apporteur.",
+          ),
+        );
+      }
+    }
+    const { error: popeyLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .upsert(
+        {
+          ...ledgerBase,
+          row_kind: "popey",
+          receiver_member_id: null,
+          receiver_scout_id: null,
+          receiver_name: "Popey",
+          amount_eur: popeyFeeEur,
+          currency: "EUR",
+        },
+        { onConflict: "activation_id,row_kind" },
+      );
+    if (popeyLedgerError) {
+      const raw = String(popeyLedgerError.message || "").toLowerCase();
+      if (raw.includes("human_marketplace_commission_ledger")) {
+        ledgerTableMissing = true;
+      } else {
+        redirect(
+          withMarketplaceStatus(
+            withMarketplaceFocus(currentUrl, activationId),
+            "error",
+            popeyLedgerError.message || "Impossible d'écrire la ligne commission Popey.",
+          ),
+        );
+      }
+    }
+  } else {
+    const { error: cancelLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .update({
+        decision_status: "rejected",
+        payment_status: "cancelled",
+        note: note || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("activation_id", activation.id);
+    if (cancelLedgerError) {
+      const raw = String(cancelLedgerError.message || "").toLowerCase();
+      if (raw.includes("human_marketplace_commission_ledger")) {
+        ledgerTableMissing = true;
+      } else {
+        redirect(
+          withMarketplaceStatus(
+            withMarketplaceFocus(currentUrl, activationId),
+            "error",
+            cancelLedgerError.message || "Impossible de mettre à jour le ledger commission.",
+          ),
+        );
+      }
+    }
+  }
 
   revalidatePath("/admin/humain/affiliation");
   revalidatePath("/admin/humain/marketplace");
@@ -887,7 +1006,7 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     withMarketplaceStatus(
       withMarketplaceFocus(currentUrl, activationId),
       "success",
-      tableMissing
+      tableMissing || ledgerTableMissing
         ? decisionStatus === "approved"
           ? "Commission validée (mode dégradé: migration SQL commission à exécuter)."
           : "Commission refusée (mode dégradé: migration SQL commission à exécuter)."

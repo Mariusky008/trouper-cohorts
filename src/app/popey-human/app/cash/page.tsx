@@ -10,8 +10,9 @@ function kindLabel(kind: "encaissement" | "decaissement") {
   return kind === "encaissement" ? "Encaissement" : "Décaissement";
 }
 
-function commissionStatusLabel(status: "pending" | "paid" | "cancelled") {
+function marketplacePaymentStatusLabel(status: "pending" | "requested" | "paid" | "cancelled") {
   if (status === "pending") return "En attente";
+  if (status === "requested") return "Demandée";
   if (status === "paid") return "Payée";
   return "Annulée";
 }
@@ -35,9 +36,22 @@ export default async function PopeyHumanCashPage({
     summary.totals.in === 0 &&
     summary.totals.out === 0 &&
     summary.commissionsTotals.total === 0 &&
-    summary.commissionsOutboundTotals.total === 0;
+    summary.commissionsOutboundTotals.total === 0 &&
+    summary.marketplace.totals.inboundPending === 0 &&
+    summary.marketplace.totals.inboundRequested === 0 &&
+    summary.marketplace.totals.outboundPending === 0 &&
+    summary.marketplace.totals.outboundRequested === 0;
 
-  const cashDisponiblePopey = !summary.error ? summary.commissionsTotals.paid : 0;
+  const cashDisponiblePopey = !summary.error
+    ? summary.marketplace.enabled
+      ? summary.marketplace.totals.inboundPending + summary.marketplace.totals.inboundRequested
+      : summary.commissionsTotals.paid
+    : 0;
+  const settlementDue = !summary.error
+    ? summary.marketplace.enabled
+      ? summary.marketplace.totals.outboundPending + summary.marketplace.totals.outboundRequested
+      : summary.commissionsOutboundTotals.pending
+    : 0;
 
   return (
     <section className={uiKit.pageWrap}>
@@ -77,15 +91,16 @@ export default async function PopeyHumanCashPage({
         <>
           <div className="grid gap-2">
             <div className="rounded-xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-3">
-              <p className="text-xs text-fuchsia-200/90 uppercase font-black">Ma contribution au groupe</p>
-              <p className="text-2xl font-black text-fuchsia-200">{euros(summary.commissionsOutboundTotals.total)}</p>
-              <p className="text-[11px] text-fuchsia-200/75">Commissions liées à vos deals signés (sortant)</p>
+              <p className="text-xs text-fuchsia-200/90 uppercase font-black">Ce que je dois sur le mois</p>
+              <p className="text-2xl font-black text-fuchsia-200">{euros(settlementDue)}</p>
+              <p className="text-[11px] text-fuchsia-200/75">Clôture mensuelle stricte (1er → dernier jour)</p>
             </div>
             <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
               <p className="text-xs text-cyan-200/90 uppercase font-black">Mon cash disponible Popey</p>
               <p className="text-2xl font-black text-cyan-200">{euros(cashDisponiblePopey)}</p>
               <form action={requestMyCashPayoutAction} className="mt-2 space-y-2">
                 <input type="hidden" name="current_url" value="/popey-human/app/cash" />
+                <input type="hidden" name="request_kind" value="apporteur_payout" />
                 <input
                   type="number"
                   min="1"
@@ -99,6 +114,22 @@ export default async function PopeyHumanCashPage({
                   Demander un virement Popey
                 </button>
               </form>
+              <form action={requestMyCashPayoutAction} className="mt-2 space-y-2">
+                <input type="hidden" name="current_url" value="/popey-human/app/cash" />
+                <input type="hidden" name="request_kind" value="pro_settlement" />
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  name="requested_amount"
+                  defaultValue={settlementDue > 0 ? String(settlementDue) : ""}
+                  placeholder="Montant à régler"
+                  className="h-10 w-full rounded-lg border border-fuchsia-200/40 bg-black/25 px-3 text-sm"
+                />
+                <button className="h-10 w-full rounded-lg border border-fuchsia-300/50 bg-fuchsia-500/20 text-xs font-black uppercase tracking-wide">
+                  Demander règlement pro
+                </button>
+              </form>
             </div>
             {isCashZeroState && (
               <div className="rounded-xl border border-dashed border-emerald-300/35 bg-emerald-500/10 px-3 py-3">
@@ -110,16 +141,16 @@ export default async function PopeyHumanCashPage({
 
           <div className="grid gap-3 sm:grid-cols-3">
             <Link href="/popey-human/app/cash?modal=inbound" className="rounded-xl border border-emerald-400/30 bg-[#10251D] p-3">
-              <p className="text-xs uppercase font-black text-emerald-300/80">Commissions dues (Inbound)</p>
-              <p className="mt-1 text-2xl font-black text-emerald-300">{euros(summary.commissionsTotals.total)}</p>
+              <p className="text-xs uppercase font-black text-emerald-300/80">Inbound mensuel</p>
+              <p className="mt-1 text-2xl font-black text-emerald-300">{euros(cashDisponiblePopey)}</p>
               <p className="text-[11px] text-emerald-300/70">
-                Payé: {euros(summary.commissionsTotals.paid)} • En attente: {euros(summary.commissionsTotals.pending)}
+                Demandé: {euros(summary.marketplace.totals.inboundRequested)} • En attente: {euros(summary.marketplace.totals.inboundPending)}
               </p>
             </Link>
             <Link href="/popey-human/app/cash?modal=outbound" className="rounded-xl border border-[#EAC886]/30 bg-[#2A2111] p-3">
-              <p className="text-xs uppercase font-black text-[#EAC886]/80">Commissions à payer (Outbound)</p>
-              <p className="mt-1 text-2xl font-black text-[#EAC886]">{euros(summary.commissionsOutboundTotals.pending)}</p>
-              <p className="text-[11px] text-[#EAC886]/70">Total outbound: {euros(summary.commissionsOutboundTotals.total)}</p>
+              <p className="text-xs uppercase font-black text-[#EAC886]/80">Outbound mensuel</p>
+              <p className="mt-1 text-2xl font-black text-[#EAC886]">{euros(settlementDue)}</p>
+              <p className="text-[11px] text-[#EAC886]/70">Dont demandé: {euros(summary.marketplace.totals.outboundRequested)}</p>
             </Link>
             <Link href="/popey-human/app/cash?modal=events" className="rounded-xl border border-white/20 bg-black/25 p-3">
               <p className="text-xs uppercase font-black text-white/75">Mouvements cash</p>
@@ -199,26 +230,28 @@ export default async function PopeyHumanCashPage({
               </Link>
             </div>
             <div className="mt-4 max-h-[50vh] overflow-y-auto space-y-2 pr-1">
-              {summary.commissionsInbound.map((commission) => (
-                <div key={commission.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
-                  <p className="text-sm font-black">Lead {commission.lead_id}</p>
+              {(summary.marketplace.enabled ? summary.marketplace.inboundRows : []).map((row) => (
+                <div key={row.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
+                  <p className="text-sm font-black">Ticket {row.ticket_code}</p>
                   <p className="text-xs text-white/70">
-                    Montant signé: {euros(Number(commission.signed_amount))} • Commission: {euros(Number(commission.commission_amount))}
+                    Ville: {row.city || "—"} • Commission: {euros(Number(row.amount_eur))}
                   </p>
                   <p
                     className={`text-xs font-black ${
-                      commission.payment_status === "paid"
+                      row.payment_status === "paid"
                         ? "text-emerald-300"
-                        : commission.payment_status === "pending"
+                        : row.payment_status === "pending" || row.payment_status === "requested"
                         ? "text-amber-300"
                         : "text-red-300"
                     }`}
                   >
-                    {commissionStatusLabel(commission.payment_status)}
+                    {marketplacePaymentStatusLabel(row.payment_status)}
                   </p>
                 </div>
               ))}
-              {summary.commissionsInbound.length === 0 && <p className="text-sm text-white/70">Aucune commission inbound pour le moment.</p>}
+              {(summary.marketplace.enabled ? summary.marketplace.inboundRows.length : 0) === 0 && (
+                <p className="text-sm text-white/70">Aucune commission inbound pour le moment.</p>
+              )}
             </div>
           </div>
         </div>
@@ -237,26 +270,26 @@ export default async function PopeyHumanCashPage({
               </Link>
             </div>
             <div className="mt-4 max-h-[50vh] overflow-y-auto space-y-2 pr-1">
-              {summary.commissionsOutbound.map((commission) => (
-                <div key={commission.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
-                  <p className="text-sm font-black">Lead {commission.lead_id}</p>
+              {(summary.marketplace.enabled ? summary.marketplace.outboundRows : []).map((row) => (
+                <div key={row.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
+                  <p className="text-sm font-black">Ticket {row.ticket_code}</p>
                   <p className="text-xs text-white/70">
-                    Montant signé: {euros(Number(commission.signed_amount))} • Commission: {euros(Number(commission.commission_amount))}
+                    Type: {row.row_kind === "popey" ? "Part Popey" : "Part apporteur"} • Commission: {euros(Number(row.amount_eur))}
                   </p>
                   <p
                     className={`text-xs font-black ${
-                      commission.payment_status === "paid"
+                      row.payment_status === "paid"
                         ? "text-emerald-300"
-                        : commission.payment_status === "pending"
+                        : row.payment_status === "pending" || row.payment_status === "requested"
                         ? "text-amber-300"
                         : "text-red-300"
                     }`}
                   >
-                    {commissionStatusLabel(commission.payment_status)}
+                    {marketplacePaymentStatusLabel(row.payment_status)}
                   </p>
                 </div>
               ))}
-              {summary.commissionsOutbound.length === 0 && (
+              {(summary.marketplace.enabled ? summary.marketplace.outboundRows.length : 0) === 0 && (
                 <p className="text-sm text-white/70">Aucune commission outbound pour le moment.</p>
               )}
             </div>

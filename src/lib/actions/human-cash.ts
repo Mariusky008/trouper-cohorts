@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
 
 type HumanCashKind = "encaissement" | "decaissement";
 type HumanCashSourceType = "lead" | "signal" | "manual";
+type MarketplaceRequestKind = "apporteur_payout" | "pro_settlement";
+type MarketplaceRequestStatus = "pending" | "processed" | "rejected";
+type MarketplacePaymentStatus = "pending" | "requested" | "paid" | "cancelled";
+type LedgerRowKind = "apporteur" | "popey";
 
 type HumanCashEvent = {
   id: string;
@@ -34,10 +38,99 @@ type HumanCommission = {
   updated_at: string;
 };
 
-type AdminCommission = HumanCommission & {
+type MarketplaceLedgerRow = {
+  id: string;
+  activation_id: string;
+  row_kind: LedgerRowKind;
+  period_month: string;
+  ticket_code: string;
+  city: string | null;
+  payer_member_id: string | null;
+  receiver_member_id: string | null;
+  receiver_scout_id: string | null;
+  receiver_name: string | null;
+  amount_eur: number;
+  decision_status: "approved" | "rejected";
+  payment_status: MarketplacePaymentStatus;
+  payment_requested_at: string | null;
+  paid_at: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+type MarketplaceRequestRow = {
+  id: string;
+  member_id: string;
+  period_month: string;
+  request_kind: MarketplaceRequestKind;
+  requested_amount_eur: number;
+  status: MarketplaceRequestStatus;
+  note: string | null;
+  processed_note: string | null;
+  processed_at: string | null;
+  created_at: string;
+};
+
+type AdminLedgerLine = {
+  id: string;
+  activationId: string;
+  ticketCode: string;
+  rowKind: LedgerRowKind;
+  city: string;
+  amountEur: number;
+  decisionStatus: "approved" | "rejected";
+  paymentStatus: MarketplacePaymentStatus;
+  payerMemberId: string | null;
   payerLabel: string;
   receiverLabel: string;
+  paymentRequestedAt: string | null;
+  paidAt: string | null;
+  note: string | null;
+  createdAt: string;
 };
+
+type AdminRequestLine = {
+  id: string;
+  memberId: string;
+  memberLabel: string;
+  requestKind: MarketplaceRequestKind;
+  requestedAmountEur: number;
+  status: MarketplaceRequestStatus;
+  note: string | null;
+  processedNote: string | null;
+  createdAt: string;
+  processedAt: string | null;
+};
+
+type AdminProRule = {
+  id: string;
+  proMemberId: string;
+  proLabel: string;
+  popeyFeeEur: number;
+  updatedAt: string;
+};
+
+function firstDayOfCurrentMonthIso() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return start.toISOString().slice(0, 10);
+}
+
+function sanitizePeriodMonth(periodRaw: string | null | undefined) {
+  const value = String(periodRaw || "").trim();
+  if (!/^\d{4}-\d{2}$/.test(value)) return firstDayOfCurrentMonthIso();
+  return `${value}-01`;
+}
+
+function asMoney(value: number | string | null | undefined) {
+  const parsed = Number(value || 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed * 100) / 100;
+}
+
+function sumRows(rows: MarketplaceLedgerRow[]) {
+  return asMoney(rows.reduce((sum, row) => sum + asMoney(row.amount_eur), 0));
+}
 
 export async function getMyCashSummary() {
   const supabase = await createClient();
@@ -54,6 +147,21 @@ export async function getMyCashSummary() {
       totals: { in: 0, out: 0, net: 0 },
       commissionsTotals: { pending: 0, paid: 0, total: 0 },
       commissionsOutboundTotals: { pending: 0, paid: 0, cancelled: 0, total: 0 },
+      marketplace: {
+        enabled: false,
+        currentPeriodMonth: firstDayOfCurrentMonthIso(),
+        inboundRows: [] as MarketplaceLedgerRow[],
+        outboundRows: [] as MarketplaceLedgerRow[],
+        requests: [] as MarketplaceRequestRow[],
+        totals: {
+          inboundPending: 0,
+          inboundRequested: 0,
+          inboundPaid: 0,
+          outboundPending: 0,
+          outboundRequested: 0,
+          outboundPaid: 0,
+        },
+      },
     };
   }
 
@@ -68,6 +176,21 @@ export async function getMyCashSummary() {
       totals: { in: 0, out: 0, net: 0 },
       commissionsTotals: { pending: 0, paid: 0, total: 0 },
       commissionsOutboundTotals: { pending: 0, paid: 0, cancelled: 0, total: 0 },
+      marketplace: {
+        enabled: false,
+        currentPeriodMonth: firstDayOfCurrentMonthIso(),
+        inboundRows: [] as MarketplaceLedgerRow[],
+        outboundRows: [] as MarketplaceLedgerRow[],
+        requests: [] as MarketplaceRequestRow[],
+        totals: {
+          inboundPending: 0,
+          inboundRequested: 0,
+          inboundPaid: 0,
+          outboundPending: 0,
+          outboundRequested: 0,
+          outboundPaid: 0,
+        },
+      },
     };
   }
 
@@ -115,6 +238,60 @@ export async function getMyCashSummary() {
     .filter((commission) => commission.payment_status === "cancelled")
     .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
 
+  const currentPeriodMonth = firstDayOfCurrentMonthIso();
+  const [inboundLedgerResult, outboundLedgerResult, requestsResult] = await Promise.all([
+    supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .select(
+        "id,activation_id,row_kind,period_month,ticket_code,city,payer_member_id,receiver_member_id,receiver_scout_id,receiver_name,amount_eur,decision_status,payment_status,payment_requested_at,paid_at,note,created_at",
+      )
+      .eq("period_month", currentPeriodMonth)
+      .eq("row_kind", "apporteur")
+      .eq("receiver_member_id", myMember.id)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .select(
+        "id,activation_id,row_kind,period_month,ticket_code,city,payer_member_id,receiver_member_id,receiver_scout_id,receiver_name,amount_eur,decision_status,payment_status,payment_requested_at,paid_at,note,created_at",
+      )
+      .eq("period_month", currentPeriodMonth)
+      .eq("payer_member_id", myMember.id)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabaseAdmin
+      .from("human_marketplace_commission_requests")
+      .select("id,member_id,period_month,request_kind,requested_amount_eur,status,note,processed_note,processed_at,created_at")
+      .eq("member_id", myMember.id)
+      .eq("period_month", currentPeriodMonth)
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+
+  const tableMissing = [inboundLedgerResult.error, outboundLedgerResult.error, requestsResult.error]
+    .filter(Boolean)
+    .map((error) => String(error?.message || "").toLowerCase())
+    .some(
+      (message) =>
+        message.includes("human_marketplace_commission_ledger") ||
+        message.includes("human_marketplace_commission_requests") ||
+        message.includes("does not exist"),
+    );
+
+  const marketplaceEnabled = !tableMissing && !inboundLedgerResult.error && !outboundLedgerResult.error && !requestsResult.error;
+  const inboundRows = marketplaceEnabled ? ((inboundLedgerResult.data as MarketplaceLedgerRow[] | null) || []) : [];
+  const outboundRows = marketplaceEnabled
+    ? (((outboundLedgerResult.data as MarketplaceLedgerRow[] | null) || []).filter((row) => row.decision_status === "approved") as MarketplaceLedgerRow[])
+    : [];
+  const requests = marketplaceEnabled ? ((requestsResult.data as MarketplaceRequestRow[] | null) || []) : [];
+
+  const inboundPendingRows = inboundRows.filter((row) => row.payment_status === "pending");
+  const inboundRequestedRows = inboundRows.filter((row) => row.payment_status === "requested");
+  const inboundPaidRows = inboundRows.filter((row) => row.payment_status === "paid");
+  const outboundPendingRows = outboundRows.filter((row) => row.payment_status === "pending");
+  const outboundRequestedRows = outboundRows.filter((row) => row.payment_status === "requested");
+  const outboundPaidRows = outboundRows.filter((row) => row.payment_status === "paid");
+
   return {
     error: null as string | null,
     events,
@@ -136,6 +313,21 @@ export async function getMyCashSummary() {
       paid: commissionsOutboundPaid,
       cancelled: commissionsOutboundCancelled,
       total: commissionsOutboundPending + commissionsOutboundPaid + commissionsOutboundCancelled,
+    },
+    marketplace: {
+      enabled: marketplaceEnabled,
+      currentPeriodMonth,
+      inboundRows,
+      outboundRows,
+      requests,
+      totals: {
+        inboundPending: sumRows(inboundPendingRows),
+        inboundRequested: sumRows(inboundRequestedRows),
+        inboundPaid: sumRows(inboundPaidRows),
+        outboundPending: sumRows(outboundPendingRows),
+        outboundRequested: sumRows(outboundRequestedRows),
+        outboundPaid: sumRows(outboundPaidRows),
+      },
     },
   };
 }
@@ -194,51 +386,151 @@ export async function requestMyCashPayout(formData: FormData) {
   const myMember = await ensureHumanMemberForUserId(user.id);
   if (!myMember) return { error: "Profil Popey Human introuvable." };
 
+  const requestKindRaw = String(formData.get("request_kind") || "apporteur_payout").trim();
+  const requestKind: MarketplaceRequestKind = requestKindRaw === "pro_settlement" ? "pro_settlement" : "apporteur_payout";
+  const note = String(formData.get("request_note") || "").trim();
   const requestedAmountRaw = String(formData.get("requested_amount") || "").trim();
   const requestedAmount = Number(requestedAmountRaw || "0");
   if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
-    return { error: "Montant de virement invalide." };
+    return { error: "Montant de demande invalide." };
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data: adminsData }, { data: meData }] = await Promise.all([
-    supabaseAdmin.from("admins").select("user_id"),
+  const monthStart = firstDayOfCurrentMonthIso();
+  const [meDataResult, dueRowsResult] = await Promise.all([
     supabaseAdmin.from("human_members").select("first_name,last_name").eq("id", myMember.id).maybeSingle(),
+    requestKind === "apporteur_payout"
+      ? supabaseAdmin
+          .from("human_marketplace_commission_ledger")
+          .select("id,amount_eur")
+          .eq("period_month", monthStart)
+          .eq("row_kind", "apporteur")
+          .eq("receiver_member_id", myMember.id)
+          .eq("decision_status", "approved")
+          .in("payment_status", ["pending", "requested"])
+      : supabaseAdmin
+          .from("human_marketplace_commission_ledger")
+          .select("id,amount_eur")
+          .eq("period_month", monthStart)
+          .eq("payer_member_id", myMember.id)
+          .eq("decision_status", "approved")
+          .in("payment_status", ["pending", "requested"]),
   ]);
 
-  const requesterName =
-    [meData?.first_name, meData?.last_name].filter(Boolean).join(" ").trim() || "Membre Popey Human";
+  if (dueRowsResult.error) {
+    const message = String(dueRowsResult.error.message || "").toLowerCase();
+    if (message.includes("human_marketplace_commission_ledger") || message.includes("does not exist")) {
+      return { error: "Tables commissions Sprint 1 non disponibles. Exécute d'abord la migration SQL." };
+    }
+    return { error: dueRowsResult.error.message || "Impossible de préparer la demande." };
+  }
 
+  const dueRows = (((dueRowsResult.data as Array<{ id: string; amount_eur: number }> | null) || []).filter((row) => row.id)) as Array<{
+    id: string;
+    amount_eur: number;
+  }>;
+  const dueAmount = asMoney(dueRows.reduce((sum, row) => sum + asMoney(row.amount_eur), 0));
+  if (dueAmount <= 0) {
+    return {
+      error:
+        requestKind === "apporteur_payout"
+          ? "Aucune commission apporteur à réclamer sur le mois en cours."
+          : "Aucune commission due par votre compte pro sur le mois en cours.",
+    };
+  }
+  if (requestedAmount > dueAmount) {
+    return { error: `Montant trop élevé. Maximum disponible: ${dueAmount.toLocaleString("fr-FR")}€.` };
+  }
+
+  const pendingRequestResult = await supabaseAdmin
+    .from("human_marketplace_commission_requests")
+    .select("id")
+    .eq("member_id", myMember.id)
+    .eq("period_month", monthStart)
+    .eq("request_kind", requestKind)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (pendingRequestResult.error) {
+    const message = String(pendingRequestResult.error.message || "").toLowerCase();
+    if (message.includes("human_marketplace_commission_requests") || message.includes("does not exist")) {
+      return { error: "Tables commissions Sprint 1 non disponibles. Exécute d'abord la migration SQL." };
+    }
+    return { error: pendingRequestResult.error.message || "Impossible de préparer la demande." };
+  }
+
+  if (pendingRequestResult.data?.id) {
+    const { error } = await supabaseAdmin
+      .from("human_marketplace_commission_requests")
+      .update({
+        requested_amount_eur: requestedAmount,
+        note: note || null,
+      })
+      .eq("id", pendingRequestResult.data.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabaseAdmin.from("human_marketplace_commission_requests").insert({
+      member_id: myMember.id,
+      period_month: monthStart,
+      request_kind: requestKind,
+      requested_amount_eur: requestedAmount,
+      status: "pending",
+      note: note || null,
+    });
+    if (error) return { error: error.message };
+  }
+
+  const dueRowIds = dueRows.map((row) => row.id);
+  if (dueRowIds.length > 0) {
+    const { error } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .update({
+        payment_status: "requested",
+        payment_requested_at: new Date().toISOString(),
+      })
+      .in("id", dueRowIds)
+      .eq("decision_status", "approved")
+      .in("payment_status", ["pending", "requested"]);
+    if (error) return { error: error.message };
+  }
+
+  const [{ data: adminsData }, meData] = await Promise.all([
+    supabaseAdmin.from("admins").select("user_id"),
+    meDataResult,
+  ]);
+  const requesterName = [meData.data?.first_name, meData.data?.last_name].filter(Boolean).join(" ").trim() || "Membre Popey Human";
   const adminUserIds = ((adminsData as Array<{ user_id: string }> | null) || []).map((row) => row.user_id);
   const { data: adminMembers } = await supabaseAdmin.from("human_members").select("id,user_id").in("user_id", adminUserIds);
   const adminMemberIds = ((adminMembers as Array<{ id: string; user_id: string }> | null) || []).map((row) => row.id);
-
+  const requestLabel = requestKind === "apporteur_payout" ? "virement apporteur" : "règlement pro";
   const notificationPayload = [
     {
       member_id: myMember.id,
       type: "personnelle",
-      title: "Demande de virement envoyée",
-      message: `Votre demande de virement de ${requestedAmount.toLocaleString("fr-FR")}€ a été transmise à l'admin.`,
-      impact: "cash:payout_request",
+      title: "Demande envoyée",
+      message: `Votre demande ${requestLabel} de ${requestedAmount.toLocaleString("fr-FR")}€ a été transmise à l'admin.`,
+      impact: `cash:${requestKind}`,
       is_read: false,
     },
     ...adminMemberIds.map((memberId) => ({
       member_id: memberId,
       type: "personnelle",
-      title: "Demande de virement à traiter",
-      message: `${requesterName} demande un virement de ${requestedAmount.toLocaleString("fr-FR")}€.`,
-      impact: "cash:payout_request_admin",
+      title: "Demande à traiter",
+      message: `${requesterName} envoie une demande ${requestLabel} de ${requestedAmount.toLocaleString("fr-FR")}€.`,
+      impact: `cash:${requestKind}:admin`,
       is_read: false,
     })),
   ];
-
-  const { error } = await supabaseAdmin.from("human_notifications").insert(notificationPayload);
-  if (error) return { error: error.message };
+  await supabaseAdmin.from("human_notifications").insert(notificationPayload);
 
   revalidatePath("/popey-human/app/cash");
   revalidatePath("/popey-human/app/notifications");
   revalidatePath("/admin/humain/notifications");
-  return { success: true };
+  revalidatePath("/admin/humain/commissions");
+  return {
+    success: true,
+    message: requestKind === "apporteur_payout" ? "Demande de virement apporteur envoyée." : "Demande de règlement pro envoyée.",
+  };
 }
 
 export async function requestMyCashPayoutAction(formData: FormData): Promise<void> {
@@ -247,7 +539,7 @@ export async function requestMyCashPayoutAction(formData: FormData): Promise<voi
   if ("error" in result) {
     redirect(withCashStatus(currentUrl, "error", result.error || "Action impossible."));
   }
-  redirect(withCashStatus(currentUrl, "success", "Demande de virement envoyée."));
+  redirect(withCashStatus(currentUrl, "success", result.message || "Demande envoyée."));
 }
 
 export async function createCommissionForSignedLead(input: {
@@ -290,62 +582,223 @@ export async function createCommissionForSignedLead(input: {
   return { success: true, commissionAmount };
 }
 
-export async function getAdminHumanCommissions() {
+function labelFromMember(
+  member: { id: string; first_name: string | null; last_name: string | null; metier?: string | null } | undefined,
+  fallback: string,
+) {
+  if (!member) return fallback;
+  const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+  const metier = String(member.metier || "").trim();
+  return [full || fallback, metier || null].filter(Boolean).join(" · ");
+}
+
+export async function getAdminHumanCommissions(periodMonth?: string) {
   const admin = await requireAdminUser();
   if ("error" in admin) {
-    return { error: admin.error, commissions: [] as AdminCommission[] };
+    return {
+      error: admin.error,
+      periodMonth: sanitizePeriodMonth(periodMonth),
+      ledger: [] as AdminLedgerLine[],
+      requests: [] as AdminRequestLine[],
+      proRules: [] as AdminProRule[],
+      members: [] as Array<{ id: string; label: string }>,
+      kpis: {
+        apporteurPending: 0,
+        apporteurRequested: 0,
+        proOutstanding: 0,
+        popeyOutstanding: 0,
+        paidThisMonth: 0,
+      },
+    };
   }
 
+  const monthStart = sanitizePeriodMonth(periodMonth);
   const supabaseAdmin = createAdminClient();
-  const [{ data: commissionsData }, { data: membersData }, { data: profilesData }] = await Promise.all([
+  const [ledgerResult, requestsResult, rulesResult, membersResult] = await Promise.all([
     supabaseAdmin
-      .from("human_commissions")
-      .select("id,lead_id,signed_amount,commission_amount,payer_member_id,receiver_member_id,payment_status,created_at,updated_at")
+      .from("human_marketplace_commission_ledger")
+      .select(
+        "id,activation_id,row_kind,period_month,ticket_code,city,payer_member_id,receiver_member_id,receiver_scout_id,receiver_name,amount_eur,decision_status,payment_status,payment_requested_at,paid_at,note,created_at",
+      )
+      .eq("period_month", monthStart)
       .order("created_at", { ascending: false })
-      .limit(500),
-    supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name"),
-    supabaseAdmin.from("profiles").select("id,display_name"),
+      .limit(1200),
+    supabaseAdmin
+      .from("human_marketplace_commission_requests")
+      .select("id,member_id,period_month,request_kind,requested_amount_eur,status,note,processed_note,processed_at,created_at")
+      .eq("period_month", monthStart)
+      .order("created_at", { ascending: false })
+      .limit(400),
+    supabaseAdmin
+      .from("human_marketplace_pro_commission_rules")
+      .select("id,pro_member_id,popey_fee_eur,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(400),
+    supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name,metier").limit(2500),
   ]);
 
-  const members = (membersData as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null }> | null) || [];
-  const profiles = (profilesData as Array<{ id: string; display_name: string | null }> | null) || [];
-  const profileNameByUserId = new Map(profiles.map((profile) => [profile.id, profile.display_name || ""]));
+  const maybeMissingMessage = [ledgerResult.error, requestsResult.error, rulesResult.error]
+    .filter(Boolean)
+    .map((error) => String(error?.message || "").toLowerCase())
+    .find(
+      (message) =>
+        message.includes("human_marketplace_commission_ledger") ||
+        message.includes("human_marketplace_commission_requests") ||
+        message.includes("human_marketplace_pro_commission_rules") ||
+        message.includes("does not exist"),
+    );
+  if (maybeMissingMessage) {
+    return {
+      error: "Tables Sprint 1 commissions indisponibles. Exécute la migration SQL `20260504202000_create_marketplace_commission_ledger_v1.sql`.",
+      periodMonth: monthStart,
+      ledger: [] as AdminLedgerLine[],
+      requests: [] as AdminRequestLine[],
+      proRules: [] as AdminProRule[],
+      members: [] as Array<{ id: string; label: string }>,
+      kpis: {
+        apporteurPending: 0,
+        apporteurRequested: 0,
+        proOutstanding: 0,
+        popeyOutstanding: 0,
+        paidThisMonth: 0,
+      },
+    };
+  }
+  if (ledgerResult.error || requestsResult.error || rulesResult.error || membersResult.error) {
+    return {
+      error:
+        ledgerResult.error?.message ||
+        requestsResult.error?.message ||
+        rulesResult.error?.message ||
+        membersResult.error?.message ||
+        "Chargement commissions impossible.",
+      periodMonth: monthStart,
+      ledger: [] as AdminLedgerLine[],
+      requests: [] as AdminRequestLine[],
+      proRules: [] as AdminProRule[],
+      members: [] as Array<{ id: string; label: string }>,
+      kpis: {
+        apporteurPending: 0,
+        apporteurRequested: 0,
+        proOutstanding: 0,
+        popeyOutstanding: 0,
+        paidThisMonth: 0,
+      },
+    };
+  }
 
-  const memberLabelById = new Map<string, string>();
-  members.forEach((member) => {
-    const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
-    const fallback = profileNameByUserId.get(member.user_id) || member.user_id;
-    memberLabelById.set(member.id, full || fallback || "Membre");
+  const members =
+    ((membersResult.data as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) ||
+      []);
+  const memberById = new Map(members.map((member) => [member.id, member]));
+  const memberOptions = members
+    .map((member) => ({
+      id: member.id,
+      label: labelFromMember(member, "Membre"),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+
+  const ledgerRows = ((ledgerResult.data as MarketplaceLedgerRow[] | null) || []).map((row) => {
+    const payerMember = row.payer_member_id ? memberById.get(row.payer_member_id) : undefined;
+    const receiverMember = row.receiver_member_id ? memberById.get(row.receiver_member_id) : undefined;
+    return {
+      id: row.id,
+      activationId: row.activation_id,
+      ticketCode: row.ticket_code,
+      rowKind: row.row_kind,
+      city: String(row.city || "").trim() || "—",
+      amountEur: asMoney(row.amount_eur),
+      decisionStatus: row.decision_status,
+      paymentStatus: row.payment_status,
+      payerMemberId: row.payer_member_id,
+      payerLabel: labelFromMember(payerMember, row.payer_member_id || "Pro non renseigné"),
+      receiverLabel:
+        row.row_kind === "popey"
+          ? "Popey"
+          : labelFromMember(receiverMember, String(row.receiver_name || row.receiver_scout_id || "Apporteur")),
+      paymentRequestedAt: row.payment_requested_at,
+      paidAt: row.paid_at,
+      note: row.note,
+      createdAt: row.created_at,
+    } as AdminLedgerLine;
   });
 
-  const commissions = ((commissionsData as HumanCommission[] | null) || []).map((commission) => ({
-    ...commission,
-    payerLabel: memberLabelById.get(commission.payer_member_id) || commission.payer_member_id,
-    receiverLabel: memberLabelById.get(commission.receiver_member_id) || commission.receiver_member_id,
+  const requests = ((requestsResult.data as MarketplaceRequestRow[] | null) || []).map((request) => ({
+    id: request.id,
+    memberId: request.member_id,
+    memberLabel: labelFromMember(memberById.get(request.member_id), request.member_id),
+    requestKind: request.request_kind,
+    requestedAmountEur: asMoney(request.requested_amount_eur),
+    status: request.status,
+    note: request.note,
+    processedNote: request.processed_note,
+    createdAt: request.created_at,
+    processedAt: request.processed_at,
   }));
+  const rules = ((rulesResult.data as Array<{ id: string; pro_member_id: string; popey_fee_eur: number; updated_at: string }> | null) || []).map(
+    (rule) => ({
+      id: rule.id,
+      proMemberId: rule.pro_member_id,
+      proLabel: labelFromMember(memberById.get(rule.pro_member_id), rule.pro_member_id),
+      popeyFeeEur: asMoney(rule.popey_fee_eur),
+      updatedAt: rule.updated_at,
+    }),
+  );
 
-  return { error: null as string | null, commissions };
+  const apporteurPendingRows = ledgerRows.filter((row) => row.rowKind === "apporteur" && row.paymentStatus === "pending");
+  const apporteurRequestedRows = ledgerRows.filter((row) => row.rowKind === "apporteur" && row.paymentStatus === "requested");
+  const proOutstandingRows = ledgerRows.filter(
+    (row) => row.paymentStatus !== "paid" && row.paymentStatus !== "cancelled" && row.decisionStatus === "approved",
+  );
+  const popeyOutstandingRows = proOutstandingRows.filter((row) => row.rowKind === "popey");
+  const paidRows = ledgerRows.filter((row) => row.paymentStatus === "paid");
+
+  return {
+    error: null as string | null,
+    periodMonth: monthStart,
+    ledger: ledgerRows,
+    requests,
+    proRules: rules,
+    members: memberOptions,
+    kpis: {
+      apporteurPending: asMoney(apporteurPendingRows.reduce((sum, row) => sum + row.amountEur, 0)),
+      apporteurRequested: asMoney(apporteurRequestedRows.reduce((sum, row) => sum + row.amountEur, 0)),
+      proOutstanding: asMoney(proOutstandingRows.reduce((sum, row) => sum + row.amountEur, 0)),
+      popeyOutstanding: asMoney(popeyOutstandingRows.reduce((sum, row) => sum + row.amountEur, 0)),
+      paidThisMonth: asMoney(paidRows.reduce((sum, row) => sum + row.amountEur, 0)),
+    },
+  };
 }
 
 export async function adminSetHumanCommissionStatus(formData: FormData) {
   const admin = await requireAdminUser();
   if ("error" in admin) return { error: admin.error };
 
-  const commissionId = String(formData.get("commission_id") || "");
-  const paymentStatus = String(formData.get("payment_status") || "");
-  if (!commissionId) return { error: "Commission invalide." };
-  if (!["pending", "paid", "cancelled"].includes(paymentStatus)) return { error: "Statut de paiement invalide." };
+  const ledgerId = String(formData.get("ledger_id") || formData.get("commission_id") || "").trim();
+  const paymentStatus = String(formData.get("payment_status") || "").trim().toLowerCase() as MarketplacePaymentStatus;
+  const note = String(formData.get("payment_note") || "").trim();
+  if (!ledgerId) return { error: "Ligne commission invalide." };
+  if (!["pending", "requested", "paid", "cancelled"].includes(paymentStatus)) return { error: "Statut de paiement invalide." };
+
+  const updatePayload: Record<string, unknown> = {
+    payment_status: paymentStatus,
+    note: note || null,
+  };
+  if (paymentStatus === "paid") {
+    updatePayload.paid_at = new Date().toISOString();
+    updatePayload.paid_by_user_id = admin.user.id;
+  } else {
+    updatePayload.paid_at = null;
+    updatePayload.paid_by_user_id = null;
+  }
 
   const supabaseAdmin = createAdminClient();
-  const { error } = await supabaseAdmin
-    .from("human_commissions")
-    .update({ payment_status: paymentStatus, updated_at: new Date().toISOString() })
-    .eq("id", commissionId);
+  const { error } = await supabaseAdmin.from("human_marketplace_commission_ledger").update(updatePayload).eq("id", ledgerId);
   if (error) return { error: error.message };
 
   revalidatePath("/admin/humain/commissions");
   revalidatePath("/popey-human/app/cash");
-  revalidatePath("/admin/humain/cockpit");
+  revalidatePath("/admin/humain/affiliation");
   return { success: true };
 }
 
@@ -355,20 +808,79 @@ export async function adminSetHumanCommissionStatusAction(formData: FormData): P
   if ("error" in result) {
     redirect(withCommissionStatus(currentUrl, "error", result.error || "Action impossible."));
   }
-  redirect(withCommissionStatus(currentUrl, "success", "Statut de commission mis à jour."));
+  redirect(withCommissionStatus(currentUrl, "success", "Statut de paiement mis à jour."));
+}
+
+export async function adminSetMarketplaceProCommissionRuleAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/commissions");
+  const admin = await requireAdminUser();
+  if ("error" in admin) {
+    redirect(withCommissionStatus(currentUrl, "error", admin.error || "Action impossible."));
+  }
+
+  const proMemberId = String(formData.get("pro_member_id") || "").trim();
+  const feeRaw = String(formData.get("popey_fee_eur") || "").trim().replace(",", ".");
+  const fee = Number(feeRaw);
+  if (!proMemberId) redirect(withCommissionStatus(currentUrl, "error", "Membre pro manquant."));
+  if (!Number.isFinite(fee) || fee < 0) redirect(withCommissionStatus(currentUrl, "error", "Montant Popey invalide."));
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_marketplace_pro_commission_rules")
+    .upsert(
+      {
+        pro_member_id: proMemberId,
+        popey_fee_eur: asMoney(fee),
+        updated_by_user_id: admin.user.id,
+      },
+      { onConflict: "pro_member_id" },
+    );
+  if (error) redirect(withCommissionStatus(currentUrl, "error", error.message || "Mise à jour impossible."));
+
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/admin/humain/affiliation");
+  redirect(withCommissionStatus(currentUrl, "success", "Commission Popey fixe enregistrée."));
+}
+
+export async function adminProcessMarketplaceCommissionRequestAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/commissions");
+  const admin = await requireAdminUser();
+  if ("error" in admin) {
+    redirect(withCommissionStatus(currentUrl, "error", admin.error || "Action impossible."));
+  }
+
+  const requestId = String(formData.get("request_id") || "").trim();
+  const statusRaw = String(formData.get("status") || "").trim().toLowerCase();
+  const processedNote = String(formData.get("processed_note") || "").trim();
+  const status: MarketplaceRequestStatus = statusRaw === "processed" ? "processed" : "rejected";
+  if (!requestId) redirect(withCommissionStatus(currentUrl, "error", "Demande introuvable."));
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_marketplace_commission_requests")
+    .update({
+      status,
+      processed_note: processedNote || null,
+      processed_at: new Date().toISOString(),
+      processed_by_user_id: admin.user.id,
+    })
+    .eq("id", requestId)
+    .eq("status", "pending");
+  if (error) redirect(withCommissionStatus(currentUrl, "error", error.message || "Traitement impossible."));
+
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/popey-human/app/cash");
+  redirect(withCommissionStatus(currentUrl, "success", "Demande de virement traitée."));
 }
 
 async function requireAdminUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Session requise." };
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return { error: "Session requise." };
 
   const supabaseAdmin = createAdminClient();
-  const { data } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!data) return { error: "Accès admin requis." };
-  return { user };
+  return { user: { id: userId } };
 }
 
 function withCommissionStatus(url: string, status: "success" | "error", message: string) {
