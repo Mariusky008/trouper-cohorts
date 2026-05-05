@@ -114,7 +114,7 @@ type AcceptedMarketplaceOfferLite = {
   id: string;
   full_name: string | null;
   assigned_member_id: string | null;
-  place: { owner_member_id: string | null } | null;
+  place: { owner_member_id: string | null } | Array<{ owner_member_id: string | null }> | null;
 };
 
 function firstDayOfCurrentMonthIso() {
@@ -654,7 +654,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
     supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name,metier").limit(2500),
     supabaseAdmin
       .from("human_marketplace_offers")
-      .select("id,full_name,assigned_member_id,place:human_marketplace_places(owner_member_id)")
+      .select("id,full_name,assigned_member_id,place:human_marketplace_places!human_marketplace_offers_place_id_fkey(owner_member_id)")
       .eq("status", "accepted")
       .order("created_at", { ascending: false })
       .limit(1000),
@@ -725,7 +725,8 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
   const acceptedMemberIds = new Set<string>();
   acceptedOffers.forEach((offer) => {
     const assigned = String(offer.assigned_member_id || "").trim();
-    const owner = String(offer.place?.owner_member_id || "").trim();
+    const placeValue = Array.isArray(offer.place) ? offer.place[0] : offer.place;
+    const owner = String(placeValue?.owner_member_id || "").trim();
     if (assigned) {
       acceptedMemberIds.add(assigned);
       return;
