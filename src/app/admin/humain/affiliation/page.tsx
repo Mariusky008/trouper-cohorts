@@ -111,6 +111,23 @@ function commissionDecisionLabel(value: string) {
   return "Décision en attente";
 }
 
+function periodLabel(value: string) {
+  if (value === "day") return "Jour";
+  if (value === "week") return "Semaine";
+  if (value === "month") return "Mois";
+  if (value === "year") return "Année";
+  return "Tout";
+}
+
+function periodThreshold(period: string): number | null {
+  const now = Date.now();
+  if (period === "day") return now - 24 * 60 * 60 * 1000;
+  if (period === "week") return now - 7 * 24 * 60 * 60 * 1000;
+  if (period === "month") return now - 30 * 24 * 60 * 60 * 1000;
+  if (period === "year") return now - 365 * 24 * 60 * 60 * 1000;
+  return null;
+}
+
 export default async function AdminHumainAffiliationPage({
   searchParams,
 }: {
@@ -127,7 +144,16 @@ export default async function AdminHumainAffiliationPage({
     .limit(300);
 
   const logs = ((logsData as SignupLogRow[] | null) || []).filter((row) => row.event_type === "public_affiliate_signup");
-  const activationTickets = (snapshot.recentActivations || []).slice(0, 120);
+  const requestedPeriodRaw = typeof params.period === "string" ? params.period : "week";
+  const period = ["all", "day", "week", "month", "year"].includes(requestedPeriodRaw) ? requestedPeriodRaw : "week";
+  const threshold = periodThreshold(period);
+  const activationTicketsAll = (snapshot.recentActivations || []).slice(0, 120);
+  const activationTickets = activationTicketsAll.filter((ticket) => {
+    if (threshold === null) return true;
+    const ts = Date.parse(String(ticket.created_at || ""));
+    if (!Number.isFinite(ts)) return false;
+    return ts >= threshold;
+  });
   const ticketsWithoutReplyOver48h = activationTickets.filter((ticket) => {
     const relanceAt = readMetaText(ticket.metadata, "pro_followup_sent_at");
     const replyAt = readMetaText(ticket.metadata, "pro_followup_last_reply_at");
@@ -171,11 +197,13 @@ export default async function AdminHumainAffiliationPage({
   }
 
   let decisionByActivationId = new Map<string, CommissionDecisionRow>();
+  let decisionsLoadError = "";
   if (activationIds.length > 0) {
-    const { data: decisionsData } = await supabaseAdmin
+    const { data: decisionsData, error: decisionsError } = await supabaseAdmin
       .from("human_affiliate_commission_decisions")
       .select("activation_id,decision_status,commission_amount_eur,apporteur_type,apporteur_name,apporteur_phone,note,decided_at")
       .in("activation_id", activationIds);
+    if (decisionsError) decisionsLoadError = decisionsError.message || "Table commission non disponible.";
     const decisions = (decisionsData as CommissionDecisionRow[] | null) || [];
     decisionByActivationId = new Map(decisions.map((decision) => [decision.activation_id, decision]));
   }
@@ -183,6 +211,8 @@ export default async function AdminHumainAffiliationPage({
   // Read status feedback coming from admin POST routes.
   const affStatus = typeof params.affStatus === "string" ? params.affStatus : typeof params.marketStatus === "string" ? params.marketStatus : "";
   const affMessage = typeof params.affMessage === "string" ? params.affMessage : typeof params.marketMessage === "string" ? params.marketMessage : "";
+  const focusedTicketId = typeof params.marketFocus === "string" ? params.marketFocus : "";
+  const currentUrlForForms = `/admin/humain/affiliation?period=${period}`;
 
   return (
     <section className="space-y-5">
@@ -210,6 +240,7 @@ export default async function AdminHumainAffiliationPage({
             affStatus === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
           }`}
         >
+          {affStatus === "success" ? "✅ " : "⚠️ "}
           {affMessage}
         </p>
       ) : null}
@@ -315,7 +346,8 @@ export default async function AdminHumainAffiliationPage({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tickets de commission</p>
-            <h2 className="text-lg font-black">Parcours Apporteur → Client → Pro</h2>
+            <h2 className="text-lg font-black">Parcours apporteur → lead client → validation commission</h2>
+            <p className="text-xs text-muted-foreground">Période active: {periodLabel(period)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-700">
@@ -329,10 +361,28 @@ export default async function AdminHumainAffiliationPage({
             </Link>
           </div>
         </div>
+        <div className="flex flex-wrap gap-2">
+          {(["day", "week", "month", "year", "all"] as const).map((key) => (
+            <Link
+              key={key}
+              href={`/admin/humain/affiliation?period=${key}`}
+              className={`inline-flex h-8 items-center rounded border px-3 text-[11px] font-black uppercase tracking-wide ${
+                period === key ? "border-black bg-black text-white" : "border-slate-300 bg-white text-slate-700"
+              }`}
+            >
+              {periodLabel(key)}
+            </Link>
+          ))}
+        </div>
 
         {snapshot.error ? (
           <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             Impossible de charger les tickets: {snapshot.error}
+          </p>
+        ) : null}
+        {decisionsLoadError ? (
+          <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            Décisions commission indisponibles: {decisionsLoadError}. Exécute la migration SQL commission.
           </p>
         ) : null}
 
@@ -358,7 +408,9 @@ export default async function AdminHumainAffiliationPage({
               ? "Particulier (webapp éclaireur)"
               : apporteurType === "member_pro"
                 ? "Pro (webapp membre)"
-                : "Source non déterminée";
+                : ticket.referrer_name
+                  ? "Apporteur déclaré (sans identifiant technique)"
+                  : "Source non déterminée";
           const apporteurName =
             decision?.apporteur_name ||
             (scout ? scoutLabel(scout) : [txt(refMember?.first_name), txt(refMember?.last_name)].filter(Boolean).join(" ").trim()) ||
@@ -369,14 +421,40 @@ export default async function AdminHumainAffiliationPage({
             decision?.commission_amount_eur !== null && decision?.commission_amount_eur !== undefined
               ? String(decision.commission_amount_eur)
               : readMetaText(ticket.metadata, "commission_amount_eur");
+          const isFocused = focusedTicketId === ticket.id;
           return (
-            <article key={ticket.id} className="rounded-lg border p-3">
-              <p className="font-black">
-                #{ticketCode} · {ticket.client_name} → {ticket.partner_name || ticket.place?.metier || "Pro"}
-              </p>
-              <p className="mt-1 text-xs text-black/70">
-                Apporteur: {ticket.referrer_name} · Ville: {ticket.city} · Créé le {toDate(ticket.created_at)}
-              </p>
+            <article
+              key={ticket.id}
+              id={`ticket-${ticket.id}`}
+              className={`rounded-lg border p-3 ${isFocused ? "border-emerald-400 bg-emerald-50/30" : ""}`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black">Ticket #{ticketCode}</p>
+                  <p className="text-xs text-black/80">
+                    Client: <span className="font-semibold">{ticket.client_name || "Non renseigné"}</span>
+                  </p>
+                  <p className="text-xs text-black/80">
+                    Pro ciblé: <span className="font-semibold">{ticket.partner_name || ticket.place?.metier || "Non renseigné"}</span>
+                  </p>
+                  <p className="text-xs text-black/60">
+                    Ville: {ticket.city} · Créé le {toDate(ticket.created_at)}
+                  </p>
+                </div>
+                {decision?.decision_status ? (
+                  <span
+                    className={`inline-flex h-7 items-center rounded border px-2 text-[11px] font-black uppercase tracking-wide ${
+                      decision.decision_status === "approved"
+                        ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                        : decision.decision_status === "rejected"
+                          ? "border-rose-300 bg-rose-100 text-rose-800"
+                          : "border-slate-300 bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    {commissionDecisionLabel(String(decision.decision_status))}
+                  </span>
+                ) : null}
+              </div>
               <div className="mt-1">
                 <span className={`inline-flex h-7 items-center rounded border px-2 text-[11px] font-black uppercase tracking-wide ${replyBadge.className}`}>
                   {replyBadge.label}
@@ -384,9 +462,9 @@ export default async function AdminHumainAffiliationPage({
               </div>
               <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/60 p-3">
                 <p className="text-[11px] font-black uppercase tracking-wide text-cyan-800">Source du contact</p>
-                <p className="mt-1 text-xs text-cyan-900">
-                  {apporteurSourceLabel} · {apporteurName} · {apporteurPhone}
-                </p>
+                <p className="mt-1 text-xs text-cyan-900">Canal: {apporteurSourceLabel}</p>
+                <p className="text-xs text-cyan-900">Apporteur identifié: {apporteurName}</p>
+                <p className="text-xs text-cyan-900">Contact apporteur: {apporteurPhone}</p>
               </div>
               <p className="mt-1 text-xs text-black/60">
                 Dernière relance: {lastFollowupAt ? toDate(lastFollowupAt) : "Jamais"}
@@ -397,20 +475,12 @@ export default async function AdminHumainAffiliationPage({
               <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] font-black uppercase tracking-wide text-emerald-800">Décision commission</p>
-                  <span
-                    className={`inline-flex h-7 items-center rounded border px-2 text-[11px] font-black uppercase tracking-wide ${
-                      decision?.decision_status === "approved"
-                        ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                        : decision?.decision_status === "rejected"
-                          ? "border-rose-300 bg-rose-100 text-rose-800"
-                          : "border-slate-300 bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {commissionDecisionLabel(String(decision?.decision_status || "pending"))}
+                  <span className="text-[11px] text-emerald-900">
+                    État actuel: <span className="font-black">{commissionDecisionLabel(String(decision?.decision_status || "pending"))}</span>
                   </span>
                 </div>
                 <form action={adminDecideAffiliateCommissionAction} className="mt-2 grid gap-2 md:grid-cols-4">
-                  <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
+                  <input type="hidden" name="current_url" value={currentUrlForForms} />
                   <input type="hidden" name="activation_id" value={ticket.id} />
                   <select
                     name="decision_status"
@@ -433,12 +503,12 @@ export default async function AdminHumainAffiliationPage({
                     className="h-9 rounded border bg-white px-2 text-xs md:col-span-2"
                   />
                   <button className="h-9 rounded border border-emerald-300 bg-white px-3 text-[11px] font-black uppercase tracking-wide text-emerald-800">
-                    Valider décision commission
+                    Enregistrer la décision commission
                   </button>
                 </form>
               </div>
               <form action={adminUpdatePrivilegeActivationStatusAction} className="mt-2 grid gap-2 md:grid-cols-4">
-                <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
+                <input type="hidden" name="current_url" value={currentUrlForForms} />
                 <input type="hidden" name="activation_id" value={ticket.id} />
                 <select name="next_status" defaultValue={status} className="h-9 rounded border px-2 text-xs">
                   <option value="pending">En attente</option>
@@ -457,13 +527,24 @@ export default async function AdminHumainAffiliationPage({
                   MAJ {ticketLabel(status)}
                 </button>
               </form>
-              <form action={adminSendPrivilegeActivationFollowupNowAction} className="mt-2">
-                <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
-                <input type="hidden" name="activation_id" value={ticket.id} />
-                <button className="h-9 rounded border border-emerald-300/60 bg-emerald-500/10 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-700">
-                  Relancer maintenant (WhatsApp pro)
-                </button>
-              </form>
+              <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-violet-800">
+                  Relance Pro WhatsApp
+                </p>
+                <p className="mt-1 text-xs text-violet-900">
+                  Envoie un message au pro pour confirmer si le lead est conclu (OUI/NON).
+                </p>
+                <form action={adminSendPrivilegeActivationFollowupNowAction} className="mt-2">
+                  <input type="hidden" name="current_url" value={currentUrlForForms} />
+                  <input type="hidden" name="activation_id" value={ticket.id} />
+                  <button className="h-9 rounded border border-emerald-300/60 bg-emerald-500/10 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-700">
+                    Relancer maintenant (WhatsApp pro)
+                  </button>
+                </form>
+              </div>
+              {decision?.decided_at ? (
+                <p className="mt-2 text-[11px] text-black/55">Dernière décision commission: {toDate(decision.decided_at)}</p>
+              ) : null}
             </article>
           );
         })}

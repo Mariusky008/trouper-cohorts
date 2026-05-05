@@ -132,6 +132,12 @@ function withMarketplaceStatus(currentUrl: string, status: "success" | "error", 
   return `${base}${sep}marketStatus=${encodeURIComponent(status)}&marketMessage=${encodeURIComponent(message)}`;
 }
 
+function withMarketplaceFocus(currentUrl: string, activationId: string) {
+  if (!activationId) return currentUrl;
+  const sep = currentUrl.includes("?") ? "&" : "?";
+  return `${currentUrl}${sep}marketFocus=${encodeURIComponent(activationId)}#ticket-${encodeURIComponent(activationId)}`;
+}
+
 function normalizePhone(raw: string) {
   let digits = String(raw || "").trim().replace(/\D/g, "");
   if (!digits) return "";
@@ -718,7 +724,7 @@ export async function adminUpdatePrivilegeActivationStatusAction(formData: FormD
 
   revalidatePath("/admin/humain/privileges");
   revalidatePath("/admin/humain/marketplace");
-  redirect(withMarketplaceStatus(currentUrl, "success", "Statut activation mis a jour."));
+  redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "success", "Statut ticket mis à jour."));
 }
 
 export async function adminDecideAffiliateCommissionAction(formData: FormData): Promise<void> {
@@ -737,7 +743,7 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   if (amountRaw) {
     const parsed = Number(amountRaw);
     if (!Number.isFinite(parsed) || parsed < 0) {
-      redirect(withMarketplaceStatus(currentUrl, "error", "Montant commission invalide."));
+      redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", "Montant commission invalide."));
     }
     requestedAmount = Math.round(parsed * 100) / 100;
   }
@@ -751,7 +757,7 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     .eq("id", activationId)
     .maybeSingle();
   if (activationError || !activation) {
-    redirect(withMarketplaceStatus(currentUrl, "error", activationError?.message || "Activation introuvable."));
+    redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", activationError?.message || "Activation introuvable."));
   }
 
   const metadata = asMetadata(activation.metadata);
@@ -813,7 +819,13 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   const fallbackAmount = Number.isFinite(configuredPartnerValue) && configuredPartnerValue > 0 ? configuredPartnerValue : null;
   const commissionAmount = decisionStatus === "approved" ? requestedAmount ?? fallbackAmount : null;
   if (decisionStatus === "approved" && (commissionAmount === null || !Number.isFinite(commissionAmount))) {
-    redirect(withMarketplaceStatus(currentUrl, "error", "Montant commission manquant. Renseigne un montant ou configure l'offre pro."));
+    redirect(
+      withMarketplaceStatus(
+        withMarketplaceFocus(currentUrl, activationId),
+        "error",
+        "Montant commission manquant. Renseigne un montant ou configure l'offre pro.",
+      ),
+    );
   }
 
   const commissionRuleLabel =
@@ -844,9 +856,21 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   if (upsertError) {
     const raw = String(upsertError.message || "").toLowerCase();
     if (raw.includes("human_affiliate_commission_decisions")) {
-      redirect(withMarketplaceStatus(currentUrl, "error", "Table commissions absente. Exécute la migration SQL du sprint commission."));
+      redirect(
+        withMarketplaceStatus(
+          withMarketplaceFocus(currentUrl, activationId),
+          "error",
+          "Table commissions absente. Exécute la migration SQL du sprint commission.",
+        ),
+      );
     }
-    redirect(withMarketplaceStatus(currentUrl, "error", upsertError.message || "Impossible d'enregistrer la décision commission."));
+    redirect(
+      withMarketplaceStatus(
+        withMarketplaceFocus(currentUrl, activationId),
+        "error",
+        upsertError.message || "Impossible d'enregistrer la décision commission.",
+      ),
+    );
   }
 
   const nextMeta = {
@@ -863,7 +887,13 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   revalidatePath("/admin/humain/affiliation");
   revalidatePath("/admin/humain/marketplace");
   revalidatePath("/admin/humain/privileges");
-  redirect(withMarketplaceStatus(currentUrl, "success", decisionStatus === "approved" ? "Commission validée." : "Commission refusée."));
+  redirect(
+    withMarketplaceStatus(
+      withMarketplaceFocus(currentUrl, activationId),
+      "success",
+      decisionStatus === "approved" ? "Commission validée (ticket mis à jour)." : "Commission refusée (ticket mis à jour).",
+    ),
+  );
 }
 
 export async function adminSendPrivilegeActivationFollowupNowAction(formData: FormData): Promise<void> {
@@ -881,13 +911,13 @@ export async function adminSendPrivilegeActivationFollowupNowAction(formData: Fo
     .eq("id", activationId)
     .maybeSingle();
   if (activationError || !activation) {
-    redirect(withMarketplaceStatus(currentUrl, "error", activationError?.message || "Activation introuvable."));
+    redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", activationError?.message || "Activation introuvable."));
   }
 
   const partnerPhone = normalizePhone(String(activation.partner_phone || ""));
   const ownerMemberId = String(activation.partner_member_id || "").trim();
   if (!partnerPhone || !ownerMemberId) {
-    redirect(withMarketplaceStatus(currentUrl, "error", "Le pro n'a pas de téléphone WhatsApp exploitable."));
+    redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", "Le pro n'a pas de téléphone WhatsApp exploitable."));
   }
 
   const metadata = asMetadata(activation.metadata);
@@ -912,7 +942,7 @@ export async function adminSendPrivilegeActivationFollowupNowAction(formData: Fo
     },
   });
   if (!send.success) {
-    redirect(withMarketplaceStatus(currentUrl, "error", send.error || "Envoi Twilio impossible."));
+    redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", send.error || "Envoi Twilio impossible."));
   }
 
   const nowIso = new Date().toISOString();
@@ -951,5 +981,5 @@ export async function adminSendPrivilegeActivationFollowupNowAction(formData: Fo
 
   revalidatePath("/admin/humain/affiliation");
   revalidatePath("/admin/humain/privileges");
-  redirect(withMarketplaceStatus(currentUrl, "success", "Relance WhatsApp envoyée au pro."));
+  redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "success", "Relance WhatsApp envoyée au pro."));
 }
