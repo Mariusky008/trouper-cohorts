@@ -665,7 +665,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       .eq("status", "accepted")
       .order("created_at", { ascending: false })
       .limit(1000),
-    supabaseAdmin.from("human_marketplace_places").select("id,city,metier,partner_company_name").limit(2000),
+    supabaseAdmin.from("human_marketplace_places").select("id,city,metier").limit(2000),
   ]);
 
   const maybeMissingMessage = [ledgerResult.error, requestsResult.error, legacyRulesResult.error, placeRulesResult.error]
@@ -736,8 +736,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       []);
   const memberById = new Map(members.map((member) => [member.id, member]));
   const acceptedOffers = (acceptedOffersResult.data as AcceptedMarketplaceOfferLite[] | null) || [];
-  const marketplacePlaces =
-    ((placesResult.data as Array<{ id: string; city: string | null; metier: string | null; partner_company_name: string | null }> | null) || []);
+  const marketplacePlaces = ((placesResult.data as Array<{ id: string; city: string | null; metier: string | null }> | null) || []);
   const placeById = new Map(marketplacePlaces.map((place) => [place.id, place]));
   const offerOptionsMap = new Map<string, { id: string; label: string }>();
   acceptedOffers.forEach((offer) => {
@@ -798,7 +797,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
   const rulesFromPlaces = ((placeRulesResult.data as Array<{ id: string; place_id: string; popey_fee_eur: number; updated_at: string }> | null) || [])
     .map((rule) => {
       const place = placeById.get(rule.place_id);
-      const placeLabel = [place?.partner_company_name || "Pro marketplace", place?.metier || "", place?.city || ""]
+      const placeLabel = ["Pro marketplace", place?.metier || "", place?.city || ""]
         .filter(Boolean)
         .join(" · ");
       return {
