@@ -40,6 +40,12 @@ type PlaceRow = {
   claimed_at: string | null;
 };
 
+type OfferRefRow = {
+  place_id: string | null;
+  assigned_member_id?: string | null;
+  metadata?: unknown;
+};
+
 type CobrandOfferRow = {
   id: string;
   city: string;
@@ -254,6 +260,7 @@ export async function GET(request: NextRequest) {
     const refMemberIds = new Set<string>();
     const acceptedLinkedPlaceIds = new Set<string>();
     const acceptedPlaceIdsAll = new Set<string>();
+    let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
       "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
@@ -297,6 +304,34 @@ export async function GET(request: NextRequest) {
       );
       if (linkedPlaceIds.length === 0) {
         // Keep city-wide catalogue visible even when referral code has no linked accepted places yet.
+      }
+    }
+
+    if (isPrivilegeCatalog && hasReferralContext) {
+      const { data: referralOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("place_id,assigned_member_id,metadata")
+        .eq("status", "accepted")
+        .limit(800);
+
+      const rows = (referralOffers as OfferRefRow[] | null) || [];
+      const ranked = rows
+        .map((row) => {
+          const placeId = String(row.place_id || "").trim();
+          const assignedId = String(row.assigned_member_id || "").trim();
+          const metadata =
+            row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+              ? (row.metadata as Record<string, unknown>)
+              : {};
+          const rowRefCode = String(metadata.referral_code || "").trim();
+          const score = Number(assignedId === refId) * 2 + Number(Boolean(refCode) && rowRefCode === refCode);
+          return { placeId, score };
+        })
+        .filter((item) => item.placeId && item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      if (ranked[0]?.placeId) {
+        featuredPlaceId = ranked[0].placeId;
       }
     }
 
@@ -436,6 +471,14 @@ export async function GET(request: NextRequest) {
         );
         const isAcceptedLinkedPlace = acceptedLinkedPlaceIds.has(String(row.id || ""));
         return hasConfiguredIdentity || hasConfiguredOffer || hasConfiguredDetails || isAcceptedLinkedPlace;
+      });
+    }
+    if (featuredPlaceId) {
+      filteredRows.sort((a, b) => {
+        const aFeatured = String(a.id || "") === featuredPlaceId;
+        const bFeatured = String(b.id || "") === featuredPlaceId;
+        if (aFeatured === bFeatured) return 0;
+        return aFeatured ? -1 : 1;
       });
     }
     let places = filteredRows
@@ -651,7 +694,7 @@ export async function GET(request: NextRequest) {
       console.warn("[marketplace/places] cobrand unavailable", cobrandError);
     }
 
-    return NextResponse.json({ places, cities, summary, cobrandOffers });
+    return NextResponse.json({ places, cities, summary, cobrandOffers, featuredPlaceId });
   } catch (error) {
     console.error("[marketplace/places] unexpected", error);
     return NextResponse.json({ error: "Impossible de charger les places marketplace." }, { status: 500 });
