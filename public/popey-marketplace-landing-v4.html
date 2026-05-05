@@ -2456,13 +2456,13 @@ function buildPlacesData() {
       METIERS[sphere.key].forEach((metier) => {
         const key = `${city}|${sphere.key}|${metier}`;
         const h = hashCode(key);
-        const status = h % 100 < 42 ? "sale" : "dispo";
-        const months = 6 + (h % 31);
-        const reco = 20 + (h % 220);
-        const partners = 12 + (h % 75);
-        const conversion = 18 + (h % 36);
-        const ca = status === "sale" ? 900 + (h % 8600) : 0;
-        const value = status === "sale" ? 1300 + Math.round(ca * 0.72 + months * 38 + reco * 6) : 0;
+        const status = "dispo";
+        const months = 0;
+        const reco = 0;
+        const partners = 0;
+        const conversion = 0;
+        const ca = 0;
+        const value = 0;
         places.push({
           id: key,
           city,
@@ -2478,8 +2478,8 @@ function buildPlacesData() {
           conversion,
           ca,
           value,
-          growth: 12 + (h % 220),
-          score: 2 + (h % 4),
+          growth: 0,
+          score: 0,
         });
       });
     });

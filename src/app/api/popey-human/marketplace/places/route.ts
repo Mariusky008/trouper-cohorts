@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateMarketplacePlaces, slugify } from "@/lib/popey-marketplace";
+import {
+  computeMarketplacePlaceValue,
+  generateMarketplacePlaces,
+  MARKETPLACE_VALUE_COUNTER,
+  monthsSince,
+  slugify,
+} from "@/lib/popey-marketplace";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +37,7 @@ type PlaceRow = {
   reciprocity_score: number;
   partners_count: number;
   value_growth_pct: number;
+  claimed_at: string | null;
 };
 
 type CobrandOfferRow = {
@@ -138,6 +145,7 @@ async function seedMarketplaceIfEmpty() {
 }
 
 function toClientPlace(row: PlaceRow) {
+  const normalizedStatus: "sale" | "dispo" = row.status === "dispo" ? "dispo" : "sale";
   const ui = SPHERE_UI[row.sphere_key] || SPHERE_UI.digital;
   return {
     id: row.id,
@@ -157,7 +165,7 @@ function toClientPlace(row: PlaceRow) {
     websiteUrl: row.offer_website_url || null,
     description: row.offer_description || null,
     partnerOfferValueEur: row.partner_offer_value_eur == null ? null : Number(row.partner_offer_value_eur),
-    status: row.status === "sale" ? "sale" : "dispo",
+    status: normalizedStatus,
     months: Number(row.months_active || 0),
     partners: Number(row.partners_count || 0),
     reco: Number(row.recos_per_year || 0),
@@ -248,7 +256,7 @@ export async function GET(request: NextRequest) {
     const acceptedPlaceIdsAll = new Set<string>();
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -330,6 +338,71 @@ export async function GET(request: NextRequest) {
     let filteredRows = rows
       .filter((row) => !isBlockedMetier(row.metier || ""))
       .filter((row) => matchCity(city, row.city, row.city_slug));
+
+    const livePlaceIds = Array.from(
+      new Set(
+        filteredRows
+          .filter((row) => row.status !== "dispo" || Boolean(String(row.claimed_at || "").trim()))
+          .map((row) => String(row.id || "").trim())
+          .filter(Boolean),
+      ),
+    );
+    const acceptedBuyOffersCountByPlace = new Map<string, number>();
+    const activationsCountByPlace = new Map<string, number>();
+
+    if (livePlaceIds.length > 0) {
+      const [acceptedBuyOffersRes, activationsRes] = await Promise.all([
+        supabase
+          .from("human_marketplace_offers")
+          .select("place_id")
+          .eq("status", "accepted")
+          .eq("action_type", "buy_offer")
+          .in("place_id", livePlaceIds)
+          .limit(4000),
+        supabase.from("human_marketplace_landing_activations").select("place_id").in("place_id", livePlaceIds).limit(4000),
+      ]);
+
+      (((acceptedBuyOffersRes.data as Array<{ place_id: string | null }> | null) || []).forEach((row) => {
+        const placeId = String(row.place_id || "").trim();
+        if (!placeId) return;
+        acceptedBuyOffersCountByPlace.set(placeId, (acceptedBuyOffersCountByPlace.get(placeId) || 0) + 1);
+      }));
+
+      (((activationsRes.data as Array<{ place_id: string | null }> | null) || []).forEach((row) => {
+        const placeId = String(row.place_id || "").trim();
+        if (!placeId) return;
+        activationsCountByPlace.set(placeId, (activationsCountByPlace.get(placeId) || 0) + 1);
+      }));
+    }
+
+    filteredRows = filteredRows.map((row) => {
+      const placeId = String(row.id || "").trim();
+      const monthsFromClaim = monthsSince(row.claimed_at);
+      const monthsActive = Math.max(Number(row.months_active || 0), monthsFromClaim);
+      const recosCount = Math.max(Number(row.recos_per_year || 0), activationsCountByPlace.get(placeId) || 0);
+      const offersBoughtCount = acceptedBuyOffersCountByPlace.get(placeId) || 0;
+      const computedValue = computeMarketplacePlaceValue({
+        monthsActive,
+        recosCount,
+        offersBoughtCount,
+        sphereKey: row.sphere_key,
+      });
+      const currentValue = Number(row.list_price_eur || 0);
+      const nextValue = Math.max(currentValue, computedValue);
+      const baselineByMonthsOnly = monthsActive * MARKETPLACE_VALUE_COUNTER.perMonthEur;
+      const growth =
+        monthsActive > 0
+          ? Math.max(0, Math.round((nextValue / Math.max(1, baselineByMonthsOnly) - 1) * 100))
+          : 0;
+
+      return {
+        ...row,
+        months_active: monthsActive,
+        recos_per_year: recosCount,
+        list_price_eur: nextValue,
+        value_growth_pct: growth,
+      };
+    });
     if (isPrivilegeCatalog && hasReferralContext) {
       filteredRows = filteredRows.filter((row) => {
         const placeId = String(row.id || "");

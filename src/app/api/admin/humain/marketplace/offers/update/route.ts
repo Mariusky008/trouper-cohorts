@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeMarketplacePlaceValue } from "@/lib/popey-marketplace";
 
 function withStatus(base: string, status: "success" | "error", message: string) {
   const sep = base.includes("?") ? "&" : "?";
@@ -114,6 +115,10 @@ export async function POST(request: Request) {
       status: placeStatus,
       claimed_at: new Date().toISOString(),
       claimed_by_offer_id: offerId,
+      months_active: 0,
+      recos_per_year: 0,
+      list_price_eur: computeMarketplacePlaceValue({ monthsActive: 0, recosCount: 0, offersBoughtCount: 0 }),
+      value_growth_pct: 0,
       updated_at: new Date().toISOString(),
     };
     if (assignMemberIdRaw) placePatch.owner_member_id = assignMemberIdRaw;

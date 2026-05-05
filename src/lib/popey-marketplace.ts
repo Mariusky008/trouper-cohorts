@@ -18,6 +18,29 @@ export type MarketplacePlace = {
   valueGrowthPct: number;
 };
 
+type MarketplaceValueCounterInput = {
+  monthsActive: number;
+  recosCount: number;
+  offersBoughtCount: number;
+  sphereKey?: string | null;
+};
+
+export const MARKETPLACE_VALUE_COUNTER = {
+  perMonthEur: 75,
+  perRecoEur: 40,
+  perAcceptedBuyOfferEur: 180,
+  consistencyBonusEur: 250,
+  starterFloorWhenActiveEur: 500,
+} as const;
+
+export const MARKETPLACE_SPHERE_VALUE_MULTIPLIER: Record<string, number> = {
+  habitat: 1.35,
+  sante: 1.15,
+  mariage: 1.1,
+  digital: 1.0,
+  finance: 1.25,
+};
+
 const SPHERES: Record<MarketplaceSphereKey, string> = {
   sante: "Sante",
   habitat: "Habitat",
@@ -210,29 +233,18 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function hashCode(value: string): number {
-  let h = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    h = (h << 5) - h + value.charCodeAt(i);
-  }
-  return Math.abs(h);
-}
-
 export function generateMarketplacePlaces(): MarketplacePlace[] {
   const places: MarketplacePlace[] = [];
   CITY_OPTIONS.forEach((city) => {
     (Object.keys(SPHERES) as MarketplaceSphereKey[]).forEach((sphereKey) => {
       METIERS[sphereKey].forEach((metier) => {
-        const key = `${city}|${sphereKey}|${metier}`;
-        const h = hashCode(key);
-        const status = h % 100 < 42 ? "sale" : "dispo";
-        const monthsActive = 6 + (h % 31);
-        const recosPerYear = 20 + (h % 220);
-        const partnersCount = 12 + (h % 75);
-        const conversionRate = 18 + (h % 36);
-        const monthlyCaEur = status === "sale" ? 900 + (h % 8600) : 0;
-        const listPriceEur =
-          status === "sale" ? 1300 + Math.round(monthlyCaEur * 0.72 + monthsActive * 38 + recosPerYear * 6) : null;
+        const status: MarketplacePlace["status"] = "dispo";
+        const monthsActive = 0;
+        const recosPerYear = 0;
+        const partnersCount = 0;
+        const conversionRate = 0;
+        const monthlyCaEur = 0;
+        const listPriceEur = null;
 
         places.push({
           city,
@@ -247,14 +259,47 @@ export function generateMarketplacePlaces(): MarketplacePlace[] {
           recosPerYear,
           conversionRate,
           monthsActive,
-          reciprocityScore: 2 + (h % 4),
+          reciprocityScore: 0,
           partnersCount,
-          valueGrowthPct: 12 + (h % 220),
+          valueGrowthPct: 0,
         });
       });
     });
   });
   return places;
+}
+
+export function computeMarketplacePlaceValue(input: MarketplaceValueCounterInput): number {
+  const months = Math.max(0, Math.floor(Number(input.monthsActive || 0)));
+  const recos = Math.max(0, Math.floor(Number(input.recosCount || 0)));
+  const offersBought = Math.max(0, Math.floor(Number(input.offersBoughtCount || 0)));
+  const sphereKey = String(input.sphereKey || "").trim().toLowerCase();
+  const sphereMultiplier = MARKETPLACE_SPHERE_VALUE_MULTIPLIER[sphereKey] || 1;
+  const hasAnyActivity = months > 0 || recos > 0 || offersBought > 0;
+  if (!hasAnyActivity) return 0;
+
+  const baseValue =
+    months * MARKETPLACE_VALUE_COUNTER.perMonthEur +
+    recos * MARKETPLACE_VALUE_COUNTER.perRecoEur +
+    offersBought * MARKETPLACE_VALUE_COUNTER.perAcceptedBuyOfferEur;
+  const consistencyBonus =
+    months >= 3 && recos >= 3 ? MARKETPLACE_VALUE_COUNTER.consistencyBonusEur : 0;
+  const rawValue = (baseValue + consistencyBonus) * sphereMultiplier;
+
+  return Math.max(
+    MARKETPLACE_VALUE_COUNTER.starterFloorWhenActiveEur,
+    Math.round(rawValue),
+  );
+}
+
+export function monthsSince(isoDate: string | null | undefined): number {
+  const raw = String(isoDate || "").trim();
+  if (!raw) return 0;
+  const parsed = Date.parse(raw);
+  if (!Number.isFinite(parsed)) return 0;
+  const elapsedMs = Date.now() - parsed;
+  if (elapsedMs <= 0) return 0;
+  return Math.floor(elapsedMs / (1000 * 60 * 60 * 24 * 30));
 }
 
 export function getMarketplaceCities(): string[] {
