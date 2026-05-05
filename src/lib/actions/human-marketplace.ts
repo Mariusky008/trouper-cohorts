@@ -853,24 +853,20 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   const { error: upsertError } = await supabaseAdmin
     .from("human_affiliate_commission_decisions")
     .upsert(upsertPayload, { onConflict: "activation_id" });
+  let tableMissing = false;
   if (upsertError) {
     const raw = String(upsertError.message || "").toLowerCase();
     if (raw.includes("human_affiliate_commission_decisions")) {
+      tableMissing = true;
+    } else {
       redirect(
         withMarketplaceStatus(
           withMarketplaceFocus(currentUrl, activationId),
           "error",
-          "Table commissions absente. Exécute la migration SQL du sprint commission.",
+          upsertError.message || "Impossible d'enregistrer la décision commission.",
         ),
       );
     }
-    redirect(
-      withMarketplaceStatus(
-        withMarketplaceFocus(currentUrl, activationId),
-        "error",
-        upsertError.message || "Impossible d'enregistrer la décision commission.",
-      ),
-    );
   }
 
   const nextMeta = {
@@ -891,7 +887,13 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     withMarketplaceStatus(
       withMarketplaceFocus(currentUrl, activationId),
       "success",
-      decisionStatus === "approved" ? "Commission validée (ticket mis à jour)." : "Commission refusée (ticket mis à jour).",
+      tableMissing
+        ? decisionStatus === "approved"
+          ? "Commission validée (mode dégradé: migration SQL commission à exécuter)."
+          : "Commission refusée (mode dégradé: migration SQL commission à exécuter)."
+        : decisionStatus === "approved"
+          ? "Commission validée (ticket mis à jour)."
+          : "Commission refusée (ticket mis à jour).",
     ),
   );
 }

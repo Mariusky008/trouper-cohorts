@@ -382,7 +382,7 @@ export default async function AdminHumainAffiliationPage({
         ) : null}
         {decisionsLoadError ? (
           <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            Décisions commission indisponibles: {decisionsLoadError}. Exécute la migration SQL commission.
+            Historique commission avancé indisponible: {decisionsLoadError}. Les boutons Valider/Refuser restent actifs (mode dégradé).
           </p>
         ) : null}
 
@@ -399,6 +399,11 @@ export default async function AdminHumainAffiliationPage({
           const replyBadge = webhookBadge(lastReplyClassif);
           const ticketCode = readTicketCode(ticket.metadata, ticket.id);
           const decision = decisionByActivationId.get(ticket.id) || null;
+          const decisionStatusFromMeta = readMetaText(ticket.metadata, "commission_decision_status");
+          const decisionAmountFromMeta = readMetaText(ticket.metadata, "commission_amount_eur");
+          const decisionDecidedAtFromMeta = readMetaText(ticket.metadata, "commission_decided_at");
+          const decisionStatusEffective = String(decision?.decision_status || decisionStatusFromMeta || "pending");
+          const decisionDecidedAt = decision?.decided_at || decisionDecidedAtFromMeta;
           const scoutId = readMetaText(ticket.metadata, "scout_id");
           const scout = scoutId ? scoutById.get(scoutId) || null : null;
           const refMember = looksLikeUuid(ticket.referrer_id) ? memberById.get(ticket.referrer_id) || null : null;
@@ -420,7 +425,7 @@ export default async function AdminHumainAffiliationPage({
           const commissionPrefill =
             decision?.commission_amount_eur !== null && decision?.commission_amount_eur !== undefined
               ? String(decision.commission_amount_eur)
-              : readMetaText(ticket.metadata, "commission_amount_eur");
+              : decisionAmountFromMeta;
           const isFocused = focusedTicketId === ticket.id;
           return (
             <article
@@ -441,17 +446,17 @@ export default async function AdminHumainAffiliationPage({
                     Ville: {ticket.city} · Créé le {toDate(ticket.created_at)}
                   </p>
                 </div>
-                {decision?.decision_status ? (
+                {decisionStatusEffective ? (
                   <span
                     className={`inline-flex h-7 items-center rounded border px-2 text-[11px] font-black uppercase tracking-wide ${
-                      decision.decision_status === "approved"
+                      decisionStatusEffective === "approved"
                         ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                        : decision.decision_status === "rejected"
+                        : decisionStatusEffective === "rejected"
                           ? "border-rose-300 bg-rose-100 text-rose-800"
                           : "border-slate-300 bg-slate-100 text-slate-700"
                     }`}
                   >
-                    {commissionDecisionLabel(String(decision.decision_status))}
+                    {commissionDecisionLabel(decisionStatusEffective)}
                   </span>
                 ) : null}
               </div>
@@ -476,20 +481,12 @@ export default async function AdminHumainAffiliationPage({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] font-black uppercase tracking-wide text-emerald-800">Décision commission</p>
                   <span className="text-[11px] text-emerald-900">
-                    État actuel: <span className="font-black">{commissionDecisionLabel(String(decision?.decision_status || "pending"))}</span>
+                    État actuel: <span className="font-black">{commissionDecisionLabel(decisionStatusEffective)}</span>
                   </span>
                 </div>
                 <form action={adminDecideAffiliateCommissionAction} className="mt-2 grid gap-2 md:grid-cols-4">
                   <input type="hidden" name="current_url" value={currentUrlForForms} />
                   <input type="hidden" name="activation_id" value={ticket.id} />
-                  <select
-                    name="decision_status"
-                    defaultValue={String(decision?.decision_status || "approved")}
-                    className="h-9 rounded border bg-white px-2 text-xs"
-                  >
-                    <option value="approved">Commission validée</option>
-                    <option value="rejected">Commission refusée</option>
-                  </select>
                   <input
                     name="commission_amount_eur"
                     defaultValue={commissionPrefill}
@@ -502,9 +499,22 @@ export default async function AdminHumainAffiliationPage({
                     placeholder="Note décision commission"
                     className="h-9 rounded border bg-white px-2 text-xs md:col-span-2"
                   />
-                  <button className="h-9 rounded border border-emerald-300 bg-white px-3 text-[11px] font-black uppercase tracking-wide text-emerald-800">
-                    Enregistrer la décision commission
-                  </button>
+                  <div className="md:col-span-4 flex flex-wrap gap-2">
+                    <button
+                      name="decision_status"
+                      value="approved"
+                      className="h-9 rounded border border-emerald-300 bg-emerald-100 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-800"
+                    >
+                      ✅ Valider commission
+                    </button>
+                    <button
+                      name="decision_status"
+                      value="rejected"
+                      className="h-9 rounded border border-rose-300 bg-rose-100 px-3 text-[11px] font-black uppercase tracking-wide text-rose-800"
+                    >
+                      ⛔ Refuser commission
+                    </button>
+                  </div>
                 </form>
               </div>
               <form action={adminUpdatePrivilegeActivationStatusAction} className="mt-2 grid gap-2 md:grid-cols-4">
@@ -542,8 +552,8 @@ export default async function AdminHumainAffiliationPage({
                   </button>
                 </form>
               </div>
-              {decision?.decided_at ? (
-                <p className="mt-2 text-[11px] text-black/55">Dernière décision commission: {toDate(decision.decided_at)}</p>
+              {decisionDecidedAt ? (
+                <p className="mt-2 text-[11px] text-black/55">Dernière décision commission: {toDate(decisionDecidedAt)}</p>
               ) : null}
             </article>
           );
