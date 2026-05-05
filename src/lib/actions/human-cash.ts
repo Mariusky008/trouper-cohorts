@@ -110,6 +110,13 @@ type AdminProRule = {
   updatedAt: string;
 };
 
+type AcceptedMarketplaceOfferLite = {
+  id: string;
+  full_name: string | null;
+  assigned_member_id: string | null;
+  place: { owner_member_id: string | null } | null;
+};
+
 function firstDayOfCurrentMonthIso() {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -592,6 +599,16 @@ function labelFromMember(
   return [full || fallback, metier || null].filter(Boolean).join(" · ");
 }
 
+function normalizePersonName(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function getAdminHumanCommissions(periodMonth?: string) {
   const admin = await requireAdminUser();
   if ("error" in admin) {
@@ -614,7 +631,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
 
   const monthStart = sanitizePeriodMonth(periodMonth);
   const supabaseAdmin = createAdminClient();
-  const [ledgerResult, requestsResult, rulesResult, membersResult] = await Promise.all([
+  const [ledgerResult, requestsResult, rulesResult, membersResult, acceptedOffersResult] = await Promise.all([
     supabaseAdmin
       .from("human_marketplace_commission_ledger")
       .select(
@@ -635,6 +652,12 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       .order("updated_at", { ascending: false })
       .limit(400),
     supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name,metier").limit(2500),
+    supabaseAdmin
+      .from("human_marketplace_offers")
+      .select("id,full_name,assigned_member_id,place:human_marketplace_places(owner_member_id)")
+      .eq("status", "accepted")
+      .order("created_at", { ascending: false })
+      .limit(1000),
   ]);
 
   const maybeMissingMessage = [ledgerResult.error, requestsResult.error, rulesResult.error]
@@ -664,13 +687,14 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       },
     };
   }
-  if (ledgerResult.error || requestsResult.error || rulesResult.error || membersResult.error) {
+  if (ledgerResult.error || requestsResult.error || rulesResult.error || membersResult.error || acceptedOffersResult.error) {
     return {
       error:
         ledgerResult.error?.message ||
         requestsResult.error?.message ||
         rulesResult.error?.message ||
         membersResult.error?.message ||
+        acceptedOffersResult.error?.message ||
         "Chargement commissions impossible.",
       periodMonth: monthStart,
       ledger: [] as AdminLedgerLine[],
@@ -691,7 +715,31 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
     ((membersResult.data as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) ||
       []);
   const memberById = new Map(members.map((member) => [member.id, member]));
-  const memberOptions = members
+  const memberNameToId = new Map<string, string>();
+  members.forEach((member) => {
+    const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+    const key = normalizePersonName(full);
+    if (key && !memberNameToId.has(key)) memberNameToId.set(key, member.id);
+  });
+  const acceptedOffers = (acceptedOffersResult.data as AcceptedMarketplaceOfferLite[] | null) || [];
+  const acceptedMemberIds = new Set<string>();
+  acceptedOffers.forEach((offer) => {
+    const assigned = String(offer.assigned_member_id || "").trim();
+    const owner = String(offer.place?.owner_member_id || "").trim();
+    if (assigned) {
+      acceptedMemberIds.add(assigned);
+      return;
+    }
+    if (owner) {
+      acceptedMemberIds.add(owner);
+      return;
+    }
+    const byName = memberNameToId.get(normalizePersonName(String(offer.full_name || ""))) || "";
+    if (byName) acceptedMemberIds.add(byName);
+  });
+  const acceptedMembers = members.filter((member) => acceptedMemberIds.has(member.id));
+  const membersForRules = acceptedMembers.length > 0 ? acceptedMembers : members;
+  const memberOptions = membersForRules
     .map((member) => ({
       id: member.id,
       label: labelFromMember(member, "Membre"),

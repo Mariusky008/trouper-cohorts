@@ -29,6 +29,9 @@ export default async function AdminLayout({
             <a href="/admin/humain/affiliation" className="hover:underline">
               Affiliation
             </a>
+            <a href="/admin/humain/commissions" className="hover:underline">
+              Commissions
+            </a>
           </nav>
         </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
