@@ -838,8 +838,17 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     String(metadata.commission_rule_label || "").trim() ||
     (fallbackAmount ? `Règle pro (valeur configurée): ${fallbackAmount} EUR` : "Règle pro non renseignée");
 
+  const placeId = String((activation.place as { id?: string | null } | null)?.id || "").trim() || null;
   let popeyFeeEur = 0;
-  if (proMemberId) {
+  if (placeId) {
+    const { data: placeRule } = await supabaseAdmin
+      .from("human_marketplace_place_commission_rules")
+      .select("popey_fee_eur")
+      .eq("place_id", placeId)
+      .maybeSingle();
+    const parsedRule = Number(placeRule?.popey_fee_eur || 0);
+    popeyFeeEur = Number.isFinite(parsedRule) && parsedRule >= 0 ? Math.round(parsedRule * 100) / 100 : 0;
+  } else if (proMemberId) {
     const { data: popeyRule } = await supabaseAdmin
       .from("human_marketplace_pro_commission_rules")
       .select("popey_fee_eur")

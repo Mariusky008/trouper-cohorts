@@ -12,6 +12,7 @@ type MarketplaceRequestKind = "apporteur_payout" | "pro_settlement";
 type MarketplaceRequestStatus = "pending" | "processed" | "rejected";
 type MarketplacePaymentStatus = "pending" | "requested" | "paid" | "cancelled";
 type LedgerRowKind = "apporteur" | "popey";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type HumanCashEvent = {
   id: string;
@@ -113,8 +114,13 @@ type AdminProRule = {
 type AcceptedMarketplaceOfferLite = {
   id: string;
   full_name: string | null;
+  metier: string | null;
+  city: string | null;
   assigned_member_id: string | null;
-  place: { owner_member_id: string | null } | Array<{ owner_member_id: string | null }> | null;
+  place:
+    | { id?: string | null; owner_member_id: string | null; metier?: string | null; city?: string | null }
+    | Array<{ id?: string | null; owner_member_id: string | null; metier?: string | null; city?: string | null }>
+    | null;
 };
 
 function firstDayOfCurrentMonthIso() {
@@ -599,14 +605,8 @@ function labelFromMember(
   return [full || fallback, metier || null].filter(Boolean).join(" · ");
 }
 
-function normalizePersonName(value: string) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function offerPlaceValue(offer: AcceptedMarketplaceOfferLite) {
+  return Array.isArray(offer.place) ? offer.place[0] || null : offer.place;
 }
 
 export async function getAdminHumanCommissions(periodMonth?: string) {
@@ -631,7 +631,7 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
 
   const monthStart = sanitizePeriodMonth(periodMonth);
   const supabaseAdmin = createAdminClient();
-  const [ledgerResult, requestsResult, rulesResult, membersResult, acceptedOffersResult] = await Promise.all([
+  const [ledgerResult, requestsResult, legacyRulesResult, placeRulesResult, membersResult, acceptedOffersResult, placesResult] = await Promise.all([
     supabaseAdmin
       .from("human_marketplace_commission_ledger")
       .select(
@@ -651,16 +651,24 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       .select("id,pro_member_id,popey_fee_eur,updated_at")
       .order("updated_at", { ascending: false })
       .limit(400),
+    supabaseAdmin
+      .from("human_marketplace_place_commission_rules")
+      .select("id,place_id,popey_fee_eur,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(400),
     supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name,metier").limit(2500),
     supabaseAdmin
       .from("human_marketplace_offers")
-      .select("id,full_name,assigned_member_id,place:human_marketplace_places!human_marketplace_offers_place_id_fkey(owner_member_id)")
+      .select(
+        "id,full_name,metier,city,assigned_member_id,place:human_marketplace_places!human_marketplace_offers_place_id_fkey(id,owner_member_id,metier,city)",
+      )
       .eq("status", "accepted")
       .order("created_at", { ascending: false })
       .limit(1000),
+    supabaseAdmin.from("human_marketplace_places").select("id,city,metier,partner_company_name").limit(2000),
   ]);
 
-  const maybeMissingMessage = [ledgerResult.error, requestsResult.error, rulesResult.error]
+  const maybeMissingMessage = [ledgerResult.error, requestsResult.error, legacyRulesResult.error, placeRulesResult.error]
     .filter(Boolean)
     .map((error) => String(error?.message || "").toLowerCase())
     .find(
@@ -668,11 +676,13 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
         message.includes("human_marketplace_commission_ledger") ||
         message.includes("human_marketplace_commission_requests") ||
         message.includes("human_marketplace_pro_commission_rules") ||
+        message.includes("human_marketplace_place_commission_rules") ||
         message.includes("does not exist"),
     );
   if (maybeMissingMessage) {
     return {
-      error: "Tables Sprint 1 commissions indisponibles. Exécute la migration SQL `20260504202000_create_marketplace_commission_ledger_v1.sql`.",
+      error:
+        "Tables commissions indisponibles. Exécute les migrations SQL `20260504202000_create_marketplace_commission_ledger_v1.sql` puis `20260505103000_add_marketplace_place_commission_rules.sql`.",
       periodMonth: monthStart,
       ledger: [] as AdminLedgerLine[],
       requests: [] as AdminRequestLine[],
@@ -687,14 +697,24 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
       },
     };
   }
-  if (ledgerResult.error || requestsResult.error || rulesResult.error || membersResult.error || acceptedOffersResult.error) {
+  if (
+    ledgerResult.error ||
+    requestsResult.error ||
+    legacyRulesResult.error ||
+    placeRulesResult.error ||
+    membersResult.error ||
+    acceptedOffersResult.error ||
+    placesResult.error
+  ) {
     return {
       error:
         ledgerResult.error?.message ||
         requestsResult.error?.message ||
-        rulesResult.error?.message ||
+        legacyRulesResult.error?.message ||
+        placeRulesResult.error?.message ||
         membersResult.error?.message ||
         acceptedOffersResult.error?.message ||
+        placesResult.error?.message ||
         "Chargement commissions impossible.",
       periodMonth: monthStart,
       ledger: [] as AdminLedgerLine[],
@@ -715,37 +735,28 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
     ((membersResult.data as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null; metier: string | null }> | null) ||
       []);
   const memberById = new Map(members.map((member) => [member.id, member]));
-  const memberNameToId = new Map<string, string>();
-  members.forEach((member) => {
-    const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
-    const key = normalizePersonName(full);
-    if (key && !memberNameToId.has(key)) memberNameToId.set(key, member.id);
-  });
   const acceptedOffers = (acceptedOffersResult.data as AcceptedMarketplaceOfferLite[] | null) || [];
-  const acceptedMemberIds = new Set<string>();
+  const marketplacePlaces =
+    ((placesResult.data as Array<{ id: string; city: string | null; metier: string | null; partner_company_name: string | null }> | null) || []);
+  const placeById = new Map(marketplacePlaces.map((place) => [place.id, place]));
+  const offerOptionsMap = new Map<string, { id: string; label: string }>();
   acceptedOffers.forEach((offer) => {
-    const assigned = String(offer.assigned_member_id || "").trim();
-    const placeValue = Array.isArray(offer.place) ? offer.place[0] : offer.place;
-    const owner = String(placeValue?.owner_member_id || "").trim();
-    if (assigned) {
-      acceptedMemberIds.add(assigned);
+    const placeValue = offerPlaceValue(offer);
+    const placeId = String(placeValue?.id || "").trim();
+    const proName = String(offer.full_name || "").trim() || "Pro accepté";
+    const metier = String(placeValue?.metier || offer.metier || "").trim();
+    const city = String(placeValue?.city || offer.city || "").trim();
+    if (placeId) {
+      const label = [proName, metier, city].filter(Boolean).join(" · ");
+      if (!offerOptionsMap.has(`place:${placeId}`)) {
+        offerOptionsMap.set(`place:${placeId}`, { id: `place:${placeId}`, label });
+      }
       return;
     }
-    if (owner) {
-      acceptedMemberIds.add(owner);
-      return;
-    }
-    const byName = memberNameToId.get(normalizePersonName(String(offer.full_name || ""))) || "";
-    if (byName) acceptedMemberIds.add(byName);
+    const fallbackLabel = [proName, metier, city, "offre sans place"].filter(Boolean).join(" · ");
+    offerOptionsMap.set(`offer:${offer.id}`, { id: `offer:${offer.id}`, label: fallbackLabel });
   });
-  const acceptedMembers = members.filter((member) => acceptedMemberIds.has(member.id));
-  const membersForRules = acceptedMembers.length > 0 ? acceptedMembers : members;
-  const memberOptions = membersForRules
-    .map((member) => ({
-      id: member.id,
-      label: labelFromMember(member, "Membre"),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  const memberOptions = Array.from(offerOptionsMap.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"));
 
   const ledgerRows = ((ledgerResult.data as MarketplaceLedgerRow[] | null) || []).map((row) => {
     const payerMember = row.payer_member_id ? memberById.get(row.payer_member_id) : undefined;
@@ -784,15 +795,31 @@ export async function getAdminHumanCommissions(periodMonth?: string) {
     createdAt: request.created_at,
     processedAt: request.processed_at,
   }));
-  const rules = ((rulesResult.data as Array<{ id: string; pro_member_id: string; popey_fee_eur: number; updated_at: string }> | null) || []).map(
+  const rulesFromPlaces = ((placeRulesResult.data as Array<{ id: string; place_id: string; popey_fee_eur: number; updated_at: string }> | null) || [])
+    .map((rule) => {
+      const place = placeById.get(rule.place_id);
+      const placeLabel = [place?.partner_company_name || "Pro marketplace", place?.metier || "", place?.city || ""]
+        .filter(Boolean)
+        .join(" · ");
+      return {
+        id: rule.id,
+        proMemberId: `place:${rule.place_id}`,
+        proLabel: placeLabel || `Place ${rule.place_id}`,
+        popeyFeeEur: asMoney(rule.popey_fee_eur),
+        updatedAt: rule.updated_at,
+      } as AdminProRule;
+    })
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const rulesLegacy = ((legacyRulesResult.data as Array<{ id: string; pro_member_id: string; popey_fee_eur: number; updated_at: string }> | null) || []).map(
     (rule) => ({
       id: rule.id,
-      proMemberId: rule.pro_member_id,
-      proLabel: labelFromMember(memberById.get(rule.pro_member_id), rule.pro_member_id),
+      proMemberId: `member:${rule.pro_member_id}`,
+      proLabel: `${labelFromMember(memberById.get(rule.pro_member_id), rule.pro_member_id)} (legacy membre)`,
       popeyFeeEur: asMoney(rule.popey_fee_eur),
       updatedAt: rule.updated_at,
     }),
   );
+  const rules = [...rulesFromPlaces, ...rulesLegacy];
 
   const apporteurPendingRows = ledgerRows.filter((row) => row.rowKind === "apporteur" && row.paymentStatus === "pending");
   const apporteurRequestedRows = ledgerRows.filter((row) => row.rowKind === "apporteur" && row.paymentStatus === "requested");
@@ -867,22 +894,79 @@ export async function adminSetMarketplaceProCommissionRuleAction(formData: FormD
     redirect(withCommissionStatus(currentUrl, "error", admin.error || "Action impossible."));
   }
 
-  const proMemberId = String(formData.get("pro_member_id") || "").trim();
+  const proMemberRaw = String(formData.get("pro_member_id") || "").trim();
   const feeRaw = String(formData.get("popey_fee_eur") || "").trim().replace(",", ".");
   const fee = Number(feeRaw);
-  if (!proMemberId) redirect(withCommissionStatus(currentUrl, "error", "Membre pro manquant."));
+  if (!proMemberRaw) redirect(withCommissionStatus(currentUrl, "error", "Pro marketplace manquant."));
   if (!Number.isFinite(fee) || fee < 0) redirect(withCommissionStatus(currentUrl, "error", "Montant Popey invalide."));
 
   const supabaseAdmin = createAdminClient();
+  let placeId = "";
+  if (proMemberRaw.startsWith("place:")) {
+    placeId = proMemberRaw.replace(/^place:/, "").trim();
+  }
+  if (proMemberRaw.startsWith("offer:")) {
+    const offerId = proMemberRaw.replace(/^offer:/, "").trim();
+    const { data: offer } = await supabaseAdmin
+      .from("human_marketplace_offers")
+      .select("id,place_id,status")
+      .eq("id", offerId)
+      .maybeSingle();
+    if (!offer?.id) {
+      redirect(withCommissionStatus(currentUrl, "error", "Offre ACCEPTED introuvable."));
+    }
+    if (String(offer.status || "").toLowerCase() !== "accepted") {
+      redirect(withCommissionStatus(currentUrl, "error", "Sélectionne un pro marketplace ACCEPTED."));
+    }
+    placeId = String(offer.place_id || "").trim();
+  }
+  if (!placeId && proMemberRaw.startsWith("member:")) {
+    const legacyMemberId = proMemberRaw.replace(/^member:/, "").trim();
+    const { error: legacyError } = await supabaseAdmin
+      .from("human_marketplace_pro_commission_rules")
+      .upsert(
+        {
+          pro_member_id: legacyMemberId,
+          popey_fee_eur: asMoney(fee),
+          updated_by_user_id: admin.user.id,
+        },
+        { onConflict: "pro_member_id" },
+      );
+    if (legacyError) redirect(withCommissionStatus(currentUrl, "error", legacyError.message || "Mise à jour impossible."));
+    revalidatePath("/admin/humain/commissions");
+    revalidatePath("/admin/humain/affiliation");
+    redirect(withCommissionStatus(currentUrl, "success", "Commission Popey fixe enregistrée (legacy membre)."));
+  }
+  if (!placeId && UUID_RE.test(proMemberRaw)) {
+    // Compatibilité ancienne UI (member id brut).
+    const { error: legacyError } = await supabaseAdmin
+      .from("human_marketplace_pro_commission_rules")
+      .upsert(
+        {
+          pro_member_id: proMemberRaw,
+          popey_fee_eur: asMoney(fee),
+          updated_by_user_id: admin.user.id,
+        },
+        { onConflict: "pro_member_id" },
+      );
+    if (legacyError) redirect(withCommissionStatus(currentUrl, "error", legacyError.message || "Mise à jour impossible."));
+    revalidatePath("/admin/humain/commissions");
+    revalidatePath("/admin/humain/affiliation");
+    redirect(withCommissionStatus(currentUrl, "success", "Commission Popey fixe enregistrée (legacy membre)."));
+  }
+  if (!placeId) {
+    redirect(withCommissionStatus(currentUrl, "error", "Pro marketplace sans place. Configure d'abord l'offre."));
+  }
+
   const { error } = await supabaseAdmin
-    .from("human_marketplace_pro_commission_rules")
+    .from("human_marketplace_place_commission_rules")
     .upsert(
       {
-        pro_member_id: proMemberId,
+        place_id: placeId,
         popey_fee_eur: asMoney(fee),
         updated_by_user_id: admin.user.id,
       },
-      { onConflict: "pro_member_id" },
+      { onConflict: "place_id" },
     );
   if (error) redirect(withCommissionStatus(currentUrl, "error", error.message || "Mise à jour impossible."));
 

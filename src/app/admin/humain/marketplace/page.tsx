@@ -437,10 +437,8 @@ export default async function AdminHumainMarketplacePage({
                               </p>
                             );
                           })()}
-                          {offer.status === "accepted" && !offer.assigned_member_id && !offer.place?.owner_member_id ? (
-                            <p className="text-xs text-amber-700">
-                              Astuce: attribue un membre pour obtenir un lien strictement stable via `ref_id`.
-                            </p>
+                          {offer.status === "accepted" ? (
+                            <p className="text-xs text-amber-700">Le pro accepté reste piloté ici sans attribution membre manuelle.</p>
                           ) : null}
                           {offer.requester_ip ? <p className="text-xs text-black/60">IP: {offer.requester_ip}</p> : null}
                           <p className="text-xs text-black/70">Montant: {offer.offer_amount_eur ? euros(offer.offer_amount_eur) : "—"}</p>
@@ -468,18 +466,6 @@ export default async function AdminHumainMarketplacePage({
                           <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2">
                             <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                             <input type="hidden" name="offer_id" value={offer.id} />
-                            <select
-                              name="assign_member_id"
-                              defaultValue={offer.assigned_member_id || ""}
-                              className="h-9 rounded border bg-background px-2 text-xs"
-                            >
-                              <option value="">Attribuer membre (optionnel)</option>
-                              {snapshot.members.map((member) => (
-                                <option key={member.id} value={member.id}>
-                                  {member.label}
-                                </option>
-                              ))}
-                            </select>
                             <select name="next_status" defaultValue={offer.status} className="h-9 rounded border bg-background px-2 text-xs">
                               <option value="pending">pending</option>
                               <option value="reviewing">reviewing</option>
