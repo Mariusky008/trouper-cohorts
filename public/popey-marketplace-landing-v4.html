@@ -260,6 +260,7 @@ nav {
   transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
 }
 .inscription-preview-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(8,10,15,.12); border-color: rgba(0,0,0,.14); }
+.inscription-right-stack { display: grid; gap: 12px; }
 .ipc-head {
   padding: 15px 16px;
   border-bottom: 1px solid var(--border);
@@ -310,6 +311,100 @@ nav {
 .ipc-meta-item:hover { transform: translateY(-2px); box-shadow: 0 10px 16px rgba(8,10,15,.08); border-color: rgba(0,0,0,.14); }
 .ipc-meta-label { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; }
 .ipc-meta-value { margin-top: 5px; font-size: 17px; font-weight: 900; color: var(--ink); letter-spacing: -.01em; }
+
+.inscription-availability-card {
+  border: 1px solid rgba(0,0,0,.09);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(8,10,15,.08);
+}
+.iac-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.iac-title { font-size: 28px; font-weight: 900; line-height: .95; letter-spacing: -.02em; color: var(--ink); }
+.iac-sub { margin-top: 5px; font-size: 12px; color: var(--t2); }
+.iac-sphere {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,200,150,.28);
+  background: rgba(0,200,150,.09);
+  color: var(--teal-d);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.iac-price-row {
+  margin: 12px 14px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--paper);
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.iac-price-main { font-family: var(--fi); font-size: 54px; line-height: .9; color: var(--ink); }
+.iac-price-sub { margin-top: 5px; font-size: 12px; color: var(--t3); font-weight: 700; }
+.iac-j0 { text-align: right; font-size: 11px; color: var(--t3); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.iac-j0 strong { display: block; margin-top: 3px; color: var(--ink); font-size: 19px; letter-spacing: -.01em; text-transform: none; }
+.iac-metrics {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.iac-metric { text-align: center; padding: 11px 8px; border-right: 1px solid var(--border); }
+.iac-metric:last-child { border-right: none; }
+.iac-metric-val { font-family: var(--fi); font-size: 31px; color: var(--ink); line-height: .95; }
+.iac-metric-lbl { margin-top: 4px; font-size: 10px; font-weight: 800; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; }
+.iac-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.iac-status-lbl { font-size: 14px; font-weight: 700; color: var(--ink); }
+.iac-status-chip {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--teal-d);
+}
+.iac-status-chip.sale { color: #A06A00; }
+.iac-actions { display: flex; padding: 12px 14px 14px; gap: 8px; }
+.iac-action-btn {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+.iac-action-btn.sale { background: linear-gradient(90deg,#A06A00,#C07800); }
+.iac-like-btn {
+  width: 48px;
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--t2);
+  font-size: 20px;
+}
 
 .is-preview-updating .ipc-val,
 .is-preview-updating .ipc-meta-value {
@@ -823,6 +918,9 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
   .places-grid { grid-template-columns:1fr; }
   .inscription-controls { grid-template-columns:1fr; }
   .ipc-grid,.ipc-meta { grid-template-columns:1fr; }
+  .iac-title { font-size: 24px; }
+  .iac-price-main { font-size: 42px; }
+  .iac-metric-val { font-size: 26px; }
 }
 
 /* Animations */
@@ -892,39 +990,79 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
         <button class="btn-primary" type="button" onclick="openSignupFromPreview()">Reserver ma place →</button>
       </div>
     </div>
-    <div class="inscription-preview-card">
-      <div class="ipc-head">
-        <div>
-          <div class="ipc-title" id="previewMetier">Metier</div>
-          <div class="ipc-sub" id="previewVille">Ville</div>
+    <div class="inscription-right-stack">
+      <div class="inscription-preview-card">
+        <div class="ipc-head">
+          <div>
+            <div class="ipc-title" id="previewMetier">Metier</div>
+            <div class="ipc-sub" id="previewVille">Ville</div>
+          </div>
+          <span class="ipc-badge" id="previewStatut">Projection 3 ans</span>
         </div>
-        <span class="ipc-badge" id="previewStatut">Projection 3 ans</span>
+        <div class="ipc-grid">
+          <div class="ipc-cell">
+            <div class="ipc-val" id="previewYear1">0€</div>
+            <div class="ipc-lbl">Annee 1</div>
+          </div>
+          <div class="ipc-cell">
+            <div class="ipc-val" id="previewYear2">0€</div>
+            <div class="ipc-lbl">Annee 2</div>
+          </div>
+          <div class="ipc-cell">
+            <div class="ipc-val" id="previewYear3">0€</div>
+            <div class="ipc-lbl">Annee 3</div>
+          </div>
+        </div>
+        <div class="ipc-note" id="previewNote">
+          Potentiel de valorisation base sur la dynamique reseau locale et la recursivite des recommandations.
+        </div>
+        <div class="ipc-meta">
+          <div class="ipc-meta-item">
+            <div class="ipc-meta-label">Valeur cumulee 3 ans</div>
+            <div class="ipc-meta-value" id="previewTotal">0€</div>
+          </div>
+          <div class="ipc-meta-item">
+            <div class="ipc-meta-label">Gain potentiel</div>
+            <div class="ipc-meta-value" id="previewGain">0€</div>
+          </div>
+        </div>
       </div>
-      <div class="ipc-grid">
-        <div class="ipc-cell">
-          <div class="ipc-val" id="previewYear1">0€</div>
-          <div class="ipc-lbl">Annee 1</div>
+      <div class="inscription-availability-card">
+        <div class="iac-head">
+          <div>
+            <div class="iac-title" id="previewAvailMetier">Metier</div>
+            <div class="iac-sub" id="previewAvailVille">📍 Ville · 1 place unique</div>
+            <span class="iac-sphere" id="previewAvailSphere">🌿 Sphere</span>
+          </div>
         </div>
-        <div class="ipc-cell">
-          <div class="ipc-val" id="previewYear2">0€</div>
-          <div class="ipc-lbl">Annee 2</div>
+        <div class="iac-price-row">
+          <div>
+            <div class="iac-price-main" id="previewAvailPriceMain">Gratuit</div>
+            <div class="iac-price-sub" id="previewAvailPriceSub">0€ le 1er mois · puis 149€/mois</div>
+          </div>
+          <div class="iac-j0">Valeur J0<strong id="previewAvailJ0">a construire</strong></div>
         </div>
-        <div class="ipc-cell">
-          <div class="ipc-val" id="previewYear3">0€</div>
-          <div class="ipc-lbl">Annee 3</div>
+        <div class="iac-metrics">
+          <div class="iac-metric">
+            <div class="iac-metric-val" id="previewAvailPartners">0</div>
+            <div class="iac-metric-lbl">Partenaires</div>
+          </div>
+          <div class="iac-metric">
+            <div class="iac-metric-val" id="previewAvailRecos">0</div>
+            <div class="iac-metric-lbl">Recos / an</div>
+          </div>
+          <div class="iac-metric">
+            <div class="iac-metric-val" id="previewAvailCa">—</div>
+            <div class="iac-metric-lbl">CA / mois</div>
+          </div>
         </div>
-      </div>
-      <div class="ipc-note" id="previewNote">
-        Potentiel de valorisation base sur la dynamique reseau locale et la recursivite des recommandations.
-      </div>
-      <div class="ipc-meta">
-        <div class="ipc-meta-item">
-          <div class="ipc-meta-label">Valeur cumulee 3 ans</div>
-          <div class="ipc-meta-value" id="previewTotal">0€</div>
+        <div class="iac-status">
+          <span class="iac-status-lbl" id="previewAvailStatusLabel">Place non occupee</span>
+          <span class="iac-status-chip" id="previewAvailStatusChip">Disponible ✓</span>
         </div>
-        <div class="ipc-meta-item">
-          <div class="ipc-meta-label">Gain potentiel</div>
-          <div class="ipc-meta-value" id="previewGain">0€</div>
+        <div class="iac-actions">
+          <button class="iac-action-btn" type="button" id="previewAvailActionBtn" onclick="openSignupFromPreview()">Prendre cette place →</button>
+          <button class="iac-like-btn" type="button" aria-label="Favori">♡</button>
         </div>
       </div>
     </div>
@@ -2373,6 +2511,18 @@ function updateInscriptionPreview() {
   const totalEl = document.getElementById("previewTotal");
   const gainEl = document.getElementById("previewGain");
   const previewCardEl = document.querySelector(".inscription-preview-card");
+  const availMetierEl = document.getElementById("previewAvailMetier");
+  const availVilleEl = document.getElementById("previewAvailVille");
+  const availSphereEl = document.getElementById("previewAvailSphere");
+  const availPriceMainEl = document.getElementById("previewAvailPriceMain");
+  const availPriceSubEl = document.getElementById("previewAvailPriceSub");
+  const availJ0El = document.getElementById("previewAvailJ0");
+  const availPartnersEl = document.getElementById("previewAvailPartners");
+  const availRecosEl = document.getElementById("previewAvailRecos");
+  const availCaEl = document.getElementById("previewAvailCa");
+  const availStatusLabelEl = document.getElementById("previewAvailStatusLabel");
+  const availStatusChipEl = document.getElementById("previewAvailStatusChip");
+  const availActionBtnEl = document.getElementById("previewAvailActionBtn");
 
   const total3Y = y1 + y2 + y3;
   const gain3Y = Math.max(y3 - y1, 0);
@@ -2387,6 +2537,41 @@ function updateInscriptionPreview() {
   animateNumberTo(gainEl, gain3Y, (value) => `+${money(value)}`);
   if (noteEl) {
     noteEl.textContent = `${metier} a ${city}: annee 1 ${money(y1)}, annee 2 ${money(y2)}, annee 3 ${money(y3)}. Projection basee sur la traction reseau locale et la recurrence des recommandations.`;
+  }
+  if (availMetierEl) availMetierEl.textContent = metier;
+  if (availVilleEl) availVilleEl.textContent = `📍 ${city} · 1 place unique`;
+  if (availSphereEl) availSphereEl.textContent = `${sphere.icon} ${sphere.tag}`;
+  if (availPartnersEl) availPartnersEl.textContent = String(place?.partners ?? 0);
+  if (availRecosEl) availRecosEl.textContent = String(place?.reco ?? 0);
+  if (availCaEl) availCaEl.textContent = place?.status === "sale" ? money(place?.ca || 0) : "—";
+  if (place?.status === "sale") {
+    if (availPriceMainEl) availPriceMainEl.textContent = money(place?.value || y1);
+    if (availPriceSubEl) availPriceSubEl.textContent = "Prix vendeur · Cote Popey";
+    if (availJ0El) availJ0El.textContent = money(place?.value || y1);
+    if (availStatusLabelEl) availStatusLabelEl.textContent = "Place occupee";
+    if (availStatusChipEl) {
+      availStatusChipEl.textContent = "En vente";
+      availStatusChipEl.classList.add("sale");
+    }
+    if (availActionBtnEl) {
+      availActionBtnEl.textContent = "Faire une offre →";
+      availActionBtnEl.classList.add("sale");
+      availActionBtnEl.onclick = () => openModal("acheter", place?.id || null);
+    }
+  } else {
+    if (availPriceMainEl) availPriceMainEl.textContent = "Gratuit";
+    if (availPriceSubEl) availPriceSubEl.textContent = "0€ le 1er mois · puis 149€/mois";
+    if (availJ0El) availJ0El.textContent = "a construire";
+    if (availStatusLabelEl) availStatusLabelEl.textContent = "Place non occupee";
+    if (availStatusChipEl) {
+      availStatusChipEl.textContent = "Disponible ✓";
+      availStatusChipEl.classList.remove("sale");
+    }
+    if (availActionBtnEl) {
+      availActionBtnEl.textContent = "Prendre cette place →";
+      availActionBtnEl.classList.remove("sale");
+      availActionBtnEl.onclick = () => openModal("rejoindre", place?.id || null);
+    }
   }
   if (previewCardEl) {
     previewCardEl.classList.remove("is-preview-updating");
