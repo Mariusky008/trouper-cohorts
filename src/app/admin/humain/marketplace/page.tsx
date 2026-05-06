@@ -94,7 +94,7 @@ function buildProWebappLink(baseUrl: string, city: string, refLabel: string, ref
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
   const rewardSuffix = rewardQuery || "";
-  const relativeUrl = `/popey-human/accueil-test/webapp-pro.html?ville=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardSuffix}`;
+  const relativeUrl = `/popey-human/accueil-test/webapp-pro?ville=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardSuffix}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
