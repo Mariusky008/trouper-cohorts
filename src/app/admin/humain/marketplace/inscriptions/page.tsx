@@ -44,8 +44,13 @@ export default async function AdminHumainMarketplaceInscriptionsPage({
   }
 
   const params = (await searchParams) || {};
+  const hasSourceParam = Object.prototype.hasOwnProperty.call(params, "source");
+  const hasReferralParam = Object.prototype.hasOwnProperty.call(params, "referral");
   const sourceFilter = typeof params.source === "string" ? params.source.trim() : "all";
   const referralFilter = typeof params.referral === "string" ? params.referral.trim().toLowerCase() : "";
+  if ((hasSourceParam || hasReferralParam) && !sourceFilter && !referralFilter) {
+    redirect("/admin/humain/marketplace/inscriptions");
+  }
 
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin

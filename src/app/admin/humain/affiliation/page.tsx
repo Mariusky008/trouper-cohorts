@@ -171,7 +171,7 @@ export default async function AdminHumainAffiliationPage({
   const memberIds = Array.from(
     new Set(
       activationTickets
-        .flatMap((ticket) => [txt(ticket.referrer_id), txt(ticket.partner_member_id)])
+        .flatMap((ticket) => [txt(ticket.referrer_id), txt(ticket.partner_member_id), readMetaText(ticket.metadata, "apporteur_member_id")])
         .filter((value) => looksLikeUuid(value)),
     ),
   );
@@ -404,24 +404,34 @@ export default async function AdminHumainAffiliationPage({
           const decisionDecidedAtFromMeta = readMetaText(ticket.metadata, "commission_decided_at");
           const decisionStatusEffective = String(decision?.decision_status || decisionStatusFromMeta || "pending");
           const decisionDecidedAt = decision?.decided_at || decisionDecidedAtFromMeta;
-          const scoutId = readMetaText(ticket.metadata, "scout_id");
+          const scoutId = readMetaText(ticket.metadata, "apporteur_scout_id") || readMetaText(ticket.metadata, "scout_id");
+          const memberIdFromMeta = readMetaText(ticket.metadata, "apporteur_member_id");
+          const apporteurNameFromMeta = readMetaText(ticket.metadata, "apporteur_name");
+          const apporteurPhoneFromMeta = readMetaText(ticket.metadata, "apporteur_phone");
+          const apporteurSourceFromMeta = readMetaText(ticket.metadata, "apporteur_source");
           const scout = scoutId ? scoutById.get(scoutId) || null : null;
-          const refMember = looksLikeUuid(ticket.referrer_id) ? memberById.get(ticket.referrer_id) || null : null;
+          const refMemberLookupId = looksLikeUuid(ticket.referrer_id) ? ticket.referrer_id : looksLikeUuid(memberIdFromMeta) ? memberIdFromMeta : "";
+          const refMember = refMemberLookupId ? memberById.get(refMemberLookupId) || null : null;
           const apporteurType = scout?.id ? "scout_public" : refMember?.id ? "member_pro" : "unknown";
           const apporteurSourceLabel =
             apporteurType === "scout_public"
               ? "Particulier (webapp éclaireur)"
               : apporteurType === "member_pro"
                 ? "Pro (webapp membre)"
+                : apporteurSourceFromMeta === "member_pro"
+                  ? "Pro (lié via metadata ticket)"
+                  : apporteurSourceFromMeta === "scout_public"
+                    ? "Particulier (lié via metadata ticket)"
                 : ticket.referrer_name
                   ? "Apporteur déclaré (sans identifiant technique)"
                   : "Source non déterminée";
           const apporteurName =
             decision?.apporteur_name ||
+            apporteurNameFromMeta ||
             (scout ? scoutLabel(scout) : [txt(refMember?.first_name), txt(refMember?.last_name)].filter(Boolean).join(" ").trim()) ||
             ticket.referrer_name ||
             "Apporteur inconnu";
-          const apporteurPhone = decision?.apporteur_phone || txt(scout?.phone) || txt(refMember?.phone) || "Non renseigné";
+          const apporteurPhone = decision?.apporteur_phone || apporteurPhoneFromMeta || txt(scout?.phone) || txt(refMember?.phone) || "Non renseigné";
           const commissionPrefill =
             decision?.commission_amount_eur !== null && decision?.commission_amount_eur !== undefined
               ? String(decision.commission_amount_eur)

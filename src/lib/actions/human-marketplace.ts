@@ -772,13 +772,17 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   }
 
   const metadata = asMetadata(activation.metadata);
-  const scoutIdRaw = String(metadata.scout_id || "").trim();
+  const scoutIdRaw = String(metadata.apporteur_scout_id || metadata.scout_id || "").trim();
   const referrerIdRaw = String(activation.referrer_id || "").trim();
+  const memberIdFromMeta = String(metadata.apporteur_member_id || "").trim();
+  const phoneFromMeta = String(metadata.apporteur_phone || "").trim();
+  const nameFromMeta = String(metadata.apporteur_name || "").trim();
+  const sourceFromMeta = String(metadata.apporteur_source || "").trim().toLowerCase();
   let apporteurType: "scout_public" | "member_pro" | "unknown" = "unknown";
   let apporteurScoutId: string | null = null;
   let apporteurMemberId: string | null = null;
-  let apporteurName = String(activation.referrer_name || "").trim() || "Apporteur";
-  let apporteurPhone = "";
+  let apporteurName = nameFromMeta || String(activation.referrer_name || "").trim() || "Apporteur";
+  let apporteurPhone = phoneFromMeta;
 
   if (looksLikeUuid(scoutIdRaw)) {
     const { data: scout } = await supabaseAdmin
@@ -795,11 +799,12 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
     }
   }
 
-  if (apporteurType === "unknown" && looksLikeUuid(referrerIdRaw)) {
+  const memberLookupId = looksLikeUuid(memberIdFromMeta) ? memberIdFromMeta : referrerIdRaw;
+  if (apporteurType === "unknown" && looksLikeUuid(memberLookupId)) {
     const { data: member } = await supabaseAdmin
       .from("human_members")
       .select("id,first_name,last_name,phone,metier")
-      .eq("id", referrerIdRaw)
+      .eq("id", memberLookupId)
       .maybeSingle();
     if (member?.id) {
       apporteurType = "member_pro";
@@ -809,6 +814,12 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
       apporteurName = [full || apporteurName, metier || null].filter(Boolean).join(" · ");
       apporteurPhone = String(member.phone || "").trim();
     }
+  }
+  if (apporteurType === "unknown" && sourceFromMeta === "member_pro") {
+    apporteurType = "member_pro";
+  }
+  if (apporteurType === "unknown" && sourceFromMeta === "scout_public") {
+    apporteurType = "scout_public";
   }
 
   const proMemberId = String(activation.partner_member_id || "").trim() || null;

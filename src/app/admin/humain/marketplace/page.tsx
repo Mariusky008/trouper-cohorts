@@ -43,6 +43,12 @@ function normalizePersonName(value: string) {
     .trim();
 }
 
+function readMetaString(metadata: unknown, key: string) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "";
+  const value = (metadata as Record<string, unknown>)[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string, refMetier?: string) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
@@ -161,6 +167,17 @@ export default async function AdminHumainMarketplacePage({
   const defaultCity = requestedCobrandCity || manualPlaces[0]?.city || "Dax";
   const defaultPrimaryPlaceId = manualPlaces.some((place) => place.id === requestedPrimaryPlaceId) ? requestedPrimaryPlaceId : "";
   const activeCobrandOffers = snapshot.cobrandOffers.filter((row) => row.status === "active").length;
+  const webJoinOffers = snapshot.offers.filter((offer) => offer.action_type === "join_request");
+  const webJoinWithSource = webJoinOffers.filter((offer) => readMetaString(offer.metadata, "source")).length;
+  const webJoinWithReferral = webJoinOffers.filter((offer) => readMetaString(offer.metadata, "referral_code")).length;
+  const webSourceCounts = webJoinOffers.reduce<Record<string, number>>((acc, offer) => {
+    const source = readMetaString(offer.metadata, "source") || "n/a";
+    acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {});
+  const webTopSources = Object.entries(webSourceCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
 
   return (
     <section className="space-y-5">
@@ -181,36 +198,6 @@ export default async function AdminHumainMarketplacePage({
             Retour admin humain
           </Link>
         </div>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-xl border bg-white p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 1</p>
-          <p className="mt-1 text-sm font-semibold">Gérer les inscrits web marketplace</p>
-          <p className="mt-1 text-xs text-black/70">Liste dédiée des personnes venues de la page publique `marketplace`.</p>
-          <Link
-            href="/admin/humain/marketplace/inscriptions"
-            className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide"
-          >
-            Ouvrir Inscriptions
-          </Link>
-        </article>
-        <article className="rounded-xl border bg-white p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 2</p>
-          <p className="mt-1 text-sm font-semibold">Piloter le pipeline (demandes + membres)</p>
-          <p className="mt-1 text-xs text-black/70">Section “Pipeline marketplace” puis bouton “MAJ demande” et “Configurer cette offre”.</p>
-          <a href="#demandes-marketplace" className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide">
-            Aller au pipeline
-          </a>
-        </article>
-        <article className="rounded-xl border bg-white p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 3</p>
-          <p className="mt-1 text-sm font-semibold">Créer une offre duo</p>
-          <p className="mt-1 text-xs text-black/70">Depuis une demande “accepted” (bouton “Créer offre duo”) ou en bas de page.</p>
-          <a href="#duo-offer-form" className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide">
-            Aller à Offre Duo
-          </a>
-        </article>
       </div>
 
       {marketStatus === "success" && (
@@ -341,6 +328,40 @@ export default async function AdminHumainMarketplacePage({
               <p className="mt-1 text-2xl font-black">{snapshot.kpis.offersRawLast24h}</p>
             </div>
           </div>
+
+          <details className="rounded-xl border bg-white p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <h2 className="text-lg font-black">Inscriptions web (debug intégré)</h2>
+                <p className="text-xs text-black/70">Vue rapide des inscriptions marketplace web sans page séparée.</p>
+              </div>
+              <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">
+                Ouvrir &gt;
+              </span>
+            </summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border bg-slate-50 p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Inscriptions web</p>
+                <p className="mt-1 text-2xl font-black">{webJoinOffers.length}</p>
+              </div>
+              <div className="rounded-lg border bg-slate-50 p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Avec source</p>
+                <p className="mt-1 text-2xl font-black">{webJoinWithSource}</p>
+              </div>
+              <div className="rounded-lg border bg-slate-50 p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Avec referral_code</p>
+                <p className="mt-1 text-2xl font-black">{webJoinWithReferral}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {webTopSources.map(([source, count]) => (
+                <span key={source} className="rounded-full border bg-white px-2 py-1 text-xs font-bold">
+                  {source}: {count}
+                </span>
+              ))}
+              {webTopSources.length === 0 ? <span className="text-xs text-muted-foreground">Aucune source détectée.</span> : null}
+            </div>
+          </details>
 
           <div id="demandes-marketplace" className="rounded-xl border bg-white p-4">
             <h2 className="text-lg font-black">Pipeline marketplace (demandes + membres acceptés)</h2>

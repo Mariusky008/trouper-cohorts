@@ -61,6 +61,22 @@ function toWhatsAppDigits(raw: string): string {
   return digits;
 }
 
+function looksLikeUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trim(value));
+}
+
+function normalizePersonName(value: string): string {
+  return trim(value)
+    .split("·")[0]
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getAdminWhatsappDigits(): string {
   const envPhone =
     trim(process.env.MARKETPLACE_ADMIN_WHATSAPP_PHONE) ||
@@ -143,17 +159,76 @@ export async function POST(request: NextRequest) {
     const resolvedClientPhone =
       (hasVerifiedContext && "payload" in verified && verified.payload ? trim((verified.payload as Record<string, unknown>).client_phone) : "") ||
       fallbackClientPhone;
-    const resolvedReferrerName =
+    let resolvedReferrerName =
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_name : fallbackReferrerName;
-    const resolvedReferrerId =
+    const rawResolvedReferrerId =
       hasVerifiedContext && "payload" in verified && verified.payload ? verified.payload.referrer_id : fallbackReferrerId || fallbackReferralCode || "referral";
+    let resolvedReferrerId = rawResolvedReferrerId;
     let resolvedScoutId: string | null = null;
+    let resolvedScoutName = "";
+    let resolvedScoutPhone = "";
+    let resolvedMemberId: string | null = null;
+    let resolvedMemberPhone = "";
+    let resolvedApporteurSource: "scout_public" | "member_pro" | "unknown" = "unknown";
     if (fallbackScoutToken) {
       const portal = await getScoutPortalByToken(fallbackScoutToken);
       if (!portal.error && portal.scout?.id) {
         resolvedScoutId = portal.scout.id;
+        const scoutFullName = [trim(portal.scout.first_name), trim(portal.scout.last_name)].filter(Boolean).join(" ").trim();
+        resolvedScoutName = scoutFullName || trim(resolvedReferrerName);
+        resolvedScoutPhone = trim(portal.scout.phone);
+        resolvedApporteurSource = "scout_public";
       }
     }
+
+    if (looksLikeUuid(resolvedReferrerId)) {
+      const { data: member } = await supabase
+        .from("human_members")
+        .select("id,first_name,last_name,phone")
+        .eq("id", resolvedReferrerId)
+        .maybeSingle();
+      if (member?.id) {
+        resolvedMemberId = member.id;
+        const memberFullName = [trim(member.first_name), trim(member.last_name)].filter(Boolean).join(" ").trim();
+        resolvedReferrerName = memberFullName || resolvedReferrerName;
+        resolvedMemberPhone = trim(member.phone);
+        if (resolvedApporteurSource === "unknown") {
+          resolvedApporteurSource = "member_pro";
+        }
+      }
+    }
+
+    if (!resolvedMemberId && resolvedApporteurSource === "unknown") {
+      const targetName = normalizePersonName(resolvedReferrerName);
+      const firstToken = targetName.split(" ").filter(Boolean)[0] || "";
+      if (firstToken.length >= 2) {
+        const { data: membersByName } = await supabase
+          .from("human_members")
+          .select("id,first_name,last_name,phone")
+          .or(`first_name.ilike.%${firstToken}%,last_name.ilike.%${firstToken}%`)
+          .limit(40);
+        const candidates = (membersByName as Array<{ id: string; first_name: string | null; last_name: string | null; phone: string | null }> | null) || [];
+        const matched =
+          candidates.find((item) => normalizePersonName([trim(item.first_name), trim(item.last_name)].filter(Boolean).join(" ")) === targetName) ||
+          candidates[0];
+        if (matched?.id) {
+          resolvedMemberId = matched.id;
+          const fullName = [trim(matched.first_name), trim(matched.last_name)].filter(Boolean).join(" ").trim();
+          resolvedReferrerId = matched.id;
+          resolvedReferrerName = fullName || resolvedReferrerName;
+          resolvedMemberPhone = trim(matched.phone);
+          resolvedApporteurSource = "member_pro";
+        }
+      }
+    }
+    const apporteurName =
+      resolvedApporteurSource === "scout_public"
+        ? resolvedScoutName || resolvedReferrerName
+        : resolvedReferrerName;
+    const apporteurPhone =
+      resolvedApporteurSource === "scout_public"
+        ? resolvedScoutPhone || resolvedMemberPhone
+        : resolvedMemberPhone || resolvedScoutPhone;
     const ticketCode = makeCommissionTicketCode();
     const leadPayload = {
       place_id: place.id,
@@ -176,6 +251,12 @@ export async function POST(request: NextRequest) {
         referral_code: fallbackReferralCode || null,
         scout_token: fallbackScoutToken || null,
         scout_id: resolvedScoutId || null,
+        apporteur_source: resolvedApporteurSource,
+        apporteur_scout_id: resolvedScoutId || null,
+        apporteur_member_id: resolvedMemberId || null,
+        apporteur_name: apporteurName || resolvedReferrerName || null,
+        apporteur_phone: apporteurPhone || null,
+        referrer_id_original: rawResolvedReferrerId || null,
         ticket_code: ticketCode,
         workflow_status: "pending",
         ticket_status: "pending",
