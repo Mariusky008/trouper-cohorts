@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-live-ready="0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -126,6 +126,11 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 
 /* ── MAIN CONTENT ── */
 .main { padding: 24px 16px 100px; }
+/* Hide static mock cards during live boot to avoid fake-offers flash on refresh */
+html[data-live-ready="0"] .main > .offer-card,
+html[data-live-ready="0"] .main > .sphere-divider {
+  display: none !important;
+}
 
 /* Filters */
 .filter-wrap { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-bottom: 20px; }
@@ -1584,8 +1589,10 @@ async function initLiveCatalog() {
     document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
     refreshLiveCounters();
     renderLiveOffers();
+    document.documentElement.setAttribute('data-live-ready', '1');
   } catch (error) {
     console.error('[privilege-live] init failed', error);
+    document.documentElement.setAttribute('data-live-ready', '1');
   }
 }
 
