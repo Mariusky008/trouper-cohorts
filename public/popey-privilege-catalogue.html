@@ -256,29 +256,27 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 }
 .pro-name { font-size: 12px; font-weight: 600; color: var(--t); }
 .pro-loc { font-size: 11px; color: var(--t3); }
-.pro-verified { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--teal-d); display: flex; align-items: center; gap: 4px; }
-.pro-verified::before { content: '✓'; }
 .pro-reward-wrap { display: flex; flex-direction: column; gap: 6px; }
 .pro-reward-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: .05em;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  color: #475569;
+  color: #0f766e;
 }
 .pro-reward-note {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   width: fit-content;
-  font-size: 14px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 700;
   color: #0f172a;
-  background: linear-gradient(135deg, rgba(0,200,150,.14), rgba(0,200,150,.06));
-  border: 1px solid rgba(0,200,150,.3);
-  border-radius: 999px;
-  padding: 7px 12px;
-  line-height: 1.2;
+  background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(20,184,166,.08));
+  border: 1px solid rgba(13,148,136,.35);
+  border-radius: 12px;
+  padding: 8px 11px;
+  line-height: 1.3;
 }
 .pro-reward-note::before { content: '💸'; font-size: 13px; }
 
@@ -615,7 +613,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Coach sportif · Bayonne · réseau Popey</div>
         <div class="pro-site">antonin-coach-bayonne.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -665,7 +663,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Sophrologue · Bayonne · réseau Popey</div>
         <div class="pro-site">marie-sophrologie-bayonne.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -724,7 +722,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Agent immobilier · Bayonne · réseau Popey</div>
         <div class="pro-site">fontaine-immobilier-bayonne.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -774,7 +772,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Architecte · Bayonne · réseau Popey</div>
         <div class="pro-site">sophie-ravel-architecte.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -832,7 +830,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Développeur web · Bayonne · réseau Popey</div>
         <div class="pro-site">lucas-dev-web.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -882,7 +880,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Designer UX/UI · Bayonne · réseau Popey</div>
         <div class="pro-site">ines-martin-design.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -940,7 +938,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Avocat d'affaires · Bayonne · réseau Popey</div>
         <div class="pro-site">cabinet-laurent-bayonne.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -990,7 +988,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
         <div class="pro-loc">Conseillère patrimoniale · Bayonne · réseau Popey</div>
         <div class="pro-site">claire-moreau-patrimoine.fr</div>
       </div>
-      <div class="pro-verified">Membre vérifié</div>
+      
     </div>
   </div>
 
@@ -1428,7 +1426,7 @@ function renderLiveCardHtml(p, meta, featured) {
     + '    <button class="btn-wa js-live-activate" data-place-id="' + p.id + '" data-code="' + idShort + '"><span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp</button>'
     + '    <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · ' + (liveState.refFirstName || 'Votre contact') + ' est notifié automatiquement</div>'
     + '  </div>'
-    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Remuneration apporteur d\'affaires</div><div class="pro-reward-note">' + p.name + ' retribue ' + rewardText + '</div></div><div class="pro-verified">Membre vérifié</div></div>'
+    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Partagez ce catalogue avec votre lien apporteur</div><div class="pro-reward-note">Rétribution de ' + p.name + ' pour chaque nouveau client : ' + rewardText + '</div></div></div>'
     + '</div>';
 }
 
