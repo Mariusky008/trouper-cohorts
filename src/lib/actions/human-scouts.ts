@@ -64,6 +64,44 @@ type HumanScoutReferral = {
   updated_at: string;
 };
 
+type RewardMode = "percent" | "eur";
+type OwnerRewardRule = {
+  mode: RewardMode;
+  value: number;
+  text: string;
+};
+
+type AdminScoutRow = HumanScout & {
+  ownerLabel: string;
+  referralsCount: number;
+  convertedCount: number;
+  ownerRewardMode: RewardMode;
+  ownerRewardValue: number;
+  ownerRewardText: string;
+};
+
+function asMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function parseOwnerRewardRule(metadataValue: unknown): OwnerRewardRule | null {
+  const metadata = asMetadata(metadataValue);
+  const modeRaw = String(metadata.apporteur_reward_mode || "").trim().toLowerCase();
+  const mode: RewardMode = modeRaw === "eur" ? "eur" : "percent";
+  const valueRaw = String(metadata.apporteur_reward_value || "")
+    .trim()
+    .replace(",", ".");
+  const parsed = Number(valueRaw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  const value = Math.round(parsed * 100) / 100;
+  const textRaw = String(metadata.apporteur_reward_text || "").trim();
+  const text =
+    textRaw ||
+    (mode === "percent" ? `${value}%` : `${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`);
+  return { mode, value, text };
+}
+
 export async function getMyScoutWorkspace() {
   const member = await requireMemberUser();
   if ("error" in member) {
@@ -1221,13 +1259,13 @@ export async function getAdminScoutSnapshot() {
   if ("error" in admin) {
     return {
       error: admin.error,
-      scouts: [] as Array<HumanScout & { ownerLabel: string; referralsCount: number; convertedCount: number }>,
+      scouts: [] as AdminScoutRow[],
       referrals: [] as HumanScoutReferral[],
     };
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data: scoutsData }, { data: membersData }, { data: profilesData }, { data: referralsData }] = await Promise.all([
+  const [{ data: scoutsData }, { data: membersData }, { data: profilesData }, { data: referralsData }, { data: acceptedOffersData }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
       .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
@@ -1241,6 +1279,14 @@ export async function getAdminScoutSnapshot() {
       )
       .order("created_at", { ascending: false })
       .limit(1200),
+    supabaseAdmin
+      .from("human_marketplace_offers")
+      .select(
+        "id,assigned_member_id,created_at,metadata,place:human_marketplace_places!human_marketplace_offers_place_id_fkey(owner_member_id)",
+      )
+      .eq("status", "accepted")
+      .order("created_at", { ascending: false })
+      .limit(2000),
   ]);
 
   const scouts = (scoutsData as HumanScout[] | null) || [];
@@ -1266,15 +1312,53 @@ export async function getAdminScoutSnapshot() {
     referralsByScoutId.set(referral.scout_id, arr);
   });
 
+  const ownerRewardRuleByMemberId = new Map<string, OwnerRewardRule>();
+  const acceptedOffers =
+    ((acceptedOffersData as Array<{
+      id: string;
+      assigned_member_id: string | null;
+      created_at: string;
+      metadata: Record<string, unknown> | null;
+      place:
+        | {
+            owner_member_id: string | null;
+          }
+        | Array<{
+            owner_member_id: string | null;
+          }>
+        | null;
+    }> | null) || []);
+
+  acceptedOffers.forEach((offer) => {
+    const placeValue = Array.isArray(offer.place) ? offer.place[0] || null : offer.place;
+    const ownerMemberId = String(offer.assigned_member_id || placeValue?.owner_member_id || "").trim();
+    if (!ownerMemberId || ownerRewardRuleByMemberId.has(ownerMemberId)) return;
+    const parsedRule = parseOwnerRewardRule(offer.metadata);
+    if (!parsedRule) return;
+    ownerRewardRuleByMemberId.set(ownerMemberId, parsedRule);
+  });
+
   return {
     error: null as string | null,
     scouts: scouts.map((scout) => {
       const scopedReferrals = referralsByScoutId.get(scout.id) || [];
+      const ownerRule = ownerRewardRuleByMemberId.get(scout.owner_member_id);
+      const fallbackPercent = Math.round(Number(scout.commission_rate || 0) * 10000) / 100;
+      const ownerRewardMode: RewardMode = ownerRule?.mode || "percent";
+      const ownerRewardValue = ownerRule ? ownerRule.value : fallbackPercent;
+      const ownerRewardText =
+        ownerRule?.text ||
+        `${ownerRewardValue.toLocaleString("fr-FR", {
+          maximumFractionDigits: 2,
+        })}%`;
       return {
         ...scout,
         ownerLabel: memberLabelById.get(scout.owner_member_id) || scout.owner_member_id,
         referralsCount: scopedReferrals.length,
         convertedCount: scopedReferrals.filter((referral) => referral.status === "converted").length,
+        ownerRewardMode,
+        ownerRewardValue,
+        ownerRewardText,
       };
     }),
     referrals,
@@ -1286,22 +1370,105 @@ export async function adminSetScoutCommissionRate(formData: FormData) {
   if ("error" in admin) return { error: admin.error };
 
   const scoutId = String(formData.get("scout_id") || "").trim();
-  const rateRaw = String(formData.get("commission_rate") || "").trim();
+  const rewardModeRaw = String(formData.get("reward_mode") || "percent").trim().toLowerCase();
+  const rewardMode: RewardMode = rewardModeRaw === "eur" ? "eur" : "percent";
+  const rewardValueRaw = String(formData.get("reward_value") || formData.get("commission_rate") || "")
+    .trim()
+    .replace(",", ".");
   if (!scoutId) return { error: "Éclaireur invalide." };
-  const rate = Number(rateRaw);
-  if (!Number.isFinite(rate) || rate < 0 || rate > 1) return { error: "Taux invalide (0 à 1)." };
+  const rewardValueParsed = Number(rewardValueRaw);
+  if (!Number.isFinite(rewardValueParsed) || rewardValueParsed < 0) {
+    return { error: rewardMode === "eur" ? "Montant € invalide." : "Taux invalide." };
+  }
 
   const supabaseAdmin = createAdminClient();
-  const { error } = await supabaseAdmin
+  const { data: scout, error: scoutError } = await supabaseAdmin
     .from("human_scouts")
-    .update({
-      commission_rate: rate,
-      updated_at: new Date().toISOString(),
+    .select("id,owner_member_id,commission_rate")
+    .eq("id", scoutId)
+    .maybeSingle();
+  if (scoutError || !scout) return { error: scoutError?.message || "Éclaireur introuvable." };
+
+  let normalizedValue = Math.round(rewardValueParsed * 100) / 100;
+  let normalizedRate = Number(scout.commission_rate || 0.1);
+  if (rewardMode === "percent") {
+    if (normalizedValue <= 1) normalizedValue = normalizedValue * 100;
+    if (normalizedValue > 100) return { error: "Taux invalide (0 à 100)." };
+    normalizedRate = Math.round((normalizedValue / 100) * 10000) / 10000;
+    const { error: updateScoutError } = await supabaseAdmin
+      .from("human_scouts")
+      .update({
+        commission_rate: normalizedRate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", scoutId);
+    if (updateScoutError) return { error: updateScoutError.message };
+  }
+
+  const { data: acceptedOffersData, error: acceptedOffersError } = await supabaseAdmin
+    .from("human_marketplace_offers")
+    .select(
+      "id,assigned_member_id,metadata,place:human_marketplace_places!human_marketplace_offers_place_id_fkey(owner_member_id)",
+    )
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false })
+    .limit(2000);
+  if (acceptedOffersError) return { error: acceptedOffersError.message };
+
+  const rewardText =
+    rewardMode === "percent"
+      ? `${normalizedValue.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}%`
+      : `${normalizedValue.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  const acceptedOffers =
+    ((acceptedOffersData as Array<{
+      id: string;
+      assigned_member_id: string | null;
+      metadata: Record<string, unknown> | null;
+      place:
+        | {
+            owner_member_id: string | null;
+          }
+        | Array<{
+            owner_member_id: string | null;
+          }>
+        | null;
+    }> | null) || []);
+
+  const ownerMemberId = String(scout.owner_member_id || "").trim();
+  const matchingOfferIds = acceptedOffers
+    .filter((offer) => {
+      const placeValue = Array.isArray(offer.place) ? offer.place[0] || null : offer.place;
+      const offerOwnerId = String(offer.assigned_member_id || placeValue?.owner_member_id || "").trim();
+      return offerOwnerId === ownerMemberId;
     })
-    .eq("id", scoutId);
-  if (error) return { error: error.message };
+    .map((offer) => offer.id);
+
+  if (matchingOfferIds.length > 0) {
+    for (const offerId of matchingOfferIds) {
+      const offer = acceptedOffers.find((item) => item.id === offerId);
+      const currentMeta = asMetadata(offer?.metadata);
+      const nextMeta: Record<string, unknown> = {
+        ...currentMeta,
+        apporteur_reward_mode: rewardMode,
+        apporteur_reward_value: String(normalizedValue),
+        apporteur_reward_text: rewardText,
+        apporteur_reward_updated_at: new Date().toISOString(),
+      };
+      const { error: offerUpdateError } = await supabaseAdmin
+        .from("human_marketplace_offers")
+        .update({
+          metadata: nextMeta,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", offerId);
+      if (offerUpdateError) return { error: offerUpdateError.message };
+    }
+  }
 
   revalidatePath("/admin/humain/eclaireurs");
+  revalidatePath("/admin/humain/marketplace");
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/admin/humain/privileges");
   revalidatePath("/popey-human/app/eclaireurs");
   return { success: true };
 }
@@ -1310,7 +1477,7 @@ export async function adminSetScoutCommissionRateAction(formData: FormData): Pro
   const currentUrl = String(formData.get("current_url") || "/admin/humain/eclaireurs");
   const result = await adminSetScoutCommissionRate(formData);
   if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
-  redirect(withScoutStatus(currentUrl, "success", "Taux commission mis à jour."));
+  redirect(withScoutStatus(currentUrl, "success", "Règle de rétribution apporteur mise à jour."));
 }
 
 export async function adminSendScoutNudge(formData: FormData) {
