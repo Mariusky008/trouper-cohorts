@@ -1428,7 +1428,7 @@ function renderLiveCardHtml(p, meta, featured) {
     + '    <button class="btn-wa js-live-activate" data-place-id="' + p.id + '" data-code="' + idShort + '"><span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp</button>'
     + '    <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · ' + (liveState.refFirstName || 'Votre contact') + ' est notifié automatiquement</div>'
     + '  </div>'
-    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Remuneration apporteur d\'affaires</div><div class="pro-reward-note">' + refName + ' retribue ' + rewardText + '</div></div><div class="pro-verified">Membre vérifié</div></div>'
+    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Remuneration apporteur d\'affaires</div><div class="pro-reward-note">' + p.name + ' retribue ' + rewardText + '</div></div><div class="pro-verified">Membre vérifié</div></div>'
     + '</div>';
 }
 
