@@ -91,11 +91,12 @@ function buildReferralCodeLink(baseUrl: string, city: string, referralCode: stri
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
-function buildProWebappLink(baseUrl: string, city: string, refLabel: string, refMetier?: string, rewardQuery?: string) {
+function buildProWebappLink(baseUrl: string, city: string, refLabel: string, refMetier?: string, rewardQuery?: string, memberId?: string) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
+  const memberParam = memberId ? `&member_id=${encodeURIComponent(memberId)}` : "";
   const rewardSuffix = rewardQuery || "";
-  const relativeUrl = `/popey-human/accueil-test/webapp-pro?ville=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardSuffix}`;
+  const relativeUrl = `/popey-human/accueil-test/webapp-pro?ville=${encodeURIComponent(citySlug)}&city=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${memberParam}${rewardSuffix}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
@@ -488,7 +489,7 @@ export default async function AdminHumainMarketplacePage({
                               : offer.status === "accepted" && referralCode
                                 ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier, rewardQuery)
                                 : "";
-                            const proWebappLink = buildProWebappLink(appBase, city, refLabel, refMetier, rewardQuery);
+                            const proWebappLink = buildProWebappLink(appBase, city, refLabel, refMetier, rewardQuery, refId);
                             if (!catalogueLink) return null;
                             return (
                               <div className="space-y-1">

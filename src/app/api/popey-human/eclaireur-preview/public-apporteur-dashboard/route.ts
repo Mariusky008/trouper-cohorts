@@ -194,7 +194,12 @@ export async function GET(request: NextRequest) {
       .from("human_scout_notification_log")
       .select("id,event_type,created_at")
       .eq("scout_id", scout.id)
-      .in("event_type", ["public_apporteur_mass_share_clicked", "public_apporteur_contacts_imported"])
+      .in("event_type", [
+        "public_apporteur_mass_share_clicked",
+        "public_apporteur_contacts_imported",
+        "commission_decision_approved",
+        "commission_decision_rejected",
+      ])
       .order("created_at", { ascending: false })
       .limit(1500),
     supabase
@@ -253,6 +258,33 @@ export async function GET(request: NextRequest) {
   const massShareEventsThisMonth = logs.filter((row) => row.event_type === "public_apporteur_mass_share_clicked" && isThisMonth(row.created_at));
   const cataloguesSent = massShareEventsThisMonth.length;
   const conversionRatePct = cataloguesSent > 0 ? Math.round((myDealsSignedThisMonth / cataloguesSent) * 1000) / 10 : 0;
+  const notificationRows = logs
+    .slice(0, 8)
+    .map((row) => {
+      const type = String(row.event_type || "");
+      const title =
+        type === "commission_decision_approved"
+          ? "Deal validé"
+          : type === "commission_decision_rejected"
+            ? "Deal refusé"
+            : type === "public_apporteur_contacts_imported"
+              ? "Contacts importés"
+              : "Catalogue partagé";
+      const message =
+        type === "commission_decision_approved"
+          ? "Une de tes recommandations a été validée."
+          : type === "commission_decision_rejected"
+            ? "Une recommandation a été refusée."
+            : type === "public_apporteur_contacts_imported"
+              ? "Tes contacts sont bien pris en compte."
+              : "Ton catalogue a été envoyé à tes contacts.";
+      return {
+        id: row.id,
+        title,
+        message,
+        created_at: row.created_at,
+      };
+    });
 
   const timelineRows = ownActivations.map((row) => {
     const place = row.place_id ? placeById.get(row.place_id) : null;
@@ -404,5 +436,6 @@ export async function GET(request: NextRequest) {
       timeline: commissionTimeline,
       history: historyRows,
     },
+    notifications: notificationRows,
   });
 }

@@ -228,21 +228,21 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
   <!-- WALLET HERO -->
   <div class="pad gap fade-up">
     <div class="metric-hero">
-      <div class="mh-label">Commissions à percevoir</div>
-      <div class="mh-val">540€</div>
-      <div class="mh-sub">Versement automatique le 1er juin</div>
-      <div class="mh-trend">↑ +180€ vs le mois dernier</div>
+      <div class="mh-label" id="heroLabel">Commissions à percevoir</div>
+      <div class="mh-val" id="heroValue">540€</div>
+      <div class="mh-sub" id="heroSub">Versement automatique le 1er juin</div>
+      <div class="mh-trend" id="heroTrend">↑ +180€ vs le mois dernier</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px">
         <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
-          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--teal)">3</div>
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--teal)" id="heroDealsSigned">3</div>
           <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Deals signés</div>
         </div>
         <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
-          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--gold)">9</div>
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--gold)" id="heroContactsCount">9</div>
           <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Recos envoyées</div>
         </div>
         <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px">
-          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--t2)">33%</div>
+          <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:var(--t2)" id="heroConversionRate">33%</div>
           <div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fd);letter-spacing:.06em;text-transform:uppercase">Taux conv.</div>
         </div>
       </div>
@@ -313,7 +313,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
   <!-- RECENT NOTIF -->
   <div class="pad" style="margin-bottom:20px">
     <div class="sec-lbl">Dernières notifications <span class="sec-lbl-r">Tout voir →</span></div>
-    <div class="card card-p">
+    <div class="card card-p" id="notifList">
       <div class="notif-item">
         <div class="ni-dot" style="background:var(--teal)"></div>
         <div class="ni-content">
@@ -603,20 +603,20 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
   <div class="pad gap">
     <div class="stats2">
       <div class="metric-hero" style="padding:16px">
-        <div class="mh-label" style="font-size:8px">Gagné ce mois</div>
-        <div class="mh-val" style="font-size:36px">540€</div>
-        <div class="mh-trend">↑ +180€ vs avril</div>
+        <div class="mh-label" style="font-size:8px" id="s4MainLabel">Total dû par les pros</div>
+        <div class="mh-val" style="font-size:36px" id="s4MainValue">540€</div>
+        <div class="mh-trend" id="s4MainTrend">↑ +180€ vs avril</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div class="stat-card">
-          <div class="sc-label">En attente</div>
-          <div class="sc-val amber">180€</div>
-          <div class="sc-sub">3 deals en cours</div>
+          <div class="sc-label">Dû éclaireurs</div>
+          <div class="sc-val amber" id="s4DueScout">180€</div>
+          <div class="sc-sub" id="s4PendingDeals">3 deals en cours</div>
         </div>
         <div class="stat-card">
-          <div class="sc-label">Objectif</div>
-          <div class="sc-val" style="font-size:18px">600€</div>
-          <div class="sc-trend up">90% atteint</div>
+          <div class="sc-label">Commission Popey</div>
+          <div class="sc-val" style="font-size:18px" id="s4DuePopey">600€</div>
+          <div class="sc-trend up" id="s4DueSplit">Répartition live</div>
         </div>
       </div>
     </div>
@@ -625,7 +625,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
   <!-- PIPELINE ACTIF -->
   <div class="pad gap">
     <div class="sec-lbl">Contacts en cours</div>
-    <div class="card">
+    <div class="card" id="proPipelineList">
 
       <div class="pipeline-item">
         <div class="pi-av" style="background:rgba(0,212,154,.12);color:var(--teal)">PM</div>
@@ -1202,8 +1202,143 @@ function sendReco() {
   }, 1800);
 }
 
+function asNumber(value) {
+  var amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function formatEur(value) {
+  return (Math.round(asNumber(value) * 100) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + '€';
+}
+
+function statusTagClass(status) {
+  if (status === 'validated') return 't-signed';
+  if (status === 'refused') return 't-pending';
+  if (status === 'in_progress') return 't-progress';
+  if (status === 'contacted') return 't-rdv';
+  return 't-pending';
+}
+
+function fetchLiveProDashboard() {
+  var memberId = (qp.get('member_id') || '').trim();
+  var refName = (qp.get('ref_name') || '').trim();
+  var city = (qp.get('city') || qp.get('ville') || '').trim();
+  if (!memberId && !refName) return Promise.resolve(null);
+  var qs = new URLSearchParams();
+  if (memberId) qs.set('member_id', memberId);
+  if (refName) qs.set('ref_name', refName);
+  if (city) qs.set('city', city);
+  return fetch('/api/popey-human/eclaireur-preview/public-pro-dashboard?' + qs.toString(), { cache: 'no-store' })
+    .then(function(response) {
+      return response.json().catch(function() { return {}; }).then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) throw new Error(payload && payload.error ? payload.error : 'Dashboard indisponible');
+        return payload;
+      });
+    })
+    .catch(function() { return null; });
+}
+
+function renderLiveNotifications(rows) {
+  var container = document.getElementById('notifList');
+  if (!container || !Array.isArray(rows)) return;
+  if (!rows.length) {
+    container.innerHTML = '<div class="notif-item"><div class="ni-dot" style="background:var(--teal)"></div><div class="ni-content"><div class="ni-title">Aucune notification pour le moment</div><div class="ni-time">En attente d’activité</div></div></div>';
+    return;
+  }
+  container.innerHTML = rows.map(function(row) {
+    var tone = String(row.tone || 'info');
+    var color = tone === 'success' ? 'var(--teal)' : tone === 'danger' ? 'var(--red)' : '#818CF8';
+    return '' +
+      '<div class="notif-item">' +
+      '  <div class="ni-dot" style="background:' + color + '"></div>' +
+      '  <div class="ni-content">' +
+      '    <div class="ni-title">' + String(row.title || 'Notification') + '</div>' +
+      '    <div style="font-size:12px;color:var(--t2);margin-top:2px">' + String(row.message || '') + '</div>' +
+      '    <div class="ni-time">' + String(row.time_label || '') + '</div>' +
+      '  </div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderLivePipeline(rows) {
+  var container = document.getElementById('proPipelineList');
+  if (!container || !Array.isArray(rows)) return;
+  if (!rows.length) {
+    container.innerHTML = '<div class="pipeline-item"><div class="pi-info"><div class="pi-name">Aucun contact pour le moment</div><div class="pi-meta">Les nouveaux WhatsApp apparaîtront ici</div></div></div>';
+    return;
+  }
+  container.innerHTML = rows.map(function(row) {
+    var client = String(row.client_name || 'Client');
+    var source = String(row.source_name || 'Apporteur');
+    var status = String(row.status || 'pending');
+    var statusLabel = String(row.status_label || 'En attente');
+    var age = (function(iso){ var ms = Date.parse(String(iso||'')); if (!Number.isFinite(ms)) return ''; var d = Math.max(1, Math.round((Date.now()-ms)/86400000)); return d <= 1 ? 'aujourd’hui' : ('il y a ' + d + 'j'); })(row.created_at);
+    var initials = client.split(/\s+/).filter(Boolean).slice(0, 2).map(function(p) { return p.charAt(0).toUpperCase(); }).join('') || 'CL';
+    return '' +
+      '<div class="pipeline-item">' +
+      '  <div class="pi-av" style="background:rgba(0,212,154,.12);color:var(--teal)">' + initials + '</div>' +
+      '  <div class="pi-info">' +
+      '    <div class="pi-name">' + client + '</div>' +
+      '    <div class="pi-meta">Via ' + source + (age ? (' · ' + age) : '') + '</div>' +
+      '    <div style="font-size:11px;color:var(--t2)">Éclaireur: ' + formatEur(row.due_scout_eur) + ' · Popey: ' + formatEur(row.due_popey_eur) + '</div>' +
+      '  </div>' +
+      '  <div class="pi-right">' +
+      '    <div class="pi-comm" style="color:var(--teal)">' + formatEur(row.total_due_pro_eur) + '</div>' +
+      '    <div class="pi-tag ' + statusTagClass(status) + '">' + statusLabel + '</div>' +
+      '  </div>' +
+      '</div>';
+  }).join('');
+}
+
+function applyLiveProDashboard(payload) {
+  if (!payload || !payload.kpis) return;
+  var kpis = payload.kpis || {};
+  var totalDue = asNumber(kpis.total_due_pro_eur);
+  var dueScout = asNumber(kpis.total_due_scout_eur);
+  var duePopey = asNumber(kpis.total_due_popey_eur);
+  var pendingCount = asNumber(kpis.pending_deals_count);
+  var signedMonth = asNumber(kpis.signed_deals_month);
+  var contactsMonth = asNumber(kpis.contacts_received_month);
+  var conv = asNumber(kpis.conversion_rate_pct);
+
+  var heroLabel = document.getElementById('heroLabel');
+  if (heroLabel) heroLabel.textContent = 'Total dû (éclaireur + Popey)';
+  var heroValue = document.getElementById('heroValue');
+  if (heroValue) heroValue.textContent = formatEur(totalDue);
+  var heroSub = document.getElementById('heroSub');
+  if (heroSub) heroSub.textContent = 'Décisions validées depuis l’admin';
+  var heroTrend = document.getElementById('heroTrend');
+  if (heroTrend) heroTrend.textContent = pendingCount + ' contact(s) encore à confirmer';
+
+  var heroDealsSigned = document.getElementById('heroDealsSigned');
+  if (heroDealsSigned) heroDealsSigned.textContent = String(signedMonth);
+  var heroContactsCount = document.getElementById('heroContactsCount');
+  if (heroContactsCount) heroContactsCount.textContent = String(contactsMonth);
+  var heroConversionRate = document.getElementById('heroConversionRate');
+  if (heroConversionRate) heroConversionRate.textContent = String(conv).replace('.0','') + '%';
+
+  var s4MainValue = document.getElementById('s4MainValue');
+  if (s4MainValue) s4MainValue.textContent = formatEur(totalDue);
+  var s4MainTrend = document.getElementById('s4MainTrend');
+  if (s4MainTrend) s4MainTrend.textContent = contactsMonth + ' contact(s) reçus ce mois';
+  var s4DueScout = document.getElementById('s4DueScout');
+  if (s4DueScout) s4DueScout.textContent = formatEur(dueScout);
+  var s4DuePopey = document.getElementById('s4DuePopey');
+  if (s4DuePopey) s4DuePopey.textContent = formatEur(duePopey);
+  var s4PendingDeals = document.getElementById('s4PendingDeals');
+  if (s4PendingDeals) s4PendingDeals.textContent = pendingCount + ' deal(s) en cours';
+  var s4DueSplit = document.getElementById('s4DueSplit');
+  if (s4DueSplit) s4DueSplit.textContent = 'Éclaireur ' + formatEur(dueScout) + ' · Popey ' + formatEur(duePopey);
+
+  renderLiveNotifications(Array.isArray(payload.notifications) ? payload.notifications : []);
+  renderLivePipeline(Array.isArray(payload.pipeline) ? payload.pipeline : []);
+}
+
 applyRewardInProWebapp();
 applyFreshStartFromAdminLink();
+fetchLiveProDashboard().then(function(payload) {
+  if (payload) applyLiveProDashboard(payload);
+});
 </script>
 </body>
 </html>

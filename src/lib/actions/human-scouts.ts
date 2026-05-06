@@ -1785,10 +1785,62 @@ export async function adminResolveScoutDeal(formData: FormData) {
     if (cancelLedgerError) ledgerWarning = true;
   }
 
+  const notificationTitle = decisionStatus === "approved" ? "Deal validé" : "Deal refusé";
+  const notificationMessage =
+    decisionStatus === "approved"
+      ? `${String(activation.partner_name || "Le pro")} · ${String((place as { metier?: string | null } | null)?.metier || "Offre")} · total dû ${totalDuePro.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`
+      : `${String(activation.partner_name || "Le pro")} · ${String((place as { metier?: string | null } | null)?.metier || "Offre")} · ticket refusé`;
+
+  // Notify the pro owner directly in Human notifications.
+  if (looksLikeUuid(activation.partner_member_id)) {
+    await supabaseAdmin.from("human_notifications").insert({
+      member_id: activation.partner_member_id,
+      type: "personnelle",
+      title: notificationTitle,
+      message: notificationMessage,
+      impact: decisionStatus === "approved" ? "deal:signe" : "deal:perdu",
+      is_read: false,
+    });
+  }
+
+  // Notify member apporteur when the source is a pro member.
+  if (looksLikeUuid(apporteurMemberId) && apporteurMemberId !== String(activation.partner_member_id || "").trim()) {
+    await supabaseAdmin.from("human_notifications").insert({
+      member_id: apporteurMemberId,
+      type: "personnelle",
+      title: notificationTitle,
+      message:
+        decisionStatus === "approved"
+          ? `Ton apport est validé · commission ${computedApporteurCommission.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`
+          : "Ton apport a été refusé pour ce ticket",
+      impact: decisionStatus === "approved" ? "deal:signe" : "deal:perdu",
+      is_read: false,
+    });
+  }
+
+  // Notify public scout source via dedicated scout notification log.
+  if (looksLikeUuid(scoutId)) {
+    await supabaseAdmin.from("human_scout_notification_log").insert({
+      scout_id: scoutId,
+      event_type: decisionStatus === "approved" ? "commission_decision_approved" : "commission_decision_rejected",
+      payload_json: {
+        activation_id: activation.id,
+        decision_status: decisionStatus,
+        commission_amount_eur: computedApporteurCommission,
+        popey_fee_eur: popeyFee,
+        total_due_pro_eur: totalDuePro,
+        partner_name: String(activation.partner_name || ""),
+        city: String((place as { city?: string | null } | null)?.city || ""),
+      },
+      status: "sent",
+    });
+  }
+
   revalidatePath("/admin/humain/eclaireurs");
   revalidatePath("/admin/humain/affiliation");
   revalidatePath("/admin/humain/privileges");
   revalidatePath("/popey-human/eclaireur-webapp-preview");
+  revalidatePath("/popey-human/accueil-test/webapp-pro");
 
   return {
     success: true as const,
