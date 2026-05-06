@@ -107,6 +107,15 @@ function normalizePhoneDigits(value: unknown) {
   return String(value || "").replace(/\D/g, "");
 }
 
+function looksLikeUuid(value: unknown) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+}
+
+function firstDayOfCurrentMonthIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+}
+
 export async function getMyScoutWorkspace() {
   const member = await requireMemberUser();
   if ("error" in member) {
@@ -1517,6 +1526,256 @@ export async function adminSetScoutCommissionRateAction(formData: FormData): Pro
   const result = await adminSetScoutCommissionRate(formData);
   if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
   redirect(withScoutStatus(currentUrl, "success", "Règle de rétribution apporteur mise à jour."));
+}
+
+export async function adminResolveScoutDeal(formData: FormData) {
+  const admin = await requireAdminUser();
+  if ("error" in admin) return { error: admin.error };
+
+  const activationId = String(formData.get("activation_id") || "").trim();
+  const scoutIdInput = String(formData.get("scout_id") || "").trim();
+  const decisionRaw = String(formData.get("decision_status") || "").trim().toLowerCase();
+  const rewardModeRaw = String(formData.get("reward_mode") || "percent").trim().toLowerCase();
+  const rewardMode: RewardMode = rewardModeRaw === "eur" ? "eur" : "percent";
+  const rewardValueRaw = String(formData.get("reward_value") || "").trim().replace(",", ".");
+  const dealAmountRaw = String(formData.get("deal_amount_eur") || "").trim().replace(",", ".");
+  const popeyFeeRaw = String(formData.get("popey_fee_eur") || "0").trim().replace(",", ".");
+  const note = String(formData.get("note") || "").trim();
+
+  if (!activationId) return { error: "Ticket affiliation introuvable." };
+  if (decisionRaw !== "approved" && decisionRaw !== "rejected") return { error: "Décision invalide." };
+  const decisionStatus = decisionRaw as "approved" | "rejected";
+
+  const rewardValue = Number(rewardValueRaw);
+  const dealAmount = Number(dealAmountRaw);
+  const popeyFee = Number(popeyFeeRaw);
+  if (!Number.isFinite(popeyFee) || popeyFee < 0) return { error: "Commission Popey invalide." };
+  if (decisionStatus === "approved") {
+    if (!Number.isFinite(dealAmount) || dealAmount <= 0) return { error: "Montant deal invalide." };
+    if (!Number.isFinite(rewardValue) || rewardValue <= 0) {
+      return { error: rewardMode === "eur" ? "Montant éclaireur (€) invalide." : "Taux éclaireur (%) invalide." };
+    }
+    if (rewardMode === "percent" && rewardValue > 100) return { error: "Taux éclaireur > 100% impossible." };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: activation, error: activationError } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .select(
+      "id,referrer_id,referrer_name,partner_member_id,partner_name,metadata,place:human_marketplace_places(id,metier,city)",
+    )
+    .eq("id", activationId)
+    .maybeSingle();
+  if (activationError || !activation) return { error: activationError?.message || "Ticket affiliation introuvable." };
+
+  const metadata = asMetadata(activation.metadata);
+  const scoutId = String(metadata.apporteur_scout_id || metadata.scout_id || scoutIdInput || "").trim();
+  const apporteurMemberId = String(metadata.apporteur_member_id || activation.referrer_id || "").trim();
+  const place = Array.isArray(activation.place) ? activation.place[0] || null : activation.place;
+
+  let apporteurName =
+    String(metadata.apporteur_name || metadata.commission_apporteur_name || "").trim() ||
+    String(activation.referrer_name || "").trim() ||
+    "Apporteur";
+  let apporteurPhone = String(metadata.apporteur_phone || "").trim();
+  if (looksLikeUuid(scoutId)) {
+    const { data: scout } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id,first_name,last_name,phone")
+      .eq("id", scoutId)
+      .maybeSingle();
+    if (scout?.id) {
+      const full = [String(scout.first_name || "").trim(), String(scout.last_name || "").trim()].filter(Boolean).join(" ").trim();
+      apporteurName = full || apporteurName;
+      apporteurPhone = String(scout.phone || "").trim() || apporteurPhone;
+    }
+  }
+  if (!apporteurPhone && looksLikeUuid(apporteurMemberId)) {
+    const { data: member } = await supabaseAdmin
+      .from("human_members")
+      .select("id,first_name,last_name,phone")
+      .eq("id", apporteurMemberId)
+      .maybeSingle();
+    if (member?.id) {
+      const full = [String(member.first_name || "").trim(), String(member.last_name || "").trim()].filter(Boolean).join(" ").trim();
+      apporteurName = full || apporteurName;
+      apporteurPhone = String(member.phone || "").trim() || apporteurPhone;
+    }
+  }
+
+  const apporteurType: "scout_public" | "member_pro" | "unknown" = looksLikeUuid(scoutId)
+    ? "scout_public"
+    : looksLikeUuid(apporteurMemberId)
+      ? "member_pro"
+      : "unknown";
+
+  const computedApporteurCommission =
+    decisionStatus === "approved"
+      ? rewardMode === "percent"
+        ? Math.round((dealAmount * (rewardValue / 100)) * 100) / 100
+        : Math.round(rewardValue * 100) / 100
+      : 0;
+  if (decisionStatus === "approved" && computedApporteurCommission > dealAmount) {
+    return { error: "Commission éclaireur supérieure au montant du deal." };
+  }
+  const totalDuePro = decisionStatus === "approved" ? Math.round((computedApporteurCommission + popeyFee) * 100) / 100 : 0;
+  const rewardText =
+    rewardMode === "percent"
+      ? `${Math.round(rewardValue * 100) / 100}%`
+      : `${(Math.round(rewardValue * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+
+  const upsertDecisionPayload = {
+    activation_id: activation.id,
+    decision_status: decisionStatus,
+    commission_amount_eur: decisionStatus === "approved" ? computedApporteurCommission : 0,
+    currency: "EUR",
+    apporteur_type: apporteurType,
+    apporteur_scout_id: looksLikeUuid(scoutId) ? scoutId : null,
+    apporteur_member_id: looksLikeUuid(apporteurMemberId) ? apporteurMemberId : null,
+    apporteur_name: apporteurName || null,
+    apporteur_phone: apporteurPhone || null,
+    pro_member_id: String(activation.partner_member_id || "").trim() || null,
+    pro_name: String(activation.partner_name || "").trim() || null,
+    commission_rule_label: `Deal ${decisionStatus === "approved" ? dealAmount.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : "0"}€ · éclaireur ${rewardText} · Popey ${popeyFee.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`,
+    note: note || null,
+    decided_by_user_id: admin.user.id,
+    decided_at: new Date().toISOString(),
+  };
+  const { error: decisionError } = await supabaseAdmin
+    .from("human_affiliate_commission_decisions")
+    .upsert(upsertDecisionPayload, { onConflict: "activation_id" });
+  if (decisionError && !String(decisionError.message || "").toLowerCase().includes("human_affiliate_commission_decisions")) {
+    return { error: decisionError.message || "Impossible d'enregistrer la décision." };
+  }
+
+  const nextMeta: Record<string, unknown> = {
+    ...metadata,
+    workflow_status: decisionStatus === "approved" ? "validated" : "refused",
+    workflow_note: note || null,
+    workflow_updated_at: new Date().toISOString(),
+    workflow_updated_by_user_id: admin.user.id,
+    commission_decision_status: decisionStatus,
+    commission_amount_eur: decisionStatus === "approved" ? computedApporteurCommission : 0,
+    commission_popey_fee_eur: decisionStatus === "approved" ? popeyFee : 0,
+    commission_decided_at: new Date().toISOString(),
+    commission_decided_by_user_id: admin.user.id,
+    commission_apporteur_type: apporteurType,
+    commission_apporteur_name: apporteurName || null,
+    deal_amount_eur: decisionStatus === "approved" ? Math.round(dealAmount * 100) / 100 : 0,
+    deal_total_due_pro_eur: totalDuePro,
+    apporteur_reward_mode: rewardMode,
+    apporteur_reward_value: String(Math.round(rewardValue * 100) / 100),
+    apporteur_reward_text: rewardText,
+  };
+  const { error: metaError } = await supabaseAdmin
+    .from("human_marketplace_landing_activations")
+    .update({ metadata: nextMeta })
+    .eq("id", activation.id);
+  if (metaError) return { error: metaError.message || "Impossible de mettre à jour le ticket." };
+
+  const periodMonth = firstDayOfCurrentMonthIso();
+  const ticketCode = String(metadata.ticket_code || "").trim() || `POPEY-${activation.id.slice(0, 6).toUpperCase()}`;
+  const city = String((place as { city?: string | null } | null)?.city || "").trim() || null;
+  let ledgerWarning = false;
+
+  if (decisionStatus === "approved") {
+    const baseLedger = {
+      activation_id: activation.id,
+      period_month: periodMonth,
+      ticket_code: ticketCode,
+      city,
+      payer_member_id: String(activation.partner_member_id || "").trim() || null,
+      decision_status: "approved",
+      payment_status: "pending",
+      note: note || null,
+      metadata: {
+        source: "admin_eclaireurs_page",
+        deal_amount_eur: Math.round(dealAmount * 100) / 100,
+        reward_mode: rewardMode,
+        reward_value: Math.round(rewardValue * 100) / 100,
+      },
+    };
+    const { error: apporteurLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .upsert(
+        {
+          ...baseLedger,
+          row_kind: "apporteur",
+          receiver_member_id: looksLikeUuid(apporteurMemberId) ? apporteurMemberId : null,
+          receiver_scout_id: looksLikeUuid(scoutId) ? scoutId : null,
+          receiver_name: apporteurName || null,
+          amount_eur: computedApporteurCommission,
+          currency: "EUR",
+        },
+        { onConflict: "activation_id,row_kind" },
+      );
+    if (apporteurLedgerError) {
+      if (String(apporteurLedgerError.message || "").toLowerCase().includes("human_marketplace_commission_ledger")) {
+        ledgerWarning = true;
+      } else {
+        return { error: apporteurLedgerError.message || "Impossible d'écrire le ledger apporteur." };
+      }
+    }
+    const { error: popeyLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .upsert(
+        {
+          ...baseLedger,
+          row_kind: "popey",
+          receiver_member_id: null,
+          receiver_scout_id: null,
+          receiver_name: "Popey",
+          amount_eur: popeyFee,
+          currency: "EUR",
+        },
+        { onConflict: "activation_id,row_kind" },
+      );
+    if (popeyLedgerError) {
+      if (String(popeyLedgerError.message || "").toLowerCase().includes("human_marketplace_commission_ledger")) {
+        ledgerWarning = true;
+      } else {
+        return { error: popeyLedgerError.message || "Impossible d'écrire le ledger Popey." };
+      }
+    }
+  } else {
+    const { error: cancelLedgerError } = await supabaseAdmin
+      .from("human_marketplace_commission_ledger")
+      .update({
+        decision_status: "rejected",
+        payment_status: "cancelled",
+        note: note || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("activation_id", activation.id);
+    if (cancelLedgerError && !String(cancelLedgerError.message || "").toLowerCase().includes("human_marketplace_commission_ledger")) {
+      return { error: cancelLedgerError.message || "Impossible de mettre à jour le ledger." };
+    }
+    if (cancelLedgerError) ledgerWarning = true;
+  }
+
+  revalidatePath("/admin/humain/eclaireurs");
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/admin/humain/privileges");
+  revalidatePath("/popey-human/eclaireur-webapp-preview");
+
+  return {
+    success: true as const,
+    message:
+      decisionStatus === "approved"
+        ? ledgerWarning
+          ? "Deal validé (mode dégradé: table ledger commission manquante)."
+          : "Deal validé et commissions calculées."
+        : ledgerWarning
+          ? "Deal refusé (mode dégradé: table ledger commission manquante)."
+          : "Deal refusé.",
+  };
+}
+
+export async function adminResolveScoutDealAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/eclaireurs");
+  const result = await adminResolveScoutDeal(formData);
+  if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
+  redirect(withScoutStatus(currentUrl, "success", result.message || "Action effectuée."));
 }
 
 export async function adminSendScoutNudge(formData: FormData) {
