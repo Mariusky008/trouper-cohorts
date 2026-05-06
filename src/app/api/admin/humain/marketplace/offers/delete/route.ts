@@ -20,6 +20,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
   const offerId = String(formData.get("offer_id") || "").trim();
+  const intent = String(formData.get("intent") || "delete").trim();
 
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
@@ -35,10 +36,55 @@ export async function POST(request: Request) {
 
   const { data: offer, error: offerReadError } = await supabaseAdmin
     .from("human_marketplace_offers")
-    .select("id,place_id,action_type,full_name")
+    .select("id,place_id,action_type,full_name,status")
     .eq("id", offerId)
     .maybeSingle();
   if (offerReadError || !offer) return fail(offerReadError?.message || "Demande introuvable.");
+
+  if (intent === "delete_and_reset_place" && offer.place_id) {
+    const resetPatch: Record<string, unknown> = {
+      status: "dispo",
+      owner_member_id: null,
+      list_price_eur: 0,
+      monthly_ca_eur: 0,
+      recos_per_year: 0,
+      conversion_rate: 0,
+      months_active: 0,
+      reciprocity_score: 0,
+      partners_count: 0,
+      value_growth_pct: 0,
+      company_name: null,
+      privilege_badge: null,
+      logo_url: null,
+      category_key: null,
+      partner_whatsapp: null,
+      direct_contact: null,
+      external_ref: null,
+      offer_photo_url: null,
+      offer_website_url: null,
+      offer_description: null,
+      partner_offer_value_eur: null,
+      claimed_at: null,
+      claimed_by_offer_id: null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: resetError } = await supabaseAdmin.from("human_marketplace_places").update(resetPatch).eq("id", offer.place_id);
+    if (resetError && /column/i.test(String(resetError.message || ""))) {
+      const retryPatch = { ...resetPatch };
+      delete (retryPatch as { claimed_at?: unknown }).claimed_at;
+      delete (retryPatch as { claimed_by_offer_id?: unknown }).claimed_by_offer_id;
+      const retry = await supabaseAdmin.from("human_marketplace_places").update(retryPatch).eq("id", offer.place_id);
+      if (retry.error) return fail(retry.error.message || "Suppression impossible (reset place).");
+    } else if (resetError) {
+      return fail(resetError.message || "Suppression impossible (reset place).");
+    }
+
+    // Prevent dangling duo packs tied to this place.
+    await supabaseAdmin
+      .from("human_marketplace_cobrand_offers")
+      .update({ status: "inactive", updated_at: new Date().toISOString() })
+      .or(`primary_place_id.eq.${offer.place_id},secondary_place_id.eq.${offer.place_id}`);
+  }
 
   const { error: nullifyError } = await supabaseAdmin
     .from("human_marketplace_events")
@@ -58,14 +104,18 @@ export async function POST(request: Request) {
       action: "deleted",
       deleted_offer_id: offerId,
       deleted_offer_type: offer.action_type,
+      deleted_offer_status: offer.status,
+      intent,
       deleted_by_user_id: userId,
     },
   });
 
   revalidatePath("/admin/humain/marketplace");
   revalidatePath("/admin/humain/marketplace/inscriptions");
+  revalidatePath("/marketplace");
+  revalidatePath("/privilege");
 
-  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", "Demande supprimee.")), {
-    status: 303,
-  });
+  const message =
+    intent === "delete_and_reset_place" ? "Membre supprimé et place réinitialisée en dispo." : "Demande supprimee.";
+  return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", message)), { status: 303 });
 }

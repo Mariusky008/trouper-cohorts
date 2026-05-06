@@ -197,10 +197,10 @@ export default async function AdminHumainMarketplacePage({
         </article>
         <article className="rounded-xl border bg-white p-4">
           <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Parcours 2</p>
-          <p className="mt-1 text-sm font-semibold">Accepter/Rejeter + créer offre pro</p>
-          <p className="mt-1 text-xs text-black/70">Section “Demandes marketplace” puis bouton “MAJ demande” et “Configurer cette offre”.</p>
+          <p className="mt-1 text-sm font-semibold">Piloter le pipeline (demandes + membres)</p>
+          <p className="mt-1 text-xs text-black/70">Section “Pipeline marketplace” puis bouton “MAJ demande” et “Configurer cette offre”.</p>
           <a href="#demandes-marketplace" className="mt-3 inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide">
-            Aller aux demandes
+            Aller au pipeline
           </a>
         </article>
         <article className="rounded-xl border bg-white p-4">
@@ -343,7 +343,10 @@ export default async function AdminHumainMarketplacePage({
           </div>
 
           <div id="demandes-marketplace" className="rounded-xl border bg-white p-4">
-            <h2 className="text-lg font-black">Demandes marketplace</h2>
+            <h2 className="text-lg font-black">Pipeline marketplace (demandes + membres acceptés)</h2>
+            <p className="mt-1 text-xs text-black/70">
+              Les lignes en statut <strong>accepted</strong> sont déjà des membres validés. Utilise le bouton de suppression pour retirer le membre et remettre sa place en <strong>dispo</strong>.
+            </p>
             {snapshot.offers.length === 0 && snapshot.kpis.offersRawTotal > 0 ? (
               <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 Des demandes existent, mais vos filtres actuels masquent tout.
@@ -481,8 +484,11 @@ export default async function AdminHumainMarketplacePage({
                           <form action="/api/admin/humain/marketplace/offers/delete" method="post" className="flex justify-end">
                             <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                             <input type="hidden" name="offer_id" value={offer.id} />
+                            {offer.status === "accepted" && offer.place?.id ? (
+                              <input type="hidden" name="intent" value="delete_and_reset_place" />
+                            ) : null}
                             <button type="submit" className="h-9 rounded border border-red-300 px-3 text-xs font-black uppercase tracking-wide text-red-700">
-                              Supprimer
+                              {offer.status === "accepted" && offer.place?.id ? "Supprimer membre + liberer place" : "Supprimer"}
                             </button>
                           </form>
                         </div>
@@ -652,12 +658,20 @@ export default async function AdminHumainMarketplacePage({
                   </details>
                 );
               })}
-              {snapshot.offers.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande marketplace pour le moment.</p> : null}
+              {snapshot.offers.length === 0 ? <p className="text-sm text-muted-foreground">Aucune entrée dans le pipeline marketplace pour le moment.</p> : null}
             </div>
           </div>
 
-          <div className="rounded-xl border bg-white p-4">
-            <h2 className="text-lg font-black">Places (controle manuel)</h2>
+          <details className="rounded-xl border bg-white p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <h2 className="text-lg font-black">Places (controle manuel)</h2>
+                <p className="text-xs text-black/70">Modifier ou réinitialiser les places manuellement.</p>
+              </div>
+              <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">
+                Ouvrir &gt;
+              </span>
+            </summary>
             <div className="mt-3 space-y-3">
               {manualPlaces.slice(0, 120).map((place) => (
                 <article key={place.id} className="rounded-lg border p-3">
@@ -828,15 +842,22 @@ export default async function AdminHumainMarketplacePage({
                 <p className="text-sm text-muted-foreground">Aucune place réellement configurée pour le moment.</p>
               ) : null}
             </div>
-          </div>
+          </details>
 
-          <div id="duo-offer-form" className="rounded-xl border bg-white p-4">
-            <h2 className="text-lg font-black">Creation Offre Duo (catalogue privilege)</h2>
-            <p className="mt-1 text-xs text-black/70">
+          <details id="duo-offer-form" className="rounded-xl border bg-white p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <h2 className="text-lg font-black">Creation Offre Duo (catalogue privilege)</h2>
+                <p className="mt-1 text-xs text-black/70">
+                  Packs enregistrés: {snapshot.cobrandOffers.length} · actifs: {activeCobrandOffers}
+                </p>
+              </div>
+              <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">
+                Ouvrir &gt;
+              </span>
+            </summary>
+            <p className="mt-3 text-xs text-black/70">
               Crée un pack à deux entre membres acceptés. Le pack s&apos;affiche ensuite dans le catalogue `privilege` sous la section dédiée.
-            </p>
-            <p className="mt-2 text-xs text-black/70">
-              Packs enregistrés: {snapshot.cobrandOffers.length} · actifs: {activeCobrandOffers}
             </p>
 
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3">
@@ -980,7 +1001,7 @@ export default async function AdminHumainMarketplacePage({
                 <p className="text-sm text-muted-foreground">Aucune offre co-brandée créée pour le moment.</p>
               ) : null}
             </div>
-          </div>
+          </details>
         </>
       )}
     </section>
