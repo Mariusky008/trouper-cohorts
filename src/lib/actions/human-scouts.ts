@@ -62,6 +62,7 @@ type HumanScoutReferral = {
   paid_at: string | null;
   created_at: string;
   updated_at: string;
+  matched_activation_id?: string | null;
 };
 
 type RewardMode = "percent" | "eur";
@@ -100,6 +101,10 @@ function parseOwnerRewardRule(metadataValue: unknown): OwnerRewardRule | null {
     textRaw ||
     (mode === "percent" ? `${value}%` : `${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`);
   return { mode, value, text };
+}
+
+function normalizePhoneDigits(value: unknown) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 export async function getMyScoutWorkspace() {
@@ -1265,7 +1270,7 @@ export async function getAdminScoutSnapshot() {
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data: scoutsData }, { data: membersData }, { data: profilesData }, { data: referralsData }, { data: acceptedOffersData }] = await Promise.all([
+  const [{ data: scoutsData }, { data: membersData }, { data: profilesData }, { data: referralsData }, { data: acceptedOffersData }, { data: activationsData }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
       .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
@@ -1287,10 +1292,17 @@ export async function getAdminScoutSnapshot() {
       .eq("status", "accepted")
       .order("created_at", { ascending: false })
       .limit(2000),
+    supabaseAdmin
+      .from("human_marketplace_landing_activations")
+      .select("id,partner_member_id,client_phone,created_at")
+      .order("created_at", { ascending: false })
+      .limit(3000),
   ]);
 
   const scouts = (scoutsData as HumanScout[] | null) || [];
   const referrals = (referralsData as HumanScoutReferral[] | null) || [];
+  const activations =
+    ((activationsData as Array<{ id: string; partner_member_id: string | null; client_phone: string | null; created_at: string }> | null) || []);
   const members = (membersData as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null }> | null) || [];
   const profiles = (profilesData as Array<{ id: string; display_name: string | null; trade: string | null }> | null) || [];
   const profileByUserId = new Map(
@@ -1310,6 +1322,33 @@ export async function getAdminScoutSnapshot() {
     const arr = referralsByScoutId.get(referral.scout_id) || [];
     arr.push(referral);
     referralsByScoutId.set(referral.scout_id, arr);
+  });
+
+  const activationByOwnerAndPhone = new Map<string, Array<{ id: string; created_at: string }>>();
+  activations.forEach((activation) => {
+    const ownerId = String(activation.partner_member_id || "").trim();
+    const phoneDigits = normalizePhoneDigits(activation.client_phone);
+    if (!ownerId || !phoneDigits) return;
+    const key = `${ownerId}:${phoneDigits}`;
+    const arr = activationByOwnerAndPhone.get(key) || [];
+    arr.push({ id: activation.id, created_at: activation.created_at });
+    activationByOwnerAndPhone.set(key, arr);
+  });
+  activationByOwnerAndPhone.forEach((arr, key) => {
+    arr.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+    activationByOwnerAndPhone.set(key, arr);
+  });
+
+  const enrichedReferrals = referrals.map((referral) => {
+    const ownerId = String(referral.owner_member_id || "").trim();
+    const phoneDigits = normalizePhoneDigits(referral.contact_phone_normalized || referral.contact_phone);
+    if (!ownerId || !phoneDigits) return { ...referral, matched_activation_id: null };
+    const candidates = activationByOwnerAndPhone.get(`${ownerId}:${phoneDigits}`) || [];
+    const matchedActivationId = candidates[0]?.id || null;
+    return {
+      ...referral,
+      matched_activation_id: matchedActivationId,
+    };
   });
 
   const ownerRewardRuleByMemberId = new Map<string, OwnerRewardRule>();
@@ -1361,7 +1400,7 @@ export async function getAdminScoutSnapshot() {
         ownerRewardText,
       };
     }),
-    referrals,
+    referrals: enrichedReferrals,
   };
 }
 

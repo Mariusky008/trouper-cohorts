@@ -33,6 +33,14 @@ function referralStatusLabel(status: string) {
   return status || "En attente";
 }
 
+function affiliationTicketHref(activationId?: string | null) {
+  if (!activationId) return "/admin/humain/affiliation?period=week";
+  const params = new URLSearchParams();
+  params.set("period", "week");
+  params.set("marketFocus", activationId);
+  return `/admin/humain/affiliation?${params.toString()}#ticket-${activationId}`;
+}
+
 export default async function AdminHumainEclaireursPage({
   searchParams,
 }: {
@@ -133,17 +141,27 @@ export default async function AdminHumainEclaireursPage({
             </div>
             {recentReferrals.map((referral) => (
               <article key={referral.id} className="rounded-lg border p-3">
-                <p className="text-sm font-black">
-                  {referral.contact_name || "Contact"} • {referralStatusLabel(String(referral.status || ""))}
-                </p>
-                <p className="text-xs text-black/70">
-                  Apporteur: {scoutNameById.get(referral.scout_id) || referral.scout_id} • Owner:{" "}
-                  {scoutOwnerById.get(referral.scout_id) || referral.owner_member_id}
-                </p>
-                <p className="text-xs text-black/70">
-                  Projet: {referral.project_type || "Non renseigné"} • Créé le:{" "}
-                  {new Date(referral.created_at).toLocaleDateString("fr-FR")}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black">
+                      {referral.contact_name || "Contact"} • {referralStatusLabel(String(referral.status || ""))}
+                    </p>
+                    <p className="text-xs text-black/70">
+                      Apporteur: {scoutNameById.get(referral.scout_id) || referral.scout_id} • Owner:{" "}
+                      {scoutOwnerById.get(referral.scout_id) || referral.owner_member_id}
+                    </p>
+                    <p className="text-xs text-black/70">
+                      Projet: {referral.project_type || "Non renseigné"} • Créé le:{" "}
+                      {new Date(referral.created_at).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <Link
+                    href={affiliationTicketHref(referral.matched_activation_id || null)}
+                    className="inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide"
+                  >
+                    {referral.matched_activation_id ? "Ouvrir ticket" : "Voir affiliation"}
+                  </Link>
+                </div>
               </article>
             ))}
             {recentReferrals.length === 0 && <p className="text-sm text-muted-foreground">Aucun signal éclaireur pour le moment.</p>}
