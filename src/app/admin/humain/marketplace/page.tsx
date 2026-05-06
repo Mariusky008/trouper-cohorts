@@ -51,16 +51,17 @@ function readMetaString(metadata: unknown, key: string) {
 
 function normalizeRewardText(input: { mode: string; value: string; customText: string }) {
   const custom = String(input.customText || "").trim();
-  if (custom) return custom;
   const valueRaw = String(input.value || "").trim().replace(",", ".");
-  if (!valueRaw) return "";
+  let valueLabel = "";
   const amount = Number(valueRaw);
-  if (!Number.isFinite(amount) || amount <= 0) return "";
-  const normalized = Math.round(amount * 100) / 100;
-  const mode = String(input.mode || "").trim().toLowerCase();
-  if (mode === "percent") return `${normalized}%`;
-  if (mode === "eur") return `${normalized.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
-  return "";
+  if (valueRaw && Number.isFinite(amount) && amount > 0) {
+    const normalized = Math.round(amount * 100) / 100;
+    const mode = String(input.mode || "").trim().toLowerCase();
+    if (mode === "percent") valueLabel = `${normalized}%`;
+    if (mode === "eur") valueLabel = `${normalized.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  }
+  if (valueLabel && custom) return `${valueLabel} + ${custom}`;
+  return valueLabel || custom;
 }
 
 function buildRewardQueryFromMeta(metadata: unknown) {

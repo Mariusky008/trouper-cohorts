@@ -258,9 +258,29 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 .pro-loc { font-size: 11px; color: var(--t3); }
 .pro-verified { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--teal-d); display: flex; align-items: center; gap: 4px; }
 .pro-verified::before { content: '✓'; }
-.pro-reward-wrap { display: flex; flex-direction: column; gap: 2px; }
-.pro-reward-title { font-size: 12px; font-weight: 900; color: var(--ink); line-height: 1.2; }
-.pro-reward-note { font-size: 13px; font-weight: 900; color: var(--ink); line-height: 1.2; }
+.pro-reward-wrap { display: flex; flex-direction: column; gap: 6px; }
+.pro-reward-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #475569;
+}
+.pro-reward-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  background: linear-gradient(135deg, rgba(0,200,150,.14), rgba(0,200,150,.06));
+  border: 1px solid rgba(0,200,150,.3);
+  border-radius: 999px;
+  padding: 7px 12px;
+  line-height: 1.2;
+}
+.pro-reward-note::before { content: '💸'; font-size: 13px; }
 
 /* DIVIDER between spheres */
 .sphere-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 16px; }
@@ -398,8 +418,8 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 .oc-site { font-family: var(--fm); font-size: 10px; color: var(--t3); display: flex; align-items: center; gap: 4px; }
 .oc-site::before { content: '🌐'; font-size: 9px; }
 /* Service image strip */
-.oc-img-strip { width: 100%; height: 110px; object-fit: cover; display: block; }
-.oc-img-placeholder { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.oc-img-strip { width: 100%; height: 160px; object-fit: cover; display: block; }
+.oc-img-placeholder { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 46px; }
 
 /* ── PHOTOS ── */
 .oc-photos { display:flex; gap:6px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; }
@@ -1403,7 +1423,7 @@ function renderLiveCardHtml(p, meta, featured) {
     + '    <button class="btn-wa js-live-activate" data-place-id="' + p.id + '" data-code="' + idShort + '"><span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp</button>'
     + '    <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · ' + (liveState.refFirstName || 'Votre contact') + ' est notifié automatiquement</div>'
     + '  </div>'
-    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Pour ceux qui partagent ce catalogue (apporteur d\'affaires)</div><div class="pro-reward-note">' + refName + ' retribue ' + rewardText + '.</div></div><div class="pro-verified">Membre vérifié</div></div>'
+    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Remuneration apporteur d\'affaires</div><div class="pro-reward-note">' + refName + ' retribue ' + rewardText + '</div></div><div class="pro-verified">Membre vérifié</div></div>'
     + '</div>';
 }
 
