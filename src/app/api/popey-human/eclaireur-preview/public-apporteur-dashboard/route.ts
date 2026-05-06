@@ -92,6 +92,20 @@ function readWorkflowStatus(metadata: Record<string, unknown> | null): "pending"
   return "pending";
 }
 
+function readCommissionDecisionStatus(metadata: Record<string, unknown> | null): "pending" | "approved" | "rejected" {
+  const raw = txt(metadata?.commission_decision_status).toLowerCase();
+  if (raw === "approved") return "approved";
+  if (raw === "rejected" || raw === "refused") return "rejected";
+  return "pending";
+}
+
+function attributionSourceLabel(metadata: Record<string, unknown> | null) {
+  const source = txt(metadata?.apporteur_source || metadata?.commission_apporteur_type).toLowerCase();
+  if (source === "scout_public") return "Apporteur public";
+  if (source === "member_pro") return "Pro apporteur";
+  return "Attribution Popey";
+}
+
 function euros(value: number) {
   return Math.round((value || 0) * 100) / 100;
 }
@@ -242,17 +256,36 @@ export async function GET(request: NextRequest) {
 
   const timelineRows = ownActivations.map((row) => {
     const place = row.place_id ? placeById.get(row.place_id) : null;
-    const workflow = readWorkflowStatus(row.metadata);
+    const metadata = row.metadata || {};
+    const workflow = readWorkflowStatus(metadata);
+    const decisionStatus = readCommissionDecisionStatus(metadata);
     const commissionBase = Number(place?.partner_offer_value_eur || 0);
-    const commissionEur = euros(commissionBase);
+    const explicitCommission = Number(metadata.commission_amount_eur || 0);
+    const resolvedCommission =
+      decisionStatus === "approved"
+        ? Number.isFinite(explicitCommission) && explicitCommission >= 0
+          ? explicitCommission
+          : commissionBase
+        : decisionStatus === "rejected" || workflow === "refused"
+          ? 0
+          : commissionBase;
+    const commissionEur = euros(resolvedCommission);
+    const status =
+      decisionStatus === "rejected"
+        ? "refused"
+        : decisionStatus === "approved" && workflow === "validated"
+          ? "validated"
+          : workflow;
     return {
       id: row.id,
       created_at: row.created_at,
       client_name: txt(row.client_name) || "Client",
       partner_name: txt(row.partner_name) || txt(place?.company_name) || txt(place?.metier) || "Partenaire",
       metier: txt(place?.metier) || "Offre",
-      status: workflow,
+      status,
       commission_eur: commissionEur,
+      attribution_label: attributionSourceLabel(metadata),
+      decision_status: decisionStatus,
     };
   });
 
@@ -345,6 +378,11 @@ export async function GET(request: NextRequest) {
     period: {
       month_label: monthLabel,
       payout_label: firstPayoutLabel(),
+    },
+    attribution: {
+      rule_code: "last_click_30d",
+      rule_label: "Dernier clic valide (30 jours)",
+      window_days: 30,
     },
     kpis: {
       platform_deals_signed_month: platformDealsSignedThisMonth,

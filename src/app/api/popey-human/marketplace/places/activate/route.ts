@@ -85,6 +85,9 @@ function getAdminWhatsappDigits(): string {
   return toWhatsAppDigits(envPhone);
 }
 
+const ATTRIBUTION_RULE_CODE = "last_click_30d";
+const ATTRIBUTION_RULE_LABEL = "Dernier clic valide (30 jours)";
+
 function makeCommissionTicketCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let suffix = "";
@@ -261,6 +264,13 @@ export async function POST(request: NextRequest) {
         workflow_status: "pending",
         ticket_status: "pending",
         ticket_created_at: new Date().toISOString(),
+        attribution_rule_code: ATTRIBUTION_RULE_CODE,
+        attribution_rule_label: ATTRIBUTION_RULE_LABEL,
+        attribution_window_days: 30,
+        attribution_owner_type: resolvedApporteurSource,
+        attribution_owner_scout_id: resolvedScoutId || null,
+        attribution_owner_member_id: resolvedMemberId || null,
+        attribution_owner_name: apporteurName || resolvedReferrerName || null,
       },
     };
 

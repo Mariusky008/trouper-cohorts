@@ -777,6 +777,7 @@ function renderCommissionTimeline(rows) {
     var metier = String(row.metier || 'Offre');
     var client = String(row.client_name || 'Client');
     var statusLabel = String(row.status_label || 'En attente');
+    var attributionLabel = String(row.attribution_label || 'Attribution Popey');
     var createdAt = String(row.created_at || '');
     var dateLabel = createdAt ? new Date(createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '';
     var initials = partner.split(/\s+/).filter(Boolean).slice(0, 2).map(function(p) { return p.charAt(0).toUpperCase(); }).join('') || 'PP';
@@ -788,6 +789,7 @@ function renderCommissionTimeline(rows) {
       '  <div class="comm-info">' +
       '    <div class="comm-name">' + partner + ' · ' + metier + '</div>' +
       '    <div class="comm-meta">Via : ' + client + (dateLabel ? ' · ' + dateLabel : '') + '</div>' +
+      '    <div class="comm-meta">' + attributionLabel + '</div>' +
       '    <span class="comm-status ' + statusClass(status) + '">' + statusLabel + '</span>' +
       '  </div>' +
       '  <div><div class="comm-amount" style="color:var(--teal)">+' + formatEur(amount) + '</div></div>' +
@@ -816,6 +818,7 @@ function applyDashboardData(payload) {
   if (!payload || !payload.kpis) return;
   var kpis = payload.kpis || {};
   var period = payload.period || {};
+  var attribution = payload.attribution || {};
   var featured = payload.featured_offer || null;
   var offers = Array.isArray(payload.offers) ? payload.offers : [];
   var timeline = payload.commissions && Array.isArray(payload.commissions.timeline) ? payload.commissions.timeline : [];
@@ -894,7 +897,10 @@ function applyDashboardData(payload) {
   var commissionsHeaderMeta = document.getElementById('commissionsHeaderMeta');
   if (commissionsHeaderMeta) commissionsHeaderMeta.textContent = monthLabel;
   var commDetailTitle = document.getElementById('commDetailTitle');
-  if (commDetailTitle) commDetailTitle.textContent = 'Détail ' + monthLabel.toLowerCase() + ' · En cours';
+  if (commDetailTitle) {
+    var ruleLabel = String(attribution.rule_label || '');
+    commDetailTitle.textContent = 'Détail ' + monthLabel.toLowerCase() + (ruleLabel ? (' · ' + ruleLabel) : ' · En cours');
+  }
 
   var commTotalWallet = document.getElementById('commTotalWallet');
   if (commTotalWallet) commTotalWallet.textContent = formatEur(walletPending);
