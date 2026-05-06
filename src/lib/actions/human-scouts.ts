@@ -1536,8 +1536,10 @@ export async function adminResolveScoutDeal(formData: FormData) {
   const scoutIdInput = String(formData.get("scout_id") || "").trim();
   const decisionRaw = String(formData.get("decision_status") || "").trim().toLowerCase();
   const rewardModeRaw = String(formData.get("reward_mode") || "percent").trim().toLowerCase();
-  const rewardMode: RewardMode = rewardModeRaw === "eur" ? "eur" : "percent";
+  let rewardMode: RewardMode = rewardModeRaw === "eur" ? "eur" : "percent";
   const rewardValueRaw = String(formData.get("reward_value") || "").trim().replace(",", ".");
+  const rewardValueEurRaw = String(formData.get("reward_value_eur") || "").trim().replace(",", ".");
+  const rewardValuePercentRaw = String(formData.get("reward_value_percent") || "").trim().replace(",", ".");
   const dealAmountRaw = String(formData.get("deal_amount_eur") || "").trim().replace(",", ".");
   const popeyFeeRaw = String(formData.get("popey_fee_eur") || "0").trim().replace(",", ".");
   const note = String(formData.get("note") || "").trim();
@@ -1546,16 +1548,40 @@ export async function adminResolveScoutDeal(formData: FormData) {
   if (decisionRaw !== "approved" && decisionRaw !== "rejected") return { error: "Décision invalide." };
   const decisionStatus = decisionRaw as "approved" | "rejected";
 
-  const rewardValue = Number(rewardValueRaw);
+  const rewardValueLegacy = Number(rewardValueRaw);
+  const rewardValueEur = Number(rewardValueEurRaw);
+  const rewardValuePercent = Number(rewardValuePercentRaw);
   const dealAmount = Number(dealAmountRaw);
   const popeyFee = Number(popeyFeeRaw);
   if (!Number.isFinite(popeyFee) || popeyFee < 0) return { error: "Commission Popey invalide." };
   if (decisionStatus === "approved") {
     if (!Number.isFinite(dealAmount) || dealAmount <= 0) return { error: "Montant deal invalide." };
-    if (!Number.isFinite(rewardValue) || rewardValue <= 0) {
-      return { error: rewardMode === "eur" ? "Montant éclaireur (€) invalide." : "Taux éclaireur (%) invalide." };
+  }
+
+  const safeRewardEur = Number.isFinite(rewardValueEur) && rewardValueEur > 0 ? Math.round(rewardValueEur * 100) / 100 : 0;
+  const safeRewardPercent =
+    Number.isFinite(rewardValuePercent) && rewardValuePercent > 0 ? Math.round(rewardValuePercent * 100) / 100 : 0;
+  let resolvedRewardValue = 0;
+
+  // Business rule validated by user: if both % and € exist, € has priority.
+  if (decisionStatus === "approved") {
+    if (safeRewardEur > 0) {
+      rewardMode = "eur";
+      resolvedRewardValue = safeRewardEur;
+    } else if (safeRewardPercent > 0) {
+      rewardMode = "percent";
+      resolvedRewardValue = safeRewardPercent;
+    } else if (Number.isFinite(rewardValueLegacy) && rewardValueLegacy > 0) {
+      resolvedRewardValue = Math.round(rewardValueLegacy * 100) / 100;
+      if (rewardMode === "percent" && resolvedRewardValue > 100) {
+        return { error: "Taux éclaireur > 100% impossible." };
+      }
+    } else {
+      return { error: "Renseigne une commission éclaireur (€ prioritaire, sinon %)." };
     }
-    if (rewardMode === "percent" && rewardValue > 100) return { error: "Taux éclaireur > 100% impossible." };
+    if (rewardMode === "percent" && resolvedRewardValue > 100) {
+      return { error: "Taux éclaireur > 100% impossible." };
+    }
   }
 
   const supabaseAdmin = createAdminClient();
@@ -1612,8 +1638,8 @@ export async function adminResolveScoutDeal(formData: FormData) {
   const computedApporteurCommission =
     decisionStatus === "approved"
       ? rewardMode === "percent"
-        ? Math.round((dealAmount * (rewardValue / 100)) * 100) / 100
-        : Math.round(rewardValue * 100) / 100
+        ? Math.round((dealAmount * (resolvedRewardValue / 100)) * 100) / 100
+        : Math.round(resolvedRewardValue * 100) / 100
       : 0;
   if (decisionStatus === "approved" && computedApporteurCommission > dealAmount) {
     return { error: "Commission éclaireur supérieure au montant du deal." };
@@ -1621,8 +1647,8 @@ export async function adminResolveScoutDeal(formData: FormData) {
   const totalDuePro = decisionStatus === "approved" ? Math.round((computedApporteurCommission + popeyFee) * 100) / 100 : 0;
   const rewardText =
     rewardMode === "percent"
-      ? `${Math.round(rewardValue * 100) / 100}%`
-      : `${(Math.round(rewardValue * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+      ? `${Math.round(resolvedRewardValue * 100) / 100}%`
+      : `${(Math.round(resolvedRewardValue * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
 
   const upsertDecisionPayload = {
     activation_id: activation.id,
@@ -1664,7 +1690,10 @@ export async function adminResolveScoutDeal(formData: FormData) {
     deal_amount_eur: decisionStatus === "approved" ? Math.round(dealAmount * 100) / 100 : 0,
     deal_total_due_pro_eur: totalDuePro,
     apporteur_reward_mode: rewardMode,
-    apporteur_reward_value: String(Math.round(rewardValue * 100) / 100),
+    apporteur_reward_value: String(Math.round(resolvedRewardValue * 100) / 100),
+    apporteur_reward_value_eur: rewardMode === "eur" ? Math.round(resolvedRewardValue * 100) / 100 : safeRewardEur,
+    apporteur_reward_value_percent: rewardMode === "percent" ? Math.round(resolvedRewardValue * 100) / 100 : safeRewardPercent,
+    apporteur_reward_priority: "eur_first",
     apporteur_reward_text: rewardText,
   };
   const { error: metaError } = await supabaseAdmin
@@ -1692,7 +1721,10 @@ export async function adminResolveScoutDeal(formData: FormData) {
         source: "admin_eclaireurs_page",
         deal_amount_eur: Math.round(dealAmount * 100) / 100,
         reward_mode: rewardMode,
-        reward_value: Math.round(rewardValue * 100) / 100,
+        reward_value: Math.round(resolvedRewardValue * 100) / 100,
+        reward_value_eur: rewardMode === "eur" ? Math.round(resolvedRewardValue * 100) / 100 : safeRewardEur,
+        reward_value_percent: rewardMode === "percent" ? Math.round(resolvedRewardValue * 100) / 100 : safeRewardPercent,
+        reward_priority: "eur_first",
       },
     };
     const { error: apporteurLedgerError } = await supabaseAdmin

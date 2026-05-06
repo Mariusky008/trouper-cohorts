@@ -250,8 +250,8 @@ export default async function AdminHumainEclaireursPage({
                     <th className="px-2 py-2 text-left font-black">Téléphone</th>
                     <th className="px-2 py-2 text-left font-black">WA</th>
                     <th className="px-2 py-2 text-left font-black">Deal €</th>
-                    <th className="px-2 py-2 text-left font-black">Mode</th>
-                    <th className="px-2 py-2 text-left font-black">Valeur</th>
+                    <th className="px-2 py-2 text-left font-black">% éclaireur</th>
+                    <th className="px-2 py-2 text-left font-black">€ éclaireur (prioritaire)</th>
                     <th className="px-2 py-2 text-left font-black">Popey €</th>
                     <th className="px-2 py-2 text-left font-black">Dû éclaireur</th>
                     <th className="px-2 py-2 text-left font-black">Total dû pro</th>
@@ -271,6 +271,10 @@ export default async function AdminHumainEclaireursPage({
                       | "percent"
                       | "eur";
                     const rewardValue = readMetaNumber(activation?.metadata, "apporteur_reward_value") || scout.ownerRewardValue || 0;
+                    const rewardValueEur =
+                      readMetaNumber(activation?.metadata, "apporteur_reward_value_eur") || (rewardMode === "eur" ? rewardValue : 0);
+                    const rewardValuePercent =
+                      readMetaNumber(activation?.metadata, "apporteur_reward_value_percent") || (rewardMode === "percent" ? rewardValue : 0);
                     const contactPhone = String(referral.contact_phone_normalized || referral.contact_phone || "").trim();
                     const waHref = whatsappThreadHref(contactPhone);
                     return (
@@ -298,11 +302,8 @@ export default async function AdminHumainEclaireursPage({
                               <input type="hidden" name="activation_id" value={referral.matched_activation_id} />
                               <input type="hidden" name="scout_id" value={scout.id} />
                               <input name="deal_amount_eur" defaultValue={dealAmount > 0 ? String(dealAmount) : ""} className="h-8 rounded border px-2" />
-                              <select name="reward_mode" defaultValue={rewardMode} className="h-8 rounded border px-2">
-                                <option value="percent">%</option>
-                                <option value="eur">€</option>
-                              </select>
-                              <input name="reward_value" defaultValue={rewardValue > 0 ? String(rewardValue) : ""} className="h-8 rounded border px-2" />
+                              <input name="reward_value_percent" defaultValue={rewardValuePercent > 0 ? String(rewardValuePercent) : ""} className="h-8 rounded border px-2" />
+                              <input name="reward_value_eur" defaultValue={rewardValueEur > 0 ? String(rewardValueEur) : ""} className="h-8 rounded border px-2" />
                               <input name="popey_fee_eur" defaultValue={duePopey > 0 ? String(duePopey) : "0"} className="h-8 rounded border px-2" />
                               <input
                                 name="note"
@@ -310,6 +311,8 @@ export default async function AdminHumainEclaireursPage({
                                 placeholder="Note"
                                 className="h-8 rounded border px-2"
                               />
+                              <input type="hidden" name="reward_mode" value={rewardMode} />
+                              <input type="hidden" name="reward_value" value={rewardValue > 0 ? String(rewardValue) : ""} />
                               <button
                                 type="submit"
                                 name="decision_status"
@@ -395,6 +398,10 @@ export default async function AdminHumainEclaireursPage({
                         | "percent"
                         | "eur";
                       const rewardValue = readMetaNumber(activation?.metadata, "apporteur_reward_value") || scout.ownerRewardValue || 0;
+                      const rewardValueEur =
+                        readMetaNumber(activation?.metadata, "apporteur_reward_value_eur") || (rewardMode === "eur" ? rewardValue : 0);
+                      const rewardValuePercent =
+                        readMetaNumber(activation?.metadata, "apporteur_reward_value_percent") || (rewardMode === "percent" ? rewardValue : 0);
                       const note = readMetaString(activation?.metadata, "workflow_note");
                       const contactPhone = String(referral.contact_phone_normalized || referral.contact_phone || "").trim();
                       const waHref = whatsappThreadHref(contactPhone);
@@ -444,14 +451,16 @@ export default async function AdminHumainEclaireursPage({
                                 placeholder="Montant deal €"
                                 className="h-9 rounded border px-2 text-xs"
                               />
-                              <select name="reward_mode" defaultValue={rewardMode} className="h-9 rounded border px-2 text-xs">
-                                <option value="percent">Rétribution %</option>
-                                <option value="eur">Rétribution €</option>
-                              </select>
                               <input
-                                name="reward_value"
-                                defaultValue={rewardValue > 0 ? String(rewardValue) : ""}
-                                placeholder="Valeur"
+                                name="reward_value_percent"
+                                defaultValue={rewardValuePercent > 0 ? String(rewardValuePercent) : ""}
+                                placeholder="Rétribution %"
+                                className="h-9 rounded border px-2 text-xs"
+                              />
+                              <input
+                                name="reward_value_eur"
+                                defaultValue={rewardValueEur > 0 ? String(rewardValueEur) : ""}
+                                placeholder="Rétribution € (prioritaire)"
                                 className="h-9 rounded border px-2 text-xs"
                               />
                               <input
@@ -466,6 +475,8 @@ export default async function AdminHumainEclaireursPage({
                                 placeholder="Note"
                                 className="h-9 rounded border px-2 text-xs md:col-span-2"
                               />
+                              <input type="hidden" name="reward_mode" value={rewardMode} />
+                              <input type="hidden" name="reward_value" value={rewardValue > 0 ? String(rewardValue) : ""} />
                               <div className="flex items-center gap-2">
                                 <button
                                   type="submit"
