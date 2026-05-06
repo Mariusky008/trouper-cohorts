@@ -1017,11 +1017,16 @@ function slugifyCity(value) {
 
 function resolveRewardTextFromQuery() {
   var reward = (qp.get('reward') || qp.get('apporteur_reward') || '').trim();
-  if (reward) return reward;
   var rewardPct = (qp.get('reward_pct') || qp.get('apporteur_pct') || '').trim();
-  if (rewardPct) return rewardPct.endsWith('%') ? rewardPct : (rewardPct + '%');
   var rewardEur = (qp.get('reward_eur') || qp.get('apporteur_eur') || '').trim();
-  if (rewardEur) return rewardEur.endsWith('€') ? rewardEur : (rewardEur + '€');
+  var valueLabel = '';
+  if (rewardPct) valueLabel = rewardPct.endsWith('%') ? rewardPct : (rewardPct + '%');
+  if (!valueLabel && rewardEur) valueLabel = rewardEur.endsWith('€') ? rewardEur : (rewardEur + '€');
+  if (reward && valueLabel && reward.toLowerCase().indexOf(valueLabel.toLowerCase()) === -1) {
+    return valueLabel + ' + ' + reward;
+  }
+  if (reward) return reward;
+  if (valueLabel) return valueLabel;
   return '6%';
 }
 
@@ -1056,6 +1061,38 @@ function applyRewardInProWebapp() {
   if (comboExample) {
     comboExample.innerHTML = 'Diagnostic gratuit apporté → <strong style="color:var(--gold)">15€</strong> immédiat. Si le chantier signe ensuite → <strong style="color:var(--teal)">+' + rewardText + '</strong> en bonus dans les 60 jours.';
   }
+}
+
+function applyFreshStartFromAdminLink() {
+  var hasAdminContext = Boolean((qp.get('ref_name') || '').trim());
+  if (!hasAdminContext) return;
+  var firstName = (qp.get('ref_name') || 'Nouveau pro').trim();
+  var metier = (qp.get('ref_metier') || 'Professionnel').trim();
+  var city = (qp.get('ville') || 'dax').trim().replace(/-/g, ' ');
+  var cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : 'Dax';
+
+  var hdrTag = document.querySelector('.hdr-tag');
+  var hdrSub = document.querySelector('.hdr-sub');
+  if (hdrTag) hdrTag.textContent = 'Bonjour ' + firstName + ' 👋';
+  if (hdrSub) hdrSub.textContent = metier + ' · ' + cityLabel + ' · Nouveau membre';
+
+  document.querySelectorAll('.mh-val').forEach(function (el) { el.textContent = '0€'; });
+  document.querySelectorAll('.mh-trend').forEach(function (el) { el.textContent = 'Aucun historique pour le moment'; });
+  document.querySelectorAll('.fr-val').forEach(function (el) { el.textContent = '0'; });
+  document.querySelectorAll('.fr-bar').forEach(function (el) { el.style.width = '0%'; });
+  document.querySelectorAll('.sc-val').forEach(function (el) {
+    var current = (el.textContent || '').trim();
+    if (!current) return;
+    if (current.indexOf('%') !== -1) el.textContent = '0%';
+    else if (current.indexOf('€') !== -1 || current.indexOf('+') !== -1) el.textContent = '0€';
+    else el.textContent = '0';
+  });
+  document.querySelectorAll('.pi-comm').forEach(function (el) { el.textContent = '+0€'; });
+
+  var notifTitles = document.querySelectorAll('.ni-title');
+  if (notifTitles[0]) notifTitles[0].textContent = 'Aucune activité pour le moment';
+  if (notifTitles[1]) notifTitles[1].textContent = 'Ton tableau démarre à zéro';
+  if (notifTitles[2]) notifTitles[2].textContent = 'Partage ton catalogue pour lancer tes premiers leads';
 }
 
 function importContacts() {
@@ -1166,6 +1203,7 @@ function sendReco() {
 }
 
 applyRewardInProWebapp();
+applyFreshStartFromAdminLink();
 </script>
 </body>
 </html>

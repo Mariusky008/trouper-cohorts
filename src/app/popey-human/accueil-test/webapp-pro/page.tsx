@@ -21,7 +21,7 @@ function toQueryString(searchParams: Record<string, string | string[] | undefine
 
 export default async function PopeyHumanWebappProPage({ searchParams }: ProWebappPageProps) {
   const resolved = (await searchParams) || {};
-  const query = toQueryString({ ...resolved, v: "20260506-webapp-pro-route-v1" });
+  const query = toQueryString({ ...resolved, v: "20260506-webapp-pro-fresh-v2" });
   return (
     <main className="h-screen w-full overflow-hidden bg-[#07090C]">
       <iframe title="Popey Pro Webapp" src={`/popey-webapp-pro.html${query}`} className="h-full w-full border-0" />
