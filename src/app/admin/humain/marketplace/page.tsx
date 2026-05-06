@@ -49,17 +49,52 @@ function readMetaString(metadata: unknown, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string, refMetier?: string) {
+function normalizeRewardText(input: { mode: string; value: string; customText: string }) {
+  const custom = String(input.customText || "").trim();
+  if (custom) return custom;
+  const valueRaw = String(input.value || "").trim().replace(",", ".");
+  if (!valueRaw) return "";
+  const amount = Number(valueRaw);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  const normalized = Math.round(amount * 100) / 100;
+  const mode = String(input.mode || "").trim().toLowerCase();
+  if (mode === "percent") return `${normalized}%`;
+  if (mode === "eur") return `${normalized.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  return "";
+}
+
+function buildRewardQueryFromMeta(metadata: unknown) {
+  const mode = readMetaString(metadata, "apporteur_reward_mode");
+  const value = readMetaString(metadata, "apporteur_reward_value");
+  const customText = readMetaString(metadata, "apporteur_reward_text");
+  const rewardText = normalizeRewardText({ mode, value, customText });
+  if (!rewardText) return "";
+  const params = new URLSearchParams();
+  params.set("reward", rewardText);
+  if (mode === "percent" && value) params.set("reward_pct", value);
+  if (mode === "eur" && value) params.set("reward_eur", value);
+  return `&${params.toString()}`;
+}
+
+function buildPersonalLink(baseUrl: string, city: string, refId: string, refLabel: string, refMetier?: string, rewardQuery?: string) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
-  const relativeUrl = `/privilege/${citySlug}?ref_id=${encodeURIComponent(refId)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}`;
+  const relativeUrl = `/privilege/${citySlug}?ref_id=${encodeURIComponent(refId)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardQuery || ""}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
-function buildReferralCodeLink(baseUrl: string, city: string, referralCode: string, refLabel: string, refMetier?: string) {
+function buildReferralCodeLink(baseUrl: string, city: string, referralCode: string, refLabel: string, refMetier?: string, rewardQuery?: string) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
-  const relativeUrl = `/privilege/${citySlug}?ref=${encodeURIComponent(referralCode)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}`;
+  const relativeUrl = `/privilege/${citySlug}?ref=${encodeURIComponent(referralCode)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardQuery || ""}`;
+  return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
+}
+
+function buildProWebappLink(baseUrl: string, city: string, refLabel: string, refMetier?: string, rewardQuery?: string) {
+  const citySlug = slugify(city || "dax") || "dax";
+  const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
+  const rewardSuffix = rewardQuery || "";
+  const relativeUrl = `/popey-human/accueil-test/webapp-pro.html?ville=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${rewardSuffix}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
@@ -446,20 +481,39 @@ export default async function AdminHumainMarketplacePage({
                             const refLabel = parsed.displayName;
                             const refMetier = parsed.metier || offer.metier || "";
                             const city = offer.city || offer.place?.city || "dax";
-                            const link = refId
-                              ? buildPersonalLink(appBase, city, refId, refLabel, refMetier)
+                            const rewardQuery = buildRewardQueryFromMeta(offer.metadata);
+                            const catalogueLink = refId
+                              ? buildPersonalLink(appBase, city, refId, refLabel, refMetier, rewardQuery)
                               : offer.status === "accepted" && referralCode
-                                ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier)
+                                ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier, rewardQuery)
                                 : "";
-                            if (!link) return null;
+                            const proWebappLink = buildProWebappLink(appBase, city, refLabel, refMetier, rewardQuery);
+                            if (!catalogueLink) return null;
                             return (
-                              <p className="text-xs text-emerald-700">
-                                Lien perso pro:{" "}
-                                <a href={link} target="_blank" rel="noreferrer" className="underline">
-                                  {link}
-                                </a>
-                              </p>
+                              <div className="space-y-1">
+                                <p className="text-xs text-emerald-700">
+                                  Lien catalogue client:{" "}
+                                  <a href={catalogueLink} target="_blank" rel="noreferrer" className="underline">
+                                    {catalogueLink}
+                                  </a>
+                                </p>
+                                <p className="text-xs text-sky-700">
+                                  Lien web app pro:{" "}
+                                  <a href={proWebappLink} target="_blank" rel="noreferrer" className="underline">
+                                    {proWebappLink}
+                                  </a>
+                                </p>
+                              </div>
                             );
+                          })()}
+                          {(() => {
+                            const rewardText = normalizeRewardText({
+                              mode: readMetaString(offer.metadata, "apporteur_reward_mode"),
+                              value: readMetaString(offer.metadata, "apporteur_reward_value"),
+                              customText: readMetaString(offer.metadata, "apporteur_reward_text"),
+                            });
+                            if (!rewardText) return null;
+                            return <p className="text-xs text-emerald-800">Rétribution apporteur: {rewardText}</p>;
                           })()}
                           {offer.status === "accepted" ? (
                             <p className="text-xs text-amber-700">Le pro accepté reste piloté ici sans attribution membre manuelle.</p>
@@ -499,6 +553,35 @@ export default async function AdminHumainMarketplacePage({
                             </select>
                             <button type="submit" className="h-9 rounded border px-3 text-xs font-black uppercase tracking-wide">
                               MAJ demande
+                            </button>
+                          </form>
+
+                          <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2 rounded border border-emerald-200 bg-emerald-50/50 p-2">
+                            <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                            <input type="hidden" name="offer_id" value={offer.id} />
+                            <input type="hidden" name="intent" value="update_reward" />
+                            <select
+                              name="reward_mode"
+                              defaultValue={readMetaString(offer.metadata, "apporteur_reward_mode") || "percent"}
+                              className="h-9 rounded border bg-white px-2 text-xs"
+                            >
+                              <option value="percent">Rétribution en %</option>
+                              <option value="eur">Rétribution en €</option>
+                            </select>
+                            <input
+                              name="reward_value"
+                              defaultValue={readMetaString(offer.metadata, "apporteur_reward_value")}
+                              placeholder="Valeur (ex: 12 ou 25)"
+                              className="h-9 w-40 rounded border bg-white px-2 text-xs"
+                            />
+                            <input
+                              name="reward_text"
+                              defaultValue={readMetaString(offer.metadata, "apporteur_reward_text")}
+                              placeholder="Texte personnalisé (optionnel)"
+                              className="h-9 w-56 rounded border bg-white px-2 text-xs"
+                            />
+                            <button type="submit" className="h-9 rounded border border-emerald-300 bg-white px-3 text-xs font-black uppercase tracking-wide text-emerald-800">
+                              MAJ rétribution
                             </button>
                           </form>
 

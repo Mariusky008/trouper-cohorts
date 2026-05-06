@@ -777,24 +777,24 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
             <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--t)">Si le deal est payant</div>
-                <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">6% du montant</div>
+                <div id="rewardDealMain" style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--teal)">6% du montant</div>
               </div>
-              <div style="font-size:11px;color:var(--t3);line-height:1.5">Exemple : chantier à 800€ → <strong style="color:var(--teal)">+48€</strong> versés à l'apporteur le 1er du mois</div>
+              <div id="rewardDealExample" style="font-size:11px;color:var(--t3);line-height:1.5">Exemple : chantier à 800€ → <strong style="color:var(--teal)">+48€</strong> versés à l'apporteur le 1er du mois</div>
             </div>
 
             <!-- Si gratuité -->
             <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--t)">Si ton offre est une gratuité</div>
-                <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--gold)">15€ fixe</div>
+                <div id="rewardFreeMain" style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--gold)">15€ fixe</div>
               </div>
-              <div style="font-size:11px;color:var(--t3);line-height:1.5">15€ versés dès que le contact qualifié arrive chez toi — que ça signe ou pas. Ça motive quand même à recommander.</div>
+              <div id="rewardFreeExample" style="font-size:11px;color:var(--t3);line-height:1.5">15€ versés dès que le contact qualifié arrive chez toi — que ça signe ou pas. Ça motive quand même à recommander.</div>
             </div>
 
             <!-- Combo -->
             <div style="background:rgba(232,184,75,.06);border:1px solid var(--gold-g);border-radius:12px;padding:12px">
               <div style="font-family:var(--fd);font-size:11px;font-weight:700;color:var(--gold);margin-bottom:5px">💡 Les deux peuvent s'additionner</div>
-              <div style="font-size:11px;color:var(--t2);line-height:1.5">Diagnostic gratuit apporté → <strong style="color:var(--gold)">15€</strong> immédiat. Si le chantier signe ensuite → <strong style="color:var(--teal)">+6%</strong> en bonus dans les 60 jours.</div>
+              <div id="rewardComboExample" style="font-size:11px;color:var(--t2);line-height:1.5">Diagnostic gratuit apporté → <strong style="color:var(--gold)">15€</strong> immédiat. Si le chantier signe ensuite → <strong style="color:var(--teal)">+6%</strong> en bonus dans les 60 jours.</div>
             </div>
 
             <div style="font-size:11px;color:var(--t3);line-height:1.5;text-align:center">Tout est calculé et versé automatiquement par Popey · Tu n'as rien à gérer</div>
@@ -1003,6 +1003,60 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
 
 <script>
 var cur = 's1';
+var qp = new URLSearchParams(window.location.search);
+
+function slugifyCity(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'dax';
+}
+
+function resolveRewardTextFromQuery() {
+  var reward = (qp.get('reward') || qp.get('apporteur_reward') || '').trim();
+  if (reward) return reward;
+  var rewardPct = (qp.get('reward_pct') || qp.get('apporteur_pct') || '').trim();
+  if (rewardPct) return rewardPct.endsWith('%') ? rewardPct : (rewardPct + '%');
+  var rewardEur = (qp.get('reward_eur') || qp.get('apporteur_eur') || '').trim();
+  if (rewardEur) return rewardEur.endsWith('€') ? rewardEur : (rewardEur + '€');
+  return '6%';
+}
+
+function buildCatalogueLink() {
+  var base = 'https://www.popey.academy';
+  var city = slugifyCity(qp.get('ville') || qp.get('city') || 'dax');
+  var ref = (qp.get('ref') || '').trim();
+  var refName = (qp.get('ref_name') || '').trim();
+  var refMetier = (qp.get('ref_metier') || '').trim();
+  var reward = resolveRewardTextFromQuery();
+  var params = new URLSearchParams();
+  if (ref) params.set('ref', ref);
+  if (refName) params.set('ref_name', refName);
+  if (refMetier) params.set('ref_metier', refMetier);
+  if (reward) params.set('reward', reward);
+  return base + '/privilege/' + city + (params.toString() ? ('?' + params.toString()) : '');
+}
+
+function applyRewardInProWebapp() {
+  var rewardText = resolveRewardTextFromQuery();
+  var dealMain = document.getElementById('rewardDealMain');
+  var dealExample = document.getElementById('rewardDealExample');
+  var freeMain = document.getElementById('rewardFreeMain');
+  var freeExample = document.getElementById('rewardFreeExample');
+  var comboExample = document.getElementById('rewardComboExample');
+  if (dealMain) dealMain.textContent = rewardText + (rewardText.includes('€') ? ' par affaire' : ' du montant');
+  if (dealExample) dealExample.innerHTML = 'Exemple : chantier à 800€ → <strong style="color:var(--teal)">+' + rewardText + '</strong> versés à l\'apporteur le 1er du mois';
+  if (freeMain) freeMain.textContent = rewardText.includes('€') ? (rewardText + ' fixe') : '15€ fixe';
+  if (freeExample && rewardText.includes('€')) {
+    freeExample.textContent = rewardText + ' versés dès que le contact qualifié arrive chez toi — que ça signe ou pas.';
+  }
+  if (comboExample) {
+    comboExample.innerHTML = 'Diagnostic gratuit apporté → <strong style="color:var(--gold)">15€</strong> immédiat. Si le chantier signe ensuite → <strong style="color:var(--teal)">+' + rewardText + '</strong> en bonus dans les 60 jours.';
+  }
+}
 
 function importContacts() {
   var input = document.createElement('input');
@@ -1027,12 +1081,12 @@ function importContacts() {
 }
 
 function openWAMass() {
-  var msg = "Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de Dax. Plombier, agent immo, coach, architecte... Clique ici pour profiter de mes avantages : popey.academy/catalogue?ref=frederic-plomb-dax";
+  var msg = "Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de ma ville. Clique ici pour profiter de mes avantages : " + buildCatalogueLink();
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function shareOffer(pro, metier, offre, id) {
-  var msg = "Salut ! Je voulais te partager une offre exclusive via Popey — " + offre + " chez " + pro + " (" + metier + " à Dax). Active-la ici : popey.academy/catalogue?ref=frederic-plomb-dax [ID: " + id + "]";
+  var msg = "Salut ! Je voulais te partager une offre exclusive via Popey — " + offre + " chez " + pro + " (" + metier + "). Active-la ici : " + buildCatalogueLink() + " [ID: " + id + "]";
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
@@ -1110,6 +1164,8 @@ function sendReco() {
     showScreen('s4','bn4');
   }, 1800);
 }
+
+applyRewardInProWebapp();
 </script>
 </body>
 </html>

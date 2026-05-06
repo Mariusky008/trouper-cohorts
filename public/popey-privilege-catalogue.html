@@ -182,6 +182,7 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(200,168,75,.18), rgba(200,168,75,.06));
   border: 1px solid rgba(200,168,75,.34);
+  display: none !important;
 }
 .featured-tag {
   font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8A6A18;
@@ -257,6 +258,9 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 .pro-loc { font-size: 11px; color: var(--t3); }
 .pro-verified { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--teal-d); display: flex; align-items: center; gap: 4px; }
 .pro-verified::before { content: '✓'; }
+.pro-reward-wrap { display: flex; flex-direction: column; gap: 2px; }
+.pro-reward-title { font-size: 12px; font-weight: 900; color: var(--ink); line-height: 1.2; }
+.pro-reward-note { font-size: 13px; font-weight: 900; color: var(--ink); line-height: 1.2; }
 
 /* DIVIDER between spheres */
 .sphere-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 16px; }
@@ -1281,12 +1285,17 @@ function copyApporteurWebappLink() {
   if (copyBtn) copyBtn.textContent = 'Copie impossible';
 }
 
+function toCityLabel(raw) {
+  var city = String(raw || '').trim().replace(/-/g, ' ');
+  if (!city) return 'Dax';
+  return city.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
 (function hydrateReferralContext(){
   var params = new URLSearchParams(window.location.search);
   var refName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Jean Roth').trim();
   var refMetier = (params.get('ref_metier') || params.get('metier') || 'Membre Popey').trim();
-  var city = (params.get('ville') || 'Bayonne 64').trim().replace(/-/g, ' ');
-  var cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : 'Bayonne 64';
+  var cityLabel = toCityLabel(params.get('ville') || 'dax');
   var first = refName.split(/\s+/)[0] || 'Jean';
 
   var senderName = document.querySelector('.sender-name');
@@ -1299,7 +1308,17 @@ function copyApporteurWebappLink() {
   if (heroDesc) heroDesc.textContent = first + ' fait partie du réseau Popey — 150 professionnels de confiance sur le ' + cityLabel + '. Il vous partage ses accès. Activez en 1 tap, profitez immédiatement.';
 })();
 
-var liveState = { loaded: false, places: [], activeSphere: 'all', byId: {}, featuredPlaceId: '', refFirstName: 'Votre contact' };
+var liveState = {
+  loaded: false,
+  places: [],
+  activeSphere: 'all',
+  byId: {},
+  featuredPlaceId: '',
+  refFirstName: 'Votre contact',
+  cityLabel: 'Dax',
+  refFullName: 'Votre contact',
+  rewardText: 'une commission'
+};
 function euros(value) {
   var num = Number(value || 0);
   return num.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -1328,10 +1347,20 @@ function normalizePlace(row) {
     metier: String(row.metier || 'Professionnel'),
     badge: String(row.privilege_badge || row.privilegeBadge || row.badge || 'Offre privilège'),
     desc: String(row.offer_description || row.description || 'Activation immédiate en 1 tap via WhatsApp.'),
-    image: String(row.cover_url || row.photo_url || row.logo_url || row.logoUrl || ''),
+    image: String(row.cover_url || row.photo_url || row.photoUrl || row.offer_photo_url || row.offerPhotoUrl || row.logo_url || row.logoUrl || ''),
     value: Number(row.partner_offer_value_eur || row.partnerOfferValueEur || 0),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
+}
+
+function resolveRewardText(params) {
+  var direct = (params.get('reward') || params.get('apporteur_reward') || '').trim();
+  if (direct) return direct;
+  var rewardPct = (params.get('reward_pct') || params.get('apporteur_pct') || '').trim();
+  if (rewardPct) return rewardPct.endsWith('%') ? rewardPct : (rewardPct + '%');
+  var rewardEur = (params.get('reward_eur') || params.get('apporteur_eur') || '').trim();
+  if (rewardEur) return rewardEur.endsWith('€') ? rewardEur : (rewardEur + '€');
+  return 'une commission';
 }
 
 function renderLiveCardHtml(p, meta, featured) {
@@ -1342,24 +1371,21 @@ function renderLiveCardHtml(p, meta, featured) {
     ? '<img class="oc-img-strip" src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
     : '';
   image += '<div class="oc-img-placeholder" style="background:rgba(0,0,0,.04);display:' + (p.image ? 'none' : 'flex') + '">' + meta.icon + '</div>';
-  var featuredTop = featured
-    ? '<div class="featured-head"><div class="featured-tag">Offre en vedette</div><div class="featured-note">En premier dans ce catalogue</div></div>'
-    : '';
+  var refName = (liveState.refFullName || liveState.refFirstName || 'Votre contact');
+  var rewardText = liveState.rewardText || 'une commission';
 
   return ''
     + '<div class="offer-card' + (featured ? ' featured-offer' : '') + '" data-sphere="' + p.sphere + '">'
     + '  <div class="oc-stripe" style="background:' + meta.grad + '"></div>'
     + '  <div class="oc-header-new">'
-    + featuredTop
     + '    <div class="oc-profile-row">'
     + '      <img class="pro-photo" src="' + (p.image || '') + '" alt="' + p.name + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
     + '      <div class="pro-photo-fallback" style="background:rgba(0,0,0,.06);color:#1f2937;display:' + (p.image ? 'none' : 'flex') + '">' + initials + '</div>'
     + '      <div class="oc-profile-info">'
     + '        <div class="oc-sphere-tag" style="color:' + meta.color + ';border:1px solid rgba(0,0,0,.12)">' + meta.icon + ' ' + meta.label + '</div>'
     + '        <div class="oc-name">' + p.name + '</div>'
-    + '        <div class="oc-role">' + p.metier + ' · 📍 Bayonne 64</div>'
+    + '        <div class="oc-role">' + p.metier + ' · 📍 ' + (liveState.cityLabel || 'Dax') + '</div>'
     + '      </div>'
-    + '      <div class="pro-badge">' + (featured ? 'Votre offre' : 'Statut pro') + '</div>'
     + '    </div>'
     + '  </div>'
     + image
@@ -1377,7 +1403,7 @@ function renderLiveCardHtml(p, meta, featured) {
     + '    <button class="btn-wa js-live-activate" data-place-id="' + p.id + '" data-code="' + idShort + '"><span class="btn-wa-icon">💬</span> Activer mon privilège via WhatsApp</button>'
     + '    <div class="oc-cta-note">Message pré-rempli · Envoi en 1 tap · ' + (liveState.refFirstName || 'Votre contact') + ' est notifié automatiquement</div>'
     + '  </div>'
-    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div style="flex:1;min-width:0"><div class="pro-name">' + p.name + '</div><div class="pro-loc">' + p.metier + ' · Bayonne 64 · réseau Popey</div></div><div class="pro-verified">Membre vérifié</div></div>'
+    + '  <div class="oc-pro-info"><div class="pro-av-photo">' + meta.icon + '</div><div class="pro-reward-wrap" style="flex:1;min-width:0"><div class="pro-reward-title">Pour ceux qui partagent ce catalogue (apporteur d\'affaires)</div><div class="pro-reward-note">' + refName + ' retribue ' + rewardText + '.</div></div><div class="pro-verified">Membre vérifié</div></div>'
     + '</div>';
 }
 
@@ -1507,10 +1533,13 @@ async function initLiveCatalog() {
   try {
     var params = new URLSearchParams(window.location.search);
     var city = (params.get('ville') || 'dax').trim();
+    liveState.cityLabel = toCityLabel(city);
     var refId = (params.get('ref_id') || '').trim();
     var refCode = (params.get('ref') || '').trim();
     var refName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Votre contact').trim();
     liveState.refFirstName = (refName.split(/\s+/)[0] || 'Votre contact');
+    liveState.refFullName = refName || liveState.refFirstName;
+    liveState.rewardText = resolveRewardText(params);
     var qs = new URLSearchParams({ catalog: 'privilege', city: city });
     if (refId) qs.set('ref_id', refId);
     if (refCode) qs.set('ref', refCode);

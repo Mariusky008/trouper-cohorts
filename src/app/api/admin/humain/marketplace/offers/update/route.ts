@@ -45,12 +45,13 @@ export async function POST(request: Request) {
   const offerId = String(formData.get("offer_id") || "").trim();
   const nextStatus = String(formData.get("next_status") || "").trim();
   const assignMemberIdRaw = String(formData.get("assign_member_id") || "").trim();
+  const intent = String(formData.get("intent") || "").trim();
 
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
 
   if (!offerId) return fail("Demande introuvable.");
-  if (!["pending", "reviewing", "accepted", "rejected", "cancelled"].includes(nextStatus)) {
+  if (intent !== "update_reward" && !["pending", "reviewing", "accepted", "rejected", "cancelled"].includes(nextStatus)) {
     return fail("Statut de demande invalide.");
   }
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     .eq("id", offerId)
     .maybeSingle();
   if (offerReadError || !offer) return fail(offerReadError?.message || "Demande introuvable.");
-  if (!canTransitionOfferStatus(String(offer.status || ""), nextStatus)) {
+  if (intent !== "update_reward" && !canTransitionOfferStatus(String(offer.status || ""), nextStatus)) {
     return fail(`Transition demande invalide: ${String(offer.status)} -> ${nextStatus}.`);
   }
 
@@ -75,6 +76,44 @@ export async function POST(request: Request) {
     offer.metadata && typeof offer.metadata === "object" && !Array.isArray(offer.metadata)
       ? (offer.metadata as Record<string, unknown>)
       : {};
+  if (intent === "update_reward") {
+    const rewardModeRaw = String(formData.get("reward_mode") || "").trim().toLowerCase();
+    const rewardMode = rewardModeRaw === "eur" ? "eur" : "percent";
+    const rewardValueRaw = String(formData.get("reward_value") || "")
+      .trim()
+      .replace(",", ".");
+    const rewardValue = Number(rewardValueRaw);
+    const rewardTextRaw = String(formData.get("reward_text") || "").trim();
+    const rewardTextComputed =
+      rewardTextRaw ||
+      (Number.isFinite(rewardValue) && rewardValue > 0
+        ? rewardMode === "percent"
+          ? `${Math.round(rewardValue * 100) / 100}%`
+          : `${(Math.round(rewardValue * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`
+        : "");
+    const nextMeta: Record<string, unknown> = {
+      ...currentMeta,
+      apporteur_reward_mode: rewardMode,
+      apporteur_reward_value: Number.isFinite(rewardValue) && rewardValue > 0 ? String(Math.round(rewardValue * 100) / 100) : "",
+      apporteur_reward_text: rewardTextComputed,
+      apporteur_reward_updated_at: new Date().toISOString(),
+    };
+    const { error: rewardError } = await supabaseAdmin
+      .from("human_marketplace_offers")
+      .update({
+        metadata: nextMeta,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", offerId);
+    if (rewardError) return fail(rewardError.message || "Mise à jour rétribution impossible.");
+    revalidatePath("/admin/humain/marketplace");
+    revalidatePath("/privilege/[ville]");
+    revalidatePath("/popey-human/accueil-test/webapp-pro.html");
+    return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", "Rétribution apporteur mise à jour.")), {
+      status: 303,
+    });
+  }
+
   const referralCodeExisting = String(currentMeta.referral_code || "").trim();
   const referralCodeGenerated =
     referralCodeExisting ||
