@@ -2812,7 +2812,15 @@ function getModalConfig(type) {
           <div class="modal-field"><label>Votre metier exact</label><input name="metier" required type="text" placeholder="Developpeur web freelance"></div>
           <div class="modal-field"><label>Votre ville</label><input name="city" required type="text" placeholder="Dax (40)"></div>
           <div class="modal-field"><label>Votre numero WhatsApp</label><input name="whatsapp" required type="tel" placeholder="+33 6 XX XX XX XX"></div>
-          <div class="modal-field"><label>Votre site web (optionnel)</label><input name="website" type="url" placeholder="https://votre-site.fr"></div>
+          <div class="modal-field">
+            <label>Choisissez l'option qui vous convient</label>
+            <select name="selectedPlan" required>
+              <option value="" selected disabled>Selectionnez votre option</option>
+              <option value="option_a_starter">Option A - Starter (au RDV qualifie)</option>
+              <option value="option_b_performance">Option B - Performance (a la signature)</option>
+              <option value="option_c_membre">Option C - Membre (abonnement fixe)</option>
+            </select>
+          </div>
           <button class="modal-btn" type="submit">Reserver ma place →</button>
         </form>
       `,
@@ -2840,6 +2848,7 @@ function getModalConfig(type) {
 }
 
 async function submitMarketplaceAction(type, form) {
+  const selectedPlan = String(form.get("selectedPlan") || "").trim();
   const payload = {
     actionType: type,
     placeId: currentModalPlaceId || undefined,
@@ -2853,7 +2862,7 @@ async function submitMarketplaceAction(type, form) {
     source: funnelSource || "marketplace_landing",
     referralCode: funnelReferralCode || null,
     referralLabel: funnelReferralLabel || null,
-    selectedPlan: type === "rejoindre" ? "zero_euro_premier_mois" : null,
+    selectedPlan: type === "rejoindre" ? (selectedPlan || null) : null,
   };
 
   const response = await fetch("/api/popey-human/marketplace/actions", {
