@@ -5,7 +5,7 @@ import { OpenAI } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
-import { sendPartnerOutreach, sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { sendPartnerOutreach } from "@/lib/actions/whatsapp-twilio";
 import { isWhatsAppTwilioConfigured } from "@/lib/popey-human/whatsapp-twilio-config";
 import {
   smartScanFeatureFlags,
@@ -3890,26 +3890,15 @@ export async function createAllianceInvite(input: {
   const senderFirstName = String(memberProfile?.first_name || "").trim() || "Popey";
   const cityOrContext = String(ensuredProspectRow.city || memberProfile?.ville || "").trim() || "votre ville";
   const targetJob = String(ensuredProspectRow.metier || "").trim() || "partenaire local";
-  const twentyFourHoursAgoIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentInbound } = await supabaseAdmin
-    .from("human_whatsapp_events")
-    .select("id")
-    .eq("owner_member_id", ownerMemberId)
-    .eq("phone_e164", phone)
-    .eq("direction", "inbound")
-    .gte("created_at", twentyFourHoursAgoIso)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let deliveryMode: "free_text_24h" | "template" = "template";
-  let twilioResult: { success: true; sid: string; status: string } | { success: false; error: string } = {
-    success: false,
-    error: "Envoi non initialisé.",
-  };
-
-  if (recentInbound?.id && messageDraft) {
-    const freeTextResult = await sendWhatsAppTextMessage(phone, messageDraft, {
+  const twilioResult = await sendPartnerOutreach(
+    phone,
+    {
+      1: firstName,
+      2: senderFirstName,
+      3: cityOrContext,
+      4: targetJob,
+    },
+    {
       ownerMemberId,
       source: "smart_scan_alliance_invite",
       metadata: {
@@ -3918,43 +3907,12 @@ export async function createAllianceInvite(input: {
         onboarding_token: invite?.onboarding_token || token,
         onboarding_link: invite?.onboarding_link || onboardingLink,
         scout_portal_link: scoutPortalLink,
-        channel: "whatsapp_free_text_twilio",
-        delivery_mode: "free_text_24h",
+        channel: "whatsapp_template_twilio",
+        delivery_mode: "template",
+        message_draft_note: messageDraft || null,
       },
-    });
-    if (freeTextResult.success) {
-      deliveryMode = "free_text_24h";
-      twilioResult = freeTextResult;
-    }
-  }
-
-  if (!twilioResult.success) {
-    const templateResult = await sendPartnerOutreach(
-      phone,
-      {
-        1: firstName,
-        2: senderFirstName,
-        3: cityOrContext,
-        4: targetJob,
-      },
-      {
-        ownerMemberId,
-        source: "smart_scan_alliance_invite",
-        metadata: {
-          alliance_invite_id: invite?.id || null,
-          alliance_prospect_id: ensuredProspectRow.id,
-          onboarding_token: invite?.onboarding_token || token,
-          onboarding_link: invite?.onboarding_link || onboardingLink,
-          scout_portal_link: scoutPortalLink,
-          channel: "whatsapp_template_twilio",
-          delivery_mode: "template",
-          message_draft_note: messageDraft || null,
-        },
-      },
-    );
-    twilioResult = templateResult;
-    deliveryMode = "template";
-  }
+    },
+  );
 
   if (!twilioResult.success) {
     return { error: `Envoi WhatsApp Pro impossible: ${twilioResult.error}` };
@@ -3985,7 +3943,7 @@ export async function createAllianceInvite(input: {
     onboardingLink: invite?.onboarding_link || onboardingLink,
     scoutPortalLink,
     provider: "twilio" as const,
-    deliveryMode,
+    deliveryMode: "template" as const,
     sid: twilioResult.sid,
     status: twilioResult.status,
   };
