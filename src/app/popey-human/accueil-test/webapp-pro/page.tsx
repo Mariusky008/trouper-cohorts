@@ -23,7 +23,7 @@ export default async function PopeyHumanWebappProPage({ searchParams }: ProWebap
   const resolved = (await searchParams) || {};
   const query = toQueryString({ ...resolved, v: "20260506-webapp-pro-fresh-v2" });
   return (
-    <main className="h-screen w-full overflow-hidden bg-[#07090C]">
+    <main className="h-dvh w-full overflow-hidden bg-[#07090C]">
       <iframe title="Popey Pro Webapp" src={`/popey-webapp-pro.html${query}`} className="h-full w-full border-0" />
     </main>
   );

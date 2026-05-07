@@ -6,6 +6,7 @@
 <title>Jean-Philippe Roth — Apporteur de Clients</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/popey-legal-footer.css">
 <style>
 :root {
   --ink:#0A0B0F;
@@ -1231,8 +1232,27 @@ html { scroll-behavior: smooth; }
 <footer class="footer">
   <div class="footer-logo">Popey</div>
   <div>© 2026 Popey Coffeeshop SAS — 9 Rue Sully, 40100 Dax — SIRET 995 014 388 00012</div>
-  <div><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none;margin-right:20px">CGV/CGU</a><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none">Mentions légales</a></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+    <span onclick="openLegal('cgv')" style="color:rgba(245,242,236,.4);text-decoration:none;font-size:12px;cursor:pointer;transition:color .2s" onmouseover="this.style.color='rgba(0,196,140,.8)'" onmouseout="this.style.color='rgba(245,242,236,.4)'">CGV</span>
+    <span onclick="openLegal('cgu')" style="color:rgba(245,242,236,.4);text-decoration:none;font-size:12px;cursor:pointer;transition:color .2s" onmouseover="this.style.color='rgba(0,196,140,.8)'" onmouseout="this.style.color='rgba(245,242,236,.4)'">CGU</span>
+    <span onclick="openLegal('mentions')" style="color:rgba(245,242,236,.4);text-decoration:none;font-size:12px;cursor:pointer;transition:color .2s" onmouseover="this.style.color='rgba(0,196,140,.8)'" onmouseout="this.style.color='rgba(245,242,236,.4)'">Mentions légales</span>
+    <span onclick="openLegal('confidentialite')" style="color:rgba(245,242,236,.4);text-decoration:none;font-size:12px;cursor:pointer;transition:color .2s" onmouseover="this.style.color='rgba(0,196,140,.8)'" onmouseout="this.style.color='rgba(245,242,236,.4)'">Politique de confidentialité</span>
+    <a href="mailto:contact@popey.academy" style="color:rgba(245,242,236,.4);text-decoration:none;font-size:12px;transition:color .2s" onmouseover="this.style.color='rgba(0,196,140,.8)'" onmouseout="this.style.color='rgba(245,242,236,.4)'">Contact</a>
+  </div>
 </footer>
+
+<div id="legalOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,8,16,.85);backdrop-filter:blur(16px);z-index:9999;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeLegal()">
+  <div style="background:#F5F2EC;border-radius:24px;width:100%;max-width:760px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:legalIn .3s cubic-bezier(.32,1,.28,1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid #E0DCD4;background:#F5F2EC;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#0A0B0F" id="legalTitle">Mentions légales</div>
+        <div style="background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.3);border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:#009B6F;letter-spacing:.08em">Popey Coffeeshop SAS</div>
+      </div>
+      <button onclick="closeLegal()" style="background:rgba(0,0,0,.07);border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;transition:background .2s" onmouseover="this.style.background='rgba(0,0,0,.12)'" onmouseout="this.style.background='rgba(0,0,0,.07)'">✕</button>
+    </div>
+    <div id="legalContent" style="overflow-y:auto;padding:32px 28px;font-size:14px;color:#3A3630;line-height:1.8;font-weight:300;-webkit-overflow-scrolling:touch"></div>
+  </div>
+</div>
 
 <script>
 function showPlan(plan){['a','b','c'].forEach(function(p){document.getElementById('plan-'+p).style.display=p===plan?'block':'none';var tab=document.getElementById('tab-'+p);if(p==='a'){tab.style.background=plan==='a'?'#1A5CB0':'transparent';tab.style.color=plan==='a'?'#fff':'var(--text-sec)';}if(p==='b'){tab.style.background=plan==='b'?'var(--teal)':'transparent';tab.style.color=plan==='b'?'var(--ink)':'var(--text-sec)';}if(p==='c'){tab.style.background=plan==='c'?'var(--ink)':'transparent';tab.style.color=plan==='c'?'var(--paper)':'var(--text-sec)';}});}
@@ -1273,5 +1293,6 @@ function updateSim(){
 }
 updateSim();
 </script>
+<script src="/popey-legal-footer.js"></script>
 </body>
 </html>

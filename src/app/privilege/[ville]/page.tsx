@@ -29,7 +29,7 @@ export default async function PrivilegeByCityPage({ params, searchParams }: Priv
     }
   }
   return (
-    <main className="h-screen w-full overflow-hidden bg-[#F8F5EE]">
+    <main className="h-dvh w-full overflow-hidden bg-[#F8F5EE]">
       <iframe
         title="Popey Privilege Catalogue"
         src={`/popey-privilege-catalogue.html?${query.toString()}`}

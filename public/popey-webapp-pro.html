@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Popey Pro — Espace Professionnel</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -15,19 +15,23 @@
   --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
   --t:#ECF0F8; --t2:rgba(236,240,248,.55); --t3:rgba(236,240,248,.28);
   --fd:'Syne',sans-serif; --fi:'Lora',serif; --fm:'DM Mono',monospace;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --vv-bottom: 0px;
+  --app-h: 100vh;
+  --bnav-h: 66px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--fi);overflow:hidden}
+html,body{height:var(--app-h);background:var(--bg);color:var(--t);font-family:var(--fi);overflow:hidden}
 body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
 /* ── SCREENS ── */
-.screen{position:absolute;inset:0;bottom:66px;overflow-y:auto;overflow-x:hidden;
+.screen{position:absolute;inset:0;bottom:calc(var(--bnav-h) + var(--safe-bottom) + var(--vv-bottom));overflow-y:auto;overflow-x:hidden;
   display:none;flex-direction:column;scrollbar-width:none;background:var(--bg)}
 .screen::-webkit-scrollbar{display:none}
 .screen.active{display:flex}
 
 /* ── BOTTOM NAV ── */
-.bnav{position:absolute;bottom:0;left:0;right:0;height:66px;
+.bnav{position:fixed;bottom:var(--vv-bottom);left:50%;transform:translateX(-50%);width:min(430px,100%);height:calc(var(--bnav-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);
   background:rgba(7,9,12,.96);backdrop-filter:blur(20px);
   border-top:1px solid var(--border);display:flex;z-index:50}
 .bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -371,20 +375,46 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
     </div>
   </div>
 
-  <!-- IMPORT CONTACTS + ENVOI CATALOGUE -->
+  <!-- PARTAGE WHATSAPP -->
   <div class="pad gap">
     <div class="sec-lbl">
       <span style="display:flex;align-items:center;gap:6px">
         <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">1</span>
-        Importe tes contacts
+        Envoie le catalogue
       </span>
     </div>
     <div class="card card-p">
+      <div style="margin-bottom:12px;padding:12px;background:rgba(0,212,154,.06);border:1px solid var(--teal-g);border-radius:12px;font-size:12px;color:var(--t2);line-height:1.65">
+        <div style="font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:5px">Message pré-rédigé</div>
+        <div style="font-style:italic" id="waMsgPreview">"Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de Dax. Plombier, agent immo, coach, architecte... Clique ici pour profiter de mes avantages : popey.academy/catalogue?ref=frederic-plomb-dax"</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn btn-teal" style="flex:1" onclick="openWAMass()">
+          <span style="font-size:16px">💬</span> ENVOYER SUR WHATSAPP
+        </button>
+        <button class="btn btn-ghost" style="width:auto;padding:15px 14px" onclick="copyWAMessage()">Copier</button>
+      </div>
+      <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5">WhatsApp s'ouvre · Tu choisis tes contacts · Envoi</div>
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(232,184,75,.08);border:1px solid var(--gold-g);border-radius:12px;font-size:11px;color:rgba(236,240,248,.7);line-height:1.5">
+        WhatsApp limite l'envoi multi-destinataires à 5 discussions maximum. Pour envoyer à toute ta liste : ouvre <strong style="color:var(--gold)">Mode avancé (+ de 5)</strong> ci-dessous.
+      </div>
+    </div>
+  </div>
+
+  <div class="pad gap">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">2</span>
+        Mode avancé (+ de 5)
+      </span>
+      <span class="sec-lbl-r" id="advancedToggle" onclick="toggleAdvanced()">Afficher →</span>
+    </div>
+    <div class="card card-p" id="advancedBox" style="display:none">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <div style="font-size:32px">📱</div>
         <div style="flex:1">
           <div style="font-family:var(--fd);font-size:15px;font-weight:800;color:var(--t)" id="importLbl">Aucun contact importé</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px" id="importSub">Importe ton .vcf pour commencer</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px" id="importSub">Importe ton .vcf/.csv pour envoyer 1 par 1</div>
           <div style="margin-top:7px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">
             <div id="importBar" style="height:100%;width:0%;background:var(--teal);border-radius:2px;transition:width .6s ease"></div>
           </div>
@@ -394,26 +424,9 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
         <button class="btn btn-teal btn-sm" style="flex:1" onclick="importContacts()">📥 Importer .vcf/.csv</button>
         <button class="btn btn-ghost btn-sm" style="flex:1;font-size:10px" onclick="openTuto()">❓ Comment faire</button>
       </div>
-      <div style="font-size:11px;color:var(--t3);line-height:1.5">Contacts importés une fois, disponibles chaque mois pour les nouveaux catalogues.</div>
-    </div>
-  </div>
-
-  <div class="pad gap">
-    <div class="sec-lbl">
-      <span style="display:flex;align-items:center;gap:6px">
-        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:var(--bg);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">2</span>
-        Envoie le catalogue de mai
-      </span>
-    </div>
-    <div class="card card-p">
-      <div style="margin-bottom:12px;padding:12px;background:rgba(0,212,154,.06);border:1px solid var(--teal-g);border-radius:12px;font-size:12px;color:var(--t2);line-height:1.65">
-        <div style="font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:5px">Message pré-rédigé</div>
-        <div style="font-style:italic">"Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de Dax. Plombier, agent immo, coach, architecte... Clique ici pour profiter de mes avantages : popey.academy/catalogue?ref=frederic-plomb-dax"</div>
-      </div>
-      <button class="btn btn-teal" style="margin-bottom:8px" onclick="openWAMass()">
-        <span style="font-size:16px">💬</span> ENVOYER LE CATALOGUE EN MASSE
-      </button>
-      <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5">WhatsApp s'ouvre · Tu sélectionnes tes contacts · 1 tap</div>
+      <button class="btn btn-gold" id="bulkSendBtn" onclick="bulkSendNext()" style="margin-top:6px">▶ DÉMARRER / CONTINUER</button>
+      <div id="bulkSendStatus" style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5;margin-top:8px">Ouvre 1 chat à la fois. Après l'envoi dans WhatsApp, reviens ici et appuie sur Continuer.</div>
+      <button class="btn btn-ghost btn-sm" onclick="bulkSendReset()" style="margin-top:10px">Réinitialiser</button>
     </div>
   </div>
 
@@ -1004,6 +1017,18 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:r
 <script>
 var cur = 's1';
 var qp = new URLSearchParams(window.location.search);
+function updateViewportVars() {
+  var vv = window.visualViewport;
+  var height = vv ? vv.height : window.innerHeight;
+  var bottom = 0;
+  if (vv) bottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  document.documentElement.style.setProperty('--app-h', height + 'px');
+  document.documentElement.style.setProperty('--vv-bottom', bottom + 'px');
+}
+updateViewportVars();
+window.addEventListener('resize', updateViewportVars, { passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', updateViewportVars, { passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener('scroll', updateViewportVars, { passive: true });
 
 function slugifyCity(value) {
   return String(value || '')
@@ -1104,13 +1129,12 @@ function importContacts() {
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function(ev) {
-      var count = file.name.endsWith('.vcf')
-        ? (ev.target.result.match(/BEGIN:VCARD/gi)||[]).length
-        : Math.max(1, ev.target.result.split('\n').filter(function(l){return l.trim().length>5}).length - 1);
-      document.getElementById('importLbl').textContent = count + ' contact' + (count>1?'s':'') + ' importé' + (count>1?'s':'');
-      document.getElementById('importSub').textContent = 'Prêts à recevoir le catalogue de mai';
-      document.getElementById('importBar').style.width = Math.min(100, Math.round(count/250*100)) + '%';
-      showToast('✓ ' + count + ' contacts importés !');
+      var text = String(ev.target.result || '');
+      var phones = extractPhonesFromText(text);
+      localStorage.setItem('popey_pro_contacts_v1', JSON.stringify(phones));
+      localStorage.setItem('popey_pro_contacts_index_v1', '0');
+      refreshBulkSendUI();
+      showToast('✓ ' + phones.length + ' contact' + (phones.length > 1 ? 's' : '') + ' importé' + (phones.length > 1 ? 's' : '') + ' !');
     };
     reader.readAsText(file);
   };
@@ -1118,8 +1142,138 @@ function importContacts() {
 }
 
 function openWAMass() {
-  var msg = "Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de ma ville. Clique ici pour profiter de mes avantages : " + buildCatalogueLink();
+  var msg = buildWAMessage();
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function buildWAMessage() {
+  return "Salut ! Ce mois-ci j'ai accès aux offres exclusives des meilleurs pros de ma ville. Clique ici pour profiter de mes avantages : " + buildCatalogueLink();
+}
+
+function copyWAMessage() {
+  var msg = buildWAMessage();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(function () {
+      showToast('✓ Message copié');
+    }).catch(function () {
+      window.prompt('Copie le message :', msg);
+    });
+    return;
+  }
+  window.prompt('Copie le message :', msg);
+}
+
+function toggleAdvanced() {
+  var box = document.getElementById('advancedBox');
+  var toggle = document.getElementById('advancedToggle');
+  var open = box && box.style.display !== 'none';
+  if (box) box.style.display = open ? 'none' : 'block';
+  if (toggle) toggle.textContent = open ? 'Afficher →' : 'Masquer →';
+}
+
+function normalizePhone(raw) {
+  var s = String(raw || '').trim();
+  s = s.replace(/[^\d+]/g, '');
+  if (s.startsWith('00')) s = '+' + s.slice(2);
+  if (!s.startsWith('+')) {
+    var digits = s.replace(/\D/g, '');
+    if (digits.length === 10 && digits[0] === '0') s = '+33' + digits.slice(1);
+    else if (digits.length === 9) s = '+33' + digits;
+    else s = '+' + digits;
+  }
+  s = '+' + s.replace(/\D/g, '');
+  if (!/^\+\d{8,15}$/.test(s)) return null;
+  return s;
+}
+
+function extractPhonesFromText(text) {
+  var out = [];
+  var seen = {};
+  var m;
+  var telLine = /TEL[^:]*:([^\r\n]+)/gi;
+  while ((m = telLine.exec(text))) out.push(m[1]);
+  var anyPhone = /(?:\+|00)?\d[\d\s().-]{7,}\d/g;
+  while ((m = anyPhone.exec(text))) out.push(m[0]);
+
+  var normalized = [];
+  for (var i = 0; i < out.length; i++) {
+    var n = normalizePhone(out[i]);
+    if (!n) continue;
+    if (seen[n]) continue;
+    seen[n] = true;
+    normalized.push(n);
+  }
+  return normalized;
+}
+
+function getImportedContacts() {
+  try {
+    var raw = localStorage.getItem('popey_pro_contacts_v1');
+    if (!raw) return [];
+    var parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(function (p) { return typeof p === 'string' && p.length > 0; });
+  } catch (e) {
+    return [];
+  }
+}
+
+function getBulkIndex() {
+  var raw = localStorage.getItem('popey_pro_contacts_index_v1');
+  var n = parseInt(raw || '0', 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function refreshBulkSendUI() {
+  var phones = getImportedContacts();
+  var idx = Math.min(getBulkIndex(), phones.length);
+
+  var importLbl = document.getElementById('importLbl');
+  var importSub = document.getElementById('importSub');
+  var importBar = document.getElementById('importBar');
+  var status = document.getElementById('bulkSendStatus');
+  var btn = document.getElementById('bulkSendBtn');
+
+  if (importLbl) importLbl.textContent = phones.length ? (phones.length + ' contact' + (phones.length > 1 ? 's' : '') + ' importé' + (phones.length > 1 ? 's' : '')) : 'Aucun contact importé';
+  if (importSub) importSub.textContent = phones.length ? (idx + ' envoyé' + (idx > 1 ? 's' : '') + ' · ' + (phones.length - idx) + ' restant' + ((phones.length - idx) > 1 ? 's' : '')) : 'Importe ton .vcf/.csv pour envoyer 1 par 1';
+  if (importBar) importBar.style.width = phones.length ? Math.min(100, Math.round((idx / phones.length) * 100)) + '%' : '0%';
+
+  if (btn) btn.disabled = phones.length === 0;
+  if (btn) btn.style.opacity = phones.length === 0 ? '.45' : '1';
+  if (btn) btn.style.pointerEvents = phones.length === 0 ? 'none' : 'auto';
+
+  if (status) {
+    if (!phones.length) status.textContent = "Importe des contacts pour envoyer 1 par 1 (sans limite de 5).";
+    else if (idx >= phones.length) status.textContent = "✓ Terminé. Tu as tout envoyé.";
+    else status.textContent = "Ouvre 1 chat à la fois. Après l'envoi dans WhatsApp, reviens ici et appuie sur Continuer.";
+  }
+}
+
+function bulkSendNext() {
+  var phones = getImportedContacts();
+  if (!phones.length) {
+    showToast('Importe des contacts d’abord');
+    return;
+  }
+  var idx = getBulkIndex();
+  if (idx >= phones.length) {
+    refreshBulkSendUI();
+    showToast('✓ Déjà terminé');
+    return;
+  }
+  var phone = phones[idx];
+  var digits = String(phone).replace(/\D/g, '');
+  var msg = buildWAMessage();
+  localStorage.setItem('popey_pro_contacts_index_v1', String(idx + 1));
+  refreshBulkSendUI();
+  window.open('https://wa.me/' + digits + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function bulkSendReset() {
+  localStorage.removeItem('popey_pro_contacts_v1');
+  localStorage.removeItem('popey_pro_contacts_index_v1');
+  refreshBulkSendUI();
+  showToast('✓ Réinitialisé');
 }
 
 function shareOffer(pro, metier, offre, id) {
@@ -1336,6 +1490,9 @@ function applyLiveProDashboard(payload) {
 
 applyRewardInProWebapp();
 applyFreshStartFromAdminLink();
+refreshBulkSendUI();
+var waMsgPreview = document.getElementById('waMsgPreview');
+if (waMsgPreview) waMsgPreview.textContent = '"' + buildWAMessage() + '"';
 fetchLiveProDashboard().then(function(payload) {
   if (payload) applyLiveProDashboard(payload);
 });

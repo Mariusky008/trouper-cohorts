@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Catalogue Privilège Popey — Jean Roth · Mai 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,10 +28,13 @@
   --fd: 'Fraunces', serif;
   --fb: 'Instrument Sans', sans-serif;
   --fm: 'DM Mono', monospace;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --vv-bottom: 0px;
+  --app-h: 100vh;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
-body { background: var(--cream); color: var(--t); font-family: var(--fb); max-width: 480px; margin: 0 auto; min-height: 100vh; overflow-x: hidden; }
+body { background: var(--cream); color: var(--t); font-family: var(--fb); max-width: 480px; margin: 0 auto; min-height: var(--app-h); overflow-x: hidden; padding-bottom: calc(92px + var(--safe-bottom) + var(--vv-bottom)); }
 
 /* ── HERO BAND ── */
 .hero { background: var(--ink); position: relative; overflow: hidden; }
@@ -249,8 +252,8 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 
 /* STICKY BOTTOM — become apporteur */
 .sticky-bottom {
-  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 480px; padding: 12px 16px;
+  position: fixed; bottom: var(--vv-bottom); left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; padding: 12px 16px calc(12px + var(--safe-bottom));
   background: rgba(8,10,13,.92); backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255,255,255,.08); z-index: 50;
 }
@@ -1215,6 +1218,18 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
 
 <script>
 var currentWA = {};
+function updateViewportVars() {
+  var vv = window.visualViewport;
+  var height = vv ? vv.height : window.innerHeight;
+  var bottom = 0;
+  if (vv) bottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  document.documentElement.style.setProperty('--app-h', height + 'px');
+  document.documentElement.style.setProperty('--vv-bottom', bottom + 'px');
+}
+updateViewportVars();
+window.addEventListener('resize', updateViewportVars, { passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', updateViewportVars, { passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener('scroll', updateViewportVars, { passive: true });
 
 function filterOffers(sphere, btn) {
   document.querySelectorAll('.f-chip').forEach(function(c) { c.classList.remove('active'); });
