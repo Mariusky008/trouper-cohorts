@@ -5,6 +5,8 @@ import { OpenAI } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
+import { sendPartnerOutreach } from "@/lib/actions/whatsapp-twilio";
+import { isWhatsAppTwilioConfigured } from "@/lib/popey-human/whatsapp-twilio-config";
 import {
   smartScanFeatureFlags,
   type SmartScanAnalyticsEventType,
@@ -3672,7 +3674,7 @@ export async function createAllianceInvite(input: {
   const supabaseAdmin = createAdminClient();
   const { data: prospect, error: prospectError } = await supabaseAdmin
     .from("human_smart_scan_alliance_prospects")
-    .select("id,owner_member_id,full_name,phone_e164,city")
+    .select("id,owner_member_id,full_name,metier,phone_e164,city")
     .eq("id", input.prospectId)
     .eq("owner_member_id", ownerMemberId)
     .maybeSingle();
@@ -3792,17 +3794,19 @@ export async function createAllianceInvite(input: {
     ? `${appBaseUrl}/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(scoutInviteToken)}`
     : onboardingLink;
 
+  const messageDraft = String(input.messageDraft || "").trim();
+
   const { data: invite, error: inviteError } = await supabaseAdmin
     .from("human_smart_scan_alliance_invites")
     .insert({
       owner_member_id: ownerMemberId,
       prospect_id: prospectRow.id,
       channel,
-      message_draft: String(input.messageDraft || "").trim(),
+      message_draft: messageDraft || "Template Twilio alliance",
       onboarding_token: token,
       onboarding_link: onboardingLink,
-      status: "sent",
-      sent_at: nowIso,
+      status: "drafted",
+      sent_at: null,
       created_at: nowIso,
       updated_at: nowIso,
     })
@@ -3810,6 +3814,65 @@ export async function createAllianceInvite(input: {
     .maybeSingle();
 
   if (inviteError) return { error: inviteError.message };
+
+  if (!isWhatsAppTwilioConfigured()) {
+    return { error: "WhatsApp Pro (Twilio) n'est pas configure. Envoi impossible en mode template." };
+  }
+
+  const phone = String(prospectRow.phone_e164 || "").trim();
+  if (!phone) {
+    return { error: "Numero WhatsApp prospect manquant. Envoi template Twilio impossible." };
+  }
+
+  const { data: memberProfile } = await supabaseAdmin
+    .from("human_members")
+    .select("first_name,ville")
+    .eq("id", ownerMemberId)
+    .maybeSingle();
+
+  const firstName = String(prospectRow.full_name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)[0] || "Bonjour";
+  const senderFirstName = String(memberProfile?.first_name || "").trim() || "Popey";
+  const cityOrContext = String(prospectRow.city || memberProfile?.ville || "").trim() || "votre ville";
+  const targetJob = String(prospectRow.metier || "").trim() || "partenaire local";
+
+  const twilioResult = await sendPartnerOutreach(
+    phone,
+    {
+      1: firstName,
+      2: senderFirstName,
+      3: cityOrContext,
+      4: targetJob,
+    },
+    {
+      ownerMemberId,
+      source: "smart_scan_alliance_invite",
+      metadata: {
+        alliance_invite_id: invite?.id || null,
+        alliance_prospect_id: prospectRow.id,
+        onboarding_token: invite?.onboarding_token || token,
+        onboarding_link: invite?.onboarding_link || onboardingLink,
+        scout_portal_link: scoutPortalLink,
+        channel: "whatsapp_template_twilio",
+        message_draft_note: messageDraft || null,
+      },
+    },
+  );
+
+  if (!twilioResult.success) {
+    return { error: `Envoi WhatsApp Pro impossible: ${twilioResult.error}` };
+  }
+
+  await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .update({
+      status: "sent",
+      sent_at: nowIso,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", invite?.id || "");
 
   await supabaseAdmin
     .from("human_smart_scan_alliance_prospects")
@@ -3820,19 +3883,15 @@ export async function createAllianceInvite(input: {
     .eq("id", prospectRow.id)
     .eq("owner_member_id", ownerMemberId);
 
-  const phone = String(prospectRow.phone_e164 || "").replace(/^\+/, "");
-  const message = `${String(input.messageDraft || "").trim()}\n\n${scoutPortalLink}`;
-  const whatsappUrl = phone
-    ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
-    : null;
-
   return {
     success: true as const,
     inviteId: invite?.id || null,
     onboardingToken: invite?.onboarding_token || token,
     onboardingLink: invite?.onboarding_link || onboardingLink,
     scoutPortalLink,
-    whatsappUrl,
+    provider: "twilio" as const,
+    sid: twilioResult.sid,
+    status: twilioResult.status,
   };
 }
 

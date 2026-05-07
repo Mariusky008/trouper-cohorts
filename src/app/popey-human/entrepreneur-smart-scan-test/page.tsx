@@ -4540,10 +4540,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
-      const messageDraft = String(messageDraftInput || "").trim();
-      if (!messageDraft) {
-        throw new Error("Le message est vide. Ajoute un texte avant envoi.");
-      }
+      const messageDraft = String(messageDraftInput || "").trim() || "Template Twilio alliance";
       const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4555,16 +4552,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
-        whatsappUrl?: string | null;
+        provider?: "twilio";
+        status?: string;
+        sid?: string;
       };
       if (!response.ok) {
         throw new Error(payload.error || "Invitation alliance impossible.");
       }
-      if (payload.whatsappUrl && typeof window !== "undefined") {
-        window.open(payload.whatsappUrl, "_blank", "noopener,noreferrer");
-      } else {
-        setApiErrorMessage("Invitation creee. Numero manquant pour ouverture WhatsApp directe.");
-      }
+      setModalInfoMessage(
+        payload.provider === "twilio"
+          ? `Message envoye via WhatsApp Pro (${payload.status || "sent"}).`
+          : "Invitation envoyee.",
+      );
       setAllianceProspects((currentList) =>
         currentList.map((item) => (item.id === prospect.id ? { ...item, status: "contacted" } : item)),
       );
@@ -4589,7 +4588,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setModalErrorMessage("");
       await inviteAllianceProspect(selectedAllianceProspect, allianceMessageDraft);
       closeAllianceMessageEditor();
-      setModalInfoMessage("Message pret dans WhatsApp. Tu peux l envoyer quand tu veux.");
     } catch {
       // Errors are surfaced via modalErrorMessage/apiErrorMessage.
     } finally {
@@ -9527,7 +9525,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   ✕
                 </button>
               </div>
-              <p className="mt-2 text-[11px] text-white/70">Tu peux relire et modifier le message avant ouverture de WhatsApp.</p>
+              <p className="mt-2 text-[11px] text-white/70">
+                En mode pro, c&apos;est le template WhatsApp Twilio qui est envoye. Ce texte est conserve en note interne.
+              </p>
               <textarea
                 value={allianceMessageDraft}
                 onChange={(event) => setAllianceMessageDraft(event.target.value)}
@@ -9548,10 +9548,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   onClick={() => {
                     void sendAllianceMessageFromModal();
                   }}
-                  disabled={isAllianceMessageSending || !String(allianceMessageDraft || "").trim()}
+                  disabled={isAllianceMessageSending}
                   className="h-10 flex-1 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
                 >
-                  {isAllianceMessageSending ? "Preparation..." : "Ouvrir WhatsApp avec ce message"}
+                  {isAllianceMessageSending ? "Envoi en cours..." : "Envoyer via WhatsApp Pro (Twilio)"}
                 </button>
               </div>
             </div>
