@@ -49,6 +49,15 @@ function readMetaString(metadata: unknown, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function planLabelFromMeta(metadata: unknown) {
+  const raw = readMetaString(metadata, "selected_plan");
+  if (!raw) return "";
+  if (raw === "option_a_starter") return "Option choisie: Starter (au RDV qualifié)";
+  if (raw === "option_b_performance") return "Option choisie: Performance (à la signature)";
+  if (raw === "option_c_membre") return "Option choisie: Membre (abonnement fixe)";
+  return `Option choisie: ${raw}`;
+}
+
 function normalizeRewardText(input: { mode: string; value: string; customText: string }) {
   const custom = String(input.customText || "").trim();
   const valueRaw = String(input.value || "").trim().replace(",", ".");
@@ -475,6 +484,9 @@ export default async function AdminHumainMarketplacePage({
                           <p className="text-xs text-black/70">
                             Source: {String(offer.metadata?.source || "n/a")} · Referral: {String(offer.metadata?.referral_code || "n/a")}
                           </p>
+                          {planLabelFromMeta(offer.metadata) ? (
+                            <p className="text-xs text-violet-700">{planLabelFromMeta(offer.metadata)}</p>
+                          ) : null}
                           {(() => {
                             const refId = offer.assigned_member_id || offer.place?.owner_member_id || "";
                             const referralCode = String(offer.metadata?.referral_code || "").trim();

@@ -706,6 +706,79 @@ nav {
 }
 .modal-field input:focus, .modal-field textarea:focus { border-color: var(--teal); }
 .modal-field textarea { min-height: 80px; resize: vertical; }
+.plan-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.plan-option {
+  position: relative;
+  border: 1.5px solid var(--border2);
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.plan-option:hover {
+  border-color: rgba(0,164,117,.35);
+  transform: translateY(-1px);
+}
+.plan-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.plan-option-label {
+  display: block;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.plan-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--paper2);
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--t2);
+}
+.plan-title {
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.plan-sub {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.45;
+}
+.plan-option input:checked + .plan-option-label {
+  background: linear-gradient(180deg, #f8fdfa 0%, #eefaf4 100%);
+  border-radius: 12px;
+}
+.plan-option input:checked + .plan-option-label .plan-badge {
+  border-color: rgba(0,164,117,.35);
+  color: #047857;
+  background: #e7f9f0;
+}
+.plan-option input:checked + .plan-option-label .plan-title {
+  color: #065f46;
+}
+.plan-option:has(input:checked) {
+  border-color: rgba(0,164,117,.45);
+  box-shadow: 0 6px 18px rgba(0,164,117,.12);
+}
 .modal-price-hint { font-size: 11px; color: var(--t3); margin-top: 6px; }
 .modal-commission-note {
   background: var(--paper2); border-radius: 12px; padding: 14px 16px;
@@ -2814,12 +2887,38 @@ function getModalConfig(type) {
           <div class="modal-field"><label>Votre numero WhatsApp</label><input name="whatsapp" required type="tel" placeholder="+33 6 XX XX XX XX"></div>
           <div class="modal-field">
             <label>Choisissez l'option qui vous convient</label>
-            <select name="selectedPlan" required>
-              <option value="" selected disabled>Selectionnez votre option</option>
-              <option value="option_a_starter">Option A - Starter (au RDV qualifie)</option>
-              <option value="option_b_performance">Option B - Performance (a la signature)</option>
-              <option value="option_c_membre">Option C - Membre (abonnement fixe)</option>
-            </select>
+            <div class="plan-options">
+              <div class="plan-option">
+                <input id="planOptionA" name="selectedPlan" type="radio" value="option_a_starter" required>
+                <label class="plan-option-label" for="planOptionA">
+                  <div class="plan-option-head">
+                    <span class="plan-title">Option A · Starter</span>
+                    <span class="plan-badge">RDV qualifié</span>
+                  </div>
+                  <p class="plan-sub">Idéal pour démarrer vite. Rétribution déclenchée au rendez-vous qualifié.</p>
+                </label>
+              </div>
+              <div class="plan-option">
+                <input id="planOptionB" name="selectedPlan" type="radio" value="option_b_performance" required>
+                <label class="plan-option-label" for="planOptionB">
+                  <div class="plan-option-head">
+                    <span class="plan-title">Option B · Performance</span>
+                    <span class="plan-badge">À la signature</span>
+                  </div>
+                  <p class="plan-sub">Approche orientée résultat. Rétribution liée aux ventes signées.</p>
+                </label>
+              </div>
+              <div class="plan-option">
+                <input id="planOptionC" name="selectedPlan" type="radio" value="option_c_membre" required>
+                <label class="plan-option-label" for="planOptionC">
+                  <div class="plan-option-head">
+                    <span class="plan-title">Option C · Membre</span>
+                    <span class="plan-badge">Abonnement fixe</span>
+                  </div>
+                  <p class="plan-sub">Formule stable avec abonnement mensuel pour une visibilité continue.</p>
+                </label>
+              </div>
+            </div>
           </div>
           <button class="modal-btn" type="submit">Reserver ma place →</button>
         </form>
