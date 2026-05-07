@@ -461,6 +461,37 @@ const RADAR_MOCK_SEED: Array<{
   { fullName: "Pierre Castets", metier: "Assureur", distanceKm: 1.9, phoneE164: "+33622997731", synergyReason: "clients acheteurs avec besoins cross-sell", colorTone: "amber" },
 ];
 const RADAR_BLOCKED_PHONE_SET = new Set(["33612345678"]);
+const ALLIANCE_PERSONAL_TEST_PROSPECT_ID = "alliance-test-jean-philippe-roth";
+const ALLIANCE_PERSONAL_TEST_PHONE = "+33768233347";
+const ALLIANCE_PERSONAL_TEST_PROSPECT: SmartScanAllianceProspect = {
+  id: ALLIANCE_PERSONAL_TEST_PROSPECT_ID,
+  full_name: "Jean Philippe Roth",
+  metier: "Contact test WhatsApp perso",
+  city: "Dax",
+  phone_e164: ALLIANCE_PERSONAL_TEST_PHONE,
+  distance_km: 0,
+  rating: 5,
+  fit_score: 100,
+  fit_reasons: ["Test end-to-end Twilio", "Validation reponse admin"],
+  status: "new",
+  invite_sent_count: 0,
+  invite_clicked_count: 0,
+  invite_signed_up_count: 0,
+  last_invite_status: null,
+  last_invite_at: null,
+  partnership_probability: 100,
+  source_mode: "fallback",
+  created_at: new Date(0).toISOString(),
+  updated_at: new Date(0).toISOString(),
+};
+
+function injectPersonalAllianceTestProspect(prospects: SmartScanAllianceProspect[], mode: AllianceDirectoryMode) {
+  if (mode !== "external") return prospects;
+  const withoutDuplicate = prospects.filter(
+    (item) => item.id !== ALLIANCE_PERSONAL_TEST_PROSPECT_ID && String(item.phone_e164 || "").trim() !== ALLIANCE_PERSONAL_TEST_PHONE,
+  );
+  return [ALLIANCE_PERSONAL_TEST_PROSPECT, ...withoutDuplicate];
+}
 
 const CONTACTS: DailyContact[] = [
   {
@@ -1554,24 +1585,30 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [incomingReferrals]);
   const sortedAllianceProspects = useMemo(() => {
     const list = [...allianceProspects];
+    let sorted = list;
     if (allianceSort === "fit") {
-      return list.sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
-    }
-    if (allianceSort === "distance") {
-      return list.sort((a, b) => {
+      sorted = list.sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
+    } else if (allianceSort === "distance") {
+      sorted = list.sort((a, b) => {
         const da = Number.isFinite(Number(a.distance_km)) ? Number(a.distance_km) : 9999;
         const db = Number.isFinite(Number(b.distance_km)) ? Number(b.distance_km) : 9999;
         return da - db;
       });
-    }
-    if (allianceSort === "recent") {
-      return list.sort((a, b) => {
+    } else if (allianceSort === "recent") {
+      sorted = list.sort((a, b) => {
         const ta = new Date(a.last_invite_at || a.updated_at || a.created_at || 0).getTime();
         const tb = new Date(b.last_invite_at || b.updated_at || b.created_at || 0).getTime();
         return tb - ta;
       });
+    } else {
+      sorted = list.sort((a, b) => (b.partnership_probability || 0) - (a.partnership_probability || 0));
     }
-    return list.sort((a, b) => (b.partnership_probability || 0) - (a.partnership_probability || 0));
+    const pinnedIndex = sorted.findIndex((item) => item.id === ALLIANCE_PERSONAL_TEST_PROSPECT_ID);
+    if (pinnedIndex > 0) {
+      const [pinned] = sorted.splice(pinnedIndex, 1);
+      sorted.unshift(pinned);
+    }
+    return sorted;
   }, [allianceProspects, allianceSort]);
   const displayedAllianceProspects = useMemo(() => {
     if (!isAllianceRevealRunning) return sortedAllianceProspects;
@@ -1710,7 +1747,7 @@ export default function EntrepreneurSmartScanTestPage() {
           throw new Error(payload.error || "Impossible de charger les alliances externes.");
         }
         if (!cancelled) {
-          setAllianceProspects(payload.prospects || []);
+          setAllianceProspects(injectPersonalAllianceTestProspect(payload.prospects || [], allianceDirectoryMode));
         }
       } catch (error) {
         if (!cancelled) {
@@ -3920,7 +3957,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     if (!response.ok) {
       throw new Error(payload.error || "Impossible de charger les alliances externes.");
     }
-    setAllianceProspects(payload.prospects || []);
+    setAllianceProspects(injectPersonalAllianceTestProspect(payload.prospects || [], allianceDirectoryMode));
   }
 
   async function runAllianceSearch(overrides?: {
@@ -3966,7 +4003,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       if (!response.ok) {
         throw new Error(toUiErrorMessage(payload.error, "Recherche alliances impossible."));
       }
-      const nextProspects = payload.prospects || [];
+      const nextProspects = injectPersonalAllianceTestProspect(payload.prospects || [], provider);
       setAllianceProspects(nextProspects);
       if (nextProspects.length === 0) {
         setIsAllianceRevealRunning(false);
