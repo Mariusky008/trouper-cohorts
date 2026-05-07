@@ -4561,13 +4561,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         provider?: "twilio";
         status?: string;
         sid?: string;
+        deliveryMode?: "free_text_24h" | "template";
       };
       if (!response.ok) {
         throw new Error(payload.error || "Invitation alliance impossible.");
       }
       setModalInfoMessage(
         payload.provider === "twilio"
-          ? `Message envoye via WhatsApp Pro (${payload.status || "sent"}).`
+          ? payload.deliveryMode === "free_text_24h"
+            ? `Message envoye via WhatsApp Pro en texte libre (${payload.status || "sent"}).`
+            : `Message envoye via WhatsApp Pro en template (${payload.status || "sent"}).`
           : "Invitation envoyee.",
       );
       setAllianceProspects((currentList) =>
