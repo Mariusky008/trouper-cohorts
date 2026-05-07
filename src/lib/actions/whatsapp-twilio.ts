@@ -38,6 +38,40 @@ function normalizeTwilioWhatsAppAddress(raw: string | null | undefined): string 
   return phone ? `whatsapp:${phone}` : "";
 }
 
+function normalizeOutgoingWhatsAppBody(raw: string | null | undefined): string {
+  return String(raw || "")
+    .normalize("NFC")
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+function buildTemplateFallbackVariables(messageText: string, metadata?: Record<string, unknown>): PartnerOutreachVariables {
+  const meta = metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+  const partnerName = String(meta.partner_name || meta.pro_name || "Partenaire").trim() || "Partenaire";
+  const referrerName = String(meta.referrer_name || "Popey").trim() || "Popey";
+  const ticketCode = String(meta.ticket_code || "suivi").trim() || "suivi";
+  const shortMessage = String(messageText || "")
+    .replace(/\s+/g, " ")
+    .slice(0, 120)
+    .trim();
+  return {
+    1: partnerName,
+    2: referrerName,
+    3: ticketCode,
+    4: shortMessage || "Merci de répondre à ce message pour continuer l'échange.",
+  };
+}
+
+function extractTwilioError(input: unknown): { code: string; message: string } {
+  const asRecord = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const code = String(asRecord.code || "").trim();
+  const message = String(asRecord.message || "").trim();
+  return { code, message };
+}
+
 function classifyInboundText(message: string): InboundClassification {
   const normalized = String(message || "")
     .toLowerCase()
@@ -561,17 +595,42 @@ export async function sendWhatsAppTextMessage(
   }
 
   const to = normalizeTwilioWhatsAppAddress(targetPhone);
-  const body = String(messageText || "").trim();
+  const body = normalizeOutgoingWhatsAppBody(messageText);
   if (!to) return { success: false as const, error: "Numéro cible invalide." };
   if (!body) return { success: false as const, error: "Message vide." };
 
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
-  const sent = await client.messages.create({
-    from: whatsappTwilioConfig.whatsappFrom,
-    to,
-    body,
-    ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
-  });
+  let sent: Awaited<ReturnType<typeof client.messages.create>>;
+  let sentChannel: "text" | "template_fallback" = "text";
+  let fallbackErrorCode: string | null = null;
+  let fallbackContentVariables: PartnerOutreachVariables | null = null;
+  try {
+    sent = await client.messages.create({
+      from: whatsappTwilioConfig.whatsappFrom,
+      to,
+      body,
+      ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
+    });
+  } catch (error) {
+    const parsed = extractTwilioError(error);
+    const shouldFallbackTemplate = parsed.code === "63016" && Boolean(whatsappTwilioConfig.contentSid);
+    if (!shouldFallbackTemplate) {
+      return {
+        success: false as const,
+        error: parsed.message || "Envoi WhatsApp Twilio impossible.",
+      };
+    }
+    fallbackErrorCode = parsed.code;
+    fallbackContentVariables = buildTemplateFallbackVariables(body, options?.metadata);
+    sent = await client.messages.create({
+      from: whatsappTwilioConfig.whatsappFrom,
+      to,
+      contentSid: whatsappTwilioConfig.contentSid,
+      contentVariables: parseContentVariables(fallbackContentVariables),
+      ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
+    });
+    sentChannel = "template_fallback";
+  }
 
   const nowIso = new Date().toISOString();
   if (options?.ownerMemberId) {
@@ -580,18 +639,28 @@ export async function sendWhatsAppTextMessage(
     const metadata = {
       ...(options.metadata || {}),
       provider: "twilio",
-      channel: "text",
+      channel: sentChannel,
       twilio_message_sid: String(sent.sid || "").trim(),
       twilio_status: String(sent.status || "").trim(),
+      twilio_fallback_error_code: fallbackErrorCode,
+      twilio_content_sid: sentChannel === "template_fallback" ? whatsappTwilioConfig.contentSid : null,
     };
     const { data: queueRow } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
       .insert({
         owner_member_id: options.ownerMemberId,
         phone_e164: phoneE164,
-        template_name: "twilio_text_reply",
+        template_name: sentChannel === "template_fallback" ? "twilio_template_fallback_after_63016" : "twilio_text_reply",
         language_code: "fr",
-        vars: [],
+        vars:
+          sentChannel === "template_fallback" && fallbackContentVariables
+            ? [
+                String(fallbackContentVariables[1] || ""),
+                String(fallbackContentVariables[2] || ""),
+                String(fallbackContentVariables[3] || ""),
+                String(fallbackContentVariables[4] || ""),
+              ]
+            : [],
         quick_reply_payload: [],
         source: String(options.source || "admin_chat").trim().slice(0, 64) || "admin_chat",
         metadata,
@@ -614,15 +683,21 @@ export async function sendWhatsAppTextMessage(
       direction: "outbound",
       event_type: "sent",
       classification: null,
-      message_text: body,
+      message_text:
+        sentChannel === "template_fallback"
+          ? `Template fallback Twilio (63016): ${String(fallbackContentVariables?.[4] || body)}`
+          : body,
       provider_message_id: String(sent.sid || "").trim() || null,
       payload: {
         provider: "twilio",
-        channel: "text",
+        channel: sentChannel,
         sid: String(sent.sid || "").trim() || null,
         status: String(sent.status || "").trim() || null,
         to: String(sent.to || "").trim() || null,
         from: String(sent.from || "").trim() || null,
+        fallback_error_code: fallbackErrorCode,
+        content_sid: sentChannel === "template_fallback" ? whatsappTwilioConfig.contentSid : null,
+        content_variables: sentChannel === "template_fallback" ? fallbackContentVariables : null,
       },
     });
   }
@@ -632,5 +707,6 @@ export async function sendWhatsAppTextMessage(
     provider: "twilio",
     sid: String(sent.sid || "").trim(),
     status: String(sent.status || "").trim() || "queued",
+    fallbackUsed: sentChannel === "template_fallback",
   };
 }

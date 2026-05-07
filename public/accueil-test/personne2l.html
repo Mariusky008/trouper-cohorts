@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jean-Philippe Roth — Apporteur de Clients</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0A0B0F;
+  --paper:#F5F2EC;
+  --paper2:#EDE9E0;
+  --teal:#00C48C;
+  --teal-dark:#009B6F;
+  --amber:#F5A623;
+  --warm:#C8A882;
+  --text:#1A1A1A;
+  --text-sec:#6B6560;
+  --text-ter:#A09890;
+  --border:#E0DCD4;
+  --fd:'Playfair Display',serif;
+  --fb:'Epilogue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--text);font-family:var(--fb);overflow-x:hidden}
+
+/* ── NOISE TEXTURE ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 56px;background:rgba(245,242,236,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.nav-logo span{color:var(--teal)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-link{font-size:13px;font-weight:500;color:var(--text-sec);text-decoration:none;transition:color .2s;letter-spacing:.02em}
+.nav-link:hover{color:var(--text)}
+.nav-cta{background:var(--ink);color:var(--paper);padding:10px 22px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;letter-spacing:.02em}
+.nav-cta:hover{background:var(--teal);transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:grid;grid-template-columns:1.2fr 0.8fr;gap:0;position:relative;padding-top:80px;align-items:center}
+.hero-left{padding:80px 56px 80px 56px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
+.hero-right{position:relative;display:flex;align-items:center;justify-content:center;padding:60px 40px;background:var(--paper2);border-left:1px solid var(--border)}
+.hero-right::after{display:none}
+
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:24px;position:relative}
+.hero-eyebrow::before{content:'';display:inline-block;width:28px;height:1.5px;background:var(--teal)}
+
+.hero-title{font-family:var(--fd);font-size:clamp(42px,5vw,72px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:24px;color:var(--ink)}
+.hero-title .line2{color:var(--teal);font-style:italic}
+.hero-title .line3{color:var(--text-sec);font-size:.7em}
+
+.hero-sub{font-size:17px;color:var(--text-sec);line-height:1.7;margin-bottom:40px;font-weight:300;max-width:460px}
+.hero-sub strong{color:var(--text);font-weight:600}
+
+.hero-photo{display:none}
+
+.hero-photo-wrap{position:relative;width:100%;height:100%}
+.hero-photo-overlay{position:absolute;bottom:0;left:0;right:0;padding:40px;background:linear-gradient(transparent,rgba(10,11,15,.9));color:var(--paper)}
+.hpo-name{font-family:var(--fd);font-size:28px;font-weight:700;margin-bottom:4px}
+.hpo-role{font-size:14px;color:rgba(245,242,236,.6);font-weight:300;letter-spacing:.05em}
+.hpo-stats{display:flex;gap:24px;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)}
+.hpo-stat{text-align:left}
+.hpo-stat-val{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--teal);line-height:1}
+.hpo-stat-lbl{font-size:11px;color:rgba(245,242,236,.5);margin-top:3px;font-weight:300}
+
+.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.btn-primary{background:var(--ink);color:var(--paper);padding:16px 36px;border-radius:100px;font-size:15px;font-weight:600;text-decoration:none;transition:all .25s;letter-spacing:.02em;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--teal);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,196,140,.25)}
+.btn-secondary{background:transparent;color:var(--text);padding:16px 28px;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all .25s;border:1.5px solid var(--border);display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:var(--ink);background:var(--paper2)}
+
+/* ── SECTION COMMUNE ── */
+.section{padding:100px 56px;position:relative;z-index:1}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-tag::before{content:'';display:inline-block;width:20px;height:1.5px;background:var(--teal)}
+.section-title{font-family:var(--fd);font-size:clamp(32px,4vw,52px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px;color:var(--ink)}
+.section-sub{font-size:16px;color:var(--text-sec);line-height:1.7;font-weight:300;max-width:600px}
+
+/* ── LE CONCEPT ── */
+.concept{background:var(--ink);color:var(--paper)}
+.concept .section-title{color:var(--paper)}
+.concept .section-sub{color:rgba(245,242,236,.6)}
+.concept .section-tag{color:var(--teal)}
+.concept .section-tag::before{background:var(--teal)}
+
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:56px;align-items:start}
+.concept-text{}
+.concept-flow{display:flex;flex-direction:column;gap:0}
+
+.flow-step{display:flex;gap:20px;position:relative;padding-bottom:28px}
+.flow-step:last-child{padding-bottom:0}
+.flow-step::before{content:'';position:absolute;left:20px;top:44px;bottom:0;width:1px;background:rgba(255,255,255,.08)}
+.flow-step:last-child::before{display:none}
+.flow-num{width:40px;height:40px;border-radius:50%;background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.flow-content{}
+.flow-title{font-size:15px;font-weight:700;color:var(--paper);margin-bottom:4px}
+.flow-text{font-size:13px;color:rgba(245,242,236,.55);line-height:1.6}
+.flow-tag{display:inline-flex;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(0,196,140,.12);border:1px solid rgba(0,196,140,.25);color:var(--teal);margin-top:6px}
+
+/* ── OFFRES ── */
+.offres-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.offre-card{background:var(--paper2);border:1px solid var(--border);border-radius:20px;padding:32px;transition:all .3s;position:relative;overflow:hidden}
+.offre-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--border);transition:background .3s}
+.offre-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.08);border-color:var(--teal)}
+.offre-card:hover::before{background:var(--teal)}
+.offre-card.featured{background:var(--ink);border-color:var(--ink)}
+.offre-card.featured .offre-icon-bg{background:rgba(0,196,140,.15);border-color:rgba(0,196,140,.3)}
+.offre-card.featured .offre-name{color:var(--paper)}
+.offre-card.featured .offre-price{color:var(--teal)}
+.offre-card.featured .offre-period{color:rgba(245,242,236,.4)}
+.offre-card.featured .offre-desc{color:rgba(245,242,236,.55)}
+.offre-card.featured .offre-feat{color:rgba(245,242,236,.7)}
+.offre-card.featured .offre-feat::before{color:var(--teal)}
+.offre-card.featured::before{background:var(--teal)}
+
+.offre-icon-bg{width:48px;height:48px;border-radius:14px;background:var(--paper);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px}
+.offre-badge{display:inline-flex;background:var(--teal);color:var(--ink);font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.05em;margin-bottom:12px}
+.offre-name{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.offre-price{font-family:var(--fd);font-size:36px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:2px;letter-spacing:-1px}
+.offre-price .currency{font-size:20px;vertical-align:top;margin-top:6px;display:inline-block}
+.offre-period{font-size:12px;color:var(--text-ter);margin-bottom:20px}
+.offre-desc{font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:20px;font-weight:300;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.offre-card.featured .offre-desc{border-color:rgba(255,255,255,.08)}
+.offre-feats{display:flex;flex-direction:column;gap:8px}
+.offre-feat{font-size:13px;color:var(--text-sec);display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.offre-feat::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0;margin-top:1px}
+.offre-cta{display:block;text-align:center;margin-top:24px;padding:13px;border-radius:100px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s}
+.cta-dark{background:var(--ink);color:var(--paper)}
+.cta-dark:hover{background:var(--teal)}
+.cta-teal{background:var(--teal);color:var(--ink)}
+.cta-teal:hover{background:var(--teal-dark);color:var(--paper)}
+.cta-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.cta-outline:hover{border-color:var(--ink)}
+
+/* ── PROOF — LIVE STATS ── */
+.proof{background:var(--paper2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.proof-inner{max-width:1200px;margin:0 auto}
+.proof-title{font-family:var(--fd);font-size:clamp(28px,3vw,42px);font-weight:900;letter-spacing:-.5px;margin-bottom:8px}
+.proof-sub{font-size:15px;color:var(--text-sec);font-weight:300;margin-bottom:48px}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:48px}
+.stat-card{background:var(--paper);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;transition:all .3s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.06)}
+.stat-val{font-family:var(--fd);font-size:42px;font-weight:900;line-height:1;color:var(--ink);margin-bottom:4px}
+.stat-val.teal{color:var(--teal)}
+.stat-val.amber{color:var(--amber)}
+.stat-label{font-size:12px;color:var(--text-ter);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.stat-trend{font-size:11px;color:var(--teal);font-weight:600;margin-top:6px}
+
+/* LIVE TICKER */
+.ticker-wrap{overflow:hidden;white-space:nowrap;border-top:1px solid var(--border);padding:14px 0}
+.ticker{display:inline-block;animation:ticker 30s linear infinite}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;margin-right:60px;font-size:13px;color:var(--text-sec)}
+.ticker-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── COMMENT ÇA MARCHE ── */
+.comment{background:var(--paper)}
+.comment-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:56px;background:var(--border);border-radius:20px;overflow:hidden}
+.comment-step{background:var(--paper);padding:40px 32px;transition:background .2s}
+.comment-step:hover{background:var(--paper2)}
+.cs-num{font-family:var(--fd);font-size:64px;font-weight:900;color:var(--border);line-height:1;margin-bottom:16px}
+.cs-icon{font-size:28px;margin-bottom:14px;display:block}
+.cs-title{font-size:18px;font-weight:700;margin-bottom:8px;color:var(--ink)}
+.cs-text{font-size:13px;color:var(--text-sec);line-height:1.6;font-weight:300}
+.cs-pill{display:inline-flex;margin-top:10px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(0,196,140,.1);color:var(--teal)}
+
+/* ── EXEMPLE CONCRET ── */
+.exemple{background:var(--ink);color:var(--paper)}
+.exemple .section-title{color:var(--paper)}
+.exemple .section-sub{color:rgba(245,242,236,.55)}
+
+.exemple-scenario{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;margin-top:48px}
+.es-header{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.08)}
+.es-av{width:52px;height:52px;border-radius:50%;object-fit:cover;filter:grayscale(30%)}
+.es-info .es-name{font-size:16px;font-weight:700;color:var(--paper);margin-bottom:2px}
+.es-info .es-role{font-size:13px;color:rgba(245,242,236,.45)}
+.es-flow{display:flex;flex-direction:column;gap:12px}
+.es-msg{display:flex;gap:14px;align-items:flex-start}
+.es-msg-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.es-msg-bubble{padding:12px 16px;border-radius:0 14px 14px 14px;font-size:13px;line-height:1.5;max-width:80%}
+.bubble-jpr{background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.2);color:rgba(245,242,236,.9)}
+.bubble-pro{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(245,242,236,.7);border-radius:14px 0 14px 14px;margin-left:auto}
+.bubble-pro-wrap{display:flex;justify-content:flex-end}
+.es-result{background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:12px;padding:16px 20px;margin-top:8px;display:flex;align-items:center;gap:12px}
+.esr-icon{font-size:22px;flex-shrink:0}
+.esr-text{font-size:13px;color:rgba(245,242,236,.8);line-height:1.5}
+.esr-amount{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--teal);margin-left:auto;flex-shrink:0}
+
+/* ── EVENEMENTS ── */
+.events{background:var(--paper2);border-top:1px solid var(--border)}
+.events-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:48px}
+.event-card{background:var(--paper);border:1px solid var(--border);border-radius:16px;padding:28px;display:flex;gap:20px;transition:all .3s;cursor:pointer}
+.event-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.07);border-color:var(--teal)}
+.event-date{flex-shrink:0;text-align:center}
+.ed-day{font-family:var(--fd);font-size:32px;font-weight:900;color:var(--teal);line-height:1}
+.ed-month{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter)}
+.event-info{}
+.ei-title{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.ei-desc{font-size:13px;color:var(--text-sec);line-height:1.5;margin-bottom:10px;font-weight:300}
+.ei-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ei-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--paper2);border:1px solid var(--border);color:var(--text-sec)}
+
+/* ── FAQ ── */
+.faq{background:var(--paper)}
+.faq-list{margin-top:48px;display:flex;flex-direction:column;gap:0;border-top:1px solid var(--border)}
+.faq-item{border-bottom:1px solid var(--border);overflow:hidden}
+.faq-q{padding:24px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:16px}
+.faq-q-text{font-size:16px;font-weight:600;color:var(--ink);flex:1}
+.faq-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-sec);transition:all .3s;flex-shrink:0}
+.faq-item.open .faq-icon{background:var(--ink);border-color:var(--ink);color:var(--paper);transform:rotate(45deg)}
+.faq-a{font-size:14px;color:var(--text-sec);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-weight:300}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:24px}
+
+/* ── CTA FINAL ── */
+.cta-final{background:var(--ink);color:var(--paper);text-align:center;padding:120px 56px}
+.cf-title{font-family:var(--fd);font-size:clamp(36px,5vw,64px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px}
+.cf-title span{color:var(--teal);font-style:italic}
+.cf-sub{font-size:17px;color:rgba(245,242,236,.55);font-weight:300;margin-bottom:48px;line-height:1.7}
+.cf-actions{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+
+/* ── FOOTER ── */
+.footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:40px 56px;display:flex;align-items:center;justify-content:space-between;color:rgba(245,242,236,.35);font-size:13px}
+.footer-logo{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--teal)}
+
+
+/* ── CLUB EXCLUSIVITÉ ── */
+.club-section{background:var(--ink);color:var(--paper);padding:100px 56px}
+.spheres-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.sphere-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:24px 16px;text-align:center;transition:all .3s;cursor:default;
+  position:relative;overflow:hidden}
+.sphere-card:hover{background:rgba(255,255,255,.07);transform:translateY(-4px)}
+.sphere-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc-sante::before{background:linear-gradient(90deg,#00C48C,#00A070)}
+.sc-digital::before{background:linear-gradient(90deg,#4FC3F7,#0288D1)}
+.sc-habitat::before{background:linear-gradient(90deg,#F5A623,#E8961A)}
+.sc-mariage::before{background:linear-gradient(90deg,#F48FB1,#C2185B)}
+.sc-finance::before{background:linear-gradient(90deg,#9B8FFF,#7B5EA7)}
+.sc-icon{font-size:32px;margin-bottom:12px;display:block}
+.sc-name{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--paper);margin-bottom:8px}
+.sc-count{font-size:11px;color:rgba(245,242,236,.4);margin-bottom:14px}
+.sc-metiers{display:flex;flex-direction:column;gap:4px}
+.sc-metier{font-size:10px;padding:3px 0;color:rgba(245,242,236,.55);
+  border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between}
+.sc-metier:last-child{border-bottom:none}
+.sc-dispo{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sc-dispo.ok{background:#00C48C}
+.sc-dispo.taken{background:rgba(255,255,255,.2)}
+.sc-badge{display:inline-flex;background:rgba(0,196,140,.12);border:1px solid rgba(0,196,140,.25);
+  border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--teal);margin-top:12px}
+
+/* ── RECO GÉRÉE ── */
+.reco-section{background:var(--paper2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:100px 56px}
+.reco-flow{display:grid;grid-template-columns:1fr 48px 1fr 48px 1fr;gap:0;align-items:center;margin-top:48px}
+.rf-step{background:var(--paper);border:1.5px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.rf-step.highlight{background:var(--ink);border-color:var(--ink)}
+.rf-icon{font-size:28px;margin-bottom:10px;display:block}
+.rf-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.rf-title.light{color:var(--paper)}
+.rf-text{font-size:12px;color:var(--text-sec);line-height:1.5;font-weight:300}
+.rf-text.light{color:rgba(245,242,236,.55)}
+.rf-arrow{text-align:center;font-size:22px;color:var(--teal)}
+.rf-time{display:inline-flex;margin-top:10px;font-size:10px;font-weight:700;
+  padding:3px 10px;border-radius:20px;background:rgba(0,196,140,.1);color:var(--teal)}
+.charte-box{background:var(--paper);border:2px solid var(--ink);border-radius:20px;
+  padding:36px;margin-top:48px;position:relative}
+.charte-box::before{content:'CHARTE DU MEMBRE';position:absolute;top:-12px;left:32px;
+  background:var(--ink);color:var(--paper);padding:4px 16px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:.08em}
+.charte-items{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.charte-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-sec);line-height:1.5}
+.charte-check{width:20px;height:20px;border-radius:6px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--paper);
+  flex-shrink:0;margin-top:2px}
+
+@media(max-width:900px){
+  .spheres-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .reco-flow{grid-template-columns:1fr;gap:12px}
+  .rf-arrow{transform:rotate(90deg)}
+  .charte-items{grid-template-columns:1fr}
+  .club-section{padding:64px 24px}
+  .reco-section{padding:64px 24px}
+}
+
+/* ── HERO ANIMATIONS ── */
+@keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,20px) scale(1.05)}}
+@keyframes orbFloat2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes orbFloat3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.1)}}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+@keyframes barLoad{from{width:0}to{}}
+@keyframes heroFadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.hero-left{animation:heroFadeUp .8s ease both}
+.hero-right > div{animation:heroFadeUp .8s ease .2s both}
+
+
+
+/* Animated underline for section titles */
+.section-title { position: relative; }
+
+/* Card hover lift */
+.offre-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
+.event-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
+
+/* Tab swipe on mobile */
+@media(max-width:768px){
+  .hero{padding:0!important;min-height:100vh}
+  .hero > div:last-child{padding:60px 20px 40px!important;grid-template-columns:1fr!important;gap:32px!important}
+  h1[style*="font-size"]{font-size:32px!important;line-height:.95!important}
+  .hero-right{display:none!important}
+}
+@media(max-width:600px){
+  .hero > div:last-child{padding:48px 20px 32px!important}
+}
+
+/* Number counter glow */
+#msgCount,#repCount,#dealCount{transition:all .1s}
+
+/* Ticker smooth */
+.ticker{will-change:transform}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  [style*="grid-template-columns:1.4fr 1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important;font-size:11px}
+  [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+}
+
+/* ── MOBILE RESPONSIVE ADDITIONS ── */
+@media(max-width:600px){
+  .nav{padding:12px 16px}
+  .section{padding:56px 20px}
+  .hero-left{padding:40px 20px 28px}
+  .hero-right{padding:28px 20px}
+  .hero-title{font-size:36px}
+  .concept-grid,.offres-grid,.events-grid,.stats-row,.charte-items{grid-template-columns:1fr!important}
+  .comment-steps{grid-template-columns:1fr!important}
+  .reco-flow{grid-template-columns:1fr;gap:12px}
+  .rf-arrow{transform:rotate(90deg)}
+  .spheres-grid{grid-template-columns:1fr 1fr!important}
+  .cta-final{padding:64px 20px}
+  .footer{flex-direction:column;gap:10px;text-align:center;padding:20px}
+  .section-title{font-size:28px}
+  #simSlider{-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,.15)}
+  #simSlider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--teal);cursor:pointer}
+  .offre-price{font-size:28px!important}
+  [style*="grid-template-columns:1fr 60px 1fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:repeat(4"]{grid-template-columns:1fr 1fr!important}
+}
+@media(max-width:480px){
+  .hero-title{font-size:30px}
+  .section-title{font-size:24px}
+  .offre-price{font-size:24px!important}
+}
+
+@media(max-width:900px){
+  .nav{padding:16px 24px}
+  .nav-links{display:none}
+  .hero{grid-template-columns:1fr;min-height:auto;padding-top:80px}
+  .hero-left{padding:48px 24px 32px}
+  .hero-right{height:auto;padding:40px 24px;border-left:none;border-top:1px solid var(--border)}
+  .section{padding:64px 24px}
+  .concept-grid{grid-template-columns:1fr}
+  .offres-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .comment-steps{grid-template-columns:1fr}
+  .events-grid{grid-template-columns:1fr}
+  .cta-final{padding:80px 24px}
+  .footer{flex-direction:column;gap:12px;text-align:center;padding:24px}
+}
+
+/* ── WAHOO SIMULATOR CSS (from partner) ── */
+/* Override font vars for compatibility */
+.sim-sec{--fi:'Playfair Display',serif}
+
+.sec-inner{max-width:1200px;margin:0 auto}
+.sec-tag{font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.sec-tag::before{content:'';width:24px;height:1.5px;background:var(--teal)}
+.sec-title{font-family:var(--fd);font-size:clamp(24px,4vw,48px);font-weight:900;line-height:.95;letter-spacing:-.02em;margin-bottom:20px}
+.sec-title em{font-family:var(--fi);font-style:italic;font-weight:300;color:rgba(245,242,235,.35)}
+.sim-sec{padding:100px 48px;background:var(--ink)}
+.sim-wrap{max-width:1000px;margin:0 auto}
+.ped-steps{margin-top:40px;max-width:820px}
+.ped-step{display:flex;gap:24px;padding:28px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.ped-step:last-child{border-bottom:none}
+.ped-num{font-family:var(--fm);font-size:11px;width:28px;flex-shrink:0;padding-top:4px}
+.ped-ti{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--cream);margin-bottom:8px;line-height:1.2}
+.ped-tx{font-size:14px;color:rgba(245,242,235,.5);font-weight:300;line-height:1.75}
+.ped-hl{color:var(--cream)}
+.sim-box{background:var(--ink2);border:1px solid var(--border);border-radius:28px;overflow:hidden;margin-top:32px}
+.sim-hd{padding:32px 36px 28px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sim-lbl{font-size:13px;color:rgba(245,242,235,.4);margin-bottom:20px;font-weight:300}
+.sim-row{display:flex;align-items:center;gap:24px}
+.sim-big{font-family:var(--fd);font-size:64px;font-weight:900;color:var(--teal);line-height:1;min-width:100px;text-align:center}
+.sim-unit{font-family:var(--fm);font-size:10px;color:rgba(245,242,235,.25);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;text-align:center}
+.sim-sw{flex:1}
+.sim-slider{width:100%;-webkit-appearance:none;appearance:none;height:5px;background:rgba(255,255,255,.1);border-radius:3px;outline:none;cursor:pointer}
+.sim-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--teal);cursor:pointer;box-shadow:0 0 0 5px rgba(0,212,160,.15)}
+.sim-lbls{display:flex;justify-content:space-between;margin-top:12px;font-family:var(--fm);font-size:10px;color:rgba(245,242,235,.2)}
+.sim-ctx{margin-top:16px;padding:12px 16px;background:rgba(0,212,160,.06);border:1px solid var(--teal-g);border-radius:10px;font-size:13px;color:rgba(245,242,235,.6);line-height:1.6;font-weight:300;min-height:44px;transition:all .3s}
+.sim-results{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.06)}
+.sim-res{background:var(--ink2);padding:28px 32px}
+.sr-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,242,235,.3);margin-bottom:12px}
+.sr-val{font-family:var(--fd);font-size:clamp(20px,3vw,34px);font-weight:900;line-height:1;margin-bottom:4px;transition:all .4s}
+.sr-sub{font-size:12px;color:rgba(245,242,235,.3);font-weight:300}
+.sr-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:14px;overflow:hidden}
+.sr-fill{height:100%;border-radius:2px;transition:width .6s ease;min-width:3px}
+.sim-bd{padding:24px 32px;border-top:1px solid rgba(255,255,255,.06)}
+.bd-ti{font-size:11px;font-weight:700;color:rgba(245,242,235,.3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.bd-row{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.bd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.bd-lbl{font-size:13px;color:rgba(245,242,235,.5);flex:1;font-weight:300}
+.bd-num{font-family:var(--fm);font-size:14px;font-weight:500;transition:all .4s}
+.sim-ca{background:linear-gradient(135deg,rgba(0,212,160,.08),transparent);border-top:1px solid var(--teal-g);padding:24px 32px}
+.flow-sec .sec-tag{color:var(--teal-d)}
+.flow-sec .sec-tag::before{background:var(--teal-d)}
+.flow-sec .sec-title{color:var(--ink)}
+.hero,.pain-sec,.sim-sec,.flow-sec,.exclu-sec,.offer-sec,.form-sec{padding-left:24px;padding-right:24px}
+.sim-results,.ca-grid{grid-template-columns:1fr}
+/* fix: sec-title color for light bg context */
+.sim-sec .sec-title{color:var(--paper)}
+.sim-sec .sec-tag{color:var(--teal)}
+
+/* ── CHAT SCROLL ANIMATION ── */
+@keyframes chatScroll{
+  0%{top:0}
+  20%{top:0}
+  45%{top:-320px}
+  65%{top:-320px}
+  85%{top:-620px}
+  95%{top:-620px}
+  100%{top:0}
+}
+@keyframes bouncePeek{
+  0%,100%{transform:translateX(-50%) translateY(0)}
+  50%{transform:translateX(-50%) translateY(-3px)}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Jean-Philippe <span>Roth</span></div>
+  <div class="nav-links">
+    <a href="#wahoo" class="nav-link">L'effet viral</a>
+    <a href="#offres" class="nav-link">Tarifs</a>
+    <a href="#resultats" class="nav-link">Résultats</a>
+    <a href="#evenements" class="nav-link">Événements</a>
+  </div>
+  <a href="#contact" class="nav-cta">Travailler ensemble →</a>
+</nav>
+
+<!-- HERO -->
+<!-- ══ HERO ══ -->
+<section style="min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:#060810;padding-top:80px">
+
+  <!-- Background -->
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:0">
+    <div style="position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.14),transparent 65%);top:-200px;left:-80px;filter:blur(80px);animation:orbF 9s ease-in-out infinite"></div>
+    <div style="position:absolute;width:450px;height:450px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.08),transparent 65%);bottom:-100px;right:5%;filter:blur(80px);animation:orbF 11s ease-in-out infinite reverse"></div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(0,196,140,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,196,140,.03) 1px,transparent 1px);background-size:64px 64px"></div>
+    <div style="position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,196,140,.25),transparent);top:0;animation:scanLine 7s linear infinite"></div>
+  </div>
+  <style>
+    @keyframes orbF{0%,100%{transform:scale(1) translate(0,0)}50%{transform:scale(1.1) translate(20px,-20px)}}
+    @keyframes scanLine{0%{top:-1px;opacity:0}8%{opacity:1}92%{opacity:.5}100%{top:100%;opacity:0}}
+    @keyframes hFadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+    @keyframes blinkDot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,196,140,.4)}50%{opacity:.4;box-shadow:0 0 0 6px rgba(0,196,140,0)}}
+    @keyframes numGlow{0%,100%{text-shadow:0 0 30px rgba(0,196,140,.2)}50%{text-shadow:0 0 80px rgba(0,196,140,.5),0 0 120px rgba(0,196,140,.2)}}
+    @keyframes msgAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    @keyframes phoneGlow{0%,100%{box-shadow:0 40px 100px rgba(0,0,0,.8),0 0 40px rgba(0,196,140,.06),0 0 0 1px rgba(255,255,255,.07)}50%{box-shadow:0 40px 100px rgba(0,0,0,.8),0 0 60px rgba(0,196,140,.14),0 0 0 1px rgba(255,255,255,.1)}}
+  </style>
+
+  <!-- 2-COL GRID -->
+  <div style="position:relative;z-index:1;width:100%;max-width:1280px;margin:0 auto;padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center" class="hero-2col">
+  <style>
+    .hero-2col{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+    @media(max-width:960px){.hero-2col{grid-template-columns:1fr!important;padding:48px 28px!important}.hero-phone-col{order:1}}
+    @media(max-width:600px){.hero-2col{padding:40px 18px 48px!important;gap:32px!important}}
+  </style>
+
+    <!-- ═══ LEFT ═══ -->
+    <div style="display:flex;flex-direction:column;gap:22px">
+
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:100px;padding:8px 20px;width:fit-content;animation:hFadeUp .5s ease both">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;animation:blinkDot 2s ease-in-out infinite"></span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.9)">Apporteur de clients · Dax · Bayonne · Pau</span>
+      </div>
+
+      <div style="animation:hFadeUp .6s ease .08s both">
+        <div style="font-size:clamp(14px,1.6vw,19px);color:rgba(245,242,236,.4);font-weight:300;margin-bottom:6px">Votre offre sur</div>
+        <div style="font-family:var(--fd);font-size:clamp(70px,9.5vw,116px);font-weight:900;color:var(--teal);line-height:.86;letter-spacing:-3px;animation:numGlow 3s ease-in-out infinite">100<span style="font-size:.62em;letter-spacing:-2px"> 000</span></div>
+        <div style="font-family:var(--fd);font-size:clamp(26px,3.8vw,48px);font-weight:900;color:rgba(245,242,236,.88);letter-spacing:-1px;line-height:1;margin-top:6px">téléphones ce mois-ci.</div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;animation:hFadeUp .6s ease .15s both">
+        <span style="padding:5px 15px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(245,242,236,.5)">Sans pub</span>
+        <span style="padding:5px 15px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(245,242,236,.5)">Sans budget</span>
+        <span style="padding:5px 15px;border-radius:100px;font-size:12px;font-weight:700;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.3);color:var(--teal)">Sans abonnement fixe</span>
+      </div>
+
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;animation:hFadeUp .6s ease .22s both">
+        <div style="display:flex;gap:13px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.05)">
+          <span style="font-family:var(--fd);font-size:11px;font-weight:700;color:rgba(0,196,140,.5);flex-shrink:0;padding-top:2px">01</span>
+          <span style="font-size:13px;color:rgba(245,242,236,.6);line-height:1.6;font-weight:300">Je distribue votre offre à <strong style="color:rgba(245,242,236,.9)">50 professionnels non concurrents</strong> — ceux dont les clients vous cherchent <em style="font-style:normal;color:rgba(245,242,236,.8)">juste après</em>. La source la plus qualifiée, la moins exploitée.</span>
+        </div>
+        <div style="display:flex;gap:13px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.05)">
+          <span style="font-family:var(--fd);font-size:11px;font-weight:700;color:rgba(0,196,140,.5);flex-shrink:0;padding-top:2px">02</span>
+          <span style="font-size:13px;color:rgba(245,242,236,.6);line-height:1.6;font-weight:300">Ils la distribuent <strong style="color:rgba(245,242,236,.9)">en 1 clic à leurs milliers de contacts WhatsApp</strong>. Des dizaines cliqueront sur "Je veux".</span>
+        </div>
+        <div style="display:flex;gap:13px;padding:15px 18px">
+          <span style="font-family:var(--fd);font-size:11px;font-weight:700;color:rgba(0,196,140,.5);flex-shrink:0;padding-top:2px">03</span>
+          <span style="font-size:13px;color:rgba(245,242,236,.6);line-height:1.6;font-weight:300">Je qualifie chaque lead. <strong style="color:var(--teal);font-weight:700">Vous payez uniquement quand vous recevez un client.</strong></span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;animation:hFadeUp .6s ease .3s both">
+        <a href="#wahoo" style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#040E0A;padding:14px 26px;border-radius:100px;font-family:var(--fb);font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;transition:all .25s">Voir comment ça marche →</a>
+        <a href="#offres" style="display:inline-flex;align-items:center;background:transparent;color:rgba(245,242,236,.55);padding:14px 26px;border-radius:100px;font-family:var(--fb);font-size:14px;font-weight:500;text-decoration:none;border:1.5px solid rgba(255,255,255,.12);white-space:nowrap;transition:all .25s">Voir les tarifs</a>
+      </div>
+
+      <div style="display:flex;align-items:stretch;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;animation:hFadeUp .6s ease .38s both">
+        <div style="flex:1;padding:13px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.06)">
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--paper);line-height:1" id="msgCount">0</div>
+          <div style="font-size:8px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-top:3px">Messages</div>
+        </div>
+        <div style="flex:1;padding:13px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.06)">
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--paper);line-height:1" id="repCount">0</div>
+          <div style="font-size:8px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-top:3px">Réponses</div>
+        </div>
+        <div style="flex:1;padding:13px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.06)">
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--amber);line-height:1" id="dealCount">0</div>
+          <div style="font-size:8px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-top:3px">Deals signés</div>
+        </div>
+        <div style="flex:1;padding:13px 12px;text-align:center">
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal);line-height:1">47</div>
+          <div style="font-size:8px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-top:3px">Pros actifs</div>
+        </div>
+      </div>
+
+    </div><!-- end left col -->
+
+    <!-- ═══ RIGHT — WhatsApp with real catalogue cards ═══ -->
+    <div class="hero-phone-col" style="display:flex;justify-content:center;align-items:center;position:relative">
+
+      <!-- Floating badge top right -->
+      <div style="position:absolute;top:-14px;right:-8px;z-index:20;background:#0A1210;border:1.5px solid rgba(0,196,140,.4);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 28px rgba(0,0,0,.6);animation:floatBadge 3s ease-in-out infinite">
+        <span style="font-size:18px">📱</span>
+        <div>
+          <div style="font-family:var(--fd);font-size:17px;font-weight:900;color:var(--teal);line-height:1">100 000</div>
+          <div style="font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.35)">téléphones ce mois</div>
+        </div>
+      </div>
+
+      <!-- Commission badge bottom left -->
+      <div style="position:absolute;bottom:-10px;left:-12px;z-index:20;background:#0A1210;border:1px solid rgba(0,196,140,.3);border-radius:100px;padding:8px 14px;display:flex;align-items:center;gap:6px;box-shadow:0 6px 20px rgba(0,0,0,.5);animation:floatBadge 3.5s ease-in-out infinite reverse">
+        <span style="font-size:14px">💸</span>
+        <span style="font-size:10px;font-weight:700;color:rgba(0,196,140,.9)">+15€ — contact qualifié !</span>
+      </div>
+
+      <!-- PHONE SHELL -->
+      <div style="width:292px;border-radius:40px;overflow:hidden;animation:phoneGlow 4s ease-in-out infinite;position:relative;z-index:1">
+
+        <!-- Status bar -->
+        <div style="background:#075E54;padding:10px 18px 5px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:#fff;font-family:var(--fd)">09:41</span>
+          <span style="font-size:8px;color:rgba(255,255,255,.6)">▌▌ 5G ■</span>
+        </div>
+
+        <!-- WA contact header -->
+        <!-- STATUS BAR -->
+        <div style="background:#075E54;padding:10px 18px 5px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:#fff;font-family:var(--fd)">09:41</span>
+          <span style="font-size:8px;color:rgba(255,255,255,.6)">▌▌ 5G ■</span>
+        </div>
+        <!-- WA HEADER -->
+        <div style="background:#075E54;padding:6px 14px 13px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.2)">
+          <div style="position:relative;flex-shrink:0">
+            <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00C48C,#008F6A);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;color:#fff">JP</div>
+            <div style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#25D366;border:2px solid #075E54"></div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff">Jean-Philippe Roth</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.7)">en ligne</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:14px;opacity:.7;font-size:14px">📞 ⋮</div>
+        </div>
+
+        <!-- CHAT BODY -->
+        <div style="background:#0C1317;background-image:url('data:image/svg+xml,%3Csvg width=\'52\' height=\'52\' viewBox=\'0 0 52 52\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle fill=\'%23ffffff\' fill-opacity=\'0.018\' cx=\'26\' cy=\'26\' r=\'1\'/%3E%3C/svg%3E');height:460px;overflow:hidden;position:relative" id="chatBody"></div>
+
+          <!-- Scrolling inner container -->
+          <div id="chatInner" style="display:flex;flex-direction:column;gap:8px;padding:10px 10px 6px;position:absolute;width:100%;animation:chatScroll 12s ease-in-out infinite">
+
+            <!-- Date -->
+            <div style="text-align:center;margin-bottom:2px">
+              <span style="background:rgba(255,255,255,.07);border-radius:20px;padding:3px 10px;font-size:9px;color:rgba(255,255,255,.4)">Aujourd'hui · 09h38</span>
+            </div>
+
+            <!-- Forwarded context -->
+            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+              <span style="font-size:9px;color:rgba(0,196,140,.7);padding-left:4px;font-weight:600">Jean-Philippe Roth</span>
+              <div style="background:#1A2730;border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:8px 12px;max-width:88%">
+                <div style="font-size:8px;font-weight:700;color:var(--teal);margin-bottom:3px">↪ Via Sophie · votre amie</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.5">Sophie m'a demandé de t'envoyer son accès privilège. C'est exclusif et ça expire le 31 mai. 👇</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.3);text-align:right;margin-top:3px">09:38</div>
+              </div>
+            </div>
+
+            <!-- OFFER CARD 1 — full card visible -->
+            <div style="display:flex;flex-direction:column;align-items:flex-start">
+              <div style="background:#fff;border-radius:4px 16px 16px 16px;overflow:hidden;width:96%;max-width:256px;box-shadow:0 4px 16px rgba(0,0,0,.4)">
+                <div style="height:3px;background:linear-gradient(90deg,#00C896,#00A070)"></div>
+                <div style="padding:13px 14px;background:#fff">
+                  <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:700;color:#B45309;text-align:center;margin-bottom:10px">⏰ Expire le 31 mai · Offre exclusive</div>
+                  <div style="display:inline-flex;align-items:center;background:rgba(0,200,150,.1);border:1px solid rgba(0,160,112,.2);border-radius:20px;padding:2px 9px;margin-bottom:9px">
+                    <span style="font-size:8px;font-weight:700;color:#007A56;letter-spacing:.05em;text-transform:uppercase">🌿 Santé · Bien-être</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                    <div style="position:relative;flex-shrink:0">
+                      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=80&q=80&fit=crop&crop=face" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,196,140,.3);display:block" alt="Antonin" onerror="this.style.display='none'">
+                      <div style="position:absolute;bottom:0;right:-1px;width:11px;height:11px;border-radius:50%;background:#25D366;border:2px solid #fff"></div>
+                    </div>
+                    <div>
+                      <div style="font-size:12px;font-weight:700;color:#1A1C22">Antonin Lemaire</div>
+                      <div style="font-size:9px;color:#9A9DAA">Coach sportif · Dax · ★★★★★</div>
+                      <div style="font-size:8px;color:#007A56;font-weight:600;margin-top:1px">✓ Disponible cette semaine</div>
+                    </div>
+                  </div>
+                  <div style="background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1px solid rgba(200,168,75,.25);border-radius:10px;padding:10px">
+                    <div style="font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8A84B;margin-bottom:5px">✦ Privilège exclusif via Jean Roth</div>
+                    <div style="font-size:14px;font-weight:800;color:#1A1C22;margin-bottom:5px;line-height:1.2">1er mois de coaching<br>personnalisé offert</div>
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px">
+                      <span style="font-size:11px;color:#9A9DAA;text-decoration:line-through">240€</span>
+                      <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:#007A56">Gratuit</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px">
+                      <div style="display:flex">
+                        <div style="width:16px;height:16px;border-radius:50%;background:#dcfce7;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#166534;margin-right:-5px">SB</div>
+                        <div style="width:16px;height:16px;border-radius:50%;background:#dbeafe;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#1e40af;margin-right:-5px">ML</div>
+                        <div style="width:16px;height:16px;border-radius:50%;background:#fef3c7;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#92400e">TC</div>
+                      </div>
+                      <span style="font-size:9px;color:#5A5D68"><strong style="color:#1A1C22">14 personnes</strong> ont activé</span>
+                    </div>
+                    <div style="background:#25D366;border-radius:8px;padding:9px;text-align:center;font-size:10px;font-weight:700;color:#fff">💬 Activer mon privilège via WhatsApp</div>
+                  </div>
+                </div>
+                <div style="padding:2px 14px 8px;background:#fff;font-size:8px;color:#9A9DAA;text-align:right">09:38</div>
+              </div>
+            </div>
+
+            <!-- Reaction -->
+            <div style="display:flex;flex-direction:column;align-items:flex-end">
+              <div style="background:#005C4B;border-radius:14px 4px 14px 14px;padding:9px 13px;max-width:82%">
+                <div style="font-size:11.5px;color:rgba(255,255,255,.92);line-height:1.5">Wahooo 😱 j'active MAINTENANT !</div>
+                <div style="font-size:8px;color:rgba(255,255,255,.45);text-align:right;margin-top:3px">09:41 ✓✓</div>
+              </div>
+            </div>
+
+            <!-- Commission -->
+            <div style="display:flex;justify-content:center">
+              <div style="background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);border-radius:20px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px">
+                <span style="font-size:12px">💸</span>
+                <span style="font-size:10px;font-weight:700;color:rgba(0,196,140,.9)">+15€ commission automatique !</span>
+              </div>
+            </div>
+
+            <!-- OFFER CARD 2 — Habitat, peeking at bottom -->
+            <div style="display:flex;flex-direction:column;align-items:flex-start">
+              <div style="background:#fff;border-radius:4px 16px 16px 16px;overflow:hidden;width:96%;max-width:256px;box-shadow:0 4px 16px rgba(0,0,0,.4)">
+                <div style="height:3px;background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+                <div style="padding:13px 14px;background:#fff">
+                  <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:700;color:#B45309;text-align:center;margin-bottom:10px">⏰ Expire le 31 mai · Offre exclusive</div>
+                  <div style="display:inline-flex;align-items:center;background:rgba(192,120,0,.08);border:1px solid rgba(192,120,0,.2);border-radius:20px;padding:2px 9px;margin-bottom:9px">
+                    <span style="font-size:8px;font-weight:700;color:#B45309;letter-spacing:.05em;text-transform:uppercase">🏠 Habitat · Travaux</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                    <div style="position:relative;flex-shrink:0">
+                      <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80&q=80&fit=crop&crop=face" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(245,166,35,.3);display:block" alt="Frédéric" onerror="this.style.display='none'">
+                    </div>
+                    <div>
+                      <div style="font-size:12px;font-weight:700;color:#1A1C22">Frédéric Lacourt</div>
+                      <div style="font-size:9px;color:#9A9DAA">Plombier chauffagiste · Dax ★★★★★</div>
+                    </div>
+                  </div>
+                  <div style="background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1px solid rgba(200,168,75,.25);border-radius:10px;padding:10px">
+                    <div style="font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8A84B;margin-bottom:5px">✦ Privilège exclusif via Jean Roth</div>
+                    <div style="font-size:14px;font-weight:800;color:#1A1C22;margin-bottom:5px">Diagnostic chaudière offert</div>
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px">
+                      <span style="font-size:11px;color:#9A9DAA;text-decoration:line-through">120€</span>
+                      <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:#B45309">Offert</span>
+                    </div>
+                    <div style="background:#25D366;border-radius:8px;padding:9px;text-align:center;font-size:10px;font-weight:700;color:#fff">💬 Activer mon privilège via WhatsApp</div>
+                  </div>
+                </div>
+                <div style="padding:2px 14px 8px;background:#fff;font-size:8px;color:#9A9DAA;text-align:right">09:39</div>
+              </div>
+            </div>
+
+          </div><!-- end chatInner -->
+
+          <!-- Fade gradient at bottom to hint more content below -->
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(12,19,23,.95));pointer-events:none;z-index:2"></div>
+          <!-- "More offers" indicator -->
+          <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:3;background:rgba(0,196,140,.15);border:1px solid rgba(0,196,140,.3);border-radius:20px;padding:4px 12px;font-size:9px;font-weight:700;color:var(--teal);white-space:nowrap;animation:bouncePeek .8s ease-in-out infinite">↓ 6 autres offres</div>
+
+
+        <!-- WA Input bar -->
+        <div style="background:#1F2C34;padding:8px 12px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px;opacity:.4">😊</span>
+          <div style="flex:1;background:#2A3942;border-radius:22px;padding:8px 14px;font-size:10px;color:rgba(255,255,255,.25);">Votre message...</div>
+          <span style="font-size:16px;opacity:.4">🎤</span>
+        </div>
+        <div style="background:#1F2C34;padding:6px 0;display:flex;justify-content:center">
+          <div style="width:44px;height:4px;background:rgba(255,255,255,.12);border-radius:2px"></div>
+        </div>
+
+
+
+      </div><!-- end phone shell glow -->
+    </div><!-- end right col -->
+  </div><!-- end 2-col grid -->
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Sophie M. (Ostéo · Dax) a rejoint le réseau</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Nouveau deal signé — Coach sportif recommandé à un nutritionniste · +180€</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Marc D. (Expert-comptable) — accord 10% par client signé</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Réseau actif · 47 professionnels dans le secteur de Dax</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Sophie M. (Ostéo · Dax) a rejoint le réseau</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Nouveau deal signé — Coach sportif recommandé à un nutritionniste · +180€</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#00C48C"></span>Marc D. (Expert-comptable) — accord 10% par client signé</span>
+    <span class="ticker-item"><span class="ticker-dot" style="background:#F5A623"></span>Réseau actif · 47 professionnels dans le secteur de Dax</span>
+  </div>
+</div>
+
+
+<section id="simulateur" style="background:linear-gradient(160deg,#F0FDF8 0%,#ECFDF5 40%,#F5F2EC 100%);padding:100px 48px;overflow:hidden;position:relative">
+
+  <!-- Decorative background elements -->
+  <div style="position:absolute;top:-80px;right:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.12),transparent 70%);pointer-events:none"></div>
+  <div style="position:absolute;bottom:-60px;left:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.1),transparent 70%);pointer-events:none"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:800px;border-radius:50%;border:1px dashed rgba(0,196,140,.1);pointer-events:none"></div>
+
+  <div style="max-width:1100px;margin:0 auto;position:relative;z-index:1">
+
+    <!-- Header -->
+    <div class="fade-up" style="text-align:center;margin-bottom:64px">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.3);border-radius:100px;padding:8px 20px;margin-bottom:24px">
+        <span style="font-size:16px">🌊</span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-dark)">L'effet wahoo</span>
+      </div>
+      <h2 style="font-family:var(--fd);font-size:clamp(32px,5vw,60px);font-weight:900;line-height:.95;letter-spacing:-1.5px;color:var(--ink);margin-bottom:16px">
+        Laissez-moi vous expliquer<br>quelque chose <em style="color:var(--teal);font-style:italic">de dingue.</em>
+      </h2>
+      <p style="font-size:17px;color:var(--text-sec);font-weight:300;max-width:560px;margin:0 auto;line-height:1.6">Une ville entière devient votre force commerciale. Regardez comment.</p>
+    </div>
+
+    <!-- 3 VAGUES — cards horizontales colorées -->
+    <div class="fade-up" style="display:flex;flex-direction:column;gap:16px;margin-bottom:72px">
+
+      <!-- Vague 01 -->
+      <div style="display:grid;grid-template-columns:64px 1fr auto;gap:20px;align-items:center;background:#fff;border:1.5px solid rgba(0,196,140,.2);border-radius:20px;padding:24px 28px;box-shadow:0 4px 24px rgba(0,196,140,.08);transition:transform .3s" onmouseover="this.style.transform='translateX(6px)'" onmouseout="this.style.transform='none'">
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#00C48C,#00A070);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:24px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 8px 20px rgba(0,196,140,.35)">01</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.2">Votre téléphone contient <span style="color:var(--teal)">250 contacts.</span></div>
+          <div style="font-size:14px;color:var(--text-sec);line-height:1.6;font-weight:300">Vous envoyez votre catalogue à ces 250 personnes en <strong style="color:var(--ink)">1 tap</strong> via l'app Popey. Chaque fois que l'une d'elles signe, vous touchez une <strong style="color:var(--ink)">commission automatique.</strong></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;padding-left:16px;border-left:2px solid rgba(0,196,140,.15)">
+          <div style="font-family:var(--fd);font-size:40px;font-weight:900;color:var(--teal);line-height:1">250</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-ter)">personnes · vous seul</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="text-align:center;font-size:22px;color:rgba(0,196,140,.4);animation:arrowBounce 1.5s ease-in-out infinite">↓</div>
+
+      <!-- Vague 02 -->
+      <div style="display:grid;grid-template-columns:64px 1fr auto;gap:20px;align-items:center;background:#fff;border:1.5px solid rgba(245,166,35,.25);border-radius:20px;padding:24px 28px;box-shadow:0 4px 24px rgba(245,166,35,.1);transition:transform .3s" onmouseover="this.style.transform='translateX(6px)'" onmouseout="this.style.transform='none'">
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#F5A623,#D97706);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:24px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 8px 20px rgba(245,166,35,.35)">02</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.2">Maintenant imaginez <span style="color:#B45309">50 professionnels</span> qui font la même chose.</div>
+          <div style="font-size:14px;color:var(--text-sec);line-height:1.6;font-weight:300">Chacun envoie à ses 250 contacts. Votre offre est visible dans chaque envoi. <strong style="color:var(--ink)">250 × 50 = 12 500 personnes</strong> voient votre offre ce mois-ci. Sans effort. Sans budget.</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;padding-left:16px;border-left:2px solid rgba(245,166,35,.2)">
+          <div style="font-family:var(--fd);font-size:40px;font-weight:900;color:#B45309;line-height:1">12 500</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-ter)">vues · 50 pros</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="text-align:center;font-size:22px;color:rgba(245,166,35,.4);animation:arrowBounce 1.5s ease-in-out infinite .3s">↓</div>
+
+      <!-- Vague 03 — the explosion -->
+      <div style="display:grid;grid-template-columns:64px 1fr auto;gap:20px;align-items:center;background:var(--ink);border:1.5px solid rgba(0,196,140,.3);border-radius:20px;padding:24px 28px;box-shadow:0 8px 40px rgba(0,0,0,.2);transition:transform .3s;position:relative;overflow:hidden" onmouseover="this.style.transform='translateX(6px)'" onmouseout="this.style.transform='none'">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--amber),transparent)"></div>
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#7C3AED,#4F46E5);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:24px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 8px 20px rgba(124,58,237,.4)">03</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--paper);margin-bottom:4px;line-height:1.2">Allons encore plus loin. <span style="color:var(--teal)">L'effet viral.</span></div>
+          <div style="font-size:14px;color:rgba(245,242,236,.6);line-height:1.6;font-weight:300">Parmi les 12 500, certains veulent aussi toucher une commission. Ils partagent à leurs 250 contacts. 10% le font → <strong style="color:var(--paper)">1 250 relayeurs × 250 = 312 500 vues de plus.</strong></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;padding-left:16px;border-left:2px solid rgba(0,196,140,.2)">
+          <div style="font-family:var(--fd);font-size:36px;font-weight:900;color:var(--teal);line-height:1">+293K</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(245,242,236,.35)">portée virale</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIMULATEUR — fun, coloré, impactant -->
+    <div class="fade-up">
+      <div style="background:var(--ink);border-radius:28px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.2)">
+
+        <!-- Simulator header -->
+        <div style="background:linear-gradient(135deg,#0D1F18,#0A1810);padding:32px 40px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.15),transparent 70%)"></div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:10px">Faites le test vous-même</div>
+          <div style="font-family:var(--fd);font-size:clamp(20px,3vw,30px);font-weight:900;color:var(--paper);margin-bottom:6px">Combien de pros Popey dans votre ville ?</div>
+          <div style="font-size:14px;color:rgba(245,242,236,.45)">Bougez le curseur et regardez les chiffres exploser.</div>
+        </div>
+
+        <!-- Slider area -->
+        <div style="padding:32px 40px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap">
+            <div style="font-family:var(--fd);font-size:72px;font-weight:900;color:var(--teal);line-height:1;min-width:90px" id="simProsVal">10</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:var(--paper);margin-bottom:2px">professionnels actifs</div>
+              <div style="font-size:13px;color:rgba(245,242,236,.4)" id="simDesc2">10 pros : votre offre touche 2 250 personnes directement.</div>
+            </div>
+          </div>
+          <input type="range" id="simSlider" min="1" max="150" value="10" oninput="updateSim()" style="width:100%;height:6px;border-radius:3px;outline:none;cursor:pointer;accent-color:var(--teal);margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(245,242,236,.3);font-weight:500">
+            <span>1 pro</span><span>50 pros</span><span>150 pros</span>
+          </div>
+        </div>
+
+        <!-- Results grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,.06)">
+          <div style="background:#060810;padding:24px 20px;text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(155,143,255,.7);margin-bottom:8px">📱 Contacts WhatsApp</div>
+            <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--paper);line-height:1" id="r1">2 500</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">Pros × leurs contacts</div>
+          </div>
+          <div style="background:#060810;padding:24px 20px;text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,166,35,.7);margin-bottom:8px">👁 Voient votre offre</div>
+            <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--amber);line-height:1" id="r2">2 250</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">90% ouvrent WhatsApp</div>
+          </div>
+          <div style="background:#060810;padding:24px 20px;text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:8px">🔥 Portée virale</div>
+            <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--teal);line-height:1" id="r3">56 250</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">10% relayeurs × 250</div>
+          </div>
+          <div style="background:rgba(0,196,140,.07);padding:24px 20px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal)"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.8);margin-bottom:8px">🚀 Total smartphones</div>
+            <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--teal);line-height:1" id="r4">58 500</div>
+            <div style="font-size:11px;color:rgba(0,196,140,.5);margin-top:6px">Votre offre vue ce mois</div>
+          </div>
+        </div>
+
+        <!-- CA estimation -->
+        <div style="padding:24px 40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;background:rgba(255,255,255,.01);border-top:1px solid rgba(255,255,255,.06)">
+          <div style="text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-bottom:6px">Demandes reçues</div>
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--paper)" id="d1">45</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:3px">2% des vues</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-bottom:6px">Ventes conclues</div>
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--amber)" id="d2">23</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:3px">50% conversion</div>
+          </div>
+          <div style="text-align:center;background:rgba(0,196,140,.06);border-radius:12px;padding:14px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:6px">CA réseau / mois</div>
+            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--teal)" id="d3">3 450€</div>
+            <div style="font-size:11px;color:rgba(0,196,140,.4);margin-top:3px">Panier moyen 150€</div>
+          </div>
+        </div>
+
+        <!-- Quote bottom -->
+        <div style="padding:24px 40px;background:rgba(0,196,140,.04);border-top:1px solid rgba(0,196,140,.1);text-align:center">
+          <p style="font-family:var(--fd);font-size:clamp(14px,2vw,18px);font-style:italic;color:rgba(245,242,236,.6);max-width:700px;margin:0 auto;line-height:1.5">
+            "Seul vous touchez <span style="color:var(--paper)">250 personnes</span>. Avec <span style="color:var(--teal)" id="simQuote">50</span> partenaires Popey, votre offre circule sur <span style="color:var(--teal)" id="r4b">58 500</span> smartphones — <span style="color:var(--amber)">plus puissant qu'une campagne d'affichage.</span>"
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+@keyframes arrowBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@media(max-width:768px){
+  #simulateur{padding:64px 20px}
+  #simulateur [style*="grid-template-columns:64px 1fr auto"]{grid-template-columns:48px 1fr!important}
+  #simulateur [style*="grid-template-columns:1fr 1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important}
+  #simulateur [style*="grid-template-columns:1fr 1fr 1fr;"]{grid-template-columns:1fr!important}
+  #simulateur [style*="padding:32px 40px"]{padding:24px 20px!important}
+  #simulateur [style*="padding:24px 40px"]{padding:20px 20px!important}
+  [style*="font-size:72px"]{font-size:48px!important}
+  #simulateur [style*="auto;gap:20px;margin-bottom:20px"]{gap:12px!important}
+}
+</style>
+
+<!-- L'EFFET WAHOO — valeur marchande -->
+<section class="section" style="background:var(--paper2);border-top:1px solid var(--border)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:40px">
+      <div class="section-tag" style="justify-content:center">Le cadeau · La puissance des 100 000 vues</div>
+      <h2 class="section-title">100 000 vues WhatsApp.<br><span style="color:var(--teal)">Valeur marchande : 7 000€.</span><br><span style="font-size:.55em;color:var(--text-ter)">Offert gratuitement via le réseau.</span></h2>
+    </div>
+    <div class="fade-up" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="background:var(--paper);border:1.5px solid #FED7D7;border-radius:16px;padding:24px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">📣</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:8px">Facebook Ads</div>
+        <div style="font-family:var(--fd);font-size:32px;font-weight:900;color:#E5534B;line-height:1;margin-bottom:6px">1 000€</div>
+        <div style="font-size:11px;color:var(--text-ter);line-height:1.5">100K impressions · CPM 10€<br><strong style="color:var(--text-sec)">Taux d'ouverture : 2%</strong></div>
+      </div>
+      <div style="background:var(--paper);border:1.5px solid #FED7D7;border-radius:16px;padding:24px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">📰</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:8px">Journal local</div>
+        <div style="font-family:var(--fd);font-size:32px;font-weight:900;color:#E5534B;line-height:1;margin-bottom:6px">1 500€</div>
+        <div style="font-size:11px;color:var(--text-ter);line-height:1.5">Pleine page · 20K pers. max<br><strong style="color:var(--text-sec)">Mémorisation très faible</strong></div>
+      </div>
+      <div style="background:var(--paper);border:1.5px solid #FED7D7;border-radius:16px;padding:24px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">📱</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:8px">SMS Marketing</div>
+        <div style="font-family:var(--fd);font-size:32px;font-weight:900;color:#E5534B;line-height:1;margin-bottom:6px">7 000€</div>
+        <div style="font-size:11px;color:var(--text-ter);line-height:1.5">100K SMS à 0,07€<br><strong style="color:var(--text-sec)">Taux d'ouverture : 90%</strong></div>
+      </div>
+    </div>
+    <div class="fade-up" style="background:var(--ink);border-radius:18px;padding:28px 36px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent)"></div>
+      <div style="font-size:36px">🎁</div>
+      <div style="flex:1;min-width:240px">
+        <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--paper);margin-bottom:6px">Avec Popey — même résultat. Prix : 0€.</div>
+        <div style="font-size:13px;color:rgba(245,242,236,.55);line-height:1.7;font-weight:300">WhatsApp : <strong style="color:var(--paper)">90% de taux d'ouverture</strong> (vs 2% pour les pubs). Votre offre n'est pas une pub entre deux reels — elle arrive dans la conversation d'un ami de confiance. C'est le média le plus puissant du monde.</div>
+      </div>
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-family:var(--fd);font-size:52px;font-weight:900;color:var(--teal);line-height:1">0€</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.5);margin-top:4px">Offert via le réseau</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLUB EXCLUSIVITÉ -->
+<section class="club-section">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="section-tag" style="justify-content:center;color:var(--teal)">Exclusivité · 1 seul par métier par ville</div>
+      <h2 style="font-family:var(--fd);font-size:clamp(32px,4vw,52px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px;color:var(--paper)">
+        Une famille de <span style="color:var(--teal)">150 professionnels.</span><br>
+        <span style="font-size:.6em;color:rgba(245,242,236,.4)">6 sphères · 1 seul par métier · 1 seul par ville · Votre place ou celle de votre concurrent.</span>
+      </h2>
+      <p style="font-size:16px;color:rgba(245,242,236,.55);max-width:640px;margin:0 auto 16px;font-weight:300;line-height:1.7">Ce n'est pas un annuaire. C'est un club fermé de 150 professionnels — chacun dans son métier, chacun dans sa ville. Tous peuvent vous recommander. Vous pouvez recommander chacun d'eux.</p>
+      <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:10px 20px;font-size:13px;color:rgba(245,242,236,.7)">
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">150</span> métiers ·
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">6</span> sphères ·
+        <span style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal)">1</span> seul par métier par ville
+      </div>
+    </div>
+    <div class="spheres-grid fade-up" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sphere-card sc-sante"><span class="sc-icon">🌿</span><div class="sc-name">Santé · Bien-être · Sport</div><div class="sc-count">30 métiers · ~300 villes</div><div class="sc-metiers"><div class="sc-metier"><span>Ostéopathe</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Coach sportif</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Nutritionniste</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Sophrologue</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Kinésithérapeute</span><div class="sc-dispo ok"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 25 métiers →</span></div></div><div class="sc-badge">Option A : 30€/RDV</div></div>
+      <div class="sphere-card sc-habitat"><span class="sc-icon">🏠</span><div class="sc-name">Habitat · Patrimoine</div><div class="sc-count">30 métiers · ~300 villes</div><div class="sc-metiers"><div class="sc-metier"><span>Agent immobilier</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Courtier crédit</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Architecte</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Plombier</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Électricien</span><div class="sc-dispo ok"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 25 métiers →</span></div></div><div class="sc-badge">Option A : 60€/RDV</div></div>
+      <div class="sphere-card sc-digital"><span class="sc-icon">💻</span><div class="sc-name">Digital · Business</div><div class="sc-count">30 métiers · ~300 villes</div><div class="sc-metiers"><div class="sc-metier"><span>Développeur web</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Designer UX</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Consultant SEO</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Community manager</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Coach business</span><div class="sc-dispo taken"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 25 métiers →</span></div></div><div class="sc-badge">Option A : 40€/RDV</div></div>
+      <div class="sphere-card sc-mariage"><span class="sc-icon">💒</span><div class="sc-name">Mariage · Événementiel</div><div class="sc-count">30 métiers · ~300 villes</div><div class="sc-metiers"><div class="sc-metier"><span>Wedding planner</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Traiteur</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Photographe</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>DJ / Musicien</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Fleuriste</span><div class="sc-dispo taken"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 25 métiers →</span></div></div><div class="sc-badge">Option A : 60€/RDV</div></div>
+      <div class="sphere-card sc-finance"><span class="sc-icon">⚖️</span><div class="sc-name">Finance · Juridique</div><div class="sc-count">30 métiers · ~300 villes</div><div class="sc-metiers"><div class="sc-metier"><span>Expert-comptable</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Avocat d'affaires</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>CGP</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Courtier assurance</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Consultant RH</span><div class="sc-dispo ok"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>+ 25 métiers →</span></div></div><div class="sc-badge">Option A : 120€/RDV</div></div>
+      <div class="sphere-card" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px 16px;text-align:center;transition:all .3s;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#E8694A,#C04828)"></div><span class="sc-icon">✨</span><div class="sc-name">Créateurs · Artisans</div><div class="sc-count">Métiers passion · Toutes villes</div><div class="sc-metiers"><div class="sc-metier"><span>Potière · Céramiste</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Peintre décorative</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Créatrice de bijoux</span><div class="sc-dispo taken"></div></div><div class="sc-metier"><span>Textile · Mode</span><div class="sc-dispo ok"></div></div><div class="sc-metier"><span>Savonnière · Bougies</span><div class="sc-dispo ok"></div></div><div class="sc-metier" style="color:rgba(245,242,236,.3)"><span>Tout métier passion →</span></div></div><div class="sc-badge" style="background:rgba(232,105,74,.12);border:1px solid rgba(232,105,74,.25);color:#E8694A">29€/mois + 10%</div></div>
+    </div>
+    <div class="fade-up" style="display:flex;align-items:center;justify-content:center;gap:32px;margin-top:24px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(245,242,236,.5)"><div style="width:8px;height:8px;border-radius:50%;background:#00C48C"></div>Place disponible dans votre ville</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(245,242,236,.5)"><div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2)"></div>Place déjà occupée</div>
+    </div>
+  </div>
+</section>
+
+<!-- RECO GÉRÉE -->
+<section class="reco-section">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up">
+      <div class="section-tag">La pièce qui change tout</div>
+      <h2 class="section-title">Je gère chaque recommandation<br><span style="color:var(--teal)">de A jusqu'à Z.</span></h2>
+      <p class="section-sub" style="margin-bottom:40px">La recommandation que vous envoyez ne doit pas rester un numéro dans un WhatsApp. Je la contacte dans les 2 heures, je la qualifie, je transmets un contact chaud et presque prêt à signer.</p>
+    </div>
+    <div class="reco-flow fade-up">
+      <div class="rf-step"><span class="rf-icon">👩‍⚕️</span><div class="rf-title">Sophie envoie une reco</div><div class="rf-text">Elle clique sur son lien Éclaireur. Son patient remplit un formulaire en 30 secondes.</div><span class="rf-time">30 secondes</span></div>
+      <div class="rf-arrow">→</div>
+      <div class="rf-step highlight"><span class="rf-icon">📞</span><div class="rf-title light">Jean-Philippe rappelle</div><div class="rf-text light">Dans les 2 heures, j'appelle, qualifie, propose un créneau. Je transmets un contact chaud.</div><span class="rf-time">– 2 heures</span></div>
+      <div class="rf-arrow">→</div>
+      <div class="rf-step"><span class="rf-icon">🏋️</span><div class="rf-title">Antonin reçoit un RDV</div><div class="rf-text">Un contact qualifié, informé, qui attend son appel. Taux de conversion : 70%.</div><span class="rf-time">70% conversion</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMENT ÇA MARCHE -->
+<section class="section comment" id="fonctionnement">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="section-tag" style="justify-content:center">Fonctionnement · Du catalogue au client signé</div>
+      <h2 class="section-title">En 4 étapes, votre offre<br>touche 100 000 téléphones<br><span style="color:var(--teal);font-style:italic">et vous ramène des clients.</span></h2>
+    </div>
+    <div class="comment-steps fade-up" style="grid-template-columns:repeat(4,1fr)">
+      <div class="comment-step"><div class="cs-num">01</div><span class="cs-icon">🎁</span><div class="cs-title">Vous créez votre privilège</div><div class="cs-text">Diagnostic offert, -15%, 1re séance gratuite ou offre duo avec un partenaire. Setup en 40 minutes.</div><span class="cs-pill">40 min · Offre solo ou duo</span></div>
+      <div class="comment-step"><div class="cs-num">02</div><span class="cs-icon">📲</span><div class="cs-title">Le catalogue part sur toute la ville</div><div class="cs-text">Chaque membre envoie le catalogue à ses 250 contacts via WhatsApp. Avec 50 pros : 12 500 vues le jour même.</div><span class="cs-pill">100 000+ vues potentielles</span></div>
+      <div class="comment-step"><div class="cs-num">03</div><span class="cs-icon">📞</span><div class="cs-title">Je qualifie et prends le RDV</div><div class="cs-text">Quand un contact active votre privilège, je le rappelle sous 2h, confirme le besoin et prends le RDV.</div><span class="cs-pill">Rappel sous 2h · RDV confirmé</span></div>
+      <div class="comment-step"><div class="cs-num">04</div><span class="cs-icon">✅</span><div class="cs-title">Vous signez. Vous payez si vous voulez.</div><div class="cs-text">Option A : payez le RDV (30–250€). Option B : payez uniquement si ça signe. Votre choix, à chaque fois.</div><span class="cs-pill">Option A ou B · Votre choix</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TARIFICATION -->
+<section class="section" id="offres" style="background:var(--paper)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="section-tag" style="justify-content:center">Tarification · Choisissez votre niveau de risque</div>
+      <h2 class="section-title">Trois façons de travailler ensemble.</h2>
+      <p class="section-sub" style="margin:0 auto 48px;text-align:center">Du plus flexible au plus rentable — selon votre profil et votre volume.</p>
+    </div>
+    <div class="fade-up">
+      <div style="display:flex;gap:8px;background:var(--paper2);border-radius:14px;padding:5px;margin-bottom:24px;overflow-x:auto;scrollbar-width:none">
+        <button onclick="showPlan('a')" id="tab-a" style="flex:1;min-width:120px;padding:11px 16px;border-radius:10px;border:none;background:#1A5CB0;color:#fff;font-family:var(--fb);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap">⭐ Starter</button>
+        <button onclick="showPlan('b')" id="tab-b" style="flex:1;min-width:120px;padding:11px 16px;border-radius:10px;border:none;background:transparent;color:var(--text-sec);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap">🚀 Performance</button>
+        <button onclick="showPlan('c')" id="tab-c" style="flex:1;min-width:120px;padding:11px 16px;border-radius:10px;border:none;background:transparent;color:var(--text-sec);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap">💎 Membre</button>
+      </div>
+      <div id="plan-a">
+        <div style="background:var(--paper2);border:2px solid #1A5CB0;border-radius:20px;overflow:hidden">
+          <div style="background:#1A5CB0;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px">Option A · Starter</div><div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff">Au RDV qualifié</div><div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">Je qualifie, vous rencontrez. Payez à la mise en relation.</div></div>
+            <div style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap">Idéal pour tester le réseau</div>
+          </div>
+          <div style="padding:24px">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🌿 Bien-être · Coaching · ✨ Artisans</span><strong style="font-family:var(--fd);font-size:18px;color:#1A5CB0">30€</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">💻 Digital · Freelance</span><strong style="font-family:var(--fd);font-size:18px;color:#1A5CB0">40€</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🏠 Habitat · Travaux · 💒 Événementiel</span><strong style="font-family:var(--fd);font-size:18px;color:#1A5CB0">60€</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">⚖️ Finance · Juridique</span><strong style="font-family:var(--fd);font-size:18px;color:#1A5CB0">120€</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🔑 Immobilier</span><strong style="font-family:var(--fd);font-size:18px;color:#1A5CB0">250€</strong></div>
+            </div>
+            <a href="#contact" class="btn-primary" style="display:block;text-align:center">Choisir l'Option Starter →</a>
+          </div>
+        </div>
+      </div>
+      <div id="plan-b" style="display:none">
+        <div style="background:var(--paper2);border:2px solid var(--teal);border-radius:20px;overflow:hidden">
+          <div style="background:var(--teal);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.5);margin-bottom:4px">Option B · Performance</div><div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--ink)">À la signature</div><div style="font-size:13px;color:rgba(0,0,0,.6);margin-top:2px">Zéro risque. Vous ne payez que si vous encaissez.</div></div>
+            <div style="background:rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.2);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap">Partenariat Premium</div>
+          </div>
+          <div style="padding:24px">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🔑 Immobilier</span><strong style="font-family:var(--fd);font-size:16px;color:var(--teal-dark)">5–10% commission agence</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🏠 Travaux · Artisanat</span><strong style="font-family:var(--fd);font-size:16px;color:var(--teal-dark)">5–10% du devis</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">⚖️ Finance · Courtage</span><strong style="font-family:var(--fd);font-size:16px;color:var(--teal-dark)">5–10% honoraires</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">💻 Digital · Marketing</span><strong style="font-family:var(--fd);font-size:16px;color:var(--teal-dark)">10–20% du deal</strong></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:12px"><span style="font-size:14px;color:var(--text)">🌿 Coaching · Bien-être</span><strong style="font-family:var(--fd);font-size:16px;color:var(--teal-dark)">10–20% prestation</strong></div>
+            </div>
+            <div style="background:rgba(0,196,140,.06);border:1.5px solid rgba(0,196,140,.3);border-radius:14px;padding:16px;margin-bottom:16px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:10px">🧮 Simulateur — Immobilier</div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <div style="flex:1;min-width:160px"><div style="font-size:11px;color:var(--text-ter);margin-bottom:5px">Montant de votre commission (€)</div><input type="number" id="simImmo" oninput="calcImmo()" placeholder="Ex: 8000" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--fb);font-size:15px;font-weight:600;color:var(--ink);background:var(--paper);outline:none"></div>
+                <div style="text-align:center;padding-top:16px">→</div>
+                <div style="flex:1;min-width:160px;background:var(--paper);border:1.5px solid rgba(0,196,140,.3);border-radius:10px;padding:10px 14px"><div style="font-size:10px;color:var(--text-ter);margin-bottom:3px">Gain Popey estimé</div><div id="simResult" style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--teal-dark)">—</div></div>
+              </div>
+            </div>
+            <a href="#contact" class="btn-primary" style="display:block;text-align:center;background:var(--teal);color:var(--ink)">Choisir l'Option Performance →</a>
+          </div>
+        </div>
+      </div>
+      <div id="plan-c" style="display:none">
+        <div style="background:var(--paper2);border:2px solid var(--ink);border-radius:20px;overflow:hidden">
+          <div style="background:var(--ink);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);margin-bottom:4px">Option C · Membre</div><div style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--paper)">Abonnement fixe</div><div style="font-size:13px;color:rgba(245,242,236,.6);margin-top:2px">Visibilité illimitée sans commission.</div></div>
+            <div style="background:rgba(200,168,130,.15);border:1px solid rgba(200,168,130,.3);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:700;color:var(--warm);white-space:nowrap">Le plus rentable (gros volumes)</div>
+          </div>
+          <div style="padding:24px">
+            <div style="text-align:center;padding:28px 0;border-bottom:1px solid var(--border);margin-bottom:20px"><div style="font-family:var(--fd);font-size:64px;font-weight:900;color:var(--ink);line-height:1">149€</div><div style="font-size:14px;color:var(--text-sec);margin-top:4px">HT / mois · Sans engagement</div></div>
+            <div style="background:#FFF8EE;border:1.5px solid #F5A623;border-radius:12px;padding:14px 16px;margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:#B8750A;margin-bottom:6px">⚠️ À noter</div><div style="font-size:13px;color:var(--text-sec);line-height:1.6">Dans cette option, vous gérez vos leads en direct sans qualification préalable par Popey.</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sec)"><span style="color:var(--teal);font-weight:700">✓</span>Place exclusive verrouillée dans votre ville</div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sec)"><span style="color:var(--teal);font-weight:700">✓</span>Présence dans le catalogue mensuel</div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sec)"><span style="color:var(--teal);font-weight:700">✓</span>Commissions automatiques entre membres</div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sec)"><span style="color:var(--teal);font-weight:700">✓</span>Café réseau mensuel · Dax + région</div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sec)"><span style="color:var(--teal);font-weight:700">✓</span>Place revendable sur le marketplace Popey</div>
+            </div>
+            <a href="#contact" class="btn-primary" style="display:block;text-align:center">Devenir membre →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COÛT D'ACQUISITION -->
+<section class="section" style="background:var(--paper2);border-top:1px solid var(--border)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up" style="text-align:center;margin-bottom:48px">
+      <div class="section-tag" style="justify-content:center">Comparatif · Ce que vous payez vraiment pour trouver un client</div>
+      <h2 class="section-title">Acquérir un client vous coûte<br>une fortune. <span style="color:var(--teal)">Sauf avec Popey.</span></h2>
+    </div>
+    <div class="fade-up" style="background:var(--paper);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:24px">
+      <div style="background:var(--ink);padding:16px 24px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:0">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,242,236,.3)">Secteur</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,242,236,.3);text-align:center">💸 Classique</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.7);text-align:center">✦ Via Popey</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,166,35,.7);text-align:center">🎯 Gain net</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:14px 24px;border-bottom:1px solid var(--border);align-items:center">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🏠</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Habitat · Travaux</div><div style="font-size:10px;color:var(--text-ter)">Pub + temps devis</div></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:18px;font-weight:700;color:#E5534B">~150€</span><br><span style="font-size:10px;color:var(--text-ter)">par client</span></div>
+        <div style="text-align:center"><div style="display:inline-block;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.25);border-radius:8px;padding:6px 12px"><span style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal-dark)">60€</span><br><span style="font-size:9px;color:var(--teal-dark)">RDV chaud</span></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:15px;font-weight:900;color:var(--amber)">-60% de frais</span><br><span style="font-size:10px;color:var(--text-ter)">+ 0h perdu</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:14px 24px;border-bottom:1px solid var(--border);align-items:center;background:rgba(0,0,0,.02)">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🔑</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Immobilier</div><div style="font-size:10px;color:var(--text-ter)">Prospection terrain</div></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:18px;font-weight:700;color:#E5534B">400–600€</span><br><span style="font-size:10px;color:var(--text-ter)">par client</span></div>
+        <div style="text-align:center"><div style="display:inline-block;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.25);border-radius:8px;padding:6px 12px"><span style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal-dark)">250€</span><br><span style="font-size:9px;color:var(--teal-dark)">RDV chaud</span></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:15px;font-weight:900;color:var(--amber)">Économie 350€</span><br><span style="font-size:10px;color:var(--text-ter)">par transaction</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:14px 24px;border-bottom:1px solid var(--border);align-items:center">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🌿</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Santé · Bien-être</div><div style="font-size:10px;color:var(--text-ter)">Doctolib + pub</div></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:18px;font-weight:700;color:#E5534B">~45€</span><br><span style="font-size:10px;color:var(--text-ter)">par client</span></div>
+        <div style="text-align:center"><div style="display:inline-block;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.25);border-radius:8px;padding:6px 12px"><span style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal-dark)">30€</span><br><span style="font-size:9px;color:var(--teal-dark)">RDV chaud</span></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:15px;font-weight:900;color:var(--amber)">-33% de frais</span><br><span style="font-size:10px;color:var(--text-ter)">lead ultra qualifié</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:14px 24px;align-items:center;background:rgba(0,0,0,.02)">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">⚖️</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Finance · Juridique</div><div style="font-size:10px;color:var(--text-ter)">Réseautage + events</div></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:18px;font-weight:700;color:#E5534B">~200€</span><br><span style="font-size:10px;color:var(--text-ter)">par client</span></div>
+        <div style="text-align:center"><div style="display:inline-block;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.25);border-radius:8px;padding:6px 12px"><span style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--teal-dark)">120€</span><br><span style="font-size:9px;color:var(--teal-dark)">RDV chaud</span></div></div>
+        <div style="text-align:center"><span style="font-family:var(--fd);font-size:15px;font-weight:900;color:var(--amber)">Gain de temps massif</span><br><span style="font-size:10px;color:var(--text-ter)">0h de réseau payant</span></div>
+      </div>
+    </div>
+
+    <!-- Commissions estimation -->
+    <div class="fade-up" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+      <div style="background:var(--paper);border:1.5px solid var(--border);border-radius:18px;padding:26px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1A5CB0,#3B82F6)"></div>
+        <div style="display:inline-flex;background:rgba(26,92,176,.08);border:1px solid rgba(26,92,176,.2);border-radius:20px;padding:4px 14px;font-size:10px;font-weight:700;color:#1A5CB0;letter-spacing:.06em;margin-bottom:14px">Pour le professionnel membre</div>
+        <div style="font-family:var(--fd);font-size:19px;font-weight:900;color:var(--ink);margin-bottom:6px;line-height:1.1">Son abonnement Popey<br>se rembourse tout seul.</div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:16px;font-weight:300">300 clients contactés · 10% intéressés · <strong style="color:var(--ink)">3 ventes chez ses partenaires</strong></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px"><span style="color:var(--text-sec)">3 ventes × 50€</span><strong style="color:var(--ink)">150€/mois</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px"><span style="color:var(--text-sec)">Abonnement Popey</span><strong style="color:var(--ink)">-149€/mois</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:rgba(0,196,140,.06);border:1.5px solid rgba(0,196,140,.25);border-radius:10px;font-size:14px;font-weight:700"><span style="color:var(--ink)">Coût réel Popey</span><span style="color:var(--teal-dark)">0€ net ✓</span></div>
+        </div>
+      </div>
+      <div style="background:var(--paper);border:1.5px solid var(--border);border-radius:18px;padding:26px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#E8694A,#C04828)"></div>
+        <div style="display:inline-flex;background:rgba(232,105,74,.08);border:1px solid rgba(232,105,74,.2);border-radius:20px;padding:4px 14px;font-size:10px;font-weight:700;color:#C04828;letter-spacing:.06em;margin-bottom:14px">Pour le particulier ambassadeur</div>
+        <div style="font-family:var(--fd);font-size:19px;font-weight:900;color:var(--ink);margin-bottom:6px;line-height:1.1">1 tap "Partager".<br>250€/mois en poche.</div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:16px;font-weight:300">300 amis contactés · 15% intéressés · <strong style="color:var(--ink)">5 ventes</strong> (confiance ami)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px"><span style="color:var(--text-sec)">5 ventes × 50€</span><strong style="color:var(--ink)">250€/mois</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px"><span style="color:var(--text-sec)">Temps investi</span><strong style="color:var(--ink)">1 tap "Partager"</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:9px 14px;background:rgba(232,105,74,.06);border:1.5px solid rgba(232,105,74,.25);border-radius:10px;font-size:14px;font-weight:700"><span style="color:var(--ink)">Revenu net mensuel</span><span style="color:#C04828">250€ net ✓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fade-up" style="background:var(--ink);border-radius:18px;padding:28px 32px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--amber),transparent)"></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:12px">💡 Popey, c'est l'économie du bon sens</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:6px">Pour le Pro</div><div style="font-size:12px;color:rgba(245,242,236,.55);line-height:1.65">Une pub d'une valeur de <strong style="color:var(--paper)">7 000€ offerte</strong> et des clients qualifiés <strong style="color:var(--paper)">2× moins chers qu'ailleurs</strong>. Abonnement remboursé par les commissions.</div></div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">Pour le Particulier</div><div style="font-size:12px;color:rgba(245,242,236,.55);line-height:1.65">Transformez votre répertoire en <strong style="color:var(--paper)">250€/mois</strong> tout en offrant des bons plans à vos amis. 1 tap suffit.</div></div>
+      </div>
+      <div style="text-align:center"><a href="#contact" style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#040E0A;padding:14px 30px;border-radius:100px;font-family:var(--fb);font-size:14px;font-weight:700;text-decoration:none">Rejoindre le réseau — 0€ pour démarrer →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- EVENEMENTS -->
+<section class="section events" id="evenements">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="fade-up"><div class="section-tag">Réseau & Événements</div><h2 class="section-title">Le réseau se construit aussi en face-à-face.</h2><p class="section-sub">Cafés réseau, déjeuners synergies, webinaires mensuels — je rassemble régulièrement les membres pour créer des liens directs.</p></div>
+    <div class="events-grid fade-up">
+      <div class="event-card"><div class="event-date"><div class="ed-day">15</div><div class="ed-month">Mai 2026</div></div><div class="event-info"><div class="ei-title">Café Réseau · Dax</div><div class="ei-desc">Rencontre informelle entre membres. Présentations croisées, échange de recommandations, networking décontracté.</div><div class="ei-tags"><span class="ei-tag">Gratuit membres</span><span class="ei-tag">Dax Centre</span><span class="ei-tag">10h → 12h</span></div></div></div>
+      <div class="event-card"><div class="event-date"><div class="ed-day">06</div><div class="ed-month">Juin 2026</div></div><div class="event-info"><div class="ei-title">Déjeuner Synergies · Bayonne</div><div class="ei-desc">Format structuré : chaque membre présente son activité et son profil client idéal. Objectif : repartir avec 3 contacts qualifiés.</div><div class="ei-tags"><span class="ei-tag">Membres Forfait+</span><span class="ei-tag">Bayonne</span><span class="ei-tag">12h → 14h</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section faq" id="faq">
+  <div style="max-width:800px;margin:0 auto">
+    <div class="fade-up" style="text-align:center"><div class="section-tag" style="justify-content:center">Questions fréquentes</div><h2 class="section-title">Les vraies questions que vous vous posez.</h2></div>
+    <div class="faq-list fade-up">
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><div class="faq-q-text">Comment êtes-vous sûr que vous trouverez des clients pour MON métier ?</div><div class="faq-icon">+</div></div><div class="faq-a">La réponse honnête : je ne garantis rien à 100%. Mais deux choses jouent en votre faveur. D'abord, je prouve la méthode sur moi-même chaque jour. Ensuite, comme vous ne payez qu'à la signature ou au RDV livré, le risque financier est nul ou maîtrisé.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><div class="faq-q-text">Quelle est la différence entre Option A et Option B ?</div><div class="faq-icon">+</div></div><div class="faq-a">Option A : vous payez le RDV qualifié livré que le client signe ou non (30 à 250€ selon secteur). Option B : vous ne payez rien si le client ne signe pas — tarif plus élevé sur les deals signés (5–20% selon secteur). Vous choisissez à chaque client.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><div class="faq-q-text">Combien de temps avant de voir des résultats ?</div><div class="faq-icon">+</div></div><div class="faq-a">Les premiers contacts répondent généralement dans la première semaine. Les premières recommandations concrètes arrivent en 2 à 4 semaines selon votre secteur. Pour les métiers à cycle long (immo, finance), comptez 6 à 8 semaines.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><div class="faq-q-text">Comment se passe le paiement ?</div><div class="faq-icon">+</div></div><div class="faq-a">Via l'app Popey. Quand vous confirmez qu'un client a signé (Option B) ou qu'un RDV a été livré (Option A), la facturation est déclenchée. Un récapitulatif mensuel est généré automatiquement.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><div class="faq-q-text">Puis-je rejoindre le réseau sans payer de forfait fixe ?</div><div class="faq-icon">+</div></div><div class="faq-a">Oui, totalement. Option A et B n'ont aucun abonnement fixe. Le forfait mensuel (149€) est optionnel — il devient intéressant quand le volume de clients reçus dépasse 3 à 5 par mois selon votre secteur.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final" id="contact">
+  <div class="fade-up" style="max-width:800px;margin:0 auto">
+    <h2 class="cf-title">Prêt à recevoir<br>vos <span>premiers clients</span><br>cette semaine ?</h2>
+    <p class="cf-sub">Aucun abonnement fixe pour démarrer. Dès le premier client livré avec rendez-vous, vous choisissez Option A ou Option B. Un message suffit.</p>
+    <div class="cf-actions">
+      <a href="https://wa.me/33768233347?text=Bonjour%20Jean-Philippe%2C%20j%27ai%20vu%20votre%20page%20Popey.%20Mon%20m%C3%A9tier%20%3A%20%5BM%C3%89TIER%5D%20%C3%A0%20%5BVILLE%5D.%20Je%20voudrais%20recevoir%20mes%20premiers%20clients." class="btn-primary" style="font-size:16px;padding:18px 40px">💬 M'écrire sur WhatsApp →</a>
+      <a href="https://www.popey.academy/marketplace" class="btn-secondary" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:rgba(245,242,236,.7)">Réserver ma place →</a>
+    </div>
+    <p style="margin-top:32px;font-size:13px;color:rgba(245,242,236,.25)">Jean-Philippe Roth · Coach business · Fondateur Popey · Dax (40) · Popey Coffeeshop SAS</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Popey</div>
+  <div>© 2026 Popey Coffeeshop SAS — 9 Rue Sully, 40100 Dax — SIRET 995 014 388 00012</div>
+  <div><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none;margin-right:20px">CGV/CGU</a><a href="#" style="color:rgba(245,242,236,.35);text-decoration:none">Mentions légales</a></div>
+</footer>
+
+<script>
+function showPlan(plan){['a','b','c'].forEach(function(p){document.getElementById('plan-'+p).style.display=p===plan?'block':'none';var tab=document.getElementById('tab-'+p);if(p==='a'){tab.style.background=plan==='a'?'#1A5CB0':'transparent';tab.style.color=plan==='a'?'#fff':'var(--text-sec)';}if(p==='b'){tab.style.background=plan==='b'?'var(--teal)':'transparent';tab.style.color=plan==='b'?'var(--ink)':'var(--text-sec)';}if(p==='c'){tab.style.background=plan==='c'?'var(--ink)':'transparent';tab.style.color=plan==='c'?'var(--paper)':'var(--text-sec)';}});}
+function calcImmo(){var val=parseFloat(document.getElementById('simImmo').value)||0;var low=Math.round(val*.05);var high=Math.round(val*.10);document.getElementById('simResult').textContent=val>0?low.toLocaleString('fr')+'€ — '+high.toLocaleString('fr')+'€':'—';}
+function animateCount(el,target,suffix,duration){duration=duration||2000;var start=0;var step=target/(duration/16);var timer=setInterval(function(){start+=step;if(start>=target){el.textContent=target+(suffix||'');clearInterval(timer);return;}el.textContent=Math.floor(start)+(suffix||'');},16);}
+setTimeout(function(){var m=document.getElementById('msgCount');var r=document.getElementById('repCount');var d=document.getElementById('dealCount');if(m)animateCount(m,1247);if(r)animateCount(r,89);if(d)animateCount(d,12);},600);
+var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting)entry.target.classList.add('visible');});},{threshold:.1});
+document.querySelectorAll('.fade-up').forEach(function(el){observer.observe(el);});
+function toggleFaq(btn){var item=btn.closest('.faq-item');var isOpen=item.classList.contains('open');document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open');});if(!isOpen)item.classList.add('open');}
+try{var s=document.getElementById('simSlider');if(s)updateSim();}catch(e){}
+function updateSim(){
+  var n = parseInt(document.getElementById('simSlider').value);
+  document.getElementById('simProsVal').textContent = n;
+  var contacts = n * 250;
+  var vues = Math.round(contacts * 0.9);
+  var virale = Math.round(vues * 0.1 * 250);
+  var total = vues + virale;
+  var demandes = Math.round(total * 0.02);
+  var ventes = Math.round(demandes * 0.5);
+  var ca = ventes * 150;
+  
+  function fmt(n){return n.toLocaleString('fr-FR')}
+  
+  var e = function(id){return document.getElementById(id)};
+  if(e('r1')) e('r1').textContent = fmt(contacts);
+  if(e('r2')) e('r2').textContent = fmt(vues);
+  if(e('r3')) e('r3').textContent = fmt(virale);
+  if(e('r4')) e('r4').textContent = fmt(total);
+  if(e('r4b')) e('r4b').textContent = fmt(total);
+  if(e('d1')) e('d1').textContent = fmt(demandes);
+  if(e('d2')) e('d2').textContent = fmt(ventes);
+  if(e('d3')) e('d3').textContent = fmt(ca) + '€';
+  if(e('simQuote')) e('simQuote').textContent = n;
+  
+  var descs = [[1,"Vous seul : 225 personnes touchées directement. C'est un bon début."],[5,"5 pros : votre offre voyage dans 1 125 contacts. L'effet réseau commence."],[10,"10 pros : 2 250 vues directes + portée virale massive. Ça devient sérieux."],[20,"20 pros : 4 500 contacts directs. Votre ville vous connaît."],[50,"50 pros : 11 250 vues + explosion virale. L'agglo entière vous voit."],[100,"100 pros : une machine de guerre commerciale. Quasi impossible à ignorer."],[150,"150 pros — réseau complet : saturation totale de votre agglomération. 🚀"]];
+  var closest = descs.reduce(function(a,b){return Math.abs(b[0]-n)<Math.abs(a[0]-n)?b:a;});
+  if(e('simDesc2')) e('simDesc2').textContent = closest[1];
+}
+updateSim();
+</script>
+</body>
+</html>
