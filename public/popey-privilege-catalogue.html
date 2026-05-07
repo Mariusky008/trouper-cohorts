@@ -424,6 +424,57 @@ html[data-live-ready="0"] .main > .sphere-divider {
   color: #0f172a;
 }
 .pitch-result strong { color: #065f46; }
+.pitch-scenarios {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.pitch-scenario {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px 11px;
+}
+.pitch-scenario-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.pitch-scenario-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #334155;
+}
+.pitch-scenario-sales {
+  font-size: 11px;
+  color: #0f766e;
+  font-weight: 700;
+}
+.pitch-scenario-amount {
+  font-family: var(--fd);
+  font-size: 20px;
+  color: #0f172a;
+  line-height: 1;
+}
+.pitch-scenario-bar {
+  margin-top: 7px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.08);
+  overflow: hidden;
+}
+.pitch-scenario-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+.pitch-scenario-fill.prudent { width: 25%; background: linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.pitch-scenario-fill.moyen { width: 56%; background: linear-gradient(90deg,#0ea5e9,#3b82f6); }
+.pitch-scenario-fill.ambitieux { width: 100%; background: linear-gradient(90deg,#f59e0b,#f97316); }
 @keyframes pitchIn {
   from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -1093,6 +1144,32 @@ html[data-live-ready="0"] .main > .sphere-divider {
         </div>
       </div>
       <div class="pitch-result">Résultat: avec quelques ventes chaque mois de votre répertoire téléphonique, vous pouvez viser <strong>50€ à 450€ net</strong> juste en appuyant sur “Partager”.</div>
+      <div class="pitch-scenarios">
+        <div class="pitch-scenario">
+          <div class="pitch-scenario-head">
+            <div class="pitch-scenario-label">Scénario prudent</div>
+            <div class="pitch-scenario-sales" id="apporteurSalesPrudent">2 ventes</div>
+          </div>
+          <div class="pitch-scenario-amount" id="apporteurAmountPrudent">≈ 50€ / mois</div>
+          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill prudent"></div></div>
+        </div>
+        <div class="pitch-scenario">
+          <div class="pitch-scenario-head">
+            <div class="pitch-scenario-label">Scénario moyen</div>
+            <div class="pitch-scenario-sales" id="apporteurSalesMoyen">5 ventes</div>
+          </div>
+          <div class="pitch-scenario-amount" id="apporteurAmountMoyen">≈ 150€ / mois</div>
+          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill moyen"></div></div>
+        </div>
+        <div class="pitch-scenario">
+          <div class="pitch-scenario-head">
+            <div class="pitch-scenario-label">Scénario ambitieux</div>
+            <div class="pitch-scenario-sales" id="apporteurSalesAmbitieux">9 ventes</div>
+          </div>
+          <div class="pitch-scenario-amount" id="apporteurAmountAmbitieux">≈ 450€ / mois</div>
+          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill ambitieux"></div></div>
+        </div>
+      </div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Votre prénom</label>
@@ -1227,19 +1304,31 @@ function extractRewardValueEur(text) {
 function updateApporteurProjection() {
   var unitEl = document.getElementById('apporteurRewardUnit');
   var gainEl = document.getElementById('apporteurGainMonthly');
+  var amountPrudentEl = document.getElementById('apporteurAmountPrudent');
+  var amountMoyenEl = document.getElementById('apporteurAmountMoyen');
+  var amountAmbitieuxEl = document.getElementById('apporteurAmountAmbitieux');
   if (!unitEl || !gainEl) return;
   var rewardText = String(liveState.rewardText || '').trim();
   var value = extractRewardValueEur(rewardText);
+  var prudentSales = 2;
+  var moyenSales = 5;
+  var ambitieuxSales = 9;
   if (value) {
     var unit = euros(value);
     var monthly = euros(value * 5);
     unitEl.textContent = unit;
     gainEl.textContent = '5 ventes × ' + unit + ' = ' + monthly + ' / mois';
+    if (amountPrudentEl) amountPrudentEl.textContent = '≈ ' + euros(value * prudentSales) + ' / mois';
+    if (amountMoyenEl) amountMoyenEl.textContent = '≈ ' + euros(value * moyenSales) + ' / mois';
+    if (amountAmbitieuxEl) amountAmbitieuxEl.textContent = '≈ ' + euros(value * ambitieuxSales) + ' / mois';
     return;
   }
   var fallback = rewardText || '...€';
   unitEl.textContent = fallback;
   gainEl.textContent = '5 ventes × ' + fallback + ' = ...€ / mois';
+  if (amountPrudentEl) amountPrudentEl.textContent = '≈ 50€ / mois';
+  if (amountMoyenEl) amountMoyenEl.textContent = '≈ 150€ / mois';
+  if (amountAmbitieuxEl) amountAmbitieuxEl.textContent = '≈ 450€ / mois';
 }
 
 function openClientLeadModal(defaults) {
