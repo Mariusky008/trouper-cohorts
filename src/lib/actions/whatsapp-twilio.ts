@@ -67,9 +67,15 @@ function buildTemplateFallbackVariables(messageText: string, metadata?: Record<s
 
 function extractTwilioError(input: unknown): { code: string; message: string } {
   const asRecord = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
-  const code = String(asRecord.code || "").trim();
-  const message = String(asRecord.message || "").trim();
+  const code = String(asRecord.code || asRecord.errorCode || "").trim();
+  const message = String(asRecord.message || asRecord.detail || "").trim();
   return { code, message };
+}
+
+function isOutsideMessagingWindowError(error: { code: string; message: string }): boolean {
+  const code = String(error.code || "").trim();
+  const message = String(error.message || "").toLowerCase();
+  return code === "63016" || message.includes("63016") || message.includes("outside messaging window");
 }
 
 function classifyInboundText(message: string): InboundClassification {
@@ -613,7 +619,7 @@ export async function sendWhatsAppTextMessage(
     });
   } catch (error) {
     const parsed = extractTwilioError(error);
-    const shouldFallbackTemplate = parsed.code === "63016" && Boolean(whatsappTwilioConfig.contentSid);
+    const shouldFallbackTemplate = isOutsideMessagingWindowError(parsed) && Boolean(whatsappTwilioConfig.contentSid);
     if (!shouldFallbackTemplate) {
       return {
         success: false as const,
@@ -622,13 +628,23 @@ export async function sendWhatsAppTextMessage(
     }
     fallbackErrorCode = parsed.code;
     fallbackContentVariables = buildTemplateFallbackVariables(body, options?.metadata);
-    sent = await client.messages.create({
-      from: whatsappTwilioConfig.whatsappFrom,
-      to,
-      contentSid: whatsappTwilioConfig.contentSid,
-      contentVariables: parseContentVariables(fallbackContentVariables),
-      ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
-    });
+    try {
+      sent = await client.messages.create({
+        from: whatsappTwilioConfig.whatsappFrom,
+        to,
+        contentSid: whatsappTwilioConfig.contentSid,
+        contentVariables: parseContentVariables(fallbackContentVariables),
+        ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
+      });
+    } catch (fallbackError) {
+      const parsedFallback = extractTwilioError(fallbackError);
+      return {
+        success: false as const,
+        error:
+          parsedFallback.message ||
+          `Fallback template Twilio impossible (contentSid=${whatsappTwilioConfig.contentSid || "n/a"}).`,
+      };
+    }
     sentChannel = "template_fallback";
   }
 
