@@ -3666,6 +3666,12 @@ export async function createAllianceInvite(input: {
   prospectId: string;
   messageDraft: string;
   channel?: "whatsapp" | "sms" | "email" | "other";
+  prospect?: {
+    fullName: string;
+    metier?: string | null;
+    city?: string | null;
+    phoneE164?: string | null;
+  };
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -3685,8 +3691,50 @@ export async function createAllianceInvite(input: {
     : baseProspectQuery.eq("provider_prospect_ref", normalizedProspectId).maybeSingle());
 
   if (prospectError) return { error: prospectError.message };
-  if (!prospect?.id) return { error: "Prospect introuvable." };
-  const prospectRow = prospect;
+  let prospectRow = prospect as
+    | {
+        id: string;
+        owner_member_id: string;
+        full_name: string;
+        metier: string | null;
+        phone_e164: string | null;
+        city: string | null;
+        provider_prospect_ref: string | null;
+      }
+    | null;
+  if (!prospectRow?.id) {
+    const fallbackFullName = String(input.prospect?.fullName || "").trim();
+    if (!fallbackFullName) return { error: "Prospect introuvable." };
+    const nowIsoFallback = new Date().toISOString();
+    const fallbackRef = String(normalizedProspectId || `manual-${crypto.randomUUID().slice(0, 8)}`).slice(0, 180);
+    const { data: insertedProspect, error: insertProspectError } = await supabaseAdmin
+      .from("human_smart_scan_alliance_prospects")
+      .insert({
+        owner_member_id: ownerMemberId,
+        provider: "b2b",
+        provider_prospect_ref: fallbackRef,
+        full_name: fallbackFullName.slice(0, 180),
+        metier: String(input.prospect?.metier || "").trim().slice(0, 180) || "Partenaire local",
+        city: String(input.prospect?.city || "").trim().slice(0, 120) || null,
+        phone_e164: String(input.prospect?.phoneE164 || "").trim() || null,
+        distance_km: null,
+        rating: null,
+        fit_score: 50,
+        fit_reasons: ["fallback_ui_prospect"],
+        status: "new",
+        source_payload: { source: "ui_fallback", original_prospect_id: normalizedProspectId || null },
+        fetched_at: nowIsoFallback,
+        updated_at: nowIsoFallback,
+      })
+      .select("id,owner_member_id,full_name,metier,phone_e164,city,provider_prospect_ref")
+      .single();
+    if (insertProspectError || !insertedProspect?.id) {
+      return { error: insertProspectError?.message || "Prospect introuvable." };
+    }
+    prospectRow = insertedProspect;
+  }
+  if (!prospectRow?.id) return { error: "Prospect introuvable." };
+  const ensuredProspectRow = prospectRow;
 
   const token = `alliance_${crypto.randomUUID().replace(/-/g, "")}`;
   const appBaseUrl = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
@@ -3706,8 +3754,8 @@ export async function createAllianceInvite(input: {
     return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
   }
   async function ensureScoutInviteToken() {
-    const phone = String(prospectRow.phone_e164 || "").trim();
-    const nameParts = splitName(String(prospectRow.full_name || ""));
+    const phone = String(ensuredProspectRow.phone_e164 || "").trim();
+    const nameParts = splitName(String(ensuredProspectRow.full_name || ""));
     let scoutId = "";
     if (phone) {
       const { data: existingByPhone } = await supabaseAdmin
@@ -3738,7 +3786,7 @@ export async function createAllianceInvite(input: {
           scout_type: "pro",
           first_name: nameParts.firstName,
           last_name: nameParts.lastName,
-          ville: String(prospectRow.city || "").trim() || null,
+          ville: String(ensuredProspectRow.city || "").trim() || null,
           phone: phone || null,
           status: "invited",
           commission_rate: 0.1,
@@ -3805,7 +3853,7 @@ export async function createAllianceInvite(input: {
     .from("human_smart_scan_alliance_invites")
     .insert({
       owner_member_id: ownerMemberId,
-      prospect_id: prospectRow.id,
+      prospect_id: ensuredProspectRow.id,
       channel,
       message_draft: messageDraft || "Template Twilio alliance",
       onboarding_token: token,
@@ -3824,7 +3872,7 @@ export async function createAllianceInvite(input: {
     return { error: "WhatsApp Pro (Twilio) n'est pas configure. Envoi impossible en mode template." };
   }
 
-  const phone = String(prospectRow.phone_e164 || "").trim();
+  const phone = String(ensuredProspectRow.phone_e164 || "").trim();
   if (!phone) {
     return { error: "Numero WhatsApp prospect manquant. Envoi template Twilio impossible." };
   }
@@ -3835,13 +3883,13 @@ export async function createAllianceInvite(input: {
     .eq("id", ownerMemberId)
     .maybeSingle();
 
-  const firstName = String(prospectRow.full_name || "")
+  const firstName = String(ensuredProspectRow.full_name || "")
     .trim()
     .split(/\s+/)
     .filter(Boolean)[0] || "Bonjour";
   const senderFirstName = String(memberProfile?.first_name || "").trim() || "Popey";
-  const cityOrContext = String(prospectRow.city || memberProfile?.ville || "").trim() || "votre ville";
-  const targetJob = String(prospectRow.metier || "").trim() || "partenaire local";
+  const cityOrContext = String(ensuredProspectRow.city || memberProfile?.ville || "").trim() || "votre ville";
+  const targetJob = String(ensuredProspectRow.metier || "").trim() || "partenaire local";
 
   const twilioResult = await sendPartnerOutreach(
     phone,
@@ -3856,7 +3904,7 @@ export async function createAllianceInvite(input: {
       source: "smart_scan_alliance_invite",
       metadata: {
         alliance_invite_id: invite?.id || null,
-        alliance_prospect_id: prospectRow.id,
+        alliance_prospect_id: ensuredProspectRow.id,
         onboarding_token: invite?.onboarding_token || token,
         onboarding_link: invite?.onboarding_link || onboardingLink,
         scout_portal_link: scoutPortalLink,

@@ -235,6 +235,14 @@ export const smartScanAllianceInviteSchema = z
     prospectId: z.string().trim().min(1).max(180),
     channel: z.enum(ALLIANCE_INVITE_CHANNELS).optional(),
     messageDraft: z.string().trim().min(1).max(3000),
+    prospect: z
+      .object({
+        fullName: z.string().trim().min(1).max(180),
+        metier: optionalNullableString(180),
+        city: optionalNullableString(120),
+        phoneE164: optionalNullableString(32),
+      })
+      .optional(),
   })
   .strict();
 

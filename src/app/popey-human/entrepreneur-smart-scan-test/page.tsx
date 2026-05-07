@@ -4548,6 +4548,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           prospectId: prospect.id,
           channel: "whatsapp",
           messageDraft,
+          prospect: {
+            fullName: prospect.full_name,
+            metier: prospect.metier,
+            city: prospect.city,
+            phoneE164: prospect.phone_e164,
+          },
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
@@ -9554,6 +9560,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {isAllianceMessageSending ? "Envoi en cours..." : "Envoyer via WhatsApp Pro (Twilio)"}
                 </button>
               </div>
+              {modalErrorMessage ? (
+                <p className="mt-2 rounded-xl border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
+                  {modalErrorMessage}
+                </p>
+              ) : null}
+              {modalInfoMessage ? (
+                <p className="mt-2 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
+                  {modalInfoMessage}
+                </p>
+              ) : null}
             </div>
           </section>
         </div>
