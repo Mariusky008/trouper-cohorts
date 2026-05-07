@@ -10,6 +10,8 @@ type QueueLookupRow = {
   id: string;
   owner_member_id: string;
   phone_e164: string;
+  source?: string | null;
+  template_name?: string | null;
   metadata: Record<string, unknown> | null;
 };
 type PartnerOutreachVariables = {
@@ -357,6 +359,7 @@ export async function sendPartnerOutreach(
     const metadata = {
       ...(options.metadata || {}),
       provider: "twilio",
+      channel: "template",
       twilio_message_sid: String(message.sid || ""),
       twilio_status: String(message.status || ""),
       twilio_content_sid: whatsappTwilioConfig.contentSid,
@@ -433,7 +436,7 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
   if (messageSid) {
     const { data } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
-      .select("id,owner_member_id,phone_e164,metadata")
+      .select("id,owner_member_id,phone_e164,source,template_name,metadata")
       .eq("provider_message_id", messageSid)
       .maybeSingle();
     queueRow = (data as QueueLookupRow | null) || null;
@@ -441,7 +444,7 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
   if (repliedMessageSid) {
     const { data } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
-      .select("id,owner_member_id,phone_e164,metadata")
+      .select("id,owner_member_id,phone_e164,source,template_name,metadata")
       .eq("provider_message_id", repliedMessageSid)
       .maybeSingle();
     queueRow = queueRow || ((data as QueueLookupRow | null) || null);
@@ -449,7 +452,7 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
   if (!queueRow && toPhone) {
     const { data } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
-      .select("id,owner_member_id,phone_e164,metadata")
+      .select("id,owner_member_id,phone_e164,source,template_name,metadata")
       .eq("phone_e164", toPhone)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -503,9 +506,26 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
       whatsappTwilioConfig.contentSid
     ) {
       const queueMeta = asRecord(queueRow.metadata);
-      const alreadyRecovered = String(queueMeta.twilio_auto_template_fallback_at || "").trim();
+      const alreadyRecovered =
+        String(queueMeta.twilio_auto_template_fallback_at || "").trim() ||
+        String(queueMeta.twilio_auto_template_fallback_attempted_at || "").trim();
       const channel = String(queueMeta.channel || "").trim();
-      if (!alreadyRecovered && channel !== "template_fallback") {
+      const source = String(queueRow.source || "").trim();
+      const templateName = String(queueRow.template_name || "").trim();
+      const isTextAttempt = channel === "text" || templateName === "twilio_text_reply";
+      const isAlreadyAutoFallbackFlow =
+        source === "twilio_auto_fallback_63016" || Boolean(String(queueMeta.twilio_auto_fallback_from_sid || "").trim());
+      if (!alreadyRecovered && isTextAttempt && !isAlreadyAutoFallbackFlow) {
+        await supabaseAdmin
+          .from("human_whatsapp_outbound_queue")
+          .update({
+            metadata: {
+              ...queueMeta,
+              twilio_auto_template_fallback_attempted_at: nowIso,
+            },
+            updated_at: nowIso,
+          })
+          .eq("id", queueRow.id);
         const originalBody = String(queueMeta.twilio_original_body || "").trim();
         const fallbackVariables = buildTemplateFallbackVariables(originalBody, queueMeta);
         const recovered = await sendPartnerOutreach(queueRow.phone_e164, fallbackVariables, {
