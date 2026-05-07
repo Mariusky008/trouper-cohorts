@@ -480,6 +480,117 @@ html[data-live-ready="0"] .main > .sphere-divider {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* APPORTEUR MODAL — aligned with popup2 design */
+#apporteurOverlay {
+  padding: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(12px);
+  z-index: 200;
+}
+#apporteurOverlay .ap-modal {
+  background: #F8F6F1;
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: slideUp .3s cubic-bezier(.32,1,.28,1);
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+#apporteurOverlay .ap-handle { width: 40px; height: 4px; background: rgba(0,0,0,.15); border-radius: 2px; margin: 12px auto 0; }
+#apporteurOverlay .ap-close {
+  position: absolute; top: 14px; right: 16px;
+  background: rgba(0,0,0,.07); border: none; width: 32px; height: 32px;
+  border-radius: 50%; font-size: 14px; cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center; color: #555;
+}
+#apporteurOverlay .ap-hero {
+  margin: 8px 16px 0;
+  background: linear-gradient(135deg, #040E0A 0%, #0A1F16 60%, #071A11 100%);
+  border-radius: 20px; overflow: hidden; position: relative;
+}
+#apporteurOverlay .ap-hero-bg {
+  position: absolute; top: -60px; right: -60px; width: 220px; height: 220px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(0,196,140,.2), transparent 65%);
+}
+#apporteurOverlay .ap-hero-content { padding: 24px 24px 22px; position: relative; z-index: 1; }
+#apporteurOverlay .ap-hero-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(0,196,140,.8); margin-bottom: 10px;
+}
+#apporteurOverlay .ap-hero-title {
+  font-family: var(--fd); font-size: clamp(22px, 5vw, 30px); font-weight: 900;
+  color: #fff; line-height: 1.05; margin-bottom: 10px;
+}
+#apporteurOverlay .ap-hero-title em { color: #00C48C; font-style: normal; }
+#apporteurOverlay .ap-hero-sub { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.6; font-weight: 300; }
+#apporteurOverlay .ap-steps { display: flex; align-items: center; gap: 0; padding: 20px 16px 0; }
+#apporteurOverlay .ap-step { flex: 1; text-align: center; padding: 0 6px; }
+#apporteurOverlay .ap-step-icon { font-size: 24px; margin-bottom: 6px; }
+#apporteurOverlay .ap-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #00C48C; color: #040E0A; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 6px;
+}
+#apporteurOverlay .ap-step-label { font-size: 12px; font-weight: 700; color: #1A1C22; margin-bottom: 3px; }
+#apporteurOverlay .ap-step-desc { font-size: 10px; color: #6B6560; line-height: 1.4; }
+#apporteurOverlay .ap-step-arrow { font-size: 18px; color: #D0CCC4; flex-shrink: 0; padding: 0 4px; padding-top: 8px; }
+#apporteurOverlay .ap-calc {
+  margin: 16px 16px 0;
+  background: #fff; border: 1.5px solid #E8E4DC; border-radius: 18px; overflow: hidden;
+}
+#apporteurOverlay .ap-calc-header { padding: 16px 18px 12px; border-bottom: 1px solid #F0EDE7; }
+#apporteurOverlay .ap-calc-title { font-size: 14px; font-weight: 700; color: #1A1C22; margin-bottom: 2px; }
+#apporteurOverlay .ap-calc-sub { font-size: 11px; color: #9A9DAA; }
+#apporteurOverlay .ap-scenarios { padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; }
+#apporteurOverlay .ap-scenario { display: flex; align-items: center; gap: 10px; }
+#apporteurOverlay .ap-scen-label { font-size: 11px; font-weight: 600; color: #6B6560; min-width: 120px; flex-shrink: 0; }
+#apporteurOverlay .ap-scen-amount {
+  font-family: var(--fd); font-size: 20px; font-weight: 900; color: #1A1C22;
+  min-width: 105px; flex-shrink: 0;
+}
+#apporteurOverlay .ap-scen-amount span { font-size: 11px; font-weight: 400; color: #9A9DAA; }
+#apporteurOverlay .ap-scen-bar { flex: 1; height: 6px; background: #F0EDE7; border-radius: 3px; overflow: hidden; }
+#apporteurOverlay .ap-scen-fill { height: 100%; border-radius: 3px; transition: width .8s ease; }
+#apporteurOverlay .ap-scen-detail { font-size: 10px; color: #9A9DAA; min-width: 130px; flex-shrink: 0; text-align: right; }
+#apporteurOverlay .ap-calc-punchline {
+  padding: 12px 18px; background: linear-gradient(135deg, #ECFDF5, #F0FDF4);
+  border-top: 1px solid rgba(0,196,140,.15); font-size: 12px; color: #374151; line-height: 1.55;
+}
+#apporteurOverlay .ap-calc-punchline strong { color: #065F46; }
+#apporteurOverlay .ap-form { padding: 14px 16px 28px; }
+#apporteurOverlay .ap-form-title { font-size: 14px; font-weight: 700; color: #1A1C22; margin-bottom: 14px; }
+#apporteurOverlay .ap-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+#apporteurOverlay .ap-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #9A9DAA; margin-bottom: 6px; display: block;
+}
+#apporteurOverlay .ap-input {
+  width: 100%; background: #fff; border: 1.5px solid #E8E4DC; border-radius: 12px;
+  padding: 13px 14px; font-family: var(--fb); font-size: 15px; color: #1A1C22; outline: none;
+}
+#apporteurOverlay .ap-input:focus { border-color: #00C48C; }
+#apporteurOverlay .ap-submit {
+  width: 100%; padding: 17px 20px; background: linear-gradient(135deg, #00C48C, #009B6F);
+  color: #040E0A; border: none; border-radius: 16px; font-family: var(--fd);
+  font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,196,140,.35); margin-bottom: 8px;
+}
+#apporteurOverlay .ap-fine { font-size: 10px; color: #A09890; text-align: center; line-height: 1.6; }
+#apporteurOverlay #apporteurCopyBtn {
+  width: 100%; padding: 13px; background: transparent; border: 1.5px solid #E8E4DC;
+  border-radius: 14px; font-family: var(--fd); font-size: 14px; font-weight: 700;
+  color: #4b5563; cursor: pointer; margin-bottom: 10px;
+}
+@media(max-width:480px){
+  #apporteurOverlay .ap-step-desc { display: none; }
+  #apporteurOverlay .ap-scenario { flex-wrap: wrap; }
+  #apporteurOverlay .ap-scen-detail { display: none; }
+  #apporteurOverlay .ap-fields { grid-template-columns: 1fr; }
+  #apporteurOverlay .ap-scen-bar { order: 3; flex: 100%; }
+}
+
 /* WA CONFIRM SHEET */
 .wa-sheet { background: #fff; border-radius: 24px; width: 100%; padding: 24px; animation: slideUp .25s ease; }
 .wa-msg { background: #e8f5e9; border: 1px solid rgba(37,211,102,.25); border-radius: 14px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #1b5e20; line-height: 1.65; font-style: italic; }
@@ -1112,82 +1223,91 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 <!-- APPORTEUR MODAL -->
 <div class="modal-overlay" id="apporteurOverlay" onclick="closeApporteur(event)">
-  <div class="modal" id="apporteurModal">
-    <button class="modal-close" onclick="closeApporteur()">✕</button>
-    <div class="modal-handle"></div>
-    <div style="font-size:28px;margin-bottom:12px">💸</div>
-    <div class="modal-title">Devenez apporteur d'affaires</div>
-    <div class="modal-sub">Partagez en 1 clic. Activez des deals. Gagnez vite.</div>
-    <div class="apporteur-pitch">
-      <div class="pitch-topline">Nouveau modèle Popey</div>
-      <div class="pitch-hero">Un simple partage peut devenir un <strong>vrai complément de revenu</strong>.</div>
-      <div class="pitch-kpi-grid">
-        <div class="pitch-kpi">
-          <div class="pitch-kpi-label">Diffusion moyenne</div>
-          <div class="pitch-kpi-value">300 contacts</div>
-          <div class="pitch-kpi-sub">Personnes qui reçoivent le catalogue via WhatsApp.</div>
-        </div>
-        <div class="pitch-kpi">
-          <div class="pitch-kpi-label">Taux de clic / intérêt</div>
-          <div class="pitch-kpi-value">15% · 45 personnes</div>
-          <div class="pitch-kpi-sub">En moyenne, 45 contacts sur 300 montrent un intérêt réel.</div>
-        </div>
-        <div class="pitch-kpi">
-          <div class="pitch-kpi-label">Ventes réalisées en moyenne</div>
-          <div class="pitch-kpi-value">5 ventes</div>
-          <div class="pitch-kpi-sub">Projection mensuelle basée sur les activations observées.</div>
-        </div>
-        <div class="pitch-kpi">
-          <div class="pitch-kpi-label">Gain estimé</div>
-          <div class="pitch-kpi-value" id="apporteurGainMonthly">5 ventes × votre commission = ...€ / mois</div>
-          <div class="pitch-kpi-sub">Base de calcul: <span id="apporteurRewardUnit">...€</span> par nouveau client.</div>
-        </div>
-      </div>
-      <div class="pitch-result">Résultat: avec quelques ventes chaque mois de votre répertoire téléphonique, vous pouvez viser <strong>50€ à 450€ net</strong> juste en appuyant sur “Partager”.</div>
-      <div class="pitch-scenarios">
-        <div class="pitch-scenario">
-          <div class="pitch-scenario-head">
-            <div class="pitch-scenario-label">Scénario prudent</div>
-            <div class="pitch-scenario-sales" id="apporteurSalesPrudent">2 ventes</div>
-          </div>
-          <div class="pitch-scenario-amount" id="apporteurAmountPrudent">≈ 50€ / mois</div>
-          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill prudent"></div></div>
-        </div>
-        <div class="pitch-scenario">
-          <div class="pitch-scenario-head">
-            <div class="pitch-scenario-label">Scénario moyen</div>
-            <div class="pitch-scenario-sales" id="apporteurSalesMoyen">5 ventes</div>
-          </div>
-          <div class="pitch-scenario-amount" id="apporteurAmountMoyen">≈ 150€ / mois</div>
-          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill moyen"></div></div>
-        </div>
-        <div class="pitch-scenario">
-          <div class="pitch-scenario-head">
-            <div class="pitch-scenario-label">Scénario ambitieux</div>
-            <div class="pitch-scenario-sales" id="apporteurSalesAmbitieux">9 ventes</div>
-          </div>
-          <div class="pitch-scenario-amount" id="apporteurAmountAmbitieux">≈ 450€ / mois</div>
-          <div class="pitch-scenario-bar"><div class="pitch-scenario-fill ambitieux"></div></div>
-        </div>
+  <div class="ap-modal" id="apporteurModal">
+    <div class="ap-handle"></div>
+    <button class="ap-close" onclick="closeApporteur()">✕</button>
+
+    <div class="ap-hero">
+      <div class="ap-hero-bg"></div>
+      <div class="ap-hero-content">
+        <div class="ap-hero-tag">💸 Opportunité · Réseau Popey</div>
+        <div class="ap-hero-title modal-title">1 tap "Partager".<br>Jusqu'à <em>450€/mois</em> en poche.</div>
+        <div class="ap-hero-sub modal-sub">Votre répertoire WhatsApp peut devenir un complément de revenu. Partagez ce catalogue à vos contacts en 1 clic.</div>
       </div>
     </div>
-    <div class="modal-field">
-      <label class="modal-label">Votre prénom</label>
-      <input class="modal-input" type="text" placeholder="Camille" id="apporteurPrenom">
+
+    <div class="ap-steps">
+      <div class="ap-step">
+        <div class="ap-step-icon">📲</div>
+        <div class="ap-step-num">1</div>
+        <div class="ap-step-label">Vous partagez</div>
+        <div class="ap-step-desc">Le catalogue part sur WhatsApp à vos contacts.</div>
+      </div>
+      <div class="ap-step-arrow">→</div>
+      <div class="ap-step">
+        <div class="ap-step-icon">🛍️</div>
+        <div class="ap-step-num">2</div>
+        <div class="ap-step-label">Ils activent</div>
+        <div class="ap-step-desc">Vos proches cliquent sur une offre qui les intéresse.</div>
+      </div>
+      <div class="ap-step-arrow">→</div>
+      <div class="ap-step">
+        <div class="ap-step-icon">💰</div>
+        <div class="ap-step-num">3</div>
+        <div class="ap-step-label">Vous encaissez</div>
+        <div class="ap-step-desc">Commission versée chaque mois selon les activations.</div>
+      </div>
     </div>
-    <div class="modal-field">
-      <label class="modal-label">Votre WhatsApp</label>
-      <input class="modal-input" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel">
+
+    <div class="ap-calc">
+      <div class="ap-calc-header">
+        <div class="ap-calc-title">🧮 Combien pouvez-vous gagner ?</div>
+        <div class="ap-calc-sub">Simulation basée sur 300 contacts WhatsApp</div>
+      </div>
+      <div class="ap-scenarios">
+        <div class="ap-scenario">
+          <div class="ap-scen-label">Prudent · 2 ventes</div>
+          <div class="ap-scen-amount" id="apporteurAmountPrudent">≈ 50€<span>/mois</span></div>
+          <div class="ap-scen-bar"><div class="ap-scen-fill" style="width:25%;background:#6EE7B7"></div></div>
+          <div class="ap-scen-detail">2 × <span id="apporteurRewardUnit">...€</span></div>
+        </div>
+        <div class="ap-scenario">
+          <div class="ap-scen-label">Moyen · 5 ventes</div>
+          <div class="ap-scen-amount" id="apporteurAmountMoyen">≈ 150€<span>/mois</span></div>
+          <div class="ap-scen-bar"><div class="ap-scen-fill" style="width:56%;background:#34D399"></div></div>
+          <div class="ap-scen-detail" id="apporteurGainMonthly">5 ventes × votre commission</div>
+        </div>
+        <div class="ap-scenario">
+          <div class="ap-scen-label">Ambitieux · 9 ventes</div>
+          <div class="ap-scen-amount" id="apporteurAmountAmbitieux">≈ 450€<span>/mois</span></div>
+          <div class="ap-scen-bar"><div class="ap-scen-fill" style="width:100%;background:linear-gradient(90deg,#00C48C,#F5A623)"></div></div>
+          <div class="ap-scen-detail">jusqu'à 450€ / mois</div>
+        </div>
+      </div>
+      <div class="ap-calc-punchline">Résultat: avec quelques ventes chaque mois de votre répertoire téléphonique, vous pouvez viser <strong>50€ à 450€ net</strong> juste en appuyant sur “Partager”.</div>
     </div>
-    <button class="modal-submit" id="apporteurSubmitBtn" onclick="createApporteurLink()">Créer mon lien apporteur →</button>
-    <button
-      id="apporteurCopyBtn"
-      onclick="copyApporteurWebappLink()"
-      style="display:none;width:100%;padding:14px;background:transparent;border:1.5px solid var(--border-l);border-radius:14px;font-family:var(--fd);font-size:14px;font-weight:700;color:var(--t2);cursor:pointer;margin-top:8px;"
-    >
-      Copier mon lien web app
-    </button>
-    <div class="modal-fine">Lien unique généré instantanément · Tous vos deals tracés automatiquement · Commission versée le 1er du mois</div>
+
+    <div class="ap-form">
+      <div class="ap-form-title">Créez votre lien en 30 secondes</div>
+      <div class="ap-fields">
+        <div>
+          <label class="ap-label">Votre prénom</label>
+          <input class="ap-input" type="text" placeholder="Camille" id="apporteurPrenom" autocomplete="given-name">
+        </div>
+        <div>
+          <label class="ap-label">Votre WhatsApp</label>
+          <input class="ap-input" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel" autocomplete="tel">
+        </div>
+      </div>
+      <button class="ap-submit" id="apporteurSubmitBtn" onclick="createApporteurLink()">
+        <span>💬 Créer mon lien apporteur</span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button id="apporteurCopyBtn" onclick="copyApporteurWebappLink()" style="display:none">Copier mon lien web app</button>
+      <div class="ap-fine">Lien unique généré instantanément · Deals tracés automatiquement · Commission versée le 1er du mois · Sans engagement</div>
+    </div>
   </div>
 </div>
 
