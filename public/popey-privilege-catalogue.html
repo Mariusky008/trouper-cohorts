@@ -380,15 +380,50 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .pitch-copy { font-size: 12px; color: #4b5563; line-height: 1.45; font-weight: 500; }
 .pitch-copy strong { color: #111827; }
-.pitch-row {
-  display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+.pitch-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
 }
-.pitch-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  border-radius: 999px; padding: 6px 10px;
-  font-size: 10px; font-weight: 700; letter-spacing: .02em;
-  background: rgba(8,10,13,.08); color: #111827;
+.pitch-kpi {
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px 11px;
 }
+.pitch-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.pitch-kpi-value {
+  font-family: var(--fd);
+  font-size: 20px;
+  line-height: 1;
+  color: #0f172a;
+}
+.pitch-kpi-sub {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+.pitch-result {
+  margin-top: 10px;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: linear-gradient(140deg, rgba(16,185,129,.22), rgba(20,184,166,.10));
+  border: 1px solid rgba(13,148,136,.38);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0f172a;
+}
+.pitch-result strong { color: #065f46; }
 @keyframes pitchIn {
   from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -1034,26 +1069,30 @@ html[data-live-ready="0"] .main > .sphere-divider {
     <div class="modal-sub">Partagez en 1 clic. Activez des deals. Gagnez vite.</div>
     <div class="apporteur-pitch">
       <div class="pitch-topline">Nouveau modèle Popey</div>
-      <div class="pitch-hero">Votre commission est <strong>définie par le pro</strong> : en % ou en €.</div>
-      <div class="pitch-grid">
-        <div class="pitch-item">
-          <div class="pitch-icon">🔗</div>
-          <div class="pitch-copy"><strong>Lien perso instantané.</strong> Générez votre lien catalogue en quelques secondes depuis cette page.</div>
+      <div class="pitch-hero">Un simple partage peut devenir un <strong>vrai complément de revenu</strong>.</div>
+      <div class="pitch-kpi-grid">
+        <div class="pitch-kpi">
+          <div class="pitch-kpi-label">Diffusion moyenne</div>
+          <div class="pitch-kpi-value">300 contacts</div>
+          <div class="pitch-kpi-sub">Personnes qui reçoivent le catalogue via WhatsApp.</div>
         </div>
-        <div class="pitch-item">
-          <div class="pitch-icon">📲</div>
-          <div class="pitch-copy"><strong>Suivi en direct.</strong> Vous voyez les activations et commissions tomber dans votre web app.</div>
+        <div class="pitch-kpi">
+          <div class="pitch-kpi-label">Taux de clic / intérêt</div>
+          <div class="pitch-kpi-value">15% · 45 personnes</div>
+          <div class="pitch-kpi-sub">En moyenne, 45 contacts sur 300 montrent un intérêt réel.</div>
         </div>
-        <div class="pitch-item">
-          <div class="pitch-icon">🗓️</div>
-          <div class="pitch-copy"><strong>Nouveau catalogue chaque mois.</strong> Partagez tout le catalogue ou seulement les offres utiles à vos contacts.</div>
+        <div class="pitch-kpi">
+          <div class="pitch-kpi-label">Ventes réalisées en moyenne</div>
+          <div class="pitch-kpi-value">5 ventes</div>
+          <div class="pitch-kpi-sub">Projection mensuelle basée sur les activations observées.</div>
+        </div>
+        <div class="pitch-kpi">
+          <div class="pitch-kpi-label">Gain estimé</div>
+          <div class="pitch-kpi-value" id="apporteurGainMonthly">5 ventes × votre commission = ...€ / mois</div>
+          <div class="pitch-kpi-sub">Base de calcul: <span id="apporteurRewardUnit">...€</span> par nouveau client.</div>
         </div>
       </div>
-      <div class="pitch-row">
-        <span class="pitch-pill">⚡ Mise en place rapide</span>
-        <span class="pitch-pill">🎯 Partage ciblé</span>
-        <span class="pitch-pill">💸 Rémunération attractive</span>
-      </div>
+      <div class="pitch-result">Résultat: avec quelques ventes chaque mois de votre répertoire téléphonique, vous pouvez viser <strong>50€ à 450€ net</strong> juste en appuyant sur “Partager”.</div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Votre prénom</label>
@@ -1164,6 +1203,7 @@ function closeWA(e) {
 }
 
 function openApporteurModal() {
+  updateApporteurProjection();
   document.getElementById('apporteurOverlay').classList.add('open');
 }
 
@@ -1171,6 +1211,35 @@ function closeApporteur(e) {
   if (!e || e.target === document.getElementById('apporteurOverlay')) {
     document.getElementById('apporteurOverlay').classList.remove('open');
   }
+}
+
+function extractRewardValueEur(text) {
+  var raw = String(text || '').trim().replace(/\s+/g, '');
+  if (!raw) return null;
+  var m = raw.match(/(\d+[.,]?\d*)\s*€/);
+  if (!m) m = raw.match(/(\d+[.,]?\d*)/);
+  if (!m) return null;
+  var n = Number(String(m[1]).replace(',', '.'));
+  if (!isFinite(n) || n <= 0) return null;
+  return n;
+}
+
+function updateApporteurProjection() {
+  var unitEl = document.getElementById('apporteurRewardUnit');
+  var gainEl = document.getElementById('apporteurGainMonthly');
+  if (!unitEl || !gainEl) return;
+  var rewardText = String(liveState.rewardText || '').trim();
+  var value = extractRewardValueEur(rewardText);
+  if (value) {
+    var unit = euros(value);
+    var monthly = euros(value * 5);
+    unitEl.textContent = unit;
+    gainEl.textContent = '5 ventes × ' + unit + ' = ' + monthly + ' / mois';
+    return;
+  }
+  var fallback = rewardText || '...€';
+  unitEl.textContent = fallback;
+  gainEl.textContent = '5 ventes × ' + fallback + ' = ...€ / mois';
 }
 
 function openClientLeadModal(defaults) {
@@ -1569,6 +1638,7 @@ async function initLiveCatalog() {
     liveState.refFirstName = (refName.split(/\s+/)[0] || 'Votre contact');
     liveState.refFullName = refName || liveState.refFirstName;
     liveState.rewardText = resolveRewardText(params);
+    updateApporteurProjection();
     var qs = new URLSearchParams({ catalog: 'privilege', city: city });
     if (refId) qs.set('ref_id', refId);
     if (refCode) qs.set('ref', refCode);
