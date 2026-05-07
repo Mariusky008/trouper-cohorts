@@ -9535,15 +9535,23 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </button>
               </div>
               <p className="mt-2 text-[11px] text-white/70">
-                En mode pro, c&apos;est le template WhatsApp Twilio qui est envoye. Ce texte est conserve en note interne.
+                En mode pro, le template WhatsApp Twilio est envoye automatiquement. Le texte ci-dessous est une note interne (non envoyee au prospect).
               </p>
-              <textarea
-                value={allianceMessageDraft}
-                onChange={(event) => setAllianceMessageDraft(event.target.value)}
-                rows={18}
-                className="mt-3 h-[46vh] min-h-[300px] w-full resize-none rounded-2xl border border-white/20 bg-black/30 px-3 py-2 text-[13px] leading-relaxed text-white placeholder:text-white/45"
-                placeholder="Ecris ton message..."
-              />
+              <div className="mt-3 rounded-2xl border border-cyan-200/30 bg-cyan-200/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">Envoi WhatsApp Pro</p>
+                <p className="mt-1 text-xs text-cyan-50/90">
+                  Le clic sur &quot;Envoyer via WhatsApp Pro (Twilio)&quot; envoie directement le template Twilio approuve.
+                </p>
+                <p className="mt-2 text-[11px] text-cyan-50/80">
+                  Variables template: {selectedAllianceProspect.full_name.split(/\s+/)[0] || "Bonjour"} | Popey | {selectedAllianceProspect.city || "votre ville"} | {selectedAllianceProspect.metier || "partenaire local"}
+                </p>
+              </div>
+              <div className="mt-3 rounded-2xl border border-white/20 bg-black/30 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-white/70">Note interne (non envoyee)</p>
+                <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-white/90">
+                  {allianceMessageDraft || "Aucune note interne."}
+                </p>
+              </div>
               <div className="mt-3 flex items-center gap-2">
                 <button
                   type="button"

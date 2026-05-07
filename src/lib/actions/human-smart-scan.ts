@@ -3915,7 +3915,15 @@ export async function createAllianceInvite(input: {
   );
 
   if (!twilioResult.success) {
-    return { error: `Envoi WhatsApp Pro impossible: ${twilioResult.error}` };
+    const rawError = String(twilioResult.error || "").trim();
+    const isWindowError = rawError.includes("63016") || rawError.toLowerCase().includes("outside messaging window");
+    if (isWindowError) {
+      return {
+        error:
+          "Envoi WhatsApp Pro impossible (63016). Le template Twilio n'est pas reconnu comme valide dans ce contexte. Vérifie: 1) contentSid WhatsApp approuvé et actif, 2) numéro destinataire autorisé (sandbox join), 3) expéditeur WhatsApp lié au bon compte.",
+      };
+    }
+    return { error: `Envoi WhatsApp Pro impossible: ${rawError || "erreur Twilio inconnue."}` };
   }
 
   await supabaseAdmin
