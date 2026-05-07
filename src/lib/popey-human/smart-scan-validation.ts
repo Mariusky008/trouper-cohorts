@@ -232,7 +232,7 @@ export const smartScanAllianceSearchSchema = z
 
 export const smartScanAllianceInviteSchema = z
   .object({
-    prospectId: z.string().uuid(),
+    prospectId: z.string().trim().min(1).max(180),
     channel: z.enum(ALLIANCE_INVITE_CHANNELS).optional(),
     messageDraft: z.string().trim().min(1).max(3000),
   })

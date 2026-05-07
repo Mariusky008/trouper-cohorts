@@ -3672,12 +3672,17 @@ export async function createAllianceInvite(input: {
   const ownerMemberId = currentMember.id;
 
   const supabaseAdmin = createAdminClient();
-  const { data: prospect, error: prospectError } = await supabaseAdmin
+  const normalizedProspectId = String(input.prospectId || "").trim();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    normalizedProspectId,
+  );
+  const baseProspectQuery = supabaseAdmin
     .from("human_smart_scan_alliance_prospects")
-    .select("id,owner_member_id,full_name,metier,phone_e164,city")
-    .eq("id", input.prospectId)
-    .eq("owner_member_id", ownerMemberId)
-    .maybeSingle();
+    .select("id,owner_member_id,full_name,metier,phone_e164,city,provider_prospect_ref")
+    .eq("owner_member_id", ownerMemberId);
+  const { data: prospect, error: prospectError } = await (isUuid
+    ? baseProspectQuery.eq("id", normalizedProspectId).maybeSingle()
+    : baseProspectQuery.eq("provider_prospect_ref", normalizedProspectId).maybeSingle());
 
   if (prospectError) return { error: prospectError.message };
   if (!prospect?.id) return { error: "Prospect introuvable." };
