@@ -493,6 +493,46 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
         error_message: errorMessage || null,
       },
     });
+
+    // If Twilio accepts send then later marks it failed (63016), auto-send a template fallback once.
+    if (
+      statusEvent === "failed" &&
+      (String(errorCode || "").trim() === "63016" || String(errorMessage || "").toLowerCase().includes("outside messaging window")) &&
+      queueRow?.owner_member_id &&
+      queueRow?.phone_e164 &&
+      whatsappTwilioConfig.contentSid
+    ) {
+      const queueMeta = asRecord(queueRow.metadata);
+      const alreadyRecovered = String(queueMeta.twilio_auto_template_fallback_at || "").trim();
+      const channel = String(queueMeta.channel || "").trim();
+      if (!alreadyRecovered && channel !== "template_fallback") {
+        const originalBody = String(queueMeta.twilio_original_body || "").trim();
+        const fallbackVariables = buildTemplateFallbackVariables(originalBody, queueMeta);
+        const recovered = await sendPartnerOutreach(queueRow.phone_e164, fallbackVariables, {
+          ownerMemberId: queueRow.owner_member_id,
+          source: "twilio_auto_fallback_63016",
+          metadata: {
+            ...queueMeta,
+            twilio_auto_fallback_from_sid: messageSid,
+            twilio_auto_fallback_error_code: errorCode || "63016",
+            twilio_auto_fallback_error_message: errorMessage || "Outside messaging window",
+          },
+        });
+        if (recovered.success) {
+          await supabaseAdmin
+            .from("human_whatsapp_outbound_queue")
+            .update({
+              metadata: {
+                ...queueMeta,
+                twilio_auto_template_fallback_at: nowIso,
+                twilio_auto_template_fallback_sid: recovered.sid || null,
+              },
+              updated_at: nowIso,
+            })
+            .eq("id", queueRow.id);
+        }
+      }
+    }
   }
 
   if (!body && !buttonPayload) {
@@ -656,6 +696,7 @@ export async function sendWhatsAppTextMessage(
       ...(options.metadata || {}),
       provider: "twilio",
       channel: sentChannel,
+      twilio_original_body: body.slice(0, 500),
       twilio_message_sid: String(sent.sid || "").trim(),
       twilio_status: String(sent.status || "").trim(),
       twilio_fallback_error_code: fallbackErrorCode,
