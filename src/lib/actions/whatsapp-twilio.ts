@@ -298,6 +298,10 @@ export async function sendPartnerOutreach(
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
   const nowIso = new Date().toISOString();
   const contentVariables = parseContentVariables(variables);
+  const previewMessage = `Template ${whatsappTwilioConfig.contentSid}: ${[variables[1], variables[2], variables[3], variables[4]]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(" | ")}`;
 
   const message = await client.messages.create({
     from: whatsappTwilioConfig.whatsappFrom,
@@ -348,7 +352,7 @@ export async function sendPartnerOutreach(
       direction: "outbound",
       event_type: "sent",
       classification: null,
-      message_text: null,
+      message_text: previewMessage,
       provider_message_id: String(message.sid || "").trim() || null,
       payload: {
         provider: "twilio",
@@ -356,6 +360,8 @@ export async function sendPartnerOutreach(
         status: String(message.status || "").trim() || null,
         to: String(message.to || "").trim() || null,
         from: String(message.from || "").trim() || null,
+        template_name: whatsappTwilioConfig.contentSid || null,
+        template_vars: variables,
       },
     });
   }
@@ -375,25 +381,36 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
   const messageStatus = String(params.MessageStatus || params.SmsStatus || "").trim();
   const statusEvent = toQueueStatus(messageStatus);
   const fromPhone = normalizePhone(String(params.From || "").replace(/^whatsapp:/i, ""));
+  const toPhone = normalizePhone(String(params.To || "").replace(/^whatsapp:/i, ""));
+  const errorCode = String(params.ErrorCode || "").trim();
+  const errorMessage = String(params.ErrorMessage || params.ChannelStatusMessage || "").trim();
   const body = String(params.ButtonText || params.Body || "").trim();
   const buttonPayload = String(params.ButtonPayload || "").trim() || null;
   const repliedMessageSid = String(params.OriginalRepliedMessageSid || params.RepliedMessageSid || "").trim();
 
   let queueRow: QueueLookupRow | null = null;
 
+  if (messageSid) {
+    const { data } = await supabaseAdmin
+      .from("human_whatsapp_outbound_queue")
+      .select("id,owner_member_id,phone_e164,metadata")
+      .eq("provider_message_id", messageSid)
+      .maybeSingle();
+    queueRow = (data as QueueLookupRow | null) || null;
+  }
   if (repliedMessageSid) {
     const { data } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
       .select("id,owner_member_id,phone_e164,metadata")
       .eq("provider_message_id", repliedMessageSid)
       .maybeSingle();
-    queueRow = (data as QueueLookupRow | null) || null;
+    queueRow = queueRow || ((data as QueueLookupRow | null) || null);
   }
-  if (!queueRow && fromPhone) {
+  if (!queueRow && toPhone) {
     const { data } = await supabaseAdmin
       .from("human_whatsapp_outbound_queue")
       .select("id,owner_member_id,phone_e164,metadata")
-      .eq("phone_e164", fromPhone)
+      .eq("phone_e164", toPhone)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -408,21 +425,32 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
     };
     if (statusEvent === "delivered") updatePayload.delivered_at = nowIso;
     if (statusEvent === "read") updatePayload.read_at = nowIso;
-    if (statusEvent === "failed") updatePayload.failed_at = nowIso;
+    if (statusEvent === "failed") {
+      updatePayload.failed_at = nowIso;
+      updatePayload.last_error =
+        [errorCode ? `Error ${errorCode}` : "", errorMessage].filter(Boolean).join(" - ") || `Twilio status: ${messageStatus || "failed"}`;
+    } else if (statusEvent === "delivered" || statusEvent === "read" || statusEvent === "sent") {
+      updatePayload.last_error = null;
+    }
 
     await supabaseAdmin.from("human_whatsapp_outbound_queue").update(updatePayload).eq("provider_message_id", messageSid);
     await supabaseAdmin.from("human_whatsapp_events").insert({
       queue_id: queueRow?.id || null,
       owner_member_id: queueRow?.owner_member_id || null,
-      phone_e164: queueRow?.phone_e164 || fromPhone || null,
+      phone_e164: queueRow?.phone_e164 || toPhone || fromPhone || null,
       direction: "status",
       event_type: statusEvent,
       classification: null,
-      message_text: null,
+      message_text:
+        statusEvent === "failed"
+          ? [errorCode ? `Error ${errorCode}` : "", errorMessage].filter(Boolean).join(" - ") || "Échec de livraison WhatsApp"
+          : null,
       provider_message_id: messageSid,
       payload: {
         provider: "twilio",
         params,
+        error_code: errorCode || null,
+        error_message: errorMessage || null,
       },
     });
   }
