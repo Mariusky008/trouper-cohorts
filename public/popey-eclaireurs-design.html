@@ -295,41 +295,6 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
     <div class="sec-lbl">
       <span style="display:flex;align-items:center;gap:6px">
         <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">1</span>
-        Importe tes contacts
-      </span>
-    </div>
-    <div class="card card-pad">
-      <!-- STATUS -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div style="font-size:32px">📱</div>
-        <div style="flex:1">
-          <div id="import-count-lbl" style="font-size:15px;font-weight:600;color:var(--t)">47 contacts importés</div>
-          <div id="import-count-sub" style="font-size:11px;color:var(--t3);margin-top:2px">24 envoyés · 23 restants ce mois</div>
-          <div style="margin-top:6px"><div class="progress-wrap"><div class="progress-fill" id="import-progress" style="width:0%"></div></div></div>
-        </div>
-      </div>
-
-      <!-- BOUTONS IMPORT -->
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button class="btn btn-sm btn-primary" style="flex:1" onclick="importContacts()">📥 Importer .vcf/.csv</button>
-        <button class="btn btn-sm btn-ghost" style="flex:1" onclick="addManual()">+ Manuel</button>
-      </div>
-
-      <!-- LIEN TUTO -->
-      <button onclick="openTuto()" style="display:flex;align-items:center;gap:8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:10px 14px;width:100%;cursor:pointer;transition:all .2s">
-        <span style="width:22px;height:22px;border-radius:50%;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">?</span>
-        <span style="font-size:13px;font-weight:500;color:var(--amber)">Comment exporter mes contacts depuis mon téléphone ?</span>
-        <span style="margin-left:auto;font-size:14px;color:var(--amber)">›</span>
-      </button>
-
-    </div>
-  </div>
-
-  <!-- ÉTAPE 2 : ENVOYER -->
-  <div class="pad" style="margin-bottom:12px">
-    <div class="sec-lbl">
-      <span style="display:flex;align-items:center;gap:6px">
-        <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#040D0A;font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">2</span>
         Envoie le catalogue
       </span>
     </div>
@@ -341,7 +306,48 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
       <button class="btn btn-wa" style="margin-bottom:8px" onclick="openWAMass()">
         <span style="font-size:16px">💬</span> ENVOYER LE CATALOGUE EN MASSE
       </button>
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:12px;font-size:11px;color:var(--t2);line-height:1.55">
+        WhatsApp limite l'envoi multi-destinataires à <strong style="color:var(--amber)">5 discussions maximum</strong>. Pour envoyer à + de 5 : ouvre le <strong style="color:var(--amber)">Mode avancé (+ de 5)</strong> ci-dessous.
+      </div>
       <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.5">WhatsApp s'ouvre avec le message pré-rempli.<br>Sélectionne tes contacts et envoie.</div>
+    </div>
+  </div>
+
+  <!-- MODE AVANCÉ (+ DE 5) -->
+  <div class="pad" style="margin-bottom:12px">
+    <div class="sec-lbl">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:rgba(245,166,35,.18);color:var(--amber);border:1px solid rgba(245,166,35,.25);font-family:var(--fd);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center">+</span>
+        Mode avancé (+ de 5)
+      </span>
+      <span class="sec-lbl-r" onclick="toggleAdvanced()" id="advancedToggleLbl">Ouvrir →</span>
+    </div>
+    <div class="card card-pad" id="advancedWrap" style="display:none">
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:12px">
+        Optionnel : importe tes contacts (VCF/CSV), puis envoie <strong>1 par 1</strong> (illimité). C'est le seul moyen côté web de contourner la limite WhatsApp des 5 destinataires.
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="font-size:28px">📇</div>
+        <div style="flex:1">
+          <div id="import-count-lbl" style="font-size:15px;font-weight:600;color:var(--t)">0 contact importé</div>
+          <div id="import-count-sub" style="font-size:11px;color:var(--t3);margin-top:2px">Prêt à envoyer</div>
+          <div style="margin-top:6px"><div class="progress-wrap"><div class="progress-fill" id="import-progress" style="width:0%"></div></div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-sm btn-primary" style="flex:1" onclick="importContacts()">📥 Importer .vcf/.csv</button>
+        <button class="btn btn-sm btn-ghost" style="flex:1" onclick="addManual()">+ Manuel</button>
+      </div>
+
+      <button class="btn btn-wa" style="margin-bottom:10px" onclick="startAdvancedSend()" id="advancedSendBtn">
+        <span style="font-size:16px">💬</span> DÉMARRER L'ENVOI (1 PAR 1)
+      </button>
+      <button onclick="openTuto()" style="display:flex;align-items:center;gap:8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:10px 14px;width:100%;cursor:pointer;transition:all .2s">
+        <span style="width:22px;height:22px;border-radius:50%;background:var(--amber);color:#0a0800;font-family:var(--fd);font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">?</span>
+        <span style="font-size:13px;font-weight:500;color:var(--amber)">Comment exporter mes contacts depuis mon téléphone ?</span>
+        <span style="margin-left:auto;font-size:14px;color:var(--amber)">›</span>
+      </button>
     </div>
   </div>
 
@@ -514,13 +520,73 @@ body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; 
 var currentScreen = 's-home';
 var qp = new URLSearchParams(window.location.search);
 var __tokenOrCode = String(qp.get('token') || qp.get('code') || '').trim();
-var __catalogueUrl = String(qp.get('catalogue_url') || 'https://www.popey.academy/privilege').trim();
+var __catalogueUrl = String(qp.get('catalogue_url') || '').trim();
 var __cityLabel = String(qp.get('city') || '').trim();
-var __refName = String(qp.get('ref_name') || 'camille').trim();
+var __refName = String(qp.get('ref_name') || '').trim();
 var __screenParam = String(qp.get('screen') || '').trim();
 var __scoutFirstName = '';
+var __refCode = String(qp.get('ref') || '').trim();
 var __contactsStoragePrefix = 'popey-eclaireur:import-count:';
 var __contactsStorageGlobalKey = 'popey-eclaireur:import-count:global';
+var __contactsListKey = 'popey-eclaireur:contacts:list:';
+var __sendStateKey = 'popey-eclaireur:contacts:state:';
+
+function slugifyCity(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function portalRefCode() {
+  var clean = String(__refCode || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+  if (clean) return clean;
+  var token = String(__tokenOrCode || '').toLowerCase().trim();
+  if (!token) return '';
+  if (token.length >= 10) return token.slice(0, 10);
+  return token;
+}
+
+function buildPrivilegeCatalogueUrl() {
+  var cityLabel = String(__cityLabel || 'Dax').trim();
+  var citySlug = slugifyCity(cityLabel);
+  var href = citySlug ? ('/privilege/' + citySlug) : '/privilege';
+  var params = new URLSearchParams();
+  var refCode = portalRefCode();
+  if (refCode) params.set('ref', refCode);
+  if (__tokenOrCode) params.set('scout_token', __tokenOrCode);
+  var scoutName = String(__refName || __scoutFirstName || '').trim();
+  if (scoutName) params.set('ref_name', scoutName);
+  var qs = params.toString();
+  return (window.location.origin + href + (qs ? ('?' + qs) : ''));
+}
+
+function updateCatalogueUi() {
+  if (!__catalogueUrl) __catalogueUrl = buildPrivilegeCatalogueUrl();
+  var linkLbl = document.getElementById('catalogLinkLabel');
+  if (linkLbl) linkLbl.textContent = __catalogueUrl.replace(/^https?:\/\//, '');
+  var massPreview = document.getElementById('massMsgPreview');
+  if (massPreview) {
+    var cityLabel = __cityLabel || 'ta ville';
+    massPreview.textContent =
+      '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' +
+      cityLabel +
+      ' avec des offres exclusives. Clique ici 👉 ' +
+      __catalogueUrl.replace(/^https?:\/\//, '') +
+      '"';
+  }
+}
+
+function toggleAdvanced() {
+  var wrap = document.getElementById('advancedWrap');
+  var lbl = document.getElementById('advancedToggleLbl');
+  if (!wrap || !lbl) return;
+  var open = wrap.style.display !== 'none';
+  wrap.style.display = open ? 'none' : 'block';
+  lbl.textContent = open ? 'Ouvrir →' : 'Fermer ←';
+}
 
 function getContactsStorageKey() {
   return __contactsStoragePrefix + ((__tokenOrCode || 'demo').toLowerCase());
@@ -619,7 +685,7 @@ function sendWA() {
 
 function openWAMass() {
   var cityLabel = __cityLabel || 'ta ville';
-  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + cityLabel + " avec des offres exclusives. Agent immo, coach sportif, architecte... Clique ici pour en profiter : " + __catalogueUrl;
+  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + cityLabel + " avec des offres exclusives. Clique ici pour en profiter : " + __catalogueUrl;
   trackEvent('mass_share_clicked', { source: 'mass_catalogue' });
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
@@ -633,6 +699,62 @@ function copyLink() {
       if (btn) { var orig = btn.textContent; btn.textContent = '✓ Copié !'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
     });
   }
+}
+
+function normalizePhone(raw) {
+  var digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith('0')) digits = '33' + digits.slice(1);
+  return digits;
+}
+
+function getContactsListStorageKey() {
+  return __contactsListKey + ((__tokenOrCode || 'demo').toLowerCase());
+}
+
+function getSendStateStorageKey() {
+  return __sendStateKey + ((__tokenOrCode || 'demo').toLowerCase());
+}
+
+function readContactsList() {
+  try {
+    var raw = localStorage.getItem(getContactsListStorageKey());
+    if (!raw) return [];
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_e) {
+    return [];
+  }
+}
+
+function writeContactsList(list) {
+  try { localStorage.setItem(getContactsListStorageKey(), JSON.stringify(list || [])); } catch (_e) {}
+}
+
+function readSendState() {
+  try {
+    var raw = localStorage.getItem(getSendStateStorageKey());
+    if (!raw) return { index: 0, sent: 0 };
+    var parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : { index: 0, sent: 0 };
+  } catch (_e) {
+    return { index: 0, sent: 0 };
+  }
+}
+
+function writeSendState(state) {
+  try { localStorage.setItem(getSendStateStorageKey(), JSON.stringify(state || { index: 0, sent: 0 })); } catch (_e) {}
+}
+
+function updateAdvancedUi() {
+  var list = readContactsList();
+  var st = readSendState();
+  var total = list.length;
+  var sent = Math.min(total, Math.max(0, Number(st.sent || 0)));
+  applyImportedContactsCount(total, total ? (sent + ' envoyés · ' + (total - sent) + ' restants') : 'Importe une liste pour activer');
+  var btn = document.getElementById('advancedSendBtn');
+  if (btn) btn.textContent = total ? ('💬 CONTINUER (' + (st.index + 1) + '/' + total + ')') : "💬 DÉMARRER L'ENVOI (1 PAR 1)";
 }
 
 function openTuto() {
@@ -665,23 +787,34 @@ function importContacts() {
     var reader = new FileReader();
     reader.onload = function(ev) {
       var text = ev.target.result;
-      // Count contacts in vcf (BEGIN:VCARD occurrences) or csv lines
-      var count = 0;
-      if (file.name.endsWith('.vcf')) {
-        count = (text.match(/BEGIN:VCARD/gi) || []).length;
+      var contacts = [];
+      if (String(file.name || '').toLowerCase().endsWith('.vcf')) {
+        var matches = String(text || '').match(/TEL[^:\n]*:([^\n\r]+)/gi) || [];
+        matches.forEach(function(line) {
+          var raw = String(line).split(':').slice(1).join(':');
+          var normalized = normalizePhone(raw);
+          if (normalized && contacts.indexOf(normalized) === -1) contacts.push(normalized);
+        });
       } else {
-        count = text.split('\n').filter(function(l){ return l.trim().length > 5; }).length - 1;
+        String(text || '')
+          .split(/\r?\n/)
+          .forEach(function(line) {
+            var normalized = normalizePhone(line);
+            if (normalized && contacts.indexOf(normalized) === -1) contacts.push(normalized);
+          });
       }
-      count = Math.max(count, 1);
-      applyImportedContactsCount(count, 'Prêt à envoyer le catalogue');
-      persistImportedContactsCount(count);
-      trackEvent('contacts_imported', { source: 'file', imported_count: count });
+      writeContactsList(contacts);
+      writeSendState({ index: 0, sent: 0 });
+      applyImportedContactsCount(contacts.length, 'Prêt à envoyer (1 par 1)');
+      persistImportedContactsCount(contacts.length);
+      trackEvent('contacts_imported', { source: 'file', imported_count: contacts.length });
       // Toast
       var toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--teal);color:#040D0A;padding:10px 20px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;z-index:999;white-space:nowrap';
-      toast.textContent = '✓ ' + count + ' contacts importés !';
+      toast.textContent = '✓ ' + Math.max(0, contacts.length) + ' contacts importés !';
       document.body.appendChild(toast);
       setTimeout(function(){ toast.remove(); }, 2500);
+      updateAdvancedUi();
     };
     reader.readAsText(file);
   };
@@ -690,7 +823,32 @@ function importContacts() {
 
 function addManual() {
   var num = prompt('Numéro WhatsApp à ajouter :');
-  if (num) alert('Contact ajouté : ' + num);
+  if (!num) return;
+  var normalized = normalizePhone(num);
+  if (!normalized) return;
+  var list = readContactsList();
+  if (list.indexOf(normalized) === -1) list.push(normalized);
+  writeContactsList(list);
+  updateAdvancedUi();
+}
+
+function startAdvancedSend() {
+  var list = readContactsList();
+  if (!list.length) {
+    showScreen('s-partage');
+    toggleAdvanced();
+    return;
+  }
+  var st = readSendState();
+  var idx = Math.max(0, Math.min(list.length - 1, Number(st.index || 0)));
+  var phone = list[idx];
+  var cityLabel = __cityLabel || 'ta ville';
+  var msg = "Salut ! Ce mois-ci j'ai accès au catalogue des meilleurs pros de " + cityLabel + " avec des offres exclusives. Clique ici pour en profiter : " + __catalogueUrl;
+  trackEvent('mass_share_clicked', { source: 'advanced_one_by_one', index: idx + 1, total: list.length });
+  window.open('https://wa.me/' + encodeURIComponent(phone) + '?text=' + encodeURIComponent(msg), '_blank');
+  var next = Math.min(list.length, idx + 1);
+  writeSendState({ index: next, sent: Math.max(Number(st.sent || 0), idx + 1) });
+  updateAdvancedUi();
 }
 
 function formatEur(value) {
@@ -721,6 +879,22 @@ function fetchPublicApporteurDashboard() {
     .then(function(response) {
       return response.json().catch(function() { return {}; }).then(function(payload) {
         if (!response.ok || !payload || payload.success !== true) throw new Error(payload && payload.error ? payload.error : 'Dashboard indisponible');
+        return payload;
+      });
+    })
+    .catch(function() { return null; });
+}
+
+function loadPortal() {
+  if (!__tokenOrCode) return Promise.resolve(null);
+  return fetch('/api/popey-human/eclaireur-preview/portal?token=' + encodeURIComponent(__tokenOrCode), { cache: 'no-store' })
+    .then(function(response) {
+      return response.json().catch(function() { return {}; }).then(function(payload) {
+        if (!response.ok || !payload) return null;
+        __refCode = String(payload.shortCode || __refCode || '').trim();
+        __scoutFirstName = String((payload.scout && payload.scout.first_name) || __scoutFirstName || '').trim();
+        if (!__refName) __refName = __scoutFirstName;
+        if (!__cityLabel) __cityLabel = String(payload.sponsorVille || __cityLabel || '').trim();
         return payload;
       });
     })
@@ -953,24 +1127,41 @@ function applyDashboardData(payload) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var safeName = __refName ? __refName.charAt(0).toUpperCase() + __refName.slice(1) : 'Apporteur';
-  var hdrTag = document.querySelector('.hdr-tag');
-  if (hdrTag && currentScreen === 's-home') hdrTag.textContent = 'Bonjour ' + safeName + ' 👋';
-  var linkLbl = document.getElementById('catalogLinkLabel');
-  if (linkLbl) linkLbl.textContent = __catalogueUrl.replace(/^https?:\/\//, '');
-  var massPreview = document.getElementById('massMsgPreview');
-  if (massPreview) {
-    var cityLabel = __cityLabel || 'ta ville';
-    massPreview.textContent = '"Salut ! Ce mois-ci j\'ai accès au catalogue des meilleurs pros de ' + cityLabel + ' avec des offres exclusives. Clique ici 👉 ' + __catalogueUrl + '"';
-  }
+  restoreImportedContactsCount();
+  updateCatalogueUi();
+  updateAdvancedUi();
+
   if (__screenParam === '2') showScreen('s-partage');
   if (__screenParam === '3') showScreen('s-catalogue');
   if (__screenParam === '4') showScreen('s-commissions');
-  restoreImportedContactsCount();
+
+  trackEvent('mode_entered', { source: 'popey_eclaireurs_design_html' });
+
+  var safeNameRaw = String(__refName || __scoutFirstName || '').trim();
+  var safeName = safeNameRaw ? (safeNameRaw.charAt(0).toUpperCase() + safeNameRaw.slice(1)) : 'Apporteur';
+  var hdrTag = document.querySelector('.hdr-tag');
+  if (hdrTag && currentScreen === 's-home') hdrTag.textContent = 'Bonjour ' + safeName + ' 👋';
+
+  if (__tokenOrCode) {
+    loadPortal().then(function() {
+      __catalogueUrl = String(qp.get('catalogue_url') || '').trim() || buildPrivilegeCatalogueUrl();
+      updateCatalogueUi();
+
+      var safeNameRaw2 = String(__refName || __scoutFirstName || '').trim();
+      var safeName2 = safeNameRaw2 ? (safeNameRaw2.charAt(0).toUpperCase() + safeNameRaw2.slice(1)) : 'Apporteur';
+      var hdrTag2 = document.querySelector('.hdr-tag');
+      if (hdrTag2 && currentScreen === 's-home') hdrTag2.textContent = 'Bonjour ' + safeName2 + ' 👋';
+
+      fetchPublicApporteurDashboard().then(function(payload) {
+        if (payload) applyDashboardData(payload);
+      });
+    });
+    return;
+  }
+
   fetchPublicApporteurDashboard().then(function(payload) {
     if (payload) applyDashboardData(payload);
   });
-  trackEvent('mode_entered', { source: 'popey_eclaireurs_design_html' });
 });
 </script>
 
