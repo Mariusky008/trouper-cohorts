@@ -126,6 +126,23 @@ type MarketplaceCobrandRow = {
   updated_at: string;
 };
 
+type MarketplaceLocalEventRow = {
+  id: string;
+  city: string;
+  city_slug: string;
+  title: string;
+  day_label: string;
+  place_label: string;
+  badge: string | null;
+  sponsor_names: string | null;
+  emoji: string | null;
+  details: string | null;
+  image_url: string | null;
+  sort_order: number;
+  status: "active" | "inactive";
+  updated_at: string;
+};
+
 type MarketplaceSnapshotFilters = {
   offerStatus?: string;
   offerActionType?: string;
@@ -190,6 +207,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       timelineEvents: [] as MarketplaceEventRow[],
       recentActivations: [] as MarketplaceLandingActivationRow[],
       cobrandOffers: [] as MarketplaceCobrandRow[],
+      localEvents: [] as MarketplaceLocalEventRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -240,6 +258,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       timelineEvents: [] as MarketplaceEventRow[],
       recentActivations: [] as MarketplaceLandingActivationRow[],
       cobrandOffers: [] as MarketplaceCobrandRow[],
+      localEvents: [] as MarketplaceLocalEventRow[],
       members: [] as Array<{ id: string; label: string }>,
       filters: {
         offerStatus: filters.offerStatus || "all",
@@ -317,6 +336,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     .limit(80);
   const recentActivations = (activationsData as MarketplaceLandingActivationRow[] | null) || [];
   let cobrandOffers: MarketplaceCobrandRow[] = [];
+  let localEvents: MarketplaceLocalEventRow[] = [];
   try {
     const { data: cobrandData, error: cobrandError } = await supabaseAdmin
       .from("human_marketplace_cobrand_offers")
@@ -332,6 +352,19 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
   } catch (error) {
     console.warn("[admin marketplace] cobrand snapshot unavailable", error);
   }
+  try {
+    const { data: localEventsData, error: localEventsError } = await supabaseAdmin
+      .from("human_privilege_local_events")
+      .select("id,city,city_slug,title,day_label,place_label,badge,sponsor_names,emoji,details,image_url,sort_order,status,updated_at")
+      .order("city_slug", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("updated_at", { ascending: false })
+      .limit(300);
+    if (localEventsError) throw localEventsError;
+    localEvents = (localEventsData as MarketplaceLocalEventRow[] | null) || [];
+  } catch (error) {
+    console.warn("[admin marketplace] local events snapshot unavailable", error);
+  }
   const cities = Array.from(new Set(places.map((place) => place.city))).sort((a, b) => a.localeCompare(b, "fr"));
   const offersRawLast24h = offersRaw.filter((offer) => {
     const createdAt = Date.parse(String(offer.created_at || ""));
@@ -346,6 +379,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     timelineEvents,
     recentActivations,
     cobrandOffers,
+    localEvents,
     members,
     cities,
     selectedTimelinePlaceId,

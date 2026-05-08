@@ -561,7 +561,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   width: 100%;
   max-width: 680px;
   height: 100%;
-  max-height: 720px;
+  max-height: 660px;
 }
 .swp-ghost {
   position: absolute;
@@ -619,7 +619,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
 .swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7)); }
 .swp-media {
-  height: 35%;
+  height: 43%;
   position: relative;
 }
 .swp-media img {
@@ -694,7 +694,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   margin-top: 2px;
 }
 .swp-body {
-  height: 60%;
+  height: 57%;
   overflow: hidden;
   padding: 10px 12px 8px;
 }
@@ -703,7 +703,11 @@ html[data-live-ready="0"] .main > .sphere-divider {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1px solid rgba(15,23,42,.08);
 }
 .swp-id-left {
   min-width: 0;
@@ -720,7 +724,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   flex-shrink: 0;
 }
 .swp-id-name {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
   color: #111827;
   white-space: nowrap;
@@ -728,7 +732,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   text-overflow: ellipsis;
 }
 .swp-id-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: #6B7280;
   white-space: nowrap;
   overflow: hidden;
@@ -772,7 +776,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-offer-title {
   font-family: var(--fd);
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 800;
   margin-top: 4px;
 }
@@ -786,12 +790,12 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-new { font-family: var(--fd); font-size: 20px; font-weight: 900; }
 .swp-desc {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 13px;
   color: #5A5D68;
   line-height: 1.45;
   display: -webkit-box;
-  line-clamp: 1;
-  -webkit-line-clamp: 1;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -848,8 +852,8 @@ html[data-live-ready="0"] .main > .sphere-divider {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 14px 20px 20px;
-  padding-bottom: calc(20px + var(--safe-bottom));
+  padding: 12px 18px 14px;
+  padding-bottom: calc(14px + var(--safe-bottom));
 }
 .swp-act-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .swp-act {
@@ -959,10 +963,10 @@ html[data-live-ready="0"] .main > .sphere-divider {
   }
   .swp-stack {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 610px;
   }
   .swp-media {
-    height: 32%;
+    height: 40%;
   }
   .swp-sphere,
   .swp-urgency {
@@ -992,10 +996,10 @@ html[data-live-ready="0"] .main > .sphere-divider {
     height: 26px;
   }
   .swp-id-name {
-    font-size: 12px;
+    font-size: 14px;
   }
   .swp-id-meta {
-    font-size: 10px;
+    font-size: 11px;
   }
   .swp-id-tag {
     padding: 2px 6px;
@@ -2767,6 +2771,7 @@ function toCityLabel(raw) {
 var liveState = {
   loaded: false,
   places: [],
+  localEvents: [],
   activeSphere: 'all',
   byId: {},
   featuredPlaceId: '',
@@ -2900,6 +2905,36 @@ function buildLocalEvents(cityLabel, sponsors) {
   ];
 }
 
+async function loadLocalEvents(citySlug) {
+  try {
+    var response = await fetch('/api/popey-human/privilege/local-events?city=' + encodeURIComponent(String(citySlug || '').trim()), {
+      cache: 'no-store'
+    }).catch(function () { return null; });
+    if (!response || !response.ok) {
+      liveState.localEvents = [];
+      return;
+    }
+    var payload = await response.json().catch(function () { return {}; });
+    var rows = Array.isArray(payload.events) ? payload.events : [];
+    liveState.localEvents = rows.map(function (row) {
+      return {
+        emoji: String(row.emoji || '').trim() || '📍',
+        title: String(row.title || '').trim() || 'Événement local',
+        day: String(row.dayLabel || '').trim() || 'Cette semaine',
+        spot: String(row.placeLabel || '').trim() || (liveState.cityLabel || 'Votre ville'),
+        sponsor: String(row.sponsorNames || '').trim(),
+        badge: String(row.badge || '').trim(),
+        bg: 'linear-gradient(135deg,#E5E7EB,#D1D5DB)',
+        detail: String(row.details || '').trim(),
+        imageUrl: String(row.imageUrl || '').trim()
+      };
+    });
+  } catch (error) {
+    console.error('[privilege-events] load failed', error);
+    liveState.localEvents = [];
+  }
+}
+
 function renderLocalEventsFeed() {
   var titleEl = document.getElementById('eventsTitle');
   var feedEl = document.getElementById('eventsFeed');
@@ -2916,23 +2951,28 @@ function renderLocalEventsFeed() {
   var sponsors = liveState.places
     .slice(0, 3)
     .map(function (p) { return p.name.split(' ')[0] || p.name || 'Popey'; });
-  var events = buildLocalEvents(city, sponsors);
+  var events = (liveState.localEvents && liveState.localEvents.length)
+    ? liveState.localEvents
+    : [];
   localEventsCache = events.slice();
   if (!events.length) {
     localEventsCache = [];
-    feedEl.innerHTML = '<div class="event-empty">Aucun événement local pour le moment.</div>';
+    feedEl.innerHTML = '<div class="event-empty">Aucun événement local configuré pour cette ville.</div>';
     return;
   }
   feedEl.innerHTML = events.map(function (ev) {
+    var visual = ev.imageUrl
+      ? '<img src="' + ev.imageUrl + '" alt="' + ev.title + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'' + ev.emoji + '\'">'
+      : ev.emoji;
     return ''
       + '<article class="event-card">'
-      + '  <div class="event-img" style="background:' + ev.bg + '">' + ev.emoji + '</div>'
+      + '  <div class="event-img" style="background:' + ev.bg + '">' + visual + '</div>'
       + '  <div class="event-body">'
       + '    <div class="event-day">' + ev.day + '</div>'
       + '    <div class="event-name">' + ev.title + '</div>'
       + '    <div class="event-loc">📍 ' + ev.spot + '</div>'
-      + '    <div class="event-free">' + ev.badge + '</div>'
-      + '    <div class="event-sponsor">Sponsorisé par <span>' + ev.sponsor + '</span></div>'
+      + (ev.badge ? ('    <div class="event-free">' + ev.badge + '</div>') : '')
+      + (ev.sponsor ? ('    <div class="event-sponsor">Sponsorisé par <span>' + ev.sponsor + '</span></div>') : '')
       + '  </div>'
       + '</article>';
   }).join('');
@@ -3429,6 +3469,7 @@ async function initLiveCatalog() {
 
     liveState.places = rows.map(normalizePlace);
     liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
+    await loadLocalEvents(city);
     liveState.loaded = true;
 
     // Always remove static mock cards once live init runs.

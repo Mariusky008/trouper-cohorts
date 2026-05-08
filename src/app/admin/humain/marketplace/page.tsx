@@ -224,6 +224,9 @@ export default async function AdminHumainMarketplacePage({
   const webTopSources = Object.entries(webSourceCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
+  const localEventsCities = Array.from(new Set(snapshot.localEvents.map((event) => event.city))).sort((a, b) =>
+    a.localeCompare(b, "fr"),
+  );
 
   return (
     <section className="space-y-5">
@@ -999,6 +1002,103 @@ export default async function AdminHumainMarketplacePage({
               ))}
               {manualPlaces.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucune place réellement configurée pour le moment.</p>
+              ) : null}
+            </div>
+          </details>
+
+          <details id="local-events-admin" className="rounded-xl border bg-white p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <h2 className="text-lg font-black">Événements Locaux (catalogue privilège)</h2>
+                <p className="text-xs text-black/70">
+                  Source de vérité pour la section « Ce qu&apos;il se passe à {defaultCity} cette semaine ».
+                </p>
+              </div>
+              <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">Ouvrir &gt;</span>
+            </summary>
+
+            <form action="/api/admin/humain/marketplace/local-events" method="post" className="mt-3 rounded-lg border p-3">
+              <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+              <input type="hidden" name="intent" value="create" />
+              <div className="grid gap-2 md:grid-cols-2">
+                <input name="city" defaultValue={defaultCity} className="h-9 rounded border bg-background px-2 text-xs" placeholder="Ville (ex: Bordeaux)" />
+                <input name="title" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Titre (ex: Concert sunset)" />
+                <input name="day_label" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Jour/heure (ex: Vendredi · 19h)" />
+                <input name="place_label" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Lieu (ex: Bordeaux centre)" />
+                <input name="emoji" defaultValue="🎵" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Emoji (ex: 🎵)" />
+                <input name="badge" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Badge (ex: Gratuit)" />
+                <input
+                  name="sponsor_names"
+                  className="h-9 rounded border bg-background px-2 text-xs md:col-span-2"
+                  placeholder="Sponsors (ex: Pedro · Popey · Antonin)"
+                />
+                <input name="image_url" className="h-9 rounded border bg-background px-2 text-xs md:col-span-2" placeholder="Image URL (optionnel)" />
+                <input
+                  name="details"
+                  className="h-9 rounded border bg-background px-2 text-xs md:col-span-2"
+                  placeholder="Détails (ex: Village food trucks + DJ set)"
+                />
+                <input name="sort_order" type="number" min="0" step="1" defaultValue="100" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Ordre" />
+                <select name="status" defaultValue="active" className="h-9 rounded border bg-background px-2 text-xs">
+                  <option value="active">active</option>
+                  <option value="inactive">inactive</option>
+                </select>
+              </div>
+              <button type="submit" className="mt-3 h-9 rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-900">
+                Ajouter événement local
+              </button>
+            </form>
+
+            <div className="mt-3 space-y-3">
+              {localEventsCities.map((city) => {
+                const cityEvents = snapshot.localEvents.filter((event) => event.city === city);
+                return (
+                  <article key={city} className="rounded border p-3">
+                    <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-700">
+                      {city} · {cityEvents.length} événement(s)
+                    </p>
+                    <div className="space-y-2">
+                      {cityEvents.map((event) => (
+                        <form key={event.id} action="/api/admin/humain/marketplace/local-events" method="post" className="rounded border bg-slate-50 p-2">
+                          <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
+                          <input type="hidden" name="intent" value="update" />
+                          <input type="hidden" name="event_id" value={event.id} />
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <input name="city" defaultValue={event.city} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="title" defaultValue={event.title} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="day_label" defaultValue={event.day_label} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="place_label" defaultValue={event.place_label} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="emoji" defaultValue={event.emoji || ""} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="badge" defaultValue={event.badge || ""} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="sponsor_names" defaultValue={event.sponsor_names || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
+                            <input name="image_url" defaultValue={event.image_url || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
+                            <input name="details" defaultValue={event.details || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
+                            <input name="sort_order" type="number" min="0" step="1" defaultValue={String(event.sort_order || 100)} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <select name="status" defaultValue={event.status || "active"} className="h-8 rounded border bg-white px-2 text-xs">
+                              <option value="active">active</option>
+                              <option value="inactive">inactive</option>
+                            </select>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <button type="submit" className="h-8 rounded border px-3 text-[11px] font-black uppercase tracking-wide">
+                              Enregistrer
+                            </button>
+                            <button type="submit" name="intent" value="toggle" className="h-8 rounded border border-amber-300 px-3 text-[11px] font-black uppercase tracking-wide text-amber-800">
+                              {event.status === "active" ? "Désactiver" : "Activer"}
+                            </button>
+                            <input type="hidden" name="next_status" value={event.status === "active" ? "inactive" : "active"} />
+                            <button type="submit" name="intent" value="delete" className="h-8 rounded border border-red-300 px-3 text-[11px] font-black uppercase tracking-wide text-red-700">
+                              Supprimer
+                            </button>
+                          </div>
+                        </form>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
+              {snapshot.localEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucun événement local configuré pour le moment.</p>
               ) : null}
             </div>
           </details>
