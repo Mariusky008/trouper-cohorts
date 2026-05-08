@@ -298,6 +298,44 @@ html[data-live-ready="0"] .main > .sphere-divider {
   touch-action: pan-y;
   transform-origin: 50% 82%;
 }
+.swipe-stamp {
+  position: absolute;
+  top: 18px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border: 2px solid transparent;
+  opacity: 0;
+  transform: scale(.9) rotate(-6deg);
+  transition: opacity .12s ease, transform .12s ease;
+  pointer-events: none;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+}
+.swipe-stamp.like {
+  right: 16px;
+  color: #0f6c3c;
+  border-color: rgba(15,108,60,.8);
+  background: rgba(37,211,102,.14);
+  transform: scale(.9) rotate(7deg);
+}
+.swipe-stamp.pass {
+  left: 16px;
+  color: #b91c1c;
+  border-color: rgba(185,28,28,.75);
+  background: rgba(239,68,68,.14);
+}
+.swipe-card.show-like .swipe-stamp.like {
+  opacity: 1;
+  transform: scale(1) rotate(7deg);
+}
+.swipe-card.show-pass .swipe-stamp.pass {
+  opacity: 1;
+  transform: scale(1) rotate(-6deg);
+}
 .swipe-card.peek {
   transform: scale(.96) translateY(8px);
   opacity: .6;
@@ -2255,6 +2293,8 @@ function buildSwipeCard(place, isPeek) {
   }
   var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
   card.innerHTML =
+    '<div class="swipe-stamp pass">PASS</div>' +
+    '<div class="swipe-stamp like">LIKE</div>' +
     media +
     '<div class="swipe-card-content">' +
       '<div class="swipe-chip" style="color:' + meta.color + '">' + meta.icon + ' ' + meta.label + '</div>' +
@@ -2308,6 +2348,9 @@ function wireSwipeDrag(card) {
     var rot = swipeState.dx / 20;
     card.style.transform = 'translateX(' + swipeState.dx + 'px) rotate(' + rot + 'deg)';
     card.style.opacity = String(Math.max(0.35, 1 - Math.abs(swipeState.dx) / 260));
+    card.classList.remove('show-like', 'show-pass');
+    if (swipeState.dx > 20) card.classList.add('show-like');
+    if (swipeState.dx < -20) card.classList.add('show-pass');
   }
   function onEnd() {
     if (!swipeState.dragging) return;
@@ -2323,6 +2366,7 @@ function wireSwipeDrag(card) {
     card.style.transition = 'transform .18s ease, opacity .18s ease';
     card.style.transform = '';
     card.style.opacity = '';
+    card.classList.remove('show-like', 'show-pass');
   }
   card.addEventListener('touchstart', onStart, { passive: true });
   card.addEventListener('touchmove', onMove, { passive: true });
