@@ -559,9 +559,9 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-stack {
   position: relative;
   width: 100%;
-  max-width: 680px;
+  max-width: 460px;
   height: 100%;
-  max-height: 660px;
+  max-height: 610px;
 }
 .swp-ghost {
   position: absolute;
@@ -619,7 +619,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
 .swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7)); }
 .swp-media {
-  height: 43%;
+  height: 48%;
   position: relative;
 }
 .swp-media img {
@@ -694,9 +694,12 @@ html[data-live-ready="0"] .main > .sphere-divider {
   margin-top: 2px;
 }
 .swp-body {
-  height: 57%;
+  height: 52%;
   overflow: hidden;
   padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .swp-identity {
   display: flex;
@@ -724,15 +727,13 @@ html[data-live-ready="0"] .main > .sphere-divider {
   flex-shrink: 0;
 }
 .swp-id-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.1;
 }
 .swp-id-meta {
-  font-size: 12px;
+  font-size: 11px;
   color: #6B7280;
   white-space: nowrap;
   overflow: hidden;
@@ -776,7 +777,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-offer-title {
   font-family: var(--fd);
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 800;
   margin-top: 4px;
 }
@@ -790,17 +791,17 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-new { font-family: var(--fd); font-size: 20px; font-weight: 900; }
 .swp-desc {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 12px;
   color: #5A5D68;
   line-height: 1.45;
   display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .swp-retrib {
-  margin-top: 7px;
+  margin-top: auto;
   border-radius: 10px;
   background: #F0FDF4;
   border: 1.5px solid rgba(0,168,112,.2);
@@ -963,10 +964,10 @@ html[data-live-ready="0"] .main > .sphere-divider {
   }
   .swp-stack {
     max-width: 100%;
-    max-height: 610px;
+    max-height: 540px;
   }
   .swp-media {
-    height: 40%;
+    height: 48%;
   }
   .swp-sphere,
   .swp-urgency {
@@ -996,7 +997,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
     height: 26px;
   }
   .swp-id-name {
-    font-size: 14px;
+    font-size: 13px;
   }
   .swp-id-meta {
     font-size: 11px;
