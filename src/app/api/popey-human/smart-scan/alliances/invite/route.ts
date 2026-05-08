@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
     channel: body.channel,
     messageDraft: body.messageDraft,
     upstreamJobs: body.upstreamJobs || null,
+    senderCityOverride: body.senderCityOverride || null,
+    targetMetierOverride: body.targetMetierOverride || null,
     prospect: body.prospect,
   });
   if ("error" in result) {

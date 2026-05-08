@@ -1275,6 +1275,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedAllianceProspect, setSelectedAllianceProspect] = useState<SmartScanAllianceProspect | null>(null);
   const [allianceMessageDraft, setAllianceMessageDraft] = useState("");
   const [allianceUpstreamJobs, setAllianceUpstreamJobs] = useState("coach business, agent immobilier");
+  const [allianceSenderCityOverride, setAllianceSenderCityOverride] = useState("");
+  const [allianceTargetMetierOverride, setAllianceTargetMetierOverride] = useState("");
   const [isAllianceMessageSending, setIsAllianceMessageSending] = useState(false);
   const [showRadarMode, setShowRadarMode] = useState(false);
   const [isRadarLoading, setIsRadarLoading] = useState(false);
@@ -4529,6 +4531,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setSelectedAllianceProspect(prospect);
     setAllianceMessageDraft(buildAllianceInviteMessage(prospect));
     setAllianceUpstreamJobs("coach business, agent immobilier");
+    setAllianceSenderCityOverride(String(profileForm.ville || "").trim());
+    setAllianceTargetMetierOverride(String(prospect.metier || "").trim());
     setShowAllianceMessageModal(true);
     setModalErrorMessage("");
     setModalInfoMessage("");
@@ -4539,12 +4543,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setSelectedAllianceProspect(null);
     setAllianceMessageDraft("");
     setAllianceUpstreamJobs("coach business, agent immobilier");
+    setAllianceSenderCityOverride("");
+    setAllianceTargetMetierOverride("");
   }
 
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
       const messageDraft = String(messageDraftInput || "").trim() || "Template Twilio alliance";
       const upstreamJobs = String(allianceUpstreamJobs || "").trim();
+      const senderCityOverride = String(allianceSenderCityOverride || "").trim();
+      const targetMetierOverride = String(allianceTargetMetierOverride || "").trim();
       const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4553,6 +4561,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           channel: "whatsapp",
           messageDraft,
           upstreamJobs: upstreamJobs || null,
+          senderCityOverride: senderCityOverride || null,
+          targetMetierOverride: targetMetierOverride || null,
           prospect: {
             fullName: prospect.full_name,
             metier: prospect.metier,
@@ -9554,7 +9564,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{2}}"} Ta ville</p>
-                    <p className="mt-1 text-xs text-white/85">{profileForm.ville || selectedAllianceProspect.city || "votre ville"}</p>
+                    <input
+                      value={allianceSenderCityOverride}
+                      onChange={(event) => setAllianceSenderCityOverride(event.target.value)}
+                      placeholder={profileForm.ville || selectedAllianceProspect.city || "votre ville"}
+                      className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                    />
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{3}}"} Metiers amont (modifiable)</p>
@@ -9567,7 +9582,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{4}}"} Son metier</p>
-                    <p className="mt-1 text-xs text-white/85">{selectedAllianceProspect.metier || "partenaire local"}</p>
+                    <input
+                      value={allianceTargetMetierOverride}
+                      onChange={(event) => setAllianceTargetMetierOverride(event.target.value)}
+                      placeholder={selectedAllianceProspect.metier || "partenaire local"}
+                      className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                    />
                   </div>
                 </div>
               </div>
