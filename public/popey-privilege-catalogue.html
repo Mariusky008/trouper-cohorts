@@ -148,102 +148,177 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .fc-lbl { font-size: 9px; font-weight: 700; letter-spacing: .04em; display: block; }
 .fc-count { font-family: var(--fm); font-size: 10px; font-weight: 500; opacity: .6; display: block; }
 
-/* Apporteur CTA inline */
-.apporteur-cta {
+/* Swipe mode hero */
+.swipe-hero {
+  margin: 0 0 14px;
+}
+.swipe-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-decoration: none;
+  border-radius: 20px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--ink), #1A2030);
-  border: 1.5px solid var(--teal-g); border-radius: 16px;
-  padding: 18px; margin-bottom: 24px; position: relative; overflow: hidden;
+  border: 1.5px solid rgba(0,196,140,.3);
 }
-.apporteur-cta::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+.swipe-link::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,196,140,.18), transparent 70%);
+  pointer-events: none;
 }
-.ac-tag { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-.ac-tag::before { content: ''; width: 14px; height: 1px; background: var(--teal); }
-.ac-title { font-family: var(--fd); font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.1; }
-.ac-desc { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 14px; line-height: 1.5; font-weight: 300; }
-.ac-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--teal); color: var(--ink); padding: 12px;
-  border-radius: 10px; border: none; width: 100%;
-  font-family: var(--fd); font-size: 13px; font-weight: 700; cursor: pointer;
-  transition: all .2s;
+.swipe-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
 }
-.ac-btn:active { transform: scale(.98); background: var(--teal-d); }
-.ac-meta { font-size: 10px; color: rgba(255,255,255,.25); margin-top: 8px; text-align: center; }
+.swipe-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(0,196,140,.15);
+  border: 1px solid rgba(0,196,140,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.swipe-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(0,196,140,.8);
+  margin-bottom: 3px;
+}
+.swipe-title {
+  font-family: var(--fd);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #fff;
+}
+.swipe-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+  margin-top: 2px;
+}
+.swipe-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #040E0A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
 
 /* ── LOCAL EVENTS FEED ── */
-.events-block {
-  margin: 0 0 18px;
-  background: linear-gradient(145deg, #fff, #f8f4ec);
-  border: 1.5px solid var(--border-l);
-  border-radius: 18px;
-  padding: 14px;
+.events-section {
+  margin: 0 0 24px;
 }
-.events-kicker {
-  font-size: 10px;
-  font-weight: 800;
+.events-header {
+  margin-bottom: 12px;
+}
+.events-tag {
+  font-size: 9px;
+  font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: #8A6A18;
-  margin-bottom: 6px;
+  color: var(--t2);
+  margin-bottom: 5px;
 }
 .events-title {
   font-family: var(--fd);
-  font-size: 24px;
-  line-height: 1.02;
-  letter-spacing: -.02em;
-  color: var(--t);
-  margin-bottom: 6px;
-}
-.events-sub {
-  font-size: 12px;
-  color: var(--t2);
-  line-height: 1.5;
-  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
 }
 .events-feed {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  padding-bottom: 6px;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 .events-feed::-webkit-scrollbar { display: none; }
 .event-card {
-  flex: 0 0 84%;
-  scroll-snap-align: start;
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: 14px;
+  flex-shrink: 0;
+  width: 220px;
   background: #fff;
-  padding: 12px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
 }
-.event-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.event-emoji {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: #FFF7E4;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
+.event-img {
+  width: 100%;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
 }
-.event-tag {
-  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8A6A18;
+.event-body { padding: 10px 12px 12px; }
+.event-day {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--t2);
+  margin-bottom: 3px;
 }
-.event-title {
+.event-name {
   font-family: var(--fd);
-  font-size: 18px;
-  line-height: 1.05;
-  color: #1A1C22;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 3px;
+  line-height: 1.2;
 }
-.event-meta {
-  font-size: 12px;
-  color: #5A5D68;
-  margin-bottom: 8px;
-}
-.event-sponsored {
+.event-loc {
   font-size: 11px;
-  color: #7C6F63;
-  line-height: 1.45;
+  color: #6B6560;
+  margin-bottom: 6px;
+}
+.event-sponsor {
+  font-size: 9px;
+  color: #9A9DAA;
+}
+.event-sponsor span {
+  color: var(--t2);
+  font-weight: 600;
+}
+.event-free {
+  display: inline-flex;
+  background: rgba(0,168,112,.08);
+  border: 1px solid rgba(0,168,112,.2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--t2);
+  margin-top: 4px;
 }
 .event-empty {
   border: 1px dashed rgba(0,0,0,.16);
@@ -824,48 +899,52 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
   <!-- FILTERS -->
   <div class="filter-wrap">
-    <div class="f-chip active" onclick="filterOffers('all',this)">
+    <div class="f-chip active" data-sphere="all" onclick="filterOffers('all',this)">
       <span class="fc-icon">✦</span>
       <span class="fc-lbl">Tous</span>
       <span class="fc-count">8</span>
     </div>
-    <div class="f-chip" onclick="filterOffers('sante',this)">
+    <div class="f-chip" data-sphere="sante" onclick="filterOffers('sante',this)">
       <span class="fc-icon">🌿</span>
       <span class="fc-lbl">Santé</span>
       <span class="fc-count">2</span>
     </div>
-    <div class="f-chip" onclick="filterOffers('habitat',this)">
+    <div class="f-chip" data-sphere="habitat" onclick="filterOffers('habitat',this)">
       <span class="fc-icon">🏠</span>
       <span class="fc-lbl">Habitat</span>
       <span class="fc-count">2</span>
     </div>
-    <div class="f-chip" onclick="filterOffers('digital',this)">
+    <div class="f-chip" data-sphere="digital" onclick="filterOffers('digital',this)">
       <span class="fc-icon">💻</span>
       <span class="fc-lbl">Digital</span>
       <span class="fc-count">2</span>
     </div>
-    <div class="f-chip" onclick="filterOffers('finance',this)">
+    <div class="f-chip" data-sphere="finance" onclick="filterOffers('finance',this)">
       <span class="fc-icon">⚖️</span>
       <span class="fc-lbl">Juridique</span>
       <span class="fc-count">2</span>
     </div>
   </div>
 
-  <!-- APPORTEUR CTA -->
-  <div class="apporteur-cta">
-    <div class="ac-tag">Opportunité · Devenez apporteur</div>
-    <div class="ac-title">Partagez ce catalogue.<br>Touchez la commission définie par le pro.</div>
-    <div class="ac-desc">Chaque pro fixe sa règle (pourcentage ou montant fixe en euros). Vous partagez votre lien en quelques secondes, les activations sont tracées automatiquement, et vous suivez vos commissions en direct sur la web app.</div>
-    <button class="ac-btn" onclick="openApporteurModal()">
-      <span>💸</span> Créer mon lien apporteur
-    </button>
-    <div class="ac-meta">Nom + WhatsApp · ID unique instantané · Lien traçable</div>
+  <div class="swipe-hero">
+    <a class="swipe-link" href="?mode=swipe">
+      <div class="swipe-main">
+        <div class="swipe-icon">🃏</div>
+        <div>
+          <div class="swipe-kicker">Nouveau · Recommandé</div>
+          <div class="swipe-title">Découvrir en mode Swipe</div>
+          <div class="swipe-sub">Swipez les offres comme Tinder · 3× plus engageant</div>
+        </div>
+      </div>
+      <div class="swipe-arrow">→</div>
+    </a>
   </div>
 
-  <section class="events-block" id="localEventsBlock">
-    <div class="events-kicker">À découvrir autour de vous</div>
-    <h2 class="events-title" id="eventsTitle">Ce qu'il se passe cette semaine</h2>
-    <p class="events-sub">Mini feed local vivant: partage émotionnel + visibilité des pros locaux sponsor.</p>
+  <section class="events-section" id="localEventsBlock">
+    <div class="events-header">
+      <div class="events-tag">— À DÉCOUVRIR AUTOUR DE VOUS</div>
+      <h2 class="events-title" id="eventsTitle">Ce qu'il se passe cette semaine</h2>
+    </div>
     <div class="events-feed" id="eventsFeed"></div>
     <div class="events-foot">
       <a class="events-link" id="eventsSeeAllLink" href="/marketplace">Voir tout</a>
@@ -1784,10 +1863,10 @@ function buildLocalEvents(cityLabel, sponsors) {
   var safeSponsors = (sponsors || []).slice(0, 3);
   while (safeSponsors.length < 3) safeSponsors.push('Popey');
   return [
-    { emoji: '🎵', title: 'Concert sunset', day: 'vendredi', spot: city + ' centre', sponsor: safeSponsors.join(' · ') },
-    { emoji: '🍔', title: 'Food festival', day: 'samedi', spot: city + ' rive droite', sponsor: safeSponsors.join(' · ') },
-    { emoji: '🏃', title: 'Course solidaire', day: 'dimanche', spot: city + ' front de mer', sponsor: safeSponsors.join(' · ') },
-    { emoji: '🧘', title: 'Yoga plage', day: 'mercredi', spot: city + ' plage', sponsor: safeSponsors.join(' · ') }
+    { emoji: '🎵', title: 'Concert sunset', day: 'vendredi · 19h', spot: city + ' centre', sponsor: safeSponsors.join(' · '), badge: 'Gratuit', bg: 'linear-gradient(135deg,#FEF3C7,#FDE68A)' },
+    { emoji: '🍔', title: 'Food festival', day: 'samedi · 12h', spot: city + ' rive droite', sponsor: safeSponsors.join(' · '), badge: 'Entrée libre', bg: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)' },
+    { emoji: '🏃', title: 'Course solidaire', day: 'dimanche · 9h', spot: city + ' front de mer', sponsor: safeSponsors.join(' · '), badge: 'Inscription ouverte', bg: 'linear-gradient(135deg,#EDE9FE,#DDD6FE)' },
+    { emoji: '🧘', title: 'Yoga plage', day: 'mercredi · 18h', spot: city + ' plage', sponsor: safeSponsors.join(' · '), badge: 'Places limitées', bg: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)' }
   ];
 }
 
@@ -1811,9 +1890,14 @@ function renderLocalEventsFeed() {
   feedEl.innerHTML = events.map(function (ev) {
     return ''
       + '<article class="event-card">'
-      + '  <div class="event-row"><div class="event-emoji">' + ev.emoji + '</div><div><div class="event-tag">' + ev.day + '</div><div class="event-title">' + ev.title + '</div></div></div>'
-      + '  <div class="event-meta">📍 ' + ev.spot + '</div>'
-      + '  <div class="event-sponsored">Sponsorisé par: ' + ev.sponsor + '</div>'
+      + '  <div class="event-img" style="background:' + ev.bg + '">' + ev.emoji + '</div>'
+      + '  <div class="event-body">'
+      + '    <div class="event-day">' + ev.day + '</div>'
+      + '    <div class="event-name">' + ev.title + '</div>'
+      + '    <div class="event-loc">📍 ' + ev.spot + '</div>'
+      + '    <div class="event-free">' + ev.badge + '</div>'
+      + '    <div class="event-sponsor">Sponsorisé par <span>' + ev.sponsor + '</span></div>'
+      + '  </div>'
       + '</article>';
   }).join('');
 }
@@ -1927,13 +2011,16 @@ function renderLiveOffers() {
 function refreshLiveCounters() {
   var counts = { all: liveState.places.length, 'evenements-locaux': 0, sante: 0, habitat: 0, digital: 0, finance: 0 };
   liveState.places.forEach(function (p) { counts[p.sphere] = (counts[p.sphere] || 0) + 1; });
-  var chips = document.querySelectorAll('.f-chip');
-  if (chips[0]) chips[0].querySelector('.fc-count').textContent = counts.all;
-  if (chips[1]) chips[1].querySelector('.fc-count').textContent = counts['evenements-locaux'];
-  if (chips[2]) chips[2].querySelector('.fc-count').textContent = counts.sante;
-  if (chips[3]) chips[3].querySelector('.fc-count').textContent = counts.habitat;
-  if (chips[4]) chips[4].querySelector('.fc-count').textContent = counts.digital;
-  if (chips[5]) chips[5].querySelector('.fc-count').textContent = counts.finance;
+  document.querySelectorAll('.f-chip').forEach(function(chip) {
+    var sphere = chip.getAttribute('data-sphere') || '';
+    var countEl = chip.querySelector('.fc-count');
+    if (!countEl) return;
+    if (sphere === 'all') {
+      countEl.textContent = counts.all;
+      return;
+    }
+    countEl.textContent = String(counts[sphere] || 0);
+  });
 
   var statVals = document.querySelectorAll('.stat-val');
   if (statVals[0]) statVals[0].textContent = String(counts.all);
