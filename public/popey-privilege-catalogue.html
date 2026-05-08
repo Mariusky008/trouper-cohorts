@@ -952,6 +952,102 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-toast.show { transform: translateX(-50%) translateY(0); }
 
+.swp-activate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.swp-activate-overlay.open { display: flex; }
+.swp-activate-sheet {
+  width: min(760px, 100%);
+  background: var(--cream);
+  border-radius: 28px 28px 0 0;
+  padding: 14px 16px calc(16px + var(--safe-bottom));
+  box-shadow: 0 -12px 40px rgba(0,0,0,.25);
+  animation: swpActivateUp .2s ease-out;
+}
+@keyframes swpActivateUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.swp-activate-handle {
+  width: 62px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.12);
+  margin: 2px auto 10px;
+}
+.swp-activate-icon {
+  font-size: 40px;
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.swp-activate-title {
+  font-family: var(--fd);
+  font-size: 26px;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--t);
+}
+.swp-activate-sub {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--t2);
+}
+.swp-activate-offer {
+  margin-top: 14px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(200,168,75,.25);
+  background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
+  padding: 12px 14px;
+}
+.swp-activate-pro {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1A1C22;
+}
+.swp-activate-badge {
+  margin-top: 4px;
+  font-family: var(--fd);
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+  color: #1A1C22;
+}
+.swp-activate-cta {
+  margin-top: 16px;
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  font-family: var(--fd);
+  font-size: 20px;
+  font-weight: 800;
+  background: #25D366;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(37,211,102,.35);
+  cursor: pointer;
+}
+.swp-activate-cancel {
+  margin-top: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #9AA0AA;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 8px 6px 4px;
+  cursor: pointer;
+}
+
 @media (max-width: 600px) {
   .swipe-overlay {
     align-items: stretch;
@@ -2311,6 +2407,21 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 <div class="swp-toast" id="swipeToast">Ajouté aux favoris</div>
 
+<div class="swp-activate-overlay" id="swipeActivateOverlay" onclick="closeSwipeActivateIfBackdrop(event)">
+  <div class="swp-activate-sheet">
+    <div class="swp-activate-handle"></div>
+    <div class="swp-activate-icon">💬</div>
+    <div class="swp-activate-title" id="swipeActivateTitle">Activer l'offre</div>
+    <div class="swp-activate-sub">Vous allez être mis en contact avec Jean-Philippe qui qualifiera votre demande et organisera votre rendez-vous.</div>
+    <div class="swp-activate-offer">
+      <div class="swp-activate-pro" id="swipeActivatePro">Pro · Métier · Ville</div>
+      <div class="swp-activate-badge" id="swipeActivateBadge">Offre</div>
+    </div>
+    <button class="swp-activate-cta" id="swipeActivateConfirmBtn">Ouvrir WhatsApp →</button>
+    <button class="swp-activate-cancel" onclick="closeSwipeActivate()">Annuler</button>
+  </div>
+</div>
+
 <!-- LOCAL EVENTS DETAILS MODAL -->
 <div class="events-modal-overlay" id="eventsModalOverlay" onclick="closeEventsModal(event)">
   <div class="events-modal">
@@ -2481,6 +2592,7 @@ var swipeState = {
   dx: 0,
   dy: 0
 };
+var swipeActivationTarget = null;
 function updateViewportVars() {
   var vv = window.visualViewport;
   var height = vv ? vv.height : window.innerHeight;
@@ -3209,6 +3321,20 @@ function showSwipeToast(text) {
   showSwipeToast._t = window.setTimeout(function () { el.classList.remove('show'); }, 1800);
 }
 
+function resetTopSwipeCardVisual() {
+  var card = document.querySelector('.swp-card[data-top-card="1"]');
+  if (!card) return;
+  card.style.transition = 'transform .22s cubic-bezier(.32,1,.28,1)';
+  card.style.transform = 'none';
+  card.style.opacity = '1';
+  var yes = card.querySelector('.swp-overlay-stamp.yes');
+  var no = card.querySelector('.swp-overlay-stamp.no');
+  var save = card.querySelector('.swp-overlay-stamp.save');
+  if (yes) yes.style.opacity = '0';
+  if (no) no.style.opacity = '0';
+  if (save) save.style.opacity = '0';
+}
+
 function animateSwipeOut(direction, callback) {
   var card = document.querySelector('.swp-card[data-top-card="1"]');
   if (!card) { callback(); return; }
@@ -3248,8 +3374,48 @@ async function swipeCardAction(direction) {
     swipeAdvance('up');
     return;
   }
+  resetTopSwipeCardVisual();
+  openSwipeActivate(place);
+}
+
+function openSwipeActivate(place) {
+  if (!place) return;
+  swipeActivationTarget = place;
+  var title = document.getElementById('swipeActivateTitle');
+  var pro = document.getElementById('swipeActivatePro');
+  var badge = document.getElementById('swipeActivateBadge');
+  if (title) title.textContent = 'Activer : ' + String(place.badge || 'offre');
+  if (pro) pro.textContent = String(place.personName || place.name || 'Pro Popey') + ' · ' + String(place.metier || 'Partenaire') + ' · ' + (liveState.cityLabel || 'Dax');
+  if (badge) badge.textContent = String(place.badge || 'Offre privilégiée');
+  var overlay = document.getElementById('swipeActivateOverlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeSwipeActivate() {
+  var overlay = document.getElementById('swipeActivateOverlay');
+  if (overlay) overlay.classList.remove('open');
+  swipeActivationTarget = null;
+}
+
+function closeSwipeActivateIfBackdrop(event) {
+  var overlay = document.getElementById('swipeActivateOverlay');
+  if (event && overlay && event.target === overlay) closeSwipeActivate();
+}
+
+async function confirmSwipeActivate() {
+  if (!swipeActivationTarget) return;
+  var place = swipeActivationTarget;
+  var button = document.getElementById('swipeActivateConfirmBtn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Ouverture...';
+  }
   var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14));
-  if (ok) swipeAdvance('right');
+  if (button) {
+    button.disabled = false;
+    button.textContent = 'Ouvrir WhatsApp →';
+  }
+  if (ok) closeSwipeActivate();
 }
 
 function wireSwipeDrag(card, place) {
@@ -3519,10 +3685,12 @@ document.addEventListener('DOMContentLoaded', function () {
   var saveBtn = document.getElementById('swipeSaveBtn');
   var likeBtn = document.getElementById('swipeLikeBtn');
   var favBtn = document.getElementById('swipeFavBtn');
+  var activateConfirmBtn = document.getElementById('swipeActivateConfirmBtn');
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
   if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('up'); });
   if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('right'); });
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
+  if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
   var params = new URLSearchParams(window.location.search);
   if (params.get('mode') === 'swipe') {
