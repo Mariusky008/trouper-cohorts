@@ -173,6 +173,7 @@ nav {
 }
 .sphere-chip.active { border-color: currentColor; }
 .sc-green.active { color: #00A070; background: rgba(0,160,112,.08); border-color: rgba(0,160,112,.3); }
+.sc-coral.active { color: #D84A3A; background: rgba(216,74,58,.08); border-color: rgba(216,74,58,.3); }
 .sc-amber.active { color: #C07800; background: rgba(192,120,0,.08); border-color: rgba(192,120,0,.3); }
 .sc-blue.active  { color: #1D6FA4; background: rgba(29,111,164,.08); border-color: rgba(29,111,164,.3); }
 .sc-pink.active  { color: #B5376A; background: rgba(181,55,106,.08); border-color: rgba(181,55,106,.3); }
@@ -1182,6 +1183,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
   <div class="filter-group">
     <span class="filter-label">Sphère</span>
     <div class="sphere-chips">
+      <div class="sphere-chip sc-coral active" onclick="toggleChip(this)">🎉 Évènements locaux</div>
       <div class="sphere-chip sc-green active" onclick="toggleChip(this)">🌿 Santé</div>
       <div class="sphere-chip sc-amber active" onclick="toggleChip(this)">🏠 Habitat</div>
       <div class="sphere-chip sc-blue active" onclick="toggleChip(this)">💻 Digital</div>
@@ -1297,7 +1299,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-diversity">
         <div class="pcd-label">
           <span>Diversité des sources de recos</span>
-          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/5 sphères actives</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/6 sphères actives</span>
         </div>
         <div class="pcd-spheres">
           <div class="pcd-sphere" style="background:#00C896;opacity:0.85" title="Santé 85%"></div>
@@ -1574,7 +1576,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-diversity">
         <div class="pcd-label">
           <span>Diversité des sources de recos</span>
-          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">3/5 sphères actives</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">3/6 sphères actives</span>
         </div>
         <div class="pcd-spheres">
           <div class="pcd-sphere" style="background:#00C896;opacity:0.9" title="Santé 90%"></div>
@@ -1808,7 +1810,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-diversity">
         <div class="pcd-label">
           <span>Diversité des sources de recos</span>
-          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/5 sphères actives</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">1/6 sphères actives</span>
         </div>
         <div class="pcd-spheres">
           <div class="pcd-sphere" style="background:#00C896;opacity:0.15" title="Santé 15%"></div>
@@ -2050,7 +2052,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
       <div class="pc-diversity">
         <div class="pcd-label">
           <span>Diversité des sources de recos</span>
-          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">4/5 sphères actives</span>
+          <span style="color:var(--t2);font-weight:400;text-transform:none;letter-spacing:0">4/6 sphères actives</span>
         </div>
         <div class="pcd-spheres">
           <div class="pcd-sphere" style="background:#00C896;opacity:0.95" title="Santé 95%"></div>
@@ -2482,6 +2484,7 @@ footer { background: var(--ink); padding: 40px 48px; display: flex; align-items:
 
 <script>
 const SPHERES = [
+  { key: "evenements-locaux", label: "🎉 Évènements locaux", color: "#D84A3A", tag: "🎉 Évènements locaux", icon: "🎉" },
   { key: "sante", label: "🌿 Santé", color: "#00A070", tag: "🌿 Santé · Bien-être", icon: "🦴" },
   { key: "habitat", label: "🏠 Habitat", color: "#C07800", tag: "🏠 Habitat · Patrimoine", icon: "🏠" },
   { key: "digital", label: "💻 Digital", color: "#1D6FA4", tag: "💻 Digital · Business", icon: "💻" },
@@ -2490,6 +2493,7 @@ const SPHERES = [
 ];
 
 const METIERS = {
+  "evenements-locaux": ["Organisateur événementiel local", "Coordinateur événementiel", "Animateur local", "Maître de cérémonie", "Sonorisateur événement", "Éclairagiste événementiel", "DJ événement local", "Groupe live local", "Traiteur événement local", "Food truck événementiel", "Photographe événement", "Vidéaste événement", "Location chapiteau", "Location mobilier événementiel", "Décorateur événementiel", "Fleuriste événement", "Hôtesse d'accueil événement", "Sécurité événementielle", "Régisseur événementiel", "Imprimeur signalétique événement", "Community manager événement", "Speaker conférencier", "Coach prise de parole", "Magicien close-up événement", "Artiste performer local", "Location jeux gonflables", "Agence billetterie locale", "Coach team building", "Organisateur marché local", "Organisateur salon local"],
   sante: ["Coach bien-être", "Coach sportif", "Naturopathe", "Sophrologue", "Praticien en hypnose", "Réflexologue", "Praticien en relaxation", "Professeur de yoga", "Professeur de pilates", "Praticien shiatsu bien-être", "Masseur bien-être", "Spa manager", "Coach respiration", "Professeur de méditation", "Éducateur sportif", "Préparateur mental", "Coach sommeil", "Coach nutrition bien-être", "Praticien EFT", "Praticien sonothérapie", "Praticien aromathérapie", "Praticien ayurveda bien-être", "Coach mobilité", "Coach postural", "Coach anti-stress", "Coach burn-out prévention", "Praticien drainage bien-être", "Praticien massage assis", "Praticien relaxation aquatique", "Coach remise en forme"],
   habitat: ["Maître d'oeuvre", "Promoteur immobilier", "Constructeur maison", "Plombier", "Électricien", "Menuisier", "Serrurier", "Peintre", "Carreleur", "Maçon", "Couvreur", "Charpentier", "Chauffagiste", "Climaticien", "Paysagiste", "Jardinier", "Pisciniste", "Cuisiniste", "Agenceur intérieur", "Décorateur d'intérieur", "Home stager", "Expert rénovation énergétique", "Installateur panneaux solaires", "Installateur borne de recharge", "Façadier", "Terrassier", "Étancheur", "Solier", "Plaquiste", "Domoticien"],
   digital: ["Développeur web", "Développeur mobile", "Designer UI", "Designer UX", "Motion designer", "Monteur vidéo", "Photographe pro", "Community manager", "Traffic manager", "Consultant SEO", "Consultant SEA", "Copywriter", "Ghostwriter", "Closer", "Setter", "Media buyer", "Expert IA", "Automatisation no-code", "Intégrateur Webflow", "Expert CRM", "Growth marketer", "Data analyst", "Consultant cybersécurité", "Hébergeur web", "Infographiste", "Brand designer", "Formateur digital", "Coach LinkedIn", "Podcasteur", "Attaché de presse digital"],
@@ -2736,6 +2740,7 @@ function openSignupFromPreview() {
 
 function getActiveSpheres() {
   return Array.from(document.querySelectorAll(".sphere-chip.active")).map((chip) => {
+    if (chip.classList.contains("sc-coral")) return "evenements-locaux";
     if (chip.classList.contains("sc-green")) return "sante";
     if (chip.classList.contains("sc-amber")) return "habitat";
     if (chip.classList.contains("sc-blue")) return "digital";

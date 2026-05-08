@@ -1,4 +1,4 @@
-export type MarketplaceSphereKey = "sante" | "habitat" | "digital" | "mariage" | "finance";
+export type MarketplaceSphereKey = "evenements-locaux" | "sante" | "habitat" | "digital" | "mariage" | "finance";
 
 export type MarketplacePlace = {
   city: string;
@@ -34,6 +34,7 @@ export const MARKETPLACE_VALUE_COUNTER = {
 } as const;
 
 export const MARKETPLACE_SPHERE_VALUE_MULTIPLIER: Record<string, number> = {
+  "evenements-locaux": 1.2,
   habitat: 1.35,
   sante: 1.15,
   mariage: 1.1,
@@ -42,6 +43,7 @@ export const MARKETPLACE_SPHERE_VALUE_MULTIPLIER: Record<string, number> = {
 };
 
 const SPHERES: Record<MarketplaceSphereKey, string> = {
+  "evenements-locaux": "Evenements locaux",
   sante: "Sante",
   habitat: "Habitat",
   digital: "Digital",
@@ -57,6 +59,38 @@ const CITY_OPTIONS = [
 ] as const;
 
 const METIERS: Record<MarketplaceSphereKey, string[]> = {
+  "evenements-locaux": [
+    "Organisateur evenementiel local",
+    "Coordinateur evenementiel",
+    "Animateur local",
+    "Maitre de ceremonie",
+    "Sonorisateur evenement",
+    "Eclairagiste evenementiel",
+    "DJ evenement local",
+    "Groupe live local",
+    "Traiteur evenement local",
+    "Food truck evenementiel",
+    "Photographe evenement",
+    "Videaste evenement",
+    "Location chapiteau",
+    "Location mobilier evenementiel",
+    "Decorateur evenementiel",
+    "Fleuriste evenement",
+    "Hotesse d accueil evenement",
+    "Securite evenementielle",
+    "Regisseur evenementiel",
+    "Imprimeur signaletique evenement",
+    "Community manager evenement",
+    "Speaker conferencier",
+    "Coach prise de parole",
+    "Magicien close-up evenement",
+    "Artiste performer local",
+    "Location jeux gonflables",
+    "Agence billetterie locale",
+    "Coach team building",
+    "Organisateur marche local",
+    "Organisateur salon local",
+  ],
   sante: [
     "Coach bien-etre",
     "Coach sportif",

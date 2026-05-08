@@ -130,6 +130,7 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
             <select name="category_key" defaultValue={offer.place.category_key || ""} className="h-10 w-full rounded border bg-background px-2 text-sm">
               <option value="">Catégorie auto</option>
               <option value="maison">maison</option>
+              <option value="evenements-locaux">evenements-locaux</option>
               <option value="sante">sante</option>
               <option value="travaux">travaux</option>
               <option value="bien-etre">bien-etre</option>

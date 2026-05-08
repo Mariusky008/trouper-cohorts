@@ -20,7 +20,7 @@ type SyncOfferInput = {
   isActive?: boolean;
 };
 
-const ALLOWED_SPHERES = new Set(["sante", "habitat", "digital", "mariage", "finance"]);
+const ALLOWED_SPHERES = new Set(["evenements-locaux", "sante", "habitat", "digital", "mariage", "finance"]);
 
 function trim(value: unknown): string {
   return String(value || "").trim();
@@ -28,6 +28,7 @@ function trim(value: unknown): string {
 
 function inferCategoryFromSphere(sphere: string): string {
   const value = trim(sphere).toLowerCase();
+  if (value === "evenements-locaux") return "services";
   if (value === "habitat") return "maison";
   if (value === "sante") return "sante";
   return "services";

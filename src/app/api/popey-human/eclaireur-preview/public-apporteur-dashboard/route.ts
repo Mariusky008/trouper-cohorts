@@ -150,6 +150,7 @@ function firstPayoutLabel() {
 
 function sphereMeta(sphereKey: string) {
   const key = txt(sphereKey).toLowerCase();
+  if (key === "evenements-locaux") return { icon: "🎉", color: "#D84A3A", sphere: "evenements-locaux" };
   if (key === "sante") return { icon: "🌿", color: "#00A070", sphere: "sante" };
   if (key === "habitat") return { icon: "🏠", color: "#C07800", sphere: "habitat" };
   if (key === "digital") return { icon: "💻", color: "#1D6FA4", sphere: "digital" };

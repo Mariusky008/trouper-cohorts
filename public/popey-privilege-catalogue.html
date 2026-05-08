@@ -172,6 +172,103 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .ac-btn:active { transform: scale(.98); background: var(--teal-d); }
 .ac-meta { font-size: 10px; color: rgba(255,255,255,.25); margin-top: 8px; text-align: center; }
 
+/* ── LOCAL EVENTS FEED ── */
+.events-block {
+  margin: 0 0 18px;
+  background: linear-gradient(145deg, #fff, #f8f4ec);
+  border: 1.5px solid var(--border-l);
+  border-radius: 18px;
+  padding: 14px;
+}
+.events-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #8A6A18;
+  margin-bottom: 6px;
+}
+.events-title {
+  font-family: var(--fd);
+  font-size: 24px;
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  color: var(--t);
+  margin-bottom: 6px;
+}
+.events-sub {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.events-feed {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.events-feed::-webkit-scrollbar { display: none; }
+.event-card {
+  flex: 0 0 84%;
+  scroll-snap-align: start;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+}
+.event-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.event-emoji {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: #FFF7E4;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.event-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8A6A18;
+}
+.event-title {
+  font-family: var(--fd);
+  font-size: 18px;
+  line-height: 1.05;
+  color: #1A1C22;
+}
+.event-meta {
+  font-size: 12px;
+  color: #5A5D68;
+  margin-bottom: 8px;
+}
+.event-sponsored {
+  font-size: 11px;
+  color: #7C6F63;
+  line-height: 1.45;
+}
+.event-empty {
+  border: 1px dashed rgba(0,0,0,.16);
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 12px;
+  color: #6B6560;
+  background: #fff;
+}
+.events-foot {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.events-link {
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #3E3A33;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* ── OFFER CARD — full redesign ── */
 .offer-card {
   background: #fff; border-radius: 20px; overflow: hidden;
@@ -716,7 +813,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   <!-- Stats -->
   <div class="stats-strip">
     <div class="stat-item"><div class="stat-val">8</div><div class="stat-lbl">Offres</div></div>
-    <div class="stat-item"><div class="stat-val">5</div><div class="stat-lbl">Sphères</div></div>
+    <div class="stat-item"><div class="stat-val">6</div><div class="stat-lbl">Sphères</div></div>
     <div class="stat-item"><div class="stat-val">100%</div><div class="stat-lbl">Vérifiés</div></div>
     <div class="stat-item"><div class="stat-val">Bay.</div><div class="stat-lbl">Zone</div></div>
   </div>
@@ -764,6 +861,16 @@ html[data-live-ready="0"] .main > .sphere-divider {
     </button>
     <div class="ac-meta">Nom + WhatsApp · ID unique instantané · Lien traçable</div>
   </div>
+
+  <section class="events-block" id="localEventsBlock">
+    <div class="events-kicker">À découvrir autour de vous</div>
+    <h2 class="events-title" id="eventsTitle">Ce qu'il se passe cette semaine</h2>
+    <p class="events-sub">Mini feed local vivant: partage émotionnel + visibilité des pros locaux sponsor.</p>
+    <div class="events-feed" id="eventsFeed"></div>
+    <div class="events-foot">
+      <a class="events-link" id="eventsSeeAllLink" href="/marketplace">Voir tout</a>
+    </div>
+  </section>
 
   <!-- ─── SPHÈRE SANTÉ ─── -->
   <div class="sphere-divider" data-sphere="sante">
@@ -1641,6 +1748,7 @@ function euros(value) {
   return num.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 }
 var sphereMeta = {
+  "evenements-locaux": { icon: '🎉', label: 'Évènements locaux', color: '#D84A3A', grad: 'linear-gradient(90deg,#F97316,#DC2626)' },
   sante: { icon: '🌿', label: 'Santé · Bien-être', color: '#007A56', grad: 'linear-gradient(90deg,#00C896,#00A070)' },
   habitat: { icon: '🏠', label: 'Habitat', color: '#B45309', grad: 'linear-gradient(90deg,#F59E0B,#D97706)' },
   digital: { icon: '💻', label: 'Digital', color: '#1D4ED8', grad: 'linear-gradient(90deg,#60A5FA,#3B82F6)' },
@@ -1649,6 +1757,7 @@ var sphereMeta = {
 
 function normalizeSphere(raw) {
   var s = String(raw || '').toLowerCase();
+  if (s === 'evenements-locaux' || s === 'evenement' || s === 'evenements' || s === 'event') return 'evenements-locaux';
   if (s === 'sante' || s === 'bien-etre') return 'sante';
   if (s === 'maison' || s === 'travaux' || s === 'habitat') return 'habitat';
   if (s === 'finance' || s === 'juridique' || s === 'services') return 'finance';
@@ -1668,6 +1777,45 @@ function normalizePlace(row) {
     value: Number(row.partner_offer_value_eur || row.partnerOfferValueEur || 0),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
+}
+
+function buildLocalEvents(cityLabel, sponsors) {
+  var city = String(cityLabel || 'Bayonne');
+  var safeSponsors = (sponsors || []).slice(0, 3);
+  while (safeSponsors.length < 3) safeSponsors.push('Popey');
+  return [
+    { emoji: '🎵', title: 'Concert sunset', day: 'vendredi', spot: city + ' centre', sponsor: safeSponsors.join(' · ') },
+    { emoji: '🍔', title: 'Food festival', day: 'samedi', spot: city + ' rive droite', sponsor: safeSponsors.join(' · ') },
+    { emoji: '🏃', title: 'Course solidaire', day: 'dimanche', spot: city + ' front de mer', sponsor: safeSponsors.join(' · ') },
+    { emoji: '🧘', title: 'Yoga plage', day: 'mercredi', spot: city + ' plage', sponsor: safeSponsors.join(' · ') }
+  ];
+}
+
+function renderLocalEventsFeed() {
+  var titleEl = document.getElementById('eventsTitle');
+  var feedEl = document.getElementById('eventsFeed');
+  var seeAllEl = document.getElementById('eventsSeeAllLink');
+  if (!feedEl) return;
+  var city = liveState.cityLabel || 'Bayonne';
+  if (titleEl) titleEl.textContent = "Ce qu'il se passe à " + city + " cette semaine";
+  if (seeAllEl) seeAllEl.href = '/marketplace?ville=' + encodeURIComponent(String(city).toLowerCase().replace(/\s+/g, '-'));
+
+  var sponsors = liveState.places
+    .slice(0, 3)
+    .map(function (p) { return p.name.split(' ')[0] || p.name || 'Popey'; });
+  var events = buildLocalEvents(city, sponsors);
+  if (!events.length) {
+    feedEl.innerHTML = '<div class="event-empty">Aucun événement local pour le moment.</div>';
+    return;
+  }
+  feedEl.innerHTML = events.map(function (ev) {
+    return ''
+      + '<article class="event-card">'
+      + '  <div class="event-row"><div class="event-emoji">' + ev.emoji + '</div><div><div class="event-tag">' + ev.day + '</div><div class="event-title">' + ev.title + '</div></div></div>'
+      + '  <div class="event-meta">📍 ' + ev.spot + '</div>'
+      + '  <div class="event-sponsored">Sponsorisé par: ' + ev.sponsor + '</div>'
+      + '</article>';
+  }).join('');
 }
 
 function resolveRewardText(params) {
@@ -1763,7 +1911,8 @@ function renderLiveOffers() {
     var featuredMeta = sphereMeta[featuredPlace.sphere] || sphereMeta.digital;
     html += renderLiveCardHtml(featuredPlace, featuredMeta, true);
   }
-  Object.keys(grouped).forEach(function (sphere) {
+  ['evenements-locaux', 'sante', 'habitat', 'digital', 'finance'].forEach(function (sphere) {
+    if (!grouped[sphere] || !grouped[sphere].length) return;
     var meta = sphereMeta[sphere] || sphereMeta.digital;
     html += '<div class="sphere-divider"><div class="sd-line"></div><div class="sd-label"><span>' + meta.icon + '</span> ' + meta.label + '</div><div class="sd-line"></div></div>';
     grouped[sphere].forEach(function (p) {
@@ -1776,19 +1925,20 @@ function renderLiveOffers() {
 }
 
 function refreshLiveCounters() {
-  var counts = { all: liveState.places.length, sante: 0, habitat: 0, digital: 0, finance: 0 };
+  var counts = { all: liveState.places.length, 'evenements-locaux': 0, sante: 0, habitat: 0, digital: 0, finance: 0 };
   liveState.places.forEach(function (p) { counts[p.sphere] = (counts[p.sphere] || 0) + 1; });
   var chips = document.querySelectorAll('.f-chip');
   if (chips[0]) chips[0].querySelector('.fc-count').textContent = counts.all;
-  if (chips[1]) chips[1].querySelector('.fc-count').textContent = counts.sante;
-  if (chips[2]) chips[2].querySelector('.fc-count').textContent = counts.habitat;
-  if (chips[3]) chips[3].querySelector('.fc-count').textContent = counts.digital;
-  if (chips[4]) chips[4].querySelector('.fc-count').textContent = counts.finance;
+  if (chips[1]) chips[1].querySelector('.fc-count').textContent = counts['evenements-locaux'];
+  if (chips[2]) chips[2].querySelector('.fc-count').textContent = counts.sante;
+  if (chips[3]) chips[3].querySelector('.fc-count').textContent = counts.habitat;
+  if (chips[4]) chips[4].querySelector('.fc-count').textContent = counts.digital;
+  if (chips[5]) chips[5].querySelector('.fc-count').textContent = counts.finance;
 
   var statVals = document.querySelectorAll('.stat-val');
   if (statVals[0]) statVals[0].textContent = String(counts.all);
   if (statVals[1]) statVals[1].textContent = String(
-    ['sante', 'habitat', 'digital', 'finance'].filter(function (s) { return counts[s] > 0; }).length
+    ['evenements-locaux', 'sante', 'habitat', 'digital', 'finance'].filter(function (s) { return counts[s] > 0; }).length
   );
 
   var total = liveState.places.reduce(function (acc, p) { return acc + Math.max(0, Number(p.value || 0)); }, 0);
@@ -1881,6 +2031,7 @@ async function initLiveCatalog() {
 
     // Always remove static mock cards once live init runs.
     document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
+    renderLocalEventsFeed();
     refreshLiveCounters();
     renderLiveOffers();
     document.documentElement.setAttribute('data-live-ready', '1');

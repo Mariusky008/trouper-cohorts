@@ -107,6 +107,7 @@ const SPHERE_UI: Record<
   string,
   { tag: string; color: string; icon: string }
 > = {
+  "evenements-locaux": { tag: "🎉 Evenements locaux", color: "#D84A3A", icon: "🎉" },
   sante: { tag: "🌿 Sante · Bien-etre", color: "#00A070", icon: "🦴" },
   habitat: { tag: "🏠 Habitat · Patrimoine", color: "#C07800", icon: "🏠" },
   digital: { tag: "💻 Digital · Business", color: "#1D6FA4", icon: "💻" },
@@ -185,6 +186,7 @@ function toClientPlace(row: PlaceRow) {
 
 function inferCategoryFromSphere(sphereKey: string): string {
   const value = String(sphereKey || "").toLowerCase().trim();
+  if (value === "evenements-locaux") return "services";
   if (value === "habitat") return "maison";
   if (value === "sante") return "sante";
   if (value === "digital") return "services";

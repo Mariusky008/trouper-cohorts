@@ -667,6 +667,7 @@ export default async function AdminHumainMarketplacePage({
                                   >
                                     <option value="">Catégorie auto</option>
                                     <option value="maison">maison</option>
+                                    <option value="evenements-locaux">evenements-locaux</option>
                                     <option value="sante">sante</option>
                                     <option value="travaux">travaux</option>
                                     <option value="bien-etre">bien-etre</option>
@@ -904,6 +905,7 @@ export default async function AdminHumainMarketplacePage({
                       <select name="category_key" defaultValue={place.category_key || ""} className="h-9 rounded border bg-background px-2 text-xs">
                         <option value="">Catégorie auto</option>
                         <option value="maison">maison</option>
+                        <option value="evenements-locaux">evenements-locaux</option>
                         <option value="sante">sante</option>
                         <option value="travaux">travaux</option>
                         <option value="bien-etre">bien-etre</option>

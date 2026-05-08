@@ -39,6 +39,7 @@ function buildPartnerDisplayName(input: {
 
 function inferCategoryFromSphere(sphere: string): string {
   const value = trim(sphere).toLowerCase();
+  if (value === "evenements-locaux") return "services";
   if (value === "habitat") return "maison";
   if (value === "sante") return "sante";
   if (value === "mariage") return "services";
