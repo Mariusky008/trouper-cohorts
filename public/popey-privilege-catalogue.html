@@ -980,6 +980,113 @@ html[data-live-ready="0"] .main > .sphere-divider {
   font-weight: 700;
 }
 
+/* Local events details modal */
+.events-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.66);
+  backdrop-filter: blur(10px);
+  z-index: 230;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.events-modal-overlay.open { display: flex; }
+.events-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 86vh;
+  background: #F8F6F1;
+  border-radius: 26px 26px 0 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.events-modal-head {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.events-modal-title {
+  font-family: var(--fd);
+  font-size: 21px;
+  font-weight: 900;
+  color: #111827;
+}
+.events-modal-sub {
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 3px;
+}
+.events-modal-body {
+  overflow-y: auto;
+  padding: 12px;
+}
+.events-modal-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.events-modal-media {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+}
+.events-modal-content { padding: 10px 12px 12px; }
+.events-modal-day {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+.events-modal-name {
+  margin-top: 4px;
+  font-family: var(--fd);
+  font-size: 18px;
+  line-height: 1.08;
+  color: #111827;
+}
+.events-modal-loc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #4B5563;
+}
+.events-modal-desc {
+  margin-top: 7px;
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.45;
+}
+.events-modal-foot {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.events-modal-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f766e;
+  background: rgba(16,185,129,.12);
+  border: 1px solid rgba(13,148,136,.3);
+}
+.events-modal-sponsor {
+  font-size: 11px;
+  color: #6B7280;
+}
+
 /* ── OFFER CARD — full redesign ── */
 .offer-card {
   background: #fff; border-radius: 20px; overflow: hidden;
@@ -2069,6 +2176,20 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 <div class="swp-toast" id="swipeToast">Ajouté aux favoris</div>
 
+<!-- LOCAL EVENTS DETAILS MODAL -->
+<div class="events-modal-overlay" id="eventsModalOverlay" onclick="closeEventsModal(event)">
+  <div class="events-modal">
+    <div class="events-modal-head">
+      <div>
+        <div class="events-modal-title">Événements locaux</div>
+        <div class="events-modal-sub" id="eventsModalSub">Les bons plans de votre ville</div>
+      </div>
+      <button class="swipe-close" onclick="closeEventsModal()">✕</button>
+    </div>
+    <div class="events-modal-body" id="eventsModalBody"></div>
+  </div>
+</div>
+
 <!-- STICKY BOTTOM -->
 <div class="sticky-bottom">
   <div class="sb-inner">
@@ -2212,6 +2333,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 var currentWA = {};
 var clientLeadResolver = null;
 var generatedApporteurLinks = null;
+var localEventsCache = [];
 var swipeState = {
   open: false,
   queue: [],
@@ -2558,10 +2680,10 @@ function buildLocalEvents(cityLabel, sponsors) {
   var safeSponsors = (sponsors || []).slice(0, 3);
   while (safeSponsors.length < 3) safeSponsors.push('Popey');
   return [
-    { emoji: '🎵', title: 'Concert sunset', day: 'vendredi · 19h', spot: city + ' centre', sponsor: safeSponsors.join(' · '), badge: 'Gratuit', bg: 'linear-gradient(135deg,#FEF3C7,#FDE68A)' },
-    { emoji: '🍔', title: 'Food festival', day: 'samedi · 12h', spot: city + ' rive droite', sponsor: safeSponsors.join(' · '), badge: 'Entrée libre', bg: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)' },
-    { emoji: '🏃', title: 'Course solidaire', day: 'dimanche · 9h', spot: city + ' front de mer', sponsor: safeSponsors.join(' · '), badge: 'Inscription ouverte', bg: 'linear-gradient(135deg,#EDE9FE,#DDD6FE)' },
-    { emoji: '🧘', title: 'Yoga plage', day: 'mercredi · 18h', spot: city + ' plage', sponsor: safeSponsors.join(' · '), badge: 'Places limitées', bg: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)' }
+    { emoji: '🎵', title: 'Concert sunset', day: 'vendredi · 19h', spot: city + ' centre', sponsor: safeSponsors.join(' · '), badge: 'Gratuit', bg: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', detail: 'Scène sunset avec artistes locaux, DJ set progressif et espace chill en plein air.' },
+    { emoji: '🍔', title: 'Food festival', day: 'samedi · 12h', spot: city + ' rive droite', sponsor: safeSponsors.join(' · '), badge: 'Entrée libre', bg: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)', detail: 'Parcours food & producteurs locaux, ateliers dégustation et mini-concert live.' },
+    { emoji: '🏃', title: 'Course solidaire', day: 'dimanche · 9h', spot: city + ' front de mer', sponsor: safeSponsors.join(' · '), badge: 'Inscription ouverte', bg: 'linear-gradient(135deg,#EDE9FE,#DDD6FE)', detail: '5 km et 10 km, village associatif et échauffement collectif avant départ.' },
+    { emoji: '🧘', title: 'Yoga plage', day: 'mercredi · 18h', spot: city + ' plage', sponsor: safeSponsors.join(' · '), badge: 'Places limitées', bg: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)', detail: 'Session sunset tous niveaux, respiration guidée et collation healthy après cours.' }
   ];
 }
 
@@ -2573,17 +2695,18 @@ function renderLocalEventsFeed() {
   var city = liveState.cityLabel || 'Bayonne';
   if (titleEl) titleEl.textContent = "Ce qu'il se passe à " + city + " cette semaine";
   if (seeAllEl) {
-    var citySlug = encodeURIComponent(String(city).toLowerCase().replace(/\s+/g, '-'));
-    seeAllEl.href = 'https://www.popey.academy/marketplace?ville=' + citySlug;
-    seeAllEl.target = '_top';
-    seeAllEl.rel = 'noopener';
+    seeAllEl.href = '#events-details';
+    seeAllEl.target = '';
+    seeAllEl.rel = '';
   }
 
   var sponsors = liveState.places
     .slice(0, 3)
     .map(function (p) { return p.name.split(' ')[0] || p.name || 'Popey'; });
   var events = buildLocalEvents(city, sponsors);
+  localEventsCache = events.slice();
   if (!events.length) {
+    localEventsCache = [];
     feedEl.innerHTML = '<div class="event-empty">Aucun événement local pour le moment.</div>';
     return;
   }
@@ -2600,6 +2723,43 @@ function renderLocalEventsFeed() {
       + '  </div>'
       + '</article>';
   }).join('');
+}
+
+function renderEventsModal() {
+  var body = document.getElementById('eventsModalBody');
+  var sub = document.getElementById('eventsModalSub');
+  if (!body) return;
+  var city = liveState.cityLabel || 'votre ville';
+  if (sub) sub.textContent = 'Les bons plans de ' + city + ' en détail';
+  if (!localEventsCache.length) {
+    body.innerHTML = '<div class="event-empty">Aucun événement local à afficher pour le moment.</div>';
+    return;
+  }
+  body.innerHTML = localEventsCache.map(function(ev) {
+    return ''
+      + '<article class="events-modal-card">'
+      + '  <div class="events-modal-media" style="background:' + ev.bg + '">' + ev.emoji + '</div>'
+      + '  <div class="events-modal-content">'
+      + '    <div class="events-modal-day">' + ev.day + '</div>'
+      + '    <div class="events-modal-name">' + ev.title + '</div>'
+      + '    <div class="events-modal-loc">📍 ' + ev.spot + '</div>'
+      + '    <div class="events-modal-desc">' + (ev.detail || '') + '</div>'
+      + '    <div class="events-modal-foot"><span class="events-modal-badge">' + ev.badge + '</span><span class="events-modal-sponsor">Sponsorisé par ' + ev.sponsor + '</span></div>'
+      + '  </div>'
+      + '</article>';
+  }).join('');
+}
+
+function openEventsModal() {
+  renderEventsModal();
+  var overlay = document.getElementById('eventsModalOverlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeEventsModal(event) {
+  var overlay = document.getElementById('eventsModalOverlay');
+  if (!overlay) return;
+  if (!event || event.target === overlay) overlay.classList.remove('open');
 }
 
 function resolveRewardText(params) {
@@ -3065,6 +3225,12 @@ async function initLiveCatalog() {
 }
 
 document.addEventListener('click', function (event) {
+  var eventsSeeAll = event.target.closest('#eventsSeeAllLink');
+  if (eventsSeeAll) {
+    event.preventDefault();
+    openEventsModal();
+    return;
+  }
   var swipeLink = event.target.closest('#openSwipeMode');
   if (swipeLink) {
     event.preventDefault();
