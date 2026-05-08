@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     prospectId: body.prospectId,
     channel: body.channel,
     messageDraft: body.messageDraft,
+    upstreamJobs: body.upstreamJobs || null,
     prospect: body.prospect,
   });
   if ("error" in result) {

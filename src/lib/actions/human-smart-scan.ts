@@ -3665,6 +3665,7 @@ export async function listAllianceProspects(limit = 80, provider?: "b2b" | "inte
 export async function createAllianceInvite(input: {
   prospectId: string;
   messageDraft: string;
+  upstreamJobs?: string | null;
   channel?: "whatsapp" | "sms" | "email" | "other";
   prospect?: {
     fullName: string;
@@ -3887,15 +3888,16 @@ export async function createAllianceInvite(input: {
     .trim()
     .split(/\s+/)
     .filter(Boolean)[0] || "Bonjour";
-  const senderFirstName = String(memberProfile?.first_name || "").trim() || "Popey";
-  const cityOrContext = String(ensuredProspectRow.city || memberProfile?.ville || "").trim() || "votre ville";
+  const senderCity = String(memberProfile?.ville || "").trim();
+  const cityOrContext = senderCity || String(ensuredProspectRow.city || "").trim() || "votre ville";
+  const upstreamJobs = String(input.upstreamJobs || "").trim() || "plusieurs metiers complementaires";
   const targetJob = String(ensuredProspectRow.metier || "").trim() || "partenaire local";
   const twilioResult = await sendPartnerOutreach(
     phone,
     {
       1: firstName,
-      2: senderFirstName,
-      3: cityOrContext,
+      2: cityOrContext,
+      3: upstreamJobs,
       4: targetJob,
     },
     {
@@ -3910,6 +3912,7 @@ export async function createAllianceInvite(input: {
         channel: "whatsapp_template_twilio",
         delivery_mode: "template",
         message_draft_note: messageDraft || null,
+        upstream_jobs: upstreamJobs,
       },
     },
   );

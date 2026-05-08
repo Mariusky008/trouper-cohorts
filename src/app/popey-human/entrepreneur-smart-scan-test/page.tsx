@@ -1274,6 +1274,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
   const [selectedAllianceProspect, setSelectedAllianceProspect] = useState<SmartScanAllianceProspect | null>(null);
   const [allianceMessageDraft, setAllianceMessageDraft] = useState("");
+  const [allianceUpstreamJobs, setAllianceUpstreamJobs] = useState("coach business, agent immobilier");
   const [isAllianceMessageSending, setIsAllianceMessageSending] = useState(false);
   const [showRadarMode, setShowRadarMode] = useState(false);
   const [isRadarLoading, setIsRadarLoading] = useState(false);
@@ -4527,6 +4528,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
     setSelectedAllianceProspect(prospect);
     setAllianceMessageDraft(buildAllianceInviteMessage(prospect));
+    setAllianceUpstreamJobs("coach business, agent immobilier");
     setShowAllianceMessageModal(true);
     setModalErrorMessage("");
     setModalInfoMessage("");
@@ -4536,11 +4538,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setShowAllianceMessageModal(false);
     setSelectedAllianceProspect(null);
     setAllianceMessageDraft("");
+    setAllianceUpstreamJobs("coach business, agent immobilier");
   }
 
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
       const messageDraft = String(messageDraftInput || "").trim() || "Template Twilio alliance";
+      const upstreamJobs = String(allianceUpstreamJobs || "").trim();
       const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4548,6 +4552,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           prospectId: prospect.id,
           channel: "whatsapp",
           messageDraft,
+          upstreamJobs: upstreamJobs || null,
           prospect: {
             fullName: prospect.full_name,
             metier: prospect.metier,
@@ -9542,9 +9547,29 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <p className="mt-1 text-xs text-cyan-50/90">
                   Le clic sur &quot;Envoyer via WhatsApp Pro (Twilio)&quot; envoie directement le template Twilio approuve.
                 </p>
-                <p className="mt-2 text-[11px] text-cyan-50/80">
-                  Variables template: {selectedAllianceProspect.full_name.split(/\s+/)[0] || "Bonjour"} | Popey | {selectedAllianceProspect.city || "votre ville"} | {selectedAllianceProspect.metier || "partenaire local"}
-                </p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{1}}"} Prenom pro</p>
+                    <p className="mt-1 text-xs text-white/85">{selectedAllianceProspect.full_name.split(/\s+/)[0] || "Bonjour"}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{2}}"} Ta ville</p>
+                    <p className="mt-1 text-xs text-white/85">{profileForm.ville || selectedAllianceProspect.city || "votre ville"}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{3}}"} Metiers amont (modifiable)</p>
+                    <input
+                      value={allianceUpstreamJobs}
+                      onChange={(event) => setAllianceUpstreamJobs(event.target.value)}
+                      placeholder="Ex: coach business, agent immobilier"
+                      className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                    />
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{4}}"} Son metier</p>
+                    <p className="mt-1 text-xs text-white/85">{selectedAllianceProspect.metier || "partenaire local"}</p>
+                  </div>
+                </div>
               </div>
               <div className="mt-3 rounded-2xl border border-white/20 bg-black/30 p-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.08em] text-white/70">Note interne (non envoyee)</p>

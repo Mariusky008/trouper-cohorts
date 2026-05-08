@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Popey · Catalogue Privilège</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0A0C10;
+  --cream: #F6F3ED;
+  --cream2: #EDE9E0;
+  --teal: #00C48C;
+  --teal-d: #008F66;
+  --amber: #F5A623;
+  --red: #EF4444;
+  --border: rgba(0,0,0,.08);
+  --fd: 'Fraunces', serif;
+  --fb: 'Instrument Sans', sans-serif;
+  --shadow: 0 32px 80px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.1);
+  --shadow-sm: 0 8px 24px rgba(0,0,0,.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--ink); font-family: var(--fb); }
+
+/* ── APP SHELL ── */
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #0E1318 0%, #0A0C10 50%, #0D1209 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle bg pattern */
+.app::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 20%, rgba(0,196,140,.06) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(245,166,35,.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.header-logo {
+  font-family: var(--fd);
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -.5px;
+}
+.header-logo span { color: var(--teal); }
+.header-month {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.35);
+  letter-spacing: .04em;
+}
+.header-fav-btn {
+  position: relative;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  transition: all .2s;
+}
+.header-fav-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+.fav-count {
+  background: var(--teal);
+  color: var(--ink);
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ── SPHERE FILTERS ── */
+.filters {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 12px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,.1);
+  background: transparent;
+  color: rgba(255,255,255,.5);
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.filter-pill.active {
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.25);
+  color: #fff;
+}
+.filter-pill.active.f-all { background: rgba(0,196,140,.15); border-color: rgba(0,196,140,.4); color: var(--teal); }
+.filter-pill.active.f-sante { background: rgba(0,196,140,.15); border-color: rgba(0,196,140,.4); color: #00C48C; }
+.filter-pill.active.f-habitat { background: rgba(245,166,35,.15); border-color: rgba(245,166,35,.4); color: var(--amber); }
+.filter-pill.active.f-digital { background: rgba(79,195,247,.15); border-color: rgba(79,195,247,.4); color: #4FC3F7; }
+.filter-pill.active.f-mariage { background: rgba(244,143,177,.15); border-color: rgba(244,143,177,.4); color: #F48FB1; }
+.filter-pill.active.f-finance { background: rgba(155,143,255,.15); border-color: rgba(155,143,255,.4); color: #9B8FFF; }
+.filter-pill.active.f-artisans { background: rgba(232,105,74,.15); border-color: rgba(232,105,74,.4); color: #E8694A; }
+
+/* ── CARD STACK ── */
+.stack-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  min-height: 0;
+}
+
+.stack {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  max-height: 540px;
+}
+
+/* Background stacked cards hint */
+.stack-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+.stack-ghost-2 {
+  transform: scale(.94) translateY(10px);
+  z-index: 1;
+}
+.stack-ghost-1 {
+  transform: scale(.97) translateY(5px);
+  z-index: 2;
+  background: rgba(255,255,255,.06);
+}
+
+/* ── THE CARD ── */
+.offer-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--cream);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  user-select: none;
+  z-index: 10;
+  touch-action: none;
+  will-change: transform;
+  transition: box-shadow .3s;
+}
+.offer-card:active { cursor: grabbing; }
+
+/* Swipe feedback overlays */
+.swipe-yes {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,196,140,.9), rgba(0,196,140,.6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 20;
+  border-radius: 26px;
+  flex-direction: column;
+  gap: 12px;
+}
+.swipe-yes .stamp {
+  font-size: 64px;
+  font-family: var(--fd);
+  font-weight: 900;
+  color: #fff;
+  transform: rotate(-15deg);
+  border: 5px solid #fff;
+  padding: 8px 20px;
+  border-radius: 12px;
+  letter-spacing: 2px;
+}
+.swipe-no {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 20;
+  border-radius: 26px;
+  flex-direction: column;
+  gap: 12px;
+}
+.swipe-no .stamp {
+  font-size: 64px;
+  font-family: var(--fd);
+  font-weight: 900;
+  color: #fff;
+  transform: rotate(15deg);
+  border: 5px solid #fff;
+  padding: 8px 20px;
+  border-radius: 12px;
+  letter-spacing: 2px;
+}
+.swipe-save {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 20;
+  border-radius: 26px;
+  flex-direction: column;
+  gap: 12px;
+}
+.swipe-save .stamp {
+  font-size: 52px;
+  font-family: var(--fd);
+  font-weight: 900;
+  color: #fff;
+  border: 5px solid #fff;
+  padding: 8px 20px;
+  border-radius: 12px;
+  letter-spacing: 2px;
+}
+
+/* Card image area */
+.card-img {
+  height: 38%;
+  position: relative;
+  overflow: hidden;
+}
+.card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.card-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.5) 100%);
+}
+.card-sphere-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  background: rgba(10,12,16,.5);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+}
+.card-urgency {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(239,68,68,.9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.2);
+}
+.card-pro-row {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-pro-img {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
+  max-width: 46px;
+  max-height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,.85);
+  flex-shrink: 0;
+  display: block;
+}
+.card-pro-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.card-pro-title {
+  font-size: 11px;
+  color: rgba(255,255,255,.75);
+  text-shadow: 0 1px 3px rgba(0,0,0,.4);
+  margin-top: 1px;
+}
+
+/* Card body */
+.card-body {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 62%;
+  overflow: hidden;
+}
+.card-offer-box {
+  background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
+  border: 1.5px solid rgba(200,168,75,.25);
+  border-radius: 12px;
+  padding: 9px 11px;
+}
+.card-offer-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #C8A84B;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.card-offer-title {
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 800;
+  color: #1A1C22;
+  line-height: 1.15;
+  margin-bottom: 3px;
+}
+.card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.card-price-old {
+  font-size: 13px;
+  color: #9A9DAA;
+  text-decoration: line-through;
+}
+.card-price-new {
+  font-family: var(--fd);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+.card-desc {
+  font-size: 12px;
+  color: #5A5D68;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Social proof */
+.card-social {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.card-avs {
+  display: flex;
+}
+.card-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--cream);
+  margin-right: -6px;
+  flex-shrink: 0;
+}
+.card-social-txt {
+  font-size: 12px;
+  color: #6B6560;
+  margin-left: 8px;
+}
+.card-stars {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
+/* Counter badge on card */
+.card-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9A9DAA;
+}
+
+/* ── ACTION BUTTONS ── */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 20px 20px;
+  flex-shrink: 0;
+}
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  font-size: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+.action-btn:active { transform: scale(.92) !important; }
+.btn-skip {
+  width: 54px;
+  height: 54px;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(255,255,255,.1);
+}
+.btn-skip:hover { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.3); color: var(--red); }
+.btn-save {
+  width: 54px;
+  height: 54px;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(255,255,255,.1);
+}
+.btn-save:hover { background: rgba(245,166,35,.15); border-color: rgba(245,166,35,.3); color: var(--amber); }
+.btn-wa {
+  width: 72px;
+  height: 72px;
+  background: #25D366;
+  font-size: 28px;
+  box-shadow: 0 8px 28px rgba(37,211,102,.4);
+}
+.btn-wa:hover { transform: scale(1.07); box-shadow: 0 12px 36px rgba(37,211,102,.5); }
+.btn-wa:active { transform: scale(.95) !important; }
+
+/* Action labels */
+.action-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.action-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.3); letter-spacing: .04em; }
+
+
+/* ── RETRIBUTION BLOCK IN CARD ── */
+.card-retrib {
+  background: #F0FDF4;
+  border: 1.5px solid rgba(0,168,112,.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+.card-retrib-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #007A56;
+  margin-bottom: 3px;
+}
+.card-retrib-text {
+  font-size: 11px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+}
+.empty-icon { font-size: 64px; }
+.empty-title { font-family: var(--fd); font-size: 26px; font-weight: 900; color: #fff; }
+.empty-sub { font-size: 14px; color: rgba(255,255,255,.4); line-height: 1.6; }
+.empty-reset {
+  margin-top: 8px;
+  background: var(--teal);
+  color: var(--ink);
+  border: none;
+  border-radius: 100px;
+  padding: 14px 32px;
+  font-family: var(--fb);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 8px 24px rgba(0,196,140,.35);
+}
+.empty-reset:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,196,140,.45); }
+
+/* ── FAVORITES PANEL ── */
+.favs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.favs-overlay.open { display: flex; }
+.favs-panel {
+  background: var(--cream);
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: panelUp .3s cubic-bezier(.32,1,.28,1);
+}
+@keyframes panelUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.favs-handle { width: 40px; height: 4px; background: rgba(0,0,0,.15); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.favs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.favs-title { font-family: var(--fd); font-size: 20px; font-weight: 900; color: var(--ink); }
+.favs-close { background: rgba(0,0,0,.07); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #555; }
+.favs-list { overflow-y: auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.fav-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  animation: fadeIn .25s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fav-thumb { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.fav-info { flex: 1; min-width: 0; }
+.fav-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-offer { font-size: 12px; color: #5A5D68; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-price { font-family: var(--fd); font-size: 16px; font-weight: 900; flex-shrink: 0; }
+.fav-wa-btn {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.fav-wa-btn:hover { transform: scale(1.03); }
+.favs-empty { text-align: center; padding: 40px 20px; color: #9A9DAA; font-size: 14px; }
+.favs-empty-icon { font-size: 40px; margin-bottom: 10px; }
+
+/* ── WA CONFIRM MODAL ── */
+.wa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.wa-overlay.open { display: flex; }
+.wa-sheet {
+  background: var(--cream);
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  animation: panelUp .25s cubic-bezier(.32,1,.28,1);
+}
+.wa-handle { width: 40px; height: 4px; background: rgba(0,0,0,.15); border-radius: 2px; margin: 0 auto 16px; }
+.wa-icon { text-align: center; font-size: 40px; margin-bottom: 10px; }
+.wa-title { font-family: var(--fd); font-size: 22px; font-weight: 900; color: var(--ink); text-align: center; margin-bottom: 6px; line-height: 1.15; }
+.wa-sub { font-size: 13px; color: #6B6560; text-align: center; line-height: 1.55; margin-bottom: 18px; }
+.wa-offer-preview {
+  background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
+  border: 1px solid rgba(200,168,75,.2);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.wa-offer-pro { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.wa-offer-title { font-size: 12px; color: #6B6560; }
+.wa-confirm-btn {
+  width: 100%;
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 17px;
+  font-family: var(--fd);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all .25s;
+  box-shadow: 0 8px 28px rgba(37,211,102,.35);
+  margin-bottom: 10px;
+}
+.wa-confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(37,211,102,.45); }
+.wa-cancel { display: block; text-align: center; padding: 12px; font-size: 14px; color: #9A9DAA; cursor: pointer; border: none; background: none; width: 100%; }
+
+/* Progress dots */
+.progress-dots {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding: 0 20px 8px;
+  flex-shrink: 0;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  transition: all .3s;
+  flex-shrink: 0;
+}
+.dot.active { background: var(--teal); width: 20px; border-radius: 3px; }
+.dot.done { background: rgba(255,255,255,.3); }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: rgba(10,12,16,.95);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 300;
+  transition: transform .35s cubic-bezier(.32,1,.28,1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,.1);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Animate card entrance */
+@keyframes cardDrop {
+  from { transform: translateY(-20px) scale(.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.card-enter { animation: cardDrop .35s cubic-bezier(.32,1,.28,1); }
+
+/* Sphere colors */
+.sphere-sante { color: #00C48C; }
+.sphere-habitat { color: #F5A623; }
+.sphere-digital { color: #4FC3F7; }
+.sphere-mariage { color: #F48FB1; }
+.sphere-finance { color: #9B8FFF; }
+.sphere-artisans { color: #E8694A; }
+.sphere-immo { color: #F5A623; }
+
+/* Mobile safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .actions { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+}
+
+/* Desktop centering */
+@media (min-width: 480px) {
+  .app { max-width: 430px; margin: 0 auto; border-radius: 0; box-shadow: 0 0 80px rgba(0,0,0,.5); }
+  body { display: flex; align-items: center; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-logo">Pop<span>ey</span></div>
+      <div class="header-month">Catalogue Privilège · Mai 2026</div>
+    </div>
+    <button class="header-fav-btn" onclick="openFavs()">
+      ❤️ Favoris <span class="fav-count" id="favCount">0</span>
+    </button>
+  </div>
+
+  <!-- SPHERE FILTERS -->
+  <div class="filters" id="filters">
+    <div class="filter-pill f-all active" onclick="setFilter('all', this)">✦ Tout</div>
+    <div class="filter-pill f-sante" onclick="setFilter('sante', this)">🌿 Santé</div>
+    <div class="filter-pill f-habitat" onclick="setFilter('habitat', this)">🏠 Habitat</div>
+    <div class="filter-pill f-digital" onclick="setFilter('digital', this)">💻 Digital</div>
+    <div class="filter-pill f-mariage" onclick="setFilter('mariage', this)">💒 Mariage</div>
+    <div class="filter-pill f-finance" onclick="setFilter('finance', this)">⚖️ Finance</div>
+    <div class="filter-pill f-artisans" onclick="setFilter('artisans', this)">✨ Artisans</div>
+  </div>
+
+  <!-- PROGRESS DOTS -->
+  <div class="progress-dots" id="progressDots"></div>
+
+  <!-- CARD STACK -->
+  <div class="stack-wrap">
+    <div class="stack" id="stack">
+      <!-- Ghost cards for depth -->
+      <div class="stack-ghost stack-ghost-2"></div>
+      <div class="stack-ghost stack-ghost-1"></div>
+      <!-- Cards injected by JS -->
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎉</div>
+      <div class="empty-title">Vous avez tout vu !</div>
+      <div class="empty-sub">Vous avez parcouru toutes les offres de ce mois. Revenez le mois prochain pour les nouvelles offres.</div>
+      <button class="empty-reset" onclick="resetCards()">↺ Revoir les offres</button>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="actions" id="actions">
+    <div class="action-wrap">
+      <button class="action-btn btn-skip" onclick="swipeCard('left')" title="Passer">✕</button>
+      <div class="action-label">Passer</div>
+    </div>
+    <div class="action-wrap">
+      <button class="action-btn btn-save" onclick="swipeCard('up')" title="Sauvegarder">♡</button>
+      <div class="action-label">Favoris</div>
+    </div>
+    <div class="action-wrap">
+      <button class="action-btn btn-wa" onclick="swipeCard('right')" title="Activer sur WhatsApp">💬</button>
+      <div class="action-label">Activer</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FAVORITES PANEL -->
+<div class="favs-overlay" id="favsOverlay" onclick="if(event.target===this)closeFavs()">
+  <div class="favs-panel">
+    <div class="favs-handle"></div>
+    <div class="favs-header">
+      <div class="favs-title">❤️ Mes favoris</div>
+      <button class="favs-close" onclick="closeFavs()">✕</button>
+    </div>
+    <div class="favs-list" id="favsList"></div>
+  </div>
+</div>
+
+<!-- WA CONFIRM SHEET -->
+<div class="wa-overlay" id="waOverlay" onclick="if(event.target===this)closeWA()">
+  <div class="wa-sheet">
+    <div class="wa-handle"></div>
+    <div class="wa-icon">💬</div>
+    <div class="wa-title" id="waTitle">Activer votre privilège</div>
+    <div class="wa-sub" id="waSub">Vous allez être mis en contact avec Jean-Philippe qui qualifiera votre demande et organisera votre rendez-vous.</div>
+    <div class="wa-offer-preview">
+      <div class="wa-offer-pro" id="waOfferPro"></div>
+      <div class="wa-offer-title" id="waOfferTitle"></div>
+    </div>
+    <button class="wa-confirm-btn" id="waBtn" onclick="confirmWA()">
+      <span>Ouvrir WhatsApp →</span>
+    </button>
+    <button class="wa-cancel" onclick="closeWA()">Annuler</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastMsg">Ajouté aux favoris</span>
+</div>
+
+<script>
+// ── OFFERS DATA ──
+const OFFERS = [
+  {
+    id: 1, sphere: 'sante',
+    sphereLabel: '🌿 Santé · Sport', sphereClass: 'sphere-sante',
+    proName: 'Antonin Lemaire', retrib: '15€ fixe achetez-lui un café ☕', proTitle: 'Coach sportif · Dax',
+    proPhoto: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&h=240&fit=crop',
+    title: '1er mois de coaching offert',
+    desc: 'Programme sur-mesure, bilan forme initial, accès illimité aux séances. Sans engagement.',
+    oldPrice: '240€', newPrice: 'Gratuit', priceColor: '#007A56',
+    stars: '★★★★★', activations: 14, avatars: [
+      { bg: '#dcfce7', color: '#166534', text: 'SB' },
+      { bg: '#dbeafe', color: '#1e40af', text: 'ML' },
+      { bg: '#fef3c7', color: '#92400e', text: 'TC' }
+    ],
+    urgency: '⏰ Expire le 31 mai',
+    waText: 'Bonjour Jean-Philippe ! Je voudrais activer le privilège coaching avec Antonin Lemaire — 1er mois offert. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 2, sphere: 'sante',
+    sphereLabel: '🌿 Santé · Bien-être', sphereClass: 'sphere-sante',
+    proName: 'Dr Sophie Blanc', retrib: '15€ fixe par consultation générée', proTitle: 'Ostéopathe · Bayonne',
+    proPhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=500&h=240&fit=crop',
+    title: 'Séance ostéo offerte',
+    desc: 'Première séance de 45 min offerte. Consultation complète, bilan postural inclus.',
+    oldPrice: '65€', newPrice: 'Gratuit', priceColor: '#007A56',
+    stars: '★★★★★', activations: 22, avatars: [
+      { bg: '#dcfce7', color: '#166534', text: 'AL' },
+      { bg: '#fce7f3', color: '#9d174d', text: 'PD' },
+      { bg: '#ede9fe', color: '#5b21b6', text: 'RK' }
+    ],
+    urgency: '⏰ 8 places restantes',
+    waText: "Bonjour Jean-Philippe ! Je souhaite activer le privilège séance ostéo offerte avec Dr Sophie Blanc. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]"
+  },
+  {
+    id: 3, sphere: 'habitat',
+    sphereLabel: '🏠 Habitat · Patrimoine', sphereClass: 'sphere-habitat',
+    proName: 'Marc Fontaine', retrib: '5% commission agence sur chaque vente signée', proTitle: 'Agent immobilier · Dax',
+    proPhoto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=500&h=240&fit=crop',
+    title: '500€ de remise honoraires',
+    desc: 'Déduits sur vos honoraires d\'agence pour toute transaction signée avant le 31 mai.',
+    oldPrice: 'Plein tarif', newPrice: '-500€', priceColor: '#B45309',
+    stars: '★★★★☆', activations: 9, avatars: [
+      { bg: '#fef3c7', color: '#78350f', text: 'FR' },
+      { bg: '#fde68a', color: '#92400e', text: 'CP' }
+    ],
+    urgency: '⏰ Expire le 31 mai',
+    waText: 'Bonjour Jean-Philippe ! Je voudrais activer le privilège -500€ avec Marc Fontaine (agent immo). Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 4, sphere: 'habitat',
+    sphereLabel: '🏠 Habitat · Travaux', sphereClass: 'sphere-habitat',
+    proName: 'Frédéric Lacourt', retrib: '15€ fixe par chantier déclenché', proTitle: 'Plombier chauffagiste · Dax',
+    proPhoto: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=240&fit=crop',
+    title: 'Diagnostic chaudière offert',
+    desc: 'Bilan complet de votre installation. Rapport écrit + devis si intervention nécessaire.',
+    oldPrice: '120€', newPrice: 'Offert', priceColor: '#B45309',
+    stars: '★★★★★', activations: 17, avatars: [
+      { bg: '#fef3c7', color: '#78350f', text: 'HM' },
+      { bg: '#dbeafe', color: '#1e40af', text: 'LB' },
+      { bg: '#dcfce7', color: '#166534', text: 'SN' }
+    ],
+    urgency: null,
+    waText: 'Bonjour Jean-Philippe ! Je souhaite activer le diagnostic chaudière offert avec Frédéric Lacourt. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 5, sphere: 'digital',
+    sphereLabel: '💻 Digital · Business', sphereClass: 'sphere-digital',
+    proName: 'Lucas Bernard', retrib: '6% du devis signé', proTitle: 'Développeur web · Bayonne',
+    proPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&h=240&fit=crop',
+    title: '-15% + 3 mois maintenance offerts',
+    desc: 'Création de site vitrine ou e-commerce. Remise de 15% + maintenance pendant 3 mois.',
+    oldPrice: 'À partir 1 500€', newPrice: '-15%', priceColor: '#0284C7',
+    stars: '★★★★★', activations: 6, avatars: [
+      { bg: '#dbeafe', color: '#1e40af', text: 'AC' },
+      { bg: '#dcfce7', color: '#166534', text: 'MR' }
+    ],
+    urgency: '⏰ 4 places ce mois',
+    waText: 'Bonjour Jean-Philippe ! Je veux activer le privilège développement web avec Lucas Bernard (-15% + maintenance). Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 6, sphere: 'mariage',
+    sphereLabel: '💒 Mariage · Événementiel', sphereClass: 'sphere-mariage',
+    proName: 'Émilie Rousseau', retrib: '8% du contrat sur mariage ou événement', proTitle: 'Wedding planner · Pau',
+    proPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1626785774625-0b1c2c4eab67?w=500&h=240&fit=crop',
+    title: 'Consultation mariage offerte',
+    desc: 'Séance de 2h pour définir votre vision, votre budget et votre planning. Sans engagement.',
+    oldPrice: '180€', newPrice: 'Offerte', priceColor: '#9D174D',
+    stars: '★★★★★', activations: 11, avatars: [
+      { bg: '#fce7f3', color: '#9d174d', text: 'SV' },
+      { bg: '#ede9fe', color: '#5b21b6', text: 'JC' },
+      { bg: '#fef3c7', color: '#78350f', text: 'NP' }
+    ],
+    urgency: '⏰ Pour mariages 2026',
+    waText: 'Bonjour Jean-Philippe ! Je voudrais activer la consultation mariage offerte avec Émilie Rousseau. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 7, sphere: 'finance',
+    sphereLabel: '⚖️ Finance · Juridique', sphereClass: 'sphere-finance',
+    proName: 'Thomas Laurent', retrib: '15€ fixe puis % si dossier ouvert', proTitle: 'Avocat d\'affaires · Bayonne',
+    proPhoto: 'https://images.unsplash.com/photo-1556157382-97eda2f9e2bf?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=500&h=240&fit=crop',
+    title: 'Consultation juridique offerte',
+    desc: '45 min de consultation pour analyser votre situation et identifier les risques. Tous domaines.',
+    oldPrice: '150€', newPrice: 'Gratuit', priceColor: '#5B21B6',
+    stars: '★★★★★', activations: 7, avatars: [
+      { bg: '#ede9fe', color: '#5b21b6', text: 'MD' },
+      { bg: '#dbeafe', color: '#1e40af', text: 'CT' }
+    ],
+    urgency: '⏰ 5 créneaux restants',
+    waText: 'Bonjour Jean-Philippe ! Je souhaite activer la consultation juridique offerte avec Thomas Laurent. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 8, sphere: 'finance',
+    sphereLabel: '⚖️ Finance · Patrimoine', sphereClass: 'sphere-finance',
+    proName: 'Isabelle Morin', retrib: '6% honoraires sur contrat de gestion', proTitle: 'CGP · Dax',
+    proPhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=500&h=240&fit=crop',
+    title: 'Bilan patrimonial complet offert',
+    desc: 'Analyse de votre situation patrimoniale, fiscale et successorale. Recommandations personnalisées.',
+    oldPrice: '350€', newPrice: 'Offert', priceColor: '#5B21B6',
+    stars: '★★★★★', activations: 5, avatars: [
+      { bg: '#fce7f3', color: '#9d174d', text: 'JL' },
+      { bg: '#dcfce7', color: '#166534', text: 'PB' }
+    ],
+    urgency: '⏰ Seulement 3 bilans/mois',
+    waText: 'Bonjour Jean-Philippe ! Je veux activer le bilan patrimonial offert avec Isabelle Morin (CGP). Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  },
+  {
+    id: 9, sphere: 'artisans',
+    sphereLabel: '✨ Créateurs · Artisans', sphereClass: 'sphere-artisans',
+    proName: 'Léa Dumont', retrib: '10€ fixe par atelier réservé', proTitle: 'Potière · Céramiste · Dax',
+    proPhoto: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=68&h=68&fit=crop&crop=faces',
+    bgPhoto: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=500&h=240&fit=crop',
+    title: 'Atelier céramique découverte offert',
+    desc: 'Séance de 2h30 en petit groupe (4 pers. max). Matériel fourni. Création à emporter.',
+    oldPrice: '65€', newPrice: 'Offert', priceColor: '#C04828',
+    stars: '★★★★★', activations: 19, avatars: [
+      { bg: '#fce7f3', color: '#9d174d', text: 'NB' },
+      { bg: '#fef3c7', color: '#78350f', text: 'AL' },
+      { bg: '#dcfce7', color: '#166534', text: 'VC' }
+    ],
+    urgency: '⏰ Week-ends de mai uniquement',
+    waText: 'Bonjour Jean-Philippe ! Je veux activer l\'atelier céramique offert avec Léa Dumont. Mon prénom : [PRÉNOM] · Ma ville : [VILLE]'
+  }
+];
+
+// ── STATE ──
+let currentFilter = 'all';
+let currentIndex = 0;
+let filtered = [...OFFERS];
+let favorites = [];
+let pendingOffer = null;
+let isDragging = false;
+let startX = 0, startY = 0, currentX = 0;
+let cardEl = null;
+
+// ── FILTER ──
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentIndex = 0;
+  filtered = f === 'all' ? [...OFFERS] : OFFERS.filter(o => o.sphere === f);
+  renderCard();
+  renderDots();
+}
+
+// ── RENDER DOTS ──
+function renderDots() {
+  const wrap = document.getElementById('progressDots');
+  const total = Math.min(filtered.length, 9);
+  wrap.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === currentIndex ? ' active' : i < currentIndex ? ' done' : '');
+    wrap.appendChild(d);
+  }
+  if (filtered.length > 9) {
+    const more = document.createElement('div');
+    more.style.cssText = 'font-size:10px;color:rgba(255,255,255,.3);align-self:center;margin-left:2px';
+    more.textContent = `+${filtered.length - 9}`;
+    wrap.appendChild(more);
+  }
+}
+
+// ── RENDER CARD ──
+function renderCard() {
+  const stack = document.getElementById('stack');
+  const emptyState = document.getElementById('emptyState');
+  const actions = document.getElementById('actions');
+  const dots = document.getElementById('progressDots');
+
+  // Remove old card
+  const old = stack.querySelector('.offer-card');
+  if (old) old.remove();
+
+  if (currentIndex >= filtered.length) {
+    emptyState.style.display = 'flex';
+    actions.style.display = 'none';
+    dots.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  actions.style.display = 'flex';
+  dots.style.display = 'flex';
+
+  const offer = filtered[currentIndex];
+  const isFav = favorites.some(f => f.id === offer.id);
+  const avHtml = offer.avatars.map(av =>
+    `<div class="card-av" style="background:${av.bg};color:${av.color}">${av.text}</div>`
+  ).join('');
+
+  const card = document.createElement('div');
+  card.className = 'offer-card card-enter';
+  card.innerHTML = `
+    <div class="swipe-yes"><div class="stamp">ACTIVÉ !</div></div>
+    <div class="swipe-no"><div class="stamp">PASS</div></div>
+    <div class="swipe-save"><div class="stamp">♡ SAUVÉ</div></div>
+
+    <div class="card-img">
+      <img src="${offer.bgPhoto}" alt="${offer.title}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div class="card-img-overlay"></div>
+      <div class="card-sphere-tag ${offer.sphereClass}">${offer.sphereLabel}</div>
+      ${offer.urgency ? `<div class="card-urgency">${offer.urgency}</div>` : ''}
+      <div class="card-pro-row">
+        <img class="card-pro-img" src="${offer.proPhoto}" alt="${offer.proName}" loading="lazy" style="width:46px;height:46px;min-width:46px;max-width:46px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(255,255,255,.9);flex-shrink:0;display:block;box-shadow:0 2px 10px rgba(0,0,0,.25)">
+        <div>
+          <div class="card-pro-name">${offer.proName}</div>
+          <div class="card-pro-title">${offer.proTitle}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="card-offer-box">
+        <div class="card-offer-label">✦ Privilège exclusif via Jean Roth</div>
+        <div class="card-offer-title">${offer.title}</div>
+        <div class="card-price-row">
+          <span class="card-price-old">${offer.oldPrice}</span>
+          <span class="card-price-new" style="color:${offer.priceColor}">${offer.newPrice}</span>
+        </div>
+        <div class="card-desc">${offer.desc}</div>
+      </div>
+      <div class="card-social">
+        <div class="card-avs">${avHtml}</div>
+        <div class="card-social-txt"><strong>${offer.activations} personnes</strong> ont activé</div>
+        <div class="card-stars">${offer.stars}</div>
+      </div>
+      ${offer.retrib ? `<div class="card-retrib"><div class="card-retrib-label">💼 PARTAGEZ · GAGNEZ</div><div class="card-retrib-text">Rétribution de <strong>${offer.proName}</strong> pour chaque client : <strong>${offer.retrib}</strong></div></div>` : ''}
+    </div>
+    <div class="card-counter">${currentIndex + 1} / ${filtered.length}</div>
+  `;
+
+  stack.appendChild(card);
+  cardEl = card;
+  attachDragListeners(card, offer);
+}
+
+// ── DRAG LOGIC ──
+function attachDragListeners(card, offer) {
+  // Touch
+  card.addEventListener('touchstart', e => onDragStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  card.addEventListener('touchmove', e => { e.preventDefault(); onDragMove(e.touches[0].clientX); }, { passive: false });
+  card.addEventListener('touchend', () => onDragEnd(offer));
+  // Mouse
+  card.addEventListener('mousedown', e => onDragStart(e.clientX, e.clientY));
+  document.addEventListener('mousemove', e => { if (isDragging) onDragMove(e.clientX); });
+  document.addEventListener('mouseup', () => { if (isDragging) onDragEnd(offer); });
+}
+
+function onDragStart(x, y) {
+  isDragging = true;
+  startX = x;
+  startY = y;
+  currentX = 0;
+  cardEl.style.transition = 'none';
+}
+
+function onDragMove(x) {
+  if (!isDragging || !cardEl) return;
+  currentX = x - startX;
+  const rotate = currentX * 0.08;
+  cardEl.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+
+  // Show overlays
+  const yes = cardEl.querySelector('.swipe-yes');
+  const no = cardEl.querySelector('.swipe-no');
+  const threshold = 60;
+  if (currentX > threshold) {
+    yes.style.opacity = Math.min((currentX - threshold) / 80, 1);
+    no.style.opacity = 0;
+  } else if (currentX < -threshold) {
+    no.style.opacity = Math.min((-currentX - threshold) / 80, 1);
+    yes.style.opacity = 0;
+  } else {
+    yes.style.opacity = 0;
+    no.style.opacity = 0;
+  }
+}
+
+function onDragEnd(offer) {
+  if (!isDragging || !cardEl) return;
+  isDragging = false;
+  const threshold = 100;
+
+  if (currentX > threshold) {
+    flyOut('right', offer);
+  } else if (currentX < -threshold) {
+    flyOut('left', offer);
+  } else {
+    // Snap back
+    cardEl.style.transition = 'transform .4s cubic-bezier(.32,1,.28,1)';
+    cardEl.style.transform = 'none';
+    cardEl.querySelector('.swipe-yes').style.opacity = 0;
+    cardEl.querySelector('.swipe-no').style.opacity = 0;
+  }
+}
+
+function flyOut(direction, offer) {
+  if (!cardEl) return;
+  const x = direction === 'right' ? 600 : direction === 'left' ? -600 : 0;
+  const y = direction === 'up' ? -600 : 0;
+  const rotate = direction === 'right' ? 30 : direction === 'left' ? -30 : 0;
+
+  cardEl.style.transition = 'transform .4s cubic-bezier(.4,0,1,1), opacity .4s ease';
+  cardEl.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${rotate}deg)`;
+  cardEl.style.opacity = '0';
+
+  if (direction === 'right') {
+    openWASheet(offer);
+  } else if (direction === 'up') {
+    addToFavorites(offer);
+  }
+
+  setTimeout(() => {
+    currentIndex++;
+    renderCard();
+    renderDots();
+  }, 350);
+}
+
+// ── SWIPE BUTTONS ──
+function swipeCard(dir) {
+  if (!cardEl || currentIndex >= filtered.length) return;
+  const offer = filtered[currentIndex];
+
+  if (dir === 'up') {
+    // Save animation
+    const save = cardEl.querySelector('.swipe-save');
+    save.style.opacity = '1';
+    setTimeout(() => flyOut('up', offer), 150);
+  } else {
+    flyOut(dir, offer);
+  }
+}
+
+// ── FAVORITES ──
+function addToFavorites(offer) {
+  if (!favorites.some(f => f.id === offer.id)) {
+    favorites.push(offer);
+    document.getElementById('favCount').textContent = favorites.length;
+    showToast('❤️', `Ajouté : ${offer.proName}`);
+  } else {
+    showToast('ℹ️', 'Déjà dans vos favoris');
+  }
+}
+
+function openFavs() {
+  const overlay = document.getElementById('favsOverlay');
+  const list = document.getElementById('favsList');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (favorites.length === 0) {
+    list.innerHTML = '<div class="favs-empty"><div class="favs-empty-icon">❤️</div>Aucun favori pour l\'instant.<br>Swipez vers le haut pour sauvegarder des offres.</div>';
+    return;
+  }
+
+  list.innerHTML = favorites.map(offer => `
+    <div class="fav-item">
+      <img class="fav-thumb" src="${offer.bgPhoto}" alt="${offer.proName}">
+      <div class="fav-info">
+        <div class="fav-name">${offer.proName}</div>
+        <div class="fav-offer">${offer.title}</div>
+      </div>
+      <div class="fav-price" style="color:${offer.priceColor}">${offer.newPrice}</div>
+      <button class="fav-wa-btn" onclick="openWASheetFromFav(${offer.id})">💬 Activer</button>
+    </div>
+  `).join('');
+}
+
+function closeFavs() {
+  document.getElementById('favsOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openWASheetFromFav(id) {
+  const offer = OFFERS.find(o => o.id === id);
+  if (offer) { closeFavs(); openWASheet(offer); }
+}
+
+// ── WA SHEET ──
+function openWASheet(offer) {
+  pendingOffer = offer;
+  document.getElementById('waTitle').textContent = `Activer : ${offer.title}`;
+  document.getElementById('waOfferPro').textContent = `${offer.proName} · ${offer.proTitle}`;
+  document.getElementById('waOfferTitle').textContent = offer.title;
+  document.getElementById('waOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWA() {
+  document.getElementById('waOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  pendingOffer = null;
+}
+
+function confirmWA() {
+  if (!pendingOffer) return;
+  const msg = encodeURIComponent(pendingOffer.waText);
+  window.open(`https://wa.me/33768233347?text=${msg}`, '_blank');
+  closeWA();
+  showToast('💬', 'WhatsApp ouvert !');
+}
+
+// ── RESET ──
+function resetCards() {
+  currentIndex = 0;
+  filtered = currentFilter === 'all' ? [...OFFERS] : OFFERS.filter(o => o.sphere === currentFilter);
+  renderCard();
+  renderDots();
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── KEYBOARD SHORTCUTS (desktop) ──
+document.addEventListener('keydown', e => {
+  if (document.getElementById('waOverlay').classList.contains('open') || 
+      document.getElementById('favsOverlay').classList.contains('open')) {
+    if (e.key === 'Escape') { closeWA(); closeFavs(); }
+    return;
+  }
+  if (e.key === 'ArrowRight') swipeCard('right');
+  if (e.key === 'ArrowLeft') swipeCard('left');
+  if (e.key === 'ArrowUp') swipeCard('up');
+});
+
+// ── INIT ──
+renderCard();
+renderDots();
+</script>
+</body>
+</html>
