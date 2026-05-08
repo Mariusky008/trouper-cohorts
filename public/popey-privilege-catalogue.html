@@ -443,6 +443,360 @@ html[data-live-ready="0"] .main > .sphere-divider {
   color: rgba(255,255,255,.85);
 }
 
+/* Swipe design v2 (aligned with poepy-catalogue-swipe.html) */
+.swp-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.swp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 10px;
+}
+.swp-logo {
+  font-family: var(--fd);
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+}
+.swp-logo span { color: var(--teal); }
+.swp-month {
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+  margin-top: 2px;
+}
+.swp-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.swp-fav-btn {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  color: rgba(255,255,255,.76);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.swp-fav-count {
+  margin-left: 6px;
+  background: var(--teal);
+  color: #07100C;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.swp-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.swp-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 14px 10px;
+}
+.swp-filters::-webkit-scrollbar { display: none; }
+.swp-pill {
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,.14);
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.swp-pill.active {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.swp-progress {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px 8px;
+}
+.swp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+}
+.swp-dot.active { width: 18px; border-radius: 3px; background: var(--teal); }
+.swp-dot.done { background: rgba(255,255,255,.36); }
+.swp-stack-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+}
+.swp-stack {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: min(66vh, 560px);
+}
+.swp-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+}
+.swp-ghost.g2 { transform: scale(.94) translateY(11px); }
+.swp-ghost.g1 { transform: scale(.97) translateY(6px); }
+.swp-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--cream);
+  box-shadow: 0 26px 60px rgba(0,0,0,.35);
+  touch-action: none;
+  user-select: none;
+}
+.swp-overlay-stamp {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.swp-overlay-stamp .stamp {
+  font-family: var(--fd);
+  font-size: 52px;
+  font-weight: 900;
+  color: #fff;
+  border: 5px solid #fff;
+  border-radius: 12px;
+  padding: 8px 20px;
+}
+.swp-overlay-stamp.yes { background: linear-gradient(135deg, rgba(0,196,140,.9), rgba(0,196,140,.65)); }
+.swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
+.swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7)); }
+.swp-media {
+  height: 38%;
+  position: relative;
+}
+.swp-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.swp-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.55) 100%);
+}
+.swp-sphere {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(10,12,16,.52);
+  border: 1px solid rgba(255,255,255,.22);
+}
+.swp-pro {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.swp-pro-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.88);
+  object-fit: cover;
+}
+.swp-pro-name {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.swp-pro-job {
+  color: rgba(255,255,255,.78);
+  font-size: 11px;
+}
+.swp-body {
+  height: 62%;
+  overflow: hidden;
+  padding: 10px 12px 8px;
+}
+.swp-offer {
+  background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
+  border: 1.5px solid rgba(200,168,75,.25);
+  border-radius: 12px;
+  padding: 9px 11px;
+}
+.swp-offer-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: #C8A84B;
+}
+.swp-offer-title {
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+.swp-offer-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 3px;
+}
+.swp-old { font-size: 13px; color: #9AA0AA; text-decoration: line-through; }
+.swp-new { font-family: var(--fd); font-size: 20px; font-weight: 900; }
+.swp-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #5A5D68;
+  line-height: 1.45;
+  display: -webkit-box;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.swp-retrib {
+  margin-top: 7px;
+  border-radius: 10px;
+  background: #F0FDF4;
+  border: 1.5px solid rgba(0,168,112,.2);
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #374151;
+}
+.swp-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 11px;
+  color: #9AA0AA;
+}
+.swp-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 14px calc(14px + var(--safe-bottom));
+}
+.swp-act-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.swp-act {
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 22px;
+}
+.swp-act.skip {
+  width: 54px; height: 54px;
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.74);
+}
+.swp-act.save {
+  width: 54px; height: 54px;
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.74);
+}
+.swp-act.like {
+  width: 72px; height: 72px;
+  background: #25D366;
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(37,211,102,.4);
+}
+.swp-act-label {
+  font-size: 10px;
+  color: rgba(255,255,255,.42);
+  font-weight: 700;
+}
+.swp-empty {
+  text-align: center;
+  color: rgba(255,255,255,.8);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: auto;
+  padding: 18px;
+}
+.swp-favs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(12px);
+  z-index: 300;
+  display: none;
+  align-items: flex-end;
+}
+.swp-favs-overlay.open { display: flex; }
+.swp-favs-panel {
+  width: 100%;
+  background: var(--cream);
+  border-radius: 26px 26px 0 0;
+  max-height: 78vh;
+  overflow: hidden;
+}
+.swp-favs-head {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.swp-favs-title {
+  font-family: var(--fd);
+  font-size: 20px;
+}
+.swp-favs-list {
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(78vh - 58px);
+}
+.swp-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-90px);
+  background: rgba(8,10,13,.94);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 12px;
+  z-index: 320;
+  transition: transform .28s ease;
+}
+.swp-toast.show { transform: translateX(-50%) translateY(0); }
+
 /* ── LOCAL EVENTS FEED ── */
 .events-section {
   margin: 0 0 24px;
@@ -1600,20 +1954,50 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 <!-- SWIPE MODE -->
 <div class="swipe-overlay" id="swipeOverlay" onclick="closeSwipeIfBackdrop(event)">
-  <div class="swipe-topbar">
-    <div>
-      <div class="swipe-top-title">Mode Swipe</div>
-      <div class="swipe-top-sub">Activez les offres en un geste</div>
+  <div class="swp-app">
+    <div class="swp-header">
+      <div>
+        <div class="swp-logo">Pop<span>ey</span></div>
+        <div class="swp-month">Catalogue Privilège · Swipe</div>
+      </div>
+      <div class="swp-right">
+        <button class="swp-fav-btn" id="swipeFavBtn">❤️ Favoris <span class="swp-fav-count" id="swipeFavCount">0</span></button>
+        <button class="swp-close" onclick="closeSwipeMode()" aria-label="Fermer le mode swipe">✕</button>
+      </div>
     </div>
-    <button class="swipe-close" onclick="closeSwipeMode()" aria-label="Fermer le mode swipe">✕</button>
-  </div>
-  <div class="swipe-count" id="swipeCount">Chargement…</div>
-  <div class="swipe-stage" id="swipeStage"></div>
-  <div class="swipe-actions">
-    <button class="swipe-btn pass" id="swipePassBtn">Passer</button>
-    <button class="swipe-btn like" id="swipeLikeBtn">Activer</button>
+    <div class="swp-filters" id="swipeFilters"></div>
+    <div class="swp-progress" id="swipeProgress"></div>
+    <div class="swp-stack-wrap">
+      <div class="swp-stack" id="swipeStage"></div>
+    </div>
+    <div class="swp-actions">
+      <div class="swp-act-wrap">
+        <button class="swp-act skip" id="swipePassBtn">✕</button>
+        <div class="swp-act-label">Passer</div>
+      </div>
+      <div class="swp-act-wrap">
+        <button class="swp-act save" id="swipeSaveBtn">♡</button>
+        <div class="swp-act-label">Favoris</div>
+      </div>
+      <div class="swp-act-wrap">
+        <button class="swp-act like" id="swipeLikeBtn">💬</button>
+        <div class="swp-act-label">Activer</div>
+      </div>
+    </div>
   </div>
 </div>
+
+<div class="swp-favs-overlay" id="swipeFavsOverlay" onclick="closeSwipeFavsIfBackdrop(event)">
+  <div class="swp-favs-panel">
+    <div class="swp-favs-head">
+      <div class="swp-favs-title">❤️ Mes favoris</div>
+      <button class="swipe-close" onclick="closeSwipeFavs()">✕</button>
+    </div>
+    <div class="swp-favs-list" id="swipeFavsList"></div>
+  </div>
+</div>
+
+<div class="swp-toast" id="swipeToast">Ajouté aux favoris</div>
 
 <!-- STICKY BOTTOM -->
 <div class="sticky-bottom">
@@ -1762,9 +2146,13 @@ var swipeState = {
   open: false,
   queue: [],
   index: 0,
+  sphere: 'all',
+  favorites: [],
   dragging: false,
   startX: 0,
-  dx: 0
+  startY: 0,
+  dx: 0,
+  dy: 0
 };
 function updateViewportVars() {
   var vv = window.visualViewport;
@@ -2114,7 +2502,12 @@ function renderLocalEventsFeed() {
   if (!feedEl) return;
   var city = liveState.cityLabel || 'Bayonne';
   if (titleEl) titleEl.textContent = "Ce qu'il se passe à " + city + " cette semaine";
-  if (seeAllEl) seeAllEl.href = '/marketplace?ville=' + encodeURIComponent(String(city).toLowerCase().replace(/\s+/g, '-'));
+  if (seeAllEl) {
+    var citySlug = encodeURIComponent(String(city).toLowerCase().replace(/\s+/g, '-'));
+    seeAllEl.href = 'https://www.popey.academy/marketplace?ville=' + citySlug;
+    seeAllEl.target = '_top';
+    seeAllEl.rel = 'noopener';
+  }
 
   var sponsors = liveState.places
     .slice(0, 3)
@@ -2245,128 +2638,166 @@ function renderLiveOffers() {
   main.appendChild(root);
 }
 
-function getSwipePool() {
-  if (!liveState.loaded) return [];
-  if (liveState.activeSphere === 'all') return liveState.places.slice();
-  return liveState.places.filter(function (p) { return p.sphere === liveState.activeSphere; });
+function getSwipePoolBySphere(sphere) {
+  var pool = liveState.places.slice();
+  if (sphere && sphere !== 'all') pool = pool.filter(function (p) { return p.sphere === sphere; });
+  return pool;
+}
+
+function renderSwipeFilters() {
+  var wrap = document.getElementById('swipeFilters');
+  if (!wrap) return;
+  var available = ['all', 'sante', 'habitat', 'digital', 'finance'].filter(function (s) {
+    if (s === 'all') return true;
+    return liveState.places.some(function (p) { return p.sphere === s; });
+  });
+  wrap.innerHTML = available.map(function (s) {
+    var label = s === 'all' ? '✦ Tout' : ((sphereMeta[s] || sphereMeta.digital).icon + ' ' + (sphereMeta[s] || sphereMeta.digital).label.split(' · ')[0]);
+    return '<button class="swp-pill' + (swipeState.sphere === s ? ' active' : '') + '" data-sphere="' + s + '">' + label + '</button>';
+  }).join('');
+}
+
+function renderSwipeProgress() {
+  var wrap = document.getElementById('swipeProgress');
+  if (!wrap) return;
+  var total = swipeState.queue.length;
+  var current = Math.min(swipeState.index, total - 1);
+  if (!total) { wrap.innerHTML = ''; return; }
+  var limit = Math.min(total, 9);
+  var html = '';
+  for (var i = 0; i < limit; i += 1) {
+    var cls = 'swp-dot';
+    if (i < current) cls += ' done';
+    if (i === current) cls += ' active';
+    html += '<span class="' + cls + '"></span>';
+  }
+  wrap.innerHTML = html;
 }
 
 function renderSwipeStage() {
   var stage = document.getElementById('swipeStage');
-  var count = document.getElementById('swipeCount');
-  if (!stage || !count) return;
-  if (!swipeState.queue.length) {
-    stage.innerHTML = '<div class="swipe-empty">Aucune offre à swiper pour ce filtre. Revenez sur “Tous” ou changez de catégorie.</div>';
-    count.textContent = '0 offre';
+  if (!stage) return;
+  stage.innerHTML = '<div class="swp-ghost g2"></div><div class="swp-ghost g1"></div>';
+  if (!swipeState.queue.length || swipeState.index >= swipeState.queue.length) {
+    stage.innerHTML += '<div class="swp-empty">Vous avez parcouru toutes les offres pour ce filtre.</div>';
+    renderSwipeProgress();
     return;
   }
-  if (swipeState.index >= swipeState.queue.length) {
-    stage.innerHTML = '<div class="swipe-empty">Vous avez parcouru toutes les offres. Fermez ce mode ou relancez pour recommencer.</div>';
-    count.textContent = 'Terminé';
-    return;
-  }
-
-  var current = swipeState.queue[swipeState.index];
-  var next = swipeState.queue[swipeState.index + 1] || null;
-  count.textContent = (swipeState.index + 1) + ' / ' + swipeState.queue.length + ' offres';
-  stage.innerHTML = '';
-
-  if (next) {
-    stage.appendChild(buildSwipeCard(next, true));
-  }
-  stage.appendChild(buildSwipeCard(current, false));
+  var place = swipeState.queue[swipeState.index];
+  stage.appendChild(buildSwipeCard(place));
+  renderSwipeProgress();
 }
 
-function buildSwipeCard(place, isPeek) {
-  var meta = sphereMeta[place.sphere] || sphereMeta.digital;
+function buildSwipeCard(place) {
   var card = document.createElement('article');
-  card.className = 'swipe-card' + (isPeek ? ' peek' : '');
-  if (!isPeek) {
-    card.setAttribute('data-top-card', '1');
-    wireSwipeDrag(card);
-  }
-  var media = '';
-  if (place.image) {
-    media = '<div class="swipe-card-media"><img src="' + place.image + '" alt="' + place.name + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swipe-card-media-fallback\').style.display=\'flex\'"><div class="swipe-card-media-fallback" style="display:none">' + meta.icon + '</div></div>';
-  } else {
-    media = '<div class="swipe-card-media"><div class="swipe-card-media-fallback">' + meta.icon + '</div></div>';
-  }
+  card.className = 'swp-card';
+  card.setAttribute('data-top-card', '1');
+  var meta = sphereMeta[place.sphere] || sphereMeta.digital;
   var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
+  var rewardText = liveState.rewardText || 'une commission';
+  var media = place.image
+    ? '<img src="' + place.image + '" alt="' + place.name + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'"><div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:52px;background:#d1d5db;">' + meta.icon + '</div>'
+    : '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:52px;background:#d1d5db;">' + meta.icon + '</div>';
   card.innerHTML =
-    '<div class="swipe-stamp pass">PASS</div>' +
-    '<div class="swipe-stamp like">LIKE</div>' +
-    media +
-    '<div class="swipe-card-content">' +
-      '<div class="swipe-chip" style="color:' + meta.color + '">' + meta.icon + ' ' + meta.label + '</div>' +
-      '<div class="swipe-card-title">' + place.name + '</div>' +
-      '<div class="swipe-card-role">' + place.metier + ' · 📍 ' + (liveState.cityLabel || 'Dax') + '</div>' +
-      '<div class="swipe-card-badge">' +
-        '<div class="swipe-card-badge-top">Privilège via ' + (liveState.refFirstName || 'votre contact') + '</div>' +
-        '<div class="swipe-card-badge-main">' + place.badge + '</div>' +
-        '<div class="swipe-card-desc"><s>' + oldPrice + '</s> · ' + place.desc + '</div>' +
-      '</div>' +
-    '</div>';
+    '<div class="swp-overlay-stamp yes"><div class="stamp">ACTIVÉ</div></div>' +
+    '<div class="swp-overlay-stamp no"><div class="stamp">PASS</div></div>' +
+    '<div class="swp-overlay-stamp save"><div class="stamp">♡ SAUVÉ</div></div>' +
+    '<div class="swp-media">' + media + '<div class="swp-gradient"></div><div class="swp-sphere">' + meta.icon + ' ' + meta.label + '</div><div class="swp-pro"><img class="swp-pro-photo" src="' + (place.image || '') + '" alt="' + place.name + '"><div><div class="swp-pro-name">' + place.name + '</div><div class="swp-pro-job">' + place.metier + ' · ' + (liveState.cityLabel || 'Dax') + '</div></div></div></div>' +
+    '<div class="swp-body"><div class="swp-offer"><div class="swp-offer-label">✦ Privilège exclusif via ' + (liveState.refFirstName || 'Jean') + '</div><div class="swp-offer-title">' + place.badge + '</div><div class="swp-offer-price"><span class="swp-old">' + oldPrice + '</span><span class="swp-new" style="color:' + meta.color + '">' + place.badge + '</span></div><div class="swp-desc">' + place.desc + '</div></div><div class="swp-retrib">Rétribution de <strong>' + place.name + '</strong>: <strong>' + rewardText + '</strong></div></div><div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
+  wireSwipeDrag(card, place);
   return card;
 }
 
-function animateSwipeOut(direction, callback) {
-  var card = document.querySelector('.swipe-card[data-top-card="1"]');
-  if (!card) { callback(); return; }
-  var x = direction === 'right' ? 520 : -520;
-  card.style.transition = 'transform .26s ease, opacity .26s ease';
-  card.style.transform = 'translateX(' + x + 'px) rotate(' + (direction === 'right' ? 16 : -16) + 'deg)';
-  card.style.opacity = '0';
-  setTimeout(callback, 240);
+function showSwipeToast(text) {
+  var el = document.getElementById('swipeToast');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  window.clearTimeout(showSwipeToast._t);
+  showSwipeToast._t = window.setTimeout(function () { el.classList.remove('show'); }, 1800);
 }
 
-function swipeNext(direction) {
-  if (swipeState.index >= swipeState.queue.length) return;
+function animateSwipeOut(direction, callback) {
+  var card = document.querySelector('.swp-card[data-top-card="1"]');
+  if (!card) { callback(); return; }
+  var x = direction === 'right' ? 560 : direction === 'left' ? -560 : 0;
+  var y = direction === 'up' ? -560 : 0;
+  var rot = direction === 'right' ? 26 : direction === 'left' ? -26 : 0;
+  card.style.transition = 'transform .36s cubic-bezier(.4,0,1,1), opacity .28s ease';
+  card.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px) rotate(' + rot + 'deg)';
+  card.style.opacity = '0';
+  window.setTimeout(callback, 300);
+}
+
+function swipeAdvance(direction) {
   animateSwipeOut(direction, function () {
     swipeState.index += 1;
     renderSwipeStage();
   });
 }
 
-async function swipeLikeCurrent() {
+async function swipeCardAction(direction) {
+  if (swipeState.index >= swipeState.queue.length) return;
   var place = swipeState.queue[swipeState.index];
   if (!place) return;
+  if (direction === 'left') {
+    swipeAdvance('left');
+    return;
+  }
+  if (direction === 'up') {
+    if (!swipeState.favorites.some(function (f) { return f.id === place.id; })) {
+      swipeState.favorites.push(place);
+      var countEl = document.getElementById('swipeFavCount');
+      if (countEl) countEl.textContent = String(swipeState.favorites.length);
+      showSwipeToast('Ajouté aux favoris');
+    } else {
+      showSwipeToast('Déjà dans vos favoris');
+    }
+    swipeAdvance('up');
+    return;
+  }
   var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14));
-  if (ok) swipeNext('right');
+  if (ok) swipeAdvance('right');
 }
 
-function wireSwipeDrag(card) {
+function wireSwipeDrag(card, place) {
+  var yes = card.querySelector('.swp-overlay-stamp.yes');
+  var no = card.querySelector('.swp-overlay-stamp.no');
+  var save = card.querySelector('.swp-overlay-stamp.save');
   function onStart(evt) {
     swipeState.dragging = true;
     swipeState.dx = 0;
+    swipeState.dy = 0;
     swipeState.startX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    swipeState.startY = evt.touches ? evt.touches[0].clientY : evt.clientY;
     card.style.transition = 'none';
   }
   function onMove(evt) {
     if (!swipeState.dragging) return;
     var x = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    var y = evt.touches ? evt.touches[0].clientY : evt.clientY;
     swipeState.dx = x - swipeState.startX;
-    var rot = swipeState.dx / 20;
-    card.style.transform = 'translateX(' + swipeState.dx + 'px) rotate(' + rot + 'deg)';
-    card.style.opacity = String(Math.max(0.35, 1 - Math.abs(swipeState.dx) / 260));
-    card.classList.remove('show-like', 'show-pass');
-    if (swipeState.dx > 20) card.classList.add('show-like');
-    if (swipeState.dx < -20) card.classList.add('show-pass');
+    swipeState.dy = y - swipeState.startY;
+    var rot = swipeState.dx * 0.08;
+    card.style.transform = 'translateX(' + swipeState.dx + 'px) translateY(' + swipeState.dy + 'px) rotate(' + rot + 'deg)';
+    yes.style.opacity = '0';
+    no.style.opacity = '0';
+    save.style.opacity = '0';
+    if (swipeState.dx > 60) yes.style.opacity = String(Math.min((swipeState.dx - 60) / 80, 1));
+    else if (swipeState.dx < -60) no.style.opacity = String(Math.min((-swipeState.dx - 60) / 80, 1));
+    else if (swipeState.dy < -70 && Math.abs(swipeState.dx) < 70) save.style.opacity = String(Math.min((-swipeState.dy - 70) / 80, 1));
   }
   function onEnd() {
     if (!swipeState.dragging) return;
     swipeState.dragging = false;
-    if (Math.abs(swipeState.dx) > 95) {
-      if (swipeState.dx > 0) {
-        swipeLikeCurrent();
-      } else {
-        swipeNext('left');
-      }
-      return;
-    }
-    card.style.transition = 'transform .18s ease, opacity .18s ease';
-    card.style.transform = '';
-    card.style.opacity = '';
-    card.classList.remove('show-like', 'show-pass');
+    if (swipeState.dx > 110) { swipeCardAction('right'); return; }
+    if (swipeState.dx < -110) { swipeCardAction('left'); return; }
+    if (swipeState.dy < -120 && Math.abs(swipeState.dx) < 80) { swipeCardAction('up'); return; }
+    card.style.transition = 'transform .28s cubic-bezier(.32,1,.28,1)';
+    card.style.transform = 'none';
+    yes.style.opacity = '0';
+    no.style.opacity = '0';
+    save.style.opacity = '0';
   }
   card.addEventListener('touchstart', onStart, { passive: true });
   card.addEventListener('touchmove', onMove, { passive: true });
@@ -2376,13 +2807,49 @@ function wireSwipeDrag(card) {
   window.addEventListener('mouseup', onEnd);
 }
 
+function renderSwipeFavs() {
+  var list = document.getElementById('swipeFavsList');
+  if (!list) return;
+  if (!swipeState.favorites.length) {
+    list.innerHTML = '<div class="swp-empty" style="color:#6B7280">Aucun favori pour le moment.</div>';
+    return;
+  }
+  list.innerHTML = swipeState.favorites.map(function (p) {
+    return '<div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px;margin-bottom:8px;">'
+      + '<img src="' + (p.image || '') + '" alt="' + p.name + '" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#e5e7eb;">'
+      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.badge + '</div></div>'
+      + '<button class="btn-wa js-fav-activate" data-place-id="' + p.id + '" style="width:auto;padding:9px 12px;border-radius:10px;font-size:12px;">💬</button>'
+      + '</div>';
+  }).join('');
+}
+
+function openSwipeFavs() {
+  var overlay = document.getElementById('swipeFavsOverlay');
+  if (!overlay) return;
+  renderSwipeFavs();
+  overlay.classList.add('open');
+}
+
+function closeSwipeFavs() {
+  var overlay = document.getElementById('swipeFavsOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+}
+
+function closeSwipeFavsIfBackdrop(event) {
+  var overlay = document.getElementById('swipeFavsOverlay');
+  if (event && overlay && event.target === overlay) closeSwipeFavs();
+}
+
 function openSwipeMode() {
   var overlay = document.getElementById('swipeOverlay');
   if (!overlay) return;
-  swipeState.queue = getSwipePool();
+  swipeState.sphere = 'all';
+  swipeState.queue = getSwipePoolBySphere('all');
   swipeState.index = 0;
   swipeState.open = true;
   overlay.classList.add('open');
+  renderSwipeFilters();
   renderSwipeStage();
 }
 
@@ -2526,6 +2993,22 @@ document.addEventListener('click', function (event) {
     openSwipeMode();
     return;
   }
+  var swipePill = event.target.closest('.swp-pill');
+  if (swipePill) {
+    var sphere = swipePill.getAttribute('data-sphere') || 'all';
+    swipeState.sphere = sphere;
+    swipeState.queue = getSwipePoolBySphere(sphere);
+    swipeState.index = 0;
+    renderSwipeFilters();
+    renderSwipeStage();
+    return;
+  }
+  var favActivate = event.target.closest('.js-fav-activate');
+  if (favActivate) {
+    event.preventDefault();
+    activateLive(favActivate.getAttribute('data-place-id'), 'PRIV');
+    return;
+  }
   var button = event.target.closest('.js-live-activate');
   if (!button) return;
   event.preventDefault();
@@ -2534,9 +3017,13 @@ document.addEventListener('click', function (event) {
 
 document.addEventListener('DOMContentLoaded', function () {
   var passBtn = document.getElementById('swipePassBtn');
+  var saveBtn = document.getElementById('swipeSaveBtn');
   var likeBtn = document.getElementById('swipeLikeBtn');
-  if (passBtn) passBtn.addEventListener('click', function () { swipeNext('left'); });
-  if (likeBtn) likeBtn.addEventListener('click', function () { swipeLikeCurrent(); });
+  var favBtn = document.getElementById('swipeFavBtn');
+  if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
+  if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('up'); });
+  if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('right'); });
+  if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   initLiveCatalog();
   var params = new URLSearchParams(window.location.search);
   if (params.get('mode') === 'swipe') {
