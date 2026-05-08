@@ -227,6 +227,9 @@ export default async function AdminHumainMarketplacePage({
   const localEventsCities = Array.from(new Set(snapshot.localEvents.map((event) => event.city))).sort((a, b) =>
     a.localeCompare(b, "fr"),
   );
+  const localEventsCityOptions = Array.from(new Set([...snapshot.cities, ...localEventsCities, defaultCity])).sort((a, b) =>
+    a.localeCompare(b, "fr"),
+  );
 
   return (
     <section className="space-y-5">
@@ -1017,15 +1020,26 @@ export default async function AdminHumainMarketplacePage({
               <span className="rounded border bg-white px-2 py-1 text-[11px] font-black uppercase tracking-wide text-black/70">Ouvrir &gt;</span>
             </summary>
 
-            <form action="/api/admin/humain/marketplace/local-events" method="post" className="mt-3 rounded-lg border p-3">
+            <form action="/api/admin/humain/marketplace/local-events" method="post" encType="multipart/form-data" className="mt-3 rounded-lg border p-3">
               <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
               <input type="hidden" name="intent" value="create" />
               <div className="grid gap-2 md:grid-cols-2">
-                <input name="city" defaultValue={defaultCity} className="h-9 rounded border bg-background px-2 text-xs" placeholder="Ville (ex: Bordeaux)" />
+                <select name="city" defaultValue={defaultCity} className="h-9 rounded border bg-background px-2 text-xs">
+                  {localEventsCityOptions.map((city) => (
+                    <option key={`local-event-create-city-${city}`} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
                 <input name="title" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Titre (ex: Concert sunset)" />
                 <input name="day_label" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Jour/heure (ex: Vendredi · 19h)" />
                 <input name="place_label" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Lieu (ex: Bordeaux centre)" />
-                <input name="emoji" defaultValue="🎵" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Emoji (ex: 🎵)" />
+                <input
+                  name="emoji"
+                  defaultValue="🎵"
+                  className="h-9 rounded border bg-background px-2 text-xs"
+                  placeholder="Visuel court (emoji, optionnel)"
+                />
                 <input name="badge" className="h-9 rounded border bg-background px-2 text-xs" placeholder="Badge (ex: Gratuit)" />
                 <input
                   name="sponsor_names"
@@ -1033,6 +1047,12 @@ export default async function AdminHumainMarketplacePage({
                   placeholder="Sponsors (ex: Pedro · Popey · Antonin)"
                 />
                 <input name="image_url" className="h-9 rounded border bg-background px-2 text-xs md:col-span-2" placeholder="Image URL (optionnel)" />
+                <input
+                  name="image_file"
+                  type="file"
+                  accept="image/*"
+                  className="h-9 rounded border bg-background px-2 text-xs md:col-span-2 file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
+                />
                 <input
                   name="details"
                   className="h-9 rounded border bg-background px-2 text-xs md:col-span-2"
@@ -1059,19 +1079,37 @@ export default async function AdminHumainMarketplacePage({
                     </p>
                     <div className="space-y-2">
                       {cityEvents.map((event) => (
-                        <form key={event.id} action="/api/admin/humain/marketplace/local-events" method="post" className="rounded border bg-slate-50 p-2">
+                        <form
+                          key={event.id}
+                          action="/api/admin/humain/marketplace/local-events"
+                          method="post"
+                          encType="multipart/form-data"
+                          className="rounded border bg-slate-50 p-2"
+                        >
                           <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                           <input type="hidden" name="intent" value="update" />
                           <input type="hidden" name="event_id" value={event.id} />
                           <div className="grid gap-2 md:grid-cols-2">
-                            <input name="city" defaultValue={event.city} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <select name="city" defaultValue={event.city} className="h-8 rounded border bg-white px-2 text-xs">
+                              {localEventsCityOptions.map((cityOption) => (
+                                <option key={`local-event-update-city-${event.id}-${cityOption}`} value={cityOption}>
+                                  {cityOption}
+                                </option>
+                              ))}
+                            </select>
                             <input name="title" defaultValue={event.title} className="h-8 rounded border bg-white px-2 text-xs" />
                             <input name="day_label" defaultValue={event.day_label} className="h-8 rounded border bg-white px-2 text-xs" />
                             <input name="place_label" defaultValue={event.place_label} className="h-8 rounded border bg-white px-2 text-xs" />
-                            <input name="emoji" defaultValue={event.emoji || ""} className="h-8 rounded border bg-white px-2 text-xs" />
+                            <input name="emoji" defaultValue={event.emoji || ""} className="h-8 rounded border bg-white px-2 text-xs" placeholder="Visuel court (emoji)" />
                             <input name="badge" defaultValue={event.badge || ""} className="h-8 rounded border bg-white px-2 text-xs" />
                             <input name="sponsor_names" defaultValue={event.sponsor_names || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
                             <input name="image_url" defaultValue={event.image_url || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
+                            <input
+                              name="image_file"
+                              type="file"
+                              accept="image/*"
+                              className="h-8 rounded border bg-white px-2 text-xs md:col-span-2 file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
+                            />
                             <input name="details" defaultValue={event.details || ""} className="h-8 rounded border bg-white px-2 text-xs md:col-span-2" />
                             <input name="sort_order" type="number" min="0" step="1" defaultValue={String(event.sort_order || 100)} className="h-8 rounded border bg-white px-2 text-xs" />
                             <select name="status" defaultValue={event.status || "active"} className="h-8 rounded border bg-white px-2 text-xs">
