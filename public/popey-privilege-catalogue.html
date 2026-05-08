@@ -964,11 +964,11 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-activate-overlay.open { display: flex; }
 .swp-activate-sheet {
-  width: min(760px, 100%);
+  width: min(760px, 92vw);
   background: var(--cream);
-  border-radius: 28px 28px 0 0;
-  padding: 14px 16px calc(16px + var(--safe-bottom));
-  box-shadow: 0 -12px 40px rgba(0,0,0,.25);
+  border-radius: 34px 34px 0 0;
+  padding: 16px 28px calc(18px + var(--safe-bottom));
+  box-shadow: 0 -16px 54px rgba(0,0,0,.28);
   animation: swpActivateUp .2s ease-out;
 }
 @keyframes swpActivateUp {
@@ -976,79 +976,97 @@ html[data-live-ready="0"] .main > .sphere-divider {
   to { transform: translateY(0); opacity: 1; }
 }
 .swp-activate-handle {
-  width: 62px;
-  height: 5px;
+  width: 70px;
+  height: 6px;
   border-radius: 999px;
   background: rgba(0,0,0,.12);
-  margin: 2px auto 10px;
+  margin: 2px auto 14px;
 }
 .swp-activate-icon {
-  font-size: 40px;
+  font-size: 54px;
   text-align: center;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .swp-activate-title {
   font-family: var(--fd);
-  font-size: 26px;
+  font-size: clamp(26px, 3.5vw, 52px);
   line-height: 1.1;
   text-align: center;
   color: var(--t);
 }
 .swp-activate-sub {
-  margin-top: 8px;
-  font-size: 16px;
-  line-height: 1.45;
+  margin: 10px auto 0;
+  max-width: 640px;
+  font-size: 18px;
+  line-height: 1.4;
   text-align: center;
   color: var(--t2);
 }
 .swp-activate-offer {
-  margin-top: 14px;
+  margin-top: 18px;
   border-radius: 16px;
   border: 1.5px solid rgba(200,168,75,.25);
   background: linear-gradient(135deg, #FDFAF2, #FDF5DC);
-  padding: 12px 14px;
+  padding: 14px 16px;
 }
 .swp-activate-pro {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
   color: #1A1C22;
 }
 .swp-activate-badge {
-  margin-top: 4px;
+  margin-top: 6px;
   font-family: var(--fd);
-  font-size: 34px;
+  font-size: 42px;
   line-height: 1;
   font-weight: 800;
   color: #1A1C22;
 }
 .swp-activate-cta {
-  margin-top: 16px;
+  margin-top: 20px;
   width: 100%;
   border: none;
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 19px 18px;
   font-family: var(--fd);
-  font-size: 20px;
+  font-size: clamp(22px, 3vw, 44px);
+  line-height: 1;
   font-weight: 800;
   background: #25D366;
   color: #fff;
   box-shadow: 0 10px 30px rgba(37,211,102,.35);
   cursor: pointer;
 }
+.swp-activate-cta:disabled {
+  opacity: .72;
+  cursor: wait;
+}
 .swp-activate-cancel {
-  margin-top: 10px;
+  margin-top: 12px;
   width: 100%;
   border: none;
   background: transparent;
   color: #9AA0AA;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   padding: 8px 6px 4px;
   cursor: pointer;
 }
 
 @media (max-width: 600px) {
+  .swp-activate-sheet {
+    width: 100%;
+    border-radius: 26px 26px 0 0;
+    padding: 14px 14px calc(14px + var(--safe-bottom));
+  }
+  .swp-activate-icon { font-size: 42px; margin-bottom: 8px; }
+  .swp-activate-title { font-size: 24px; }
+  .swp-activate-sub { font-size: 13px; max-width: none; }
+  .swp-activate-pro { font-size: 14px; }
+  .swp-activate-badge { font-size: 33px; }
+  .swp-activate-cta { font-size: 24px; border-radius: 16px; padding: 16px 14px; }
+  .swp-activate-cancel { font-size: 16px; }
   .swipe-overlay {
     align-items: stretch;
     justify-content: flex-start;
