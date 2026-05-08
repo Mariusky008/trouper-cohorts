@@ -554,27 +554,35 @@ html[data-live-ready="0"] .main > .sphere-divider {
   position: relative;
   width: 100%;
   max-width: 420px;
-  height: min(66vh, 560px);
+  height: 100%;
+  max-height: 540px;
 }
 .swp-ghost {
   position: absolute;
   inset: 0;
   border-radius: 26px;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  transform-origin: bottom center;
+  pointer-events: none;
 }
-.swp-ghost.g2 { transform: scale(.94) translateY(11px); }
-.swp-ghost.g1 { transform: scale(.97) translateY(6px); }
+.swp-ghost.g2 { transform: scale(.94) translateY(10px); z-index: 1; }
+.swp-ghost.g1 { transform: scale(.97) translateY(5px); z-index: 2; background: rgba(255,255,255,.06); }
 .swp-card {
   position: absolute;
   inset: 0;
   border-radius: 26px;
   overflow: hidden;
   background: var(--cream);
-  box-shadow: 0 26px 60px rgba(0,0,0,.35);
+  box-shadow: 0 32px 80px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.1);
+  cursor: grab;
   touch-action: none;
   user-select: none;
+  z-index: 10;
+  will-change: transform;
+  transition: box-shadow .3s;
 }
+.swp-card:active { cursor: grabbing; }
 .swp-overlay-stamp {
   position: absolute;
   inset: 0;
@@ -587,12 +595,19 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-overlay-stamp .stamp {
   font-family: var(--fd);
-  font-size: 52px;
+  font-size: 64px;
   font-weight: 900;
   color: #fff;
   border: 5px solid #fff;
   border-radius: 12px;
   padding: 8px 20px;
+  letter-spacing: 2px;
+}
+.swp-overlay-stamp.yes .stamp { transform: rotate(-15deg); }
+.swp-overlay-stamp.no .stamp { transform: rotate(15deg); }
+.swp-overlay-stamp.save .stamp {
+  font-size: 52px;
+  transform: none;
 }
 .swp-overlay-stamp.yes { background: linear-gradient(135deg, rgba(0,196,140,.9), rgba(0,196,140,.65)); }
 .swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
@@ -752,16 +767,24 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-actions {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 12px 14px calc(14px + var(--safe-bottom));
+  padding: 14px 20px 20px;
+  padding-bottom: calc(20px + var(--safe-bottom));
 }
 .swp-act-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .swp-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 50%;
   cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
   font-size: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }
 .swp-act.skip {
   width: 54px; height: 54px;
@@ -783,8 +806,9 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-act-label {
   font-size: 10px;
-  color: rgba(255,255,255,.42);
-  font-weight: 700;
+  font-weight: 600;
+  color: rgba(255,255,255,.3);
+  letter-spacing: .04em;
 }
 .swp-empty {
   text-align: center;
