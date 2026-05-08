@@ -619,7 +619,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
 .swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7)); }
 .swp-media {
-  height: 40%;
+  height: 35%;
   position: relative;
 }
 .swp-media img {
@@ -670,6 +670,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   padding: 8px 10px;
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.26));
+  display: none;
 }
 .swp-pro-photo {
   width: 56px;
@@ -961,7 +962,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
     max-height: 100%;
   }
   .swp-media {
-    height: 42%;
+    height: 32%;
   }
   .swp-sphere,
   .swp-urgency {
@@ -3158,7 +3159,7 @@ function buildSwipeCard(place) {
     '<div class="swp-overlay-stamp yes"><div class="stamp">ACTIVÉ</div></div>' +
     '<div class="swp-overlay-stamp no"><div class="stamp">PASS</div></div>' +
     '<div class="swp-overlay-stamp save"><div class="stamp">♡ SAUVÉ</div></div>' +
-    '<div class="swp-media">' + media + '<div class="swp-gradient"></div><div class="swp-sphere">' + meta.icon + ' ' + themeLabel + '</div><div class="swp-urgency">' + urgency + '</div><div class="swp-pro">' + proPhoto + '<div><div class="swp-pro-name">' + displayName + '</div><div class="swp-pro-job">' + String(place.metier || themeLabel) + ' · ' + (liveState.cityLabel || 'Dax') + '</div></div></div></div>' +
+    '<div class="swp-media">' + media + '<div class="swp-gradient"></div><div class="swp-sphere">' + meta.icon + ' ' + themeLabel + '</div><div class="swp-urgency">' + urgency + '</div></div>' +
     '<div class="swp-body"><div class="swp-identity"><div class="swp-id-left">' + bodyPhoto + '<div style="min-width:0;"><div class="swp-id-name">' + displayName + '</div><div class="swp-id-meta">' + String(place.metier || themeLabel) + ' · ' + (liveState.cityLabel || 'Dax') + '</div></div></div><div class="swp-id-tags"><span class="swp-id-tag theme">' + themeLabel + '</span><span class="swp-id-tag exp">' + urgencyShort + '</span></div></div><div class="swp-offer"><div class="swp-offer-label">✦ Privilège exclusif via ' + (liveState.refFirstName || 'Jean') + '</div><div class="swp-offer-title">' + place.badge + '</div><div class="swp-offer-price"><span class="swp-old">' + oldPrice + '</span><span class="swp-new" style="color:' + meta.color + '">' + place.badge + '</span></div><div class="swp-desc">' + place.desc + '</div></div><div class="swp-social"><div class="swp-avatars"><div class="swp-av" style="background:#dcfce7;color:#166534">' + avatarA + '</div><div class="swp-av" style="background:#dbeafe;color:#1e40af">' + avatarB + '</div><div class="swp-av" style="background:#fef3c7;color:#92400e">' + avatarC + '</div></div><div class="swp-social-txt"><strong>' + Math.max(2, Number(place.activeCount || 2)) + ' personnes</strong> ont activé</div><div class="swp-stars">★★★★★</div></div><div class="swp-retrib">Rétribution de <strong>' + place.name + '</strong>: <strong>' + rewardText + '</strong></div></div><div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   wireSwipeDrag(card, place);
   return card;
