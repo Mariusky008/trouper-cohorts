@@ -504,7 +504,7 @@ html { scroll-behavior: smooth; }
       </div>
 
       <div style="animation:hFadeUp .6s ease .08s both">
-        <div style="font-size:clamp(14px,1.6vw,19px);color:rgba(245,242,236,.4);font-weight:300;margin-bottom:6px">Votre offre sur</div>
+        <div style="font-size:clamp(14px,1.6vw,19px);color:#FFFFFF;font-weight:300;margin-bottom:6px">Votre offre sur</div>
         <div style="font-family:var(--fd);font-size:clamp(70px,9.5vw,116px);font-weight:900;color:var(--teal);line-height:.86;letter-spacing:-3px;animation:numGlow 3s ease-in-out infinite">100<span style="font-size:.62em;letter-spacing:-2px"> 000</span></div>
         <div style="font-family:var(--fd);font-size:clamp(26px,3.8vw,48px);font-weight:900;color:rgba(245,242,236,.88);letter-spacing:-1px;line-height:1;margin-top:6px">téléphones ce mois-ci.</div>
       </div>
@@ -832,9 +832,9 @@ html { scroll-behavior: smooth; }
         <!-- Simulator header -->
         <div style="background:linear-gradient(135deg,#0D1F18,#0A1810);padding:32px 40px;position:relative;overflow:hidden">
           <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.15),transparent 70%)"></div>
-          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:10px">Faites le test vous-même</div>
-          <div style="font-family:var(--fd);font-size:clamp(20px,3vw,30px);font-weight:900;color:var(--paper);margin-bottom:6px">Combien de pros Popey dans votre ville ?</div>
-          <div style="font-size:14px;color:rgba(245,242,236,.45)">Bougez le curseur et regardez les chiffres exploser.</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:10px">Visualisez l'effet réseau</div>
+          <div style="font-family:var(--fd);font-size:clamp(20px,3vw,30px);font-weight:900;color:var(--paper);margin-bottom:6px">Combien de professionnels Popey dans votre ville ?</div>
+          <div style="font-size:14px;color:rgba(245,242,236,.45)">Voyez comment une offre peut circuler localement.</div>
         </div>
 
         <!-- Slider area -->
@@ -843,7 +843,7 @@ html { scroll-behavior: smooth; }
             <div style="font-family:var(--fd);font-size:72px;font-weight:900;color:var(--teal);line-height:1;min-width:90px" id="simProsVal">10</div>
             <div>
               <div style="font-size:16px;font-weight:600;color:var(--paper);margin-bottom:2px">professionnels actifs</div>
-              <div style="font-size:13px;color:rgba(245,242,236,.4)" id="simDesc2">10 pros : votre offre touche 2 250 personnes directement.</div>
+              <div style="font-size:13px;color:rgba(245,242,236,.4)" id="simDesc2">10 pros : votre offre circule deja localement de contact en contact.</div>
             </div>
           </div>
           <input type="range" id="simSlider" min="1" max="150" value="10" oninput="updateSim()" style="width:100%;height:6px;border-radius:3px;outline:none;cursor:pointer;accent-color:var(--teal);margin-bottom:10px">
@@ -855,51 +855,45 @@ html { scroll-behavior: smooth; }
         <!-- Results grid -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,.06)">
           <div style="background:#060810;padding:24px 20px;text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(155,143,255,.7);margin-bottom:8px">📱 Contacts WhatsApp</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(155,143,255,.7);margin-bottom:8px">📱 Contacts cumulés</div>
             <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--paper);line-height:1" id="r1">2 500</div>
-            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">Pros × leurs contacts</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">Pros × contacts cumulés</div>
           </div>
           <div style="background:#060810;padding:24px 20px;text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,166,35,.7);margin-bottom:8px">👁 Voient votre offre</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,166,35,.7);margin-bottom:8px">👁 Diffusion estimée</div>
             <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--amber);line-height:1" id="r2">2 250</div>
-            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">90% ouvrent WhatsApp</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">Ouvertures estimées du catalogue</div>
           </div>
           <div style="background:#060810;padding:24px 20px;text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:8px">🔥 Portée virale</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:8px">🔁 Diffusion secondaire</div>
             <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--teal);line-height:1" id="r3">56 250</div>
-            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">10% relayeurs × 250</div>
+            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:6px">Bouche-a-oreille possible</div>
           </div>
           <div style="background:rgba(0,196,140,.07);padding:24px 20px;text-align:center;position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal)"></div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.8);margin-bottom:8px">🚀 Total smartphones</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.8);margin-bottom:8px">🚀 Visibilité locale totale</div>
             <div style="font-family:var(--fd);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--teal);line-height:1" id="r4">58 500</div>
-            <div style="font-size:11px;color:rgba(0,196,140,.5);margin-top:6px">Votre offre vue ce mois</div>
+            <div style="font-size:11px;color:rgba(0,196,140,.5);margin-top:6px">Portée cumulée dans la ville</div>
           </div>
         </div>
 
-        <!-- CA estimation -->
-        <div style="padding:24px 40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;background:rgba(255,255,255,.01);border-top:1px solid rgba(255,255,255,.06)">
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-bottom:6px">Demandes reçues</div>
-            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--paper)" id="d1">45</div>
-            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:3px">2% des vues</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.3);margin-bottom:6px">Ventes conclues</div>
-            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--amber)" id="d2">23</div>
-            <div style="font-size:11px;color:rgba(245,242,236,.3);margin-top:3px">50% conversion</div>
-          </div>
-          <div style="text-align:center;background:rgba(0,196,140,.06);border-radius:12px;padding:14px">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:6px">CA réseau / mois</div>
-            <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--teal)" id="d3">3 450€</div>
-            <div style="font-size:11px;color:rgba(0,196,140,.4);margin-top:3px">Panier moyen 150€</div>
+        <div style="padding:22px 40px;background:rgba(255,255,255,.01);border-top:1px solid rgba(255,255,255,.06)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,236,.45);margin-bottom:5px">Portée locale estimée</div>
+              <div style="font-size:13px;color:rgba(245,242,236,.7);line-height:1.55">Le catalogue circule par relations de confiance, pas comme une pub classique.</div>
+            </div>
+            <div style="background:rgba(0,196,140,.07);border:1px solid rgba(0,196,140,.25);border-radius:12px;padding:14px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,196,140,.75);margin-bottom:5px">Visibilité locale</div>
+              <div style="font-size:13px;color:rgba(245,242,236,.88);line-height:1.55">Une diffusion impossible a obtenir seul, surtout au lancement.</div>
+            </div>
           </div>
         </div>
 
         <!-- Quote bottom -->
         <div style="padding:24px 40px;background:rgba(0,196,140,.04);border-top:1px solid rgba(0,196,140,.1);text-align:center">
           <p style="font-family:var(--fd);font-size:clamp(14px,2vw,18px);font-style:italic;color:rgba(245,242,236,.6);max-width:700px;margin:0 auto;line-height:1.5">
-            "Seul vous touchez <span style="color:var(--paper)">250 personnes</span>. Avec <span style="color:var(--teal)" id="simQuote">50</span> partenaires Popey, votre offre circule sur <span style="color:var(--teal)" id="r4b">58 500</span> smartphones — <span style="color:var(--amber)">plus puissant qu'une campagne d'affichage.</span>"
+            "Seul, vous touchez <span style="color:var(--paper)">250 personnes</span>. Avec <span style="color:var(--teal)" id="simQuote">50</span> professionnels Popey, votre offre peut circuler sur <span style="color:var(--teal)" id="r4b">58 500</span> smartphones de la ville."
           </p>
         </div>
 
@@ -1152,6 +1146,18 @@ html { scroll-behavior: smooth; }
       </div>
     </div>
 
+    <div class="fade-up" style="margin-bottom:14px;position:relative;overflow:hidden;border-radius:18px;border:1.5px solid rgba(0,196,140,.24);background:linear-gradient(110deg,rgba(0,196,140,.16),rgba(245,166,35,.12) 45%,rgba(0,196,140,.08));padding:18px 20px">
+      <div style="position:absolute;inset:-130% auto auto -35%;width:220px;height:300%;transform:rotate(20deg);background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.36),rgba(255,255,255,0));animation:shimmer 2.6s ease-in-out infinite"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:2">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(6,11,18,.08);border:1px solid rgba(6,11,18,.12);border-radius:999px;padding:5px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:8px">Transition Popey</div>
+          <div style="font-family:var(--fd);font-size:26px;font-weight:900;line-height:1.02;color:#053F33">Le vrai cadeau, il est là ✨</div>
+          <div style="font-size:13px;color:#0A2A24;line-height:1.6;font-weight:600;margin-top:6px">0 risque + faible coût d'acquisition, et en plus votre offre tourne dans toute la ville.</div>
+        </div>
+        <div style="font-size:34px;animation:pulse 1.9s ease-in-out infinite">👇</div>
+      </div>
+    </div>
+
     <div class="fade-up" style="background:linear-gradient(180deg,rgba(0,196,140,.08),rgba(245,242,236,0) 65%),var(--paper);border:1.5px solid var(--border);border-radius:22px;padding:30px;position:relative;overflow:hidden;margin-bottom:24px">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--teal),#22C55E,var(--amber))"></div>
       <div style="display:grid;grid-template-columns:1.25fr .75fr;gap:20px;align-items:center">
@@ -1196,9 +1202,8 @@ html { scroll-behavior: smooth; }
     <div class="fade-up" style="background:var(--ink);border-radius:18px;padding:28px 32px;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--amber),transparent)"></div>
       <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:12px">💡 Popey, c'est l'économie du bon sens</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px">
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:6px">Pour le Pro</div><div style="font-size:12px;color:rgba(245,242,236,.55);line-height:1.65">Une pub d'une valeur de <strong style="color:var(--paper)">7 000€ offerte</strong> et des clients qualifiés <strong style="color:var(--paper)">2× moins chers qu'ailleurs</strong>. Abonnement remboursé par les commissions.</div></div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">Pour le Particulier</div><div style="font-size:12px;color:rgba(245,242,236,.55);line-height:1.65">Transformez votre répertoire en <strong style="color:var(--paper)">250€/mois</strong> tout en offrant des bons plans à vos amis. 1 tap suffit.</div></div>
       </div>
       <div style="text-align:center"><a href="#contact" style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#040E0A;padding:14px 30px;border-radius:100px;font-family:var(--fb);font-size:14px;font-weight:700;text-decoration:none">Rejoindre le réseau — 0€ pour démarrer →</a></div>
     </div>
@@ -1285,9 +1290,6 @@ function updateSim(){
   var vues = Math.round(contacts * 0.9);
   var virale = Math.round(vues * 0.1 * 250);
   var total = vues + virale;
-  var demandes = Math.round(total * 0.02);
-  var ventes = Math.round(demandes * 0.5);
-  var ca = ventes * 150;
   
   function fmt(n){return n.toLocaleString('fr-FR')}
   
@@ -1297,12 +1299,9 @@ function updateSim(){
   if(e('r3')) e('r3').textContent = fmt(virale);
   if(e('r4')) e('r4').textContent = fmt(total);
   if(e('r4b')) e('r4b').textContent = fmt(total);
-  if(e('d1')) e('d1').textContent = fmt(demandes);
-  if(e('d2')) e('d2').textContent = fmt(ventes);
-  if(e('d3')) e('d3').textContent = fmt(ca) + '€';
   if(e('simQuote')) e('simQuote').textContent = n;
   
-  var descs = [[1,"Vous seul : 225 personnes touchées directement. C'est un bon début."],[5,"5 pros : votre offre voyage dans 1 125 contacts. L'effet réseau commence."],[10,"10 pros : 2 250 vues directes + portée virale massive. Ça devient sérieux."],[20,"20 pros : 4 500 contacts directs. Votre ville vous connaît."],[50,"50 pros : 11 250 vues + explosion virale. L'agglo entière vous voit."],[100,"100 pros : une machine de guerre commerciale. Quasi impossible à ignorer."],[150,"150 pros — réseau complet : saturation totale de votre agglomération. 🚀"]];
+  var descs = [[1,"Vous seul : votre offre reste limitee a votre cercle direct."],[5,"5 pros : la diffusion locale commence a prendre."],[10,"10 pros : votre offre circule deja de telephone en telephone."],[20,"20 pros : vous gagnez une visibilite locale concrete."],[50,"50 pros : votre catalogue devient visible a l'echelle de la ville."],[100,"100 pros : la diffusion locale est tres large et repetitive."],[150,"150 pros : reseau mature, forte presence locale."]];
   var closest = descs.reduce(function(a,b){return Math.abs(b[0]-n)<Math.abs(a[0]-n)?b:a;});
   if(e('simDesc2')) e('simDesc2').textContent = closest[1];
 }
