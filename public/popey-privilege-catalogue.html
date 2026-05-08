@@ -1032,8 +1032,12 @@ html[data-live-ready="0"] .main > .sphere-divider {
   padding: 20px 18px;
   font-family: var(--fd);
   font-size: clamp(21px, 2.8vw, 40px);
-  line-height: 1;
+  line-height: 1.02;
   font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-1px);
   background: #25D366;
   color: #fff;
   box-shadow: 0 10px 30px rgba(37,211,102,.35);
@@ -1066,7 +1070,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   .swp-activate-sub { font-size: 13px; max-width: none; }
   .swp-activate-pro { font-size: 14px; }
   .swp-activate-badge { font-size: 33px; }
-  .swp-activate-cta { font-size: 22px; border-radius: 16px; min-height: 60px; padding: 16px 14px; }
+  .swp-activate-cta { font-size: 22px; border-radius: 16px; min-height: 60px; padding: 16px 14px; transform: translateY(0); }
   .swp-activate-cancel { font-size: 16px; }
   .swipe-overlay {
     align-items: stretch;
