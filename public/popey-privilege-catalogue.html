@@ -231,6 +231,180 @@ html[data-live-ready="0"] .main > .sphere-divider {
   flex-shrink: 0;
 }
 
+/* Swipe fullscreen mode */
+.swipe-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  background: linear-gradient(160deg, #080A0D, #141823);
+  color: #fff;
+  display: none;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.swipe-overlay.open { display: flex; }
+.swipe-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.swipe-top-title {
+  font-family: var(--fd);
+  font-size: 20px;
+  line-height: 1;
+}
+.swipe-top-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.65);
+  margin-top: 4px;
+}
+.swipe-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.swipe-count {
+  margin: 10px 14px 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.58);
+}
+.swipe-stage {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+  margin: 10px 14px 0;
+}
+.swipe-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  color: #121418;
+  box-shadow: 0 20px 48px rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.18);
+  touch-action: pan-y;
+  transform-origin: 50% 82%;
+}
+.swipe-card.peek {
+  transform: scale(.96) translateY(8px);
+  opacity: .6;
+}
+.swipe-card-media {
+  height: 48%;
+  min-height: 220px;
+  background: linear-gradient(135deg,#e5e7eb,#d1d5db);
+}
+.swipe-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.swipe-card-media-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+}
+.swipe-card-content {
+  padding: 14px;
+}
+.swipe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,.1);
+}
+.swipe-card-title {
+  font-family: var(--fd);
+  font-size: 25px;
+  margin-top: 8px;
+  line-height: 1.05;
+}
+.swipe-card-role {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #4b5563;
+}
+.swipe-card-badge {
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.1);
+  background: #f8fafc;
+  padding: 10px 11px;
+}
+.swipe-card-badge-top {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+.swipe-card-badge-main {
+  font-family: var(--fd);
+  font-size: 20px;
+  margin-top: 4px;
+}
+.swipe-card-desc {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.45;
+}
+.swipe-actions {
+  padding: 12px 14px calc(14px + var(--safe-bottom));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.swipe-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 13px 12px;
+  font-family: var(--fd);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.swipe-btn.pass {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+}
+.swipe-btn.like {
+  background: #25D366;
+  color: #052b12;
+}
+.swipe-empty {
+  margin: auto 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.06);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,.85);
+}
+
 /* ── LOCAL EVENTS FEED ── */
 .events-section {
   margin: 0 0 24px;
@@ -927,7 +1101,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   </div>
 
   <div class="swipe-hero">
-    <a class="swipe-link" href="?mode=swipe">
+    <a class="swipe-link" href="?mode=swipe" id="openSwipeMode">
       <div class="swipe-main">
         <div class="swipe-icon">🃏</div>
         <div>
@@ -1386,6 +1560,23 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 </div>
 
+<!-- SWIPE MODE -->
+<div class="swipe-overlay" id="swipeOverlay" onclick="closeSwipeIfBackdrop(event)">
+  <div class="swipe-topbar">
+    <div>
+      <div class="swipe-top-title">Mode Swipe</div>
+      <div class="swipe-top-sub">Activez les offres en un geste</div>
+    </div>
+    <button class="swipe-close" onclick="closeSwipeMode()" aria-label="Fermer le mode swipe">✕</button>
+  </div>
+  <div class="swipe-count" id="swipeCount">Chargement…</div>
+  <div class="swipe-stage" id="swipeStage"></div>
+  <div class="swipe-actions">
+    <button class="swipe-btn pass" id="swipePassBtn">Passer</button>
+    <button class="swipe-btn like" id="swipeLikeBtn">Activer</button>
+  </div>
+</div>
+
 <!-- STICKY BOTTOM -->
 <div class="sticky-bottom">
   <div class="sb-inner">
@@ -1529,6 +1720,14 @@ html[data-live-ready="0"] .main > .sphere-divider {
 var currentWA = {};
 var clientLeadResolver = null;
 var generatedApporteurLinks = null;
+var swipeState = {
+  open: false,
+  queue: [],
+  index: 0,
+  dragging: false,
+  startX: 0,
+  dx: 0
+};
 function updateViewportVars() {
   var vv = window.visualViewport;
   var height = vv ? vv.height : window.innerHeight;
@@ -2008,6 +2207,153 @@ function renderLiveOffers() {
   main.appendChild(root);
 }
 
+function getSwipePool() {
+  if (!liveState.loaded) return [];
+  if (liveState.activeSphere === 'all') return liveState.places.slice();
+  return liveState.places.filter(function (p) { return p.sphere === liveState.activeSphere; });
+}
+
+function renderSwipeStage() {
+  var stage = document.getElementById('swipeStage');
+  var count = document.getElementById('swipeCount');
+  if (!stage || !count) return;
+  if (!swipeState.queue.length) {
+    stage.innerHTML = '<div class="swipe-empty">Aucune offre à swiper pour ce filtre. Revenez sur “Tous” ou changez de catégorie.</div>';
+    count.textContent = '0 offre';
+    return;
+  }
+  if (swipeState.index >= swipeState.queue.length) {
+    stage.innerHTML = '<div class="swipe-empty">Vous avez parcouru toutes les offres. Fermez ce mode ou relancez pour recommencer.</div>';
+    count.textContent = 'Terminé';
+    return;
+  }
+
+  var current = swipeState.queue[swipeState.index];
+  var next = swipeState.queue[swipeState.index + 1] || null;
+  count.textContent = (swipeState.index + 1) + ' / ' + swipeState.queue.length + ' offres';
+  stage.innerHTML = '';
+
+  if (next) {
+    stage.appendChild(buildSwipeCard(next, true));
+  }
+  stage.appendChild(buildSwipeCard(current, false));
+}
+
+function buildSwipeCard(place, isPeek) {
+  var meta = sphereMeta[place.sphere] || sphereMeta.digital;
+  var card = document.createElement('article');
+  card.className = 'swipe-card' + (isPeek ? ' peek' : '');
+  if (!isPeek) {
+    card.setAttribute('data-top-card', '1');
+    wireSwipeDrag(card);
+  }
+  var media = '';
+  if (place.image) {
+    media = '<div class="swipe-card-media"><img src="' + place.image + '" alt="' + place.name + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swipe-card-media-fallback\').style.display=\'flex\'"><div class="swipe-card-media-fallback" style="display:none">' + meta.icon + '</div></div>';
+  } else {
+    media = '<div class="swipe-card-media"><div class="swipe-card-media-fallback">' + meta.icon + '</div></div>';
+  }
+  var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
+  card.innerHTML =
+    media +
+    '<div class="swipe-card-content">' +
+      '<div class="swipe-chip" style="color:' + meta.color + '">' + meta.icon + ' ' + meta.label + '</div>' +
+      '<div class="swipe-card-title">' + place.name + '</div>' +
+      '<div class="swipe-card-role">' + place.metier + ' · 📍 ' + (liveState.cityLabel || 'Dax') + '</div>' +
+      '<div class="swipe-card-badge">' +
+        '<div class="swipe-card-badge-top">Privilège via ' + (liveState.refFirstName || 'votre contact') + '</div>' +
+        '<div class="swipe-card-badge-main">' + place.badge + '</div>' +
+        '<div class="swipe-card-desc"><s>' + oldPrice + '</s> · ' + place.desc + '</div>' +
+      '</div>' +
+    '</div>';
+  return card;
+}
+
+function animateSwipeOut(direction, callback) {
+  var card = document.querySelector('.swipe-card[data-top-card="1"]');
+  if (!card) { callback(); return; }
+  var x = direction === 'right' ? 520 : -520;
+  card.style.transition = 'transform .26s ease, opacity .26s ease';
+  card.style.transform = 'translateX(' + x + 'px) rotate(' + (direction === 'right' ? 16 : -16) + 'deg)';
+  card.style.opacity = '0';
+  setTimeout(callback, 240);
+}
+
+function swipeNext(direction) {
+  if (swipeState.index >= swipeState.queue.length) return;
+  animateSwipeOut(direction, function () {
+    swipeState.index += 1;
+    renderSwipeStage();
+  });
+}
+
+async function swipeLikeCurrent() {
+  var place = swipeState.queue[swipeState.index];
+  if (!place) return;
+  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14));
+  if (ok) swipeNext('right');
+}
+
+function wireSwipeDrag(card) {
+  function onStart(evt) {
+    swipeState.dragging = true;
+    swipeState.dx = 0;
+    swipeState.startX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    card.style.transition = 'none';
+  }
+  function onMove(evt) {
+    if (!swipeState.dragging) return;
+    var x = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    swipeState.dx = x - swipeState.startX;
+    var rot = swipeState.dx / 20;
+    card.style.transform = 'translateX(' + swipeState.dx + 'px) rotate(' + rot + 'deg)';
+    card.style.opacity = String(Math.max(0.35, 1 - Math.abs(swipeState.dx) / 260));
+  }
+  function onEnd() {
+    if (!swipeState.dragging) return;
+    swipeState.dragging = false;
+    if (Math.abs(swipeState.dx) > 95) {
+      if (swipeState.dx > 0) {
+        swipeLikeCurrent();
+      } else {
+        swipeNext('left');
+      }
+      return;
+    }
+    card.style.transition = 'transform .18s ease, opacity .18s ease';
+    card.style.transform = '';
+    card.style.opacity = '';
+  }
+  card.addEventListener('touchstart', onStart, { passive: true });
+  card.addEventListener('touchmove', onMove, { passive: true });
+  card.addEventListener('touchend', onEnd, { passive: true });
+  card.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+}
+
+function openSwipeMode() {
+  var overlay = document.getElementById('swipeOverlay');
+  if (!overlay) return;
+  swipeState.queue = getSwipePool();
+  swipeState.index = 0;
+  swipeState.open = true;
+  overlay.classList.add('open');
+  renderSwipeStage();
+}
+
+function closeSwipeMode() {
+  var overlay = document.getElementById('swipeOverlay');
+  if (!overlay) return;
+  swipeState.open = false;
+  overlay.classList.remove('open');
+}
+
+function closeSwipeIfBackdrop(event) {
+  var overlay = document.getElementById('swipeOverlay');
+  if (event && overlay && event.target === overlay) closeSwipeMode();
+}
+
 function refreshLiveCounters() {
   var counts = { all: liveState.places.length, 'evenements-locaux': 0, sante: 0, habitat: 0, digital: 0, finance: 0 };
   liveState.places.forEach(function (p) { counts[p.sphere] = (counts[p.sphere] || 0) + 1; });
@@ -2048,10 +2394,10 @@ function filterOffers(sphere, btn) {
 
 async function activateLive(placeId, trackingCode) {
   var place = liveState.byId[placeId];
-  if (!place) return;
+  if (!place) return false;
   var params = new URLSearchParams(window.location.search);
   var leadInfo = await ensureClientLeadInfo(params);
-  if (!leadInfo) return;
+  if (!leadInfo) return false;
   var clientName = String(leadInfo.name || '').trim();
   var clientPhone = String(leadInfo.phone || '').trim();
   var clientMessage = String(leadInfo.message || '').trim();
@@ -2073,9 +2419,9 @@ async function activateLive(placeId, trackingCode) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   }).catch(function () { return null; });
-  if (!response) return;
+  if (!response) return false;
   var payload = await response.json().catch(function () { return {}; });
-  if (!response.ok || !payload.success) return;
+  if (!response.ok || !payload.success) return false;
   var message = String(payload.whatsappMessage || ('Bonjour ! Je souhaite activer mon privilège Popey. Code: #' + trackingCode));
   document.getElementById('waTitle').textContent = place.metier;
   document.getElementById('waMeta').textContent = place.name + ' · ' + place.badge;
@@ -2086,6 +2432,7 @@ async function activateLive(placeId, trackingCode) {
     document.getElementById('waOverlay').classList.remove('open');
   };
   document.getElementById('waOverlay').classList.add('open');
+  return true;
 }
 
 async function initLiveCatalog() {
@@ -2129,6 +2476,12 @@ async function initLiveCatalog() {
 }
 
 document.addEventListener('click', function (event) {
+  var swipeLink = event.target.closest('#openSwipeMode');
+  if (swipeLink) {
+    event.preventDefault();
+    openSwipeMode();
+    return;
+  }
   var button = event.target.closest('.js-live-activate');
   if (!button) return;
   event.preventDefault();
@@ -2136,7 +2489,15 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+  var passBtn = document.getElementById('swipePassBtn');
+  var likeBtn = document.getElementById('swipeLikeBtn');
+  if (passBtn) passBtn.addEventListener('click', function () { swipeNext('left'); });
+  if (likeBtn) likeBtn.addEventListener('click', function () { swipeLikeCurrent(); });
   initLiveCatalog();
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('mode') === 'swipe') {
+    setTimeout(function () { openSwipeMode(); }, 220);
+  }
 });
 </script>
 </body>
