@@ -446,8 +446,8 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 /* Swipe design v2 (aligned with poepy-catalogue-swipe.html) */
 .swp-app {
-  width: min(390px, 100%);
-  height: min(840px, calc(100vh - 24px));
+  width: min(760px, 94vw);
+  height: min(980px, calc(100vh - 24px));
   display: flex;
   flex-direction: column;
   background: linear-gradient(160deg, #0E1318 0%, #0A0C10 50%, #0D1209 100%);
@@ -559,9 +559,9 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-stack {
   position: relative;
   width: 100%;
-  max-width: 360px;
+  max-width: 680px;
   height: 100%;
-  max-height: 555px;
+  max-height: 720px;
 }
 .swp-ghost {
   position: absolute;
@@ -665,8 +665,8 @@ html[data-live-ready="0"] .main > .sphere-divider {
   gap: 10px;
 }
 .swp-pro-photo {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,.88);
   object-fit: cover;
@@ -675,12 +675,15 @@ html[data-live-ready="0"] .main > .sphere-divider {
 }
 .swp-pro-name {
   color: #fff;
-  font-size: 14px;
+  font-size: 34px;
   font-weight: 800;
+  line-height: 1;
 }
 .swp-pro-job {
   color: rgba(255,255,255,.78);
-  font-size: 11px;
+  font-size: 27px;
+  line-height: 1;
+  margin-top: 2px;
 }
 .swp-body {
   height: 60%;
@@ -890,6 +893,17 @@ html[data-live-ready="0"] .main > .sphere-divider {
   .swp-stack {
     max-width: 100%;
     max-height: 100%;
+  }
+  .swp-pro-photo {
+    width: 46px;
+    height: 46px;
+  }
+  .swp-pro-name {
+    font-size: 13px;
+  }
+  .swp-pro-job {
+    font-size: 11px;
+    margin-top: 1px;
   }
 }
 
@@ -2689,34 +2703,36 @@ function normalizeSphere(raw) {
 function normalizePlace(row) {
   var sphere = normalizeSphere(row.sphere_key || row.sphere || row.category_key || row.category);
   var coverImage = String(
+    row.photoUrl ||
     row.offer_photo_url ||
     row.offerPhotoUrl ||
     row.cover_url ||
     row.coverUrl ||
     row.banner_url ||
     row.bannerUrl ||
-    row.photo_url ||
-    row.photoUrl ||
-    row.logo_url ||
-    row.logoUrl ||
     ''
   );
   var profileImage = String(
-    row.profile_photo_url ||
+    row.owner_profile_photo_url ||
+    row.ownerProfilePhotoUrl ||
     row.profilePhotoUrl ||
+    row.profile_photo_url ||
     row.owner_photo_url ||
     row.ownerPhotoUrl ||
     row.avatar_url ||
     row.avatarUrl ||
+    row.profile_photo ||
+    row.profilePhoto ||
     row.logo_url ||
     row.logoUrl ||
     row.photo_url ||
-    row.photoUrl ||
     ''
   );
   var personName = String(
-    row.contact_name ||
+    row.owner_display_name ||
+    row.ownerDisplayName ||
     row.contactName ||
+    row.contact_name ||
     row.owner_name ||
     row.ownerName ||
     row.full_name ||
@@ -2729,9 +2745,11 @@ function normalizePlace(row) {
     'Partenaire Popey'
   );
   var expiryRaw = String(
+    row.offer_expires_at ||
+    row.offerExpiresAt ||
+    row.expiresAt ||
     row.expire_at ||
     row.expires_at ||
-    row.expiresAt ||
     row.expire_on ||
     row.expires_on ||
     row.expiresOn ||
@@ -2746,7 +2764,7 @@ function normalizePlace(row) {
     sphere: sphere,
     name: String(row.company_name || row.companyName || row.metier || 'Partenaire Popey'),
     personName: personName,
-    metier: String(row.metier || 'Professionnel'),
+    metier: String(row.metier || (sphereMeta[sphere] ? sphereMeta[sphere].label : 'Professionnel')),
     badge: String(row.privilege_badge || row.privilegeBadge || row.badge || 'Offre privilège'),
     desc: String(row.offer_description || row.description || 'Activation immédiate en 1 tap via WhatsApp.'),
     image: coverImage,
