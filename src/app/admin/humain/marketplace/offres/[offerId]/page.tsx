@@ -158,6 +158,21 @@ export default async function AdminMarketplaceOfferConfigPage({ params, searchPa
             <input name="offer_photo_file" type="file" accept="image/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
           </label>
 
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Nom affiché (personne)</span>
+            <input name="owner_display_name" defaultValue={offer.place.owner_display_name || offer.full_name || ""} placeholder="Ex: Antonin Lemaire" className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Photo profil (URL, optionnel)</span>
+            <input name="owner_profile_photo_url" defaultValue={offer.place.owner_profile_photo_url || ""} placeholder="https://.../profil.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date d'expiration du deal</span>
+            <input name="offer_expires_at" type="date" defaultValue={offer.place.offer_expires_at || ""} className="h-10 w-full rounded border bg-background px-3 text-sm" />
+          </label>
+
           <label className="space-y-1 md:col-span-2">
             <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Descriptif de l'offre</span>
             <textarea

@@ -27,6 +27,9 @@ type PlaceRow = {
   offer_photo_url: string | null;
   offer_website_url: string | null;
   offer_description: string | null;
+  owner_display_name: string | null;
+  owner_profile_photo_url: string | null;
+  offer_expires_at: string | null;
   partner_offer_value_eur: number | null;
   status: "dispo" | "sale" | "occupied" | "reserved";
   list_price_eur: number | null;
@@ -169,6 +172,9 @@ function toClientPlace(row: PlaceRow) {
     partnerWhatsapp: row.partner_whatsapp || null,
     directContact: row.direct_contact || null,
     photoUrl: row.offer_photo_url || null,
+    profilePhotoUrl: row.owner_profile_photo_url || null,
+    contactName: row.owner_display_name || null,
+    expiresAt: row.offer_expires_at || null,
     websiteUrl: row.offer_website_url || null,
     description: row.offer_description || null,
     partnerOfferValueEur: row.partner_offer_value_eur == null ? null : Number(row.partner_offer_value_eur),
@@ -265,7 +271,7 @@ export async function GET(request: NextRequest) {
     let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -449,6 +455,9 @@ export async function GET(request: NextRequest) {
           String(row.offer_description || "").trim() ||
             String(row.offer_website_url || "").trim() ||
             String(row.offer_photo_url || "").trim() ||
+            String(row.owner_display_name || "").trim() ||
+            String(row.owner_profile_photo_url || "").trim() ||
+            String(row.offer_expires_at || "").trim() ||
             String(row.direct_contact || "").trim() ||
             Number(row.partner_offer_value_eur || 0) > 0,
         );
@@ -468,6 +477,9 @@ export async function GET(request: NextRequest) {
           String(row.offer_description || "").trim() ||
             String(row.offer_website_url || "").trim() ||
             String(row.offer_photo_url || "").trim() ||
+            String(row.owner_display_name || "").trim() ||
+            String(row.owner_profile_photo_url || "").trim() ||
+            String(row.offer_expires_at || "").trim() ||
             String(row.direct_contact || "").trim() ||
             Number(row.partner_offer_value_eur || 0) > 0,
         );
@@ -517,6 +529,9 @@ export async function GET(request: NextRequest) {
           partnerWhatsapp: null,
           directContact: null,
           photoUrl: null,
+          profilePhotoUrl: null,
+          contactName: null,
+          expiresAt: null,
           websiteUrl: null,
           description: null,
           partnerOfferValueEur: null,

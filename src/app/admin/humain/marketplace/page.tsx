@@ -707,6 +707,24 @@ export default async function AdminHumainMarketplacePage({
                                     className="h-9 w-56 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
                                   />
                                   <input
+                                    name="owner_display_name"
+                                    defaultValue={offer.place.owner_display_name || offer.full_name || ""}
+                                    placeholder="Nom affiché personne"
+                                    className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="owner_profile_photo_url"
+                                    defaultValue={offer.place.owner_profile_photo_url || ""}
+                                    placeholder="Photo profil URL"
+                                    className="h-9 w-56 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
+                                    name="offer_expires_at"
+                                    type="date"
+                                    defaultValue={offer.place.offer_expires_at || ""}
+                                    className="h-9 rounded border bg-background px-2 text-xs"
+                                  />
+                                  <input
                                     name="offer_description"
                                     defaultValue={offer.place.offer_description || ""}
                                     placeholder="Descriptif offre"
@@ -810,6 +828,9 @@ export default async function AdminHumainMarketplacePage({
                       </p>
                       <p className="text-xs text-black/70">
                         Contact direct: {place.direct_contact || "—"} · Site: {place.offer_website_url || "—"} · Offre partenaire: {place.partner_offer_value_eur ? `${euros(place.partner_offer_value_eur)}` : "—"}
+                      </p>
+                      <p className="text-xs text-black/70">
+                        Nom swipe: {place.owner_display_name || "—"} · Expiration: {place.offer_expires_at || "—"}
                       </p>
                       <p className="text-xs text-black/70">
                         Descriptif: {place.offer_description || "—"}
@@ -943,6 +964,24 @@ export default async function AdminHumainMarketplacePage({
                         type="file"
                         accept="image/*"
                         className="h-9 w-44 rounded border bg-background px-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-[11px] file:font-bold file:text-amber-900"
+                      />
+                      <input
+                        name="owner_display_name"
+                        defaultValue={place.owner_display_name || ""}
+                        placeholder="Nom affiché personne"
+                        className="h-9 w-40 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="owner_profile_photo_url"
+                        defaultValue={place.owner_profile_photo_url || ""}
+                        placeholder="Photo profil URL"
+                        className="h-9 w-44 rounded border bg-background px-2 text-xs"
+                      />
+                      <input
+                        name="offer_expires_at"
+                        type="date"
+                        defaultValue={place.offer_expires_at || ""}
+                        className="h-9 rounded border bg-background px-2 text-xs"
                       />
                       <input
                         name="offer_description"

@@ -58,6 +58,9 @@ export async function POST(request: Request) {
   const offerPhotoUrlRaw = String(formData.get("offer_photo_url") || "").trim();
   const offerWebsiteUrlRaw = String(formData.get("offer_website_url") || "").trim();
   const offerDescriptionRaw = String(formData.get("offer_description") || "").trim();
+  const ownerDisplayNameRaw = String(formData.get("owner_display_name") || "").trim();
+  const ownerProfilePhotoUrlRaw = String(formData.get("owner_profile_photo_url") || "").trim();
+  const offerExpiresAtRaw = String(formData.get("offer_expires_at") || "").trim();
   const directContactRaw = String(formData.get("direct_contact") || "").trim();
   const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
   const offerPhotoFileRaw = formData.get("offer_photo_file");
@@ -92,6 +95,9 @@ export async function POST(request: Request) {
     patch.offer_photo_url = null;
     patch.offer_website_url = null;
     patch.offer_description = null;
+    patch.owner_display_name = null;
+    patch.owner_profile_photo_url = null;
+    patch.offer_expires_at = null;
     patch.direct_contact = null;
     patch.partner_offer_value_eur = null;
     // Best-effort cleanup for claimed fields (ignore if DB doesn't have them).
@@ -106,6 +112,9 @@ export async function POST(request: Request) {
     patch.offer_photo_url = null;
     patch.offer_website_url = null;
     patch.offer_description = null;
+    patch.owner_display_name = null;
+    patch.owner_profile_photo_url = null;
+    patch.offer_expires_at = null;
     patch.direct_contact = null;
     patch.partner_offer_value_eur = null;
   } else {
@@ -117,6 +126,9 @@ export async function POST(request: Request) {
     patch.offer_photo_url = offerPhotoUrlRaw || null;
     patch.offer_website_url = offerWebsiteUrlRaw || null;
     patch.offer_description = offerDescriptionRaw || null;
+    patch.owner_display_name = ownerDisplayNameRaw || null;
+    patch.owner_profile_photo_url = ownerProfilePhotoUrlRaw || null;
+    patch.offer_expires_at = offerExpiresAtRaw || null;
     patch.direct_contact = directContactRaw || null;
   }
   if (listPriceRaw) {
@@ -139,6 +151,14 @@ export async function POST(request: Request) {
     patch.partner_offer_value_eur = parsed;
   } else if (intent !== "clear_privilege") {
     patch.partner_offer_value_eur = null;
+  }
+  if (intent !== "clear_privilege" && offerExpiresAtRaw) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(offerExpiresAtRaw)) {
+      return fail("Date d'expiration invalide (format YYYY-MM-DD).");
+    }
+    patch.offer_expires_at = offerExpiresAtRaw;
+  } else if (intent !== "clear_privilege") {
+    patch.offer_expires_at = null;
   }
   if (intent !== "clear_privilege" && offerPhotoFileRaw instanceof File && offerPhotoFileRaw.size > 0) {
     if (!String(offerPhotoFileRaw.type || "").startsWith("image/")) {

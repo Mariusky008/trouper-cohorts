@@ -242,7 +242,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  padding: 12px;
 }
 .swipe-overlay.open { display: flex; }
 .swipe-topbar {
@@ -446,14 +446,14 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
 /* Swipe design v2 (aligned with poepy-catalogue-swipe.html) */
 .swp-app {
-  width: min(430px, 100%);
-  height: min(860px, calc(100vh - 28px));
+  width: min(390px, 100%);
+  height: min(840px, calc(100vh - 24px));
   display: flex;
   flex-direction: column;
   background: linear-gradient(160deg, #0E1318 0%, #0A0C10 50%, #0D1209 100%);
-  border-radius: 0;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 0 80px rgba(0,0,0,.5);
+  box-shadow: 0 22px 70px rgba(0,0,0,.5);
 }
 .swp-header {
   display: flex;
@@ -559,9 +559,9 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-stack {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 360px;
   height: 100%;
-  max-height: 540px;
+  max-height: 555px;
 }
 .swp-ghost {
   position: absolute;
@@ -619,7 +619,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 .swp-overlay-stamp.no { background: linear-gradient(135deg, rgba(239,68,68,.9), rgba(239,68,68,.65)); }
 .swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(245,166,35,.9), rgba(245,166,35,.7)); }
 .swp-media {
-  height: 38%;
+  height: 40%;
   position: relative;
 }
 .swp-media img {
@@ -683,7 +683,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   font-size: 11px;
 }
 .swp-body {
-  height: 62%;
+  height: 60%;
   overflow: hidden;
   padding: 10px 12px 8px;
 }
@@ -886,6 +886,10 @@ html[data-live-ready="0"] .main > .sphere-divider {
     height: 100%;
     border-radius: 0;
     box-shadow: none;
+  }
+  .swp-stack {
+    max-width: 100%;
+    max-height: 100%;
   }
 }
 
