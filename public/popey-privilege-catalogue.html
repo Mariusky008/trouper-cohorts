@@ -3429,11 +3429,16 @@ async function confirmSwipeActivate() {
   if (!swipeActivationTarget) return;
   var place = swipeActivationTarget;
   var button = document.getElementById('swipeActivateConfirmBtn');
+  var popup = null;
+  try { popup = window.open('about:blank', '_blank'); } catch (_popupErr) { popup = null; }
   if (button) {
     button.disabled = true;
     button.textContent = 'Ouverture...';
   }
-  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14));
+  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'direct', popupWindow: popup });
+  if (!ok && popup && !popup.closed) {
+    try { popup.close(); } catch (_closeErr) {}
+  }
   if (button) {
     button.disabled = false;
     button.textContent = 'Ouvrir WhatsApp →';
@@ -3584,7 +3589,7 @@ function filterOffers(sphere, btn) {
   renderLiveOffers();
 }
 
-async function activateLive(placeId, trackingCode) {
+async function activateLive(placeId, trackingCode, options) {
   var place = liveState.byId[placeId];
   if (!place) return false;
   var params = new URLSearchParams(window.location.search);
@@ -3615,11 +3620,26 @@ async function activateLive(placeId, trackingCode) {
   var payload = await response.json().catch(function () { return {}; });
   if (!response.ok || !payload.success) return false;
   var message = String(payload.whatsappMessage || ('Bonjour ! Je souhaite activer mon privilège Popey. Code: #' + trackingCode));
+  var url = String(payload.whatsappUrl || ('https://wa.me/33768233347?text=' + encodeURIComponent(message)));
+  var mode = options && options.openMode ? String(options.openMode) : 'sheet';
+  if (mode === 'direct') {
+    var popup = options && options.popupWindow ? options.popupWindow : null;
+    try {
+      if (popup && !popup.closed) {
+        popup.location.href = url;
+      } else {
+        var opened = window.open(url, '_blank');
+        if (!opened) window.location.href = url;
+      }
+    } catch (_openErr) {
+      window.location.href = url;
+    }
+    return true;
+  }
   document.getElementById('waTitle').textContent = place.metier;
   document.getElementById('waMeta').textContent = place.name + ' · ' + place.badge;
   document.getElementById('waMsg').innerHTML = '"' + message + '"';
   document.getElementById('waBtn').onclick = function () {
-    var url = String(payload.whatsappUrl || ('https://wa.me/33768233347?text=' + encodeURIComponent(message)));
     window.open(url, '_blank');
     document.getElementById('waOverlay').classList.remove('open');
   };
