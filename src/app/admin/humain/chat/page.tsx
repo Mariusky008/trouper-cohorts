@@ -19,6 +19,7 @@ type ChatMessage = {
   text: string | null;
   classification: "positive" | "negative" | "stop" | "neutral" | null;
   eventType: string;
+  providerMessageId: string | null;
   createdAt: string;
 };
 
@@ -26,6 +27,38 @@ function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("fr-FR");
+}
+
+function formatTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+type DeliveryStatus = "sent" | "delivered" | "read" | "failed";
+
+function normalizeStatus(value: string): DeliveryStatus | null {
+  const status = String(value || "").trim().toLowerCase();
+  if (status === "sent") return "sent";
+  if (status === "delivered") return "delivered";
+  if (status === "read") return "read";
+  if (status === "failed") return "failed";
+  return null;
+}
+
+function statusPriority(status: DeliveryStatus): number {
+  if (status === "failed") return 40;
+  if (status === "read") return 30;
+  if (status === "delivered") return 20;
+  return 10;
+}
+
+function Spinner({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent ${className || ""}`}
+    />
+  );
 }
 
 export default function AdminHumainChatPage() {
@@ -42,6 +75,7 @@ export default function AdminHumainChatPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [error, setError] = useState<string>("");
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const playNotificationSound = useCallback(() => {
     if (!soundEnabled) return;
@@ -183,6 +217,7 @@ export default function AdminHumainChatPage() {
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
+    if (!shouldAutoScrollRef.current) return;
     container.scrollTop = container.scrollHeight;
   }, [messages, selectedPhone]);
 
@@ -217,41 +252,79 @@ export default function AdminHumainChatPage() {
     });
   }
 
+  const statusByProviderId = useMemo(() => {
+    const map = new Map<string, { status: DeliveryStatus; at: string }>();
+    messages.forEach((message) => {
+      if (message.direction !== "status") return;
+      const providerId = String(message.providerMessageId || "").trim();
+      if (!providerId) return;
+      const normalized = normalizeStatus(message.eventType);
+      if (!normalized) return;
+      const current = map.get(providerId);
+      if (!current) {
+        map.set(providerId, { status: normalized, at: message.createdAt });
+        return;
+      }
+      const nextPriority = statusPriority(normalized);
+      const currentPriority = statusPriority(current.status);
+      if (nextPriority > currentPriority) {
+        map.set(providerId, { status: normalized, at: message.createdAt });
+        return;
+      }
+      if (nextPriority === currentPriority && message.createdAt > current.at) {
+        map.set(providerId, { status: normalized, at: message.createdAt });
+      }
+    });
+    return map;
+  }, [messages]);
+
+  const chatMessages = useMemo(() => messages.filter((message) => message.direction !== "status"), [messages]);
+
+  function renderTicks(status: DeliveryStatus | null | undefined) {
+    if (!status) return null;
+    if (status === "failed") {
+      return <span className="text-[11px] font-black text-red-600">!</span>;
+    }
+    const base = "text-[12px] font-black";
+    if (status === "sent") return <span className={`${base} text-slate-500`}>✓</span>;
+    if (status === "delivered") return <span className={`${base} text-slate-500`}>✓✓</span>;
+    return <span className={`${base} text-sky-600`}>✓✓</span>;
+  }
+
   return (
-    <section className="space-y-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">WhatsApp privé</p>
-        <h1 className="text-3xl font-black">Chat Admin</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Lecture et réponse aux messages Twilio depuis l&apos;interface admin.
-          {totalNewIncoming > 0 ? ` • ${totalNewIncoming} nouveau(x) fil(s)` : ""}
-        </p>
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={() => setSoundEnabled((current) => !current)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-              soundEnabled
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                : "border-border bg-background text-muted-foreground"
-            }`}
-          >
-            Son notifications: {soundEnabled ? "ON" : "OFF"}
-          </button>
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            WhatsApp privé{totalNewIncoming > 0 ? ` • ${totalNewIncoming} nouveau(x)` : ""}
+          </p>
+          <h1 className="text-2xl font-black">Inbox</h1>
         </div>
+        <button
+          type="button"
+          onClick={() => setSoundEnabled((current) => !current)}
+          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+            soundEnabled ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-border bg-background text-muted-foreground"
+          }`}
+        >
+          Son: {soundEnabled ? "ON" : "OFF"}
+        </button>
       </div>
 
       {error ? <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px,1fr]">
-        <aside className="rounded-xl border bg-card p-3">
-          <h2 className="mb-2 text-sm font-black uppercase tracking-wide text-muted-foreground">Conversations</h2>
-          <div className="mb-3 space-y-2">
+      <div className="grid grid-cols-1 gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:grid-cols-[360px,1fr]">
+        <aside className="bg-white">
+          <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
+            <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Conversations</h2>
+            {loadingThreads ? <Spinner className="text-slate-500" /> : null}
+          </div>
+          <div className="space-y-2 px-3 py-3">
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Recherche numéro ou texte..."
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-blue-400"
+              className="w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400"
             />
             <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
               <input
@@ -262,104 +335,119 @@ export default function AdminHumainChatPage() {
               Afficher seulement les non lus
             </label>
           </div>
-          {loadingThreads ? <p className="text-sm text-muted-foreground">Chargement...</p> : null}
-          <div className="space-y-2">
+          <div className="space-y-1 px-2 pb-3">
             {filteredThreads.map((thread) => (
               <button
                 key={thread.phone}
                 type="button"
                 onClick={() => handleSelectThread(thread.phone)}
-                className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                  selectedPhone === thread.phone ? "border-blue-500 bg-blue-50" : "border-border bg-background hover:bg-muted/40"
+                className={`w-full rounded-xl px-3 py-2 text-left transition ${
+                  selectedPhone === thread.phone ? "bg-emerald-50" : "hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold">{thread.phone}</p>
+                    <p className="font-semibold text-slate-900">{thread.phone}</p>
                     {newIncomingPhones[thread.phone] ? (
-                      <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white">Nouveau</span>
+                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">Nouveau</span>
                     ) : null}
                   </div>
                   <div className="flex items-center gap-1">
                     {thread.unresolvedInboundCount > 0 ? (
-                      <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-white">
+                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
                         {thread.unresolvedInboundCount}
                       </span>
                     ) : null}
                   </div>
                 </div>
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {thread.lastMessage || `Dernier événement: ${thread.lastDirection}`}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{formatDate(thread.lastAt)}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{thread.lastMessage || ""}</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">{formatDate(thread.lastAt)}</p>
               </button>
             ))}
             {!loadingThreads && filteredThreads.length === 0 ? (
-              <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">Aucune conversation pour le moment.</p>
+              <p className="rounded-xl border border-dashed px-3 py-4 text-sm text-slate-500">Aucune conversation pour le moment.</p>
             ) : null}
           </div>
         </aside>
 
-        <div className="rounded-xl border bg-card p-3">
-          <div className="mb-3 flex items-center justify-between gap-2 border-b pb-2">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Fil actif</p>
-              <p className="font-semibold">{selectedPhone || "Sélectionne une conversation"}</p>
+        <div className="flex min-h-[620px] flex-col">
+          <div className="flex items-center justify-between gap-2 bg-[#075e54] px-4 py-3 text-white">
+            <div className="min-w-0">
+              <p className="text-xs/4 font-semibold opacity-90">Fil actif</p>
+              <p className="truncate text-sm font-black">{selectedPhone || "Sélectionne une conversation"}</p>
             </div>
-            {selectedThread ? (
-              <p className="text-xs text-muted-foreground">
-                {selectedThread.inboundCount} entrant(s) • {selectedThread.outboundCount} sortant(s)
-              </p>
-            ) : null}
-          </div>
-
-          <div ref={messagesContainerRef} className="h-[460px] overflow-y-auto rounded-lg border bg-background p-3">
-            {loadingMessages ? <p className="text-sm text-muted-foreground">Chargement des messages...</p> : null}
-            <div className="space-y-2">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                    message.direction === "inbound"
-                      ? "mr-auto border border-emerald-300/60 bg-emerald-50"
-                      : message.direction === "outbound"
-                        ? "ml-auto border border-blue-300/60 bg-blue-50"
-                        : "mx-auto border border-muted bg-muted/40 text-muted-foreground"
-                  }`}
-                >
-                  <p>{message.text || `[${message.eventType}]`}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {formatDate(message.createdAt)}
-                    {message.classification ? ` • ${message.classification}` : ""}
-                  </p>
-                </div>
-              ))}
-              {!loadingMessages && selectedPhone && messages.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Pas encore de message sur ce fil.</p>
+            <div className="flex items-center gap-3">
+              {loadingMessages ? <Spinner className="text-white/80" /> : null}
+              {selectedThread ? (
+                <p className="whitespace-nowrap text-xs/4 opacity-90">
+                  {selectedThread.inboundCount} entrant(s) • {selectedThread.outboundCount} sortant(s)
+                </p>
               ) : null}
             </div>
           </div>
 
-          <div className="mt-3 space-y-2">
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" || event.shiftKey) return;
-                event.preventDefault();
-                void sendMessage();
-              }}
-              placeholder={selectedPhone ? "Écris ta réponse WhatsApp..." : "Sélectionne une conversation pour répondre"}
-              rows={4}
-              disabled={!selectedPhone || sending}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-0 focus:border-blue-400"
-            />
-            <div className="flex justify-end">
+          <div
+            ref={messagesContainerRef}
+            onScroll={() => {
+              const container = messagesContainerRef.current;
+              if (!container) return;
+              const threshold = 140;
+              const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
+              shouldAutoScrollRef.current = remaining < threshold;
+            }}
+            className="flex-1 overflow-y-auto bg-[#efeae2] px-4 py-4"
+          >
+            <div className="space-y-2">
+              {chatMessages.map((message) => {
+                const isInbound = message.direction === "inbound";
+                const isOutbound = message.direction === "outbound";
+                const bubbleClass = isInbound
+                  ? "mr-auto bg-white text-slate-900"
+                  : isOutbound
+                    ? "ml-auto bg-[#dcf8c6] text-slate-900"
+                    : "mx-auto bg-white text-slate-700";
+                const status = isOutbound && message.providerMessageId ? statusByProviderId.get(message.providerMessageId)?.status : null;
+                return (
+                  <div key={message.id} className={`w-fit max-w-[86%] rounded-2xl px-3 py-2 shadow-sm ${bubbleClass}`}>
+                    {message.text ? <p className="whitespace-pre-wrap text-sm">{message.text}</p> : null}
+                    <div className="mt-1 flex items-end justify-end gap-2">
+                      {isInbound && message.classification ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {message.classification}
+                        </span>
+                      ) : null}
+                      <span className="text-[10px] text-slate-500">{formatTime(message.createdAt)}</span>
+                      {isOutbound ? renderTicks(status) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              {!loadingMessages && selectedPhone && chatMessages.length === 0 ? (
+                <p className="text-sm text-slate-500">Pas encore de message sur ce fil.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="border-t bg-[#f0f2f5] px-3 py-3">
+            <div className="flex items-end gap-2">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" || event.shiftKey) return;
+                  event.preventDefault();
+                  void sendMessage();
+                }}
+                placeholder={selectedPhone ? "Écris un message…" : "Sélectionne une conversation pour répondre"}
+                rows={2}
+                disabled={!selectedPhone || sending}
+                className="min-h-[44px] flex-1 resize-none rounded-2xl border bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400 disabled:bg-slate-50"
+              />
               <button
                 type="button"
                 onClick={() => void sendMessage()}
                 disabled={!selectedPhone || !draft.trim() || sending}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-[44px] rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sending ? "Envoi..." : "Envoyer"}
               </button>

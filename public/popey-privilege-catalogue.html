@@ -2616,6 +2616,122 @@ var swipeState = {
   dy: 0
 };
 var swipeActivationTarget = null;
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+function escapeAttr(text) {
+  return escapeHtml(text).replace(/`/g, '&#096;');
+}
+function getSwipeFavoritesStorageKey() {
+  var params = new URLSearchParams(window.location.search);
+  var city = String(params.get('ville') || 'dax').trim().toLowerCase() || 'dax';
+  return 'popey_privilege_swipe_favorites_' + city;
+}
+function setSwipeFavoritesCount() {
+  var countEl = document.getElementById('swipeFavCount');
+  if (!countEl) return;
+  countEl.textContent = String((swipeState.favorites || []).length);
+}
+function loadSwipeFavorites() {
+  try {
+    if (!window.localStorage) return;
+    var raw = localStorage.getItem(getSwipeFavoritesStorageKey()) || '';
+    if (!raw) return;
+    var parsed = JSON.parse(raw);
+    var ids = Array.isArray(parsed && parsed.ids) ? parsed.ids : [];
+    swipeState.favorites = ids
+      .map(function (id) { return String(id || '').trim(); })
+      .filter(Boolean)
+      .slice(0, 200);
+  } catch (_error) {}
+  setSwipeFavoritesCount();
+}
+function normalizeWhatsAppDigits(raw) {
+  var digits = String(raw || '').trim().replace(/[^\d]/g, '');
+  if (!digits) return '';
+  if (digits.indexOf('00') === 0) digits = digits.slice(2);
+  if (digits.length === 10 && digits[0] === '0') digits = '33' + digits.slice(1);
+  if (digits.length < 8 || digits.length > 15) return '';
+  return digits;
+}
+function getClientPhoneForFavoritesSync() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var phoneQuery = String(params.get('client_phone') || '').trim();
+    if (phoneQuery) return phoneQuery;
+  } catch (_err) {}
+  try {
+    var draft = loadClientLeadDraft();
+    if (draft && draft.phone) return String(draft.phone || '').trim();
+  } catch (_err2) {}
+  return '';
+}
+var swipeFavServerSync = { pending: false, timer: null, last: '' };
+async function hydrateSwipeFavoritesFromServer() {
+  var phone = getClientPhoneForFavoritesSync();
+  var digits = normalizeWhatsAppDigits(phone);
+  if (!digits) return;
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var city = String(params.get('ville') || 'dax').trim();
+    var qs = new URLSearchParams();
+    qs.set('ville', city);
+    qs.set('client_phone', '+' + digits);
+    var response = await fetch('/api/popey-human/privilege/favorites?' + qs.toString(), { cache: 'no-store' }).catch(function () { return null; });
+    if (!response || !response.ok) return;
+    var payload = await response.json().catch(function () { return {}; });
+    var serverFavs = Array.isArray(payload && payload.favorites) ? payload.favorites : [];
+    var merged = new Set((swipeState.favorites || []).slice(0, 200));
+    serverFavs.forEach(function (id) {
+      var v = String(id || '').trim().slice(0, 64);
+      if (v) merged.add(v);
+    });
+    swipeState.favorites = Array.from(merged).slice(0, 200);
+    saveSwipeFavorites();
+    setSwipeFavoritesCount();
+  } catch (_error) {}
+}
+function scheduleSwipeFavoritesServerSync() {
+  var phone = getClientPhoneForFavoritesSync();
+  var digits = normalizeWhatsAppDigits(phone);
+  if (!digits) return;
+  var params = new URLSearchParams(window.location.search);
+  var city = String(params.get('ville') || 'dax').trim();
+  var snapshot = JSON.stringify({ city: city, phone: digits, ids: (swipeState.favorites || []).slice(0, 200) });
+  if (snapshot === swipeFavServerSync.last) return;
+  swipeFavServerSync.last = snapshot;
+  if (swipeFavServerSync.timer) window.clearTimeout(swipeFavServerSync.timer);
+  swipeFavServerSync.timer = window.setTimeout(function () {
+    swipeFavServerSync.timer = null;
+    var ids = (swipeState.favorites || []).slice(0, 200);
+    fetch('/api/popey-human/privilege/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ville: city, client_phone: '+' + digits, placeIds: ids })
+    }).catch(function () { return null; });
+  }, 700);
+}
+function saveSwipeFavorites() {
+  try {
+    if (!window.localStorage) return;
+    localStorage.setItem(
+      getSwipeFavoritesStorageKey(),
+      JSON.stringify({ ids: (swipeState.favorites || []).slice(0, 200), updatedAt: Date.now() })
+    );
+  } catch (_error) {}
+}
+function syncSwipeFavoritesWithLiveData() {
+  if (!liveState || !liveState.loaded) return;
+  var before = (swipeState.favorites || []).slice();
+  swipeState.favorites = before.filter(function (id) { return Boolean(liveState.byId && liveState.byId[id]); });
+  if (swipeState.favorites.length !== before.length) saveSwipeFavorites();
+  setSwipeFavoritesCount();
+}
 function updateViewportVars() {
   var vv = window.visualViewport;
   var height = vv ? vv.height : window.innerHeight;
@@ -2658,6 +2774,8 @@ function saveClientLeadDraft(payload) {
     if (window.localStorage) localStorage.setItem('popey_client_lead', JSON.stringify(safe));
     if (window.sessionStorage) sessionStorage.setItem('popey_client_lead', JSON.stringify(safe));
   } catch (_error) {}
+  hydrateSwipeFavoritesFromServer();
+  scheduleSwipeFavoritesServerSync();
 }
 
 function filterOffers(sphere, btn) {
@@ -3389,10 +3507,12 @@ async function swipeCardAction(direction) {
     return;
   }
   if (direction === 'up') {
-    if (!swipeState.favorites.some(function (f) { return f.id === place.id; })) {
-      swipeState.favorites.push(place);
-      var countEl = document.getElementById('swipeFavCount');
-      if (countEl) countEl.textContent = String(swipeState.favorites.length);
+    var id = String(place.id || '').trim();
+    if (id && swipeState.favorites.indexOf(id) === -1) {
+      swipeState.favorites.push(id);
+      setSwipeFavoritesCount();
+      saveSwipeFavorites();
+      scheduleSwipeFavoritesServerSync();
       showSwipeToast('Ajouté aux favoris');
     } else {
       showSwipeToast('Déjà dans vos favoris');
@@ -3463,47 +3583,53 @@ function wireSwipeDrag(card, place) {
   var yes = card.querySelector('.swp-overlay-stamp.yes');
   var no = card.querySelector('.swp-overlay-stamp.no');
   var save = card.querySelector('.swp-overlay-stamp.save');
+  var activePointer = null;
   function onStart(evt) {
+    if (typeof evt.button === 'number' && evt.button !== 0) return;
     swipeState.dragging = true;
     swipeState.dx = 0;
     swipeState.dy = 0;
-    swipeState.startX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-    swipeState.startY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    swipeState.startX = evt.clientX;
+    swipeState.startY = evt.clientY;
     card.style.transition = 'none';
+    activePointer = typeof evt.pointerId === 'number' ? evt.pointerId : null;
+    try { if (activePointer !== null) card.setPointerCapture(activePointer); } catch (_err) {}
   }
   function onMove(evt) {
     if (!swipeState.dragging) return;
-    var x = evt.touches ? evt.touches[0].clientX : evt.clientX;
-    var y = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    if (activePointer !== null && evt.pointerId !== activePointer) return;
+    var x = evt.clientX;
+    var y = evt.clientY;
     swipeState.dx = x - swipeState.startX;
     swipeState.dy = y - swipeState.startY;
     var rot = swipeState.dx * 0.08;
     card.style.transform = 'translateX(' + swipeState.dx + 'px) translateY(' + swipeState.dy + 'px) rotate(' + rot + 'deg)';
-    yes.style.opacity = '0';
-    no.style.opacity = '0';
-    save.style.opacity = '0';
-    if (swipeState.dx > 60) yes.style.opacity = String(Math.min((swipeState.dx - 60) / 80, 1));
-    else if (swipeState.dx < -60) no.style.opacity = String(Math.min((-swipeState.dx - 60) / 80, 1));
-    else if (swipeState.dy < -70 && Math.abs(swipeState.dx) < 70) save.style.opacity = String(Math.min((-swipeState.dy - 70) / 80, 1));
+    if (yes) yes.style.opacity = '0';
+    if (no) no.style.opacity = '0';
+    if (save) save.style.opacity = '0';
+    if (swipeState.dx > 60 && yes) yes.style.opacity = String(Math.min((swipeState.dx - 60) / 80, 1));
+    else if (swipeState.dx < -60 && no) no.style.opacity = String(Math.min((-swipeState.dx - 60) / 80, 1));
+    else if (swipeState.dy < -70 && Math.abs(swipeState.dx) < 70 && save) save.style.opacity = String(Math.min((-swipeState.dy - 70) / 80, 1));
   }
-  function onEnd() {
+  function onEnd(evt) {
     if (!swipeState.dragging) return;
+    if (activePointer !== null && evt && evt.pointerId !== activePointer) return;
     swipeState.dragging = false;
+    try { if (activePointer !== null) card.releasePointerCapture(activePointer); } catch (_err2) {}
+    activePointer = null;
     if (swipeState.dx > 110) { swipeCardAction('right'); return; }
     if (swipeState.dx < -110) { swipeCardAction('left'); return; }
     if (swipeState.dy < -120 && Math.abs(swipeState.dx) < 80) { swipeCardAction('up'); return; }
     card.style.transition = 'transform .28s cubic-bezier(.32,1,.28,1)';
     card.style.transform = 'none';
-    yes.style.opacity = '0';
-    no.style.opacity = '0';
-    save.style.opacity = '0';
+    if (yes) yes.style.opacity = '0';
+    if (no) no.style.opacity = '0';
+    if (save) save.style.opacity = '0';
   }
-  card.addEventListener('touchstart', onStart, { passive: true });
-  card.addEventListener('touchmove', onMove, { passive: true });
-  card.addEventListener('touchend', onEnd, { passive: true });
-  card.addEventListener('mousedown', onStart);
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onEnd);
+  card.addEventListener('pointerdown', onStart);
+  card.addEventListener('pointermove', onMove);
+  card.addEventListener('pointerup', onEnd);
+  card.addEventListener('pointercancel', onEnd);
 }
 
 function renderSwipeFavs() {
@@ -3513,11 +3639,25 @@ function renderSwipeFavs() {
     list.innerHTML = '<div class="swp-empty" style="color:#6B7280">Aucun favori pour le moment.</div>';
     return;
   }
-  list.innerHTML = swipeState.favorites.map(function (p) {
+  var rows = swipeState.favorites
+    .map(function (id) { return (liveState && liveState.byId && liveState.byId[id]) ? liveState.byId[id] : null; })
+    .filter(Boolean);
+  if (!rows.length) {
+    list.innerHTML = '<div class="swp-empty" style="color:#6B7280">Aucun favori disponible.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function (p) {
+    var img = escapeAttr(p.image || '');
+    var name = escapeHtml(p.name || 'Offre');
+    var badge = escapeHtml(p.badge || '');
+    var pid = escapeAttr(p.id || '');
+    var imgTag = img
+      ? '<img src="' + img + '" alt="' + escapeAttr(p.name || 'Offre') + '" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#e5e7eb;">'
+      : '<div style="width:52px;height:52px;border-radius:10px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-weight:800;color:#64748b;">★</div>';
     return '<div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px;margin-bottom:8px;">'
-      + '<img src="' + (p.image || '') + '" alt="' + p.name + '" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#e5e7eb;">'
-      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.badge + '</div></div>'
-      + '<button class="btn-wa js-fav-activate" data-place-id="' + p.id + '" style="width:auto;padding:9px 12px;border-radius:10px;font-size:12px;">💬</button>'
+      + imgTag
+      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + badge + '</div></div>'
+      + '<button class="btn-wa js-fav-activate" data-place-id="' + pid + '" style="width:auto;padding:9px 12px;border-radius:10px;font-size:12px;">💬</button>'
       + '</div>';
   }).join('');
 }
@@ -3697,6 +3837,7 @@ async function initLiveCatalog() {
     liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
     await loadLocalEvents(city);
     liveState.loaded = true;
+    syncSwipeFavoritesWithLiveData();
 
     // Always remove static mock cards once live init runs.
     document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
@@ -3746,6 +3887,8 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+  loadSwipeFavorites();
+  hydrateSwipeFavoritesFromServer();
   var passBtn = document.getElementById('swipePassBtn');
   var saveBtn = document.getElementById('swipeSaveBtn');
   var likeBtn = document.getElementById('swipeLikeBtn');

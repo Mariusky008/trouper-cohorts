@@ -93,6 +93,10 @@ Le système a évolué pour supporter deux types de programmes distincts :
 - **`/emploi`** : Landing page spécifique "Job Seeker".
 - **`/france-travail`** : Page institutionnelle B2B pour présenter le dispositif pilote à France Travail.
     - Ton formel, focus sur la remobilisation et l'innovation sociale.
+- **`/privilege/{ville}`** : Catalogue privilèges (public) avec un mode swipe type Tinder.
+    - UI servie via `public/popey-privilege-catalogue.html`.
+    - Favoris du mode swipe persistés en localStorage (clé par ville: `popey_privilege_swipe_favorites_<ville>`).
+    - Sync multi-device : si l’utilisateur a renseigné son WhatsApp (lead), les favoris sont aussi synchronisés côté serveur via `/api/popey-human/privilege/favorites` (clé: `ville + client_phone`).
 
 ---
 

@@ -22,6 +22,7 @@ type ChatMessage = {
   text: string | null;
   classification: "positive" | "negative" | "stop" | "neutral" | null;
   eventType: string;
+  providerMessageId: string | null;
   createdAt: string;
 };
 
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
   if (phoneFilter) {
     const { data, error } = await supabaseAdmin
       .from("human_whatsapp_events")
-      .select("id,phone_e164,direction,event_type,classification,message_text,payload,created_at")
+      .select("id,phone_e164,direction,event_type,classification,message_text,provider_message_id,payload,created_at")
       .eq("phone_e164", phoneFilter)
       .order("created_at", { ascending: true })
       .limit(300);
@@ -79,6 +80,7 @@ export async function GET(request: Request) {
       text: String(row.message_text || "").trim() || extractTextFallback((row.payload || {}) as Record<string, unknown>) || null,
       classification: (row.classification as "positive" | "negative" | "stop" | "neutral" | null) || null,
       eventType: String(row.event_type || ""),
+      providerMessageId: String(row.provider_message_id || "").trim() || null,
       createdAt: String(row.created_at || ""),
     }));
     return NextResponse.json({ success: true, phone: phoneFilter, messages });
@@ -86,7 +88,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabaseAdmin
     .from("human_whatsapp_events")
-    .select("id,phone_e164,direction,event_type,classification,message_text,payload,created_at")
+    .select("id,phone_e164,direction,event_type,classification,message_text,provider_message_id,payload,created_at")
     .not("phone_e164", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -113,6 +115,9 @@ export async function GET(request: Request) {
       });
     }
     const current = threadMap.get(phone)!;
+    if (!current.lastMessage && direction !== "status" && text) {
+      current.lastMessage = text;
+    }
     if (direction === "inbound") {
       current.inboundCount += 1;
       if (current.lastDirection !== "outbound") current.unresolvedInboundCount += 1;
