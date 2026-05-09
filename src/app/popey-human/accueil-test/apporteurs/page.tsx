@@ -1,7 +1,7 @@
 "use client";
 
 export default function PopeyHumanApporteursInfoPage() {
-  const version = "20260509-apporteurs-info-v2";
+  const version = "20260509-apporteurs-info-v4";
 
   return (
     <main className="h-screen w-full overflow-hidden bg-[#07090C]">

@@ -2571,6 +2571,10 @@ html[data-live-ready="0"] .main > .sphere-divider {
           <input class="ap-input" type="text" placeholder="Camille" id="apporteurPrenom" autocomplete="given-name">
         </div>
         <div>
+          <label class="ap-label">Votre nom</label>
+          <input class="ap-input" type="text" placeholder="Dupont" id="apporteurNom" autocomplete="family-name">
+        </div>
+        <div>
           <label class="ap-label">Votre WhatsApp</label>
           <input class="ap-input" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel" autocomplete="tel">
         </div>
@@ -2940,12 +2944,13 @@ async function ensureClientLeadInfo(params) {
 
 async function createApporteurLink() {
   var prenom = document.getElementById('apporteurPrenom').value.trim();
+  var nom = document.getElementById('apporteurNom') ? document.getElementById('apporteurNom').value.trim() : '';
   var tel = document.getElementById('apporteurTel').value.trim();
   var submit = document.getElementById('apporteurSubmitBtn');
   var copyBtn = document.getElementById('apporteurCopyBtn');
   var titleEl = document.querySelector('#apporteurModal .modal-title');
   var subEl = document.querySelector('#apporteurModal .modal-sub');
-  if (!prenom || !tel) { alert('Merci de renseigner votre prénom et WhatsApp.'); return; }
+  if (!prenom || !nom || !tel) { alert('Merci de renseigner votre prénom, nom et WhatsApp.'); return; }
   if (submit) { submit.textContent = 'Génération…'; submit.disabled = true; }
   if (copyBtn) { copyBtn.style.display = 'none'; }
   try {
@@ -2955,7 +2960,7 @@ async function createApporteurLink() {
     var sponsorMemberId = (params.get('ref_id') || '').trim();
     var citySlug = (params.get('ville') || 'dax').trim();
     var cityLabel = citySlug.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-    var fullName = prenom;
+    var fullName = (prenom + ' ' + nom).trim();
 
     var response = await fetch('/api/popey-human/affiliation/public/register', {
       method: 'POST',

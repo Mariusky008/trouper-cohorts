@@ -611,6 +611,10 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
           <input type="text" id="ctaPrenom" placeholder="Sophie" autocomplete="given-name">
         </div>
         <div class="form-field">
+          <label>Votre nom</label>
+          <input type="text" id="ctaNom" placeholder="Dupont" autocomplete="family-name">
+        </div>
+        <div class="form-field">
           <label>Votre WhatsApp</label>
           <input type="tel" id="ctaTel" placeholder="+33 6 XX XX XX XX" autocomplete="tel">
         </div>
@@ -626,10 +630,12 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
       <div class="success-title">Votre lien est prêt</div>
       <div class="success-sub">Partagez ce lien à vos proches. Quand ils activent une offre, la commission est attribuée automatiquement.</div>
       <div class="link-box">
-        <input class="link-input" id="referralLinkInput" value="" readonly>
+        <input class="link-input" id="webappLinkInput" value="" readonly>
         <div class="link-actions">
-          <button class="btn-mini" id="copyBtn" onclick="copyReferralLink(event)">Copier le lien</button>
-          <a class="btn-mini primary" id="waShareBtn" href="#" target="_blank" rel="noreferrer">Partager sur WhatsApp</a>
+          <a class="btn-mini primary" id="openWebappBtn" href="#" target="_blank" rel="noreferrer">Ouvrir ma web app ↗</a>
+          <button class="btn-mini" id="copyBtn" onclick="copyWebappLink(event)">Copier lien web app</button>
+          <a class="btn-mini" id="openCatalogBtn" href="#" target="_blank" rel="noreferrer">Ouvrir le catalogue ↗</a>
+          <a class="btn-mini" id="waShareBtn" href="#" target="_blank" rel="noreferrer">Partager sur WhatsApp</a>
         </div>
       </div>
     </div>
@@ -663,14 +669,16 @@ function buildBackToCatalogLink() {
 }
 buildBackToCatalogLink();
 
-var generatedReferral = { url: '', wa: '' };
+var generatedReferral = { webapp: '', catalogue: '', wa: '' };
 
 async function submitApporteur(event) {
   if (event) event.preventDefault();
   var prenom = document.getElementById('ctaPrenom').value.trim();
+  var nom = document.getElementById('ctaNom') ? document.getElementById('ctaNom').value.trim() : '';
   var tel = document.getElementById('ctaTel').value.trim();
   var submitBtn = document.getElementById('ctaSubmitBtn');
   if (!prenom) { document.getElementById('ctaPrenom').focus(); return; }
+  if (!nom) { document.getElementById('ctaNom').focus(); return; }
   if (!tel) { document.getElementById('ctaTel').focus(); return; }
 
   try {
@@ -688,7 +696,7 @@ async function submitApporteur(event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fullName: prenom,
+        fullName: (prenom + ' ' + nom).trim(),
         phone: tel,
         city: cityLabel,
         sponsorName: sponsorName,
@@ -701,14 +709,27 @@ async function submitApporteur(event) {
 
     var referralUrl = String(payload.referralUrl || '').trim();
     var whatsappShareUrl = String(payload.whatsappShareUrl || '').trim();
-    if (!referralUrl) throw new Error('Lien de parrainage introuvable');
+    var previewWebapp = String(payload.previewUrl || '').trim();
+    if (!referralUrl && !previewWebapp) throw new Error('Lien introuvable');
 
-    generatedReferral.url = referralUrl;
+    generatedReferral.webapp = previewWebapp || referralUrl;
+    generatedReferral.catalogue = referralUrl;
     generatedReferral.wa = whatsappShareUrl;
 
-    document.getElementById('referralLinkInput').value = referralUrl;
+    document.getElementById('webappLinkInput').value = generatedReferral.webapp;
+    var openBtn = document.getElementById('openWebappBtn');
+    if (openBtn) openBtn.setAttribute('href', generatedReferral.webapp);
+    var openCatalogBtn = document.getElementById('openCatalogBtn');
+    if (openCatalogBtn) {
+      if (referralUrl) {
+        openCatalogBtn.setAttribute('href', referralUrl);
+        openCatalogBtn.style.display = '';
+      } else {
+        openCatalogBtn.style.display = 'none';
+      }
+    }
     var waBtn = document.getElementById('waShareBtn');
-    if (waBtn) waBtn.setAttribute('href', whatsappShareUrl || ('https://api.whatsapp.com/send?text=' + encodeURIComponent(referralUrl)));
+    if (waBtn) waBtn.setAttribute('href', whatsappShareUrl || ('https://api.whatsapp.com/send?text=' + encodeURIComponent(generatedReferral.webapp)));
 
     document.getElementById('ctaForm').style.display = 'none';
     document.getElementById('successMsg').style.display = 'block';
@@ -721,15 +742,15 @@ async function submitApporteur(event) {
   }
 }
 
-function copyReferralLink(event) {
+function copyWebappLink(event) {
   if (event) event.preventDefault();
   var btn = document.getElementById('copyBtn');
-  var value = String(generatedReferral.url || '').trim();
+  var value = String(generatedReferral.webapp || '').trim();
   if (!value) return;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(value).then(function() {
       if (btn) btn.textContent = '✓ Copié';
-      setTimeout(function() { if (btn) btn.textContent = 'Copier le lien'; }, 1600);
+      setTimeout(function() { if (btn) btn.textContent = 'Copier lien web app'; }, 1600);
     }).catch(function() {
       if (btn) btn.textContent = 'Copie impossible';
     });

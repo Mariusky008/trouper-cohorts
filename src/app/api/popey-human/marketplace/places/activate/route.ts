@@ -326,6 +326,9 @@ export async function POST(request: NextRequest) {
       clientText,
       `Merci de me recontacter pour un rendez-vous.`,
       ``,
+      `Parrain: ${apporteurName || resolvedReferrerName || "Non renseigné"}`,
+      `Ticket: ${ticketCode}`,
+      ``,
       `Cordialement,`,
       `${leadPayload.client_name}`,
     ].join("\n");

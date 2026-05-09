@@ -333,7 +333,7 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
       "id,city,category_key,client_name,referrer_id,referrer_name,partner_member_id,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)",
     )
     .order("created_at", { ascending: false })
-    .limit(80);
+    .limit(300);
   const recentActivations = (activationsData as MarketplaceLandingActivationRow[] | null) || [];
   let cobrandOffers: MarketplaceCobrandRow[] = [];
   let localEvents: MarketplaceLocalEventRow[] = [];

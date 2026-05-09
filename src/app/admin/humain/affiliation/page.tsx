@@ -166,7 +166,7 @@ export default async function AdminHumainAffiliationPage({
   const requestedPeriodRaw = typeof params.period === "string" ? params.period : "week";
   const period = ["all", "day", "week", "month", "year"].includes(requestedPeriodRaw) ? requestedPeriodRaw : "week";
   const threshold = periodThreshold(period);
-  const activationTicketsAll = (snapshot.recentActivations || []).slice(0, 120);
+  const activationTicketsAll = (snapshot.recentActivations || []).slice(0, 300);
   const activationTickets = activationTicketsAll.filter((ticket) => {
     if (threshold === null) return true;
     const ts = Date.parse(String(ticket.created_at || ""));
@@ -385,12 +385,12 @@ export default async function AdminHumainAffiliationPage({
                     </a>
                   ) : null}
                   {scoutId ? (
-                    <Link
+                    <a
                       href={`/admin/humain/affiliation?period=${period}${scoutId ? `&scout=${encodeURIComponent(scoutId)}` : ""}#tickets`}
                       className="inline-flex h-9 items-center rounded border border-emerald-300/60 bg-emerald-500/10 px-3 text-xs font-black uppercase tracking-wide text-emerald-800"
                     >
                       Voir ses WhatsApp
-                    </Link>
+                    </a>
                   ) : null}
                   <form action="/api/admin/humain/affiliation/scouts/delete" method="post">
                     <input type="hidden" name="current_url" value={currentUrlForForms} />
