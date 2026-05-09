@@ -1733,6 +1733,19 @@ html[data-live-ready="0"] .main > .sphere-divider {
 #apporteurOverlay .ap-calc-punchline strong { color: #065F46; }
 #apporteurOverlay .ap-form { padding: 14px 16px 28px; }
 #apporteurOverlay .ap-form-title { font-size: 14px; font-weight: 700; color: #1A1C22; margin-bottom: 14px; }
+#apporteurOverlay .ap-info-btn {
+  width: 100%;
+  padding: 13px 14px;
+  margin: -6px 0 12px;
+  background: rgba(0,0,0,.03);
+  border: 1.5px solid #E8E4DC;
+  border-radius: 14px;
+  font-family: var(--fd);
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f766e;
+  cursor: pointer;
+}
 #apporteurOverlay .ap-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 #apporteurOverlay .ap-label {
   font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
@@ -2551,6 +2564,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
 
     <div class="ap-form">
       <div class="ap-form-title">Créez votre lien en 30 secondes</div>
+      <button class="ap-info-btn" type="button" onclick="openApporteurInfoPage()">Voir la page complète →</button>
       <div class="ap-fields">
         <div>
           <label class="ap-label">Votre prénom</label>
@@ -2808,6 +2822,14 @@ function closeWA(e) {
 function openApporteurModal() {
   updateApporteurProjection();
   document.getElementById('apporteurOverlay').classList.add('open');
+}
+
+function openApporteurInfoPage() {
+  var params = new URLSearchParams(window.location.search);
+  var target = '/popey-human/accueil-test/apporteurs';
+  if ([...params.keys()].length) target += '?' + params.toString();
+  var navTarget = (window.top && window.top !== window) ? window.top : window;
+  navTarget.location.href = target;
 }
 
 function closeApporteur(e) {

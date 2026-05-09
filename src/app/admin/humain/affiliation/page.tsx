@@ -129,6 +129,24 @@ function periodThreshold(period: string): number | null {
   return null;
 }
 
+function toWhatsAppDigits(raw: string) {
+  let digits = txt(raw).replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith("0")) digits = `33${digits.slice(1)}`;
+  if (digits.length < 8 || digits.length > 15) return "";
+  return digits;
+}
+
+function whatsappClientUrl(phone: string, message: string) {
+  const digits = toWhatsAppDigits(phone);
+  if (!digits) return "";
+  const base = `https://api.whatsapp.com/send?phone=${encodeURIComponent(digits)}`;
+  const text = txt(message);
+  if (!text) return base;
+  return `${base}&text=${encodeURIComponent(text)}`;
+}
+
 export default async function AdminHumainAffiliationPage({
   searchParams,
 }: {
@@ -213,7 +231,36 @@ export default async function AdminHumainAffiliationPage({
   const affStatus = typeof params.affStatus === "string" ? params.affStatus : typeof params.marketStatus === "string" ? params.marketStatus : "";
   const affMessage = typeof params.affMessage === "string" ? params.affMessage : typeof params.marketMessage === "string" ? params.marketMessage : "";
   const focusedTicketId = typeof params.marketFocus === "string" ? params.marketFocus : "";
-  const currentUrlForForms = `/admin/humain/affiliation?period=${period}`;
+  const scoutFilterId = typeof params.scout === "string" ? params.scout : "";
+  const currentUrlForForms = `/admin/humain/affiliation?period=${period}${scoutFilterId ? `&scout=${encodeURIComponent(scoutFilterId)}` : ""}`;
+  const ticketFilterScout = scoutFilterId ? scoutById.get(scoutFilterId) || null : null;
+  const activationTicketsFiltered = scoutFilterId
+    ? activationTickets.filter((ticket) => {
+        const metaScout = readMetaText(ticket.metadata, "apporteur_scout_id") || readMetaText(ticket.metadata, "scout_id");
+        return metaScout === scoutFilterId;
+      })
+    : activationTickets;
+  const activeScoutsCount = logs.filter((log) => {
+    const scout = scoutById.get(txt(log.scout_id));
+    return txt(scout?.status).toLowerCase() === "active";
+  }).length;
+  const scoutSignupRows = Array.from(
+    logs.reduce((acc, row) => {
+      const scoutId = txt(row.scout_id);
+      const key = scoutId || `log:${row.id}`;
+      const existing = acc.get(key);
+      if (!existing) {
+        acc.set(key, row);
+        return acc;
+      }
+      const existingTs = Date.parse(existing.created_at);
+      const nextTs = Date.parse(row.created_at);
+      if (!Number.isFinite(existingTs) || (Number.isFinite(nextTs) && nextTs > existingTs)) {
+        acc.set(key, row);
+      }
+      return acc;
+    }, new Map<string, SignupLogRow>()).values(),
+  );
 
   return (
     <section className="space-y-5">
@@ -251,17 +298,11 @@ export default async function AdminHumainAffiliationPage({
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Inscriptions</p>
           <p className="mt-1 text-2xl font-black">{logs.length}</p>
         </div>
-        <div className="rounded-xl border bg-card p-4">
+        <Link href="/admin/humain/affiliation#scouts" className="rounded-xl border bg-card p-4 transition hover:border-emerald-400">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Éclaireurs actifs</p>
-          <p className="mt-1 text-2xl font-black">
-            {
-              logs.filter((log) => {
-                const scout = scoutById.get(txt(log.scout_id));
-                return txt(scout?.status).toLowerCase() === "active";
-              }).length
-            }
-          </p>
-        </div>
+          <p className="mt-1 text-2xl font-black">{activeScoutsCount}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Cliquer pour voir la liste</p>
+        </Link>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Villes actives</p>
           <p className="mt-1 text-2xl font-black">
@@ -277,8 +318,20 @@ export default async function AdminHumainAffiliationPage({
         </div>
       </div>
 
-      <div className="rounded-xl border bg-white p-4 space-y-3">
-        {logs.map((row) => {
+      <div id="scouts" className="rounded-xl border bg-white p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Éclaireurs inscrits</p>
+            <p className="text-xs text-muted-foreground">Nom · Téléphone · Lien webapp · Lien catalogue</p>
+          </div>
+          <Link
+            href="/admin/humain/affiliation#tickets"
+            className="inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide"
+          >
+            Aller aux tickets →
+          </Link>
+        </div>
+        {scoutSignupRows.map((row) => {
           const payload = row.payload_json || {};
           const sponsorName = txt(payload.sponsor_name) || "Parrain inconnu";
           const scoutNameFromPayload = txt(payload.scout_name);
@@ -287,6 +340,7 @@ export default async function AdminHumainAffiliationPage({
           const previewUrl = txt(payload.preview_url);
           const refCode = txt(payload.generated_ref_code) || txt(payload.short_code) || txt(payload.invite_token).slice(0, 10);
           const scout = scoutById.get(txt(row.scout_id)) || null;
+          const scoutId = txt(row.scout_id);
           return (
             <article key={row.id} className="rounded-lg border p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -300,6 +354,14 @@ export default async function AdminHumainAffiliationPage({
                   <p className="text-xs text-black/60">
                     Ville: {txt(payload.city_label) || txt(payload.city_slug) || "Non renseignée"}
                   </p>
+                  {previewUrl ? (
+                    <p className="text-xs text-black/60">
+                      Webapp:{" "}
+                      <a href={previewUrl} target="_blank" rel="noreferrer" className="font-semibold underline">
+                        {previewUrl}
+                      </a>
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {referralUrl ? (
@@ -322,9 +384,17 @@ export default async function AdminHumainAffiliationPage({
                       Ouvrir webapp éclaireur
                     </a>
                   ) : null}
+                  {scoutId ? (
+                    <Link
+                      href={`/admin/humain/affiliation?period=${period}${scoutId ? `&scout=${encodeURIComponent(scoutId)}` : ""}#tickets`}
+                      className="inline-flex h-9 items-center rounded border border-emerald-300/60 bg-emerald-500/10 px-3 text-xs font-black uppercase tracking-wide text-emerald-800"
+                    >
+                      Voir ses WhatsApp
+                    </Link>
+                  ) : null}
                   <form action="/api/admin/humain/affiliation/scouts/delete" method="post">
-                    <input type="hidden" name="current_url" value="/admin/humain/affiliation" />
-                    <input type="hidden" name="scout_id" value={txt(row.scout_id)} />
+                    <input type="hidden" name="current_url" value={currentUrlForForms} />
+                    <input type="hidden" name="scout_id" value={scoutId} />
                     <input type="hidden" name="log_id" value={row.id} />
                     <button
                       type="submit"
@@ -343,7 +413,7 @@ export default async function AdminHumainAffiliationPage({
         ) : null}
       </div>
 
-      <div className="rounded-xl border bg-white p-4 space-y-3">
+      <div id="tickets" className="rounded-xl border bg-white p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tickets de commission</p>
@@ -354,6 +424,14 @@ export default async function AdminHumainAffiliationPage({
             <span className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-700">
               Sans réponse &gt; 48h: {ticketsWithoutReplyOver48h}
             </span>
+            {scoutFilterId ? (
+              <Link
+                href={`/admin/humain/affiliation?period=${period}#tickets`}
+                className="inline-flex h-9 items-center rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-black uppercase tracking-wide text-emerald-800"
+              >
+                Filtre: {ticketFilterScout ? scoutLabel(ticketFilterScout) : scoutFilterId} ✕
+              </Link>
+            ) : null}
             <Link
               href="/admin/humain/privileges"
               className="inline-flex h-9 items-center rounded border px-3 text-xs font-black uppercase tracking-wide"
@@ -366,7 +444,7 @@ export default async function AdminHumainAffiliationPage({
           {(["day", "week", "month", "year", "all"] as const).map((key) => (
             <Link
               key={key}
-              href={`/admin/humain/affiliation?period=${key}`}
+              href={`/admin/humain/affiliation?period=${key}${scoutFilterId ? `&scout=${encodeURIComponent(scoutFilterId)}` : ""}#tickets`}
               className={`inline-flex h-8 items-center rounded border px-3 text-[11px] font-black uppercase tracking-wide ${
                 period === key ? "border-black bg-black text-white" : "border-slate-300 bg-white text-slate-700"
               }`}
@@ -387,7 +465,7 @@ export default async function AdminHumainAffiliationPage({
           </p>
         ) : null}
 
-        {activationTickets.map((ticket) => {
+        {activationTicketsFiltered.map((ticket) => {
           const status = readTicketStatus(ticket.metadata);
           const note =
             ticket.metadata && typeof ticket.metadata === "object" && !Array.isArray(ticket.metadata)
@@ -440,6 +518,11 @@ export default async function AdminHumainAffiliationPage({
               ? String(decision.commission_amount_eur)
               : decisionAmountFromMeta;
           const isFocused = focusedTicketId === ticket.id;
+          const clientPhone = readMetaText(ticket.metadata, "client_phone");
+          const clientMessage = readMetaText(ticket.metadata, "client_message");
+          const offerLabel = txt(ticket.place?.metier) || txt(ticket.partner_name) || "offre Popey";
+          const defaultClientFollowup = `Bonjour ${txt(ticket.client_name) || "!"}, c'est Jean-Philippe (Popey). Je fais suite à votre demande pour "${offerLabel}".`;
+          const clientChatUrl = clientPhone ? whatsappClientUrl(clientPhone, defaultClientFollowup) : "";
           return (
             <article
               key={ticket.id}
@@ -526,17 +609,36 @@ export default async function AdminHumainAffiliationPage({
                       value="approved"
                       className="h-9 rounded border border-emerald-300 bg-emerald-100 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-800"
                     >
-                      ✅ Valider commission
+                      ✅ Deal conclu (valider)
                     </button>
                     <button
                       name="decision_status"
                       value="rejected"
                       className="h-9 rounded border border-rose-300 bg-rose-100 px-3 text-[11px] font-black uppercase tracking-wide text-rose-800"
                     >
-                      ⛔ Refuser commission
+                      ⛔ Pas conclu (refuser)
                     </button>
                   </div>
                 </form>
+              </div>
+              <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-slate-600">WhatsApp reçu (client → admin)</p>
+                <p className="mt-1 text-xs text-slate-700">
+                  Téléphone client: <span className="font-semibold">{clientPhone || "Non renseigné"}</span>
+                </p>
+                {clientMessage ? <p className="mt-1 text-xs text-slate-700">Message client: “{clientMessage}”</p> : null}
+                {clientChatUrl ? (
+                  <p className="mt-2">
+                    <a
+                      href={clientChatUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 items-center rounded border border-slate-300 bg-white px-3 text-[11px] font-black uppercase tracking-wide text-slate-700"
+                    >
+                      Ouvrir WhatsApp client →
+                    </a>
+                  </p>
+                ) : null}
               </div>
               <form action={adminUpdatePrivilegeActivationStatusAction} className="mt-2 grid gap-2 md:grid-cols-4">
                 <input type="hidden" name="current_url" value={currentUrlForForms} />
@@ -590,7 +692,7 @@ export default async function AdminHumainAffiliationPage({
             </article>
           );
         })}
-        {!snapshot.error && activationTickets.length === 0 ? (
+        {!snapshot.error && activationTicketsFiltered.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun ticket pour le moment.</p>
         ) : null}
       </div>
