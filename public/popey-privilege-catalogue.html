@@ -3429,16 +3429,31 @@ async function confirmSwipeActivate() {
   if (!swipeActivationTarget) return;
   var place = swipeActivationTarget;
   var button = document.getElementById('swipeActivateConfirmBtn');
+  var fallbackText = 'Bonjour Jean-Philippe, je suis intéressé(e) par l\'offre "' + String(place.badge || place.metier || 'offre Popey') + '". Merci de me contacter pour un rendez-vous. Bonne journée.';
+  var quickUrl = 'https://wa.me/33768233347?text=' + encodeURIComponent(fallbackText);
   if (button) {
     button.disabled = true;
     button.textContent = 'Ouverture...';
   }
-  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'direct', sameTab: true });
+  closeSwipeActivate();
+  // Open WhatsApp immediately on direct user click to avoid popup blockers/blank about:blank flows.
+  try {
+    var opened = window.open(quickUrl, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      var target = (window.top && window.top !== window) ? window.top : window;
+      target.location.href = quickUrl;
+    }
+  } catch (_waOpenErr) {
+    var targetFallback = (window.top && window.top !== window) ? window.top : window;
+    targetFallback.location.href = quickUrl;
+  }
+  activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'silent' }).catch(function () { return false; });
+  var ok = true;
   if (button) {
     button.disabled = false;
     button.textContent = 'Ouvrir WhatsApp →';
   }
-  if (ok) closeSwipeActivate();
+  if (ok) return;
 }
 
 function wireSwipeDrag(card, place) {
@@ -3617,10 +3632,14 @@ async function activateLive(placeId, trackingCode, options) {
   var message = String(payload.whatsappMessage || ('Bonjour ! Je souhaite activer mon privilège Popey. Code: #' + trackingCode));
   var url = String(payload.whatsappUrl || ('https://wa.me/33768233347?text=' + encodeURIComponent(message)));
   var mode = options && options.openMode ? String(options.openMode) : 'sheet';
+  if (mode === 'silent') {
+    return true;
+  }
   if (mode === 'direct') {
     var sameTab = Boolean(options && options.sameTab);
     if (sameTab) {
-      window.location.href = url;
+      var navTarget = (window.top && window.top !== window) ? window.top : window;
+      navTarget.location.href = url;
       return true;
     }
     var popup = options && options.popupWindow ? options.popupWindow : null;
