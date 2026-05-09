@@ -3917,21 +3917,48 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
     return TRUST_LEVEL_OPTIONS.find((option) => option.id === level)?.label ?? "A definir";
   }
 
-  function buildAllianceInviteMessage(prospect: SmartScanAllianceProspect) {
-    const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
-    const myFirstName = (myProfile?.first_name || profileForm.firstName || "").trim();
-    const myMetier = String(allianceSourceMetier || "").trim() || resolveOwnerMetierLabel(myProfile, "professionnel");
-    const city = allianceCity || myProfile?.ville || "ma ville";
-    const intro = myFirstName ? `je suis ${myFirstName}, ${myMetier} a ${city}.` : `je suis ${myMetier} a ${city}.`;
-    return `Bonjour ${firstName}, ${intro}
+  function buildAllianceInviteMessage(
+    prospect: SmartScanAllianceProspect,
+    overrides?: {
+      upstreamJobs?: string;
+      senderCityOverride?: string;
+      targetMetierOverride?: string;
+    },
+  ) {
+    const firstName =
+      String(prospect.full_name || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)[0] || String(prospect.full_name || "").trim() || "contact";
+    const city =
+      String(overrides?.senderCityOverride ?? "").trim() ||
+      String(allianceSenderCityOverride || "").trim() ||
+      String(allianceCity || "").trim() ||
+      String(myProfile?.ville || "").trim() ||
+      "ville";
+    const upstreamJobs =
+      String(overrides?.upstreamJobs ?? "").trim() || String(allianceUpstreamJobs || "").trim() || "plusieurs metiers complementaires";
+    const targetMetier =
+      String(overrides?.targetMetierOverride ?? "").trim() || String(allianceTargetMetierOverride || "").trim() || String(prospect.metier || "").trim() || "metier";
+    const senderFullName = [
+      String(myProfile?.first_name || profileForm.firstName || "").trim(),
+      String(myProfile?.last_name || profileForm.lastName || "").trim(),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Jean-Philippe Roth";
 
-Je me permets de t ecrire car on croise souvent des personnes qui auraient besoin d un autre pro de confiance, et je pense que nos activites peuvent se completer.
+    return `Bonjour ${firstName},
 
-Je te propose un test simple : tu me recommandes a une personne, je lui fais une seance totalement gratuitement, et tu juges librement.
+Je suis ${senderFullName}, je suis de « ${city} » aussi.
 
-Si l experience est bonne, on garde le contact pour de futures recommandations.
+Je travaille avec plusieurs métiers en amont du vôtre (${upstreamJobs}) et j'ai régulièrement des clients à recommander pour des besoins en « ${targetMetier} ».
 
-Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`;
+J'aimerais voir si nous pourrions nous recommander mutuellement.
+
+Vous auriez 5 mn pour qu'on s'appelle demain ?
+
+Bonne journée !`;
   }
 
   function clearAllianceRevealQueue() {
@@ -4528,11 +4555,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
+    const upstreamJobs = "coach business, agent immobilier";
+    const senderCityOverride = String(profileForm.ville || "").trim();
+    const targetMetierOverride = String(prospect.metier || "").trim();
     setSelectedAllianceProspect(prospect);
-    setAllianceMessageDraft(buildAllianceInviteMessage(prospect));
-    setAllianceUpstreamJobs("coach business, agent immobilier");
-    setAllianceSenderCityOverride(String(profileForm.ville || "").trim());
-    setAllianceTargetMetierOverride(String(prospect.metier || "").trim());
+    setAllianceUpstreamJobs(upstreamJobs);
+    setAllianceSenderCityOverride(senderCityOverride);
+    setAllianceTargetMetierOverride(targetMetierOverride);
+    setAllianceMessageDraft(
+      buildAllianceInviteMessage(prospect, {
+        upstreamJobs,
+        senderCityOverride,
+        targetMetierOverride,
+      }),
+    );
     setShowAllianceMessageModal(true);
     setModalErrorMessage("");
     setModalInfoMessage("");

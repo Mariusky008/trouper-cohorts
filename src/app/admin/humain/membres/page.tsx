@@ -49,31 +49,31 @@ export default async function AdminHumainMembresPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">100% Humain</p>
-          <h1 className="text-3xl font-black">Membres</h1>
+          <h1 className="text-3xl font-black">Comptes Popey Human (app)</h1>
           <p className="text-sm text-muted-foreground">
-            Initialisation des membres Popey Human et pilotage des statuts.
+            Comptes applicatifs utilisés par les fonctionnalités réseau / permissions. Les pros ACCEPTED se gèrent sur Marketplace.
           </p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
             <Link href="/admin/humain">Retour espace humain</Link>
           </Button>
-          <Button asChild>
-            <Link href="/admin/humain/permissions">Aller aux permissions</Link>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain/marketplace">Ouvrir Marketplace</Link>
           </Button>
         </div>
       </div>
 
       <form action={adminInitMemberAction} className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_auto]">
         <select name="user_id" required className="w-full rounded border px-3 py-2 text-sm">
-          <option value="">Sélectionner un utilisateur à initialiser</option>
+          <option value="">Choisir un utilisateur (compte app)</option>
           {snapshot.candidates.map((candidate) => (
             <option key={candidate.user_id} value={candidate.user_id}>
               {candidate.label}
             </option>
           ))}
         </select>
-        <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Initialiser le membre</button>
+        <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Créer le compte</button>
         <input type="hidden" name="current_url" value={currentHref} />
       </form>
 

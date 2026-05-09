@@ -76,7 +76,6 @@ export default async function AdminHumainPage() {
       links: [
         { href: "/admin/humain/chat", label: "Chat WhatsApp admin" },
         { href: "/admin/humain/eclaireurs", label: "Éclaireurs" },
-        { href: "/admin/humain/membres", label: "Membres" },
         { href: "/admin/humain/clients", label: "Clients" },
         { href: "/admin/humain/notifications", label: "Notifications" },
       ],
@@ -86,7 +85,6 @@ export default async function AdminHumainPage() {
       links: [
         { href: "/admin/humain/cockpit", label: "Cockpit" },
         { href: "/admin/humain/commissions", label: "Commissions" },
-        { href: "/admin/humain/permissions", label: "Permissions" },
         { href: "/admin/humain/sphere", label: "Sphère" },
       ],
     },

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popey · Devenez Apporteur d'Affaires</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Instrument+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #07090C;
+  --cream: #F5F2EB;
+  --cream2: #EDE9E0;
+  --teal: #00C48C;
+  --teal-d: #008F66;
+  --amber: #F5A623;
+  --red: #EF4444;
+  --border: rgba(0,0,0,.08);
+  --border-light: rgba(255,255,255,.1);
+  --fd: 'Unbounded', sans-serif;
+  --fb: 'Instrument Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--cream);font-family:var(--fb);overflow-x:hidden}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,9,12,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-logo{font-family:var(--fd);font-size:17px;font-weight:900;color:#fff;letter-spacing:-.5px;text-decoration:none}
+.nav-logo span{color:var(--teal)}
+.nav-cta{background:var(--teal);color:var(--ink);padding:10px 22px;border-radius:100px;font-size:13px;font-weight:700;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:#00e0a6;transform:translateY(-1px)}
+@media(max-width:600px){.nav{padding:14px 20px}}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:120px 48px 80px}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg-mesh{position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 50% at 70% 50%, rgba(0,196,140,.12) 0%, transparent 60%),
+  radial-gradient(ellipse 40% 60% at 10% 80%, rgba(245,166,35,.08) 0%, transparent 50%),
+  radial-gradient(ellipse 30% 40% at 90% 10%, rgba(0,196,140,.06) 0%, transparent 50%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,196,140,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,196,140,.03) 1px,transparent 1px);background-size:48px 48px}
+.hero-scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,196,140,.3),transparent);top:0;animation:scan 8s linear infinite}
+@keyframes scan{0%{top:-1px;opacity:0}5%{opacity:1}95%{opacity:.4}100%{top:100%;opacity:0}}
+
+.hero-inner{position:relative;z-index:1;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center;width:100%}
+
+/* Left */
+.hero-left{}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:100px;padding:8px 18px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:28px;animation:fadeUp .6s ease both}
+.hero-tag-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,196,140,.4)}50%{opacity:.3;box-shadow:0 0 0 5px rgba(0,196,140,0)}}
+
+.hero-h1{font-family:var(--fd);font-size:clamp(32px,4.5vw,58px);font-weight:900;line-height:.95;letter-spacing:-1.5px;margin-bottom:22px;animation:fadeUp .7s ease .08s both}
+.hero-h1 .line-accent{color:var(--teal);font-style:normal}
+.hero-h1 .line-dim{color:rgba(245,242,235,.45);font-weight:400;font-size:.55em;letter-spacing:-.5px;display:block;margin-top:8px}
+
+.hero-sub{font-size:16px;color:rgba(245,242,235,.55);line-height:1.75;font-weight:300;max-width:480px;margin-bottom:36px;animation:fadeUp .7s ease .16s both}
+.hero-sub strong{color:rgba(245,242,235,.88);font-weight:600}
+
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:36px;animation:fadeUp .7s ease .22s both}
+.hpill{padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.12);color:rgba(245,242,235,.5)}
+.hpill-g{background:rgba(0,196,140,.1);border-color:rgba(0,196,140,.3);color:var(--teal)}
+
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;animation:fadeUp .7s ease .3s both}
+.btn-main{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:var(--ink);padding:16px 32px;border-radius:100px;font-family:var(--fd);font-size:14px;font-weight:700;text-decoration:none;transition:all .25s;letter-spacing:-.3px}
+.btn-main:hover{background:#00e0a6;transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,196,140,.3)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;color:rgba(245,242,235,.5);font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;cursor:pointer;background:none;border:none;padding:0}
+.btn-ghost:hover{color:var(--cream)}
+
+/* Right — earnings card */
+.hero-right{animation:fadeUp .7s ease .25s both}
+.earn-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;overflow:hidden;position:relative}
+.earn-card-top{background:linear-gradient(135deg,rgba(0,196,140,.12),rgba(0,196,140,.04));padding:24px;border-bottom:1px solid rgba(255,255,255,.06)}
+.earn-card-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:8px}
+.earn-card-title{font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;line-height:1.1}
+.earn-scenarios{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.earn-row{display:flex;align-items:center;gap:12px}
+.earn-label{font-size:12px;color:rgba(245,242,235,.45);min-width:120px;flex-shrink:0}
+.earn-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.earn-bar{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+.earn-val{font-family:var(--fd);font-size:15px;font-weight:900;min-width:56px;text-align:right}
+.earn-footer{padding:16px 24px;background:rgba(0,196,140,.06);border-top:1px solid rgba(0,196,140,.12)}
+.earn-footer-txt{font-size:12px;color:rgba(245,242,235,.5);line-height:1.55}
+.earn-footer-txt strong{color:var(--teal)}
+
+/* contacts slider */
+.earn-slider-wrap{padding:0 24px 18px}
+.earn-slider-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,235,.3);margin-bottom:10px;display:flex;justify-content:space-between}
+.earn-slider-label span{color:rgba(245,242,235,.6);font-family:var(--fd);font-size:13px;letter-spacing:0;text-transform:none}
+input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;border-radius:2px;background:rgba(255,255,255,.1);cursor:pointer}
+
+/* ── SECTION BASE ── */
+.section{padding:100px 48px;position:relative}
+.section-inner{max-width:1100px;margin:0 auto}
+.sec-tag{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.sec-tag::before{content:'';width:24px;height:1.5px;background:var(--teal)}
+.sec-h{font-family:var(--fd);font-size:clamp(26px,4vw,48px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:18px}
+.sec-sub{font-size:16px;color:rgba(245,242,235,.5);line-height:1.7;font-weight:300;max-width:580px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.fade-up.visible{opacity:1;transform:none}
+
+/* ── HOW IT WORKS ── */
+.how{background:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:56px;background:rgba(255,255,255,.06);border-radius:22px;overflow:hidden}
+.step{background:#0D1117;padding:36px 28px;position:relative;transition:background .3s}
+.step:hover{background:#111820}
+.step-num{font-family:var(--fd);font-size:56px;font-weight:900;color:rgba(255,255,255,.05);line-height:1;margin-bottom:14px}
+.step-icon{font-size:32px;margin-bottom:14px;display:block}
+.step-title{font-family:var(--fd);font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.3px}
+.step-desc{font-size:13px;color:rgba(245,242,235,.5);line-height:1.65;font-weight:300}
+.step-badge{display:inline-flex;margin-top:14px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--teal);letter-spacing:.06em}
+.step-arrow{position:absolute;top:50%;right:-16px;transform:translateY(-50%);font-size:20px;color:var(--teal);z-index:10;background:#0D1117;padding:4px}
+
+/* ── WHO ── */
+.who{background:var(--cream);color:var(--ink)}
+.who .sec-tag{color:var(--teal-d)}
+.who .sec-tag::before{background:var(--teal-d)}
+.who .sec-h{color:var(--ink)}
+.who .sec-sub{color:#6B6560}
+.profiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:52px}
+.profile-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:20px;padding:24px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
+.profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--teal);transform:scaleX(0);transition:transform .3s;transform-origin:left}
+.profile-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.1)}
+.profile-card:hover::before{transform:scaleX(1)}
+.profile-icon{font-size:36px;margin-bottom:12px;display:block}
+.profile-name{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px}
+.profile-desc{font-size:12px;color:#6B6560;line-height:1.55}
+.profile-earn{display:inline-flex;margin-top:12px;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--teal-d)}
+
+/* ── EARNINGS DETAIL ── */
+.earnings{background:#0A0C10}
+.earn-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:52px}
+.earn-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:28px;position:relative;overflow:hidden;transition:border-color .3s}
+.earn-box:hover{border-color:rgba(0,196,140,.25)}
+.earn-box-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.6);margin-bottom:10px}
+.earn-box-title{font-family:var(--fd);font-size:18px;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-.3px}
+.earn-box-desc{font-size:13px;color:rgba(245,242,235,.5);line-height:1.65;font-weight:300;margin-bottom:18px}
+.earn-box-examples{display:flex;flex-direction:column;gap:8px}
+.earn-ex{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;font-size:13px}
+.earn-ex-label{color:rgba(245,242,235,.6)}
+.earn-ex-val{font-family:var(--fd);font-size:14px;font-weight:900;color:var(--teal)}
+.earn-box-accent{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent)}
+
+/* simulator */
+.sim-section{background:rgba(0,196,140,.04);border:1px solid rgba(0,196,140,.15);border-radius:20px;padding:28px;margin-top:20px;grid-column:span 2}
+.sim-title{font-family:var(--fd);font-size:18px;font-weight:900;color:#fff;margin-bottom:6px}
+.sim-sub{font-size:13px;color:rgba(245,242,235,.4);margin-bottom:20px}
+.sim-controls{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.sim-field label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,235,.35);margin-bottom:8px;display:block}
+.sim-field input,.sim-field select{width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;font-family:var(--fb);font-size:15px;font-weight:600;color:#fff;outline:none;transition:border-color .2s;appearance:none}
+.sim-field input:focus,.sim-field select:focus{border-color:var(--teal)}
+.sim-field select option{background:#0A0C10;color:#fff}
+.sim-result{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sim-res-item{background:rgba(255,255,255,.04);border-radius:14px;padding:16px;text-align:center}
+.sim-res-item.highlight{background:rgba(0,196,140,.1);border:1.5px solid rgba(0,196,140,.3)}
+.sim-res-val{font-family:var(--fd);font-size:28px;font-weight:900;color:#fff;line-height:1;margin-bottom:4px}
+.sim-res-item.highlight .sim-res-val{color:var(--teal)}
+.sim-res-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(245,242,235,.3)}
+
+/* ── TESTIMONIALS ── */
+.testis{background:var(--cream);color:var(--ink)}
+.testis .sec-tag{color:var(--teal-d)}
+.testis .sec-tag::before{background:var(--teal-d)}
+.testis .sec-h{color:var(--ink)}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px}
+.testi-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:20px;padding:28px;position:relative;transition:all .3s}
+.testi-card:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(0,0,0,.09)}
+.testi-quote{font-size:32px;color:var(--teal);line-height:1;margin-bottom:14px}
+.testi-text{font-size:14px;color:#374151;line-height:1.7;margin-bottom:20px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:12px}
+.testi-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.testi-name{font-size:14px;font-weight:700;color:var(--ink)}
+.testi-role{font-size:11px;color:#9A9DAA;margin-top:1px}
+.testi-earn{display:inline-flex;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--teal-d);margin-top:10px}
+
+/* ── FAQ ── */
+.faq{background:var(--ink)}
+.faq-list{margin-top:52px;border-top:1px solid rgba(255,255,255,.06)}
+.faq-item{border-bottom:1px solid rgba(255,255,255,.06)}
+.faq-q{padding:22px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:16px}
+.faq-q-text{font-size:16px;font-weight:600;color:#fff;flex:1;line-height:1.3}
+.faq-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:16px;color:rgba(245,242,235,.4);transition:all .3s;flex-shrink:0}
+.faq-item.open .faq-icon{background:var(--teal);border-color:var(--teal);color:var(--ink);transform:rotate(45deg)}
+.faq-a{font-size:14px;color:rgba(245,242,235,.55);line-height:1.75;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-weight:300}
+.faq-item.open .faq-a{max-height:400px;padding-bottom:24px}
+
+/* ── CTA FINAL ── */
+.cta-section{background:linear-gradient(135deg,#071510,#0A1A10);padding:120px 48px;text-align:center;position:relative;overflow:hidden}
+.cta-bg-orb{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:600px;height:400px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,196,140,.12),transparent 70%);pointer-events:none}
+.cta-inner{position:relative;z-index:1;max-width:640px;margin:0 auto}
+.cta-h{font-family:var(--fd);font-size:clamp(28px,5vw,52px);font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:16px}
+.cta-h span{color:var(--teal)}
+.cta-sub{font-size:16px;color:rgba(245,242,235,.5);font-weight:300;line-height:1.7;margin-bottom:48px}
+.cta-form{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px;text-align:left;max-width:440px;margin:0 auto 20px}
+.cta-form-title{font-family:var(--fd);font-size:16px;font-weight:700;color:#fff;margin-bottom:18px;text-align:center;letter-spacing:-.3px}
+.form-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.form-field label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,235,.35);margin-bottom:6px;display:block}
+.form-field input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-family:var(--fb);font-size:15px;color:#fff;outline:none;transition:border-color .2s}
+.form-field input:focus{border-color:var(--teal)}
+.form-field input::placeholder{color:rgba(255,255,255,.2)}
+.btn-cta{width:100%;background:linear-gradient(135deg,var(--teal),#00A070);color:var(--ink);border:none;border-radius:14px;padding:17px;font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .25s;box-shadow:0 8px 28px rgba(0,196,140,.35);letter-spacing:-.3px}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,196,140,.45)}
+.btn-cta:active{transform:translateY(0)}
+.cta-fine{font-size:11px;color:rgba(245,242,235,.3);text-align:center;line-height:1.6}
+.success-msg{display:none;text-align:center;padding:24px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.3);border-radius:16px}
+.success-msg .success-icon{font-size:40px;margin-bottom:12px}
+.success-msg .success-title{font-family:var(--fd);font-size:20px;font-weight:900;color:#fff;margin-bottom:6px}
+.success-msg .success-sub{font-size:13px;color:rgba(245,242,235,.5);line-height:1.6}
+
+/* ── FOOTER ── */
+.footer{background:#040608;border-top:1px solid rgba(255,255,255,.05);padding:32px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-family:var(--fd);font-size:16px;font-weight:900;color:var(--teal);letter-spacing:-.3px}
+.footer-copy{font-size:12px;color:rgba(245,242,235,.25)}
+.footer-link{font-size:12px;color:rgba(245,242,235,.25);text-decoration:none;transition:color .2s}
+.footer-link:hover{color:var(--teal)}
+
+/* ── STATS STRIP ── */
+.stats-strip{background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.stats-inner{max-width:1100px;margin:0 auto;padding:28px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.stat-item{text-align:center;padding:0 24px;border-right:1px solid rgba(255,255,255,.06)}
+.stat-item:last-child{border-right:none}
+.stat-val{font-family:var(--fd);font-size:clamp(28px,4vw,40px);font-weight:900;color:var(--teal);line-height:1;margin-bottom:4px}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,242,235,.3)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;gap:48px}
+  .hero-right{order:-1}
+  .steps{grid-template-columns:1fr}
+  .profiles{grid-template-columns:1fr 1fr}
+  .earn-grid{grid-template-columns:1fr}
+  .sim-section{grid-column:span 1}
+  .sim-controls{grid-template-columns:1fr}
+  .sim-result{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .stats-inner{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .section{padding:64px 20px}
+  .hero{padding:100px 20px 64px}
+  .profiles{grid-template-columns:1fr}
+  .stats-inner{padding:20px 20px;grid-template-columns:1fr 1fr}
+  .cta-section{padding:80px 20px}
+  .footer{flex-direction:column;text-align:center;padding:24px 20px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo">Pop<span>ey</span></a>
+  <a href="#creer-lien" class="nav-cta">Créer mon lien →</a>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-bg-mesh"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-scan"></div>
+  </div>
+
+  <div class="hero-inner">
+    <!-- Left -->
+    <div class="hero-left">
+      <div class="hero-tag">
+        <span class="hero-tag-dot"></span>
+        Popey · Programme apporteur d'affaires
+      </div>
+      <h1 class="hero-h1">
+        Votre répertoire<br>
+        vaut de l'<span class="line-accent">argent.</span>
+        <span class="line-dim">20% reversés sur chaque deal. Sans effort.</span>
+      </h1>
+      <p class="hero-sub">
+        Partagez le catalogue Popey à vos proches. Chaque fois que l'un d'eux profite d'une offre, vous touchez une commission automatique. <strong>1 tap suffit. Aucune compétence requise.</strong>
+      </p>
+      <div class="hero-pills">
+        <span class="hpill hpill-g">100% gratuit</span>
+        <span class="hpill">Sans engagement</span>
+        <span class="hpill">20% de la commission Popey</span>
+      </div>
+      <div class="hero-actions">
+        <a href="#creer-lien" class="btn-main">
+          Créer mon lien gratuitement
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <button class="btn-ghost" onclick="document.getElementById('comment').scrollIntoView({behavior:'smooth'})">
+          Comment ça marche ↓
+        </button>
+      </div>
+    </div>
+
+    <!-- Right — live earnings card -->
+    <div class="hero-right">
+      <div class="earn-card">
+        <div class="earn-card-top">
+          <div class="earn-card-label">Simulation · Vos gains estimés</div>
+          <div class="earn-card-title">Avec <span id="heroContactsLabel" style="color:var(--teal)">300 contacts</span><br>estimation de vos gains :</div>
+        </div>
+        <div class="earn-slider-wrap" style="padding:18px 24px 0">
+          <div class="earn-slider-label">
+            <span>Vos contacts WhatsApp</span>
+            <span id="heroContactsVal">300</span>
+          </div>
+          <input type="range" id="heroSlider" min="50" max="800" value="300" step="25" oninput="updateHeroSim()">
+        </div>
+        <div class="earn-scenarios">
+          <div class="earn-row">
+            <div class="earn-label">Prudent · 2%</div>
+            <div class="earn-bar-wrap"><div class="earn-bar" id="bar1" style="width:15%;background:#6EE7B7"></div></div>
+            <div class="earn-val" id="val1" style="color:#6EE7B7">30€</div>
+          </div>
+          <div class="earn-row">
+            <div class="earn-label">Moyen · 5%</div>
+            <div class="earn-bar-wrap"><div class="earn-bar" id="bar2" style="width:42%;background:var(--teal)"></div></div>
+            <div class="earn-val" id="val2" style="color:var(--teal)">90€</div>
+          </div>
+          <div class="earn-row">
+            <div class="earn-label">Ambitieux · 10%</div>
+            <div class="earn-bar-wrap"><div class="earn-bar" id="bar3" style="width:75%;background:linear-gradient(90deg,var(--teal),var(--amber))"></div></div>
+            <div class="earn-val" id="val3" style="color:var(--amber)">96€</div>
+          </div>
+        </div>
+        <div class="earn-footer">
+          <div class="earn-footer-txt">20% de ce que Popey encaisse sur chaque deal — entre <strong>6€ et 50€</strong> selon le secteur · Versé le 1er du mois</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip fade-up">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-val">47</div>
+      <div class="stat-label">Apporteurs actifs</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">96€</div>
+      <div class="stat-label">Gain moyen / mois</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">20%</div>
+      <div class="stat-label">De la commission Popey</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">1 tap</div>
+      <div class="stat-label">Pour partager</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="section how" id="comment">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="sec-tag">Comment ça marche</div>
+      <h2 class="sec-h">3 étapes.<br>Votre répertoire travaille.</h2>
+      <p class="sec-sub">Pas de vente, pas de prospection, pas de discours. Juste un lien à partager.</p>
+    </div>
+    <div class="steps fade-up">
+      <div class="step">
+        <div class="step-num">01</div>
+        <span class="step-icon">🔗</span>
+        <div class="step-title">Vous créez votre lien</div>
+        <div class="step-desc">En 30 secondes, vous obtenez un lien unique tracé à votre nom. Popey.io/eclaireur/votre-prénom. Gratuit. Instantané. Aucun compte bancaire nécessaire pour démarrer.</div>
+        <span class="step-badge">30 secondes · Gratuit</span>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <span class="step-icon">📲</span>
+        <div class="step-title">Vous partagez à vos proches</div>
+        <div class="step-desc">Vous envoyez le catalogue Popey via votre lien à vos contacts WhatsApp. Famille, amis, collègues. Ils découvrent des offres exclusives de pros locaux. Vous n'avez rien d'autre à faire.</div>
+        <span class="step-badge">1 tap · WhatsApp</span>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <span class="step-icon">💸</span>
+        <div class="step-title">Vous encaissez</div>
+        <div class="step-desc">Quand l'un de vos contacts active une offre et devient client d'un pro Popey, vous touchez 20% de ce que Popey encaisse sur le deal — de 6€ à 50€ selon le secteur. Tout est tracé automatiquement.</div>
+        <span class="step-badge">20% de la commission · Automatique</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ WHO ══ -->
+<section class="section who">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="sec-tag">Pour qui</div>
+      <h2 class="sec-h" style="color:var(--ink)">Pour tout le monde.<br>Vraiment.</h2>
+      <p class="sec-sub" style="color:#6B6560">Pas besoin d'être commercial. Pas besoin d'expérience. Si vous avez un répertoire WhatsApp, vous avez ce qu'il faut.</p>
+    </div>
+    <div class="profiles fade-up">
+      <div class="profile-card">
+        <span class="profile-icon">👩‍👧</span>
+        <div class="profile-name">La maman active</div>
+        <div class="profile-desc">300 contacts entre l'école, la famille, les amis. Son cercle de confiance est immense et réactif.</div>
+        <div class="profile-earn">≈ 50–120€/mois</div>
+      </div>
+      <div class="profile-card">
+        <span class="profile-icon">👨‍💼</span>
+        <div class="profile-name">Le professionnel</div>
+        <div class="profile-desc">Il connait des dizaines d'entrepreneurs locaux. Chaque partage génère des commissions croisées.</div>
+        <div class="profile-earn">≈ 40–100€/mois</div>
+      </div>
+      <div class="profile-card">
+        <span class="profile-icon">🎓</span>
+        <div class="profile-name">L'étudiant</div>
+        <div class="profile-desc">Grand réseau social, contacts connectés. Parfait pour un complément de revenu sans contrainte.</div>
+        <div class="profile-earn">≈ 40–100€/mois</div>
+      </div>
+      <div class="profile-card">
+        <span class="profile-icon">👴</span>
+        <div class="profile-name">Le retraité</div>
+        <div class="profile-desc">Réseau ancré localement, confiance établie. Ses recommandations ont un poids naturel fort.</div>
+        <div class="profile-earn">≈ 30–80€/mois</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ EARNINGS DETAIL ══ -->
+<section class="section earnings" id="commissions">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="sec-tag">Les commissions en détail</div>
+      <h2 class="sec-h">Combien exactement ?</h2>
+      <p class="sec-sub">Deux sources de revenus cumulables. Pas de plafond.</p>
+    </div>
+    <div class="earn-grid fade-up">
+      <!-- Fixed commission -->
+      <div class="earn-box">
+        <div class="earn-box-accent"></div>
+        <div class="earn-box-tag">Commission fixe · Garantie</div>
+        <div class="earn-box-title">20% de la commission Popey</div>
+        <div class="earn-box-desc">Vous touchez 20% de ce que Popey encaisse sur chaque deal apporté via votre lien. Le montant dépend du secteur et de l'option choisie par le pro.</div>
+        <div class="earn-box-examples">
+          <div class="earn-ex"><span class="earn-ex-label">Santé · Popey encaisse 30€</span><span class="earn-ex-val">+6€</span></div>
+          <div class="earn-ex"><span class="earn-ex-label">Habitat · Popey encaisse 60€</span><span class="earn-ex-val">+12€</span></div>
+          <div class="earn-ex"><span class="earn-ex-label">Finance · Popey encaisse 120€</span><span class="earn-ex-val">+24€</span></div>
+        </div>
+      </div>
+      <!-- Variable commission -->
+      <div class="earn-box">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent)"></div>
+        <div class="earn-box-tag" style="color:rgba(245,166,35,.7)">Selon le secteur · Option abonnement</div>
+        <div class="earn-box-title">Le pro fixe sa propre rétribution</div>
+        <div class="earn-box-desc">Sur l'abonnement Popey à 149€/mois, le pro décide lui-même combien il rémunère ses apporteurs (entre 5€ et 20€ par client apporté). Popey collecte et vous reverse.</div>
+        <div class="earn-box-examples">
+          <div class="earn-ex"><span class="earn-ex-label">Pro abonné donne 5€/client</span><span class="earn-ex-val" style="color:var(--amber)">+5€</span></div>
+          <div class="earn-ex"><span class="earn-ex-label">Pro abonné donne 10€/client</span><span class="earn-ex-val" style="color:var(--amber)">+10€</span></div>
+          <div class="earn-ex"><span class="earn-ex-label">Immo · Popey encaisse 250€</span><span class="earn-ex-val" style="color:var(--amber)">+50€</span></div>
+        </div>
+      </div>
+
+      <!-- SIMULATOR -->
+      <div class="sim-section">
+        <div class="sim-title">🧮 Calculez vos revenus</div>
+        <div class="sim-sub">Renseignez votre situation pour une simulation personnalisée</div>
+        <div class="sim-controls">
+          <div class="sim-field">
+            <label>Nombre de contacts WhatsApp</label>
+            <input type="number" id="simContacts" value="300" min="50" max="2000" oninput="updateSim()">
+          </div>
+          <div class="sim-field">
+            <label>Secteur dominant dans votre réseau</label>
+            <select id="simSector" onchange="updateSim()">
+              <option value="30">🌿 Santé · Bien-être → vous +6€</option>
+              <option value="60" selected>🏠 Habitat · Travaux → vous +12€</option>
+              <option value="120">⚖️ Finance · Juridique (120€ Opt.A)</option>
+              <option value="250">🔑 Immobilier (250€ Opt.A)</option>
+              <option value="40">💻 Digital · Freelance (40€ Opt.A)</option>
+            </select>
+          </div>
+        </div>
+        <div class="sim-result">
+          <div class="sim-res-item">
+            <div class="sim-res-val" id="simLeads">6</div>
+            <div class="sim-res-label">Leads qualifiés / mois</div>
+          </div>
+          <div class="sim-res-item">
+            <div class="sim-res-val" id="simFixed">90€</div>
+            <div class="sim-res-label">Votre part (20%)</div>
+          </div>
+          <div class="sim-res-item highlight">
+            <div class="sim-res-val" id="simTotal">270€</div>
+            <div class="sim-res-label">Revenu estimé / mois</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TESTIMONIALS ══ -->
+<section class="section testis">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="sec-tag">Ils l'ont fait</div>
+      <h2 class="sec-h" style="color:var(--ink)">De vrais résultats.<br>Des vraies personnes.</h2>
+    </div>
+    <div class="testi-grid fade-up">
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-text">J'ai partagé le catalogue à ma liste WhatsApp un dimanche soir. Le lundi matin j'avais 3 notifications de commissions. Je n'avais rien eu à faire d'autre qu'appuyer sur "Partager".</div>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#DCFCE7;color:#166534">SB</div>
+          <div>
+            <div class="testi-name">Sophie B.</div>
+            <div class="testi-role">Assistante · Bayonne · 280 contacts</div>
+          </div>
+        </div>
+        <div class="testi-earn">+84€ le 1er mois</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-text">Je pensais que c'était compliqué comme un MLM. En fait c'est juste un lien. Mon contact active l'offre, Jean-Philippe s'occupe du reste, et la commission arrive toute seule.</div>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#DBEAFE;color:#1E40AF">ML</div>
+          <div>
+            <div class="testi-name">Marc L.</div>
+            <div class="testi-role">Artisan · Dax · 420 contacts</div>
+          </div>
+        </div>
+        <div class="testi-earn">+156€ le 1er mois</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-text">Mon fils en fac a généré 180€ son premier mois juste en envoyant le lien à ses potes. Le plus jeune apporteur du réseau. Il finance ses sorties comme ça maintenant.</div>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#FEF3C7;color:#92400E">TC</div>
+          <div>
+            <div class="testi-name">Thérèse C.</div>
+            <div class="testi-role">Retraitée · Pau · 190 contacts</div>
+          </div>
+        </div>
+        <div class="testi-earn">+108€ / mois en moyenne</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FAQ ══ -->
+<section class="section faq">
+  <div class="section-inner">
+    <div class="fade-up" style="text-align:center;margin-bottom:0">
+      <div class="sec-tag" style="justify-content:center">Questions fréquentes</div>
+      <h2 class="sec-h">Les vraies questions<br>que vous vous posez.</h2>
+    </div>
+    <div class="faq-list fade-up">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Est-ce légal ? Dois-je déclarer ces revenus ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Oui, c'est parfaitement légal — c'est un contrat d'apport d'affaires classique encadré par le droit commercial français. Pour les revenus : les montants sont généralement modestes et à déclarer en BNC si vous dépassez le seuil de la micro-activité. Au-delà, les revenus sont à déclarer en BNC (Bénéfices Non Commerciaux). Pour les montants importants, consultez un comptable. Popey vous fournit un récapitulatif annuel de toutes vos commissions.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">C'est quoi la différence avec un MLM ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">La différence est totale. Dans un MLM, vous devez acheter des produits, recruter d'autres personnes, et votre revenu dépend de votre réseau de recruteurs. Ici : vous ne vendez rien, vous ne recrutez personne, vous ne payez rien. Vous partagez juste un lien. Les pros locaux existent déjà, leurs offres existent déjà. Vous faites simplement connaître des offres utiles à vos proches, et vous êtes rémunéré pour ça. C'est de la recommandation, pas du MLM.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Quand et comment je reçois l'argent ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Les commissions sont versées le 1er de chaque mois pour toutes les activations validées du mois précédent. Versement par virement bancaire (vous renseignez votre IBAN une fois dans votre espace), ou via le portefeuille numérique Popey. Un délai de validation de 30 jours s'applique pour vérifier que le deal est bien signé. Le seuil minimum de versement est de 20€.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Mes contacts vont-ils être harcelés ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Non. Vous partagez une fois, votre contact reçoit le catalogue et décide librement d'activer ou non une offre. Aucun suivi commercial n'est fait sans leur accord explicite. Ils cliquent sur "Activer mon privilège", remplissent 30 secondes de formulaire, et Jean-Philippe les rappelle une fois pour qualifier leur besoin. Si l'intérêt n'est pas là, il ne relance pas. La qualité du réseau repose sur le respect des contacts.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Puis-je partager à mes contacts en dehors de la région ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Le réseau Popey est actuellement actif dans le Grand Sud-Ouest (Dax, Bayonne, Pau, Bordeaux et région). Les offres sont donc pertinentes pour vos contacts qui vivent ou travaillent dans ces zones. Si vous partagez à des contacts hors zone, ils recevront le catalogue mais ne pourront pas activer les offres (les pros ne couvrent pas leur zone). Le réseau s'étend régulièrement à de nouvelles villes.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <div class="faq-q-text">Y a-t-il un engagement ou des frais cachés ?</div>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-a">Aucun. La création du lien apporteur est gratuite. Il n'y a aucun abonnement, aucun achat obligatoire, aucune formation payante. Vous gagnez de l'argent ou vous n'en gagnez pas — mais vous ne pouvez pas en perdre. Si vous ne partagez pas, il ne se passe rien. Votre lien reste actif tant que vous le souhaitez.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA FINAL ══ -->
+<section class="cta-section" id="creer-lien">
+  <div class="cta-bg-orb"></div>
+  <div class="cta-inner fade-up">
+    <h2 class="cta-h">Votre lien est prêt<br>en <span>30 secondes.</span></h2>
+    <p class="cta-sub">Renseignez juste votre prénom et votre WhatsApp. Jean-Philippe vous envoie votre lien personnel immédiatement.</p>
+
+    <div class="cta-form" id="ctaForm">
+      <div class="cta-form-title">Créer mon lien apporteur</div>
+      <div class="form-fields">
+        <div class="form-field">
+          <label>Votre prénom</label>
+          <input type="text" id="ctaPrenom" placeholder="Sophie" autocomplete="given-name">
+        </div>
+        <div class="form-field">
+          <label>Votre WhatsApp</label>
+          <input type="tel" id="ctaTel" placeholder="+33 6 XX XX XX XX" autocomplete="tel">
+        </div>
+      </div>
+      <button class="btn-cta" onclick="submitApporteur()">
+        <span>💬 Recevoir mon lien via WhatsApp</span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <div class="success-msg" id="successMsg">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Votre lien arrive !</div>
+      <div class="success-sub">Jean-Philippe vous contacte dans les 2 heures avec votre lien personnel tracé. Bienvenue dans le réseau !</div>
+    </div>
+
+    <div class="cta-fine">Lien unique généré instantanément · Deals tracés automatiquement<br>20% de la commission Popey · Versement le 1er du mois · Gratuit · Sans engagement</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Popey</div>
+  <div class="footer-copy">© 2026 Popey Coffeeshop SAS · 9 Rue Sully, 40100 Dax · SIRET 995 014 388 00012</div>
+  <div style="display:flex;gap:16px">
+    <a href="popey-catalogue-unifie.html" class="footer-link">← Retour au catalogue</a>
+    <a href="jpr-landing.html" class="footer-link">Contact</a>
+  </div>
+</footer>
+
+<script>
+// ── HERO SIMULATOR ──
+function updateHeroSim() {
+  var n = parseInt(document.getElementById('heroSlider').value);
+  document.getElementById('heroContactsVal').textContent = n;
+  document.getElementById('heroContactsLabel').textContent = n + ' contacts';
+  // 20% of Popey avg commission (avg 60€/deal = 12€ per apporteur)
+  var avgApporteur = 12;
+  var low  = Math.round(n * 0.02 * avgApporteur);
+  var mid  = Math.round(n * 0.04 * avgApporteur);
+  var high = Math.round(n * 0.07 * avgApporteur);
+  var max  = high * 1.4;
+  document.getElementById('val1').textContent = low + '€';
+  document.getElementById('val2').textContent = mid + '€';
+  document.getElementById('val3').textContent = high + '€';
+  document.getElementById('bar1').style.width = Math.min(low/max*100, 100) + '%';
+  document.getElementById('bar2').style.width = Math.min(mid/max*100, 100) + '%';
+  document.getElementById('bar3').style.width = Math.min(high/max*100, 100) + '%';
+}
+updateHeroSim();
+
+// ── EARNINGS SIMULATOR ──
+function updateSim() {
+  var contacts = parseInt(document.getElementById('simContacts').value) || 300;
+  var sectorVal = parseInt(document.getElementById('simSector').value) || 60;
+  var rate = 0.03;
+  var leads = Math.round(contacts * rate);
+  // 20% of Popey commission per deal
+  var popeyCommission = sectorVal; // Option A tariff = Popey commission
+  var apporteurPerDeal = Math.round(popeyCommission * 0.20);
+  var fixedTotal = leads * apporteurPerDeal;
+  var total = fixedTotal;
+  document.getElementById('simLeads').textContent = leads;
+  document.getElementById('simFixed').textContent = fixedTotal + '€';
+  document.getElementById('simTotal').textContent = total + '€';
+}
+updateSim();
+
+// ── CTA SUBMIT ──
+function submitApporteur() {
+  var prenom = document.getElementById('ctaPrenom').value.trim();
+  var tel    = document.getElementById('ctaTel').value.trim();
+  if (!prenom) { document.getElementById('ctaPrenom').focus(); return; }
+  if (!tel)    { document.getElementById('ctaTel').focus(); return; }
+  var msg = encodeURIComponent(
+    'Bonjour Jean-Philippe ! Je voudrais créer mon lien apporteur Popey.\nMon prénom : ' + prenom + '\nMon WhatsApp : ' + tel
+  );
+  window.open('https://wa.me/33768233347?text=' + msg, '_blank');
+  document.getElementById('ctaForm').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'block';
+}
+
+// ── FAQ ──
+function toggleFaq(btn) {
+  var item = btn.closest('.faq-item');
+  var isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(function(i){ i.classList.remove('open'); });
+  if (!isOpen) item.classList.add('open');
+}
+
+// ── SCROLL ANIMATIONS ──
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el); });
+
+// ── ANIMATE BARS ON LOAD ──
+setTimeout(function(){
+  document.getElementById('bar1').style.width = '15%';
+  document.getElementById('bar2').style.width = '42%';
+  document.getElementById('bar3').style.width = '75%';
+}, 600);
+</script>
+</body>
+</html>

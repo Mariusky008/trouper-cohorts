@@ -3852,19 +3852,21 @@ async function initLiveCatalog() {
 }
 
 document.addEventListener('click', function (event) {
-  var eventsSeeAll = event.target.closest('#eventsSeeAllLink');
+  var targetEl = event && event.target && event.target.nodeType === 1 ? event.target : (event && event.target && event.target.parentElement ? event.target.parentElement : null);
+  if (!targetEl) return;
+  var eventsSeeAll = targetEl.closest('#eventsSeeAllLink');
   if (eventsSeeAll) {
     event.preventDefault();
     openEventsModal();
     return;
   }
-  var swipeLink = event.target.closest('#openSwipeMode');
+  var swipeLink = targetEl.closest('#openSwipeMode');
   if (swipeLink) {
     event.preventDefault();
     openSwipeMode();
     return;
   }
-  var swipePill = event.target.closest('.swp-pill');
+  var swipePill = targetEl.closest('.swp-pill');
   if (swipePill) {
     var sphere = swipePill.getAttribute('data-sphere') || 'all';
     swipeState.sphere = sphere;
@@ -3874,13 +3876,14 @@ document.addEventListener('click', function (event) {
     renderSwipeStage();
     return;
   }
-  var favActivate = event.target.closest('.js-fav-activate');
+  var favActivate = targetEl.closest('.js-fav-activate');
   if (favActivate) {
     event.preventDefault();
-    activateLive(favActivate.getAttribute('data-place-id'), 'PRIV');
+    closeSwipeFavs();
+    activateLive(favActivate.getAttribute('data-place-id'), 'PRIV', { openMode: 'direct' });
     return;
   }
-  var button = event.target.closest('.js-live-activate');
+  var button = targetEl.closest('.js-live-activate');
   if (!button) return;
   event.preventDefault();
   activateLive(button.getAttribute('data-place-id'), button.getAttribute('data-code') || 'PRIV');

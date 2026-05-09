@@ -137,6 +137,9 @@ export default async function AdminHumainPermissionsPage({
         <p className="mt-1 text-sm text-muted-foreground">
           Réglez l&apos;accès membre: `BINOME_ONLY`, `SELECTED_MEMBERS` ou `SPHERE_FULL`.
         </p>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          Configuration avancée: indépendant du pipeline Marketplace (pros ACCEPTED). Utile uniquement pour l&apos;accès réseau interne Popey Human.
+        </p>
         <div className="mt-3">
           <Button asChild variant="outline">
             <Link href="/admin/humain/membres">Gérer les membres</Link>
