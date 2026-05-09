@@ -154,6 +154,12 @@ export default async function AdminHumainAffiliationPage({
 }) {
   const params = (await searchParams) || {};
   const supabaseAdmin = createAdminClient();
+  const requestedPeriodRaw = typeof params.period === "string" ? params.period : "week";
+  const period = ["all", "day", "week", "month", "year"].includes(requestedPeriodRaw) ? requestedPeriodRaw : "week";
+  const threshold = periodThreshold(period);
+  const scoutFilterId = typeof params.scout === "string" ? params.scout : "";
+  const ticketFilterCode = typeof params.ticket === "string" ? txt(params.ticket) : "";
+
   const snapshot = await getAdminMarketplaceSnapshot({ placeCity: "all" });
   const { data: logsData, error } = await supabaseAdmin
     .from("human_scout_notification_log")
@@ -163,10 +169,27 @@ export default async function AdminHumainAffiliationPage({
     .limit(300);
 
   const logs = ((logsData as SignupLogRow[] | null) || []).filter((row) => row.event_type === "public_affiliate_signup");
-  const requestedPeriodRaw = typeof params.period === "string" ? params.period : "week";
-  const period = ["all", "day", "week", "month", "year"].includes(requestedPeriodRaw) ? requestedPeriodRaw : "week";
-  const threshold = periodThreshold(period);
-  const activationTicketsAll = (snapshot.recentActivations || []).slice(0, 300);
+  let activationTicketsAll = (snapshot.recentActivations || []).slice(0, 300);
+  if (scoutFilterId || ticketFilterCode) {
+    let activationQuery = supabaseAdmin
+      .from("human_marketplace_landing_activations")
+      .select(
+        "id,city,category_key,client_name,referrer_id,referrer_name,partner_member_id,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (ticketFilterCode) {
+      activationQuery = activationQuery.eq("metadata->>ticket_code", ticketFilterCode);
+    }
+    if (scoutFilterId) {
+      activationQuery = activationQuery.or(
+        `metadata->>apporteur_scout_id.eq.${scoutFilterId},metadata->>scout_id.eq.${scoutFilterId}`,
+      );
+    }
+    const { data: activationsFiltered } = await activationQuery;
+    activationTicketsAll = ((activationsFiltered as typeof activationTicketsAll) || []).slice(0, 500);
+  }
   const activationTickets = activationTicketsAll.filter((ticket) => {
     if (threshold === null) return true;
     const ts = Date.parse(String(ticket.created_at || ""));
@@ -231,8 +254,9 @@ export default async function AdminHumainAffiliationPage({
   const affStatus = typeof params.affStatus === "string" ? params.affStatus : typeof params.marketStatus === "string" ? params.marketStatus : "";
   const affMessage = typeof params.affMessage === "string" ? params.affMessage : typeof params.marketMessage === "string" ? params.marketMessage : "";
   const focusedTicketId = typeof params.marketFocus === "string" ? params.marketFocus : "";
-  const scoutFilterId = typeof params.scout === "string" ? params.scout : "";
-  const currentUrlForForms = `/admin/humain/affiliation?period=${period}${scoutFilterId ? `&scout=${encodeURIComponent(scoutFilterId)}` : ""}`;
+  const currentUrlForForms = `/admin/humain/affiliation?period=${period}${scoutFilterId ? `&scout=${encodeURIComponent(scoutFilterId)}` : ""}${
+    ticketFilterCode ? `&ticket=${encodeURIComponent(ticketFilterCode)}` : ""
+  }`;
   const ticketFilterScout = scoutFilterId ? scoutById.get(scoutFilterId) || null : null;
   const activationTicketsFiltered = scoutFilterId
     ? activationTickets.filter((ticket) => {
