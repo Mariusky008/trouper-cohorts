@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
     const { data: place, error: placeError } = await supabase
       .from("human_marketplace_places")
-      .select("id,city,sphere_key,metier,company_name,owner_member_id,partner_phone,partner_whatsapp")
+      .select("id,city,sphere_key,metier,company_name,privilege_badge,owner_member_id,partner_phone,partner_whatsapp")
       .eq("id", placeId)
       .maybeSingle();
 
@@ -316,19 +316,18 @@ export async function POST(request: NextRequest) {
 
     const trackingId = activationId || requestId;
     const adminWaPhone = getAdminWhatsappDigits();
+    const offerLabel = trim(place.privilege_badge) || trim(place.metier) || "offre Popey";
+    const clientText =
+      fallbackClientMessage ||
+      `Bonjour, je suis intéressé(e) par votre offre "${offerLabel}". Merci de me contacter pour un rendez-vous. Bonne journée.`;
     const rawMessage = [
-      `NOUVEAU LEAD CATALOGUE POPEY`,
-      `ID: ${ticketCode}`,
-      `Client: ${leadPayload.client_name}`,
-      resolvedClientPhone ? `Tel client: ${resolvedClientPhone}` : null,
-      fallbackClientMessage ? `Message client: ${fallbackClientMessage}` : null,
-      `Referrer: ${leadPayload.referrer_name}`,
-      `Pro cible: ${partnerName} (${trim(place.metier) || "metier non precise"})`,
-      `Ville: ${leadPayload.city}`,
-      `Source: ${source}`,
+      `Bonjour Jean-Philippe,`,
+      `Je suis intéressé(e) par l'offre "${offerLabel}" proposée par ${partnerName} à ${leadPayload.city}.`,
+      clientText,
+      `Merci de me recontacter pour un rendez-vous.`,
       ``,
-      `Action demandee: qualification + dispatch manuel (tour de controle).`,
-      `Tracking: ${trackingId}`,
+      `Cordialement,`,
+      `${leadPayload.client_name}`,
     ].join("\n");
     const whatsappUrl = adminWaPhone
       ? `https://api.whatsapp.com/send?phone=${adminWaPhone}&text=${encodeURIComponent(rawMessage)}`

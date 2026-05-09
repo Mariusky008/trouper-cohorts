@@ -3429,16 +3429,11 @@ async function confirmSwipeActivate() {
   if (!swipeActivationTarget) return;
   var place = swipeActivationTarget;
   var button = document.getElementById('swipeActivateConfirmBtn');
-  var popup = null;
-  try { popup = window.open('about:blank', '_blank'); } catch (_popupErr) { popup = null; }
   if (button) {
     button.disabled = true;
     button.textContent = 'Ouverture...';
   }
-  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'direct', popupWindow: popup });
-  if (!ok && popup && !popup.closed) {
-    try { popup.close(); } catch (_closeErr) {}
-  }
+  var ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'direct', sameTab: true });
   if (button) {
     button.disabled = false;
     button.textContent = 'Ouvrir WhatsApp →';
@@ -3623,6 +3618,11 @@ async function activateLive(placeId, trackingCode, options) {
   var url = String(payload.whatsappUrl || ('https://wa.me/33768233347?text=' + encodeURIComponent(message)));
   var mode = options && options.openMode ? String(options.openMode) : 'sheet';
   if (mode === 'direct') {
+    var sameTab = Boolean(options && options.sameTab);
+    if (sameTab) {
+      window.location.href = url;
+      return true;
+    }
     var popup = options && options.popupWindow ? options.popupWindow : null;
     try {
       if (popup && !popup.closed) {
