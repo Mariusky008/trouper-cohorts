@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   adminDecideAffiliateCommissionAction,
+  adminDeleteAffiliateTicketAction,
   adminSendPrivilegeActivationFollowupNowAction,
   adminUpdatePrivilegeActivationStatusAction,
   getAdminMarketplaceSnapshot,
@@ -398,6 +399,8 @@ export default async function AdminHumainAffiliationPage({
           const lastReplyClassif = readMetaText(ticket.metadata, "pro_followup_last_reply_classification");
           const replyBadge = webhookBadge(lastReplyClassif);
           const ticketCode = readTicketCode(ticket.metadata, ticket.id);
+          const placeId = txt(ticket.place?.id);
+          const proWebappUrl = placeId ? `/popey-human/accueil-test/webapp-pro?place_id=${encodeURIComponent(placeId)}` : "";
           const decision = decisionByActivationId.get(ticket.id) || null;
           const decisionStatusFromMeta = readMetaText(ticket.metadata, "commission_decision_status");
           const decisionAmountFromMeta = readMetaText(ticket.metadata, "commission_amount_eur");
@@ -452,6 +455,14 @@ export default async function AdminHumainAffiliationPage({
                   <p className="text-xs text-black/80">
                     Pro ciblé: <span className="font-semibold">{ticket.partner_name || ticket.place?.metier || "Non renseigné"}</span>
                   </p>
+                  {proWebappUrl ? (
+                    <p className="text-xs text-sky-700">
+                      Webapp pro:{" "}
+                      <a href={proWebappUrl} target="_blank" rel="noreferrer" className="font-semibold underline">
+                        Ouvrir
+                      </a>
+                    </p>
+                  ) : null}
                   <p className="text-xs text-black/60">
                     Ville: {ticket.city} · Créé le {toDate(ticket.created_at)}
                   </p>
@@ -562,6 +573,17 @@ export default async function AdminHumainAffiliationPage({
                   </button>
                 </form>
               </div>
+              <form action={adminDeleteAffiliateTicketAction} className="mt-2">
+                <input type="hidden" name="current_url" value={currentUrlForForms} />
+                <input type="hidden" name="activation_id" value={ticket.id} />
+                <button
+                  name="confirm"
+                  value="delete"
+                  className="h-9 rounded border border-rose-300 bg-rose-50 px-3 text-[11px] font-black uppercase tracking-wide text-rose-800"
+                >
+                  Supprimer ce ticket
+                </button>
+              </form>
               {decisionDecidedAt ? (
                 <p className="mt-2 text-[11px] text-black/55">Dernière décision commission: {toDate(decisionDecidedAt)}</p>
               ) : null}

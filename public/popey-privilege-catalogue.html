@@ -3761,7 +3761,7 @@ async function activateLive(placeId, trackingCode, options) {
     referrerName: (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Jean Roth').trim(),
     referrerId: (params.get('ref_id') || null),
     referralCode: (params.get('ref') || null),
-    scoutToken: (params.get('scout_token') || null),
+    scoutToken: (params.get('scout_token') || params.get('token') || params.get('ref') || null),
     source: 'whatsapp_landing'
   };
   var response = await fetch('/api/popey-human/marketplace/places/activate', {

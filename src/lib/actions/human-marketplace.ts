@@ -1082,6 +1082,51 @@ export async function adminDecideAffiliateCommissionAction(formData: FormData): 
   );
 }
 
+export async function adminDeleteAffiliateTicketAction(formData: FormData): Promise<void> {
+  const auth = await requireHumanAdmin();
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/affiliation");
+  if ("error" in auth) redirect(withMarketplaceStatus(currentUrl, "error", auth.error || "Acces admin requis."));
+
+  const activationId = String(formData.get("activation_id") || "").trim();
+  const confirm = String(formData.get("confirm") || "").trim().toLowerCase();
+  if (!activationId) redirect(withMarketplaceStatus(currentUrl, "error", "Ticket introuvable."));
+  if (confirm !== "delete") redirect(withMarketplaceStatus(withMarketplaceFocus(currentUrl, activationId), "error", "Confirmation requise."));
+
+  const supabaseAdmin = createAdminClient();
+
+  await supabaseAdmin.from("human_affiliate_commission_decisions").delete().eq("activation_id", activationId);
+
+  const { error: ledgerDeleteError } = await supabaseAdmin.from("human_marketplace_commission_ledger").delete().eq("activation_id", activationId);
+  if (ledgerDeleteError && !String(ledgerDeleteError.message || "").toLowerCase().includes("human_marketplace_commission_ledger")) {
+    redirect(
+      withMarketplaceStatus(
+        withMarketplaceFocus(currentUrl, activationId),
+        "error",
+        ledgerDeleteError.message || "Suppression ledger impossible.",
+      ),
+    );
+  }
+
+  await supabaseAdmin.from("human_scout_notification_log").delete().eq("payload_json->>activation_id", activationId);
+
+  const { error: activationDeleteError } = await supabaseAdmin.from("human_marketplace_landing_activations").delete().eq("id", activationId);
+  if (activationDeleteError) {
+    redirect(
+      withMarketplaceStatus(
+        withMarketplaceFocus(currentUrl, activationId),
+        "error",
+        activationDeleteError.message || "Suppression ticket impossible.",
+      ),
+    );
+  }
+
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/admin/humain/marketplace");
+  revalidatePath("/admin/humain/privileges");
+  redirect(withMarketplaceStatus(currentUrl, "success", "Ticket supprimé."));
+}
+
 export async function adminSendPrivilegeActivationFollowupNowAction(formData: FormData): Promise<void> {
   const auth = await requireHumanAdmin();
   const currentUrl = String(formData.get("current_url") || "/admin/humain/affiliation");

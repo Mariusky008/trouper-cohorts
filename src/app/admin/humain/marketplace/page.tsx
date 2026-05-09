@@ -100,12 +100,21 @@ function buildReferralCodeLink(baseUrl: string, city: string, referralCode: stri
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
-function buildProWebappLink(baseUrl: string, city: string, refLabel: string, refMetier?: string, rewardQuery?: string, memberId?: string) {
+function buildProWebappLink(
+  baseUrl: string,
+  city: string,
+  refLabel: string,
+  refMetier?: string,
+  rewardQuery?: string,
+  memberId?: string,
+  placeId?: string,
+) {
   const citySlug = slugify(city || "dax") || "dax";
   const metierParam = refMetier ? `&ref_metier=${encodeURIComponent(refMetier)}` : "";
   const memberParam = memberId ? `&member_id=${encodeURIComponent(memberId)}` : "";
+  const placeParam = placeId ? `&place_id=${encodeURIComponent(placeId)}` : "";
   const rewardSuffix = rewardQuery || "";
-  const relativeUrl = `/popey-human/accueil-test/webapp-pro?ville=${encodeURIComponent(citySlug)}&city=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${memberParam}${rewardSuffix}`;
+  const relativeUrl = `/popey-human/accueil-test/webapp-pro?ville=${encodeURIComponent(citySlug)}&city=${encodeURIComponent(citySlug)}&ref_name=${encodeURIComponent(refLabel)}${metierParam}${memberParam}${placeParam}${rewardSuffix}`;
   return baseUrl ? `${baseUrl}${relativeUrl}` : relativeUrl;
 }
 
@@ -507,7 +516,7 @@ export default async function AdminHumainMarketplacePage({
                               : offer.status === "accepted" && referralCode
                                 ? buildReferralCodeLink(appBase, city, referralCode, refLabel, refMetier, rewardQuery)
                                 : "";
-                            const proWebappLink = buildProWebappLink(appBase, city, refLabel, refMetier, rewardQuery, refId);
+                            const proWebappLink = buildProWebappLink(appBase, city, refLabel, refMetier, rewardQuery, refId, String(offer.place?.id || "").trim());
                             if (!catalogueLink) return null;
                             return (
                               <div className="space-y-1">

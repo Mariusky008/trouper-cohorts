@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 type ActivationRow = {
   id: string;
   created_at: string;
+  place_id: string | null;
   city: string | null;
   client_name: string | null;
   partner_name: string | null;
@@ -103,15 +104,16 @@ function elapsedLabel(iso: string) {
 export async function GET(request: NextRequest) {
   const memberId = txt(request.nextUrl.searchParams.get("member_id"));
   const refName = txt(request.nextUrl.searchParams.get("ref_name"));
+  const placeId = txt(request.nextUrl.searchParams.get("place_id") || request.nextUrl.searchParams.get("placeId"));
   const city = txt(request.nextUrl.searchParams.get("city") || request.nextUrl.searchParams.get("ville"));
-  if (!memberId && !refName) {
-    return NextResponse.json({ error: "member_id ou ref_name requis." }, { status: 400 });
+  if (!memberId && !refName && !placeId) {
+    return NextResponse.json({ error: "member_id, ref_name ou place_id requis." }, { status: 400 });
   }
 
   const supabase = createAdminClient();
   const { data: activationsData, error: activationsError } = await supabase
     .from("human_marketplace_landing_activations")
-    .select("id,created_at,city,client_name,partner_name,partner_member_id,metadata")
+    .select("id,created_at,place_id,city,client_name,partner_name,partner_member_id,metadata")
     .order("created_at", { ascending: false })
     .limit(2500);
   if (activationsError) {
@@ -121,6 +123,7 @@ export async function GET(request: NextRequest) {
   const activations = (activationsData as ActivationRow[] | null) || [];
   const normalizedRef = normalizePersonName(refName);
   const scoped = activations.filter((row) => {
+    if (placeId && txt(row.place_id) === placeId) return true;
     if (memberId && txt(row.partner_member_id) === memberId) return true;
     if (!memberId && normalizedRef && normalizePersonName(row.partner_name || "") === normalizedRef) return true;
     return false;
@@ -225,10 +228,18 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     controls: {
-      source: memberId ? "member_id" : "fallback_ref_name",
+      source: placeId ? "place_id" : memberId ? "member_id" : "fallback_ref_name",
       member_id_present: Boolean(memberId),
+      place_id_present: Boolean(placeId),
       data_rows: rows.length,
-      warnings: rows.length === 0 ? ["Aucune donnée liée à ce pro. Vérifie le member_id transmis dans le lien."] : [],
+      warnings:
+        rows.length === 0
+          ? [
+              placeId
+                ? "Aucune donnée liée à ce pro. Vérifie le place_id transmis dans le lien."
+                : "Aucune donnée liée à ce pro. Vérifie le member_id transmis dans le lien.",
+            ]
+          : [],
     },
     kpis: {
       contacts_received_month: contactsThisMonth,

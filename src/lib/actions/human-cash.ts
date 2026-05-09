@@ -1005,6 +1005,49 @@ export async function adminProcessMarketplaceCommissionRequestAction(formData: F
   redirect(withCommissionStatus(currentUrl, "success", "Demande de virement traitée."));
 }
 
+export async function adminDeleteMarketplaceCommissionRequestAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/commissions");
+  const admin = await requireAdminUser();
+  if ("error" in admin) {
+    redirect(withCommissionStatus(currentUrl, "error", admin.error || "Action impossible."));
+  }
+
+  const requestId = String(formData.get("request_id") || "").trim();
+  const confirm = String(formData.get("confirm") || "").trim().toLowerCase();
+  if (!requestId) redirect(withCommissionStatus(currentUrl, "error", "Demande introuvable."));
+  if (confirm !== "delete") redirect(withCommissionStatus(currentUrl, "error", "Confirmation requise."));
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin.from("human_marketplace_commission_requests").delete().eq("id", requestId);
+  if (error) redirect(withCommissionStatus(currentUrl, "error", error.message || "Suppression impossible."));
+
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/popey-human/app/cash");
+  redirect(withCommissionStatus(currentUrl, "success", "Demande supprimée."));
+}
+
+export async function adminDeleteHumanCommissionLedgerRowAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/commissions");
+  const admin = await requireAdminUser();
+  if ("error" in admin) {
+    redirect(withCommissionStatus(currentUrl, "error", admin.error || "Action impossible."));
+  }
+
+  const ledgerId = String(formData.get("ledger_id") || "").trim();
+  const confirm = String(formData.get("confirm") || "").trim().toLowerCase();
+  if (!ledgerId) redirect(withCommissionStatus(currentUrl, "error", "Ligne commission introuvable."));
+  if (confirm !== "delete") redirect(withCommissionStatus(currentUrl, "error", "Confirmation requise."));
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin.from("human_marketplace_commission_ledger").delete().eq("id", ledgerId);
+  if (error) redirect(withCommissionStatus(currentUrl, "error", error.message || "Suppression impossible."));
+
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/admin/humain/affiliation");
+  revalidatePath("/popey-human/app/cash");
+  redirect(withCommissionStatus(currentUrl, "success", "Ligne commission supprimée."));
+}
+
 async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
   if (!userId) return { error: "Session requise." };

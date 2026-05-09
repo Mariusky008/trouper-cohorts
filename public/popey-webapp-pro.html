@@ -1376,11 +1376,13 @@ function statusTagClass(status) {
 function fetchLiveProDashboard() {
   var memberId = (qp.get('member_id') || '').trim();
   var refName = (qp.get('ref_name') || '').trim();
+  var placeId = (qp.get('place_id') || qp.get('placeId') || '').trim();
   var city = (qp.get('city') || qp.get('ville') || '').trim();
-  if (!memberId && !refName) return Promise.resolve(null);
+  if (!memberId && !refName && !placeId) return Promise.resolve(null);
   var qs = new URLSearchParams();
   if (memberId) qs.set('member_id', memberId);
   if (refName) qs.set('ref_name', refName);
+  if (placeId) qs.set('place_id', placeId);
   if (city) qs.set('city', city);
   return fetch('/api/popey-human/eclaireur-preview/public-pro-dashboard?' + qs.toString(), { cache: 'no-store' })
     .then(function(response) {

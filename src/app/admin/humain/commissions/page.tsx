@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AdminStatusBanner } from "@/components/admin/status-banner";
 import {
+  adminDeleteHumanCommissionLedgerRowAction,
+  adminDeleteMarketplaceCommissionRequestAction,
   adminProcessMarketplaceCommissionRequestAction,
   adminSetMarketplaceProCommissionRuleAction,
   adminSetHumanCommissionStatusAction,
@@ -142,7 +144,20 @@ export default async function AdminHumainCommissionsPage({
                 <p className="text-sm font-semibold">
                   {request.memberLabel} · {requestKindLabel(request.requestKind)} · {euros(request.requestedAmountEur)}
                 </p>
-                <span className="text-xs font-black uppercase tracking-wide">{requestStatusLabel(request.status)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wide">{requestStatusLabel(request.status)}</span>
+                  <form action={adminDeleteMarketplaceCommissionRequestAction}>
+                    <input type="hidden" name="current_url" value={clearHref} />
+                    <input type="hidden" name="request_id" value={request.id} />
+                    <button
+                      name="confirm"
+                      value="delete"
+                      className="h-7 rounded border border-rose-300 bg-rose-50 px-2 text-[10px] font-black uppercase tracking-wide text-rose-800"
+                    >
+                      Supprimer
+                    </button>
+                  </form>
+                </div>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Créée le {new Date(request.createdAt).toLocaleString("fr-FR")}</p>
               {request.status === "pending" ? (
@@ -212,6 +227,17 @@ export default async function AdminHumainCommissionsPage({
                     </select>
                     <input name="payment_note" defaultValue={row.note || ""} placeholder="Note" className="rounded border px-2 py-1 text-xs" />
                     <button className="rounded border px-2 py-1 text-xs font-semibold">Mettre à jour</button>
+                  </form>
+                  <form action={adminDeleteHumanCommissionLedgerRowAction} className="mt-1">
+                    <input type="hidden" name="current_url" value={clearHref} />
+                    <input type="hidden" name="ledger_id" value={row.id} />
+                    <button
+                      name="confirm"
+                      value="delete"
+                      className="h-7 rounded border border-rose-300 bg-rose-50 px-2 text-[10px] font-black uppercase tracking-wide text-rose-800"
+                    >
+                      Supprimer
+                    </button>
                   </form>
                   <p className="mt-1 text-xs text-muted-foreground">{paymentStatusLabel(row.paymentStatus)}</p>
                 </td>
