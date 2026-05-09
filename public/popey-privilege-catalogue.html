@@ -3119,9 +3119,12 @@ function renderEventsModal() {
     return;
   }
   body.innerHTML = localEventsCache.map(function(ev) {
+    var media = ev.imageUrl
+      ? '<img src="' + ev.imageUrl + '" alt="' + ev.title + '" style="width:100%;height:100%;object-fit:cover;">'
+      : ev.emoji;
     return ''
       + '<article class="events-modal-card">'
-      + '  <div class="events-modal-media" style="background:' + ev.bg + '">' + ev.emoji + '</div>'
+      + '  <div class="events-modal-media" style="background:' + ev.bg + '">' + media + '</div>'
       + '  <div class="events-modal-content">'
       + '    <div class="events-modal-day">' + ev.day + '</div>'
       + '    <div class="events-modal-name">' + ev.title + '</div>'
