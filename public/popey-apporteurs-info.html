@@ -692,9 +692,17 @@ function populateCitySelect(cities, selectedSlugOrLabel) {
     select.appendChild(opt);
     return;
   }
-  items.forEach(function(cityLabel) {
-    var label = toCityLabel(cityLabel);
-    var slug = String(label || '').trim().toLowerCase().replace(/\s+/g, '-');
+  items.forEach(function(cityItem) {
+    var rawLabel = '';
+    var rawSlug = '';
+    if (typeof cityItem === 'string') {
+      rawLabel = cityItem;
+    } else if (cityItem && typeof cityItem === 'object') {
+      rawLabel = String(cityItem.label || cityItem.city || '').trim();
+      rawSlug = String(cityItem.slug || cityItem.city_slug || '').trim();
+    }
+    var label = toCityLabel(rawLabel);
+    var slug = (rawSlug || String(label || '').trim().toLowerCase().replace(/\s+/g, '-')).toLowerCase();
     var opt = document.createElement('option');
     opt.value = slug;
     opt.textContent = label;
@@ -708,7 +716,7 @@ async function loadAvailableCities() {
   if (!select) return;
   select.innerHTML = '<option value="">Chargement…</option>';
   try {
-    var res = await fetch('/api/popey-human/marketplace/places?catalog=privilege', { cache: 'no-store' });
+    var res = await fetch('/api/popey-human/marketplace/cities?catalog=privilege', { cache: 'no-store' });
     var payload = await res.json().catch(function() { return {}; });
     var cities = Array.isArray(payload.cities) ? payload.cities : [];
     availableCities = cities;

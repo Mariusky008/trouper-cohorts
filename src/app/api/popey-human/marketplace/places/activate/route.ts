@@ -328,9 +328,6 @@ export async function POST(request: NextRequest) {
       ``,
       `Parrain: ${apporteurName || resolvedReferrerName || "Non renseigné"}`,
       `Ticket: ${ticketCode}`,
-      ``,
-      `Cordialement,`,
-      `${leadPayload.client_name}`,
     ].join("\n");
     const whatsappUrl = adminWaPhone
       ? `https://api.whatsapp.com/send?phone=${adminWaPhone}&text=${encodeURIComponent(rawMessage)}`
