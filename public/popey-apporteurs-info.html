@@ -199,6 +199,9 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
 .form-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
 .form-field label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,242,235,.35);margin-bottom:6px;display:block}
 .form-field input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-family:var(--fb);font-size:15px;color:#fff;outline:none;transition:border-color .2s}
+.form-field select{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-family:var(--fb);font-size:15px;font-weight:600;color:#fff;outline:none;transition:border-color .2s;appearance:none}
+.form-field select:focus{border-color:var(--teal)}
+.form-field select option{background:#0A0C10;color:#fff}
 .form-field input:focus{border-color:var(--teal)}
 .form-field input::placeholder{color:rgba(255,255,255,.2)}
 .btn-cta{width:100%;background:linear-gradient(135deg,var(--teal),#00A070);color:var(--ink);border:none;border-radius:14px;padding:17px;font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .25s;box-shadow:0 8px 28px rgba(0,196,140,.35);letter-spacing:-.3px}
@@ -618,6 +621,10 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
           <label>Votre WhatsApp</label>
           <input type="tel" id="ctaTel" placeholder="+33 6 XX XX XX XX" autocomplete="tel">
         </div>
+        <div class="form-field">
+          <label>Votre ville</label>
+          <select id="ctaCity"></select>
+        </div>
       </div>
       <button class="btn-cta" id="ctaSubmitBtn" onclick="submitApporteur(event)">
         <span>💬 Créer mon lien apporteur</span>
@@ -670,16 +677,64 @@ function buildBackToCatalogLink() {
 buildBackToCatalogLink();
 
 var generatedReferral = { webapp: '', catalogue: '', wa: '' };
+var availableCities = [];
+
+function populateCitySelect(cities, selectedSlugOrLabel) {
+  var select = document.getElementById('ctaCity');
+  if (!select) return;
+  var selected = String(selectedSlugOrLabel || '').trim().toLowerCase();
+  var items = Array.isArray(cities) ? cities : [];
+  select.innerHTML = '';
+  if (items.length === 0) {
+    var opt = document.createElement('option');
+    opt.value = 'dax';
+    opt.textContent = 'Dax';
+    select.appendChild(opt);
+    return;
+  }
+  items.forEach(function(cityLabel) {
+    var label = toCityLabel(cityLabel);
+    var slug = String(label || '').trim().toLowerCase().replace(/\s+/g, '-');
+    var opt = document.createElement('option');
+    opt.value = slug;
+    opt.textContent = label;
+    if (selected && (selected === slug || selected === label.toLowerCase())) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+async function loadAvailableCities() {
+  var select = document.getElementById('ctaCity');
+  if (!select) return;
+  select.innerHTML = '<option value="">Chargement…</option>';
+  try {
+    var res = await fetch('/api/popey-human/marketplace/places?catalog=privilege', { cache: 'no-store' });
+    var payload = await res.json().catch(function() { return {}; });
+    var cities = Array.isArray(payload.cities) ? payload.cities : [];
+    availableCities = cities;
+    var params = new URLSearchParams(window.location.search);
+    var preselected = String(params.get('ville') || '').trim().toLowerCase();
+    populateCitySelect(cities, preselected || 'dax');
+  } catch (_e) {
+    populateCitySelect(['Dax'], 'dax');
+  }
+}
 
 async function submitApporteur(event) {
   if (event) event.preventDefault();
   var prenom = document.getElementById('ctaPrenom').value.trim();
   var nom = document.getElementById('ctaNom') ? document.getElementById('ctaNom').value.trim() : '';
   var tel = document.getElementById('ctaTel').value.trim();
+  var citySelect = document.getElementById('ctaCity');
+  var citySlug = citySelect && citySelect.value ? String(citySelect.value).trim() : '';
+  var cityLabel = citySelect && citySelect.options && citySelect.options.length
+    ? String(citySelect.options[citySelect.selectedIndex].textContent || '').trim()
+    : '';
   var submitBtn = document.getElementById('ctaSubmitBtn');
   if (!prenom) { document.getElementById('ctaPrenom').focus(); return; }
   if (!nom) { document.getElementById('ctaNom').focus(); return; }
   if (!tel) { document.getElementById('ctaTel').focus(); return; }
+  if (!cityLabel) { if (citySelect) citySelect.focus(); return; }
 
   try {
     if (submitBtn) { submitBtn.disabled = true; }
@@ -689,8 +744,7 @@ async function submitApporteur(event) {
     var sponsorName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || params.get('sponsor') || 'Popey').trim();
     var sponsorRefCode = (params.get('ref') || '').trim();
     var sponsorMemberId = (params.get('ref_id') || '').trim();
-    var citySlug = (params.get('ville') || 'dax').trim();
-    var cityLabel = toCityLabel(citySlug);
+    var finalCityLabel = cityLabel || toCityLabel(citySlug || params.get('ville') || 'dax');
 
     var response = await fetch('/api/popey-human/affiliation/public/register', {
       method: 'POST',
@@ -698,7 +752,7 @@ async function submitApporteur(event) {
       body: JSON.stringify({
         fullName: (prenom + ' ' + nom).trim(),
         phone: tel,
-        city: cityLabel,
+        city: finalCityLabel,
         sponsorName: sponsorName,
         sponsorRefCode: sponsorRefCode || null,
         sponsorMemberId: sponsorMemberId || null
@@ -809,6 +863,8 @@ setTimeout(function(){
   document.getElementById('bar2').style.width = '42%';
   document.getElementById('bar3').style.width = '75%';
 }, 600);
+
+loadAvailableCities();
 </script>
 </body>
 </html>
