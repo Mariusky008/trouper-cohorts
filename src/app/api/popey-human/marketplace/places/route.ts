@@ -42,6 +42,7 @@ type PlaceRow = {
   partners_count: number;
   value_growth_pct: number;
   claimed_at: string | null;
+  claimed_by_offer_id?: string | null;
 };
 
 type OfferRefRow = {
@@ -97,6 +98,23 @@ function rewardLabelForMember(input: {
     }
   }
   return "";
+}
+
+function rewardLabelForOfferMetadata(metadata: Record<string, unknown>): string {
+  const direct = trim(metadata.apporteur_reward_text);
+  if (direct) return direct;
+  const mode = trim(metadata.apporteur_reward_mode).toLowerCase();
+  const valueRaw = trim(metadata.apporteur_reward_value).replace(",", ".");
+  const value = Number(valueRaw);
+  if (!Number.isFinite(value) || value <= 0) return "";
+  if (mode === "percent") return `${Math.round(value * 100) / 100}%`;
+  if (mode === "eur") return `${(Math.round(value * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  return "";
+}
+
+function asMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
 }
 
 const BLOCKED_METIER_KEYWORDS = [
@@ -295,7 +313,7 @@ export async function GET(request: NextRequest) {
     let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at,claimed_by_offer_id",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -396,10 +414,30 @@ export async function GET(request: NextRequest) {
     else if (sort === "ca_desc") query = query.order("monthly_ca_eur", { ascending: false });
     else query = query.order("list_price_eur", { ascending: false, nullsFirst: false });
 
-    const { data, error } = await query.limit(3000);
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    let data: unknown = null;
+    let error: { message?: string } | null = null;
+    {
+      const res = await query.limit(3000);
+      data = res.data;
+      error = res.error as { message?: string } | null;
     }
+    if (error && String(error.message || "").toLowerCase().includes("claimed_by_offer_id")) {
+      query = supabase.from("human_marketplace_places").select(
+        "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
+      );
+      if (status === "sale") query = query.eq("status", "sale");
+      if (status === "dispo") query = query.eq("status", "dispo");
+      if (spheres.length > 0) query = query.in("sphere_key", spheres);
+      if (sort === "value_asc") query = query.order("list_price_eur", { ascending: true, nullsFirst: true });
+      else if (sort === "reco_desc") query = query.order("recos_per_year", { ascending: false });
+      else if (sort === "anciennete_desc") query = query.order("months_active", { ascending: false });
+      else if (sort === "ca_desc") query = query.order("monthly_ca_eur", { ascending: false });
+      else query = query.order("list_price_eur", { ascending: false, nullsFirst: false });
+      const retry = await query.limit(3000);
+      data = retry.data;
+      error = retry.error as { message?: string } | null;
+    }
+    if (error) return NextResponse.json({ error: String(error.message || "Erreur chargement places.") }, { status: 500 });
 
     const rows = (data || []) as PlaceRow[];
     let filteredRows = rows
@@ -538,8 +576,66 @@ export async function GET(request: NextRequest) {
       }));
     }
 
+    const placeIds = Array.from(new Set(filteredRows.map((row) => trim(row.id)).filter(Boolean)));
+    const rewardByPlaceIdFromOffers = new Map<string, string>();
+    if (placeIds.length > 0) {
+      const { data: acceptedOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("place_id,metadata,updated_at,processed_at,created_at")
+        .eq("status", "accepted")
+        .in("place_id", placeIds)
+        .limit(4000);
+
+      const bestByPlace = new Map<string, { reward: string; ts: number }>();
+      (((acceptedOffers as Array<{
+        place_id: string | null;
+        metadata?: unknown;
+        updated_at?: string | null;
+        processed_at?: string | null;
+        created_at?: string | null;
+      }> | null) || []).forEach((row) => {
+        const placeId = trim(row.place_id);
+        if (!placeId) return;
+        const reward = rewardLabelForOfferMetadata(asMetadata(row.metadata));
+        if (!reward) return;
+        const timeCandidate = String(row.updated_at || row.processed_at || row.created_at || "").trim();
+        const ts = timeCandidate ? Date.parse(timeCandidate) : 0;
+        const existing = bestByPlace.get(placeId);
+        if (!existing || ts >= existing.ts) bestByPlace.set(placeId, { reward, ts });
+      }));
+
+      bestByPlace.forEach((value, placeId) => {
+        if (value.reward) rewardByPlaceIdFromOffers.set(placeId, value.reward);
+      });
+    }
+
+    const claimedOfferIds = Array.from(new Set(filteredRows.map((row) => trim(row.claimed_by_offer_id)).filter(Boolean)));
+    const rewardByPlaceIdFromClaimedOffer = new Map<string, string>();
+    if (claimedOfferIds.length > 0) {
+      const { data: claimedOffers } = await supabase
+        .from("human_marketplace_offers")
+        .select("id,metadata")
+        .in("id", claimedOfferIds)
+        .limit(1200);
+      const rewardByOfferId = new Map<string, string>();
+      (((claimedOffers as Array<{ id: string; metadata?: unknown }> | null) || []).forEach((row) => {
+        rewardByOfferId.set(String(row.id || "").trim(), rewardLabelForOfferMetadata(asMetadata(row.metadata)));
+      }));
+      filteredRows.forEach((row) => {
+        const placeId = trim(row.id);
+        const offerId = trim(row.claimed_by_offer_id);
+        const reward = rewardByOfferId.get(offerId) || "";
+        if (placeId && reward) rewardByPlaceIdFromClaimedOffer.set(placeId, reward);
+      });
+    }
+
     let places = filteredRows
-      .map((row) => toClientPlace(row, rewardByOwnerId.get(trim(row.owner_member_id))))
+      .map((row) => {
+        const placeId = trim(row.id);
+        const placeReward = rewardByPlaceIdFromOffers.get(placeId) || rewardByPlaceIdFromClaimedOffer.get(placeId);
+        const ownerReward = rewardByOwnerId.get(trim(row.owner_member_id));
+        return toClientPlace(row, placeReward || ownerReward);
+      })
       .map((item) => ({
         ...item,
         category: item.category || inferCategoryFromSphere(item.sphere),
