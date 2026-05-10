@@ -171,30 +171,21 @@ export default async function AdminHumainAffiliationPage({
   const logs = ((logsData as SignupLogRow[] | null) || []).filter((row) => row.event_type === "public_affiliate_signup");
   let activationTicketsAll = (snapshot.recentActivations || []).slice(0, 300);
   if (scoutFilterId || ticketFilterCode) {
-    let activationQuery = supabaseAdmin
+    const { data: activationsWide } = await supabaseAdmin
       .from("human_marketplace_landing_activations")
       .select(
         "id,city,category_key,client_name,referrer_id,referrer_name,partner_member_id,partner_name,partner_phone,source,created_at,metadata,place:human_marketplace_places(id,city,metier)",
       )
       .order("created_at", { ascending: false })
-      .limit(500);
-
-    if (ticketFilterCode) {
-      activationQuery = activationQuery.eq("metadata->>ticket_code", ticketFilterCode);
-    }
-    if (scoutFilterId) {
-      activationQuery = activationQuery.or(
-        `metadata->>apporteur_scout_id.eq.${scoutFilterId},metadata->>scout_id.eq.${scoutFilterId}`,
-      );
-    }
-    const { data: activationsFiltered } = await activationQuery;
-    activationTicketsAll = ((activationsFiltered as typeof activationTicketsAll) || []).slice(0, 500);
+      .limit(2000);
+    activationTicketsAll = ((activationsWide as typeof activationTicketsAll) || []).slice(0, 2000);
   }
+  const thresholdEffective = ticketFilterCode ? null : threshold;
   const activationTickets = activationTicketsAll.filter((ticket) => {
-    if (threshold === null) return true;
+    if (thresholdEffective === null) return true;
     const ts = Date.parse(String(ticket.created_at || ""));
     if (!Number.isFinite(ts)) return false;
-    return ts >= threshold;
+    return ts >= thresholdEffective;
   });
   const ticketsWithoutReplyOver48h = activationTickets.filter((ticket) => {
     const relanceAt = readMetaText(ticket.metadata, "pro_followup_sent_at");
@@ -258,12 +249,17 @@ export default async function AdminHumainAffiliationPage({
     ticketFilterCode ? `&ticket=${encodeURIComponent(ticketFilterCode)}` : ""
   }`;
   const ticketFilterScout = scoutFilterId ? scoutById.get(scoutFilterId) || null : null;
-  const activationTicketsFiltered = scoutFilterId
-    ? activationTickets.filter((ticket) => {
-        const metaScout = readMetaText(ticket.metadata, "apporteur_scout_id") || readMetaText(ticket.metadata, "scout_id");
-        return metaScout === scoutFilterId;
-      })
-    : activationTickets;
+  const activationTicketsFiltered = activationTickets.filter((ticket) => {
+    if (ticketFilterCode) {
+      const code = readMetaText(ticket.metadata, "ticket_code") || readTicketCode(ticket.metadata, ticket.id);
+      if (code !== ticketFilterCode) return false;
+    }
+    if (scoutFilterId) {
+      const metaScout = readMetaText(ticket.metadata, "apporteur_scout_id") || readMetaText(ticket.metadata, "scout_id");
+      if (metaScout !== scoutFilterId) return false;
+    }
+    return true;
+  });
   const activeScoutsCount = logs.filter((log) => {
     const scout = scoutById.get(txt(log.scout_id));
     return txt(scout?.status).toLowerCase() === "active";
@@ -486,6 +482,11 @@ export default async function AdminHumainAffiliationPage({
         {decisionsLoadError ? (
           <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
             Historique commission avancé indisponible: {decisionsLoadError}. Les boutons Valider/Refuser restent actifs (mode dégradé).
+          </p>
+        ) : null}
+        {ticketFilterCode && activationTicketsFiltered.length === 0 ? (
+          <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            Ticket {ticketFilterCode} introuvable. Si tu as reçu WhatsApp mais rien ici, l’activation n’a probablement pas été enregistrée en base.
           </p>
         ) : null}
 

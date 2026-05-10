@@ -282,10 +282,11 @@ export async function POST(request: NextRequest) {
       .select("id")
       .maybeSingle();
     if (activationError) {
-      console.warn("[marketplace/activate] activation insert failed", {
-        requestId,
-        error: activationError.message,
-      });
+      console.warn("[marketplace/activate] activation insert failed", { requestId, error: activationError.message });
+      return NextResponse.json(
+        { error: "Activation non enregistrée. Merci de réessayer." },
+        { status: 500 },
+      );
     } else {
       activationId = trim(insertedActivation?.id) || null;
     }
