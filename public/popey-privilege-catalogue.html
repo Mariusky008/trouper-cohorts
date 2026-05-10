@@ -74,13 +74,24 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   }
   #live-offers-root {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 420px));
     gap: 14px;
+    justify-content: center;
   }
   #live-offers-root .sphere-divider { grid-column: 1 / -1; }
   #live-offers-root .featured-offer { grid-column: 1 / -1; }
+  .oc-img-strip { height: 140px; }
+  .oc-img-placeholder { height: 140px; }
+  .sticky-bottom { display: none; }
+  .apporteur-side { display: block; }
   .sticky-bottom {
     max-width: 1320px;
+  }
+}
+
+@media (min-width: 1240px) {
+  #live-offers-root {
+    grid-template-columns: repeat(3, minmax(0, 360px));
   }
 }
 
@@ -216,6 +227,41 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   background: rgba(200,168,75,.12);
 }
 .city-item.active::after { content: '✓'; color: var(--gold); font-family: var(--fd); }
+.apporteur-side {
+  display: none;
+  margin: 14px 20px 18px;
+  border-radius: 16px;
+  padding: 14px 14px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.apporteur-side-title {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 10px;
+}
+.apporteur-side-text {
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.apporteur-side-text strong { color: var(--teal); }
+.apporteur-side-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--teal);
+  color: var(--ink);
+  font-family: var(--fd);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
 
 /* Hero content */
 .hero-body { padding: 24px 20px 0; position: relative; z-index: 1; }
@@ -2060,6 +2106,11 @@ html[data-live-ready="0"] .main > .sphere-divider {
     <div class="stat-item"><div class="stat-val">6</div><div class="stat-lbl">Sphères</div></div>
     <div class="stat-item"><div class="stat-val">100%</div><div class="stat-lbl">Vérifiés</div></div>
     <div class="stat-item"><div class="stat-val">Bay.</div><div class="stat-lbl">Zone</div></div>
+  </div>
+  <div class="apporteur-side">
+    <div class="apporteur-side-title">Apporteur d’affaires</div>
+    <div class="apporteur-side-text">Partagez ce catalogue · Touchez <strong>la commission définie par le pro (%, ou €)</strong></div>
+    <button class="apporteur-side-btn" onclick="openApporteurModal()" type="button">Devenir apporteur →</button>
   </div>
 </div>
 
