@@ -101,14 +101,20 @@ function rewardLabelForMember(input: {
 }
 
 function rewardLabelForOfferMetadata(metadata: Record<string, unknown>): string {
-  const direct = trim(metadata.apporteur_reward_text);
-  if (direct) return direct;
   const mode = trim(metadata.apporteur_reward_mode).toLowerCase();
   const valueRaw = trim(metadata.apporteur_reward_value).replace(",", ".");
   const value = Number(valueRaw);
-  if (!Number.isFinite(value) || value <= 0) return "";
-  if (mode === "percent") return `${Math.round(value * 100) / 100}%`;
-  if (mode === "eur") return `${(Math.round(value * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  const direct = trim(metadata.apporteur_reward_text);
+  let valueLabel = "";
+  if (Number.isFinite(value) && value > 0) {
+    if (mode === "percent") valueLabel = `${Math.round(value * 100) / 100}%`;
+    if (mode === "eur") valueLabel = `${(Math.round(value * 100) / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}€`;
+  }
+  if (direct && valueLabel && !direct.toLowerCase().includes(valueLabel.toLowerCase())) {
+    return `${valueLabel} + ${direct}`;
+  }
+  if (direct) return direct;
+  if (valueLabel) return valueLabel;
   return "";
 }
 
