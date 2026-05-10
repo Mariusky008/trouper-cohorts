@@ -85,21 +85,89 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   gap: 8px;
 }
 .city-switch-label::before { content: '📍'; font-size: 12px; opacity: .95; }
-.city-select {
+.city-pill {
   height: 40px;
-  min-width: 170px;
+  min-width: 190px;
   border-radius: 14px;
   padding: 0 14px;
-  border: 1px solid rgba(200,168,75,.4);
-  background: linear-gradient(135deg, rgba(200,168,75,.16), rgba(0,0,0,.06));
+  border: 1px solid rgba(200,168,75,.45);
+  background: linear-gradient(135deg, rgba(200,168,75,.18), rgba(0,0,0,.08));
   color: #fff;
   font-size: 14px;
   font-weight: 900;
   letter-spacing: .01em;
   outline: none;
-  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
 }
-.city-select option { color: #111827; }
+.city-pill::after { content: '▾'; opacity: .9; }
+.city-select { display:none; }
+.city-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 9999;
+}
+.city-overlay.open { display: flex; }
+.city-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #0F1117;
+  border-radius: 18px 18px 0 0;
+  border: 1px solid rgba(255,255,255,.08);
+  padding: 14px 14px 18px;
+}
+.city-modal-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 2px 4px 10px;
+}
+.city-modal-title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.65);
+}
+.city-modal-close {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.city-list { display: grid; gap: 10px; }
+.city-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  padding: 12px 12px;
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.city-item.active {
+  border-color: rgba(200,168,75,.55);
+  background: rgba(200,168,75,.12);
+}
+.city-item.active::after { content: '✓'; color: var(--gold); font-family: var(--fd); }
 
 /* Hero content */
 .hero-body { padding: 24px 20px 0; position: relative; z-index: 1; }
@@ -1897,9 +1965,20 @@ html[data-live-ready="0"] .main > .sphere-divider {
   </div>
   <div class="city-switch">
     <div class="city-switch-label">Changer de ville</div>
+    <button class="city-pill" id="cityPill" type="button">Bordeaux</button>
     <select class="city-select" id="citySelect" aria-label="Changer de ville">
       <option value="dax">Dax</option>
     </select>
+  </div>
+
+  <div class="city-overlay" id="cityOverlay" role="dialog" aria-modal="true" aria-label="Choisir une ville">
+    <div class="city-modal">
+      <div class="city-modal-head">
+        <div class="city-modal-title">Choisir une ville</div>
+        <button class="city-modal-close" id="cityCloseBtn" type="button">Fermer</button>
+      </div>
+      <div class="city-list" id="cityList"></div>
+    </div>
   </div>
 
   <!-- Hero body -->
@@ -4010,36 +4089,63 @@ document.addEventListener('DOMContentLoaded', function () {
   loadSwipeFavorites();
   hydrateSwipeFavoritesFromServer();
   var citySelect = document.getElementById('citySelect');
+  var cityPill = document.getElementById('cityPill');
+  var cityOverlay = document.getElementById('cityOverlay');
+  var cityList = document.getElementById('cityList');
+  var cityCloseBtn = document.getElementById('cityCloseBtn');
   try {
     var params = new URLSearchParams(window.location.search);
     var currentVille = String(params.get('ville') || 'dax').trim().toLowerCase() || 'dax';
     if (citySelect) citySelect.value = currentVille;
+    var currentLabel = toCityLabel(currentVille);
+    if (cityPill) cityPill.textContent = currentLabel;
+    function closeCityOverlay() {
+      if (!cityOverlay) return;
+      cityOverlay.classList.remove('open');
+    }
+    function openCityOverlay() {
+      if (!cityOverlay) return;
+      cityOverlay.classList.add('open');
+    }
+    if (cityPill) cityPill.addEventListener('click', function () { openCityOverlay(); });
+    if (cityCloseBtn) cityCloseBtn.addEventListener('click', function () { closeCityOverlay(); });
+    if (cityOverlay) {
+      cityOverlay.addEventListener('click', function (event) {
+        if (event && event.target === cityOverlay) closeCityOverlay();
+      });
+    }
     fetch('/api/popey-human/marketplace/cities?catalog=privilege', { cache: 'no-store' })
       .then(function (res) { return res && res.ok ? res.json() : null; })
       .then(function (payload) {
         if (!citySelect) return;
         var cities = Array.isArray(payload && payload.cities) ? payload.cities : [];
         if (!cities.length) return;
-        citySelect.innerHTML = cities
-          .map(function (c) {
+        citySelect.innerHTML = cities.map(function (c) {
+          var slug = String((c && c.slug) || '').trim();
+          var label = String((c && c.label) || '').trim();
+          if (!slug || !label) return '';
+          return '<option value="' + escapeAttr(slug) + '">' + escapeHtml(label) + '</option>';
+        }).filter(Boolean).join('');
+        citySelect.value = currentVille;
+        if (cityList) {
+          cityList.innerHTML = cities.map(function (c) {
             var slug = String((c && c.slug) || '').trim();
             var label = String((c && c.label) || '').trim();
             if (!slug || !label) return '';
-            return '<option value="' + escapeAttr(slug) + '">' + escapeHtml(label) + '</option>';
-          })
-          .filter(Boolean)
-          .join('');
-        citySelect.value = currentVille;
+            var active = slug === currentVille ? ' city-item active' : ' city-item';
+            return '<button type="button" class="' + active + '" data-ville="' + escapeAttr(slug) + '">' + escapeHtml(label) + '</button>';
+          }).filter(Boolean).join('');
+          cityList.querySelectorAll('button[data-ville]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var nextVille = String(btn.getAttribute('data-ville') || '').trim().toLowerCase();
+              if (!nextVille) return;
+              params.set('ville', nextVille);
+              window.location.href = window.location.pathname + '?' + params.toString();
+            });
+          });
+        }
       })
       .catch(function () { return null; });
-    if (citySelect) {
-      citySelect.addEventListener('change', function () {
-        var nextVille = String(citySelect.value || '').trim().toLowerCase();
-        if (!nextVille) return;
-        params.set('ville', nextVille);
-        window.location.href = window.location.pathname + '?' + params.toString();
-      });
-    }
   } catch (_cityErr) {}
   var passBtn = document.getElementById('swipePassBtn');
   var saveBtn = document.getElementById('swipeSaveBtn');
