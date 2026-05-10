@@ -11,6 +11,20 @@ export default async function AdminHumainPage() {
   const snapshot = await getAdminMarketplaceSnapshot({ placeCity: "all" });
   const activationTickets = snapshot.recentActivations || [];
 
+  let privilegeCatalogueMonthViews = 0;
+  let privilegeCatalogueMonthUniqueVisitors = 0;
+  try {
+    const { data, error } = await supabaseAdmin.rpc("human_admin_privilege_catalogue_current_month_stats");
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!error && row) {
+      privilegeCatalogueMonthViews = Number((row as { total_views?: unknown }).total_views || 0);
+      privilegeCatalogueMonthUniqueVisitors = Number((row as { unique_visitors?: unknown }).unique_visitors || 0);
+    }
+  } catch {
+    privilegeCatalogueMonthViews = 0;
+    privilegeCatalogueMonthUniqueVisitors = 0;
+  }
+
   // Marketplace pending = demandes pending + reviewing
   const marketplacePendingCount = Math.max(0, Number(snapshot.kpis?.offersPending || 0) + Number(snapshot.kpis?.offersReviewing || 0));
 
@@ -105,6 +119,19 @@ export default async function AdminHumainPage() {
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
           Espace de pilotage organisé pour accéder rapidement aux actions quotidiennes importantes.
         </p>
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-800">Catalogue privilèges · Mois en cours</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="text-4xl font-black tracking-tight text-emerald-950 sm:text-5xl">{privilegeCatalogueMonthUniqueVisitors}</p>
+              <p className="mt-1 text-xs font-semibold text-emerald-900/70">visiteurs uniques</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black text-emerald-950 sm:text-xl">{privilegeCatalogueMonthViews}</p>
+              <p className="text-xs font-semibold text-emerald-900/60">vues totales</p>
+            </div>
+          </div>
+        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => (
             <a

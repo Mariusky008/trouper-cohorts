@@ -2645,6 +2645,43 @@ function escapeHtml(text) {
 function escapeAttr(text) {
   return escapeHtml(text).replace(/`/g, '&#096;');
 }
+function uuidv4Fallback() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0;
+    var v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+function getOrCreatePrivilegeVisitorId() {
+  try {
+    if (!window.localStorage) return null;
+    var key = 'popey_privilege_visitor_id';
+    var current = String(localStorage.getItem(key) || '').trim();
+    if (current) return current;
+    var id = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : uuidv4Fallback();
+    localStorage.setItem(key, id);
+    return id;
+  } catch (_error) {
+    return null;
+  }
+}
+var privilegeVisitorId = getOrCreatePrivilegeVisitorId();
+function trackPrivilegeLandingView(cityLabel, ville) {
+  try {
+    var body = {
+      eventType: 'landing_view',
+      city: String(cityLabel || '').trim() || null,
+      source: 'privilege_catalogue',
+      visitorId: privilegeVisitorId,
+      metadata: { ville: String(ville || '').trim().slice(0, 120) || null }
+    };
+    fetch('/api/popey-human/marketplace/places/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).catch(function () { return null; });
+  } catch (_error2) {}
+}
 function getSwipeFavoritesStorageKey() {
   var params = new URLSearchParams(window.location.search);
   var city = String(params.get('ville') || 'dax').trim().toLowerCase() || 'dax';
@@ -3854,6 +3891,7 @@ async function initLiveCatalog() {
     var params = new URLSearchParams(window.location.search);
     var city = (params.get('ville') || 'dax').trim();
     liveState.cityLabel = toCityLabel(city);
+    trackPrivilegeLandingView(liveState.cityLabel, city);
     var refId = (params.get('ref_id') || '').trim();
     var refCode = (params.get('ref') || '').trim();
     var refName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || 'Votre contact').trim();

@@ -10,11 +10,16 @@ type TrackingPayload = {
   placeId?: string;
   contextToken?: string;
   source?: string;
+  visitorId?: string;
   metadata?: Record<string, unknown>;
 };
 
 function trim(value: unknown): string {
   return String(value || "").trim();
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export async function POST(request: NextRequest) {
@@ -26,12 +31,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "eventType invalide." }, { status: 400 });
     }
 
+    const visitorId = trim(body?.visitorId);
     const payload = {
       event_type: eventType,
       city: trim(body?.city || "Grand Dax").slice(0, 120) || "Grand Dax",
       category_key: trim(body?.category).toLowerCase().slice(0, 32) || null,
       place_id: trim(body?.placeId) || null,
       source: trim(body?.source || "whatsapp_landing").slice(0, 64) || "whatsapp_landing",
+      visitor_id: visitorId && isUuid(visitorId) ? visitorId : null,
       metadata: {
         ...(body?.metadata || {}),
         context_token_present: Boolean(trim(body?.contextToken)),

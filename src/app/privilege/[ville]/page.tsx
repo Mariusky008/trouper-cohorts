@@ -17,7 +17,7 @@ export default async function PrivilegeByCityPage({ params, searchParams }: Priv
   const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
-  query.set("v", "20260510-privilege-events-sphere-v7");
+  query.set("v", "20260510-privilege-catalogue-views-v8");
   for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {
