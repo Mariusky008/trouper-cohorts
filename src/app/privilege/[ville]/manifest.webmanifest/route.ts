@@ -28,11 +28,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ vil
   const resolvedParams = await Promise.resolve(context.params);
   const ville = String(resolvedParams?.ville || "dax").trim().toLowerCase() || "dax";
   const label = toCityLabel(ville);
+  const startUrl = buildStartUrl(ville, request);
   const manifest = {
     name: `Catalogue Popey — ${label}`,
     short_name: `Popey ${label}`,
     description: "Catalogue privilèges Popey.",
-    start_url: buildStartUrl(ville, request),
+    id: startUrl,
+    start_url: startUrl,
     scope: "/privilege/",
     display: "standalone",
     background_color: "#E2D9BC",
@@ -54,4 +56,3 @@ export async function GET(request: NextRequest, context: { params: Promise<{ vil
     },
   });
 }
-
