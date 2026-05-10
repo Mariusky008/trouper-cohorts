@@ -2,15 +2,12 @@ import type { Metadata } from "next";
 
 type LayoutProps = {
   children: React.ReactNode;
-  params: {
-    ville: string;
-  };
-  searchParams?: {
+  searchParams?: Promise<{
     [key: string]: string | string[] | undefined;
-  };
+  }>;
 };
 
-function toQuery(searchParams?: LayoutProps["searchParams"]): string {
+function toQuery(searchParams: Record<string, string | string[] | undefined>): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(searchParams || {})) {
     if (!value) continue;
@@ -26,9 +23,10 @@ function toQuery(searchParams?: LayoutProps["searchParams"]): string {
   return qs ? `?${qs}` : "";
 }
 
-export async function generateMetadata({ params, searchParams }: LayoutProps): Promise<Metadata> {
-  const ville = String(params?.ville || "dax").trim().toLowerCase() || "dax";
-  const merged = { ...(searchParams || {}), ville };
+export async function generateMetadata({ searchParams }: LayoutProps): Promise<Metadata> {
+  const resolvedSearchParams = (await searchParams) || {};
+  const ville = String(resolvedSearchParams.ville || "dax").trim().toLowerCase() || "dax";
+  const merged: Record<string, string | string[] | undefined> = { ...resolvedSearchParams, ville };
   const qs = toQuery(merged);
   return {
     manifest: `/privilege/app/manifest.webmanifest${qs}`,
@@ -40,6 +38,7 @@ export async function generateMetadata({ params, searchParams }: LayoutProps): P
   };
 }
 
-export default function PrivilegeCityLayout({ children }: { children: React.ReactNode }) {
+export default function PrivilegeAppLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
+

@@ -75,6 +75,20 @@ body { background: var(--cream); color: var(--t); font-family: var(--fb); max-wi
   font-size: 10px; font-weight: 700; color: var(--gold); flex-shrink: 0;
 }
 .certified-badge::before { content: '✓'; font-family: var(--fd); }
+.city-select {
+  height: 30px;
+  border-radius: 999px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  outline: none;
+  appearance: none;
+}
+.city-select option { color: #111827; }
 
 /* Hero content */
 .hero-body { padding: 24px 20px 0; position: relative; z-index: 1; }
@@ -1869,6 +1883,9 @@ html[data-live-ready="0"] .main > .sphere-divider {
       <div class="sender-name">Jean Roth</div>
       <div class="sender-meta">Coach business · Bayonne 64 · Membre Popey</div>
     </div>
+    <select class="city-select" id="citySelect" aria-label="Changer de ville">
+      <option value="dax">Dax</option>
+    </select>
     <div class="certified-badge">Éclaireur certifié</div>
   </div>
 
@@ -3979,6 +3996,38 @@ document.addEventListener('click', function (event) {
 document.addEventListener('DOMContentLoaded', function () {
   loadSwipeFavorites();
   hydrateSwipeFavoritesFromServer();
+  var citySelect = document.getElementById('citySelect');
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var currentVille = String(params.get('ville') || 'dax').trim().toLowerCase() || 'dax';
+    if (citySelect) citySelect.value = currentVille;
+    fetch('/api/popey-human/marketplace/cities?catalog=privilege', { cache: 'no-store' })
+      .then(function (res) { return res && res.ok ? res.json() : null; })
+      .then(function (payload) {
+        if (!citySelect) return;
+        var cities = Array.isArray(payload && payload.cities) ? payload.cities : [];
+        if (!cities.length) return;
+        citySelect.innerHTML = cities
+          .map(function (c) {
+            var slug = String((c && c.slug) || '').trim();
+            var label = String((c && c.label) || '').trim();
+            if (!slug || !label) return '';
+            return '<option value="' + escapeAttr(slug) + '">' + escapeHtml(label) + '</option>';
+          })
+          .filter(Boolean)
+          .join('');
+        citySelect.value = currentVille;
+      })
+      .catch(function () { return null; });
+    if (citySelect) {
+      citySelect.addEventListener('change', function () {
+        var nextVille = String(citySelect.value || '').trim().toLowerCase();
+        if (!nextVille) return;
+        params.set('ville', nextVille);
+        window.location.href = window.location.pathname + '?' + params.toString();
+      });
+    }
+  } catch (_cityErr) {}
   var passBtn = document.getElementById('swipePassBtn');
   var saveBtn = document.getElementById('swipeSaveBtn');
   var likeBtn = document.getElementById('swipeLikeBtn');
