@@ -39,6 +39,7 @@ function buildPartnerDisplayName(input: {
 
 function inferCategoryFromSphere(sphere: string): string {
   const value = trim(sphere).toLowerCase();
+  if (["maison", "sante", "travaux", "bien-etre", "services"].includes(value)) return value;
   if (value === "evenements-locaux") return "services";
   if (value === "habitat") return "maison";
   if (value === "sante") return "sante";
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
       companyName: place.company_name,
     });
 
-    const category = declaredCategory || inferCategoryFromSphere(trim(place.sphere_key));
+    const category = inferCategoryFromSphere(declaredCategory || trim(place.sphere_key));
     const clientId =
       hasVerifiedContext && "payload" in verified && verified.payload
         ? verified.payload.client_id
