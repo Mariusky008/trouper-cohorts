@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Popey · Devenez Apporteur d'Affaires</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Instrument+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
@@ -47,29 +47,29 @@ body{background:var(--ink);color:var(--cream);font-family:var(--fb);overflow-x:h
 
 /* Left */
 .hero-left{}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:100px;padding:8px 18px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:28px;animation:fadeUp .6s ease both}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:100px;padding:8px 18px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:28px;animation:fadeUp .6s ease forwards}
 .hero-tag-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,196,140,.4)}50%{opacity:.3;box-shadow:0 0 0 5px rgba(0,196,140,0)}}
 
-.hero-h1{font-family:var(--fd);font-size:clamp(32px,4.5vw,58px);font-weight:900;line-height:.95;letter-spacing:-1.5px;margin-bottom:22px;animation:fadeUp .7s ease .08s both}
+.hero-h1{font-family:var(--fd);font-size:clamp(32px,4.5vw,58px);font-weight:900;line-height:.95;letter-spacing:-1.5px;margin-bottom:22px;animation:fadeUp .7s ease .08s forwards}
 .hero-h1 .line-accent{color:var(--teal);font-style:normal}
 .hero-h1 .line-dim{color:rgba(245,242,235,.45);font-weight:400;font-size:.55em;letter-spacing:-.5px;display:block;margin-top:8px}
 
-.hero-sub{font-size:16px;color:rgba(245,242,235,.55);line-height:1.75;font-weight:300;max-width:480px;margin-bottom:36px;animation:fadeUp .7s ease .16s both}
+.hero-sub{font-size:16px;color:rgba(245,242,235,.55);line-height:1.75;font-weight:300;max-width:480px;margin-bottom:36px;animation:fadeUp .7s ease .16s forwards}
 .hero-sub strong{color:rgba(245,242,235,.88);font-weight:600}
 
-.hero-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:36px;animation:fadeUp .7s ease .22s both}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:36px;animation:fadeUp .7s ease .22s forwards}
 .hpill{padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.12);color:rgba(245,242,235,.5)}
 .hpill-g{background:rgba(0,196,140,.1);border-color:rgba(0,196,140,.3);color:var(--teal)}
 
-.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;animation:fadeUp .7s ease .3s both}
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;animation:fadeUp .7s ease .3s forwards}
 .btn-main{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:var(--ink);padding:16px 32px;border-radius:100px;font-family:var(--fd);font-size:14px;font-weight:700;text-decoration:none;transition:all .25s;letter-spacing:-.3px}
 .btn-main:hover{background:#00e0a6;transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,196,140,.3)}
 .btn-ghost{display:inline-flex;align-items:center;gap:8px;color:rgba(245,242,235,.5);font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;cursor:pointer;background:none;border:none;padding:0}
 .btn-ghost:hover{color:var(--cream)}
 
 /* Right — earnings card */
-.hero-right{animation:fadeUp .7s ease .25s both}
+.hero-right{animation:fadeUp .7s ease .25s forwards}
 .earn-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;overflow:hidden;position:relative}
 .earn-card-top{background:linear-gradient(135deg,rgba(0,196,140,.12),rgba(0,196,140,.04));padding:24px;border-bottom:1px solid rgba(255,255,255,.06)}
 .earn-card-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:8px}
@@ -99,7 +99,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
 .sec-sub{font-size:16px;color:rgba(245,242,235,.5);line-height:1.7;font-weight:300;max-width:580px}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-.fade-up{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.fade-up{opacity:1;transform:none}
 .fade-up.visible{opacity:1;transform:none}
 
 /* ── HOW IT WORKS ── */
@@ -207,18 +207,18 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
 .btn-cta{width:100%;background:linear-gradient(135deg,var(--teal),#00A070);color:var(--ink);border:none;border-radius:14px;padding:17px;font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .25s;box-shadow:0 8px 28px rgba(0,196,140,.35);letter-spacing:-.3px}
 .btn-cta:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,196,140,.45)}
 .btn-cta:active{transform:translateY(0)}
-.btn-cta:disabled{opacity:.65;cursor:not-allowed}
 .cta-fine{font-size:11px;color:rgba(245,242,235,.3);text-align:center;line-height:1.6}
 .success-msg{display:none;text-align:center;padding:24px;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.3);border-radius:16px}
 .success-msg .success-icon{font-size:40px;margin-bottom:12px}
 .success-msg .success-title{font-family:var(--fd);font-size:20px;font-weight:900;color:#fff;margin-bottom:6px}
 .success-msg .success-sub{font-size:13px;color:rgba(245,242,235,.5);line-height:1.6}
-
-.link-box{margin-top:16px;display:flex;flex-direction:column;gap:10px;text-align:left}
+.link-box{margin-top:16px;text-align:left}
 .link-input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;color:#fff;outline:none}
-.link-actions{display:flex;gap:10px;flex-wrap:wrap}
+.link-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .btn-mini{flex:1;min-width:150px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-family:var(--fd);font-size:12px;font-weight:800;color:#fff;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center}
 .btn-mini.primary{background:linear-gradient(135deg,var(--teal),#00A070);border:none;color:var(--ink)}
+.btn-mini:hover{border-color:rgba(0,196,140,.35)}
+.btn-mini.primary:hover{filter:brightness(1.02)}
 
 /* ── FOOTER ── */
 .footer{background:#040608;border-top:1px solid rgba(255,255,255,.05);padding:32px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
@@ -256,6 +256,175 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   .cta-section{padding:80px 20px}
   .footer{flex-direction:column;text-align:center;padding:24px 20px;gap:10px}
 }
+
+/* ══ LEGAL PANELS — CHECKBOX HACK ══ */
+.legal-chk { display: none !important; }
+
+.legal-panel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(7,9,12,.75);
+  backdrop-filter: blur(8px);
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+@media(min-width:600px){
+  .legal-panel { align-items: center; padding: 24px; }
+}
+
+#chk-mentions:checked ~ #panel-mentions,
+#chk-responsabilite:checked ~ #panel-responsabilite,
+#chk-cgv:checked ~ #panel-cgv,
+#chk-cgu:checked ~ #panel-cgu,
+#chk-confidentialite:checked ~ #panel-confidentialite { display: flex; }
+
+.legal-panel-box {
+  background: #F5F2EC;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 820px;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -8px 48px rgba(0,0,0,.3);
+}
+@media(min-width:600px){
+  .legal-panel-box {
+    border-radius: 24px;
+    height: auto;
+    max-height: 88vh;
+  }
+}
+
+.legal-panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid #E0DCD4;
+  background: #F5F2EC;
+  flex-shrink: 0;
+  gap: 16px;
+}
+.legal-panel-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0A0C10;
+  line-height: 1.2;
+}
+.legal-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #0A0C10;
+  color: #F5F2EC;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
+  transition: background .2s;
+}
+.legal-panel-close:hover { background: #333; }
+
+.legal-panel-body {
+  overflow-y: auto;
+  padding: 36px 32px 48px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+@media(max-width:600px){
+  .legal-panel-body { padding: 24px 18px 40px; }
+  .legal-panel-bar { padding: 14px 18px; }
+}
+
+/* Legal content styles */
+.legal-panel-body .lh1 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(16px,2.5vw,22px);
+  font-weight: 900; color: #0A0C10;
+  margin: 0 0 18px; padding-bottom: 14px;
+  border-bottom: 3px solid #00C48C;
+  line-height: 1.2;
+}
+.legal-panel-body .lh2 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 12px; font-weight: 700; color: #0A0C10;
+  margin: 28px 0 11px;
+  display: flex; align-items: center; gap: 8px;
+}
+.legal-panel-body .lh2::before {
+  content: ''; width: 4px; height: 14px;
+  background: #00C48C; border-radius: 2px;
+  flex-shrink: 0; display: inline-block;
+}
+.legal-panel-body .lp {
+  margin: 0 0 13px; color: #4A4640;
+  line-height: 1.85; font-size: 14px;
+}
+.legal-panel-body .ltag {
+  display: inline-flex;
+  background: rgba(0,196,140,.1);
+  border: 1px solid rgba(0,196,140,.25);
+  border-radius: 20px; padding: 4px 14px;
+  font-size: 11px; font-weight: 700;
+  color: #007A56; letter-spacing: .06em;
+  margin-bottom: 20px;
+}
+.legal-panel-body .linfo {
+  background: #EDE9E0; border: 1px solid #D8D4CC;
+  border-radius: 12px; padding: 16px 20px;
+  margin: 0 0 22px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+}
+.legal-panel-body .linfo-l {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: #9A9DAA; padding: 8px 0;
+  border-bottom: 1px solid #D8D4CC;
+}
+.legal-panel-body .linfo-v {
+  font-size: 13px; font-weight: 600;
+  color: #1A1C22; padding: 8px 0;
+  border-bottom: 1px solid #D8D4CC;
+}
+.legal-panel-body .lul {
+  margin: 0 0 14px; padding-left: 20px; color: #4A4640;
+}
+.legal-panel-body .lul li {
+  margin-bottom: 8px; line-height: 1.75; font-size: 14px;
+}
+.legal-panel-body .lalert {
+  background: #FFFBEB; border: 1.5px solid #F59E0B;
+  border-radius: 10px; padding: 14px 18px;
+  margin: 0 0 18px; font-size: 13px; color: #92400E; line-height: 1.7;
+}
+.legal-panel-body .ldanger {
+  background: #FEF2F2; border: 1.5px solid #EF4444;
+  border-radius: 10px; padding: 14px 18px;
+  margin: 0 0 18px; font-size: 13px; color: #991B1B; line-height: 1.7;
+}
+.legal-panel-body strong { color: #1A1C22; font-weight: 700; }
+@media(max-width:600px){
+  .legal-panel-body .linfo { grid-template-columns: 1fr; }
+}
+
+/* Footer label links */
+.footer-legal-label {
+  font-size: 12px;
+  color: rgba(245,242,235,.25);
+  cursor: pointer;
+  transition: color .2s;
+  font-family: 'Instrument Sans', sans-serif;
+}
+.footer-legal-label:hover { color: var(--teal); }
 </style>
 </head>
 <body>
@@ -275,6 +444,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 
   <div class="hero-inner">
+    <!-- Left -->
     <div class="hero-left">
       <div class="hero-tag">
         <span class="hero-tag-dot"></span>
@@ -304,6 +474,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
       </div>
     </div>
 
+    <!-- Right — live earnings card -->
     <div class="hero-right">
       <div class="earn-card">
         <div class="earn-card-top">
@@ -342,6 +513,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- STATS STRIP -->
 <div class="stats-strip fade-up">
   <div class="stats-inner">
     <div class="stat-item">
@@ -363,6 +535,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </div>
 
+<!-- ══ HOW IT WORKS ══ -->
 <section class="section how" id="comment">
   <div class="section-inner">
     <div class="fade-up">
@@ -375,14 +548,14 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
         <div class="step-num">01</div>
         <span class="step-icon">🔗</span>
         <div class="step-title">Vous créez votre lien</div>
-        <div class="step-desc">En 30 secondes, vous obtenez un lien unique tracé à votre nom. Gratuit. Instantané.</div>
+        <div class="step-desc">En 30 secondes, vous obtenez un lien unique tracé à votre nom. Popey.io/eclaireur/votre-prénom. Gratuit. Instantané. Aucun compte bancaire nécessaire pour démarrer.</div>
         <span class="step-badge">30 secondes · Gratuit</span>
       </div>
       <div class="step">
         <div class="step-num">02</div>
         <span class="step-icon">📲</span>
         <div class="step-title">Vous partagez à vos proches</div>
-        <div class="step-desc">Vous envoyez le catalogue Popey via votre lien à vos contacts WhatsApp. Famille, amis, collègues. Ils découvrent des offres exclusives de pros locaux.</div>
+        <div class="step-desc">Vous envoyez le catalogue Popey via votre lien à vos contacts WhatsApp. Famille, amis, collègues. Ils découvrent des offres exclusives de pros locaux. Vous n'avez rien d'autre à faire.</div>
         <span class="step-badge">1 tap · WhatsApp</span>
       </div>
       <div class="step">
@@ -396,6 +569,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- ══ WHO ══ -->
 <section class="section who">
   <div class="section-inner">
     <div class="fade-up">
@@ -432,6 +606,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- ══ EARNINGS DETAIL ══ -->
 <section class="section earnings" id="commissions">
   <div class="section-inner">
     <div class="fade-up">
@@ -440,6 +615,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
       <p class="sec-sub">Deux sources de revenus cumulables. Pas de plafond.</p>
     </div>
     <div class="earn-grid fade-up">
+      <!-- Fixed commission -->
       <div class="earn-box">
         <div class="earn-box-accent"></div>
         <div class="earn-box-tag">Commission fixe · Garantie</div>
@@ -451,6 +627,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
           <div class="earn-ex"><span class="earn-ex-label">Finance · Popey encaisse 120€</span><span class="earn-ex-val">+24€</span></div>
         </div>
       </div>
+      <!-- Variable commission -->
       <div class="earn-box">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent)"></div>
         <div class="earn-box-tag" style="color:rgba(245,166,35,.7)">Selon le secteur · Option abonnement</div>
@@ -462,6 +639,8 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
           <div class="earn-ex"><span class="earn-ex-label">Immo · Popey encaisse 250€</span><span class="earn-ex-val" style="color:var(--amber)">+50€</span></div>
         </div>
       </div>
+
+      <!-- SIMULATOR -->
       <div class="sim-section">
         <div class="sim-title">🧮 Calculez vos revenus</div>
         <div class="sim-sub">Renseignez votre situation pour une simulation personnalisée</div>
@@ -500,6 +679,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- ══ TESTIMONIALS ══ -->
 <section class="section testis">
   <div class="section-inner">
     <div class="fade-up">
@@ -547,6 +727,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- ══ FAQ ══ -->
 <section class="section faq">
   <div class="section-inner">
     <div class="fade-up" style="text-align:center;margin-bottom:0">
@@ -600,11 +781,12 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
+<!-- ══ CTA FINAL ══ -->
 <section class="cta-section" id="creer-lien">
   <div class="cta-bg-orb"></div>
   <div class="cta-inner fade-up">
     <h2 class="cta-h">Votre lien est prêt<br>en <span>30 secondes.</span></h2>
-    <p class="cta-sub">Renseignez juste votre prénom et votre WhatsApp. Le lien est généré instantanément (traçable).</p>
+    <p class="cta-sub">Renseignez votre prénom, nom, WhatsApp et votre ville. Votre lien personnel est généré automatiquement.</p>
 
     <div class="cta-form" id="ctaForm">
       <div class="cta-form-title">Créer mon lien apporteur</div>
@@ -635,7 +817,7 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
     <div class="success-msg" id="successMsg">
       <div class="success-icon">🎉</div>
       <div class="success-title">Votre lien est prêt</div>
-      <div class="success-sub">Partagez ce lien à vos proches. Quand ils activent une offre, la commission est attribuée automatiquement.</div>
+      <div class="success-sub">Partagez ce lien : la commission est attribuée automatiquement quand un proche active une offre.</div>
       <div class="link-box">
         <input class="link-input" id="webappLinkInput" value="" readonly>
         <div class="link-actions">
@@ -651,226 +833,600 @@ input[type=range]#heroSlider{width:100%;accent-color:var(--teal);height:4px;bord
   </div>
 </section>
 
-<footer class="footer">
+<style>
+.lh1{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:900;color:#0A0C10;margin:0 0 20px;padding-bottom:12px;border-bottom:2px solid #E0DCD4}
+.lh2{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:#0A0C10;margin:28px 0 10px;display:flex;align-items:center;gap:8px}
+.lh2::before{content:'';display:inline-block;width:3px;height:14px;background:#00C48C;border-radius:2px;flex-shrink:0}
+.lp{margin:0 0 14px;color:#4A4640;line-height:1.8}
+.ltag{display:inline-flex;background:rgba(0,196,140,.08);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:#007A56;letter-spacing:.06em;margin-bottom:18px}
+.linfo{background:#EDE9E0;border:1px solid #D8D4CC;border-radius:12px;padding:16px 20px;margin:0 0 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.linfo-l{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9A9DAA;padding:4px 0}
+.linfo-v{font-size:13px;font-weight:600;color:#1A1C22;padding:4px 0}
+.lul{margin:0 0 14px;padding-left:20px;color:#4A4640}
+.lul li{margin-bottom:7px;line-height:1.7}
+.lalert{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:12px 16px;margin:0 0 16px;font-size:13px;color:#92400E;line-height:1.6}
+.ldanger{background:#FEF2F2;border:1.5px solid #EF4444;border-radius:10px;padding:12px 16px;margin:0 0 16px;font-size:13px;color:#991B1B;line-height:1.6}
+@keyframes legalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:600px){
+  #legalOverlay{padding:0;align-items:flex-end}
+  #legalOverlay>div{border-radius:24px 24px 0 0;max-height:92vh}
+  .linfo{grid-template-columns:1fr}
+}
+
+/* ── LEGAL MODALS — CSS ONLY via :target ── */
+.legal-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,9,12,.92);
+  backdrop-filter: blur(16px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.legal-modal:target {
+  display: flex;
+}
+.legal-box {
+  background: #F5F2EC;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid #E0DCD4;
+  flex-shrink: 0;
+  background: #F5F2EC;
+}
+.legal-header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0A0C10;
+  font-family: 'Unbounded', sans-serif;
+}
+.legal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.07);
+  color: #555;
+  text-decoration: none;
+  font-size: 16px;
+  flex-shrink: 0;
+  font-style: normal;
+  line-height: 1;
+}
+.legal-close:hover { background: rgba(0,0,0,.13); }
+.legal-body {
+  overflow-y: auto;
+  padding: 28px 24px;
+  font-size: 13.5px;
+  color: #3A3630;
+  line-height: 1.85;
+  font-weight: 300;
+  -webkit-overflow-scrolling: touch;
+}
+@media(max-width:600px){
+  .legal-modal { padding: 0; align-items: flex-end; }
+  .legal-box { border-radius: 20px 20px 0 0; max-height: 90vh; }
+}
+</style>
+
+
+<!-- FOOTER -->
+<footer class="footer" id="page-footer">
   <div class="footer-logo">Popey</div>
-  <div class="footer-copy">© 2026 Popey Coffeeshop SAS · 9 Rue Sully, 40100 Dax · SIRET 995 014 388 00012</div>
-  <div style="display:flex;gap:16px">
-    <a href="#" class="footer-link" id="backToCatalogLink">← Retour au catalogue</a>
+  <div class="footer-copy">© 2026 Popey Coffeeshop SAS · 9 Rue Sully, 40100 Dax · SIRET 995 014 388 00012 · RCS Dax · TVA FR96995014388</div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center">
+    <label for="chk-mentions" class="footer-legal-label">Mentions légales</label>
+    <label for="chk-cgv" class="footer-legal-label">CGV</label>
+    <label for="chk-cgu" class="footer-legal-label">CGU</label>
+    <label for="chk-confidentialite" class="footer-legal-label">Confidentialité</label>
+    <label for="chk-responsabilite" class="footer-legal-label">Limitation de responsabilité</label>
+    <a href="mailto:contact@popey.academy" class="footer-link">Contact</a>
   </div>
 </footer>
 
-<script>
-function toCityLabel(raw) {
-  var city = String(raw || '').trim().replace(/-/g, ' ');
-  if (!city) return 'Dax';
-  return city.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-}
 
-function buildBackToCatalogLink() {
-  var params = new URLSearchParams(window.location.search);
-  var citySlug = String(params.get('ville') || 'dax').trim().toLowerCase() || 'dax';
-  var target = '/privilege/' + encodeURIComponent(citySlug);
-  if ([...params.keys()].length) target += '?' + params.toString();
-  var link = document.getElementById('backToCatalogLink');
-  if (link) link.setAttribute('href', target);
+<!-- ══ LEGAL PANELS (checkbox hack) ══ -->
+
+<input type="checkbox" class="legal-chk" id="chk-mentions">
+<div class="legal-panel" id="panel-mentions">
+  <div class="legal-panel-box">
+    <div class="legal-panel-bar">
+      <div class="legal-panel-title">Mentions légales</div>
+      <label for="chk-mentions" class="legal-panel-close" title="Fermer">✕</label>
+    </div>
+    <div class="legal-panel-body">
+<h1 class="lh1">Mentions légales</h1>
+      <span class="ltag">Loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique</span>
+      <h2 class="lh2">Éditeur du site</h2>
+      <div class="linfo">
+        <span class="linfo-l">Société</span><span class="linfo-v">Popey Coffeeshop SAS</span>
+        <span class="linfo-l">Forme juridique</span><span class="linfo-v">Société par actions simplifiée (SAS)</span>
+        <span class="linfo-l">SIREN</span><span class="linfo-v">995 014 388</span>
+        <span class="linfo-l">SIRET (siège)</span><span class="linfo-v">995 014 388 00012</span>
+        <span class="linfo-l">N° RCS</span><span class="linfo-v">995 014 388 R.C.S. Dax</span>
+        <span class="linfo-l">Inscription RCS</span><span class="linfo-v">Greffe de Dax — 12/12/2025</span>
+        <span class="linfo-l">Inscription RNE</span><span class="linfo-v">Inscrit</span>
+        <span class="linfo-l">TVA intracommunautaire</span><span class="linfo-v">FR96995014388</span>
+        <span class="linfo-l">Siège social</span><span class="linfo-v">9 Rue Sully, 40100 Dax, France</span>
+        <span class="linfo-l">Directeur de publication</span><span class="linfo-v">Jean-Philippe Roth, Président</span>
+        <span class="linfo-l">Email</span><span class="linfo-v">contact@popey.academy</span>
+        <span class="linfo-l">Téléphone</span><span class="linfo-v">+33 7 68 23 33 47</span>
+      </div>
+      <h2 class="lh2">Nature de l'activité</h2>
+      <p class="lp">Popey Coffeeshop SAS est une <strong>plateforme d'intermédiation commerciale</strong>. Elle met en relation des professionnels indépendants avec des particuliers et des apporteurs d'affaires, via un catalogue numérique distribué par WhatsApp. Popey agit exclusivement en qualité d'intermédiaire et ne fournit aucune des prestations proposées par les professionnels référencés.</p>
+      <h2 class="lh2">Hébergement</h2>
+      <p class="lp">Pour toute question relative à l'hébergement technique : contact@popey.academy</p>
+      <h2 class="lh2">Propriété intellectuelle</h2>
+      <p class="lp">L'ensemble des contenus (textes, logos, graphismes, marque POPEY) sont la propriété exclusive de Popey Coffeeshop SAS. Toute reproduction sans autorisation écrite préalable est interdite.</p>
+      <h2 class="lh2">Droit applicable</h2>
+      <p class="lp">Les présentes mentions légales sont régies par le droit français. Tribunal compétent : Tribunal de Commerce de Dax.</p>
+    </div>
+  </div>
+</div>
+
+<input type="checkbox" class="legal-chk" id="chk-responsabilite">
+<div class="legal-panel" id="panel-responsabilite">
+  <div class="legal-panel-box">
+    <div class="legal-panel-bar">
+      <div class="legal-panel-title">Limitation de responsabilité</div>
+      <label for="chk-responsabilite" class="legal-panel-close" title="Fermer">✕</label>
+    </div>
+    <div class="legal-panel-body">
+<h1 class="lh1">Limitation de responsabilité — Clause essentielle</h1>
+      <span class="ltag">À lire impérativement avant toute utilisation du programme apporteur</span>
+
+      <div class="ldanger">⚠️ IMPORTANT : Popey Coffeeshop SAS est une plateforme d'intermédiation. Elle n'est en aucun cas prestataire des services proposés par les professionnels référencés, ni employeur des apporteurs d'affaires, ni garant des commissions versées par les professionnels en Option abonnement.</div>
+
+      <h2 class="lh2">1. Statut d'intermédiaire — Ce que Popey est et n'est pas</h2>
+      <p class="lp">Popey Coffeeshop SAS est une <strong>plateforme de mise en relation</strong> entre des professionnels indépendants et leurs clients potentiels. À ce titre :</p>
+      <ul class="lul">
+        <li>Popey <strong>n'est pas</strong> prestataire des services présentés dans le catalogue (coaching, travaux, ostéopathie, etc.)</li>
+        <li>Popey <strong>n'est pas</strong> employeur ni mandataire des apporteurs d'affaires</li>
+        <li>Popey <strong>n'est pas</strong> garant de la solvabilité, de la qualité ou de la conformité des professionnels référencés</li>
+        <li>Popey <strong>n'est pas</strong> partie aux contrats conclus entre les professionnels et leurs clients</li>
+        <li>Popey <strong>ne garantit pas</strong> un nombre minimum de deals, de leads qualifiés ou de commissions pour les apporteurs</li>
+      </ul>
+
+      <h2 class="lh2">2. Responsabilité concernant les professionnels</h2>
+      <p class="lp">Popey Coffeeshop SAS décline toute responsabilité concernant :</p>
+      <ul class="lul">
+        <li>La <strong>qualité des prestations</strong> délivrées par les professionnels référencés</li>
+        <li>La <strong>ponctualité, le sérieux ou le professionnalisme</strong> des intervenants</li>
+        <li>Le <strong>respect des engagements</strong> pris par les professionnels dans leurs offres catalogue</li>
+        <li>Tout <strong>préjudice matériel, corporel ou moral</strong> subi lors de la réalisation d'une prestation</li>
+        <li>La <strong>conformité réglementaire</strong> des professionnels (diplômes, assurances, certifications)</li>
+        <li>Tout <strong>litige commercial</strong> entre le client et le professionnel</li>
+      </ul>
+      <p class="lp">En cas de litige avec un professionnel, l'apporteur ou le client doit s'adresser directement au professionnel concerné ou aux autorités compétentes.</p>
+
+      <h2 class="lh2">3. Responsabilité concernant les commissions apporteurs</h2>
+      <div class="lalert">⚠️ Les commissions versées aux apporteurs d'affaires proviennent de deux sources distinctes selon l'option choisie par le professionnel. Les conditions varient selon l'option.</div>
+      <p class="lp"><strong>Option A — Au RDV qualifié (Popey encaisse et reverse) :</strong></p>
+      <ul class="lul">
+        <li>Popey encaisse les honoraires du professionnel et reverse 20% à l'apporteur</li>
+        <li>Le versement est conditionné au <strong>paiement effectif du professionnel</strong> à Popey</li>
+        <li>En cas de non-paiement du professionnel, Popey ne peut être tenu de reverser une commission non perçue</li>
+        <li>Popey s'engage à notifier l'apporteur dans les 15 jours en cas de litige de paiement</li>
+      </ul>
+      <p class="lp"><strong>Option B — Abonnement 149€/mois (le pro fixe sa rétribution) :</strong></p>
+      <ul class="lul">
+        <li>Le montant de la commission apporteur est <strong>librement fixé par le professionnel</strong></li>
+        <li>Popey reverse les commissions uniquement sur les montants effectivement reçus de l'abonné</li>
+        <li>Popey n'est <strong>pas garant</strong> du maintien de l'abonnement du professionnel ni du montant de sa rétribution apporteur d'un mois sur l'autre</li>
+        <li>Le professionnel peut modifier ou résilier son abonnement avec un préavis de 30 jours, entraînant la suspension des commissions correspondantes</li>
+      </ul>
+      <p class="lp">Popey s'engage à verser les commissions validées le 1er du mois suivant, dans la limite des sommes effectivement encaissées. Tout litige relatif aux commissions doit être adressé à contact@popey.academy dans les 30 jours suivant la date de versement prévue.</p>
+
+      <h2 class="lh2">4. Responsabilité concernant les données et la plateforme</h2>
+      <ul class="lul">
+        <li>Popey ne garantit pas la <strong>disponibilité continue</strong> de la plateforme (maintenance, incidents techniques)</li>
+        <li>Popey n'est pas responsable des <strong>pertes de données</strong> liées à un usage incorrect de la plateforme</li>
+        <li>Popey ne garantit pas l'<strong>exactitude en temps réel</strong> du suivi des commissions (délai de synchronisation possible)</li>
+      </ul>
+
+      <h2 class="lh2">5. Plafond de responsabilité</h2>
+      <p class="lp">En toute hypothèse, la responsabilité de Popey Coffeeshop SAS, toutes causes confondues, ne pourra excéder le montant des sommes effectivement versées par la partie lésée à Popey au cours des <strong>3 derniers mois</strong> précédant le fait générateur du dommage. Aucune responsabilité ne peut être engagée pour des préjudices indirects (manque à gagner, perte de clientèle, préjudice d'image).</p>
+
+      <h2 class="lh2">6. Force majeure</h2>
+      <p class="lp">Popey ne pourra être tenu responsable de tout manquement à ses obligations en cas de force majeure au sens de l'article 1218 du Code civil : catastrophe naturelle, pandémie, défaillance de prestataires tiers, cyberattaque, décision administrative ou réglementaire imprévue.</p>
+    </div>
+  </div>
+</div>
+
+<input type="checkbox" class="legal-chk" id="chk-cgv">
+<div class="legal-panel" id="panel-cgv">
+  <div class="legal-panel-box">
+    <div class="legal-panel-bar">
+      <div class="legal-panel-title">Conditions Générales de Vente</div>
+      <label for="chk-cgv" class="legal-panel-close" title="Fermer">✕</label>
+    </div>
+    <div class="legal-panel-body">
+<h1 class="lh1">Conditions Générales de Vente — Programme Apporteur d'Affaires</h1>
+      <span class="ltag">Version en vigueur au 1er janvier 2026</span>
+      <p class="lp"><strong>Popey Coffeeshop SAS</strong> — SIRET 995 014 388 00012 — 9 Rue Sully, 40100 Dax — contact@popey.academy — TVA FR96995014388</p>
+
+      <h2 class="lh2">Article 1 — Objet</h2>
+      <p class="lp">Les présentes CGV régissent les relations entre Popey Coffeeshop SAS ("Popey") et toute personne physique ou morale ("l'Apporteur") souhaitant participer au programme d'apport d'affaires Popey. En créant un lien apporteur, l'Apporteur accepte sans réserve les présentes CGV.</p>
+
+      <h2 class="lh2">Article 2 — Nature du programme et statut de l'apporteur</h2>
+      <p class="lp">Le programme apporteur Popey est un <strong>contrat d'apport d'affaires</strong> au sens du droit commercial français. L'Apporteur est un <strong>prestataire indépendant</strong>, non salarié, non mandataire exclusif de Popey. Il n'existe aucun lien de subordination entre Popey et l'Apporteur.</p>
+      <p class="lp">L'Apporteur reconnaît expressément :</p>
+      <ul class="lul">
+        <li>Agir en toute indépendance dans le choix de ses méthodes de partage</li>
+        <li>Ne pas représenter Popey ni engager sa responsabilité vis-à-vis de tiers</li>
+        <li>Être seul responsable du respect des règles applicables à son activité (déclaration fiscale, statut auto-entrepreneur si applicable)</li>
+        <li>Ne pas créer de confusion entre son activité personnelle et celle de Popey</li>
+      </ul>
+
+      <h2 class="lh2">Article 3 — Fonctionnement du programme</h2>
+      <p class="lp">L'Apporteur reçoit un lien unique traçable à son nom. Lorsqu'il partage ce lien et qu'un contact active une offre du catalogue, Popey qualifie le contact (rappel, confirmation du besoin, prise de RDV). Une commission est déclenchée si et seulement si :</p>
+      <ul class="lul">
+        <li>Le contact est joignable et confirme un intérêt réel</li>
+        <li>Un RDV est effectivement posé avec le professionnel</li>
+        <li>Le professionnel valide la qualification dans l'application Popey</li>
+        <li>Le paiement correspondant est reçu par Popey de la part du professionnel</li>
+      </ul>
+
+      <h2 class="lh2">Article 4 — Structure des commissions</h2>
+      <p class="lp"><strong>Option A (professionnel au RDV livré) :</strong> L'Apporteur reçoit <strong>20% du montant HT encaissé par Popey</strong> sur le deal généré via son lien. Les montants varient de 6€ (secteur santé/artisans) à 50€ (secteur immobilier) selon le tarif Option A applicable.</p>
+      <p class="lp"><strong>Option B (professionnel abonné 149€/mois) :</strong> L'Apporteur reçoit le montant fixé librement par le professionnel dans son espace Popey (entre 0€ et 20€ par client apporté). Ce montant peut être modifié par le professionnel avec un préavis de 30 jours.</p>
+      <div class="lalert">⚠️ Popey ne garantit pas le montant des commissions Option B, celui-ci étant à la discrétion du professionnel abonné. Aucun recours ne peut être exercé contre Popey si un professionnel abonné réduit ou supprime sa rétribution apporteur dans le respect du préavis.</div>
+
+      <h2 class="lh2">Article 5 — Versement des commissions</h2>
+      <ul class="lul">
+        <li>Les commissions sont versées le <strong>1er du mois</strong> suivant leur validation</li>
+        <li>Seuil minimum de versement : <strong>20€</strong>. En dessous, report au mois suivant</li>
+        <li>Versement par virement IBAN ou portefeuille numérique Popey</li>
+        <li>Pour les cumuls annuels supérieurs à 600€ : une convention d'apport d'affaires ou une facture de l'Apporteur sera requise</li>
+        <li>Délai de validation des commissions : <strong>30 jours</strong> après le RDV pour vérifier l'absence de litige</li>
+      </ul>
+
+      <h2 class="lh2">Article 6 — Obligations de l'apporteur</h2>
+      <ul class="lul">
+        <li>Ne partager le lien qu'à des personnes susceptibles d'être intéressées par les offres</li>
+        <li>Ne pas utiliser de méthodes de spam, d'envois massifs non consentis ou de pratiques trompeuses</li>
+        <li>Ne pas présenter les offres de manière inexacte ou exagérée</li>
+        <li>Ne pas usurper l'identité de Popey ou de ses professionnels</li>
+        <li>Déclarer ses revenus d'apport d'affaires conformément à la réglementation fiscale française</li>
+        <li>Informer Popey de tout changement de coordonnées bancaires ou de statut</li>
+      </ul>
+
+      <h2 class="lh2">Article 7 — Suspension et résiliation</h2>
+      <p class="lp">Popey se réserve le droit de suspendre ou résilier immédiatement tout lien apporteur en cas de : fraude avérée (faux contacts, auto-activation), violation des obligations de l'article 6, comportement portant atteinte à l'image du réseau, ou décision judiciaire. Les commissions déjà validées restent dues. Les commissions en cours de validation sont annulées.</p>
+
+      <h2 class="lh2">Article 8 — Responsabilité de l'apporteur</h2>
+      <p class="lp">L'Apporteur est seul responsable de la manière dont il présente les offres Popey à son entourage. Il s'engage à ne faire aucune promesse de résultat au nom de Popey ou des professionnels. Toute déclaration inexacte engageant la responsabilité de Popey auprès de tiers sera à la charge exclusive de l'Apporteur.</p>
+
+      <h2 class="lh2">Article 9 — Exclusion de relation d'emploi</h2>
+      <p class="lp">Les présentes CGV ne créent en aucun cas un contrat de travail, un contrat d'agent commercial exclusif, ou toute autre relation impliquant un lien de subordination entre Popey et l'Apporteur. L'Apporteur reste libre de ses horaires, méthodes et engagements.</p>
+
+      <h2 class="lh2">Article 10 — Droit applicable et litiges</h2>
+      <p class="lp">Les présentes CGV sont soumises au droit français. Tout litige sera soumis, à défaut de résolution amiable dans les 30 jours, au Tribunal de Commerce de Dax.</p>
+    </div>
+  </div>
+</div>
+
+<input type="checkbox" class="legal-chk" id="chk-cgu">
+<div class="legal-panel" id="panel-cgu">
+  <div class="legal-panel-box">
+    <div class="legal-panel-bar">
+      <div class="legal-panel-title">Conditions Générales d'Utilisation</div>
+      <label for="chk-cgu" class="legal-panel-close" title="Fermer">✕</label>
+    </div>
+    <div class="legal-panel-body">
+<h1 class="lh1">Conditions Générales d'Utilisation (CGU)</h1>
+      <span class="ltag">Programme Apporteur d'Affaires Popey — Janvier 2026</span>
+      <p class="lp"><strong>Popey Coffeeshop SAS</strong> — SIRET 995 014 388 00012 — 9 Rue Sully, 40100 Dax</p>
+
+      <h2 class="lh2">Article 1 — Acceptation et champ d'application</h2>
+      <p class="lp">Toute création de lien apporteur ou utilisation du catalogue Popey implique l'acceptation pleine et entière des présentes CGU. Elles s'appliquent à toute personne utilisant la plateforme Popey, que ce soit en tant qu'apporteur d'affaires, client final ou simple visiteur.</p>
+
+      <h2 class="lh2">Article 2 — Description de la plateforme</h2>
+      <p class="lp">Popey est une <strong>plateforme d'intermédiation</strong> qui :</p>
+      <ul class="lul">
+        <li>Référence des professionnels locaux indépendants dans un catalogue mensuel</li>
+        <li>Distribue ce catalogue via un réseau d'apporteurs d'affaires utilisant WhatsApp</li>
+        <li>Qualifie les contacts intéressés et organise des rendez-vous pour les professionnels</li>
+        <li>Gère la traçabilité des commissions d'apport d'affaires</li>
+      </ul>
+      <p class="lp">Popey <strong>n'est pas</strong> une agence de placement, un prestataire de services, un employeur, ni un garant des prestations réalisées par les professionnels.</p>
+
+      <h2 class="lh2">Article 3 — Lien apporteur — Conditions d'utilisation</h2>
+      <ul class="lul">
+        <li>Le lien apporteur est <strong>strictement personnel</strong> et ne peut être cédé, revendu ou partagé à un tiers</li>
+        <li>L'Apporteur s'engage à ne l'utiliser qu'auprès de personnes physiques avec lesquelles il a une relation personnelle préexistante</li>
+        <li>Toute diffusion de masse (emailing, SMS marketing, réseaux sociaux publics sans mention claire) est interdite sauf accord écrit de Popey</li>
+        <li>Le lien peut être désactivé à tout moment par Popey ou par l'Apporteur</li>
+      </ul>
+
+      <h2 class="lh2">Article 4 — Comportements prohibés</h2>
+      <ul class="lul">
+        <li>Créer de faux contacts ou simuler des activations pour générer des commissions artificielles</li>
+        <li>S'auto-activer ou activer des membres de sa famille dans le but de générer des commissions</li>
+        <li>Présenter Popey comme un MLM, une pyramide de vente ou tout système d'enrichissement garanti</li>
+        <li>Promettre des commissions à des sous-apporteurs (Popey n'a pas de structure multi-niveaux)</li>
+        <li>Utiliser la marque POPEY sans autorisation dans des supports de communication personnels</li>
+        <li>Harceler des contacts refusant de s'inscrire ou d'activer une offre</li>
+      </ul>
+
+      <h2 class="lh2">Article 5 — Obligations fiscales de l'apporteur</h2>
+      <div class="lalert">⚠️ Popey ne se substitue pas à un conseiller fiscal. Les informations ci-dessous sont indicatives et ne constituent pas un conseil juridique.</div>
+      <p class="lp">Les revenus perçus au titre du programme apporteur constituent des revenus imposables en France. L'Apporteur est seul responsable de leur déclaration :</p>
+      <ul class="lul">
+        <li>Les commissions sont en principe imposables en <strong>Bénéfices Non Commerciaux (BNC)</strong></li>
+        <li>Pour des montants modestes, le régime de la micro-activité ou la déclaration en revenus accessoires peut s'appliquer</li>
+        <li>Si les commissions dépassent <strong>600€/an</strong>, une convention d'apport d'affaires et/ou une facture sera demandée</li>
+        <li>Popey fournit un récapitulatif annuel des commissions versées sur demande à contact@popey.academy</li>
+      </ul>
+
+      <h2 class="lh2">Article 6 — Protection des données personnelles</h2>
+      <p class="lp">Les données collectées (prénom, téléphone, éventuellement IBAN) sont utilisées exclusivement pour la gestion du programme apporteur. Elles ne sont jamais revendues. Durée de conservation : 3 ans après la dernière commission. Droits RGPD : contact@popey.academy. Réclamation : CNIL (www.cnil.fr).</p>
+
+      <h2 class="lh2">Article 7 — Modification des CGU</h2>
+      <p class="lp">Popey peut modifier les présentes CGU à tout moment. Les apporteurs actifs seront informés par WhatsApp ou email 15 jours avant l'entrée en vigueur des nouvelles conditions. La poursuite de l'utilisation du lien apporteur vaut acceptation.</p>
+
+      <h2 class="lh2">Article 8 — Droit applicable</h2>
+      <p class="lp">Les présentes CGU sont régies par le droit français. Dernière mise à jour : janvier 2026.</p>
+    </div>
+  </div>
+</div>
+
+<input type="checkbox" class="legal-chk" id="chk-confidentialite">
+<div class="legal-panel" id="panel-confidentialite">
+  <div class="legal-panel-box">
+    <div class="legal-panel-bar">
+      <div class="legal-panel-title">Politique de confidentialité & RGPD</div>
+      <label for="chk-confidentialite" class="legal-panel-close" title="Fermer">✕</label>
+    </div>
+    <div class="legal-panel-body">
+<h1 class="lh1">Politique de confidentialité & Protection des données</h1>
+<span class="ltag">Règlement (UE) 2016/679 — RGPD</span>
+<p class="lp"><strong>Responsable du traitement :</strong> Jean-Philippe Roth — Popey Coffeeshop SAS — 9 Rue Sully, 40100 Dax — contact@popey.academy — +33 7 68 23 33 47</p>
+
+<h2 class="lh2">1. Données personnelles collectées</h2>
+<ul class="lul">
+  <li><strong>Identité :</strong> prénom, nom (facultatif)</li>
+  <li><strong>Contact :</strong> numéro WhatsApp, email (si fourni)</li>
+  <li><strong>Bancaires :</strong> IBAN (uniquement si commissions supérieures à 20€)</li>
+  <li><strong>Activité :</strong> liens partagés, contacts qualifiés, commissions générées</li>
+  <li><strong>Techniques :</strong> identifiant de lien unique, logs de clics anonymisés</li>
+</ul>
+
+<h2 class="lh2">2. Finalités et bases légales</h2>
+<div class="linfo">
+  <span class="linfo-l">Finalité</span><span class="linfo-l">Base légale</span>
+  <span class="linfo-v">Gestion du lien apporteur</span><span class="linfo-v">Exécution du contrat (art. 6.1.b)</span>
+  <span class="linfo-v">Versement des commissions</span><span class="linfo-v">Exécution du contrat (art. 6.1.b)</span>
+  <span class="linfo-v">Obligations comptables</span><span class="linfo-v">Obligation légale (art. 6.1.c)</span>
+  <span class="linfo-v">Prévention des fraudes</span><span class="linfo-v">Intérêt légitime (art. 6.1.f)</span>
+  <span class="linfo-v">Communications Popey</span><span class="linfo-v">Intérêt légitime (art. 6.1.f)</span>
+</div>
+
+<h2 class="lh2">3. Durées de conservation</h2>
+<ul class="lul">
+  <li>Données apporteur actif : durée du programme + 3 ans</li>
+  <li>Données IBAN et paiement : 10 ans (obligation comptable)</li>
+  <li>Logs techniques : 12 mois maximum</li>
+</ul>
+
+<h2 class="lh2">4. Vos droits</h2>
+<p class="lp">Conformément aux articles 15 à 22 du RGPD, vous disposez des droits d'accès, de rectification, d'effacement, de portabilité, de limitation et d'opposition. Pour exercer vos droits : <strong>contact@popey.academy</strong>. Réponse sous 30 jours. Réclamation possible auprès de la <strong>CNIL</strong> (www.cnil.fr).</p>
+
+<h2 class="lh2">5. Destinataires des données</h2>
+<p class="lp">Vos données sont destinées à Popey Coffeeshop SAS uniquement. Elles peuvent être transmises à notre prestataire d'hébergement (données techniques) et à notre logiciel de comptabilité (données de facturation). <strong>Elles ne sont jamais vendues ni partagées à des fins commerciales.</strong></p>
+
+<h2 class="lh2">6. Sécurité</h2>
+<p class="lp">Connexions HTTPS, accès restreints, sauvegardes chiffrées. En cas de violation de données, notification dans les 72h conformément à l'article 34 du RGPD.</p>
+
+<h2 class="lh2">7. Cookies</h2>
+<p class="lp">Ce site utilise uniquement des cookies techniques nécessaires au fonctionnement (session, traçage du lien apporteur). Aucun cookie publicitaire tiers sans consentement.</p>
+
+<h2 class="lh2">8. Contact DPD</h2>
+<p class="lp">Jean-Philippe Roth — contact@popey.academy — +33 7 68 23 33 47 — 9 Rue Sully, 40100 Dax. Dernière mise à jour : janvier 2026.</p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function updateHeroSim(){
+  var n=parseInt(document.getElementById('heroSlider').value);
+  document.getElementById('heroContactsVal').textContent=n;
+  document.getElementById('heroContactsLabel').textContent=n+' contacts';
+  var avg=12,low=Math.round(n*.02*avg),mid=Math.round(n*.04*avg),high=Math.round(n*.07*avg),max=high*1.3;
+  document.getElementById('val1').textContent=low+'€';
+  document.getElementById('val2').textContent=mid+'€';
+  document.getElementById('val3').textContent=high+'€';
+  document.getElementById('bar1').style.width=Math.min(low/max*100,100)+'%';
+  document.getElementById('bar2').style.width=Math.min(mid/max*100,100)+'%';
+  document.getElementById('bar3').style.width=Math.min(high/max*100,100)+'%';
 }
-buildBackToCatalogLink();
+updateHeroSim();
+function updateSim(){
+  var contacts=parseInt(document.getElementById('simContacts').value)||300;
+  var sector=parseInt(document.getElementById('simSector').value)||60;
+  var leads=Math.round(contacts*.03);
+  var perDeal=Math.round(sector*.20);
+  var total=leads*perDeal;
+  document.getElementById('simLeads').textContent=leads;
+  document.getElementById('simFixed').textContent=total+'€';
+  document.getElementById('simTotal').textContent=total+'€';
+}
+updateSim();
 
 var generatedReferral = { webapp: '', catalogue: '', wa: '' };
-var availableCities = [];
 
-function populateCitySelect(cities, selectedSlugOrLabel) {
-  var select = document.getElementById('ctaCity');
-  if (!select) return;
-  var selected = String(selectedSlugOrLabel || '').trim().toLowerCase();
-  var items = Array.isArray(cities) ? cities : [];
-  select.innerHTML = '';
-  if (items.length === 0) {
-    var opt = document.createElement('option');
-    opt.value = 'dax';
-    opt.textContent = 'Dax';
+function toCityLabel(raw){
+  var city=String(raw||'').trim().replace(/-/g,' ');
+  if(!city) return 'Dax';
+  return city.replace(/\b\w/g,function(c){return c.toUpperCase();});
+}
+
+function populateCitySelect(cities, selectedSlugOrLabel){
+  var select=document.getElementById('ctaCity');
+  if(!select) return;
+  var selected=String(selectedSlugOrLabel||'').trim().toLowerCase();
+  var items=Array.isArray(cities)?cities:[];
+  select.innerHTML='';
+  if(items.length===0){
+    var opt=document.createElement('option');
+    opt.value='dax';
+    opt.textContent='Dax';
     select.appendChild(opt);
     return;
   }
-  items.forEach(function(cityItem) {
-    var rawLabel = '';
-    var rawSlug = '';
-    if (typeof cityItem === 'string') {
-      rawLabel = cityItem;
-    } else if (cityItem && typeof cityItem === 'object') {
-      rawLabel = String(cityItem.label || cityItem.city || '').trim();
-      rawSlug = String(cityItem.slug || cityItem.city_slug || '').trim();
+  items.forEach(function(cityItem){
+    var rawLabel='';
+    var rawSlug='';
+    if(typeof cityItem==='string'){
+      rawLabel=cityItem;
+    } else if(cityItem && typeof cityItem==='object'){
+      rawLabel=String(cityItem.label||cityItem.city||'').trim();
+      rawSlug=String(cityItem.slug||cityItem.city_slug||'').trim();
     }
-    var label = toCityLabel(rawLabel);
-    var slug = (rawSlug || String(label || '').trim().toLowerCase().replace(/\s+/g, '-')).toLowerCase();
-    var opt = document.createElement('option');
-    opt.value = slug;
-    opt.textContent = label;
-    if (selected && (selected === slug || selected === label.toLowerCase())) opt.selected = true;
+    var label=toCityLabel(rawLabel);
+    var slug=(rawSlug||String(label||'').trim().toLowerCase().replace(/\s+/g,'-')).toLowerCase();
+    var opt=document.createElement('option');
+    opt.value=slug;
+    opt.textContent=label;
+    if(selected && (selected===slug || selected===label.toLowerCase())) opt.selected=true;
     select.appendChild(opt);
   });
 }
 
-async function loadAvailableCities() {
-  var select = document.getElementById('ctaCity');
-  if (!select) return;
-  select.innerHTML = '<option value="">Chargement…</option>';
-  try {
-    var res = await fetch('/api/popey-human/marketplace/cities?catalog=privilege', { cache: 'no-store' });
-    var payload = await res.json().catch(function() { return {}; });
-    var cities = Array.isArray(payload.cities) ? payload.cities : [];
-    availableCities = cities;
-    var params = new URLSearchParams(window.location.search);
-    var preselected = String(params.get('ville') || '').trim().toLowerCase();
+async function loadAvailableCities(){
+  var select=document.getElementById('ctaCity');
+  if(!select) return;
+  select.innerHTML='<option value=\"\">Chargement…</option>';
+  try{
+    var res=await fetch('/api/popey-human/marketplace/cities?catalog=privilege',{cache:'no-store'});
+    var payload=await res.json().catch(function(){return {};});
+    var cities=Array.isArray(payload.cities)?payload.cities:[];
+    var params=new URLSearchParams(window.location.search);
+    var preselected=String(params.get('ville')||'').trim().toLowerCase();
     populateCitySelect(cities, preselected || 'dax');
-  } catch (_e) {
-    populateCitySelect(['Dax'], 'dax');
+  }catch(_e){
+    populateCitySelect(['Dax'],'dax');
   }
 }
 
-async function submitApporteur(event) {
-  if (event) event.preventDefault();
-  var prenom = document.getElementById('ctaPrenom').value.trim();
-  var nom = document.getElementById('ctaNom') ? document.getElementById('ctaNom').value.trim() : '';
-  var tel = document.getElementById('ctaTel').value.trim();
-  var citySelect = document.getElementById('ctaCity');
-  var citySlug = citySelect && citySelect.value ? String(citySelect.value).trim() : '';
-  var cityLabel = citySelect && citySelect.options && citySelect.options.length
-    ? String(citySelect.options[citySelect.selectedIndex].textContent || '').trim()
-    : '';
-  var submitBtn = document.getElementById('ctaSubmitBtn');
-  if (!prenom) { document.getElementById('ctaPrenom').focus(); return; }
-  if (!nom) { document.getElementById('ctaNom').focus(); return; }
-  if (!tel) { document.getElementById('ctaTel').focus(); return; }
-  if (!cityLabel) { if (citySelect) citySelect.focus(); return; }
+async function submitApporteur(event){
+  if(event) event.preventDefault();
+  var prenom=document.getElementById('ctaPrenom').value.trim();
+  var nom=document.getElementById('ctaNom')?document.getElementById('ctaNom').value.trim():'';
+  var tel=document.getElementById('ctaTel').value.trim();
+  var citySelect=document.getElementById('ctaCity');
+  var cityLabel=citySelect && citySelect.options && citySelect.options.length ? String(citySelect.options[citySelect.selectedIndex].textContent||'').trim() : '';
+  var submitBtn=document.getElementById('ctaSubmitBtn');
+  if(!prenom){document.getElementById('ctaPrenom').focus();return;}
+  if(!nom){document.getElementById('ctaNom').focus();return;}
+  if(!tel){document.getElementById('ctaTel').focus();return;}
+  if(!cityLabel){if(citySelect) citySelect.focus();return;}
 
-  try {
-    if (submitBtn) { submitBtn.disabled = true; }
-    if (submitBtn) { submitBtn.innerHTML = '<span>Génération…</span>'; }
+  try{
+    if(submitBtn){submitBtn.disabled=true; submitBtn.innerHTML='<span>Génération…</span>';}
 
-    var params = new URLSearchParams(window.location.search);
-    var sponsorName = (params.get('ref_name') || params.get('referrer') || params.get('pro') || params.get('sponsor') || 'Popey').trim();
-    var sponsorRefCode = (params.get('ref') || '').trim();
-    var sponsorMemberId = (params.get('ref_id') || '').trim();
-    var finalCityLabel = cityLabel || toCityLabel(citySlug || params.get('ville') || 'dax');
+    var params=new URLSearchParams(window.location.search);
+    var sponsorName=(params.get('ref_name')||params.get('referrer')||params.get('pro')||params.get('sponsor')||'Popey').trim();
+    var sponsorRefCode=(params.get('ref')||'').trim();
+    var sponsorMemberId=(params.get('ref_id')||'').trim();
 
-    var response = await fetch('/api/popey-human/affiliation/public/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fullName: (prenom + ' ' + nom).trim(),
-        phone: tel,
-        city: finalCityLabel,
-        sponsorName: sponsorName,
-        sponsorRefCode: sponsorRefCode || null,
-        sponsorMemberId: sponsorMemberId || null
+    var response=await fetch('/api/popey-human/affiliation/public/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        fullName:(prenom+' '+nom).trim(),
+        phone:tel,
+        city:cityLabel,
+        sponsorName:sponsorName,
+        sponsorRefCode:sponsorRefCode||null,
+        sponsorMemberId:sponsorMemberId||null
       })
     });
-    var payload = await response.json().catch(function() { return {}; });
-    if (!response.ok || !payload.success) throw new Error(payload.error || 'Impossible de générer le lien');
 
-    var referralUrl = String(payload.referralUrl || '').trim();
-    var whatsappShareUrl = String(payload.whatsappShareUrl || '').trim();
-    var previewWebapp = String(payload.previewUrl || '').trim();
-    if (!referralUrl && !previewWebapp) throw new Error('Lien introuvable');
+    var payload=await response.json().catch(function(){return {};});
+    if(!response.ok || !payload.success) throw new Error(payload.error || 'Impossible de générer le lien');
 
-    generatedReferral.webapp = previewWebapp || referralUrl;
-    generatedReferral.catalogue = referralUrl;
-    generatedReferral.wa = whatsappShareUrl;
+    var referralUrl=String(payload.referralUrl||'').trim();
+    var whatsappShareUrl=String(payload.whatsappShareUrl||'').trim();
+    var previewWebapp=String(payload.previewUrl||'').trim();
+    if(!referralUrl && !previewWebapp) throw new Error('Lien introuvable');
 
-    document.getElementById('webappLinkInput').value = generatedReferral.webapp;
-    var openBtn = document.getElementById('openWebappBtn');
-    if (openBtn) openBtn.setAttribute('href', generatedReferral.webapp);
-    var openCatalogBtn = document.getElementById('openCatalogBtn');
-    if (openCatalogBtn) {
-      if (referralUrl) {
+    generatedReferral.webapp=previewWebapp || referralUrl;
+    generatedReferral.catalogue=referralUrl;
+    generatedReferral.wa=whatsappShareUrl;
+
+    document.getElementById('webappLinkInput').value=generatedReferral.webapp;
+    var openBtn=document.getElementById('openWebappBtn');
+    if(openBtn) openBtn.setAttribute('href', generatedReferral.webapp);
+    var openCatalogBtn=document.getElementById('openCatalogBtn');
+    if(openCatalogBtn){
+      if(referralUrl){
         openCatalogBtn.setAttribute('href', referralUrl);
-        openCatalogBtn.style.display = '';
+        openCatalogBtn.style.display='';
       } else {
-        openCatalogBtn.style.display = 'none';
+        openCatalogBtn.style.display='none';
       }
     }
-    var waBtn = document.getElementById('waShareBtn');
-    if (waBtn) waBtn.setAttribute('href', whatsappShareUrl || ('https://api.whatsapp.com/send?text=' + encodeURIComponent(generatedReferral.webapp)));
+    var waBtn=document.getElementById('waShareBtn');
+    if(waBtn) waBtn.setAttribute('href', whatsappShareUrl || ('https://api.whatsapp.com/send?text='+encodeURIComponent(generatedReferral.webapp)));
 
-    document.getElementById('ctaForm').style.display = 'none';
-    document.getElementById('successMsg').style.display = 'block';
-  } catch (error) {
-    alert((error && error.message) ? error.message : 'Erreur de génération du lien');
-    if (submitBtn) { submitBtn.disabled = false; }
-    if (submitBtn) {
-      submitBtn.innerHTML = '<span>💬 Créer mon lien apporteur</span><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    document.getElementById('ctaForm').style.display='none';
+    document.getElementById('successMsg').style.display='block';
+  }catch(error){
+    alert((error && error.message)?error.message:'Erreur de génération du lien');
+    if(submitBtn){
+      submitBtn.disabled=false;
+      submitBtn.innerHTML='<span>💬 Créer mon lien apporteur</span><svg width=\"18\" height=\"18\" viewBox=\"0 0 18 18\" fill=\"none\"><path d=\"M4 9h10M10 5l4 4-4 4\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>';
     }
   }
 }
 
-function copyWebappLink(event) {
-  if (event) event.preventDefault();
-  var btn = document.getElementById('copyBtn');
-  var value = String(generatedReferral.webapp || '').trim();
-  if (!value) return;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(value).then(function() {
-      if (btn) btn.textContent = '✓ Copié';
-      setTimeout(function() { if (btn) btn.textContent = 'Copier lien web app'; }, 1600);
-    }).catch(function() {
-      if (btn) btn.textContent = 'Copie impossible';
+function copyWebappLink(event){
+  if(event) event.preventDefault();
+  var btn=document.getElementById('copyBtn');
+  var value=String(generatedReferral.webapp||'').trim();
+  if(!value) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(value).then(function(){
+      if(btn) btn.textContent='✓ Copié';
+      setTimeout(function(){ if(btn) btn.textContent='Copier lien web app'; }, 1600);
+    }).catch(function(){
+      if(btn) btn.textContent='Copie impossible';
     });
     return;
   }
-  if (btn) btn.textContent = 'Copie impossible';
+  if(btn) btn.textContent='Copie impossible';
 }
-
-function updateHeroSim() {
-  var n = parseInt(document.getElementById('heroSlider').value);
-  document.getElementById('heroContactsVal').textContent = n;
-  document.getElementById('heroContactsLabel').textContent = n + ' contacts';
-  var avgApporteur = 12;
-  var low  = Math.round(n * 0.02 * avgApporteur);
-  var mid  = Math.round(n * 0.04 * avgApporteur);
-  var high = Math.round(n * 0.07 * avgApporteur);
-  var max  = high * 1.4;
-  document.getElementById('val1').textContent = low + '€';
-  document.getElementById('val2').textContent = mid + '€';
-  document.getElementById('val3').textContent = high + '€';
-  document.getElementById('bar1').style.width = Math.min(low/max*100, 100) + '%';
-  document.getElementById('bar2').style.width = Math.min(mid/max*100, 100) + '%';
-  document.getElementById('bar3').style.width = Math.min(high/max*100, 100) + '%';
+function toggleFaq(btn){
+  var item=btn.closest('.faq-item');
+  var open=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open');});
+  if(!open)item.classList.add('open');
 }
-updateHeroSim();
-
-function updateSim() {
-  var contacts = parseInt(document.getElementById('simContacts').value) || 300;
-  var sectorVal = parseInt(document.getElementById('simSector').value) || 60;
-  var rate = 0.03;
-  var leads = Math.round(contacts * rate);
-  var popeyCommission = sectorVal;
-  var apporteurPerDeal = Math.round(popeyCommission * 0.20);
-  var fixedTotal = leads * apporteurPerDeal;
-  var total = fixedTotal;
-  document.getElementById('simLeads').textContent = leads;
-  document.getElementById('simFixed').textContent = fixedTotal + '€';
-  document.getElementById('simTotal').textContent = total + '€';
-}
-updateSim();
-
-function toggleFaq(btn) {
-  var item = btn.closest('.faq-item');
-  var isOpen = item.classList.contains('open');
-  document.querySelectorAll('.faq-item').forEach(function(i){ i.classList.remove('open'); });
-  if (!isOpen) item.classList.add('open');
-}
-
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.12 });
-document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el); });
-
 setTimeout(function(){
-  document.getElementById('bar1').style.width = '15%';
-  document.getElementById('bar2').style.width = '42%';
-  document.getElementById('bar3').style.width = '75%';
-}, 600);
+  ['bar1','bar2','bar3'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(el)el.style.width=['15%','42%','75%'][i];
+  });
+},600);
 
 loadAvailableCities();
 </script>
