@@ -29,13 +29,14 @@ export async function GET(request: NextRequest, context: { params: Promise<{ vil
   const ville = String(resolvedParams?.ville || "dax").trim().toLowerCase() || "dax";
   const label = toCityLabel(ville);
   const startUrl = buildStartUrl(ville, request);
+  const scope = `/privilege/${ville}`;
   const manifest = {
     name: `Catalogue Popey — ${label}`,
     short_name: `Popey ${label}`,
     description: "Catalogue privilèges Popey.",
-    id: startUrl,
+    id: scope,
     start_url: startUrl,
-    scope: "/privilege/",
+    scope,
     display: "standalone",
     background_color: "#E2D9BC",
     theme_color: "#0A0B0C",
