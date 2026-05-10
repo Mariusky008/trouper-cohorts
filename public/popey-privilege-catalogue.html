@@ -36,6 +36,54 @@
 html { scroll-behavior: smooth; }
 body { background: var(--cream); color: var(--t); font-family: var(--fb); max-width: 480px; margin: 0 auto; min-height: var(--app-h); overflow-x: hidden; padding-bottom: calc(92px + var(--safe-bottom) + var(--vv-bottom)); }
 
+@media (min-width: 960px) {
+  body {
+    max-width: none;
+    margin: 0;
+    padding-bottom: 0;
+    background: var(--cream2);
+  }
+  .page-shell {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: 100vh;
+    max-width: 1320px;
+    margin: 0 auto;
+    background: var(--cream2);
+    box-shadow: 0 0 80px rgba(0,0,0,.18);
+  }
+  .hero {
+    height: 100vh;
+    overflow: auto;
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .main {
+    height: 100vh;
+    overflow: auto;
+    padding: 24px 24px 140px;
+    background: var(--cream2);
+  }
+  .filter-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(237,234,224,.92);
+    backdrop-filter: blur(10px);
+    padding: 14px 0 14px;
+    margin: -6px 0 18px;
+  }
+  #live-offers-root {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  #live-offers-root .sphere-divider { grid-column: 1 / -1; }
+  #live-offers-root .featured-offer { grid-column: 1 / -1; }
+  .sticky-bottom {
+    max-width: 1320px;
+  }
+}
+
 /* ── HERO BAND ── */
 .hero { background: var(--ink); position: relative; overflow: hidden; }
 .hero::before {
@@ -1950,6 +1998,8 @@ html[data-live-ready="0"] .main > .sphere-divider {
 </head>
 <body>
 
+<div class="page-shell">
+
 <!-- ══ HERO ══ -->
 <div class="hero">
   <div class="hero-noise"></div>
@@ -2502,6 +2552,8 @@ html[data-live-ready="0"] .main > .sphere-divider {
       
     </div>
   </div>
+
+</div>
 
 </div>
 
