@@ -3579,26 +3579,33 @@ async function confirmSwipeActivate() {
   if (!swipeActivationTarget) return;
   var place = swipeActivationTarget;
   var button = document.getElementById('swipeActivateConfirmBtn');
-  var fallbackText = 'Bonjour Jean-Philippe, je suis intéressé(e) par l\'offre "' + String(place.badge || place.metier || 'offre Popey') + '". Merci de me contacter pour un rendez-vous. Bonne journée.';
-  var quickUrl = 'https://wa.me/33768233347?text=' + encodeURIComponent(fallbackText);
   if (button) {
     button.disabled = true;
     button.textContent = 'Ouverture...';
   }
   closeSwipeActivate();
-  // Open WhatsApp immediately on direct user click to avoid popup blockers/blank about:blank flows.
+  var popup = null;
   try {
-    var opened = window.open(quickUrl, '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      var target = (window.top && window.top !== window) ? window.top : window;
-      target.location.href = quickUrl;
-    }
-  } catch (_waOpenErr) {
-    var targetFallback = (window.top && window.top !== window) ? window.top : window;
-    targetFallback.location.href = quickUrl;
+    popup = window.open('about:blank', '_blank', 'noopener,noreferrer');
+  } catch (_openErr) {
+    popup = null;
   }
-  activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), { openMode: 'silent' }).catch(function () { return false; });
-  var ok = true;
+
+  var ok = false;
+  try {
+    ok = await activateLive(place.id, ('PRIV-' + place.id).slice(0, 14), {
+      openMode: 'direct',
+      popupWindow: popup,
+      sameTab: !popup
+    });
+  } catch (_err) {
+    ok = false;
+  }
+
+  if (!ok) {
+    try { if (popup && !popup.closed) popup.close(); } catch (_closeErr) {}
+    alert("Activation impossible pour le moment. Merci de réessayer.");
+  }
   if (button) {
     button.disabled = false;
     button.textContent = 'Ouvrir WhatsApp →';
@@ -3796,9 +3803,13 @@ async function activateLive(placeId, trackingCode, options) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   }).catch(function () { return null; });
-  if (!response) return false;
+  if (!response) { alert("Activation impossible. Vérifie ta connexion et réessaye."); return false; }
   var payload = await response.json().catch(function () { return {}; });
-  if (!response.ok || !payload.success) return false;
+  if (!response.ok || !payload.success) {
+    var errMsg = String(payload.error || '').trim() || "Activation impossible pour le moment. Merci de réessayer.";
+    alert(errMsg);
+    return false;
+  }
   var message = String(payload.whatsappMessage || ('Bonjour ! Je souhaite activer mon privilège Popey. Code: #' + trackingCode));
   var url = String(payload.whatsappUrl || ('https://wa.me/33768233347?text=' + encodeURIComponent(message)));
   var mode = options && options.openMode ? String(options.openMode) : 'sheet';
@@ -3837,6 +3848,7 @@ async function activateLive(placeId, trackingCode, options) {
 }
 
 async function initLiveCatalog() {
+  document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
   try {
     var params = new URLSearchParams(window.location.search);
     var city = (params.get('ville') || 'dax').trim();
@@ -3866,14 +3878,23 @@ async function initLiveCatalog() {
     liveState.loaded = true;
     syncSwipeFavoritesWithLiveData();
 
-    // Always remove static mock cards once live init runs.
-    document.querySelectorAll('.offer-card, .sphere-divider').forEach(function (el) { el.remove(); });
     renderLocalEventsFeed();
     refreshLiveCounters();
     renderLiveOffers();
     document.documentElement.setAttribute('data-live-ready', '1');
   } catch (error) {
     console.error('[privilege-live] init failed', error);
+    var main = document.querySelector('.main');
+    if (main) {
+      var root = document.createElement('div');
+      root.id = 'live-offers-root';
+      root.innerHTML = ''
+        + '<div class="divider"><i></i><span>Catalogue indisponible · Recharge la page</span><i></i></div>'
+        + '<div style="display:flex;justify-content:center;margin:14px 0 24px;">'
+        + '  <button class="btn-primary" onclick="window.location.reload()">Recharger</button>'
+        + '</div>';
+      main.appendChild(root);
+    }
     document.documentElement.setAttribute('data-live-ready', '1');
   }
 }
