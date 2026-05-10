@@ -29,6 +29,7 @@ type PlaceRow = {
   offer_description: string | null;
   owner_display_name: string | null;
   owner_profile_photo_url: string | null;
+  owner_member_id: string | null;
   offer_expires_at: string | null;
   partner_offer_value_eur: number | null;
   status: "dispo" | "sale" | "occupied" | "reserved";
@@ -74,6 +75,28 @@ type CobrandOfferRow = {
 
 function trim(value: unknown): string {
   return String(value || "").trim();
+}
+
+function rewardLabelForMember(input: {
+  eclaireur_reward_mode: string | null;
+  eclaireur_reward_percent: number | null;
+  eclaireur_reward_fixed_eur: number | null;
+}) {
+  const mode = trim(input.eclaireur_reward_mode).toLowerCase();
+  if (mode === "percent") {
+    const raw = Number(input.eclaireur_reward_percent || 0);
+    if (Number.isFinite(raw) && raw > 0) {
+      const normalized = raw > 1 ? raw : raw * 100;
+      return `${Math.round(normalized)}%`;
+    }
+  }
+  if (mode === "fixed") {
+    const raw = Number(input.eclaireur_reward_fixed_eur || 0);
+    if (Number.isFinite(raw) && raw > 0) {
+      return `${Math.round(raw)}€`;
+    }
+  }
+  return "";
 }
 
 const BLOCKED_METIER_KEYWORDS = [
@@ -154,7 +177,7 @@ async function seedMarketplaceIfEmpty() {
   }
 }
 
-function toClientPlace(row: PlaceRow) {
+function toClientPlace(row: PlaceRow, rewardLabel?: string) {
   const normalizedStatus: "sale" | "dispo" = row.status === "dispo" ? "dispo" : "sale";
   const ui = SPHERE_UI[row.sphere_key] || SPHERE_UI.digital;
   return {
@@ -169,6 +192,7 @@ function toClientPlace(row: PlaceRow) {
     badge: row.privilege_badge || null,
     logoUrl: row.logo_url || null,
     category: row.category_key || null,
+    rewardLabel: rewardLabel || null,
     partnerWhatsapp: row.partner_whatsapp || null,
     directContact: row.direct_contact || null,
     photoUrl: row.offer_photo_url || null,
@@ -271,7 +295,7 @@ export async function GET(request: NextRequest) {
     let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -495,8 +519,27 @@ export async function GET(request: NextRequest) {
         return aFeatured ? -1 : 1;
       });
     }
+
+    const ownerIds = Array.from(new Set(filteredRows.map((row) => trim(row.owner_member_id)).filter(Boolean)));
+    const rewardByOwnerId = new Map<string, string>();
+    if (ownerIds.length > 0) {
+      const { data: ownersData } = await supabase
+        .from("human_members")
+        .select("id,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur")
+        .in("id", ownerIds)
+        .limit(500);
+      (((ownersData as Array<{
+        id: string;
+        eclaireur_reward_mode: string | null;
+        eclaireur_reward_percent: number | null;
+        eclaireur_reward_fixed_eur: number | null;
+      }> | null) || []).forEach((row) => {
+        rewardByOwnerId.set(row.id, rewardLabelForMember(row));
+      }));
+    }
+
     let places = filteredRows
-      .map(toClientPlace)
+      .map((row) => toClientPlace(row, rewardByOwnerId.get(trim(row.owner_member_id))))
       .map((item) => ({
         ...item,
         category: item.category || inferCategoryFromSphere(item.sphere),
@@ -526,6 +569,7 @@ export async function GET(request: NextRequest) {
           badge: null,
           logoUrl: null,
           category: inferCategoryFromSphere(item.sphereKey),
+          rewardLabel: null,
           partnerWhatsapp: null,
           directContact: null,
           photoUrl: null,

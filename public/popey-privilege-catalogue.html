@@ -3147,6 +3147,7 @@ function normalizePlace(row) {
     profileImage: profileImage || coverImage,
     expiry: expiryRaw,
     value: Number(row.partner_offer_value_eur || row.partnerOfferValueEur || 0),
+    rewardLabel: String(row.rewardLabel || row.reward_label || '').trim() || null,
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
 }
@@ -3317,7 +3318,7 @@ function renderLiveCardHtml(p, meta, featured) {
     : '';
   image += '<div class="oc-img-placeholder" style="background:rgba(0,0,0,.04);display:' + (p.image ? 'none' : 'flex') + '">' + meta.icon + '</div>';
   var refName = (liveState.refFullName || liveState.refFirstName || 'Votre contact');
-  var rewardText = liveState.rewardText || 'une commission';
+  var rewardText = String(p.rewardLabel || liveState.rewardText || 'une commission');
 
   return ''
     + '<div class="offer-card' + (featured ? ' featured-offer' : '') + '" data-sphere="' + p.sphere + '">'
@@ -3455,7 +3456,7 @@ function buildSwipeCard(place) {
   card.setAttribute('data-top-card', '1');
   var meta = sphereMeta[place.sphere] || sphereMeta.digital;
   var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
-  var rewardText = liveState.rewardText || 'une commission';
+  var rewardText = String(place.rewardLabel || liveState.rewardText || 'une commission');
   var displayName = String(place.personName || place.name || 'Partenaire Popey');
   var themeLabel = String((meta.label || 'Digital').split('·')[0]).trim();
   var proInitials = displayName.split(' ').map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
