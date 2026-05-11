@@ -4,7 +4,7 @@
 
 Sur la route `/popey-human/entrepreneur-smart-scan-test`, l’onglet “Alliances” doit:
 
-- Lancer automatiquement une recherche de prospects via Apify dès l’ouverture de l’onglet
+- Lancer une recherche de prospects via Apify quand l’utilisateur renseigne ses métiers cibles et clique sur “Trouver mes éclaireurs”
 - Persister les résultats (prospects + runs de recherche)
 - Permettre l’envoi d’un message WhatsApp “pro” via Twilio avec suivi de statuts
 - Centraliser les réponses et statuts dans l’admin inbox
@@ -43,9 +43,9 @@ Tables principales:
 
 ## 4) Flux technique (résumé)
 
-### 4.1 Déclenchement auto (UI)
+### 4.1 Déclenchement (UI)
 
-À l’ouverture de l’onglet “Alliances”, le client déclenche automatiquement `POST /api/popey-human/smart-scan/alliances/search`.
+L’utilisateur clique sur “Trouver mes éclaireurs” (après saisie des métiers cibles) pour déclencher `POST /api/popey-human/smart-scan/alliances/search`.
 
 - UI: `src/app/popey-human/entrepreneur-smart-scan-test/page.tsx`
 
@@ -99,7 +99,7 @@ Retourne: derniers runs de recherche Alliances, compteurs d’invites, + snapsho
 
 ## 6) Tests
 
-### 6.1 E2E (déclenchement auto)
+### 6.1 E2E (déclenchement manuel)
 
 Script: `scripts/e2e-human-alliances.mjs`
 
@@ -113,7 +113,7 @@ Commande:
 
 - `npm run e2e:human-alliances`
 
-Critère: présence d’un `POST /api/popey-human/smart-scan/alliances/search` lors de l’ouverture avec `?panel=alliances`.
+Critère: présence d’un `POST /api/popey-human/smart-scan/alliances/search` après clic sur “Trouver mes éclaireurs”.
 
 ## 7) Checklist go-live
 
@@ -122,4 +122,3 @@ Critère: présence d’un `POST /api/popey-human/smart-scan/alliances/search` l
 - Webhooks Twilio: inbound + status callback pointent sur les URLs Vercel de prod
 - Signature webhook: activée si possible (`TWILIO_WHATSAPP_VALIDATE_WEBHOOK_SIGNATURE=true`)
 - Admin: `/admin/humain/chat` reçoit bien inbound + statuts (delivered/read/failed)
-

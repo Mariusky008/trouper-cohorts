@@ -125,16 +125,53 @@ async function main() {
 
     await page.goto(`${baseUrl}/popey-human/entrepreneur-smart-scan-test?panel=alliances`, { waitUntil: "domcontentloaded" });
 
+    await page.waitForFunction(
+      () => (document.body?.textContent || "").toLowerCase().includes("trouver mes"),
+      { timeout: 20000 },
+    );
+
+    await page.evaluate(() => {
+      const input = document.querySelector('input[placeholder*="Ajoute tes metiers cibles"]');
+      if (!input) return;
+      input.focus();
+      input.value = "Agent immobilier, Consultant marketing";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    const clicked = await page.evaluate(() => {
+      const normalize = (value) =>
+        (value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+      const buttons = Array.from(document.querySelectorAll("button"));
+      for (const button of buttons) {
+        const text = normalize(button.textContent || "");
+        if (!text) continue;
+        if (!text.includes("trouver mes")) continue;
+        if ((button).disabled) continue;
+        button.click();
+        return true;
+      }
+      return false;
+    });
+    if (!clicked) {
+      throw new Error("Unable to click 'Trouver mes ...' button on Alliances panel.");
+    }
+
     const deadline = Date.now() + 35000;
     while (!alliancesSearchResponse && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
 
     if (!alliancesSearchResponse) {
-      throw new Error("Alliances search was not triggered automatically (no POST /alliances/search observed).");
+      throw new Error("Alliances search was not triggered (no POST /alliances/search observed after click).");
     }
 
-    console.log("[E2E-ALLIANCES] Auto-search triggered:", JSON.stringify(alliancesSearchResponse));
+    console.log("[E2E-ALLIANCES] Manual search triggered:", JSON.stringify(alliancesSearchResponse));
   } finally {
     await page.close();
     await browser.close();
@@ -146,4 +183,3 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
-
