@@ -345,7 +345,10 @@ export async function sendPartnerOutreach(
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
   const nowIso = new Date().toISOString();
   const contentVariables = parseContentVariables(variables);
-  const contentSid = mode === "direct" ? whatsappTwilioConfig.directContentSid : whatsappTwilioConfig.contentSid;
+  const contentSid =
+    mode === "direct"
+      ? whatsappTwilioConfig.directContentSid || whatsappTwilioConfig.contentSid
+      : whatsappTwilioConfig.contentSid;
   const previewMessage = `Template ${contentSid}: ${[variables[1], variables[2], variables[3], variables[4], variables[5]]
     .map((item) => String(item || "").trim())
     .filter(Boolean)

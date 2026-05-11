@@ -37,6 +37,6 @@ export function isWhatsAppTwilioDirectConfigured() {
     whatsappTwilioConfig.accountSid &&
       whatsappTwilioConfig.authToken &&
       whatsappTwilioConfig.whatsappFrom &&
-      whatsappTwilioConfig.directContentSid,
+      (whatsappTwilioConfig.directContentSid || whatsappTwilioConfig.contentSid),
   );
 }
