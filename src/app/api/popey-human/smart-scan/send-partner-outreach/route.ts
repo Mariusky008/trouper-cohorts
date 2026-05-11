@@ -3,7 +3,7 @@ import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
 import { prepareSmartScanWhatsAppPayload } from "@/lib/actions/human-smart-scan";
 import { sendPartnerOutreach } from "@/lib/actions/whatsapp-twilio";
 import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
-import { isWhatsAppTwilioConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import { isWhatsAppTwilioConfigured, isWhatsAppTwilioDirectConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 import { smartScanSendPartnerOutreachSchema } from "@/lib/popey-human/whatsapp-twilio-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Payload Twilio invalide pour l'envoi partenaire." }, { status: 400 });
   }
   const body = parsed.data;
+  const mode = body.sendMode === "direct" ? "direct" : "default";
 
   const supabase = await createClient();
   const {
@@ -69,21 +70,27 @@ export async function POST(request: NextRequest) {
   const supabaseAdmin = createAdminClient();
   const { data: memberProfile } = await supabaseAdmin
     .from("human_members")
-    .select("first_name")
+    .select("first_name,last_name")
     .eq("id", ensured.id)
     .maybeSingle();
   const senderFirstName = String(memberProfile?.first_name || "").trim() || "Popey";
+  const senderFullName = [String(memberProfile?.first_name || "").trim(), String(memberProfile?.last_name || "").trim()]
+    .filter(Boolean)
+    .join(" ")
+    .trim() || "Jean-Philippe Roth";
   const prospectFirstName = firstNameFromFullName(body.fullName);
   const cityOrContext = String(body.city || body.companyHint || "").trim() || "votre ville";
-  const targetJob = String(body.variables?.[4] || body.companyHint || "").trim();
+  const targetJob = mode === "direct" ? String(body.variables?.[5] || "").trim() : String(body.variables?.[4] || body.companyHint || "").trim();
+  const upstreamJobs = String(body.variables?.[4] || "").trim();
   if (!targetJob) {
     return NextResponse.json(
-      { error: "Le métier prospect (variable {{4}}) est obligatoire pour envoyer le template Twilio." },
+      { error: mode === "direct" ? "Le métier prospect (variable {{5}}) est obligatoire pour envoyer le template Twilio." : "Le métier prospect (variable {{4}}) est obligatoire pour envoyer le template Twilio." },
       { status: 400 },
     );
   }
 
-  if (!isWhatsAppTwilioConfigured()) {
+  const configured = mode === "direct" ? isWhatsAppTwilioDirectConfigured() : isWhatsAppTwilioConfigured();
+  if (!configured) {
     return NextResponse.json(
       {
         error: "Twilio WhatsApp non configuré (Sandbox).",
@@ -97,18 +104,21 @@ export async function POST(request: NextRequest) {
     phone,
     {
       1: body.variables?.[1] || prospectFirstName,
-      2: body.variables?.[2] || senderFirstName,
+      2: body.variables?.[2] || (mode === "direct" ? senderFullName : senderFirstName),
       3: body.variables?.[3] || cityOrContext,
-      4: body.variables?.[4] || targetJob,
+      4: mode === "direct" ? upstreamJobs : body.variables?.[4] || targetJob,
+      5: mode === "direct" ? targetJob : undefined,
     },
     {
       ownerMemberId: ensured.id,
       source: "smart_scan_daily_scan",
+      mode,
       metadata: {
         smart_scan_contact_id: prepared.contactId,
         external_contact_ref: body.externalContactRef || null,
         action_type: body.actionType,
         message_draft: body.messageDraft,
+        direct_mode: mode === "direct",
         quick_reply_expected: ["Oui, avec plaisir", "Pas pour le moment"],
       },
     },

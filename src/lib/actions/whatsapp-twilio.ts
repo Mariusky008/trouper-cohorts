@@ -2,7 +2,7 @@
 
 import twilio from "twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isWhatsAppTwilioConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import { isWhatsAppTwilioConfigured, isWhatsAppTwilioDirectConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 
 type InboundClassification = "positive" | "negative" | "stop" | "neutral";
 type QueueStatus = "sent" | "delivered" | "read" | "failed";
@@ -19,6 +19,7 @@ type PartnerOutreachVariables = {
   2?: string;
   3?: string;
   4?: string;
+  5?: string;
 };
 
 function normalizePhone(raw: string | null | undefined): string {
@@ -108,6 +109,7 @@ function parseContentVariables(input: PartnerOutreachVariables): string {
     "2": String(input[2] || "").trim(),
     "3": String(input[3] || "").trim(),
     "4": String(input[4] || "").trim(),
+    "5": String(input[5] || "").trim(),
   };
   return JSON.stringify(variables);
 }
@@ -323,9 +325,12 @@ export async function sendPartnerOutreach(
     ownerMemberId?: string;
     source?: string;
     metadata?: Record<string, unknown>;
+    mode?: "default" | "direct";
   },
 ) {
-  if (!isWhatsAppTwilioConfigured()) {
+  const mode = options?.mode === "direct" ? "direct" : "default";
+  const configured = mode === "direct" ? isWhatsAppTwilioDirectConfigured() : isWhatsAppTwilioConfigured();
+  if (!configured) {
     return {
       success: false as const,
       error: "Configuration Twilio WhatsApp incomplète (account SID, auth token, from, content SID).",
@@ -340,7 +345,8 @@ export async function sendPartnerOutreach(
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
   const nowIso = new Date().toISOString();
   const contentVariables = parseContentVariables(variables);
-  const previewMessage = `Template ${whatsappTwilioConfig.contentSid}: ${[variables[1], variables[2], variables[3], variables[4]]
+  const contentSid = mode === "direct" ? whatsappTwilioConfig.directContentSid : whatsappTwilioConfig.contentSid;
+  const previewMessage = `Template ${contentSid}: ${[variables[1], variables[2], variables[3], variables[4], variables[5]]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .join(" | ")}`;
@@ -348,7 +354,7 @@ export async function sendPartnerOutreach(
   const message = await client.messages.create({
     from: whatsappTwilioConfig.whatsappFrom,
     to,
-    contentSid: whatsappTwilioConfig.contentSid,
+    contentSid,
     contentVariables,
     ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
   });
@@ -362,7 +368,7 @@ export async function sendPartnerOutreach(
       channel: "template",
       twilio_message_sid: String(message.sid || ""),
       twilio_status: String(message.status || ""),
-      twilio_content_sid: whatsappTwilioConfig.contentSid,
+      twilio_content_sid: contentSid,
     };
 
     const { data: queueRow } = await supabaseAdmin
@@ -370,9 +376,9 @@ export async function sendPartnerOutreach(
       .insert({
         owner_member_id: options.ownerMemberId,
         phone_e164: phoneE164,
-        template_name: whatsappTwilioConfig.contentSid || "twilio_content_template",
+        template_name: contentSid || "twilio_content_template",
         language_code: "fr",
-        vars: [variables[1] || "", variables[2] || "", variables[3] || "", variables[4] || ""],
+        vars: [variables[1] || "", variables[2] || "", variables[3] || "", variables[4] || "", variables[5] || ""],
         quick_reply_payload: ["YES_WITH_PLEASURE", "NOT_NOW"],
         source: String(options.source || "smart_scan_daily_scan").trim().slice(0, 64) || "smart_scan_daily_scan",
         metadata,
@@ -403,7 +409,7 @@ export async function sendPartnerOutreach(
         status: String(message.status || "").trim() || null,
         to: String(message.to || "").trim() || null,
         from: String(message.from || "").trim() || null,
-        template_name: whatsappTwilioConfig.contentSid || null,
+        template_name: contentSid || null,
         template_vars: variables,
       },
     });

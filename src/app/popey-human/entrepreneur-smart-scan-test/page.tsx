@@ -1272,11 +1272,19 @@ export default function EntrepreneurSmartScanTestPage() {
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
   const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
+  const [showAllianceDirectModal, setShowAllianceDirectModal] = useState(false);
   const [selectedAllianceProspect, setSelectedAllianceProspect] = useState<SmartScanAllianceProspect | null>(null);
   const [allianceMessageDraft, setAllianceMessageDraft] = useState("");
   const [allianceUpstreamJobs, setAllianceUpstreamJobs] = useState("coach business, agent immobilier");
   const [allianceSenderCityOverride, setAllianceSenderCityOverride] = useState("");
   const [allianceTargetMetierOverride, setAllianceTargetMetierOverride] = useState("");
+  const [allianceManualPhone, setAllianceManualPhone] = useState("");
+  const [allianceManualFullName, setAllianceManualFullName] = useState("");
+  const [allianceManualFirstName, setAllianceManualFirstName] = useState("");
+  const [allianceManualProspectCity, setAllianceManualProspectCity] = useState("");
+  const [allianceManualUpstreamJobs, setAllianceManualUpstreamJobs] = useState("");
+  const [allianceManualTargetJob, setAllianceManualTargetJob] = useState("");
+  const [allianceManualSenderName, setAllianceManualSenderName] = useState("Jean-Philippe Roth");
   const [isAllianceMessageSending, setIsAllianceMessageSending] = useState(false);
   const [showRadarMode, setShowRadarMode] = useState(false);
   const [isRadarLoading, setIsRadarLoading] = useState(false);
@@ -4644,6 +4652,30 @@ Bonne journée !`;
     setAllianceTargetMetierOverride("");
   }
 
+  function openAllianceDirectEditor() {
+    setShowAllianceDirectModal(true);
+    setModalErrorMessage("");
+    setModalInfoMessage("");
+    const defaultCity = String(profileForm.ville || "").trim();
+    if (!allianceManualProspectCity && defaultCity) {
+      setAllianceManualProspectCity(defaultCity);
+    }
+    if (!allianceManualUpstreamJobs) {
+      setAllianceManualUpstreamJobs(String(allianceUpstreamJobs || "").trim() || "coach business, agent immobilier");
+    }
+  }
+
+  function closeAllianceDirectEditor() {
+    setShowAllianceDirectModal(false);
+    setAllianceManualPhone("");
+    setAllianceManualFullName("");
+    setAllianceManualFirstName("");
+    setAllianceManualProspectCity("");
+    setAllianceManualUpstreamJobs("");
+    setAllianceManualTargetJob("");
+    setAllianceManualSenderName("Jean-Philippe Roth");
+  }
+
   async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
       const messageDraft = String(messageDraftInput || "").trim() || "Template Twilio alliance";
@@ -4711,6 +4743,53 @@ Bonne journée !`;
       closeAllianceMessageEditor();
     } catch {
       // Errors are surfaced via modalErrorMessage/apiErrorMessage.
+    } finally {
+      setIsAllianceMessageSending(false);
+    }
+  }
+
+  async function sendAllianceDirectTwilio() {
+    try {
+      const phone = String(allianceManualPhone || "").trim();
+      const fullName = String(allianceManualFullName || "").trim();
+      const firstName = String(allianceManualFirstName || "").trim() || fullName.split(/\s+/).filter(Boolean)[0] || "";
+      const senderName = String(allianceManualSenderName || "").trim();
+      const city = String(allianceManualProspectCity || "").trim();
+      const upstreamJobs = String(allianceManualUpstreamJobs || "").trim();
+      const targetJob = String(allianceManualTargetJob || "").trim();
+      if (!phone || !fullName || !firstName || !senderName || !city || !upstreamJobs || !targetJob) {
+        setModalErrorMessage("Complete tous les champs (telephone, nom, prenom, ton nom, ville, metiers amont, metier du prospect).");
+        return;
+      }
+      setIsAllianceMessageSending(true);
+      setModalErrorMessage("");
+      const response = await fetch("/api/popey-human/smart-scan/send-partner-outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sendMode: "direct",
+          actionType: "package",
+          messageDraft: "Envoi direct Twilio (Alliances)",
+          phoneE164: phone,
+          fullName,
+          city,
+          companyHint: null,
+          variables: {
+            1: firstName,
+            2: senderName,
+            3: city,
+            4: upstreamJobs,
+            5: targetJob,
+          },
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; status?: string; sid?: string };
+      if (!response.ok) throw new Error(payload.error || "Envoi WhatsApp Pro impossible.");
+      setModalInfoMessage(`Message envoye via WhatsApp Pro (${payload.status || "sent"}).`);
+      setTimeout(() => setModalInfoMessage(""), 2200);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Envoi WhatsApp Pro impossible.";
+      setModalErrorMessage(message);
     } finally {
       setIsAllianceMessageSending(false);
     }
@@ -8599,6 +8678,17 @@ Bonne journée !`;
                     : "Trouver mes eclaireurs"}
                 {!isAlliancesSearching ? <span className="text-xl leading-none">→</span> : null}
               </button>
+              {allianceDirectoryMode !== "internal" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    openAllianceDirectEditor();
+                  }}
+                  className="mt-2 h-11 w-full rounded-2xl border border-white/20 bg-white/10 text-[12px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:bg-white/15"
+                >
+                  Envoyer a un numero (WhatsApp Pro)
+                </button>
+              ) : null}
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">
                   {apiErrorMessage}
@@ -9713,6 +9803,131 @@ Bonne journée !`;
                   {isAllianceMessageSending ? "Envoi en cours..." : "Envoyer via WhatsApp Pro (Twilio)"}
                 </button>
               </div>
+              {modalErrorMessage ? (
+                <p className="mt-2 rounded-xl border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
+                  {modalErrorMessage}
+                </p>
+              ) : null}
+              {modalInfoMessage ? (
+                <p className="mt-2 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
+                  {modalInfoMessage}
+                </p>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showAlliancesPanel && showAllianceDirectModal && (
+        <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/75 px-3 py-6 backdrop-blur-md sm:px-4">
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-orange-300/35 bg-gradient-to-br from-[#1F1A10] via-[#101B18] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(251,146,60,0.22)] sm:p-5">
+            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-orange-300/18 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-emerald-300/14 blur-3xl animate-pulse" />
+            <div className="relative">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-orange-100">Envoi direct WhatsApp Pro</p>
+                  <p className="mt-1 text-sm font-black text-white">Envoyer un template a un numero</p>
+                  <p className="mt-1 text-[11px] text-white/70">
+                    Variables: {"{{1}}"} prenom • {"{{2}}"} ton nom • {"{{3}}"} ta ville • {"{{4}}"} metiers • {"{{5}}"} metier du prospect
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeAllianceDirectEditor}
+                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
+                  aria-label="Fermer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">Telephone WhatsApp</p>
+                  <input
+                    value={allianceManualPhone}
+                    onChange={(event) => setAllianceManualPhone(event.target.value)}
+                    placeholder="+33612345678"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">Nom complet (prospect)</p>
+                  <input
+                    value={allianceManualFullName}
+                    onChange={(event) => setAllianceManualFullName(event.target.value)}
+                    placeholder="Ex: Marie Dupont"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{1}}"} Prenom (editable)</p>
+                  <input
+                    value={allianceManualFirstName}
+                    onChange={(event) => setAllianceManualFirstName(event.target.value)}
+                    placeholder="Ex: Marie"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{2}}"} Ton nom</p>
+                  <input
+                    value={allianceManualSenderName}
+                    onChange={(event) => setAllianceManualSenderName(event.target.value)}
+                    placeholder="Jean-Philippe Roth"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{3}}"} Ta ville</p>
+                  <input
+                    value={allianceManualProspectCity}
+                    onChange={(event) => setAllianceManualProspectCity(event.target.value)}
+                    placeholder={profileForm.ville || "Ex: Dax"}
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{4}}"} Metiers (secteur)</p>
+                  <input
+                    value={allianceManualUpstreamJobs}
+                    onChange={(event) => setAllianceManualUpstreamJobs(event.target.value)}
+                    placeholder="Ex: coach business, agent immobilier"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/60">{"{{5}}"} Metier du prospect</p>
+                  <input
+                    value={allianceManualTargetJob}
+                    onChange={(event) => setAllianceManualTargetJob(event.target.value)}
+                    placeholder="Ex: coach sportif"
+                    className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-xs text-white/90 placeholder:text-white/40"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={closeAllianceDirectEditor}
+                  className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white/80"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void sendAllianceDirectTwilio();
+                  }}
+                  disabled={isAllianceMessageSending}
+                  className="h-10 flex-1 rounded-xl border border-orange-300/35 bg-orange-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-orange-100 disabled:opacity-60"
+                >
+                  {isAllianceMessageSending ? "Envoi en cours..." : "Envoyer via WhatsApp Pro"}
+                </button>
+              </div>
+
               {modalErrorMessage ? (
                 <p className="mt-2 rounded-xl border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
                   {modalErrorMessage}

@@ -13,6 +13,7 @@ export const whatsappTwilioConfig = {
   authToken: String(process.env.TWILIO_AUTH_TOKEN || "").trim(),
   whatsappFrom: String(process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886").trim(),
   contentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID || "").trim(),
+  directContentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID_DIRECT || "").trim(),
   isSandbox: readBoolean(process.env.TWILIO_WHATSAPP_SANDBOX_MODE, true),
   inboundWebhookUrl: String(process.env.TWILIO_WHATSAPP_INBOUND_WEBHOOK_URL || "").trim(),
   statusCallbackUrl: String(process.env.TWILIO_WHATSAPP_STATUS_CALLBACK_URL || "").trim(),
@@ -28,5 +29,14 @@ export function isWhatsAppTwilioConfigured() {
       whatsappTwilioConfig.authToken &&
       whatsappTwilioConfig.whatsappFrom &&
       whatsappTwilioConfig.contentSid,
+  );
+}
+
+export function isWhatsAppTwilioDirectConfigured() {
+  return Boolean(
+    whatsappTwilioConfig.accountSid &&
+      whatsappTwilioConfig.authToken &&
+      whatsappTwilioConfig.whatsappFrom &&
+      whatsappTwilioConfig.directContentSid,
   );
 }

@@ -4253,6 +4253,7 @@ export async function createAllianceInvite(input: {
       2: cityOrContext,
       3: upstreamJobs,
       4: targetJob,
+      5: undefined,
     },
     {
       ownerMemberId,
