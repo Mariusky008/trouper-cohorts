@@ -3260,10 +3260,17 @@ async function searchB2BProvider(input: {
   const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
   const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
   if (!apifyToken || !apifyTaskSlug) {
+    if (!smartScanFeatureFlags.strictValidation) {
+      return {
+        error: null as string | null,
+        prospects: buildDemoProspects("provider_demo_mode"),
+        meta: { providerMode: "fallback" as const },
+      };
+    }
     return {
-      error: null as string | null,
-      prospects: buildDemoProspects("provider_demo_mode"),
-      meta: { providerMode: "fallback" as const },
+      error: "Apify non configuré. Renseigner APIFY_TOKEN et APIFY_TASK_SLUG.",
+      prospects: [],
+      meta: { providerMode: "misconfigured" as const },
     };
   }
 
@@ -3291,14 +3298,22 @@ async function searchB2BProvider(input: {
   const payload = (await response.json().catch(() => [])) as unknown;
 
   if (!response.ok) {
-    const payloadError = toErrorMessage(payload).toLowerCase();
-    const reason = payloadError.includes("usage") || payloadError.includes("quota") || payloadError.includes("exceed")
-      ? "provider_quota_demo"
-      : "provider_error_demo";
+    const payloadError = toErrorMessage(payload);
+    const normalized = payloadError.toLowerCase();
+    const isQuota = normalized.includes("usage") || normalized.includes("quota") || normalized.includes("exceed");
+    if (!smartScanFeatureFlags.strictValidation) {
+      return {
+        error: null as string | null,
+        prospects: buildDemoProspects(isQuota ? "provider_quota_demo" : "provider_error_demo"),
+        meta: { providerMode: "fallback" as const },
+      };
+    }
     return {
-      error: null as string | null,
-      prospects: buildDemoProspects(reason),
-      meta: { providerMode: "fallback" as const },
+      error: isQuota
+        ? "Apify: quota dépassé ou plan insuffisant."
+        : `Apify: erreur (${response.status}). ${payloadError ? payloadError.slice(0, 180) : "Recherche impossible."}`,
+      prospects: [],
+      meta: { providerMode: "error" as const },
     };
   }
 

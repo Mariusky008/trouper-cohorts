@@ -1290,6 +1290,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isRadarFallbackDemo, setIsRadarFallbackDemo] = useState(false);
   const [radarInfoMessage, setRadarInfoMessage] = useState("");
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
+  const allianceAutoSearchArmedRef = useRef<boolean>(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -1772,6 +1773,17 @@ export default function EntrepreneurSmartScanTestPage() {
     return () => {
       cancelled = true;
     };
+  }, [showAlliancesPanel, allianceDirectoryMode]);
+
+  useEffect(() => {
+    if (!showAlliancesPanel) {
+      allianceAutoSearchArmedRef.current = false;
+      return;
+    }
+    if (allianceAutoSearchArmedRef.current) return;
+    allianceAutoSearchArmedRef.current = true;
+    if (allianceDirectoryMode === "internal") return;
+    void runAllianceSearch();
   }, [showAlliancesPanel, allianceDirectoryMode]);
   const template = useMemo(
     () =>

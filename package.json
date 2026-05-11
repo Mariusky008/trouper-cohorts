@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "e2e:human-access": "node scripts/e2e-human-access.mjs",
+    "e2e:human-alliances": "node scripts/e2e-human-alliances.mjs",
     "e2e:human-radar": "node scripts/e2e-human-radar.mjs",
     "e2e:human-smart-scan": "node scripts/e2e-human-smart-scan.mjs",
     "e2e:human-scout-flow": "node scripts/e2e-human-scout-flow.mjs",
