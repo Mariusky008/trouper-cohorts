@@ -1291,6 +1291,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [radarInfoMessage, setRadarInfoMessage] = useState("");
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const allianceAutoSearchArmedRef = useRef<boolean>(false);
+  const allianceSearchAbortRef = useRef<AbortController | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -1783,7 +1784,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (allianceAutoSearchArmedRef.current) return;
     allianceAutoSearchArmedRef.current = true;
     if (allianceDirectoryMode === "internal") return;
-    void runAllianceSearch();
+    void runAllianceSearch({ limit: 6 });
   }, [showAlliancesPanel, allianceDirectoryMode]);
   const template = useMemo(
     () =>
@@ -4016,6 +4017,19 @@ Bonne journée !`;
     const targetMetiersRaw = String(overrides?.targetMetiersInput ?? allianceTargetMetiersInput ?? "");
     const radiusKmRaw = String(overrides?.radiusKm ?? allianceRadiusKm ?? "15");
     const limit = overrides?.limit ?? 10;
+    const previousAbort = allianceSearchAbortRef.current;
+    if (previousAbort) {
+      try {
+        previousAbort.abort();
+      } catch {}
+    }
+    const abortController = new AbortController();
+    allianceSearchAbortRef.current = abortController;
+    const abortTimeoutId = window.setTimeout(() => {
+      try {
+        abortController.abort();
+      } catch {}
+    }, 20000);
     try {
       setIsAlliancesSearching(true);
       clearAllianceRevealQueue();
@@ -4037,6 +4051,7 @@ Bonne journée !`;
           radiusKm: Number.parseInt(radiusKmRaw || "15", 10) || 15,
           limit,
         }),
+        signal: abortController.signal,
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: unknown;
@@ -4068,12 +4083,21 @@ Bonne journée !`;
       setApiErrorMessage("");
       return nextProspects.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
+      const isAbortError = error instanceof DOMException && error.name === "AbortError";
+      const message = isAbortError
+        ? "Recherche interrompue (Apify lent). Relance la recherche."
+        : error instanceof Error
+          ? error.message
+          : "Recherche alliances impossible.";
       setApiErrorMessage(message);
       setIsAllianceRevealRunning(false);
       return 0;
     } finally {
       setIsAlliancesSearching(false);
+      window.clearTimeout(abortTimeoutId);
+      if (allianceSearchAbortRef.current === abortController) {
+        allianceSearchAbortRef.current = null;
+      }
     }
   }
 
