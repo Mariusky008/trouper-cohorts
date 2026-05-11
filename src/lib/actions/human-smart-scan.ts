@@ -3259,6 +3259,10 @@ async function searchB2BProvider(input: {
 
   const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
   const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
+  function resolveApifyTaskId(slug: string) {
+    const normalized = String(slug || "").trim();
+    return normalized.includes("/") ? normalized.replace("/", "~") : normalized;
+  }
   if (!apifyToken || !apifyTaskSlug) {
     if (!smartScanFeatureFlags.strictValidation) {
       return {
@@ -3274,7 +3278,7 @@ async function searchB2BProvider(input: {
     };
   }
 
-  const taskId = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
+  const taskId = resolveApifyTaskId(apifyTaskSlug);
   const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(taskId)}/run-sync-get-dataset-items`;
   const response = await fetch(endpoint, {
     method: "POST",
@@ -3368,6 +3372,459 @@ async function searchB2BProvider(input: {
     prospects,
     meta: { providerMode: "live" as const },
   };
+}
+
+async function persistAllianceSearchResults(input: {
+  ownerMemberId: string;
+  provider: "b2b" | "internal";
+  city: string;
+  sourceMetier: string | null;
+  targetMetiers: string[];
+  radiusKm: number;
+  limit: number;
+  providerProspects: Array<{
+    externalId: string;
+    name: string;
+    metier: string;
+    city: string;
+    phone: string | null;
+    distanceKm: number | null;
+    rating: number | null;
+    payload: Record<string, unknown>;
+  }>;
+  providerMode: "live" | "fallback" | "misconfigured" | "error";
+  searchRunId?: string;
+  runMetadata?: Record<string, unknown>;
+}) {
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const providerProspects = input.providerProspects || [];
+  const upsertPayload = providerProspects
+    .map((row, index) => {
+      const fullName = String(row.name || "").trim();
+      const metier = String(row.metier || "").trim();
+      if (!fullName || !metier) return null;
+      const normalizedPhone = normalizeAlliancePhone(row.phone);
+      const fit = computeAllianceFitScore({
+        sourceMetier: input.sourceMetier,
+        targetMetiers: input.targetMetiers,
+        prospectMetier: metier,
+        hasPhone: Boolean(normalizedPhone),
+        distanceKm: Number(row.distanceKm || 0),
+        rating: Number(row.rating || 0),
+      });
+      return {
+        owner_member_id: input.ownerMemberId,
+        provider: input.provider,
+        provider_prospect_ref: String(row.externalId || `${fullName.toLowerCase()}-${index}`).slice(0, 180),
+        full_name: fullName.slice(0, 180),
+        metier: metier.slice(0, 180),
+        city: String(row.city || input.city || "").trim().slice(0, 120) || null,
+        phone_e164: normalizedPhone,
+        distance_km: Number.isFinite(Number(row.distanceKm)) ? Number(row.distanceKm) : null,
+        rating: Number.isFinite(Number(row.rating)) ? Number(row.rating) : null,
+        fit_score: fit.score,
+        fit_reasons: fit.reasons,
+        status: "new",
+        source_payload: row.payload || {},
+        fetched_at: nowIso,
+        updated_at: nowIso,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  if (upsertPayload.length > 0) {
+    const refs = upsertPayload.map((row) => row.provider_prospect_ref).filter(Boolean);
+    const { data: existingRows, error: existingError } = refs.length
+      ? await supabaseAdmin
+        .from("human_smart_scan_alliance_prospects")
+        .select("id,provider_prospect_ref")
+        .eq("owner_member_id", input.ownerMemberId)
+        .eq("provider", input.provider)
+        .in("provider_prospect_ref", refs)
+      : { data: [] as Array<{ id: string; provider_prospect_ref: string | null }>, error: null };
+    if (existingError) {
+      return { error: existingError.message, prospects: [] as AllianceProspectRecord[] };
+    }
+
+    const existingByRef = new Map<string, string>();
+    (existingRows || []).forEach((row) => {
+      if (row.provider_prospect_ref) {
+        existingByRef.set(String(row.provider_prospect_ref), row.id);
+      }
+    });
+
+    const toInsert: Array<Record<string, unknown>> = [];
+    for (const row of upsertPayload) {
+      const existingId = row.provider_prospect_ref ? existingByRef.get(String(row.provider_prospect_ref)) : null;
+      if (existingId) {
+        const { error: updateError } = await supabaseAdmin
+          .from("human_smart_scan_alliance_prospects")
+          .update({
+            full_name: row.full_name,
+            metier: row.metier,
+            city: row.city,
+            phone_e164: row.phone_e164,
+            distance_km: row.distance_km,
+            rating: row.rating,
+            fit_score: row.fit_score,
+            fit_reasons: row.fit_reasons,
+            source_payload: row.source_payload,
+            fetched_at: row.fetched_at,
+            updated_at: row.updated_at,
+          })
+          .eq("id", existingId)
+          .eq("owner_member_id", input.ownerMemberId);
+        if (updateError) {
+          return { error: updateError.message, prospects: [] as AllianceProspectRecord[] };
+        }
+      } else {
+        toInsert.push(row);
+      }
+    }
+
+    if (toInsert.length > 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from("human_smart_scan_alliance_prospects")
+        .insert(toInsert);
+      if (insertError) {
+        return { error: insertError.message, prospects: [] as AllianceProspectRecord[] };
+      }
+    }
+  }
+
+  const nextMetadata = {
+    ...(input.runMetadata || {}),
+    limit: input.limit,
+    providerMode: input.providerMode,
+  };
+  if (input.searchRunId) {
+    const { error: runUpdateError } = await supabaseAdmin
+      .from("human_smart_scan_alliance_search_runs")
+      .update({
+        total_found: upsertPayload.length,
+        metadata: nextMetadata,
+        updated_at: nowIso,
+      })
+      .eq("id", input.searchRunId)
+      .eq("owner_member_id", input.ownerMemberId);
+    if (runUpdateError) {
+      return { error: runUpdateError.message, prospects: [] as AllianceProspectRecord[] };
+    }
+  } else {
+    await supabaseAdmin.from("human_smart_scan_alliance_search_runs").insert({
+      owner_member_id: input.ownerMemberId,
+      provider: input.provider,
+      city: input.city,
+      source_metier: input.sourceMetier,
+      target_metiers: input.targetMetiers,
+      radius_km: input.radiusKm,
+      total_found: upsertPayload.length,
+      metadata: nextMetadata,
+      created_at: nowIso,
+      updated_at: nowIso,
+    });
+  }
+
+  const { data: prospects, error: listError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_prospects")
+    .select(
+      "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,source_payload,fetched_at,created_at,updated_at",
+    )
+    .eq("owner_member_id", input.ownerMemberId)
+    .eq("provider", input.provider)
+    .eq("fetched_at", nowIso)
+    .limit(input.limit);
+
+  if (listError) {
+    return { error: listError.message, prospects: [] as AllianceProspectRecord[] };
+  }
+  const baseProspects = ((prospects as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
+    const reason = String(row.source_payload?.reason || "");
+    const isFallback = reason === "provider_not_configured" || reason === "provider_demo_mode" || reason === "provider_quota_demo" || reason === "provider_error_demo";
+    return {
+      ...row,
+      source_mode: (isFallback ? "fallback" : "live") as "fallback" | "live",
+    };
+  });
+  const hydrated = await enrichAllianceProspectsWithInviteStats(
+    input.ownerMemberId,
+    baseProspects,
+  );
+  return { error: null as string | null, prospects: hydrated, fetchedAt: nowIso, metadata: nextMetadata };
+}
+
+export async function startAllianceB2BAsyncSearch(input: {
+  city: string;
+  sourceMetier: string | null;
+  targetMetiers: string[];
+  radiusKm: number;
+  limit: number;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." } as const;
+  const city = String(input.city || "").trim();
+  if (!city) return { error: "Ville requise." } as const;
+
+  const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
+  const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
+  if (!apifyToken || !apifyTaskSlug) {
+    return { error: "Apify non configuré. Renseigner APIFY_TOKEN et APIFY_TASK_SLUG." } as const;
+  }
+
+  const taskId = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
+  const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(taskId)}/runs?waitForFinish=0`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apifyToken}`,
+    },
+    body: JSON.stringify({
+      searchStringsArray: input.targetMetiers.slice(0, 10),
+      locationQuery: city,
+      maxCrawledPlacesPerSearch: Math.max(1, Math.min(10, input.limit)),
+      language: "fr",
+      maxImages: 0,
+      includeWebResults: false,
+      skipClosedPlaces: true,
+      additionalInfo: false,
+    }),
+    cache: "no-store",
+  });
+  const payload = (await response.json().catch(() => null)) as any;
+  const runData = payload?.data || null;
+  const apifyRunId = typeof runData?.id === "string" ? runData.id : "";
+  const datasetId = typeof runData?.defaultDatasetId === "string" ? runData.defaultDatasetId : "";
+  if (!response.ok || !apifyRunId) {
+    const message = typeof payload?.error?.message === "string" ? payload.error.message : "Apify: impossible de démarrer le run.";
+    return { error: message } as const;
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const { data: created, error: insertError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_search_runs")
+    .insert({
+      owner_member_id: currentMember.id,
+      provider: "b2b",
+      city,
+      source_metier: input.sourceMetier,
+      target_metiers: input.targetMetiers,
+      radius_km: input.radiusKm,
+      total_found: 0,
+      metadata: {
+        status: "running",
+        providerMode: "live",
+        apifyTask: apifyTaskSlug,
+        apifyRunId,
+        apifyDatasetId: datasetId,
+      },
+      created_at: nowIso,
+      updated_at: nowIso,
+    })
+    .select("id")
+    .maybeSingle();
+  if (insertError || !created?.id) {
+    return { error: insertError?.message || "Impossible de créer le run de recherche." } as const;
+  }
+  return { success: true as const, searchRunId: created.id as string };
+}
+
+export async function pollAllianceB2BAsyncSearch(input: { searchRunId: string }) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." } as const;
+  const supabaseAdmin = createAdminClient();
+  const { data: runRow, error: runError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_search_runs")
+    .select("id,owner_member_id,provider,city,source_metier,target_metiers,radius_km,metadata,created_at,updated_at")
+    .eq("id", input.searchRunId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+  if (runError || !runRow) {
+    return { error: runError?.message || "Run introuvable." } as const;
+  }
+  const metadata = (runRow.metadata as Record<string, unknown> | null) || {};
+  const status = String(metadata.status || "running");
+  const fetchedAt = String(metadata.fetchedAt || "");
+  if (status === "completed" && fetchedAt) {
+    const { data: prospects, error: listError } = await supabaseAdmin
+      .from("human_smart_scan_alliance_prospects")
+      .select(
+        "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,source_payload,fetched_at,created_at,updated_at",
+      )
+      .eq("owner_member_id", currentMember.id)
+      .eq("provider", "b2b")
+      .eq("fetched_at", fetchedAt)
+      .limit(50);
+    if (listError) return { error: listError.message } as const;
+    const baseProspects = ((prospects as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
+      const reason = String(row.source_payload?.reason || "");
+      const isFallback = reason === "provider_not_configured" || reason === "provider_demo_mode" || reason === "provider_quota_demo" || reason === "provider_error_demo";
+      return {
+        ...row,
+        source_mode: (isFallback ? "fallback" : "live") as "fallback" | "live",
+      };
+    });
+    const hydrated = await enrichAllianceProspectsWithInviteStats(currentMember.id, baseProspects);
+    return { success: true as const, status: "completed" as const, prospects: hydrated };
+  }
+  if (status === "failed") {
+    return { error: String(metadata.error || "Recherche Apify échouée.") } as const;
+  }
+
+  const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
+  const apifyRunId = String(metadata.apifyRunId || "").trim();
+  const datasetId = String(metadata.apifyDatasetId || "").trim();
+  if (!apifyToken || !apifyRunId) {
+    return { error: "Apify run introuvable ou token manquant." } as const;
+  }
+
+  const runStatusEndpoint = `https://api.apify.com/v2/actor-runs/${encodeURIComponent(apifyRunId)}`;
+  const runStatusResponse = await fetch(runStatusEndpoint, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${apifyToken}` },
+    cache: "no-store",
+  });
+  const runPayload = (await runStatusResponse.json().catch(() => null)) as any;
+  const runData = runPayload?.data || null;
+  const apifyStatus = String(runData?.status || "").toUpperCase();
+  const terminalStatus = ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"].includes(apifyStatus);
+  if (!terminalStatus) {
+    return { success: true as const, status: "running" as const };
+  }
+
+  if (apifyStatus !== "SUCCEEDED") {
+    const nowIso = new Date().toISOString();
+    const message = String(runData?.statusMessage || runData?.errorMessage || "") || `Apify: run ${apifyStatus}.`;
+    await supabaseAdmin
+      .from("human_smart_scan_alliance_search_runs")
+      .update({
+        metadata: {
+          ...metadata,
+          status: "failed",
+          apifyStatus,
+          error: message,
+        },
+        updated_at: nowIso,
+      })
+      .eq("id", runRow.id)
+      .eq("owner_member_id", currentMember.id);
+    return { error: message } as const;
+  }
+
+  const dataset = datasetId || String(runData?.defaultDatasetId || "").trim();
+  if (!dataset) return { error: "Apify: dataset introuvable." } as const;
+  const itemsEndpoint = `https://api.apify.com/v2/datasets/${encodeURIComponent(dataset)}/items?clean=true&format=json`;
+  const itemsResponse = await fetch(itemsEndpoint, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${apifyToken}` },
+    cache: "no-store",
+  });
+  const itemsPayload = (await itemsResponse.json().catch(() => [])) as unknown;
+  const rows = Array.isArray(itemsPayload) ? (itemsPayload as Array<unknown>) : [];
+  function pickString(row: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+      const value = row[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    return "";
+  }
+  function pickNumber(row: Record<string, unknown>, keys: string[]): number | null {
+    for (const key of keys) {
+      const raw = row[key];
+      if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+      if (typeof raw === "string") {
+        const parsed = Number(raw);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+    return null;
+  }
+  const providerProspects = rows
+    .map((item, idx) => {
+      const row = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      const name = pickString(row, ["title", "name", "placeName", "displayName", "businessName"]);
+      const metier =
+        pickString(row, ["categoryName", "category", "searchString"]) ||
+        (runRow.target_metiers?.[idx % Math.max(runRow.target_metiers.length, 1)] as string | undefined) ||
+        "partenaire local";
+      if (!name || !metier) return null;
+      const city = pickString(row, ["city", "locationCity", "addressCity"]) || String(runRow.city || "");
+      const externalId = pickString(row, ["placeId", "cid", "url", "googleMapsUrl"]) || `${name.toLowerCase()}-${metier.toLowerCase()}-${idx + 1}`;
+      const phone = pickString(row, ["phone", "phoneUnformatted", "phoneNumber", "phoneInternational"]);
+      return {
+        externalId,
+        name,
+        metier,
+        city,
+        phone: phone || null,
+        distanceKm: pickNumber(row, ["distanceKm", "distance", "distanceInKm"]),
+        rating: pickNumber(row, ["totalScore", "rating", "stars"]),
+        payload: {
+          provider: "apify",
+          task: String(metadata.apifyTask || ""),
+          sourceMetier: runRow.source_metier || null,
+        } as Record<string, unknown>,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  const radiusKm = Math.max(1, Math.min(100, Math.round(Number(runRow.radius_km || 15))));
+  const normalizedTargets = ((runRow.target_metiers as string[] | null) || []).map((item) => String(item || "").trim()).filter(Boolean);
+  const limit = Math.max(1, Math.min(10, Math.round(Number(metadata.limit || 10))));
+  const persisted = await persistAllianceSearchResults({
+    ownerMemberId: currentMember.id,
+    provider: "b2b",
+    city: String(runRow.city || ""),
+    sourceMetier: String(runRow.source_metier || "").trim() || null,
+    targetMetiers: normalizedTargets,
+    radiusKm,
+    limit,
+    providerProspects,
+    providerMode: "live",
+    searchRunId: runRow.id,
+    runMetadata: {
+      ...metadata,
+      status: "completed",
+      apifyStatus,
+      apifyDatasetId: dataset,
+    },
+  });
+  if (persisted.error) {
+    const nowIso = new Date().toISOString();
+    await supabaseAdmin
+      .from("human_smart_scan_alliance_search_runs")
+      .update({
+        metadata: {
+          ...metadata,
+          status: "failed",
+          apifyStatus,
+          error: persisted.error,
+        },
+        updated_at: nowIso,
+      })
+      .eq("id", runRow.id)
+      .eq("owner_member_id", currentMember.id);
+    return { error: persisted.error } as const;
+  }
+
+  const nowIso = new Date().toISOString();
+  await supabaseAdmin
+    .from("human_smart_scan_alliance_search_runs")
+    .update({
+      metadata: {
+        ...(persisted.metadata || {}),
+        status: "completed",
+        fetchedAt: persisted.fetchedAt,
+        apifyStatus,
+      },
+      updated_at: nowIso,
+    })
+    .eq("id", runRow.id)
+    .eq("owner_member_id", currentMember.id);
+
+  return { success: true as const, status: "completed" as const, prospects: persisted.prospects };
 }
 
 async function searchInternalMembersProvider(input: {
@@ -3502,144 +3959,19 @@ export async function searchAllianceProspects(input: {
     return { error: providerResult.error, prospects: [] as AllianceProspectRecord[] };
   }
 
-  const supabaseAdmin = createAdminClient();
-  const nowIso = new Date().toISOString();
-  const providerProspects = providerResult.prospects || [];
-  const upsertPayload = providerProspects
-    .map((row, index) => {
-      const fullName = String(row.name || "").trim();
-      const metier = String(row.metier || "").trim();
-      if (!fullName || !metier) return null;
-      const normalizedPhone = normalizeAlliancePhone(row.phone);
-      const fit = computeAllianceFitScore({
-        sourceMetier,
-        targetMetiers: normalizedTargets,
-        prospectMetier: metier,
-        hasPhone: Boolean(normalizedPhone),
-        distanceKm: Number(row.distanceKm || 0),
-        rating: Number(row.rating || 0),
-      });
-      return {
-        owner_member_id: currentMember.id,
-        provider,
-        provider_prospect_ref: String(row.externalId || `${fullName.toLowerCase()}-${index}`).slice(0, 180),
-        full_name: fullName.slice(0, 180),
-        metier: metier.slice(0, 180),
-        city: String(row.city || city || "").trim().slice(0, 120) || null,
-        phone_e164: normalizedPhone,
-        distance_km: Number.isFinite(Number(row.distanceKm)) ? Number(row.distanceKm) : null,
-        rating: Number.isFinite(Number(row.rating)) ? Number(row.rating) : null,
-        fit_score: fit.score,
-        fit_reasons: fit.reasons,
-        status: "new",
-        source_payload: row.payload || {},
-        fetched_at: nowIso,
-        updated_at: nowIso,
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => Boolean(row));
-
-  if (upsertPayload.length > 0) {
-    const refs = upsertPayload.map((row) => row.provider_prospect_ref).filter(Boolean);
-    const { data: existingRows, error: existingError } = refs.length
-      ? await supabaseAdmin
-        .from("human_smart_scan_alliance_prospects")
-        .select("id,provider_prospect_ref")
-        .eq("owner_member_id", currentMember.id)
-        .eq("provider", provider)
-        .in("provider_prospect_ref", refs)
-      : { data: [] as Array<{ id: string; provider_prospect_ref: string | null }>, error: null };
-    if (existingError) {
-      return { error: existingError.message, prospects: [] as AllianceProspectRecord[] };
-    }
-
-    const existingByRef = new Map<string, string>();
-    (existingRows || []).forEach((row) => {
-      if (row.provider_prospect_ref) {
-        existingByRef.set(String(row.provider_prospect_ref), row.id);
-      }
-    });
-
-    const toInsert: Array<Record<string, unknown>> = [];
-    for (const row of upsertPayload) {
-      const existingId = row.provider_prospect_ref ? existingByRef.get(String(row.provider_prospect_ref)) : null;
-      if (existingId) {
-        const { error: updateError } = await supabaseAdmin
-          .from("human_smart_scan_alliance_prospects")
-          .update({
-            full_name: row.full_name,
-            metier: row.metier,
-            city: row.city,
-            phone_e164: row.phone_e164,
-            distance_km: row.distance_km,
-            rating: row.rating,
-            fit_score: row.fit_score,
-            fit_reasons: row.fit_reasons,
-            source_payload: row.source_payload,
-            fetched_at: row.fetched_at,
-            updated_at: row.updated_at,
-          })
-          .eq("id", existingId)
-          .eq("owner_member_id", currentMember.id);
-        if (updateError) {
-          return { error: updateError.message, prospects: [] as AllianceProspectRecord[] };
-        }
-      } else {
-        toInsert.push(row);
-      }
-    }
-
-    if (toInsert.length > 0) {
-      const { error: insertError } = await supabaseAdmin
-        .from("human_smart_scan_alliance_prospects")
-        .insert(toInsert);
-      if (insertError) {
-        return { error: insertError.message, prospects: [] as AllianceProspectRecord[] };
-      }
-    }
-  }
-
-  await supabaseAdmin.from("human_smart_scan_alliance_search_runs").insert({
-    owner_member_id: currentMember.id,
+  const persisted = await persistAllianceSearchResults({
+    ownerMemberId: currentMember.id,
     provider,
     city,
-    source_metier: sourceMetier,
-    target_metiers: normalizedTargets,
-    radius_km: radiusKm,
-    total_found: upsertPayload.length,
-    metadata: {
-      limit,
-      providerMode: providerResult.meta?.providerMode || "live",
-    },
-    created_at: nowIso,
-    updated_at: nowIso,
+    sourceMetier,
+    targetMetiers: normalizedTargets,
+    radiusKm,
+    limit,
+    providerProspects: providerResult.prospects || [],
+    providerMode: (providerResult.meta?.providerMode || "live") as "live" | "fallback" | "misconfigured" | "error",
   });
-
-  const { data: prospects, error: listError } = await supabaseAdmin
-    .from("human_smart_scan_alliance_prospects")
-    .select(
-      "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,source_payload,fetched_at,created_at,updated_at",
-    )
-    .eq("owner_member_id", currentMember.id)
-    .eq("fetched_at", nowIso)
-    .limit(limit);
-
-  if (listError) {
-    return { error: listError.message, prospects: [] as AllianceProspectRecord[] };
-  }
-  const baseProspects = ((prospects as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
-    const reason = String(row.source_payload?.reason || "");
-    const isFallback = reason === "provider_not_configured" || reason === "provider_demo_mode" || reason === "provider_quota_demo" || reason === "provider_error_demo";
-    return {
-      ...row,
-      source_mode: (isFallback ? "fallback" : "live") as "fallback" | "live",
-    };
-  });
-  const hydrated = await enrichAllianceProspectsWithInviteStats(
-    currentMember.id,
-    baseProspects,
-  );
-  return { error: null as string | null, prospects: hydrated };
+  if (persisted.error) return { error: persisted.error, prospects: [] as AllianceProspectRecord[] };
+  return { error: null as string | null, prospects: persisted.prospects };
 }
 
 export async function listAllianceProspects(limit = 80, provider?: "b2b" | "internal") {

@@ -4017,7 +4017,7 @@ Bonne journée !`;
       try {
         abortController.abort();
       } catch {}
-    }, 240000);
+    }, 480000);
     try {
       setIsAlliancesSearching(true);
       clearAllianceRevealQueue();
@@ -4043,12 +4043,44 @@ Bonne journée !`;
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: unknown;
+        status?: "running" | "completed";
+        runId?: string;
         prospects?: SmartScanAllianceProspect[];
       };
       if (!response.ok) {
         throw new Error(toUiErrorMessage(payload.error, "Recherche alliances impossible."));
       }
-      const nextProspects = injectPersonalAllianceTestProspect(payload.prospects || [], provider);
+
+      let resolvedProspects = payload.prospects || [];
+      if (payload.status === "running" && payload.runId) {
+        const pollStartedAt = Date.now();
+        const pollTimeoutMs = 8 * 60 * 1000;
+        while (Date.now() - pollStartedAt < pollTimeoutMs) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+          const pollResponse = await fetch(`/api/popey-human/smart-scan/alliances/search?runId=${encodeURIComponent(payload.runId)}`, {
+            method: "GET",
+            cache: "no-store",
+            signal: abortController.signal,
+          });
+          const pollPayload = (await pollResponse.json().catch(() => ({}))) as {
+            error?: unknown;
+            status?: "running" | "completed";
+            prospects?: SmartScanAllianceProspect[];
+          };
+          if (!pollResponse.ok) {
+            throw new Error(toUiErrorMessage(pollPayload.error, "Recherche alliances impossible."));
+          }
+          if (pollPayload.status === "completed") {
+            resolvedProspects = pollPayload.prospects || [];
+            break;
+          }
+        }
+        if (Date.now() - pollStartedAt >= pollTimeoutMs) {
+          throw new Error("Recherche trop longue. Relance la recherche.");
+        }
+      }
+
+      const nextProspects = injectPersonalAllianceTestProspect(resolvedProspects, provider);
       setAllianceProspects(nextProspects);
       if (nextProspects.length === 0) {
         setIsAllianceRevealRunning(false);
@@ -4073,7 +4105,7 @@ Bonne journée !`;
     } catch (error) {
       const isAbortError = error instanceof DOMException && error.name === "AbortError";
       const message = isAbortError
-        ? "Recherche interrompue (Apify lent). Relance la recherche."
+        ? "Recherche interrompue. Relance la recherche."
         : error instanceof Error
           ? error.message
           : "Recherche alliances impossible.";
