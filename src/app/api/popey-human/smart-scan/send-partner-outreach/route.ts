@@ -15,6 +15,17 @@ function extractPhoneFromWaUrl(url: string) {
   return match?.[1] ? `+${match[1]}` : "";
 }
 
+function toWaMeUrl(phoneE164: string, message?: string) {
+  const normalized = String(phoneE164 || "")
+    .trim()
+    .replace(/[^\d+]/g, "");
+  const digits = normalized.replace(/^\+/, "");
+  if (!digits) return "";
+  const text = String(message || "").trim();
+  const suffix = text ? `?text=${encodeURIComponent(text)}` : "";
+  return `https://wa.me/${digits}${suffix}`;
+}
+
 function firstNameFromFullName(fullName: string | undefined) {
   const parts = String(fullName || "")
     .trim()
@@ -48,21 +59,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Profil Popey Human introuvable." }, { status: 400 });
   }
 
-  const prepared = await prepareSmartScanWhatsAppPayload({
-    contactId: body.contactId,
-    externalContactRef: body.externalContactRef,
-    fullName: body.fullName,
-    city: body.city,
-    companyHint: body.companyHint,
-    actionType: body.actionType,
-    messageDraft: body.messageDraft,
-    phoneE164: body.phoneE164 || null,
-  });
+  const prepared =
+    mode === "direct"
+      ? {
+          contactId: null as string | null,
+          whatsappUrl: toWaMeUrl(String(body.phoneE164 || "").trim(), body.messageDraft),
+        }
+      : await prepareSmartScanWhatsAppPayload({
+          contactId: body.contactId,
+          externalContactRef: body.externalContactRef,
+          fullName: body.fullName,
+          city: body.city,
+          companyHint: body.companyHint,
+          actionType: body.actionType,
+          messageDraft: body.messageDraft,
+          phoneE164: body.phoneE164 || null,
+        });
   if ("error" in prepared) {
     return NextResponse.json({ error: prepared.error }, { status: 400 });
   }
 
-  const phone = String(body.phoneE164 || extractPhoneFromWaUrl(prepared.whatsappUrl || "")).trim();
+  const phone =
+    mode === "direct"
+      ? String(body.phoneE164 || "").trim()
+      : String(body.phoneE164 || extractPhoneFromWaUrl(prepared.whatsappUrl || "")).trim();
   if (!phone) {
     return NextResponse.json({ error: "Numero WhatsApp introuvable pour ce contact." }, { status: 400 });
   }
