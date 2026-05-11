@@ -4017,7 +4017,7 @@ Bonne journée !`;
       try {
         abortController.abort();
       } catch {}
-    }, 20000);
+    }, 240000);
     try {
       setIsAlliancesSearching(true);
       clearAllianceRevealQueue();

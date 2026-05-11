@@ -4,6 +4,7 @@ import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
 import { smartScanAllianceSearchSchema } from "@/lib/popey-human/smart-scan-validation";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 240;
 
 export async function POST(request: NextRequest) {
   if (!smartScanFeatureFlags.enabled) {
