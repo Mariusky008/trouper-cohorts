@@ -3572,6 +3572,10 @@ export async function startAllianceB2BAsyncSearch(input: {
     return { error: "Apify non configuré. Renseigner APIFY_TOKEN et APIFY_TASK_SLUG." } as const;
   }
 
+  const sourceMetier = String(input.sourceMetier || "").trim() || null;
+  const normalizedTargets = (input.targetMetiers || []).map((item) => String(item || "").trim()).filter(Boolean);
+  const effectiveTargets = normalizedTargets.length > 0 ? normalizedTargets : resolveDefaultAllianceTargets(sourceMetier);
+
   const taskId = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
   const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(taskId)}/runs?waitForFinish=0`;
   const response = await fetch(endpoint, {
@@ -3581,7 +3585,7 @@ export async function startAllianceB2BAsyncSearch(input: {
       Authorization: `Bearer ${apifyToken}`,
     },
     body: JSON.stringify({
-      searchStringsArray: input.targetMetiers.slice(0, 10),
+      searchStringsArray: effectiveTargets.slice(0, 10),
       locationQuery: city,
       maxCrawledPlacesPerSearch: Math.max(1, Math.min(10, input.limit)),
       language: "fr",
@@ -3609,8 +3613,8 @@ export async function startAllianceB2BAsyncSearch(input: {
       owner_member_id: currentMember.id,
       provider: "b2b",
       city,
-      source_metier: input.sourceMetier,
-      target_metiers: input.targetMetiers,
+      source_metier: sourceMetier,
+      target_metiers: effectiveTargets,
       radius_km: input.radiusKm,
       total_found: 0,
       metadata: {
@@ -3619,6 +3623,7 @@ export async function startAllianceB2BAsyncSearch(input: {
         apifyTask: apifyTaskSlug,
         apifyRunId,
         apifyDatasetId: datasetId,
+        limit: input.limit,
       },
       created_at: nowIso,
       updated_at: nowIso,

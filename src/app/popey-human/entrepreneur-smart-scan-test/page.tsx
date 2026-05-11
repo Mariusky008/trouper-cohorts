@@ -4019,15 +4019,20 @@ Bonne journée !`;
       } catch {}
     }, 480000);
     try {
+      const targetMetiers = targetMetiersRaw
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (provider !== "internal" && targetMetiers.length === 0) {
+        setApiErrorMessage("Ajoute au moins un metier cible (Metiers cibles) puis relance la recherche.");
+        setIsAllianceRevealRunning(false);
+        return 0;
+      }
       setIsAlliancesSearching(true);
       clearAllianceRevealQueue();
       setIsAllianceRevealRunning(true);
       setRevealedAllianceProspectIds([]);
       setAllianceProspects([]);
-      const targetMetiers = targetMetiersRaw
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
       const response = await fetch("/api/popey-human/smart-scan/alliances/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
