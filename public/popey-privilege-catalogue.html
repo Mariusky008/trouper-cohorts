@@ -2095,21 +2095,6 @@ html[data-live-ready="0"] .main > .sphere-divider {
     flex-shrink: 0;
   }
   .desktop-card .dc-sphere-ico { font-size: 14px; }
-  .desktop-card .dc-pro-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    overflow: hidden;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(17, 24, 39, .04);
-    border: 1px solid rgba(17, 24, 39, .08);
-    flex-shrink: 0;
-    position: relative;
-  }
-  .desktop-card .dc-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; z-index: 2; }
-  .desktop-card .dc-fallback { position: absolute; inset: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 1; font-size: 18px; }
   .desktop-card .dc-pro { flex: 1; min-width: 0; }
   .desktop-card .dc-pro-name { font-size: 18px; font-weight: 900; color: #0B1220; line-height: 1.05; }
   .desktop-card .dc-pro-meta { margin-top: 3px; font-size: 12px; color: rgba(17, 24, 39, .55); }
@@ -2123,23 +2108,6 @@ html[data-live-ready="0"] .main > .sphere-divider {
     padding: 14px 18px 14px;
   }
   .desktop-card .dc-offer-tag { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(17, 24, 39, .45); margin-bottom: 8px; }
-  .desktop-card .dc-offer-row { display: flex; gap: 14px; align-items: flex-start; }
-  .desktop-card .dc-offer-img {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: rgba(17, 24, 39, .04);
-    border: 1px solid rgba(17, 24, 39, .08);
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    position: relative;
-  }
-  .desktop-card .dc-offer-img img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; z-index: 2; }
-  .desktop-card .dc-offer-content { flex: 1; min-width: 0; }
   .desktop-card .dc-offer-title { font-size: 18px; font-weight: 950; color: #0B1220; line-height: 1.15; }
   .desktop-card .dc-price-row { margin-top: 6px; display: flex; align-items: baseline; gap: 12px; }
   .desktop-card .dc-old { font-size: 13px; color: rgba(17, 24, 39, .35); text-decoration: line-through; font-weight: 800; }
@@ -3766,8 +3734,6 @@ function renderLiveCardHtmlDesktop(p, meta, featured) {
   var refName = (liveState.refFullName || liveState.refFirstName || 'Votre contact');
   var metier = String(p.metier || (meta && meta.label) || 'Professionnel');
   var city = String(liveState.cityLabel || 'Dax');
-  var proImg = String(p.profileImage || '').trim();
-  var offerImg = String(p.image || '').trim() || proImg;
   var desc = String(p.desc || '').trim();
   if (desc.length > 140) desc = desc.slice(0, 139) + '…';
   return ''
@@ -3775,10 +3741,6 @@ function renderLiveCardHtmlDesktop(p, meta, featured) {
     + '  <div class="dc-stripe" style="background:' + meta.grad + '"></div>'
     + '  <div class="dc-top">'
     + '    <div class="dc-sphere"><span class="dc-sphere-ico">' + meta.icon + '</span><span>' + escapeHtml(meta.label || '') + '</span></div>'
-    + '    <div class="dc-pro-avatar">'
-    + '      <span class="dc-fallback">' + meta.icon + '</span>'
-    + (proImg ? ('<img class="dc-avatar-img" src="' + escapeHtml(proImg) + '" alt="" loading="lazy" onerror="this.style.display=\\'none\\'">') : '')
-    + '    </div>'
     + '    <div class="dc-pro">'
     + '      <div class="dc-pro-name">' + escapeHtml(p.personName || p.name || 'Partenaire') + '</div>'
     + '      <div class="dc-pro-meta">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div>'
@@ -3787,20 +3749,12 @@ function renderLiveCardHtmlDesktop(p, meta, featured) {
     + '  </div>'
     + '  <div class="dc-offer">'
     + '    <div class="dc-offer-tag">✦ Privilège exclusif via ' + escapeHtml(refName) + '</div>'
-    + '    <div class="dc-offer-row">'
-    + '      <div class="dc-offer-img">'
-    + '        <span class="dc-fallback">' + meta.icon + '</span>'
-    + (offerImg ? ('<img src="' + escapeHtml(offerImg) + '" alt="" loading="lazy" onerror="this.style.display=\\'none\\'">') : '')
-    + '      </div>'
-    + '      <div class="dc-offer-content">'
-    + '        <div class="dc-offer-title">' + escapeHtml(p.badge || 'Offre privilège') + '</div>'
-    + '        <div class="dc-price-row">'
+    + '    <div class="dc-offer-title">' + escapeHtml(p.badge || 'Offre privilège') + '</div>'
+    + '    <div class="dc-price-row">'
     + (oldPrice ? ('<span class="dc-old">' + escapeHtml(oldPrice) + '</span>') : '')
-    + '          <span class="dc-new">' + escapeHtml(newLabel) + '</span>'
-    + '        </div>'
-    + (desc ? ('<div class="dc-desc">' + escapeHtml(desc) + '</div>') : '')
-    + '      </div>'
+    + '      <span class="dc-new">' + escapeHtml(newLabel) + '</span>'
     + '    </div>'
+    + (desc ? ('<div class="dc-desc">' + escapeHtml(desc) + '</div>') : '')
     + '  </div>'
     + '  <div class="dc-social">'
     + '    <div class="dc-avatars"><span class="dc-av a">SB</span><span class="dc-av b">ML</span><span class="dc-av c">TC</span></div>'
