@@ -344,12 +344,28 @@ export async function sendPartnerOutreach(
 
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
   const nowIso = new Date().toISOString();
-  const contentVariables = parseContentVariables(variables);
+  const hasDirectTemplate = Boolean(whatsappTwilioConfig.directContentSid);
   const contentSid =
     mode === "direct"
       ? whatsappTwilioConfig.directContentSid || whatsappTwilioConfig.contentSid
       : whatsappTwilioConfig.contentSid;
-  const previewMessage = `Template ${contentSid}: ${[variables[1], variables[2], variables[3], variables[4], variables[5]]
+  const effectiveVariables =
+    mode === "direct" && !hasDirectTemplate
+      ? ({
+          1: variables[1],
+          2: variables[3],
+          3: variables[4],
+          4: variables[5],
+        } satisfies PartnerOutreachVariables)
+      : variables;
+  const contentVariables = parseContentVariables(effectiveVariables);
+  const previewMessage = `Template ${contentSid}: ${[
+    effectiveVariables[1],
+    effectiveVariables[2],
+    effectiveVariables[3],
+    effectiveVariables[4],
+    effectiveVariables[5],
+  ]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .join(" | ")}`;
@@ -381,7 +397,13 @@ export async function sendPartnerOutreach(
         phone_e164: phoneE164,
         template_name: contentSid || "twilio_content_template",
         language_code: "fr",
-        vars: [variables[1] || "", variables[2] || "", variables[3] || "", variables[4] || "", variables[5] || ""],
+        vars: [
+          effectiveVariables[1] || "",
+          effectiveVariables[2] || "",
+          effectiveVariables[3] || "",
+          effectiveVariables[4] || "",
+          effectiveVariables[5] || "",
+        ],
         quick_reply_payload: ["YES_WITH_PLEASURE", "NOT_NOW"],
         source: String(options.source || "smart_scan_daily_scan").trim().slice(0, 64) || "smart_scan_daily_scan",
         metadata,
