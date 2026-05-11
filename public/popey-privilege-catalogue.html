@@ -2046,13 +2046,14 @@ html[data-live-ready="0"] .main > .sphere-divider {
   .apporteur-side { display: block; }
   #live-offers-root {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 520px));
-    justify-content: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1120px;
+    margin: 0 auto;
     gap: 22px;
   }
   #live-offers-root .sphere-divider { grid-column: 1 / -1; }
   #live-offers-root .featured-offer { grid-column: auto; }
-  #live-offers-root .offer-card { margin: 0; max-width: 520px; }
+  #live-offers-root .offer-card { margin: 0; }
   .oc-img-strip { display: none; }
   .oc-img-placeholder { display: none; }
   .oc-photos { display: none; }
@@ -2076,13 +2077,72 @@ html[data-live-ready="0"] .main > .sphere-divider {
   .sd-label { font-size: 11px; letter-spacing: .12em; color: rgba(0,0,0,.35); }
   .sd-line { background: rgba(0,0,0,.10); }
   .apporteur-side { position: sticky; bottom: 18px; }
+
+  .desktop-card {
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, .08);
+    overflow: hidden;
+  }
+  .desktop-card .dc-stripe { height: 3px; width: 100%; }
+  .desktop-card .dc-top { padding: 16px 18px 10px; display: flex; gap: 14px; align-items: flex-start; }
+  .desktop-card .dc-sphere {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase;
+    color: rgba(17, 24, 39, .55);
+    background: rgba(17, 24, 39, .03);
+    border: 1px solid rgba(17, 24, 39, .06);
+    padding: 6px 10px; border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .desktop-card .dc-sphere-ico { font-size: 14px; }
+  .desktop-card .dc-pro { flex: 1; min-width: 0; }
+  .desktop-card .dc-pro-name { font-size: 18px; font-weight: 900; color: #0B1220; line-height: 1.05; }
+  .desktop-card .dc-pro-meta { margin-top: 3px; font-size: 12px; color: rgba(17, 24, 39, .55); }
+  .desktop-card .dc-pro-avail { margin-top: 6px; font-size: 12px; color: rgba(16, 185, 129, .95); font-weight: 800; }
+
+  .desktop-card .dc-offer {
+    margin: 0 0 10px;
+    background: linear-gradient(180deg, rgba(245, 240, 226, .95), rgba(245, 240, 226, .85));
+    border-top: 1px solid rgba(17, 24, 39, .06);
+    border-bottom: 1px solid rgba(17, 24, 39, .06);
+    padding: 14px 18px 14px;
+  }
+  .desktop-card .dc-offer-tag { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(17, 24, 39, .45); margin-bottom: 8px; }
+  .desktop-card .dc-offer-title { font-size: 18px; font-weight: 950; color: #0B1220; line-height: 1.15; }
+  .desktop-card .dc-price-row { margin-top: 6px; display: flex; align-items: baseline; gap: 12px; }
+  .desktop-card .dc-old { font-size: 13px; color: rgba(17, 24, 39, .35); text-decoration: line-through; font-weight: 800; }
+  .desktop-card .dc-new { font-size: 22px; font-weight: 950; color: #007A56; }
+  .desktop-card .dc-desc { margin-top: 8px; font-size: 12px; color: rgba(17, 24, 39, .55); }
+
+  .desktop-card .dc-social { padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .desktop-card .dc-avatars { display: inline-flex; align-items: center; }
+  .desktop-card .dc-av { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; border: 2px solid #fff; margin-left: -8px; }
+  .desktop-card .dc-av.a { background: #DCFCE7; color: #065F46; margin-left: 0; }
+  .desktop-card .dc-av.b { background: #E0E7FF; color: #1E3A8A; }
+  .desktop-card .dc-av.c { background: #FEE2E2; color: #7F1D1D; }
+  .desktop-card .dc-social-txt { font-size: 12px; color: rgba(17, 24, 39, .55); flex: 1; }
+  .desktop-card .dc-stars { font-size: 12px; letter-spacing: 1px; color: #F59E0B; }
+
+  .desktop-card .dc-cta { padding: 0 18px 12px; }
+  .desktop-card .btn-wa { width: 100%; border-radius: 14px; padding: 14px; font-size: 14px; }
+  .desktop-card .dc-cta-note { margin-top: 8px; font-size: 11px; color: rgba(17, 24, 39, .35); text-align: center; }
+
+  .desktop-card .dc-retrib {
+    margin: 0 18px 16px;
+    border-radius: 14px;
+    background: #ECFDF5;
+    border: 1px solid rgba(16, 185, 129, .18);
+    padding: 12px 12px;
+  }
+  .desktop-card .dc-retrib-tag { font-size: 9px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; color: rgba(17, 24, 39, .38); }
+  .desktop-card .dc-retrib-text { margin-top: 6px; font-size: 12px; color: rgba(17, 24, 39, .65); }
 }
 
 @media (min-width: 1240px) {
   #live-offers-root {
-    grid-template-columns: repeat(3, minmax(0, 420px));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1200px;
   }
-  #live-offers-root .offer-card { max-width: 420px; }
 }
 </style>
 </head>
@@ -3462,6 +3522,26 @@ function getExpiryBadge(raw) {
   return '⏰ Expire le ' + end.getDate() + ' ' + monthLabel;
 }
 
+function isDesktopLayout() {
+  try {
+    return window.matchMedia && window.matchMedia('(min-width: 960px)').matches;
+  } catch (_e) {
+    return false;
+  }
+}
+
+function guessOfferLabel(place) {
+  var badge = String((place && place.badge) || '').toLowerCase();
+  var desc = String((place && place.desc) || '').toLowerCase();
+  var text = badge + ' ' + desc;
+  if (/\bgratuit\b|\boffert\b|\bofferte\b|\bofferts\b|\boffertes\b/.test(text)) return 'Gratuit';
+  var pct = text.match(/-?\d+(?:[.,]\d+)?\s*%/);
+  if (pct) return String(pct[0]).replace(',', '.');
+  var eur = text.match(/-?\d+(?:[.,]\d+)?\s*€/);
+  if (eur) return String(eur[0]).replace(',', '.');
+  return 'Avantage';
+}
+
 function buildLocalEvents(cityLabel, sponsors) {
   var city = String(cityLabel || 'Bayonne');
   var safeSponsors = (sponsors || []).slice(0, 3);
@@ -3646,6 +3726,52 @@ function renderLiveCardHtml(p, meta, featured) {
     + '</div>';
 }
 
+function renderLiveCardHtmlDesktop(p, meta, featured) {
+  var idShort = ('PRIV-' + p.id).slice(0, 14);
+  var oldPrice = p.value > 0 ? euros(p.value) : '';
+  var newLabel = guessOfferLabel(p);
+  var rewardText = String(p.rewardLabel || liveState.rewardText || 'une commission');
+  var refName = (liveState.refFullName || liveState.refFirstName || 'Votre contact');
+  var metier = String(p.metier || (meta && meta.label) || 'Professionnel');
+  var city = String(liveState.cityLabel || 'Dax');
+  var desc = String(p.desc || '').trim();
+  if (desc.length > 140) desc = desc.slice(0, 139) + '…';
+  return ''
+    + '<div class="offer-card desktop-card' + (featured ? ' featured-offer' : '') + '" data-sphere="' + p.sphere + '">'
+    + '  <div class="dc-stripe" style="background:' + meta.grad + '"></div>'
+    + '  <div class="dc-top">'
+    + '    <div class="dc-sphere"><span class="dc-sphere-ico">' + meta.icon + '</span><span>' + escapeHtml(meta.label || '') + '</span></div>'
+    + '    <div class="dc-pro">'
+    + '      <div class="dc-pro-name">' + escapeHtml(p.personName || p.name || 'Partenaire') + '</div>'
+    + '      <div class="dc-pro-meta">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div>'
+    + '      <div class="dc-pro-avail">✓ Disponible cette semaine</div>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="dc-offer">'
+    + '    <div class="dc-offer-tag">✦ Privilège exclusif via ' + escapeHtml(refName) + '</div>'
+    + '    <div class="dc-offer-title">' + escapeHtml(p.badge || 'Offre privilège') + '</div>'
+    + '    <div class="dc-price-row">'
+    + (oldPrice ? ('<span class="dc-old">' + escapeHtml(oldPrice) + '</span>') : '')
+    + '      <span class="dc-new">' + escapeHtml(newLabel) + '</span>'
+    + '    </div>'
+    + (desc ? ('<div class="dc-desc">' + escapeHtml(desc) + '</div>') : '')
+    + '  </div>'
+    + '  <div class="dc-social">'
+    + '    <div class="dc-avatars"><span class="dc-av a">SB</span><span class="dc-av b">ML</span><span class="dc-av c">TC</span></div>'
+    + '    <div class="dc-social-txt"><strong>' + Number(p.activeCount || 2) + ' personnes</strong> ont activé</div>'
+    + '    <div class="dc-stars">★★★★★</div>'
+    + '  </div>'
+    + '  <div class="dc-cta">'
+    + '    <button class="btn-wa js-live-activate" data-place-id="' + p.id + '" data-code="' + idShort + '"><span class="btn-wa-icon">💬</span> Activer via WhatsApp</button>'
+    + '    <div class="dc-cta-note">Message pré-rempli · 1 tap · ' + escapeHtml((liveState.refFirstName || 'Votre contact')) + ' notifié</div>'
+    + '  </div>'
+    + '  <div class="dc-retrib">'
+    + '    <div class="dc-retrib-tag">Partagez · Gagnez</div>'
+    + '    <div class="dc-retrib-text">Rétribution : <strong>' + escapeHtml(rewardText) + '</strong></div>'
+    + '  </div>'
+    + '</div>';
+}
+
 function renderLiveOffers() {
   var main = document.querySelector('.main');
   if (!main) return;
@@ -3678,14 +3804,18 @@ function renderLiveOffers() {
   var html = '';
   if (featuredPlace) {
     var featuredMeta = sphereMeta[featuredPlace.sphere] || sphereMeta.digital;
-    html += renderLiveCardHtml(featuredPlace, featuredMeta, true);
+    html += isDesktopLayout()
+      ? renderLiveCardHtmlDesktop(featuredPlace, featuredMeta, true)
+      : renderLiveCardHtml(featuredPlace, featuredMeta, true);
   }
   ['evenements-locaux', 'sante', 'habitat', 'digital', 'finance'].forEach(function (sphere) {
     if (!grouped[sphere] || !grouped[sphere].length) return;
     var meta = sphereMeta[sphere] || sphereMeta.digital;
     html += '<div class="sphere-divider"><div class="sd-line"></div><div class="sd-label"><span>' + meta.icon + '</span> ' + meta.label + '</div><div class="sd-line"></div></div>';
     grouped[sphere].forEach(function (p) {
-      html += renderLiveCardHtml(p, meta, false);
+      html += isDesktopLayout()
+        ? renderLiveCardHtmlDesktop(p, meta, false)
+        : renderLiveCardHtml(p, meta, false);
     });
   });
 
