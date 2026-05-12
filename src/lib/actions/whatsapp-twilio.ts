@@ -818,3 +818,111 @@ export async function sendWhatsAppTextMessage(
     fallbackUsed: sentChannel === "template_fallback",
   };
 }
+
+export async function sendWhatsAppMediaMessage(
+  targetPhone: string,
+  input: { caption?: string; mediaUrls: string[] },
+  options?: {
+    ownerMemberId?: string | null;
+    source?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  if (!isWhatsAppTwilioConfigured()) {
+    return {
+      success: false as const,
+      error: "Configuration Twilio WhatsApp incomplète (account SID, auth token, from).",
+    };
+  }
+
+  const to = normalizeTwilioWhatsAppAddress(targetPhone);
+  if (!to) return { success: false as const, error: "Numéro cible invalide." };
+  const mediaUrls = Array.isArray(input.mediaUrls)
+    ? input.mediaUrls.map((value) => String(value || "").trim()).filter(Boolean).slice(0, 5)
+    : [];
+  if (mediaUrls.length === 0) return { success: false as const, error: "Pièce jointe manquante." };
+
+  const captionRaw = String(input.caption || "").trim();
+  const caption = captionRaw ? normalizeOutgoingWhatsAppBody(captionRaw) : "";
+
+  const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
+  let sent: Awaited<ReturnType<typeof client.messages.create>>;
+  try {
+    sent = await client.messages.create({
+      from: whatsappTwilioConfig.whatsappFrom,
+      to,
+      ...(caption ? { body: caption } : {}),
+      mediaUrl: mediaUrls,
+      ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
+    });
+  } catch (error) {
+    const parsed = extractTwilioError(error);
+    return {
+      success: false as const,
+      error: parsed.message || "Envoi WhatsApp Twilio (media) impossible.",
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+  if (options?.ownerMemberId) {
+    const supabaseAdmin = createAdminClient();
+    const phoneE164 = normalizePhone(targetPhone);
+    const metadata = {
+      ...(options.metadata || {}),
+      provider: "twilio",
+      channel: "media",
+      twilio_message_sid: String(sent.sid || "").trim(),
+      twilio_status: String(sent.status || "").trim(),
+    };
+    const { data: queueRow } = await supabaseAdmin
+      .from("human_whatsapp_outbound_queue")
+      .insert({
+        owner_member_id: options.ownerMemberId,
+        phone_e164: phoneE164,
+        template_name: "twilio_media_reply",
+        language_code: "fr",
+        vars: [],
+        quick_reply_payload: [],
+        source: String(options.source || "admin_chat").trim().slice(0, 64) || "admin_chat",
+        metadata,
+        status: "sent",
+        attempt_count: 1,
+        max_attempts: 1,
+        random_delay_ms: 0,
+        not_before_at: nowIso,
+        provider_message_id: String(sent.sid || "").trim() || null,
+        sent_at: nowIso,
+        updated_at: nowIso,
+      })
+      .select("id")
+      .single();
+
+    await supabaseAdmin.from("human_whatsapp_events").insert({
+      queue_id: queueRow?.id || null,
+      owner_member_id: options.ownerMemberId,
+      phone_e164: phoneE164 || null,
+      direction: "outbound",
+      event_type: "sent",
+      classification: null,
+      message_text: caption || null,
+      provider_message_id: String(sent.sid || "").trim() || null,
+      payload: {
+        provider: "twilio",
+        channel: "media",
+        sid: String(sent.sid || "").trim() || null,
+        status: String(sent.status || "").trim() || null,
+        to: String(sent.to || "").trim() || null,
+        from: String(sent.from || "").trim() || null,
+        media_urls: mediaUrls,
+        ...(options.metadata || {}),
+      },
+    });
+  }
+
+  return {
+    success: true as const,
+    provider: "twilio",
+    sid: String(sent.sid || "").trim(),
+    status: String(sent.status || "").trim() || "queued",
+  };
+}

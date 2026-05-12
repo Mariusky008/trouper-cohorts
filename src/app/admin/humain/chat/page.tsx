@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ChatThread = {
   phone: string;
+  displayName: string | null;
   lastAt: string;
+  lastReceivedAt: string | null;
   lastDirection: "inbound" | "outbound" | "status";
   lastMessage: string | null;
   inboundCount: number;
   outboundCount: number;
   unresolvedInboundCount: number;
+  isUnreadLatest: boolean;
 };
 
 type ChatMessage = {
@@ -17,6 +20,7 @@ type ChatMessage = {
   phone: string;
   direction: "inbound" | "outbound" | "status";
   text: string | null;
+  attachments: Array<{ url: string; contentType: string | null; fileName: string | null }>;
   classification: "positive" | "negative" | "stop" | "neutral" | null;
   eventType: string;
   providerMessageId: string | null;
@@ -66,6 +70,7 @@ export default function AdminHumainChatPage() {
   const [selectedPhone, setSelectedPhone] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [newIncomingPhones, setNewIncomingPhones] = useState<Record<string, true>>({});
@@ -74,8 +79,10 @@ export default function AdminHumainChatPage() {
   const [sending, setSending] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [error, setError] = useState<string>("");
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const playNotificationSound = useCallback(() => {
     if (!soundEnabled) return;
@@ -177,19 +184,35 @@ export default function AdminHumainChatPage() {
   async function sendMessage() {
     const phone = selectedPhone;
     const message = draft.trim();
-    if (!phone || !message || sending) return;
+    const hasFiles = selectedFiles.length > 0;
+    if (!phone || sending) return;
+    if (!message && !hasFiles) return;
     setSending(true);
     try {
-      const response = await fetch("/api/admin/humain/whatsapp/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, message }),
-      });
+      const response = hasFiles
+        ? await fetch("/api/admin/humain/whatsapp/chat", {
+            method: "POST",
+            body: (() => {
+              const formData = new FormData();
+              formData.set("phone", phone);
+              if (message) formData.set("message", message);
+              selectedFiles.forEach((file) => {
+                formData.append("files", file);
+              });
+              return formData;
+            })(),
+          })
+        : await fetch("/api/admin/humain/whatsapp/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, message }),
+          });
       const payload = (await response.json().catch(() => ({}))) as { success?: boolean; error?: string };
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || "Envoi impossible.");
       }
       setDraft("");
+      setSelectedFiles([]);
       await Promise.all([loadMessages(phone), loadThreads()]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Envoi impossible.");
@@ -229,7 +252,7 @@ export default function AdminHumainChatPage() {
   const filteredThreads = useMemo(
     () =>
       threads.filter((thread) => {
-        const matchUnread = !showUnreadOnly || thread.unresolvedInboundCount > 0;
+        const matchUnread = !showUnreadOnly || thread.isUnreadLatest;
         const matchSearch =
           !normalizedSearch ||
           thread.phone.toLowerCase().includes(normalizedSearch) ||
@@ -244,6 +267,7 @@ export default function AdminHumainChatPage() {
 
   function handleSelectThread(phone: string) {
     setSelectedPhone(phone);
+    setMobileView("chat");
     setNewIncomingPhones((current) => {
       if (!current[phone]) return current;
       const next = { ...current };
@@ -313,68 +337,76 @@ export default function AdminHumainChatPage() {
 
       {error ? <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="grid grid-cols-1 gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:grid-cols-[360px,1fr]">
-        <aside className="bg-white">
-          <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
-            <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Conversations</h2>
+      <div className="grid min-h-[620px] grid-cols-1 gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:grid-cols-[380px,1fr]">
+        <aside className={`${mobileView === "list" ? "flex" : "hidden"} flex-col bg-white lg:flex`}>
+          <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+            <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Discussions</h2>
             {loadingThreads ? <Spinner className="text-slate-500" /> : null}
           </div>
-          <div className="space-y-2 px-3 py-3">
+          <div className="space-y-2 border-b px-4 py-3">
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Recherche numéro ou texte..."
+              placeholder="Rechercher…"
               className="w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400"
             />
             <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={showUnreadOnly}
-                onChange={(event) => setShowUnreadOnly(event.target.checked)}
-              />
+              <input type="checkbox" checked={showUnreadOnly} onChange={(event) => setShowUnreadOnly(event.target.checked)} />
               Afficher seulement les non lus
             </label>
           </div>
-          <div className="space-y-1 px-2 pb-3">
-            {filteredThreads.map((thread) => (
-              <button
-                key={thread.phone}
-                type="button"
-                onClick={() => handleSelectThread(thread.phone)}
-                className={`w-full rounded-xl px-3 py-2 text-left transition ${
-                  selectedPhone === thread.phone ? "bg-emerald-50" : "hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-900">{thread.phone}</p>
-                    {newIncomingPhones[thread.phone] ? (
-                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">Nouveau</span>
-                    ) : null}
+          <div className="flex-1 overflow-y-auto">
+            {filteredThreads.map((thread) => {
+              const title = thread.displayName || thread.phone;
+              const subtitle = thread.phone;
+              const preview = thread.lastMessage || "";
+              const timeLabel = formatTime(thread.lastReceivedAt || thread.lastAt);
+              const showUnreadDot = thread.isUnreadLatest;
+              return (
+                <button
+                  key={thread.phone}
+                  type="button"
+                  onClick={() => handleSelectThread(thread.phone)}
+                  className={`w-full border-b px-4 py-3 text-left transition ${
+                    selectedPhone === thread.phone ? "bg-emerald-50" : "hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-slate-900">{title}</p>
+                      <p className="truncate text-xs text-slate-600">{subtitle}</p>
+                      <p className="mt-0.5 line-clamp-1 text-[12px] text-slate-400">{preview}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
+                      <span className="text-[11px] font-semibold text-slate-400">{timeLabel}</span>
+                      {showUnreadDot ? <span className="h-2.5 w-2.5 rounded-full bg-red-500" /> : null}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {thread.unresolvedInboundCount > 0 ? (
-                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
-                        {thread.unresolvedInboundCount}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{thread.lastMessage || ""}</p>
-                <p className="mt-0.5 text-[11px] text-slate-400">{formatDate(thread.lastAt)}</p>
-              </button>
-            ))}
+                </button>
+              );
+            })}
             {!loadingThreads && filteredThreads.length === 0 ? (
-              <p className="rounded-xl border border-dashed px-3 py-4 text-sm text-slate-500">Aucune conversation pour le moment.</p>
+              <p className="px-4 py-5 text-sm text-slate-500">Aucune conversation pour le moment.</p>
             ) : null}
           </div>
         </aside>
 
-        <div className="flex min-h-[620px] flex-col">
+        <div className={`${mobileView === "chat" ? "flex" : "hidden"} min-h-[620px] flex-col lg:flex`}>
           <div className="flex items-center justify-between gap-2 bg-[#075e54] px-4 py-3 text-white">
             <div className="min-w-0">
-              <p className="text-xs/4 font-semibold opacity-90">Fil actif</p>
-              <p className="truncate text-sm font-black">{selectedPhone || "Sélectionne une conversation"}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileView("list")}
+                  className="rounded-full bg-white/10 px-2 py-1 text-xs font-black lg:hidden"
+                >
+                  Retour
+                </button>
+                <div className="min-w-0">
+                  <p className="text-xs/4 font-semibold opacity-90">Conversation</p>
+                  <p className="truncate text-sm font-black">{selectedThread?.displayName || selectedPhone || "Sélectionne une conversation"}</p>
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {loadingMessages ? <Spinner className="text-white/80" /> : null}
@@ -409,6 +441,34 @@ export default function AdminHumainChatPage() {
                 const status = isOutbound && message.providerMessageId ? statusByProviderId.get(message.providerMessageId)?.status : null;
                 return (
                   <div key={message.id} className={`w-fit max-w-[86%] rounded-2xl px-3 py-2 shadow-sm ${bubbleClass}`}>
+                    {message.attachments.length > 0 ? (
+                      <div className="space-y-2">
+                        {message.attachments.map((attachment) => {
+                          const isImage = String(attachment.contentType || "").startsWith("image/");
+                          const label = attachment.fileName || "Pièce jointe";
+                          return isImage ? (
+                            <a key={attachment.url} href={attachment.url} target="_blank" rel="noreferrer" className="block">
+                              <img
+                                src={attachment.url}
+                                alt={label}
+                                loading="lazy"
+                                className="max-h-[260px] w-full rounded-xl object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              key={attachment.url}
+                              href={attachment.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block rounded-xl border border-slate-200 bg-white/50 px-3 py-2 text-sm font-semibold text-slate-700 underline"
+                            >
+                              {label}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                     {message.text ? <p className="whitespace-pre-wrap text-sm">{message.text}</p> : null}
                     <div className="mt-1 flex items-end justify-end gap-2">
                       {isInbound && message.classification ? (
@@ -429,7 +489,41 @@ export default function AdminHumainChatPage() {
           </div>
 
           <div className="border-t bg-[#f0f2f5] px-3 py-3">
+            {selectedFiles.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {selectedFiles.map((file) => (
+                  <button
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                    type="button"
+                    onClick={() => setSelectedFiles((current) => current.filter((candidate) => candidate !== file))}
+                    className="inline-flex max-w-full items-center gap-2 rounded-full border bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+                  >
+                    <span className="truncate">{file.name}</span>
+                    <span className="text-slate-400">✕</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={(event) => {
+                  const files = Array.from(event.target.files || []);
+                  setSelectedFiles(files.slice(0, 5));
+                  event.target.value = "";
+                }}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!selectedPhone || sending}
+                className="h-[44px] w-[44px] shrink-0 rounded-full border bg-white text-sm font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                +
+              </button>
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -446,7 +540,7 @@ export default function AdminHumainChatPage() {
               <button
                 type="button"
                 onClick={() => void sendMessage()}
-                disabled={!selectedPhone || !draft.trim() || sending}
+                disabled={!selectedPhone || (!draft.trim() && selectedFiles.length === 0) || sending}
                 className="h-[44px] rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sending ? "Envoi..." : "Envoyer"}

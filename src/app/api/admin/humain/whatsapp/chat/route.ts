@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
-import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { sendWhatsAppMediaMessage, sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+const CHAT_ATTACHMENTS_BUCKET = "admin-whatsapp-chat-attachments";
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+
 type ChatThread = {
   phone: string;
+  displayName: string | null;
   lastAt: string;
+  lastReceivedAt: string | null;
   lastDirection: "inbound" | "outbound" | "status";
   lastMessage: string | null;
   inboundCount: number;
   outboundCount: number;
   unresolvedInboundCount: number;
+  isUnreadLatest: boolean;
 };
 
 type ChatMessage = {
@@ -20,6 +26,7 @@ type ChatMessage = {
   phone: string;
   direction: "inbound" | "outbound" | "status";
   text: string | null;
+  attachments: Array<{ url: string; contentType: string | null; fileName: string | null }>;
   classification: "positive" | "negative" | "stop" | "neutral" | null;
   eventType: string;
   providerMessageId: string | null;
@@ -36,11 +43,57 @@ async function requireAdminUser() {
   return { userId, ownerMemberId: memberRow?.id || null } as const;
 }
 
+function splitName(fullName: string) {
+  const cleaned = String(fullName || "").trim();
+  if (!cleaned) return { firstName: "", lastName: "", full: "" };
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "", lastName: "", full: "" };
+  const firstName = parts[0] || "";
+  const lastName = parts.slice(1).join(" ");
+  return { firstName, lastName, full: cleaned };
+}
+
+function safeFileName(value: string) {
+  const raw = String(value || "").trim() || "piece-jointe";
+  const sanitized = raw.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+  return sanitized.slice(0, 120) || "piece-jointe";
+}
+
+type StoredAttachment = {
+  bucket: string;
+  path: string;
+  contentType: string | null;
+  originalName: string | null;
+  sizeBytes: number | null;
+};
+
+function readStoredAttachments(payload: Record<string, unknown> | null | undefined): StoredAttachment[] {
+  if (!payload || typeof payload !== "object") return [];
+  const raw = (payload.attachments || []) as unknown;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => (item && typeof item === "object" ? (item as Record<string, unknown>) : null))
+    .filter(Boolean)
+    .map((item) => ({
+      bucket: String(item!.bucket || "").trim(),
+      path: String(item!.path || "").trim(),
+      contentType: String(item!.contentType || "").trim() || null,
+      originalName: String(item!.originalName || "").trim() || null,
+      sizeBytes: Number.isFinite(Number(item!.sizeBytes)) ? Number(item!.sizeBytes) : null,
+    }))
+    .filter((item) => Boolean(item.bucket && item.path));
+}
+
 function extractTextFallback(payload: Record<string, unknown> | null | undefined): string | null {
   if (!payload || typeof payload !== "object") return null;
   const params = (payload.params || {}) as Record<string, unknown>;
   const fromParams = String(params.Body || params.ButtonText || "").trim();
   if (fromParams) return fromParams;
+  const attachments = readStoredAttachments(payload);
+  const firstAttachment = attachments[0];
+  if (firstAttachment?.originalName) return firstAttachment.originalName;
+  const mediaUrls = (payload.media_urls || []) as unknown;
+  if (Array.isArray(mediaUrls) && mediaUrls.length > 0) return "Pièce jointe";
   return null;
 }
 
@@ -73,16 +126,55 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: true })
       .limit(300);
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 400 });
-    const messages: ChatMessage[] = ((data || []) as Array<Record<string, unknown>>).map((row) => ({
-      id: String(row.id || ""),
-      phone: String(row.phone_e164 || ""),
-      direction: (String(row.direction || "status") as "inbound" | "outbound" | "status"),
-      text: String(row.message_text || "").trim() || extractTextFallback((row.payload || {}) as Record<string, unknown>) || null,
-      classification: (row.classification as "positive" | "negative" | "stop" | "neutral" | null) || null,
-      eventType: String(row.event_type || ""),
-      providerMessageId: String(row.provider_message_id || "").trim() || null,
-      createdAt: String(row.created_at || ""),
-    }));
+    const rows = (data || []) as Array<Record<string, unknown>>;
+    const attachmentsByBucket = new Map<string, Set<string>>();
+    const storedAttachmentsById = new Map<string, StoredAttachment[]>();
+    rows.forEach((row) => {
+      const payload = (row.payload || {}) as Record<string, unknown>;
+      const stored = readStoredAttachments(payload);
+      if (!stored.length) return;
+      const id = String(row.id || "");
+      storedAttachmentsById.set(id, stored);
+      stored.forEach((attachment) => {
+        if (!attachmentsByBucket.has(attachment.bucket)) attachmentsByBucket.set(attachment.bucket, new Set());
+        attachmentsByBucket.get(attachment.bucket)!.add(attachment.path);
+      });
+    });
+
+    const signedUrlByKey = new Map<string, string>();
+    for (const [bucket, pathsSet] of attachmentsByBucket.entries()) {
+      const paths = Array.from(pathsSet.values());
+      const { data: signedUrls } = await supabaseAdmin.storage.from(bucket).createSignedUrls(paths, 60 * 60);
+      (signedUrls || []).forEach((signed) => {
+        const path = String((signed as any)?.path || "").trim();
+        const signedUrl = String((signed as any)?.signedUrl || "").trim();
+        if (!path || !signedUrl) return;
+        signedUrlByKey.set(`${bucket}:${path}`, signedUrl);
+      });
+    }
+
+    const messages: ChatMessage[] = rows.map((row) => {
+      const payload = (row.payload || {}) as Record<string, unknown>;
+      const storedAttachments = storedAttachmentsById.get(String(row.id || "")) || readStoredAttachments(payload);
+      const attachments = storedAttachments
+        .map((attachment) => ({
+          url: signedUrlByKey.get(`${attachment.bucket}:${attachment.path}`) || "",
+          contentType: attachment.contentType,
+          fileName: attachment.originalName,
+        }))
+        .filter((attachment) => Boolean(attachment.url));
+      return {
+        id: String(row.id || ""),
+        phone: String(row.phone_e164 || ""),
+        direction: (String(row.direction || "status") as "inbound" | "outbound" | "status"),
+        text: String(row.message_text || "").trim() || extractTextFallback(payload) || null,
+        attachments,
+        classification: (row.classification as "positive" | "negative" | "stop" | "neutral" | null) || null,
+        eventType: String(row.event_type || ""),
+        providerMessageId: String(row.provider_message_id || "").trim() || null,
+        createdAt: String(row.created_at || ""),
+      };
+    });
     return NextResponse.json({ success: true, phone: phoneFilter, messages });
   }
 
@@ -94,7 +186,12 @@ export async function GET(request: Request) {
     .limit(limit);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 400 });
 
-  const threadMap = new Map<string, ChatThread>();
+  type ThreadAccumulator = ChatThread & {
+    countingUnresolved: boolean;
+    lastInboundAt: string | null;
+    lastOutboundAt: string | null;
+  };
+  const threadMap = new Map<string, ThreadAccumulator>();
   ((data || []) as Array<Record<string, unknown>>).forEach((row) => {
     const phone = normalizePhone(String(row.phone_e164 || ""));
     if (!phone) return;
@@ -106,12 +203,18 @@ export async function GET(request: Request) {
     if (!threadMap.has(phone)) {
       threadMap.set(phone, {
         phone,
+        displayName: null,
         lastAt: createdAt,
+        lastReceivedAt: direction === "inbound" ? createdAt : null,
         lastDirection: direction,
         lastMessage: text,
         inboundCount: 0,
         outboundCount: 0,
         unresolvedInboundCount: 0,
+        isUnreadLatest: direction === "inbound",
+        countingUnresolved: direction === "inbound",
+        lastInboundAt: direction === "inbound" ? createdAt : null,
+        lastOutboundAt: direction === "outbound" ? createdAt : null,
       });
     }
     const current = threadMap.get(phone)!;
@@ -120,15 +223,83 @@ export async function GET(request: Request) {
     }
     if (direction === "inbound") {
       current.inboundCount += 1;
-      if (current.lastDirection !== "outbound") current.unresolvedInboundCount += 1;
+      if (!current.lastInboundAt) current.lastInboundAt = createdAt;
+      if (current.countingUnresolved) current.unresolvedInboundCount += 1;
     }
     if (direction === "outbound") {
       current.outboundCount += 1;
       current.unresolvedInboundCount = 0;
+      current.countingUnresolved = false;
+      if (!current.lastOutboundAt) current.lastOutboundAt = createdAt;
     }
   });
 
-  const threads = Array.from(threadMap.values()).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+  const phones = Array.from(threadMap.keys());
+  const nameByPhone = new Map<string, string>();
+  if (admin.ownerMemberId && phones.length > 0) {
+    const [contactsResult, scoutsResult, leadsResult] = await Promise.all([
+      supabaseAdmin
+        .from("human_smart_scan_contacts")
+        .select("phone_e164,full_name")
+        .eq("owner_member_id", admin.ownerMemberId)
+        .in("phone_e164", phones)
+        .limit(300),
+      supabaseAdmin
+        .from("human_scouts")
+        .select("phone,first_name,last_name")
+        .eq("owner_member_id", admin.ownerMemberId)
+        .in("phone", phones)
+        .limit(300),
+      supabaseAdmin
+        .from("human_leads")
+        .select("phone,client_name")
+        .eq("owner_member_id", admin.ownerMemberId)
+        .in("phone", phones)
+        .limit(300),
+    ]);
+    ((contactsResult.data as Array<{ phone_e164: string | null; full_name: string | null }> | null) || []).forEach((row) => {
+      const phone = normalizePhone(row.phone_e164 || "");
+      const fullName = String(row.full_name || "").trim();
+      if (!phone || !fullName) return;
+      nameByPhone.set(phone, fullName);
+    });
+    ((scoutsResult.data as Array<{ phone: string | null; first_name: string | null; last_name: string | null }> | null) || []).forEach(
+      (row) => {
+        const phone = normalizePhone(row.phone || "");
+        if (!phone || nameByPhone.has(phone)) return;
+        const label = [String(row.first_name || "").trim(), String(row.last_name || "").trim()].filter(Boolean).join(" ").trim();
+        if (!label) return;
+        nameByPhone.set(phone, label);
+      },
+    );
+    ((leadsResult.data as Array<{ phone: string | null; client_name: string | null }> | null) || []).forEach((row) => {
+      const phone = normalizePhone(row.phone || "");
+      if (!phone || nameByPhone.has(phone)) return;
+      const label = String(row.client_name || "").trim();
+      if (!label) return;
+      nameByPhone.set(phone, label);
+    });
+  }
+
+  const threads = Array.from(threadMap.values())
+    .map((thread) => {
+      const label = nameByPhone.get(thread.phone) || null;
+      const name = label ? splitName(label) : null;
+      const display = name?.firstName ? name.firstName : label;
+      return {
+        phone: thread.phone,
+        displayName: display || null,
+        lastAt: thread.lastAt,
+        lastReceivedAt: thread.lastInboundAt,
+        lastDirection: thread.lastDirection,
+        lastMessage: thread.lastMessage,
+        inboundCount: thread.inboundCount,
+        outboundCount: thread.outboundCount,
+        unresolvedInboundCount: thread.unresolvedInboundCount,
+        isUnreadLatest: thread.lastDirection === "inbound" && thread.unresolvedInboundCount > 0,
+      } satisfies ChatThread;
+    })
+    .sort((a, b) => (b.lastReceivedAt || b.lastAt).localeCompare(a.lastReceivedAt || a.lastAt));
   return NextResponse.json({
     success: true,
     ownerMemberId: admin.ownerMemberId,
@@ -143,10 +314,77 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Profil human_member admin introuvable." }, { status: 400 });
   }
 
-  const body = (await request.json().catch(() => null)) as {
-    phone?: string;
-    message?: string;
-  } | null;
+  const contentType = String(request.headers.get("content-type") || "").toLowerCase();
+  const supabaseAdmin = createAdminClient();
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const phone = normalizePhone(String(formData.get("phone") || ""));
+    const message = String(formData.get("message") || "").trim();
+    const fileItems = formData.getAll("files").filter((item) => item instanceof File) as File[];
+    const files = fileItems.filter((file) => file.size > 0).slice(0, 5);
+    if (!phone) return NextResponse.json({ success: false, error: "Numero requis." }, { status: 400 });
+    if (!message && files.length === 0) {
+      return NextResponse.json({ success: false, error: "Message ou pièce jointe requis." }, { status: 400 });
+    }
+    if (files.some((file) => file.size > MAX_ATTACHMENT_BYTES)) {
+      return NextResponse.json({ success: false, error: "Fichier trop volumineux (max 12MB)." }, { status: 400 });
+    }
+
+    if (files.length === 0) {
+      const result = await sendWhatsAppTextMessage(phone, message, {
+        ownerMemberId: admin.ownerMemberId,
+        source: "admin_chat",
+        metadata: { channel: "admin_chat" },
+      });
+      if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      return NextResponse.json({ success: true, sid: result.sid, status: result.status });
+    }
+
+    const phoneSlug = phone.replace(/[^\d]/g, "") || "unknown";
+    const basePrefix = `whatsapp-chat/${admin.ownerMemberId}/${phoneSlug}`;
+    const attachments: StoredAttachment[] = [];
+    const signedUrls: string[] = [];
+    for (const file of files) {
+      const filePath = `${basePrefix}/${Date.now()}-${safeFileName(file.name)}`;
+      const { error: uploadError } = await supabaseAdmin.storage.from(CHAT_ATTACHMENTS_BUCKET).upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type || undefined,
+      });
+      if (uploadError) {
+        return NextResponse.json({ success: false, error: `Upload impossible: ${uploadError.message}` }, { status: 400 });
+      }
+      const { data: signed, error: signedError } = await supabaseAdmin.storage
+        .from(CHAT_ATTACHMENTS_BUCKET)
+        .createSignedUrl(filePath, 60 * 60);
+      if (signedError || !signed?.signedUrl) {
+        return NextResponse.json({ success: false, error: `URL de partage impossible: ${signedError?.message || "erreur storage"}` }, { status: 400 });
+      }
+      attachments.push({
+        bucket: CHAT_ATTACHMENTS_BUCKET,
+        path: filePath,
+        contentType: String(file.type || "").trim() || null,
+        originalName: String(file.name || "").trim() || null,
+        sizeBytes: Number.isFinite(file.size) ? file.size : null,
+      });
+      signedUrls.push(String(signed.signedUrl || "").trim());
+    }
+
+    const result = await sendWhatsAppMediaMessage(
+      phone,
+      { caption: message || undefined, mediaUrls: signedUrls },
+      {
+        ownerMemberId: admin.ownerMemberId,
+        source: "admin_chat",
+        metadata: { channel: "admin_chat", attachments },
+      },
+    );
+    if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+    return NextResponse.json({ success: true, sid: result.sid, status: result.status });
+  }
+
+  const body = (await request.json().catch(() => null)) as { phone?: string; message?: string } | null;
   const phone = normalizePhone(body?.phone);
   const message = String(body?.message || "").trim();
   if (!phone) return NextResponse.json({ success: false, error: "Numero requis." }, { status: 400 });
