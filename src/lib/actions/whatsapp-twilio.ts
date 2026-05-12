@@ -844,6 +844,7 @@ export async function sendWhatsAppMediaMessage(
 
   const captionRaw = String(input.caption || "").trim();
   const caption = captionRaw ? normalizeOutgoingWhatsAppBody(captionRaw) : "";
+  const messageTextForLog = caption || "Pièce jointe";
 
   const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
   let sent: Awaited<ReturnType<typeof client.messages.create>>;
@@ -904,7 +905,7 @@ export async function sendWhatsAppMediaMessage(
       direction: "outbound",
       event_type: "sent",
       classification: null,
-      message_text: caption || null,
+      message_text: messageTextForLog,
       provider_message_id: String(sent.sid || "").trim() || null,
       payload: {
         provider: "twilio",
