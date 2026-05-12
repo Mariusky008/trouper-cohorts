@@ -80,6 +80,7 @@ export default function AdminHumainChatPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [error, setError] = useState<string>("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [isDesktop, setIsDesktop] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -122,6 +123,19 @@ export default function AdminHumainChatPage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("admin_humain_chat_sound_enabled", soundEnabled ? "1" : "0");
   }, [soundEnabled]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsDesktop(Boolean(mediaQuery.matches));
+    apply();
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", apply);
+      return () => mediaQuery.removeEventListener("change", apply);
+    }
+    mediaQuery.addListener(apply);
+    return () => mediaQuery.removeListener(apply);
+  }, []);
 
   const loadThreads = useCallback(async () => {
     setLoadingThreads(true);
@@ -188,6 +202,7 @@ export default function AdminHumainChatPage() {
     if (!phone || sending) return;
     if (!message && !hasFiles) return;
     setSending(true);
+    setError("");
     try {
       const response = hasFiles
         ? await fetch("/api/admin/humain/whatsapp/chat", {
@@ -337,8 +352,10 @@ export default function AdminHumainChatPage() {
 
       {error ? <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="grid min-h-[620px] grid-cols-1 gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:grid-cols-[380px,1fr]">
-        <aside className={`${mobileView === "list" ? "flex" : "hidden"} flex-col bg-white lg:flex`}>
+      <div className="flex min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:flex-row">
+        <aside
+          className={`${isDesktop || mobileView === "list" ? "flex" : "hidden"} flex-col bg-white lg:w-[380px] lg:shrink-0`}
+        >
           <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
             <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Discussions</h2>
             {loadingThreads ? <Spinner className="text-slate-500" /> : null}
@@ -391,14 +408,14 @@ export default function AdminHumainChatPage() {
           </div>
         </aside>
 
-        <div className={`${mobileView === "chat" ? "flex" : "hidden"} min-h-[620px] flex-col lg:flex`}>
+        <div className={`${isDesktop || mobileView === "chat" ? "flex" : "hidden"} min-h-[620px] flex-1 flex-col`}>
           <div className="flex items-center justify-between gap-2 bg-[#075e54] px-4 py-3 text-white">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setMobileView("list")}
-                  className="rounded-full bg-white/10 px-2 py-1 text-xs font-black lg:hidden"
+                  className={`rounded-full bg-white/10 px-2 py-1 text-xs font-black ${isDesktop ? "hidden" : ""}`}
                 >
                   Retour
                 </button>
@@ -509,6 +526,7 @@ export default function AdminHumainChatPage() {
                 ref={fileInputRef}
                 type="file"
                 multiple
+                accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
                 onChange={(event) => {
                   const files = Array.from(event.target.files || []);
                   setSelectedFiles(files.slice(0, 5));

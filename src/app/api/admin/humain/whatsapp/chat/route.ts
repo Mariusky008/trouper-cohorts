@@ -321,8 +321,17 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const phone = normalizePhone(String(formData.get("phone") || ""));
     const message = String(formData.get("message") || "").trim();
-    const fileItems = formData.getAll("files").filter((item) => item instanceof File) as File[];
-    const files = fileItems.filter((file) => file.size > 0).slice(0, 5);
+    const rawFileItems = [...formData.getAll("files"), ...formData.getAll("file")];
+    const fileItems = rawFileItems
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const candidate = item as File;
+        if (typeof (candidate as unknown as { arrayBuffer?: unknown }).arrayBuffer !== "function") return null;
+        if (!("name" in candidate)) return null;
+        return candidate;
+      })
+      .filter(Boolean) as File[];
+    const files = fileItems.filter((file) => Number(file.size || 0) > 0).slice(0, 5);
     if (!phone) return NextResponse.json({ success: false, error: "Numero requis." }, { status: 400 });
     if (!message && files.length === 0) {
       return NextResponse.json({ success: false, error: "Message ou pièce jointe requis." }, { status: 400 });
