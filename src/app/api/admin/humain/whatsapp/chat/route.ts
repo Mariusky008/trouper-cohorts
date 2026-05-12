@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const CHAT_ATTACHMENTS_BUCKET = "admin-whatsapp-chat-attachments";
 const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+const WHATSAPP_WINDOW_HOURS = 24;
 
 type ChatThread = {
   phone: string;
@@ -348,6 +349,26 @@ export async function POST(request: Request) {
       });
       if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       return NextResponse.json({ success: true, sid: result.sid, status: result.status });
+    }
+
+    const cutoffIso = new Date(Date.now() - WHATSAPP_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+    const { data: lastInbound } = await supabaseAdmin
+      .from("human_whatsapp_events")
+      .select("created_at")
+      .eq("phone_e164", phone)
+      .eq("direction", "inbound")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const lastInboundAt = String(((lastInbound as Array<{ created_at?: string | null }> | null) || [])[0]?.created_at || "").trim();
+    if (!lastInboundAt || lastInboundAt < cutoffIso) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Fenêtre WhatsApp fermée (Twilio 63016). Le contact doit d'abord t'écrire sur WhatsApp pour rouvrir la fenêtre (24h), puis tu pourras envoyer une pièce jointe.",
+        },
+        { status: 400 },
+      );
     }
 
     const phoneSlug = phone.replace(/[^\d]/g, "") || "unknown";
