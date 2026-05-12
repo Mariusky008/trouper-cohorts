@@ -89,6 +89,7 @@ export default async function AdminHumainPage() {
       title: "Opérations humaines",
       links: [
         { href: "/admin/humain/chat", label: "Chat WhatsApp admin" },
+        { href: "/admin/humain/voice", label: "Voix (IA)" },
         { href: "/admin/humain/eclaireurs", label: "Éclaireurs" },
         { href: "/admin/humain/clients", label: "Clients" },
         { href: "/admin/humain/notifications", label: "Notifications" },
@@ -107,6 +108,7 @@ export default async function AdminHumainPage() {
   const quickActions = [
     { href: "/admin/humain/marketplace", label: "Suivre les places", description: "Demandes, offres et statuts en cours." },
     { href: "/admin/humain/chat", label: "Lire les messages WhatsApp", description: "Boîte de réception admin et réponses." },
+    { href: "/admin/humain/voice", label: "Suivre les appels IA", description: "Queue d'appels, résumés et enregistrements." },
     { href: "/admin/humain/affiliation", label: "Valider les tickets affiliation", description: "Suivi des apporteurs et commissions." },
     { href: "/admin/humain/cockpit", label: "Contrôler le cockpit", description: "Vue synthèse des signaux et exports." },
   ];

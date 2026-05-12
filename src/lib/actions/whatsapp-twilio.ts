@@ -3,6 +3,7 @@
 import twilio from "twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWhatsAppTwilioConfigured, isWhatsAppTwilioDirectConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import { enqueueVoiceCall } from "@/lib/actions/voice-twilio";
 
 type InboundClassification = "positive" | "negative" | "stop" | "neutral";
 type QueueStatus = "sent" | "delivered" | "read" | "failed";
@@ -92,6 +93,16 @@ function classifyInboundText(message: string): InboundClassification {
   if (/\b(oui|ok|interesse|interessee|partant|go|avec plaisir)\b/.test(normalized)) return "positive";
   if (/\b(non|pas interesse|pas interessee|pas pour le moment)\b/.test(normalized)) return "negative";
   return "neutral";
+}
+
+function isCallbackRequestText(message: string): boolean {
+  const normalized = String(message || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  if (!normalized) return false;
+  return /\b(rappel|rappelez|rappelle|appelez|appel)\b/.test(normalized);
 }
 
 function toQueueStatus(raw: string): QueueStatus | null {
@@ -490,6 +501,16 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
       .maybeSingle();
     queueRow = (data as QueueLookupRow | null) || null;
   }
+  if (!queueRow && fromPhone) {
+    const { data } = await supabaseAdmin
+      .from("human_whatsapp_outbound_queue")
+      .select("id,owner_member_id,phone_e164,source,template_name,metadata")
+      .eq("phone_e164", fromPhone)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    queueRow = (data as QueueLookupRow | null) || null;
+  }
 
   if (statusEvent && messageSid) {
     const nowIso = new Date().toISOString();
@@ -664,6 +685,35 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
       .eq("owner_member_id", ownerMemberId)
       .eq("phone_e164", queuePhone)
       .in("status", ["queued", "scheduled", "failed"]);
+  }
+
+  const callbackRequested = isCallbackRequestText(body || buttonPayload || "");
+  if (callbackRequested && classification !== "stop" && ownerMemberId && queuePhone) {
+    const queued = await enqueueVoiceCall({
+      ownerMemberId,
+      phoneE164: queuePhone,
+      source: "whatsapp_callback_request",
+      metadata: {
+        twilio_message_sid: messageSid || null,
+        twilio_reply_to_sid: repliedMessageSid || null,
+        trigger_text: body || buttonPayload || "",
+      },
+    });
+    if (queued.success) {
+      const notBeforeAt = typeof (queued as { notBeforeAt?: string }).notBeforeAt === "string" ? (queued as { notBeforeAt?: string }).notBeforeAt : null;
+      await sendWhatsAppTextMessage(
+        queuePhone,
+        "Parfait. Je vous appelle dès que possible (9h-12h, 14h-18h30). Si vous préférez, vous pouvez aussi répondre ici par WhatsApp.",
+        {
+          ownerMemberId,
+          source: "voice_callback_ack",
+          metadata: {
+            voice_queue_id: queued.queueId,
+            voice_not_before_at: notBeforeAt,
+          },
+        },
+      );
+    }
   }
 
   return {
