@@ -2,6 +2,7 @@ import http from "node:http";
 import { WebSocketServer } from "ws";
 import twilio from "twilio";
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Json = Record<string, unknown>;
 
@@ -65,7 +66,7 @@ function buildDefaultSystemPrompt() {
   ].join("\n");
 }
 
-async function fetchActiveAgentConfig(supabase: ReturnType<typeof createClient<Database>>, ownerMemberId: string) {
+async function fetchActiveAgentConfig(supabase: SupabaseClient<any>, ownerMemberId: string) {
   const { data } = await supabase
     .from("human_voice_agent_configs")
     .select("config")
@@ -104,7 +105,7 @@ async function start() {
   const twilioWhatsAppFrom = trim(process.env.TWILIO_WHATSAPP_FROM || "");
   const proSignupUrl = trim(process.env.POPEY_PRO_SIGNUP_URL || "");
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  const supabase = createClient<any>(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const twilioClient = twilio(twilioAccountSid, twilioAuthToken);
