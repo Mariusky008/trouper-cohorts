@@ -85,6 +85,7 @@ export default function AdminHumainChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const threadsContainerRef = useRef<HTMLDivElement | null>(null);
 
   const playNotificationSound = useCallback(() => {
     if (!soundEnabled) return;
@@ -167,6 +168,8 @@ export default function AdminHumainChatPage() {
             return next;
           });
           playNotificationSound();
+          const container = threadsContainerRef.current;
+          if (container) container.scrollTo({ top: 0, behavior: "smooth" });
         }
         return nextThreads;
       });
@@ -375,7 +378,7 @@ export default function AdminHumainChatPage() {
               Afficher seulement les non lus
             </label>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div ref={threadsContainerRef} className="flex-1 overflow-y-auto">
             {filteredThreads.map((thread) => {
               const title = thread.displayName || thread.phone;
               const subtitle = thread.phone;
