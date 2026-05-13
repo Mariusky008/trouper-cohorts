@@ -994,3 +994,230 @@ export async function sendWhatsAppMediaMessage(
     status: String(sent.status || "").trim() || "queued",
   };
 }
+
+type OutboundQueueStatus = "queued" | "scheduled" | "sending" | "sent" | "delivered" | "read" | "failed" | "cancelled" | "blocked";
+type OutboundQueueRow = {
+  id: string;
+  owner_member_id: string;
+  phone_e164: string;
+  template_name: string;
+  language_code: string;
+  vars: string[];
+  quick_reply_payload: string[];
+  source: string;
+  metadata: Record<string, unknown> | null;
+  status: OutboundQueueStatus;
+  attempt_count: number;
+  max_attempts: number;
+  not_before_at: string;
+  provider_message_id: string | null;
+  sent_at: string | null;
+};
+
+function randomInt(min: number, max: number): number {
+  const safeMin = Math.min(min, max);
+  const safeMax = Math.max(min, max);
+  return Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
+}
+
+function parseTwilioContentVariables(vars: string[]): string {
+  const payload: Record<string, string> = {};
+  (Array.isArray(vars) ? vars : []).slice(0, 20).forEach((value, idx) => {
+    payload[String(idx + 1)] = String(value || "").trim();
+  });
+  return JSON.stringify(payload);
+}
+
+function buildCampaignMessage(vars: string[], metadata: Record<string, unknown> | null | undefined): string {
+  const greeting = String(vars?.[0] || "Madame, Monsieur").trim() || "Madame, Monsieur";
+  const metier = String(vars?.[1] || "professionnel").trim() || "professionnel";
+  const city = String((metadata || {}).city || "Dax").trim() || "Dax";
+  const audience = Number((metadata || {}).audience || 12500);
+  const audienceLabel = Number.isFinite(audience) && audience > 0 ? audience.toLocaleString("fr-FR") : "12 500";
+  const free = Boolean((metadata || {}).diffusion_free ?? true);
+  return `Bonjour ${greeting},
+
+Je suis Jean‑Philippe Roth. Je monte actuellement sur ${city} un cercle de 50 pros, avec une seule entreprise par métier (exclusivité par discipline), pour mettre en avant leurs services auprès de plus de ${audienceLabel} personnes sur le Grand ${city}${free ? " (diffusion gratuite)" : ""} et toucher une nouvelle clientèle qui ne vous connaît pas encore.
+
+Je cherche un(e) ${metier} de confiance pour compléter le groupe et j’ai pensé à vous en voyant vos excellents avis Google.
+
+Auriez‑vous 5 minutes demain pour un court appel ?
+
+Bonne journée,
+Jean‑Philippe Roth`;
+}
+
+async function computePerMinuteSentCount(ownerMemberId: string) {
+  const supabaseAdmin = createAdminClient();
+  const sinceIso = new Date(Date.now() - 60 * 1000).toISOString();
+  const { count } = await supabaseAdmin
+    .from("human_whatsapp_outbound_queue")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_member_id", ownerMemberId)
+    .or("metadata->>provider.eq.twilio,metadata->>provider.eq.twilio_campaign")
+    .in("status", ["sent", "delivered", "read"])
+    .gte("sent_at", sinceIso);
+  return Number(count || 0);
+}
+
+async function computeDailySentCount(ownerMemberId: string) {
+  const supabaseAdmin = createAdminClient();
+  const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabaseAdmin
+    .from("human_whatsapp_outbound_queue")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_member_id", ownerMemberId)
+    .or("metadata->>provider.eq.twilio,metadata->>provider.eq.twilio_campaign")
+    .in("status", ["sent", "delivered", "read"])
+    .gte("sent_at", sinceIso);
+  return Number(count || 0);
+}
+
+export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40) {
+  if (!isWhatsAppTwilioConfigured()) {
+    return { success: false, error: "Configuration Twilio WhatsApp incomplète.", processed: 0, sent: 0, failed: 0, blocked: 0 };
+  }
+  const safeLimit = Math.max(1, Math.min(120, Math.round(limit || 40)));
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const { data: candidates, error } = await supabaseAdmin
+    .from("human_whatsapp_outbound_queue")
+    .select("id,owner_member_id,phone_e164,template_name,language_code,vars,quick_reply_payload,source,metadata,status,attempt_count,max_attempts,not_before_at,provider_message_id,sent_at")
+    .in("status", ["queued", "scheduled", "failed"])
+    .or("metadata->>provider.eq.twilio,metadata->>provider.eq.twilio_campaign")
+    .lte("not_before_at", nowIso)
+    .order("created_at", { ascending: true })
+    .limit(safeLimit * 2);
+  if (error) {
+    return { success: false, error: error.message, processed: 0, sent: 0, failed: 0, blocked: 0 };
+  }
+
+  const rows = ((candidates || []) as OutboundQueueRow[]).slice(0, safeLimit * 2);
+  const ownerRateMap = new Map<string, number>();
+  const ownerDailyMap = new Map<string, number>();
+  let processed = 0;
+  let sent = 0;
+  let failed = 0;
+  let blocked = 0;
+
+  const client = twilio(whatsappTwilioConfig.accountSid, whatsappTwilioConfig.authToken);
+
+  for (const row of rows) {
+    if (processed >= safeLimit) break;
+
+    const currentRate = ownerRateMap.has(row.owner_member_id)
+      ? Number(ownerRateMap.get(row.owner_member_id) || 0)
+      : await computePerMinuteSentCount(row.owner_member_id);
+    if (currentRate >= 1) {
+      const pushMs = randomInt(30_000, 90_000);
+      await supabaseAdmin
+        .from("human_whatsapp_outbound_queue")
+        .update({ status: "scheduled", not_before_at: new Date(Date.now() + pushMs).toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", row.id);
+      continue;
+    }
+    ownerRateMap.set(row.owner_member_id, currentRate + 1);
+
+    const currentDaily = ownerDailyMap.has(row.owner_member_id)
+      ? Number(ownerDailyMap.get(row.owner_member_id) || 0)
+      : await computeDailySentCount(row.owner_member_id);
+    if (currentDaily >= 60) {
+      await supabaseAdmin
+        .from("human_whatsapp_outbound_queue")
+        .update({ status: "scheduled", not_before_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", row.id);
+      continue;
+    }
+    ownerDailyMap.set(row.owner_member_id, currentDaily + 1);
+
+    const { data: blacklisted } = await supabaseAdmin
+      .from("human_whatsapp_blacklist")
+      .select("phone_e164")
+      .eq("owner_member_id", row.owner_member_id)
+      .eq("phone_e164", row.phone_e164)
+      .maybeSingle();
+    if (blacklisted?.phone_e164) {
+      blocked += 1;
+      processed += 1;
+      await supabaseAdmin
+        .from("human_whatsapp_outbound_queue")
+        .update({ status: "blocked", cancelled_at: new Date().toISOString(), last_error: "Blocked: contact in blacklist", updated_at: new Date().toISOString() })
+        .eq("id", row.id);
+      continue;
+    }
+
+    const lockResult = await supabaseAdmin
+      .from("human_whatsapp_outbound_queue")
+      .update({ status: "sending", attempt_count: Number(row.attempt_count || 0) + 1, updated_at: new Date().toISOString() })
+      .eq("id", row.id)
+      .in("status", ["queued", "scheduled", "failed"]);
+    if (lockResult.error) continue;
+
+    const vars = Array.isArray(row.vars) ? row.vars.map((v) => String(v || "").trim()).filter(Boolean) : [];
+    const contentSid = String((row.metadata || {}).content_sid || row.template_name || whatsappTwilioConfig.contentSid || "").trim();
+    const contentVariables = parseTwilioContentVariables(vars);
+    const messageText = buildCampaignMessage(vars, row.metadata || {});
+
+    try {
+      const delivered = await client.messages.create({
+        from: whatsappTwilioConfig.whatsappFrom,
+        to: normalizeTwilioWhatsAppAddress(row.phone_e164),
+        contentSid,
+        contentVariables,
+        ...(whatsappTwilioConfig.statusCallbackUrl ? { statusCallback: whatsappTwilioConfig.statusCallbackUrl } : {}),
+      });
+      const sentAt = new Date().toISOString();
+      await supabaseAdmin
+        .from("human_whatsapp_outbound_queue")
+        .update({
+          status: "sent",
+          provider_message_id: String(delivered.sid || "").trim() || null,
+          sent_at: sentAt,
+          last_error: null,
+          updated_at: sentAt,
+        })
+        .eq("id", row.id);
+      await supabaseAdmin.from("human_whatsapp_events").insert({
+        queue_id: row.id,
+        owner_member_id: row.owner_member_id,
+        phone_e164: row.phone_e164,
+        direction: "outbound",
+        event_type: "sent",
+        classification: null,
+        message_text: messageText,
+        provider_message_id: String(delivered.sid || "").trim() || null,
+        payload: {
+          provider: "twilio",
+          channel: "template_campaign",
+          sid: String(delivered.sid || "").trim() || null,
+          status: String(delivered.status || "").trim() || null,
+          to: String(delivered.to || "").trim() || null,
+          from: String(delivered.from || "").trim() || null,
+          content_sid: contentSid,
+          content_variables: vars.reduce((acc, value, idx) => ({ ...acc, [idx + 1]: String(value || "").trim() }), {}),
+          ...(row.metadata || {}),
+        },
+      });
+      sent += 1;
+      processed += 1;
+    } catch (sendError) {
+      const parsed = extractTwilioError(sendError);
+      const nextAttempt = Number(row.attempt_count || 0) + 1;
+      const exhausted = nextAttempt >= Math.max(1, Number(row.max_attempts || 2));
+      const retryAt = exhausted ? null : new Date(Date.now() + randomInt(5 * 60_000, 20 * 60_000)).toISOString();
+      await supabaseAdmin
+        .from("human_whatsapp_outbound_queue")
+        .update({
+          status: exhausted ? "failed" : "scheduled",
+          last_error: parsed.message || parsed.code || "Twilio send failed",
+          not_before_at: retryAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", row.id);
+      failed += 1;
+      processed += 1;
+    }
+  }
+
+  return { success: true, processed, sent, failed, blocked };
+}

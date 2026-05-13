@@ -89,6 +89,7 @@ export default async function AdminHumainPage() {
       title: "Opérations humaines",
       links: [
         { href: "/admin/humain/chat", label: "Chat WhatsApp admin" },
+        { href: "/admin/humain/campagne", label: "Campagne WhatsApp" },
         { href: "/admin/humain/voice", label: "Voix (IA)" },
         { href: "/admin/humain/eclaireurs", label: "Éclaireurs" },
         { href: "/admin/humain/clients", label: "Clients" },

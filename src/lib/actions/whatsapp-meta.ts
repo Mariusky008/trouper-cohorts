@@ -342,6 +342,10 @@ export async function enqueueWhatsAppTemplateMessage(input: {
   const randomDelayMs = randomInt(whatsappMetaConfig.queueMinDelayMs, whatsappMetaConfig.queueMaxDelayMs);
   const notBeforeAt = new Date(Date.now() + randomDelayMs).toISOString();
   const defaultQuickReplyPayload = ["YES_WITH_PLEASURE", "NOT_NOW"];
+  const metadata = {
+    ...(input.metadata || {}),
+    provider: "meta",
+  } as Record<string, unknown>;
   const { data, error } = await supabaseAdmin
     .from("human_whatsapp_outbound_queue")
     .insert({
@@ -352,7 +356,7 @@ export async function enqueueWhatsAppTemplateMessage(input: {
       vars,
       quick_reply_payload: defaultQuickReplyPayload,
       source: String(input.source || "api").trim().slice(0, 64) || "api",
-      metadata: input.metadata || {},
+      metadata,
       status: "queued",
       attempt_count: 0,
       max_attempts: whatsappMetaConfig.queueMaxAttempts,
@@ -474,6 +478,7 @@ export async function runWhatsAppOutboundQueueSweep(limit = whatsappMetaConfig.q
     .from("human_whatsapp_outbound_queue")
     .select("id,owner_member_id,phone_e164,template_name,language_code,vars,quick_reply_payload,source,metadata,status,attempt_count,max_attempts,not_before_at,provider_message_id,sent_at")
     .in("status", ["queued", "scheduled", "failed"])
+    .or("metadata->>provider.is.null,metadata->>provider.eq.meta")
     .lte("not_before_at", nowIso)
     .order("created_at", { ascending: true })
     .limit(safeLimit * 2);
