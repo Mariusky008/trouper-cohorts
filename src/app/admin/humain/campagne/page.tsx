@@ -106,6 +106,24 @@ function safeParseJson<T>(raw: string): { data: T | null; parseError: string | n
   }
 }
 
+function formatApiError(status: number, raw: string, parsed: { data: { error?: unknown } | null; parseError: string | null }) {
+  const payloadError = parsed.data?.error;
+  let message = "";
+  if (typeof payloadError === "string" && payloadError.trim()) {
+    message = payloadError.trim();
+  } else if (payloadError && typeof payloadError === "object") {
+    const record = payloadError as Record<string, unknown>;
+    const nested =
+      String(record.message || record.error || record.detail || record.statusText || "")
+        .trim();
+    message = nested || JSON.stringify(payloadError);
+  }
+  if (!message) {
+    message = raw.slice(0, 500) || parsed.parseError || "Erreur inconnue.";
+  }
+  return `${status} — ${message}`.slice(0, 800);
+}
+
 export default function AdminHumainCampagnePage() {
   const [city, setCity] = useState("Dax");
   const [audience, setAudience] = useState(12500);
@@ -189,9 +207,7 @@ export default function AdminHumainCampagnePage() {
       const parsed = safeParseJson<ScanResponse>(raw);
       const data = parsed.data;
       if (!data || !data.success) {
-        setScanError(
-          `${response.status} — ${data?.error || raw.slice(0, 500) || parsed.parseError || "Scan impossible."}`.slice(0, 800),
-        );
+        setScanError(formatApiError(response.status, raw, parsed));
         setProspects([]);
         setSelectedPhones({});
         return;
@@ -246,7 +262,7 @@ export default function AdminHumainCampagnePage() {
       if (!data || !data.success) {
         setEnqueueResult({
           success: false,
-          error: `${response.status} — ${data?.error || raw.slice(0, 500) || parsed.parseError || "Enqueue impossible."}`.slice(0, 800),
+          error: formatApiError(response.status, raw, parsed),
         });
         return;
       }

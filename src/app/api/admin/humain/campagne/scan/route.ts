@@ -71,6 +71,8 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
   const normalizedSlug = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
   const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(normalizedSlug)}/run-sync-get-dataset-items`;
   let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
   try {
     response = await fetch(endpoint, {
       method: "POST",
@@ -89,13 +91,21 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
         additionalInfo: false,
       }),
       cache: "no-store",
+      signal: controller.signal,
     });
   } catch (error) {
+    clearTimeout(timeout);
     return {
-      error: error instanceof Error ? `Apify: ${error.message}` : "Apify: erreur réseau (fetch).",
+      error:
+        error instanceof Error && error.name === "AbortError"
+          ? "Apify: délai dépassé (>45s). Réduis le volume ou relance le scan."
+          : error instanceof Error
+            ? `Apify: ${error.message}`
+            : "Apify: erreur réseau (fetch).",
       prospects: [] as ScanProspect[],
     };
   }
+  clearTimeout(timeout);
 
   let payload: unknown = null;
   try {
@@ -110,7 +120,13 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
         : typeof payload === "object" && payload
           ? JSON.stringify(payload).slice(0, 240)
           : "";
-    return { error: `Apify: erreur (${response.status}). ${msg || "Recherche impossible."}`, prospects: [] as ScanProspect[] };
+    return {
+      error:
+        response.status === 504
+          ? `Apify: timeout upstream (504). ${msg || "Le provider a mis trop de temps à répondre."}`
+          : `Apify: erreur (${response.status}). ${msg || "Recherche impossible."}`,
+      prospects: [] as ScanProspect[],
+    };
   }
   const rows = Array.isArray(payload) ? payload : [];
   const prospects = rows
