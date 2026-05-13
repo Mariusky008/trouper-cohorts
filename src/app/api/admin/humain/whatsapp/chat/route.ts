@@ -300,7 +300,12 @@ export async function GET(request: Request) {
         isUnreadLatest,
       } satisfies ChatThread;
     })
-    .sort((a, b) => (b.lastReceivedAt || b.lastAt).localeCompare(a.lastReceivedAt || a.lastAt));
+    .sort((a, b) => {
+      const unreadA = a.isUnreadLatest ? 1 : 0;
+      const unreadB = b.isUnreadLatest ? 1 : 0;
+      if (unreadA !== unreadB) return unreadB - unreadA;
+      return (b.lastReceivedAt || b.lastAt).localeCompare(a.lastReceivedAt || a.lastAt);
+    });
   return NextResponse.json({
     success: true,
     ownerMemberId: admin.ownerMemberId,

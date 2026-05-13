@@ -82,6 +82,7 @@ export default function AdminHumainChatPage() {
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [isDesktop, setIsDesktop] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [seenInboundAtByPhone, setSeenInboundAtByPhone] = useState<Record<string, string>>({});
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -125,6 +126,27 @@ export default function AdminHumainChatPage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("admin_humain_chat_sound_enabled", soundEnabled ? "1" : "0");
   }, [soundEnabled]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem("admin_humain_chat_seen_inbound_v1");
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+    const next: Record<string, string> = {};
+    Object.entries(parsed as Record<string, unknown>).forEach(([phone, value]) => {
+      const cleanPhone = String(phone || "").trim();
+      const cleanValue = String(value || "").trim();
+      if (!cleanPhone || !cleanValue) return;
+      next[cleanPhone] = cleanValue;
+    });
+    setSeenInboundAtByPhone(next);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("admin_humain_chat_seen_inbound_v1", JSON.stringify(seenInboundAtByPhone));
+  }, [seenInboundAtByPhone]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -267,11 +289,24 @@ export default function AdminHumainChatPage() {
     () => threads.find((thread) => thread.phone === selectedPhone) || null,
     [threads, selectedPhone],
   );
+
+  const isThreadUnread = useCallback(
+    (thread: ChatThread) => {
+      const lastInboundAt = String(thread.lastReceivedAt || "").trim();
+      if (!lastInboundAt) return false;
+      const seenAt = String(seenInboundAtByPhone[thread.phone] || "").trim();
+      if (seenAt && seenAt >= lastInboundAt) return false;
+      return thread.isUnreadLatest || Boolean(newIncomingPhones[thread.phone]);
+    },
+    [newIncomingPhones, seenInboundAtByPhone],
+  );
+
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredThreads = useMemo(
     () =>
-      threads.filter((thread) => {
-        const matchUnread = !showUnreadOnly || thread.isUnreadLatest;
+      threads
+        .filter((thread) => {
+        const matchUnread = !showUnreadOnly || isThreadUnread(thread);
         const matchSearch =
           !normalizedSearch ||
           thread.phone.toLowerCase().includes(normalizedSearch) ||
@@ -279,8 +314,15 @@ export default function AdminHumainChatPage() {
             .toLowerCase()
             .includes(normalizedSearch);
         return matchUnread && matchSearch;
-      }),
-    [normalizedSearch, showUnreadOnly, threads],
+      })
+        .slice()
+        .sort((a, b) => {
+          const unreadA = isThreadUnread(a) ? 1 : 0;
+          const unreadB = isThreadUnread(b) ? 1 : 0;
+          if (unreadA !== unreadB) return unreadB - unreadA;
+          return (b.lastReceivedAt || b.lastAt).localeCompare(a.lastReceivedAt || a.lastAt);
+        }),
+    [isThreadUnread, normalizedSearch, showUnreadOnly, threads],
   );
   const totalNewIncoming = Object.keys(newIncomingPhones).length;
 
@@ -289,6 +331,10 @@ export default function AdminHumainChatPage() {
     setMobileView("chat");
     shouldAutoScrollRef.current = true;
     setShowScrollToBottom(false);
+    const thread = threads.find((candidate) => candidate.phone === phone);
+    if (thread?.lastReceivedAt) {
+      setSeenInboundAtByPhone((current) => ({ ...current, [phone]: thread.lastReceivedAt || "" }));
+    }
     setNewIncomingPhones((current) => {
       if (!current[phone]) return current;
       const next = { ...current };
@@ -384,7 +430,7 @@ export default function AdminHumainChatPage() {
               const subtitle = thread.phone;
               const preview = thread.lastMessage || "";
               const timeLabel = formatTime(thread.lastReceivedAt || thread.lastAt);
-              const showUnreadDot = thread.isUnreadLatest;
+              const showUnreadDot = isThreadUnread(thread);
               const hasNewPing = Boolean(newIncomingPhones[thread.phone]);
               const highlightUnread = showUnreadDot || hasNewPing;
               return (
