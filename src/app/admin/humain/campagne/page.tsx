@@ -29,6 +29,8 @@ type EnqueueResponse = {
   totalInput?: number;
 };
 
+const SCAN_BATCH_SIZE = 10;
+
 const METIERS_CIBLES = [
   "Pisciniste (Entretien ou construction)",
   "Élagueur",
@@ -124,6 +126,39 @@ function formatApiError(status: number, raw: string, parsed: { data: { error?: u
   return `${status} — ${message}`.slice(0, 800);
 }
 
+function mergeProspectLists(current: ScanProspect[], incoming: ScanProspect[]) {
+  const byKey = new Map<string, ScanProspect>();
+  [...current, ...incoming].forEach((prospect) => {
+    const key = String(prospect.phoneE164 || "").trim() || `external:${prospect.externalId}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, prospect);
+      return;
+    }
+    const existingRating = Number(existing.rating || 0);
+    const nextRating = Number(prospect.rating || 0);
+    if (nextRating >= existingRating) byKey.set(key, prospect);
+  });
+  return Array.from(byKey.values()).slice(0, 800);
+}
+
+function buildAutoSelectedPhones(items: ScanProspect[]) {
+  const next: Record<string, boolean> = {};
+  const byMetier = new Map<string, ScanProspect[]>();
+  items.forEach((p) => {
+    const key = normalizeText(p.requestedMetier || p.metier || "Autres");
+    if (!byMetier.has(key)) byMetier.set(key, []);
+    byMetier.get(key)!.push(p);
+  });
+  byMetier.forEach((rows) => {
+    const bestWithPhone = rows
+      .filter((p) => Boolean(p.phoneE164))
+      .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))[0];
+    if (bestWithPhone?.phoneE164) next[bestWithPhone.phoneE164] = true;
+  });
+  return next;
+}
+
 export default function AdminHumainCampagnePage() {
   const [city, setCity] = useState("Dax");
   const [audience, setAudience] = useState(12500);
@@ -141,6 +176,7 @@ export default function AdminHumainCampagnePage() {
   const [enqueueResult, setEnqueueResult] = useState<EnqueueResponse | null>(null);
   const [prospects, setProspects] = useState<ScanProspect[]>([]);
   const [selectedPhones, setSelectedPhones] = useState<Record<string, boolean>>({});
+  const [scanOffset, setScanOffset] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const grouped = useMemo(() => {
@@ -168,29 +204,28 @@ export default function AdminHumainCampagnePage() {
   }, [prospects]);
 
   const selectedCount = useMemo(() => Object.values(selectedPhones).filter(Boolean).length, [selectedPhones]);
+  const scannedMetiersCount = Math.min(scanOffset, METIERS_CIBLES.length);
+  const remainingMetiersCount = Math.max(0, METIERS_CIBLES.length - scannedMetiersCount);
+  const canLoadMore = scanOffset > 0 && remainingMetiersCount > 0;
 
   function autoSelectOnePerMetier(items: ScanProspect[]) {
-    const next: Record<string, boolean> = {};
-    const byMetier = new Map<string, ScanProspect[]>();
-    items.forEach((p) => {
-      const key = normalizeText(p.requestedMetier || p.metier || "Autres");
-      if (!byMetier.has(key)) byMetier.set(key, []);
-      byMetier.get(key)!.push(p);
-    });
-    byMetier.forEach((rows) => {
-      const bestWithPhone = rows
-        .filter((p) => Boolean(p.phoneE164))
-        .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))[0];
-      if (bestWithPhone?.phoneE164) next[bestWithPhone.phoneE164] = true;
-    });
-    setSelectedPhones(next);
+    setSelectedPhones(buildAutoSelectedPhones(items));
   }
 
-  async function runScan() {
+  async function runScan(options?: { append?: boolean }) {
+    const append = Boolean(options?.append);
+    const startOffset = append ? scanOffset : 0;
+    const metiersBatch = METIERS_CIBLES.slice(startOffset, startOffset + SCAN_BATCH_SIZE);
+    if (metiersBatch.length === 0) return;
     setScanError(null);
     setScanWarning(null);
     setEnqueueResult(null);
     setLoadingScan(true);
+    if (!append) {
+      setProspects([]);
+      setSelectedPhones({});
+      setScanOffset(0);
+    }
     try {
       const response = await fetch("/api/admin/humain/campagne/scan", {
         method: "POST",
@@ -199,7 +234,7 @@ export default function AdminHumainCampagnePage() {
         body: JSON.stringify({
           city,
           provider: "b2b",
-          metiers: METIERS_CIBLES,
+          metiers: metiersBatch,
           limitPerMetier,
         }),
       });
@@ -208,14 +243,23 @@ export default function AdminHumainCampagnePage() {
       const data = parsed.data;
       if (!data || !data.success) {
         setScanError(formatApiError(response.status, raw, parsed));
-        setProspects([]);
-        setSelectedPhones({});
+        if (!append) {
+          setProspects([]);
+          setSelectedPhones({});
+        }
         return;
       }
       setScanWarning(data.warning ? String(data.warning) : null);
-      const list = (data.prospects || []).slice(0, 800);
-      setProspects(list);
-      autoSelectOnePerMetier(list);
+      const incoming = (data.prospects || []).slice(0, 800);
+      const nextList = append ? mergeProspectLists(prospects, incoming) : incoming;
+      setProspects(nextList);
+      if (append) {
+        const autoSelection = buildAutoSelectedPhones(nextList);
+        setSelectedPhones((current) => ({ ...autoSelection, ...current }));
+      } else {
+        autoSelectOnePerMetier(nextList);
+      }
+      setScanOffset(startOffset + metiersBatch.length);
       setTimeout(() => {
         listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 50);
@@ -355,12 +399,21 @@ export default function AdminHumainCampagnePage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={runScan}
+            onClick={() => void runScan()}
             disabled={loadingScan}
             className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
           >
             {loadingScan ? <Spinner className="text-white" /> : null}
-            Scanner la ville
+            Scanner 10 métiers
+          </button>
+          <button
+            type="button"
+            onClick={() => void runScan({ append: true })}
+            disabled={loadingScan || !canLoadMore}
+            className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-bold text-slate-800 disabled:opacity-60"
+          >
+            {loadingScan ? <Spinner className="text-slate-700" /> : null}
+            Charger la suite
           </button>
           <button
             type="button"
@@ -385,6 +438,10 @@ export default function AdminHumainCampagnePage() {
         {scanWarning ? (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{scanWarning}</p>
         ) : null}
+        <p className="mt-3 text-sm text-slate-600">
+          Progression scan: {scannedMetiersCount}/{METIERS_CIBLES.length} métiers chargés
+          {remainingMetiersCount > 0 ? ` · ${remainingMetiersCount} restant(s)` : " · scan terminé"}
+        </p>
         {enqueueResult ? (
           <div
             className={`mt-3 rounded-xl border p-3 text-sm ${enqueueResult.success ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-rose-200 bg-rose-50 text-rose-700"}`}
