@@ -54,18 +54,21 @@ function normalizeOutgoingWhatsAppBody(raw: string | null | undefined): string {
 
 function buildTemplateFallbackVariables(messageText: string, metadata?: Record<string, unknown>): PartnerOutreachVariables {
   const meta = metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
-  const partnerName = String(meta.partner_name || meta.pro_name || "Partenaire").trim() || "Partenaire";
-  const referrerName = String(meta.referrer_name || "Popey").trim() || "Popey";
-  const ticketCode = String(meta.ticket_code || "suivi").trim() || "suivi";
+  
+  const partnerName = String(meta.partner_name || meta.pro_name || "Madame, Monsieur").trim();
+  const referrerName = String(meta.referrer_name || "Dax").trim();
+  const ticketCode = String(meta.ticket_code || "l'artisanat et des services").trim();
+  
   const shortMessage = String(messageText || "")
     .replace(/\s+/g, " ")
     .slice(0, 120)
     .trim();
+    
   return {
     1: partnerName,
     2: referrerName,
     3: ticketCode,
-    4: shortMessage || "Merci de répondre à ce message pour continuer l'échange.",
+    4: shortMessage || "devis",
   };
 }
 
