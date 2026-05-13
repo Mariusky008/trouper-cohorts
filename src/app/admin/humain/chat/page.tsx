@@ -81,6 +81,7 @@ export default function AdminHumainChatPage() {
   const [error, setError] = useState<string>("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -283,6 +284,8 @@ export default function AdminHumainChatPage() {
   function handleSelectThread(phone: string) {
     setSelectedPhone(phone);
     setMobileView("chat");
+    shouldAutoScrollRef.current = true;
+    setShowScrollToBottom(false);
     setNewIncomingPhones((current) => {
       if (!current[phone]) return current;
       const next = { ...current };
@@ -352,7 +355,7 @@ export default function AdminHumainChatPage() {
 
       {error ? <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="flex min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:flex-row">
+      <div className="flex h-[calc(100dvh-210px)] min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border bg-[#f0f2f5] lg:flex-row">
         <aside
           className={`${isDesktop || mobileView === "list" ? "flex" : "hidden"} flex-col bg-white lg:w-[380px] lg:shrink-0`}
         >
@@ -379,24 +382,33 @@ export default function AdminHumainChatPage() {
               const preview = thread.lastMessage || "";
               const timeLabel = formatTime(thread.lastReceivedAt || thread.lastAt);
               const showUnreadDot = thread.isUnreadLatest;
+              const hasNewPing = Boolean(newIncomingPhones[thread.phone]);
+              const highlightUnread = showUnreadDot || hasNewPing;
               return (
                 <button
                   key={thread.phone}
                   type="button"
                   onClick={() => handleSelectThread(thread.phone)}
                   className={`w-full border-b px-4 py-3 text-left transition ${
-                    selectedPhone === thread.phone ? "bg-emerald-50" : "hover:bg-slate-50"
+                    selectedPhone === thread.phone
+                      ? "bg-emerald-50"
+                      : highlightUnread
+                        ? "bg-amber-50 hover:bg-amber-100"
+                        : "hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-slate-900">{title}</p>
+                      <p className={`truncate text-sm text-slate-900 ${highlightUnread ? "font-black" : "font-bold"}`}>{title}</p>
                       <p className="truncate text-xs text-slate-600">{subtitle}</p>
-                      <p className="mt-0.5 line-clamp-1 text-[12px] text-slate-400">{preview}</p>
+                      <p className={`mt-0.5 line-clamp-1 text-[12px] ${highlightUnread ? "font-semibold text-slate-700" : "text-slate-400"}`}>
+                        {preview}
+                      </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
-                      <span className="text-[11px] font-semibold text-slate-400">{timeLabel}</span>
+                      <span className={`text-[11px] font-semibold ${highlightUnread ? "text-slate-700" : "text-slate-400"}`}>{timeLabel}</span>
                       {showUnreadDot ? <span className="h-2.5 w-2.5 rounded-full bg-red-500" /> : null}
+                      {!showUnreadDot && hasNewPing ? <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> : null}
                     </div>
                   </div>
                 </button>
@@ -443,10 +455,11 @@ export default function AdminHumainChatPage() {
               const threshold = 140;
               const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
               shouldAutoScrollRef.current = remaining < threshold;
+              setShowScrollToBottom(remaining >= threshold);
             }}
             className="flex-1 overflow-y-auto bg-[#efeae2] px-4 py-4"
           >
-            <div className="space-y-2">
+            <div className="relative space-y-2">
               {chatMessages.map((message) => {
                 const isInbound = message.direction === "inbound";
                 const isOutbound = message.direction === "outbound";
@@ -501,6 +514,21 @@ export default function AdminHumainChatPage() {
               })}
               {!loadingMessages && selectedPhone && chatMessages.length === 0 ? (
                 <p className="text-sm text-slate-500">Pas encore de message sur ce fil.</p>
+              ) : null}
+              {showScrollToBottom ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const container = messagesContainerRef.current;
+                    if (!container) return;
+                    shouldAutoScrollRef.current = true;
+                    container.scrollTop = container.scrollHeight;
+                    setShowScrollToBottom(false);
+                  }}
+                  className="sticky bottom-2 ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-sm font-black text-slate-700 shadow-md"
+                >
+                  ↓
+                </button>
               ) : null}
             </div>
           </div>

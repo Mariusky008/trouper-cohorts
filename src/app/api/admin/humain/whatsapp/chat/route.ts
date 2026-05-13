@@ -187,8 +187,14 @@ export async function GET(request: Request) {
     .limit(limit);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 400 });
 
-  type ThreadAccumulator = ChatThread & {
-    countingUnresolved: boolean;
+  type ThreadAccumulator = {
+    phone: string;
+    displayName: string | null;
+    lastAt: string;
+    lastDirection: "inbound" | "outbound" | "status";
+    lastMessage: string | null;
+    inboundCount: number;
+    outboundCount: number;
     lastInboundAt: string | null;
     lastOutboundAt: string | null;
   };
@@ -206,14 +212,10 @@ export async function GET(request: Request) {
         phone,
         displayName: null,
         lastAt: createdAt,
-        lastReceivedAt: direction === "inbound" ? createdAt : null,
         lastDirection: direction,
         lastMessage: text,
         inboundCount: 0,
         outboundCount: 0,
-        unresolvedInboundCount: 0,
-        isUnreadLatest: direction === "inbound",
-        countingUnresolved: direction === "inbound",
         lastInboundAt: direction === "inbound" ? createdAt : null,
         lastOutboundAt: direction === "outbound" ? createdAt : null,
       });
@@ -225,12 +227,9 @@ export async function GET(request: Request) {
     if (direction === "inbound") {
       current.inboundCount += 1;
       if (!current.lastInboundAt) current.lastInboundAt = createdAt;
-      if (current.countingUnresolved) current.unresolvedInboundCount += 1;
     }
     if (direction === "outbound") {
       current.outboundCount += 1;
-      current.unresolvedInboundCount = 0;
-      current.countingUnresolved = false;
       if (!current.lastOutboundAt) current.lastOutboundAt = createdAt;
     }
   });
@@ -287,6 +286,7 @@ export async function GET(request: Request) {
       const label = nameByPhone.get(thread.phone) || null;
       const name = label ? splitName(label) : null;
       const display = name?.firstName ? name.firstName : label;
+      const isUnreadLatest = Boolean(thread.lastInboundAt && (!thread.lastOutboundAt || thread.lastInboundAt > thread.lastOutboundAt));
       return {
         phone: thread.phone,
         displayName: display || null,
@@ -296,8 +296,8 @@ export async function GET(request: Request) {
         lastMessage: thread.lastMessage,
         inboundCount: thread.inboundCount,
         outboundCount: thread.outboundCount,
-        unresolvedInboundCount: thread.unresolvedInboundCount,
-        isUnreadLatest: thread.lastDirection === "inbound" && thread.unresolvedInboundCount > 0,
+        unresolvedInboundCount: isUnreadLatest ? 1 : 0,
+        isUnreadLatest,
       } satisfies ChatThread;
     })
     .sort((a, b) => (b.lastReceivedAt || b.lastAt).localeCompare(a.lastReceivedAt || a.lastAt));
