@@ -70,27 +70,46 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
   }
   const normalizedSlug = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
   const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(normalizedSlug)}/run-sync-get-dataset-items`;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apifyToken}`,
-    },
-    body: JSON.stringify({
-      searchStringsArray: input.metiers.slice(0, 10),
-      locationQuery: input.city,
-      maxCrawledPlacesPerSearch: Math.max(1, Math.min(10, Math.round(input.limitPerMetier || 3))),
-      language: "fr",
-      maxImages: 0,
-      includeWebResults: false,
-      skipClosedPlaces: true,
-      additionalInfo: false,
-    }),
-    cache: "no-store",
-  });
-  const payload = (await response.json().catch(() => [])) as unknown;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apifyToken}`,
+      },
+      body: JSON.stringify({
+        searchStringsArray: input.metiers.slice(0, 10),
+        locationQuery: input.city,
+        maxCrawledPlacesPerSearch: Math.max(1, Math.min(10, Math.round(input.limitPerMetier || 3))),
+        language: "fr",
+        maxImages: 0,
+        includeWebResults: false,
+        skipClosedPlaces: true,
+        additionalInfo: false,
+      }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    return {
+      error: error instanceof Error ? `Apify: ${error.message}` : "Apify: erreur réseau (fetch).",
+      prospects: [] as ScanProspect[],
+    };
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
   if (!response.ok) {
-    const msg = typeof payload === "object" && payload ? JSON.stringify(payload).slice(0, 240) : "";
+    const msg =
+      typeof payload === "string"
+        ? payload.slice(0, 240)
+        : typeof payload === "object" && payload
+          ? JSON.stringify(payload).slice(0, 240)
+          : "";
     return { error: `Apify: erreur (${response.status}). ${msg || "Recherche impossible."}`, prospects: [] as ScanProspect[] };
   }
   const rows = Array.isArray(payload) ? payload : [];
@@ -120,48 +139,55 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
-  if ("error" in admin) return NextResponse.json({ success: false, error: admin.error }, { status: 401 });
+  try {
+    const admin = await requireAdminUser();
+    if ("error" in admin) return NextResponse.json({ success: false, error: admin.error }, { status: 401 });
 
-  const payload = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  const city = String(payload?.city || "").trim();
-  const provider = String(payload?.provider || "b2b").trim().toLowerCase();
-  const metiers = Array.isArray(payload?.metiers) ? payload?.metiers : [];
-  const metiersNormalized = metiers.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 60);
-  const limitPerMetier = Math.max(1, Math.min(10, Math.round(Number(payload?.limitPerMetier || 3))));
-  if (!city) return NextResponse.json({ success: false, error: "Ville requise." }, { status: 400 });
-  if (metiersNormalized.length === 0) return NextResponse.json({ success: false, error: "Liste de métiers vide." }, { status: 400 });
-  if (provider !== "b2b") return NextResponse.json({ success: false, error: "Provider non supporté pour l’instant." }, { status: 400 });
+    const payload = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    const city = String(payload?.city || "").trim();
+    const provider = String(payload?.provider || "b2b").trim().toLowerCase();
+    const metiers = Array.isArray(payload?.metiers) ? payload?.metiers : [];
+    const metiersNormalized = metiers.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 60);
+    const limitPerMetier = Math.max(1, Math.min(10, Math.round(Number(payload?.limitPerMetier || 3))));
+    if (!city) return NextResponse.json({ success: false, error: "Ville requise." }, { status: 400 });
+    if (metiersNormalized.length === 0) return NextResponse.json({ success: false, error: "Liste de métiers vide." }, { status: 400 });
+    if (provider !== "b2b") return NextResponse.json({ success: false, error: "Provider non supporté pour l’instant." }, { status: 400 });
 
-  const chunkSize = 10;
-  const chunks = Array.from({ length: Math.ceil(metiersNormalized.length / chunkSize) }).map((_, idx) =>
-    metiersNormalized.slice(idx * chunkSize, idx * chunkSize + chunkSize),
-  );
-  const responses = await Promise.all(chunks.map((chunk) => runApifySearch({ city, metiers: chunk, limitPerMetier })));
-  const firstError = responses.find((result) => result.error)?.error || null;
+    const chunkSize = 10;
+    const chunks = Array.from({ length: Math.ceil(metiersNormalized.length / chunkSize) }).map((_, idx) =>
+      metiersNormalized.slice(idx * chunkSize, idx * chunkSize + chunkSize),
+    );
+    const responses = await Promise.all(chunks.map((chunk) => runApifySearch({ city, metiers: chunk, limitPerMetier })));
+    const firstError = responses.find((result) => result.error)?.error || null;
 
-  const byPhone = new Map<string, ScanProspect>();
-  const withoutPhone: ScanProspect[] = [];
-  responses
-    .flatMap((result) => result.prospects || [])
-    .forEach((prospect) => {
-      if (prospect.phoneE164) {
-        const current = byPhone.get(prospect.phoneE164);
-        const nextRating = Number(prospect.rating || 0);
-        const currentRating = current ? Number(current.rating || 0) : -1;
-        if (!current || nextRating >= currentRating) {
-          byPhone.set(prospect.phoneE164, prospect);
+    const byPhone = new Map<string, ScanProspect>();
+    const withoutPhone: ScanProspect[] = [];
+    responses
+      .flatMap((result) => result.prospects || [])
+      .forEach((prospect) => {
+        if (prospect.phoneE164) {
+          const current = byPhone.get(prospect.phoneE164);
+          const nextRating = Number(prospect.rating || 0);
+          const currentRating = current ? Number(current.rating || 0) : -1;
+          if (!current || nextRating >= currentRating) {
+            byPhone.set(prospect.phoneE164, prospect);
+          }
+        } else {
+          withoutPhone.push(prospect);
         }
-      } else {
-        withoutPhone.push(prospect);
-      }
-    });
+      });
 
-  const prospects = [...Array.from(byPhone.values()), ...withoutPhone].slice(0, 800);
-  return NextResponse.json({
-    success: true,
-    ownerMemberId: admin.ownerMemberId,
-    prospects,
-    warning: firstError,
-  });
+    const prospects = [...Array.from(byPhone.values()), ...withoutPhone].slice(0, 800);
+    return NextResponse.json({
+      success: true,
+      ownerMemberId: admin.ownerMemberId,
+      prospects,
+      warning: firstError,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Erreur serveur scan campagne." },
+      { status: 500 },
+    );
+  }
 }

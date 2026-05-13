@@ -173,9 +173,10 @@ export default function AdminHumainCampagnePage() {
           limitPerMetier,
         }),
       });
-      const data = (await response.json().catch(() => null)) as ScanResponse | null;
+      const raw = await response.text();
+      const data = (raw ? (JSON.parse(raw) as ScanResponse) : null) as ScanResponse | null;
       if (!data || !data.success) {
-        setScanError(data?.error || "Scan impossible.");
+        setScanError(`${response.status} — ${data?.error || raw || "Scan impossible."}`.slice(0, 800));
         setProspects([]);
         setSelectedPhones({});
         return;
@@ -223,9 +224,10 @@ export default function AdminHumainCampagnePage() {
           prospects: selected,
         }),
       });
-      const data = (await response.json().catch(() => null)) as EnqueueResponse | null;
+      const raw = await response.text();
+      const data = (raw ? (JSON.parse(raw) as EnqueueResponse) : null) as EnqueueResponse | null;
       if (!data || !data.success) {
-        setEnqueueResult({ success: false, error: data?.error || "Enqueue impossible." });
+        setEnqueueResult({ success: false, error: `${response.status} — ${data?.error || raw || "Enqueue impossible."}`.slice(0, 800) });
         return;
       }
       setEnqueueResult(data);
@@ -452,4 +454,3 @@ export default function AdminHumainCampagnePage() {
     </section>
   );
 }
-
