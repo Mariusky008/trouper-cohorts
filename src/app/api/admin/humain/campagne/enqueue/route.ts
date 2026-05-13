@@ -16,14 +16,15 @@ async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
   if (!userId) return { error: "Session requise." as const };
   const supabaseAdmin = createAdminClient();
-  const { data, error } = await supabaseAdmin
-    .from("human_members")
-    .select("id,user_id,is_admin")
+  const { data: adminRow, error: adminError } = await supabaseAdmin
+    .from("admins")
+    .select("user_id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error || !data?.id) return { error: "Profil human_member introuvable." as const };
-  if (!data.is_admin) return { error: "Accès admin requis." as const };
-  return { ownerMemberId: String(data.id) };
+  if (adminError || !adminRow?.user_id) return { error: "Accès admin requis." as const };
+  const { data: memberRow, error: memberError } = await supabaseAdmin.from("human_members").select("id").eq("user_id", userId).maybeSingle();
+  if (memberError || !memberRow?.id) return { error: "Profil human_member admin introuvable." as const };
+  return { ownerMemberId: String(memberRow.id) };
 }
 
 function normalizePhone(rawValue?: string | null): string {
@@ -144,4 +145,3 @@ export async function POST(request: Request) {
     totalInput: prospects.length,
   });
 }
-
