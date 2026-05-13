@@ -370,7 +370,7 @@ export async function sendPartnerOutreach(
         } satisfies PartnerOutreachVariables)
       : variables;
   const contentVariables = parseContentVariables(effectiveVariables);
-  const previewMessage = `Template ${contentSid}: ${[
+  const previewMessage = [
     effectiveVariables[1],
     effectiveVariables[2],
     effectiveVariables[3],
@@ -379,7 +379,7 @@ export async function sendPartnerOutreach(
   ]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
-    .join(" | ")}`;
+    .join(" | ");
 
   const message = await client.messages.create({
     from: whatsappTwilioConfig.whatsappFrom,

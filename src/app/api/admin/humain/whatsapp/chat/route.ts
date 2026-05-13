@@ -98,6 +98,19 @@ function extractTextFallback(payload: Record<string, unknown> | null | undefined
   return null;
 }
 
+function formatAdminMessageText(raw: string | null | undefined): string | null {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  const templateMatch = /^Template\s+HX[0-9a-f]{10,}:\s*/i.exec(value);
+  if (templateMatch) return value.slice(templateMatch[0].length).trim() || null;
+  if (value.toLowerCase().startsWith("template fallback twilio")) {
+    const idx = value.indexOf(":");
+    if (idx >= 0) return value.slice(idx + 1).trim() || null;
+    return value;
+  }
+  return value;
+}
+
 function normalizePhone(raw: string | null | undefined): string {
   const value = String(raw || "").trim();
   if (!value) return "";
@@ -164,11 +177,12 @@ export async function GET(request: Request) {
           fileName: attachment.originalName,
         }))
         .filter((attachment) => Boolean(attachment.url));
+      const rawText = String(row.message_text || "").trim() || extractTextFallback(payload) || "";
       return {
         id: String(row.id || ""),
         phone: String(row.phone_e164 || ""),
         direction: (String(row.direction || "status") as "inbound" | "outbound" | "status"),
-        text: String(row.message_text || "").trim() || extractTextFallback(payload) || null,
+        text: formatAdminMessageText(rawText),
         attachments,
         classification: (row.classification as "positive" | "negative" | "stop" | "neutral" | null) || null,
         eventType: String(row.event_type || ""),
@@ -205,7 +219,9 @@ export async function GET(request: Request) {
     const direction = (String(row.direction || "status") as "inbound" | "outbound" | "status");
     const createdAt = String(row.created_at || "");
     const text =
-      String(row.message_text || "").trim() || extractTextFallback((row.payload || {}) as Record<string, unknown>) || null;
+      formatAdminMessageText(
+        String(row.message_text || "").trim() || extractTextFallback((row.payload || {}) as Record<string, unknown>) || null,
+      ) || null;
 
     if (!threadMap.has(phone)) {
       threadMap.set(phone, {
