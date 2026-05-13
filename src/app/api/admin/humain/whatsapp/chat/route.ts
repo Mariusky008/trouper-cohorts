@@ -98,8 +98,48 @@ function extractTextFallback(payload: Record<string, unknown> | null | undefined
   return null;
 }
 
-function formatAdminMessageText(raw: string | null | undefined): string | null {
+function readTemplateVariables(payload: Record<string, unknown> | null | undefined): Record<string, string> | null {
+  if (!payload || typeof payload !== "object") return null;
+  const rawVars =
+    (payload.content_variables as unknown) ||
+    (payload.template_vars as unknown) ||
+    (payload.templateVars as unknown) ||
+    null;
+  if (!rawVars || typeof rawVars !== "object" || Array.isArray(rawVars)) return null;
+  const vars = rawVars as Record<string, unknown>;
+  const v1 = String(vars["1"] ?? (vars as any)[1] ?? "").trim();
+  const v2 = String(vars["2"] ?? (vars as any)[2] ?? "").trim();
+  const v3 = String(vars["3"] ?? (vars as any)[3] ?? "").trim();
+  const v4 = String(vars["4"] ?? (vars as any)[4] ?? "").trim();
+  if (!v1 && !v2 && !v3 && !v4) return null;
+  return { 1: v1, 2: v2, 3: v3, 4: v4 };
+}
+
+function renderOutreachTemplateMessage(vars: Record<string, string>): string {
+  const greeting = vars["1"]?.trim() || "Madame, Monsieur";
+  const city = vars["2"]?.trim() || "Dax";
+  const sector = vars["3"]?.trim() || "l'artisanat et des services";
+  const need = vars["4"]?.trim() || "devis";
+  return `Bonjour ${greeting},
+Ici Jean-Philippe Roth. Je suis de ${city} également.
+
+Je travaille avec pas mal d'indépendants du secteur de ${sector} et nous avons souvent des clients en demande de ${need}.
+
+J'aimerais voir si nous pourrions mettre en place un système de recommandation mutuelle pour nos clients respectifs.
+
+Est-ce que vous auriez 5 petites minutes pour en discuter de vive voix demain ?
+
+Bonne journée.
+
+Jean Philippe Roth`;
+}
+
+function formatAdminMessageText(raw: string | null | undefined, payload?: Record<string, unknown> | null): string | null {
   const value = String(raw || "").trim();
+  const templateVars = readTemplateVariables(payload);
+  const hasTemplateInfo =
+    Boolean((payload || {})["content_sid"]) || Boolean((payload || {})["template_name"]) || Boolean((payload || {})["twilio_content_sid"]);
+  if (hasTemplateInfo && templateVars) return renderOutreachTemplateMessage(templateVars);
   if (!value) return null;
   const templateMatch = /^Template\s+HX[0-9a-f]{10,}:\s*/i.exec(value);
   if (templateMatch) return value.slice(templateMatch[0].length).trim() || null;
@@ -182,7 +222,7 @@ export async function GET(request: Request) {
         id: String(row.id || ""),
         phone: String(row.phone_e164 || ""),
         direction: (String(row.direction || "status") as "inbound" | "outbound" | "status"),
-        text: formatAdminMessageText(rawText),
+        text: formatAdminMessageText(rawText, payload),
         attachments,
         classification: (row.classification as "positive" | "negative" | "stop" | "neutral" | null) || null,
         eventType: String(row.event_type || ""),
@@ -218,9 +258,11 @@ export async function GET(request: Request) {
     if (!phone) return;
     const direction = (String(row.direction || "status") as "inbound" | "outbound" | "status");
     const createdAt = String(row.created_at || "");
+    const payload = (row.payload || {}) as Record<string, unknown>;
     const text =
       formatAdminMessageText(
-        String(row.message_text || "").trim() || extractTextFallback((row.payload || {}) as Record<string, unknown>) || null,
+        String(row.message_text || "").trim() || extractTextFallback(payload) || null,
+        payload,
       ) || null;
 
     if (!threadMap.has(phone)) {

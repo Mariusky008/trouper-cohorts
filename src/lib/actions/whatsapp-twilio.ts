@@ -72,6 +72,29 @@ function buildTemplateFallbackVariables(messageText: string, metadata?: Record<s
   };
 }
 
+function renderOutreachTemplateMessage(variables: PartnerOutreachVariables): string {
+  const v1 = String(variables[1] || "").trim();
+  const v2 = String(variables[2] || "").trim();
+  const v3 = String(variables[3] || "").trim();
+  const v4 = String(variables[4] || "").trim();
+  const greeting = v1 || "Madame, Monsieur";
+  const city = v2 || "Dax";
+  const sector = v3 || "l'artisanat et des services";
+  const need = v4 || "devis";
+  return `Bonjour ${greeting},
+Ici Jean-Philippe Roth. Je suis de ${city} également.
+
+Je travaille avec pas mal d'indépendants du secteur de ${sector} et nous avons souvent des clients en demande de ${need}.
+
+J'aimerais voir si nous pourrions mettre en place un système de recommandation mutuelle pour nos clients respectifs.
+
+Est-ce que vous auriez 5 petites minutes pour en discuter de vive voix demain ?
+
+Bonne journée.
+
+Jean Philippe Roth`;
+}
+
 function extractTwilioError(input: unknown): { code: string; message: string } {
   const asRecord = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
   const code = String(asRecord.code || asRecord.errorCode || "").trim();
@@ -373,16 +396,7 @@ export async function sendPartnerOutreach(
         } satisfies PartnerOutreachVariables)
       : variables;
   const contentVariables = parseContentVariables(effectiveVariables);
-  const previewMessage = [
-    effectiveVariables[1],
-    effectiveVariables[2],
-    effectiveVariables[3],
-    effectiveVariables[4],
-    effectiveVariables[5],
-  ]
-    .map((item) => String(item || "").trim())
-    .filter(Boolean)
-    .join(" | ");
+  const previewMessage = renderOutreachTemplateMessage(effectiveVariables);
 
   const message = await client.messages.create({
     from: whatsappTwilioConfig.whatsappFrom,
@@ -449,7 +463,7 @@ export async function sendPartnerOutreach(
         to: String(message.to || "").trim() || null,
         from: String(message.from || "").trim() || null,
         template_name: contentSid || null,
-        template_vars: variables,
+        template_vars: effectiveVariables,
       },
     });
   }
@@ -845,8 +859,8 @@ export async function sendWhatsAppTextMessage(
       event_type: "sent",
       classification: null,
       message_text:
-        sentChannel === "template_fallback"
-          ? `Template fallback Twilio (63016): ${String(fallbackContentVariables?.[4] || body)}`
+        sentChannel === "template_fallback" && fallbackContentVariables
+          ? renderOutreachTemplateMessage(fallbackContentVariables)
           : body,
       provider_message_id: String(sent.sid || "").trim() || null,
       payload: {
