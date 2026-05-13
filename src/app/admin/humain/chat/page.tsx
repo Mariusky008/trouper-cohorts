@@ -326,6 +326,24 @@ export default function AdminHumainChatPage() {
   );
   const totalNewIncoming = Object.keys(newIncomingPhones).length;
 
+  const canMarkAllRead = useMemo(() => {
+    if (threads.length === 0) return false;
+    return threads.some((thread) => isThreadUnread(thread));
+  }, [isThreadUnread, threads]);
+
+  function markAllAsRead() {
+    setSeenInboundAtByPhone((current) => {
+      const next = { ...current };
+      threads.forEach((thread) => {
+        const lastInboundAt = String(thread.lastReceivedAt || "").trim();
+        if (!lastInboundAt) return;
+        next[thread.phone] = lastInboundAt;
+      });
+      return next;
+    });
+    setNewIncomingPhones({});
+  }
+
   function handleSelectThread(phone: string) {
     setSelectedPhone(phone);
     setMobileView("chat");
@@ -409,8 +427,18 @@ export default function AdminHumainChatPage() {
           className={`${isDesktop || mobileView === "list" ? "flex" : "hidden"} flex-col bg-white lg:w-[380px] lg:shrink-0`}
         >
           <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-            <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Discussions</h2>
-            {loadingThreads ? <Spinner className="text-slate-500" /> : null}
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Discussions</h2>
+              {loadingThreads ? <Spinner className="text-slate-500" /> : null}
+            </div>
+            <button
+              type="button"
+              onClick={markAllAsRead}
+              disabled={!canMarkAllRead}
+              className="rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Tout lire
+            </button>
           </div>
           <div className="space-y-2 border-b px-4 py-3">
             <input
