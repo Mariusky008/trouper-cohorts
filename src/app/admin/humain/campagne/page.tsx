@@ -95,6 +95,17 @@ function normalizeText(value: unknown) {
   return String(value || "").trim();
 }
 
+function safeParseJson<T>(raw: string): { data: T | null; parseError: string | null } {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return { data: null, parseError: "Réponse vide." };
+  try {
+    return { data: JSON.parse(trimmed) as T, parseError: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "JSON parse error.";
+    return { data: null, parseError: message };
+  }
+}
+
 export default function AdminHumainCampagnePage() {
   const [city, setCity] = useState("Dax");
   const [audience, setAudience] = useState(12500);
@@ -165,7 +176,8 @@ export default function AdminHumainCampagnePage() {
     try {
       const response = await fetch("/api/admin/humain/campagne/scan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        redirect: "manual",
         body: JSON.stringify({
           city,
           provider: "b2b",
@@ -174,9 +186,12 @@ export default function AdminHumainCampagnePage() {
         }),
       });
       const raw = await response.text();
-      const data = (raw ? (JSON.parse(raw) as ScanResponse) : null) as ScanResponse | null;
+      const parsed = safeParseJson<ScanResponse>(raw);
+      const data = parsed.data;
       if (!data || !data.success) {
-        setScanError(`${response.status} — ${data?.error || raw || "Scan impossible."}`.slice(0, 800));
+        setScanError(
+          `${response.status} — ${data?.error || raw.slice(0, 500) || parsed.parseError || "Scan impossible."}`.slice(0, 800),
+        );
         setProspects([]);
         setSelectedPhones({});
         return;
@@ -212,7 +227,8 @@ export default function AdminHumainCampagnePage() {
         }));
       const response = await fetch("/api/admin/humain/campagne/enqueue", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        redirect: "manual",
         body: JSON.stringify({
           city,
           audience,
@@ -225,9 +241,13 @@ export default function AdminHumainCampagnePage() {
         }),
       });
       const raw = await response.text();
-      const data = (raw ? (JSON.parse(raw) as EnqueueResponse) : null) as EnqueueResponse | null;
+      const parsed = safeParseJson<EnqueueResponse>(raw);
+      const data = parsed.data;
       if (!data || !data.success) {
-        setEnqueueResult({ success: false, error: `${response.status} — ${data?.error || raw || "Enqueue impossible."}`.slice(0, 800) });
+        setEnqueueResult({
+          success: false,
+          error: `${response.status} — ${data?.error || raw.slice(0, 500) || parsed.parseError || "Enqueue impossible."}`.slice(0, 800),
+        });
         return;
       }
       setEnqueueResult(data);
