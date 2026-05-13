@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalogue Privilège Popey — Jean Roth · Mai 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=Instrument+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#08090C; --ink2:#111318; --cream:#F5F2EB; --cream2:#EDE9E0;
+  --teal:#00C48C; --teal-d:#009B6F; --amber:#F5A623;
+  --border:rgba(255,255,255,.08); --border-l:rgba(0,0,0,.07);
+  --fd:'Fraunces',serif; --fb:'Instrument Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--fb);overflow:hidden}
+
+/* ── SHELL: fixed 3-column layout ── */
+#shell{
+  display:grid;
+  grid-template-columns:300px 1fr;
+  grid-template-rows:100vh;
+  height:100vh;
+  overflow:hidden;
+  background:var(--cream2);
+}
+
+/* ── LEFT SIDEBAR ── */
+#sidebar{
+  background:var(--ink);
+  height:100vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.1) transparent;
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--border);
+}
+#sidebar::-webkit-scrollbar{width:3px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+/* Sender strip */
+.sender{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sender-av{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sender-from{font-size:8px;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase}
+.sender-name{font-size:13px;font-weight:700;color:var(--cream)}
+.sender-meta{font-size:9px;color:rgba(255,255,255,.35);margin-top:1px}
+.sender-badge{margin-left:auto;background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.25);border-radius:100px;padding:3px 9px;font-size:8px;font-weight:700;color:var(--teal);white-space:nowrap;flex-shrink:0}
+
+/* Hero */
+.hero-block{padding:20px 18px 16px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.hero-block::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.08),transparent 70%);pointer-events:none}
+.hero-eyebrow{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.hero-eyebrow::before{content:'—';color:var(--amber)}
+.hero-title{font-family:var(--fd);font-size:clamp(20px,2.5vw,28px);font-weight:900;line-height:1;letter-spacing:-.02em;color:var(--cream);margin-bottom:5px}
+.hero-title em{color:var(--amber);font-style:italic;font-weight:300;display:block}
+.hero-desc{font-size:12px;color:rgba(245,242,235,.5);line-height:1.6;margin-bottom:14px}
+
+.urgency-box{background:rgba(196,88,36,.1);border:1px solid rgba(196,88,36,.25);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:rgba(245,242,235,.7);line-height:1.5}
+.urgency-box strong{color:var(--cream);font-weight:600}
+
+.val-box{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.val-label{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.6);margin-bottom:2px}
+.val-amount{font-family:var(--fd);font-size:24px;font-weight:900;color:var(--amber);line-height:1}
+.val-sub{font-size:9px;color:rgba(245,242,235,.35)}
+
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border)}
+.stat-i{padding:10px 4px;text-align:center;border-right:1px solid var(--border)}
+.stat-i:last-child{border-right:none}
+.stat-v{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--teal);line-height:1}
+.stat-l{font-size:7px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:2px}
+
+/* Filters */
+.filters{padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.15)}
+.filters-label{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:8px}
+.filter-chips{display:flex;flex-direction:column;gap:4px}
+.f-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .2s;background:transparent;width:100%;text-align:left}
+.f-chip:hover{background:rgba(255,255,255,.04)}
+.f-chip.active{background:rgba(0,196,140,.1);border-color:rgba(0,196,140,.25)}
+.fc-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);flex-shrink:0;transition:background .2s}
+.f-chip.active .fc-dot{background:var(--teal)}
+.fc-name{font-size:12px;font-weight:500;color:rgba(255,255,255,.45);transition:color .2s;flex:1}
+.f-chip.active .fc-name{color:var(--cream)}
+.fc-count{font-size:10px;font-weight:700;color:rgba(255,255,255,.2);background:rgba(255,255,255,.06);border-radius:20px;padding:1px 7px;transition:all .2s}
+.f-chip.active .fc-count{color:var(--teal);background:rgba(0,196,140,.1)}
+
+/* Swipe banner in sidebar */
+.swipe-banner-side{padding:10px 12px;border-bottom:1px solid var(--border)}
+.swipe-banner-side a{display:flex;align-items:center;gap:10px;background:rgba(0,196,140,.06);border:1px solid rgba(0,196,140,.2);border-radius:10px;padding:10px 12px;text-decoration:none;transition:all .2s}
+.swipe-banner-side a:hover{background:rgba(0,196,140,.1);border-color:rgba(0,196,140,.35)}
+.swipe-icon{width:30px;height:30px;border-radius:8px;background:rgba(0,196,140,.1);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.swipe-text-block{}
+.swipe-tag{font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,196,140,.7);margin-bottom:2px}
+.swipe-title{font-size:12px;font-weight:700;color:var(--cream);line-height:1.1}
+.swipe-sub{font-size:9px;color:rgba(255,255,255,.35);margin-top:1px}
+.swipe-arrow{margin-left:auto;width:24px;height:24px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink);flex-shrink:0;font-weight:900}
+
+/* Sponsor sidebar mark */
+.sponsor-sidebar{padding:10px 14px;background:linear-gradient(135deg,#0B1C3A,#0A2040);border-top:1px solid rgba(201,168,76,.2);margin-top:auto;display:flex;align-items:center;gap:8px}
+.sponsor-sidebar-dot{width:5px;height:5px;border-radius:50%;background:#C9A84C;flex-shrink:0}
+.sponsor-sidebar-text{font-size:8px;color:rgba(255,255,255,.35);flex:1}
+.sponsor-sidebar-name{font-size:9px;font-weight:700;color:#C9A84C}
+
+/* ── RIGHT MAIN ── */
+#main{
+  height:100vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--cream2);
+  scrollbar-width:thin;
+  scrollbar-color:rgba(0,0,0,.1) transparent;
+}
+
+/* Events strip */
+.events-strip{background:var(--ink2);padding:14px 24px;border-bottom:1px solid var(--border)}
+.events-tag{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.events-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.events-scroll::-webkit-scrollbar{display:none}
+.ev-card{flex-shrink:0;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;cursor:pointer;transition:background .2s;white-space:nowrap}
+.ev-card:hover{background:rgba(255,255,255,.07)}
+.ev-emoji{font-size:18px}
+.ev-date{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:2px}
+.ev-name{font-size:11px;font-weight:600;color:var(--cream)}
+.ev-badge{font-size:8px;font-weight:700;color:var(--teal);background:rgba(0,196,140,.1);border:1px solid rgba(0,196,140,.2);border-radius:20px;padding:1px 7px;margin-top:3px;display:inline-flex}
+
+/* Sponsor strip in main */
+.sponsor-strip{background:linear-gradient(135deg,#0B1C3A,#0D2544);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:2px solid #C9A84C;position:relative}
+.sponsor-strip::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,#E2BC65,#C9A84C,transparent)}
+.sponsor-logo-box{background:rgba(255,255,255,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sponsor-logo-txt{font-size:7px;font-weight:800;color:#E8D080;text-align:center;line-height:1.3;letter-spacing:.05em}
+.sponsor-strip-info{}
+.sponsor-strip-eyebrow{font-size:7px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,.7);margin-bottom:1px}
+.sponsor-strip-name{font-size:13px;font-weight:700;color:#fff}
+.sponsor-strip-sub{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px}
+.sponsor-strip-badge{margin-left:auto;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);border-radius:100px;padding:4px 12px;font-size:8px;font-weight:700;color:#C9A84C;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+
+/* Offers grid */
+.offers-container{padding:20px 24px 100px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.sphere-header{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:1.5px solid rgba(0,0,0,.08);grid-column:1/-1}
+.sphere-header:first-child{margin-top:0;grid-column:1/-1}
+.sphere-icon{font-size:18px}
+.sphere-name{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.35)}
+.sphere-count{font-size:10px;background:rgba(0,0,0,.06);border-radius:20px;padding:2px 8px;color:rgba(0,0,0,.3)}
+
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px}
+
+/* Offer card — desktop redesign */
+.offer-card{background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;transition:all .25s;display:flex;flex-direction:column;grid-column:span 1}
+.offer-card:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,.1);border-color:rgba(0,0,0,.1)}
+
+.oc-stripe{height:3px;flex-shrink:0}
+.oc-top{padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.05)}
+.oc-avatar{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.oc-pro-name{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--ink);line-height:1.1}
+.oc-pro-role{font-size:10px;color:rgba(0,0,0,.4);margin-top:2px}
+.oc-avail{font-size:9px;font-weight:600;color:var(--teal-d);margin-top:3px}
+
+.oc-offer{padding:12px 16px;background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border-bottom:1px solid rgba(200,168,75,.12);flex-shrink:0}
+.oc-priv-tag{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C8A84B;margin-bottom:4px}
+.oc-title{font-family:var(--fd);font-size:16px;font-weight:800;color:var(--ink);line-height:1.15;margin-bottom:4px}
+.oc-price-row{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.oc-old{font-size:11px;color:rgba(0,0,0,.3);text-decoration:line-through}
+.oc-new{font-family:var(--fd);font-size:20px;font-weight:900;line-height:1}
+.oc-desc{font-size:11px;color:rgba(0,0,0,.45);line-height:1.5}
+
+.oc-social{padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(0,0,0,.05)}
+.oc-avs{display:flex}
+.oc-av{width:20px;height:20px;border-radius:50%;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;margin-right:-4px;flex-shrink:0}
+.oc-social-txt{font-size:10px;color:rgba(0,0,0,.45);margin-left:5px}
+.oc-stars{margin-left:auto;font-size:10px;color:var(--amber);letter-spacing:1px}
+
+.oc-cta-area{padding:10px 14px 12px;margin-top:auto}
+.oc-btn{width:100%;background:#25D366;border:none;border-radius:8px;padding:9px;font-family:var(--fb);font-size:11px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .2s;margin-bottom:5px}
+.oc-btn:hover{background:#1ea855}
+.oc-note{font-size:8px;color:rgba(0,0,0,.3);text-align:center;line-height:1.4}
+
+.oc-retrib{margin:0 14px 12px;background:#F0FDF4;border:1px solid rgba(0,168,112,.15);border-radius:8px;padding:7px 10px}
+.oc-retrib-lbl{font-size:7px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-d);margin-bottom:2px}
+.oc-retrib-txt{font-size:10px;color:#374151;line-height:1.4}
+.oc-retrib-txt strong{color:var(--ink)}
+
+/* ── STICKY BAR ── */
+.sticky-bottom{position:fixed;bottom:0;left:300px;right:0;padding:12px 24px;background:rgba(8,10,13,.95);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);z-index:200;display:flex;align-items:center;justify-content:center;gap:20px}
+.sb-text{font-size:12px;color:rgba(255,255,255,.55);line-height:1.4}
+.sb-text strong{color:var(--teal)}
+.sb-btn{background:var(--teal);color:var(--ink);border:none;border-radius:100px;padding:10px 20px;font-family:var(--fb);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .2s}
+.sb-btn:hover{background:#00e0a6}
+
+/* ── MODAL OVERLAYS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(12px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--cream);border-radius:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:24px;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.modal-handle{width:36px;height:3px;background:rgba(0,0,0,.12);border-radius:2px;margin:0 auto 18px}
+
+/* Apporteur modal */
+.ap-modal-box{background:var(--cream);border-radius:20px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease}
+.ap-hero-m{background:linear-gradient(135deg,#040E0A,#0A1F16);padding:24px;border-radius:20px 20px 0 0;position:relative;overflow:hidden}
+.ap-hero-tag{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,196,140,.8);margin-bottom:8px}
+.ap-hero-title{font-family:var(--fd);font-size:24px;font-weight:900;color:#fff;line-height:1.05;margin-bottom:8px}
+.ap-hero-title em{color:#00C48C;font-style:normal}
+.ap-hero-sub{font-size:12px;color:rgba(255,255,255,.5);line-height:1.6}
+.ap-body{padding:20px 24px 28px}
+.ap-steps-row{display:flex;align-items:flex-start;gap:0;margin-bottom:20px}
+.ap-step-m{flex:1;text-align:center;padding:0 8px}
+.ap-step-icon{font-size:20px;margin-bottom:6px}
+.ap-step-num-m{width:20px;height:20px;border-radius:50%;background:#00C48C;color:#040E0A;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 6px}
+.ap-step-lbl{font-size:11px;font-weight:700;color:var(--ink)}
+.ap-step-d{font-size:9px;color:#6B6560;line-height:1.4;margin-top:2px}
+.ap-step-sep{color:#D0CCC4;font-size:16px;padding-top:16px;flex-shrink:0}
+.ap-scenarios-m{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.ap-scenarios-head{padding:12px 16px 8px;border-bottom:1px solid rgba(0,0,0,.05)}
+.ap-scenarios-title{font-size:13px;font-weight:700;color:var(--ink)}
+.ap-scenarios-sub{font-size:10px;color:#9A9DAA}
+.ap-scenarios-body{padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+.ap-scen-row{display:flex;align-items:center;gap:8px}
+.ap-scen-lbl{font-size:10px;font-weight:600;color:#6B6560;min-width:100px;flex-shrink:0}
+.ap-scen-val{font-family:var(--fd);font-size:17px;font-weight:900;color:var(--ink);min-width:60px}
+.ap-scen-val span{font-size:10px;font-weight:400;color:#9A9DAA}
+.ap-scen-bar-wrap{flex:1;height:5px;background:rgba(0,0,0,.06);border-radius:3px;overflow:hidden}
+.ap-scen-fill{height:100%;border-radius:3px}
+.ap-punchline{padding:10px 16px;background:linear-gradient(135deg,#ECFDF5,#F0FDF4);border-top:1px solid rgba(0,196,140,.1);font-size:11px;color:#374151;line-height:1.5}
+.ap-punchline strong{color:#065F46}
+.ap-form-m{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:16px;margin-bottom:12px}
+.ap-form-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px}
+.ap-fields-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ap-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9A9DAA;margin-bottom:5px;display:block}
+.ap-inp{width:100%;background:#F8F5EF;border:1.5px solid rgba(0,0,0,.08);border-radius:10px;padding:11px 12px;font-family:var(--fb);font-size:14px;color:var(--ink);outline:none;transition:border-color .2s}
+.ap-inp:focus{border-color:var(--teal)}
+.ap-submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#00C48C,#009B6F);color:#040E0A;border:none;border-radius:12px;font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 6px 20px rgba(0,196,140,.25);margin-bottom:10px}
+.ap-submit-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,196,140,.35)}
+.ap-fine{font-size:9px;color:#9A9DAA;text-align:center;line-height:1.5}
+
+/* ── MOBILE ── */
+@media(max-width:767px){
+  html,body{overflow:auto;height:auto}
+  #shell{display:block;grid-template-columns:none;grid-template-rows:none;height:auto;overflow:visible;max-width:480px;margin:0 auto;background:var(--ink)}
+  #sidebar{height:auto;overflow:visible;border-right:none}
+  #main{height:auto;overflow:visible;background:var(--cream2)}
+  .sticky-bottom{left:0;right:0}
+  .offers-container{grid-template-columns:1fr !important}
+  .cards-row{grid-template-columns:1fr}
+  .offers-container{padding:16px 14px 80px}
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal-box,.ap-modal-box{border-radius:20px 20px 0 0;max-height:90vh}
+  .ap-fields-row{grid-template-columns:1fr}
+  .ap-hero-m{border-radius:0}
+}
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <div id="sidebar">
+
+    <!-- Sender -->
+    <div class="sender">
+      <div class="sender-av">👤</div>
+      <div>
+        <div class="sender-from">Invitation personnelle de</div>
+        <div class="sender-name">Jean Roth</div>
+        <div class="sender-meta">Coach business · Bayonne 64 · Membre Popey</div>
+      </div>
+      <div class="sender-badge">✓ Éclaireur certifié</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero-block">
+      <div class="hero-eyebrow">Catalogue Privilège · Mai 2026</div>
+      <div class="hero-title">Vos avantages<br><em>exclusifs</em>grâce à Jean.</div>
+      <p class="hero-desc">Jean fait partie du réseau Popey — 150 professionnels de confiance sur le Grand Bayonne. Activez en 1 tap, profitez immédiatement.</p>
+      <div class="urgency-box"><strong>Expire le 31 mai.</strong> Ces offres disparaissent le 1er juin.</div>
+      <div class="val-box">
+        <div>
+          <div class="val-label">Valeur totale disponible</div>
+          <div class="val-amount">1 620€</div>
+          <div class="val-sub">d'avantages exclusifs ce mois</div>
+        </div>
+        <div style="font-size:28px">🎁</div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-i"><div class="stat-v">9</div><div class="stat-l">Offres</div></div>
+        <div class="stat-i"><div class="stat-v">5</div><div class="stat-l">Sphères</div></div>
+        <div class="stat-i"><div class="stat-v">100%</div><div class="stat-l">Vérifiés</div></div>
+        <div class="stat-i"><div class="stat-v">Bay.</div><div class="stat-l">Zone</div></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filters-label">Filtrer par sphère</div>
+      <div class="filter-chips">
+        <div class="f-chip active" onclick="filterOffers('all',this)"><span class="fc-dot"></span><span class="fc-name">Toutes les offres</span><span class="fc-count">9</span></div>
+        <div class="f-chip" onclick="filterOffers('sante',this)"><span class="fc-dot" style="background:#00C48C"></span><span class="fc-name">🌿 Santé · Sport</span><span class="fc-count">2</span></div>
+        <div class="f-chip" onclick="filterOffers('habitat',this)"><span class="fc-dot" style="background:#F5A623"></span><span class="fc-name">🏠 Habitat · Travaux</span><span class="fc-count">2</span></div>
+        <div class="f-chip" onclick="filterOffers('digital',this)"><span class="fc-dot" style="background:#4FC3F7"></span><span class="fc-name">💻 Digital</span><span class="fc-count">1</span></div>
+        <div class="f-chip" onclick="filterOffers('mariage',this)"><span class="fc-dot" style="background:#F48FB1"></span><span class="fc-name">💒 Mariage</span><span class="fc-count">1</span></div>
+        <div class="f-chip" onclick="filterOffers('finance',this)"><span class="fc-dot" style="background:#9B8FFF"></span><span class="fc-name">⚖️ Finance · Juridique</span><span class="fc-count">2</span></div>
+        <div class="f-chip" onclick="filterOffers('artisans',this)"><span class="fc-dot" style="background:#E8694A"></span><span class="fc-name">✨ Créateurs · Artisans</span><span class="fc-count">1</span></div>
+      </div>
+    </div>
+
+    <!-- Swipe banner -->
+    <div class="swipe-banner-side">
+      <a href="popey-swipe-catalogue.html">
+        <div class="swipe-icon">🃏</div>
+        <div class="swipe-text-block">
+          <div class="swipe-tag">Nouveau · Recommandé</div>
+          <div class="swipe-title">Mode Swipe Tinder</div>
+          <div class="swipe-sub">3× plus engageant · Essayez !</div>
+        </div>
+        <div class="swipe-arrow">→</div>
+      </a>
+    </div>
+
+    <div style="flex:1"></div>
+    <!-- Sponsor sidebar mark -->
+    <div class="sponsor-sidebar">
+      <div class="sponsor-sidebar-dot"></div>
+      <div class="sponsor-sidebar-text">Partenaire de l'édition</div>
+      <div class="sponsor-sidebar-name">Crédit Agricole Landes</div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- ═══ MAIN ═══ -->
+  <div id="main">
+
+    <!-- Events strip -->
+    <div class="events-strip">
+      <div class="events-tag">— À DÉCOUVRIR AUTOUR DE VOUS · Bayonne cette semaine</div>
+      <div class="events-scroll">
+        <div class="ev-card"><div class="ev-emoji">🎵</div><div><div class="ev-date">Vendredi 9 mai</div><div class="ev-name">Concert sunset</div><div class="ev-badge">Gratuit</div></div></div>
+        <div class="ev-card"><div class="ev-emoji">☕</div><div><div class="ev-date">Samedi 10 mai</div><div class="ev-name">Café réseau Popey</div><div class="ev-badge">Membres</div></div></div>
+        <div class="ev-card"><div class="ev-emoji">🏺</div><div><div class="ev-date">Dimanche 11 mai</div><div class="ev-name">Atelier céramique Léa</div><div class="ev-badge">Places limitées</div></div></div>
+        <div class="ev-card"><div class="ev-emoji">💪</div><div><div class="ev-date">Mercredi 14 mai</div><div class="ev-name">Séance découverte sport</div><div class="ev-badge">Gratuit 1re fois</div></div></div>
+        <div class="ev-card"><div class="ev-emoji">🍽️</div><div><div class="ev-date">Vendredi 16 mai</div><div class="ev-name">Déjeuner synergies</div><div class="ev-badge">Sur invitation</div></div></div>
+      </div>
+    </div>
+
+    <!-- Sponsor strip -->
+    <div class="sponsor-strip">
+      <div class="sponsor-logo-box"><div class="sponsor-logo-txt">CA<br>LANDES</div></div>
+      <div class="sponsor-strip-info">
+        <div class="sponsor-strip-eyebrow">⬡ Partenaire officiel de cette édition</div>
+        <div class="sponsor-strip-name">Crédit Agricole Landes</div>
+        <div class="sponsor-strip-sub">La banque qui agit pour les Landes</div>
+      </div>
+      <div class="sponsor-strip-badge">Exclusif</div>
+    </div>
+
+    <!-- Offers -->
+    <div class="offers-container" id="offersContainer">
+
+      <!-- ═══ SANTÉ ═══ -->
+      <div class="sphere-header" data-sphere="sante">
+        <span class="sphere-icon">🌿</span>
+        <span class="sphere-name">Santé · Sport</span>
+        <span class="sphere-count">2</span>
+      </div>
+
+      <div class="offer-card" data-sphere="sante">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#d1fae5,#6ee7b7)">🏋️</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-d);margin-bottom:3px">🌿 Santé · Sport</div>
+            <div class="oc-pro-name">Antonin Lemaire</div>
+            <div class="oc-pro-role">Coach sportif · Bayonne · réseau Popey</div>
+            <div class="oc-avail">✓ Disponible cette semaine</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">1er mois de coaching offert</div>
+          <div class="oc-price-row"><span class="oc-old">240€</span><span class="oc-new" style="color:#007A56">Gratuit</span></div>
+          <div class="oc-desc">Programme sur-mesure, bilan forme initial, accès illimité aux séances.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#dcfce7;color:#166534">SB</div><div class="oc-av" style="background:#dbeafe;color:#1e40af">ML</div></div>
+          <div class="oc-social-txt"><strong>14 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Antonin Lemaire','1er mois coaching offert','Bonjour ! Je veux activer le coaching avec Antonin Lemaire.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>8€</strong> par client apporté à Antonin</div></div>
+      </div>
+
+      <div class="offer-card" data-sphere="sante">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#00C896,#00A070)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#a7f3d0,#6ee7b7)">🧘</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-d);margin-bottom:3px">🌿 Santé · Bien-être</div>
+            <div class="oc-pro-name">Dr Sophie Blanc</div>
+            <div class="oc-pro-role">Ostéopathe · Bayonne · réseau Popey</div>
+            <div class="oc-avail">✓ 8 places restantes ce mois</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Séance ostéo offerte</div>
+          <div class="oc-price-row"><span class="oc-old">65€</span><span class="oc-new" style="color:#007A56">Gratuit</span></div>
+          <div class="oc-desc">Première séance 45 min offerte. Consultation complète, bilan postural inclus.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#dcfce7;color:#166534">AL</div><div class="oc-av" style="background:#fce7f3;color:#9d174d">PD</div></div>
+          <div class="oc-social-txt"><strong>22 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Dr Sophie Blanc','Séance ostéo offerte','Bonjour ! Je veux la séance ostéo avec Dr Sophie Blanc.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>8€ fixe</strong> par consultation générée</div></div>
+      </div>
+
+      <!-- ═══ HABITAT ═══ -->
+      <div class="sphere-header" data-sphere="habitat">
+        <span class="sphere-icon">🏠</span>
+        <span class="sphere-name">Habitat · Travaux</span>
+        <span class="sphere-count">2</span>
+      </div>
+
+      <div class="offer-card" data-sphere="habitat">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#fef3c7,#fde68a)">🔧</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B45309;margin-bottom:3px">🏠 Habitat · Travaux</div>
+            <div class="oc-pro-name">Frédéric Lacourt</div>
+            <div class="oc-pro-role">Plombier chauffagiste · Dax · réseau Popey</div>
+            <div class="oc-avail">✓ Disponible sous 48h</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Diagnostic chaudière offert</div>
+          <div class="oc-price-row"><span class="oc-old">120€</span><span class="oc-new" style="color:#B45309">Offert</span></div>
+          <div class="oc-desc">Bilan complet de votre installation. Rapport écrit + devis si intervention nécessaire.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#fef3c7;color:#78350f">HM</div><div class="oc-av" style="background:#dbeafe;color:#1e40af">LB</div></div>
+          <div class="oc-social-txt"><strong>17 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Frédéric Lacourt','Diagnostic chaudière offert','Bonjour ! Je veux le diagnostic chaudière avec Frédéric Lacourt.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>12€ fixe</strong> par chantier déclenché</div></div>
+      </div>
+
+      <div class="offer-card" data-sphere="habitat">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#F59E0B,#D97706)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#fef9c3,#fef08a)">🏠</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B45309;margin-bottom:3px">🏠 Habitat · Immobilier</div>
+            <div class="oc-pro-name">Marc Fontaine</div>
+            <div class="oc-pro-role">Agent immobilier · Dax · réseau Popey</div>
+            <div class="oc-avail">✓ Disponible cette semaine</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">−500€ sur honoraires agence</div>
+          <div class="oc-price-row"><span class="oc-old">Plein tarif</span><span class="oc-new" style="color:#B45309">−500€</span></div>
+          <div class="oc-desc">Déduits sur vos honoraires pour toute transaction signée avant le 31 mai.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#fef3c7;color:#78350f">FR</div></div>
+          <div class="oc-social-txt"><strong>9 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★☆</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Marc Fontaine','Remise 500€ honoraires','Bonjour ! Je veux la remise honoraires avec Marc Fontaine.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>5% de la commission agence</strong> sur chaque vente</div></div>
+      </div>
+
+      <!-- ═══ DIGITAL ═══ -->
+      <div class="sphere-header" data-sphere="digital">
+        <span class="sphere-icon">💻</span>
+        <span class="sphere-name">Digital · Business</span>
+        <span class="sphere-count">1</span>
+      </div>
+
+      <div class="offer-card" data-sphere="digital">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#4FC3F7,#0284C7)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#dbeafe,#93c5fd)">💻</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0284C7;margin-bottom:3px">💻 Digital · Web</div>
+            <div class="oc-pro-name">Lucas Bernard</div>
+            <div class="oc-pro-role">Développeur web · Bayonne · réseau Popey</div>
+            <div class="oc-avail">✓ 4 places ce mois</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">−15% + 3 mois maintenance offerts</div>
+          <div class="oc-price-row"><span class="oc-old">Dès 1 500€</span><span class="oc-new" style="color:#0284C7">−15%</span></div>
+          <div class="oc-desc">Site vitrine ou e-commerce. Remise + maintenance 3 mois incluse.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#dbeafe;color:#1e40af">AC</div></div>
+          <div class="oc-social-txt"><strong>6 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Lucas Bernard','-15% web','Bonjour ! Je veux le privilège web avec Lucas Bernard.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>6% du devis signé</strong></div></div>
+      </div>
+
+      <!-- ═══ MARIAGE ═══ -->
+      <div class="sphere-header" data-sphere="mariage">
+        <span class="sphere-icon">💒</span>
+        <span class="sphere-name">Mariage · Événementiel</span>
+        <span class="sphere-count">1</span>
+      </div>
+
+      <div class="offer-card" data-sphere="mariage">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#F48FB1,#D4537E)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8)">💒</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9D174D;margin-bottom:3px">💒 Mariage</div>
+            <div class="oc-pro-name">Émilie Rousseau</div>
+            <div class="oc-pro-role">Wedding planner · Pau · réseau Popey</div>
+            <div class="oc-avail">✓ Pour mariages 2026</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Consultation mariage offerte</div>
+          <div class="oc-price-row"><span class="oc-old">180€</span><span class="oc-new" style="color:#9D174D">Offerte</span></div>
+          <div class="oc-desc">Séance 2h pour définir vision, budget et planning. Sans engagement.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#fce7f3;color:#9d174d">SV</div></div>
+          <div class="oc-social-txt"><strong>11 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Émilie Rousseau','Consultation mariage offerte','Bonjour ! Je veux la consultation mariage avec Émilie Rousseau.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>8% du contrat mariage</strong></div></div>
+      </div>
+
+      <!-- ═══ FINANCE ═══ -->
+      <div class="sphere-header" data-sphere="finance">
+        <span class="sphere-icon">⚖️</span>
+        <span class="sphere-name">Finance · Juridique</span>
+        <span class="sphere-count">2</span>
+      </div>
+
+      <div class="offer-card" data-sphere="finance">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#534AB7)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">⚖️</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B21B6;margin-bottom:3px">⚖️ Finance · Juridique</div>
+            <div class="oc-pro-name">Thomas Laurent</div>
+            <div class="oc-pro-role">Avocat d'affaires · Bayonne · réseau Popey</div>
+            <div class="oc-avail">✓ 5 créneaux restants</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Consultation juridique offerte</div>
+          <div class="oc-price-row"><span class="oc-old">150€</span><span class="oc-new" style="color:#5B21B6">Gratuit</span></div>
+          <div class="oc-desc">45 min pour analyser votre situation juridique. Tous domaines.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#ede9fe;color:#5b21b6">MD</div></div>
+          <div class="oc-social-txt"><strong>7 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Thomas Laurent','Consultation juridique','Bonjour ! Je veux la consultation juridique avec Thomas Laurent.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>12€ fixe</strong> par consultation générée</div></div>
+      </div>
+
+      <div class="offer-card" data-sphere="finance">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#9B8FFF,#534AB7)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#ddd6fe,#c4b5fd)">💰</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B21B6;margin-bottom:3px">⚖️ Finance · Patrimoine</div>
+            <div class="oc-pro-name">Isabelle Morin</div>
+            <div class="oc-pro-role">Conseillère Patrimoniale · Bayonne · réseau Popey</div>
+            <div class="oc-avail">✓ 3 bilans disponibles</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Bilan patrimonial offert</div>
+          <div class="oc-price-row"><span class="oc-old">350€</span><span class="oc-new" style="color:#5B21B6">Offert</span></div>
+          <div class="oc-desc">Analyse patrimoniale, fiscale et successorale. Recommandations personnalisées.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#fce7f3;color:#9d174d">JL</div></div>
+          <div class="oc-social-txt"><strong>5 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Isabelle Morin','Bilan patrimonial','Bonjour ! Je veux le bilan patrimonial avec Isabelle Morin.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>6% des honoraires</strong> sur contrat signé</div></div>
+      </div>
+
+      <!-- ═══ ARTISANS ═══ -->
+      <div class="sphere-header" data-sphere="artisans">
+        <span class="sphere-icon">✨</span>
+        <span class="sphere-name">Créateurs · Artisans</span>
+        <span class="sphere-count">1</span>
+      </div>
+
+      <div class="offer-card" data-sphere="artisans">
+        <div class="oc-stripe" style="background:linear-gradient(90deg,#E8694A,#C04828)"></div>
+        <div class="oc-top">
+          <div class="oc-avatar" style="background:linear-gradient(135deg,#fed7aa,#fdba74)">🏺</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#C04828;margin-bottom:3px">✨ Créateurs</div>
+            <div class="oc-pro-name">Léa Dumont</div>
+            <div class="oc-pro-role">Potière · Céramiste · Dax · réseau Popey</div>
+            <div class="oc-avail">✓ Week-ends de mai</div>
+          </div>
+        </div>
+        <div class="oc-offer">
+          <div class="oc-priv-tag">✦ Privilège exclusif via Jean Roth</div>
+          <div class="oc-title">Atelier céramique découverte offert</div>
+          <div class="oc-price-row"><span class="oc-old">65€</span><span class="oc-new" style="color:#C04828">Offert</span></div>
+          <div class="oc-desc">Séance 2h30 en petit groupe (4 pers. max). Matériel fourni. Création à emporter.</div>
+        </div>
+        <div class="oc-social">
+          <div class="oc-avs"><div class="oc-av" style="background:#fce7f3;color:#9d174d">NB</div></div>
+          <div class="oc-social-txt"><strong>19 personnes</strong> ont activé</div>
+          <div class="oc-stars">★★★★★</div>
+        </div>
+        <div class="oc-cta-area">
+          <button class="oc-btn" onclick="openWA('Léa Dumont','Atelier céramique','Bonjour ! Je veux l atelier céramique avec Léa Dumont.')">💬 Activer via WhatsApp</button>
+          <div class="oc-note">Message pré-rempli · 1 tap · Jean Roth notifié</div>
+        </div>
+        <div class="oc-retrib"><div class="oc-retrib-lbl">💼 PARTAGEZ · GAGNEZ</div><div class="oc-retrib-txt">Rétribution : <strong>10€ fixe</strong> par atelier réservé</div></div>
+      </div>
+
+    
+    </div>
+
+    <!-- Sponsor footer -->
+    <div style="padding:0 24px 20px">
+      <div style="background:linear-gradient(135deg,#0B1C3A,#0A2040);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:12px;border:1px solid rgba(201,168,76,.2);position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,#E2BC65,#C9A84C,transparent)"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(201,168,76,.3);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:8px;font-weight:800;color:#E8D080;text-align:center;line-height:1.3;letter-spacing:.05em">CA<br>LANDES</div></div>
+          <div><div style="font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.75);margin-bottom:2px">⬡ Partenaire officiel · Mai 2026</div><div style="font-size:14px;font-weight:700;color:#fff">Crédit Agricole Landes</div><div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:1px">La banque qui agit pour les Landes</div></div>
+        </div>
+        <div style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);border-radius:100px;padding:5px 14px;font-size:9px;font-weight:700;color:#C9A84C;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;flex-shrink:0">Exclusif</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+</div><!-- /shell -->
+
+<!-- Sticky bar -->
+<div class="sticky-bottom" id="stickyBar">
+  <div class="sb-text">Partagez ce catalogue · Touchez <strong>20% des honoraires Popey</strong> sur chaque deal</div>
+  <button class="sb-btn" onclick="openApporteurModal()">Devenir apporteur →</button>
+</div>
+
+<!-- WA Modal -->
+<div class="modal-overlay" id="waOverlay" onclick="if(event.target===this)closeWA()">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div style="font-size:32px;text-align:center;margin-bottom:10px">💬</div>
+    <div style="font-family:var(--fd);font-size:19px;font-weight:900;text-align:center;color:var(--ink);margin-bottom:4px" id="waTitle">Activer ce privilège</div>
+    <div style="font-size:11px;color:rgba(0,0,0,.4);text-align:center;margin-bottom:14px">Via Jean-Philippe Roth · Réseau Popey</div>
+    <div style="background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1px solid rgba(200,168,75,.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:rgba(0,0,0,.6);line-height:1.5" id="waMsg"></div>
+    <button id="waBtn" style="width:100%;background:#25D366;border:none;border-radius:12px;padding:14px;font-family:var(--fd);font-size:16px;font-weight:800;color:#fff;cursor:pointer;margin-bottom:8px;transition:background .2s" onclick="confirmWA()">💬 Ouvrir WhatsApp →</button>
+    <button style="width:100%;background:none;border:none;padding:10px;font-size:13px;font-weight:600;color:rgba(0,0,0,.35);cursor:pointer" onclick="closeWA()">Annuler</button>
+  </div>
+</div>
+
+<!-- Apporteur Modal -->
+<div class="modal-overlay" id="apporteurOverlay" onclick="if(event.target===this)closeApporteur()">
+  <div class="ap-modal-box">
+    <div class="ap-hero-m">
+      <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(0,196,140,.15),transparent 70%)"></div>
+      <div class="ap-hero-tag">💸 Opportunité · Réseau Popey</div>
+      <div class="ap-hero-title">1 tap "Partager".<br>Jusqu'à <em>250€/mois</em> en poche.</div>
+      <div class="ap-hero-sub">Votre répertoire WhatsApp est une mine d'or. Partagez ce catalogue et touchez 20% des honoraires Popey sur chaque deal.</div>
+    </div>
+    <div class="ap-body">
+      <div class="ap-steps-row">
+        <div class="ap-step-m"><div class="ap-step-icon">📲</div><div class="ap-step-num-m">1</div><div class="ap-step-lbl">Partagez</div><div class="ap-step-d">1 tap WhatsApp</div></div>
+        <div class="ap-step-sep">→</div>
+        <div class="ap-step-m"><div class="ap-step-icon">🛍️</div><div class="ap-step-num-m">2</div><div class="ap-step-lbl">Ils activent</div><div class="ap-step-d">Vos proches cliquent</div></div>
+        <div class="ap-step-sep">→</div>
+        <div class="ap-step-m"><div class="ap-step-icon">💰</div><div class="ap-step-num-m">3</div><div class="ap-step-lbl">Encaissez</div><div class="ap-step-d">20% versés le 1er</div></div>
+      </div>
+      <div class="ap-scenarios-m">
+        <div class="ap-scenarios-head"><div class="ap-scenarios-title">🧮 Simulation de gains</div><div class="ap-scenarios-sub">Basée sur 300 contacts WhatsApp</div></div>
+        <div class="ap-scenarios-body">
+          <div class="ap-scen-row"><div class="ap-scen-lbl">Prudent · 2 deals</div><div class="ap-scen-val">30€<span>/mois</span></div><div class="ap-scen-bar-wrap"><div class="ap-scen-fill" style="width:12%;background:#6EE7B7"></div></div></div>
+          <div class="ap-scen-row"><div class="ap-scen-lbl">Moyen · 5 deals</div><div class="ap-scen-val">96€<span>/mois</span></div><div class="ap-scen-bar-wrap"><div class="ap-scen-fill" style="width:40%;background:#34D399"></div></div></div>
+          <div class="ap-scen-row"><div class="ap-scen-lbl">Ambitieux · 10 deals</div><div class="ap-scen-val">180€<span>/mois</span></div><div class="ap-scen-bar-wrap"><div class="ap-scen-fill" style="width:72%;background:linear-gradient(90deg,#00C48C,#F5A623)"></div></div></div>
+        </div>
+        <div class="ap-punchline">20% de ce que Popey encaisse · de <strong>6€ à 50€</strong> selon le secteur · Versé le 1er du mois</div>
+      </div>
+      <div class="ap-form-m">
+        <div class="ap-form-title">Créez votre lien en 30 secondes</div>
+        <div class="ap-fields-row">
+          <div><label class="ap-lbl">Prénom</label><input class="ap-inp" type="text" placeholder="Sophie" id="apporteurPrenom"></div>
+          <div><label class="ap-lbl">WhatsApp</label><input class="ap-inp" type="tel" placeholder="+33 6 XX XX XX XX" id="apporteurTel"></div>
+        </div>
+        <button class="ap-submit-btn" onclick="createApporteurLink()">💬 Créer mon lien apporteur →</button>
+        <div class="ap-fine">Lien unique · Deals tracés · Commission le 1er · Sans engagement</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── LAYOUT ──
+function applyLayout() {
+  var shell = document.getElementById('main-shell');
+  var sidebar = document.getElementById('main-sidebar');
+  var content = document.getElementById('main-content');
+  var grid = document.getElementById('offers-grid');
+  var sticky = document.getElementById('stickyBar');
+  if (!shell) return;
+
+  if (window.innerWidth >= 768) {
+    document.body.style.cssText = 'margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden;background:#D8D5CE';
+    shell.style.cssText = 'display:grid;grid-template-columns:360px 1fr;max-width:1320px;margin:0 auto;min-height:100vh;width:100%;box-shadow:0 0 80px rgba(0,0,0,.2)';
+    if(sidebar) sidebar.style.cssText = 'position:sticky;top:0;height:100vh;overflow-y:auto;background:#08090C;border-right:1px solid rgba(255,255,255,.08);scrollbar-width:none';
+    if(content) content.style.cssText = 'background:#F5F2EB;min-height:100vh;padding-bottom:120px';
+    if(grid) {
+      grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px';
+      grid.querySelectorAll('.sphere-divider').forEach(function(d){ d.style.gridColumn='1/-1'; d.style.padding='14px 0 8px'; });
+      grid.querySelectorAll('.offer-card').forEach(function(d){ d.style.marginBottom='0'; d.style.opacity='1'; d.style.transform='none'; });
+    }
+    if(sticky) sticky.style.cssText = 'position:fixed;bottom:0;left:360px;right:0;transform:none;max-width:none;padding:12px 24px;background:rgba(8,10,13,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);z-index:200;display:flex;align-items:center;justify-content:space-between;gap:16px';
+  } else {
+    document.body.style.cssText = 'margin:0 auto;max-width:480px;width:100%;overflow-x:hidden;background:#F5F2EB';
+    shell.style.cssText = 'display:block;width:100%';
+    if(sidebar) sidebar.style.cssText = 'display:block;background:#08090C';
+    if(content) content.style.cssText = 'display:block;background:#F5F2EB;padding-bottom:80px';
+    if(grid) {
+      grid.style.cssText = 'display:block;padding:0 12px';
+      grid.querySelectorAll('.sphere-divider').forEach(function(d){ d.style.gridColumn=''; d.style.padding='14px 0 8px'; });
+      grid.querySelectorAll('.offer-card').forEach(function(d){ d.style.marginBottom='14px'; d.style.opacity='1'; d.style.transform='none'; });
+    }
+    if(sticky) sticky.style.cssText = 'position:fixed;bottom:0;left:0;right:0;transform:none;max-width:100%;padding:12px 16px;background:rgba(8,10,13,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);z-index:200;display:flex;align-items:center;justify-content:center;gap:16px';
+  }
+}
+applyLayout();
+window.addEventListener('resize', applyLayout);
+
+// ── FILTER ──
+function filterOffers(sphere, btn) {
+  // Also hide sphere headers
+  document.querySelectorAll('.sphere-header').forEach(function(h){
+    h.style.display = (sphere==='all'||h.dataset.sphere===sphere)?'':'none';
+  });
+  document.querySelectorAll('.f-chip').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.offer-card').forEach(function(c){ c.style.display = (sphere==='all'||c.dataset.sphere===sphere)?'':'none'; });
+  document.querySelectorAll('.sphere-divider').forEach(function(d){ 
+    var s = d.dataset.sphere;
+    d.style.display = (sphere==='all'||sphere===s)?'':'none';
+  });
+  // Re-apply grid layout after filter
+  setTimeout(applyLayout, 10);
+}
+
+// ── WA ──
+var currentWA = {};
+function openWA(pro, offer, msg) {
+  currentWA = {pro:pro, offer:offer, msg:msg};
+  document.getElementById('waTitle').textContent = 'Activer : ' + offer;
+  document.getElementById('waMeta').textContent = 'Via Jean-Philippe Roth · Réseau Popey';
+  document.getElementById('waMsg').innerHTML = '<strong>' + pro + '</strong> — ' + offer;
+  document.getElementById('waOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeWA(e) { if(!e||e.target===document.getElementById('waOverlay')){ document.getElementById('waOverlay').classList.remove('open'); document.body.style.overflow=''; } }
+function confirmWA() {
+  var msg = encodeURIComponent(currentWA.msg + '\nMon prénom : [PRÉNOM] · Ma ville : [VILLE]');
+  window.open('https://wa.me/33768233347?text=' + msg, '_blank');
+  closeWA();
+}
+
+// ── APPORTEUR ──
+function openApporteurModal() { document.getElementById('apporteurOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeApporteur(e) { if(!e||e.target===document.getElementById('apporteurOverlay')){ document.getElementById('apporteurOverlay').classList.remove('open'); document.body.style.overflow=''; } }
+function createApporteurLink() {
+  var p = document.getElementById('apporteurPrenom').value.trim();
+  var t = document.getElementById('apporteurTel').value.trim();
+  if(!p||!t) return;
+  var msg = encodeURIComponent('Bonjour Jean-Philippe ! Je veux créer mon lien apporteur Popey.\nMon prénom : ' + p + '\nMon WhatsApp : ' + t);
+  window.open('https://wa.me/33768233347?text=' + msg, '_blank');
+  closeApporteur();
+}
+</script>
+
+</body>
+</html>
