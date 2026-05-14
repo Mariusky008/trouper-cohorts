@@ -10,6 +10,7 @@ from .config import env
 from .quality_gate import run_quality_gate
 from .scraper import scrape_website
 from .site_generator import generate_site
+from .slug import slugify
 from .supabase_uploader import upload_directory, upsert_vitrine_site
 
 
@@ -24,7 +25,9 @@ def _setup_logging():
   )
 
 
-async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_rating: float, dry_run: bool) -> None:
+async def run_pipeline(
+  *, ville: str, categorie: str, queries: list[str], batch_size: int, max_rating: float, dry_run: bool
+) -> None:
   _setup_logging()
 
   output_root = Path(__file__).resolve().parents[1] / "output"
@@ -34,20 +37,67 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
   anthropic_api_key = env("ANTHROPIC_API_KEY")
   bucket = env("SUPABASE_VITRINES_BUCKET", "vitrines")
 
-  businesses = await search_businesses(
-    query=categorie,
-    location=ville,
-    token=token,
-    max_rating=max_rating,
-    max_results=batch_size,
-  )
+  queries_raw = env("QUERIES")
+  effective_queries = [q.strip() for q in queries if str(q or "").strip()]
+  if not effective_queries and queries_raw:
+    effective_queries = [q.strip() for q in queries_raw.split(",") if q.strip()]
+  if not effective_queries:
+    effective_queries = [categorie]
+
+  businesses: list[dict[str, Any]] = []
+  seen_websites: set[str] = set()
+  seen_place_ids: set[str] = set()
+
+  for q in effective_queries:
+    remaining = batch_size - len(businesses)
+    if remaining <= 0:
+      break
+
+    found = await search_businesses(
+      query=q,
+      location=ville,
+      token=token,
+      max_rating=max_rating,
+      max_results=remaining,
+    )
+
+    for biz in found:
+      website = str(biz.get("website") or "").strip()
+      place_id = str(biz.get("place_id") or "").strip()
+      if place_id and place_id in seen_place_ids:
+        continue
+      if website and website in seen_websites:
+        continue
+      if website:
+        seen_websites.add(website)
+      if place_id:
+        seen_place_ids.add(place_id)
+      businesses.append(biz)
+      if len(businesses) >= batch_size:
+        break
 
   if not businesses:
     log.info("Aucune entreprise trouvée.")
     return
 
+  def unique_slug(base: str, biz: dict[str, Any]) -> str:
+    base_slug = base or "vitrine"
+    suffix = ""
+    place_id = str(biz.get("place_id") or "").strip()
+    website = str(biz.get("website") or "").strip()
+    if place_id:
+      suffix = place_id[-6:].lower()
+    elif website:
+      suffix = slugify(website.replace("https://", "").replace("http://", ""))[:6]
+
+    candidate = base_slug
+    if (output_root / candidate).exists() and suffix:
+      candidate = f"{base_slug}-{suffix}"
+    return candidate
+
   for biz in businesses:
-    slug = str(biz.get("slug") or "").strip()
+    base_slug = str(biz.get("slug") or "").strip()
+    slug = unique_slug(base_slug, biz)
     site_dir = output_root / slug
     site_dir.mkdir(parents=True, exist_ok=True)
 
@@ -70,7 +120,7 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
           slug=slug,
           business_name=str(biz.get("name") or ""),
           city=str(ville or ""),
-          category=str(categorie or ""),
+          category=str(biz.get("search_query") or categorie or ""),
           source_website=str(biz.get("website") or ""),
           status="error",
           storage_prefix=slug,
@@ -85,7 +135,7 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
           slug=slug,
           business_name=str(biz.get("name") or ""),
           city=str(ville or ""),
-          category=str(categorie or ""),
+          category=str(biz.get("search_query") or categorie or ""),
           source_website=str(biz.get("website") or ""),
           status="generated",
           storage_prefix=slug,
@@ -100,7 +150,7 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
         slug=slug,
         business_name=str(biz.get("name") or ""),
         city=str(ville or ""),
-        category=str(categorie or ""),
+        category=str(biz.get("search_query") or categorie or ""),
         source_website=str(biz.get("website") or ""),
         status="uploaded",
         storage_prefix=slug,
@@ -113,7 +163,7 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
         slug=slug,
         business_name=str(biz.get("name") or ""),
         city=str(ville or ""),
-        category=str(categorie or ""),
+        category=str(biz.get("search_query") or categorie or ""),
         source_website=str(biz.get("website") or ""),
         status="error",
         storage_prefix=slug,

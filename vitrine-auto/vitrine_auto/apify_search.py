@@ -104,6 +104,8 @@ async def search_businesses(
       {
         "slug": slugify(name),
         "name": name,
+        "search_query": query,
+        "place_id": str(item.get("placeId") or item.get("place_id") or "").strip(),
         "website": website,
         "phone": normalized_phone,
         "email": str(item.get("email") or "").strip(),
@@ -137,7 +139,8 @@ def _build_actor_input(*, query: str, location: str | None, max_results: int) ->
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
   language = env("APIFY_LANGUAGE", "en")
   if input_mode == "datapilot":
-    actor_limit = max(1, min(30, max_results))
+    per_query_limit = int(env("APIFY_PER_QUERY_LIMIT", "10") or "10")
+    actor_limit = max(1, min(30, per_query_limit))
     use_proxy = _as_bool(env("APIFY_USE_PROXY", "false"))
     proxy_groups_raw = env("APIFY_PROXY_GROUPS", "RESIDENTIAL")
     proxy_groups = [g.strip() for g in proxy_groups_raw.split(",") if g.strip()]
