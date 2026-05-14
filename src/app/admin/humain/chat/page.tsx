@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type ChatThread = {
   phone: string;
@@ -66,6 +67,7 @@ function Spinner({ className }: { className?: string }) {
 }
 
 export default function AdminHumainChatPage() {
+  const searchParams = useSearchParams();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -169,6 +171,7 @@ export default function AdminHumainChatPage() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || "Impossible de charger les conversations.");
       }
+      const preferredPhone = String(searchParams.get("phone") || "").trim();
       setThreads((currentThreads) => {
         const previousByPhone = new Map(currentThreads.map((thread) => [thread.phone, thread]));
         const nextThreads = payload.threads || [];
@@ -195,13 +198,13 @@ export default function AdminHumainChatPage() {
         }
         return nextThreads;
       });
-      setSelectedPhone((current) => current || payload.threads?.[0]?.phone || "");
+      setSelectedPhone((current) => current || preferredPhone || payload.threads?.[0]?.phone || "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Impossible de charger les conversations.");
     } finally {
       setLoadingThreads(false);
     }
-  }, [playNotificationSound]);
+  }, [playNotificationSound, searchParams]);
 
   const loadMessages = useCallback(async (phone: string) => {
     if (!phone) return;

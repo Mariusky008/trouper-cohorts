@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ApifySearchCommand } from "./_components/apify-search-command";
 import { ManualVitrineCreateForm } from "./_components/manual-vitrine-create-form";
 import { VitrinesDrawerDashboard, type VitrineRow } from "./_components/vitrines-drawer-dashboard";
 
@@ -46,6 +47,8 @@ export default async function AdminHumainVitrinesPage() {
           </div>
         </div>
       </div>
+
+      <ApifySearchCommand />
 
       <ManualVitrineCreateForm />
 

@@ -23,6 +23,9 @@ export default async function AdminLayout({
             <a href="/admin/humain" className="hover:underline text-emerald-700">
               100% Humain
             </a>
+            <a href="/admin/humain/vitrines" className="hover:underline">
+              Vitrines
+            </a>
             <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
             </a>

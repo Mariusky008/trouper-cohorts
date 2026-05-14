@@ -354,6 +354,14 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                     >
                       Copier slug
                     </button>
+                    {normalize(selected.whatsapp_phone_e164) ? (
+                      <a
+                        href={`/admin/humain/chat?phone=${encodeURIComponent(normalize(selected.whatsapp_phone_e164))}`}
+                        className="rounded-full border bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100"
+                      >
+                        Ouvrir chat
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
