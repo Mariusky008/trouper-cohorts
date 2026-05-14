@@ -23,6 +23,7 @@ Contraintes strictes :
 6) Inclure au minimum : Hero, Services (déduits du texte si possible), Réalisations/Galerie (si assets), Contact, FAQ courte.
 7) Ajouter une section "Mentions" (basique) avec identité de l'entreprise si dispo, sinon un texte neutre.
 8) Bouton CTA principal : "Demander un devis" (ou "Nous contacter") avec lien tel: ou mailto: si dispo. Si téléphone, ajouter un bouton WhatsApp vers https://wa.me/{phone_e164_digits_only}.
+8) Bouton CTA principal : "Demander un devis" (ou "Nous contacter") avec lien tel: ou mailto: si dispo. Si téléphone, ajouter un bouton WhatsApp vers https://wa.me/{{phone_e164_digits_only}}.
 
 DONNÉES :
 {data}
@@ -114,4 +115,3 @@ async def generate_site(
       raise ValueError("Anthropic: HTML invalide")
 
   return text
-
