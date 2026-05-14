@@ -68,12 +68,8 @@ export async function POST(request: Request) {
   if (!phoneE164) return NextResponse.json({ success: false, error: "WhatsApp manquant sur la vitrine." }, { status: 400 });
   if (!publicUrl) return NextResponse.json({ success: false, error: "URL publique manquante." }, { status: 400 });
 
-  const businessName = String(row?.business_name || "").trim() || "Entreprise";
-  const city = String(row?.city || "").trim() || "France";
-  const category = String(row?.category || "").trim();
-
   const nowIso = new Date().toISOString();
-  const vars = normalizeVars([businessName, city, category, publicUrl]);
+  const vars = normalizeVars(["Bonjour", publicUrl]);
 
   const { error: queueError } = await supabaseAdmin.from("human_whatsapp_outbound_queue").insert({
     owner_member_id: admin.ownerMemberId,
@@ -87,9 +83,7 @@ export async function POST(request: Request) {
       provider: "twilio_vitrine",
       vitrine_slug: slug,
       public_url: publicUrl,
-      business_name: businessName,
-      city,
-      category,
+      greeting: "Bonjour",
       content_sid: contentSid,
     },
     status: "scheduled",
