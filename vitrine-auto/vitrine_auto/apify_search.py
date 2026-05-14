@@ -19,6 +19,35 @@ def _as_float(value: Any) -> float | None:
     return None
 
 
+def _normalize_fr_mobile_to_e164(value: str) -> str | None:
+  raw = str(value or "").strip()
+  if not raw:
+    return None
+
+  cleaned = "".join(ch for ch in raw if ch.isdigit() or ch == "+")
+  if cleaned.startswith("00"):
+    cleaned = "+" + cleaned[2:]
+
+  if cleaned.startswith("+33"):
+    rest = "".join(ch for ch in cleaned[3:] if ch.isdigit())
+    if rest.startswith("0"):
+      rest = rest[1:]
+    if len(rest) != 9:
+      return None
+    if rest[0] not in ("6", "7"):
+      return None
+    return "+33" + rest
+
+  digits = "".join(ch for ch in cleaned if ch.isdigit())
+  if digits.startswith("0"):
+    digits = digits[1:]
+  if len(digits) != 9:
+    return None
+  if digits[0] not in ("6", "7"):
+    return None
+  return "+33" + digits
+
+
 async def search_businesses(
   *, query: str, location: str | None, token: str, max_rating: float, max_results: int
 ) -> list[dict[str, Any]]:
@@ -67,13 +96,16 @@ async def search_businesses(
       or item.get("internationalPhoneNumber")
       or ""
     ).strip()
+    normalized_phone = _normalize_fr_mobile_to_e164(phone)
+    if not normalized_phone:
+      continue
 
     results.append(
       {
         "slug": slugify(name),
         "name": name,
         "website": website,
-        "phone": phone,
+        "phone": normalized_phone,
         "email": str(item.get("email") or "").strip(),
         "address": str(item.get("address") or "").strip(),
         "rating": rating,
