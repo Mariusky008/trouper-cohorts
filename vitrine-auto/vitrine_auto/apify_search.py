@@ -19,7 +19,9 @@ def _as_float(value: Any) -> float | None:
     return None
 
 
-async def search_businesses(*, query: str, token: str, max_rating: float, max_results: int) -> list[dict[str, Any]]:
+async def search_businesses(
+  *, query: str, location: str | None, token: str, max_rating: float, max_results: int
+) -> list[dict[str, Any]]:
   if not token:
     return [
       {
@@ -39,9 +41,11 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
   run_mode = env("APIFY_RUN_MODE", "async")
   actor_max_results = max_results * 3
   if run_mode == "sync_dataset":
-    items = await _run_sync_get_dataset_items(token=token, query=query, max_results=actor_max_results)
+    items = await _run_sync_get_dataset_items(
+      token=token, query=query, location=location, max_results=actor_max_results
+    )
   else:
-    run_id = await _start_run(token=token, query=query, max_results=actor_max_results)
+    run_id = await _start_run(token=token, query=query, location=location, max_results=actor_max_results)
     timeout_s = int(env("APIFY_TIMEOUT_S", "900") or "900")
     poll_interval_s = int(env("APIFY_POLL_INTERVAL_S", "8") or "8")
     items = await _wait_for_results(token=token, run_id=run_id, timeout_s=timeout_s, poll_interval_s=poll_interval_s)
@@ -93,13 +97,30 @@ def _normalize_actor_id(raw_actor_id: str) -> str:
   return actor_id
 
 
-def _build_actor_input(*, query: str, max_results: int) -> dict[str, Any]:
+def _as_bool(value: str) -> bool:
+  return str(value or "").strip().lower() in ("1", "true", "yes", "y", "on")
+
+
+def _build_actor_input(*, query: str, location: str | None, max_results: int) -> dict[str, Any]:
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
-  actor_max_results = max(50, max_results)
   language = env("APIFY_LANGUAGE", "en")
+  if input_mode == "datapilot":
+    actor_limit = max(1, min(30, max_results))
+    use_proxy = _as_bool(env("APIFY_USE_PROXY", "false"))
+    proxy_groups_raw = env("APIFY_PROXY_GROUPS", "RESIDENTIAL")
+    proxy_groups = [g.strip() for g in proxy_groups_raw.split(",") if g.strip()]
+    return {
+      "query": query,
+      "location": (location or "France").strip(),
+      "limit": actor_limit,
+      "useApifyProxy": use_proxy,
+      "apifyProxyGroups": proxy_groups if use_proxy else [],
+    }
+
+  actor_max_results = max(50, max_results)
   if input_mode == "legacy":
     return {
-      "searchStringsArray": [query],
+      "searchStringsArray": [f"{query} {location}".strip() if location else query],
       "maxCrawledPlacesPerSearch": actor_max_results,
       "language": language,
       "countryCode": "FR",
@@ -107,16 +128,18 @@ def _build_actor_input(*, query: str, max_results: int) -> dict[str, Any]:
       "additionalInfo": True,
     }
   return {
-    "searchQueries": [query],
+    "searchQueries": [f"{query} {location}".strip() if location else query],
     "maxResults": actor_max_results,
     "language": language,
   }
 
 
+async def _start_run(*, token: str, query: str, location: str | None, max_results: int) -> str:
+  actor_input = _build_actor_input(query=query, location=location, max_results=max_results)
 
-async def _start_run(*, token: str, query: str, max_results: int) -> str:
-  actor_input = _build_actor_input(query=query, max_results=max_results)
-
+  input_mode = env("APIFY_INPUT_MODE", "searchQueries")
+  default_actor_id = "datapilot/google-maps-scraper" if input_mode == "datapilot" else "futurizerush/google-maps-scraper"
+  actor_id = env("APIFY_ACTOR_ID", default_actor_id)
   actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
   normalized_actor_id = _normalize_actor_id(actor_id)
   actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
@@ -135,14 +158,17 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
       data = await r.json()
       return str(data["data"]["id"])
 
+async def _run_sync_get_dataset_items(
+  *, token: str, query: str, location: str | None, max_results: int
+) -> list[dict[str, Any]]:
+  actor_input = _build_actor_input(query=query, location=location, max_results=max_results)
 
-async def _run_sync_get_dataset_items(*, token: str, query: str, max_results: int) -> list[dict[str, Any]]:
-  actor_input = _build_actor_input(query=query, max_results=max_results)
-
+  input_mode = env("APIFY_INPUT_MODE", "searchQueries")
+  default_actor_id = "datapilot/google-maps-scraper" if input_mode == "datapilot" else "futurizerush/google-maps-scraper"
+  actor_id = env("APIFY_ACTOR_ID", default_actor_id)
   actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
   normalized_actor_id = _normalize_actor_id(actor_id)
   actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
-  url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/run-sync-get-dataset-items"
 
   timeout_s = int(env("APIFY_TIMEOUT_S", "900") or "900")
   headers = {"Authorization": f"Bearer {token}"}

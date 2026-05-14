@@ -35,7 +35,8 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
   bucket = env("SUPABASE_VITRINES_BUCKET", "vitrines")
 
   businesses = await search_businesses(
-    query=f"{categorie} {ville}",
+    query=categorie,
+    location=ville,
     token=token,
     max_rating=max_rating,
     max_results=batch_size,
@@ -120,4 +121,3 @@ async def run_pipeline(*, ville: str, categorie: str, batch_size: int, max_ratin
         metadata=meta,
       )
       log.info("Error %s: %s", slug, str(e)[:250])
-
