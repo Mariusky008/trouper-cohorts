@@ -57,6 +57,20 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
   }
 
+  const vitrineHost = String(host || "").split(":")[0].toLowerCase();
+  const isVitrineHost = vitrineHost === "vitrine.popey.academy";
+  const canRewriteVitrinePath =
+    !pathname.startsWith("/vitrine") &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next") &&
+    !/\.[a-z0-9]+$/i.test(pathname);
+
+  if (isVitrineHost && canRewriteVitrinePath) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = pathname === "/" ? "/vitrine" : `/vitrine${pathname}`;
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+  }
+
   const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {
