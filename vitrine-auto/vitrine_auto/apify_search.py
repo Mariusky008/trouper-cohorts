@@ -80,11 +80,12 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
 async def _start_run(*, token: str, query: str, max_results: int) -> str:
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
   actor_max_results = max(50, max_results)
+  language = env("APIFY_LANGUAGE", "en")
   if input_mode == "legacy":
     actor_input = {
       "searchStringsArray": [query],
       "maxCrawledPlacesPerSearch": actor_max_results,
-      "language": "fr",
+      "language": language,
       "countryCode": "FR",
       "includeWebResults": True,
       "additionalInfo": True,
@@ -93,7 +94,7 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
     actor_input = {
       "searchQueries": [query],
       "maxResults": actor_max_results,
-      "language": "fr",
+      "language": language,
     }
 
   actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
