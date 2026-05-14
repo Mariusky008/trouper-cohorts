@@ -36,8 +36,15 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
       }
     ]
 
-  run_id = await _start_run(token=token, query=query, max_results=max_results * 3)
-  items = await _wait_for_results(token=token, run_id=run_id)
+  run_mode = env("APIFY_RUN_MODE", "async")
+  actor_max_results = max_results * 3
+  if run_mode == "sync_dataset":
+    items = await _run_sync_get_dataset_items(token=token, query=query, max_results=actor_max_results)
+  else:
+    run_id = await _start_run(token=token, query=query, max_results=actor_max_results)
+    timeout_s = int(env("APIFY_TIMEOUT_S", "900") or "900")
+    poll_interval_s = int(env("APIFY_POLL_INTERVAL_S", "8") or "8")
+    items = await _wait_for_results(token=token, run_id=run_id, timeout_s=timeout_s, poll_interval_s=poll_interval_s)
 
   results: list[dict[str, Any]] = []
   for item in items:
@@ -77,12 +84,21 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
   return results
 
 
-async def _start_run(*, token: str, query: str, max_results: int) -> str:
+def _normalize_actor_id(raw_actor_id: str) -> str:
+  actor_id = raw_actor_id
+  if "/" in actor_id and "~" not in actor_id:
+    parts = actor_id.split("/")
+    if len(parts) >= 2:
+      actor_id = f"{parts[0]}~{'/'.join(parts[1:])}"
+  return actor_id
+
+
+def _build_actor_input(*, query: str, max_results: int) -> dict[str, Any]:
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
   actor_max_results = max(50, max_results)
   language = env("APIFY_LANGUAGE", "en")
   if input_mode == "legacy":
-    actor_input = {
+    return {
       "searchStringsArray": [query],
       "maxCrawledPlacesPerSearch": actor_max_results,
       "language": language,
@@ -90,20 +106,19 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
       "includeWebResults": True,
       "additionalInfo": True,
     }
-  else:
-    actor_input = {
-      "searchQueries": [query],
-      "maxResults": actor_max_results,
-      "language": language,
-    }
+  return {
+    "searchQueries": [query],
+    "maxResults": actor_max_results,
+    "language": language,
+  }
+
+
+
+async def _start_run(*, token: str, query: str, max_results: int) -> str:
+  actor_input = _build_actor_input(query=query, max_results=max_results)
 
   actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
-  normalized_actor_id = actor_id
-  if "/" in normalized_actor_id and "~" not in normalized_actor_id:
-    parts = normalized_actor_id.split("/")
-    if len(parts) >= 2:
-      normalized_actor_id = f"{parts[0]}~{'/'.join(parts[1:])}"
-
+  normalized_actor_id = _normalize_actor_id(actor_id)
   actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
   url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/runs"
   async with aiohttp.ClientSession() as session:
@@ -121,7 +136,33 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
       return str(data["data"]["id"])
 
 
-async def _wait_for_results(*, token: str, run_id: str, timeout_s: int = 300) -> list[dict[str, Any]]:
+async def _run_sync_get_dataset_items(*, token: str, query: str, max_results: int) -> list[dict[str, Any]]:
+  actor_input = _build_actor_input(query=query, max_results=max_results)
+
+  actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
+  normalized_actor_id = _normalize_actor_id(actor_id)
+  actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
+  url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/run-sync-get-dataset-items"
+
+  timeout_s = int(env("APIFY_TIMEOUT_S", "900") or "900")
+  headers = {"Authorization": f"Bearer {token}"}
+  async with aiohttp.ClientSession(headers=headers) as session:
+    async with session.post(
+      url,
+      json=actor_input,
+      params={"token": token, "timeout": str(timeout_s)},
+      timeout=aiohttp.ClientTimeout(total=timeout_s + 30),
+    ) as r:
+      if r.status != 200:
+        raw = await r.text()
+        raise RuntimeError(f"Apify sync error {r.status}: {raw[:300]}")
+      items = await r.json()
+      return items if isinstance(items, list) else []
+
+
+async def _wait_for_results(
+  *, token: str, run_id: str, timeout_s: int = 900, poll_interval_s: int = 8
+) -> list[dict[str, Any]]:
   status_url = f"https://api.apify.com/v2/actor-runs/{run_id}"
   dataset_url = f"{status_url}/dataset/items"
   headers = {"Authorization": f"Bearer {token}"}
@@ -129,8 +170,8 @@ async def _wait_for_results(*, token: str, run_id: str, timeout_s: int = 300) ->
   elapsed = 0
   async with aiohttp.ClientSession(headers=headers) as session:
     while elapsed < timeout_s:
-      await asyncio.sleep(8)
-      elapsed += 8
+      await asyncio.sleep(poll_interval_s)
+      elapsed += poll_interval_s
       async with session.get(status_url, timeout=aiohttp.ClientTimeout(total=30)) as r:
         data = await r.json()
         status = str(data.get("data", {}).get("status", ""))
