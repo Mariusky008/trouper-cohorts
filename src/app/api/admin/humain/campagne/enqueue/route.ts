@@ -5,12 +5,8 @@ import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-type CampaignProspect = {
-  phoneE164: string;
-  metier: string;
-  fullName?: string | null;
-  requestedMetier?: string | null;
-};
+const QUEUE_MAX_DELAY_MS = 600_000;
+const QUEUE_MAX_DELAY_MINUTES = Math.floor(QUEUE_MAX_DELAY_MS / 60_000);
 
 async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
@@ -52,8 +48,11 @@ export async function POST(request: Request) {
   const city = String(payload?.city || "Dax").trim() || "Dax";
   const audience = Math.max(1000, Math.min(50000, Math.round(Number(payload?.audience || 12500))));
   const greeting = String(payload?.greeting || "Madame, Monsieur").trim() || "Madame, Monsieur";
-  const minDelayMinutes = Math.max(1, Math.min(60, Math.round(Number(payload?.minDelayMinutes || 3))));
-  const maxDelayMinutes = Math.max(minDelayMinutes, Math.min(90, Math.round(Number(payload?.maxDelayMinutes || 8))));
+  const minDelayMinutes = Math.max(1, Math.min(QUEUE_MAX_DELAY_MINUTES, Math.round(Number(payload?.minDelayMinutes || 3))));
+  const maxDelayMinutes = Math.max(
+    minDelayMinutes,
+    Math.min(QUEUE_MAX_DELAY_MINUTES, Math.round(Number(payload?.maxDelayMinutes || 8))),
+  );
   const maxToQueue = Math.max(1, Math.min(120, Math.round(Number(payload?.maxToQueue || 50))));
   const contentSid = String(payload?.contentSid || process.env.TWILIO_WHATSAPP_CONTENT_SID || "").trim();
   if (!contentSid) return NextResponse.json({ success: false, error: "Content SID manquant." }, { status: 400 });
@@ -102,7 +101,8 @@ export async function POST(request: Request) {
   const now = Date.now();
   const queueRows = candidates.map((p) => {
     const stepMinutes = randomInt(minDelayMinutes, maxDelayMinutes);
-    cumulativeDelayMs += stepMinutes * 60_000;
+    const stepDelayMs = Math.min(stepMinutes * 60_000, QUEUE_MAX_DELAY_MS);
+    cumulativeDelayMs += stepDelayMs;
     const notBeforeAt = new Date(now + cumulativeDelayMs).toISOString();
     return {
       owner_member_id: admin.ownerMemberId,
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
       status: "scheduled",
       attempt_count: 0,
       max_attempts: 2,
-      random_delay_ms: cumulativeDelayMs,
+      random_delay_ms: stepDelayMs,
       not_before_at: notBeforeAt,
       updated_at: new Date().toISOString(),
     };

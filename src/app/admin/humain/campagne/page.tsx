@@ -42,6 +42,7 @@ type EnqueueResponse = {
 };
 
 const SCAN_BATCH_SIZE = 10;
+const QUEUE_MAX_DELAY_MINUTES = 10;
 
 const METIERS_CIBLES = [
   "Pisciniste (Entretien ou construction)",
@@ -434,18 +435,31 @@ export default function AdminHumainCampagnePage() {
             <input
               type="number"
               value={minDelayMinutes}
-              onChange={(e) => setMinDelayMinutes(Number(e.target.value))}
+              min={1}
+              max={QUEUE_MAX_DELAY_MINUTES}
+              onChange={(e) => {
+                const next = Math.max(1, Math.min(QUEUE_MAX_DELAY_MINUTES, Number(e.target.value) || 1));
+                setMinDelayMinutes(next);
+                setMaxDelayMinutes((current) => Math.max(next, Math.min(QUEUE_MAX_DELAY_MINUTES, current)));
+              }}
               className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
             />
+            <p className="text-xs text-slate-500">Max 10 min par envoi pour rester compatible avec la queue WhatsApp.</p>
           </label>
           <label className="space-y-1 rounded-xl border bg-slate-50 p-3">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Cadence max (min)</span>
             <input
               type="number"
               value={maxDelayMinutes}
-              onChange={(e) => setMaxDelayMinutes(Number(e.target.value))}
+              min={1}
+              max={QUEUE_MAX_DELAY_MINUTES}
+              onChange={(e) => {
+                const next = Math.max(minDelayMinutes, Math.min(QUEUE_MAX_DELAY_MINUTES, Number(e.target.value) || minDelayMinutes));
+                setMaxDelayMinutes(next);
+              }}
               className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
             />
+            <p className="text-xs text-slate-500">La campagne espace les messages dans cette fourchette, puis les planifie dans la file.</p>
           </label>
           <label className="space-y-1 rounded-xl border bg-slate-50 p-3">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Max à envoyer</span>
