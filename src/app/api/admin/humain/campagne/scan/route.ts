@@ -24,11 +24,11 @@ type ScanMeta = {
 const METIER_SEARCH_ALIASES: Record<string, string[]> = {
   "Pisciniste (Entretien ou construction)": ["pisciniste", "constructeur de piscine", "entretien piscine"],
   "Élagueur": ["élagueur", "elagage", "paysagiste"],
-  "Nettoyage de toiture / Façade": ["nettoyage toiture", "ravalement facade", "nettoyage facade"],
+  "Nettoyage de toiture / Façade": ["demoussage toiture", "nettoyage toiture", "nettoyage facade", "facadier", "ravalement facade"],
   "Architecte d'intérieur / Décorateur": ["architecte d'intérieur", "décorateur intérieur", "décorateur"],
-  "Cuisiniste": ["cuisiniste", "cuisine sur mesure", "concepteur cuisine"],
-  "Menuisier (Portails, terrasses bois)": ["menuisier", "pose de portail", "terrasse bois"],
-  "Storiste / Volets roulants": ["storiste", "volets roulants", "store banne"],
+  "Cuisiniste": ["magasin de cuisine", "cuisine sur mesure", "concepteur cuisine", "cuisiniste"],
+  "Menuisier (Portails, terrasses bois)": ["pose de portail", "portail alu", "terrasse bois", "menuiserie exterieure", "menuisier"],
+  "Storiste / Volets roulants": ["volets roulants", "store banne", "storiste"],
   "Entreprise de nettoyage (Aide au ménage ou grand nettoyage de printemps)": [
     "entreprise de nettoyage",
     "service de ménage",
@@ -264,29 +264,44 @@ function buildPreferredMetierSearchTerms(input: string) {
   return Array.from(ordered).slice(0, 5);
 }
 
-async function runApifySearchWithFallback(input: { city: string; metier: string; limitPerMetier: number }) {
-  const preferredTerms = buildPreferredMetierSearchTerms(input.metier);
-  const primaryTerms = preferredTerms.length > 0 ? [preferredTerms[0]] : [input.metier];
-  const primary = await runApifySearch({ city: input.city, metiers: primaryTerms, limitPerMetier: input.limitPerMetier });
-  if (!primary.error && primary.meta) {
-    primary.meta.searchTerms = primaryTerms;
-  }
-  if (primary.error || primary.prospects.length > 0) return primary;
-
-  const fallbackTerms = preferredTerms.filter((term) => !primaryTerms.includes(term));
-  if (fallbackTerms.length === 0) return primary;
-
-  const fallback = await runApifySearch({ city: input.city, metiers: fallbackTerms, limitPerMetier: input.limitPerMetier });
-  if (fallback.error) return primary;
-
+function withScanMeta<T extends { error: string | null; prospects: ScanProspect[]; meta?: ScanMeta }>(
+  result: T,
+  searchTerms: string[],
+  fallbackUsed: boolean,
+) {
   return {
-    ...fallback,
+    ...result,
     meta: {
-      ...(fallback.meta || { rawCount: 0 }),
-      searchTerms: fallbackTerms,
-      fallbackUsed: true,
+      ...(result.meta || { rawCount: 0 }),
+      searchTerms,
+      fallbackUsed,
     } satisfies ScanMeta,
   };
+}
+
+async function runApifySearchWithFallback(input: { city: string; metier: string; limitPerMetier: number }) {
+  const preferredTerms = buildPreferredMetierSearchTerms(input.metier);
+  const primaryTerm = preferredTerms[0] || input.metier;
+  const fallbackTerms = preferredTerms.filter((term) => term !== primaryTerm).slice(0, 3);
+  const primary = withScanMeta(
+    await runApifySearch({ city: input.city, metiers: [primaryTerm], limitPerMetier: input.limitPerMetier }),
+    [primaryTerm],
+    false,
+  );
+  if (!primary.error && primary.prospects.length > 0) return primary;
+
+  let bestNonErrorResult = primary.error ? null : primary;
+  for (const term of fallbackTerms) {
+    const retry = withScanMeta(
+      await runApifySearch({ city: input.city, metiers: [term], limitPerMetier: input.limitPerMetier }),
+      [term],
+      true,
+    );
+    if (!retry.error && retry.prospects.length > 0) return retry;
+    if (!retry.error) bestNonErrorResult = retry;
+  }
+
+  return bestNonErrorResult || primary;
 }
 
 export async function POST(request: Request) {
