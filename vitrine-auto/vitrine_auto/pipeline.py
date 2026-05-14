@@ -114,7 +114,13 @@ async def run_pipeline(
       html_path = site_dir / "index.html"
       html_path.write_text(html, encoding="utf-8")
 
-      gate = run_quality_gate(scraped=scraped, html_path=html_path, assets_dir=site_dir / "assets")
+      scraped_for_gate = dict(scraped)
+      if not str(scraped_for_gate.get("phone") or "").strip():
+        scraped_for_gate["phone"] = str(biz.get("phone") or "").strip()
+      if not str(scraped_for_gate.get("email") or "").strip():
+        scraped_for_gate["email"] = str(biz.get("email") or "").strip()
+
+      gate = run_quality_gate(scraped=scraped_for_gate, html_path=html_path, assets_dir=site_dir / "assets")
       if not gate.passed:
         await upsert_vitrine_site(
           slug=slug,
