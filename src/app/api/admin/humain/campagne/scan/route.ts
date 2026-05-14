@@ -21,6 +21,63 @@ type ScanMeta = {
   rawCount: number;
 };
 
+const METIER_SEARCH_ALIASES: Record<string, string[]> = {
+  "Pisciniste (Entretien ou construction)": ["pisciniste", "constructeur de piscine", "entretien piscine"],
+  "Élagueur": ["élagueur", "elagage", "paysagiste"],
+  "Nettoyage de toiture / Façade": ["nettoyage toiture", "ravalement facade", "nettoyage facade"],
+  "Architecte d'intérieur / Décorateur": ["architecte d'intérieur", "décorateur intérieur", "décorateur"],
+  "Cuisiniste": ["cuisiniste", "cuisine sur mesure", "concepteur cuisine"],
+  "Menuisier (Portails, terrasses bois)": ["menuisier", "pose de portail", "terrasse bois"],
+  "Storiste / Volets roulants": ["storiste", "volets roulants", "store banne"],
+  "Entreprise de nettoyage (Aide au ménage ou grand nettoyage de printemps)": [
+    "entreprise de nettoyage",
+    "service de ménage",
+    "aide ménagère",
+  ],
+  "Déménageur": ["déménageur", "demenagement", "societe de demenagement"],
+  "Garde-meuble / Self-stockage": ["garde meuble", "self stockage", "box de stockage"],
+  "Ramoneur": ["ramoneur", "ramonage"],
+  "Vente de poêles à bois / Granulés": ["poele a bois", "poele a granules", "chauffage bois"],
+  "Restaurants / Bar": ["restaurant", "bar", "brasserie"],
+  "Coach sportif à domicile": ["coach sportif", "coach sportif domicile", "personal trainer"],
+  "Studio de Yoga / Pilates": ["yoga", "pilates", "studio yoga"],
+  "Institut de beauté (Soins du visage/corps)": ["institut de beauté", "soin du visage", "soin du corps"],
+  "Centre d'amincissement / Cryothérapie": ["centre amincissement", "cryotherapie", "minceur"],
+  "Barbière / Coiffeur créateur": ["barbier", "coiffeur", "salon de coiffure"],
+  "Prothésiste ongulaire": ["prothesiste ongulaire", "onglerie", "nail artist"],
+  "Réflexologue / Sophrologue": ["reflexologue", "sophrologue", "bien etre"],
+  "Ostéopathe / Masseur bien-être": ["osteopathe", "massage bien etre", "masseur"],
+  "Blanchiment dentaire / Sourire": ["blanchiment dentaire", "blanchiment dents", "esthetique sourire"],
+  "Tatoueur": ["tatoueur", "tatouage"],
+  "Nettoyage auto à domicile (Intérieur/Extérieur)": ["nettoyage auto", "lavage auto domicile", "detailing auto"],
+  "Réparation de pare-brise": ["pare brise", "reparation pare brise", "vitrage auto"],
+  "Vente de vélos électriques / Réparateur": ["velo electrique", "reparation velo", "magasin velo"],
+  "Contrôle technique": ["controle technique auto", "controle technique"],
+  "Auto-école": ["auto ecole", "permis de conduire"],
+  "Toiletteur canin": ["toiletteur canin", "toilettage chien"],
+  "Éducateur canin / Comportementaliste": ["educateur canin", "comportementaliste canin"],
+  "Pet-sitter / Pension pour chiens et chats": ["pet sitter", "pension canine", "garde animaux"],
+  "Photographe (Grossesse, mariage, portrait)": ["photographe mariage", "photographe portrait", "photographe grossesse"],
+  "Traiteur / Chef à domicile": ["traiteur", "chef a domicile"],
+  "Organisateur d'anniversaires enfants": ["animation anniversaire enfant", "organisateur anniversaire", "evenement enfant"],
+  "Caviste": ["caviste", "boutique vin"],
+  "Boutique de fleurs / Ateliers floraux": ["fleuriste", "atelier floral"],
+  "Magasin de jeux de société / Escape Game local": ["escape game", "jeux de societe", "loisirs indoor"],
+  "Food-truck local": ["food truck", "restauration mobile"],
+  "Pâtissier / Cake Designer": ["patisserie", "cake designer", "patissier"],
+  "Soutien scolaire / Cours d'anglais": ["soutien scolaire", "cours anglais", "cours particuliers"],
+  "Garde d'enfants (Babysitting structuré)": ["garde d'enfants", "babysitting", "nounou"],
+  "Coach de vie / Conseil conjugal": ["coach de vie", "conseil conjugal", "therapie couple"],
+  "Informaticien (Dépannage PC / Installation Box)": ["depannage informatique", "reparation pc", "installation box"],
+  "Agent immobilier indépendant": ["agent immobilier", "agence immobiliere"],
+  "Courtier en prêt immobilier": ["courtier immobilier", "courtier pret immobilier"],
+  "Assureur (Auto / Habitation / Santé)": ["assurance auto", "assurance habitation", "mutuelle sante"],
+  "Conseiller en gestion de patrimoine": ["gestion de patrimoine", "conseiller patrimoine"],
+  "Courtier en travaux": ["courtier en travaux", "travaux renovation"],
+  "Pompes funèbres / Marbrerie": ["pompes funebres", "marbrerie funeraire"],
+  "Vente et installation d'alarmes / Télésurveillance": ["alarme maison", "telesurveillance", "installateur alarme"],
+};
+
 async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
   if (!userId) return { error: "Session requise." as const };
@@ -196,11 +253,27 @@ function expandMetierSearchTerms(input: string) {
   return Array.from(variants).slice(0, 4);
 }
 
+function buildPreferredMetierSearchTerms(input: string) {
+  const curated = METIER_SEARCH_ALIASES[String(input || "").trim()] || [];
+  const fallback = expandMetierSearchTerms(input);
+  const ordered = new Set<string>();
+  [...curated, ...fallback].forEach((term) => {
+    const clean = String(term || "").trim();
+    if (clean) ordered.add(clean);
+  });
+  return Array.from(ordered).slice(0, 5);
+}
+
 async function runApifySearchWithFallback(input: { city: string; metier: string; limitPerMetier: number }) {
-  const primary = await runApifySearch({ city: input.city, metiers: [input.metier], limitPerMetier: input.limitPerMetier });
+  const preferredTerms = buildPreferredMetierSearchTerms(input.metier);
+  const primaryTerms = preferredTerms.length > 0 ? [preferredTerms[0]] : [input.metier];
+  const primary = await runApifySearch({ city: input.city, metiers: primaryTerms, limitPerMetier: input.limitPerMetier });
+  if (!primary.error && primary.meta) {
+    primary.meta.searchTerms = primaryTerms;
+  }
   if (primary.error || primary.prospects.length > 0) return primary;
 
-  const fallbackTerms = expandMetierSearchTerms(input.metier).filter((term) => term !== input.metier);
+  const fallbackTerms = preferredTerms.filter((term) => !primaryTerms.includes(term));
   if (fallbackTerms.length === 0) return primary;
 
   const fallback = await runApifySearch({ city: input.city, metiers: fallbackTerms, limitPerMetier: input.limitPerMetier });
