@@ -28,6 +28,9 @@ async def upsert_vitrine_site(
   storage_prefix: str,
   error_reason: str | None,
   metadata: dict[str, Any],
+  preview_storage_prefix: str | None = None,
+  preview_token: str | None = None,
+  preview_url: str | None = None,
 ) -> None:
   base = _base(supabase_url())
   if not base:
@@ -56,6 +59,12 @@ async def upsert_vitrine_site(
     "error_reason": error_reason,
     "metadata": metadata or {},
   }
+  if preview_storage_prefix is not None:
+    row["preview_storage_prefix"] = preview_storage_prefix
+  if preview_token is not None:
+    row["preview_token"] = preview_token
+  if preview_url is not None:
+    row["preview_url"] = preview_url
 
   async with aiohttp.ClientSession() as session:
     async with session.post(url, headers=headers, data=json.dumps([row])) as r:
@@ -77,8 +86,8 @@ async def fetch_queued_vitrine_sites(*, limit: int) -> list[dict[str, Any]]:
     "Accept": "application/json",
   }
   params = {
-    "status": "eq.queued",
-    "select": "id,slug,business_name,city,category,source_website,whatsapp_phone_e164,metadata,created_at",
+    "status": "in.(queued,queued_preview)",
+    "select": "id,slug,status,business_name,city,category,source_website,whatsapp_phone_e164,storage_prefix,revision_instructions,preview_storage_prefix,preview_token,preview_url,metadata,created_at",
     "order": "created_at.asc",
     "limit": str(max(1, int(limit or 1))),
   }

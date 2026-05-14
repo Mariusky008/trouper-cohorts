@@ -30,12 +30,17 @@ async def _process_business(
   ville: str,
   categorie: str,
   slug: str,
+  site_dir_name: str,
+  upload_prefix: str,
+  db_storage_prefix: str,
+  is_preview: bool,
   output_root: Path,
   bucket: str,
   anthropic_api_key: str,
+  revision_instructions: str,
   dry_run: bool,
 ) -> None:
-  site_dir = output_root / slug
+  site_dir = output_root / site_dir_name
   site_dir.mkdir(parents=True, exist_ok=True)
 
   meta: dict[str, Any] = {"generated_at": datetime.now().isoformat()}
@@ -47,7 +52,13 @@ async def _process_business(
     assets = await download_assets(urls=list(scraped.get("images") or []), output_dir=site_dir)
     meta["assets"] = assets
 
-    html = await generate_site(scraped=scraped, biz=biz, assets=assets, api_key=anthropic_api_key)
+    html = await generate_site(
+      scraped=scraped,
+      biz=biz,
+      assets=assets,
+      api_key=anthropic_api_key,
+      revision_instructions=revision_instructions,
+    )
     html_path = site_dir / "index.html"
     html_path.write_text(html, encoding="utf-8")
 
@@ -67,7 +78,7 @@ async def _process_business(
         source_website=str(biz.get("website") or ""),
         whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
         status="error",
-        storage_prefix=slug,
+        storage_prefix=db_storage_prefix,
         error_reason=gate.reason,
         metadata=meta,
       )
@@ -75,6 +86,7 @@ async def _process_business(
       return
 
     if dry_run:
+      dry_status = "queued_preview" if is_preview else "generated"
       await upsert_vitrine_site(
         slug=slug,
         business_name=str(biz.get("name") or ""),
@@ -82,15 +94,16 @@ async def _process_business(
         category=str(biz.get("search_query") or categorie or ""),
         source_website=str(biz.get("website") or ""),
         whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
-        status="generated",
-        storage_prefix=slug,
+        status=dry_status,
+        storage_prefix=db_storage_prefix,
         error_reason=None,
         metadata=meta,
       )
-      log.info("Dry-run OK %s", slug)
+      log.info("Dry-run OK %s", slug if not is_preview else f"{slug} (preview)")
       return
 
-    await upload_directory(bucket=bucket, storage_prefix=slug, local_dir=site_dir)
+    await upload_directory(bucket=bucket, storage_prefix=upload_prefix, local_dir=site_dir)
+    final_status = "preview_uploaded" if is_preview else "uploaded"
     await upsert_vitrine_site(
       slug=slug,
       business_name=str(biz.get("name") or ""),
@@ -98,12 +111,12 @@ async def _process_business(
       category=str(biz.get("search_query") or categorie or ""),
       source_website=str(biz.get("website") or ""),
       whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
-      status="uploaded",
-      storage_prefix=slug,
+      status=final_status,
+      storage_prefix=db_storage_prefix,
       error_reason=None,
       metadata=meta,
     )
-    log.info("Uploaded %s", slug)
+    log.info("%s %s", "Preview uploaded" if is_preview else "Uploaded", slug)
   except Exception as e:
     await upsert_vitrine_site(
       slug=slug,
@@ -113,7 +126,7 @@ async def _process_business(
       source_website=str(biz.get("website") or ""),
       whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
       status="error",
-      storage_prefix=slug,
+      storage_prefix=db_storage_prefix,
       error_reason=str(e)[:250],
       metadata=meta,
     )
@@ -198,9 +211,14 @@ async def run_pipeline(
       ville=ville,
       categorie=categorie,
       slug=slug,
+      site_dir_name=slug,
+      upload_prefix=slug,
+      db_storage_prefix=slug,
+      is_preview=False,
       output_root=output_root,
       bucket=bucket,
       anthropic_api_key=anthropic_api_key,
+      revision_instructions="",
       dry_run=dry_run,
     )
 
@@ -223,8 +241,14 @@ async def run_queue(*, batch_size: int, dry_run: bool) -> None:
     slug = str(row.get("slug") or "").strip()
     if not slug:
       continue
+    status = str(row.get("status") or "").strip()
+    is_preview = status == "queued_preview"
     ville = str(row.get("city") or "").strip()
     categorie = str(row.get("category") or "").strip()
+    revision_instructions = str(row.get("revision_instructions") or "").strip()
+    storage_prefix = str(row.get("storage_prefix") or "").strip() or slug
+    preview_prefix = str(row.get("preview_storage_prefix") or "").strip()
+    upload_prefix = preview_prefix if is_preview and preview_prefix else slug
     biz: dict[str, Any] = {
       "slug": slug,
       "name": str(row.get("business_name") or "").strip() or "Entreprise",
@@ -232,6 +256,7 @@ async def run_queue(*, batch_size: int, dry_run: bool) -> None:
       "place_id": "",
       "website": str(row.get("source_website") or "").strip(),
       "phone": str(row.get("whatsapp_phone_e164") or "").strip(),
+      "city": ville,
       "email": "",
       "address": "",
       "rating": None,
@@ -248,7 +273,7 @@ async def run_queue(*, batch_size: int, dry_run: bool) -> None:
         source_website="",
         whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
         status="error",
-        storage_prefix=slug,
+        storage_prefix=storage_prefix,
         error_reason="missing_source_website",
         metadata={"manual_queue": True},
       )
@@ -259,8 +284,13 @@ async def run_queue(*, batch_size: int, dry_run: bool) -> None:
       ville=ville,
       categorie=categorie,
       slug=slug,
+      site_dir_name=upload_prefix,
+      upload_prefix=upload_prefix,
+      db_storage_prefix=storage_prefix,
+      is_preview=is_preview,
       output_root=output_root,
       bucket=bucket,
       anthropic_api_key=anthropic_api_key,
+      revision_instructions=revision_instructions,
       dry_run=dry_run,
     )
