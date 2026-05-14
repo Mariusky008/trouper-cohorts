@@ -1,19 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ManualVitrineCreateForm } from "./_components/manual-vitrine-create-form";
-
-type VitrineRow = {
-  id: string;
-  slug: string;
-  business_name: string;
-  city: string;
-  category: string;
-  whatsapp_phone_e164: string | null;
-  status: string;
-  public_url: string;
-  source_website: string;
-  error_reason: string | null;
-  created_at: string;
-};
+import { VitrinesTable, type VitrineRow } from "./_components/vitrines-table";
 
 function normalize(value: unknown) {
   return String(value || "").trim();
@@ -60,89 +47,11 @@ export default async function AdminHumainVitrinesPage() {
 
       <ManualVitrineCreateForm />
 
-      <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50 px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-600">Dernières vitrines</h2>
-          <a
-            href="https://vitrine.popey.academy"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Ouvrir vitrine.popey.academy
-          </a>
-        </div>
-        {hasError ? (
-          <div className="p-5 text-sm text-red-700">Erreur Supabase: {normalize(error?.message)}</div>
-        ) : vitrines.length === 0 ? (
-          <div className="p-5 text-sm text-muted-foreground">Aucune vitrine pour le moment.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full text-left text-sm">
-              <thead className="bg-white">
-                <tr className="border-b text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                  <th className="px-5 py-3">Entreprise</th>
-                  <th className="px-5 py-3">Slug</th>
-                  <th className="px-5 py-3">Ville</th>
-                  <th className="px-5 py-3">Catégorie</th>
-                  <th className="px-5 py-3">WhatsApp</th>
-                  <th className="px-5 py-3">Statut</th>
-                  <th className="px-5 py-3">Public</th>
-                  <th className="px-5 py-3">Source</th>
-                  <th className="px-5 py-3">Créée</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vitrines.map((row) => {
-                  const publicUrl = normalize(row.public_url);
-                  const sourceUrl = normalize(row.source_website);
-                  const status = normalize(row.status);
-                  const whatsapp = normalize(row.whatsapp_phone_e164);
-                  const created = normalize(row.created_at);
-                  return (
-                    <tr key={row.id} className="border-b last:border-b-0">
-                      <td className="px-5 py-3 font-semibold text-slate-950">
-                        {normalize(row.business_name) || "—"}
-                        {row.error_reason ? (
-                          <div className="mt-1 text-xs font-medium text-red-700">{normalize(row.error_reason)}</div>
-                        ) : null}
-                      </td>
-                      <td className="px-5 py-3 font-mono text-xs text-slate-700">{normalize(row.slug) || "—"}</td>
-                      <td className="px-5 py-3 text-slate-700">{normalize(row.city) || "—"}</td>
-                      <td className="px-5 py-3 text-slate-700">{normalize(row.category) || "—"}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-slate-700">{whatsapp || "—"}</td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex rounded-full border bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                          {status || "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">
-                        {publicUrl ? (
-                          <a href={publicUrl} target="_blank" rel="noreferrer" className="text-emerald-700 underline">
-                            Ouvrir
-                          </a>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        {sourceUrl ? (
-                          <a href={sourceUrl} target="_blank" rel="noreferrer" className="text-slate-700 underline">
-                            Site
-                          </a>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-xs text-slate-600">{created ? new Date(created).toLocaleString("fr-FR") : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {hasError ? (
+        <div className="rounded-2xl border bg-white p-5 text-sm text-red-700 shadow-sm">Erreur Supabase: {normalize(error?.message)}</div>
+      ) : (
+        <VitrinesTable vitrines={vitrines} />
+      )}
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import json
 import logging
+import mimetypes
 from pathlib import Path
 from typing import Any
 
@@ -97,13 +98,37 @@ async def upload_directory(*, bucket: str, storage_prefix: str, local_dir: Path)
     raise RuntimeError("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)")
   service_key = required_env("SUPABASE_SERVICE_ROLE_KEY")
 
+  def guess_allowed_mime_type(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".woff2":
+      return "font/woff2"
+    if suffix == ".woff":
+      return "font/woff"
+    if suffix == ".js":
+      return "application/javascript"
+    if suffix == ".css":
+      return "text/css"
+    if suffix == ".html":
+      return "text/html"
+    if suffix == ".json":
+      return "application/json"
+    if suffix == ".svg":
+      return "image/svg+xml"
+    mime, _ = mimetypes.guess_type(str(path))
+    normalized = str(mime or "").strip().lower()
+    if normalized in ("text/javascript", "application/x-javascript"):
+      return "application/javascript"
+    if normalized:
+      return normalized
+    return "text/plain"
+
   async def upload_file(session: aiohttp.ClientSession, rel_path: str, file_path: Path):
     url = f"{base}/storage/v1/object/{bucket}/{storage_prefix}/{rel_path}"
     headers = {
       "apikey": service_key,
       "Authorization": f"Bearer {service_key}",
       "x-upsert": "true",
-      "Content-Type": "application/octet-stream",
+      "Content-Type": guess_allowed_mime_type(file_path),
     }
     data = file_path.read_bytes()
     async with session.post(url, headers=headers, data=data) as r:
