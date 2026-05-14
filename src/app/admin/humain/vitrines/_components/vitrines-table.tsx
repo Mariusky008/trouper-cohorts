@@ -33,6 +33,10 @@ function canRequeue(status: string) {
   return ["error", "rejected", "generated", "uploaded", "approved"].includes(status);
 }
 
+function canSendWhatsApp(status: string) {
+  return ["approved"].includes(status);
+}
+
 async function callAction(endpoint: string, payload: Record<string, unknown>) {
   const res = await fetch(endpoint, {
     method: "POST",
@@ -52,11 +56,13 @@ export function VitrinesTable({ vitrines }: { vitrines: VitrineRow[] }) {
   const router = useRouter();
   const [busySlug, setBusySlug] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const ordered = useMemo(() => vitrines, [vitrines]);
 
   const onApprove = async (slug: string) => {
     setError("");
+    setInfo("");
     setBusySlug(slug);
     try {
       await callAction("/api/admin/humain/vitrines/approve", { slug });
@@ -70,6 +76,7 @@ export function VitrinesTable({ vitrines }: { vitrines: VitrineRow[] }) {
 
   const onReject = async (slug: string) => {
     setError("");
+    setInfo("");
     const reasonRaw = window.prompt("Raison du rejet (optionnel) :", "") ?? "";
     const reason = normalize(reasonRaw).slice(0, 250);
     setBusySlug(slug);
@@ -85,9 +92,25 @@ export function VitrinesTable({ vitrines }: { vitrines: VitrineRow[] }) {
 
   const onRequeue = async (slug: string) => {
     setError("");
+    setInfo("");
     setBusySlug(slug);
     try {
       await callAction("/api/admin/humain/vitrines/requeue", { slug });
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusySlug("");
+    }
+  };
+
+  const onSendWhatsApp = async (slug: string) => {
+    setError("");
+    setInfo("");
+    setBusySlug(slug);
+    try {
+      await callAction("/api/admin/humain/vitrines/send-whatsapp", { slug });
+      setInfo("Message WhatsApp ajouté à la file d’envoi.");
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -111,6 +134,7 @@ export function VitrinesTable({ vitrines }: { vitrines: VitrineRow[] }) {
       </div>
 
       {error ? <div className="border-b px-5 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+      {info ? <div className="border-b px-5 py-3 text-sm font-semibold text-emerald-700">{info}</div> : null}
 
       {ordered.length === 0 ? (
         <div className="p-5 text-sm text-muted-foreground">Aucune vitrine pour le moment.</div>
@@ -198,6 +222,14 @@ export function VitrinesTable({ vitrines }: { vitrines: VitrineRow[] }) {
                           className="rounded-full border bg-white px-3 py-1 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Requeue
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isBusy || !canSendWhatsApp(status)}
+                          onClick={() => onSendWhatsApp(normalize(row.slug))}
+                          className="rounded-full border bg-white px-3 py-1 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Envoyer WhatsApp
                         </button>
                       </div>
                     </td>

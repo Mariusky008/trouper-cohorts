@@ -566,6 +566,25 @@ export async function processTwilioWhatsAppWebhook(params: Record<string, string
       },
     });
 
+    const queueMeta = asRecord(queueRow?.metadata);
+    const vitrineSlug = String(queueMeta.vitrine_slug || "").trim();
+    if (vitrineSlug) {
+      if (statusEvent === "sent") {
+        await supabaseAdmin
+          .from("human_vitrine_sites")
+          .update({ status: "sent", sent_at: nowIso, error_reason: null, updated_at: nowIso })
+          .eq("slug", vitrineSlug);
+      } else if (statusEvent === "failed") {
+        const reason =
+          [errorCode ? `Error ${errorCode}` : "", errorMessage].filter(Boolean).join(" - ") ||
+          `Twilio status: ${messageStatus || "failed"}`;
+        await supabaseAdmin
+          .from("human_vitrine_sites")
+          .update({ error_reason: `whatsapp_failed: ${reason}`.slice(0, 250), updated_at: nowIso })
+          .eq("slug", vitrineSlug);
+      }
+    }
+
     // If Twilio accepts send then later marks it failed (63016), auto-send a template fallback once.
     if (
       statusEvent === "failed" &&
