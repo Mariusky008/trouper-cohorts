@@ -379,6 +379,7 @@ def _demo_html(biz: dict) -> str:
     phone_clean = re.sub(r'[\s.\-()]', '', phone)
     if phone_clean.startswith("0"):
         phone_clean = "33" + phone_clean[1:]
+    phone_clean = phone_clean.lstrip("+")
 
     return f"""<!DOCTYPE html>
 <html lang="fr">
