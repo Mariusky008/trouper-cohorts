@@ -79,10 +79,11 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
 
 async def _start_run(*, token: str, query: str, max_results: int) -> str:
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
+  actor_max_results = max(50, max_results)
   if input_mode == "legacy":
     actor_input = {
       "searchStringsArray": [query],
-      "maxCrawledPlacesPerSearch": max_results,
+      "maxCrawledPlacesPerSearch": actor_max_results,
       "language": "fr",
       "countryCode": "FR",
       "includeWebResults": True,
@@ -91,7 +92,7 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
   else:
     actor_input = {
       "searchQueries": [query],
-      "maxResults": max_results,
+      "maxResults": actor_max_results,
       "language": "fr",
     }
 
