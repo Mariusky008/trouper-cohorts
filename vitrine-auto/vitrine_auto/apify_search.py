@@ -172,7 +172,6 @@ async def _start_run(*, token: str, query: str, location: str | None, max_result
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
   default_actor_id = "datapilot/google-maps-scraper" if input_mode == "datapilot" else "futurizerush/google-maps-scraper"
   actor_id = env("APIFY_ACTOR_ID", default_actor_id)
-  actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
   normalized_actor_id = _normalize_actor_id(actor_id)
   actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
   url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/runs"
@@ -198,9 +197,9 @@ async def _run_sync_get_dataset_items(
   input_mode = env("APIFY_INPUT_MODE", "searchQueries")
   default_actor_id = "datapilot/google-maps-scraper" if input_mode == "datapilot" else "futurizerush/google-maps-scraper"
   actor_id = env("APIFY_ACTOR_ID", default_actor_id)
-  actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
   normalized_actor_id = _normalize_actor_id(actor_id)
   actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
+  url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/run-sync-get-dataset-items"
 
   timeout_s = int(env("APIFY_TIMEOUT_S", "900") or "900")
   headers = {"Authorization": f"Bearer {token}"}
