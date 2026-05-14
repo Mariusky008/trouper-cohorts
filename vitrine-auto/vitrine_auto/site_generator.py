@@ -194,7 +194,7 @@ RÈGLES DE CONTENU — PERSONNALISATION RÉELLE
 2. Rédige des accroches percutantes à partir du texte extrait :
    - H1 : formule courte impactante qui parle du bénéfice client (pas juste le nom)
    - Lead : 1-2 phrases qui expliquent la valeur unique de l'entreprise
-   - Stats bar : chiffres réels si disponibles, sinon inventes des stats crédibles
+   - Stats bar : chiffres réels si disponibles, sinon rester générique (ne pas inventer de chiffres)
 
 3. Pour les images :
    - Utilise UNIQUEMENT les chemins relatifs fournis dans `assets` (ex: "assets/img-xxxx.jpg")
