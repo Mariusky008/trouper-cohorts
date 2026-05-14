@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+trash_rm_scripts/
 
 # debug
 npm-debug.log*
