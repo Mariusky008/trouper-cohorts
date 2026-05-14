@@ -1,0 +1,38 @@
+name: vitrine-auto jobs
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: "1"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      APIFY_TIMEOUT_S: "900"
+      APIFY_RUN_MODE: "sync_dataset"
+      APIFY_USE_PROXY: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r vitrine-auto/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run one job
+        working-directory: vitrine-auto
+        run: |
+          python -m vitrine_auto.job_runner
+
