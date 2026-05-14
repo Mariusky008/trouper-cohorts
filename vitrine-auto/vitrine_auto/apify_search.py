@@ -88,7 +88,13 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
   }
 
   actor_id = env("APIFY_ACTOR_ID", "apify/google-maps-scraper")
-  actor_id_encoded = aiohttp.helpers.quote(actor_id, safe="")
+  normalized_actor_id = actor_id
+  if "/" in normalized_actor_id and "~" not in normalized_actor_id:
+    parts = normalized_actor_id.split("/")
+    if len(parts) >= 2:
+      normalized_actor_id = f"{parts[0]}~{'/'.join(parts[1:])}"
+
+  actor_id_encoded = aiohttp.helpers.quote(normalized_actor_id, safe="~")
   url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/runs"
   async with aiohttp.ClientSession() as session:
     async with session.post(
