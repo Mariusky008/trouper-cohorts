@@ -78,16 +78,24 @@ async def search_businesses(*, query: str, token: str, max_rating: float, max_re
 
 
 async def _start_run(*, token: str, query: str, max_results: int) -> str:
-  actor_input = {
-    "searchStringsArray": [query],
-    "maxCrawledPlacesPerSearch": max_results,
-    "language": "fr",
-    "countryCode": "FR",
-    "includeWebResults": True,
-    "additionalInfo": True,
-  }
+  input_mode = env("APIFY_INPUT_MODE", "searchQueries")
+  if input_mode == "legacy":
+    actor_input = {
+      "searchStringsArray": [query],
+      "maxCrawledPlacesPerSearch": max_results,
+      "language": "fr",
+      "countryCode": "FR",
+      "includeWebResults": True,
+      "additionalInfo": True,
+    }
+  else:
+    actor_input = {
+      "searchQueries": [query],
+      "maxResults": max_results,
+      "language": "fr",
+    }
 
-  actor_id = env("APIFY_ACTOR_ID", "apify/google-maps-scraper")
+  actor_id = env("APIFY_ACTOR_ID", "futurizerush/google-maps-scraper")
   normalized_actor_id = actor_id
   if "/" in normalized_actor_id and "~" not in normalized_actor_id:
     parts = normalized_actor_id.split("/")
@@ -99,7 +107,7 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
   async with aiohttp.ClientSession() as session:
     async with session.post(
       url,
-      json={"input": actor_input},
+      json=actor_input,
       headers={"Authorization": f"Bearer {token}"},
       params={"token": token},
       timeout=aiohttp.ClientTimeout(total=30),
