@@ -5,6 +5,7 @@ from typing import Any
 
 import aiohttp
 
+from .config import env
 from .slug import slugify
 
 
@@ -86,7 +87,9 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
     "additionalInfo": True,
   }
 
-  url = "https://api.apify.com/v2/acts/apify~google-maps-scraper/runs"
+  actor_id = env("APIFY_ACTOR_ID", "apify/google-maps-scraper")
+  actor_id_encoded = aiohttp.helpers.quote(actor_id, safe="")
+  url = f"https://api.apify.com/v2/acts/{actor_id_encoded}/runs"
   async with aiohttp.ClientSession() as session:
     async with session.post(
       url,
@@ -96,7 +99,8 @@ async def _start_run(*, token: str, query: str, max_results: int) -> str:
       timeout=aiohttp.ClientTimeout(total=30),
     ) as r:
       if r.status not in (200, 201):
-        raise RuntimeError(f"Apify start error {r.status}")
+        raw = await r.text()
+        raise RuntimeError(f"Apify start error {r.status}: {raw[:300]}")
       data = await r.json()
       return str(data["data"]["id"])
 
@@ -128,4 +132,3 @@ async def _wait_for_results(*, token: str, run_id: str, timeout_s: int = 300) ->
         raise RuntimeError(f"Apify run failed: {status}")
 
   raise TimeoutError(f"Apify timeout après {timeout_s}s")
-
