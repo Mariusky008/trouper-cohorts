@@ -173,6 +173,7 @@ export default function AdminHumainCampagnePage() {
   const [loadingEnqueue, setLoadingEnqueue] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanWarning, setScanWarning] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
   const [enqueueResult, setEnqueueResult] = useState<EnqueueResponse | null>(null);
   const [prospects, setProspects] = useState<ScanProspect[]>([]);
   const [selectedPhones, setSelectedPhones] = useState<Record<string, boolean>>({});
@@ -219,6 +220,7 @@ export default function AdminHumainCampagnePage() {
     if (metiersBatch.length === 0) return;
     setScanError(null);
     setScanWarning(null);
+    setScanStatus(null);
     setEnqueueResult(null);
     setLoadingScan(true);
     if (!append) {
@@ -227,39 +229,61 @@ export default function AdminHumainCampagnePage() {
       setScanOffset(0);
     }
     try {
-      const response = await fetch("/api/admin/humain/campagne/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        redirect: "manual",
-        body: JSON.stringify({
-          city,
-          provider: "b2b",
-          metiers: metiersBatch,
-          limitPerMetier,
-        }),
-      });
-      const raw = await response.text();
-      const parsed = safeParseJson<ScanResponse>(raw);
-      const data = parsed.data;
-      if (!data || !data.success) {
-        setScanError(formatApiError(response.status, raw, parsed));
+      let nextList = append ? [...prospects] : [];
+      let successCount = 0;
+      const warningMessages: string[] = [];
+      let firstError: string | null = null;
+
+      for (let index = 0; index < metiersBatch.length; index += 1) {
+        const metier = metiersBatch[index] || "";
+        setScanStatus(`Scan ${startOffset + index + 1}/${METIERS_CIBLES.length} · ${metier}`);
+
+        const response = await fetch("/api/admin/humain/campagne/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          redirect: "manual",
+          body: JSON.stringify({
+            city,
+            provider: "b2b",
+            metiers: [metier],
+            limitPerMetier,
+          }),
+        });
+        const raw = await response.text();
+        const parsed = safeParseJson<ScanResponse>(raw);
+        const data = parsed.data;
+        if (!data || !data.success) {
+          const formatted = formatApiError(response.status, raw, parsed);
+          if (!firstError) firstError = formatted;
+          warningMessages.push(`${metier}: ${formatted}`);
+          setScanOffset(startOffset + index + 1);
+          continue;
+        }
+
+        if (data.warning) warningMessages.push(`${metier}: ${String(data.warning)}`);
+        const incoming = (data.prospects || []).slice(0, 800);
+        nextList = mergeProspectLists(nextList, incoming);
+        setProspects(nextList);
+        const autoSelection = buildAutoSelectedPhones(nextList);
+        if (append) {
+          setSelectedPhones((current) => ({ ...autoSelection, ...current }));
+        } else {
+          setSelectedPhones(autoSelection);
+        }
+        setScanOffset(startOffset + index + 1);
+        successCount += 1;
+      }
+
+      if (successCount === 0) {
+        setScanError(firstError || "Scan impossible.");
         if (!append) {
           setProspects([]);
           setSelectedPhones({});
         }
         return;
       }
-      setScanWarning(data.warning ? String(data.warning) : null);
-      const incoming = (data.prospects || []).slice(0, 800);
-      const nextList = append ? mergeProspectLists(prospects, incoming) : incoming;
-      setProspects(nextList);
-      if (append) {
-        const autoSelection = buildAutoSelectedPhones(nextList);
-        setSelectedPhones((current) => ({ ...autoSelection, ...current }));
-      } else {
-        autoSelectOnePerMetier(nextList);
-      }
-      setScanOffset(startOffset + metiersBatch.length);
+
+      setScanWarning(warningMessages.length ? warningMessages.slice(0, 3).join(" | ").slice(0, 800) : null);
       setTimeout(() => {
         listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 50);
@@ -268,6 +292,7 @@ export default function AdminHumainCampagnePage() {
       setProspects([]);
       setSelectedPhones({});
     } finally {
+      setScanStatus(null);
       setLoadingScan(false);
     }
   }
@@ -438,6 +463,7 @@ export default function AdminHumainCampagnePage() {
         {scanWarning ? (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{scanWarning}</p>
         ) : null}
+        {scanStatus ? <p className="mt-3 text-sm font-medium text-slate-700">{scanStatus}</p> : null}
         <p className="mt-3 text-sm text-slate-600">
           Progression scan: {scannedMetiersCount}/{METIERS_CIBLES.length} métiers chargés
           {remainingMetiersCount > 0 ? ` · ${remainingMetiersCount} restant(s)` : " · scan terminé"}
