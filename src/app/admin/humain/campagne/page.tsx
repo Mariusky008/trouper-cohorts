@@ -192,7 +192,14 @@ export default function AdminHumainCampagnePage() {
   const [selectedPhones, setSelectedPhones] = useState<Record<string, boolean>>({});
   const [scanOffset, setScanOffset] = useState(0);
   const [metierStatuses, setMetierStatuses] = useState<MetierScanStatus[]>([]);
+  const [, setAutoSelectionEnabled] = useState(true);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const autoSelectionEnabledRef = useRef(true);
+
+  function setAutoSelectionMode(next: boolean) {
+    autoSelectionEnabledRef.current = next;
+    setAutoSelectionEnabled(next);
+  }
 
   const grouped = useMemo(() => {
     const map = new Map<string, ScanProspect[]>();
@@ -224,6 +231,7 @@ export default function AdminHumainCampagnePage() {
   const canLoadMore = scanOffset > 0 && remainingMetiersCount > 0;
 
   function autoSelectOnePerMetier(items: ScanProspect[]) {
+    setAutoSelectionMode(true);
     setSelectedPhones(buildAutoSelectedPhones(items));
   }
 
@@ -238,6 +246,7 @@ export default function AdminHumainCampagnePage() {
     setEnqueueResult(null);
     setLoadingScan(true);
     if (!append) {
+      setAutoSelectionMode(true);
       setProspects([]);
       setSelectedPhones({});
       setScanOffset(0);
@@ -311,11 +320,13 @@ export default function AdminHumainCampagnePage() {
             },
           ];
         });
-        const autoSelection = buildAutoSelectedPhones(nextList);
-        if (append) {
-          setSelectedPhones((current) => ({ ...autoSelection, ...current }));
-        } else {
-          setSelectedPhones(autoSelection);
+        if (autoSelectionEnabledRef.current) {
+          const autoSelection = buildAutoSelectedPhones(nextList);
+          if (append) {
+            setSelectedPhones((current) => ({ ...autoSelection, ...current }));
+          } else {
+            setSelectedPhones(autoSelection);
+          }
         }
         setScanOffset(startOffset + index + 1);
         successCount += 1;
@@ -588,6 +599,7 @@ export default function AdminHumainCampagnePage() {
           <button
             type="button"
             onClick={() => {
+              setAutoSelectionMode(false);
               setSelectedPhones({});
             }}
             disabled={prospects.length === 0}
@@ -615,6 +627,7 @@ export default function AdminHumainCampagnePage() {
                     onClick={() => {
                       const best = rows.find((p) => p.phoneE164);
                       if (!best?.phoneE164) return;
+                      setAutoSelectionMode(false);
                       setSelectedPhones((current) => ({ ...current, [best.phoneE164!]: true }));
                     }}
                     className="rounded-full border bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-700"
@@ -637,6 +650,7 @@ export default function AdminHumainCampagnePage() {
                           disabled={!phone}
                           onChange={(e) => {
                             if (!phone) return;
+                            setAutoSelectionMode(false);
                             setSelectedPhones((current) => ({ ...current, [phone]: e.target.checked }));
                           }}
                           className="mt-1"

@@ -26,7 +26,7 @@ const METIER_SEARCH_ALIASES: Record<string, string[]> = {
   "Élagueur": ["élagueur", "elagage", "paysagiste"],
   "Nettoyage de toiture / Façade": ["demoussage toiture", "nettoyage toiture", "nettoyage facade", "facadier", "ravalement facade"],
   "Architecte d'intérieur / Décorateur": ["architecte d'intérieur", "décorateur intérieur", "décorateur"],
-  "Cuisiniste": ["magasin de cuisine", "cuisine sur mesure", "concepteur cuisine", "cuisiniste"],
+  "Cuisiniste": ["cuisine équipée", "magasin de cuisine", "cuisine sur mesure", "cuisiniste", "cuisines"],
   "Menuisier (Portails, terrasses bois)": ["pose de portail", "portail alu", "terrasse bois", "menuiserie exterieure", "menuisier"],
   "Storiste / Volets roulants": ["volets roulants", "store banne", "storiste"],
   "Entreprise de nettoyage (Aide au ménage ou grand nettoyage de printemps)": [
@@ -35,7 +35,7 @@ const METIER_SEARCH_ALIASES: Record<string, string[]> = {
     "aide ménagère",
   ],
   "Déménageur": ["déménageur", "demenagement", "societe de demenagement"],
-  "Garde-meuble / Self-stockage": ["garde meuble", "self stockage", "box de stockage"],
+  "Garde-meuble / Self-stockage": ["box de stockage", "location box", "self stockage", "garde meuble", "stockage"],
   "Ramoneur": ["ramoneur", "ramonage"],
   "Vente de poêles à bois / Granulés": ["poele a bois", "poele a granules", "chauffage bois"],
   "Restaurants / Bar": ["restaurant", "bar", "brasserie"],
