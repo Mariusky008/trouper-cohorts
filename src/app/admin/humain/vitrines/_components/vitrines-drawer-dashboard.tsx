@@ -28,6 +28,30 @@ function normalize(value: unknown) {
   return String(value || "").trim();
 }
 
+function humanizeError(rawValue: unknown) {
+  const raw = normalize(rawValue).replace(/^'+|'+$/g, "");
+  if (!raw) return "";
+  if (raw === "html_too_small") return "Site généré trop léger (manque de contenu).";
+  if (raw === "missing_contact") return "WhatsApp manquant ou invalide.";
+  if (raw === "too_little_content") return "Contenu insuffisant sur le site source.";
+  if (raw === "no_assets") return "Aucune image exploitable (assets manquants).";
+  if (raw === "missing_source_website") return "Site source manquant.";
+  if (raw === "phone_e164_digits_only") return "Erreur template WhatsApp (variable manquante).";
+  if (raw.startsWith("whatsapp_failed:")) return `WhatsApp: ${raw.replace(/^whatsapp_failed:\s*/i, "")}`;
+  return raw.length > 140 ? `${raw.slice(0, 140)}…` : raw;
+}
+
+async function copyToClipboard(value: string) {
+  const text = normalize(value);
+  if (!text) return false;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function badgeTone(status: string) {
   if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (status === "sent") return "border-indigo-200 bg-indigo-50 text-indigo-800";
@@ -211,12 +235,13 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
               <th className="px-5 py-3">Ville</th>
               <th className="px-5 py-3">WhatsApp</th>
               <th className="px-5 py-3">Créée</th>
-              <th className="px-5 py-3 text-right">Détails</th>
+                <th className="px-5 py-3 text-right">Voir</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((row) => {
               const status = normalize(row.status);
+                const humanError = humanizeError(row.error_reason);
               return (
                 <tr
                   key={row.id}
@@ -231,14 +256,14 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                     <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${badgeTone(status)}`}>
                       {status || "—"}
                     </span>
-                    {row.error_reason ? <div className="mt-1 text-xs font-semibold text-red-700">{normalize(row.error_reason)}</div> : null}
+                      {humanError ? <div className="mt-1 text-xs font-semibold text-red-700">{humanError}</div> : null}
                   </td>
                   <td className="px-5 py-3 text-slate-700">{normalize(row.city) || "—"}</td>
                   <td className="px-5 py-3 font-mono text-xs text-slate-700">{normalize(row.whatsapp_phone_e164) || "—"}</td>
                   <td className="px-5 py-3 text-xs text-slate-600">
                     {normalize(row.created_at) ? new Date(normalize(row.created_at)).toLocaleString("fr-FR") : "—"}
                   </td>
-                  <td className="px-5 py-3 text-right text-xs font-semibold text-slate-700">Ouvrir</td>
+                    <td className="px-5 py-3 text-right text-xs font-semibold text-slate-700">Voir →</td>
                 </tr>
               );
             })}
@@ -318,6 +343,17 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                         Ouvrir preview
                       </a>
                     ) : null}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        const ok = await copyToClipboard(normalize(selected.slug));
+                        setInfo(ok ? "Slug copié." : "Impossible de copier le slug.");
+                      }}
+                      className="rounded-full border bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Copier slug
+                    </button>
                   </div>
                 </div>
               ) : null}
@@ -399,6 +435,19 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                     className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Publier preview
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={async () => {
+                      const cmd =
+                        "cd /Users/jeanphilippe/Desktop/trouper-cohorts/vitrine-auto && source venv/bin/activate && python main.py --consume-queue --batch 1";
+                      const ok = await copyToClipboard(cmd);
+                      setInfo(ok ? "Commande pipeline copiée." : "Impossible de copier la commande pipeline.");
+                    }}
+                    className="rounded-full border bg-white px-4 py-2 text-xs font-bold text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Copier commande pipeline
                   </button>
                 </div>
                 <div className="mt-2 text-xs text-slate-500">
