@@ -210,7 +210,7 @@ async def _run_sync_get_dataset_items(
       params={"token": token, "timeout": str(timeout_s)},
       timeout=aiohttp.ClientTimeout(total=timeout_s + 30),
     ) as r:
-      if r.status != 200:
+      if r.status not in (200, 201):
         raw = await r.text()
         raise RuntimeError(f"Apify sync error {r.status}: {raw[:300]}")
       items = await r.json()
