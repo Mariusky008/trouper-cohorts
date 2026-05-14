@@ -17,6 +17,18 @@ type ScanResponse = {
   error?: string;
   warning?: string | null;
   prospects?: ScanProspect[];
+  scanMeta?: {
+    searchTerms?: string[];
+    fallbackUsed?: boolean;
+    rawCount?: number;
+  } | null;
+};
+
+type MetierScanStatus = {
+  metier: string;
+  status: "pending" | "success" | "empty" | "error";
+  count: number;
+  detail: string | null;
 };
 
 type EnqueueResponse = {
@@ -178,6 +190,7 @@ export default function AdminHumainCampagnePage() {
   const [prospects, setProspects] = useState<ScanProspect[]>([]);
   const [selectedPhones, setSelectedPhones] = useState<Record<string, boolean>>({});
   const [scanOffset, setScanOffset] = useState(0);
+  const [metierStatuses, setMetierStatuses] = useState<MetierScanStatus[]>([]);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const grouped = useMemo(() => {
@@ -227,6 +240,7 @@ export default function AdminHumainCampagnePage() {
       setProspects([]);
       setSelectedPhones({});
       setScanOffset(0);
+      setMetierStatuses([]);
     }
     try {
       let nextList = append ? [...prospects] : [];
@@ -237,6 +251,10 @@ export default function AdminHumainCampagnePage() {
       for (let index = 0; index < metiersBatch.length; index += 1) {
         const metier = metiersBatch[index] || "";
         setScanStatus(`Scan ${startOffset + index + 1}/${METIERS_CIBLES.length} · ${metier}`);
+        setMetierStatuses((current) => {
+          const filtered = current.filter((item) => item.metier !== metier);
+          return [...filtered, { metier, status: "pending", count: 0, detail: null }];
+        });
 
         const response = await fetch("/api/admin/humain/campagne/scan", {
           method: "POST",
@@ -256,14 +274,42 @@ export default function AdminHumainCampagnePage() {
           const formatted = formatApiError(response.status, raw, parsed);
           if (!firstError) firstError = formatted;
           warningMessages.push(`${metier}: ${formatted}`);
+          setMetierStatuses((current) => {
+            const filtered = current.filter((item) => item.metier !== metier);
+            return [...filtered, { metier, status: "error", count: 0, detail: formatted }];
+          });
           setScanOffset(startOffset + index + 1);
           continue;
         }
 
         if (data.warning) warningMessages.push(`${metier}: ${String(data.warning)}`);
         const incoming = (data.prospects || []).slice(0, 800);
+        const fallbackUsed = Boolean(data.scanMeta?.fallbackUsed);
+        const searchTerms = Array.isArray(data.scanMeta?.searchTerms)
+          ? data.scanMeta?.searchTerms?.map((item) => String(item || "").trim()).filter(Boolean)
+          : [];
+        const statusDetail =
+          incoming.length > 0
+            ? fallbackUsed && searchTerms.length > 0
+              ? `fallback: ${searchTerms.join(" | ")}`
+              : "resultat direct"
+            : fallbackUsed && searchTerms.length > 0
+              ? `0 resultat apres fallback: ${searchTerms.join(" | ")}`
+              : "0 resultat";
         nextList = mergeProspectLists(nextList, incoming);
         setProspects(nextList);
+        setMetierStatuses((current) => {
+          const filtered = current.filter((item) => item.metier !== metier);
+          return [
+            ...filtered,
+            {
+              metier,
+              status: incoming.length > 0 ? "success" : "empty",
+              count: incoming.length,
+              detail: statusDetail,
+            },
+          ];
+        });
         const autoSelection = buildAutoSelectedPhones(nextList);
         if (append) {
           setSelectedPhones((current) => ({ ...autoSelection, ...current }));
@@ -468,6 +514,35 @@ export default function AdminHumainCampagnePage() {
           Progression scan: {scannedMetiersCount}/{METIERS_CIBLES.length} métiers chargés
           {remainingMetiersCount > 0 ? ` · ${remainingMetiersCount} restant(s)` : " · scan terminé"}
         </p>
+        {metierStatuses.length > 0 ? (
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
+            {metierStatuses.map((item) => {
+              const tone =
+                item.status === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : item.status === "empty"
+                    ? "border-slate-200 bg-slate-50 text-slate-700"
+                    : item.status === "error"
+                      ? "border-rose-200 bg-rose-50 text-rose-700"
+                      : "border-amber-200 bg-amber-50 text-amber-800";
+              const label =
+                item.status === "success"
+                  ? `${item.count} trouvé(s)`
+                  : item.status === "empty"
+                    ? "0 résultat"
+                    : item.status === "error"
+                      ? "erreur"
+                      : "scan en cours";
+              return (
+                <div key={item.metier} className={`rounded-xl border px-3 py-2 text-sm ${tone}`}>
+                  <p className="font-bold">{item.metier}</p>
+                  <p>{label}</p>
+                  {item.detail ? <p className="text-xs opacity-80">{item.detail}</p> : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
         {enqueueResult ? (
           <div
             className={`mt-3 rounded-xl border p-3 text-sm ${enqueueResult.success ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-rose-200 bg-rose-50 text-rose-700"}`}

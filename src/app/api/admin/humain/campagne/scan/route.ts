@@ -15,6 +15,12 @@ type ScanProspect = {
   rating: number | null;
 };
 
+type ScanMeta = {
+  searchTerms: string[];
+  fallbackUsed: boolean;
+  rawCount: number;
+};
+
 async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
   if (!userId) return { error: "Session requise." as const };
@@ -103,6 +109,11 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
             ? `Apify: ${error.message}`
             : "Apify: erreur réseau (fetch).",
       prospects: [] as ScanProspect[],
+      meta: {
+        searchTerms: input.metiers.slice(0, 10),
+        fallbackUsed: false,
+        rawCount: 0,
+      } satisfies ScanMeta,
     };
   }
   clearTimeout(timeout);
@@ -126,6 +137,11 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
           ? `Apify: timeout upstream (504). ${msg || "Le provider a mis trop de temps à répondre."}`
           : `Apify: erreur (${response.status}). ${msg || "Recherche impossible."}`,
       prospects: [] as ScanProspect[],
+      meta: {
+        searchTerms: input.metiers.slice(0, 10),
+        fallbackUsed: false,
+        rawCount: 0,
+      } satisfies ScanMeta,
     };
   }
   const rows = Array.isArray(payload) ? payload : [];
@@ -151,7 +167,53 @@ async function runApifySearch(input: { city: string; metiers: string[]; limitPer
       } satisfies ScanProspect;
     })
     .filter((row): row is NonNullable<typeof row> => Boolean(row));
-  return { error: null as string | null, prospects };
+  return {
+    error: null as string | null,
+    prospects,
+    meta: {
+      searchTerms: input.metiers.slice(0, 10),
+      fallbackUsed: false,
+      rawCount: rows.length,
+    } satisfies ScanMeta,
+  };
+}
+
+function expandMetierSearchTerms(input: string) {
+  const raw = String(input || "").trim();
+  if (!raw) return [];
+  const variants = new Set<string>();
+  const add = (value: string) => {
+    const clean = String(value || "").replace(/\s+/g, " ").trim();
+    if (clean.length >= 3) variants.add(clean);
+  };
+  add(raw);
+  add(raw.replace(/\([^)]*\)/g, " "));
+  raw.split("/").forEach((part) => add(part));
+  const withoutParenthesis = raw.replace(/\([^)]*\)/g, " ").trim();
+  if (withoutParenthesis.includes("/")) {
+    add(withoutParenthesis.replace(/\//g, " "));
+  }
+  return Array.from(variants).slice(0, 4);
+}
+
+async function runApifySearchWithFallback(input: { city: string; metier: string; limitPerMetier: number }) {
+  const primary = await runApifySearch({ city: input.city, metiers: [input.metier], limitPerMetier: input.limitPerMetier });
+  if (primary.error || primary.prospects.length > 0) return primary;
+
+  const fallbackTerms = expandMetierSearchTerms(input.metier).filter((term) => term !== input.metier);
+  if (fallbackTerms.length === 0) return primary;
+
+  const fallback = await runApifySearch({ city: input.city, metiers: fallbackTerms, limitPerMetier: input.limitPerMetier });
+  if (fallback.error) return primary;
+
+  return {
+    ...fallback,
+    meta: {
+      ...(fallback.meta || { rawCount: 0 }),
+      searchTerms: fallbackTerms,
+      fallbackUsed: true,
+    } satisfies ScanMeta,
+  };
 }
 
 export async function POST(request: Request) {
@@ -169,11 +231,9 @@ export async function POST(request: Request) {
     if (metiersNormalized.length === 0) return NextResponse.json({ success: false, error: "Liste de métiers vide." }, { status: 400 });
     if (provider !== "b2b") return NextResponse.json({ success: false, error: "Provider non supporté pour l’instant." }, { status: 400 });
 
-    const chunkSize = 10;
-    const chunks = Array.from({ length: Math.ceil(metiersNormalized.length / chunkSize) }).map((_, idx) =>
-      metiersNormalized.slice(idx * chunkSize, idx * chunkSize + chunkSize),
+    const responses = await Promise.all(
+      metiersNormalized.map((metier) => runApifySearchWithFallback({ city, metier, limitPerMetier })),
     );
-    const responses = await Promise.all(chunks.map((chunk) => runApifySearch({ city, metiers: chunk, limitPerMetier })));
     const firstError = responses.find((result) => result.error)?.error || null;
 
     const byPhone = new Map<string, ScanProspect>();
@@ -199,6 +259,7 @@ export async function POST(request: Request) {
       ownerMemberId: admin.ownerMemberId,
       prospects,
       warning: firstError,
+      scanMeta: responses[0]?.meta || null,
     });
   } catch (error) {
     return NextResponse.json(
