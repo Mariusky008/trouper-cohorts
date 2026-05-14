@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ManualVitrineCreateForm } from "./_components/manual-vitrine-create-form";
 
 type VitrineRow = {
   id: string;
@@ -6,6 +7,7 @@ type VitrineRow = {
   business_name: string;
   city: string;
   category: string;
+  whatsapp_phone_e164: string | null;
   status: string;
   public_url: string;
   source_website: string;
@@ -21,7 +23,7 @@ export default async function AdminHumainVitrinesPage() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("human_vitrine_sites")
-    .select("id,slug,business_name,city,category,status,public_url,source_website,error_reason,created_at")
+    .select("id,slug,business_name,city,category,whatsapp_phone_e164,status,public_url,source_website,error_reason,created_at")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -56,6 +58,8 @@ export default async function AdminHumainVitrinesPage() {
         </div>
       </div>
 
+      <ManualVitrineCreateForm />
+
       <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50 px-5 py-4">
           <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-600">Dernières vitrines</h2>
@@ -81,6 +85,7 @@ export default async function AdminHumainVitrinesPage() {
                   <th className="px-5 py-3">Slug</th>
                   <th className="px-5 py-3">Ville</th>
                   <th className="px-5 py-3">Catégorie</th>
+                  <th className="px-5 py-3">WhatsApp</th>
                   <th className="px-5 py-3">Statut</th>
                   <th className="px-5 py-3">Public</th>
                   <th className="px-5 py-3">Source</th>
@@ -92,6 +97,7 @@ export default async function AdminHumainVitrinesPage() {
                   const publicUrl = normalize(row.public_url);
                   const sourceUrl = normalize(row.source_website);
                   const status = normalize(row.status);
+                  const whatsapp = normalize(row.whatsapp_phone_e164);
                   const created = normalize(row.created_at);
                   return (
                     <tr key={row.id} className="border-b last:border-b-0">
@@ -104,6 +110,7 @@ export default async function AdminHumainVitrinesPage() {
                       <td className="px-5 py-3 font-mono text-xs text-slate-700">{normalize(row.slug) || "—"}</td>
                       <td className="px-5 py-3 text-slate-700">{normalize(row.city) || "—"}</td>
                       <td className="px-5 py-3 text-slate-700">{normalize(row.category) || "—"}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-700">{whatsapp || "—"}</td>
                       <td className="px-5 py-3">
                         <span className="inline-flex rounded-full border bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
                           {status || "—"}
@@ -139,4 +146,3 @@ export default async function AdminHumainVitrinesPage() {
     </section>
   );
 }
-
