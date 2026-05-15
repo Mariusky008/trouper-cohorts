@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+const ARRONDISSEMENTS: Record<string, string[]> = {
+  paris: Array.from({ length: 20 }, (_, i) => i === 0 ? "1er" : `${i + 1}ème`),
+  lyon: Array.from({ length: 9 }, (_, i) => i === 0 ? "1er" : `${i + 1}ème`),
+  marseille: Array.from({ length: 16 }, (_, i) => i === 0 ? "1er" : `${i + 1}ème`),
+};
+
+function getArrondissements(ville: string): string[] | null {
+  return ARRONDISSEMENTS[ville.toLowerCase().trim()] ?? null;
+}
 
 export function SearchForm() {
   const router = useRouter();
@@ -15,6 +25,13 @@ export function SearchForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ found: number; imported: number; skipped: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const arrondissements = useMemo(() => getArrondissements(ville), [ville]);
+
+  function handleVilleChange(v: string) {
+    setVille(v);
+    setZone(""); // reset zone when city changes
+  }
 
   async function submit(modeAuto: boolean) {
     setLoading(true);
@@ -40,15 +57,31 @@ export function SearchForm() {
     <div className="rounded-2xl border bg-white p-6 shadow-sm space-y-4">
       <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Recherche Apify</h2>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div className="space-y-1">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ville</label>
-          <Input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Bordeaux" required />
+          <Input value={ville} onChange={(e) => handleVilleChange(e.target.value)} placeholder="Bordeaux" required />
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Zone / Quartier <span className="normal-case font-normal text-slate-400">(optionnel)</span></label>
-          <Input value={zone} onChange={(e) => setZone(e.target.value)} placeholder="Mériadeck, Bacalan…" />
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {arrondissements ? "Arrondissement" : "Zone / Quartier"}
+            {!arrondissements && <span className="ml-1 normal-case font-normal text-slate-400">(optionnel)</span>}
+          </label>
+          {arrondissements ? (
+            <select
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Tous</option>
+              {arrondissements.map((arr) => (
+                <option key={arr} value={arr}>{arr}</option>
+              ))}
+            </select>
+          ) : (
+            <Input value={zone} onChange={(e) => setZone(e.target.value)} placeholder="Mériadeck, Bacalan…" />
+          )}
         </div>
 
         <div className="space-y-1">
@@ -109,7 +142,8 @@ export function SearchForm() {
       </div>
 
       <p className="text-xs text-slate-400">
-        Le scan auto recherche : coiffeur, restaurant, boulangerie, garage, plombier, électricien, fleuriste, kiné, pizzeria, bar — et importe ceux avec moins de {maxAvis} avis Google.
+        Scan auto : coiffeur, restaurant, boulangerie, garage, plombier, électricien, fleuriste, kiné, pizzeria, bar — moins de {maxAvis} avis.
+        {arrondissements && ` Pour ${ville}, sélectionne un arrondissement ou laisse "Tous".`}
       </p>
     </div>
   );
