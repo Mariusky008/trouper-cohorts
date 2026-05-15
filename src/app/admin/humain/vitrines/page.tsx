@@ -51,7 +51,12 @@ export default async function AdminHumainVitrinesPage() {
 
       <ApifyJobLauncher />
 
-      <ApifySearchCommand />
+      <details className="rounded-2xl border bg-white p-5 shadow-sm sm:p-7">
+        <summary className="cursor-pointer text-sm font-bold text-slate-800">Mode expert (commande terminal)</summary>
+        <div className="mt-4">
+          <ApifySearchCommand />
+        </div>
+      </details>
 
       <ManualVitrineCreateForm />
 
