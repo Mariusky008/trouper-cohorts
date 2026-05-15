@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -101,6 +101,7 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   const filtered = useMemo(() => {
     const q = normalize(query).toLowerCase();
@@ -119,6 +120,26 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
       return hay.includes(q);
     });
   }, [query, vitrines]);
+
+  const hasPending = useMemo(() => {
+    return vitrines.some((row) => ["queued", "queued_preview"].includes(normalize(row.status)));
+  }, [vitrines]);
+
+  useEffect(() => {
+    if (!hasPending) {
+      setAutoRefresh(false);
+      return;
+    }
+
+    setAutoRefresh(true);
+    const id = window.setInterval(() => {
+      router.refresh();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [hasPending, router]);
 
   const openRow = (row: VitrineRow) => {
     setError("");
@@ -217,6 +238,7 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Vitrines</p>
           <h2 className="mt-1 text-lg font-black text-slate-950">Pilotage</h2>
+          {autoRefresh ? <p className="mt-1 text-xs font-semibold text-slate-500">Auto-refresh actif (5s)</p> : null}
         </div>
         <div className="flex items-center gap-2">
           <input
