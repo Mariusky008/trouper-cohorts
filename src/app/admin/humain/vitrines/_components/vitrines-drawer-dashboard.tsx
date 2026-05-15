@@ -201,6 +201,16 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
       setInfo("Preview publiée sur l’URL publique.");
     });
 
+  const onDelete = () =>
+    runAction(async () => {
+      if (!selected) return;
+      const ok = window.confirm("Supprimer définitivement cette vitrine ? (action irréversible)");
+      if (!ok) return;
+      await postJson("/api/admin/humain/vitrines/delete", { slug: selected.slug });
+      setInfo("Vitrine supprimée.");
+      close();
+    });
+
   return (
     <div className="rounded-2xl border bg-white shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50 px-5 py-4">
@@ -413,6 +423,14 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                     className="rounded-full border bg-white px-4 py-2 text-xs font-bold text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Envoyer WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !selected}
+                    onClick={onDelete}
+                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Supprimer
                   </button>
                 </div>
               </div>
