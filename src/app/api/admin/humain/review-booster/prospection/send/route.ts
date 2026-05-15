@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       phone_e164: prospect.telephone,
       template_name: contentSid,
       language_code: "fr",
-      vars: [prospect.proprietaire || "là", prospect.nom],
+      vars: [prospect.proprietaire ? ` ${prospect.proprietaire}` : ",", prospect.nom],
       quick_reply_payload: [],
       source: "admin_review_prospection",
       metadata: {
