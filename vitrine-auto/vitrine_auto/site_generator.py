@@ -13,6 +13,29 @@ from .config import env
 
 log = logging.getLogger(__name__)
 
+def _ensure_scroll_reveal(html: str) -> str:
+    text = str(html or "")
+    if "IntersectionObserver" in text:
+        return text
+    style = (
+        "<style>.reveal{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}"
+        ".reveal.visible{opacity:1;transform:translateY(0)}</style>"
+    )
+    script = (
+        "<script>(function(){try{var els=document.querySelectorAll('.reveal');"
+        "if(!els||!els.length||!('IntersectionObserver'in window)){return;}"
+        "var io=new IntersectionObserver(function(entries){entries.forEach(function(e){"
+        "if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:0.1});"
+        "els.forEach(function(el){io.observe(el);});}catch(e){}})();</script>"
+    )
+    if "</head>" in text and ".reveal" not in text:
+        text = text.replace("</head>", f"{style}</head>", 1)
+    if "</body>" in text:
+        text = text.replace("</body>", f"{script}</body>", 1)
+    else:
+        text = text + script
+    return text
+
 # ═══════════════════════════════════════════════════════════════════
 # MASTER PROMPT — NE PAS RACCOURCIR, CHAQUE LIGNE EST INTENTIONNELLE
 # ═══════════════════════════════════════════════════════════════════
@@ -351,6 +374,8 @@ async def generate_site(
             html = match.group(0)
         else:
             raise ValueError(f"HTML invalide retourné par Claude (début: {html[:100]})")
+
+    html = _ensure_scroll_reveal(html)
 
     # ── Checks qualité — log si éléments manquants ───────────
     checks = {
