@@ -25,7 +25,7 @@ def _guess_ext(content_type: str, url: str) -> str:
     suffix = "." + path.split(".")[-1].lower()
     if 1 < len(suffix) <= 6:
       return suffix
-  return ".bin"
+  return ".jpg"
 
 
 def _safe_name(url: str) -> str:
@@ -70,4 +70,3 @@ async def download_assets(
         log.info("Asset download skipped: %s (%s)", url, str(e)[:120])
 
   return results
-

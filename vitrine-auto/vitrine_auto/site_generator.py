@@ -335,6 +335,17 @@ async def generate_site(
     if extra:
         prompt = prompt + "\n\nINSTRUCTIONS DE MODIFICATION (prioritaires) :\n" + extra[:6000] + "\n"
 
+    nav_links = scraped.get("nav_links") or []
+    if isinstance(nav_links, list) and len(nav_links) > 0:
+        prompt = (
+            prompt
+            + "\n\nNAVIGATION (OBLIGATOIRE) :\n"
+            + "- La liste `navigation_pages` est fournie dans les données.\n"
+            + "- Reprends EXACTEMENT ces intitulés dans la navigation (même ordre) et crée des sections correspondantes.\n"
+            + "- Ne remplace pas par des intitulés génériques type \"Nos services\" si une navigation existe.\n"
+            + "- Chaque item doit scroller vers une section (ancres #...) dans la page.\n"
+        )
+
     if assets:
         prompt = (
             prompt
