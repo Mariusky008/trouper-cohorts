@@ -36,9 +36,25 @@ def _ensure_scroll_reveal(html: str) -> str:
         text = text.replace("</head>", f"{style}</head>", 1)
     if "</body>" in text:
         text = text.replace("</body>", f"{script}</body>", 1)
-    else:
-        text = text + script
+        return text
+    m = re.search(r"<body[^>]*>", text, flags=re.IGNORECASE)
+    if m:
+        insert_at = m.end()
+        return text[:insert_at] + script + text[insert_at:]
+    return text + script
     return text
+
+
+def _ensure_closing_tags(html: str) -> str:
+    text = str(html or "")
+    m = re.search(r"</html>", text, flags=re.IGNORECASE)
+    if m:
+        return text[: m.end()]
+    if re.search(r"</body>", text, flags=re.IGNORECASE):
+        return text + "\n</html>"
+    if re.search(r"<body[^>]*>", text, flags=re.IGNORECASE):
+        return text + "\n</body>\n</html>"
+    return text + "\n</html>"
 
 # ═══════════════════════════════════════════════════════════════════
 # MASTER PROMPT — NE PAS RACCOURCIR, CHAQUE LIGNE EST INTENTIONNELLE
@@ -442,6 +458,7 @@ async def generate_site(
             raise ValueError(f"HTML invalide retourné par Claude (début: {html[:100]})")
 
     html = _ensure_scroll_reveal(html)
+    html = _ensure_closing_tags(html)
 
     # ── Checks qualité — log si éléments manquants ───────────
     checks = {

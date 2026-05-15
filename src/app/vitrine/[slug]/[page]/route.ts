@@ -86,8 +86,17 @@ function injectPageMode(html: string, sectionId: string) {
   const script = `<script>(function(){try{var id=${JSON.stringify(
     id,
   )};var el=document.getElementById(id);if(!el){return;}var section=(el.closest&&el.closest('section'))||null;var sections=document.querySelectorAll('section');for(var i=0;i<sections.length;i++){var s=sections[i];var keep=s.id==='accueil'||s.id==='contact'||(section&&s===section);s.style.display=keep?'':'none';}setTimeout(function(){try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}},50);}catch(e){}})();</script>`;
-  const text = String(html || "");
+  let text = String(html || "");
   if (text.includes(script)) return text;
+  const match = text.match(/<body[^>]*>/i);
+  if (match?.[0]) {
+    const idx = text.toLowerCase().indexOf(match[0].toLowerCase());
+    if (idx >= 0) {
+      const insertAt = idx + match[0].length;
+      text = text.slice(0, insertAt) + script + text.slice(insertAt);
+      return text;
+    }
+  }
   if (text.includes("</body>")) return text.replace("</body>", `${script}</body>`);
   return text + script;
 }
