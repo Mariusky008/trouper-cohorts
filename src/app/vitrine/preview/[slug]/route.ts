@@ -101,8 +101,8 @@ export async function GET(request: Request, context: RouteContext) {
   if (downloadError || !file) return new Response("Not found", { status: 404 });
 
   const htmlRaw = await file.text();
-  const withAssets = rewriteAssetUrls(htmlRaw, `/preview/${normalizedSlug}/assets/`, token);
-  const html = rewriteInternalLinks(withAssets, `/preview/${normalizedSlug}`, token);
+  const withAssets = rewriteAssetUrls(htmlRaw, `/vitrine/preview/${normalizedSlug}/assets/`, token);
+  const html = rewriteInternalLinks(withAssets, `/vitrine/preview/${normalizedSlug}`, token);
   return new Response(html, {
     status: 200,
     headers: {

@@ -80,6 +80,19 @@ function injectScrollToSection(html: string, sectionId: string) {
   return text + script;
 }
 
+function injectPageMode(html: string, sectionId: string) {
+  const id = String(sectionId || "").trim().replace(/[^a-z0-9_-]/gi, "");
+  if (!id || id === "accueil" || id === "home") return html;
+  const css = `<style id="page-mode">body[data-page-mode="1"] section{display:none}body[data-page-mode="1"] section#accueil{display:block}body[data-page-mode="1"] section#${id}{display:block}body[data-page-mode="1"] section#contact{display:block}</style>`;
+  const js = `<script>(function(){try{document.body.setAttribute('data-page-mode','1');}catch(e){}})();</script>`;
+  let out = String(html || "");
+  if (out.includes('id="page-mode"')) return out;
+  if (out.includes("</head>")) out = out.replace("</head>", `${css}</head>`);
+  if (out.includes("</body>")) out = out.replace("</body>", `${js}</body>`);
+  else out = out + js;
+  return out;
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   const { slug, page } = await context.params;
   const normalizedSlug = String(slug || "").trim().toLowerCase();
@@ -105,9 +118,10 @@ export async function GET(_request: Request, context: RouteContext) {
   if (downloadError || !file) return new Response("Not found", { status: 404 });
 
   const htmlRaw = await file.text();
-  const withAssets = rewriteAssetUrls(htmlRaw, `/${normalizedSlug}/assets/`);
+  const withAssets = rewriteAssetUrls(htmlRaw, `/vitrine/${normalizedSlug}/assets/`);
   const withLinks = rewriteInternalLinks(withAssets, `/${normalizedSlug}`);
-  const html = injectScrollToSection(withLinks, normalizedPage);
+  const withPageMode = injectPageMode(withLinks, normalizedPage);
+  const html = injectScrollToSection(withPageMode, normalizedPage);
   return new Response(html, {
     status: 200,
     headers: {
@@ -116,4 +130,3 @@ export async function GET(_request: Request, context: RouteContext) {
     },
   });
 }
-
