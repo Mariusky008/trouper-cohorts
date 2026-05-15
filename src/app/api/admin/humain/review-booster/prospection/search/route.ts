@@ -18,7 +18,7 @@ function isMobile(e164: string): boolean {
 async function scrapeApify(
   apifyToken: string,
   secteur: string,
-  ville: string,
+  locationQuery: string,
   limit: number
 ): Promise<Record<string, unknown>[]> {
   const res = await fetch(
@@ -65,11 +65,11 @@ export async function POST(request: Request) {
   let allItems: { item: Record<string, unknown>; secteurLabel: string }[] = [];
   if (modeAuto) {
     const results = await Promise.all(
-      AUTO_SECTEURS.map((s) => scrapeApify(apifyToken, s, ville, 10).then((items) => items.map((item) => ({ item, secteurLabel: s }))))
+      AUTO_SECTEURS.map((s) => scrapeApify(apifyToken, s, locationQuery, 10).then((items) => items.map((item) => ({ item, secteurLabel: s }))))
     );
     allItems = results.flat();
   } else {
-    const items = await scrapeApify(apifyToken, secteur, ville, limit);
+    const items = await scrapeApify(apifyToken, secteur, locationQuery, limit);
     allItems = items.map((item) => ({ item, secteurLabel: secteur }));
   }
 
