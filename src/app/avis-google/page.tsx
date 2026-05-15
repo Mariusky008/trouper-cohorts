@@ -1,17 +1,20 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useInView, type Variants } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { motion, useInView, AnimatePresence, type Variants } from "framer-motion";
 
+// ─── Variants ────────────────────────────────────────────────────────────────
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut" } },
 };
 
-const stagger = {
-  visible: { transition: { staggerChildren: 0.15 } },
+const stagger: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
 };
 
+// ─── Primitives ──────────────────────────────────────────────────────────────
 function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -20,7 +23,7 @@ function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode;
       ref={ref}
       initial="hidden"
       animate={inView ? "visible" : "hidden"}
-      variants={{ hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut", delay } } }}
+      variants={{ hidden: { opacity: 0, y: 36 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut", delay } } }}
       className={className}
     >
       {children}
@@ -38,109 +41,215 @@ function StaggerIn({ children, className }: { children: React.ReactNode; classNa
   );
 }
 
-function PhoneMockup() {
+// ─── Animated counter ────────────────────────────────────────────────────────
+function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const duration = 1800;
+    const step = 16;
+    const increment = target / (duration / step);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, step);
+    return () => clearInterval(timer);
+  }, [inView, target]);
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
+// ─── Phone (merchant form) ────────────────────────────────────────────────────
+function MerchantAppMockup() {
   return (
-    <div className="relative mx-auto" style={{ width: 220, height: 440 }}>
-      {/* Phone frame */}
-      <div className="absolute inset-0 rounded-[2.8rem] bg-neutral-900 shadow-2xl shadow-black/60 border-2 border-neutral-700" />
-      <div className="absolute inset-[3px] rounded-[2.5rem] bg-[#075E54] overflow-hidden flex flex-col">
-        {/* Status bar */}
-        <div className="bg-[#075E54] px-4 pt-3 pb-2 flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-full bg-emerald-300 flex items-center justify-center text-xs font-bold text-emerald-900">JP</div>
+    <div className="relative mx-auto" style={{ width: 200, height: 400 }}>
+      <div className="absolute inset-0 rounded-[2.5rem] bg-neutral-800 shadow-2xl shadow-black/60 border-2 border-neutral-600" />
+      <div className="absolute inset-[3px] rounded-[2.4rem] bg-white overflow-hidden flex flex-col">
+        {/* top bar */}
+        <div className="bg-neutral-900 px-4 pt-3 pb-2 shrink-0 flex items-center justify-between">
+          <div className="text-white text-xs font-bold">🌟 Review Booster</div>
+          <div className="text-emerald-400 text-[10px]">admin</div>
+        </div>
+        {/* form */}
+        <div className="flex-1 bg-slate-50 px-3 pt-4 pb-3 space-y-3 overflow-hidden">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nouveau client</p>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wide">Prénom</label>
+            <div className="bg-white border border-emerald-200 rounded-lg px-2 py-1.5 flex items-center gap-1">
+              <span className="text-xs text-neutral-800 font-medium">Martin</span>
+              <span className="inline-block w-0.5 h-3 bg-emerald-500 animate-pulse ml-0.5" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wide">Téléphone WhatsApp</label>
+            <div className="bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+              <span className="text-xs text-neutral-800">06 12 34 56 78</span>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wide">Commerce</label>
+            <div className="bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+              <span className="text-xs text-neutral-600">Salon Éclat</span>
+            </div>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            className="w-full bg-emerald-500 rounded-xl py-2 text-white text-xs font-bold shadow-md shadow-emerald-400/30"
+          >
+            ✓ Envoyer le client
+          </motion.button>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2 flex items-center gap-2">
+            <span className="text-base">⚡</span>
+            <p className="text-[9px] text-emerald-700 font-semibold leading-tight">WhatsApp envoyé demain matin automatiquement !</p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-3 bg-neutral-800 rounded-full" />
+    </div>
+  );
+}
+
+// ─── Phone (WhatsApp received) ────────────────────────────────────────────────
+function ClientPhoneMockup() {
+  return (
+    <div className="relative mx-auto" style={{ width: 200, height: 400 }}>
+      <div className="absolute inset-0 rounded-[2.5rem] bg-neutral-800 shadow-2xl shadow-black/60 border-2 border-neutral-600" />
+      <div className="absolute inset-[3px] rounded-[2.4rem] bg-[#075E54] overflow-hidden flex flex-col">
+        <div className="bg-[#075E54] px-3 pt-3 pb-2 flex items-center gap-2 shrink-0">
+          <div className="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center text-xs font-bold text-white">SÉ</div>
           <div>
-            <div className="text-white text-xs font-semibold leading-none">Jean-Philippe</div>
+            <div className="text-white text-xs font-semibold leading-none">Salon Éclat</div>
             <div className="text-green-300 text-[10px]">en ligne</div>
           </div>
         </div>
-        {/* Chat */}
-        <div className="flex-1 bg-[#ECE5DD] px-2 pt-2 pb-2 space-y-2 overflow-hidden" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c5bdb4' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}>
-          {/* Incoming message */}
-          <div className="flex justify-start">
-            <div className="bg-white rounded-xl rounded-tl-sm px-2.5 py-1.5 max-w-[75%] shadow-sm">
-              <p className="text-[10px] text-neutral-800 leading-tight">Bonjour Martin 👋</p>
-              <p className="text-[10px] text-neutral-800 leading-tight mt-0.5">Merci pour votre visite chez <strong>Salon Éclat</strong> ✨</p>
-              <p className="text-[10px] text-neutral-600 mt-1">Votre avis nous aide beaucoup !</p>
-              <div className="mt-1.5 bg-emerald-500 rounded-lg px-2 py-1 text-center">
-                <span className="text-white text-[10px] font-semibold">⭐ Laisser mon avis</span>
-              </div>
-              <p className="text-[9px] text-neutral-400 text-right mt-0.5">10:23 ✓✓</p>
+        <div className="flex-1 bg-[#ECE5DD] px-2 pt-3 pb-2 space-y-2 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex justify-start"
+          >
+            <div className="bg-white rounded-xl rounded-tl-sm px-2.5 py-2 max-w-[80%] shadow-sm">
+              <p className="text-[10px] text-neutral-800 leading-snug font-medium">Bonjour Martin 👋</p>
+              <p className="text-[10px] text-neutral-700 leading-snug mt-0.5">Merci pour votre visite chez <strong>Salon Éclat</strong> ✨</p>
+              <p className="text-[10px] text-neutral-600 mt-1">Votre avis compte énormément pour nous !</p>
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="mt-1.5 bg-emerald-500 rounded-lg px-2 py-1 text-center cursor-pointer"
+              >
+                <span className="text-white text-[10px] font-bold">⭐ Laisser mon avis Google</span>
+              </motion.div>
+              <p className="text-[9px] text-neutral-400 text-right mt-0.5">09:15 ✓✓</p>
             </div>
-          </div>
-          {/* Reply */}
-          <div className="flex justify-end">
-            <div className="bg-[#dcf8c6] rounded-xl rounded-tr-sm px-2.5 py-1.5 max-w-[70%] shadow-sm">
-              <p className="text-[10px] text-neutral-800">Avec plaisir ! 😊</p>
-              <p className="text-[9px] text-neutral-400 text-right mt-0.5">10:31 ✓✓</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.2 }}
+            className="flex justify-end"
+          >
+            <div className="bg-[#dcf8c6] rounded-xl rounded-tr-sm px-2.5 py-1.5 shadow-sm">
+              <p className="text-[10px] text-neutral-800">Avec plaisir ! 😄</p>
+              <p className="text-[9px] text-neutral-400 text-right mt-0.5">09:17 ✓✓</p>
             </div>
-          </div>
-          {/* Relance J+6 */}
-          <div className="flex justify-start">
-            <div className="bg-white rounded-xl rounded-tl-sm px-2.5 py-1.5 max-w-[75%] shadow-sm">
-              <p className="text-[10px] text-neutral-800 leading-tight">Martin, vous avez pensé à cet avis ? 🙏</p>
-              <div className="mt-1 bg-emerald-500 rounded-lg px-2 py-1 text-center">
-                <span className="text-white text-[10px] font-semibold">⭐ 2 min, c&apos;est tout</span>
-              </div>
-              <p className="text-[9px] text-neutral-400 text-right mt-0.5">J+6 ✓✓</p>
-            </div>
-          </div>
+          </motion.div>
         </div>
-        {/* Input bar */}
         <div className="bg-[#F0F0F0] px-2 py-1.5 flex items-center gap-1 shrink-0">
           <div className="flex-1 bg-white rounded-full px-2 py-1">
-            <span className="text-[10px] text-neutral-400">Message</span>
+            <span className="text-[10px] text-neutral-400">Message…</span>
           </div>
           <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
             <span className="text-white text-[9px]">↑</span>
           </div>
         </div>
       </div>
-      {/* Notch */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-4 bg-neutral-900 rounded-full" />
+      <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-3 bg-neutral-800 rounded-full" />
     </div>
   );
 }
 
-function GoogleMapsMockup({ position, rating, reviews, name, isTop }: { position: number; rating: number; reviews: number; name: string; isTop: boolean }) {
+// ─── Google review card ───────────────────────────────────────────────────────
+function GoogleReviewCard({ name, stars, text, delay, className }: { name: string; stars: number; text: string; delay: number; className?: string }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
-    <div className={`rounded-xl border p-3 shadow-sm transition-all ${isTop ? "bg-white border-emerald-200 ring-2 ring-emerald-400" : "bg-white border-gray-200 opacity-70"}`}>
-      <div className="flex items-start gap-2">
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${isTop ? "bg-emerald-500" : "bg-gray-400"}`}>
-          {position}
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      animate={inView ? { opacity: 1, scale: 1, y: 0 } : {}}
+      transition={{ delay, duration: 0.5, type: "spring", bounce: 0.3 }}
+      className={`bg-white rounded-2xl p-4 shadow-lg border border-slate-100 ${className ?? ""}`}
+    >
+      <div className="flex items-start gap-3 mb-2">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          {name[0]}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold truncate ${isTop ? "text-emerald-700" : "text-gray-500"}`}>{name}</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-yellow-400 text-xs">{"★".repeat(Math.round(rating))}</span>
-            <span className="text-xs text-gray-600 font-medium">{rating}</span>
-            <span className="text-xs text-gray-400">({reviews} avis)</span>
+        <div>
+          <p className="text-xs font-semibold text-neutral-800">{name}</p>
+          <div className="flex items-center gap-0.5 mt-0.5">
+            {Array.from({ length: stars }).map((_, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={inView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ delay: delay + 0.1 + i * 0.08 }}
+                className="text-yellow-400 text-xs"
+              >★</motion.span>
+            ))}
           </div>
         </div>
-        {isTop && <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded-full shrink-0">TOP</span>}
       </div>
+      <p className="text-xs text-neutral-600 leading-relaxed">{text}</p>
+    </motion.div>
+  );
+}
+
+// ─── Google Maps rank mockup ──────────────────────────────────────────────────
+function RankMockup({ rank, name, reviews, rating, isYou }: { rank: number; name: string; reviews: number; rating: number; isYou?: boolean }) {
+  return (
+    <div className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all ${isYou ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-200" : "bg-white border-gray-100"}`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${isYou ? "bg-emerald-500" : rank === 2 ? "bg-gray-400" : "bg-gray-300"}`}>
+        {rank}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-semibold truncate ${isYou ? "text-emerald-700" : "text-gray-500"}`}>{name}</p>
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-400 text-[10px]">{"★".repeat(Math.round(rating))}</span>
+          <span className="text-[10px] text-gray-500">{rating} ({reviews})</span>
+        </div>
+      </div>
+      {isYou && <span className="text-[10px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full shrink-0">VOUS</span>}
     </div>
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AvisGooglePage() {
   return (
     <main className="bg-white text-neutral-900 overflow-x-hidden">
-      {/* ─── HERO ─────────────────────────────────────────────────────────── */}
+
+      {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center overflow-hidden bg-neutral-950">
-        {/* Gradient orbs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-900/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-40 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-widest uppercase rounded-full px-4 py-1.5 mb-6">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                Spécialiste avis Google
+                Spécialiste avis Google · 100% WhatsApp
               </span>
             </motion.div>
 
@@ -152,7 +261,7 @@ export default function AvisGooglePage() {
             >
               De 60 à<br />
               <span className="text-emerald-400">500 avis Google</span><br />
-              sans effort
+              <span className="text-neutral-400 text-4xl sm:text-5xl">en pilote automatique</span>
             </motion.h1>
 
             <motion.p
@@ -161,8 +270,8 @@ export default function AvisGooglePage() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-neutral-400 text-lg leading-relaxed mb-8 max-w-lg"
             >
-              Vos clients satisfaits reçoivent un WhatsApp automatique après leur visite.
-              Ils cliquent, ils écrivent, vous montez dans Google. <strong className="text-white">Vous ne faites rien.</strong>
+              Vos clients satisfaits reçoivent un WhatsApp après leur visite. Ils cliquent, ils écrivent un avis, vous montez dans Google.
+              <strong className="text-white"> Vous ne faites rien.</strong>
             </motion.p>
 
             <motion.div
@@ -173,344 +282,580 @@ export default function AvisGooglePage() {
             >
               <a
                 href="https://wa.me/33622129675"
-                className="group inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5"
               >
                 <span>💬</span> Démarrer — 79€/mois
               </a>
               <a
-                href="#comment-ca-marche"
+                href="#demo"
                 className="inline-flex items-center justify-center gap-2 border border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm"
               >
-                Voir comment ça marche ↓
+                Voir la démo ↓
               </a>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="flex items-center gap-4 text-xs text-neutral-500"
-            >
-              <span className="flex items-center gap-1"><span className="text-emerald-400">✓</span> Sans engagement</span>
-              <span className="flex items-center gap-1"><span className="text-emerald-400">✓</span> Résultats dès J+2</span>
-              <span className="flex items-center gap-1"><span className="text-emerald-400">✓</span> Zéro effort</span>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-wrap items-center gap-4 text-xs text-neutral-500">
+              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Sans engagement</span>
+              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Résultats dès J+2</span>
+              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 10 secondes par client</span>
             </motion.div>
           </div>
 
-          {/* Phone mockup */}
+          {/* Hero phone mockup */}
           <motion.div
-            initial={{ opacity: 0, x: 60, rotate: 3 }}
-            animate={{ opacity: 1, x: 0, rotate: -2 }}
-            transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
-            className="flex justify-center lg:justify-end"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.9, delay: 0.4, ease: "easeOut" }}
+            className="flex justify-center lg:justify-end gap-4 items-end"
           >
-            <div className="relative">
-              <div className="absolute -inset-8 bg-emerald-500/10 rounded-full blur-2xl" />
-              <PhoneMockup />
+            <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}>
+              <MerchantAppMockup />
+            </motion.div>
+            <div className="flex flex-col items-center gap-2 pb-16">
+              <div className="flex flex-col items-center gap-1">
+                {["⚡", "→", "⭐"].map((s, i) => (
+                  <motion.span key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 + i * 0.2 }} className="text-emerald-400 text-lg">{s}</motion.span>
+                ))}
+              </div>
             </div>
+            <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.5 }}>
+              <ClientPhoneMockup />
+            </motion.div>
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-500"
-        >
-          <span className="text-xs tracking-widest uppercase">Scroll</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="text-lg"
-          >↓</motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-500">
+          <span className="text-xs tracking-widest uppercase">Voir la démo</span>
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-lg">↓</motion.div>
         </motion.div>
       </section>
 
-      {/* ─── BEFORE / AFTER ──────────────────────────────────────────────── */}
-      <section className="bg-slate-50 py-20 sm:py-28">
+      {/* ═══ APP DEMO — 10 secondes ═════════════════════════════════════════ */}
+      <section id="demo" className="bg-slate-50 py-20 sm:py-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-16">
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-3 block">L&apos;application commerçant</span>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light mb-4">
+              Votre seul travail : <span className="italic text-emerald-600">10 secondes</span> par client
+            </h2>
+            <p className="text-neutral-500 max-w-xl mx-auto">
+              Après chaque prestation, vous entrez le prénom et le numéro. Tout le reste se fait sans vous.
+            </p>
+          </FadeIn>
+
+          {/* 4-step flow */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center max-w-5xl mx-auto">
+
+            {/* Step 1 — you enter the client */}
+            <FadeIn delay={0} className="relative">
+              <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 text-center h-full">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-black text-lg flex items-center justify-center mx-auto mb-3">1</div>
+                <div className="text-3xl mb-2">📱</div>
+                <h3 className="font-semibold text-sm mb-1">Vous notez le client</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">Prénom + numéro WhatsApp dans le formulaire. 10 secondes. Terminé.</p>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.05} className="hidden sm:flex justify-center items-center">
+              <motion.div animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-2xl text-emerald-300">→</motion.div>
+            </FadeIn>
+
+            {/* Step 2 — automatic WhatsApp */}
+            <FadeIn delay={0.1} className="relative">
+              <div className="rounded-2xl bg-white border border-emerald-200 shadow-md p-5 text-center h-full ring-2 ring-emerald-100">
+                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-3">2</div>
+                <div className="text-3xl mb-2">💬</div>
+                <h3 className="font-semibold text-sm mb-1">WhatsApp automatique J+1</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">Votre client reçoit un message personnalisé avec son prénom. Bouton avis Google en un clic.</p>
+                <div className="mt-3 bg-emerald-50 rounded-xl p-2">
+                  <p className="text-[10px] text-emerald-700 italic">&ldquo;Bonjour Martin 👋 merci pour votre visite&hellip;&rdquo;</p>
+                </div>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.15} className="hidden sm:flex justify-center items-center">
+              <motion.div animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }} className="text-2xl text-emerald-300">→</motion.div>
+            </FadeIn>
+
+            {/* Step 3 — Google review appears */}
+            <FadeIn delay={0.2} className="sm:col-start-4">
+              <div className="rounded-2xl bg-white border border-amber-200 shadow-sm p-5 text-center h-full">
+                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 font-black text-lg flex items-center justify-center mx-auto mb-3">3</div>
+                <div className="text-3xl mb-2">⭐</div>
+                <h3 className="font-semibold text-sm mb-1">Avis Google posté</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">Martin clique, il écrit son avis. 5 étoiles. Votre compteur monte. Votre position aussi.</p>
+                <div className="mt-3 flex justify-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <motion.span key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 + i * 0.1 }} className="text-yellow-400 text-lg">★</motion.span>
+                  ))}
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+
+          {/* The app screenshot — fake but realistic UI */}
+          <FadeIn delay={0.2} className="mt-16">
+            <div className="max-w-4xl mx-auto rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+              {/* browser bar */}
+              <div className="bg-slate-100 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-rose-400" />
+                  <div className="w-3 h-3 rounded-full bg-amber-400" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-400" />
+                </div>
+                <div className="flex-1 bg-white rounded-lg px-3 py-1 text-xs text-neutral-400 text-center border border-slate-200">
+                  app.review-booster.fr/ajouter-client
+                </div>
+              </div>
+              {/* app content */}
+              <div className="p-6 sm:p-10">
+                <div className="grid sm:grid-cols-2 gap-8 items-start">
+                  {/* left — add client form */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-6">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white text-sm">🌟</div>
+                      <div>
+                        <p className="font-black text-xs uppercase tracking-widest text-neutral-400">Review Booster</p>
+                        <p className="font-semibold text-sm">Salon Éclat — Bordeaux</p>
+                      </div>
+                    </div>
+
+                    <h3 className="font-semibold text-neutral-900 mb-4">Ajouter un client</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Prénom du client</label>
+                        <div className="mt-1 border border-emerald-300 rounded-xl px-3 py-2.5 text-sm bg-emerald-50 flex items-center gap-2">
+                          <span className="text-neutral-700">Martin</span>
+                          <span className="inline-block w-0.5 h-4 bg-emerald-500 animate-pulse" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Numéro WhatsApp</label>
+                        <div className="mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm flex items-center gap-2">
+                          <span className="text-xs text-neutral-400 bg-slate-100 px-1.5 py-0.5 rounded">🇫🇷 +33</span>
+                          <span className="text-neutral-700">6 12 34 56 78</span>
+                        </div>
+                      </div>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-neutral-900 text-white rounded-2xl px-4 py-3 text-sm font-semibold text-center cursor-pointer shadow-lg"
+                      >
+                        ✓ Enregistrer — envoi automatique demain à 9h
+                      </motion.div>
+                    </div>
+
+                    <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-start gap-2">
+                      <span className="text-base mt-0.5">⚡</span>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        Martin recevra un WhatsApp demain à 9h15, puis une relance J+6 si pas de réponse.
+                        <strong className="block mt-0.5">Vous n&apos;avez rien d&apos;autre à faire.</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* right — stats */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-neutral-900">Ce mois-ci</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { v: "14", l: "Avis reçus", c: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+                        { v: "4,8★", l: "Note Google", c: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+                        { v: "#2", l: "Position locale", c: "text-violet-600", bg: "bg-violet-50 border-violet-200" },
+                        { v: "38%", l: "Taux de clic", c: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
+                      ].map(({ v, l, c, bg }) => (
+                        <div key={l} className={`rounded-2xl border p-3 text-center ${bg}`}>
+                          <div className={`text-xl font-black ${c}`}>{v}</div>
+                          <div className="text-xs text-neutral-500 mt-0.5">{l}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* recent reviews */}
+                    <div>
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Derniers avis reçus</p>
+                      <div className="space-y-2">
+                        {[
+                          { name: "Martin B.", stars: 5, time: "il y a 2h", text: "Super coiffeur, je recommande !" },
+                          { name: "Camille R.", stars: 5, time: "hier", text: "Résultat parfait, je reviendrai." },
+                          { name: "Thomas K.", stars: 5, time: "il y a 2j", text: "Très professionnel et rapide." },
+                        ].map(({ name, stars, time, text }) => (
+                          <div key={name} className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-slate-100">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">{name[0]}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1 justify-between">
+                                <span className="text-xs font-semibold">{name}</span>
+                                <span className="text-[10px] text-neutral-400">{time}</span>
+                              </div>
+                              <div className="flex">{"★".repeat(stars).split("").map((s, i) => <span key={i} className="text-yellow-400 text-[10px]">{s}</span>)}</div>
+                              <p className="text-[10px] text-neutral-500 truncate">{text}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ═══ BEFORE / AFTER ════════════════════════════════════════════════ */}
+      <section className="bg-white py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
             <span className="text-xs font-semibold uppercase tracking-widest text-rose-500 mb-3 block">La réalité aujourd&apos;hui</span>
             <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">
               Vos concurrents vous <span className="italic text-rose-500">écrasent</span> sur Google
             </h2>
-            <p className="mt-4 text-neutral-500 max-w-xl mx-auto">
-              Le client tape &ldquo;coiffeur Bordeaux&rdquo;. Il clique sur les 3 premiers. Vous êtes en 8ème position. Il ne vous voit pas.
+            <p className="mt-4 text-neutral-500 max-w-xl mx-auto text-sm">
+              Le client tape &ldquo;coiffeur Bordeaux&rdquo;. Il clique sur les 3 premiers. Vous êtes 8ème. Il ne vous voit pas.
             </p>
           </FadeIn>
 
           <div className="grid sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Before */}
-            <FadeIn delay={0.1}>
+            <FadeIn delay={0.05}>
               <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                 <div className="bg-rose-50 border-b border-rose-100 px-5 py-3 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-rose-400" />
-                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Avant — Aujourd&apos;hui</span>
+                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Aujourd&apos;hui — sans nous</span>
                 </div>
                 <div className="p-4 space-y-2">
-                  <div className="text-xs text-gray-400 mb-3 font-medium">Résultats Google Maps — &ldquo;coiffeur bordeaux&rdquo;</div>
-                  <GoogleMapsMockup position={1} rating={4.8} reviews={487} name="Salon Prestige" isTop={true} />
-                  <GoogleMapsMockup position={2} rating={4.7} reviews={312} name="Studio Coif'" isTop={false} />
-                  <GoogleMapsMockup position={3} rating={4.6} reviews={201} name="L'Atelier Cheveux" isTop={false} />
-                  <div className="border-t border-dashed border-gray-200 my-2 pt-2">
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-rose-400 flex items-center justify-center text-xs font-bold text-white shrink-0">8</div>
-                      <div>
-                        <p className="text-sm font-semibold text-rose-500 truncate">Votre salon</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-yellow-400 text-xs">★★★★☆</span>
-                          <span className="text-xs text-gray-500">4.4 <span className="text-gray-400">(62 avis)</span></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium mb-2">Google Maps · &ldquo;coiffeur bordeaux&rdquo;</p>
+                  {[
+                    { pos: 1, name: "Salon Prestige", rating: 4.8, reviews: 487 },
+                    { pos: 2, name: "Studio Coif'", rating: 4.7, reviews: 312 },
+                    { pos: 3, name: "L'Atelier Cheveux", rating: 4.6, reviews: 201 },
+                  ].map(({ pos, name, rating, reviews }) => (
+                    <RankMockup key={pos} rank={pos} name={name} rating={rating} reviews={reviews} />
+                  ))}
+                  <div className="py-1 text-center text-xs text-gray-300">· · ·</div>
+                  <RankMockup rank={8} name="Votre salon — 62 avis" rating={4.4} reviews={62} isYou />
                 </div>
               </div>
             </FadeIn>
 
-            {/* After */}
-            <FadeIn delay={0.25}>
+            <FadeIn delay={0.15}>
               <div className="rounded-2xl bg-white border border-emerald-200 shadow-sm overflow-hidden">
                 <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-3 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Après — 12 mois</span>
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Dans 12 mois — avec nous</span>
                 </div>
                 <div className="p-4 space-y-2">
-                  <div className="text-xs text-gray-400 mb-3 font-medium">Résultats Google Maps — &ldquo;coiffeur bordeaux&rdquo;</div>
-                  <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 flex items-center gap-2 ring-2 ring-emerald-200">
-                    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white shrink-0">1</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-emerald-700 truncate">Votre salon ✨</p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-yellow-400 text-xs">★★★★★</span>
-                        <span className="text-xs text-gray-700 font-medium">4.8 <span className="text-gray-400">(186 avis)</span></span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">#1</span>
-                  </div>
-                  <GoogleMapsMockup position={2} rating={4.8} reviews={487} name="Salon Prestige" isTop={false} />
-                  <GoogleMapsMockup position={3} rating={4.7} reviews={312} name="Studio Coif'" isTop={false} />
+                  <p className="text-[10px] text-gray-400 font-medium mb-2">Google Maps · &ldquo;coiffeur bordeaux&rdquo;</p>
+                  <RankMockup rank={1} name="Votre salon — 186 avis 🎉" rating={4.8} reviews={186} isYou />
+                  {[
+                    { pos: 2, name: "Salon Prestige", rating: 4.8, reviews: 487 },
+                    { pos: 3, name: "Studio Coif'", rating: 4.7, reviews: 312 },
+                    { pos: 4, name: "L'Atelier Cheveux", rating: 4.6, reviews: 201 },
+                  ].map(({ pos, name, rating, reviews }) => (
+                    <RankMockup key={pos} rank={pos} name={name} rating={rating} reviews={reviews} />
+                  ))}
                 </div>
               </div>
             </FadeIn>
           </div>
+        </div>
+      </section>
+
+      {/* ═══ REVIEWS EXPLOSION ══════════════════════════════════════════════ */}
+      <section className="relative bg-gradient-to-b from-amber-50 to-emerald-50 py-20 sm:py-28 overflow-hidden">
+        {/* floating stars background */}
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-yellow-300 select-none pointer-events-none"
+            style={{ left: `${(i * 8.3) % 100}%`, top: `${(i * 13.7) % 80 + 5}%`, fontSize: `${16 + (i % 4) * 8}px`, opacity: 0.3 }}
+            animate={{ y: [0, -20, 0], rotate: [0, 10, -10, 0], opacity: [0.2, 0.5, 0.2] }}
+            transition={{ repeat: Infinity, duration: 3 + i * 0.4, delay: i * 0.3 }}
+          >★</motion.div>
+        ))}
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-3 block">Ce que ça produit concrètement</span>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light mb-4">
+              Des vrais avis. <span className="italic text-emerald-600">Des vrais clients.</span>
+            </h2>
+            <p className="text-neutral-600 max-w-xl mx-auto text-sm">
+              Chaque avis est un client satisfait qui vous recommande publiquement à toute la ville.
+            </p>
+          </FadeIn>
+
+          {/* Counter + progress bar */}
+          <FadeIn className="max-w-lg mx-auto mb-12">
+            <div className="bg-white rounded-3xl shadow-xl border border-amber-100 p-8 text-center">
+              <div className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-2">Avis Google aujourd&apos;hui</div>
+              <div className="text-7xl font-black text-emerald-500 mb-1">
+                <Counter target={186} />
+              </div>
+              <div className="flex items-center gap-1 justify-center text-yellow-400 text-2xl mb-4">
+                {"★★★★★".split("").map((s, i) => (
+                  <motion.span key={i} animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}>{s}</motion.span>
+                ))}
+              </div>
+              <div className="bg-slate-100 rounded-full h-3 overflow-hidden mb-2">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"
+                  initial={{ width: "12%" }}
+                  whileInView={{ width: "37%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 2, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-neutral-400">
+                <span>62 avis (départ)</span>
+                <span className="text-emerald-600 font-semibold">186 avis aujourd&apos;hui</span>
+                <span>500 avis 🎯</span>
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* Cascading review cards */}
+          <div className="grid sm:grid-cols-3 gap-4">
+            <GoogleReviewCard delay={0.05} name="Martin B." stars={5} text="Super coiffeur ! Je suis venu pour une coupe et le résultat est top. Je recommande vivement à tout le monde." />
+            <GoogleReviewCard delay={0.15} name="Camille R." stars={5} text="Accueil chaleureux, coupe parfaite. Ma meilleure adresse à Bordeaux depuis des années. 5 étoiles méritées !" />
+            <GoogleReviewCard delay={0.25} name="Thomas K." stars={5} text="Très professionnel, à l&apos;écoute et rapide. Prix raisonnables pour une qualité excellente. Bravo !" />
+            <GoogleReviewCard delay={0.05} name="Sophie M." stars={5} text="Je cherchais un bon coiffeur depuis longtemps. J&apos;ai enfin trouvé ! Résultat parfait, je reviendrai." />
+            <GoogleReviewCard delay={0.15} name="Lucas D." stars={5} text="Génial ! L&apos;équipe est sympa, le salon est propre et moderne. Mon nouveau coiffeur attitré sans hésiter." className="sm:col-start-2" />
+            <GoogleReviewCard delay={0.25} name="Emma F." stars={5} text="Franchement bluffée par le résultat. Exactement ce que je voulais. Je recommande les yeux fermés !" />
+          </div>
 
           <FadeIn delay={0.3} className="mt-10 text-center">
-            <div className="inline-flex items-center gap-3 bg-emerald-900/5 border border-emerald-200 rounded-2xl px-6 py-4">
+            <div className="inline-flex items-center gap-3 bg-white rounded-2xl border border-emerald-200 shadow-sm px-6 py-4">
               <span className="text-2xl">📈</span>
               <p className="text-sm text-emerald-800 font-medium">
-                +10 avis réels par mois · de 62 à 186 avis en 12 mois · position #1 dans votre ville
+                +10 avis réels par mois · chaque avis = +1 client de plus qui vous trouve sur Google
               </p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ─── HOW IT WORKS ─────────────────────────────────────────────────── */}
-      <section id="comment-ca-marche" className="bg-white py-20 sm:py-28">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-3 block">Le processus</span>
-            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">
-              3 étapes. <span className="italic">10 secondes</span> de votre temps.
-            </h2>
-          </FadeIn>
-
-          <StaggerIn className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                step: "01",
-                emoji: "📱",
-                color: "emerald",
-                title: "Vous notez le client",
-                desc: "Après la prestation, vous entrez le prénom + numéro WhatsApp en 10 secondes dans un formulaire simple.",
-                detail: "Une URL sur votre téléphone. C'est tout.",
-              },
-              {
-                step: "02",
-                emoji: "🤖",
-                color: "violet",
-                title: "On envoie automatiquement",
-                desc: "Le lendemain matin, votre client reçoit un WhatsApp chaleureux, personnalisé avec son prénom et votre nom.",
-                detail: "Message J+1, puis relance J+6 si pas de réponse.",
-              },
-              {
-                step: "03",
-                emoji: "📈",
-                color: "amber",
-                title: "Vous montez dans Google",
-                desc: "Les avis s'accumulent chaque semaine. Google vous remonte. Les nouveaux clients vous trouvent en premier.",
-                detail: "Résultats visibles dès le 2ème mois.",
-              },
-            ].map(({ step, emoji, color, title, desc, detail }) => (
-              <motion.div
-                key={step}
-                variants={fadeUp}
-                className={`rounded-2xl border p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ${
-                  color === "emerald" ? "border-emerald-100 bg-emerald-50/50" :
-                  color === "violet" ? "border-violet-100 bg-violet-50/50" :
-                  "border-amber-100 bg-amber-50/50"
-                }`}
-              >
-                <div className={`text-6xl font-black absolute -top-2 -right-2 select-none ${
-                  color === "emerald" ? "text-emerald-100" :
-                  color === "violet" ? "text-violet-100" :
-                  "text-amber-100"
-                }`}>{step}</div>
-                <div className="text-4xl mb-4">{emoji}</div>
-                <h3 className="font-semibold text-lg mb-2">{title}</h3>
-                <p className="text-neutral-600 text-sm leading-relaxed mb-3">{desc}</p>
-                <p className={`text-xs font-semibold ${
-                  color === "emerald" ? "text-emerald-600" :
-                  color === "violet" ? "text-violet-600" :
-                  "text-amber-600"
-                }`}>{detail}</p>
-              </motion.div>
-            ))}
-          </StaggerIn>
-        </div>
-      </section>
-
-      {/* ─── THE MAGIC FILTER ────────────────────────────────────────────── */}
+      {/* ═══ PROGRESSION PAR PALIERS ════════════════════════════════════════ */}
       <section className="bg-neutral-950 py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
-        <div className="absolute -top-32 left-1/4 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 right-1/4 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-emerald-500/50 via-emerald-500/20 to-transparent pointer-events-none" />
+        <div className="absolute -top-32 left-1/4 w-64 h-64 bg-emerald-500/8 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 right-1/4 w-64 h-64 bg-violet-500/8 rounded-full blur-3xl" />
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-14">
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-3 block">La fonctionnalité secrète</span>
-            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light text-white mb-4">
-              Les insatisfaits restent <span className="text-rose-400">privés</span>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-16">
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-4 block">La progression par paliers</span>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-6xl font-light text-white mb-4">
+              De 0 à 500 avis :<br /><span className="text-emerald-400 italic">l&apos;ascension</span>
             </h2>
-            <p className="text-neutral-400 max-w-xl mx-auto">
-              Avant de diriger un client vers Google, on lui pose la question. Sa réponse détermine la suite.
+            <p className="text-neutral-400 max-w-lg mx-auto text-sm">
+              Chaque palier change quelque chose. Voici exactement ce qui se passe à chaque étape.
             </p>
           </FadeIn>
 
-          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            <FadeIn delay={0.1}>
-              <div className="rounded-2xl bg-neutral-900 border border-rose-500/30 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-lg">😕</div>
-                  <span className="text-rose-400 font-semibold text-sm">&ldquo;Bof, pas super...&rdquo;</span>
+          <div className="space-y-4">
+            {[
+              {
+                count: "10",
+                label: "avis",
+                emoji: "🌱",
+                title: "Le déclic",
+                desc: "Les premiers avis arrivent. Votre fiche Google s'anime. Vous passez de \"commerce inconnu\" à \"commerce qui existe\". Vos proches qui hésitaient vous recommandent maintenant avec confiance.",
+                color: "emerald",
+                milestone: "Mois 1",
+              },
+              {
+                count: "50",
+                label: "avis",
+                emoji: "🚀",
+                title: "Vous sortez de l'anonymat",
+                desc: "Google commence à vous afficher dans les suggestions locales. De nouveaux clients que vous ne connaissez pas vous trouvent pour la première fois. Le bouche-à-oreille digital commence.",
+                color: "teal",
+                milestone: "Mois 5",
+              },
+              {
+                count: "100",
+                label: "avis",
+                emoji: "🔥",
+                title: "Vos concurrents s'inquiètent",
+                desc: "Vous êtes dans le Top 5 local. Les clients comparent et vous choisissent. Vos concurrents voient leur trafic baisser. Certains vous demandent comment vous faites.",
+                color: "amber",
+                milestone: "Mois 10",
+              },
+              {
+                count: "200",
+                label: "avis",
+                emoji: "👑",
+                title: "Vous dominez votre ville",
+                desc: "Top 3 garanti. Les nouveaux clients dans la ville vous trouvent en premier. Votre carnet de rendez-vous se remplit sans pub. Votre réputation est établie.",
+                color: "violet",
+                milestone: "Mois 20",
+              },
+              {
+                count: "500",
+                label: "avis",
+                emoji: "🏆",
+                title: "Personne ne peut vous rattraper",
+                desc: "Vous êtes la référence absolue de votre ville. Même si un concurrent lance le même service aujourd&apos;hui, il lui faudra des années pour vous rejoindre. Vous êtes imbattable. Pour toujours.",
+                color: "gold",
+                milestone: "Mois 48",
+              },
+            ].map(({ count, label, emoji, title, desc, color, milestone }, i) => (
+              <FadeIn key={count} delay={i * 0.08}>
+                <div className={`relative rounded-2xl border overflow-hidden ${
+                  color === "emerald" ? "border-emerald-800 bg-emerald-950/50" :
+                  color === "teal" ? "border-teal-800 bg-teal-950/50" :
+                  color === "amber" ? "border-amber-800 bg-amber-950/50" :
+                  color === "violet" ? "border-violet-800 bg-violet-950/50" :
+                  "border-yellow-600 bg-yellow-950/50 ring-2 ring-yellow-500/30"
+                }`}>
+                  <div className="flex items-start gap-4 p-5 sm:p-6">
+                    <div className={`shrink-0 rounded-2xl p-3 text-center min-w-[70px] ${
+                      color === "emerald" ? "bg-emerald-900/50" :
+                      color === "teal" ? "bg-teal-900/50" :
+                      color === "amber" ? "bg-amber-900/50" :
+                      color === "violet" ? "bg-violet-900/50" :
+                      "bg-yellow-900/50"
+                    }`}>
+                      <div className="text-2xl mb-1">{emoji}</div>
+                      <div className={`text-2xl font-black ${
+                        color === "emerald" ? "text-emerald-400" :
+                        color === "teal" ? "text-teal-400" :
+                        color === "amber" ? "text-amber-400" :
+                        color === "violet" ? "text-violet-400" :
+                        "text-yellow-400"
+                      }`}>{count}</div>
+                      <div className="text-xs text-neutral-500">{label}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-white">{title}</h3>
+                        <span className="text-xs text-neutral-500 shrink-0 ml-2">{milestone}</span>
+                      </div>
+                      <p className="text-sm text-neutral-400 leading-relaxed">{desc}</p>
+                    </div>
+                  </div>
+                  {/* progress bar */}
+                  <div className="h-1 bg-neutral-800">
+                    <motion.div
+                      className={`h-full ${
+                        color === "emerald" ? "bg-emerald-500" :
+                        color === "teal" ? "bg-teal-500" :
+                        color === "amber" ? "bg-amber-500" :
+                        color === "violet" ? "bg-violet-500" :
+                        "bg-yellow-500"
+                      }`}
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${(parseInt(count) / 500) * 100}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                    />
+                  </div>
                 </div>
-                <div className="bg-neutral-800 rounded-xl p-4 mb-4">
-                  <p className="text-xs text-neutral-300 leading-relaxed">
-                    Le client exprime son mécontentement. Ce message vous arrive <strong className="text-white">en privé</strong> sur votre tableau de bord.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-rose-400">
-                  <span>🔒</span>
-                  <span>Jamais publié sur Google</span>
-                </div>
-                <p className="mt-3 text-xs text-neutral-500">Vous gérez le problème, vous gardez votre réputation.</p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.2}>
-              <div className="rounded-2xl bg-neutral-900 border border-emerald-500/30 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-lg">😍</div>
-                  <span className="text-emerald-400 font-semibold text-sm">&ldquo;Parfait, super !&rdquo;</span>
-                </div>
-                <div className="bg-neutral-800 rounded-xl p-4 mb-4">
-                  <p className="text-xs text-neutral-300 leading-relaxed">
-                    Le client est redirigé vers votre fiche Google et laisse un <strong className="text-white">vrai avis 5 étoiles</strong> en 2 clics.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-emerald-400">
-                  <span>⭐</span>
-                  <span>Publié sur votre fiche Google</span>
-                </div>
-                <p className="mt-3 text-xs text-neutral-500">+1 avis. Compteur qui monte. Ranking qui suit.</p>
-              </div>
-            </FadeIn>
+              </FadeIn>
+            ))}
           </div>
 
-          <FadeIn delay={0.3} className="mt-10 text-center">
-            <p className="text-neutral-400 text-sm">
-              Résultat : votre note Google <strong className="text-white">monte</strong>, vos problèmes restent <strong className="text-white">privés</strong>.
-            </p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ─── STATS ────────────────────────────────────────────────────────── */}
-      <section className="bg-white py-20 sm:py-28 border-y border-slate-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <StaggerIn className="grid sm:grid-cols-3 gap-8 text-center">
-            {[
-              { value: "+10", label: "avis réels par mois", sub: "en moyenne sur nos clients actifs", color: "emerald" },
-              { value: "4,7★", label: "note moyenne", sub: "atteinte après 6 mois de service", color: "amber" },
-              { value: "40%", label: "taux de clic", sub: "des clients cliquent sur le bouton avis", color: "violet" },
-            ].map(({ value, label, sub, color }) => (
-              <motion.div key={label} variants={fadeUp} className="space-y-2">
-                <div className={`text-5xl font-black ${
-                  color === "emerald" ? "text-emerald-500" :
-                  color === "amber" ? "text-amber-500" :
-                  "text-violet-500"
-                }`}>{value}</div>
-                <div className="font-semibold text-neutral-900">{label}</div>
-                <div className="text-sm text-neutral-400">{sub}</div>
-              </motion.div>
-            ))}
-          </StaggerIn>
-        </div>
-      </section>
-
-      {/* ─── 500 AVIS ─────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-emerald-950 via-neutral-900 to-violet-950 py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <FadeIn>
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-4 block">L&apos;objectif ultime</span>
-            <h2 className="font-[family-name:var(--font-cormorant)] text-5xl sm:text-7xl font-light text-white mb-6 leading-tight">
-              500 avis : le seuil<br />où vous devenez<br /><span className="text-emerald-400 italic">imbattable</span>
-            </h2>
-            <p className="text-neutral-300 text-lg max-w-2xl mx-auto mb-12 leading-relaxed">
-              Dans votre ville, combien de concurrents ont plus de 200 avis ? <strong className="text-white">Un ou deux.</strong>
-              Celui qui en a 500 devient LA référence. Les autres travaillent pour lui.
-              <br /><br />
-              À 79€/mois, vous y êtes en moins de 4 ans — et vous prenez de l&apos;avance <strong className="text-emerald-400">dès le 6ème mois.</strong>
-            </p>
-
-            {/* Timeline */}
-            <div className="grid grid-cols-4 gap-2 max-w-2xl mx-auto mb-12">
-              {[
-                { mois: "M1", avis: "10", label: "Premiers avis", active: false },
-                { mois: "M6", avis: "60", label: "Top 3 local", active: false },
-                { mois: "M12", avis: "120", label: "Référence ville", active: false },
-                { mois: "M48", avis: "500+", label: "Imbattable", active: true },
-              ].map(({ mois, avis, label, active }) => (
-                <div key={mois} className={`rounded-xl p-3 border ${active ? "border-emerald-400 bg-emerald-400/10" : "border-neutral-700 bg-neutral-800/50"}`}>
-                  <div className="text-xs text-neutral-400 mb-1">{mois}</div>
-                  <div className={`text-2xl font-bold ${active ? "text-emerald-400" : "text-white"}`}>{avis}</div>
-                  <div className="text-xs text-neutral-400">{label}</div>
-                </div>
-              ))}
+          <FadeIn delay={0.2} className="mt-12 text-center">
+            <div className="inline-block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-8 py-6">
+              <p className="text-yellow-300 font-semibold text-lg">🏆 À 500 avis, le jeu est terminé.</p>
+              <p className="text-neutral-400 text-sm mt-1">Vos concurrents travaillent pour vous.</p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ─── WHAT'S INCLUDED ─────────────────────────────────────────────── */}
+      {/* ═══ THE MAGIC FILTER ═══════════════════════════════════════════════ */}
+      <section className="bg-white py-20 sm:py-28">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-violet-600 mb-3 block">La fonctionnalité qui protège</span>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light mb-4">
+              Les insatisfaits restent <span className="italic text-rose-500">privés</span>
+            </h2>
+            <p className="text-neutral-500 max-w-xl mx-auto text-sm">
+              Avant Google, on filtre. Les mauvaises expériences vous arrivent en message privé. Seuls les clients heureux publient.
+            </p>
+          </FadeIn>
+
+          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <FadeIn delay={0.05}>
+              <div className="rounded-2xl bg-rose-50 border border-rose-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-3xl">😕</div>
+                  <div>
+                    <p className="font-semibold text-rose-700">Client insatisfait</p>
+                    <p className="text-xs text-rose-500">&ldquo;Bof, c&apos;était moyen…&rdquo;</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 mb-4 border border-rose-100">
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    Son message vous arrive <strong>en privé</strong> dans votre tableau de bord. Vous lui répondez, vous réglez le problème.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 bg-rose-100 rounded-xl px-3 py-2">
+                  <span>🔒</span>
+                  <span className="text-xs font-semibold text-rose-700">Jamais publié sur Google</span>
+                </div>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.15}>
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-3xl">😍</div>
+                  <div>
+                    <p className="font-semibold text-emerald-700">Client satisfait</p>
+                    <p className="text-xs text-emerald-600">&ldquo;Super, parfait !&rdquo;</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 mb-4 border border-emerald-100">
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    Il est redirigé vers votre fiche Google. Il laisse un <strong>vrai avis 5 étoiles</strong> en 2 clics.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 bg-emerald-100 rounded-xl px-3 py-2">
+                  <span>⭐</span>
+                  <span className="text-xs font-semibold text-emerald-700">Publié sur Google. Visible de tous.</span>
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ STATS ══════════════════════════════════════════════════════════ */}
+      <section className="bg-neutral-950 py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <StaggerIn className="grid sm:grid-cols-3 gap-8 text-center">
+            {[
+              { target: 10, suffix: "+", label: "avis réels par mois", sub: "en moyenne sur nos clients", color: "text-emerald-400" },
+              { target: 40, suffix: "%", label: "taux de clic WhatsApp", sub: "3x plus qu&apos;un email", color: "text-amber-400" },
+              { target: 47, suffix: "★", label: "note moyenne atteinte", sub: "après 6 mois de service", color: "text-yellow-400" },
+            ].map(({ target, suffix, label, sub, color }) => (
+              <motion.div key={label} variants={fadeUp} className="space-y-2">
+                <div className={`text-6xl font-black ${color}`}>
+                  <Counter target={target} suffix={suffix === "★" ? "" : suffix} />
+                  {suffix === "★" && <span className="text-yellow-400">★</span>}
+                </div>
+                <div className="font-semibold text-white">{label}</div>
+                <div className="text-sm text-neutral-500" dangerouslySetInnerHTML={{ __html: sub }} />
+              </motion.div>
+            ))}
+          </StaggerIn>
+        </div>
+      </section>
+
+      {/* ═══ WHAT'S INCLUDED ═══════════════════════════════════════════════ */}
       <section className="bg-slate-50 py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
             <span className="text-xs font-semibold uppercase tracking-widest text-violet-600 mb-3 block">Votre abonnement</span>
-            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">
-              Tout inclus. Rien à gérer.
-            </h2>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">Tout inclus. Rien à gérer.</h2>
           </FadeIn>
-
           <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
             {[
               { icon: "💬", title: "WhatsApp automatique J+1 et J+6", desc: "Message chaleureux, personnalisé avec le prénom." },
               { icon: "🔒", title: "Filtre anti-mauvais avis", desc: "Les insatisfaits restent en privé. Toujours." },
               { icon: "📊", title: "Tableau de bord en temps réel", desc: "Vos stats, vos avis, vos clients — tout en un." },
-              { icon: "📋", title: "Rapport mensuel d&apos;évolution", desc: "Vous voyez la progression mois par mois." },
+              { icon: "📋", title: "Rapport mensuel d'évolution", desc: "Vous voyez la progression mois par mois." },
               { icon: "💡", title: "Réponse à vos avis Google", desc: "Je réponds à vos avis chaque semaine pour vous." },
               { icon: "🤝", title: "Support WhatsApp direct", desc: "Je réponds sous 2h. Pas un chatbot. Moi." },
             ].map(({ icon, title, desc }) => (
@@ -518,7 +863,7 @@ export default function AvisGooglePage() {
                 <div className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   <span className="text-2xl shrink-0">{icon}</span>
                   <div>
-                    <p className="font-semibold text-sm text-neutral-900 mb-0.5" dangerouslySetInnerHTML={{ __html: title }} />
+                    <p className="font-semibold text-sm text-neutral-900 mb-0.5">{title}</p>
                     <p className="text-xs text-neutral-500 leading-relaxed">{desc}</p>
                   </div>
                 </div>
@@ -528,16 +873,12 @@ export default function AvisGooglePage() {
         </div>
       </section>
 
-      {/* ─── PRICING ──────────────────────────────────────────────────────── */}
+      {/* ═══ PRICING ════════════════════════════════════════════════════════ */}
       <section className="bg-white py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
-            <span className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-3 block">Tarif</span>
-            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">
-              Simple. Transparent.
-            </h2>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">Simple. Transparent.</h2>
           </FadeIn>
-
           <FadeIn>
             <div className="max-w-sm mx-auto">
               <div className="rounded-3xl border-2 border-neutral-900 bg-white shadow-2xl shadow-neutral-200 overflow-hidden">
@@ -546,14 +887,7 @@ export default function AvisGooglePage() {
                   <div className="text-neutral-400 text-sm">par mois · sans engagement</div>
                 </div>
                 <div className="px-8 py-6 space-y-4">
-                  {[
-                    "WhatsApp automatique J+1 et J+6",
-                    "Filtre anti-mauvais avis",
-                    "Tableau de bord en temps réel",
-                    "Rapport mensuel d'évolution",
-                    "Réponse aux avis Google (1x/semaine)",
-                    "Support WhatsApp — réponse sous 2h",
-                  ].map((item) => (
+                  {["WhatsApp automatique J+1 et J+6", "Filtre anti-mauvais avis", "Tableau de bord en temps réel", "Rapport mensuel d'évolution", "Réponse aux avis Google (1x/semaine)", "Support WhatsApp — réponse sous 2h"].map((item) => (
                     <div key={item} className="flex items-start gap-3 text-sm text-neutral-700">
                       <span className="text-emerald-500 font-bold mt-0.5 shrink-0">✓</span>
                       <span>{item}</span>
@@ -561,67 +895,37 @@ export default function AvisGooglePage() {
                   ))}
                 </div>
                 <div className="px-8 pb-8">
-                  <a
-                    href="https://wa.me/33622129675"
-                    className="block w-full bg-neutral-900 hover:bg-neutral-700 text-white rounded-full px-8 py-3.5 font-semibold transition-colors text-center text-sm mb-3"
-                  >
+                  <a href="https://wa.me/33622129675" className="block w-full bg-neutral-900 hover:bg-neutral-700 text-white rounded-full px-8 py-3.5 font-semibold transition-colors text-center text-sm mb-3">
                     Démarrer maintenant →
                   </a>
-                  <p className="text-center text-xs text-neutral-400">
-                    Résiliation à tout moment · Pas de frais cachés
-                  </p>
+                  <p className="text-center text-xs text-neutral-400">Résiliation à tout moment · Pas de frais cachés</p>
                 </div>
               </div>
             </div>
           </FadeIn>
-
-          <FadeIn delay={0.2} className="mt-10 text-center">
+          <FadeIn delay={0.2} className="mt-8 text-center">
             <div className="inline-flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-4 max-w-md">
               <span className="text-2xl">🧮</span>
-              <p className="text-sm text-emerald-800">
-                <strong>ROI garanti :</strong> 1 nouveau client Google = 50 à 200€.
-                Il suffit d&apos;1 client par mois pour être rentable.
-              </p>
+              <p className="text-sm text-emerald-800"><strong>ROI garanti :</strong> 1 client Google = 50–200€. Il suffit d&apos;1 par mois pour être rentable. La plupart en ont 3 à 5 dès le 2ème mois.</p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ─── FAQ ──────────────────────────────────────────────────────────── */}
+      {/* ═══ FAQ ════════════════════════════════════════════════════════════ */}
       <section className="bg-slate-50 py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
-            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">
-              Vos questions
-            </h2>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">Vos questions</h2>
           </FadeIn>
-
           <div className="max-w-2xl mx-auto space-y-3">
             {[
-              {
-                q: "Est-ce que mes clients vont trouver ça bizarre ?",
-                a: "Non. Le message WhatsApp est naturel, chaleureux, personnalisé avec leur prénom et votre nom. 40% des clients cliquent. C'est 3x plus qu'un email.",
-              },
-              {
-                q: "Et si un client est insatisfait ?",
-                a: "Il ne va pas sur Google. Il répond en privé et son message arrive sur votre tableau de bord. Vous gérez, vous fidélisez. Seuls les clients heureux publient un avis.",
-              },
-              {
-                q: "Je dois installer quelque chose ?",
-                a: "Non. Juste une URL sur votre téléphone pour noter prénom + numéro après chaque client. 10 secondes maximum.",
-              },
-              {
-                q: "Combien de temps avant de voir des résultats ?",
-                a: "Les premiers avis arrivent dans les 48h suivant le lancement. En général +10 nouveaux avis dès le 1er mois.",
-              },
-              {
-                q: "Sans engagement, ça veut dire quoi ?",
-                a: "Vous payez mois par mois, par virement ou carte. Vous arrêtez quand vous voulez, sans frais ni justification. Je ne fais pas de rétention.",
-              },
-              {
-                q: "Est-ce conforme au RGPD ?",
-                a: "Oui. Les numéros WhatsApp sont collectés avec accord du client (il les donne volontairement). Les données sont stockées sur des serveurs sécurisés européens.",
-              },
+              { q: "Est-ce que mes clients vont trouver ça bizarre ?", a: "Non. Le message WhatsApp est naturel, chaleureux, personnalisé avec leur prénom et votre nom. 40% des clients cliquent. C'est 3x plus qu'un email." },
+              { q: "Et si un client est insatisfait ?", a: "Il ne va pas sur Google. Il répond en privé et son message arrive sur votre tableau de bord. Vous gérez, vous fidélisez. Seuls les clients heureux publient un avis." },
+              { q: "Je dois installer quelque chose ?", a: "Non. Juste une URL sur votre téléphone pour noter prénom + numéro après chaque client. 10 secondes maximum." },
+              { q: "Combien de temps avant de voir des résultats ?", a: "Les premiers avis arrivent dans les 48h suivant le lancement. En général +10 nouveaux avis dès le 1er mois." },
+              { q: "Sans engagement, ça veut dire quoi ?", a: "Vous payez mois par mois. Vous arrêtez quand vous voulez, sans frais ni justification. Je ne fais pas de rétention." },
+              { q: "Est-ce conforme au RGPD ?", a: "Oui. Les numéros WhatsApp sont collectés avec accord du client. Les données sont stockées sur des serveurs sécurisés européens." },
             ].map(({ q, a }) => (
               <FadeIn key={q}>
                 <details className="group rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -629,9 +933,7 @@ export default function AvisGooglePage() {
                     {q}
                     <span className="text-neutral-400 group-open:rotate-180 transition-transform duration-200 shrink-0 ml-4">↓</span>
                   </summary>
-                  <div className="px-5 pb-5 text-neutral-600 leading-relaxed text-sm border-t border-slate-100 pt-4">
-                    {a}
-                  </div>
+                  <div className="px-5 pb-5 text-neutral-600 leading-relaxed text-sm border-t border-slate-100 pt-4">{a}</div>
                 </details>
               </FadeIn>
             ))}
@@ -639,31 +941,40 @@ export default function AvisGooglePage() {
         </div>
       </section>
 
-      {/* ─── FINAL CTA ────────────────────────────────────────────────────── */}
+      {/* ═══ FINAL CTA ══════════════════════════════════════════════════════ */}
       <section className="relative bg-neutral-950 py-24 sm:py-32 overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
+
+        {/* flying stars */}
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-yellow-400/30 select-none pointer-events-none text-2xl"
+            style={{ left: `${10 + i * 11}%`, top: `${20 + (i % 3) * 25}%` }}
+            animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2] }}
+            transition={{ repeat: Infinity, duration: 3 + i * 0.5, delay: i * 0.4 }}
+          >★</motion.div>
+        ))}
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <FadeIn>
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-6 block">Prochaine étape</span>
+            <div className="text-5xl mb-6">🏆</div>
             <h2 className="font-[family-name:var(--font-cormorant)] text-5xl sm:text-6xl font-light text-white mb-6">
               Devenez la référence<br />de votre ville
             </h2>
             <p className="text-neutral-400 text-lg mb-10 leading-relaxed">
               Envoyez-moi un message WhatsApp. On échange 10 minutes.
-              Je vous montre exactement où vous en êtes sur Google et ce qu&apos;on peut faire.
+              Je vous montre exactement où vous en êtes sur Google et ce qu&apos;on peut construire ensemble.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <a
-                href="https://wa.me/33622129675"
-                className="group inline-flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-8 py-4 font-semibold transition-all text-base shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1"
-              >
-                <span className="text-xl">💬</span>
-                Contacter Jean-Philippe sur WhatsApp
-              </a>
-            </div>
+            <a
+              href="https://wa.me/33622129675"
+              className="inline-flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-10 py-4 font-semibold transition-all text-lg shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 mb-8"
+            >
+              <span className="text-xl">💬</span>
+              Contacter Jean-Philippe sur WhatsApp
+            </a>
 
             <div className="flex items-center justify-center gap-6 text-xs text-neutral-500">
               <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Réponse sous 2h</span>
