@@ -29,6 +29,9 @@ export default async function AdminLayout({
             <a href="/admin/humain/review-booster" className="hover:underline">
               Avis Google
             </a>
+            <a href="/admin/humain/review-booster/prospection" className="hover:underline">
+              Prospection
+            </a>
             <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
             </a>
