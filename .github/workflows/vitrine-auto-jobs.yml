@@ -36,3 +36,7 @@ jobs:
         run: |
           python -m vitrine_auto.job_runner
 
+      - name: Consume queued vitrines
+        working-directory: vitrine-auto
+        run: |
+          python main.py --consume-queue --batch 3

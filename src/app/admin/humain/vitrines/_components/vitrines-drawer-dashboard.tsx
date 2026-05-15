@@ -333,7 +333,7 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                         Ouvrir source
                       </a>
                     ) : null}
-                    {normalize(selected.preview_url) ? (
+                    {normalize(selected.preview_url) && normalize(selected.status) === "preview_uploaded" ? (
                       <a
                         href={normalize(selected.preview_url)}
                         target="_blank"
@@ -342,6 +342,14 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                       >
                         Ouvrir preview
                       </a>
+                    ) : normalize(selected.status) === "queued_preview" ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="rounded-full border bg-white px-3 py-2 text-xs font-semibold text-slate-500 opacity-70"
+                      >
+                        Preview en attente
+                      </button>
                     ) : null}
                     <button
                       type="button"
@@ -438,7 +446,7 @@ export function VitrinesDrawerDashboard({ vitrines }: { vitrines: VitrineRow[] }
                   </button>
                   <button
                     type="button"
-                    disabled={busy || !selected || !normalize(selected.preview_storage_prefix)}
+                    disabled={busy || !selected || normalize(selected.status) !== "preview_uploaded" || !normalize(selected.preview_url)}
                     onClick={onPublishPreview}
                     className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
