@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type RouteContext = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; page: string }>;
 };
 
 function rewriteAssetUrls(html: string, assetBase: string) {
@@ -23,10 +23,6 @@ function rewriteAssetUrls(html: string, assetBase: string) {
       })
       .join(", ");
     return `srcset=${q}${next}${q}`;
-  });
-  out = out.replace(/url\(\s*(["']?)assets\/([^"')]+)\1\s*\)/gi, (_m, q: string, path: string) => {
-    const quote = q || "";
-    return `url(${quote}${base}${path}${quote})`;
   });
   out = out.replace(/url\(\s*(["']?)(?:\.\/)?\/?assets\/([^"')]+)\1\s*\)/gi, (_m, q: string, path: string) => {
     const quote = q || "";
@@ -72,10 +68,23 @@ function rewriteInternalLinks(html: string, pageBase: string) {
   });
 }
 
+function injectScrollToSection(html: string, sectionId: string) {
+  const id = String(sectionId || "").trim().replace(/[^a-z0-9_-]/gi, "");
+  if (!id || id === "accueil" || id === "home") return html;
+  const script = `<script>(function(){try{var id=${JSON.stringify(
+    id,
+  )};var el=document.getElementById(id);if(!el){return;}setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},50);}catch(e){}})();</script>`;
+  const text = String(html || "");
+  if (text.includes(script)) return text;
+  if (text.includes("</body>")) return text.replace("</body>", `${script}</body>`);
+  return text + script;
+}
+
 export async function GET(_request: Request, context: RouteContext) {
-  const { slug } = await context.params;
+  const { slug, page } = await context.params;
   const normalizedSlug = String(slug || "").trim().toLowerCase();
-  if (!normalizedSlug) return new Response("Not found", { status: 404 });
+  const normalizedPage = String(page || "").trim().toLowerCase();
+  if (!normalizedSlug || !normalizedPage) return new Response("Not found", { status: 404 });
 
   const supabase = createAdminClient();
   const { data: site, error } = await supabase
@@ -97,7 +106,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const htmlRaw = await file.text();
   const withAssets = rewriteAssetUrls(htmlRaw, `/${normalizedSlug}/assets/`);
-  const html = rewriteInternalLinks(withAssets, `/${normalizedSlug}`);
+  const withLinks = rewriteInternalLinks(withAssets, `/${normalizedSlug}`);
+  const html = injectScrollToSection(withLinks, normalizedPage);
   return new Response(html, {
     status: 200,
     headers: {
@@ -106,3 +116,4 @@ export async function GET(_request: Request, context: RouteContext) {
     },
   });
 }
+

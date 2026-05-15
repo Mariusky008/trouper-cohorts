@@ -11,6 +11,7 @@ import asyncio
 import aiohttp
 
 from .config import env
+from .slug import slugify
 
 log = logging.getLogger(__name__)
 
@@ -310,6 +311,32 @@ async def generate_site(
         phone_clean = "33" + phone_clean[1:]
     phone_clean = phone_clean.lstrip("+")
 
+    raw_nav = scraped.get("nav_links") or []
+    navigation_pages: list[dict[str, str]] = []
+    seen_page_slugs: set[str] = set()
+    if isinstance(raw_nav, list):
+        for item in raw_nav:
+            label = ""
+            if isinstance(item, dict):
+                label = str(item.get("label") or item.get("text") or "").strip()
+            else:
+                label = str(item or "").strip()
+            if not label:
+                continue
+            page_slug = slugify(label, max_len=40)
+            if page_slug in seen_page_slugs:
+                continue
+            seen_page_slugs.add(page_slug)
+            navigation_pages.append({"label": label, "page_slug": page_slug})
+    if not navigation_pages:
+        fallback = ["Accueil", "Services", "Réalisations", "Avis clients", "Zones d'intervention", "Contact"]
+        for label in fallback:
+            page_slug = slugify(label, max_len=40)
+            if page_slug in seen_page_slugs:
+                continue
+            seen_page_slugs.add(page_slug)
+            navigation_pages.append({"label": label, "page_slug": page_slug})
+
     data_summary = {
         "nom_entreprise": str(biz.get("name") or "").strip(),
         "secteur": str(biz.get("category") or "").strip(),
@@ -325,7 +352,7 @@ async def generate_site(
         "note_google": f"{biz.get('rating','')} / 5 ({biz.get('reviews_count','')} avis)" if biz.get("rating") else "",
         "assets": [{"relative_path": a.get("relative_path"), "source_url": a.get("source_url")} for a in (assets or [])],
         "logo_url": str(scraped.get("logo") or "").strip(),
-        "navigation_pages": scraped.get("nav_links", []),
+        "navigation_pages": navigation_pages,
     }
 
     try:
@@ -338,15 +365,15 @@ async def generate_site(
     if extra:
         prompt = prompt + "\n\nINSTRUCTIONS DE MODIFICATION (prioritaires) :\n" + extra[:6000] + "\n"
 
-    nav_links = scraped.get("nav_links") or []
-    if isinstance(nav_links, list) and len(nav_links) > 0:
+    if navigation_pages:
         prompt = (
             prompt
             + "\n\nNAVIGATION (OBLIGATOIRE) :\n"
             + "- La liste `navigation_pages` est fournie dans les données.\n"
             + "- Reprends EXACTEMENT ces intitulés dans la navigation (même ordre) et crée des sections correspondantes.\n"
             + "- Ne remplace pas par des intitulés génériques type \"Nos services\" si une navigation existe.\n"
-            + "- Chaque item doit scroller vers une section (ancres #...) dans la page.\n"
+            + "- Chaque item doit pointer vers une page (href=\"./{page_slug}\") et pas vers une ancre #...\n"
+            + "- La section correspondante doit avoir id=\"{page_slug}\".\n"
         )
 
     if assets:
