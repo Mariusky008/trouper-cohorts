@@ -4,6 +4,8 @@ import { ApifySearchCommand } from "./_components/apify-search-command";
 import { ManualVitrineCreateForm } from "./_components/manual-vitrine-create-form";
 import { VitrinesDrawerDashboard, type VitrineRow } from "./_components/vitrines-drawer-dashboard";
 
+export const dynamic = "force-dynamic";
+
 function normalize(value: unknown) {
   return String(value || "").trim();
 }
