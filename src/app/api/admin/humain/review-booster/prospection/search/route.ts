@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser, formatPhoneToE164 } from "@/lib/actions/review-booster-admin";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 function isFrenchMobile(phone: string): boolean {
   return /^(\+336|\+337|06|07)/.test(phone);
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   if (!apifyToken) return NextResponse.json({ error: "APIFY_TOKEN manquant." }, { status: 500 });
 
   const apifyRes = await fetch(
-    `https://api.apify.com/v2/acts/compass~google-maps-scraper/run-sync-get-dataset-items?token=${apifyToken}&timeout=120`,
+    `https://api.apify.com/v2/acts/apify~google-maps-scraper/run-sync-get-dataset-items?token=${apifyToken}&timeout=300`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
