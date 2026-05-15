@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+import shutil
 
 from .apify_search import search_businesses
 from .assets import download_assets
@@ -50,6 +51,26 @@ async def _process_business(
     (site_dir / "scraped.json").write_text(json.dumps(scraped, ensure_ascii=False, indent=2), encoding="utf-8")
 
     assets = await download_assets(urls=list(scraped.get("images") or []), output_dir=site_dir)
+    if not assets:
+      screenshot_path = str(scraped.get("screenshot_path") or "").strip()
+      if screenshot_path:
+        try:
+          src = Path(screenshot_path)
+          if src.exists() and src.is_file():
+            assets_dir = site_dir / "assets"
+            assets_dir.mkdir(parents=True, exist_ok=True)
+            file_name = "hero-screenshot.jpg"
+            dst = assets_dir / file_name
+            shutil.copyfile(src, dst)
+            assets = [
+              {
+                "source_url": "playwright_screenshot",
+                "file_name": file_name,
+                "relative_path": f"assets/{file_name}",
+              }
+            ]
+        except Exception:
+          pass
     meta["assets"] = assets
 
     html = await generate_site(

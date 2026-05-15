@@ -335,6 +335,15 @@ async def generate_site(
     if extra:
         prompt = prompt + "\n\nINSTRUCTIONS DE MODIFICATION (prioritaires) :\n" + extra[:6000] + "\n"
 
+    if assets:
+        prompt = (
+            prompt
+            + "\n\nCONTRAINTE ASSETS (OBLIGATOIRE) :\n"
+            + "- La liste `assets` n’est pas vide : tu dois utiliser AU MOINS 3 images.\n"
+            + "- 1 image en HERO (balise <img> en background), et au moins 2 images dans les cards services.\n"
+            + "- Les src doivent être des chemins relatifs exactement comme dans `assets` (ex: assets/img-xxxx.jpg).\n"
+        )
+
     payload = {
         "model": env("ANTHROPIC_MODEL", "claude-sonnet-4-20250514") or "claude-sonnet-4-20250514",
         "max_tokens": int(env("ANTHROPIC_MAX_TOKENS", "16000") or "16000"),
@@ -389,6 +398,8 @@ async def generate_site(
         "fadeUp": "fadeUp" in html,
     }
     failed = [k for k, v in checks.items() if not v]
+    if assets and "assets/" not in html:
+        failed = failed + ["assets_used"]
     if failed:
         log.warning(f"  Checks qualite echoues : {failed}")
     else:
