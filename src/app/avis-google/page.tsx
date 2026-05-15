@@ -234,6 +234,21 @@ function RankMockup({ rank, name, reviews, rating, isYou }: { rank: number; name
   );
 }
 
+// ─── Mini CTA réutilisable ────────────────────────────────────────────────────
+function MiniCTA({ label = "Tester gratuitement — 5 avis offerts", className = "" }: { label?: string; className?: string }) {
+  return (
+    <div className={`flex flex-col sm:flex-row items-center justify-center gap-3 ${className}`}>
+      <a
+        href="https://wa.me/33622129675?text=Bonjour%2C%20je%20voudrais%20tester%20les%205%20avis%20Google%20gratuits%20!"
+        className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-6 py-2.5 text-sm font-semibold transition-all shadow-md shadow-emerald-500/20 hover:-translate-y-0.5"
+      >
+        <span>🎁</span> {label}
+      </a>
+      <p className="text-xs text-neutral-400">Sans carte bancaire · Résultats en 48h</p>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AvisGooglePage() {
   return (
@@ -260,10 +275,10 @@ export default function AvisGooglePage() {
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            href="https://wa.me/33622129675"
+            href="https://wa.me/33622129675?text=Bonjour%2C%20je%20voudrais%20tester%20les%205%20avis%20Google%20gratuits%20!"
             className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-4 py-2 text-xs font-semibold transition-all shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5"
           >
-            <span>💬</span> <span className="hidden sm:inline">Démarrer —</span> 79€/mois
+            <span>🎁</span> <span className="hidden sm:inline">5 avis offerts —</span> Essai gratuit
           </motion.a>
         </div>
       </nav>
@@ -319,23 +334,29 @@ export default function AvisGooglePage() {
               className="flex flex-col sm:flex-row gap-3 mb-8"
             >
               <a
-                href="https://wa.me/33622129675"
-                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5"
+                href="https://wa.me/33622129675?text=Bonjour%2C%20je%20voudrais%20tester%20les%205%20avis%20Google%20gratuits%20!"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 hover:shadow-emerald-500/50"
               >
-                <span>💬</span> Démarrer — 79€/mois
+                <span>🎁</span> Tester gratuitement — 5 avis offerts
               </a>
               <a
                 href="#demo"
                 className="inline-flex items-center justify-center gap-2 border border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-white rounded-full px-7 py-3.5 font-semibold transition-all text-sm"
               >
-                Voir la démo ↓
+                Voir comment ça marche ↓
               </a>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-wrap items-center gap-4 text-xs text-neutral-500">
-              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Sans engagement</span>
-              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Résultats dès J+2</span>
-              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 10 secondes par client</span>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="space-y-3">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500">
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Sans engagement</span>
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Résultats dès J+2</span>
+                <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 10 secondes par client</span>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5">
+                <span className="text-emerald-400 text-xs">🎁</span>
+                <span className="text-emerald-300 text-xs font-semibold">Offre de lancement : 5 premiers avis Google 100% gratuits — sans carte bancaire</span>
+              </div>
             </motion.div>
           </div>
 
@@ -572,6 +593,9 @@ export default function AvisGooglePage() {
               </div>
             </FadeIn>
           </div>
+          <FadeIn delay={0.2} className="mt-10">
+            <MiniCTA className="justify-center" />
+          </FadeIn>
         </div>
       </section>
 
@@ -638,13 +662,14 @@ export default function AvisGooglePage() {
             <GoogleReviewCard delay={0.25} name="Emma F." stars={5} text="Franchement bluffée par le résultat. Exactement ce que je voulais. Je recommande les yeux fermés !" />
           </div>
 
-          <FadeIn delay={0.3} className="mt-10 text-center">
+          <FadeIn delay={0.3} className="mt-10 text-center space-y-5">
             <div className="inline-flex items-center gap-3 bg-white rounded-2xl border border-emerald-200 shadow-sm px-6 py-4">
               <span className="text-2xl">📈</span>
               <p className="text-sm text-emerald-800 font-medium">
                 +10 avis réels par mois · chaque avis = +1 client de plus qui vous trouve sur Google
               </p>
             </div>
+            <MiniCTA label="Voir si c'est fait pour moi — 5 avis offerts" />
           </FadeIn>
         </div>
       </section>
@@ -769,11 +794,12 @@ export default function AvisGooglePage() {
             ))}
           </div>
 
-          <FadeIn delay={0.2} className="mt-12 text-center">
+          <FadeIn delay={0.2} className="mt-12 text-center space-y-6">
             <div className="inline-block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-8 py-6">
               <p className="text-yellow-300 font-semibold text-lg">🏆 À 500 avis, le jeu est terminé.</p>
               <p className="text-neutral-400 text-sm mt-1">Vos concurrents travaillent pour vous.</p>
             </div>
+            <MiniCTA label="Commencer l'ascension — 5 avis gratuits" />
           </FadeIn>
         </div>
       </section>
@@ -834,6 +860,9 @@ export default function AvisGooglePage() {
               </div>
             </FadeIn>
           </div>
+          <FadeIn delay={0.2} className="mt-10">
+            <MiniCTA label="Protéger ma réputation — 5 avis offerts" />
+          </FadeIn>
         </div>
       </section>
 
@@ -886,6 +915,9 @@ export default function AvisGooglePage() {
               </FadeIn>
             ))}
           </div>
+          <FadeIn delay={0.2} className="mt-10">
+            <MiniCTA label="Tester le service — 5 avis offerts" />
+          </FadeIn>
         </div>
       </section>
 
@@ -899,6 +931,10 @@ export default function AvisGooglePage() {
             <div className="max-w-sm mx-auto">
               <div className="rounded-3xl border-2 border-neutral-900 bg-white shadow-2xl shadow-neutral-200 overflow-hidden">
                 <div className="bg-neutral-900 px-8 py-6 text-center">
+                  <div className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-3 py-1 mb-3">
+                    <span className="text-xs">🎁</span>
+                    <span className="text-emerald-400 text-xs font-semibold">5 premiers avis offerts</span>
+                  </div>
                   <div className="text-5xl font-black text-white mb-1">79€</div>
                   <div className="text-neutral-400 text-sm">par mois · sans engagement</div>
                 </div>
@@ -911,8 +947,14 @@ export default function AvisGooglePage() {
                   ))}
                 </div>
                 <div className="px-8 pb-8">
-                  <a href="https://wa.me/33622129675" className="block w-full bg-neutral-900 hover:bg-neutral-700 text-white rounded-full px-8 py-3.5 font-semibold transition-colors text-center text-sm mb-3">
-                    Démarrer maintenant →
+                  <a
+                    href="https://wa.me/33622129675?text=Bonjour%2C%20je%20voudrais%20tester%20les%205%20avis%20Google%20gratuits%20!"
+                    className="block w-full bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-8 py-3.5 font-semibold transition-colors text-center text-sm mb-2 shadow-lg shadow-emerald-500/20"
+                  >
+                    🎁 Commencer par 5 avis gratuits
+                  </a>
+                  <a href="https://wa.me/33622129675" className="block w-full border border-neutral-200 hover:border-neutral-300 text-neutral-500 hover:text-neutral-700 rounded-full px-8 py-2.5 font-medium transition-colors text-center text-xs mb-3">
+                    S&apos;abonner directement — 79€/mois
                   </a>
                   <p className="text-center text-xs text-neutral-400">Résiliation à tout moment · Pas de frais cachés</p>
                 </div>
@@ -984,18 +1026,25 @@ export default function AvisGooglePage() {
               Je vous montre exactement où vous en êtes sur Google et ce qu&apos;on peut construire ensemble.
             </p>
 
-            <a
-              href="https://wa.me/33622129675"
-              className="inline-flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-10 py-4 font-semibold transition-all text-lg shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 mb-8"
-            >
-              <span className="text-xl">💬</span>
-              Contacter Jean-Philippe sur WhatsApp
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+              <a
+                href="https://wa.me/33622129675?text=Bonjour%2C%20je%20voudrais%20tester%20les%205%20avis%20Google%20gratuits%20!"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-8 py-4 font-semibold transition-all text-base shadow-2xl shadow-emerald-500/30 hover:-translate-y-1"
+              >
+                <span>🎁</span> Tester gratuitement — 5 avis offerts
+              </a>
+              <a
+                href="https://wa.me/33622129675"
+                className="inline-flex items-center justify-center gap-2 border border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-white rounded-full px-8 py-4 font-semibold transition-all text-base"
+              >
+                <span>💬</span> Poser une question
+              </a>
+            </div>
 
-            <div className="flex items-center justify-center gap-6 text-xs text-neutral-500">
+            <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-neutral-500">
               <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Réponse sous 2h</span>
-              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 79€/mois</span>
-              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Sans engagement</span>
+              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 5 avis offerts sans carte</span>
+              <span className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> Puis 79€/mois sans engagement</span>
             </div>
           </FadeIn>
         </div>
