@@ -1,22 +1,44 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SearchForm } from "./_components/search-form";
 import { ProspectsTable, ProspectRow } from "./_components/prospects-table";
+import { HistoriqueSection, HistoriqueRow } from "./_components/historique-section";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProspectionPage() {
   const supabase = createAdminClient();
 
-  const { data } = await supabase
-    .from("human_review_prospects")
-    .select("id, nom, ville, secteur, note_google, nb_avis, telephone, est_mobile, statut, proprietaire")
-    .neq("statut", "converti")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [prospectsResult, historiqueResult] = await Promise.all([
+    supabase
+      .from("human_review_prospects")
+      .select("id, nom, ville, secteur, note_google, nb_avis, telephone, est_mobile, statut, proprietaire")
+      .neq("statut", "converti")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("human_review_prospects")
+      .select("ville, secteur, created_at, statut")
+      .order("created_at", { ascending: false })
+      .limit(500),
+  ]);
 
-  const prospects: ProspectRow[] = Array.isArray(data)
-    ? (data as unknown as ProspectRow[])
+  const prospects: ProspectRow[] = Array.isArray(prospectsResult.data)
+    ? (prospectsResult.data as unknown as ProspectRow[])
     : [];
+
+  // Group historique by ville+secteur+day
+  const seen = new Map<string, HistoriqueRow>();
+  ((historiqueResult.data || []) as Array<{ ville: string; secteur: string | null; created_at: string; statut: string }>).forEach((row) => {
+    const day = row.created_at.slice(0, 10);
+    const key = `${row.ville}|${row.secteur || ""}|${day}`;
+    if (!seen.has(key)) {
+      seen.set(key, { ville: row.ville, secteur: row.secteur || "", date: day, count: 0, contactes: 0 });
+    }
+    const entry = seen.get(key)!;
+    entry.count++;
+    if (row.statut === "contacté") entry.contactes++;
+  });
+  const historique = Array.from(seen.values()).slice(0, 50);
 
   return (
     <section className="space-y-6">
@@ -29,7 +51,7 @@ export default async function ProspectionPage() {
       </div>
 
       <SearchForm />
-
+      <HistoriqueSection historique={historique} />
       <ProspectsTable prospects={prospects} />
     </section>
   );
