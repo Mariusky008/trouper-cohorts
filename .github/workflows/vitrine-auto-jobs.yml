@@ -34,9 +34,21 @@ jobs:
       - name: Run one job
         working-directory: vitrine-auto
         run: |
-          python -m vitrine_auto.job_runner
+          set -o pipefail
+          python -m vitrine_auto.job_runner 2>&1 | tee /tmp/vitrine-auto-job-runner.log
 
       - name: Consume queued vitrines
         working-directory: vitrine-auto
         run: |
-          python main.py --consume-queue --batch 3
+          set -o pipefail
+          python main.py --consume-queue --batch 3 2>&1 | tee /tmp/vitrine-auto-consume-queue.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitrine-auto-jobs-logs
+          path: |
+            /tmp/vitrine-auto-job-runner.log
+            /tmp/vitrine-auto-consume-queue.log
+          if-no-files-found: warn
