@@ -4,6 +4,20 @@ type RouteContext = {
   params: Promise<{ slug: string }>;
 };
 
+function rewriteAssetUrls(html: string, assetBase: string) {
+  const base = String(assetBase || "").trim();
+  if (!base) return html;
+  let out = String(html || "");
+  out = out.replace(/(src|href)=(["'])assets\/([^"']+)\2/gi, (_m, attr: string, q: string, path: string) => {
+    return `${attr}=${q}${base}${path}${q}`;
+  });
+  out = out.replace(/url\(\s*(["']?)assets\/([^"')]+)\1\s*\)/gi, (_m, q: string, path: string) => {
+    const quote = q || "";
+    return `url(${quote}${base}${path}${quote})`;
+  });
+  return out;
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   const { slug } = await context.params;
   const normalizedSlug = String(slug || "").trim().toLowerCase();
@@ -27,7 +41,8 @@ export async function GET(_request: Request, context: RouteContext) {
   const { data: file, error: downloadError } = await supabase.storage.from("vitrines").download(htmlPath);
   if (downloadError || !file) return new Response("Not found", { status: 404 });
 
-  const html = await file.text();
+  const htmlRaw = await file.text();
+  const html = rewriteAssetUrls(htmlRaw, `/${normalizedSlug}/assets/`);
   return new Response(html, {
     status: 200,
     headers: {
