@@ -20,7 +20,7 @@ export function SearchForm() {
   const [ville, setVille] = useState("Dax");
   const [zone, setZone] = useState("");
   const [secteur, setSecteur] = useState("");
-  const [limit, setLimit] = useState<10 | 20 | 30>(10);
+  const [limit, setLimit] = useState(10);
   const [maxAvis, setMaxAvis] = useState(50);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ found: number; imported: number; skipped: number } | null>(null);
@@ -93,12 +93,15 @@ export function SearchForm() {
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nb résultats</label>
           <select
             value={limit}
-            onChange={(e) => setLimit(Number(e.target.value) as 10 | 20 | 30)}
+            onChange={(e) => setLimit(Number(e.target.value))}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={30}>30</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
           </select>
         </div>
 

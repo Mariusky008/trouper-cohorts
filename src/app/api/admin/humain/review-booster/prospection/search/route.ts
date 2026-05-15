@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const ville = String(body.ville || "").trim();
   const zone = String(body.zone || "").trim();
   const secteur = String(body.secteur || "").trim();
-  const limit = [10, 20, 30].includes(Number(body.limit)) ? Number(body.limit) : 10;
+  const limit = Math.min(200, Math.max(10, Number(body.limit) || 10));
   const maxAvis = Number(body.maxAvis) > 0 ? Number(body.maxAvis) : 50;
   const modeAuto = body.modeAuto === true;
   const locationQuery = zone ? `${ville} ${zone}, france` : `${ville}, france`;
