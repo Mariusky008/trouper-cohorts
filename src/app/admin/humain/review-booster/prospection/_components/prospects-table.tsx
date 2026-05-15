@@ -13,6 +13,7 @@ export type ProspectRow = {
   note_google: number | null;
   nb_avis: number | null;
   telephone: string;
+  est_mobile: boolean;
   statut: "nouveau" | "contacté" | "converti" | "refusé";
   proprietaire: string | null;
 };
@@ -41,7 +42,7 @@ export function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
   const [convertingId, setConvertingId] = useState<string | null>(null);
 
   function toggleAll() {
-    const newable = prospects.filter((p) => p.statut === "nouveau").map((p) => p.id);
+    const newable = prospects.filter((p) => p.statut === "nouveau" && p.est_mobile).map((p) => p.id);
     if (newable.every((id) => selected.has(id))) {
       setSelected((prev) => {
         const next = new Set(prev);
@@ -154,9 +155,9 @@ export function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
                     type="checkbox"
                     onChange={toggleAll}
                     checked={
-                      prospects.filter((p) => p.statut === "nouveau").length > 0 &&
+                      prospects.filter((p) => p.statut === "nouveau" && p.est_mobile).length > 0 &&
                       prospects
-                        .filter((p) => p.statut === "nouveau")
+                        .filter((p) => p.statut === "nouveau" && p.est_mobile)
                         .every((p) => selected.has(p.id))
                     }
                   />
@@ -177,7 +178,7 @@ export function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
-                      {p.statut === "nouveau" && (
+                      {p.statut === "nouveau" && p.est_mobile && (
                         <input
                           type="checkbox"
                           checked={selected.has(p.id)}
@@ -192,7 +193,12 @@ export function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
                       <NoteCell note={p.note_google !== null ? Number(p.note_google) : null} />
                     </td>
                     <td className="px-4 py-3 text-slate-600">{p.nb_avis ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600 font-mono text-xs">{p.telephone}</td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      <span className={p.est_mobile ? "text-emerald-700" : "text-slate-400"}>
+                        {p.telephone}
+                      </span>
+                      {!p.est_mobile && <span className="ml-1 text-xs text-slate-400">(fixe)</span>}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statutColors[p.statut] ?? ""}`}

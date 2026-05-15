@@ -9,7 +9,7 @@ export default async function ProspectionPage() {
 
   const { data } = await supabase
     .from("human_review_prospects")
-    .select("id, nom, ville, secteur, note_google, nb_avis, telephone, statut, proprietaire")
+    .select("id, nom, ville, secteur, note_google, nb_avis, telephone, est_mobile, statut, proprietaire")
     .neq("statut", "converti")
     .order("created_at", { ascending: false })
     .limit(100);

@@ -5,8 +5,8 @@ import { requireAdminUser, formatPhoneToE164 } from "@/lib/actions/review-booste
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-function isFrenchMobile(phone: string): boolean {
-  return /^(\+336|\+337|06|07)/.test(phone);
+function isMobile(e164: string): boolean {
+  return /^\+33[67]/.test(e164);
 }
 
 export async function POST(request: Request) {
@@ -68,16 +68,10 @@ export async function POST(request: Request) {
     }
 
     const rawPhone = typeof item.phone === "string" ? item.phone : null;
-    if (!rawPhone || !isFrenchMobile(rawPhone)) {
-      skipped++;
-      continue;
-    }
+    if (!rawPhone) { skipped++; continue; }
 
     const telephone = formatPhoneToE164(rawPhone);
-    if (!telephone) {
-      skipped++;
-      continue;
-    }
+    if (!telephone) { skipped++; continue; }
 
     found++;
 
@@ -98,6 +92,7 @@ export async function POST(request: Request) {
         note_google: noteGoogle,
         nb_avis: nbAvis,
         source: "apify",
+        est_mobile: isMobile(telephone),
       },
       { onConflict: "telephone", ignoreDuplicates: true }
     );
