@@ -20,6 +20,7 @@ type ChatThread = {
   outboundCount: number;
   unresolvedInboundCount: number;
   isUnreadLatest: boolean;
+  source: string | null;
 };
 
 type ChatMessage = {
@@ -339,6 +340,22 @@ export async function GET(request: Request) {
     });
   }
 
+  const sourceByPhone = new Map<string, string>();
+  if (phones.length > 0) {
+    const { data: queueRows } = await supabaseAdmin
+      .from("human_whatsapp_outbound_queue")
+      .select("phone_e164, source")
+      .in("phone_e164", phones)
+      .not("source", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(phones.length * 2);
+    ((queueRows as Array<{ phone_e164: string | null; source: string | null }> | null) || []).forEach((row) => {
+      const phone = normalizePhone(row.phone_e164 || "");
+      if (!phone || sourceByPhone.has(phone)) return;
+      if (row.source) sourceByPhone.set(phone, row.source);
+    });
+  }
+
   const threads = Array.from(threadMap.values())
     .map((thread) => {
       const label = nameByPhone.get(thread.phone) || null;
@@ -356,6 +373,7 @@ export async function GET(request: Request) {
         outboundCount: thread.outboundCount,
         unresolvedInboundCount: isUnreadLatest ? 1 : 0,
         isUnreadLatest,
+        source: sourceByPhone.get(thread.phone) || null,
       } satisfies ChatThread;
     })
     .sort((a, b) => {

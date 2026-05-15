@@ -14,6 +14,7 @@ type ChatThread = {
   outboundCount: number;
   unresolvedInboundCount: number;
   isUnreadLatest: boolean;
+  source: string | null;
 };
 
 type ChatMessage = {
@@ -479,7 +480,12 @@ export default function AdminHumainChatPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className={`truncate text-sm text-slate-900 ${highlightUnread ? "font-black" : "font-bold"}`}>{title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className={`truncate text-sm text-slate-900 ${highlightUnread ? "font-black" : "font-bold"}`}>{title}</p>
+                        {thread.source === "admin_review_prospection" && (
+                          <span className="shrink-0 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">⭐ Avis Google</span>
+                        )}
+                      </div>
                       <p className="truncate text-xs text-slate-600">{subtitle}</p>
                       <p className={`mt-0.5 line-clamp-1 text-[12px] ${highlightUnread ? "font-semibold text-slate-700" : "text-slate-400"}`}>
                         {preview}

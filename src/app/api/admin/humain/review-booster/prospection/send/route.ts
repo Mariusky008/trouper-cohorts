@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
-import twilio from "twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdminUser } from "@/lib/actions/review-booster-admin";
+import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+async function requireAdminWithMember() {
+  const userId = await getServerUserIdWithProxyFallback();
+  if (!userId) return { error: "Session requise." as const };
+  const supabase = createAdminClient();
+  const { data: adminRow } = await supabase.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
+  if (!adminRow?.user_id) return { error: "Accès admin requis." as const };
+  const { data: memberRow } = await supabase.from("human_members").select("id").eq("user_id", userId).maybeSingle();
+  if (!memberRow?.id) return { error: "Profil human_member introuvable." as const };
+  return { ownerMemberId: String(memberRow.id) };
+}
+
 export async function POST(request: Request) {
-  const auth = await requireAdminUser();
+  const auth = await requireAdminWithMember();
   if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   const body = await request.json().catch(() => null);
@@ -19,17 +29,7 @@ export async function POST(request: Request) {
   if (!prospectIds.length) return NextResponse.json({ error: "Aucun prospect sélectionné." }, { status: 400 });
   if (!contentSid) return NextResponse.json({ error: "contentSid manquant." }, { status: 400 });
 
-  const accountSid = String(process.env.TWILIO_ACCOUNT_SID || "").trim();
-  const authToken = String(process.env.TWILIO_AUTH_TOKEN || "").trim();
-  const whatsappFrom = String(process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886").trim();
-
-  if (!accountSid || !authToken) {
-    return NextResponse.json({ error: "Twilio credentials manquants." }, { status: 500 });
-  }
-
   const supabase = createAdminClient();
-  const twilioClient = twilio(accountSid, authToken);
-
   let sent = 0;
   let skipped = 0;
 
@@ -43,32 +43,39 @@ export async function POST(request: Request) {
     if (fetchError || !prospect) { skipped++; continue; }
     if (prospect.statut !== "nouveau") { skipped++; continue; }
 
-    try {
-      await twilioClient.messages.create({
-        from: whatsappFrom,
-        to: `whatsapp:${prospect.telephone}`,
-        contentSid,
-        contentVariables: JSON.stringify({
-          "1": prospect.proprietaire || "là",
-          "2": prospect.nom,
-        }),
-      });
+    const { error: queueError } = await supabase.from("human_whatsapp_outbound_queue").insert({
+      owner_member_id: auth.ownerMemberId,
+      phone_e164: prospect.telephone,
+      template_name: contentSid,
+      language_code: "fr",
+      vars: [prospect.proprietaire || "là", prospect.nom],
+      quick_reply_payload: [],
+      source: "admin_review_prospection",
+      metadata: {
+        content_sid: contentSid,
+        prospect_id: prospectId,
+        prospect_nom: prospect.nom,
+      },
+      status: "pending",
+      attempt_count: 0,
+      max_attempts: 2,
+      random_delay_ms: 0,
+      not_before_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
-      await supabase
-        .from("human_review_prospects")
-        .update({
-          statut: "contacté",
-          date_contact: new Date().toISOString(),
-          template_sid_used: contentSid,
-        })
-        .eq("id", prospectId);
+    if (queueError) { skipped++; continue; }
 
-      sent++;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[prospection-send] Échec ${prospectId}: ${msg}`);
-      skipped++;
-    }
+    await supabase
+      .from("human_review_prospects")
+      .update({
+        statut: "contacté",
+        date_contact: new Date().toISOString(),
+        template_sid_used: contentSid,
+      })
+      .eq("id", prospectId);
+
+    sent++;
   }
 
   return NextResponse.json({ sent, skipped });
