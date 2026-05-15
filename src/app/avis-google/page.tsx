@@ -239,12 +239,41 @@ export default function AvisGooglePage() {
   return (
     <main className="bg-white text-neutral-900 overflow-x-hidden">
 
+      {/* ═══ NAVBAR ═════════════════════════════════════════════════════════ */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-neutral-950/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-emerald-500/30">⭐</div>
+            <span className="text-white font-semibold text-sm tracking-tight">Review <span className="text-emerald-400">Booster</span></span>
+          </motion.div>
+
+          {/* Nav links */}
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="hidden sm:flex items-center gap-6">
+            {[["Comment ça marche", "#demo"], ["Résultats", "#resultats"], ["Tarif", "#tarif"]].map(([label, href]) => (
+              <a key={label} href={href} className="text-neutral-400 hover:text-white text-sm transition-colors font-medium">{label}</a>
+            ))}
+          </motion.div>
+
+          {/* CTA */}
+          <motion.a
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            href="https://wa.me/33622129675"
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-4 py-2 text-xs font-semibold transition-all shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5"
+          >
+            <span>💬</span> <span className="hidden sm:inline">Démarrer —</span> 79€/mois
+          </motion.a>
+        </div>
+      </nav>
+
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center overflow-hidden bg-neutral-950">
+      <section className="relative min-h-screen flex items-center overflow-hidden bg-neutral-950 pt-16">
         <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 -right-40 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-widest uppercase rounded-full px-4 py-1.5 mb-6">
@@ -257,18 +286,27 @@ export default function AvisGooglePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="font-[family-name:var(--font-cormorant)] text-5xl sm:text-6xl lg:text-7xl font-light leading-[1.1] text-white mb-6"
+              className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl lg:text-6xl font-light leading-[1.1] text-white mb-5"
             >
-              De 60 à<br />
-              <span className="text-emerald-400">500 avis Google</span><br />
-              <span className="text-neutral-400 text-4xl sm:text-5xl">en pilote automatique</span>
+              Passez la barre des<br />
+              <span className="text-emerald-400 text-5xl sm:text-6xl lg:text-7xl">+500 avis Google</span><br />
+              en mode <span className="font-black text-white tracking-tight">PILOTE AUTOMATIQUE</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-neutral-400 text-lg leading-relaxed mb-8 max-w-lg"
+              transition={{ duration: 0.6, delay: 0.25 }}
+              className="text-neutral-300 text-base sm:text-lg font-medium leading-relaxed mb-4 max-w-lg border-l-2 border-emerald-500 pl-4"
+            >
+              9 clients sur 10 consultent vos avis avant d&apos;appeler. Ne les laissez plus choisir vos concurrents faute de preuves.
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35 }}
+              className="text-neutral-400 text-base leading-relaxed mb-8 max-w-lg"
             >
               Vos clients satisfaits reçoivent un WhatsApp après leur visite. Ils cliquent, ils écrivent un avis, vous montez dans Google.
               <strong className="text-white"> Vous ne faites rien.</strong>
@@ -331,168 +369,146 @@ export default function AvisGooglePage() {
       </section>
 
       {/* ═══ APP DEMO — 10 secondes ═════════════════════════════════════════ */}
-      <section id="demo" className="bg-slate-50 py-20 sm:py-28">
+      <section id="demo" className="bg-slate-50 py-20 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
+          <FadeIn className="text-center mb-14">
             <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-3 block">L&apos;application commerçant</span>
             <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light mb-4">
-              Votre seul travail : <span className="italic text-emerald-600">10 secondes</span> par client
+              Votre seul travail :<br /><span className="italic text-emerald-600">10 secondes</span> par client
             </h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">
-              Après chaque prestation, vous entrez le prénom et le numéro. Tout le reste se fait sans vous.
+            <p className="text-neutral-500 max-w-md mx-auto text-sm">
+              Prénom + téléphone. Tout le reste se fait automatiquement sans vous.
             </p>
           </FadeIn>
 
-          {/* 4-step flow */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center max-w-5xl mx-auto">
+          {/* 3 étapes horizontales propres */}
+          <StaggerIn className="flex flex-col sm:flex-row items-center gap-3 max-w-3xl mx-auto mb-14">
+            {[
+              { n: "1", emoji: "📝", title: "Vous notez", sub: "Prénom + numéro\naprès la prestation", color: "slate" },
+              { n: "2", emoji: "💬", title: "WhatsApp auto J+1", sub: "Message personnalisé\nenvoyé par nous", color: "emerald" },
+              { n: "3", emoji: "⭐", title: "Avis Google posté", sub: "Le client clique\n5 étoiles publiées", color: "amber" },
+            ].map(({ n, emoji, title, sub, color }, i) => (
+              <>
+                <motion.div
+                  key={n}
+                  variants={fadeUp}
+                  className={`flex-1 rounded-2xl p-5 text-center border-2 ${
+                    color === "emerald" ? "border-emerald-200 bg-emerald-50 shadow-lg shadow-emerald-100" :
+                    color === "amber" ? "border-amber-200 bg-amber-50" :
+                    "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-black text-white ${
+                    color === "emerald" ? "bg-emerald-500" : color === "amber" ? "bg-amber-500" : "bg-slate-400"
+                  }`}>{n}</div>
+                  <div className="text-3xl mb-2">{emoji}</div>
+                  <p className="font-semibold text-sm text-neutral-900 mb-1">{title}</p>
+                  <p className="text-xs text-neutral-500 whitespace-pre-line leading-relaxed">{sub}</p>
+                </motion.div>
+                {i < 2 && (
+                  <motion.div key={`arrow-${i}`} variants={fadeUp} className="text-emerald-300 text-2xl font-light hidden sm:block shrink-0">→</motion.div>
+                )}
+              </>
+            ))}
+          </StaggerIn>
 
-            {/* Step 1 — you enter the client */}
-            <FadeIn delay={0} className="relative">
-              <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 text-center h-full">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-black text-lg flex items-center justify-center mx-auto mb-3">1</div>
-                <div className="text-3xl mb-2">📱</div>
-                <h3 className="font-semibold text-sm mb-1">Vous notez le client</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed">Prénom + numéro WhatsApp dans le formulaire. 10 secondes. Terminé.</p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.05} className="hidden sm:flex justify-center items-center">
-              <motion.div animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-2xl text-emerald-300">→</motion.div>
-            </FadeIn>
-
-            {/* Step 2 — automatic WhatsApp */}
-            <FadeIn delay={0.1} className="relative">
-              <div className="rounded-2xl bg-white border border-emerald-200 shadow-md p-5 text-center h-full ring-2 ring-emerald-100">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-3">2</div>
-                <div className="text-3xl mb-2">💬</div>
-                <h3 className="font-semibold text-sm mb-1">WhatsApp automatique J+1</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed">Votre client reçoit un message personnalisé avec son prénom. Bouton avis Google en un clic.</p>
-                <div className="mt-3 bg-emerald-50 rounded-xl p-2">
-                  <p className="text-[10px] text-emerald-700 italic">&ldquo;Bonjour Martin 👋 merci pour votre visite&hellip;&rdquo;</p>
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.15} className="hidden sm:flex justify-center items-center">
-              <motion.div animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }} className="text-2xl text-emerald-300">→</motion.div>
-            </FadeIn>
-
-            {/* Step 3 — Google review appears */}
-            <FadeIn delay={0.2} className="sm:col-start-4">
-              <div className="rounded-2xl bg-white border border-amber-200 shadow-sm p-5 text-center h-full">
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 font-black text-lg flex items-center justify-center mx-auto mb-3">3</div>
-                <div className="text-3xl mb-2">⭐</div>
-                <h3 className="font-semibold text-sm mb-1">Avis Google posté</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed">Martin clique, il écrit son avis. 5 étoiles. Votre compteur monte. Votre position aussi.</p>
-                <div className="mt-3 flex justify-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <motion.span key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 + i * 0.1 }} className="text-yellow-400 text-lg">★</motion.span>
-                  ))}
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-
-          {/* The app screenshot — fake but realistic UI */}
-          <FadeIn delay={0.2} className="mt-16">
+          {/* App screenshot — épuré, deux colonnes claires */}
+          <FadeIn delay={0.15}>
             <div className="max-w-4xl mx-auto rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
-              {/* browser bar */}
-              <div className="bg-slate-100 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-rose-400" />
-                  <div className="w-3 h-3 rounded-full bg-amber-400" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-400" />
+              {/* browser top bar */}
+              <div className="bg-neutral-900 px-5 py-3 flex items-center gap-3">
+                <div className="flex gap-1.5 shrink-0">
+                  <div className="w-3 h-3 rounded-full bg-rose-500" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
                 </div>
-                <div className="flex-1 bg-white rounded-lg px-3 py-1 text-xs text-neutral-400 text-center border border-slate-200">
-                  app.review-booster.fr/ajouter-client
+                <div className="flex-1 bg-neutral-800 rounded-lg px-3 py-1 text-xs text-neutral-400 text-center">
+                  app.review-booster.fr
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="w-5 h-5 rounded bg-emerald-500/20 flex items-center justify-center text-[10px]">⭐</div>
+                  <span className="text-xs text-emerald-400 font-semibold hidden sm:inline">Review Booster</span>
                 </div>
               </div>
-              {/* app content */}
-              <div className="p-6 sm:p-10">
-                <div className="grid sm:grid-cols-2 gap-8 items-start">
-                  {/* left — add client form */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-6">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white text-sm">🌟</div>
-                      <div>
-                        <p className="font-black text-xs uppercase tracking-widest text-neutral-400">Review Booster</p>
-                        <p className="font-semibold text-sm">Salon Éclat — Bordeaux</p>
-                      </div>
-                    </div>
 
-                    <h3 className="font-semibold text-neutral-900 mb-4">Ajouter un client</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Prénom du client</label>
-                        <div className="mt-1 border border-emerald-300 rounded-xl px-3 py-2.5 text-sm bg-emerald-50 flex items-center gap-2">
-                          <span className="text-neutral-700">Martin</span>
-                          <span className="inline-block w-0.5 h-4 bg-emerald-500 animate-pulse" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Numéro WhatsApp</label>
-                        <div className="mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm flex items-center gap-2">
-                          <span className="text-xs text-neutral-400 bg-slate-100 px-1.5 py-0.5 rounded">🇫🇷 +33</span>
-                          <span className="text-neutral-700">6 12 34 56 78</span>
-                        </div>
-                      </div>
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-neutral-900 text-white rounded-2xl px-4 py-3 text-sm font-semibold text-center cursor-pointer shadow-lg"
-                      >
-                        ✓ Enregistrer — envoi automatique demain à 9h
-                      </motion.div>
-                    </div>
-
-                    <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-start gap-2">
-                      <span className="text-base mt-0.5">⚡</span>
-                      <p className="text-xs text-emerald-800 leading-relaxed">
-                        Martin recevra un WhatsApp demain à 9h15, puis une relance J+6 si pas de réponse.
-                        <strong className="block mt-0.5">Vous n&apos;avez rien d&apos;autre à faire.</strong>
-                      </p>
+              <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                {/* LEFT — Formulaire ultra-simple */}
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-base shadow-md">SÉ</div>
+                    <div>
+                      <p className="font-bold text-sm text-neutral-900">Salon Éclat</p>
+                      <p className="text-xs text-neutral-400">Bordeaux · <span className="text-emerald-500 font-medium">● Actif</span></p>
                     </div>
                   </div>
 
-                  {/* right — stats */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-neutral-900">Ce mois-ci</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { v: "14", l: "Avis reçus", c: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
-                        { v: "4,8★", l: "Note Google", c: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
-                        { v: "#2", l: "Position locale", c: "text-violet-600", bg: "bg-violet-50 border-violet-200" },
-                        { v: "38%", l: "Taux de clic", c: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
-                      ].map(({ v, l, c, bg }) => (
-                        <div key={l} className={`rounded-2xl border p-3 text-center ${bg}`}>
-                          <div className={`text-xl font-black ${c}`}>{v}</div>
-                          <div className="text-xs text-neutral-500 mt-0.5">{l}</div>
-                        </div>
-                      ))}
-                    </div>
+                  <p className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-4">Nouveau client</p>
 
-                    {/* recent reviews */}
-                    <div>
-                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Derniers avis reçus</p>
-                      <div className="space-y-2">
-                        {[
-                          { name: "Martin B.", stars: 5, time: "il y a 2h", text: "Super coiffeur, je recommande !" },
-                          { name: "Camille R.", stars: 5, time: "hier", text: "Résultat parfait, je reviendrai." },
-                          { name: "Thomas K.", stars: 5, time: "il y a 2j", text: "Très professionnel et rapide." },
-                        ].map(({ name, stars, time, text }) => (
-                          <div key={name} className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-slate-100">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">{name[0]}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1 justify-between">
-                                <span className="text-xs font-semibold">{name}</span>
-                                <span className="text-[10px] text-neutral-400">{time}</span>
-                              </div>
-                              <div className="flex">{"★".repeat(stars).split("").map((s, i) => <span key={i} className="text-yellow-400 text-[10px]">{s}</span>)}</div>
-                              <p className="text-[10px] text-neutral-500 truncate">{text}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="border-2 border-emerald-300 rounded-2xl px-4 py-3 bg-emerald-50 flex items-center gap-2">
+                      <span className="text-xs text-neutral-400 shrink-0">Prénom</span>
+                      <div className="w-px h-4 bg-slate-300 shrink-0" />
+                      <span className="text-sm font-semibold text-neutral-800">Martin</span>
+                      <span className="inline-block w-0.5 h-4 bg-emerald-500 animate-pulse ml-0.5" />
                     </div>
+                    <div className="border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+                      <span className="text-xs text-neutral-400 shrink-0">📱</span>
+                      <div className="w-px h-4 bg-slate-200 shrink-0" />
+                      <span className="text-sm text-neutral-700">06 12 34 56 78</span>
+                    </div>
+                    <button className="w-full bg-neutral-900 hover:bg-neutral-700 text-white rounded-2xl py-3 text-sm font-bold shadow-lg transition-colors">
+                      ✓ Envoyer le client
+                    </button>
+                  </div>
+
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center gap-2">
+                    <span>⚡</span>
+                    <p className="text-xs text-emerald-800 font-medium">WhatsApp envoyé <strong>demain à 9h</strong> automatiquement.</p>
+                  </div>
+                </div>
+
+                {/* RIGHT — Résultats du mois */}
+                <div className="p-6 sm:p-8 bg-slate-50/50">
+                  <p className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-5">Ce mois-ci</p>
+
+                  {/* 3 stats clés */}
+                  <div className="flex gap-3 mb-5">
+                    <div className="flex-1 bg-white rounded-2xl border border-emerald-100 p-3 text-center shadow-sm">
+                      <div className="text-2xl font-black text-emerald-500">14</div>
+                      <div className="text-[10px] text-neutral-400 mt-0.5">nouveaux avis</div>
+                    </div>
+                    <div className="flex-1 bg-white rounded-2xl border border-amber-100 p-3 text-center shadow-sm">
+                      <div className="text-2xl font-black text-amber-500">4,8★</div>
+                      <div className="text-[10px] text-neutral-400 mt-0.5">note Google</div>
+                    </div>
+                    <div className="flex-1 bg-white rounded-2xl border border-violet-100 p-3 text-center shadow-sm">
+                      <div className="text-2xl font-black text-violet-500">#2</div>
+                      <div className="text-[10px] text-neutral-400 mt-0.5">position locale</div>
+                    </div>
+                  </div>
+
+                  {/* Derniers avis */}
+                  <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">Derniers avis reçus</p>
+                  <div className="space-y-2">
+                    {[
+                      { name: "Martin B.", time: "2h", text: "Super coiffeur ! Je recommande." },
+                      { name: "Camille R.", time: "hier", text: "Résultat parfait, je reviendrai." },
+                      { name: "Thomas K.", time: "2j", text: "Très professionnel et rapide." },
+                    ].map(({ name, time, text }) => (
+                      <div key={name} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">{name[0]}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-semibold text-neutral-800">{name}</span>
+                            <span className="text-[10px] text-neutral-400 shrink-0">{time}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-400 text-[10px]">★★★★★</span>
+                            <span className="text-[10px] text-neutral-500 truncate">{text}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -560,7 +576,7 @@ export default function AvisGooglePage() {
       </section>
 
       {/* ═══ REVIEWS EXPLOSION ══════════════════════════════════════════════ */}
-      <section className="relative bg-gradient-to-b from-amber-50 to-emerald-50 py-20 sm:py-28 overflow-hidden">
+      <section id="resultats" className="relative bg-gradient-to-b from-amber-50 to-emerald-50 py-20 sm:py-28 overflow-hidden">
         {/* floating stars background */}
         {[...Array(12)].map((_, i) => (
           <motion.div
@@ -874,7 +890,7 @@ export default function AvisGooglePage() {
       </section>
 
       {/* ═══ PRICING ════════════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
+      <section id="tarif" className="bg-white py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
             <h2 className="font-[family-name:var(--font-cormorant)] text-4xl sm:text-5xl font-light">Simple. Transparent.</h2>
@@ -984,6 +1000,179 @@ export default function AvisGooglePage() {
           </FadeIn>
         </div>
       </section>
+
+      {/* ═══ FOOTER ══════════════════════════════════════════════════════════ */}
+      <AvisGoogleFooter />
     </main>
+  );
+}
+
+// ─── Footer avec popups légaux ────────────────────────────────────────────────
+function AvisGoogleFooter() {
+  const [modal, setModal] = useState<"cgv" | "cgu" | "mentions" | "contact" | null>(null);
+
+  return (
+    <>
+      <footer className="bg-neutral-950 border-t border-white/5 py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-xs">⭐</div>
+              <span className="text-white font-semibold text-sm">Review <span className="text-emerald-400">Booster</span></span>
+              <span className="text-neutral-600 text-xs ml-1">by Popey Academy</span>
+            </div>
+
+            {/* Legal links */}
+            <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-neutral-500">
+              {([
+                ["CGV", "cgv"],
+                ["CGU", "cgu"],
+                ["Mentions légales", "mentions"],
+                ["Contact", "contact"],
+              ] as [string, "cgv" | "cgu" | "mentions" | "contact"][]).map(([label, key]) => (
+                <button
+                  key={key}
+                  onClick={() => setModal(key)}
+                  className="hover:text-white transition-colors underline-offset-2 hover:underline"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Copyright */}
+            <p className="text-neutral-600 text-xs">© {new Date().getFullYear()} Popey Academy. Tous droits réservés.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modales légales */}
+      <AnimatePresence>
+        {modal && (
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setModal(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 className="font-semibold text-neutral-900">
+                  {modal === "cgv" && "Conditions Générales de Vente"}
+                  {modal === "cgu" && "Conditions Générales d'Utilisation"}
+                  {modal === "mentions" && "Mentions Légales"}
+                  {modal === "contact" && "Nous contacter"}
+                </h3>
+                <button onClick={() => setModal(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-neutral-500 transition-colors text-lg leading-none">×</button>
+              </div>
+
+              {/* Modal content */}
+              <div className="overflow-y-auto px-6 py-5 text-sm text-neutral-600 leading-relaxed space-y-4">
+                {modal === "mentions" && (
+                  <>
+                    <p><strong className="text-neutral-900">Éditeur du service</strong><br />
+                    Popey Academy<br />
+                    23 rue Paul Lahragou, 40100 Dax<br />
+                    SIRET : 840 800 106<br />
+                    Email : <a href="mailto:contact@popey.academy" className="text-emerald-600 hover:underline">contact@popey.academy</a></p>
+
+                    <p><strong className="text-neutral-900">Directeur de la publication</strong><br />
+                    Jean-Philippe — fondateur de Popey Academy</p>
+
+                    <p><strong className="text-neutral-900">Hébergeur</strong><br />
+                    Vercel Inc. — 340 S Lemon Ave #4133, Walnut, CA 91789, USA</p>
+
+                    <p><strong className="text-neutral-900">Propriété intellectuelle</strong><br />
+                    Toute reproduction, représentation ou adaptation du contenu de ce site est interdite sans autorisation écrite préalable de Popey Academy.</p>
+                  </>
+                )}
+
+                {modal === "cgv" && (
+                  <>
+                    <p><strong className="text-neutral-900">Prestataire</strong><br />
+                    Popey Academy · 23 rue Paul Lahragou, 40100 Dax · SIRET 840 800 106</p>
+
+                    <p><strong className="text-neutral-900">Service proposé</strong><br />
+                    Review Booster est un service d'automatisation de collecte d'avis Google via WhatsApp. L'abonnement mensuel est de 79€/mois, sans engagement de durée.</p>
+
+                    <p><strong className="text-neutral-900">Facturation & paiement</strong><br />
+                    Le service est facturé mensuellement. Le paiement s'effectue par virement ou carte bancaire. En cas de non-paiement, le service est suspendu après mise en demeure.</p>
+
+                    <p><strong className="text-neutral-900">Résiliation</strong><br />
+                    Vous pouvez résilier votre abonnement à tout moment, sans frais ni préavis, en envoyant un message à <a href="mailto:contact@popey.academy" className="text-emerald-600 hover:underline">contact@popey.academy</a>. La résiliation prend effet à la fin de la période en cours.</p>
+
+                    <p><strong className="text-neutral-900">Responsabilité</strong><br />
+                    Popey Academy s'engage à déployer les moyens nécessaires pour assurer la continuité du service mais ne peut être tenu responsable des aléas techniques liés aux plateformes tierces (WhatsApp, Google).</p>
+
+                    <p><strong className="text-neutral-900">Droit applicable</strong><br />
+                    Les présentes CGV sont soumises au droit français. Tout litige relève de la compétence des tribunaux de Dax.</p>
+                  </>
+                )}
+
+                {modal === "cgu" && (
+                  <>
+                    <p><strong className="text-neutral-900">Accès au service</strong><br />
+                    L'utilisation de Review Booster est réservée aux professionnels (commerçants, artisans, prestataires de services) ayant souscrit un abonnement valide.</p>
+
+                    <p><strong className="text-neutral-900">Utilisation des données clients</strong><br />
+                    Les numéros de téléphone et prénoms saisis dans l'application sont utilisés exclusivement pour l'envoi des messages WhatsApp liés au service. Ces données ne sont jamais revendues ni partagées avec des tiers.</p>
+
+                    <p><strong className="text-neutral-900">Consentement des destinataires</strong><br />
+                    L'utilisateur certifie que les clients dont il saisit les coordonnées ont bien fréquenté son établissement et peuvent légitimement recevoir un message de suivi. Il est responsable du respect du RGPD pour les données qu'il collecte.</p>
+
+                    <p><strong className="text-neutral-900">Comportement prohibé</strong><br />
+                    Il est interdit d'utiliser le service pour envoyer des messages à des personnes n'ayant pas eu de relation commerciale avec vous, ou de façon abusive (spam).</p>
+
+                    <p><strong className="text-neutral-900">Modifications</strong><br />
+                    Popey Academy se réserve le droit de modifier les présentes CGU. Les utilisateurs sont informés par email avec un préavis de 30 jours.</p>
+                  </>
+                )}
+
+                {modal === "contact" && (
+                  <>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                      <span className="text-2xl">💬</span>
+                      <div>
+                        <p className="font-semibold text-emerald-800 mb-1">WhatsApp — réponse sous 2h</p>
+                        <a href="https://wa.me/33622129675" className="text-emerald-700 hover:underline font-medium">+33 6 22 12 96 75</a>
+                        <p className="text-xs text-emerald-600 mt-0.5">La façon la plus rapide pour démarrer ou poser une question.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                      <span className="text-2xl">📧</span>
+                      <div>
+                        <p className="font-semibold text-neutral-800 mb-1">Email</p>
+                        <a href="mailto:contact@popey.academy" className="text-emerald-600 hover:underline">contact@popey.academy</a>
+                        <p className="text-xs text-neutral-500 mt-0.5">Pour les demandes administratives, devis ou partenariats.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                      <span className="text-2xl">📍</span>
+                      <div>
+                        <p className="font-semibold text-neutral-800 mb-1">Adresse</p>
+                        <p>Popey Academy<br />23 rue Paul Lahragou<br />40100 Dax, France</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
