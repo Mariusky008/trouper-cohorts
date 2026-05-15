@@ -32,6 +32,8 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   let sent = 0;
   let skipped = 0;
+  let cumulativeDelayMs = 0;
+  const now = Date.now();
 
   for (const prospectId of prospectIds) {
     const { data: prospect, error: fetchError } = await supabase
@@ -42,6 +44,11 @@ export async function POST(request: Request) {
 
     if (fetchError || !prospect) { skipped++; continue; }
     if (prospect.statut !== "nouveau") { skipped++; continue; }
+
+    // Délai aléatoire entre 3 et 8 minutes entre chaque message
+    const stepMs = (Math.floor(Math.random() * (8 - 3 + 1)) + 3) * 60_000;
+    cumulativeDelayMs += stepMs;
+    const notBeforeAt = new Date(now + cumulativeDelayMs).toISOString();
 
     const { error: queueError } = await supabase.from("human_whatsapp_outbound_queue").insert({
       owner_member_id: auth.ownerMemberId,
@@ -56,11 +63,11 @@ export async function POST(request: Request) {
         prospect_id: prospectId,
         prospect_nom: prospect.nom,
       },
-      status: "pending",
+      status: "scheduled",
       attempt_count: 0,
       max_attempts: 2,
-      random_delay_ms: 0,
-      not_before_at: new Date().toISOString(),
+      random_delay_ms: stepMs,
+      not_before_at: notBeforeAt,
       updated_at: new Date().toISOString(),
     });
 
