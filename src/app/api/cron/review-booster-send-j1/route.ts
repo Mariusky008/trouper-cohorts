@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const authToken = String(process.env.TWILIO_AUTH_TOKEN || "").trim();
   const whatsappFrom = String(process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886").trim();
   const contentSidJ1 = String(process.env.TWILIO_REVIEW_CONTENT_SID_J1 || "").trim();
-  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").trim();
+  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy").trim();
 
   if (!accountSid || !authToken || !contentSidJ1) {
     return NextResponse.json({
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     .from("human_review_clients_finaux")
     .select(`
       id, prenom, telephone, lien_unique,
-      human_review_commercants ( slug, proprietaire, abonnement )
+      human_review_commercants ( nom, proprietaire, abonnement )
     `)
     .eq("statut", "en_attente")
     .is("date_envoi_j1", null)
@@ -59,14 +59,15 @@ export async function GET(request: Request) {
 
   for (const client of clients) {
     const commerce = client.human_review_commercants as unknown as {
-      slug: string;
+      nom: string;
       proprietaire: string | null;
       abonnement: string;
     } | null;
 
     if (!commerce || commerce.abonnement === "résilié") { skipped++; continue; }
 
-    const lienFiltrage = `${appUrl}/avis/${commerce.slug}?t=${client.lien_unique}`;
+    // {{4}} = token seul → /r/[token] redirige vers la page de filtrage
+    // L'URL dans le template Twilio est : https://www.popey.academy/r/{{4}}
     const proprietairePrenom = extractPrenom(commerce.proprietaire);
 
     try {
@@ -76,8 +77,9 @@ export async function GET(request: Request) {
         contentSid: contentSidJ1,
         contentVariables: JSON.stringify({
           "1": client.prenom,
-          "2": proprietairePrenom,
-          "3": lienFiltrage,
+          "2": commerce.nom,
+          "3": proprietairePrenom,
+          "4": client.lien_unique,
         }),
       });
 
