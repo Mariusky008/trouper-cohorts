@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export type HistoriqueRow = {
   ville: string;
+  zone: string;
   secteur: string;
   date: string;
   count: number;
@@ -69,6 +70,7 @@ export function HistoriqueSection({ historique }: { historique: HistoriqueRow[] 
                 <tr className="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-400">
                   <th className="px-5 py-3">Date</th>
                   <th className="px-5 py-3">Ville</th>
+                  <th className="px-5 py-3">Zone</th>
                   <th className="px-5 py-3">Secteur</th>
                   <th className="px-5 py-3">Importés</th>
                   <th className="px-5 py-3">Contactés</th>
@@ -79,6 +81,7 @@ export function HistoriqueSection({ historique }: { historique: HistoriqueRow[] 
                   <tr key={i} className="hover:bg-slate-50">
                     <td className="px-5 py-2.5 text-slate-500">{row.date}</td>
                     <td className="px-5 py-2.5 font-medium text-slate-800">{row.ville}</td>
+                    <td className="px-5 py-2.5 text-slate-500">{row.zone || "—"}</td>
                     <td className="px-5 py-2.5 text-slate-600">{row.secteur || "—"}</td>
                     <td className="px-5 py-2.5 text-slate-600">{row.count}</td>
                     <td className="px-5 py-2.5">

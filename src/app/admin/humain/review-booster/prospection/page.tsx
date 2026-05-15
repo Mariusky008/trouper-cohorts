@@ -17,7 +17,7 @@ export default async function ProspectionPage() {
       .limit(100),
     supabase
       .from("human_review_prospects")
-      .select("ville, secteur, created_at, statut")
+      .select("ville, zone, secteur, created_at, statut")
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
@@ -28,11 +28,11 @@ export default async function ProspectionPage() {
 
   // Group historique by ville+secteur+day
   const seen = new Map<string, HistoriqueRow>();
-  ((historiqueResult.data || []) as Array<{ ville: string; secteur: string | null; created_at: string; statut: string }>).forEach((row) => {
+  ((historiqueResult.data || []) as Array<{ ville: string; zone: string | null; secteur: string | null; created_at: string; statut: string }>).forEach((row) => {
     const day = row.created_at.slice(0, 10);
-    const key = `${row.ville}|${row.secteur || ""}|${day}`;
+    const key = `${row.ville}|${row.zone || ""}|${row.secteur || ""}|${day}`;
     if (!seen.has(key)) {
-      seen.set(key, { ville: row.ville, secteur: row.secteur || "", date: day, count: 0, contactes: 0 });
+      seen.set(key, { ville: row.ville, zone: row.zone || "", secteur: row.secteur || "", date: day, count: 0, contactes: 0 });
     }
     const entry = seen.get(key)!;
     entry.count++;

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 export function SearchForm() {
   const router = useRouter();
   const [ville, setVille] = useState("Dax");
+  const [zone, setZone] = useState("");
   const [secteur, setSecteur] = useState("");
   const [limit, setLimit] = useState<10 | 20 | 30>(10);
   const [maxAvis, setMaxAvis] = useState(50);
@@ -23,7 +24,7 @@ export function SearchForm() {
       const res = await fetch("/api/admin/humain/review-booster/prospection/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ville, secteur, limit, maxAvis, modeAuto }),
+        body: JSON.stringify({ ville, zone, secteur, limit, maxAvis, modeAuto }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error || "Erreur inconnue.");
@@ -40,12 +41,17 @@ export function SearchForm() {
       <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Recherche Apify</h2>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="space-y-1 col-span-2 sm:col-span-1">
+        <div className="space-y-1">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ville</label>
-          <Input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Dax" required />
+          <Input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Bordeaux" required />
         </div>
 
-        <div className="space-y-1 col-span-2 sm:col-span-1">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Zone / Quartier <span className="normal-case font-normal text-slate-400">(optionnel)</span></label>
+          <Input value={zone} onChange={(e) => setZone(e.target.value)} placeholder="Mériadeck, Bacalan…" />
+        </div>
+
+        <div className="space-y-1">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secteur</label>
           <Input value={secteur} onChange={(e) => setSecteur(e.target.value)} placeholder="coiffeur, garage…" />
         </div>

@@ -28,7 +28,7 @@ async function scrapeApify(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         searchStringsArray: [secteur],
-        locationQuery: `${ville}, france`,
+        locationQuery,
         maxCrawledPlacesPerSearch: limit,
         language: "fr",
         countryCode: "fr",
@@ -48,10 +48,12 @@ export async function POST(request: Request) {
   if (!body) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
   const ville = String(body.ville || "").trim();
+  const zone = String(body.zone || "").trim();
   const secteur = String(body.secteur || "").trim();
   const limit = [10, 20, 30].includes(Number(body.limit)) ? Number(body.limit) : 10;
   const maxAvis = Number(body.maxAvis) > 0 ? Number(body.maxAvis) : 50;
   const modeAuto = body.modeAuto === true;
+  const locationQuery = zone ? `${ville} ${zone}, france` : `${ville}, france`;
 
   if (!ville) return NextResponse.json({ error: "La ville est obligatoire." }, { status: 400 });
   if (!modeAuto && !secteur) return NextResponse.json({ error: "Secteur obligatoire en mode manuel." }, { status: 400 });
@@ -99,6 +101,7 @@ export async function POST(request: Request) {
         nom,
         telephone,
         ville,
+        zone: zone || null,
         secteur: secteurLabel,
         adresse,
         place_id: placeId,
