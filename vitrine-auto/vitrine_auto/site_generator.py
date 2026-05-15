@@ -7,11 +7,14 @@ import logging
 import re
 from typing import Any
 
+import asyncio
 import aiohttp
 
 from .config import env
 
 log = logging.getLogger(__name__)
+
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
 def _ensure_scroll_reveal(html: str) -> str:
     text = str(html or "")
@@ -367,17 +370,33 @@ async def generate_site(
         "anthropic-version": "2023-06-01",
     }
 
+    timeout_s = int(env("ANTHROPIC_TIMEOUT_S", "600") or "600")
+    retries = int(env("ANTHROPIC_RETRIES", "2") or "2")
+
+    last_exc: Exception | None = None
     async with aiohttp.ClientSession() as session:
-        async with session.post(
-            "https://api.anthropic.com/v1/messages",
-            json=payload,
-            headers=headers,
-            timeout=aiohttp.ClientTimeout(total=180)
-        ) as r:
-            if r.status != 200:
-                body = await r.text()
-                raise RuntimeError(f"Claude API error {r.status}: {body[:300]}")
-            data = await r.json()
+        for attempt in range(retries + 1):
+            try:
+                async with session.post(
+                    ANTHROPIC_API_URL,
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=timeout_s),
+                ) as r:
+                    if r.status != 200:
+                        body = await r.text()
+                        raise RuntimeError(f"Claude API error {r.status}: {body[:300]}")
+                    data = await r.json()
+                    last_exc = None
+                    break
+            except (asyncio.TimeoutError, aiohttp.ClientError) as e:
+                last_exc = e
+                if attempt >= retries:
+                    raise
+                log.warning("Anthropic timeout/network error (attempt %s/%s)", attempt + 1, retries + 1)
+
+    if last_exc:
+        raise last_exc
 
     html = data["content"][0]["text"].strip()
 
