@@ -4,6 +4,15 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const host = request.headers.get("host") || "";
+  const vitrineHost = String(host || "").split(":")[0].toLowerCase();
+  const isVitrineHost = vitrineHost === "vitrine.popey.academy";
+  const isPopeyLinkHost = /(^|\.)popey\.link$/i.test(host);
+  const isStaticAssetRequest = /\.[a-z0-9]+$/i.test(pathname);
+  if (isStaticAssetRequest && !isVitrineHost && !isPopeyLinkHost) {
+    return NextResponse.next();
+  }
+
   const isHumanMemberArea = pathname.startsWith("/popey-human/app");
   const isHumanAdminArea = pathname.startsWith("/admin/humain");
   const isHumanLogin = pathname.startsWith("/popey-human/login");
@@ -40,10 +49,7 @@ export default async function proxy(request: NextRequest) {
     }),
     response,
   );
-  const host = request.headers.get("host") || "";
   const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);
-
-  const isPopeyLinkHost = /(^|\.)popey\.link$/i.test(host);
   const canRewritePopeyLinkPath =
     pathname !== "/" &&
     !pathname.startsWith("/popey-link") &&
@@ -57,8 +63,6 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
   }
 
-  const vitrineHost = String(host || "").split(":")[0].toLowerCase();
-  const isVitrineHost = vitrineHost === "vitrine.popey.academy";
   const canRewriteVitrinePath =
     !pathname.startsWith("/vitrine") &&
     !pathname.startsWith("/api") &&
@@ -117,7 +121,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
 
