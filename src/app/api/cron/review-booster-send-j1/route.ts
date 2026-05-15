@@ -66,8 +66,8 @@ export async function GET(request: Request) {
 
     if (!commerce || commerce.abonnement === "résilié") { skipped++; continue; }
 
-    // {{4}} = token seul → /r/[token] redirige vers la page de filtrage
-    // L'URL dans le template Twilio est : https://www.popey.academy/r/{{4}}
+    // {{4}} = token seul → /ra/[token] redirige vers la page de filtrage
+    // L'URL dans le template Twilio est : https://www.popey.academy/ra/{{4}}
     const proprietairePrenom = extractPrenom(commerce.proprietaire);
 
     try {
