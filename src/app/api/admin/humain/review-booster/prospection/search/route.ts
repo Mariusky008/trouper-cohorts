@@ -28,12 +28,13 @@ export async function POST(request: Request) {
   if (!apifyToken) return NextResponse.json({ error: "APIFY_TOKEN manquant." }, { status: 500 });
 
   const apifyRes = await fetch(
-    `https://api.apify.com/v2/acts/apify~google-maps-scraper/run-sync-get-dataset-items?token=${apifyToken}&timeout=300`,
+    `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${apifyToken}&timeout=300`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        searchStringsArray: [`${secteur} ${ville}`],
+        searchStringsArray: [secteur],
+        locationQuery: `${ville}, france`,
         maxCrawledPlacesPerSearch: limit,
         language: "fr",
         countryCode: "fr",
