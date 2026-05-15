@@ -118,6 +118,11 @@ async def _process_business(
     )
     log.info("%s %s", "Preview uploaded" if is_preview else "Uploaded", slug)
   except Exception as e:
+    message = str(e).strip()
+    if not message:
+      message = type(e).__name__
+    else:
+      message = f"{type(e).__name__}: {message}"
     await upsert_vitrine_site(
       slug=slug,
       business_name=str(biz.get("name") or ""),
@@ -127,10 +132,10 @@ async def _process_business(
       whatsapp_phone_e164=str(biz.get("phone") or "").strip() or None,
       status="error",
       storage_prefix=db_storage_prefix,
-      error_reason=str(e)[:250],
+      error_reason=message[:250],
       metadata=meta,
     )
-    log.info("Error %s: %s", slug, str(e)[:250])
+    log.exception("Error %s: %s", slug, message[:250])
 
 
 async def run_pipeline(

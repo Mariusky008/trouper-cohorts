@@ -1,6 +1,7 @@
 import json
 import logging
 import mimetypes
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,7 @@ async def upsert_vitrine_site(
   }
 
   public_url = f"{vitrine_public_base_url()}/{slug}"
+  now_iso = datetime.now(timezone.utc).isoformat()
   row = {
     "slug": slug,
     "business_name": business_name,
@@ -58,6 +60,7 @@ async def upsert_vitrine_site(
     "storage_prefix": storage_prefix,
     "error_reason": error_reason,
     "metadata": metadata or {},
+    "updated_at": now_iso,
   }
   if preview_storage_prefix is not None:
     row["preview_storage_prefix"] = preview_storage_prefix
