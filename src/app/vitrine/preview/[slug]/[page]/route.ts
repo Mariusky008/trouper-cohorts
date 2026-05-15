@@ -88,14 +88,13 @@ function injectScrollToSection(html: string, sectionId: string) {
 function injectPageMode(html: string, sectionId: string) {
   const id = String(sectionId || "").trim().replace(/[^a-z0-9_-]/gi, "");
   if (!id || id === "accueil" || id === "home") return html;
-  const css = `<style id="page-mode">body[data-page-mode="1"] section{display:none}body[data-page-mode="1"] section#accueil{display:block}body[data-page-mode="1"] section#${id}{display:block}body[data-page-mode="1"] section#contact{display:block}</style>`;
-  const js = `<script>(function(){try{document.body.setAttribute('data-page-mode','1');}catch(e){}})();</script>`;
-  let out = String(html || "");
-  if (out.includes('id="page-mode"')) return out;
-  if (out.includes("</head>")) out = out.replace("</head>", `${css}</head>`);
-  if (out.includes("</body>")) out = out.replace("</body>", `${js}</body>`);
-  else out = out + js;
-  return out;
+  const script = `<script>(function(){try{var id=${JSON.stringify(
+    id,
+  )};var el=document.getElementById(id);if(!el){return;}var section=(el.closest&&el.closest('section'))||null;var sections=document.querySelectorAll('section');for(var i=0;i<sections.length;i++){var s=sections[i];var keep=s.id==='accueil'||s.id==='contact'||(section&&s===section);s.style.display=keep?'':'none';}setTimeout(function(){try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}},50);}catch(e){}})();</script>`;
+  const text = String(html || "");
+  if (text.includes(script)) return text;
+  if (text.includes("</body>")) return text.replace("</body>", `${script}</body>`);
+  return text + script;
 }
 
 export async function GET(request: Request, context: RouteContext) {
@@ -129,8 +128,7 @@ export async function GET(request: Request, context: RouteContext) {
   const htmlRaw = await file.text();
   const withAssets = rewriteAssetUrls(htmlRaw, `/vitrine/preview/${normalizedSlug}/assets/`, token);
   const withLinks = rewriteInternalLinks(withAssets, `/vitrine/preview/${normalizedSlug}`, token);
-  const withPageMode = injectPageMode(withLinks, normalizedPage);
-  const html = injectScrollToSection(withPageMode, normalizedPage);
+  const html = injectPageMode(withLinks, normalizedPage);
   return new Response(html, {
     status: 200,
     headers: {
