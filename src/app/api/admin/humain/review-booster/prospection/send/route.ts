@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   for (const prospectId of prospectIds) {
     const { data: prospect, error: fetchError } = await supabase
       .from("human_review_prospects")
-      .select("id, nom, telephone, proprietaire, statut, nb_avis")
+      .select("id, nom, telephone, proprietaire, statut, nb_avis, note_google")
       .eq("id", prospectId)
       .maybeSingle();
 
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
         prospect.proprietaire ? ` ${prospect.proprietaire}` : ",",
         prospect.nom,
         prospect.nb_avis != null ? `${prospect.nb_avis} avis` : "peu d'avis",
+        prospect.note_google != null ? `${prospect.note_google}` : "bonne",
       ],
       quick_reply_payload: [],
       source: "admin_review_prospection",
