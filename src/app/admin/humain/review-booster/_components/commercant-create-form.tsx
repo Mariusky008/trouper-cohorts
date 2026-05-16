@@ -17,6 +17,7 @@ export function CommercantCreateForm() {
     ville: "Dax",
     secteur: "",
     place_id: "",
+    lien_avis: "",
     mensualite: "79",
   });
 
@@ -86,6 +87,10 @@ export function CommercantCreateForm() {
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Place ID Google</label>
           <input value={form.place_id} onChange={(e) => set("place_id", e.target.value)} placeholder="ChIJ..." className="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Lien Google review <span className="normal-case font-normal text-slate-400">(search.google.com/...)</span></label>
+          <input value={form.lien_avis} onChange={(e) => set("lien_avis", e.target.value)} placeholder="https://search.google.com/local/writereview?placeid=..." className="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" />
         </div>
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Mensualité (€)</label>

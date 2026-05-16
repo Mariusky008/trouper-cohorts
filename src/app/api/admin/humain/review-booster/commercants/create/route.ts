@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   const ville = String(body.ville || "Dax").trim();
   const secteur = String(body.secteur || "").trim();
   const placeId = String(body.place_id || "").trim();
+  const lienAvisDirect = String(body.lien_avis || "").trim();
   const mensualite = Number(body.mensualite) || 79;
 
   if (!nom) return NextResponse.json({ error: "Le nom est obligatoire." }, { status: 400 });
@@ -28,9 +29,9 @@ export async function POST(request: Request) {
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
   const tokenSaisie = crypto.randomUUID();
 
-  const lienAvis = placeId
-    ? `https://search.google.com/local/writereview?placeid=${placeId}`
-    : null;
+  // Priorité : lien saisi directement > généré depuis place_id
+  const lienAvis = lienAvisDirect ||
+    (placeId ? `https://search.google.com/local/writereview?placeid=${placeId}` : null);
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

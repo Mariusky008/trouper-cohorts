@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CsvImport } from "./_components/csv-import";
 import { CommercantEditForm } from "./_components/commercant-edit-form";
 import { PipelineTable } from "./_components/pipeline-table";
+import { CopyButton } from "./_components/copy-button";
 
 export const dynamic = "force-dynamic";
 
@@ -125,16 +126,19 @@ export default async function CommercantDetailPage({ params }: PageProps) {
         <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-slate-500">Liens</p>
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between gap-3 overflow-hidden">
-            <span className="text-slate-500">Page filtrage</span>
-            <a href={lienFiltrage} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 hover:underline">{lienFiltrage}</a>
+            <span className="shrink-0 text-slate-500">Saisie commerçant</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <a href={lienSaisie} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 hover:underline">{lienSaisie}</a>
+              <CopyButton text={lienSaisie} />
+            </div>
           </div>
           <div className="flex items-center justify-between gap-3 overflow-hidden">
-            <span className="text-slate-500">Saisie commerçant</span>
-            <a href={lienSaisie} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 hover:underline">{lienSaisie}</a>
+            <span className="shrink-0 text-slate-500">Page filtrage</span>
+            <a href={lienFiltrage} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 hover:underline">{lienFiltrage}</a>
           </div>
           {commerce.lien_avis && (
             <div className="flex items-center justify-between gap-3 overflow-hidden">
-              <span className="text-slate-500">Lien Google</span>
+              <span className="shrink-0 text-slate-500">Lien Google</span>
               <a href={commerce.lien_avis} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 hover:underline">Voir sur Google →</a>
             </div>
           )}
