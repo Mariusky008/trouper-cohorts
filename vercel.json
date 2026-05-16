@@ -30,7 +30,7 @@
     },
     {
       "path": "/api/cron/twilio-whatsapp-queue",
-      "schedule": "0 11 * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
