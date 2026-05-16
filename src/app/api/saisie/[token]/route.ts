@@ -48,6 +48,22 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const today = new Date().toISOString().split("T")[0];
+
+  // Quota journalier : 10 clients max par commerçant par jour
+  const DAILY_LIMIT = 10;
+  const { count: countToday } = await supabase
+    .from("human_review_clients_finaux")
+    .select("id", { count: "exact", head: true })
+    .eq("commercant_id", commerce.id)
+    .eq("date_prestation", today);
+
+  if ((countToday ?? 0) >= DAILY_LIMIT) {
+    return NextResponse.json(
+      { error: `Limite atteinte : ${DAILY_LIMIT} clients maximum par jour.`, quota_reached: true },
+      { status: 429 }
+    );
+  }
+
   const prenomCapitalized = prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
 
   const { error: insertError } = await supabase.from("human_review_clients_finaux").insert({
@@ -67,5 +83,6 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Erreur lors de l'ajout" }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, prenom: prenomCapitalized });
+  const remaining = DAILY_LIMIT - ((countToday ?? 0) + 1);
+  return NextResponse.json({ success: true, prenom: prenomCapitalized, remaining, limit: DAILY_LIMIT });
 }

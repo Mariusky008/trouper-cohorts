@@ -47,6 +47,16 @@ export async function POST(request: Request) {
 
   if (!commerce) return NextResponse.json({ error: "Commerçant introuvable." }, { status: 404 });
 
+  // Quota journalier : 10 clients max par commerçant pour la date du jour
+  const DAILY_LIMIT = 10;
+  const today = new Date().toISOString().split("T")[0];
+  const { count: countToday } = await supabase
+    .from("human_review_clients_finaux")
+    .select("id", { count: "exact", head: true })
+    .eq("commercant_id", commercantId)
+    .eq("date_prestation", today);
+  const slotsLeft = Math.max(0, DAILY_LIMIT - (countToday ?? 0));
+
   const valid: { commercant_id: string; prenom: string; telephone: string; date_prestation: string; lien_unique: string; statut: string }[] = [];
   const ignored: { ligne: number; raison: string }[] = [];
 
@@ -62,6 +72,15 @@ export async function POST(request: Request) {
 
     const telephone = formatPhoneToE164(telephoneRaw);
     if (!telephone) { ignored.push({ ligne: i + 1, raison: "Téléphone invalide" }); continue; }
+
+    // Appliquer le quota uniquement pour les entrées datées d'aujourd'hui
+    if (datePrestation === today) {
+      const todayRowsInBatch = valid.filter((r) => r.date_prestation === today).length;
+      if (todayRowsInBatch >= slotsLeft) {
+        ignored.push({ ligne: i + 1, raison: `Quota journalier atteint (max ${DAILY_LIMIT}/jour)` });
+        continue;
+      }
+    }
 
     valid.push({
       commercant_id: commercantId,

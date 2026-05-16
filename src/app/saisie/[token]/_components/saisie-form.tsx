@@ -72,8 +72,13 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
   const [traitingId, setTraitingId] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
 
+  const DAILY_LIMIT = 10;
+  const quotaUsed = clients.length;
+  const quotaLeft = Math.max(0, DAILY_LIMIT - quotaUsed);
+  const quotaReached = quotaLeft === 0;
+
   const phoneValid = isValidFrenchPhone(telephone);
-  const canSubmit = prenom.trim().length >= 2 && phoneValid && !loading;
+  const canSubmit = prenom.trim().length >= 2 && phoneValid && !loading && !quotaReached;
 
   const delta = Math.max(0, nbAvisActuel - commerce.nbAvisDebut);
   const nextMilestone = getNextMilestone(nbAvisActuel);
@@ -241,9 +246,32 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
 
         {/* ── Formulaire ── */}
         <div className="rounded-3xl p-5 border border-white/10" style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/50 mb-4">
-            ✦ Nouveau client
-          </p>
+          {/* Quota bar */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-black uppercase tracking-widest text-white/50">✦ Nouveau client</p>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5">
+                {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-2 h-2 rounded-full transition-all duration-300"
+                    style={{ background: i < quotaUsed ? "#7c3aed" : "rgba(255,255,255,0.12)" }}
+                  />
+                ))}
+              </div>
+              <span className={`text-xs font-bold ${quotaReached ? "text-rose-400" : quotaLeft <= 3 ? "text-amber-400" : "text-violet-300"}`}>
+                {quotaReached ? "0 restant" : `${quotaLeft} / ${DAILY_LIMIT}`}
+              </span>
+            </div>
+          </div>
+
+          {quotaReached ? (
+            <div className="rounded-2xl px-4 py-5 text-center" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+              <p className="text-2xl mb-2">🔒</p>
+              <p className="text-sm font-bold text-rose-300">Limite journalière atteinte</p>
+              <p className="text-xs text-white/40 mt-1">10 clients maximum par jour · Revenez demain</p>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Prénom</label>
@@ -288,8 +316,9 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
               {loading ? "Ajout en cours…" : "✓  Ajouter ce client"}
             </button>
           </form>
+          )}
 
-          {/* Incentive permanent */}
+          {/* Incentive permanent — toujours visible */}
           <div className="mt-4 rounded-xl px-3 py-2.5 flex items-center gap-2"
             style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.2)" }}>
             <span className="text-base">📱</span>
