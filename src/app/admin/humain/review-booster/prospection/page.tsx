@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SearchForm } from "./_components/search-form";
+import { ManualSendForm } from "./_components/manual-send-form";
 import { ProspectsTable, ProspectRow } from "./_components/prospects-table";
 import { HistoriqueSection, HistoriqueRow } from "./_components/historique-section";
 
@@ -51,6 +52,7 @@ export default async function ProspectionPage() {
       </div>
 
       <SearchForm />
+      <ManualSendForm />
       <HistoriqueSection historique={historique} />
       <ProspectsTable prospects={prospects} />
     </section>
