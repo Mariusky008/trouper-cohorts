@@ -400,25 +400,28 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
                   </p>
                   <div className="flex gap-2">
                     {n.clientTelephone && (
-                      <a href={`tel:${n.clientTelephone}`}
+                      <a
+                        href={`tel:${n.clientTelephone}`}
                         className="flex-1 text-center text-xs font-bold text-white rounded-xl py-2.5"
-                        style={{ background: "rgba(255,255,255,0.1)" }}>
+                        style={{ background: "rgba(255,255,255,0.1)" }}
+                      >
                         📞 Rappeler {n.clientPrenom}
-                        </a>
-                      )}
-                      <button
-                        onClick={() => handleTraiter(n.id)}
-                        disabled={traitingId === n.id}
-                        className="flex-1 text-xs font-bold text-emerald-300 rounded-xl py-2.5 disabled:opacity-50 transition-opacity"
-                        style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}>
-                        {traitingId === n.id ? "…" : "✓ Traité"}
-                      </button>
-                    </div>
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleTraiter(n.id)}
+                      disabled={traitingId === n.id}
+                      className="flex-1 text-xs font-bold text-emerald-300 rounded-xl py-2.5 disabled:opacity-50 transition-opacity"
+                      style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}
+                    >
+                      {traitingId === n.id ? "…" : "✓ Traité"}
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <p className="text-center text-[10px] text-white/15 pt-1">Propulsé par Trouper · Avis Google</p>
       </div>
