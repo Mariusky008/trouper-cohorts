@@ -58,10 +58,15 @@ export async function POST(request: Request) {
     status: "pending",
     attempt_count: 0,
     max_attempts: 2,
+    random_delay_ms: 0,
+    not_before_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
 
-  if (error) return NextResponse.json({ error: "Erreur lors de l'envoi." }, { status: 500 });
+  if (error) {
+    console.error("[manual-send] supabase error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

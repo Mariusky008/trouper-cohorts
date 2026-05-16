@@ -27,7 +27,7 @@ export function ManualSendForm() {
         body: JSON.stringify({ prenom, entreprise, nbAvis, noteMoyenne, telephone, contentSid }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error || "Erreur inconnue.");
+      if (!res.ok) setError(data.error || `Erreur ${res.status}.`);
       else {
         setSuccess(true);
         setPrenom("");
