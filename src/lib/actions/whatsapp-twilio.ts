@@ -1223,7 +1223,8 @@ export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40) {
       const parsed = extractTwilioError(sendError);
       const nextAttempt = Number(row.attempt_count || 0) + 1;
       const exhausted = nextAttempt >= Math.max(1, Number(row.max_attempts || 2));
-      const retryAt = exhausted ? null : new Date(Date.now() + randomInt(5 * 60_000, 20 * 60_000)).toISOString();
+      // not_before_at is NOT NULL in DB — use far future for exhausted messages so sweep never re-picks them
+      const retryAt = exhausted ? "2099-01-01T00:00:00.000Z" : new Date(Date.now() + randomInt(5 * 60_000, 20 * 60_000)).toISOString();
       await supabaseAdmin
         .from("human_whatsapp_outbound_queue")
         .update({
