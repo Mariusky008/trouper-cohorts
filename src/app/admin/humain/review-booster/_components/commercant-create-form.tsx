@@ -19,6 +19,8 @@ export function CommercantCreateForm() {
     place_id: "",
     lien_avis: "",
     mensualite: "79",
+    nb_avis_debut: "",
+    note_actuelle: "",
   });
 
   function set(key: keyof typeof form, value: string) {
@@ -33,7 +35,7 @@ export function CommercantCreateForm() {
       const res = await fetch("/api/admin/humain/review-booster/commercants/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, mensualite: Number(form.mensualite) }),
+        body: JSON.stringify({ ...form, mensualite: Number(form.mensualite), nb_avis_debut: form.nb_avis_debut ? Number(form.nb_avis_debut) : 0, nb_avis_actuel: form.nb_avis_debut ? Number(form.nb_avis_debut) : 0, note_actuelle: form.note_actuelle ? Number(form.note_actuelle) : null }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Erreur"); setLoading(false); return; }
@@ -95,6 +97,14 @@ export function CommercantCreateForm() {
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Mensualité (€)</label>
           <input type="number" value={form.mensualite} onChange={(e) => set("mensualite", e.target.value)} className="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Nb avis actuels <span className="normal-case font-normal text-slate-400">(aujourd'hui sur Google)</span></label>
+          <input type="number" value={form.nb_avis_debut} onChange={(e) => set("nb_avis_debut", e.target.value)} placeholder="346" className="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Note Google <span className="normal-case font-normal text-slate-400">(ex: 4.1)</span></label>
+          <input type="number" step="0.1" min="1" max="5" value={form.note_actuelle} onChange={(e) => set("note_actuelle", e.target.value)} placeholder="4.1" className="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" />
         </div>
         {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
         <div className="flex gap-3 sm:col-span-2">

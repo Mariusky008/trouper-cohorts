@@ -34,8 +34,7 @@ function getNextMilestone(current: number) {
 }
 
 function formatHour(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatPhoneDisplay(raw: string) {
@@ -48,10 +47,14 @@ function isValidFrenchPhone(raw: string) {
   return /^0[67]\d{8}$/.test(digits) || /^0[1-9]\d{8}$/.test(digits);
 }
 
-function AnimatedCount({ value }: { value: number }) {
-  return (
-    <span className="tabular-nums transition-all duration-500">{value}</span>
-  );
+const AVATAR_COLORS = [
+  "bg-violet-500", "bg-fuchsia-500", "bg-rose-500",
+  "bg-orange-500", "bg-amber-500", "bg-emerald-500", "bg-cyan-500",
+];
+
+function avatarColor(prenom: string) {
+  const idx = prenom.charCodeAt(0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
 }
 
 export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }: Props) {
@@ -67,6 +70,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
   const [negatifs, setNegatifs] = useState<AvisNegatif[]>(avisNegatifs);
   const [negatifOuvert, setNegatifOuvert] = useState(false);
   const [traitingId, setTraitingId] = useState<string | null>(null);
+  const [pulse, setPulse] = useState(false);
 
   const phoneValid = isValidFrenchPhone(telephone);
   const canSubmit = prenom.trim().length >= 2 && phoneValid && !loading;
@@ -103,6 +107,8 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
       };
       setClients((prev) => [added, ...prev]);
       setSuccessPrenom(data.prenom);
+      setPulse(true);
+      setTimeout(() => setPulse(false), 600);
       setPrenom("");
       setTelephone("");
       setLoading(false);
@@ -110,7 +116,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
       setTimeout(() => {
         setSuccessPrenom(null);
         prenomRef.current?.focus();
-      }, 2800);
+      }, 3000);
     } catch {
       setError("Erreur réseau, réessayez.");
       setLoading(false);
@@ -133,93 +139,114 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
 
   return (
     <main
-      style={{ fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)" }}
-      className="min-h-screen bg-[#1C1F22] px-4 py-8 pb-16"
+      style={{
+        fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
+        background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 40%, #0d1b2a 100%)",
+      }}
+      className="min-h-screen px-4 py-7 pb-16"
     >
-      <div className="mx-auto w-full max-w-sm space-y-5">
+      <div className="mx-auto w-full max-w-sm space-y-4">
 
         {/* ── Hero ── */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#2A2D31] to-[#1C1F22] border border-[#3A3D42] p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold tracking-widest uppercase text-[#D4C89A] bg-[#D4C89A]/10 rounded-full px-3 py-1">
-              ⭐ Partenaire Google Reviews
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-white leading-tight">{commerce.nom}</h1>
-          {(commerce.secteur || commerce.ville) && (
-            <p className="text-sm text-[#6B7280] mt-1">
-              {[commerce.secteur, commerce.ville].filter(Boolean).join(" · ")}
-            </p>
-          )}
-          {commerce.noteActuelle && (
-            <div className="mt-3 inline-flex items-center gap-1.5 bg-[#D4C89A]/10 rounded-xl px-3 py-1.5">
-              <span className="text-[#D4C89A] text-sm font-bold">★ {commerce.noteActuelle.toFixed(1)}</span>
-              <span className="text-[#6B7280] text-xs">sur Google</span>
+        <div
+          className="rounded-3xl p-5 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4f46e5 50%, #2563eb 100%)" }}
+        >
+          {/* Cercles décoratifs */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+          <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
+
+          <div className="relative">
+            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur rounded-full px-3 py-1 mb-3">
+              <span className="text-xs">⭐</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase text-white">Partenaire Google</span>
             </div>
-          )}
+            <h1 className="text-xl font-black text-white leading-tight">{commerce.nom}</h1>
+            {(commerce.secteur || commerce.ville) && (
+              <p className="text-sm text-white/60 mt-0.5">
+                {[commerce.secteur, commerce.ville].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {commerce.noteActuelle && (
+              <div className="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-2xl px-3 py-2">
+                <span className="text-yellow-300 text-base">★</span>
+                <span className="text-white font-bold">{commerce.noteActuelle.toFixed(1)}</span>
+                <span className="text-white/50 text-xs">sur Google</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Compteurs ── */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Clients\naujourd'hui", value: clients.length, color: "text-white" },
-            { label: "Avis\nobtenus", value: delta, color: "text-[#25D366]" },
-            { label: "Note\nactuelle", value: commerce.noteActuelle ? `★${commerce.noteActuelle.toFixed(1)}` : "—", color: "text-[#D4C89A]", raw: true },
-          ].map(({ label, value, color, raw }) => (
-            <div key={label} className="rounded-2xl bg-[#2A2D31] border border-[#3A3D42] p-4 text-center">
-              <p className={`text-2xl font-bold ${color}`}>
-                {raw ? value : <AnimatedCount value={value as number} />}
-              </p>
-              <p className="text-[10px] text-[#6B7280] mt-1 leading-tight whitespace-pre-line">{label}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-3 gap-2.5">
+          <div className={`rounded-2xl p-4 text-center transition-transform duration-300 ${pulse ? "scale-110" : "scale-100"}`}
+            style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}>
+            <p className="text-3xl font-black text-white">{clients.length}</p>
+            <p className="text-[10px] text-violet-200 mt-0.5 leading-tight">Clients<br />aujourd'hui</p>
+          </div>
+          <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg, #059669, #047857)" }}>
+            <p className="text-3xl font-black text-white">{delta > 0 ? `+${delta}` : delta}</p>
+            <p className="text-[10px] text-emerald-200 mt-0.5 leading-tight">Avis<br />obtenus</p>
+          </div>
+          <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+            <p className="text-3xl font-black text-white">
+              {commerce.noteActuelle ? `${commerce.noteActuelle.toFixed(1)}` : nbAvisActuel > 0 ? nbAvisActuel : "—"}
+            </p>
+            <p className="text-[10px] text-amber-200 mt-0.5 leading-tight">
+              {commerce.noteActuelle ? "Note\nGoogle" : "Avis\nGoogle"}
+            </p>
+          </div>
         </div>
 
-        {/* ── Barre de progression ── */}
-        <div className="rounded-2xl bg-[#2A2D31] border border-[#3A3D42] p-4">
+        {/* ── Progression ── */}
+        <div className="rounded-2xl p-4 border border-white/10" style={{ background: "rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#9CA3AF]">Objectif {nextMilestone} avis</span>
-            <span className="text-xs font-bold text-[#D4C89A]">{nbAvisActuel} / {nextMilestone}</span>
+            <span className="text-xs font-bold text-white/80">🎯 Objectif {nextMilestone} avis</span>
+            <span className="text-xs font-black text-violet-300">{nbAvisActuel} / {nextMilestone}</span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-[#3A3D42] overflow-hidden">
+          <div className="h-3 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#D4C89A] to-[#f0e4b4] transition-all duration-700"
-              style={{ width: `${progressPct}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${progressPct}%`,
+                background: "linear-gradient(90deg, #7c3aed, #2563eb, #06b6d4)",
+              }}
             />
           </div>
-          <p className="mt-2 text-xs text-[#6B7280]">
+          <p className="mt-2 text-xs text-white/50">
             {restants === 0
-              ? "🎉 Objectif atteint !"
-              : `Encore ${restants} client${restants > 1 ? "s" : ""} pour atteindre ${nextMilestone} avis`}
+              ? "🎉 Objectif atteint ! Félicitations !"
+              : `💡 Encore ${restants} client${restants > 1 ? "s" : ""} pour atteindre l'objectif ${nextMilestone}`}
           </p>
         </div>
 
-        {/* ── Flash succès / erreur ── */}
+        {/* ── Flash succès ── */}
         {successPrenom && (
-          <div className="rounded-2xl bg-[#25D366]/15 border border-[#25D366]/30 px-4 py-3 flex items-center gap-3 animate-in fade-in duration-300">
-            <span className="text-xl">✅</span>
+          <div className="rounded-2xl px-4 py-3.5 flex items-start gap-3"
+            style={{ background: "linear-gradient(135deg, rgba(5,150,105,0.3), rgba(4,120,87,0.2))", border: "1px solid rgba(16,185,129,0.4)" }}>
+            <span className="text-2xl mt-0.5">🎉</span>
             <div>
-              <p className="text-sm font-semibold text-[#25D366]">{successPrenom} ajouté(e) !</p>
-              <p className="text-xs text-[#25D366]/70">Message WhatsApp demain matin</p>
+              <p className="text-sm font-black text-emerald-300">{successPrenom} ajouté(e) !</p>
+              <p className="text-xs text-emerald-400/70 mt-0.5">📱 Un WhatsApp partira demain matin pour demander un avis Google</p>
             </div>
           </div>
         )}
+
+        {/* ── Erreur ── */}
         {error && (
-          <div className="rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+          <div className="rounded-2xl px-4 py-3 border border-red-500/30 bg-red-500/10">
             <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
         {/* ── Formulaire ── */}
-        <div className="rounded-2xl bg-[#2A2D31] border border-[#3A3D42] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[#9CA3AF] mb-4">
-            Nouveau client
+        <div className="rounded-3xl p-5 border border-white/10" style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
+          <p className="text-xs font-black uppercase tracking-widest text-white/50 mb-4">
+            ✦ Nouveau client
           </p>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] uppercase tracking-wider mb-1.5">
-                Prénom
-              </label>
+              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Prénom</label>
               <input
                 ref={prenomRef}
                 type="text"
@@ -228,13 +255,12 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
                 placeholder="Marie"
                 autoComplete="off"
                 autoCapitalize="words"
-                className="w-full bg-[#1C1F22] border border-[#3A3D42] rounded-xl px-4 py-3.5 text-base text-white placeholder-[#4B5563] focus:outline-none focus:border-[#D4C89A] transition-colors"
+                className="w-full rounded-xl px-4 py-3.5 text-base text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] uppercase tracking-wider mb-1.5">
-                Téléphone
-              </label>
+              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Téléphone</label>
               <input
                 type="tel"
                 inputMode="tel"
@@ -242,7 +268,8 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
                 onChange={(e) => setTelephone(e.target.value)}
                 placeholder="06 12 34 56 78"
                 autoComplete="off"
-                className="w-full bg-[#1C1F22] border border-[#3A3D42] rounded-xl px-4 py-3.5 text-base text-white placeholder-[#4B5563] focus:outline-none focus:border-[#D4C89A] transition-colors"
+                className="w-full rounded-xl px-4 py-3.5 text-base text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
               />
               {telephone.replace(/\D/g, "").length >= 10 && !phoneValid && (
                 <p className="text-xs text-red-400 mt-1.5">Numéro invalide (format 06 ou 07...)</p>
@@ -251,81 +278,101 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full bg-[#D4C89A] text-[#1C1F22] rounded-xl py-4 text-sm font-bold disabled:opacity-30 transition-all active:scale-95 mt-1"
+              className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-95 disabled:opacity-30 mt-1"
+              style={{
+                background: canSubmit
+                  ? "linear-gradient(135deg, #7c3aed, #4f46e5)"
+                  : "rgba(255,255,255,0.1)",
+              }}
             >
               {loading ? "Ajout en cours…" : "✓  Ajouter ce client"}
             </button>
           </form>
+
+          {/* Incentive permanent */}
+          <div className="mt-4 rounded-xl px-3 py-2.5 flex items-center gap-2"
+            style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.2)" }}>
+            <span className="text-base">📱</span>
+            <p className="text-xs text-violet-300 leading-snug">
+              Chaque client ajouté reçoit un WhatsApp le lendemain pour laisser un avis Google
+            </p>
+          </div>
         </div>
 
         {/* ── Historique du jour ── */}
         {clients.length > 0 && (
-          <div className="rounded-2xl bg-[#2A2D31] border border-[#3A3D42] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[#9CA3AF] mb-3">
-              Aujourd'hui · {clients.length} client{clients.length > 1 ? "s" : ""}
-            </p>
-            <ul className="space-y-2">
+          <div className="rounded-2xl p-4 border border-white/10" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-black uppercase tracking-widest text-white/50">Aujourd'hui</p>
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-violet-300"
+                style={{ background: "rgba(124,58,237,0.25)" }}>
+                {clients.length} client{clients.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <ul className="space-y-2.5">
               {clients.slice(0, 8).map((c) => (
                 <li key={c.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#D4C89A]/20 flex items-center justify-center text-[10px] font-bold text-[#D4C89A]">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${avatarColor(c.prenom)}`}>
                       {c.prenom[0]?.toUpperCase()}
                     </div>
-                    <span className="text-sm text-white font-medium">{c.prenom}</span>
+                    <span className="text-sm font-semibold text-white">{c.prenom}</span>
                   </div>
-                  <span className="text-xs text-[#6B7280]">{formatHour(c.createdAt)}</span>
+                  <span className="text-xs text-white/30">{formatHour(c.createdAt)}</span>
                 </li>
               ))}
             </ul>
             {clients.length > 8 && (
-              <p className="mt-2 text-xs text-[#6B7280] text-center">+{clients.length - 8} autres</p>
+              <p className="mt-2.5 text-xs text-white/30 text-center">+{clients.length - 8} autres</p>
             )}
           </div>
         )}
 
         {/* ── Avis négatifs ── */}
         {negatifs.length > 0 && (
-          <div className="rounded-2xl border border-red-500/30 bg-[#2A2D31] overflow-hidden">
+          <div className="rounded-2xl overflow-hidden border border-rose-500/30" style={{ background: "rgba(255,255,255,0.05)" }}>
             <button
               onClick={() => setNegatifOuvert((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3.5 text-left"
+              className="w-full flex items-center justify-between px-4 py-3.5"
             >
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
                   {negatifs.length}
                 </span>
-                <span className="text-sm font-semibold text-red-400">
+                <span className="text-sm font-bold text-rose-400">
                   Retour{negatifs.length > 1 ? "s" : ""} client à traiter
                 </span>
               </div>
-              <span className="text-[#6B7280] text-xs">{negatifOuvert ? "▲" : "▼"}</span>
+              <span className="text-white/30 text-xs">{negatifOuvert ? "▲" : "▼"}</span>
             </button>
 
             {negatifOuvert && (
-              <div className="border-t border-red-500/20 divide-y divide-[#3A3D42]">
+              <div className="border-t border-rose-500/20 divide-y divide-white/5">
                 {negatifs.map((n) => (
-                  <div key={n.id} className="px-4 py-4 space-y-2">
-                    <p className="text-xs text-[#6B7280]">
+                  <div key={n.id} className="px-4 py-4 space-y-2.5">
+                    <p className="text-xs text-white/40">
                       {n.clientPrenom ?? "Client"}{n.clientTelephone ? ` · ${n.clientTelephone}` : ""}
                     </p>
-                    <p className="text-sm text-[#D1D5DB] leading-relaxed bg-[#1C1F22] rounded-xl px-3 py-2.5">
+                    <p className="text-sm text-white/80 leading-relaxed rounded-xl px-3 py-2.5"
+                      style={{ background: "rgba(255,255,255,0.06)" }}>
                       &ldquo;{n.message}&rdquo;
                     </p>
-                    {n.clientTelephone && (
-                      <a
-                        href={`tel:${n.clientTelephone}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#3A3D42] rounded-lg px-3 py-2"
-                      >
-                        📞 Rappeler {n.clientPrenom}
-                      </a>
-                    )}
-                    <button
-                      onClick={() => handleTraiter(n.id)}
-                      disabled={traitingId === n.id}
-                      className="block w-full text-center text-xs font-semibold text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl py-2.5 disabled:opacity-50 transition-opacity"
-                    >
-                      {traitingId === n.id ? "…" : "✓ J'ai rappelé ce client"}
-                    </button>
+                    <div className="flex gap-2">
+                      {n.clientTelephone && (
+                        <a href={`tel:${n.clientTelephone}`}
+                          className="flex-1 text-center text-xs font-bold text-white rounded-xl py-2.5"
+                          style={{ background: "rgba(255,255,255,0.1)" }}>
+                          📞 Rappeler {n.clientPrenom}
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleTraiter(n.id)}
+                        disabled={traitingId === n.id}
+                        className="flex-1 text-xs font-bold text-emerald-300 rounded-xl py-2.5 disabled:opacity-50 transition-opacity"
+                        style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                        {traitingId === n.id ? "…" : "✓ Traité"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -333,10 +380,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
           </div>
         )}
 
-        {/* ── Footer ── */}
-        <p className="text-center text-[10px] text-[#3A3D42] pt-2">
-          Propulsé par Trouper · Avis Google
-        </p>
+        <p className="text-center text-[10px] text-white/15 pt-1">Propulsé par Trouper · Avis Google</p>
       </div>
     </main>
   );

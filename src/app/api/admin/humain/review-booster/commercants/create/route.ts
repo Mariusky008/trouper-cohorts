@@ -21,6 +21,9 @@ export async function POST(request: Request) {
   const placeId = String(body.place_id || "").trim();
   const lienAvisDirect = String(body.lien_avis || "").trim();
   const mensualite = Number(body.mensualite) || 79;
+  const nbAvisDebut = Number(body.nb_avis_debut) || 0;
+  const nbAvisActuel = Number(body.nb_avis_actuel) || nbAvisDebut;
+  const noteActuelle = body.note_actuelle ? Number(body.note_actuelle) : null;
 
   if (!nom) return NextResponse.json({ error: "Le nom est obligatoire." }, { status: 400 });
 
@@ -48,6 +51,9 @@ export async function POST(request: Request) {
       place_id: placeId || null,
       lien_avis: lienAvis,
       mensualite,
+      nb_avis_debut: nbAvisDebut,
+      nb_avis_actuel: nbAvisActuel,
+      note_actuelle: noteActuelle,
       date_debut: new Date().toISOString().split("T")[0],
     })
     .select("id, slug, token_saisie")

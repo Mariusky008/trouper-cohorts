@@ -146,7 +146,7 @@ export default async function CommercantDetailPage({ params }: PageProps) {
       </div>
 
       {/* Edit form */}
-      <CommercantEditForm commerce={commerce} />
+      <CommercantEditForm commerce={{ ...commerce, nb_avis_actuel: commerce.nb_avis_actuel ?? null, note_actuelle: commerce.note_actuelle ? Number(commerce.note_actuelle) : null }} />
 
       {/* Pipeline table */}
       <PipelineTable clients={rows} statutLabels={STATUT_LABEL} />
