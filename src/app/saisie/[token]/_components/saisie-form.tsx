@@ -357,41 +357,53 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
           </div>
         )}
 
-        {/* ── Avis négatifs ── */}
-        {negatifs.length > 0 && (
-          <div className="rounded-2xl overflow-hidden border border-rose-500/30" style={{ background: "rgba(255,255,255,0.05)" }}>
-            <button
-              onClick={() => setNegatifOuvert((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3.5"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
-                  {negatifs.length}
-                </span>
-                <span className="text-sm font-bold text-rose-400">
-                  Retour{negatifs.length > 1 ? "s" : ""} client à traiter
-                </span>
-              </div>
+        {/* ── Avis négatifs ── toujours visible */}
+        <div
+          className="rounded-2xl overflow-hidden border"
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            borderColor: negatifs.length > 0 ? "rgba(244,63,94,0.4)" : "rgba(16,185,129,0.3)",
+          }}
+        >
+          <button
+            onClick={() => negatifs.length > 0 && setNegatifOuvert((v) => !v)}
+            className={`w-full flex items-center justify-between px-4 py-3.5 ${negatifs.length > 0 ? "cursor-pointer" : "cursor-default"}`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white"
+                style={{ background: negatifs.length > 0 ? "#f43f5e" : "#10b981" }}
+              >
+                {negatifs.length}
+              </span>
+              <span className={`text-sm font-bold ${negatifs.length > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                {negatifs.length === 0
+                  ? "Aucun retour négatif"
+                  : `Retour${negatifs.length > 1 ? "s" : ""} client à traiter`}
+              </span>
+            </div>
+            {negatifs.length > 0 && (
               <span className="text-white/30 text-xs">{negatifOuvert ? "▲" : "▼"}</span>
-            </button>
+            )}
+          </button>
 
-            {negatifOuvert && (
-              <div className="border-t border-rose-500/20 divide-y divide-white/5">
-                {negatifs.map((n) => (
-                  <div key={n.id} className="px-4 py-4 space-y-2.5">
-                    <p className="text-xs text-white/40">
-                      {n.clientPrenom ?? "Client"}{n.clientTelephone ? ` · ${n.clientTelephone}` : ""}
-                    </p>
-                    <p className="text-sm text-white/80 leading-relaxed rounded-xl px-3 py-2.5"
-                      style={{ background: "rgba(255,255,255,0.06)" }}>
-                      &ldquo;{n.message}&rdquo;
-                    </p>
-                    <div className="flex gap-2">
-                      {n.clientTelephone && (
-                        <a href={`tel:${n.clientTelephone}`}
-                          className="flex-1 text-center text-xs font-bold text-white rounded-xl py-2.5"
-                          style={{ background: "rgba(255,255,255,0.1)" }}>
-                          📞 Rappeler {n.clientPrenom}
+          {negatifs.length > 0 && negatifOuvert && (
+            <div className="border-t border-rose-500/20 divide-y divide-white/5">
+              {negatifs.map((n) => (
+                <div key={n.id} className="px-4 py-4 space-y-2.5">
+                  <p className="text-xs text-white/40">
+                    {n.clientPrenom ?? "Client"}{n.clientTelephone ? ` · ${n.clientTelephone}` : ""}
+                  </p>
+                  <p className="text-sm text-white/80 leading-relaxed rounded-xl px-3 py-2.5"
+                    style={{ background: "rgba(255,255,255,0.06)" }}>
+                    &ldquo;{n.message}&rdquo;
+                  </p>
+                  <div className="flex gap-2">
+                    {n.clientTelephone && (
+                      <a href={`tel:${n.clientTelephone}`}
+                        className="flex-1 text-center text-xs font-bold text-white rounded-xl py-2.5"
+                        style={{ background: "rgba(255,255,255,0.1)" }}>
+                        📞 Rappeler {n.clientPrenom}
                         </a>
                       )}
                       <button
@@ -407,7 +419,6 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
               </div>
             )}
           </div>
-        )}
 
         <p className="text-center text-[10px] text-white/15 pt-1">Propulsé par Trouper · Avis Google</p>
       </div>
