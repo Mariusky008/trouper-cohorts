@@ -19,18 +19,12 @@ export default async function AdminLayout({
           <Link href="/admin/humain" className="font-bold text-lg" prefetch={false}>
             Trouper Admin
           </Link>
-          <nav className="hidden gap-4 text-sm font-medium md:flex">
+          <nav className="hidden gap-4 text-sm font-medium md:flex items-center">
             <a href="/admin/humain" className="hover:underline text-emerald-700">
               100% Humain
             </a>
             <a href="/admin/humain/vitrines" className="hover:underline">
               Vitrines
-            </a>
-            <a href="/admin/humain/review-booster" className="hover:underline">
-              Avis Google
-            </a>
-            <a href="/admin/humain/review-booster/prospection" className="hover:underline">
-              Prospection
             </a>
             <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
@@ -40,6 +34,13 @@ export default async function AdminLayout({
             </a>
             <a href="/admin/humain/commissions" className="hover:underline">
               Commissions
+            </a>
+            <span className="mx-4 h-4 w-px bg-slate-300" />
+            <a href="/admin/humain/review-booster" className="hover:underline font-semibold text-amber-600 hover:text-amber-700">
+              Avis Google
+            </a>
+            <a href="/admin/humain/review-booster/prospection" className="hover:underline font-semibold text-amber-600 hover:text-amber-700">
+              Prospection
             </a>
           </nav>
         </div>
