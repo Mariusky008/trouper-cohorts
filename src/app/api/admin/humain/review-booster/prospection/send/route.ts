@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       quick_reply_payload: [],
       source: "admin_review_prospection",
       metadata: {
+        provider: "twilio",
         content_sid: contentSid,
         prospect_id: prospectId,
         prospect_nom: prospect.nom,

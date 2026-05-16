@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
+import { runTwilioWhatsAppOutboundQueueSweep } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     quick_reply_payload: [],
     source: "admin_review_prospection_manual",
     metadata: {
+      provider: "twilio",
       content_sid: contentSid,
       entreprise,
       prenom: prenom || null,
@@ -67,6 +69,11 @@ export async function POST(request: Request) {
     console.error("[manual-send] supabase error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Déclenche le sweep immédiatement pour envoi instantané
+  await runTwilioWhatsAppOutboundQueueSweep(5).catch((e) =>
+    console.error("[manual-send] sweep error:", e)
+  );
 
   return NextResponse.json({ success: true });
 }
