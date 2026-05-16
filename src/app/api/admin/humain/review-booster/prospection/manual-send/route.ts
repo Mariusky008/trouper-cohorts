@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       nb_avis: nbAvis || null,
       note_moyenne: noteMoyenne || null,
     },
-    status: "pending",
+    status: "scheduled",
     attempt_count: 0,
     max_attempts: 2,
     random_delay_ms: 0,
