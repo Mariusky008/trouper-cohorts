@@ -1172,7 +1172,7 @@ export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40) {
       .in("status", ["queued", "scheduled", "failed"]);
     if (lockResult.error) continue;
 
-    const vars = Array.isArray(row.vars) ? row.vars.map((v) => String(v || "").trim()).filter(Boolean) : [];
+    const vars = Array.isArray(row.vars) ? row.vars.map((v) => String(v ?? "").trim()) : [];
     const contentSid = String((row.metadata || {}).content_sid || row.template_name || whatsappTwilioConfig.contentSid || "").trim();
     const contentVariables = parseTwilioContentVariables(vars);
     const messageText = buildCampaignMessage(vars, row.metadata || {});
