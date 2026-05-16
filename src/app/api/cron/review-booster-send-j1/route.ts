@@ -13,10 +13,6 @@ function isAuthorized(request: Request) {
   return new URL(request.url).searchParams.get("secret") === secret;
 }
 
-function extractPrenom(fullName: string | null | undefined): string {
-  return String(fullName || "").trim().split(/\s+/)[0] || "le gérant";
-}
-
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -37,12 +33,12 @@ export async function GET(request: Request) {
 
   const supabase = createAdminClient();
 
-  // Clients à contacter pour la première fois : prestation à J+1 ou J+2, pas encore envoyé
+  // Clients à contacter : prestation hier ou avant-hier, pas encore envoyé
   const { data: clients, error } = await supabase
     .from("human_review_clients_finaux")
     .select(`
       id, prenom, telephone, lien_unique,
-      human_review_commercants ( nom, proprietaire, abonnement )
+      human_review_commercants ( nom, abonnement )
     `)
     .eq("statut", "en_attente")
     .is("date_envoi_j1", null)
@@ -60,16 +56,15 @@ export async function GET(request: Request) {
   for (const client of clients) {
     const commerce = client.human_review_commercants as unknown as {
       nom: string;
-      proprietaire: string | null;
       abonnement: string;
     } | null;
 
     if (!commerce || commerce.abonnement === "résilié") { skipped++; continue; }
 
-    // {{4}} = token seul → /ra/[token] redirige vers la page de filtrage
-    // L'URL dans le template Twilio est : https://www.popey.academy/ra/{{4}}
-    const proprietairePrenom = extractPrenom(commerce.proprietaire);
-
+    // Template 3 variables :
+    // {{1}} = prénom client
+    // {{2}} = nom du commerce
+    // {{3}} = URL de tracking (popey.academy/ra/[token]) → log clic → redirect Google
     try {
       await twilioClient.messages.create({
         from: whatsappFrom,
@@ -78,8 +73,7 @@ export async function GET(request: Request) {
         contentVariables: JSON.stringify({
           "1": client.prenom,
           "2": commerce.nom,
-          "3": proprietairePrenom,
-          "4": client.lien_unique,
+          "3": `${appUrl}/ra/${client.lien_unique}`,
         }),
       });
 
