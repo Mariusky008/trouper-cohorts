@@ -12,13 +12,13 @@ export function ManualSendForm() {
   const [telephone, setTelephone] = useState("");
   const [contentSid, setContentSid] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [sweepInfo, setSweepInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setSuccess(false);
+    setSweepInfo(null);
     setError(null);
     try {
       const res = await fetch("/api/admin/humain/review-booster/prospection/manual-send", {
@@ -27,9 +27,17 @@ export function ManualSendForm() {
         body: JSON.stringify({ prenom, entreprise, nbAvis, noteMoyenne, telephone, contentSid }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error || `Erreur ${res.status}.`);
-      else {
-        setSuccess(true);
+      if (!res.ok) {
+        setError(data.error || `Erreur ${res.status}.`);
+      } else {
+        const sweep = data.sweep;
+        if (!sweep) {
+          setSweepInfo("⚠️ Inséré en queue — sweep non exécuté.");
+        } else if (sweep.success === false) {
+          setSweepInfo(`⚠️ Sweep échoué : ${sweep.error}`);
+        } else {
+          setSweepInfo(`✅ Envoyé ! (sweep: ${sweep.sent ?? 0} sent, ${sweep.failed ?? 0} failed, ${sweep.processed ?? 0} processed)`);
+        }
         setPrenom("");
         setEntreprise("");
         setNbAvis("");
@@ -170,8 +178,8 @@ export function ManualSendForm() {
             {loading ? "Envoi en cours…" : "💬 Envoyer le WhatsApp"}
           </Button>
 
-          {success && (
-            <p className="text-sm text-emerald-700 font-medium">✅ WhatsApp envoyé avec succès !</p>
+          {sweepInfo && (
+            <p className={`text-sm font-medium font-mono ${sweepInfo.startsWith("✅") ? "text-emerald-700" : "text-amber-600"}`}>{sweepInfo}</p>
           )}
           {error && (
             <p className="text-sm text-red-600 font-medium">{error}</p>
