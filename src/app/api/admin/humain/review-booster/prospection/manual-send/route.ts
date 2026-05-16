@@ -4,6 +4,7 @@ import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { runTwilioWhatsAppOutboundQueueSweep } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 async function requireAdminWithMember() {
   const userId = await getServerUserIdWithProxyFallback();
@@ -71,9 +72,10 @@ export async function POST(request: Request) {
   }
 
   // Déclenche le sweep immédiatement pour envoi instantané
-  await runTwilioWhatsAppOutboundQueueSweep(5).catch((e) =>
-    console.error("[manual-send] sweep error:", e)
-  );
+  const sweepResult = await runTwilioWhatsAppOutboundQueueSweep(5).catch((e) => {
+    console.error("[manual-send] sweep error:", e);
+    return null;
+  });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, sweep: sweepResult });
 }
