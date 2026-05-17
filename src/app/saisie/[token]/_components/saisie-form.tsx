@@ -215,13 +215,13 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
             )}
           </div>
           {(commerce.noteActuelle || nbAvisActuel > 0) && (
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-2xl px-3 py-2 shrink-0">
-              <span className="text-amber-400 text-sm">★</span>
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 shrink-0">
+              <span className="text-amber-400 text-lg leading-none">★</span>
               <div className="text-right">
                 {commerce.noteActuelle && (
-                  <p className="font-black text-slate-900 text-sm leading-none">{commerce.noteActuelle.toFixed(1)}</p>
+                  <p className="font-black text-[#111827] text-base leading-none">{commerce.noteActuelle.toFixed(1)}</p>
                 )}
-                <p className="text-[10px] text-slate-400">{nbAvisActuel} avis</p>
+                <p className="text-[10px] text-slate-500 font-medium">{nbAvisActuel} avis</p>
               </div>
             </div>
           )}
@@ -236,7 +236,10 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
             <span className="text-xl mt-0.5">🎉</span>
             <div>
               <p className="text-sm font-black text-emerald-700">{successPrenom} ajouté(e) !</p>
-              <p className="text-xs text-emerald-600/80 mt-0.5">📱 Message WhatsApp programmé pour demain matin</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.563 4.14 1.542 5.877L.057 23.704a.75.75 0 0 0 .915.916l5.85-1.486A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.98 0-3.83-.543-5.41-1.485l-.39-.23-4.01 1.02 1.04-3.9-.25-.4A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                <p className="text-xs font-semibold text-emerald-600">Message WhatsApp programmé pour demain à 10h</p>
+              </div>
             </div>
           </div>
         )}
@@ -249,7 +252,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
         )}
 
         {/* ── Hero : formulaire ── */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-5">
+        <div className="bg-white rounded-3xl border border-slate-200 p-5" style={{ boxShadow: "0 8px 24px rgba(15,23,42,0.06)" }}>
           <div className="flex items-start justify-between mb-4">
             <div>
               <h2 className="text-lg font-black text-[#111827]">Nouveau client</h2>
@@ -287,7 +290,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                   type="text"
                   value={prenom}
                   onChange={(e) => setPrenom(e.target.value)}
-                  placeholder="Marie"
+                  placeholder="Ex : Marie"
                   autoComplete="off"
                   autoCapitalize="words"
                   className="w-full rounded-xl px-4 py-3.5 text-base text-[#111827] placeholder-slate-400 bg-white border border-[#D1D5DB] focus:outline-none focus:ring-2 focus:ring-[#5B4CF7]/25 focus:border-[#5B4CF7] transition-all"
@@ -300,7 +303,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                   inputMode="tel"
                   value={formatPhoneDisplay(telephone)}
                   onChange={(e) => setTelephone(e.target.value)}
-                  placeholder="06 12 34 56 78"
+                  placeholder="Ex : 06 12 34 56 78"
                   autoComplete="off"
                   className="w-full rounded-xl px-4 py-3.5 text-base text-[#111827] placeholder-slate-400 bg-white border border-[#D1D5DB] focus:outline-none focus:ring-2 focus:ring-[#5B4CF7]/25 focus:border-[#5B4CF7] transition-all"
                 />
@@ -313,13 +316,21 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40"
+                className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-[0.97] disabled:opacity-40"
                 style={{
-                  background: "linear-gradient(135deg, #5B4CF7, #7C3AED)",
-                  boxShadow: canSubmit ? "0 4px 14px rgba(91,76,247,0.35)" : "none",
+                  background: "#5B4CF7",
+                  boxShadow: canSubmit ? "0 4px 16px rgba(91,76,247,0.4)" : "none",
                 }}
               >
-                {loading ? "Ajout en cours…" : "⭐ Demander un avis Google"}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Ajout en cours…
+                  </span>
+                ) : "⭐ Demander un avis Google"}
               </button>
 
               {/* CTA secondaire — relance promo */}
@@ -334,10 +345,10 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                 </button>
               )}
 
-              <div className="flex items-start gap-2 pt-1">
-                <span className="text-sm mt-0.5">📱</span>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Chaque client reçoit un WhatsApp le lendemain pour laisser un avis Google
+              <div className="flex items-center gap-2.5 pt-1 px-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366" className="shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.563 4.14 1.542 5.877L.057 23.704a.75.75 0 0 0 .915.916l5.85-1.486A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.98 0-3.83-.543-5.41-1.485l-.39-.23-4.01 1.02 1.04-3.9-.25-.4A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Chaque client reçoit un WhatsApp le lendemain à 10h pour laisser un avis Google
                 </p>
               </div>
             </form>
@@ -588,7 +599,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
           )}
         </div>
 
-        <p className="text-center text-[10px] text-slate-300 pt-1 pb-4">Propulsé par Trouper · Avis Google</p>
+        <p className="text-center text-xs text-slate-400 font-medium pt-1 pb-4">Propulsé par <span className="text-[#5B4CF7] font-bold">Trouper</span></p>
       </div>
     </main>
   );
