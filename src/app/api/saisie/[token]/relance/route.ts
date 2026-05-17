@@ -79,7 +79,7 @@ export async function POST(request: Request, context: RouteContext) {
     phone_e164: c.telephone,
     template_name: contentSid,
     language_code: "fr",
-    vars: [commerce.nom, remise, service, dateLimit, c.prenom ?? ""],
+    vars: [c.prenom ?? "", commerce.nom, remise, service, dateLimit],
     quick_reply_payload: [],
     source: "review_booster_relance_promo",
     metadata: {
