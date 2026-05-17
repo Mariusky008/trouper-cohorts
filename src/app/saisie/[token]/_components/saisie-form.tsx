@@ -599,7 +599,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 font-medium pt-1 pb-4">Propulsé par <span className="text-[#5B4CF7] font-bold">Trouper</span></p>
+        <p className="text-center text-xs text-slate-400 font-medium pt-1 pb-4">Propulsé par <span className="text-[#5B4CF7] font-bold">Popey</span></p>
       </div>
     </main>
   );
