@@ -503,7 +503,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                       <div className="rounded-xl px-3 py-2.5 text-xs text-white/60 leading-relaxed"
                         style={{ background: "rgba(162,28,175,0.1)", border: "1px solid rgba(162,28,175,0.2)" }}>
                         <p className="text-[10px] font-bold text-fuchsia-400 mb-1 uppercase tracking-wide">Aperçu du message</p>
-                        🎁 Offre exclusive {commerce.nom} ! {relanceRemise}% de réduction sur {relanceService} — jusqu'au {relanceDateLimit}.
+                        Bonjour Prénom, c&apos;est {commerce.nom} ! En tant que client(e), nous vous offrons -{relanceRemise}% sur {relanceService} jusqu&apos;au {relanceDateLimit}. À bientôt !
                       </div>
                     )}
 
