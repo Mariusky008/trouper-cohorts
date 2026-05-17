@@ -67,9 +67,10 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
   const [successPrenom, setSuccessPrenom] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const prenomRef = useRef<HTMLInputElement>(null);
+  const relanceRef = useRef<HTMLDivElement>(null);
 
   const [clients, setClients] = useState<ClientEntry[]>(clientsAujourdhui);
-  const [nbAvisActuel, setNbAvisActuel] = useState(commerce.nbAvisActuel);
+  const [nbAvisActuel] = useState(commerce.nbAvisActuel);
   const [negatifs, setNegatifs] = useState<AvisNegatif[]>(avisNegatifs);
   const [negatifOuvert, setNegatifOuvert] = useState(false);
   const [traitingId, setTraitingId] = useState<string | null>(null);
@@ -97,6 +98,15 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
   const nextMilestone = getNextMilestone(nbAvisActuel);
   const progressPct = Math.min(100, Math.round((nbAvisActuel / nextMilestone) * 100));
   const restants = nextMilestone - nbAvisActuel;
+
+  const cooldownDays = lastRelanceAt
+    ? Math.ceil(30 - (Date.now() - new Date(lastRelanceAt).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const inCooldown = cooldownDays > 0;
+  const nextRelanceDate = lastRelanceAt
+    ? new Date(new Date(lastRelanceAt).getTime() + 30 * 24 * 60 * 60 * 1000)
+        .toLocaleDateString("fr-FR", { day: "numeric", month: "long" })
+    : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -184,199 +194,201 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
     }
   }
 
+  function openRelance() {
+    setRelanceOuvert(true);
+    setTimeout(() => relanceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  }
+
   return (
     <main
-      style={{
-        fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
-        background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 40%, #0d1b2a 100%)",
-      }}
-      className="min-h-screen px-4 py-7 pb-16"
+      className="min-h-screen pb-16"
+      style={{ background: "#F8FAFC", fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)" }}
     >
-      <div className="mx-auto w-full max-w-sm space-y-4">
-
-        {/* ── Hero ── */}
-        <div
-          className="rounded-3xl p-5 relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4f46e5 50%, #2563eb 100%)" }}
-        >
-          {/* Cercles décoratifs */}
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
-          <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
-
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur rounded-full px-3 py-1 mb-3">
-              <span className="text-xs">⭐</span>
-              <span className="text-[10px] font-bold tracking-widest uppercase text-white">Partenaire Google</span>
-            </div>
-            <h1 className="text-xl font-black text-white leading-tight">{commerce.nom}</h1>
+      {/* ── Header sticky ── */}
+      <header className="bg-white border-b border-slate-100 px-4 py-3.5 sticky top-0 z-20">
+        <div className="mx-auto max-w-sm flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-0.5">⭐ Partenaire Google</p>
+            <h1 className="font-black text-slate-900 text-base leading-tight">{commerce.nom}</h1>
             {(commerce.secteur || commerce.ville) && (
-              <p className="text-sm text-white/60 mt-0.5">
-                {[commerce.secteur, commerce.ville].filter(Boolean).join(" · ")}
-              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{[commerce.secteur, commerce.ville].filter(Boolean).join(" · ")}</p>
             )}
-            {commerce.noteActuelle && (
-              <div className="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-2xl px-3 py-2">
-                <span className="text-yellow-300 text-base">★</span>
-                <span className="text-white font-bold">{commerce.noteActuelle.toFixed(1)}</span>
-                <span className="text-white/50 text-xs">sur Google</span>
+          </div>
+          {(commerce.noteActuelle || nbAvisActuel > 0) && (
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-2xl px-3 py-2 shrink-0">
+              <span className="text-amber-400 text-sm">★</span>
+              <div className="text-right">
+                {commerce.noteActuelle && (
+                  <p className="font-black text-slate-900 text-sm leading-none">{commerce.noteActuelle.toFixed(1)}</p>
+                )}
+                <p className="text-[10px] text-slate-400">{nbAvisActuel} avis</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+      </header>
 
-        {/* ── Compteurs ── */}
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className={`rounded-2xl p-4 text-center transition-transform duration-300 ${pulse ? "scale-110" : "scale-100"}`}
-            style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}>
-            <p className="text-3xl font-black text-white">{clients.length}</p>
-            <p className="text-[10px] text-violet-200 mt-0.5 leading-tight">Clients<br />aujourd'hui</p>
-          </div>
-          <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg, #059669, #047857)" }}>
-            <p className="text-3xl font-black text-white">{delta > 0 ? `+${delta}` : delta}</p>
-            <p className="text-[10px] text-emerald-200 mt-0.5 leading-tight">Avis<br />obtenus</p>
-          </div>
-          <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
-            <p className="text-3xl font-black text-white">
-              {commerce.noteActuelle ? `${commerce.noteActuelle.toFixed(1)}` : nbAvisActuel > 0 ? nbAvisActuel : "—"}
-            </p>
-            <p className="text-[10px] text-amber-200 mt-0.5 leading-tight">
-              {commerce.noteActuelle ? "Note\nGoogle" : "Avis\nGoogle"}
-            </p>
-          </div>
-        </div>
-
-        {/* ── Progression ── */}
-        <div className="rounded-2xl p-4 border border-white/10" style={{ background: "rgba(255,255,255,0.05)" }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white/80">🎯 Objectif {nextMilestone} avis</span>
-            <span className="text-xs font-black text-violet-300">{nbAvisActuel} / {nextMilestone}</span>
-          </div>
-          <div className="h-3 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${progressPct}%`,
-                background: "linear-gradient(90deg, #7c3aed, #2563eb, #06b6d4)",
-              }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-white/50">
-            {restants === 0
-              ? "🎉 Objectif atteint ! Félicitations !"
-              : `💡 Encore ${restants} client${restants > 1 ? "s" : ""} pour atteindre l'objectif ${nextMilestone}`}
-          </p>
-        </div>
+      <div className="mx-auto max-w-sm px-4 pt-5 space-y-4">
 
         {/* ── Flash succès ── */}
         {successPrenom && (
-          <div className="rounded-2xl px-4 py-3.5 flex items-start gap-3"
-            style={{ background: "linear-gradient(135deg, rgba(5,150,105,0.3), rgba(4,120,87,0.2))", border: "1px solid rgba(16,185,129,0.4)" }}>
-            <span className="text-2xl mt-0.5">🎉</span>
+          <div className="rounded-2xl px-4 py-3.5 flex items-start gap-3 bg-emerald-50 border border-emerald-200">
+            <span className="text-xl mt-0.5">🎉</span>
             <div>
-              <p className="text-sm font-black text-emerald-300">{successPrenom} ajouté(e) !</p>
-              <p className="text-xs text-emerald-400/70 mt-0.5">📱 Un WhatsApp partira demain matin pour demander un avis Google</p>
+              <p className="text-sm font-black text-emerald-700">{successPrenom} ajouté(e) !</p>
+              <p className="text-xs text-emerald-600/80 mt-0.5">📱 Message WhatsApp programmé pour demain matin</p>
             </div>
           </div>
         )}
 
         {/* ── Erreur ── */}
         {error && (
-          <div className="rounded-2xl px-4 py-3 border border-red-500/30 bg-red-500/10">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="rounded-2xl px-4 py-3 bg-red-50 border border-red-200">
+            <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
-        {/* ── Formulaire ── */}
-        <div className="rounded-3xl p-5 border border-white/10" style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
-          {/* Quota bar */}
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-black uppercase tracking-widest text-white/50">✦ Nouveau client</p>
-            <div className="flex items-center gap-2">
+        {/* ── Hero : formulaire ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-base font-black text-slate-900">Nouveau client</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Ajout en 5 secondes</p>
+            </div>
+            {/* Quota dots */}
+            <div className="flex flex-col items-end gap-1">
               <div className="flex gap-0.5">
                 {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
                   <div
                     key={i}
-                    className="w-2 h-2 rounded-full transition-all duration-300"
-                    style={{ background: i < quotaUsed ? "#7c3aed" : "rgba(255,255,255,0.12)" }}
+                    className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                    style={{ background: i < quotaUsed ? "#4f46e5" : "#e2e8f0" }}
                   />
                 ))}
               </div>
-              <span className={`text-xs font-bold ${quotaReached ? "text-rose-400" : quotaLeft <= 3 ? "text-amber-400" : "text-violet-300"}`}>
-                {quotaReached ? "0 restant" : `${quotaLeft} / ${DAILY_LIMIT}`}
+              <span className={`text-[10px] font-bold ${quotaReached ? "text-red-500" : quotaLeft <= 3 ? "text-amber-500" : "text-slate-400"}`}>
+                {quotaReached ? "0 restant" : `${quotaLeft}/${DAILY_LIMIT}`}
               </span>
             </div>
           </div>
 
           {quotaReached ? (
-            <div className="rounded-2xl px-4 py-5 text-center" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <div className="rounded-2xl px-4 py-5 text-center bg-red-50 border border-red-100">
               <p className="text-2xl mb-2">🔒</p>
-              <p className="text-sm font-bold text-rose-300">Limite journalière atteinte</p>
-              <p className="text-xs text-white/40 mt-1">10 clients maximum par jour · Revenez demain</p>
+              <p className="text-sm font-bold text-red-600">Limite journalière atteinte</p>
+              <p className="text-xs text-slate-400 mt-1">10 clients maximum · Revenez demain</p>
             </div>
           ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Prénom</label>
-              <input
-                ref={prenomRef}
-                type="text"
-                value={prenom}
-                onChange={(e) => setPrenom(e.target.value)}
-                placeholder="Marie"
-                autoComplete="off"
-                autoCapitalize="words"
-                className="w-full rounded-xl px-4 py-3.5 text-base text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Téléphone</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                value={formatPhoneDisplay(telephone)}
-                onChange={(e) => setTelephone(e.target.value)}
-                placeholder="06 12 34 56 78"
-                autoComplete="off"
-                className="w-full rounded-xl px-4 py-3.5 text-base text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-              />
-              {telephone.replace(/\D/g, "").length >= 10 && !phoneValid && (
-                <p className="text-xs text-red-400 mt-1.5">Numéro invalide (format 06 ou 07...)</p>
-              )}
-            </div>
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-95 disabled:opacity-30 mt-1"
-              style={{
-                background: canSubmit
-                  ? "linear-gradient(135deg, #7c3aed, #4f46e5)"
-                  : "rgba(255,255,255,0.1)",
-              }}
-            >
-              {loading ? "Ajout en cours…" : "✓  Ajouter ce client"}
-            </button>
-          </form>
-          )}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Prénom</label>
+                <input
+                  ref={prenomRef}
+                  type="text"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder="Marie"
+                  autoComplete="off"
+                  autoCapitalize="words"
+                  className="w-full rounded-xl px-4 py-3.5 text-base text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Téléphone</label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={formatPhoneDisplay(telephone)}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  placeholder="06 12 34 56 78"
+                  autoComplete="off"
+                  className="w-full rounded-xl px-4 py-3.5 text-base text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all"
+                />
+                {telephone.replace(/\D/g, "").length >= 10 && !phoneValid && (
+                  <p className="text-xs text-red-500 mt-1.5">Numéro invalide (format 06 ou 07...)</p>
+                )}
+              </div>
 
-          {/* Incentive permanent — toujours visible */}
-          <div className="mt-4 rounded-xl px-3 py-2.5 flex items-center gap-2"
-            style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.2)" }}>
-            <span className="text-base">📱</span>
-            <p className="text-xs text-violet-300 leading-snug">
-              Chaque client ajouté reçoit un WhatsApp le lendemain pour laisser un avis Google
-            </p>
+              {/* CTA principal */}
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40"
+                style={{
+                  background: canSubmit ? "linear-gradient(135deg, #4f46e5, #6d28d9)" : "#e2e8f0",
+                  color: canSubmit ? "white" : "#94a3b8",
+                }}
+              >
+                {loading ? "Ajout en cours…" : "⭐ Demander un avis Google"}
+              </button>
+
+              {/* CTA secondaire — relance promo */}
+              {relanceEnabled && !inCooldown && totalClients > 0 && (
+                <button
+                  type="button"
+                  onClick={openRelance}
+                  className="w-full rounded-xl py-3.5 text-sm font-bold transition-all active:scale-95"
+                  style={{ background: "#fdf4ff", color: "#a21caf", border: "1px solid #f0abfc" }}
+                >
+                  🎁 Envoyer une offre promo
+                </button>
+              )}
+
+              <div className="flex items-start gap-2 pt-1">
+                <span className="text-sm mt-0.5">📱</span>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Chaque client reçoit un WhatsApp le lendemain pour laisser un avis Google
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* ── KPI Row ── */}
+        <div className="grid grid-cols-3 gap-2.5">
+          <div
+            className={`bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm transition-transform duration-300 ${pulse ? "scale-110" : "scale-100"}`}
+          >
+            <p className="text-2xl font-black text-indigo-600">{clients.length}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Clients<br />aujourd&apos;hui</p>
           </div>
+          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+            <p className="text-2xl font-black text-emerald-600">{delta > 0 ? `+${delta}` : delta}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Avis<br />obtenus</p>
+          </div>
+          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+            <p className="text-2xl font-black text-amber-600">
+              {commerce.noteActuelle ? commerce.noteActuelle.toFixed(1) : "—"}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Note<br />Google</p>
+          </div>
+        </div>
+
+        {/* ── Progression ── */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-bold text-slate-600">🎯 Objectif {nextMilestone} avis</span>
+            <span className="text-xs font-black text-indigo-600">{nbAvisActuel} / {nextMilestone}</span>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${progressPct}%`, background: "linear-gradient(90deg, #4f46e5, #7c3aed)" }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-400">
+            {restants === 0
+              ? "🎉 Objectif atteint ! Félicitations !"
+              : `💡 Encore ${restants} avis pour atteindre l'objectif`}
+          </p>
         </div>
 
         {/* ── Historique du jour ── */}
         {clients.length > 0 && (
-          <div className="rounded-2xl p-4 border border-white/10" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-black uppercase tracking-widest text-white/50">Aujourd'hui</p>
-              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-violet-300"
-                style={{ background: "rgba(124,58,237,0.25)" }}>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Aujourd&apos;hui</p>
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-indigo-600 bg-indigo-50">
                 {clients.length} client{clients.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -387,152 +399,139 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${avatarColor(c.prenom)}`}>
                       {c.prenom[0]?.toUpperCase()}
                     </div>
-                    <span className="text-sm font-semibold text-white">{c.prenom}</span>
+                    <span className="text-sm font-semibold text-slate-800">{c.prenom}</span>
                   </div>
-                  <span className="text-xs text-white/30">{formatHour(c.createdAt)}</span>
+                  <span className="text-xs text-slate-300">{formatHour(c.createdAt)}</span>
                 </li>
               ))}
             </ul>
             {clients.length > 8 && (
-              <p className="mt-2.5 text-xs text-white/30 text-center">+{clients.length - 8} autres</p>
+              <p className="mt-2.5 text-xs text-slate-400 text-center">+{clients.length - 8} autres</p>
             )}
           </div>
         )}
 
         {/* ── Relance promo ── */}
-        {relanceEnabled && (() => {
-          const cooldownDays = lastRelanceAt
-            ? Math.ceil(30 - (Date.now() - new Date(lastRelanceAt).getTime()) / (1000 * 60 * 60 * 24))
-            : 0;
-          const inCooldown = cooldownDays > 0;
-          const nextDate = lastRelanceAt
-            ? new Date(new Date(lastRelanceAt).getTime() + 30 * 24 * 60 * 60 * 1000)
-                .toLocaleDateString("fr-FR", { day: "numeric", month: "long" })
-            : null;
-
-          return (
-            <div className="rounded-2xl overflow-hidden border border-fuchsia-500/30"
-              style={{ background: "rgba(255,255,255,0.05)" }}>
-              <button
-                onClick={() => !inCooldown && setRelanceOuvert((v) => !v)}
-                className={`w-full flex items-center justify-between px-4 py-3.5 ${inCooldown ? "cursor-default" : "cursor-pointer"}`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">📢</span>
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-fuchsia-300">Relancer mes clients</p>
-                    <p className="text-[10px] text-white/40">
-                      {inCooldown
-                        ? `Disponible le ${nextDate} (dans ${cooldownDays}j)`
-                        : `${totalClients} client${totalClients > 1 ? "s" : ""} à contacter`}
-                    </p>
-                  </div>
-                </div>
-                {!inCooldown && (
-                  <span className="text-white/30 text-xs">{relanceOuvert ? "▲" : "▼"}</span>
-                )}
-              </button>
-
-              {relanceResult && (
-                <div className="mx-4 mb-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
-                  style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}>
-                  <span>✅</span>
-                  <p className="text-xs font-bold text-emerald-300">
-                    {relanceResult.sent} message{relanceResult.sent > 1 ? "s" : ""} en cours d'envoi !
+        {relanceEnabled && (
+          <div
+            ref={relanceRef}
+            className="bg-white rounded-2xl overflow-hidden border shadow-sm"
+            style={{ borderColor: inCooldown ? "#e2e8f0" : "#f0abfc" }}
+          >
+            <button
+              onClick={() => !inCooldown && setRelanceOuvert((v) => !v)}
+              className={`w-full flex items-center justify-between px-4 py-3.5 ${inCooldown ? "cursor-default" : "cursor-pointer"}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg">📢</span>
+                <div className="text-left">
+                  <p className={`text-sm font-bold ${inCooldown ? "text-slate-400" : "text-fuchsia-600"}`}>
+                    Relancer mes clients
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    {inCooldown
+                      ? `Disponible le ${nextRelanceDate} (dans ${cooldownDays}j)`
+                      : `${totalClients} client${totalClients > 1 ? "s" : ""} à contacter`}
                   </p>
                 </div>
+              </div>
+              {!inCooldown && (
+                <span className="text-slate-300 text-xs">{relanceOuvert ? "▲" : "▼"}</span>
               )}
+            </button>
 
-              {!inCooldown && relanceOuvert && (
-                <div className="border-t border-fuchsia-500/20 px-4 py-4">
-                  <form onSubmit={handleRelance} className="space-y-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
-                        Réduction proposée
-                      </label>
-                      <div className="flex gap-2 flex-wrap">
-                        {["10", "15", "20", "25", "30", "50"].map((pct) => (
-                          <button
-                            key={pct}
-                            type="button"
-                            onClick={() => setRelanceRemise(pct)}
-                            className="rounded-xl px-3 py-1.5 text-sm font-bold transition-all"
-                            style={{
-                              background: relanceRemise === pct ? "#a21caf" : "rgba(255,255,255,0.08)",
-                              color: relanceRemise === pct ? "white" : "rgba(255,255,255,0.5)",
-                            }}
-                          >
-                            -{pct}%
-                          </button>
-                        ))}
-                      </div>
+            {relanceResult && (
+              <div className="mx-4 mb-3 rounded-xl px-3 py-2.5 flex items-center gap-2 bg-emerald-50 border border-emerald-200">
+                <span>✅</span>
+                <p className="text-xs font-bold text-emerald-700">
+                  {relanceResult.sent} message{relanceResult.sent > 1 ? "s" : ""} en cours d&apos;envoi !
+                </p>
+              </div>
+            )}
+
+            {!inCooldown && relanceOuvert && (
+              <div className="border-t border-slate-100 px-4 py-4">
+                <form onSubmit={handleRelance} className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Réduction proposée
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {["10", "15", "20", "25", "30", "50"].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setRelanceRemise(pct)}
+                          className="rounded-xl px-3 py-1.5 text-sm font-bold transition-all border"
+                          style={{
+                            background: relanceRemise === pct ? "#fdf4ff" : "#f8fafc",
+                            color: relanceRemise === pct ? "#a21caf" : "#94a3b8",
+                            borderColor: relanceRemise === pct ? "#f0abfc" : "#e2e8f0",
+                          }}
+                        >
+                          -{pct}%
+                        </button>
+                      ))}
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
-                        Sur quel service ?
-                      </label>
-                      <input
-                        type="text"
-                        value={relanceService}
-                        onChange={(e) => setRelanceService(e.target.value)}
-                        placeholder="ex: coupe homme, massage, entretien..."
-                        required
-                        className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
-                        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-                      />
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Sur quel service ?
+                    </label>
+                    <input
+                      type="text"
+                      value={relanceService}
+                      onChange={(e) => setRelanceService(e.target.value)}
+                      placeholder="ex: coupe homme, massage, entretien..."
+                      required
+                      className="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Valable jusqu&apos;au
+                    </label>
+                    <input
+                      type="text"
+                      value={relanceDateLimit}
+                      onChange={(e) => setRelanceDateLimit(e.target.value)}
+                      placeholder="ex: dimanche 25 mai"
+                      required
+                      className="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 focus:border-fuchsia-400 transition-all"
+                    />
+                  </div>
+
+                  {relanceService && relanceDateLimit && (
+                    <div className="rounded-xl px-3 py-2.5 text-xs text-slate-600 leading-relaxed bg-fuchsia-50 border border-fuchsia-100">
+                      <p className="text-[10px] font-bold text-fuchsia-500 mb-1 uppercase tracking-wide">Aperçu du message</p>
+                      Bonjour Prénom, c&apos;est {commerce.nom} ! En tant que client(e) et pour vous remercier de votre fidélité, nous vous offrons -{relanceRemise}% sur {relanceService} jusqu&apos;au {relanceDateLimit}. À bientôt !
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
-                        Valable jusqu'au
-                      </label>
-                      <input
-                        type="text"
-                        value={relanceDateLimit}
-                        onChange={(e) => setRelanceDateLimit(e.target.value)}
-                        placeholder="ex: dimanche 25 mai"
-                        required
-                        className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
-                        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-                      />
-                    </div>
+                  {relanceError && (
+                    <p className="text-xs text-red-500">{relanceError}</p>
+                  )}
 
-                    {/* Aperçu */}
-                    {relanceService && relanceDateLimit && (
-                      <div className="rounded-xl px-3 py-2.5 text-xs text-white/60 leading-relaxed"
-                        style={{ background: "rgba(162,28,175,0.1)", border: "1px solid rgba(162,28,175,0.2)" }}>
-                        <p className="text-[10px] font-bold text-fuchsia-400 mb-1 uppercase tracking-wide">Aperçu du message</p>
-                        Bonjour Prénom, c&apos;est {commerce.nom} ! En tant que client(e) et pour vous remercier de votre fidélité, nous vous offrons -{relanceRemise}% sur {relanceService} jusqu&apos;au {relanceDateLimit}. À bientôt !
-                      </div>
-                    )}
-
-                    {relanceError && (
-                      <p className="text-xs text-red-400">{relanceError}</p>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={relanceLoading || !relanceService.trim() || !relanceDateLimit.trim()}
-                      className="w-full rounded-xl py-3.5 text-sm font-black text-white disabled:opacity-30 transition-all active:scale-95"
-                      style={{ background: "linear-gradient(135deg, #a21caf, #7e22ce)" }}
-                    >
-                      {relanceLoading ? "Envoi en cours…" : `📢 Envoyer à ${totalClients} client${totalClients > 1 ? "s" : ""}`}
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
-          );
-        })()}
+                  <button
+                    type="submit"
+                    disabled={relanceLoading || !relanceService.trim() || !relanceDateLimit.trim()}
+                    className="w-full rounded-xl py-3.5 text-sm font-black text-white disabled:opacity-40 transition-all active:scale-95"
+                    style={{ background: "linear-gradient(135deg, #a21caf, #7e22ce)" }}
+                  >
+                    {relanceLoading ? "Envoi en cours…" : `📢 Envoyer à ${totalClients} client${totalClients > 1 ? "s" : ""}`}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Avis négatifs ── toujours visible */}
         <div
-          className="rounded-2xl overflow-hidden border"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            borderColor: negatifs.length > 0 ? "rgba(244,63,94,0.4)" : "rgba(16,185,129,0.3)",
-          }}
+          className="bg-white rounded-2xl overflow-hidden border shadow-sm"
+          style={{ borderColor: negatifs.length > 0 ? "#fecdd3" : "#bbf7d0" }}
         >
           <button
             onClick={() => negatifs.length > 0 && setNegatifOuvert((v) => !v)}
@@ -545,34 +544,32 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
               >
                 {negatifs.length}
               </span>
-              <span className={`text-sm font-bold ${negatifs.length > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+              <span className={`text-sm font-bold ${negatifs.length > 0 ? "text-rose-500" : "text-emerald-600"}`}>
                 {negatifs.length === 0
                   ? "Aucun retour négatif"
                   : `Retour${negatifs.length > 1 ? "s" : ""} client à traiter`}
               </span>
             </div>
             {negatifs.length > 0 && (
-              <span className="text-white/30 text-xs">{negatifOuvert ? "▲" : "▼"}</span>
+              <span className="text-slate-300 text-xs">{negatifOuvert ? "▲" : "▼"}</span>
             )}
           </button>
 
           {negatifs.length > 0 && negatifOuvert && (
-            <div className="border-t border-rose-500/20 divide-y divide-white/5">
+            <div className="border-t border-rose-100 divide-y divide-slate-50">
               {negatifs.map((n) => (
                 <div key={n.id} className="px-4 py-4 space-y-2.5">
-                  <p className="text-xs text-white/40">
+                  <p className="text-xs text-slate-400">
                     {n.clientPrenom ?? "Client"}{n.clientTelephone ? ` · ${n.clientTelephone}` : ""}
                   </p>
-                  <p className="text-sm text-white/80 leading-relaxed rounded-xl px-3 py-2.5"
-                    style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <p className="text-sm text-slate-700 leading-relaxed rounded-xl px-3 py-2.5 bg-slate-50 border border-slate-100">
                     &ldquo;{n.message}&rdquo;
                   </p>
                   <div className="flex gap-2">
                     {n.clientTelephone && (
                       <a
                         href={`tel:${n.clientTelephone}`}
-                        className="flex-1 text-center text-xs font-bold text-white rounded-xl py-2.5"
-                        style={{ background: "rgba(255,255,255,0.1)" }}
+                        className="flex-1 text-center text-xs font-bold text-slate-600 rounded-xl py-2.5 bg-slate-100 border border-slate-200"
                       >
                         📞 Rappeler {n.clientPrenom}
                       </a>
@@ -580,8 +577,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                     <button
                       onClick={() => handleTraiter(n.id)}
                       disabled={traitingId === n.id}
-                      className="flex-1 text-xs font-bold text-emerald-300 rounded-xl py-2.5 disabled:opacity-50 transition-opacity"
-                      style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}
+                      className="flex-1 text-xs font-bold text-emerald-700 rounded-xl py-2.5 disabled:opacity-50 transition-opacity bg-emerald-50 border border-emerald-200"
                     >
                       {traitingId === n.id ? "…" : "✓ Traité"}
                     </button>
@@ -592,7 +588,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
           )}
         </div>
 
-        <p className="text-center text-[10px] text-white/15 pt-1">Propulsé par Trouper · Avis Google</p>
+        <p className="text-center text-[10px] text-slate-300 pt-1 pb-4">Propulsé par Trouper · Avis Google</p>
       </div>
     </main>
   );
