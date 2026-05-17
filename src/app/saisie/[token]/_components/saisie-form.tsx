@@ -205,7 +205,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
       style={{ background: "#F8FAFC", fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)" }}
     >
       {/* ── Header sticky ── */}
-      <header className="bg-white border-b border-slate-100 px-4 py-3.5 sticky top-0 z-20">
+      <header className="bg-white border-b border-slate-200 px-4 py-3.5 sticky top-0 z-20 shadow-sm">
         <div className="mx-auto max-w-sm flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-0.5">⭐ Partenaire Google</p>
@@ -249,11 +249,11 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
         )}
 
         {/* ── Hero : formulaire ── */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-base font-black text-slate-900">Nouveau client</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Ajout en 5 secondes</p>
+              <h2 className="text-lg font-black text-[#111827]">Nouveau client</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Ajout en 5 secondes</p>
             </div>
             {/* Quota dots */}
             <div className="flex flex-col items-end gap-1">
@@ -262,7 +262,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                   <div
                     key={i}
                     className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                    style={{ background: i < quotaUsed ? "#4f46e5" : "#e2e8f0" }}
+                    style={{ background: i < quotaUsed ? "#5B4CF7" : "#e2e8f0" }}
                   />
                 ))}
               </div>
@@ -281,7 +281,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Prénom</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Prénom</label>
                 <input
                   ref={prenomRef}
                   type="text"
@@ -290,11 +290,11 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                   placeholder="Marie"
                   autoComplete="off"
                   autoCapitalize="words"
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all"
+                  className="w-full rounded-xl px-4 py-3.5 text-base text-[#111827] placeholder-slate-400 bg-white border border-[#D1D5DB] focus:outline-none focus:ring-2 focus:ring-[#5B4CF7]/25 focus:border-[#5B4CF7] transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Téléphone</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Téléphone</label>
                 <input
                   type="tel"
                   inputMode="tel"
@@ -302,7 +302,7 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                   onChange={(e) => setTelephone(e.target.value)}
                   placeholder="06 12 34 56 78"
                   autoComplete="off"
-                  className="w-full rounded-xl px-4 py-3.5 text-base text-slate-900 placeholder-slate-300 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all"
+                  className="w-full rounded-xl px-4 py-3.5 text-base text-[#111827] placeholder-slate-400 bg-white border border-[#D1D5DB] focus:outline-none focus:ring-2 focus:ring-[#5B4CF7]/25 focus:border-[#5B4CF7] transition-all"
                 />
                 {telephone.replace(/\D/g, "").length >= 10 && !phoneValid && (
                   <p className="text-xs text-red-500 mt-1.5">Numéro invalide (format 06 ou 07...)</p>
@@ -315,8 +315,8 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                 disabled={!canSubmit}
                 className="w-full rounded-xl py-4 text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40"
                 style={{
-                  background: canSubmit ? "linear-gradient(135deg, #4f46e5, #6d28d9)" : "#e2e8f0",
-                  color: canSubmit ? "white" : "#94a3b8",
+                  background: "linear-gradient(135deg, #5B4CF7, #7C3AED)",
+                  boxShadow: canSubmit ? "0 4px 14px rgba(91,76,247,0.35)" : "none",
                 }}
               >
                 {loading ? "Ajout en cours…" : "⭐ Demander un avis Google"}
@@ -347,36 +347,36 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
         {/* ── KPI Row ── */}
         <div className="grid grid-cols-3 gap-2.5">
           <div
-            className={`bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm transition-transform duration-300 ${pulse ? "scale-110" : "scale-100"}`}
+            className={`bg-white rounded-2xl p-3.5 text-center border border-slate-200 shadow-sm transition-transform duration-300 ${pulse ? "scale-110" : "scale-100"}`}
           >
-            <p className="text-2xl font-black text-indigo-600">{clients.length}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Clients<br />aujourd&apos;hui</p>
+            <p className="text-3xl font-black text-[#5B4CF7]">{clients.length}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-tight font-medium">Clients<br />aujourd&apos;hui</p>
           </div>
-          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-emerald-600">{delta > 0 ? `+${delta}` : delta}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Avis<br />obtenus</p>
+          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-200 shadow-sm">
+            <p className="text-3xl font-black text-[#10B981]">{delta > 0 ? `+${delta}` : delta}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-tight font-medium">Avis<br />obtenus</p>
           </div>
-          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-amber-600">
+          <div className="bg-white rounded-2xl p-3.5 text-center border border-slate-200 shadow-sm">
+            <p className="text-3xl font-black text-[#F59E0B]">
               {commerce.noteActuelle ? commerce.noteActuelle.toFixed(1) : "—"}
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Note<br />Google</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-tight font-medium">Note<br />Google</p>
           </div>
         </div>
 
         {/* ── Progression ── */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-xs font-bold text-slate-600">🎯 Objectif {nextMilestone} avis</span>
-            <span className="text-xs font-black text-indigo-600">{nbAvisActuel} / {nextMilestone}</span>
+            <span className="text-xs font-bold text-[#111827]">🎯 Objectif {nextMilestone} avis</span>
+            <span className="text-xs font-black text-[#5B4CF7]">{nbAvisActuel} / {nextMilestone}</span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${progressPct}%`, background: "linear-gradient(90deg, #4f46e5, #7c3aed)" }}
+              style={{ width: `${progressPct}%`, background: "linear-gradient(90deg, #5B4CF7, #7C3AED)" }}
             />
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-500">
             {restants === 0
               ? "🎉 Objectif atteint ! Félicitations !"
               : `💡 Encore ${restants} avis pour atteindre l'objectif`}
@@ -385,10 +385,10 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
 
         {/* ── Historique du jour ── */}
         {clients.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Aujourd&apos;hui</p>
-              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-indigo-600 bg-indigo-50">
+              <p className="text-xs font-black text-[#111827] uppercase tracking-widest">Aujourd&apos;hui</p>
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-[#5B4CF7] bg-indigo-50">
                 {clients.length} client{clients.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -399,9 +399,9 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, t
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${avatarColor(c.prenom)}`}>
                       {c.prenom[0]?.toUpperCase()}
                     </div>
-                    <span className="text-sm font-semibold text-slate-800">{c.prenom}</span>
+                    <span className="text-sm font-semibold text-[#111827]">{c.prenom}</span>
                   </div>
-                  <span className="text-xs text-slate-300">{formatHour(c.createdAt)}</span>
+                  <span className="text-xs text-slate-400">{formatHour(c.createdAt)}</span>
                 </li>
               ))}
             </ul>
