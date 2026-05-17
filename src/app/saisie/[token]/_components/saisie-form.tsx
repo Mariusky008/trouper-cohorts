@@ -9,6 +9,7 @@ type CommerceProps = {
   nbAvisDebut: number;
   nbAvisActuel: number;
   noteActuelle: number | null;
+  lastRelanceAt: string | null;
 };
 
 type ClientEntry = { id: string; prenom: string; createdAt: string };
@@ -25,6 +26,8 @@ type Props = {
   commerce: CommerceProps;
   clientsAujourdhui: ClientEntry[];
   avisNegatifs: AvisNegatif[];
+  totalClients: number;
+  relanceEnabled: boolean;
 };
 
 const MILESTONES = [10, 25, 50, 100, 200, 500, 1000];
@@ -57,7 +60,7 @@ function avatarColor(prenom: string) {
   return AVATAR_COLORS[idx];
 }
 
-export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }: Props) {
+export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs, totalClients, relanceEnabled }: Props) {
   const [prenom, setPrenom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,6 +74,16 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
   const [negatifOuvert, setNegatifOuvert] = useState(false);
   const [traitingId, setTraitingId] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
+
+  // Relance promo
+  const [relanceOuvert, setRelanceOuvert] = useState(false);
+  const [relanceRemise, setRelanceRemise] = useState("20");
+  const [relanceService, setRelanceService] = useState("");
+  const [relanceDateLimit, setRelanceDateLimit] = useState("");
+  const [relanceLoading, setRelanceLoading] = useState(false);
+  const [relanceResult, setRelanceResult] = useState<{ sent: number } | null>(null);
+  const [relanceError, setRelanceError] = useState<string | null>(null);
+  const [lastRelanceAt, setLastRelanceAt] = useState<string | null>(commerce.lastRelanceAt);
 
   const DAILY_LIMIT = 10;
   const quotaUsed = clients.length;
@@ -125,6 +138,35 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
     } catch {
       setError("Erreur réseau, réessayez.");
       setLoading(false);
+    }
+  }
+
+  async function handleRelance(e: React.FormEvent) {
+    e.preventDefault();
+    if (!relanceService.trim() || !relanceDateLimit.trim()) return;
+    setRelanceLoading(true);
+    setRelanceError(null);
+    setRelanceResult(null);
+    try {
+      const res = await fetch(`/api/saisie/${token}/relance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remise: relanceRemise, service: relanceService.trim(), dateLimit: relanceDateLimit.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRelanceError(data.error ?? "Erreur");
+      } else {
+        setRelanceResult({ sent: data.sent });
+        setLastRelanceAt(new Date().toISOString());
+        setRelanceService("");
+        setRelanceDateLimit("");
+        setRelanceOuvert(false);
+      }
+    } catch {
+      setRelanceError("Erreur réseau.");
+    } finally {
+      setRelanceLoading(false);
     }
   }
 
@@ -356,6 +398,133 @@ export function SaisieForm({ token, commerce, clientsAujourdhui, avisNegatifs }:
             )}
           </div>
         )}
+
+        {/* ── Relance promo ── */}
+        {relanceEnabled && (() => {
+          const cooldownDays = lastRelanceAt
+            ? Math.ceil(30 - (Date.now() - new Date(lastRelanceAt).getTime()) / (1000 * 60 * 60 * 24))
+            : 0;
+          const inCooldown = cooldownDays > 0;
+          const nextDate = lastRelanceAt
+            ? new Date(new Date(lastRelanceAt).getTime() + 30 * 24 * 60 * 60 * 1000)
+                .toLocaleDateString("fr-FR", { day: "numeric", month: "long" })
+            : null;
+
+          return (
+            <div className="rounded-2xl overflow-hidden border border-fuchsia-500/30"
+              style={{ background: "rgba(255,255,255,0.05)" }}>
+              <button
+                onClick={() => !inCooldown && setRelanceOuvert((v) => !v)}
+                className={`w-full flex items-center justify-between px-4 py-3.5 ${inCooldown ? "cursor-default" : "cursor-pointer"}`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">📢</span>
+                  <div className="text-left">
+                    <p className="text-sm font-bold text-fuchsia-300">Relancer mes clients</p>
+                    <p className="text-[10px] text-white/40">
+                      {inCooldown
+                        ? `Disponible le ${nextDate} (dans ${cooldownDays}j)`
+                        : `${totalClients} client${totalClients > 1 ? "s" : ""} à contacter`}
+                    </p>
+                  </div>
+                </div>
+                {!inCooldown && (
+                  <span className="text-white/30 text-xs">{relanceOuvert ? "▲" : "▼"}</span>
+                )}
+              </button>
+
+              {relanceResult && (
+                <div className="mx-4 mb-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
+                  style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                  <span>✅</span>
+                  <p className="text-xs font-bold text-emerald-300">
+                    {relanceResult.sent} message{relanceResult.sent > 1 ? "s" : ""} en cours d'envoi !
+                  </p>
+                </div>
+              )}
+
+              {!inCooldown && relanceOuvert && (
+                <div className="border-t border-fuchsia-500/20 px-4 py-4">
+                  <form onSubmit={handleRelance} className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
+                        Réduction proposée
+                      </label>
+                      <div className="flex gap-2 flex-wrap">
+                        {["10", "15", "20", "25", "30", "50"].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => setRelanceRemise(pct)}
+                            className="rounded-xl px-3 py-1.5 text-sm font-bold transition-all"
+                            style={{
+                              background: relanceRemise === pct ? "#a21caf" : "rgba(255,255,255,0.08)",
+                              color: relanceRemise === pct ? "white" : "rgba(255,255,255,0.5)",
+                            }}
+                          >
+                            -{pct}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
+                        Sur quel service ?
+                      </label>
+                      <input
+                        type="text"
+                        value={relanceService}
+                        onChange={(e) => setRelanceService(e.target.value)}
+                        placeholder="ex: coupe homme, massage, entretien..."
+                        required
+                        className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
+                        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
+                        Valable jusqu'au
+                      </label>
+                      <input
+                        type="text"
+                        value={relanceDateLimit}
+                        onChange={(e) => setRelanceDateLimit(e.target.value)}
+                        placeholder="ex: dimanche 25 mai"
+                        required
+                        className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
+                        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                      />
+                    </div>
+
+                    {/* Aperçu */}
+                    {relanceService && relanceDateLimit && (
+                      <div className="rounded-xl px-3 py-2.5 text-xs text-white/60 leading-relaxed"
+                        style={{ background: "rgba(162,28,175,0.1)", border: "1px solid rgba(162,28,175,0.2)" }}>
+                        <p className="text-[10px] font-bold text-fuchsia-400 mb-1 uppercase tracking-wide">Aperçu du message</p>
+                        🎁 Offre exclusive {commerce.nom} ! {relanceRemise}% de réduction sur {relanceService} — jusqu'au {relanceDateLimit}.
+                      </div>
+                    )}
+
+                    {relanceError && (
+                      <p className="text-xs text-red-400">{relanceError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={relanceLoading || !relanceService.trim() || !relanceDateLimit.trim()}
+                      className="w-full rounded-xl py-3.5 text-sm font-black text-white disabled:opacity-30 transition-all active:scale-95"
+                      style={{ background: "linear-gradient(135deg, #a21caf, #7e22ce)" }}
+                    >
+                      {relanceLoading ? "Envoi en cours…" : `📢 Envoyer à ${totalClients} client${totalClients > 1 ? "s" : ""}`}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── Avis négatifs ── toujours visible */}
         <div

@@ -17,7 +17,7 @@ export default async function SaisiePage({ params }: PageProps) {
 
   const { data: commerce, error } = await supabase
     .from("human_review_commercants")
-    .select("id, nom, secteur, ville, abonnement, nb_avis_debut, nb_avis_actuel, note_actuelle")
+    .select("id, nom, secteur, ville, abonnement, nb_avis_debut, nb_avis_actuel, note_actuelle, last_relance_at")
     .eq("token_saisie", normalizedToken)
     .maybeSingle();
 
@@ -25,7 +25,7 @@ export default async function SaisiePage({ params }: PageProps) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: clientsAujourdhui }, { data: avisNegatifs }] = await Promise.all([
+  const [{ data: clientsAujourdhui }, { data: avisNegatifs }, { count: totalClients }] = await Promise.all([
     supabase
       .from("human_review_clients_finaux")
       .select("id, prenom, created_at")
@@ -40,7 +40,14 @@ export default async function SaisiePage({ params }: PageProps) {
       .eq("traite", false)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("human_review_clients_finaux")
+      .select("id", { count: "exact", head: true })
+      .eq("commercant_id", commerce.id)
+      .not("telephone", "is", null),
   ]);
+
+  const relanceEnabled = Boolean(process.env.TWILIO_REVIEW_CONTENT_SID_RELANCE);
 
   return (
     <SaisieForm
@@ -52,7 +59,10 @@ export default async function SaisiePage({ params }: PageProps) {
         nbAvisDebut: commerce.nb_avis_debut ?? 0,
         nbAvisActuel: commerce.nb_avis_actuel ?? 0,
         noteActuelle: commerce.note_actuelle ? Number(commerce.note_actuelle) : null,
+        lastRelanceAt: commerce.last_relance_at ?? null,
       }}
+      totalClients={totalClients ?? 0}
+      relanceEnabled={relanceEnabled}
       clientsAujourdhui={(clientsAujourdhui ?? []).map((c) => ({
         id: c.id,
         prenom: c.prenom,
