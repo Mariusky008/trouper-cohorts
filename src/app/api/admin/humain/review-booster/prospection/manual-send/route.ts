@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   if (!body) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
   const prenom = String(body.prenom || "").trim();
+  const ville = String(body.ville || "").trim();
   const entreprise = String(body.entreprise || "").trim();
   const nbAvis = String(body.nbAvis || "").trim();
   const noteMoyenne = String(body.noteMoyenne || "").trim();
@@ -43,10 +44,11 @@ export async function POST(request: Request) {
     template_name: contentSid,
     language_code: "fr",
     vars: [
-      prenom ? ` ${prenom}` : ",",
+      prenom || "",
+      ville || "",
       entreprise,
-      nbAvis ? `${nbAvis} avis` : "peu d'avis",
-      noteMoyenne || "bonne",
+      nbAvis || "",
+      noteMoyenne || "",
     ],
     quick_reply_payload: [],
     source: "admin_review_prospection_manual",
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
       source: "admin_review_prospection_manual",
       entreprise,
       prenom: prenom || null,
+      ville: ville || null,
       nb_avis: nbAvis || null,
       note_moyenne: noteMoyenne || null,
     },

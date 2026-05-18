@@ -1052,21 +1052,22 @@ function buildCampaignMessage(vars: string[], metadata: Record<string, unknown> 
 
   // ── Prospection Google Reviews ──
   if (source === 'admin_review_prospection_manual' || source === 'admin_review_prospection_bulk' || source === 'admin_review_prospection') {
-    const prenom = String(vars?.[0] || '').replace(/^,/, '').trim();
-    const entreprise = String(vars?.[1] || 'votre établissement').trim();
-    const nbAvis = String(vars?.[2] || '').trim();
-    const note = String(vars?.[3] || '').trim();
+    const prenom = String(vars?.[0] || '').trim();
+    const ville = String(vars?.[1] || '').trim();
+    const entreprise = String(vars?.[2] || 'votre établissement').trim();
+    const nbAvis = String(vars?.[3] || '').trim();
+    const note = String(vars?.[4] || '').trim();
     return `Bonjour ${prenom} 👋
 
-C'est Jean-Philippe Roth.
+Jean-Philippe Roth ici, basé à ${ville} comme vous.
 
-Je suis tombé sur votre fiche Google "${entreprise}" : avec ${nbAvis} et une note moyenne de ${note}★ 👏
+Je suis tombé sur votre fiche « ${entreprise} » (${nbAvis} avis – ${note}★). C'est une super base, mais vous pourriez capter beaucoup plus de clients.
 
-Franchement, il y a une vraie confiance client. Par contre, avec plus d'avis réguliers, vous pourriez remonter beaucoup plus haut localement.
+J'ai développé une application qui récolte les avis 5★ automatiquement et relance vos anciens clients.
 
-J'aide justement les pros à obtenir plus d'avis automatiquement, sans devoir courir après leurs clients.
+Je vous offre vos 5 prochains avis gratuitement 🎁
 
-Je peux vous offrir les 5 premiers pour vous montrer comment ça fonctionne 🙂`;
+On peut s'appeler 2 minutes demain ?`;
   }
 
   // ── Alliances / cercle de pros (défaut) ──

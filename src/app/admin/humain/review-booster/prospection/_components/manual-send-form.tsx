@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 
 export function ManualSendForm() {
   const [prenom, setPrenom] = useState("");
+  const [ville, setVille] = useState("");
   const [entreprise, setEntreprise] = useState("");
   const [nbAvis, setNbAvis] = useState("");
   const [noteMoyenne, setNoteMoyenne] = useState("");
@@ -24,7 +25,7 @@ export function ManualSendForm() {
       const res = await fetch("/api/admin/humain/review-booster/prospection/manual-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prenom, entreprise, nbAvis, noteMoyenne, telephone, contentSid }),
+        body: JSON.stringify({ prenom, ville, entreprise, nbAvis, noteMoyenne, telephone, contentSid }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -39,6 +40,7 @@ export function ManualSendForm() {
           setSweepInfo(`✅ Envoyé ! (sweep: ${sweep.sent ?? 0} sent, ${sweep.failed ?? 0} failed, ${sweep.processed ?? 0} processed)`);
         }
         setPrenom("");
+        setVille("");
         setEntreprise("");
         setNbAvis("");
         setNoteMoyenne("");
@@ -64,7 +66,7 @@ export function ManualSendForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Ligne 1 — Identité */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-violet-600">
               Prénom du patron <span className="normal-case font-normal text-violet-400">(optionnel)</span>
@@ -80,6 +82,20 @@ export function ManualSendForm() {
 
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-violet-600">
+              Ville <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              value={ville}
+              onChange={(e) => setVille(e.target.value)}
+              placeholder="Lyon"
+              required
+              className="bg-white border-violet-200 focus:border-violet-400 focus:ring-violet-200"
+            />
+            <p className="text-[10px] text-violet-400">→ variable {`{{2}}`} dans le message</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold uppercase tracking-wide text-violet-600">
               Nom de l&apos;entreprise <span className="text-rose-500">*</span>
             </label>
             <Input
@@ -89,7 +105,7 @@ export function ManualSendForm() {
               required
               className="bg-white border-violet-200 focus:border-violet-400 focus:ring-violet-200"
             />
-            <p className="text-[10px] text-violet-400">→ variable {`{{2}}`} dans le message</p>
+            <p className="text-[10px] text-violet-400">→ variable {`{{3}}`} dans le message</p>
           </div>
         </div>
 
@@ -107,7 +123,7 @@ export function ManualSendForm() {
               min={0}
               className="bg-white border-violet-200 focus:border-violet-400 focus:ring-violet-200"
             />
-            <p className="text-[10px] text-violet-400">→ variable {`{{3}}`} · ex : "47 avis"</p>
+            <p className="text-[10px] text-violet-400">→ variable {`{{4}}`} · ex : "47 avis"</p>
           </div>
 
           <div className="space-y-1">
@@ -124,7 +140,7 @@ export function ManualSendForm() {
               step={0.1}
               className="bg-white border-violet-200 focus:border-violet-400 focus:ring-violet-200"
             />
-            <p className="text-[10px] text-violet-400">→ variable {`{{4}}`} · ex : "4.7★"</p>
+            <p className="text-[10px] text-violet-400">→ variable {`{{5}}`} · ex : "4.7★"</p>
           </div>
         </div>
 
@@ -159,11 +175,11 @@ export function ManualSendForm() {
         </div>
 
         {/* Aperçu variables */}
-        {(entreprise || nbAvis || noteMoyenne) && (
+        {(ville || entreprise || nbAvis || noteMoyenne) && (
           <div className="bg-white border border-violet-100 rounded-xl p-3 space-y-1">
             <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wide">Aperçu du message</p>
             <p className="text-xs text-neutral-700 leading-relaxed">
-              Bonjour{prenom ? ` ${prenom}` : ","} 👋 · {entreprise || "…"} · {nbAvis ? `${nbAvis} avis` : "peu d'avis"} · {noteMoyenne ? `${noteMoyenne}★` : "bonne★"}
+              Bonjour{prenom ? ` ${prenom}` : ","} 👋 · basé à {ville || "…"} comme vous · {entreprise || "…"} · {nbAvis ? `${nbAvis} avis` : "peu d'avis"} · {noteMoyenne ? `${noteMoyenne}★` : "bonne★"}
             </p>
           </div>
         )}
@@ -172,7 +188,7 @@ export function ManualSendForm() {
         <div className="flex items-center gap-3">
           <Button
             type="submit"
-            disabled={loading || !entreprise || !telephone || !contentSid}
+            disabled={loading || !ville || !entreprise || !telephone || !contentSid}
             className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-6 py-2 text-sm"
           >
             {loading ? "Envoi en cours…" : "💬 Envoyer le WhatsApp"}
