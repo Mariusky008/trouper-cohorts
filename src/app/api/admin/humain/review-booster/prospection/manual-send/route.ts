@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   // Déclenche le sweep immédiatement pour envoi instantané
-  const sweepResult = await runTwilioWhatsAppOutboundQueueSweep(5).catch((e) => {
+  const sweepResult = await runTwilioWhatsAppOutboundQueueSweep(5, true).catch((e) => {
     console.error("[manual-send] sweep error:", e);
     return null;
   });

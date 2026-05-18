@@ -1051,7 +1051,7 @@ function buildCampaignMessage(vars: string[], metadata: Record<string, unknown> 
   const source = String((metadata || {}).source || '').trim();
 
   // ── Prospection Google Reviews ──
-  if (source === 'admin_review_prospection_manual' || source === 'admin_review_prospection_bulk') {
+  if (source === 'admin_review_prospection_manual' || source === 'admin_review_prospection_bulk' || source === 'admin_review_prospection') {
     const prenom = String(vars?.[0] || '').replace(/^,/, '').trim();
     const entreprise = String(vars?.[1] || 'votre établissement').trim();
     const nbAvis = String(vars?.[2] || '').trim();
@@ -1114,7 +1114,7 @@ async function computeDailySentCount(ownerMemberId: string) {
   return Number(count || 0);
 }
 
-export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40) {
+export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40, skipRateLimit = false) {
   if (!isWhatsAppTwilioConfigured()) {
     return { success: false, error: "Configuration Twilio WhatsApp incomplète.", processed: 0, sent: 0, failed: 0, blocked: 0 };
   }
@@ -1149,7 +1149,7 @@ export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40) {
     const currentRate = ownerRateMap.has(row.owner_member_id)
       ? Number(ownerRateMap.get(row.owner_member_id) || 0)
       : await computePerMinuteSentCount(row.owner_member_id);
-    if (currentRate >= 1) {
+    if (!skipRateLimit && currentRate >= 1) {
       const pushMs = randomInt(30_000, 90_000);
       await supabaseAdmin
         .from("human_whatsapp_outbound_queue")

@@ -85,8 +85,8 @@ export async function POST(request: Request) {
     sent++;
   }
 
-  // Déclenche le sweep immédiatement après les insertions
-  await runTwilioWhatsAppOutboundQueueSweep(5).catch((e) =>
+  // Déclenche le sweep immédiatement — skipRateLimit=true pour envoyer tous les messages en une passe
+  await runTwilioWhatsAppOutboundQueueSweep(Math.max(sent, 10), true).catch((e) =>
     console.error("[prospection-send] sweep error:", e)
   );
 
