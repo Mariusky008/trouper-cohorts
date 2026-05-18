@@ -1048,17 +1048,39 @@ function parseTwilioContentVariables(vars: string[]): string {
 }
 
 function buildCampaignMessage(vars: string[], metadata: Record<string, unknown> | null | undefined): string {
-  const greeting = String(vars?.[0] || "Madame, Monsieur").trim() || "Madame, Monsieur";
-  const metier = String(vars?.[1] || "professionnel").trim() || "professionnel";
-  const city = String((metadata || {}).city || "Dax").trim() || "Dax";
+  const source = String((metadata || {}).source || '').trim();
+
+  // ── Prospection Google Reviews ──
+  if (source === 'admin_review_prospection_manual' || source === 'admin_review_prospection_bulk') {
+    const prenom = String(vars?.[0] || '').replace(/^,/, '').trim();
+    const entreprise = String(vars?.[1] || 'votre établissement').trim();
+    const nbAvis = String(vars?.[2] || '').trim();
+    const note = String(vars?.[3] || '').trim();
+    return `Bonjour ${prenom} 👋
+
+C'est Jean-Philippe Roth.
+
+Je suis tombé sur votre fiche Google "${entreprise}" : avec ${nbAvis} et une note moyenne de ${note}★ 👏
+
+Franchement, il y a une vraie confiance client. Par contre, avec plus d'avis réguliers, vous pourriez remonter beaucoup plus haut localement.
+
+J'aide justement les pros à obtenir plus d'avis automatiquement, sans devoir courir après leurs clients.
+
+Je peux vous offrir les 5 premiers pour vous montrer comment ça fonctionne 🙂`;
+  }
+
+  // ── Alliances / cercle de pros (défaut) ──
+  const greeting = String(vars?.[0] || 'Madame, Monsieur').trim() || 'Madame, Monsieur';
+  const metier = String(vars?.[1] || 'professionnel').trim() || 'professionnel';
+  const city = String((metadata || {}).city || 'Dax').trim() || 'Dax';
   const audience = Number((metadata || {}).audience || 12500);
-  const audienceLabel = Number.isFinite(audience) && audience > 0 ? audience.toLocaleString("fr-FR") : "12 500";
+  const audienceLabel = Number.isFinite(audience) && audience > 0 ? audience.toLocaleString('fr-FR') : '12 500';
   const free = Boolean((metadata || {}).diffusion_free ?? true);
   return `Bonjour ${greeting},
 
-Je suis Jean‑Philippe Roth. Je monte actuellement sur ${city} un cercle de 50 pros, avec une seule entreprise par métier (exclusivité par discipline), pour mettre en avant leurs services auprès de plus de ${audienceLabel} personnes sur le Grand ${city}${free ? " (diffusion gratuite)" : ""} et toucher une nouvelle clientèle qui ne vous connaît pas encore.
+Je suis Jean‑Philippe Roth. Je monte actuellement sur ${city} un cercle de 50 pros, avec une seule entreprise par métier (exclusivité par discipline), pour mettre en avant leurs services auprès de plus de ${audienceLabel} personnes sur le Grand ${city}${free ? ' (diffusion gratuite)' : ''} et toucher une nouvelle clientèle qui ne vous connaît pas encore.
 
-Je cherche un(e) ${metier} de confiance pour compléter le groupe et j’ai pensé à vous en voyant vos excellents avis Google.
+Je cherche un(e) ${metier} de confiance pour compléter le groupe et j'ai pensé à vous en voyant vos excellents avis Google.
 
 Auriez‑vous 5 minutes demain pour un court appel ?
 
