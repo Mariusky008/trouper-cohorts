@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       metadata: {
         provider: "twilio",
         content_sid: contentSid,
+        source: "admin_review_prospection",
         prospect_id: prospectId,
         prospect_nom: prospect.nom,
       },

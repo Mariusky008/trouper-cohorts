@@ -1197,7 +1197,7 @@ export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40, skipRateLi
     const vars = Array.isArray(row.vars) ? row.vars.map((v) => String(v ?? "").trim()) : [];
     const contentSid = String((row.metadata || {}).content_sid || row.template_name || whatsappTwilioConfig.contentSid || "").trim();
     const contentVariables = parseTwilioContentVariables(vars);
-    const messageText = buildCampaignMessage(vars, row.metadata || {});
+    const messageText = buildCampaignMessage(vars, { ...(row.metadata || {}), source: row.source || "" });
 
     try {
       const delivered = await client.messages.create({
