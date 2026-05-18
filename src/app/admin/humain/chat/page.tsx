@@ -27,6 +27,7 @@ type ChatMessage = {
   eventType: string;
   providerMessageId: string | null;
   createdAt: string;
+  channel?: "whatsapp" | "sms";
 };
 
 function formatDate(value: string) {
@@ -586,14 +587,24 @@ export default function AdminHumainChatPage() {
                       </div>
                     ) : null}
                     {message.text ? <p className="whitespace-pre-wrap text-sm">{message.text}</p> : null}
-                    <div className="mt-1 flex items-end justify-end gap-2">
-                      {isInbound && message.classification ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {message.classification}
-                        </span>
-                      ) : null}
-                      <span className="text-[10px] text-slate-500">{formatTime(message.createdAt)}</span>
-                      {isOutbound ? renderTicks(status) : null}
+                    <div className="mt-1 flex items-end justify-between gap-2">
+                      <div className="flex items-center gap-1">
+                        {isOutbound && message.channel === "sms" && (
+                          <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 uppercase tracking-wide">SMS</span>
+                        )}
+                        {isOutbound && (!message.channel || message.channel === "whatsapp") && (
+                          <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-600 uppercase tracking-wide">WA</span>
+                        )}
+                        {isInbound && message.classification ? (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                            {message.classification}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-slate-500">{formatTime(message.createdAt)}</span>
+                        {isOutbound ? renderTicks(status) : null}
+                      </div>
                     </div>
                   </div>
                 );

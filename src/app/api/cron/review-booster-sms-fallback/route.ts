@@ -73,16 +73,36 @@ export async function GET(request: Request) {
     const body = `Bonjour ${client.prenom}, ${commerce.nom} vous remercie de votre visite ! Pourriez-vous nous laisser un avis Google ? ${reviewUrl}`;
 
     try {
-      await twilioClient.messages.create({
+      const delivered = await twilioClient.messages.create({
         from: smsFrom,
         to: client.telephone,
         body,
       });
 
+      const now = new Date().toISOString();
+
       await supabase
         .from("human_review_clients_finaux")
-        .update({ date_envoi_sms: new Date().toISOString() })
+        .update({ date_envoi_sms: now })
         .eq("id", client.id);
+
+      // Logger dans human_whatsapp_events pour apparaître dans le chat avec badge SMS
+      await supabase.from("human_whatsapp_events").insert({
+        phone_e164: client.telephone,
+        direction: "outbound",
+        event_type: "sent",
+        classification: null,
+        message_text: body,
+        provider_message_id: String(delivered.sid || "").trim() || null,
+        payload: {
+          channel: "sms",
+          provider: "twilio_sms",
+          sid: String(delivered.sid || "").trim() || null,
+          source: "review_booster_sms_fallback",
+          commerce_nom: commerce.nom,
+          client_prenom: client.prenom,
+        },
+      });
 
       sent++;
     } catch (err) {

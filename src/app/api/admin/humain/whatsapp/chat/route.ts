@@ -219,6 +219,7 @@ export async function GET(request: Request) {
         }))
         .filter((attachment) => Boolean(attachment.url));
       const rawText = String(row.message_text || "").trim() || extractTextFallback(payload) || "";
+      const channel = String((payload as Record<string, unknown>).channel || "whatsapp").trim();
       return {
         id: String(row.id || ""),
         phone: String(row.phone_e164 || ""),
@@ -229,6 +230,7 @@ export async function GET(request: Request) {
         eventType: String(row.event_type || ""),
         providerMessageId: String(row.provider_message_id || "").trim() || null,
         createdAt: String(row.created_at || ""),
+        channel: channel === "sms" ? "sms" : "whatsapp",
       };
     });
     return NextResponse.json({ success: true, phone: phoneFilter, messages });
