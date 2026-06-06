@@ -64,6 +64,13 @@ export async function POST(request: Request) {
   const directContactRaw = String(formData.get("direct_contact") || "").trim();
   const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
   const offerPhotoFileRaw = formData.get("offer_photo_file");
+  const promoCodeRaw = String(formData.get("promo_code") || "").trim();
+  const offerAddressRaw = String(formData.get("offer_address") || "").trim();
+  const totalSpotsRaw = String(formData.get("total_spots") || "").trim();
+  const offerVideoUrlRaw = String(formData.get("offer_video_url") || "").trim();
+  const coupDeCoeurTextRaw = String(formData.get("coup_de_coeur_text") || "").trim();
+  const mysteryDealLabelRaw = String(formData.get("mystery_deal_label") || "").trim();
+  const isMysteryRaw = String(formData.get("is_mystery_offer") || "").trim().toLowerCase();
 
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
@@ -100,6 +107,13 @@ export async function POST(request: Request) {
     patch.offer_expires_at = null;
     patch.direct_contact = null;
     patch.partner_offer_value_eur = null;
+    patch.promo_code = null;
+    patch.offer_address = null;
+    patch.total_spots = null;
+    patch.offer_video_url = null;
+    patch.coup_de_coeur_text = null;
+    patch.mystery_deal_label = null;
+    patch.is_mystery_offer = false;
     // Best-effort cleanup for claimed fields (ignore if DB doesn't have them).
     patch.claimed_at = null;
     patch.claimed_by_offer_id = null;
@@ -117,6 +131,13 @@ export async function POST(request: Request) {
     patch.offer_expires_at = null;
     patch.direct_contact = null;
     patch.partner_offer_value_eur = null;
+    patch.promo_code = null;
+    patch.offer_address = null;
+    patch.total_spots = null;
+    patch.offer_video_url = null;
+    patch.coup_de_coeur_text = null;
+    patch.mystery_deal_label = null;
+    patch.is_mystery_offer = false;
   } else {
     patch.owner_member_id = ownerMemberIdRaw || null;
     patch.company_name = companyNameRaw || null;
@@ -130,6 +151,21 @@ export async function POST(request: Request) {
     patch.owner_profile_photo_url = ownerProfilePhotoUrlRaw || null;
     patch.offer_expires_at = offerExpiresAtRaw || null;
     patch.direct_contact = directContactRaw || null;
+    patch.promo_code = promoCodeRaw ? promoCodeRaw.toUpperCase() : null;
+    patch.offer_address = offerAddressRaw || null;
+    patch.offer_video_url = offerVideoUrlRaw || null;
+    patch.coup_de_coeur_text = coupDeCoeurTextRaw || null;
+    patch.mystery_deal_label = mysteryDealLabelRaw || null;
+    patch.is_mystery_offer = ["on", "true", "1", "yes", "oui"].includes(isMysteryRaw);
+  }
+  if (intent !== "clear_privilege") {
+    if (totalSpotsRaw) {
+      const parsedSpots = parseInt(totalSpotsRaw, 10);
+      if (!Number.isFinite(parsedSpots) || parsedSpots < 0) return fail("Nombre de places invalide.");
+      patch.total_spots = parsedSpots;
+    } else {
+      patch.total_spots = null;
+    }
   }
   if (listPriceRaw) {
     const parsed = Number(listPriceRaw.replace(",", "."));
@@ -197,11 +233,23 @@ export async function POST(request: Request) {
 
   const { error } = await supabaseAdmin.from("human_marketplace_places").update(patch).eq("id", placeId);
   if (error) {
-    // Compatibility fallback: older DBs may not have claimed_* columns.
-    if (intent === "reset_place" && /column/i.test(String(error.message || ""))) {
-      const retryPatch = { ...patch };
-      delete (retryPatch as any).claimed_at;
-      delete (retryPatch as any).claimed_by_offer_id;
+    // Compatibility fallback: older DBs may not have the newer optional columns.
+    // On strip les colonnes optionnelles et on réessaie pour ne jamais bloquer l'admin.
+    if (/column/i.test(String(error.message || ""))) {
+      const retryPatch = { ...patch } as Record<string, unknown>;
+      [
+        "claimed_at",
+        "claimed_by_offer_id",
+        "promo_code",
+        "offer_address",
+        "total_spots",
+        "offer_video_url",
+        "coup_de_coeur_text",
+        "mystery_deal_label",
+        "is_mystery_offer",
+      ].forEach((key) => {
+        delete retryPatch[key];
+      });
       const retry = await supabaseAdmin.from("human_marketplace_places").update(retryPatch).eq("id", placeId);
       if (retry.error) return fail(retry.error.message || "Mise a jour impossible.");
     } else {

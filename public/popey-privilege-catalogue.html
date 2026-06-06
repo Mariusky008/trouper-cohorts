@@ -3701,6 +3701,9 @@ function normalizePlace(row) {
     phone: String(row.directContact || row.direct_contact || row.partnerWhatsapp || row.partner_whatsapp || '').trim(),
     isMystery: Boolean(row.isMystery || row.is_mystery_offer),
     mysteryDeal: String(row.mysteryDeal || row.mystery_deal_label || '').trim(),
+    couponCode: String(row.couponCode || row.promo_code || '').trim(),
+    address: String(row.address || row.offer_address || '').trim(),
+    totalSpots: (row.totalSpots != null ? Number(row.totalSpots) : (row.total_spots != null ? Number(row.total_spots) : null)),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
 }
@@ -4111,9 +4114,10 @@ function buildSwipeCard(place) {
   var themeLabel = String((meta.label || 'Digital').split('·')[0]).trim();
   var city = String(liveState.cityLabel || 'Dax');
   var metier = String(place.metier || themeLabel);
-  var code = ('PRIV-' + place.id).slice(0, 14);
+  var code = String(place.couponCode || '').trim() || ('PRIV-' + place.id).slice(0, 14);
   var urgency = getExpiryBadge(place.expiry);
   var urgencyShort = String(urgency || '').replace('⏰ ', '');
+  var spotsLabel = (place.totalSpots != null && place.totalSpots > 0) ? (place.totalSpots + ' places') : urgencyShort;
   var offerLabel = guessOfferLabel(place);
   var hasAccent = offerLabel && offerLabel !== 'Avantage';
   var views = Math.max(2, Number(place.activeCount || 2));
@@ -4162,7 +4166,7 @@ function buildSwipeCard(place) {
         '<div class="im-chrono" data-deadline="' + deadlineIso + '"><span class="im-chrono-ico">⏳</span><span class="im-chrono-txt" data-chrono>--</span><span class="im-chrono-unit">avant la fin de l\'offre</span></div>' +
         (pos === 'bottom' ? titleHtml : '') +
         '<div class="im-desc">' + escapeHtml(place.desc || '') + '</div>' +
-        '<div class="im-coupon"><div style="min-width:0"><div class="im-coupon-lbl">🎟️ Code privilège</div><div class="im-coupon-code">' + escapeHtml(code) + '</div></div><div class="im-coupon-exp">⏰ ' + escapeHtml(urgencyShort) + '</div></div>' +
+        '<div class="im-coupon"><div style="min-width:0"><div class="im-coupon-lbl">🎟️ Code privilège</div><div class="im-coupon-code">' + escapeHtml(code) + '</div></div><div class="im-coupon-exp">⏰ ' + escapeHtml(spotsLabel) + '</div></div>' +
         '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
       '</div>' +
     '</div>' +
@@ -4438,7 +4442,7 @@ function openPrivCard(place) {
 function buildPrivCardSheet(place) {
   var th = swipeTheme(place.sphere);
   var displayName = String(place.personName || place.name || 'Partenaire Popey');
-  var code = ('PRIV-' + place.id).slice(0, 14);
+  var code = String(place.couponCode || '').trim() || ('PRIV-' + place.id).slice(0, 14);
   var city = String(liveState.cityLabel || 'Dax');
   var member = String(liveState.refFirstName || 'votre contact');
   var offerLabel = guessOfferLabel(place);
@@ -4448,6 +4452,7 @@ function buildPrivCardSheet(place) {
   var expiry = getExpiryBadge(place.expiry);
   var website = String(place.website || '').trim();
   var phone = String(place.phone || '').trim();
+  var addr = String(place.address || '').trim() || city;
   return ''
     + '<div class="priv-sheet">'
     + '  <div class="priv-handle"></div>'
@@ -4462,7 +4467,7 @@ function buildPrivCardSheet(place) {
     + '        <div class="priv-dc-price" style="color:' + th.accent + '">' + escapeHtml(newPrice) + '</div>'
     + '        <div class="priv-dc-div"></div>'
     + '        <div class="priv-dc-coupon"><div class="priv-dc-coupon-lbl">🎟️ Code privilège</div><div class="priv-dc-coupon-code">' + escapeHtml(code) + '</div></div>'
-    + '        <div class="priv-dc-info">📍 <span>' + escapeHtml(city) + '</span></div>'
+    + '        <div class="priv-dc-info">📍 <span>' + escapeHtml(addr) + '</span></div>'
     + (phone ? '        <div class="priv-dc-info">📞 <span>' + escapeHtml(phone) + '</span></div>' : '')
     + (website ? '        <div class="priv-dc-info">🌐 <span>' + escapeHtml(website) + '</span></div>' : '')
     + '        <div class="priv-dc-expire">' + escapeHtml(expiry) + '</div>'
