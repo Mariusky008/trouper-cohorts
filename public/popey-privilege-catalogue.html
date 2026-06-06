@@ -3199,11 +3199,16 @@ function privSession() {
 var __privTrackedViews = {};
 function trackPriv(placeId, event) {
   var id = String(placeId || '').trim();
-  if (!id) return;
+  if (!id && event !== 'open') return;
   if (event === 'view') { if (__privTrackedViews[id]) return; __privTrackedViews[id] = 1; }
-  var ville = '';
-  try { ville = new URLSearchParams(window.location.search).get('ville') || ''; } catch (e) {}
-  var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville });
+  var ville = '', ref = '', refName = '';
+  try {
+    var sp = new URLSearchParams(window.location.search);
+    ville = sp.get('ville') || '';
+    ref = sp.get('ref_id') || sp.get('ref') || '';
+    refName = sp.get('ref_name') || '';
+  } catch (e) {}
+  var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville, ref: ref, refName: refName });
   try {
     if (navigator.sendBeacon) {
       navigator.sendBeacon('/api/popey-human/privilege/track', new Blob([payload], { type: 'application/json' }));
@@ -5198,6 +5203,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
+  // "open" = arrivée sur le catalogue (clic sur le lien partagé par un membre) → leaderboard
+  try { trackPriv('', 'open'); } catch (e) {}
   // L'ouverture du mode swipe par défaut est gérée dans initLiveCatalog()
   // (après chargement des offres). Voir l'opt-out ?view=landing.
   // Filet de sécurité : ne jamais laisser le splash bloqué.
