@@ -362,12 +362,20 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
             Tout sur une page : pour chaque commerçant, son offre, son code promo et tous les médias visibles dans le catalogue swipe.
           </p>
         </div>
-        <Link
-          href="/admin/humain/marketplace"
-          className="inline-flex h-9 items-center rounded border px-3 text-[11px] font-black uppercase tracking-wide text-muted-foreground"
-        >
-          Ancienne page marketplace
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/humain/catalogue/scores"
+            className="inline-flex h-9 items-center rounded border border-amber-300 bg-amber-50 px-3 text-[11px] font-black uppercase tracking-wide text-amber-800"
+          >
+            📊 Tableau des scores
+          </Link>
+          <Link
+            href="/admin/humain/marketplace"
+            className="inline-flex h-9 items-center rounded border px-3 text-[11px] font-black uppercase tracking-wide text-muted-foreground"
+          >
+            Ancienne page marketplace
+          </Link>
+        </div>
       </div>
 
       {!colsReady ? (
