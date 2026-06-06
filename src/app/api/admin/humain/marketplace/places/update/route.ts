@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const MARKETPLACE_PRIVILEGE_PHOTO_BUCKET = "marketplace-privilege-offers";
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // ~60MB (vidéo verticale 15s)
 
 function withStatus(base: string, status: "success" | "error", message: string) {
   const sep = base.includes("?") ? "&" : "?";
@@ -42,6 +43,15 @@ function safePhotoExtension(file: File): string {
   return "jpg";
 }
 
+function safeVideoExtension(file: File): string {
+  const fromName = String(file.name || "").split(".").pop()?.toLowerCase() || "";
+  if (["mp4", "webm", "m4v"].includes(fromName)) return fromName;
+  if (fromName === "mov") return "mp4";
+  const mime = String(file.type || "").toLowerCase();
+  if (mime.includes("webm")) return "webm";
+  return "mp4";
+}
+
 function slugifyPart(value: string): string {
   return String(value || "")
     .toLowerCase()
@@ -74,6 +84,7 @@ export async function POST(request: Request) {
   const directContactRaw = String(formData.get("direct_contact") || "").trim();
   const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
   const offerPhotoFileRaw = formData.get("offer_photo_file");
+  const offerVideoFileRaw = formData.get("offer_video_file");
   const promoCodeRaw = String(formData.get("promo_code") || "").trim();
   const offerAddressRaw = String(formData.get("offer_address") || "").trim();
   const totalSpotsRaw = String(formData.get("total_spots") || "").trim();
@@ -229,6 +240,31 @@ export async function POST(request: Request) {
       .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
       .getPublicUrl(filePath);
     patch.offer_photo_url = String(publicData?.publicUrl || "").trim() || null;
+  }
+  // Upload vidéo direct (15s verticale) → Supabase Storage → offer_video_url
+  if (intent !== "clear_privilege" && offerVideoFileRaw instanceof File && offerVideoFileRaw.size > 0) {
+    if (!String(offerVideoFileRaw.type || "").startsWith("video/")) {
+      return fail("Le fichier doit être une vidéo (.mp4, .webm).");
+    }
+    if (offerVideoFileRaw.size > MAX_VIDEO_BYTES) {
+      return fail("La vidéo dépasse 60MB.");
+    }
+    const ext = safeVideoExtension(offerVideoFileRaw);
+    const filePath = `marketplace-videos/${placeId}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+      .upload(filePath, offerVideoFileRaw, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: offerVideoFileRaw.type || undefined,
+      });
+    if (uploadError) {
+      return fail(`Upload vidéo impossible: ${uploadError.message || "erreur storage"}`);
+    }
+    const { data: videoPublic } = supabaseAdmin.storage
+      .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+      .getPublicUrl(filePath);
+    patch.offer_video_url = String(videoPublic?.publicUrl || "").trim() || null;
   }
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin

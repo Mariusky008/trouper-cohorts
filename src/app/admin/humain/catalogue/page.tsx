@@ -260,6 +260,11 @@ function CatalogueOfferForm({
         <input name="offer_video_url" defaultValue={s(extra?.offer_video_url)} placeholder="https://.../video.mp4" className="h-10 w-full rounded border border-sky-300 bg-sky-50 px-3 text-sm" />
       </label>
 
+      <label className="space-y-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-sky-700">🎬 Vidéo (upload direct .mp4/.webm)</span>
+        <input name="offer_video_file" type="file" accept="video/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-sky-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-sky-900" />
+      </label>
+
       <label className="space-y-1 md:col-span-2">
         <span className="text-[11px] font-bold uppercase tracking-wide text-pink-700">💖 Coup de cœur du membre (note)</span>
         <textarea name="coup_de_coeur_text" defaultValue={s(extra?.coup_de_coeur_text)} placeholder="Ex: J'ai testé Antonin moi-même, résultats bluffants en 1 mois." className="min-h-16 w-full rounded border border-pink-200 bg-pink-50 px-3 py-2 text-sm" />
