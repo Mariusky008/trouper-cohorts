@@ -2172,6 +2172,85 @@ html[data-live-ready="0"] .main > .sphere-divider {
     max-width: 1200px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   APPORTEUR D'AFFAIRES — MASQUÉ TEMPORAIREMENT (juin 2026)
+   Sur demande : on ne supprime pas le code, on cache juste l'UI
+   jusqu'à décision sur le devenir de la fonctionnalité.
+   ➜ POUR RÉACTIVER : supprimer / commenter ce bloc entier.
+   ════════════════════════════════════════════════════════════════ */
+.apporteur-side { display: none !important; }                 /* bloc latéral "Devenir apporteur" */
+.sticky-bottom { display: none !important; }                  /* barre fixe bas "Devenir apporteur →" */
+.pro-reward-wrap { display: none !important; }                /* note rétribution apporteur dans les cartes */
+.oc-pro-info:has(.pro-reward-wrap) { display: none !important; } /* masque toute la ligne (navigateurs récents) */
+/* La barre apporteur réservait 92px en bas du body : on récupère l'espace */
+body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   CARTE SWIPE IMMERSIVE (refonte juin 2026 — design prototype)
+   Transforme .swp-card (média 38% + corps blanc) en carte plein
+   cadre immersive : média = fond, contenu superposé, wash par sphère.
+   ════════════════════════════════════════════════════════════════ */
+.swp-card.im { background: #070810; }
+.swp-card.im .swp-media { position: absolute; inset: 0; height: 100%; z-index: 0; }
+.swp-card.im .swp-media img, .swp-card.im .swp-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.swp-card.im .swp-wash { position: absolute; inset: 0; z-index: 1; }
+.swp-card.im .im-content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 14px; }
+.swp-card.im .im-top { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+.swp-card.im .im-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; backdrop-filter: blur(8px); }
+.swp-card.im .im-excl { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(245,166,35,.22), rgba(255,215,0,.08)); border: 1px solid rgba(245,166,35,.55); border-radius: 999px; padding: 4px 12px; font-size: 9.5px; font-weight: 800; color: #F5A623; letter-spacing: .04em; backdrop-filter: blur(8px); box-shadow: 0 0 14px rgba(245,166,35,.25); }
+.swp-card.im .im-title { font-family: var(--fd); font-weight: 900; line-height: 1.03; letter-spacing: -.01em; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.6); font-size: 30px; flex-shrink: 0; }
+.swp-card.im .im-title .accent { display: block; }
+.swp-card.im .im-title.center { margin: auto 0; text-align: center; font-size: 34px; }
+.swp-card.im .im-title.top { margin-top: 12px; text-align: center; }
+.swp-card.im .im-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.swp-card.im .im-chrono { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; background: rgba(0,0,0,.5); backdrop-filter: blur(10px); border: 1px solid rgba(239,68,68,.4); border-radius: 999px; padding: 5px 12px; }
+.swp-card.im .im-chrono-ico { font-size: 11px; }
+.swp-card.im .im-chrono-txt { font-size: 11px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.swp-card.im .im-chrono-unit { font-size: 9px; color: rgba(255,255,255,.55); }
+.swp-card.im .im-desc { font-size: 12.5px; color: rgba(255,255,255,.8); line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.swp-card.im .im-coupon { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.4); backdrop-filter: blur(10px); border: 1.5px dashed rgba(255,255,255,.3); border-radius: 12px; padding: 8px 12px; }
+.swp-card.im .im-coupon-lbl { font-size: 7.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 2px; }
+.swp-card.im .im-coupon-code { font-family: var(--fd); font-size: 16px; font-weight: 900; color: #fff; letter-spacing: .04em; }
+.swp-card.im .im-coupon-exp { font-size: 8px; font-weight: 700; color: #fff; background: rgba(239,68,68,.85); border-radius: 6px; padding: 3px 8px; margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+.swp-card.im .im-pro { display: flex; align-items: center; gap: 9px; }
+.swp-card.im .im-pro img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8); object-fit: cover; flex-shrink: 0; }
+.swp-card.im .im-pro-name { font-size: 12px; font-weight: 700; color: #fff; }
+.swp-card.im .im-pro-role { font-size: 9px; color: rgba(255,255,255,.6); }
+.swp-card.im .im-pro-views { margin-left: auto; font-size: 9px; color: rgba(255,255,255,.65); background: rgba(0,0,0,.4); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.swp-card.im .im-coeur { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(244,114,182,.4); border-radius: 10px; padding: 7px 10px; }
+.swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
+.swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
+.swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
+.swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 3; pointer-events: none; }
+.swp-card.im .im-video-badge { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 4px 12px; font-size: 8px; font-weight: 700; color: #fff; z-index: 4; white-space: nowrap; }
+.swp-card.im .swp-counter { color: rgba(255,255,255,.7); z-index: 3; }
+/* Stamp "Réserver" (haut) en vert WhatsApp */
+.swp-overlay-stamp.save { background: linear-gradient(135deg, rgba(37,211,102,.9), rgba(37,211,102,.65)); }
+
+/* ════════ ONBOARDING 1er lancement (mode swipe) ════════ */
+.swp-onboard { position: fixed; inset: 0; z-index: 9000; background: linear-gradient(160deg,#0A0C14,#070810); display: flex; align-items: center; justify-content: center; padding: 30px; animation: swoFade .4s ease; transition: opacity .4s ease; }
+.swp-onboard.hide { opacity: 0; pointer-events: none; }
+@keyframes swoFade { from { opacity: 0; } to { opacity: 1; } }
+.swo-inner { text-align: center; max-width: 340px; animation: swoUp .5s ease .1s both; }
+@keyframes swoUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+.swo-logo { font-family: var(--fd); font-size: 40px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+.swo-logo span { color: #00C48C; }
+.swo-sub { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 4px; margin-bottom: 34px; letter-spacing: .04em; }
+.swo-demo { margin-bottom: 30px; }
+.swo-up { margin-bottom: 16px; }
+.swo-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.swo-side { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.swo-phone { width: 80px; height: 110px; border-radius: 16px; background: linear-gradient(135deg,#1a2e2a,#0d1715); border: 2px solid rgba(0,196,140,.3); display: flex; align-items: center; justify-content: center; font-size: 38px; flex-shrink: 0; box-shadow: 0 8px 30px rgba(0,196,140,.15); }
+.swo-arrow { font-size: 22px; animation: swoBounce 1.5s ease infinite; }
+.swo-up .swo-arrow { animation: swoBounceUp 1.3s ease infinite; }
+@keyframes swoBounce { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-4px); } }
+@keyframes swoBounceUp { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.swo-lbl { font-size: 11px; font-weight: 600; line-height: 1.3; }
+.swo-intro { font-size: 14px; color: rgba(255,255,255,.6); line-height: 1.6; margin-bottom: 26px; }
+.swo-intro strong { color: #fff; }
+.swo-btn { background: #00C48C; color: #04140f; border: none; border-radius: 100px; padding: 15px 40px; font-family: var(--fb); font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 28px rgba(0,196,140,.4); }
+.swo-btn:active { transform: scale(.97); }
 </style>
 </head>
 <body>
@@ -2769,7 +2848,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
       </div>
       <div class="swp-act-wrap">
         <button class="swp-act like" id="swipeLikeBtn">💬</button>
-        <div class="swp-act-label">Activer</div>
+        <div class="swp-act-label">Réserver</div>
       </div>
     </div>
   </div>
@@ -3529,6 +3608,8 @@ function normalizePlace(row) {
     expiry: expiryRaw,
     value: Number(row.partner_offer_value_eur || row.partnerOfferValueEur || 0),
     rewardLabel: String(row.rewardLabel || row.reward_label || '').trim() || null,
+    videoUrl: String(row.offer_video_url || row.videoUrl || row.video_url || '').trim(),
+    coupText: String(row.coup_de_coeur_text || row.coupDeCoeurText || row.coup_text || '').trim(),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
 }
@@ -3911,41 +3992,128 @@ function renderSwipeStage() {
   var place = swipeState.queue[swipeState.index];
   stage.appendChild(buildSwipeCard(place));
   renderSwipeProgress();
+  tickSwipeChronos();
 }
+
+var swipeThemes = {
+  sante:    { wash:'linear-gradient(165deg,rgba(0,90,68,.30) 0%,rgba(4,45,33,.7) 45%,rgba(2,28,20,.96) 80%,rgba(1,20,14,1) 100%)', accent:'#00E0A0', pill:'rgba(0,224,160,.2)', pillBorder:'rgba(0,224,160,.5)', pillText:'#6EE7B7' },
+  habitat:  { wash:'linear-gradient(165deg,rgba(130,76,12,.30) 0%,rgba(78,45,6,.7) 45%,rgba(38,22,4,.96) 80%,rgba(26,15,3,1) 100%)', accent:'#F5A623', pill:'rgba(245,166,35,.2)', pillBorder:'rgba(245,166,35,.5)', pillText:'#FCD34D' },
+  digital:  { wash:'linear-gradient(165deg,rgba(12,78,130,.30) 0%,rgba(6,45,82,.7) 45%,rgba(3,22,42,.96) 80%,rgba(2,15,28,1) 100%)', accent:'#38BDF8', pill:'rgba(56,189,248,.2)', pillBorder:'rgba(56,189,248,.5)', pillText:'#7DD3FC' },
+  mariage:  { wash:'linear-gradient(165deg,rgba(160,34,98,.30) 0%,rgba(98,17,60,.7) 45%,rgba(48,9,29,.96) 80%,rgba(32,6,19,1) 100%)', accent:'#F472B6', pill:'rgba(244,114,182,.2)', pillBorder:'rgba(244,114,182,.5)', pillText:'#F9A8D4' },
+  finance:  { wash:'linear-gradient(165deg,rgba(88,44,170,.30) 0%,rgba(55,28,110,.7) 45%,rgba(26,12,52,.96) 80%,rgba(18,8,38,1) 100%)', accent:'#A78BFA', pill:'rgba(167,139,250,.2)', pillBorder:'rgba(167,139,250,.5)', pillText:'#C4B5FD' },
+  artisans: { wash:'linear-gradient(165deg,rgba(170,66,22,.30) 0%,rgba(108,42,14,.7) 45%,rgba(52,20,7,.96) 80%,rgba(38,14,5,1) 100%)', accent:'#FB923C', pill:'rgba(251,146,60,.2)', pillBorder:'rgba(251,146,60,.5)', pillText:'#FDBA74' },
+  'evenements-locaux': { wash:'linear-gradient(165deg,rgba(170,40,30,.30) 0%,rgba(108,26,18,.7) 45%,rgba(52,12,8,.96) 80%,rgba(38,9,6,1) 100%)', accent:'#FB7185', pill:'rgba(251,113,133,.2)', pillBorder:'rgba(251,113,133,.5)', pillText:'#FDA4AF' }
+};
+function swipeTheme(s) { return swipeThemes[s] || swipeThemes.digital; }
+// Placement du titre variable par sphère (évite la monotonie visuelle)
+var SWIPE_TITLE_POS = { sante:'center', habitat:'bottom', digital:'top', mariage:'center', finance:'bottom', artisans:'top', 'evenements-locaux':'center' };
 
 function buildSwipeCard(place) {
   var card = document.createElement('article');
-  card.className = 'swp-card';
+  card.className = 'swp-card im';
   card.setAttribute('data-top-card', '1');
   var meta = sphereMeta[place.sphere] || sphereMeta.digital;
-  var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
-  var rewardText = String(place.rewardLabel || liveState.rewardText || 'une commission');
+  var th = swipeTheme(place.sphere);
+  var pos = SWIPE_TITLE_POS[place.sphere] || 'bottom';
   var displayName = String(place.personName || place.name || 'Partenaire Popey');
-  var themeLabel = String((meta.label || 'Digital').split('·')[0]).trim();
   var proInitials = displayName.split(' ').map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
-  var avatarA = proInitials || 'PP';
-  var avatarB = (liveState.refFirstName || 'JR').slice(0, 2).toUpperCase();
-  var avatarC = (liveState.cityLabel || 'BY').slice(0, 2).toUpperCase();
+  var themeLabel = String((meta.label || 'Digital').split('·')[0]).trim();
+  var city = String(liveState.cityLabel || 'Dax');
+  var metier = String(place.metier || themeLabel);
+  var code = ('PRIV-' + place.id).slice(0, 14);
   var urgency = getExpiryBadge(place.expiry);
   var urgencyShort = String(urgency || '').replace('⏰ ', '');
-  var proPhoto = place.profileImage
-    ? '<img class="swp-pro-photo" src="' + place.profileImage + '" alt="' + displayName + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="swp-pro-photo" style="display:none;background:#cbd5e1;color:#111827;align-items:center;justify-content:center;font-size:13px;font-weight:800;">' + proInitials + '</div>'
-    : '<div class="swp-pro-photo" style="display:flex;background:#cbd5e1;color:#111827;align-items:center;justify-content:center;font-size:13px;font-weight:800;">' + proInitials + '</div>';
-  var bodyPhoto = place.profileImage
-    ? '<img class="swp-id-photo" src="' + place.profileImage + '" alt="' + displayName + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="swp-id-photo" style="display:none;background:#e5e7eb;color:#111827;align-items:center;justify-content:center;font-size:10px;font-weight:800;">' + proInitials + '</div>'
-    : '<div class="swp-id-photo" style="display:flex;background:#e5e7eb;color:#111827;align-items:center;justify-content:center;font-size:10px;font-weight:800;">' + proInitials + '</div>';
-  var media = place.image
-    ? '<img src="' + place.image + '" alt="' + displayName + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'"><div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:52px;background:#d1d5db;">' + meta.icon + '</div>'
-    : '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:52px;background:#d1d5db;">' + meta.icon + '</div>';
+  var offerLabel = guessOfferLabel(place);
+  var hasAccent = offerLabel && offerLabel !== 'Avantage';
+  var views = Math.max(2, Number(place.activeCount || 2));
+
+  // Deadline ISO pour le chrono live (fallback : fin du mois courant)
+  var deadlineIso = '';
+  if (place.expiry) { var dd = new Date(place.expiry); if (!isNaN(dd.getTime())) deadlineIso = dd.toISOString(); }
+  if (!deadlineIso) { var nd = new Date(); deadlineIso = new Date(nd.getFullYear(), nd.getMonth() + 1, 0, 23, 59, 59).toISOString(); }
+
+  // Média plein cadre : vidéo (si dispo) sinon photo sinon fallback icône
+  var media;
+  if (place.videoUrl) {
+    media = '<video src="' + escapeAttr(place.videoUrl) + '" muted loop playsinline preload="metadata" poster="' + escapeAttr(place.image || '') + '"></video>'
+      + '<div class="im-video-badge">▶ VIDÉO · ' + escapeHtml(displayName.split(' ')[0]) + '</div>'
+      + '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>';
+  } else if (place.image) {
+    media = '<img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(displayName) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'">'
+      + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
+  } else {
+    media = '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
+  }
+
+  var titleHtml = '<div class="im-title ' + pos + '"><span>' + escapeHtml(place.badge || 'Offre privilège') + '</span>'
+    + (hasAccent ? '<span class="accent" style="color:' + th.accent + ';text-shadow:0 2px 24px ' + th.accent + '">' + escapeHtml(offerLabel) + '</span>' : '')
+    + '</div>';
+
+  var proImg = String(place.profileImage || place.image || '').trim();
+  var proHtml = proImg
+    ? '<img src="' + escapeAttr(proImg) + '" alt="" onerror="this.style.visibility=\'hidden\'">'
+    : '<div style="width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.8);background:#cbd5e1;color:#111;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">' + proInitials + '</div>';
+
   card.innerHTML =
-    '<div class="swp-overlay-stamp yes"><div class="stamp">ACTIVÉ</div></div>' +
-    '<div class="swp-overlay-stamp no"><div class="stamp">PASS</div></div>' +
-    '<div class="swp-overlay-stamp save"><div class="stamp">♡ SAUVÉ</div></div>' +
-    '<div class="swp-media">' + media + '<div class="swp-gradient"></div><div class="swp-sphere">' + meta.icon + ' ' + themeLabel + '</div><div class="swp-urgency">' + urgency + '</div><div class="swp-pro">' + proPhoto + '<div><div class="swp-pro-name">' + displayName + '</div><div class="swp-pro-job">' + String(place.metier || themeLabel) + ' · ' + (liveState.cityLabel || 'Dax') + '</div></div></div></div>' +
-    '<div class="swp-body"><div class="swp-identity"><div class="swp-id-left">' + bodyPhoto + '<div style="min-width:0;"><div class="swp-id-name">' + displayName + '</div><div class="swp-id-meta">' + String(place.metier || themeLabel) + ' · ' + (liveState.cityLabel || 'Dax') + '</div></div></div><div class="swp-id-tags"><span class="swp-id-tag theme">' + themeLabel + '</span><span class="swp-id-tag exp">' + urgencyShort + '</span></div></div><div class="swp-offer"><div class="swp-offer-label">✦ Privilège exclusif via ' + (liveState.refFirstName || 'Jean') + '</div><div class="swp-offer-title">' + place.badge + '</div><div class="swp-offer-price"><span class="swp-old">' + oldPrice + '</span><span class="swp-new" style="color:' + meta.color + '">' + place.badge + '</span></div><div class="swp-desc">' + place.desc + '</div></div><div class="swp-social"><div class="swp-avatars"><div class="swp-av" style="background:#dcfce7;color:#166534">' + avatarA + '</div><div class="swp-av" style="background:#dbeafe;color:#1e40af">' + avatarB + '</div><div class="swp-av" style="background:#fef3c7;color:#92400e">' + avatarC + '</div></div><div class="swp-social-txt"><strong>' + Math.max(2, Number(place.activeCount || 2)) + ' personnes</strong> ont activé</div><div class="swp-stars">★★★★★</div></div><div class="swp-retrib">Rétribution de <strong>' + place.name + '</strong>: <strong>' + rewardText + '</strong></div></div><div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
+    '<div class="swp-overlay-stamp yes"><div class="stamp">♡ FAVORI</div></div>' +
+    '<div class="swp-overlay-stamp no"><div class="stamp">PASSER ✕</div></div>' +
+    '<div class="swp-overlay-stamp save"><div class="stamp">💬 RÉSERVER</div></div>' +
+    '<div class="swp-media">' + media + '</div>' +
+    '<div class="swp-wash" style="background:' + th.wash + '"></div>' +
+    '<div class="im-content">' +
+      '<div class="im-top">' +
+        '<div class="im-pill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '">' + meta.icon + ' ' + escapeHtml(themeLabel) + '</div>' +
+        '<div class="im-excl">👑 Exclusif</div>' +
+      '</div>' +
+      (pos === 'top' || pos === 'center' ? titleHtml : '') +
+      '<div class="im-bottom">' +
+        (place.coupText ? '<div class="im-coeur"><span style="font-size:15px">💖</span><div class="im-coeur-txt"><strong>' + escapeHtml(liveState.refFirstName || 'Votre contact') + ' :</strong> «&nbsp;' + escapeHtml(place.coupText) + '&nbsp;»</div></div>' : '') +
+        '<div class="im-chrono" data-deadline="' + deadlineIso + '"><span class="im-chrono-ico">⏳</span><span class="im-chrono-txt" data-chrono>--</span><span class="im-chrono-unit">avant la fin de l\'offre</span></div>' +
+        (pos === 'bottom' ? titleHtml : '') +
+        '<div class="im-desc">' + escapeHtml(place.desc || '') + '</div>' +
+        '<div class="im-coupon"><div style="min-width:0"><div class="im-coupon-lbl">🎟️ Code privilège</div><div class="im-coupon-code">' + escapeHtml(code) + '</div></div><div class="im-coupon-exp">⏰ ' + escapeHtml(urgencyShort) + '</div></div>' +
+        '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   wireSwipeDrag(card, place);
+  // Vidéo : autoplay muet décalé (1s) sur la carte courante uniquement
+  var vid = card.querySelector('video');
+  if (vid) {
+    window.setTimeout(function () {
+      if (card.getAttribute('data-top-card') === '1') {
+        var pr = vid.play();
+        if (pr && pr.then) pr.then(function () { var pb = card.querySelector('.im-play'); if (pb) pb.style.display = 'none'; }).catch(function () {});
+      }
+    }, 1000);
+  }
   return card;
 }
+
+// Chrono live : met à jour chaque seconde tous les compteurs visibles
+function tickSwipeChronos() {
+  var nodes = document.querySelectorAll('.swp-card.im [data-deadline]');
+  if (!nodes.length) return;
+  var now = Date.now();
+  for (var i = 0; i < nodes.length; i += 1) {
+    var node = nodes[i];
+    var iso = node.getAttribute('data-deadline');
+    var txt = node.querySelector('[data-chrono]');
+    if (!iso || !txt) continue;
+    var end = new Date(iso).getTime();
+    if (isNaN(end)) continue;
+    var d = end - now;
+    if (d <= 0) { txt.textContent = 'Terminé'; continue; }
+    var days = Math.floor(d / 86400000); d -= days * 86400000;
+    var hrs = Math.floor(d / 3600000); d -= hrs * 3600000;
+    var mins = Math.floor(d / 60000); d -= mins * 60000;
+    var secs = Math.floor(d / 1000);
+    if (days > 0) txt.textContent = days + 'j ' + hrs + 'h ' + mins + 'min';
+    else if (hrs > 0) txt.textContent = hrs + 'h ' + mins + 'min ' + secs + 's';
+    else txt.textContent = mins + 'min ' + secs + 's';
+  }
+}
+if (!window.__popeyChronoTimer) { window.__popeyChronoTimer = window.setInterval(tickSwipeChronos, 1000); }
 
 function showSwipeToast(text) {
   var el = document.getElementById('swipeToast');
@@ -3994,10 +4162,12 @@ async function swipeCardAction(direction) {
   var place = swipeState.queue[swipeState.index];
   if (!place) return;
   if (direction === 'left') {
+    // ← Gauche = Passer
     swipeAdvance('left');
     return;
   }
-  if (direction === 'up') {
+  if (direction === 'right') {
+    // → Droite = Favoris (sauvegarde + passe à la carte suivante)
     var id = String(place.id || '').trim();
     if (id && swipeState.favorites.indexOf(id) === -1) {
       swipeState.favorites.push(id);
@@ -4008,9 +4178,10 @@ async function swipeCardAction(direction) {
     } else {
       showSwipeToast('Déjà dans vos favoris');
     }
-    swipeAdvance('up');
+    swipeAdvance('right');
     return;
   }
+  // ↑ Haut = Réserver (ouvre le panneau de contact WhatsApp)
   resetTopSwipeCardVisual();
   openSwipeActivate(place);
 }
@@ -4188,6 +4359,41 @@ function openSwipeMode() {
   overlay.classList.add('open');
   renderSwipeFilters();
   renderSwipeStage();
+  maybeShowSwipeOnboarding();
+}
+
+// Onboarding 1er lancement : explique les 3 gestes (une seule fois)
+function maybeShowSwipeOnboarding() {
+  try { if (localStorage.getItem('popey_priv_onboard_v1') === '1') return; } catch (e) {}
+  var existing = document.getElementById('swipeOnboard');
+  if (existing) { existing.classList.remove('hide'); return; }
+  var first = String(liveState.refFirstName || 'Votre contact');
+  var n = Math.max(1, swipeState.queue.length || 0);
+  var ob = document.createElement('div');
+  ob.id = 'swipeOnboard';
+  ob.className = 'swp-onboard';
+  ob.innerHTML =
+    '<div class="swo-inner">' +
+      '<div class="swo-logo">Pop<span>ey</span></div>' +
+      '<div class="swo-sub">Catalogue Privilège · ' + escapeHtml(liveState.cityLabel || 'votre ville') + '</div>' +
+      '<div class="swo-demo">' +
+        '<div class="swo-up"><div class="swo-arrow">⬆️</div><div class="swo-lbl" style="color:#25D366">Glissez vers le haut<br><strong>pour réserver</strong></div></div>' +
+        '<div class="swo-row">' +
+          '<div class="swo-side"><div class="swo-arrow">⬅️</div><div class="swo-lbl" style="color:#EC4899">Passer</div></div>' +
+          '<div class="swo-phone">🎁</div>' +
+          '<div class="swo-side"><div class="swo-arrow">➡️</div><div class="swo-lbl" style="color:#00C48C">Favoris</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="swo-intro"><strong>' + escapeHtml(first) + '</strong> vous a sélectionné <strong>' + n + ' offre' + (n > 1 ? 's' : '') + ' exclusive' + (n > 1 ? 's' : '') + '</strong> ce mois-ci.<br>Swipez pour les découvrir.</div>' +
+      '<button class="swo-btn" id="swoBtn" type="button">C\'est parti →</button>' +
+    '</div>';
+  document.body.appendChild(ob);
+  var btn = ob.querySelector('#swoBtn');
+  if (btn) btn.addEventListener('click', function () {
+    ob.classList.add('hide');
+    try { localStorage.setItem('popey_priv_onboard_v1', '1'); } catch (e) {}
+    window.setTimeout(function () { if (ob && ob.parentNode) ob.parentNode.removeChild(ob); }, 420);
+  });
 }
 
 function closeSwipeMode() {
@@ -4470,8 +4676,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var favBtn = document.getElementById('swipeFavBtn');
   var activateConfirmBtn = document.getElementById('swipeActivateConfirmBtn');
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
-  if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('up'); });
-  if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('right'); });
+  if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('right'); });
+  if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('up'); });
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
