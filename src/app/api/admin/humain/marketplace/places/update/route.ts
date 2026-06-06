@@ -42,6 +42,16 @@ function safePhotoExtension(file: File): string {
   return "jpg";
 }
 
+function slugifyPart(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const currentUrl = String(formData.get("current_url") || "/admin/humain/marketplace");
@@ -231,6 +241,13 @@ export async function POST(request: Request) {
     return fail(`Transition invalide: ${String(currentPlace.status)} -> ${nextStatus}.`);
   }
 
+  // Slug court & lisible pour le lien "espace commerçant" (/privilege/pro?p=slug)
+  if (intent !== "reset_place" && intent !== "clear_privilege") {
+    const base = slugifyPart(companyNameRaw || ownerDisplayNameRaw || "offre") || "offre";
+    const citySlug = slugifyPart(String(currentPlace.city || ""));
+    patch.pro_slug = [base, citySlug, placeId.slice(0, 4)].filter(Boolean).join("-");
+  }
+
   const { error } = await supabaseAdmin.from("human_marketplace_places").update(patch).eq("id", placeId);
   if (error) {
     // Compatibility fallback: older DBs may not have the newer optional columns.
@@ -247,6 +264,7 @@ export async function POST(request: Request) {
         "coup_de_coeur_text",
         "mystery_deal_label",
         "is_mystery_offer",
+        "pro_slug",
       ].forEach((key) => {
         delete retryPatch[key];
       });

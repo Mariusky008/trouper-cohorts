@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { signMerchantStatsToken, isMarketplaceLandingTokenConfigured } from "@/lib/popey-human/marketplace-landing-token";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +37,7 @@ type CataloguePageProps = {
 };
 
 const NEW_COLS =
-  "id,promo_code,offer_address,total_spots,offer_video_url,coup_de_coeur_text,is_mystery_offer,mystery_deal_label";
+  "id,promo_code,offer_address,total_spots,offer_video_url,coup_de_coeur_text,is_mystery_offer,mystery_deal_label,pro_slug";
 
 // Récupère les nouveaux champs (résilient : si migration pas appliquée → map vide,
 // le formulaire affiche vide et la sauvegarde reste possible côté write path).
@@ -318,19 +317,13 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
     { view: 0, favorite: 0, reserve: 0 },
   );
 
-  // Lien "espace commerçant" signé par offre (lecture stats) — réutilise le secret HMAC.
+  // Lien "espace commerçant" court & lisible : /privilege/pro?p=<slug> (fallback id).
   const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
-  const tokenReady = isMarketplaceLandingTokenConfigured();
   const merchantLinks: Record<string, string> = {};
-  if (tokenReady) {
-    configured.forEach((p) => {
-      try {
-        merchantLinks[p.id] = (appBase || "") + "/privilege/pro?token=" + encodeURIComponent(signMerchantStatsToken(p.id));
-      } catch {
-        /* secret absent → pas de lien */
-      }
-    });
-  }
+  configured.forEach((p) => {
+    const slug = String((extra[p.id] as { pro_slug?: string } | undefined)?.pro_slug || p.id);
+    merchantLinks[p.id] = (appBase || "") + "/privilege/pro?p=" + encodeURIComponent(slug);
+  });
 
   const bySphere = configured.reduce<Record<string, SnapPlace[]>>((acc, p) => {
     const k = String(p.sphere_label || "Autres");

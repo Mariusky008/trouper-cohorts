@@ -4,8 +4,12 @@ import { verifyMerchantStatsToken } from "@/lib/popey-human/marketplace-landing-
 export const dynamic = "force-dynamic";
 
 type ProPageProps = {
-  searchParams?: Promise<{ token?: string }>;
+  searchParams?: Promise<{ token?: string; p?: string }>;
 };
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
 
 type Stats = { view: number; favorite: number; reserve: number; card_open: number; mystery_reveal: number };
 
@@ -42,9 +46,29 @@ function StatCard({ emoji, value, label }: { emoji: string; value: number; label
 export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const qp = (await searchParams) || {};
   const token = typeof qp.token === "string" ? qp.token : "";
-  const check = verifyMerchantStatsToken(token);
+  const handle = typeof qp.p === "string" ? qp.p.trim() : "";
+  const admin = createAdminClient();
 
-  if (!check.valid || !check.placeId) {
+  // Résolution : token signé (rétro-compat) OU slug court / id via ?p=
+  let placeId = "";
+  if (token) {
+    const check = verifyMerchantStatsToken(token);
+    if (check.valid && check.placeId) placeId = check.placeId;
+  }
+  if (!placeId && handle) {
+    if (isUuid(handle)) {
+      placeId = handle;
+    } else {
+      try {
+        const r = await admin.from("human_marketplace_places").select("id").eq("pro_slug", handle).maybeSingle();
+        placeId = String((r.data as { id?: string } | null)?.id || "");
+      } catch {
+        placeId = "";
+      }
+    }
+  }
+
+  if (!placeId) {
     return (
       <Shell>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
@@ -56,9 +80,6 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
       </Shell>
     );
   }
-
-  const placeId = check.placeId;
-  const admin = createAdminClient();
 
   // Infos offre (colonnes sûres) + promo_code en best-effort (résilient).
   const placeRes = await admin
