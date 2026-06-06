@@ -132,7 +132,7 @@ export default async function AdminHumainMarketplaceTourControlePage({ searchPar
           <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">100% Humain · Tour de contrôle</p>
           <h1 className="text-3xl font-black">Pilotage Leads Catalogue</h1>
           <p className="text-sm text-muted-foreground">
-            Vue dédiée gros volume: qualification centrale JPR, dispatch manuel pro, suivi statut et ticket commission.
+            Vue dédiée gros volume: qualification centrale JPR, dispatch manuel pro et suivi statut des abonnements.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

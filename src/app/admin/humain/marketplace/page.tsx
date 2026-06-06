@@ -548,7 +548,7 @@ export default async function AdminHumainMarketplacePage({
                               customText: readMetaString(offer.metadata, "apporteur_reward_text"),
                             });
                             if (!rewardText) return null;
-                            return <p className="text-xs text-emerald-800">Rétribution apporteur: {rewardText}</p>;
+                            return null; /* Apporteur masqué — modèle 49€/mois sans commission */
                           })()}
                           {offer.status === "accepted" ? (
                             <p className="text-xs text-amber-700">Le pro accepté reste piloté ici sans attribution membre manuelle.</p>
@@ -591,7 +591,8 @@ export default async function AdminHumainMarketplacePage({
                             </button>
                           </form>
 
-                          <form action="/api/admin/humain/marketplace/offers/update" method="post" className="flex flex-wrap items-center gap-2 rounded border border-emerald-200 bg-emerald-50/50 p-2">
+                          {/* Apporteur masqué — modèle 49€/mois sans commission (réactivable en retirant "hidden") */}
+                          <form action="/api/admin/humain/marketplace/offers/update" method="post" className="hidden flex-wrap items-center gap-2 rounded border border-emerald-200 bg-emerald-50/50 p-2">
                             <input type="hidden" name="current_url" value="/admin/humain/marketplace" />
                             <input type="hidden" name="offer_id" value={offer.id} />
                             <input type="hidden" name="intent" value="update_reward" />
