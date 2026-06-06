@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -39,36 +40,19 @@ export async function POST(request: Request) {
 
   try {
     if (intent === "auto_assign") {
-      // Réunit tous les référents connus (table + events du mois) puis répartit en vagues.
-      const refs = new Map<string, string | null>(); // ref -> ref_name
-      const { data: refRows } = await supabase.from("human_catalogue_referrers").select("ref,ref_name");
-      (((refRows as Array<{ ref: string; ref_name: string | null }> | null) || [])).forEach((r) => {
-        if (r.ref) refs.set(r.ref, r.ref_name || null);
-      });
-      const now = new Date();
-      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-      const { data: evRows } = await supabase
-        .from("human_marketplace_events")
-        .select("payload,created_at")
-        .like("event_type", "priv_%")
-        .gte("created_at", monthStart)
-        .limit(50000);
-      (((evRows as Array<{ payload: Record<string, unknown> | null }> | null) || [])).forEach((e) => {
-        const ref = e.payload && typeof e.payload === "object" ? String((e.payload as { ref?: unknown }).ref || "") : "";
-        const refName = e.payload && typeof e.payload === "object" ? String((e.payload as { ref_name?: unknown }).ref_name || "") : "";
-        if (ref && !refs.has(ref)) refs.set(ref, refName || null);
-      });
-      const list = Array.from(refs.keys()).sort();
+      // Répartit les commerçants (d'une ville, ou toutes) sur les vagues du mois.
+      const city = String(formData.get("city") || "").trim();
+      const lb = await getCatalogueLeaderboard(city || undefined);
       let i = 0;
-      for (const ref of list) {
+      for (const row of lb.rows) {
         const day = WAVE_DAYS[i % WAVE_DAYS.length];
         await supabase
           .from("human_catalogue_referrers")
-          .upsert({ ref, ref_name: refs.get(ref), propulsion_day: day, updated_at: new Date().toISOString() }, { onConflict: "ref" });
+          .upsert({ ref: row.ref, ref_name: row.name, propulsion_day: day, updated_at: new Date().toISOString() }, { onConflict: "ref" });
         i += 1;
       }
       revalidatePath("/admin/humain/catalogue/scores");
-      return ok(`Planning réparti sur ${list.length} membre(s).`);
+      return ok(`Planning réparti sur ${lb.rows.length} membre(s)${city ? ` (${city})` : ""}.`);
     }
 
     // Enregistrement d'une ligne

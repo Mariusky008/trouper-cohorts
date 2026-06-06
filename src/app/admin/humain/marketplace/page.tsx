@@ -256,6 +256,12 @@ export default async function AdminHumainMarketplacePage({
             🎟️ Gérer le catalogue
           </Link>
           <Link
+            href="/admin/humain/catalogue/scores"
+            className="rounded border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-violet-800"
+          >
+            📊 Tableau des scores
+          </Link>
+          <Link
             href="/admin/humain/marketplace/tour-de-controle"
             className="rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-emerald-700"
           >

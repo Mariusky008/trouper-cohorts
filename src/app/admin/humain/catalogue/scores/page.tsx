@@ -5,7 +5,7 @@ import { getCatalogueLeaderboard, type LeaderboardRow } from "@/lib/popey-human/
 export const dynamic = "force-dynamic";
 
 type ScoresPageProps = {
-  searchParams?: Promise<{ marketStatus?: string; marketMessage?: string }>;
+  searchParams?: Promise<{ marketStatus?: string; marketMessage?: string; city?: string }>;
 };
 
 const COLS = "28px minmax(140px,1fr) 60px 88px 56px 64px 66px 104px 52px";
@@ -21,6 +21,7 @@ export default async function CatalogueScoresPage({ searchParams }: ScoresPagePr
   const qp = (await searchParams) || {};
   const marketStatus = typeof qp.marketStatus === "string" ? qp.marketStatus : "";
   const marketMessage = typeof qp.marketMessage === "string" ? qp.marketMessage : "";
+  const selectedCity = typeof qp.city === "string" ? qp.city : "";
 
   const snapshot = await getAdminMarketplaceSnapshot({ placeCity: "all" });
   if (snapshot.error) {
@@ -32,8 +33,9 @@ export default async function CatalogueScoresPage({ searchParams }: ScoresPagePr
     );
   }
 
-  const { rows, tableReady, monthLabel, totalClics } = await getCatalogueLeaderboard();
+  const { rows, tableReady, monthLabel, totalClics, cities } = await getCatalogueLeaderboard(selectedCity);
   const today = new Date().getDate();
+  const cityUrl = `/admin/humain/catalogue/scores${selectedCity ? `?city=${encodeURIComponent(selectedCity)}` : ""}`;
 
   return (
     <section className="mx-auto max-w-5xl space-y-5 p-4">
@@ -58,14 +60,26 @@ export default async function CatalogueScoresPage({ searchParams }: ScoresPagePr
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3">
+        <form method="get" className="flex items-center gap-2">
+          <select name="city" defaultValue={selectedCity} className="h-9 rounded border bg-background px-2 text-sm">
+            <option value="">Toutes les villes</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <button className="h-9 rounded border border-sky-300 bg-sky-50 px-3 text-xs font-black uppercase tracking-wide text-sky-800">Filtrer</button>
+        </form>
         <div className="text-sm">
-          <strong className="text-emerald-700">{rows.length}</strong> membre(s) actifs · <strong>{totalClics}</strong> clics ce mois
+          <strong className="text-emerald-700">{rows.length}</strong> membre(s) · <strong>{totalClics}</strong> clics ce mois
         </div>
         <form action="/api/admin/humain/catalogue/referrer" method="post" className="ml-auto">
-          <input type="hidden" name="current_url" value="/admin/humain/catalogue/scores" />
+          <input type="hidden" name="current_url" value={cityUrl} />
           <input type="hidden" name="intent" value="auto_assign" />
+          <input type="hidden" name="city" value={selectedCity} />
           <button className="h-9 rounded border border-amber-300 bg-amber-50 px-3 text-xs font-black uppercase tracking-wide text-amber-800">
-            📅 Répartir les vagues (auto)
+            📅 Répartir les vagues {selectedCity ? `· ${selectedCity}` : "· toutes villes"}
           </button>
         </form>
       </div>

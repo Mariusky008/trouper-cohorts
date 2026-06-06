@@ -1,11 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type LeaderboardRow = {
-  ref: string;
+  ref: string; // clé stable du membre (owner_member_id ou place:<id>)
   name: string;
-  clics: number; // ouvertures du catalogue via ?ref=
+  city: string;
+  clics: number; // ouvertures du catalogue via son lien (?ref=)
   interet: number; // favoris + réservations + cartes ouvertes
-  coupons: number; // activations (coupons) attribuées au référent
+  coupons: number; // activations (coupons) attribuées
   declared: number | null; // contacts WhatsApp déclarés
   day: number | null; // jour de propulsion
 };
@@ -15,11 +16,17 @@ export type Leaderboard = {
   tableReady: boolean;
   monthLabel: string;
   totalClics: number;
+  cities: string[];
 };
 
-type Agg = { open: number; favorite: number; reserve: number; card_open: number; refName: string };
+function norm(value: string): string {
+  return String(value || "").trim().toLowerCase();
+}
 
-export async function getCatalogueLeaderboard(): Promise<Leaderboard> {
+// Liste TOUS les commerçants configurés (même à zéro clic), avec leurs stats du mois.
+// cityFilter optionnel : ne garde que les membres d'une ville (mais renvoie quand
+// même la liste complète des villes pour le sélecteur).
+export async function getCatalogueLeaderboard(cityFilter?: string): Promise<Leaderboard> {
   const admin = createAdminClient();
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
@@ -27,9 +34,54 @@ export async function getCatalogueLeaderboard(): Promise<Leaderboard> {
     const m = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     return m.charAt(0).toUpperCase() + m.slice(1);
   })();
+  const wantCity = norm(cityFilter || "");
 
-  // 1) Events priv_* du mois, agrégés par référent
-  const aggByRef: Record<string, Agg> = {};
+  // 1) Membres = commerçants configurés (1 offre = 1 commerçant)
+  const rowsByRef: Record<string, LeaderboardRow> = {};
+  const byOwnerId: Record<string, LeaderboardRow> = {};
+  const byName: Record<string, LeaderboardRow> = {};
+  const citiesSet = new Set<string>();
+  try {
+    const res = await admin
+      .from("human_marketplace_places")
+      .select("id,city,company_name,owner_display_name,owner_member_id,privilege_badge,metier")
+      .limit(3000);
+    if (!res.error && res.data) {
+      (res.data as Array<{
+        id: string;
+        city: string | null;
+        company_name: string | null;
+        owner_display_name: string | null;
+        owner_member_id: string | null;
+        privilege_badge: string | null;
+        metier: string | null;
+      }>).forEach((p) => {
+        const configured = Boolean(String(p.company_name || "").trim() || String(p.privilege_badge || "").trim());
+        if (!configured) return;
+        const city = String(p.city || "").trim();
+        if (city) citiesSet.add(city);
+        if (wantCity && norm(city) !== wantCity) return;
+        const ownerId = String(p.owner_member_id || "").trim();
+        const ref = ownerId || `place:${p.id}`;
+        const name = String(p.company_name || p.owner_display_name || p.metier || "Membre Popey").trim();
+        const row: LeaderboardRow = { ref, name, city, clics: 0, interet: 0, coupons: 0, declared: null, day: null };
+        rowsByRef[ref] = row;
+        if (ownerId) byOwnerId[ownerId] = row;
+        if (name) byName[norm(name)] = row;
+      });
+    }
+  } catch {
+    /* places indisponibles */
+  }
+
+  const findMember = (ref: string, refName: string): LeaderboardRow | null => {
+    if (ref && rowsByRef[ref]) return rowsByRef[ref];
+    if (ref && byOwnerId[ref]) return byOwnerId[ref];
+    if (refName && byName[norm(refName)]) return byName[norm(refName)];
+    return null;
+  };
+
+  // 2) Events priv_* du mois → match membre par ref OU ref_name
   try {
     const res = await admin
       .from("human_marketplace_events")
@@ -41,21 +93,19 @@ export async function getCatalogueLeaderboard(): Promise<Leaderboard> {
       (res.data as Array<{ event_type: string | null; payload: Record<string, unknown> | null }>).forEach((r) => {
         const payload = r.payload && typeof r.payload === "object" ? r.payload : {};
         const ref = String((payload as { ref?: unknown }).ref || "").trim();
-        if (!ref) return;
         const refName = String((payload as { ref_name?: unknown }).ref_name || "").trim();
+        const member = findMember(ref, refName);
+        if (!member) return;
         const ev = String(r.event_type || "").replace("priv_", "");
-        if (!aggByRef[ref]) aggByRef[ref] = { open: 0, favorite: 0, reserve: 0, card_open: 0, refName: "" };
-        if (refName && !aggByRef[ref].refName) aggByRef[ref].refName = refName;
-        if (ev === "open" || ev === "favorite" || ev === "reserve" || ev === "card_open") aggByRef[ref][ev] += 1;
+        if (ev === "open") member.clics += 1;
+        else if (ev === "favorite" || ev === "reserve" || ev === "card_open") member.interet += 1;
       });
     }
   } catch {
     /* events indisponibles */
   }
 
-  // 2) Coupons (activations) du mois par référent
-  const couponsByRefId: Record<string, number> = {};
-  const couponsByName: Record<string, number> = {};
+  // 3) Coupons (activations) du mois → match membre par referrer_id OU referrer_name
   try {
     const res = await admin
       .from("human_marketplace_landing_activations")
@@ -64,53 +114,39 @@ export async function getCatalogueLeaderboard(): Promise<Leaderboard> {
       .limit(50000);
     if (!res.error && res.data) {
       (res.data as Array<{ referrer_id: string | null; referrer_name: string | null }>).forEach((r) => {
-        const id = String(r.referrer_id || "").trim();
-        const nm = String(r.referrer_name || "").trim().toLowerCase();
-        if (id) couponsByRefId[id] = (couponsByRefId[id] || 0) + 1;
-        if (nm) couponsByName[nm] = (couponsByName[nm] || 0) + 1;
+        const member = findMember(String(r.referrer_id || "").trim(), String(r.referrer_name || "").trim());
+        if (member) member.coupons += 1;
       });
     }
   } catch {
     /* activations indisponibles */
   }
 
-  // 3) Infos déclaratives / planning
-  const refInfo: Record<string, { ref_name: string | null; declared_contacts: number | null; propulsion_day: number | null }> = {};
+  // 4) Déclaratif / planning (table dédiée, clé = ref membre)
   let tableReady = false;
   try {
     const res = await admin
       .from("human_catalogue_referrers")
-      .select("ref,ref_name,declared_contacts,propulsion_day")
+      .select("ref,declared_contacts,propulsion_day")
       .limit(5000);
     tableReady = !res.error;
     if (!res.error && res.data) {
-      (res.data as Array<{ ref: string; ref_name: string | null; declared_contacts: number | null; propulsion_day: number | null }>).forEach((r) => {
-        if (r.ref) refInfo[r.ref] = { ref_name: r.ref_name, declared_contacts: r.declared_contacts, propulsion_day: r.propulsion_day };
+      (res.data as Array<{ ref: string; declared_contacts: number | null; propulsion_day: number | null }>).forEach((r) => {
+        const row = r.ref ? rowsByRef[r.ref] : null;
+        if (row) {
+          row.declared = r.declared_contacts ?? null;
+          row.day = r.propulsion_day ?? null;
+        }
       });
     }
   } catch {
     tableReady = false;
   }
 
-  // 4) Fusion + tri
-  const allRefs = Array.from(new Set([...Object.keys(aggByRef), ...Object.keys(refInfo)]));
-  const rows: LeaderboardRow[] = allRefs.map((ref) => {
-    const a = aggByRef[ref];
-    const info = refInfo[ref];
-    const name = String(info?.ref_name || a?.refName || ref);
-    const coupons = couponsByRefId[ref] || couponsByName[name.toLowerCase()] || 0;
-    return {
-      ref,
-      name,
-      clics: a ? a.open : 0,
-      interet: a ? a.favorite + a.reserve + a.card_open : 0,
-      coupons,
-      declared: info?.declared_contacts ?? null,
-      day: info?.propulsion_day ?? null,
-    };
-  });
-  rows.sort((x, y) => y.clics - x.clics || y.interet - x.interet || y.coupons - x.coupons);
-
+  const rows = Object.values(rowsByRef).sort(
+    (x, y) => y.clics - x.clics || y.interet - x.interet || y.coupons - x.coupons || x.name.localeCompare(y.name, "fr"),
+  );
   const totalClics = rows.reduce((s, r) => s + r.clics, 0);
-  return { rows, tableReady, monthLabel, totalClics };
+  const cities = Array.from(citiesSet).sort((a, b) => a.localeCompare(b, "fr"));
+  return { rows, tableReady, monthLabel, totalClics, cities };
 }

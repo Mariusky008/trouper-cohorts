@@ -13,6 +13,17 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function statutBadge(clics: number, day: number | null, declared: number | null, today: number): { label: string; cls: string } {
+  if (day && today < day) return { label: "⏳ Bientôt", cls: "bg-white/10 text-white/60" };
+  if (clics === 0) return { label: "⚠️ À relancer", cls: "bg-red-500/15 text-red-300" };
+  if (declared && clics >= Math.max(5, declared * 0.15)) return { label: "🚀 Au top", cls: "bg-emerald-500/15 text-emerald-300" };
+  return { label: "✅ Actif", cls: "bg-sky-500/15 text-sky-300" };
+}
+
+function rankLabel(rank: number): string {
+  return rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : `#${rank}`;
+}
+
 type Stats = { view: number; favorite: number; reserve: number; card_open: number; mystery_reveal: number };
 
 function emptyStats(): Stats {
@@ -152,20 +163,24 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const offerTitle = String(place.privilege_badge || "").trim() || "Votre offre privilège";
   const proName = String(place.company_name || place.owner_display_name || place.metier || "Votre commerce").trim();
 
-  // Classement des membres (transparence « tribunal bienveillant »)
-  const lb = await getCatalogueLeaderboard();
-  const myName = String(place.company_name || place.owner_display_name || "").trim().toLowerCase();
+  // Classement des membres de SA ville (transparence « tribunal bienveillant »)
+  const lb = await getCatalogueLeaderboard(place.city || undefined);
   const ownerId = String(place.owner_member_id || "").trim();
+  const myKey = ownerId || `place:${placeId}`;
+  const myName = String(place.company_name || place.owner_display_name || "").trim().toLowerCase();
   let myIndex = -1;
   for (let i = 0; i < lb.rows.length; i += 1) {
     const r = lb.rows[i];
-    if ((ownerId && r.ref === ownerId) || (myName && r.name.trim().toLowerCase() === myName)) {
+    if (r.ref === myKey || (ownerId && r.ref === ownerId) || (myName && r.name.trim().toLowerCase() === myName)) {
       myIndex = i;
       break;
     }
   }
+  const myRow = myIndex >= 0 ? lb.rows[myIndex] : null;
+  const today = new Date().getDate();
+  const myStat = statutBadge(myRow?.clics ?? 0, myRow?.day ?? null, myRow?.declared ?? null, today);
   const topRows: Array<{ r: (typeof lb.rows)[number]; rank: number }> = lb.rows.slice(0, 5).map((r, i) => ({ r, rank: i + 1 }));
-  if (myIndex >= 5) topRows.push({ r: lb.rows[myIndex], rank: myIndex + 1 });
+  if (myIndex >= 5 && myRow) topRows.push({ r: myRow, rank: myIndex + 1 });
 
   return (
     <Shell>
@@ -201,29 +216,68 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
         </div>
       </div>
 
-      {lb.rows.length > 0 ? (
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-white/40">Classement des membres · {lb.monthLabel}</p>
-            {myIndex >= 0 ? (
-              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">Toi : #{myIndex + 1} / {lb.rows.length}</span>
-            ) : null}
+      {/* Ta mission ce mois (planning + potentiel + clics générés) */}
+      <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.02] p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-300/80">🎯 Ta mission · {lb.monthLabel}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${myStat.cls}`}>{myStat.label}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-white/[0.05] p-3">
+            <div className="font-serif text-2xl font-black">{myRow?.day ? `J${myRow.day}` : "—"}</div>
+            <div className="mt-0.5 text-[10px] leading-tight text-white/45">📅 Jour de propulsion</div>
           </div>
+          <div className="rounded-xl bg-white/[0.05] p-3">
+            <div className="font-serif text-2xl font-black">{myRow?.declared != null ? myRow.declared.toLocaleString("fr-FR") : "—"}</div>
+            <div className="mt-0.5 text-[10px] leading-tight text-white/45">📱 Contacts à toucher</div>
+          </div>
+          <div className="rounded-xl bg-white/[0.05] p-3">
+            <div className="font-serif text-2xl font-black text-emerald-300">{myRow?.clics ?? 0}</div>
+            <div className="mt-0.5 text-[10px] leading-tight text-white/45">👆 Clics générés</div>
+          </div>
+        </div>
+        <div className="mt-2 flex justify-center gap-4 text-[11px] text-white/55">
+          <span>💬 <strong className="text-white">{myRow?.interet ?? 0}</strong> actions</span>
+          <span>🎟️ <strong className="text-white">{myRow?.coupons ?? 0}</strong> coupons</span>
+        </div>
+      </div>
+
+      {/* Classement de ta ville (transparence / émulation) */}
+      <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-white/40">🏆 Classement{place.city ? ` · ${place.city}` : ""}</p>
+          {myIndex >= 0 ? (
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">Toi : #{myIndex + 1} / {lb.rows.length}</span>
+          ) : null}
+        </div>
+        {lb.rows.length === 0 ? (
+          <p className="text-sm text-white/40">Le classement s&apos;affichera dès que les membres commenceront à partager leur lien.</p>
+        ) : (
           <div className="space-y-1.5">
             {topRows.map(({ r, rank }) => {
               const isMe = rank - 1 === myIndex;
+              const st = statutBadge(r.clics, r.day, r.declared, today);
               return (
-                <div key={r.ref} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${isMe ? "bg-emerald-500/15 text-white" : "text-white/70"}`}>
-                  <span className="w-6 shrink-0 font-black text-white/40">{rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : rank}</span>
-                  <span className="min-w-0 flex-1 truncate font-semibold">{r.name}{isMe ? " (toi)" : ""}</span>
-                  <span className="shrink-0 text-white/50">👁 <strong className="text-white">{r.clics}</strong></span>
+                <div
+                  key={r.ref}
+                  className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm ${isMe ? "bg-emerald-500/15 ring-1 ring-emerald-400/30" : "bg-white/[0.03]"}`}
+                >
+                  <span className="w-7 shrink-0 text-center font-black text-white/60">{rankLabel(rank)}</span>
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${isMe ? "text-white" : "text-white/85"}`}>
+                    {r.name}
+                    {isMe ? " (toi)" : ""}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-white/55">
+                    👆 <strong className="text-white">{r.clics}</strong> · 🎟️ <strong className="text-white">{r.coupons}</strong>
+                  </span>
+                  <span className={`hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold sm:inline ${st.cls}`}>{st.label.split(" ")[0]}</span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-2 text-[10px] text-white/30">Classement par clics (partages générés) ce mois. Plus tu partages ton lien, plus tu montes. 🚀</p>
-        </div>
-      ) : null}
+        )}
+        <p className="mt-2 text-[10px] text-white/30">Plus tu partages ton lien, plus tu montes. 🚀</p>
+      </div>
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-white/35">
         Ces chiffres mesurent l&apos;intérêt pour votre offre dans le catalogue Popey, diffusé chaque mois aux membres de
