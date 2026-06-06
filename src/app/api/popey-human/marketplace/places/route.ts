@@ -43,6 +43,10 @@ type PlaceRow = {
   value_growth_pct: number;
   claimed_at: string | null;
   claimed_by_offer_id?: string | null;
+  is_mystery_offer?: boolean | null;
+  mystery_deal_label?: string | null;
+  offer_video_url?: string | null;
+  coup_de_coeur_text?: string | null;
 };
 
 type OfferRefRow = {
@@ -235,6 +239,10 @@ function toClientPlace(row: PlaceRow, rewardLabel?: string) {
     value: Number(row.list_price_eur || 0),
     growth: Number(row.value_growth_pct || 0),
     score: Number(row.reciprocity_score || 0),
+    videoUrl: row.offer_video_url || null,
+    coupDeCoeurText: row.coup_de_coeur_text || null,
+    isMystery: Boolean(row.is_mystery_offer),
+    mysteryDeal: row.mystery_deal_label || null,
   };
 }
 
@@ -319,7 +327,7 @@ export async function GET(request: NextRequest) {
     let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at,claimed_by_offer_id",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at,claimed_by_offer_id,is_mystery_offer,mystery_deal_label,offer_video_url,coup_de_coeur_text",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -427,7 +435,12 @@ export async function GET(request: NextRequest) {
       data = res.data;
       error = res.error as { message?: string } | null;
     }
-    if (error && String(error.message || "").toLowerCase().includes("claimed_by_offer_id")) {
+    if (
+      error &&
+      /claimed_by_offer_id|is_mystery_offer|mystery_deal_label|offer_video_url|coup_de_coeur_text/i.test(
+        String(error.message || ""),
+      )
+    ) {
       query = supabase.from("human_marketplace_places").select(
         "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at",
       );
@@ -690,6 +703,10 @@ export async function GET(request: NextRequest) {
           value: item.listPriceEur || 0,
           growth: item.valueGrowthPct,
           score: item.reciprocityScore,
+          videoUrl: null,
+          coupDeCoeurText: null,
+          isMystery: false,
+          mysteryDeal: null,
         };
       });
 

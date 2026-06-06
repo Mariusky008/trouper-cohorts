@@ -2284,6 +2284,45 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .priv-dc-expire { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: #FCA5A5; font-weight: 600; margin-top: 6px; }
 .priv-save { width: calc(100% - 28px); margin: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 13px; font-family: var(--fb); font-size: 12px; font-weight: 700; color: rgba(255,255,255,.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .priv-note { font-size: 9px; color: rgba(255,255,255,.3); text-align: center; margin: 7px 14px 16px; }
+
+/* ════════ CARTE MYSTÈRE (cosmique, tous les 4 swipes) ════════ */
+.swp-mystery { background: linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b); box-shadow: 0 20px 70px rgba(124,58,237,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+.swp-mystery.revealed { padding: 0; justify-content: flex-start; align-items: stretch; overflow-y: auto; }
+.swm-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.swm-star { position: absolute; background: #fff; border-radius: 50%; opacity: 0; animation: swmTwinkle 2.5s ease-in-out infinite; }
+@keyframes swmTwinkle { 0%,100% { opacity: 0; transform: scale(.5); } 50% { opacity: .9; transform: scale(1); } }
+.swm-glow { position: absolute; top: 50%; left: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; background: radial-gradient(circle,rgba(168,85,247,.45),transparent 70%); animation: swmGlow 3s ease-in-out infinite; pointer-events: none; }
+@keyframes swmGlow { 0%,100% { transform: scale(.85); opacity: .5; } 50% { transform: scale(1.25); opacity: .85; } }
+.swm-gift { font-size: 72px; animation: swmFloat 3s ease-in-out infinite; position: relative; z-index: 2; filter: drop-shadow(0 8px 28px rgba(168,85,247,.7)); }
+@keyframes swmFloat { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-16px) rotate(3deg); } }
+.swm-label { font-size: 11px; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; color: #C4B5FD; margin-top: 20px; z-index: 2; animation: swmShimmer 2s ease-in-out infinite; }
+@keyframes swmShimmer { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+.swm-title { font-family: var(--fd); font-size: 26px; font-weight: 900; color: #fff; line-height: 1.08; margin-top: 12px; z-index: 2; text-shadow: 0 2px 24px rgba(168,85,247,.6); }
+.swm-sub { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 14px; line-height: 1.6; z-index: 2; max-width: 250px; }
+.swm-btn { margin-top: 24px; background: linear-gradient(135deg,#7C3AED,#A855F7); border: none; border-radius: 100px; padding: 15px 32px; font-family: var(--fb); font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; z-index: 2; box-shadow: 0 8px 30px rgba(124,58,237,.6); animation: swmPulse 2s ease infinite; }
+@keyframes swmPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.swm-r-img { height: 150px; width: 100%; position: relative; overflow: hidden; flex-shrink: 0; }
+.swm-r-img img { width: 100%; height: 100%; object-fit: cover; }
+.swm-r-ov { position: absolute; inset: 0; background: linear-gradient(to top,#1a0b2e,rgba(124,58,237,.15) 60%,transparent); }
+.swm-r-crown { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#F5A623,#FFD700); border-radius: 100px; padding: 5px 16px; font-size: 9px; font-weight: 800; color: #1a0b2e; letter-spacing: .05em; white-space: nowrap; box-shadow: 0 4px 18px rgba(245,166,35,.6); }
+.swm-r-body { flex: 1; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(180deg,#1a0b2e,#2d1b4e); }
+.swm-r-pro { display: flex; align-items: center; gap: 10px; }
+.swm-r-pro img { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid #A855F7; object-fit: cover; flex-shrink: 0; }
+.swm-r-proname { font-size: 15px; font-weight: 700; color: #fff; }
+.swm-r-prorole { font-size: 10px; color: rgba(255,255,255,.5); }
+.swm-r-title { font-family: var(--fd); font-size: 21px; font-weight: 900; color: #fff; line-height: 1.12; }
+.swm-r-deal { background: linear-gradient(135deg,rgba(245,166,35,.22),rgba(255,215,0,.1)); border: 1.5px solid rgba(245,166,35,.4); border-radius: 14px; padding: 12px; text-align: center; }
+.swm-r-deal-lbl { font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #FFD700; margin-bottom: 4px; }
+.swm-r-deal-val { font-family: var(--fd); font-size: 30px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 2px 18px rgba(245,166,35,.6); }
+.swm-r-deal-old { font-size: 12px; color: rgba(255,255,255,.4); text-decoration: line-through; margin-top: 5px; }
+.swm-r-coupon { background: rgba(255,255,255,.06); border: 1.5px dashed rgba(168,85,247,.5); border-radius: 10px; padding: 10px; text-align: center; }
+.swm-r-coupon-lbl { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: rgba(196,181,253,.7); margin-bottom: 3px; }
+.swm-r-coupon-code { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #C4B5FD; letter-spacing: .06em; }
+.swm-r-exp { font-size: 11px; color: #FCA5A5; text-align: center; font-weight: 700; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 7px; }
+.swm-r-reserve { background: #25D366; border: none; border-radius: 12px; padding: 13px; font-family: var(--fb); font-size: 13px; font-weight: 800; color: #fff; cursor: pointer; }
+.swm-r-pass { background: none; border: none; color: rgba(255,255,255,.4); font-size: 11px; padding: 4px; cursor: pointer; }
+.swm-confetti { position: absolute; width: 9px; height: 9px; z-index: 100; pointer-events: none; animation: swmConfFall 1.6s ease-out forwards; }
+@keyframes swmConfFall { to { transform: translateY(440px) rotate(400deg); opacity: 0; } }
 </style>
 </head>
 <body>
@@ -3091,7 +3130,11 @@ var swipeState = {
   startX: 0,
   startY: 0,
   dx: 0,
-  dy: 0
+  dy: 0,
+  swipesSinceMystery: 0,
+  mysteryShown: 0,
+  inMystery: false,
+  curMystery: null
 };
 var swipeActivationTarget = null;
 function escapeHtml(text) {
@@ -3649,6 +3692,8 @@ function normalizePlace(row) {
     coupText: String(row.coup_de_coeur_text || row.coupDeCoeurText || row.coup_text || '').trim(),
     website: String(row.websiteUrl || row.offer_website_url || row.website || '').trim(),
     phone: String(row.directContact || row.direct_contact || row.partnerWhatsapp || row.partner_whatsapp || '').trim(),
+    isMystery: Boolean(row.isMystery || row.is_mystery_offer),
+    mysteryDeal: String(row.mysteryDeal || row.mystery_deal_label || '').trim(),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
 }
@@ -4189,14 +4234,130 @@ function animateSwipeOut(direction, callback) {
   window.setTimeout(callback, 300);
 }
 
+function getSwipeMysteryPool() {
+  return (liveState.places || []).filter(function (p) { return p && p.isMystery; });
+}
+
 function swipeAdvance(direction) {
   animateSwipeOut(direction, function () {
     swipeState.index += 1;
-    renderSwipeStage();
+    swipeState.swipesSinceMystery = (swipeState.swipesSinceMystery || 0) + 1;
+    var pool = getSwipeMysteryPool();
+    if (swipeState.swipesSinceMystery >= 4 && (swipeState.mysteryShown || 0) < pool.length && swipeState.index < swipeState.queue.length) {
+      swipeState.swipesSinceMystery = 0;
+      showSwipeMystery();
+    } else {
+      renderSwipeStage();
+    }
   });
 }
 
+// ─── Carte mystère (tous les 4 swipes) : offres "plaisir" (resto/spa) ───
+function showSwipeMystery() {
+  var pool = getSwipeMysteryPool();
+  var m = pool[swipeState.mysteryShown] || pool[0];
+  if (!m) { renderSwipeStage(); return; }
+  swipeState.inMystery = true;
+  swipeState.curMystery = m;
+  swipeState.mysteryShown = (swipeState.mysteryShown || 0) + 1;
+  var stage = document.getElementById('swipeStage');
+  if (!stage) return;
+  stage.innerHTML = '<div class="swp-ghost g2"></div><div class="swp-ghost g1"></div>';
+  var stars = '';
+  for (var i = 0; i < 22; i += 1) {
+    var s = 1 + Math.random() * 2.5;
+    stars += '<div class="swm-star" style="width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;animation-delay:' + (Math.random() * 2.5) + 's"></div>';
+  }
+  var card = document.createElement('article');
+  card.className = 'swp-card swp-mystery';
+  card.setAttribute('data-top-card', '1');
+  card.innerHTML =
+    '<div class="swm-stars">' + stars + '</div>' +
+    '<div class="swm-glow"></div>' +
+    '<div class="swm-gift">🎁</div>' +
+    '<div class="swm-label">✦ Offre Mystère ✦</div>' +
+    '<div class="swm-title">Vous avez débloqué<br>une offre secrète&nbsp;!</div>' +
+    '<div class="swm-sub">Une réduction exceptionnelle vous attend. Ouvrez pour découvrir.</div>' +
+    '<button class="swm-btn" id="swmOpenBtn" type="button">🎁 Ouvrir l\'offre mystère</button>';
+  stage.appendChild(card);
+  var btn = card.querySelector('#swmOpenBtn');
+  if (btn) btn.addEventListener('click', function (e) { e.stopPropagation(); revealSwipeMystery(); });
+  wireSwipeDrag(card, m);
+  renderSwipeProgress();
+}
+
+function revealSwipeMystery() {
+  var m = swipeState.curMystery;
+  var card = document.querySelector('.swp-mystery[data-top-card="1"]');
+  if (!m || !card) return;
+  spawnSwipeConfetti(card);
+  card.classList.add('revealed');
+  var displayName = String(m.personName || m.name || 'Partenaire Popey');
+  var deal = String(m.mysteryDeal || guessOfferLabel(m) || '').trim() || 'Cadeau';
+  var code = ('PRIV-' + m.id).slice(0, 14);
+  var img = String(m.image || m.profileImage || '');
+  var proImg = String(m.profileImage || m.image || '');
+  var oldPrice = m.value > 0 ? euros(m.value) : '';
+  var urgency = getExpiryBadge(m.expiry);
+  card.innerHTML =
+    '<div class="swm-r-img">' + (img ? '<img src="' + escapeAttr(img) + '" alt="" onerror="this.style.display=\'none\'">' : '') + '<div class="swm-r-ov"></div><div class="swm-r-crown">👑 OFFRE MYSTÈRE EXCLUSIVE</div></div>' +
+    '<div class="swm-r-body">' +
+      '<div class="swm-r-pro">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '') + '<div style="min-width:0"><div class="swm-r-proname">' + escapeHtml(displayName) + '</div><div class="swm-r-prorole">' + escapeHtml(String(m.metier || '')) + ' · ' + escapeHtml(String(liveState.cityLabel || '')) + '</div></div></div>' +
+      '<div class="swm-r-title">' + escapeHtml(String(m.badge || 'Offre mystère')) + '</div>' +
+      '<div class="swm-r-deal"><div class="swm-r-deal-lbl">Votre privilège mystère</div><div class="swm-r-deal-val">' + escapeHtml(deal) + '</div>' + (oldPrice ? '<div class="swm-r-deal-old">' + escapeHtml(oldPrice) + '</div>' : '') + '</div>' +
+      '<div class="swm-r-coupon"><div class="swm-r-coupon-lbl">🎟️ Code mystère</div><div class="swm-r-coupon-code">' + escapeHtml(code) + '</div></div>' +
+      '<div class="swm-r-exp">⏰ ' + escapeHtml(urgency) + '</div>' +
+      '<button class="swm-r-reserve" id="swmReserveBtn" type="button">💬 Réserver via WhatsApp</button>' +
+      '<button class="swm-r-pass" id="swmPassBtn" type="button">Passer cette offre →</button>' +
+    '</div>';
+  var rb = card.querySelector('#swmReserveBtn');
+  if (rb) rb.addEventListener('click', function () { reserveSwipeMystery(); });
+  var pb = card.querySelector('#swmPassBtn');
+  if (pb) pb.addEventListener('click', function () { dismissSwipeMystery('left'); });
+}
+
+function reserveSwipeMystery() {
+  var m = swipeState.curMystery;
+  if (m) openSwipeActivate(m);
+}
+
+function dismissSwipeMystery(direction) {
+  var card = document.querySelector('.swp-mystery[data-top-card="1"]');
+  if (card) {
+    var x = direction === 'right' ? 560 : -560;
+    card.style.transition = 'transform .36s cubic-bezier(.4,0,1,1), opacity .28s ease';
+    card.style.transform = 'translateX(' + x + 'px) rotate(' + (direction === 'right' ? 22 : -22) + 'deg)';
+    card.style.opacity = '0';
+  }
+  window.setTimeout(function () {
+    swipeState.inMystery = false;
+    swipeState.curMystery = null;
+    renderSwipeStage();
+  }, 300);
+}
+
+function spawnSwipeConfetti(parent) {
+  var cols = ['#7C3AED', '#A855F7', '#F5A623', '#FFD700', '#00C48C', '#FF6B9D'];
+  for (var i = 0; i < 34; i += 1) {
+    var c = document.createElement('div');
+    c.className = 'swm-confetti';
+    c.style.background = cols[Math.floor(Math.random() * cols.length)];
+    c.style.left = (36 + Math.random() * 28) + '%';
+    c.style.top = '34%';
+    c.style.animationDelay = (Math.random() * 0.3) + 's';
+    c.style.transform = 'translateX(' + ((Math.random() - 0.5) * 220) + 'px)';
+    if (Math.random() > 0.5) c.style.borderRadius = '50%';
+    parent.appendChild(c);
+    (function (el) { window.setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 2000); })(c);
+  }
+}
+
 async function swipeCardAction(direction) {
+  if (swipeState.inMystery) {
+    if (direction === 'up') { reserveSwipeMystery(); }
+    else { dismissSwipeMystery(direction === 'left' ? 'left' : 'right'); }
+    return;
+  }
   if (swipeState.index >= swipeState.queue.length) return;
   var place = swipeState.queue[swipeState.index];
   if (!place) return;
@@ -4246,6 +4407,7 @@ function closeSwipeActivate() {
 
 // ─── Carte privilège digitale (exportable en image PNG) ───
 function openPrivCardForCurrent() {
+  if (swipeState.inMystery && swipeState.curMystery) { openPrivCard(swipeState.curMystery); return; }
   if (swipeState.index >= swipeState.queue.length) return;
   var place = swipeState.queue[swipeState.index];
   if (place) openPrivCard(place);
@@ -4483,6 +4645,10 @@ function openSwipeMode() {
   swipeState.queue = getSwipePoolBySphere('all');
   swipeState.index = 0;
   swipeState.open = true;
+  swipeState.swipesSinceMystery = 0;
+  swipeState.mysteryShown = 0;
+  swipeState.inMystery = false;
+  swipeState.curMystery = null;
   overlay.classList.add('open');
   renderSwipeFilters();
   renderSwipeStage();
