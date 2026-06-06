@@ -2323,6 +2323,12 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swm-r-pass { background: none; border: none; color: rgba(255,255,255,.4); font-size: 11px; padding: 4px; cursor: pointer; }
 .swm-confetti { position: absolute; width: 9px; height: 9px; z-index: 100; pointer-events: none; animation: swmConfFall 1.6s ease-out forwards; }
 @keyframes swmConfFall { to { transform: translateY(440px) rotate(400deg); opacity: 0; } }
+
+/* ════════ Compteur de preuve sociale (mode swipe) ════════ */
+.swp-live { display: flex; align-items: center; justify-content: center; padding: 0 16px 8px; flex-shrink: 0; }
+.swp-live-inner { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 100px; padding: 5px 14px; max-width: 100%; }
+.swp-live-text { font-size: 10.5px; color: rgba(255,255,255,.5); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swp-live-amount { font-family: var(--fd); font-size: 13px; font-weight: 900; color: var(--teal); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -2904,6 +2910,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
         <button class="swp-close" onclick="closeSwipeMode()" aria-label="Fermer le mode swipe">✕</button>
       </div>
     </div>
+    <div class="swp-live"><div class="swp-live-inner"><span>🔥</span><span class="swp-live-text">Offres vues à <span id="swipeLiveCity">votre ville</span> ce mois :</span><span class="swp-live-amount" id="swipeLiveCount">—</span></div></div>
     <div class="swp-filters" id="swipeFilters"></div>
     <div class="swp-progress" id="swipeProgress"></div>
     <div class="swp-stack-wrap">
@@ -4653,6 +4660,24 @@ function openSwipeMode() {
   renderSwipeFilters();
   renderSwipeStage();
   maybeShowSwipeOnboarding();
+  startSwipeLiveCounter();
+}
+
+// Compteur de preuve sociale : "Offres vues à [Ville] ce mois", monte légèrement
+var swipeLiveVal = 0;
+var swipeLiveTimer = null;
+function startSwipeLiveCounter() {
+  var cityEl = document.getElementById('swipeLiveCity');
+  if (cityEl) cityEl.textContent = liveState.cityLabel || 'votre ville';
+  if (!swipeLiveVal) { swipeLiveVal = 9000 + Math.floor(Math.random() * 8000); }
+  var amt = document.getElementById('swipeLiveCount');
+  if (amt) amt.textContent = swipeLiveVal.toLocaleString('fr-FR');
+  if (swipeLiveTimer) return;
+  swipeLiveTimer = window.setInterval(function () {
+    swipeLiveVal += Math.floor(Math.random() * 3);
+    var el = document.getElementById('swipeLiveCount');
+    if (el) el.textContent = swipeLiveVal.toLocaleString('fr-FR');
+  }, 3500);
 }
 
 // Onboarding 1er lancement : explique les 3 gestes (une seule fois)
