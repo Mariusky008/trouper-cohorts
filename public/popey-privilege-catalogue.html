@@ -2324,6 +2324,10 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swm-confetti { position: absolute; width: 9px; height: 9px; z-index: 100; pointer-events: none; animation: swmConfFall 1.6s ease-out forwards; }
 @keyframes swmConfFall { to { transform: translateY(440px) rotate(400deg); opacity: 0; } }
 
+/* ════════ Bouton changer de ville (header swipe) ════════ */
+.swp-city-btn { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.85); border-radius: 100px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.swp-city-btn:active { background: rgba(255,255,255,.14); }
+
 /* ════════ Compteur de preuve sociale (mode swipe) ════════ */
 .swp-live { display: flex; align-items: center; justify-content: center; padding: 0 16px 8px; flex-shrink: 0; }
 .swp-live-inner { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 100px; padding: 5px 14px; max-width: 100%; }
@@ -2906,6 +2910,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
         <div class="swp-month">Catalogue Privilège · Swipe</div>
       </div>
       <div class="swp-right">
+        <button class="swp-city-btn" id="swipeCityBtn" type="button" aria-label="Changer de ville">📍 <span id="swipeCityLabel">Ville</span></button>
         <button class="swp-fav-btn" id="swipeFavBtn">❤️ Favoris <span class="swp-fav-count" id="swipeFavCount">0</span></button>
         <button class="swp-close" onclick="closeSwipeMode()" aria-label="Fermer le mode swipe">✕</button>
       </div>
@@ -5001,6 +5006,14 @@ document.addEventListener('DOMContentLoaded', function () {
   var favBtn = document.getElementById('swipeFavBtn');
   var activateConfirmBtn = document.getElementById('swipeActivateConfirmBtn');
   var cardBtn = document.getElementById('swipeCardBtn');
+  var swipeCityBtn = document.getElementById('swipeCityBtn');
+  var swipeCityLabel = document.getElementById('swipeCityLabel');
+  try {
+    var cityParams = new URLSearchParams(window.location.search);
+    if (swipeCityLabel) swipeCityLabel.textContent = toCityLabel(cityParams.get('ville') || 'dax');
+  } catch (_e) {}
+  // Réutilise la modale ville existante (#cityOverlay) — pas de duplication
+  if (swipeCityBtn) swipeCityBtn.addEventListener('click', function () { var o = document.getElementById('cityOverlay'); if (o) o.classList.add('open'); });
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
   if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('right'); });
   if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('up'); });
