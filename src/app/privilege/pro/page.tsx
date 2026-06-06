@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMerchantStatsToken } from "@/lib/popey-human/marketplace-landing-token";
 
@@ -17,7 +18,7 @@ function emptyStats(): Stats {
   return { view: 0, favorite: 0, reserve: 0, card_open: 0, mystery_reveal: 0 };
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-dvh w-full bg-[#0B0D14] px-5 py-10 text-white">
       <div className="mx-auto w-full max-w-md">

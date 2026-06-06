@@ -2309,6 +2309,15 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .fav-item-exp { font-size: 9px; font-weight: 700; color: #FCA5A5; margin-top: 2px; }
 .fav-del { background: none; border: none; color: rgba(255,255,255,.3); font-size: 20px; cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
 .fav-del:active { color: #fff; }
+/* Favoris : sheet SOMBRE comme le prototype (le panneau était crème → texte blanc illisible) */
+.swp-favs-overlay { background: rgba(0,0,0,.7) !important; backdrop-filter: blur(14px); justify-content: center; }
+.swp-favs-panel { background: #11131C !important; border: 1px solid rgba(255,255,255,.08); max-width: 440px; }
+.swp-favs-panel::before { content: ''; display: block; width: 40px; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px; margin: 12px auto 2px; }
+.swp-favs-head { border-bottom: 1px solid rgba(255,255,255,.08) !important; }
+.swp-favs-title { color: #fff !important; }
+.swp-favs-overlay .swipe-close { background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); }
+/* La ✕ du header renvoyait à l'ancienne landing → masquée (le swipe EST le catalogue) */
+.swp-close { display: none !important; }
 
 /* ════════ CARTE MYSTÈRE (cosmique, tous les 4 swipes) ════════ */
 .swp-mystery { background: linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b); box-shadow: 0 20px 70px rgba(124,58,237,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
@@ -4204,15 +4213,20 @@ function buildSwipeCard(place) {
   // Média plein cadre : vidéo (si dispo) sinon photo sinon fallback icône
   var media;
   if (place.videoUrl) {
-    media = '<video src="' + escapeAttr(place.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(place.image || '') + '"></video>'
-      + '<div class="im-video-badge">▶ VIDÉO · ' + escapeHtml(displayName.split(' ')[0]) + '</div>'
-      + '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>';
+    media = '<video src="' + escapeAttr(place.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(place.image || '') + '"></video>';
   } else if (place.image) {
     media = '<img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(displayName) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'">'
       + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
   } else {
     media = '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
   }
+
+  // Badge vidéo + bouton play : posés AU NIVEAU DE LA CARTE (au-dessus de .im-content)
+  // pour être visibles et CLIQUABLES (sinon piégés sous le contenu à cause du z-index).
+  var videoOverlay = place.videoUrl
+    ? '<div class="im-video-badge">▶ VIDÉO · ' + escapeHtml(displayName.split(' ')[0]) + '</div>'
+      + '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>'
+    : '';
 
   var titleHtml = '<div class="im-title ' + pos + '"><span>' + escapeHtml(place.badge || 'Offre privilège') + '</span>'
     + (hasAccent ? '<span class="accent" style="color:' + th.accent + ';text-shadow:0 2px 24px ' + th.accent + '">' + escapeHtml(offerLabel) + '</span>' : '')
@@ -4244,6 +4258,7 @@ function buildSwipeCard(place) {
         '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
       '</div>' +
     '</div>' +
+    videoOverlay +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   wireSwipeDrag(card, place);
   // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)

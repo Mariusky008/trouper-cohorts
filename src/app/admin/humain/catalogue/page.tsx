@@ -105,6 +105,21 @@ function StatBar({ st }: { st?: Stats }) {
   );
 }
 
+// Détecte si les colonnes des migrations existent (sinon les nouveaux champs
+// sont silencieusement abandonnés à la sauvegarde → on prévient l'admin).
+async function catalogueColumnsReady(): Promise<boolean> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin
+      .from("human_marketplace_places")
+      .select("promo_code,offer_video_url,total_spots,is_mystery_offer,pro_slug")
+      .limit(1);
+    return !r.error;
+  } catch {
+    return false;
+  }
+}
+
 function isConfigured(place: SnapPlace): boolean {
   return Boolean(String(place.company_name || "").trim() || String(place.privilege_badge || "").trim());
 }
@@ -304,6 +319,7 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
 
   const extra = await fetchExtraFields(cityPlaces.map((p) => p.id));
   const stats = await fetchEngagementStats(configured.map((p) => p.id));
+  const colsReady = await catalogueColumnsReady();
   const cityTotals = configured.reduce(
     (acc, p) => {
       const st = stats[p.id];
@@ -349,6 +365,14 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         </Link>
       </div>
 
+      {!colsReady ? (
+        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+          ⚠️ <strong>Migrations SQL non appliquées.</strong> Les champs <strong>code promo, vidéo, adresse, nombre de places,
+          coup de cœur, offre mystère</strong> ne seront PAS enregistrés tant que les 3 migrations ne sont pas exécutées dans
+          Supabase (SQL Editor) : <code>20260606120000</code>, <code>20260606130000</code>, <code>20260606140000</code>. Les
+          autres champs (offre, photo, prix, site, téléphone…) fonctionnent normalement.
+        </p>
+      ) : null}
       {marketStatus === "success" ? (
         <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{marketMessage || "Enregistré."}</p>
       ) : null}
