@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMerchantStatsToken } from "@/lib/popey-human/marketplace-landing-token";
+import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +86,7 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   // Infos offre (colonnes sûres) + promo_code en best-effort (résilient).
   const placeRes = await admin
     .from("human_marketplace_places")
-    .select("id,company_name,metier,privilege_badge,city,offer_description,offer_expires_at,owner_display_name")
+    .select("id,company_name,metier,privilege_badge,city,offer_description,offer_expires_at,owner_display_name,owner_member_id")
     .eq("id", placeId)
     .maybeSingle();
   const place = (placeRes.data || null) as
@@ -97,6 +98,7 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
         offer_description: string | null;
         offer_expires_at: string | null;
         owner_display_name: string | null;
+        owner_member_id: string | null;
       }
     | null;
 
@@ -150,6 +152,21 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const offerTitle = String(place.privilege_badge || "").trim() || "Votre offre privilège";
   const proName = String(place.company_name || place.owner_display_name || place.metier || "Votre commerce").trim();
 
+  // Classement des membres (transparence « tribunal bienveillant »)
+  const lb = await getCatalogueLeaderboard();
+  const myName = String(place.company_name || place.owner_display_name || "").trim().toLowerCase();
+  const ownerId = String(place.owner_member_id || "").trim();
+  let myIndex = -1;
+  for (let i = 0; i < lb.rows.length; i += 1) {
+    const r = lb.rows[i];
+    if ((ownerId && r.ref === ownerId) || (myName && r.name.trim().toLowerCase() === myName)) {
+      myIndex = i;
+      break;
+    }
+  }
+  const topRows: Array<{ r: (typeof lb.rows)[number]; rank: number }> = lb.rows.slice(0, 5).map((r, i) => ({ r, rank: i + 1 }));
+  if (myIndex >= 5) topRows.push({ r: lb.rows[myIndex], rank: myIndex + 1 });
+
   return (
     <Shell>
       <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-5">
@@ -183,6 +200,30 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
           <span>💬 <strong className="text-white">{allTime.reserve.toLocaleString("fr-FR")}</strong> réserv.</span>
         </div>
       </div>
+
+      {lb.rows.length > 0 ? (
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-white/40">Classement des membres · {lb.monthLabel}</p>
+            {myIndex >= 0 ? (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">Toi : #{myIndex + 1} / {lb.rows.length}</span>
+            ) : null}
+          </div>
+          <div className="space-y-1.5">
+            {topRows.map(({ r, rank }) => {
+              const isMe = rank - 1 === myIndex;
+              return (
+                <div key={r.ref} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${isMe ? "bg-emerald-500/15 text-white" : "text-white/70"}`}>
+                  <span className="w-6 shrink-0 font-black text-white/40">{rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : rank}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold">{r.name}{isMe ? " (toi)" : ""}</span>
+                  <span className="shrink-0 text-white/50">👁 <strong className="text-white">{r.clics}</strong></span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[10px] text-white/30">Classement par clics (partages générés) ce mois. Plus tu partages ton lien, plus tu montes. 🚀</p>
+        </div>
+      ) : null}
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-white/35">
         Ces chiffres mesurent l&apos;intérêt pour votre offre dans le catalogue Popey, diffusé chaque mois aux membres de
