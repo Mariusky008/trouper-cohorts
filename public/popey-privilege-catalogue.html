@@ -2187,6 +2187,13 @@ html[data-live-ready="0"] .main > .sphere-divider {
 /* La barre apporteur réservait 92px en bas du body : on récupère l'espace */
 body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !important; }
 
+/* ════════ Splash de boot (anti-flash landing avant ouverture swipe) ════════ */
+.boot-splash { position: fixed; inset: 0; z-index: 500; background: linear-gradient(160deg,#0A0C14,#070810); display: flex; align-items: center; justify-content: center; transition: opacity .45s ease; }
+.boot-splash.hide { opacity: 0; pointer-events: none; }
+.boot-logo { font-family: var(--fd); font-size: 42px; font-weight: 900; color: #fff; letter-spacing: -1px; animation: bootPulse 1.2s ease-in-out infinite; }
+.boot-logo span { color: var(--teal); }
+@keyframes bootPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+
 /* ════════════════════════════════════════════════════════════════
    CARTE SWIPE IMMERSIVE (refonte juin 2026 — design prototype)
    Transforme .swp-card (média 38% + corps blanc) en carte plein
@@ -2223,7 +2230,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
 .swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
 .swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
-.swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 3; pointer-events: none; }
+.swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 5; pointer-events: auto; cursor: pointer; }
 .swp-card.im .im-video-badge { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 4px 12px; font-size: 8px; font-weight: 700; color: #fff; z-index: 4; white-space: nowrap; }
 .swp-card.im .swp-counter { color: rgba(255,255,255,.7); z-index: 3; }
 /* Stamp "Réserver" (haut) en vert WhatsApp */
@@ -2285,6 +2292,24 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .priv-save { width: calc(100% - 28px); margin: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 13px; font-family: var(--fb); font-size: 12px; font-weight: 700; color: rgba(255,255,255,.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .priv-note { font-size: 9px; color: rgba(255,255,255,.3); text-align: center; margin: 7px 14px 16px; }
 
+/* ════════ Panneau Contacter / Réserver (style prototype) ════════ */
+.rsv-opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; cursor: pointer; transition: all .15s; }
+.rsv-opt:active { background: rgba(255,255,255,.08); }
+.rsv-ico { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.rsv-txt { display: flex; flex-direction: column; min-width: 0; }
+.rsv-title { font-size: 14px; font-weight: 700; color: #fff; }
+.rsv-sub { font-size: 11px; color: rgba(255,255,255,.45); line-height: 1.3; }
+/* ════════ Favoris (style prototype) ════════ */
+.fav-item { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
+.fav-item:active { background: rgba(255,255,255,.04); }
+.fav-item-img { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: #1a1c22; }
+.fav-item-info { flex: 1; min-width: 0; }
+.fav-item-name { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-item-offer { font-size: 11px; color: rgba(255,255,255,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-item-exp { font-size: 9px; font-weight: 700; color: #FCA5A5; margin-top: 2px; }
+.fav-del { background: none; border: none; color: rgba(255,255,255,.3); font-size: 20px; cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
+.fav-del:active { color: #fff; }
+
 /* ════════ CARTE MYSTÈRE (cosmique, tous les 4 swipes) ════════ */
 .swp-mystery { background: linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b); box-shadow: 0 20px 70px rgba(124,58,237,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
 .swp-mystery.revealed { padding: 0; justify-content: flex-start; align-items: stretch; overflow-y: auto; }
@@ -2336,6 +2361,9 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 </style>
 </head>
 <body>
+
+<!-- Splash de boot : masque la landing le temps d'ouvrir le swipe (évite le flash) -->
+<div class="boot-splash" id="bootSplash"><div class="boot-logo">Pop<span>ey</span></div></div>
 
 <div class="page-shell">
 
@@ -3149,6 +3177,13 @@ var swipeState = {
   curMystery: null
 };
 var swipeActivationTarget = null;
+
+function hideBootSplash() {
+  var el = document.getElementById('bootSplash');
+  if (!el) return;
+  el.classList.add('hide');
+  window.setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 500);
+}
 
 // ─── Tracking engagement catalogue (vues, favoris, réserv., cartes, mystère) ───
 var __privSess = '';
@@ -4164,7 +4199,7 @@ function buildSwipeCard(place) {
   // Média plein cadre : vidéo (si dispo) sinon photo sinon fallback icône
   var media;
   if (place.videoUrl) {
-    media = '<video src="' + escapeAttr(place.videoUrl) + '" muted loop playsinline preload="metadata" poster="' + escapeAttr(place.image || '') + '"></video>'
+    media = '<video src="' + escapeAttr(place.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(place.image || '') + '"></video>'
       + '<div class="im-video-badge">▶ VIDÉO · ' + escapeHtml(displayName.split(' ')[0]) + '</div>'
       + '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>';
   } else if (place.image) {
@@ -4206,15 +4241,29 @@ function buildSwipeCard(place) {
     '</div>' +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   wireSwipeDrag(card, place);
-  // Vidéo : autoplay muet décalé (1s) sur la carte courante uniquement
+  // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)
   var vid = card.querySelector('video');
   if (vid) {
-    window.setTimeout(function () {
-      if (card.getAttribute('data-top-card') === '1') {
-        var pr = vid.play();
-        if (pr && pr.then) pr.then(function () { var pb = card.querySelector('.im-play'); if (pb) pb.style.display = 'none'; }).catch(function () {});
-      }
-    }, 1000);
+    vid.muted = true;
+    try { vid.setAttribute('muted', ''); vid.setAttribute('playsinline', ''); } catch (e) {}
+    var playBtn = card.querySelector('.im-play');
+    var tryAutoplay = function () {
+      if (card.getAttribute('data-top-card') !== '1') return;
+      var pr = vid.play();
+      if (pr && pr.then) pr.then(function () { if (playBtn) playBtn.style.display = 'none'; }).catch(function () { /* autoplay bloqué → le bouton play reste, tap manuel */ });
+    };
+    vid.addEventListener('canplay', tryAutoplay, { once: true });
+    vid.addEventListener('loadeddata', tryAutoplay, { once: true });
+    window.setTimeout(tryAutoplay, 700);
+    if (playBtn) {
+      playBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      playBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        vid.muted = false; // geste utilisateur → son autorisé
+        var pr2 = vid.play();
+        if (pr2 && pr2.then) pr2.then(function () { playBtn.style.display = 'none'; }).catch(function () {});
+      });
+    }
   }
   return card;
 }
@@ -4434,18 +4483,70 @@ async function swipeCardAction(direction) {
   openSwipeActivate(place);
 }
 
+// Panneau "Contacter" (style prototype) : 4 options + WhatsApp pré-rempli
 function openSwipeActivate(place) {
   if (!place) return;
   trackPriv(place.id, 'reserve');
   swipeActivationTarget = place;
-  var title = document.getElementById('swipeActivateTitle');
-  var pro = document.getElementById('swipeActivatePro');
-  var badge = document.getElementById('swipeActivateBadge');
-  if (title) title.textContent = 'Activer : ' + String(place.badge || 'offre');
-  if (pro) pro.textContent = String(place.personName || place.name || 'Pro Popey') + ' · ' + String(place.metier || 'Partenaire') + ' · ' + (liveState.cityLabel || 'Dax');
-  if (badge) badge.textContent = String(place.badge || 'Offre privilégiée');
-  var overlay = document.getElementById('swipeActivateOverlay');
-  if (overlay) overlay.classList.add('open');
+  openContactSheet(place);
+}
+
+function buildWaLink(place, type) {
+  var digits = String(place.phone || '').replace(/[^0-9]/g, '');
+  var member = String(liveState.refFirstName || 'votre contact');
+  var city = String(liveState.cityLabel || '');
+  var code = String(place.couponCode || '').trim() || ('PRIV-' + place.id).slice(0, 14);
+  var proFirst = String(place.personName || place.name || 'bonjour').split(' ')[0];
+  var badge = String(place.badge || 'votre offre');
+  var msg = type === 'reserve'
+    ? "Bonjour " + proFirst + " ! J'ai vu votre offre sur Popey (" + member + (city ? ' · ' + city : '') + "). Code : " + code + ". Je souhaite réserver : " + badge + ". Mon prénom : "
+    : "Bonjour " + proFirst + " ! J'ai vu votre offre « " + badge + " » sur Popey. J'aurais une question avant de réserver, êtes-vous disponible ?";
+  return (digits ? 'https://wa.me/' + digits : 'https://wa.me/') + '?text=' + encodeURIComponent(msg);
+}
+
+function contactOptHtml(key, bg, icon, title, sub) {
+  return '<button type="button" data-rsv="' + key + '" class="rsv-opt">'
+    + '<span class="rsv-ico" style="background:' + bg + '">' + icon + '</span>'
+    + '<span class="rsv-txt"><span class="rsv-title">' + escapeHtml(title) + '</span><span class="rsv-sub">' + escapeHtml(sub) + '</span></span>'
+    + '</button>';
+}
+
+function openContactSheet(place) {
+  var overlay = document.getElementById('rsvOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'rsvOverlay';
+    overlay.className = 'priv-overlay';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML =
+    '<div class="priv-sheet">'
+    + '<div class="priv-handle"></div>'
+    + '<div class="priv-sheet-hd"><div class="priv-sheet-title">' + escapeHtml(String(place.badge || 'Contacter')) + '</div><button class="priv-close" id="rsvClose" type="button">✕</button></div>'
+    + '<div style="padding:16px;display:flex;flex-direction:column;gap:10px;">'
+    + contactOptHtml('q', 'rgba(37,211,102,.14)', '💬', 'Poser une question', 'Message libre — infos, disponibilités…')
+    + contactOptHtml('r', 'rgba(0,196,140,.14)', '✅', 'Réserver cette offre', 'Message pré-rempli avec votre code · 1 tap')
+    + '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,.3);padding:2px;">— ou —</div>'
+    + contactOptHtml('card', 'rgba(245,166,35,.14)', '🎟️', 'Ma carte privilège', 'À présenter en boutique')
+    + contactOptHtml('share', 'rgba(59,130,246,.14)', '📤', 'Offrir à un proche', 'Partagez cette offre')
+    + '</div></div>';
+  overlay.classList.add('open');
+  var byKey = function (k) { return overlay.querySelector('[data-rsv="' + k + '"]'); };
+  var close = function () { overlay.classList.remove('open'); };
+  overlay.querySelector('#rsvClose').addEventListener('click', close);
+  byKey('q').addEventListener('click', function () { close(); window.open(buildWaLink(place, 'question'), '_blank'); });
+  byKey('r').addEventListener('click', function () { close(); window.open(buildWaLink(place, 'reserve'), '_blank'); });
+  byKey('card').addEventListener('click', function () { close(); openPrivCard(place); });
+  byKey('share').addEventListener('click', function () { shareSwipeOffer(place); });
+}
+
+function shareSwipeOffer(place) {
+  var link = '';
+  try { link = window.location.href; } catch (e) {}
+  var text = '🎟️ Regarde cette offre sur Popey !\n\n' + String(place.name || '') + ' — ' + String(place.badge || '') + '\n\n👉 ' + link;
+  if (navigator.share) { navigator.share({ title: 'Offre Popey', text: text, url: link }).catch(function () {}); }
+  else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
 }
 
 function closeSwipeActivate() {
@@ -4656,19 +4757,53 @@ function renderSwipeFavs() {
     return;
   }
   list.innerHTML = rows.map(function (p) {
-    var img = escapeAttr(p.image || '');
-    var name = escapeHtml(p.name || 'Offre');
-    var badge = escapeHtml(p.badge || '');
-    var pid = escapeAttr(p.id || '');
+    var img = escapeAttr(p.image || p.profileImage || '');
     var imgTag = img
-      ? '<img src="' + img + '" alt="' + escapeAttr(p.name || 'Offre') + '" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#e5e7eb;">'
-      : '<div style="width:52px;height:52px;border-radius:10px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-weight:800;color:#64748b;">★</div>';
-    return '<div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px;margin-bottom:8px;">'
+      ? '<img class="fav-item-img" src="' + img + '" alt="">'
+      : '<div class="fav-item-img" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:800;">★</div>';
+    var exp = getExpiryBadge(p.expiry);
+    return '<div class="fav-item" data-jump="' + escapeAttr(p.id || '') + '">'
       + imgTag
-      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + badge + '</div></div>'
-      + '<button class="btn-wa js-fav-activate" data-place-id="' + pid + '" style="width:auto;padding:9px 12px;border-radius:10px;font-size:12px;">💬</button>'
+      + '<div class="fav-item-info"><div class="fav-item-name">' + escapeHtml(p.name || 'Offre') + '</div><div class="fav-item-offer">' + escapeHtml(p.badge || '') + '</div><div class="fav-item-exp">' + escapeHtml(exp) + '</div></div>'
+      + '<button class="fav-del" type="button" data-del="' + escapeAttr(p.id || '') + '" aria-label="Retirer">×</button>'
       + '</div>';
   }).join('');
+  list.querySelectorAll('.fav-item').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-del') !== null) return;
+      jumpToFav(el.getAttribute('data-jump'));
+    });
+  });
+  list.querySelectorAll('[data-del]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); removeSwipeFavorite(btn.getAttribute('data-del')); });
+  });
+}
+
+function jumpToFav(id) {
+  id = String(id || '');
+  if (!id) return;
+  closeSwipeFavs();
+  if (swipeState.inMystery) { swipeState.inMystery = false; swipeState.curMystery = null; }
+  if (swipeState.sphere !== 'all') {
+    swipeState.sphere = 'all';
+    swipeState.queue = getSwipePoolBySphere('all');
+    renderSwipeFilters();
+  }
+  var idx = -1;
+  for (var i = 0; i < swipeState.queue.length; i += 1) { if (swipeState.queue[i].id === id) { idx = i; break; } }
+  if (idx >= 0) { swipeState.index = idx; renderSwipeStage(); }
+}
+
+function removeSwipeFavorite(id) {
+  id = String(id || '');
+  var i = swipeState.favorites.indexOf(id);
+  if (i >= 0) {
+    swipeState.favorites.splice(i, 1);
+    setSwipeFavoritesCount();
+    saveSwipeFavorites();
+    scheduleSwipeFavoritesServerSync();
+  }
+  renderSwipeFavs();
 }
 
 function openSwipeFavs() {
@@ -4923,6 +5058,7 @@ async function initLiveCatalog() {
       var autoView = new URLSearchParams(window.location.search).get('view');
       if (autoView !== 'landing' && !swipeState.open && liveState.places && liveState.places.length > 0) openSwipeMode();
     } catch (_swErr) {}
+    hideBootSplash();
   } catch (error) {
     console.error('[privilege-live] init failed', error);
     var main = document.querySelector('.main');
@@ -4937,6 +5073,7 @@ async function initLiveCatalog() {
       main.appendChild(root);
     }
     document.documentElement.setAttribute('data-live-ready', '1');
+    hideBootSplash();
   }
 }
 
@@ -5063,6 +5200,8 @@ document.addEventListener('DOMContentLoaded', function () {
   initLiveCatalog();
   // L'ouverture du mode swipe par défaut est gérée dans initLiveCatalog()
   // (après chargement des offres). Voir l'opt-out ?view=landing.
+  // Filet de sécurité : ne jamais laisser le splash bloqué.
+  window.setTimeout(hideBootSplash, 6000);
 });
 </script>
 </body>
