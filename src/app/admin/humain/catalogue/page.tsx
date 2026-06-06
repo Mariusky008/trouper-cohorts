@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { signMerchantStatsToken, isMarketplaceLandingTokenConfigured } from "@/lib/popey-human/marketplace-landing-token";
 
 export const dynamic = "force-dynamic";
 
@@ -317,6 +318,20 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
     { view: 0, favorite: 0, reserve: 0 },
   );
 
+  // Lien "espace commerçant" signé par offre (lecture stats) — réutilise le secret HMAC.
+  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const tokenReady = isMarketplaceLandingTokenConfigured();
+  const merchantLinks: Record<string, string> = {};
+  if (tokenReady) {
+    configured.forEach((p) => {
+      try {
+        merchantLinks[p.id] = (appBase || "") + "/privilege/pro?token=" + encodeURIComponent(signMerchantStatsToken(p.id));
+      } catch {
+        /* secret absent → pas de lien */
+      }
+    });
+  }
+
   const bySphere = configured.reduce<Record<string, SnapPlace[]>>((acc, p) => {
     const k = String(p.sphere_label || "Autres");
     (acc[k] = acc[k] || []).push(p);
@@ -403,6 +418,16 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
                   <span className="ml-auto text-[11px] text-sky-600">modifier ▾</span>
                 </summary>
                 <StatBar st={stats[p.id]} />
+                {merchantLinks[p.id] ? (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-white px-4 py-2 text-[11px]">
+                    <span className="shrink-0 font-bold uppercase tracking-wide text-slate-400">🔗 Lien commerçant (stats)</span>
+                    <input
+                      readOnly
+                      value={merchantLinks[p.id]}
+                      className="min-w-0 flex-1 rounded border bg-slate-50 px-2 py-1 font-mono text-[10px] text-slate-600"
+                    />
+                  </div>
+                ) : null}
                 <CatalogueOfferForm place={p} extra={extra[p.id]} members={members} cityParam={selectedCity} />
               </details>
             ))}

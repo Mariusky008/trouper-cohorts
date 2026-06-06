@@ -106,3 +106,39 @@ export function verifyMarketplaceLandingContext(token: string): {
     return { valid: false, reason: "invalid_payload" };
   }
 }
+
+// ─── Token "espace commerçant" (lien stats par offre) — réutilise le même secret/HMAC ───
+type MerchantTokenPayload = { place_id: string; exp: number };
+
+export function signMerchantStatsToken(placeId: string, expSeconds?: number): string {
+  const secret = readSecret();
+  if (!secret) throw new Error("Missing MARKETPLACE_LANDING_TOKEN_SECRET");
+  const payload: MerchantTokenPayload = {
+    place_id: String(placeId || "").trim(),
+    exp: Number.isFinite(expSeconds) ? Number(expSeconds) : Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+  };
+  const encoded = toBase64Url(JSON.stringify(payload));
+  return `${encoded}.${signPart(secret, encoded)}`;
+}
+
+export function verifyMerchantStatsToken(token: string): { valid: boolean; placeId?: string; reason?: string } {
+  const secret = readSecret();
+  if (!secret) return { valid: false, reason: "missing_secret" };
+  const clean = String(token || "").trim();
+  const dot = clean.indexOf(".");
+  if (dot < 0) return { valid: false, reason: "invalid_format" };
+  const payloadPart = clean.slice(0, dot);
+  const signaturePart = clean.slice(dot + 1);
+  if (!payloadPart || !signaturePart) return { valid: false, reason: "invalid_format" };
+  if (!secureEqual(signPart(secret, payloadPart), signaturePart)) return { valid: false, reason: "invalid_signature" };
+  try {
+    const payload = JSON.parse(fromBase64Url(payloadPart)) as MerchantTokenPayload;
+    if (!payload || !payload.place_id) return { valid: false, reason: "invalid_payload" };
+    if (Number.isFinite(payload.exp) && Math.floor(Date.now() / 1000) > Number(payload.exp)) {
+      return { valid: false, reason: "expired_token" };
+    }
+    return { valid: true, placeId: String(payload.place_id) };
+  } catch {
+    return { valid: false, reason: "invalid_payload" };
+  }
+}
