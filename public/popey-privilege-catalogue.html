@@ -6,6 +6,7 @@
 <title>Catalogue Privilège Popey — Jean Roth · Mai 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
 :root {
   --ink: #080A0D;
@@ -2251,6 +2252,38 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swo-intro strong { color: #fff; }
 .swo-btn { background: #00C48C; color: #04140f; border: none; border-radius: 100px; padding: 15px 40px; font-family: var(--fb); font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 28px rgba(0,196,140,.4); }
 .swo-btn:active { transform: scale(.97); }
+
+/* ════════ 4e bouton "Ma carte" + CARTE PRIVILÈGE DIGITALE (export PNG) ════════ */
+.swp-act.card { width: 54px; height: 54px; background: rgba(245,166,35,.14); border: 1.5px solid rgba(245,166,35,.55); color: #F5A623; }
+.priv-overlay { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.7); backdrop-filter: blur(14px); display: none; align-items: flex-end; justify-content: center; }
+.priv-overlay.open { display: flex; }
+.priv-sheet { background: #11131C; border: 1px solid rgba(255,255,255,.08); border-radius: 28px 28px 0 0; width: 100%; max-width: 440px; max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; animation: privUp .28s ease; }
+@keyframes privUp { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.priv-handle { width: 40px; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.priv-sheet-hd { padding: 14px 18px 12px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.priv-sheet-title { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #fff; }
+.priv-close { background: rgba(255,255,255,.08); border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; cursor: pointer; color: rgba(255,255,255,.6); }
+.priv-sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.priv-dcard { margin: 14px; background: linear-gradient(135deg,#1A1C28,#0D0F18); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.08); }
+.priv-dc-banner { height: 90px; position: relative; overflow: hidden; }
+.priv-dc-banner img { width: 100%; height: 100%; object-fit: cover; opacity: .65; }
+.priv-dc-banner-ov { position: absolute; inset: 0; background: linear-gradient(to top,#1A1C28,transparent 70%); }
+.priv-dc-body { padding: 14px 16px; }
+.priv-dc-badge { background: linear-gradient(135deg,rgba(245,166,35,.2),rgba(245,166,35,.08)); border: 1px solid rgba(245,166,35,.4); border-radius: 100px; padding: 3px 11px; font-size: 8px; font-weight: 700; color: #F5A623; letter-spacing: .04em; display: inline-block; margin-bottom: 10px; }
+.priv-dc-pro { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.priv-dc-pro img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); object-fit: cover; flex-shrink: 0; }
+.priv-dc-proname { font-family: var(--fd); font-size: 15px; font-weight: 900; color: #fff; }
+.priv-dc-prorole { font-size: 10px; color: rgba(255,255,255,.5); }
+.priv-dc-title { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 4px; }
+.priv-dc-price { font-family: var(--fd); font-size: 22px; font-weight: 900; margin-bottom: 10px; }
+.priv-dc-div { height: 1px; background: rgba(255,255,255,.08); margin: 10px 0; }
+.priv-dc-coupon { background: rgba(245,166,35,.1); border: 1.5px dashed rgba(245,166,35,.4); border-radius: 10px; padding: 11px; text-align: center; margin-bottom: 10px; }
+.priv-dc-coupon-lbl { font-size: 8px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(245,166,35,.7); margin-bottom: 4px; }
+.priv-dc-coupon-code { font-family: var(--fd); font-size: 20px; font-weight: 900; color: #F5A623; letter-spacing: .06em; }
+.priv-dc-info { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,.5); margin-bottom: 6px; }
+.priv-dc-expire { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: #FCA5A5; font-weight: 600; margin-top: 6px; }
+.priv-save { width: calc(100% - 28px); margin: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 13px; font-family: var(--fb); font-size: 12px; font-weight: 700; color: rgba(255,255,255,.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.priv-note { font-size: 9px; color: rgba(255,255,255,.3); text-align: center; margin: 7px 14px 16px; }
 </style>
 </head>
 <body>
@@ -2849,6 +2882,10 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
       <div class="swp-act-wrap">
         <button class="swp-act like" id="swipeLikeBtn">💬</button>
         <div class="swp-act-label">Réserver</div>
+      </div>
+      <div class="swp-act-wrap">
+        <button class="swp-act card" id="swipeCardBtn" type="button">🎟️</button>
+        <div class="swp-act-label">Ma carte</div>
       </div>
     </div>
   </div>
@@ -3610,6 +3647,8 @@ function normalizePlace(row) {
     rewardLabel: String(row.rewardLabel || row.reward_label || '').trim() || null,
     videoUrl: String(row.offer_video_url || row.videoUrl || row.video_url || '').trim(),
     coupText: String(row.coup_de_coeur_text || row.coupDeCoeurText || row.coup_text || '').trim(),
+    website: String(row.websiteUrl || row.offer_website_url || row.website || '').trim(),
+    phone: String(row.directContact || row.direct_contact || row.partnerWhatsapp || row.partner_whatsapp || '').trim(),
     activeCount: Math.max(2, Number(row.activations_count || row.partners || 2))
   };
 }
@@ -4205,6 +4244,94 @@ function closeSwipeActivate() {
   swipeActivationTarget = null;
 }
 
+// ─── Carte privilège digitale (exportable en image PNG) ───
+function openPrivCardForCurrent() {
+  if (swipeState.index >= swipeState.queue.length) return;
+  var place = swipeState.queue[swipeState.index];
+  if (place) openPrivCard(place);
+}
+function openPrivCard(place) {
+  var overlay = document.getElementById('privCardOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'privCardOverlay';
+    overlay.className = 'priv-overlay';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = buildPrivCardSheet(place);
+  overlay.classList.add('open');
+  var saveBtn = overlay.querySelector('#privCardSaveBtn');
+  if (saveBtn) saveBtn.addEventListener('click', function () { savePrivCard(place); });
+  var closeBtn = overlay.querySelector('#privCardCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', function () { overlay.classList.remove('open'); });
+}
+function buildPrivCardSheet(place) {
+  var th = swipeTheme(place.sphere);
+  var displayName = String(place.personName || place.name || 'Partenaire Popey');
+  var code = ('PRIV-' + place.id).slice(0, 14);
+  var city = String(liveState.cityLabel || 'Dax');
+  var member = String(liveState.refFirstName || 'votre contact');
+  var offerLabel = guessOfferLabel(place);
+  var newPrice = (offerLabel && offerLabel !== 'Avantage') ? offerLabel : String(place.badge || '');
+  var img = String(place.image || place.profileImage || '');
+  var proImg = String(place.profileImage || place.image || '');
+  var expiry = getExpiryBadge(place.expiry);
+  var website = String(place.website || '').trim();
+  var phone = String(place.phone || '').trim();
+  return ''
+    + '<div class="priv-sheet">'
+    + '  <div class="priv-handle"></div>'
+    + '  <div class="priv-sheet-hd"><div class="priv-sheet-title">🎟️ Ma carte privilège</div><button class="priv-close" id="privCardCloseBtn" type="button">✕</button></div>'
+    + '  <div class="priv-sheet-body">'
+    + '    <div class="priv-dcard" id="privDcard">'
+    + '      <div class="priv-dc-banner">' + (img ? '<img src="' + escapeAttr(img) + '" alt="" crossorigin="anonymous" onerror="this.style.display=\'none\'">' : '') + '<div class="priv-dc-banner-ov"></div></div>'
+    + '      <div class="priv-dc-body">'
+    + '        <div class="priv-dc-badge">👑 Catalogue Privilège · ' + escapeHtml(member) + ' · ' + escapeHtml(city) + '</div>'
+    + '        <div class="priv-dc-pro">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="" crossorigin="anonymous" onerror="this.style.visibility=\'hidden\'">' : '') + '<div style="min-width:0"><div class="priv-dc-proname">' + escapeHtml(displayName) + '</div><div class="priv-dc-prorole">' + escapeHtml(String(place.metier || '')) + '</div></div></div>'
+    + '        <div class="priv-dc-title">' + escapeHtml(String(place.badge || 'Offre privilège')) + '</div>'
+    + '        <div class="priv-dc-price" style="color:' + th.accent + '">' + escapeHtml(newPrice) + '</div>'
+    + '        <div class="priv-dc-div"></div>'
+    + '        <div class="priv-dc-coupon"><div class="priv-dc-coupon-lbl">🎟️ Code privilège</div><div class="priv-dc-coupon-code">' + escapeHtml(code) + '</div></div>'
+    + '        <div class="priv-dc-info">📍 <span>' + escapeHtml(city) + '</span></div>'
+    + (phone ? '        <div class="priv-dc-info">📞 <span>' + escapeHtml(phone) + '</span></div>' : '')
+    + (website ? '        <div class="priv-dc-info">🌐 <span>' + escapeHtml(website) + '</span></div>' : '')
+    + '        <div class="priv-dc-expire">' + escapeHtml(expiry) + '</div>'
+    + '      </div>'
+    + '    </div>'
+    + '    <button class="priv-save" id="privCardSaveBtn" type="button">📸 Enregistrer / Partager ma carte</button>'
+    + '    <div class="priv-note">Montrez cette carte en boutique ou à votre arrivée</div>'
+    + '  </div>'
+    + '</div>';
+}
+function savePrivCard(place) {
+  var node = document.getElementById('privDcard');
+  var btn = document.getElementById('privCardSaveBtn');
+  if (!node) return;
+  if (typeof html2canvas === 'undefined') { alert('Faites une capture d\'écran pour sauvegarder votre carte !'); return; }
+  if (btn) btn.textContent = '⏳ Génération...';
+  html2canvas(node, { backgroundColor: '#11131C', scale: 2, useCORS: true, logging: false }).then(function (canvas) {
+    canvas.toBlob(function (blob) {
+      var fileName = 'Popey-' + (('PRIV-' + (place && place.id)).slice(0, 14)) + '.png';
+      var file = null;
+      try { file = new File([blob], fileName, { type: 'image/png' }); } catch (e) { file = null; }
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Ma carte privilège Popey' }).catch(function () {});
+      } else {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = fileName; a.click();
+        URL.revokeObjectURL(url);
+      }
+      if (btn) btn.textContent = '✅ Carte enregistrée !';
+      window.setTimeout(function () { if (btn) btn.textContent = '📸 Enregistrer / Partager ma carte'; }, 2200);
+    }, 'image/png');
+  }).catch(function () {
+    alert('Faites une capture d\'écran pour sauvegarder votre carte !');
+    if (btn) btn.textContent = '📸 Enregistrer / Partager ma carte';
+  });
+}
+
 function closeSwipeActivateIfBackdrop(event) {
   var overlay = document.getElementById('swipeActivateOverlay');
   if (event && overlay && event.target === overlay) closeSwipeActivate();
@@ -4675,9 +4802,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var likeBtn = document.getElementById('swipeLikeBtn');
   var favBtn = document.getElementById('swipeFavBtn');
   var activateConfirmBtn = document.getElementById('swipeActivateConfirmBtn');
+  var cardBtn = document.getElementById('swipeCardBtn');
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
   if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('right'); });
   if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('up'); });
+  if (cardBtn) cardBtn.addEventListener('click', function () { openPrivCardForCurrent(); });
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
