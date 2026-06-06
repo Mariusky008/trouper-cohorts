@@ -4692,13 +4692,15 @@ function maybeShowSwipeOnboarding() {
   if (existing) { existing.classList.remove('hide'); return; }
   var first = String(liveState.refFirstName || 'Votre contact');
   var n = Math.max(1, swipeState.queue.length || 0);
+  var moisLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  moisLabel = moisLabel.charAt(0).toUpperCase() + moisLabel.slice(1);
   var ob = document.createElement('div');
   ob.id = 'swipeOnboard';
   ob.className = 'swp-onboard';
   ob.innerHTML =
     '<div class="swo-inner">' +
       '<div class="swo-logo">Pop<span>ey</span></div>' +
-      '<div class="swo-sub">Catalogue Privilège · ' + escapeHtml(liveState.cityLabel || 'votre ville') + '</div>' +
+      '<div class="swo-sub">Catalogue Privilège · ' + escapeHtml(liveState.cityLabel || 'votre ville') + ' · ' + escapeHtml(moisLabel) + '</div>' +
       '<div class="swo-demo">' +
         '<div class="swo-up"><div class="swo-arrow">⬆️</div><div class="swo-lbl" style="color:#25D366">Glissez vers le haut<br><strong>pour réserver</strong></div></div>' +
         '<div class="swo-row">' +
@@ -4707,7 +4709,7 @@ function maybeShowSwipeOnboarding() {
           '<div class="swo-side"><div class="swo-arrow">➡️</div><div class="swo-lbl" style="color:#00C48C">Favoris</div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="swo-intro"><strong>' + escapeHtml(first) + '</strong> vous a sélectionné <strong>' + n + ' offre' + (n > 1 ? 's' : '') + ' exclusive' + (n > 1 ? 's' : '') + '</strong> ce mois-ci.<br>Swipez pour les découvrir.</div>' +
+      '<div class="swo-intro"><strong>' + escapeHtml(first) + '</strong> vous a sélectionné <strong>' + n + ' offre' + (n > 1 ? 's' : '') + ' exclusive' + (n > 1 ? 's' : '') + '</strong> ce mois-ci.<br>Swipez pour les découvrir.<span style="display:block;margin-top:12px;font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">🔄 Chaque mois, un nouveau catalogue : promos exclusives + les sorties &amp; événements à faire dans votre ville.</span></div>' +
       '<button class="swo-btn" id="swoBtn" type="button">C\'est parti →</button>' +
     '</div>';
   document.body.appendChild(ob);
