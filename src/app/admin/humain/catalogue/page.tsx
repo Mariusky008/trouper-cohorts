@@ -58,6 +58,53 @@ async function fetchExtraFields(placeIds: string[]): Promise<Record<string, Extr
   }
 }
 
+type Stats = { view: number; favorite: number; reserve: number; card_open: number; mystery_reveal: number };
+
+// Agrège les events d'engagement du mois courant par place (résilient).
+async function fetchEngagementStats(placeIds: string[]): Promise<Record<string, Stats>> {
+  const empty: Record<string, Stats> = {};
+  if (!placeIds.length) return empty;
+  try {
+    const admin = createAdminClient();
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+    const res = await admin
+      .from("human_marketplace_events")
+      .select("place_id,event_type")
+      .in("place_id", placeIds)
+      .like("event_type", "priv_%")
+      .gte("created_at", monthStart)
+      .limit(20000);
+    if (res.error || !res.data) return empty;
+    const map: Record<string, Stats> = {};
+    (res.data as Array<{ place_id: string | null; event_type: string | null }>).forEach((r) => {
+      const id = String(r.place_id || "");
+      if (!id) return;
+      const ev = String(r.event_type || "").replace("priv_", "");
+      if (!map[id]) map[id] = { view: 0, favorite: 0, reserve: 0, card_open: 0, mystery_reveal: 0 };
+      if (ev === "view" || ev === "favorite" || ev === "reserve" || ev === "card_open" || ev === "mystery_reveal") {
+        map[id][ev] += 1;
+      }
+    });
+    return map;
+  } catch {
+    return empty;
+  }
+}
+
+function StatBar({ st }: { st?: Stats }) {
+  const v = st || { view: 0, favorite: 0, reserve: 0, card_open: 0, mystery_reveal: 0 };
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-600">
+      <span className="font-bold uppercase tracking-wide text-slate-400">📊 Ce mois</span>
+      <span>👁 <strong className="text-slate-800">{v.view}</strong> vues</span>
+      <span>❤️ <strong className="text-slate-800">{v.favorite}</strong> favoris</span>
+      <span>💬 <strong className="text-slate-800">{v.reserve}</strong> réserv.</span>
+      <span>🎟️ <strong className="text-slate-800">{v.card_open}</strong> cartes</span>
+    </div>
+  );
+}
+
 function isConfigured(place: SnapPlace): boolean {
   return Boolean(String(place.company_name || "").trim() || String(place.privilege_badge || "").trim());
 }
@@ -256,6 +303,19 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const available = cityPlaces.filter((p) => !isConfigured(p));
 
   const extra = await fetchExtraFields(cityPlaces.map((p) => p.id));
+  const stats = await fetchEngagementStats(configured.map((p) => p.id));
+  const cityTotals = configured.reduce(
+    (acc, p) => {
+      const st = stats[p.id];
+      if (st) {
+        acc.view += st.view;
+        acc.favorite += st.favorite;
+        acc.reserve += st.reserve;
+      }
+      return acc;
+    },
+    { view: 0, favorite: 0, reserve: 0 },
+  );
 
   const bySphere = configured.reduce<Record<string, SnapPlace[]>>((acc, p) => {
     const k = String(p.sphere_label || "Autres");
@@ -302,13 +362,17 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         <button className="h-10 rounded border border-sky-300 bg-sky-50 px-4 text-xs font-black uppercase tracking-wide text-sky-800">
           Afficher
         </button>
-        <div className="ml-auto flex gap-4 text-xs text-muted-foreground">
+        <div className="ml-auto flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>
             <strong className="text-emerald-700">{configured.length}</strong> en ligne
           </span>
           <span>
-            <strong>{available.length}</strong> emplacements libres
+            <strong>{available.length}</strong> libres
           </span>
+          <span className="text-slate-400">·</span>
+          <span>👁 <strong className="text-slate-800">{cityTotals.view}</strong></span>
+          <span>❤️ <strong className="text-slate-800">{cityTotals.favorite}</strong></span>
+          <span>💬 <strong className="text-slate-800">{cityTotals.reserve}</strong> <span className="text-slate-400">ce mois</span></span>
         </div>
       </form>
 
@@ -338,6 +402,7 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
                   )}
                   <span className="ml-auto text-[11px] text-sky-600">modifier ▾</span>
                 </summary>
+                <StatBar st={stats[p.id]} />
                 <CatalogueOfferForm place={p} extra={extra[p.id]} members={members} cityParam={selectedCity} />
               </details>
             ))}
