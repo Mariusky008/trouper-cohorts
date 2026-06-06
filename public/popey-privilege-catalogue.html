@@ -4917,6 +4917,12 @@ async function initLiveCatalog() {
     refreshLiveCounters();
     renderLiveOffers();
     document.documentElement.setAttribute('data-live-ready', '1');
+    // Catalogue swipe DIRECT (brief) : on ouvre l'expérience swipe par défaut
+    // une fois les offres chargées (file non vide). Opt-out via ?view=landing.
+    try {
+      var autoView = new URLSearchParams(window.location.search).get('view');
+      if (autoView !== 'landing' && !swipeState.open && liveState.places && liveState.places.length > 0) openSwipeMode();
+    } catch (_swErr) {}
   } catch (error) {
     console.error('[privilege-live] init failed', error);
     var main = document.querySelector('.main');
@@ -5055,10 +5061,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('mode') === 'swipe') {
-    setTimeout(function () { openSwipeMode(); }, 220);
-  }
+  // L'ouverture du mode swipe par défaut est gérée dans initLiveCatalog()
+  // (après chargement des offres). Voir l'opt-out ?view=landing.
 });
 </script>
 </body>
