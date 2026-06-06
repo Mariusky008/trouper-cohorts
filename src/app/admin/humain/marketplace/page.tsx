@@ -250,6 +250,12 @@ export default async function AdminHumainMarketplacePage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/humain/catalogue"
+            className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-amber-800"
+          >
+            🎟️ Gérer le catalogue
+          </Link>
+          <Link
             href="/admin/humain/marketplace/tour-de-controle"
             className="rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-emerald-700"
           >
