@@ -3149,6 +3149,34 @@ var swipeState = {
   curMystery: null
 };
 var swipeActivationTarget = null;
+
+// ─── Tracking engagement catalogue (vues, favoris, réserv., cartes, mystère) ───
+var __privSess = '';
+function privSession() {
+  if (__privSess) return __privSess;
+  try { __privSess = localStorage.getItem('popey_priv_sess') || ''; } catch (e) {}
+  if (!__privSess) {
+    __privSess = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    try { localStorage.setItem('popey_priv_sess', __privSess); } catch (e) {}
+  }
+  return __privSess;
+}
+var __privTrackedViews = {};
+function trackPriv(placeId, event) {
+  var id = String(placeId || '').trim();
+  if (!id) return;
+  if (event === 'view') { if (__privTrackedViews[id]) return; __privTrackedViews[id] = 1; }
+  var ville = '';
+  try { ville = new URLSearchParams(window.location.search).get('ville') || ''; } catch (e) {}
+  var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/popey-human/privilege/track', new Blob([payload], { type: 'application/json' }));
+      return;
+    }
+  } catch (e) {}
+  try { fetch('/api/popey-human/privilege/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function () {}); } catch (e) {}
+}
 function escapeHtml(text) {
   return String(text || '')
     .replace(/&/g, '&amp;')
@@ -4092,6 +4120,7 @@ function renderSwipeStage() {
   stage.appendChild(buildSwipeCard(place));
   renderSwipeProgress();
   tickSwipeChronos();
+  trackPriv(place.id, 'view');
 }
 
 var swipeThemes = {
@@ -4306,6 +4335,7 @@ function revealSwipeMystery() {
   var m = swipeState.curMystery;
   var card = document.querySelector('.swp-mystery[data-top-card="1"]');
   if (!m || !card) return;
+  trackPriv(m.id, 'mystery_reveal');
   spawnSwipeConfetti(card);
   card.classList.add('revealed');
   var displayName = String(m.personName || m.name || 'Partenaire Popey');
@@ -4379,11 +4409,13 @@ async function swipeCardAction(direction) {
   if (!place) return;
   if (direction === 'left') {
     // ← Gauche = Passer
+    trackPriv(place.id, 'pass');
     swipeAdvance('left');
     return;
   }
   if (direction === 'right') {
     // → Droite = Favoris (sauvegarde + passe à la carte suivante)
+    trackPriv(place.id, 'favorite');
     var id = String(place.id || '').trim();
     if (id && swipeState.favorites.indexOf(id) === -1) {
       swipeState.favorites.push(id);
@@ -4404,6 +4436,7 @@ async function swipeCardAction(direction) {
 
 function openSwipeActivate(place) {
   if (!place) return;
+  trackPriv(place.id, 'reserve');
   swipeActivationTarget = place;
   var title = document.getElementById('swipeActivateTitle');
   var pro = document.getElementById('swipeActivatePro');
@@ -4429,6 +4462,7 @@ function openPrivCardForCurrent() {
   if (place) openPrivCard(place);
 }
 function openPrivCard(place) {
+  if (place) trackPriv(place.id, 'card_open');
   var overlay = document.getElementById('privCardOverlay');
   if (!overlay) {
     overlay = document.createElement('div');
