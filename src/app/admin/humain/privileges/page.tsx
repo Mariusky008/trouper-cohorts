@@ -97,6 +97,12 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
   }).length;
   const signedCount = activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "validated").length;
   const conversion = activationsRaw.length > 0 ? Math.round((signedCount / activationsRaw.length) * 100) : 0;
+  // Modèle 49€/mois sans commission : on suit le MRR des abonnements commerçants
+  // (commerces configurés dans le catalogue), pas des commissions.
+  const activeMerchants = snapshot.places.filter(
+    (place) => String(place.company_name || "").trim() || String(place.privilege_badge || "").trim(),
+  ).length;
+  const mrrEur = activeMerchants * 49;
   const cityOptions = Array.from(new Set(activationsRaw.map((item) => String(item.city || "").trim()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b, "fr"),
   );
@@ -138,8 +144,8 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
           <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Ce mois</p>
           <div className="mt-2 space-y-2 text-xs">
             <div className="rounded border border-slate-700 bg-slate-900/40 p-2">
-              <p className="text-slate-400">Commissions dues</p>
-              <p className="font-bold text-amber-200">{signedCount * 120}€</p>
+              <p className="text-slate-400">MRR abonnements</p>
+              <p className="font-bold text-amber-200">{mrrEur}€</p>
             </div>
             <div className="rounded border border-slate-700 bg-slate-900/40 p-2">
               <p className="text-slate-400">Taux conversion</p>
@@ -154,7 +160,7 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
               <span className="rounded border border-amber-300/30 bg-amber-400/20 px-3 py-1 text-amber-200">Tour de controle</span>
               <span className="rounded bg-slate-700/40 px-3 py-1 text-slate-300">Membres</span>
               <span className="rounded bg-slate-700/40 px-3 py-1 text-slate-300">Marketplace</span>
-              <span className="rounded bg-slate-700/40 px-3 py-1 text-slate-300">Commissions</span>
+              <span className="rounded bg-slate-700/40 px-3 py-1 text-slate-300">Abonnements</span>
             </div>
             <div className="flex gap-2">
               <Link href="/admin/humain" className="rounded border border-slate-600 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-200">
@@ -194,9 +200,9 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
               <p className="text-xs text-cyan-300">dont {activationsRaw.filter((item) => readWorkflowStatus(item.metadata) === "pending").length} nouvelles</p>
             </article>
             <article className="rounded-xl border border-slate-700 bg-gradient-to-b from-[#0D1320] to-[#0A0F18] p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Commissions a verser</p>
-              <p className="mt-1 text-3xl font-black text-amber-200">{signedCount * 120}€</p>
-              <p className="text-xs text-amber-300">le 1er du mois</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">MRR catalogue</p>
+              <p className="mt-1 text-3xl font-black text-amber-200">{mrrEur}€</p>
+              <p className="text-xs text-amber-300">{activeMerchants} abonnés × 49€/mois</p>
             </article>
             <article className="rounded-xl border border-slate-700 bg-gradient-to-b from-[#0D1320] to-[#0A0F18] p-4">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Taux conversion</p>
