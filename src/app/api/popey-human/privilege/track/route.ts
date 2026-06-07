@@ -40,7 +40,10 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase
         .from("human_marketplace_events")
         .insert({ place_id: null, event_type: "priv_open", payload });
-      if (error) return NextResponse.json({ ok: false }, { status: 200 });
+      if (error) {
+        console.error("[privilege/track] insert error", error.message);
+        return NextResponse.json({ ok: false }, { status: 200 });
+      }
       return NextResponse.json({ ok: true });
     }
 
