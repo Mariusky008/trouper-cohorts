@@ -13,14 +13,6 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-function slugifyCity(v: string): string {
-  return String(v || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function statutBadge(clics: number, day: number | null, declared: number | null, today: number): { label: string; cls: string } {
   if (day && today < day) return { label: "⏳ Bientôt", cls: "bg-white/10 text-white/60" };
@@ -131,6 +123,13 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   } catch {
     promoCode = "";
   }
+  let proSlug = "";
+  try {
+    const ps = await admin.from("human_marketplace_places").select("pro_slug").eq("id", placeId).maybeSingle();
+    proSlug = String((ps.data as { pro_slug?: string } | null)?.pro_slug || "").trim();
+  } catch {
+    proSlug = "";
+  }
 
   if (!place) {
     return (
@@ -174,11 +173,16 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const offerTitle = String(place.privilege_badge || "").trim() || "Votre offre privilège";
   const proName = String(place.company_name || place.owner_display_name || place.metier || "Votre commerce").trim();
 
-  // Lien CATALOGUE que le commerçant partage à ses clients/amis (porte son ref → leaderboard)
+  // Lien COURT à partager (/c/<slug>) → redirige vers le catalogue avec le référent
   const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
-  const shareRefId = String(place.owner_member_id || placeId);
-  const shareLink = (appBase || "") + "/privilege/" + (slugifyCity(place.city || "") || "dax") + "?ref_id=" + encodeURIComponent(shareRefId) + "&ref_name=" + encodeURIComponent(proName);
-  const waShareHref = "https://wa.me/?text=" + encodeURIComponent("Mes offres privilège Popey ce mois-ci 👉 " + shareLink);
+  const shareLink = (appBase || "") + "/c/" + encodeURIComponent(proSlug || placeId);
+  const cityName = String(place.city || "ta ville");
+  const waText =
+    "Alerte pépite ! ⚡️\n\n" +
+    "Voilà le catalogue vidéo de " + monthLabel + " avec les meilleurs commerçants de " + cityName + ".\n\n" +
+    "Dedans : des gratuités de malade, des privilèges exclusifs et tout l'agenda des animations de la semaine.\n\n" +
+    "Clique et swipe, tu vas adorer : 👇\n🍿 " + shareLink;
+  const waShareHref = "https://wa.me/?text=" + encodeURIComponent(waText);
 
   // Classement des membres de SA ville (transparence « tribunal bienveillant »)
   const lb = await getCatalogueLeaderboard(place.city || undefined);
