@@ -82,6 +82,9 @@ export async function getCatalogueLeaderboard(cityFilter?: string): Promise<Lead
   };
 
   // 2) Events priv_* du mois → match membre par ref OU ref_name
+  //    « Clics » = visiteurs distincts (sessions) venus via le lien du membre,
+  //    « Intérêt » = nb d'actions (favoris + réservations + cartes ouvertes).
+  const sessionsByRef: Record<string, Set<string>> = {};
   try {
     const res = await admin
       .from("human_marketplace_events")
@@ -96,14 +99,21 @@ export async function getCatalogueLeaderboard(cityFilter?: string): Promise<Lead
         const refName = String((payload as { ref_name?: unknown }).ref_name || "").trim();
         const member = findMember(ref, refName);
         if (!member) return;
+        const session = String((payload as { session?: unknown }).session || "").trim();
+        if (session) {
+          if (!sessionsByRef[member.ref]) sessionsByRef[member.ref] = new Set();
+          sessionsByRef[member.ref].add(session);
+        }
         const ev = String(r.event_type || "").replace("priv_", "");
-        if (ev === "open") member.clics += 1;
-        else if (ev === "favorite" || ev === "reserve" || ev === "card_open") member.interet += 1;
+        if (ev === "favorite" || ev === "reserve" || ev === "card_open") member.interet += 1;
       });
     }
   } catch {
     /* events indisponibles */
   }
+  Object.values(rowsByRef).forEach((m) => {
+    m.clics = sessionsByRef[m.ref] ? sessionsByRef[m.ref].size : 0;
+  });
 
   // 3) Coupons (activations) du mois → match membre par referrer_id OU referrer_name
   try {

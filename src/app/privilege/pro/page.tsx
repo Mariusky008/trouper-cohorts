@@ -6,7 +6,7 @@ import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard
 export const dynamic = "force-dynamic";
 
 type ProPageProps = {
-  searchParams?: Promise<{ token?: string; p?: string }>;
+  searchParams?: Promise<{ token?: string; p?: string; tab?: string }>;
 };
 
 function isUuid(value: string): boolean {
@@ -60,7 +60,9 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const qp = (await searchParams) || {};
   const token = typeof qp.token === "string" ? qp.token : "";
   const handle = typeof qp.p === "string" ? qp.p.trim() : "";
+  const tab = typeof qp.tab === "string" ? qp.tab : "";
   const admin = createAdminClient();
+  const baseQs = token ? `token=${encodeURIComponent(token)}` : handle ? `p=${encodeURIComponent(handle)}` : "";
 
   // Résolution : token signé (rétro-compat) OU slug court / id via ?p=
   let placeId = "";
@@ -197,6 +199,23 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
         </div>
       </div>
 
+      <div className="mt-5 flex gap-2">
+        <a
+          href={`/privilege/pro?${baseQs}`}
+          className={`flex-1 rounded-xl border px-3 py-2 text-center text-xs font-bold ${tab !== "classement" ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200" : "border-white/10 bg-white/[0.03] text-white/55"}`}
+        >
+          📊 Mes stats
+        </a>
+        <a
+          href={`/privilege/pro?${baseQs}&tab=classement`}
+          className={`flex-1 rounded-xl border px-3 py-2 text-center text-xs font-bold ${tab === "classement" ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200" : "border-white/10 bg-white/[0.03] text-white/55"}`}
+        >
+          🏆 Classement & mission
+        </a>
+      </div>
+
+      {tab !== "classement" ? (
+        <>
       <div className="mt-5">
         <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-white/40">Ce mois · {monthLabel}</p>
         <div className="grid grid-cols-2 gap-3">
@@ -215,7 +234,11 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
           <span>💬 <strong className="text-white">{allTime.reserve.toLocaleString("fr-FR")}</strong> réserv.</span>
         </div>
       </div>
+        </>
+      ) : null}
 
+      {tab === "classement" ? (
+        <>
       {/* Ta mission ce mois (planning + potentiel + clics générés) */}
       <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.02] p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -278,6 +301,8 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
         )}
         <p className="mt-2 text-[10px] text-white/30">Plus tu partages ton lien, plus tu montes. 🚀</p>
       </div>
+        </>
+      ) : null}
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-white/35">
         Ces chiffres mesurent l&apos;intérêt pour votre offre dans le catalogue Popey, diffusé chaque mois aux membres de
