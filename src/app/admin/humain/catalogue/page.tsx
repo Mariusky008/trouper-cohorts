@@ -120,6 +120,15 @@ async function catalogueColumnsReady(): Promise<boolean> {
   }
 }
 
+function slugifyCity(v: string): string {
+  return String(v || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function isConfigured(place: SnapPlace): boolean {
   return Boolean(String(place.company_name || "").trim() || String(place.privilege_badge || "").trim());
 }
@@ -341,9 +350,15 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   // Lien "espace commerçant" court & lisible : /privilege/pro?p=<slug> (fallback id).
   const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
   const merchantLinks: Record<string, string> = {};
+  const shareLinks: Record<string, string> = {};
   configured.forEach((p) => {
     const slug = String((extra[p.id] as { pro_slug?: string } | undefined)?.pro_slug || p.id);
     merchantLinks[p.id] = (appBase || "") + "/privilege/pro?p=" + encodeURIComponent(slug);
+    // Lien CATALOGUE à partager par le commerçant (avec son ref → leaderboard)
+    const citySlug = slugifyCity(String(p.city || "")) || "dax";
+    const name = String(p.company_name || p.owner_display_name || p.metier || "Membre Popey");
+    const refId = String(p.owner_member_id || p.id);
+    shareLinks[p.id] = (appBase || "") + "/privilege/" + citySlug + "?ref_id=" + encodeURIComponent(refId) + "&ref_name=" + encodeURIComponent(name);
   });
 
   const bySphere = configured.reduce<Record<string, SnapPlace[]>>((acc, p) => {
@@ -448,9 +463,17 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
                   <span className="ml-auto text-[11px] text-sky-600">modifier ▾</span>
                 </summary>
                 <StatBar st={stats[p.id]} />
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-emerald-50/50 px-4 py-2 text-[11px]">
+                  <span className="shrink-0 font-bold uppercase tracking-wide text-emerald-700">🔗 Lien à PARTAGER (catalogue)</span>
+                  <input
+                    readOnly
+                    value={shareLinks[p.id]}
+                    className="min-w-0 flex-1 rounded border border-emerald-200 bg-white px-2 py-1 font-mono text-[10px] text-slate-700"
+                  />
+                </div>
                 {merchantLinks[p.id] ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-white px-4 py-2 text-[11px]">
-                    <span className="shrink-0 font-bold uppercase tracking-wide text-slate-400">🔗 Lien commerçant (stats)</span>
+                    <span className="shrink-0 font-bold uppercase tracking-wide text-slate-400">📊 Lien espace commerçant (stats)</span>
                     <input
                       readOnly
                       value={merchantLinks[p.id]}

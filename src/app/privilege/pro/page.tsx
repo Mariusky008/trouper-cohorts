@@ -13,6 +13,15 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function slugifyCity(v: string): string {
+  return String(v || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function statutBadge(clics: number, day: number | null, declared: number | null, today: number): { label: string; cls: string } {
   if (day && today < day) return { label: "⏳ Bientôt", cls: "bg-white/10 text-white/60" };
   if (clics === 0) return { label: "⚠️ À relancer", cls: "bg-red-500/15 text-red-300" };
@@ -165,6 +174,12 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const offerTitle = String(place.privilege_badge || "").trim() || "Votre offre privilège";
   const proName = String(place.company_name || place.owner_display_name || place.metier || "Votre commerce").trim();
 
+  // Lien CATALOGUE que le commerçant partage à ses clients/amis (porte son ref → leaderboard)
+  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const shareRefId = String(place.owner_member_id || placeId);
+  const shareLink = (appBase || "") + "/privilege/" + (slugifyCity(place.city || "") || "dax") + "?ref_id=" + encodeURIComponent(shareRefId) + "&ref_name=" + encodeURIComponent(proName);
+  const waShareHref = "https://wa.me/?text=" + encodeURIComponent("Mes offres privilège Popey ce mois-ci 👉 " + shareLink);
+
   // Classement des membres de SA ville (transparence « tribunal bienveillant »)
   const lb = await getCatalogueLeaderboard(place.city || undefined);
   const ownerId = String(place.owner_member_id || "").trim();
@@ -197,6 +212,21 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
             <p className="mt-1 font-mono text-sm font-bold tracking-wide text-amber-300">🎟️ {promoCode}</p>
           ) : null}
         </div>
+      </div>
+
+      {/* Lien à partager (action n°1 du commerçant) */}
+      <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-gradient-to-b from-emerald-500/[0.1] to-white/[0.02] p-4">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-300/80">🔗 Ton lien à partager</p>
+        <p className="mt-1 text-[11px] text-white/45">Envoie-le à tes contacts WhatsApp — chaque ouverture compte pour ton classement.</p>
+        <div className="mt-2 break-all rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-[11px] text-white/70">{shareLink}</div>
+        <a
+          href={waShareHref}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white"
+        >
+          💬 Partager sur WhatsApp
+        </a>
       </div>
 
       <div className="mt-5 flex gap-2">

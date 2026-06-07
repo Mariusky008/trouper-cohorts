@@ -4240,7 +4240,7 @@ function buildSwipeCard(place) {
   var ytId = place.videoUrl ? youtubeId(place.videoUrl) : '';
   var media;
   if (place.videoUrl && ytId) {
-    media = '<iframe src="https://www.youtube.com/embed/' + ytId + '?autoplay=1&mute=1&loop=1&playlist=' + ytId + '&controls=0&playsinline=1&modestbranding=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    media = '<iframe src="https://www.youtube.com/embed/' + ytId + '?autoplay=1&mute=1&loop=1&playlist=' + ytId + '&controls=0&playsinline=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
   } else if (place.videoUrl) {
     media = '<video src="' + escapeAttr(place.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(place.image || '') + '"></video>';
   } else if (place.image) {
@@ -4252,10 +4252,13 @@ function buildSwipeCard(place) {
 
   // Badge vidéo + bouton play : posés AU NIVEAU DE LA CARTE (au-dessus de .im-content)
   // pour être visibles et CLIQUABLES (sinon piégés sous le contenu à cause du z-index).
-  var videoOverlay = (place.videoUrl && !ytId)
-    ? '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>'
-      + '<div class="im-sound" id="imSound">🔇</div>'
-    : '';
+  var videoOverlay = '';
+  if (place.videoUrl && ytId) {
+    videoOverlay = '<div class="im-sound" id="imSound">🔇</div>'; // YouTube autoplay muet → bouton son (API postMessage)
+  } else if (place.videoUrl) {
+    videoOverlay = '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>'
+      + '<div class="im-sound" id="imSound">🔇</div>';
+  }
 
   var titleHtml = '<div class="im-title ' + pos + '"><span>' + escapeHtml(place.badge || 'Offre privilège') + '</span>'
     + (hasAccent ? '<span class="accent" style="color:' + th.accent + ';text-shadow:0 2px 24px ' + th.accent + '">' + escapeHtml(offerLabel) + '</span>' : '')
@@ -4322,6 +4325,27 @@ function buildSwipeCard(place) {
         vid.muted = !vid.muted;
         soundBtn.textContent = vid.muted ? '🔇' : '🔊';
         if (!vid.muted) { var pr3 = vid.play(); if (pr3 && pr3.then) pr3.catch(function () {}); if (playBtn) playBtn.style.display = 'none'; }
+      });
+    }
+  }
+  // Son pour YouTube (iframe) via l'API postMessage — le bouton son démute le player
+  var ytFrame = card.querySelector('iframe');
+  if (ytFrame) {
+    var ytSound = card.querySelector('.im-sound');
+    if (ytSound) {
+      var ytMuted = true;
+      ytSound.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      ytSound.addEventListener('click', function (e) {
+        e.stopPropagation();
+        ytMuted = !ytMuted;
+        ytSound.textContent = ytMuted ? '🔇' : '🔊';
+        try {
+          var cw = ytFrame.contentWindow;
+          if (cw) {
+            cw.postMessage(JSON.stringify({ event: 'command', func: ytMuted ? 'mute' : 'unMute', args: [] }), '*');
+            if (!ytMuted) cw.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+          }
+        } catch (e2) {}
       });
     }
   }
