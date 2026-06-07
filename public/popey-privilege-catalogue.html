@@ -2202,10 +2202,14 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im { background: #070810; }
 .swp-card.im .swp-media { position: absolute; inset: 0; height: 100%; z-index: 0; }
 .swp-card.im .swp-media img, .swp-card.im .swp-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-/* Vidéo : 'contain' pour voir TOUTE la vidéo (verticale) sans la rogner ; fond sombre derrière les bandes */
-.swp-card.im .swp-media video { object-fit: contain; background: #050608; }
-/* YouTube en iframe plein cadre (s'adapte tout seul, bandes sombres si besoin) */
+/* Vidéo : 'cover' = plein cadre immersif (remplit tout le bloc) */
+.swp-card.im .swp-media video { object-fit: cover; background: #050608; }
+/* YouTube en iframe plein cadre */
 .swp-card.im .swp-media iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #050608; }
+/* Sur une carte vidéo, on allège le wash pour bien voir la vidéo (texte bas reste lisible) */
+.swp-card.im.has-video .swp-wash { opacity: .68; }
+/* Bouton son (vidéo mp4) — toujours visible pour activer/couper le son */
+.swp-card.im .im-sound { position: absolute; top: 14px; right: 14px; z-index: 6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 15px; cursor: pointer; }
 .swp-card.im .swp-wash { position: absolute; inset: 0; z-index: 1; }
 .swp-card.im .im-content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 14px; }
 .swp-card.im .im-top { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -2221,9 +2225,9 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-chrono-txt { font-size: 11px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
 .swp-card.im .im-chrono-unit { font-size: 9px; color: rgba(255,255,255,.55); }
 .swp-card.im .im-desc { font-size: 12.5px; color: rgba(255,255,255,.8); line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.swp-card.im .im-coupon { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.4); backdrop-filter: blur(10px); border: 1.5px dashed rgba(255,255,255,.3); border-radius: 12px; padding: 8px 12px; }
-.swp-card.im .im-coupon-lbl { font-size: 7.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 2px; }
-.swp-card.im .im-coupon-code { font-family: var(--fd); font-size: 16px; font-weight: 900; color: #fff; letter-spacing: .04em; }
+.swp-card.im .im-coupon { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.38); backdrop-filter: blur(10px); border: 1px dashed rgba(255,255,255,.28); border-radius: 10px; padding: 5px 10px; }
+.swp-card.im .im-coupon-lbl { font-size: 7px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.swp-card.im .im-coupon-code { font-family: var(--fd); font-size: 13px; font-weight: 900; color: #fff; letter-spacing: .04em; }
 .swp-card.im .im-coupon-exp { font-size: 8px; font-weight: 700; color: #fff; background: rgba(239,68,68,.85); border-radius: 6px; padding: 3px 8px; margin-left: auto; white-space: nowrap; flex-shrink: 0; }
 .swp-card.im .im-pro { display: flex; align-items: center; gap: 9px; }
 .swp-card.im .im-pro img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8); object-fit: cover; flex-shrink: 0; }
@@ -3222,13 +3226,20 @@ function trackPriv(placeId, event) {
     refName = sp.get('ref_name') || '';
   } catch (e) {}
   var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville, ref: ref, refName: refName });
+  // fetch keepalive en PRIMAIRE (JSON fiablement parsé côté serveur) ; sendBeacon en secours.
   try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/popey-human/privilege/track', new Blob([payload], { type: 'application/json' }));
-      return;
-    }
-  } catch (e) {}
-  try { fetch('/api/popey-human/privilege/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function () {}); } catch (e) {}
+    fetch('/api/popey-human/privilege/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+      cache: 'no-store'
+    }).catch(function () {
+      try { if (navigator.sendBeacon) navigator.sendBeacon('/api/popey-human/privilege/track', new Blob([payload], { type: 'application/json' })); } catch (e2) {}
+    });
+  } catch (e) {
+    try { if (navigator.sendBeacon) navigator.sendBeacon('/api/popey-human/privilege/track', new Blob([payload], { type: 'application/json' })); } catch (e3) {}
+  }
 }
 function escapeHtml(text) {
   return String(text || '')
@@ -4197,7 +4208,7 @@ function youtubeId(url) {
 
 function buildSwipeCard(place) {
   var card = document.createElement('article');
-  card.className = 'swp-card im';
+  card.className = 'swp-card im' + (place.videoUrl ? ' has-video' : '');
   card.setAttribute('data-top-card', '1');
   var meta = sphereMeta[place.sphere] || sphereMeta.digital;
   var th = swipeTheme(place.sphere);
@@ -4236,9 +4247,9 @@ function buildSwipeCard(place) {
 
   // Badge vidéo + bouton play : posés AU NIVEAU DE LA CARTE (au-dessus de .im-content)
   // pour être visibles et CLIQUABLES (sinon piégés sous le contenu à cause du z-index).
-  var videoOverlay = place.videoUrl
-    ? '<div class="im-video-badge">▶ VIDÉO · ' + escapeHtml(displayName.split(' ')[0]) + '</div>'
-      + (ytId ? '' : '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>')
+  var videoOverlay = (place.videoUrl && !ytId)
+    ? '<div class="im-play" style="background:' + th.accent + ';box-shadow:0 0 28px ' + th.accent + '">▶</div>'
+      + '<div class="im-sound" id="imSound">🔇</div>'
     : '';
 
   var titleHtml = '<div class="im-title ' + pos + '"><span>' + escapeHtml(place.badge || 'Offre privilège') + '</span>'
@@ -4280,10 +4291,11 @@ function buildSwipeCard(place) {
     vid.muted = true;
     try { vid.setAttribute('muted', ''); vid.setAttribute('playsinline', ''); } catch (e) {}
     var playBtn = card.querySelector('.im-play');
+    var soundBtn = card.querySelector('.im-sound');
     var tryAutoplay = function () {
       if (card.getAttribute('data-top-card') !== '1') return;
       var pr = vid.play();
-      if (pr && pr.then) pr.then(function () { if (playBtn) playBtn.style.display = 'none'; }).catch(function () { /* autoplay bloqué → le bouton play reste, tap manuel */ });
+      if (pr && pr.then) pr.then(function () { if (playBtn) playBtn.style.display = 'none'; }).catch(function () { /* autoplay bloqué → le bouton play reste */ });
     };
     vid.addEventListener('canplay', tryAutoplay, { once: true });
     vid.addEventListener('loadeddata', tryAutoplay, { once: true });
@@ -4293,8 +4305,18 @@ function buildSwipeCard(place) {
       playBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         vid.muted = false; // geste utilisateur → son autorisé
+        if (soundBtn) soundBtn.textContent = '🔊';
         var pr2 = vid.play();
         if (pr2 && pr2.then) pr2.then(function () { playBtn.style.display = 'none'; }).catch(function () {});
+      });
+    }
+    if (soundBtn) {
+      soundBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      soundBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        vid.muted = !vid.muted;
+        soundBtn.textContent = vid.muted ? '🔇' : '🔊';
+        if (!vid.muted) { var pr3 = vid.play(); if (pr3 && pr3.then) pr3.catch(function () {}); if (playBtn) playBtn.style.display = 'none'; }
       });
     }
   }
