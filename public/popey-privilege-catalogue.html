@@ -2241,12 +2241,36 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-pro-views { margin-left: auto; font-size: 9px; color: rgba(255,255,255,.65); background: rgba(0,0,0,.4); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .swp-card.im .im-coeur { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(244,114,182,.4); border-radius: 10px; padding: 7px 10px; }
 .swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
-/* Carte événement / animation locale */
-.swp-card.swp-event .evt-day { font-size: 12px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
-.swp-card.swp-event .im-title.bottom { font-size: 28px; margin: 2px 0; }
+/* ── Carte ÉVÉNEMENT / animation locale (premium immersive) ── */
+.swp-card.swp-event .swp-media { background: #1a0610; }
+.swp-card.swp-event .evt-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+.swp-card.swp-event .evt-hero { position: absolute; inset: 0; overflow: hidden; z-index: 1;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(251,113,133,.40), transparent 60%),
+    radial-gradient(100% 70% at 82% 100%, rgba(251,146,60,.34), transparent 55%),
+    linear-gradient(160deg, #2a0712 0%, #5a0f22 46%, #7a1226 100%); }
+.swp-card.swp-event .evt-hero-glow { position: absolute; left: 50%; top: 37%; width: 300px; height: 300px; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(circle, rgba(251,113,133,.55), transparent 70%); animation: evtGlow 3.4s ease-in-out infinite; }
+.swp-card.swp-event .evt-medallion { position: absolute; left: 50%; top: 35%; transform: translate(-50%,-50%); font-size: 104px; filter: drop-shadow(0 14px 36px rgba(251,113,133,.6)); animation: evtFloat 3.8s ease-in-out infinite; }
+.swp-card.swp-event .evt-float { position: absolute; opacity: 0; animation-name: evtRise; animation-timing-function: linear; animation-iteration-count: infinite; filter: drop-shadow(0 4px 10px rgba(0,0,0,.4)); }
+@keyframes evtGlow { 0%,100% { opacity: .5; transform: translate(-50%,-50%) scale(1); } 50% { opacity: .85; transform: translate(-50%,-50%) scale(1.14); } }
+@keyframes evtFloat { 0%,100% { transform: translate(-50%,-52%); } 50% { transform: translate(-50%,-46%); } }
+@keyframes evtRise { 0% { opacity: 0; transform: translateY(16px) rotate(-6deg); } 18% { opacity: .9; } 82% { opacity: .9; } 100% { opacity: 0; transform: translateY(-30px) rotate(8deg); } }
+
+.swp-card.swp-event .evt-badge { font-size: 10.5px; font-weight: 800; color: #2a0710; border-radius: 999px; padding: 5px 12px; box-shadow: 0 6px 20px rgba(251,113,133,.5); white-space: nowrap; letter-spacing: .02em; }
+
+.swp-card.swp-event .evt-datechip { align-self: flex-start; max-width: 100%; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.5); backdrop-filter: blur(10px); border: 1.5px solid rgba(251,113,133,.5); border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 800; letter-spacing: .01em; text-shadow: 0 1px 6px rgba(0,0,0,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swp-card.swp-event .evt-headings { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.swp-card.swp-event .evt-kicker { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.swp-card.swp-event .evt-title { font-size: 22px; line-height: 1.08; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .swp-card.swp-event .evt-where { font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
-.swp-card.swp-event .evt-sponsor { display: inline-flex; align-self: flex-start; font-size: 11px; font-weight: 700; color: #FDA4AF; background: rgba(251,113,133,.16); border: 1px solid rgba(251,113,133,.45); border-radius: 999px; padding: 4px 11px; }
-.swp-card.swp-event .evt-hint { font-size: 9.5px; color: rgba(255,255,255,.55); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.swp-card.swp-event .evt-desc { -webkit-line-clamp: 3; }
+.swp-card.swp-event .evt-sponsors { display: flex; align-items: center; gap: 9px; }
+.swp-card.swp-event .evt-avs { display: flex; }
+.swp-card.swp-event .evt-av { width: 26px; height: 26px; border-radius: 50%; margin-left: -8px; border: 2px solid #1a0610; background: linear-gradient(135deg, #FB7185, #FB923C); color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.swp-card.swp-event .evt-av:first-child { margin-left: 0; }
+.swp-card.swp-event .evt-sp-lbl { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.86); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.swp-card.swp-event .evt-cta { margin-top: 3px; border: none; border-radius: 13px; padding: 13px; font-size: 15px; font-weight: 800; color: #2a0710; box-shadow: 0 10px 28px rgba(251,113,133,.5); cursor: pointer; transition: transform .12s ease; }
+.swp-card.swp-event .evt-cta:active { transform: translateY(1px); }
 .swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
 .swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
 .swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 5; pointer-events: auto; cursor: pointer; }
@@ -4394,12 +4418,14 @@ function buildSwipeCard(place) {
   return card;
 }
 
-// ─── Carte ÉVÉNEMENT / animation locale (informative, glissable) ───
+// ─── Carte ÉVÉNEMENT / animation locale (immersive, glissable) ───
 function buildEventCard(ev) {
   var card = document.createElement('article');
   card.className = 'swp-card im swp-event';
   card.setAttribute('data-top-card', '1');
   var th = swipeTheme('evenements-locaux');
+  var accent = th.accent || '#FB7185';
+  var accent2 = '#FB923C';
   var city = String(liveState.cityLabel || 'Dax');
   var emoji = String(ev.emoji || '📅');
   var title = String(ev.title || 'Événement local');
@@ -4410,33 +4436,59 @@ function buildEventCard(ev) {
   var detail = String(ev.detail || '').trim();
   var img = String(ev.imageUrl || '').trim();
 
-  var media;
-  if (img) {
-    media = '<img src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'">'
-      + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(160deg,#3b0a16,#7a1226);color:#fff;">' + emoji + '</div>';
-  } else {
-    media = '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:96px;background:linear-gradient(160deg,#3b0a16,#7a1226);color:#fff;">' + emoji + '</div>';
+  // "Ticket" date : 1er segment = jour, le reste = heure/précisions
+  var dayParts = day.split('·').map(function (s) { return s.trim(); }).filter(Boolean);
+  var dayMain = dayParts[0] || day;
+  var daySub = dayParts.slice(1).join(' · ');
+
+  // Sponsors → puces avatars (initiales)
+  var sponsorList = sponsor ? sponsor.split(/[·,]/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  var sponsorHtml = '';
+  if (sponsorList.length) {
+    var avatars = sponsorList.slice(0, 4).map(function (name, i) {
+      var ini = name.split(' ').map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
+      return '<span class="evt-av" style="z-index:' + (10 - i) + '">' + escapeHtml(ini || '★') + '</span>';
+    }).join('');
+    var spLbl = sponsorList.length === 1 ? escapeHtml(sponsorList[0]) : (sponsorList.length + ' partenaires Popey');
+    sponsorHtml = '<div class="evt-sponsors"><div class="evt-avs">' + avatars + '</div><span class="evt-sp-lbl">✨ Avec ' + spLbl + '</span></div>';
   }
 
+  // Média : "hero" décoratif animé en fond + image plein cadre par-dessus si dispo
+  var floats = '';
+  var floatEmojis = [emoji, '✨', emoji, '🎉', '✨', emoji, '✨'];
+  for (var fi = 0; fi < 7; fi += 1) {
+    floats += '<span class="evt-float" style="left:' + (6 + Math.random() * 86).toFixed(1) + '%;top:' + (10 + Math.random() * 74).toFixed(1) + '%;font-size:' + (15 + Math.random() * 24).toFixed(0) + 'px;animation-delay:' + (Math.random() * 4).toFixed(2) + 's;animation-duration:' + (5 + Math.random() * 4).toFixed(2) + 's">' + floatEmojis[fi % floatEmojis.length] + '</span>';
+  }
+  var hero = '<div class="evt-hero"><div class="evt-hero-glow"></div>' + floats + '<div class="evt-medallion">' + emoji + '</div></div>';
+  var imgTag = img ? '<img class="evt-img" src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+
   card.innerHTML =
-    '<div class="swp-media">' + media + '</div>' +
+    '<div class="swp-media">' + hero + imgTag + '</div>' +
     '<div class="swp-wash" style="background:' + th.wash + '"></div>' +
     '<div class="im-content">' +
       '<div class="im-top">' +
         '<div class="im-pill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '">📅 Événement</div>' +
-        (badge ? '<div class="im-excl" style="background:' + th.pill + ';color:' + th.pillText + ';border:1px solid ' + th.pillBorder + '">' + escapeHtml(badge) + '</div>' : '') +
+        (badge ? '<div class="evt-badge" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + escapeHtml(badge) + '</div>' : '') +
       '</div>' +
       '<div class="im-bottom">' +
-        '<div class="evt-day" style="color:' + th.pillText + '">⏰ ' + escapeHtml(day) + '</div>' +
-        '<div class="im-title bottom"><span>' + escapeHtml(title) + '</span></div>' +
+        '<div class="evt-datechip" style="border-color:' + th.pillBorder + ';color:' + th.pillText + '">📅 ' + escapeHtml(daySub ? (dayMain + ' · ' + daySub) : dayMain) + '</div>' +
+        '<div class="evt-headings">' +
+          '<div class="evt-kicker" style="color:' + th.pillText + '">Animation · ' + escapeHtml(city) + '</div>' +
+          '<div class="im-title bottom evt-title"><span>' + escapeHtml(title) + '</span></div>' +
+        '</div>' +
         '<div class="evt-where">📍 ' + escapeHtml(spot) + '</div>' +
-        (detail ? '<div class="im-desc">' + escapeHtml(detail) + '</div>' : '') +
-        (sponsor ? '<div class="evt-sponsor">✨ Avec ' + escapeHtml(sponsor) + '</div>' : '') +
-        '<div class="evt-hint">Glissez pour continuer · touchez « ℹ️ » pour les détails</div>' +
+        (detail ? '<div class="im-desc evt-desc">' + escapeHtml(detail) + '</div>' : '') +
+        sponsorHtml +
+        '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">ℹ️ Voir les détails</button>' +
       '</div>' +
     '</div>' +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   wireSwipeDrag(card, ev);
+  var cta = card.querySelector('.evt-cta');
+  if (cta) {
+    cta.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    cta.addEventListener('click', function (e) { e.stopPropagation(); openEventSheet(ev); });
+  }
   card.addEventListener('click', function () {
     // tap simple (pas un glissement) → ouvre le détail de l'événement
     if (Math.abs(swipeState.dx) < 8 && Math.abs(swipeState.dy) < 8) openEventSheet(ev);
