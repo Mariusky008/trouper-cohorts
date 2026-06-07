@@ -2241,6 +2241,12 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-pro-views { margin-left: auto; font-size: 9px; color: rgba(255,255,255,.65); background: rgba(0,0,0,.4); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .swp-card.im .im-coeur { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(244,114,182,.4); border-radius: 10px; padding: 7px 10px; }
 .swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
+/* Carte événement / animation locale */
+.swp-card.swp-event .evt-day { font-size: 12px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.swp-card.swp-event .im-title.bottom { font-size: 28px; margin: 2px 0; }
+.swp-card.swp-event .evt-where { font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.swp-card.swp-event .evt-sponsor { display: inline-flex; align-self: flex-start; font-size: 11px; font-weight: 700; color: #FDA4AF; background: rgba(251,113,133,.16); border: 1px solid rgba(251,113,133,.45); border-radius: 999px; padding: 4px 11px; }
+.swp-card.swp-event .evt-hint { font-size: 9.5px; color: rgba(255,255,255,.55); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
 .swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
 .swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
 .swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 5; pointer-events: auto; cursor: pointer; }
@@ -3883,6 +3889,9 @@ async function loadLocalEvents(citySlug) {
     var rows = Array.isArray(payload.events) ? payload.events : [];
     liveState.localEvents = rows.map(function (row) {
       return {
+        id: 'event:' + String(row.id || ''),
+        isEvent: true,
+        sortOrder: Number(row.sortOrder || 100),
         emoji: String(row.emoji || '').trim() || '📍',
         title: String(row.title || '').trim() || 'Événement local',
         day: String(row.dayLabel || '').trim() || 'Cette semaine',
@@ -4151,10 +4160,27 @@ function renderLiveOffers() {
   main.appendChild(root);
 }
 
+// Insère les cartes événements (animations locales) dans la file des offres,
+// à la position définie par leur sort_order (1 = en tête). Uniquement en vue
+// "Tout" pour ne pas polluer un filtre par sphère.
+function interleaveEvents(pool, sphere) {
+  if (sphere && sphere !== 'all') return pool;
+  var events = (liveState.localEvents || []).filter(function (e) { return e && e.isEvent; });
+  if (!events.length) return pool;
+  var combined = pool.slice();
+  var sorted = events.slice().sort(function (a, b) { return (Number(a.sortOrder) || 100) - (Number(b.sortOrder) || 100); });
+  for (var i = 0; i < sorted.length; i += 1) {
+    var ev = sorted[i];
+    var pos = Math.max(0, Math.min(combined.length, (Number(ev.sortOrder) || 100) - 1));
+    combined.splice(pos, 0, ev);
+  }
+  return combined;
+}
+
 function getSwipePoolBySphere(sphere) {
   var pool = liveState.places.slice();
   if (sphere && sphere !== 'all') pool = pool.filter(function (p) { return p.sphere === sphere; });
-  return pool;
+  return interleaveEvents(pool, sphere);
 }
 
 function renderSwipeFilters() {
@@ -4197,6 +4223,11 @@ function renderSwipeStage() {
     return;
   }
   var place = swipeState.queue[swipeState.index];
+  if (place && place.isEvent) {
+    stage.appendChild(buildEventCard(place));
+    renderSwipeProgress();
+    return;
+  }
   stage.appendChild(buildSwipeCard(place));
   renderSwipeProgress();
   tickSwipeChronos();
@@ -4361,6 +4392,97 @@ function buildSwipeCard(place) {
     }
   }
   return card;
+}
+
+// ─── Carte ÉVÉNEMENT / animation locale (informative, glissable) ───
+function buildEventCard(ev) {
+  var card = document.createElement('article');
+  card.className = 'swp-card im swp-event';
+  card.setAttribute('data-top-card', '1');
+  var th = swipeTheme('evenements-locaux');
+  var city = String(liveState.cityLabel || 'Dax');
+  var emoji = String(ev.emoji || '📅');
+  var title = String(ev.title || 'Événement local');
+  var day = String(ev.day || 'Cette semaine');
+  var spot = String(ev.spot || city);
+  var badge = String(ev.badge || '').trim();
+  var sponsor = String(ev.sponsor || '').trim();
+  var detail = String(ev.detail || '').trim();
+  var img = String(ev.imageUrl || '').trim();
+
+  var media;
+  if (img) {
+    media = '<img src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'">'
+      + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(160deg,#3b0a16,#7a1226);color:#fff;">' + emoji + '</div>';
+  } else {
+    media = '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:96px;background:linear-gradient(160deg,#3b0a16,#7a1226);color:#fff;">' + emoji + '</div>';
+  }
+
+  card.innerHTML =
+    '<div class="swp-media">' + media + '</div>' +
+    '<div class="swp-wash" style="background:' + th.wash + '"></div>' +
+    '<div class="im-content">' +
+      '<div class="im-top">' +
+        '<div class="im-pill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '">📅 Événement</div>' +
+        (badge ? '<div class="im-excl" style="background:' + th.pill + ';color:' + th.pillText + ';border:1px solid ' + th.pillBorder + '">' + escapeHtml(badge) + '</div>' : '') +
+      '</div>' +
+      '<div class="im-bottom">' +
+        '<div class="evt-day" style="color:' + th.pillText + '">⏰ ' + escapeHtml(day) + '</div>' +
+        '<div class="im-title bottom"><span>' + escapeHtml(title) + '</span></div>' +
+        '<div class="evt-where">📍 ' + escapeHtml(spot) + '</div>' +
+        (detail ? '<div class="im-desc">' + escapeHtml(detail) + '</div>' : '') +
+        (sponsor ? '<div class="evt-sponsor">✨ Avec ' + escapeHtml(sponsor) + '</div>' : '') +
+        '<div class="evt-hint">Glissez pour continuer · touchez « ℹ️ » pour les détails</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
+  wireSwipeDrag(card, ev);
+  card.addEventListener('click', function () {
+    // tap simple (pas un glissement) → ouvre le détail de l'événement
+    if (Math.abs(swipeState.dx) < 8 && Math.abs(swipeState.dy) < 8) openEventSheet(ev);
+  });
+  return card;
+}
+
+// Détail d'un événement dans une feuille sombre (réutilise priv-overlay/priv-sheet)
+function openEventSheet(ev) {
+  if (!ev) return;
+  var overlay = document.getElementById('rsvOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'rsvOverlay';
+    overlay.className = 'priv-overlay';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.body.appendChild(overlay);
+  }
+  var emoji = String(ev.emoji || '📅');
+  var img = String(ev.imageUrl || '').trim();
+  overlay.innerHTML =
+    '<div class="priv-sheet">'
+    + '<div class="priv-handle"></div>'
+    + '<div class="priv-sheet-hd"><div class="priv-sheet-title">' + emoji + ' ' + escapeHtml(String(ev.title || 'Événement')) + '</div><button class="priv-close" id="evtClose" type="button">✕</button></div>'
+    + (img ? '<div style="margin:0 16px 4px;border-radius:14px;overflow:hidden;"><img src="' + escapeAttr(img) + '" alt="" style="width:100%;display:block;max-height:210px;object-fit:cover" onerror="this.style.display=\'none\'"></div>' : '')
+    + '<div style="padding:14px 16px 18px;display:flex;flex-direction:column;gap:10px;">'
+    + infoRow('🗓️', 'Quand', String(ev.day || '—'))
+    + infoRow('📍', 'Où', String(ev.spot || liveState.cityLabel || '—'))
+    + (ev.badge ? infoRow('🎫', 'Infos', String(ev.badge)) : '')
+    + (ev.sponsor ? infoRow('✨', 'Avec', String(ev.sponsor)) : '')
+    + (ev.detail ? '<div style="font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.82);padding:2px 2px 0;">' + escapeHtml(String(ev.detail)) + '</div>' : '')
+    + '<button type="button" id="evtShare" class="rsv-opt" style="margin-top:4px"><span class="rsv-ico" style="background:rgba(59,130,246,.14)">📤</span><span class="rsv-txt"><span class="rsv-title">Partager l\'événement</span><span class="rsv-sub">Invitez vos proches à venir</span></span></button>'
+    + '</div></div>';
+  overlay.classList.add('open');
+  var closeBtn = overlay.querySelector('#evtClose');
+  if (closeBtn) closeBtn.addEventListener('click', function () { overlay.classList.remove('open'); });
+  var shareBtn = overlay.querySelector('#evtShare');
+  if (shareBtn) shareBtn.addEventListener('click', function () { shareEvent(ev); });
+}
+
+function shareEvent(ev) {
+  var link = '';
+  try { link = window.location.href; } catch (e) {}
+  var text = '📅 ' + String(ev.title || 'Événement') + '\n' + String(ev.day || '') + ' · ' + String(ev.spot || '') + '\n\n👉 ' + link;
+  if (navigator.share) { navigator.share({ title: String(ev.title || 'Événement'), text: text, url: link }).catch(function () {}); }
+  else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
 }
 
 // Chrono live : met à jour chaque seconde tous les compteurs visibles
@@ -4551,6 +4673,12 @@ async function swipeCardAction(direction) {
   if (swipeState.index >= swipeState.queue.length) return;
   var place = swipeState.queue[swipeState.index];
   if (!place) return;
+  if (place.isEvent) {
+    // Carte événement : informative. ↑ = détails, ←/→ = continuer.
+    if (direction === 'up') { resetTopSwipeCardVisual(); openEventSheet(place); return; }
+    swipeAdvance(direction === 'left' ? 'left' : 'right');
+    return;
+  }
   if (direction === 'left') {
     // ← Gauche = Passer
     trackPriv(place.id, 'pass');
@@ -4653,6 +4781,7 @@ function closeSwipeActivate() {
 // ─── Fiche du professionnel (résumé infos pro) ───
 function openInfoForCurrent() {
   var place = (swipeState.inMystery && swipeState.curMystery) ? swipeState.curMystery : swipeState.queue[swipeState.index];
+  if (place && place.isEvent) { openEventSheet(place); return; }
   if (place) openInfoSheet(place);
 }
 function infoRow(icon, label, val) {
