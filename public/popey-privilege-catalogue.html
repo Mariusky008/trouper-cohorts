@@ -2312,6 +2312,17 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .rsv-txt { display: flex; flex-direction: column; min-width: 0; }
 .rsv-title { font-size: 14px; font-weight: 700; color: #fff; }
 .rsv-sub { font-size: 11px; color: rgba(255,255,255,.45); line-height: 1.3; }
+/* ════════ Fiche du professionnel ════════ */
+.info-hdr { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.info-hdr img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.85); flex-shrink: 0; }
+.info-name { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #fff; }
+.info-role { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 1px; }
+.info-excl { font-size: 8px; font-weight: 700; color: #F5A623; background: rgba(245,166,35,.15); border: 1px solid rgba(245,166,35,.3); border-radius: 20px; padding: 2px 8px; margin-top: 4px; display: inline-block; }
+.info-sec { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.35); padding: 14px 16px 6px; }
+.info-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.info-ic { width: 26px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.info-lbl { font-size: 10px; color: rgba(255,255,255,.4); }
+.info-val { font-size: 13px; font-weight: 600; color: #fff; word-break: break-word; }
 /* ════════ Favoris (style prototype) ════════ */
 .fav-item { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
 .fav-item:active { background: rgba(255,255,255,.04); }
@@ -2985,8 +2996,8 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
         <div class="swp-act-label">Réserver</div>
       </div>
       <div class="swp-act-wrap">
-        <button class="swp-act card" id="swipeCardBtn" type="button">🎟️</button>
-        <div class="swp-act-label">Ma carte</div>
+        <button class="swp-act card" id="swipeCardBtn" type="button">ℹ️</button>
+        <div class="swp-act-label">Le pro</div>
       </div>
     </div>
   </div>
@@ -4639,6 +4650,61 @@ function closeSwipeActivate() {
   swipeActivationTarget = null;
 }
 
+// ─── Fiche du professionnel (résumé infos pro) ───
+function openInfoForCurrent() {
+  var place = (swipeState.inMystery && swipeState.curMystery) ? swipeState.curMystery : swipeState.queue[swipeState.index];
+  if (place) openInfoSheet(place);
+}
+function infoRow(icon, label, val) {
+  return '<div class="info-item"><div class="info-ic">' + icon + '</div><div style="min-width:0"><div class="info-lbl">' + escapeHtml(label) + '</div><div class="info-val">' + escapeHtml(val) + '</div></div></div>';
+}
+function buildInfoSheet(place) {
+  var displayName = String(place.personName || place.name || 'Partenaire Popey');
+  var metier = String(place.metier || '');
+  var city = String(liveState.cityLabel || '');
+  var code = String(place.couponCode || '').trim() || ('PRIV-' + place.id).slice(0, 14);
+  var oldPrice = place.value > 0 ? euros(place.value) : 'Plein tarif';
+  var urgency = getExpiryBadge(place.expiry);
+  var proImg = String(place.profileImage || place.image || '');
+  var addr = String(place.address || '').trim() || city;
+  var phone = String(place.phone || '').trim();
+  var website = String(place.website || '').trim();
+  var badge = String(place.badge || 'Offre privilège');
+  return ''
+    + '<div class="priv-sheet">'
+    + '<div class="priv-handle"></div>'
+    + '<div class="priv-sheet-hd"><div class="priv-sheet-title">Fiche du professionnel</div><button class="priv-close" id="infoClose" type="button">✕</button></div>'
+    + '<div class="priv-sheet-body" style="padding-bottom:8px">'
+    + '<div class="info-hdr">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="">' : '') + '<div style="min-width:0"><div class="info-name">' + escapeHtml(displayName) + '</div><div class="info-role">' + escapeHtml(metier) + (city ? ' · ' + escapeHtml(city) : '') + '</div><div class="info-excl">👑 Partenaire Exclusif Popey</div></div></div>'
+    + '<div class="info-sec">L\'offre du mois</div>'
+    + infoRow('🎁', 'Offre', badge)
+    + infoRow('💰', 'Prix habituel', oldPrice)
+    + infoRow('🎟️', 'Code', code)
+    + infoRow('⏰', 'Validité', urgency)
+    + '<div class="info-sec">Coordonnées</div>'
+    + infoRow('📍', 'Adresse', addr)
+    + (phone ? infoRow('📞', 'Téléphone', phone) : '')
+    + (website ? infoRow('🌐', 'Site web', website) : '')
+    + '<div style="padding:14px 16px"><button class="rsv-opt" id="infoContact" type="button" style="justify-content:center;background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.45)"><span style="font-size:14px;font-weight:800;color:#25D366">💬 Contacter ' + escapeHtml(displayName.split(' ')[0]) + '</span></button></div>'
+    + '</div></div>';
+}
+function openInfoSheet(place) {
+  var overlay = document.getElementById('infoOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'infoOverlay';
+    overlay.className = 'priv-overlay';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = buildInfoSheet(place);
+  overlay.classList.add('open');
+  var c = overlay.querySelector('#infoClose');
+  if (c) c.addEventListener('click', function () { overlay.classList.remove('open'); });
+  var ct = overlay.querySelector('#infoContact');
+  if (ct) ct.addEventListener('click', function () { overlay.classList.remove('open'); openContactSheet(place); });
+}
+
 // ─── Carte privilège digitale (exportable en image PNG) ───
 function openPrivCardForCurrent() {
   if (swipeState.inMystery && swipeState.curMystery) { openPrivCard(swipeState.curMystery); return; }
@@ -5278,7 +5344,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
   if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('right'); });
   if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('up'); });
-  if (cardBtn) cardBtn.addEventListener('click', function () { openPrivCardForCurrent(); });
+  if (cardBtn) cardBtn.addEventListener('click', function () { openInfoForCurrent(); });
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();

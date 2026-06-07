@@ -96,6 +96,71 @@ export async function POST(request: Request) {
   const fail = (message: string) =>
     NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "error", message)), { status: 303 });
 
+  // ── Création d'un commerçant "Autre" (métier non listé) directement depuis l'admin ──
+  if (intent === "create_place") {
+    const userId = await getServerUserIdWithProxyFallback();
+    if (!userId) return fail("Session requise.");
+    const supabaseAdmin = createAdminClient();
+    const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", userId).maybeSingle();
+    if (!adminRow) return fail("Acces admin requis.");
+
+    const cityNew = String(formData.get("city") || "").trim();
+    const newMetier = String(formData.get("new_metier") || "").trim();
+    const sphereKey = String(formData.get("sphere_key") || "digital").trim();
+    if (!cityNew || !newMetier) return fail("Ville et métier requis pour créer une offre.");
+    const sphereLabels: Record<string, string> = {
+      "evenements-locaux": "Évènements locaux",
+      sante: "Santé · Bien-être",
+      habitat: "Habitat · Patrimoine",
+      digital: "Digital · Business",
+      mariage: "Mariage · Évènementiel",
+      finance: "Finance · Juridique",
+    };
+    const baseRow: Record<string, unknown> = {
+      city: cityNew,
+      city_slug: slugifyPart(cityNew),
+      sphere_key: sphereKey,
+      sphere_label: sphereLabels[sphereKey] || "Digital · Business",
+      metier: newMetier,
+      metier_slug: slugifyPart(newMetier),
+      status: "reserved",
+      is_seeded: false,
+      owner_member_id: ownerMemberIdRaw || null,
+      company_name: companyNameRaw || null,
+      privilege_badge: privilegeBadgeRaw || null,
+      partner_whatsapp: partnerWhatsappRaw || null,
+      direct_contact: directContactRaw || null,
+      offer_website_url: offerWebsiteUrlRaw || null,
+      offer_description: offerDescriptionRaw || null,
+      owner_display_name: ownerDisplayNameRaw || null,
+      owner_profile_photo_url: ownerProfilePhotoUrlRaw || null,
+      offer_photo_url: offerPhotoUrlRaw || null,
+      offer_expires_at: offerExpiresAtRaw && /^\d{4}-\d{2}-\d{2}$/.test(offerExpiresAtRaw) ? offerExpiresAtRaw : null,
+      partner_offer_value_eur: partnerOfferValueRaw ? Number(partnerOfferValueRaw.replace(",", ".")) || null : null,
+      promo_code: promoCodeRaw ? promoCodeRaw.toUpperCase() : null,
+      offer_address: offerAddressRaw || null,
+      total_spots: totalSpotsRaw ? parseInt(totalSpotsRaw, 10) || null : null,
+      offer_video_url: offerVideoUrlRaw || null,
+      coup_de_coeur_text: coupDeCoeurTextRaw || null,
+      mystery_deal_label: mysteryDealLabelRaw || null,
+      is_mystery_offer: ["on", "true", "1", "yes", "oui"].includes(isMysteryRaw),
+    };
+    let ins = await supabaseAdmin.from("human_marketplace_places").insert(baseRow);
+    if (ins.error && /column/i.test(String(ins.error.message || ""))) {
+      const safeRow = { ...baseRow } as Record<string, unknown>;
+      ["promo_code", "offer_address", "total_spots", "offer_video_url", "coup_de_coeur_text", "mystery_deal_label", "is_mystery_offer", "pro_slug"].forEach(
+        (k) => delete safeRow[k],
+      );
+      ins = await supabaseAdmin.from("human_marketplace_places").insert(safeRow);
+    }
+    if (ins.error) return fail(ins.error.message || "Création impossible.");
+    revalidatePath("/admin/humain/catalogue");
+    revalidatePath("/privilege");
+    return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", `Commerçant créé : ${newMetier}.`)), {
+      status: 303,
+    });
+  }
+
   if (!placeId) return fail("Place introuvable.");
   if (!["dispo", "sale", "occupied", "reserved"].includes(nextStatus)) return fail("Statut de place invalide.");
 

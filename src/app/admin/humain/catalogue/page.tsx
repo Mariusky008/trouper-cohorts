@@ -142,11 +142,13 @@ function CatalogueOfferForm({
   extra,
   members,
   cityParam,
+  isNew = false,
 }: {
   place: SnapPlace;
   extra: ExtraFields | undefined;
   members: Array<{ id: string; label: string }>;
   cityParam: string;
+  isNew?: boolean;
 }) {
   const currentUrl = `/admin/humain/catalogue?city=${encodeURIComponent(cityParam)}`;
   const expires = s(place.offer_expires_at).slice(0, 10);
@@ -159,10 +161,34 @@ function CatalogueOfferForm({
       className="grid gap-3 border-t border-slate-200 p-4 md:grid-cols-2"
     >
       <input type="hidden" name="current_url" value={currentUrl} />
-      <input type="hidden" name="place_id" value={place.id} />
-      <input type="hidden" name="next_status" value={place.status || "reserved"} />
-      {/* Préserve la référence externe (le write path la nullifie si absente) */}
-      <input type="hidden" name="external_ref" value={s(place.external_ref)} />
+      {isNew ? (
+        <>
+          <input type="hidden" name="intent" value="create_place" />
+          <input type="hidden" name="city" value={cityParam} />
+          <label className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Métier (libre)</span>
+            <input name="new_metier" placeholder="Ex: Praticien shiatsu" required className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-3 text-sm" />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Sphère</span>
+            <select name="sphere_key" defaultValue="digital" className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-2 text-sm">
+              <option value="sante">Santé · Bien-être</option>
+              <option value="habitat">Habitat · Patrimoine</option>
+              <option value="digital">Digital · Business</option>
+              <option value="mariage">Mariage · Évènementiel</option>
+              <option value="finance">Finance · Juridique</option>
+              <option value="evenements-locaux">Évènements locaux</option>
+            </select>
+          </label>
+        </>
+      ) : (
+        <>
+          <input type="hidden" name="place_id" value={place.id} />
+          <input type="hidden" name="next_status" value={place.status || "reserved"} />
+          {/* Préserve la référence externe (le write path la nullifie si absente) */}
+          <input type="hidden" name="external_ref" value={s(place.external_ref)} />
+        </>
+      )}
 
       <label className="space-y-1">
         <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Owner membre</span>
@@ -289,16 +315,18 @@ function CatalogueOfferForm({
 
       <div className="flex flex-wrap items-center gap-2 pt-1 md:col-span-2">
         <button type="submit" className="inline-flex h-10 items-center rounded border border-emerald-300 bg-emerald-50 px-4 text-xs font-black uppercase tracking-wide text-emerald-800">
-          💾 Enregistrer cette offre
+          {isNew ? "➕ Créer ce commerçant" : "💾 Enregistrer cette offre"}
         </button>
-        <button
-          type="submit"
-          name="intent"
-          value="clear_privilege"
-          className="inline-flex h-10 items-center rounded border border-red-200 bg-red-50 px-4 text-xs font-black uppercase tracking-wide text-red-700"
-        >
-          Retirer du catalogue
-        </button>
+        {!isNew ? (
+          <button
+            type="submit"
+            name="intent"
+            value="clear_privilege"
+            className="inline-flex h-10 items-center rounded border border-red-200 bg-red-50 px-4 text-xs font-black uppercase tracking-wide text-red-700"
+          >
+            Retirer du catalogue
+          </button>
+        ) : null}
       </div>
     </form>
   );
@@ -504,6 +532,15 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         <p className="text-xs text-muted-foreground">
           Choisis un métier libre, renseigne l&apos;offre + le code promo, puis enregistre : l&apos;offre apparaît aussitôt dans le catalogue.
         </p>
+        <details className="overflow-hidden rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/40">
+          <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+            <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900">+ Autre</span>
+            <strong>Métier non listé</strong>
+            <span className="text-muted-foreground">· saisir un métier libre (hors des 150)</span>
+            <span className="ml-auto text-[11px] text-amber-700">configurer ▾</span>
+          </summary>
+          <CatalogueOfferForm place={{ id: "" } as SnapPlace} extra={undefined} members={members} cityParam={selectedCity} isNew />
+        </details>
         {(showAll ? available : available.slice(0, 12)).map((p) => (
           <details key={p.id} className="overflow-hidden rounded-xl border border-dashed bg-white">
             <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
