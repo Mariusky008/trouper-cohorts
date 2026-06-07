@@ -336,6 +336,7 @@ type LocalEvent = {
   details?: string | null;
   sort_order?: number | null;
   status?: string | null;
+  event_date?: string | null;
 };
 
 function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; cityParam: string; isNew?: boolean }) {
@@ -353,8 +354,13 @@ function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; ci
         <input name="title" defaultValue={s(e.title)} placeholder="Ex: Concert sunset" required={isNew} className={inp} />
       </label>
       <label className="space-y-1">
-        <span className={lbl}>Jour / heure</span>
+        <span className={lbl}>Jour / heure (texte affiché)</span>
         <input name="day_label" defaultValue={s(e.day_label)} placeholder="Ex: Vendredi · 19h" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Date &amp; heure exacte (compte à rebours)</span>
+        <input name="event_date" type="datetime-local" defaultValue={s(e.event_date).slice(0, 16)} className={inp} />
+        <span className="text-[10px] text-muted-foreground">Optionnel — affiche un compte à rebours « J-3 · 3j 4h » sur la carte.</span>
       </label>
       <label className="space-y-1">
         <span className={lbl}>Lieu</span>

@@ -2243,7 +2243,8 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
 /* ── Carte ÉVÉNEMENT / animation locale (premium immersive) ── */
 .swp-card.swp-event .swp-media { background: #1a0610; }
-.swp-card.swp-event .evt-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+.swp-card.swp-event .evt-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; transform-origin: center; animation: evtKen 22s ease-in-out infinite alternate; }
+@keyframes evtKen { from { transform: scale(1.05) translate(0,0); } to { transform: scale(1.18) translate(-2.5%,-2%); } }
 .swp-card.swp-event .evt-hero { position: absolute; inset: 0; overflow: hidden; z-index: 1;
   background:
     radial-gradient(120% 80% at 50% 0%, rgba(251,113,133,.40), transparent 60%),
@@ -2269,8 +2270,34 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.swp-event .evt-av { width: 26px; height: 26px; border-radius: 50%; margin-left: -8px; border: 2px solid #1a0610; background: linear-gradient(135deg, #FB7185, #FB923C); color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .swp-card.swp-event .evt-av:first-child { margin-left: 0; }
 .swp-card.swp-event .evt-sp-lbl { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.86); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
-.swp-card.swp-event .evt-cta { margin-top: 3px; border: none; border-radius: 13px; padding: 13px; font-size: 15px; font-weight: 800; color: #2a0710; box-shadow: 0 10px 28px rgba(251,113,133,.5); cursor: pointer; transition: transform .12s ease; }
+.swp-card.swp-event .evt-cta { position: relative; overflow: hidden; margin-top: 3px; border: none; border-radius: 13px; padding: 13px; font-size: 15px; font-weight: 800; color: #2a0710; box-shadow: 0 10px 28px rgba(251,113,133,.5); cursor: pointer; transition: transform .12s ease; }
 .swp-card.swp-event .evt-cta:active { transform: translateY(1px); }
+.swp-card.swp-event .evt-cta-shine { position: absolute; top: 0; left: -60%; width: 45%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.6), transparent); transform: skewX(-18deg); pointer-events: none; animation: evtShine 3.4s ease-in-out infinite; }
+@keyframes evtShine { 0% { left: -60%; } 55% { left: 135%; } 100% { left: 135%; } }
+
+/* Aura pulsante autour de la carte (effet "live / spécial") */
+.swp-card.swp-event .evt-aura { position: absolute; inset: 0; border-radius: 26px; pointer-events: none; z-index: 4; animation: evtAura 2.8s ease-in-out infinite; }
+@keyframes evtAura {
+  0%,100% { box-shadow: inset 0 0 14px rgba(251,113,133,.26), inset 0 0 0 1.5px rgba(251,113,133,.4); }
+  50%     { box-shadow: inset 0 0 22px rgba(251,146,60,.4), inset 0 0 0 2px rgba(251,146,60,.6); }
+}
+
+/* Particules festives flottantes sur toute la carte */
+.swp-card.swp-event .evt-particles { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+.swp-card.swp-event .evt-part { position: absolute; bottom: -24px; opacity: 0; filter: drop-shadow(0 3px 8px rgba(0,0,0,.45)); animation-name: evtPartRise; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes evtPartRise { 0% { transform: translateY(0) rotate(-8deg); opacity: 0; } 12% { opacity: .9; } 86% { opacity: .9; } 100% { transform: translateY(-660px) rotate(12deg); opacity: 0; } }
+
+/* Pastille "live" pulsante dans le badge Événement */
+.swp-card.swp-event .evt-livepill { gap: 6px; }
+.swp-card.swp-event .evt-livedot { width: 7px; height: 7px; border-radius: 50%; background: #FB7185; box-shadow: 0 0 0 0 rgba(251,113,133,.7); animation: evtLive 1.6s ease-out infinite; }
+@keyframes evtLive { 0% { box-shadow: 0 0 0 0 rgba(251,113,133,.65); } 70% { box-shadow: 0 0 0 7px rgba(251,113,133,0); } 100% { box-shadow: 0 0 0 0 rgba(251,113,133,0); } }
+
+/* Compte à rebours live vers l'événement */
+.swp-card.swp-event .evt-chrono { display: inline-flex; align-self: flex-start; align-items: center; gap: 7px; white-space: nowrap; flex-wrap: nowrap; background: rgba(0,0,0,.5); backdrop-filter: blur(10px); border: 1px solid rgba(251,113,133,.45); border-radius: 999px; padding: 5px 12px 5px 6px; }
+.swp-card.swp-event .evt-jcount { flex-shrink: 0; white-space: nowrap; font-family: var(--fd); font-weight: 900; font-size: 12px; color: #2a0710; background: linear-gradient(135deg, #FB7185, #FB923C); border-radius: 999px; padding: 3px 10px; letter-spacing: .01em; box-shadow: 0 3px 12px rgba(251,113,133,.5); }
+.swp-card.swp-event .evt-chrono-ico { font-size: 12px; }
+.swp-card.swp-event .evt-chrono-txt { font-size: 12px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.swp-card.swp-event .evt-chrono-unit { font-size: 9px; color: rgba(255,255,255,.6); }
 .swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
 .swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
 .swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 5; pointer-events: auto; cursor: pointer; }
@@ -3916,6 +3943,7 @@ async function loadLocalEvents(citySlug) {
         id: 'event:' + String(row.id || ''),
         isEvent: true,
         sortOrder: Number(row.sortOrder || 100),
+        eventDate: String(row.eventDate || '').trim(),
         emoji: String(row.emoji || '').trim() || '📍',
         title: String(row.title || '').trim() || 'Événement local',
         day: String(row.dayLabel || '').trim() || 'Cette semaine',
@@ -4250,6 +4278,7 @@ function renderSwipeStage() {
   if (place && place.isEvent) {
     stage.appendChild(buildEventCard(place));
     renderSwipeProgress();
+    tickSwipeChronos();
     return;
   }
   stage.appendChild(buildSwipeCard(place));
@@ -4418,7 +4447,7 @@ function buildSwipeCard(place) {
   return card;
 }
 
-// ─── Carte ÉVÉNEMENT / animation locale (immersive, glissable) ───
+// ─── Carte ÉVÉNEMENT / animation locale (immersive premium, glissable) ───
 function buildEventCard(ev) {
   var card = document.createElement('article');
   card.className = 'swp-card im swp-event';
@@ -4436,10 +4465,21 @@ function buildEventCard(ev) {
   var detail = String(ev.detail || '').trim();
   var img = String(ev.imageUrl || '').trim();
 
-  // "Ticket" date : 1er segment = jour, le reste = heure/précisions
+  // Date : 1er segment = jour, le reste = heure/précisions
   var dayParts = day.split('·').map(function (s) { return s.trim(); }).filter(Boolean);
   var dayMain = dayParts[0] || day;
   var daySub = dayParts.slice(1).join(' · ');
+  var dayFull = daySub ? (dayMain + ' · ' + daySub) : dayMain;
+
+  // Date ISO (champ event_date) → compte à rebours live + pastille "J-x"
+  var deadlineIso = '';
+  if (ev.eventDate) { var ed = new Date(ev.eventDate); if (!isNaN(ed.getTime())) deadlineIso = ed.toISOString(); }
+  var jcount = '';
+  if (deadlineIso) {
+    var dleft = Math.floor((new Date(deadlineIso).getTime() - Date.now()) / 86400000);
+    if (dleft >= 1) jcount = 'J-' + dleft;
+    else if (dleft === 0) jcount = "Aujourd'hui";
+  }
 
   // Sponsors → puces avatars (initiales)
   var sponsorList = sponsor ? sponsor.split(/[·,]/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
@@ -4453,25 +4493,43 @@ function buildEventCard(ev) {
     sponsorHtml = '<div class="evt-sponsors"><div class="evt-avs">' + avatars + '</div><span class="evt-sp-lbl">✨ Avec ' + spLbl + '</span></div>';
   }
 
-  // Média : "hero" décoratif animé en fond + image plein cadre par-dessus si dispo
-  var floats = '';
+  // Hero décoratif (fond visible sans image, et derrière l'image en fallback)
+  var heroFloats = '';
   var floatEmojis = [emoji, '✨', emoji, '🎉', '✨', emoji, '✨'];
   for (var fi = 0; fi < 7; fi += 1) {
-    floats += '<span class="evt-float" style="left:' + (6 + Math.random() * 86).toFixed(1) + '%;top:' + (10 + Math.random() * 74).toFixed(1) + '%;font-size:' + (15 + Math.random() * 24).toFixed(0) + 'px;animation-delay:' + (Math.random() * 4).toFixed(2) + 's;animation-duration:' + (5 + Math.random() * 4).toFixed(2) + 's">' + floatEmojis[fi % floatEmojis.length] + '</span>';
+    heroFloats += '<span class="evt-float" style="left:' + (6 + Math.random() * 86).toFixed(1) + '%;top:' + (10 + Math.random() * 74).toFixed(1) + '%;font-size:' + (15 + Math.random() * 24).toFixed(0) + 'px;animation-delay:' + (Math.random() * 4).toFixed(2) + 's;animation-duration:' + (5 + Math.random() * 4).toFixed(2) + 's">' + floatEmojis[fi % floatEmojis.length] + '</span>';
   }
-  var hero = '<div class="evt-hero"><div class="evt-hero-glow"></div>' + floats + '<div class="evt-medallion">' + emoji + '</div></div>';
+  var hero = '<div class="evt-hero"><div class="evt-hero-glow"></div>' + heroFloats + '<div class="evt-medallion">' + emoji + '</div></div>';
   var imgTag = img ? '<img class="evt-img" src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
 
+  // Particules animées sur TOUTE la carte (au-dessus du média, sous le texte)
+  var partEmojis = [emoji, '✨', '🎉', '✨', emoji, '✨', '🎊', '✨', emoji];
+  var particles = '';
+  for (var pi = 0; pi < 9; pi += 1) {
+    particles += '<span class="evt-part" style="left:' + (4 + Math.random() * 90).toFixed(1) + '%;font-size:' + (12 + Math.random() * 16).toFixed(0) + 'px;animation-delay:' + (Math.random() * 6).toFixed(2) + 's;animation-duration:' + (6 + Math.random() * 5).toFixed(2) + 's">' + partEmojis[pi % partEmojis.length] + '</span>';
+  }
+
+  // Compte à rebours (mis à jour par le ticker global via [data-deadline])
+  var chronoHtml = '';
+  if (deadlineIso) {
+    chronoHtml = '<div class="evt-chrono" data-deadline="' + deadlineIso + '">'
+      + (jcount ? '<span class="evt-jcount">' + escapeHtml(jcount) + '</span>' : '')
+      + '<span class="evt-chrono-ico">⏳</span><span class="evt-chrono-txt" data-chrono>--</span></div>';
+  }
+
   card.innerHTML =
+    '<div class="evt-aura"></div>' +
     '<div class="swp-media">' + hero + imgTag + '</div>' +
     '<div class="swp-wash" style="background:' + th.wash + '"></div>' +
+    '<div class="evt-particles">' + particles + '</div>' +
     '<div class="im-content">' +
       '<div class="im-top">' +
-        '<div class="im-pill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '">📅 Événement</div>' +
+        '<div class="im-pill evt-livepill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '"><span class="evt-livedot"></span>Événement</div>' +
         (badge ? '<div class="evt-badge" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + escapeHtml(badge) + '</div>' : '') +
       '</div>' +
       '<div class="im-bottom">' +
-        '<div class="evt-datechip" style="border-color:' + th.pillBorder + ';color:' + th.pillText + '">📅 ' + escapeHtml(daySub ? (dayMain + ' · ' + daySub) : dayMain) + '</div>' +
+        chronoHtml +
+        '<div class="evt-datechip" style="border-color:' + th.pillBorder + ';color:' + th.pillText + '">📅 ' + escapeHtml(dayFull) + '</div>' +
         '<div class="evt-headings">' +
           '<div class="evt-kicker" style="color:' + th.pillText + '">Animation · ' + escapeHtml(city) + '</div>' +
           '<div class="im-title bottom evt-title"><span>' + escapeHtml(title) + '</span></div>' +
@@ -4479,7 +4537,7 @@ function buildEventCard(ev) {
         '<div class="evt-where">📍 ' + escapeHtml(spot) + '</div>' +
         (detail ? '<div class="im-desc evt-desc">' + escapeHtml(detail) + '</div>' : '') +
         sponsorHtml +
-        '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">ℹ️ Voir les détails</button>' +
+        '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')"><span class="evt-cta-shine"></span>ℹ️ Voir les détails</button>' +
       '</div>' +
     '</div>' +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
@@ -4493,6 +4551,8 @@ function buildEventCard(ev) {
     // tap simple (pas un glissement) → ouvre le détail de l'événement
     if (Math.abs(swipeState.dx) < 8 && Math.abs(swipeState.dy) < 8) openEventSheet(ev);
   });
+  // Petite salve de confettis à l'apparition (effet "fête")
+  window.setTimeout(function () { if (card.getAttribute('data-top-card') === '1') spawnSwipeConfetti(card, 16); }, 200);
   return card;
 }
 
@@ -4700,9 +4760,10 @@ function dismissSwipeMystery(direction) {
   }, 300);
 }
 
-function spawnSwipeConfetti(parent) {
+function spawnSwipeConfetti(parent, count) {
   var cols = ['#7C3AED', '#A855F7', '#F5A623', '#FFD700', '#00C48C', '#FF6B9D'];
-  for (var i = 0; i < 34; i += 1) {
+  var n = count || 34;
+  for (var i = 0; i < n; i += 1) {
     var c = document.createElement('div');
     c.className = 'swm-confetti';
     c.style.background = cols[Math.floor(Math.random() * cols.length)];

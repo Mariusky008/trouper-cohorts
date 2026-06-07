@@ -103,6 +103,12 @@ export async function POST(request: Request) {
     const statusRaw = String(formData.get("status") || "active").trim().toLowerCase();
     const sortOrder = Number.isFinite(sortOrderRaw) ? Math.max(0, Math.round(sortOrderRaw)) : 100;
     const status = statusRaw === "inactive" ? "inactive" : "active";
+    const eventDateRaw = String(formData.get("event_date") || "").trim();
+    let eventDateIso: string | null = null;
+    if (eventDateRaw) {
+      const parsedDate = new Date(eventDateRaw);
+      if (!Number.isNaN(parsedDate.getTime())) eventDateIso = parsedDate.toISOString();
+    }
 
     if (!city || !citySlug) return fail("Ville obligatoire.");
     if (allowedCities.size > 0 && !allowedCities.has(city)) {
@@ -132,7 +138,7 @@ export async function POST(request: Request) {
       imageUrl = String(publicData?.publicUrl || "").trim();
     }
 
-    const payload = {
+    const basePayload = {
       city,
       city_slug: citySlug,
       title,
@@ -147,21 +153,24 @@ export async function POST(request: Request) {
       status,
       updated_at: new Date().toISOString(),
     };
+    const payload = { ...basePayload, event_date: eventDateIso };
 
-    if (intent === "update") {
-      if (!eventId) return fail("Evenement introuvable.");
-      const { error } = await supabaseAdmin.from("human_privilege_local_events").update(payload).eq("id", eventId);
-      if (error && isMissingLocalEventsTable(error.message || "")) {
-        return fail("Table événements locaux absente. Exécute la migration SQL puis réessaie.");
-      }
-      if (error) return fail(error.message || "Mise a jour evenement impossible.");
-    } else {
-      const { error } = await supabaseAdmin.from("human_privilege_local_events").insert(payload);
-      if (error && isMissingLocalEventsTable(error.message || "")) {
-        return fail("Table événements locaux absente. Exécute la migration SQL puis réessaie.");
-      }
-      if (error) return fail(error.message || "Creation evenement impossible.");
+    if (intent === "update" && !eventId) return fail("Evenement introuvable.");
+    const doWrite = (body: Record<string, unknown>) =>
+      intent === "update"
+        ? supabaseAdmin.from("human_privilege_local_events").update(body).eq("id", eventId)
+        : supabaseAdmin.from("human_privilege_local_events").insert(body);
+
+    // Résilient : si la colonne event_date n'existe pas encore (migration non
+    // appliquée), on réécrit sans elle au lieu de planter.
+    let { error } = await doWrite(payload);
+    if (error && /event_date/i.test(String(error.message || ""))) {
+      ({ error } = await doWrite(basePayload));
     }
+    if (error && isMissingLocalEventsTable(error.message || "")) {
+      return fail("Table événements locaux absente. Exécute la migration SQL puis réessaie.");
+    }
+    if (error) return fail(error.message || (intent === "update" ? "Mise a jour evenement impossible." : "Creation evenement impossible."));
   }
 
   revalidatePath("/admin/humain/marketplace");

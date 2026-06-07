@@ -141,6 +141,7 @@ type MarketplaceLocalEventRow = {
   sort_order: number;
   status: "active" | "inactive";
   updated_at: string;
+  event_date?: string | null;
 };
 
 type MarketplaceSnapshotFilters = {
@@ -353,15 +354,23 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
     console.warn("[admin marketplace] cobrand snapshot unavailable", error);
   }
   try {
-    const { data: localEventsData, error: localEventsError } = await supabaseAdmin
-      .from("human_privilege_local_events")
-      .select("id,city,city_slug,title,day_label,place_label,badge,sponsor_names,emoji,details,image_url,sort_order,status,updated_at")
-      .order("city_slug", { ascending: true })
-      .order("sort_order", { ascending: true })
-      .order("updated_at", { ascending: false })
-      .limit(300);
+    const localEventsBaseCols =
+      "id,city,city_slug,title,day_label,place_label,badge,sponsor_names,emoji,details,image_url,sort_order,status,updated_at";
+    const runLocalEvents = (cols: string) =>
+      supabaseAdmin
+        .from("human_privilege_local_events")
+        .select(cols)
+        .order("city_slug", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .order("updated_at", { ascending: false })
+        .limit(300);
+    // Résilient : retombe sans event_date si la migration n'est pas appliquée.
+    let { data: localEventsData, error: localEventsError } = await runLocalEvents(localEventsBaseCols + ",event_date");
+    if (localEventsError && /event_date/i.test(String(localEventsError.message || ""))) {
+      ({ data: localEventsData, error: localEventsError } = await runLocalEvents(localEventsBaseCols));
+    }
     if (localEventsError) throw localEventsError;
-    localEvents = (localEventsData as MarketplaceLocalEventRow[] | null) || [];
+    localEvents = (localEventsData as unknown as MarketplaceLocalEventRow[] | null) || [];
   } catch (error) {
     console.warn("[admin marketplace] local events snapshot unavailable", error);
   }

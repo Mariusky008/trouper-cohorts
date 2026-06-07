@@ -17,18 +17,26 @@ export async function GET(request: NextRequest) {
     const citySlug = slugify(cityInput || "dax");
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-      .from("human_privilege_local_events")
-      .select("id,city,city_slug,title,day_label,place_label,badge,sponsor_names,emoji,details,image_url,sort_order,status,created_at")
-      .eq("city_slug", citySlug)
-      .eq("status", "active")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .limit(30);
+    const baseCols = "id,city,city_slug,title,day_label,place_label,badge,sponsor_names,emoji,details,image_url,sort_order,status,created_at";
+    const runQuery = (cols: string) =>
+      supabase
+        .from("human_privilege_local_events")
+        .select(cols)
+        .eq("city_slug", citySlug)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .limit(30);
 
+    // Tente avec event_date ; si la colonne n'existe pas encore (migration non
+    // appliquée), on retombe sur les colonnes de base sans casser le catalogue.
+    let { data, error } = await runQuery(baseCols + ",event_date");
+    if (error && /event_date/i.test(String(error.message || ""))) {
+      ({ data, error } = await runQuery(baseCols));
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const events = ((data || []) as Array<Record<string, unknown>>).map((row) => ({
+    const events = ((data || []) as unknown as Array<Record<string, unknown>>).map((row) => ({
       id: String(row.id || ""),
       city: String(row.city || ""),
       citySlug: String(row.city_slug || ""),
@@ -41,6 +49,7 @@ export async function GET(request: NextRequest) {
       details: String(row.details || ""),
       imageUrl: String(row.image_url || ""),
       sortOrder: Number(row.sort_order || 100),
+      eventDate: row.event_date ? String(row.event_date) : "",
     }));
 
     return NextResponse.json({ events, citySlug });
