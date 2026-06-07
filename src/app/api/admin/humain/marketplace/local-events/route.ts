@@ -165,6 +165,7 @@ export async function POST(request: Request) {
   }
 
   revalidatePath("/admin/humain/marketplace");
+  revalidatePath("/admin/humain/catalogue");
   revalidatePath("/privilege");
   return NextResponse.redirect(toAbsolute(request.url, withStatus(currentUrl, "success", "Evenements locaux mis a jour.")), {
     status: 303,

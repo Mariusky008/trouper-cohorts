@@ -323,6 +323,91 @@ function CatalogueOfferForm({
   );
 }
 
+type LocalEvent = {
+  id: string;
+  city: string;
+  title: string;
+  day_label: string;
+  place_label: string;
+  emoji?: string | null;
+  badge?: string | null;
+  sponsor_names?: string | null;
+  image_url?: string | null;
+  details?: string | null;
+  sort_order?: number | null;
+  status?: string | null;
+};
+
+function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; cityParam: string; isNew?: boolean }) {
+  const e = event || ({} as LocalEvent);
+  const currentUrl = `/admin/humain/catalogue?city=${encodeURIComponent(cityParam)}`;
+  const inp = "h-9 w-full rounded border bg-background px-2 text-sm";
+  const lbl = "text-[11px] font-bold uppercase tracking-wide text-muted-foreground";
+  return (
+    <form action="/api/admin/humain/marketplace/local-events" method="post" encType="multipart/form-data" className="grid gap-2 border-t border-slate-200 p-4 md:grid-cols-2">
+      <input type="hidden" name="current_url" value={currentUrl} />
+      <input type="hidden" name="city" value={cityParam} />
+      {!isNew ? <input type="hidden" name="event_id" value={e.id} /> : null}
+      <label className="space-y-1">
+        <span className={lbl}>Titre</span>
+        <input name="title" defaultValue={s(e.title)} placeholder="Ex: Concert sunset" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Jour / heure</span>
+        <input name="day_label" defaultValue={s(e.day_label)} placeholder="Ex: Vendredi · 19h" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Lieu</span>
+        <input name="place_label" defaultValue={s(e.place_label)} placeholder="Ex: Bordeaux centre" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Badge</span>
+        <input name="badge" defaultValue={s(e.badge)} placeholder="Ex: Gratuit / Entrée libre" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Emoji</span>
+        <input name="emoji" defaultValue={isNew ? "🎵" : s(e.emoji)} placeholder="🎵" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Position dans le catalogue</span>
+        <input name="sort_order" type="number" min="0" step="1" defaultValue={isNew ? "100" : String(e.sort_order ?? 100)} placeholder="ex: 3" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Sponsors</span>
+        <input name="sponsor_names" defaultValue={s(e.sponsor_names)} placeholder="Ex: Pedro · Popey · Antonin" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Détails</span>
+        <input name="details" defaultValue={s(e.details)} placeholder="Ex: Village food trucks + DJ set sunset" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Image (URL)</span>
+        <input name="image_url" defaultValue={s(e.image_url)} placeholder="https://.../affiche.jpg" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Image (upload)</span>
+        <input name="image_file" type="file" accept="image/*" className="h-9 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-fuchsia-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-fuchsia-900" />
+      </label>
+      <div className="flex flex-wrap items-center gap-2 pt-1 md:col-span-2">
+        <button type="submit" name="intent" value={isNew ? "create" : "update"} className="inline-flex h-10 items-center rounded border border-fuchsia-300 bg-fuchsia-50 px-4 text-xs font-black uppercase tracking-wide text-fuchsia-800">
+          {isNew ? "➕ Ajouter l'événement" : "💾 Enregistrer"}
+        </button>
+        {!isNew ? (
+          <>
+            <input type="hidden" name="next_status" value={e.status === "active" ? "inactive" : "active"} />
+            <button type="submit" name="intent" value="toggle" className="inline-flex h-10 items-center rounded border border-amber-300 bg-amber-50 px-4 text-xs font-black uppercase tracking-wide text-amber-800">
+              {e.status === "active" ? "Désactiver" : "Activer"}
+            </button>
+            <button type="submit" name="intent" value="delete" className="inline-flex h-10 items-center rounded border border-red-200 bg-red-50 px-4 text-xs font-black uppercase tracking-wide text-red-700">
+              Supprimer
+            </button>
+          </>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
 export default async function AdminCataloguePage({ searchParams }: CataloguePageProps) {
   const qp = (await searchParams) || {};
   const marketStatus = typeof qp.marketStatus === "string" ? qp.marketStatus : "";
@@ -353,6 +438,9 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const extra = await fetchExtraFields(cityPlaces.map((p) => p.id));
   const stats = await fetchEngagementStats(configured.map((p) => p.id));
   const colsReady = await catalogueColumnsReady();
+  const cityEvents = ((snapshot.localEvents || []) as unknown as LocalEvent[])
+    .filter((e) => String(e.city || "") === selectedCity)
+    .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
   const cityTotals = configured.reduce(
     (acc, p) => {
       const st = stats[p.id];
@@ -542,6 +630,40 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         ))}
         {available.length === 0 ? (
           <p className="text-sm text-muted-foreground">Tous les emplacements de cette ville sont configurés.</p>
+        ) : null}
+      </div>
+
+      {/* Événements & animations (cartes informatives dans le catalogue) */}
+      <div className="space-y-2 border-t pt-5">
+        <h2 className="text-lg font-black">📅 Événements &amp; animations — {selectedCity || "—"}</h2>
+        <p className="text-xs text-muted-foreground">
+          Concerts, spectacles, marchés… affichés comme une belle carte dans le catalogue. La <strong>position</strong> détermine
+          où la carte apparaît parmi les offres (1 = en tête).
+        </p>
+
+        <details className="overflow-hidden rounded-xl border-2 border-dashed border-fuchsia-300 bg-fuchsia-50/40">
+          <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+            <span className="rounded-full bg-fuchsia-200 px-2 py-0.5 text-[10px] font-black uppercase text-fuchsia-900">+ Événement</span>
+            <strong>Ajouter un événement / une animation</strong>
+            <span className="ml-auto text-[11px] text-fuchsia-700">créer ▾</span>
+          </summary>
+          <EventForm cityParam={selectedCity} isNew />
+        </details>
+
+        {cityEvents.map((ev) => (
+          <details key={ev.id} className="overflow-hidden rounded-xl border bg-white">
+            <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+              <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-black uppercase text-fuchsia-700">{ev.status === "active" ? "actif" : "inactif"}</span>
+              <span>{s(ev.emoji) || "📅"}</span>
+              <strong className="min-w-0 truncate">{s(ev.title)}</strong>
+              <span className="text-muted-foreground">· {s(ev.day_label)}</span>
+              <span className="ml-auto text-[11px] text-slate-400">pos. {ev.sort_order ?? 100} · modifier ▾</span>
+            </summary>
+            <EventForm event={ev} cityParam={selectedCity} />
+          </details>
+        ))}
+        {cityEvents.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun événement pour cette ville. Ajoute-en un ci-dessus.</p>
         ) : null}
       </div>
     </section>
