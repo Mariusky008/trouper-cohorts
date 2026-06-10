@@ -109,6 +109,7 @@ export async function POST(request: Request) {
       const parsedDate = new Date(eventDateRaw);
       if (!Number.isNaN(parsedDate.getTime())) eventDateIso = parsedDate.toISOString();
     }
+    const eventType = String(formData.get("event_type") || "").trim().toLowerCase() || null;
 
     if (!city || !citySlug) return fail("Ville obligatoire.");
     if (allowedCities.size > 0 && !allowedCities.has(city)) {
@@ -153,7 +154,7 @@ export async function POST(request: Request) {
       status,
       updated_at: new Date().toISOString(),
     };
-    const payload = { ...basePayload, event_date: eventDateIso };
+    const payload = { ...basePayload, event_date: eventDateIso, event_type: eventType };
 
     if (intent === "update" && !eventId) return fail("Evenement introuvable.");
     const doWrite = (body: Record<string, unknown>) =>
@@ -161,10 +162,10 @@ export async function POST(request: Request) {
         ? supabaseAdmin.from("human_privilege_local_events").update(body).eq("id", eventId)
         : supabaseAdmin.from("human_privilege_local_events").insert(body);
 
-    // Résilient : si la colonne event_date n'existe pas encore (migration non
-    // appliquée), on réécrit sans elle au lieu de planter.
+    // Résilient : si les colonnes event_date/event_type n'existent pas encore
+    // (migration non appliquée), on réécrit sans elles au lieu de planter.
     let { error } = await doWrite(payload);
-    if (error && /event_date/i.test(String(error.message || ""))) {
+    if (error && /event_date|event_type/i.test(String(error.message || ""))) {
       ({ error } = await doWrite(basePayload));
     }
     if (error && isMissingLocalEventsTable(error.message || "")) {

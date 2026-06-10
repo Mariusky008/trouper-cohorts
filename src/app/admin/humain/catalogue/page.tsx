@@ -393,7 +393,20 @@ type LocalEvent = {
   sort_order?: number | null;
   status?: string | null;
   event_date?: string | null;
+  event_type?: string | null;
 };
+
+const EVENT_TYPES: { value: string; label: string }[] = [
+  { value: "", label: "— Type (auto) —" },
+  { value: "concert", label: "🎵 Concert" },
+  { value: "spectacle", label: "🎭 Spectacle" },
+  { value: "marche", label: "🧺 Marché" },
+  { value: "expo", label: "🖼️ Expo / Musée" },
+  { value: "sport", label: "🏅 Sport" },
+  { value: "atelier", label: "🛠️ Atelier" },
+  { value: "fete", label: "🎉 Fête / Soirée" },
+  { value: "food", label: "🍽️ Food / Dégustation" },
+];
 
 function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; cityParam: string; isNew?: boolean }) {
   const e = event || ({} as LocalEvent);
@@ -427,8 +440,16 @@ function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; ci
         <input name="badge" defaultValue={s(e.badge)} placeholder="Ex: Gratuit / Entrée libre" className={inp} />
       </label>
       <label className="space-y-1">
-        <span className={lbl}>Emoji</span>
-        <input name="emoji" defaultValue={isNew ? "🎵" : s(e.emoji)} placeholder="🎵" className={inp} />
+        <span className={lbl}>Type d&apos;événement (couleur/icône)</span>
+        <select name="event_type" defaultValue={s(e.event_type)} className={inp}>
+          {EVENT_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
+        </select>
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Emoji (optionnel, sinon auto)</span>
+        <input name="emoji" defaultValue={s(e.emoji)} placeholder="🎵" className={inp} />
       </label>
       <label className="space-y-1">
         <span className={lbl}>Position dans le catalogue</span>

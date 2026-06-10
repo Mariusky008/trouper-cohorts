@@ -2299,6 +2299,41 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.swp-event .evt-chrono-ico { font-size: 12px; }
 .swp-card.swp-event .evt-chrono-txt { font-size: 12px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 .swp-card.swp-event .evt-chrono-unit { font-size: 9px; color: rgba(255,255,255,.6); }
+
+/* ── Carte ÉVÉNEMENT v2 : AFFICHE + BILLET détachable ── */
+.swp-card.swp-event .swp-media { background: #06070c; }
+.swp-card.swp-event .evt-poster-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.swp-card.swp-event .evt-poster-ico { font-size: 150px; filter: drop-shadow(0 16px 40px rgba(0,0,0,.5)); opacity: .92; animation: evtPosterFloat 5s ease-in-out infinite; }
+@keyframes evtPosterFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.04); } }
+.swp-card.swp-event .evt-poster-tint { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.swp-card.swp-event .evt-grain { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .07; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.swp-card.swp-event .evt-kicker-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 13px; font-size: 10px; font-weight: 900; letter-spacing: .12em; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.35); box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.swp-card.swp-event .evt-badge2 { display: inline-flex; align-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 5px 12px; font-size: 10.5px; font-weight: 800; color: #fff; white-space: nowrap; }
+.swp-card.swp-event .evt-count { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; border-radius: 12px; padding: 6px 12px 6px 7px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.swp-card.swp-event .evt-count-j { font-family: var(--fd); font-weight: 900; font-size: 15px; color: #fff; background: rgba(0,0,0,.28); border-radius: 8px; padding: 2px 9px; letter-spacing: .01em; }
+.swp-card.swp-event .evt-count-t { font-size: 13px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.swp-card.swp-event .evt-ticket { display: flex; align-items: stretch; background: rgba(255,255,255,.97); color: #161019; border-radius: 14px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+.swp-card.swp-event .evt-ticket-main { flex: 1; min-width: 0; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.swp-card.swp-event .evt-ticket-row { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; font-weight: 700; line-height: 1.3; }
+.swp-card.swp-event .evt-ticket-row span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.swp-card.swp-event .evt-ticket-ic { font-size: 13px; flex-shrink: 0; }
+.swp-card.swp-event .evt-ticket-stub { position: relative; flex-shrink: 0; width: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 6px; border-left: 2px dashed rgba(22,16,25,.28); text-align: center; }
+.swp-card.swp-event .evt-ticket-stub::before, .swp-card.swp-event .evt-ticket-stub::after { content: ''; position: absolute; left: -7px; width: 12px; height: 12px; border-radius: 50%; background: #06070c; }
+.swp-card.swp-event .evt-ticket-stub::before { top: -6px; }
+.swp-card.swp-event .evt-ticket-stub::after { bottom: -6px; }
+.swp-card.swp-event .evt-ticket-admit { font-size: 7.5px; font-weight: 900; letter-spacing: .14em; color: rgba(22,16,25,.5); }
+.swp-card.swp-event .evt-ticket-no { font-family: var(--fd); font-size: 11px; font-weight: 900; line-height: 1.05; }
+/* Écran "J'y vais !" */
+.swp-card.swp-event .evt-going { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 26px; animation: matchIn .4s ease; }
+.swp-card.swp-event .evt-going.hide { opacity: 0; }
+.swp-card.swp-event .evt-going-check { font-size: 64px; filter: drop-shadow(0 8px 22px rgba(0,0,0,.35)); animation: matchPop .5s cubic-bezier(.2,1.4,.4,1) both; }
+.swp-card.swp-event .evt-going-title { font-family: var(--fd); font-size: 38px; font-weight: 900; color: #fff; line-height: 1; margin-top: 8px; text-shadow: 0 4px 18px rgba(0,0,0,.3); }
+.swp-card.swp-event .evt-going-sub { font-size: 15px; color: rgba(255,255,255,.95); margin-top: 8px; }
+.swp-card.swp-event .evt-going-sub strong { font-weight: 900; }
+.swp-card.swp-event .evt-going-meta { font-size: 12.5px; color: rgba(255,255,255,.85); line-height: 1.7; margin: 14px 0 18px; }
+.swp-card.swp-event .evt-going-btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 290px; background: #fff; color: #161019; border: none; border-radius: 100px; padding: 14px 20px; font-family: var(--fb); font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 26px rgba(0,0,0,.25); text-decoration: none; margin-bottom: 9px; }
+.swp-card.swp-event .evt-going-btn2 { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 290px; background: rgba(255,255,255,.18); backdrop-filter: blur(8px); color: #fff; border: 1.5px solid rgba(255,255,255,.4); border-radius: 100px; padding: 12px 20px; font-family: var(--fb); font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 9px; }
+.swp-card.swp-event .evt-going-skip { background: none; border: none; color: rgba(255,255,255,.8); font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
 .swp-card.im .im-coeur-txt strong { color: #F9A8D4; font-style: normal; }
 .swp-card.im .im-info-btn { background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px; font-family: var(--fb); font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); cursor: pointer; width: 100%; }
 .swp-card.im .im-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; z-index: 5; pointer-events: auto; cursor: pointer; }
@@ -4060,6 +4095,7 @@ async function loadLocalEvents(citySlug) {
         isEvent: true,
         sortOrder: Number(row.sortOrder || 100),
         eventDate: String(row.eventDate || '').trim(),
+        eventType: String(row.eventType || '').trim().toLowerCase(),
         emoji: String(row.emoji || '').trim() || '📍',
         title: String(row.title || '').trim() || 'Événement local',
         day: String(row.dayLabel || '').trim() || 'Cette semaine',
@@ -4583,16 +4619,41 @@ function buildSwipeCard(place) {
   return card;
 }
 
-// ─── Carte ÉVÉNEMENT / animation locale (immersive premium, glissable) ───
+// ─── Theming des cartes ÉVÉNEMENT par type ───
+var EVENT_THEMES = {
+  concert:   { a: '#A855F7', b: '#EC4899', icon: '🎵', kicker: 'CONCERT',     bg: 'linear-gradient(160deg,#2a0b3f,#5b1769)' },
+  spectacle: { a: '#F43F5E', b: '#F59E0B', icon: '🎭', kicker: 'SPECTACLE',   bg: 'linear-gradient(160deg,#3a0a18,#7a1226)' },
+  marche:    { a: '#22C55E', b: '#A3E635', icon: '🧺', kicker: 'MARCHÉ',      bg: 'linear-gradient(160deg,#08331f,#15602f)' },
+  expo:      { a: '#38BDF8', b: '#22D3EE', icon: '🖼️', kicker: 'EXPO',        bg: 'linear-gradient(160deg,#072036,#0a3d52)' },
+  sport:     { a: '#FB923C', b: '#F97316', icon: '🏅', kicker: 'SPORT',       bg: 'linear-gradient(160deg,#3a1606,#7a2d0c)' },
+  atelier:   { a: '#2DD4BF', b: '#0EA5E9', icon: '🛠️', kicker: 'ATELIER',     bg: 'linear-gradient(160deg,#06302c,#0a4d5a)' },
+  fete:      { a: '#F472B6', b: '#FB7185', icon: '🎉', kicker: 'FÊTE',        bg: 'linear-gradient(160deg,#3a0a2a,#7a1250)' },
+  food:      { a: '#F59E0B', b: '#EF4444', icon: '🍽️', kicker: 'DÉGUSTATION', bg: 'linear-gradient(160deg,#3a1606,#7a1226)' },
+  _default:  { a: '#FB7185', b: '#FB923C', icon: '📅', kicker: 'ÉVÉNEMENT',   bg: 'linear-gradient(160deg,#2a0712,#5a0f22)' }
+};
+function eventTheme(ev) {
+  var ty = String((ev && ev.eventType) || '').trim().toLowerCase();
+  var TH = EVENT_THEMES[ty] || EVENT_THEMES._default;
+  var em = String((ev && ev.emoji) || '').trim();
+  var icon = (em && em !== '📅' && em !== '📍') ? em : TH.icon;
+  return { a: TH.a, b: TH.b, icon: icon, kicker: TH.kicker, bg: TH.bg };
+}
+// Petit hash stable → faux numéro de billet
+function evtTicketNo(seed) {
+  var s = String(seed || 'popey'), h = 0;
+  for (var i = 0; i < s.length; i += 1) { h = (h * 31 + s.charCodeAt(i)) % 100000; }
+  var rows = 'ABCDEFGH';
+  return 'RANG ' + rows.charAt(h % rows.length) + ' · ' + (10 + (h % 90));
+}
+
+// ─── Carte ÉVÉNEMENT = AFFICHE + BILLET détachable (theming par type) ───
 function buildEventCard(ev) {
   var card = document.createElement('article');
   card.className = 'swp-card im swp-event';
   card.setAttribute('data-top-card', '1');
-  var th = swipeTheme('evenements-locaux');
-  var accent = th.accent || '#FB7185';
-  var accent2 = '#FB923C';
+  var TH = eventTheme(ev);
+  var accent = TH.a, accent2 = TH.b, icon = TH.icon, kicker = TH.kicker;
   var city = String(liveState.cityLabel || 'Dax');
-  var emoji = String(ev.emoji || '📅');
   var title = String(ev.title || 'Événement local');
   var day = String(ev.day || 'Cette semaine');
   var spot = String(ev.spot || city);
@@ -4601,13 +4662,12 @@ function buildEventCard(ev) {
   var detail = String(ev.detail || '').trim();
   var img = String(ev.imageUrl || '').trim();
 
-  // Date : 1er segment = jour, le reste = heure/précisions
   var dayParts = day.split('·').map(function (s) { return s.trim(); }).filter(Boolean);
   var dayMain = dayParts[0] || day;
   var daySub = dayParts.slice(1).join(' · ');
   var dayFull = daySub ? (dayMain + ' · ' + daySub) : dayMain;
 
-  // Date ISO (champ event_date) → compte à rebours live + pastille "J-x"
+  // Compte à rebours (ticker global via [data-deadline]) + pastille J-x
   var deadlineIso = '';
   if (ev.eventDate) { var ed = new Date(ev.eventDate); if (!isNaN(ed.getTime())) deadlineIso = ed.toISOString(); }
   var jcount = '';
@@ -4616,79 +4676,67 @@ function buildEventCard(ev) {
     if (dleft >= 1) jcount = 'J-' + dleft;
     else if (dleft === 0) jcount = "Aujourd'hui";
   }
+  var countHtml = deadlineIso
+    ? '<div class="evt-count" data-deadline="' + deadlineIso + '" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + (jcount ? '<span class="evt-count-j">' + escapeHtml(jcount) + '</span>' : '') + '<span class="evt-count-t" data-chrono>--</span></div>'
+    : '';
 
-  // Sponsors → puces avatars (initiales)
+  // Sponsors → puces avatars
   var sponsorList = sponsor ? sponsor.split(/[·,]/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
   var sponsorHtml = '';
   if (sponsorList.length) {
     var avatars = sponsorList.slice(0, 4).map(function (name, i) {
       var ini = name.split(' ').map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
-      return '<span class="evt-av" style="z-index:' + (10 - i) + '">' + escapeHtml(ini || '★') + '</span>';
+      return '<span class="evt-av" style="z-index:' + (10 - i) + ';background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + escapeHtml(ini || '★') + '</span>';
     }).join('');
     var spLbl = sponsorList.length === 1 ? escapeHtml(sponsorList[0]) : (sponsorList.length + ' partenaires Popey');
     sponsorHtml = '<div class="evt-sponsors"><div class="evt-avs">' + avatars + '</div><span class="evt-sp-lbl">✨ Avec ' + spLbl + '</span></div>';
   }
 
-  // Hero décoratif (fond visible sans image, et derrière l'image en fallback)
-  var heroFloats = '';
-  var floatEmojis = [emoji, '✨', emoji, '🎉', '✨', emoji, '✨'];
-  for (var fi = 0; fi < 7; fi += 1) {
-    heroFloats += '<span class="evt-float" style="left:' + (6 + Math.random() * 86).toFixed(1) + '%;top:' + (10 + Math.random() * 74).toFixed(1) + '%;font-size:' + (15 + Math.random() * 24).toFixed(0) + 'px;animation-delay:' + (Math.random() * 4).toFixed(2) + 's;animation-duration:' + (5 + Math.random() * 4).toFixed(2) + 's">' + floatEmojis[fi % floatEmojis.length] + '</span>';
-  }
-  var hero = '<div class="evt-hero"><div class="evt-hero-glow"></div>' + heroFloats + '<div class="evt-medallion">' + emoji + '</div></div>';
-  var imgTag = img ? '<img class="evt-img" src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  // Média : photo "affiche" (ken burns) sinon fond thématisé + grand picto filigrane
+  var media = img
+    ? '<img class="evt-img" src="' + escapeAttr(img) + '" alt="' + escapeAttr(title) + '" loading="lazy" onerror="this.closest(\'.swp-media\').classList.add(\'evt-noimg\');this.remove()">'
+    : '<div class="evt-poster-fallback" style="background:' + TH.bg + '"><span class="evt-poster-ico">' + icon + '</span></div>';
 
-  // Particules animées sur TOUTE la carte (au-dessus du média, sous le texte)
-  var partEmojis = [emoji, '✨', '🎉', '✨', emoji, '✨', '🎊', '✨', emoji];
-  var particles = '';
-  for (var pi = 0; pi < 9; pi += 1) {
-    particles += '<span class="evt-part" style="left:' + (4 + Math.random() * 90).toFixed(1) + '%;font-size:' + (12 + Math.random() * 16).toFixed(0) + 'px;animation-delay:' + (Math.random() * 6).toFixed(2) + 's;animation-duration:' + (6 + Math.random() * 5).toFixed(2) + 's">' + partEmojis[pi % partEmojis.length] + '</span>';
-  }
-
-  // Compte à rebours (mis à jour par le ticker global via [data-deadline])
-  var chronoHtml = '';
-  if (deadlineIso) {
-    chronoHtml = '<div class="evt-chrono" data-deadline="' + deadlineIso + '">'
-      + (jcount ? '<span class="evt-jcount">' + escapeHtml(jcount) + '</span>' : '')
-      + '<span class="evt-chrono-ico">⏳</span><span class="evt-chrono-txt" data-chrono>--</span></div>';
-  }
+  var ticketNo = evtTicketNo(ev.id || title);
 
   card.innerHTML =
-    '<div class="evt-aura"></div>' +
-    '<div class="swp-media">' + hero + imgTag + '</div>' +
-    '<div class="swp-wash" style="background:' + th.wash + '"></div>' +
-    '<div class="evt-particles">' + particles + '</div>' +
+    '<div class="swp-media">' + media + '</div>' +
+    '<div class="evt-poster-tint" style="background:linear-gradient(168deg,' + accent + '4d 0%,transparent 38%),linear-gradient(to top,#06070cF2 6%,#06070c66 34%,transparent 60%)"></div>' +
+    '<div class="evt-grain"></div>' +
     '<div class="im-content">' +
       '<div class="im-top">' +
-        '<div class="im-pill evt-livepill" style="background:' + th.pill + ';border:1.5px solid ' + th.pillBorder + ';color:' + th.pillText + ';box-shadow:0 0 20px ' + th.pill + '"><span class="evt-livedot"></span>Événement</div>' +
-        (badge ? '<div class="evt-badge" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + escapeHtml(badge) + '</div>' : '') +
+        '<div class="evt-kicker-badge" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + icon + ' ' + escapeHtml(kicker) + '</div>' +
+        (badge ? '<div class="evt-badge2">' + escapeHtml(badge) + '</div>' : '') +
       '</div>' +
       '<div class="im-bottom">' +
-        chronoHtml +
-        '<div class="evt-datechip" style="border-color:' + th.pillBorder + ';color:' + th.pillText + '">📅 ' + escapeHtml(dayFull) + '</div>' +
-        '<div class="evt-headings">' +
-          '<div class="evt-kicker" style="color:' + th.pillText + '">Animation · ' + escapeHtml(city) + '</div>' +
-          '<div class="im-title bottom evt-title"><span>' + escapeHtml(title) + '</span></div>' +
+        countHtml +
+        '<div class="im-title bottom evt-title"><span>' + escapeHtml(title) + '</span></div>' +
+        '<div class="evt-ticket">' +
+          '<div class="evt-ticket-main">' +
+            '<div class="evt-ticket-row"><span class="evt-ticket-ic">🗓️</span><span>' + escapeHtml(dayFull) + '</span></div>' +
+            '<div class="evt-ticket-row"><span class="evt-ticket-ic">📍</span><span>' + escapeHtml(spot) + '</span></div>' +
+          '</div>' +
+          '<div class="evt-ticket-stub" style="color:' + accent + '"><span class="evt-ticket-admit">ADMIT ONE</span><span class="evt-ticket-no">' + escapeHtml(ticketNo) + '</span></div>' +
         '</div>' +
-        '<div class="evt-where">📍 ' + escapeHtml(spot) + '</div>' +
         (detail ? '<div class="im-desc evt-desc">' + escapeHtml(detail) + '</div>' : '') +
         sponsorHtml +
-        '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')"><span class="evt-cta-shine"></span>ℹ️ Voir les détails</button>' +
+        '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')"><span class="evt-cta-shine"></span>🎟️ J\'y vais&nbsp;!</button>' +
       '</div>' +
     '</div>' +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
+  // Contour thématisé (cohérent avec les cartes offres) — la carte ressort
+  card.style.border = '1.5px solid ' + accent + '88';
+  card.style.boxShadow = '0 26px 64px rgba(0,0,0,.74), 0 0 0 1.5px rgba(255,255,255,.1), 0 0 52px ' + accent + '4d';
   wireSwipeDrag(card, ev);
   var cta = card.querySelector('.evt-cta');
   if (cta) {
     cta.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-    cta.addEventListener('click', function (e) { e.stopPropagation(); openEventSheet(ev); });
+    cta.addEventListener('click', function (e) { e.stopPropagation(); openEventGoing(ev); });
   }
   card.addEventListener('click', function () {
-    // tap simple (pas un glissement) → ouvre le détail de l'événement
+    // tap simple (pas un glissement) → détails de l'événement
     if (Math.abs(swipeState.dx) < 8 && Math.abs(swipeState.dy) < 8) openEventSheet(ev);
   });
-  // Petite salve de confettis à l'apparition (effet "fête")
-  window.setTimeout(function () { if (card.getAttribute('data-top-card') === '1') spawnSwipeConfetti(card, 16); }, 200);
   return card;
 }
 
@@ -4731,6 +4779,80 @@ function shareEvent(ev) {
   var text = '📅 ' + String(ev.title || 'Événement') + '\n' + String(ev.day || '') + ' · ' + String(ev.spot || '') + '\n\n👉 ' + link;
   if (navigator.share) { navigator.share({ title: String(ev.title || 'Événement'), text: text, url: link }).catch(function () {}); }
   else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
+}
+
+// ─── Écran "J'y vais !" (équivalent du match Tinder) : agenda + invitation ───
+function evtIcsStamp(d) {
+  function z(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getUTCFullYear() + z(d.getUTCMonth() + 1) + z(d.getUTCDate()) + 'T' + z(d.getUTCHours()) + z(d.getUTCMinutes()) + '00Z';
+}
+function eventGoogleCalUrl(ev) {
+  var url = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+  url += '&text=' + encodeURIComponent(String(ev.title || 'Événement'));
+  var loc = String(ev.spot || liveState.cityLabel || '');
+  if (loc) url += '&location=' + encodeURIComponent(loc);
+  var det = String(ev.detail || '');
+  if (ev.day) det = (det ? det + '\n' : '') + String(ev.day);
+  if (det) url += '&details=' + encodeURIComponent(det);
+  if (ev.eventDate) {
+    var d = new Date(ev.eventDate);
+    if (!isNaN(d.getTime())) url += '&dates=' + evtIcsStamp(d) + '/' + evtIcsStamp(new Date(d.getTime() + 2 * 3600000));
+  }
+  return url;
+}
+function downloadEventIcs(ev) {
+  var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Popey//Catalogue//FR', 'BEGIN:VEVENT', 'UID:' + (String(ev.id || Date.now())) + '@popey', 'SUMMARY:' + String(ev.title || 'Événement')];
+  if (ev.eventDate) {
+    var d = new Date(ev.eventDate);
+    if (!isNaN(d.getTime())) { lines.push('DTSTART:' + evtIcsStamp(d)); lines.push('DTEND:' + evtIcsStamp(new Date(d.getTime() + 2 * 3600000))); }
+  }
+  if (ev.spot) lines.push('LOCATION:' + String(ev.spot));
+  if (ev.detail) lines.push('DESCRIPTION:' + String(ev.detail).replace(/\n/g, '\\n'));
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+  try {
+    var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = String(ev.title || 'evenement').replace(/[^a-z0-9]+/gi, '-').slice(0, 40) + '.ics';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  } catch (e) { window.open(eventGoogleCalUrl(ev), '_blank'); }
+}
+function inviteEventFriends(ev) {
+  var link = '';
+  try { link = window.location.href; } catch (e) {}
+  var text = '🎟️ ' + String(ev.title || 'Événement') + '\n' + String(ev.day || '') + ' · ' + String(ev.spot || '') + '\nOn y va ensemble ? 👉 ' + link;
+  if (navigator.share) { navigator.share({ title: String(ev.title || 'Événement'), text: text, url: link }).catch(function () {}); }
+  else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
+}
+function openEventGoing(ev) {
+  if (!ev) return;
+  var card = document.querySelector('.swp-event[data-top-card="1"]');
+  if (!card || card.querySelector('.evt-going')) return;
+  resetTopSwipeCardVisual();
+  try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
+  var TH = eventTheme(ev);
+  var title = String(ev.title || 'Événement');
+  var day = String(ev.day || 'Bientôt');
+  var spot = String(ev.spot || liveState.cityLabel || '');
+  var ov = document.createElement('div');
+  ov.className = 'evt-going';
+  ov.style.background = 'linear-gradient(165deg,' + TH.a + 'f5,' + TH.b + 'f5)';
+  ov.innerHTML =
+    '<div class="evt-going-check">🎟️</div>' +
+    '<div class="evt-going-title">C\'est noté&nbsp;!</div>' +
+    '<div class="evt-going-sub">On se voit à <strong>' + escapeHtml(title) + '</strong></div>' +
+    '<div class="evt-going-meta">🗓️ ' + escapeHtml(day) + '<br>📍 ' + escapeHtml(spot) + '</div>' +
+    '<a class="evt-going-btn" href="' + escapeAttr(eventGoogleCalUrl(ev)) + '" target="_blank" rel="noopener">📅 Ajouter à mon agenda</a>' +
+    '<button class="evt-going-btn2" id="evtIcsBtn" type="button">⤓ Ajouter au calendrier (.ics)</button>' +
+    '<button class="evt-going-btn2" id="evtInviteBtn" type="button">💬 Inviter des amis</button>' +
+    '<button class="evt-going-skip" id="evtContBtn" type="button">Continuer →</button>';
+  card.appendChild(ov);
+  ov.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  var ics = ov.querySelector('#evtIcsBtn'); if (ics) ics.addEventListener('click', function (e) { e.stopPropagation(); downloadEventIcs(ev); });
+  var inv = ov.querySelector('#evtInviteBtn'); if (inv) inv.addEventListener('click', function (e) { e.stopPropagation(); inviteEventFriends(ev); });
+  var cont = ov.querySelector('#evtContBtn'); if (cont) cont.addEventListener('click', function (e) { e.stopPropagation(); swipeAdvance('right'); });
 }
 
 // Chrono live : met à jour chaque seconde tous les compteurs visibles
@@ -5077,9 +5199,10 @@ async function swipeCardAction(direction) {
   var place = swipeState.queue[swipeState.index];
   if (!place) return;
   if (place.isEvent) {
-    // Carte événement : informative. ↑ = détails, ←/→ = continuer.
-    if (direction === 'up') { resetTopSwipeCardVisual(); openEventSheet(place); return; }
-    swipeAdvance(direction === 'left' ? 'left' : 'right');
+    // Carte événement : ↑ = « J'y vais ! » (agenda), → = ça m'intéresse, ← = passer.
+    if (direction === 'up') { resetTopSwipeCardVisual(); openEventGoing(place); return; }
+    if (direction === 'right') { showSwipeToast('Noté ✨ — ça t\'intéresse'); swipeAdvance('right'); return; }
+    swipeAdvance('left');
     return;
   }
   if (direction === 'left') {

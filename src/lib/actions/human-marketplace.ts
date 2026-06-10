@@ -142,6 +142,7 @@ type MarketplaceLocalEventRow = {
   status: "active" | "inactive";
   updated_at: string;
   event_date?: string | null;
+  event_type?: string | null;
 };
 
 type MarketplaceSnapshotFilters = {
@@ -364,9 +365,9 @@ export async function getAdminMarketplaceSnapshot(filters: MarketplaceSnapshotFi
         .order("sort_order", { ascending: true })
         .order("updated_at", { ascending: false })
         .limit(300);
-    // Résilient : retombe sans event_date si la migration n'est pas appliquée.
-    let { data: localEventsData, error: localEventsError } = await runLocalEvents(localEventsBaseCols + ",event_date");
-    if (localEventsError && /event_date/i.test(String(localEventsError.message || ""))) {
+    // Résilient : retombe sur les colonnes de base si event_date/event_type absents.
+    let { data: localEventsData, error: localEventsError } = await runLocalEvents(localEventsBaseCols + ",event_date,event_type");
+    if (localEventsError && /event_date|event_type/i.test(String(localEventsError.message || ""))) {
       ({ data: localEventsData, error: localEventsError } = await runLocalEvents(localEventsBaseCols));
     }
     if (localEventsError) throw localEventsError;
