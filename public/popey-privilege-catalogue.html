@@ -2331,6 +2331,73 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swo-btn { background: #00C48C; color: #04140f; border: none; border-radius: 100px; padding: 15px 40px; font-family: var(--fb); font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 28px rgba(0,196,140,.4); }
 .swo-btn:active { transform: scale(.97); }
 
+/* ════════ ÉCRAN D'ACCUEIL "Les codes secrets de la ville" (coffre/parchemin) ════════ */
+.onboard { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 0%,#0d1f1a 0%,#080a12 45%,#050609 100%); z-index: 9300; display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; transition: opacity .5s ease; }
+.onboard.hide { opacity: 0; pointer-events: none; }
+.ob-ambient { position: absolute; top: -15%; left: 50%; transform: translateX(-50%); width: 600px; height: 400px; background: radial-gradient(circle,rgba(0,224,160,.18),transparent 65%); pointer-events: none; animation: obAmbient 6s ease-in-out infinite; }
+@keyframes obAmbient { 0%,100% { opacity: .6; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.15); } }
+.ob-grain { position: absolute; inset: 0; opacity: .04; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.ob-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 8px; z-index: 2; animation: obFadeDown .5s ease both; }
+@keyframes obFadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.ob-member { display: flex; align-items: center; gap: 10px; }
+.ob-member-av { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.1); border: 2px solid rgba(0,224,160,.4); display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 0 16px rgba(0,224,160,.3); overflow: hidden; }
+.ob-member-av img { width: 100%; height: 100%; object-fit: cover; }
+.ob-member-name { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.1; }
+.ob-member-prog { font-size: 10px; color: rgba(0,224,160,.7); }
+.ob-logo { font-family: var(--fd); font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -.5px; }
+.ob-logo span { color: #00E0A0; }
+.ob-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 22px 30px; z-index: 2; gap: 14px; min-height: 0; }
+.ob-scroll-wrap { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; animation: obScrollIn .7s cubic-bezier(.2,.8,.3,1) .15s both; }
+@keyframes obScrollIn { from { opacity: 0; transform: translateY(24px) scale(.92); } to { opacity: 1; transform: none; } }
+.ob-seal { position: absolute; top: -16px; z-index: 5; width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg,#00E0A0,#0a9e76); display: flex; align-items: center; justify-content: center; font-size: 23px; box-shadow: 0 0 28px rgba(0,224,160,.7),0 0 0 4px rgba(7,8,16,1),0 0 0 5px rgba(0,224,160,.3); animation: obSealPulse 2.5s ease infinite; }
+@keyframes obSealPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.ob-frame { position: relative; width: 100%; max-width: 340px; padding: 14px; }
+.ob-corner { position: absolute; width: 26px; height: 26px; border-color: #00E0A0; border-style: solid; filter: drop-shadow(0 0 6px rgba(0,224,160,.8)); animation: obCornerPulse 2.5s ease infinite; }
+.ob-corner.tl { top: 0; left: 0; border-width: 2.5px 0 0 2.5px; border-radius: 8px 0 0 0; }
+.ob-corner.tr { top: 0; right: 0; border-width: 2.5px 2.5px 0 0; border-radius: 0 8px 0 0; }
+.ob-corner.bl { bottom: 0; left: 0; border-width: 0 0 2.5px 2.5px; border-radius: 0 0 0 8px; }
+.ob-corner.br { bottom: 0; right: 0; border-width: 0 2.5px 2.5px 0; border-radius: 0 0 8px 0; }
+@keyframes obCornerPulse { 0%,100% { opacity: .6; } 50% { opacity: 1; } }
+.ob-parchment { position: relative; margin: 6px; filter: drop-shadow(0 10px 30px rgba(0,0,0,.5)); }
+.ob-roll { height: 22px; border-radius: 11px; background: linear-gradient(180deg,#c9a876 0%,#a07e4f 45%,#8a6a3f 55%,#b8965f 100%); box-shadow: inset 0 2px 3px rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.35),0 0 14px rgba(0,224,160,.25); position: relative; z-index: 2; }
+.ob-roll::before, .ob-roll::after { content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%,#d8bb88,#7a5d35); box-shadow: 0 0 8px rgba(0,224,160,.4); }
+.ob-roll::before { left: -3px; }
+.ob-roll::after { right: -3px; }
+.ob-roll-top { margin-bottom: -6px; }
+.ob-roll-bottom { margin-top: -6px; }
+.ob-parchment-body { background: linear-gradient(170deg,#f3e6c8 0%,#e9d7b0 50%,#f0e1c0 100%); padding: 26px 24px; position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(160,126,79,.25),inset 0 0 0 1px rgba(0,224,160,.15); border-left: 1px solid rgba(138,106,63,.3); border-right: 1px solid rgba(138,106,63,.3); }
+.ob-parchment-body::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%,transparent 60%,rgba(138,106,63,.15) 100%); pointer-events: none; }
+.ob-scroll-quote { font-family: var(--fd); font-size: 16.5px; font-weight: 600; font-style: italic; color: #4a3a22; line-height: 1.45; text-align: center; position: relative; z-index: 1; }
+.ob-scroll-quote em { font-style: italic; color: #0a7a56; font-weight: 900; text-shadow: 0 0 1px rgba(10,122,86,.3); }
+.ob-alert { display: flex; align-items: center; gap: 8px; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.4); border-radius: 100px; padding: 8px 16px; font-size: 10.5px; font-weight: 800; letter-spacing: .03em; color: #fff; text-align: center; box-shadow: 0 0 20px rgba(239,68,68,.2); animation: obAlertIn .6s ease .35s both; }
+@keyframes obAlertIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+.ob-alert-fire { animation: obFlicker 1.5s ease infinite; }
+@keyframes obFlicker { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .7; transform: scale(1.15); } }
+.ob-cats { display: flex; gap: 18px; animation: obFadeUp .6s ease .45s both; }
+.ob-cat { display: flex; flex-direction: column; align-items: center; gap: 5px; animation: obCatBob 3s ease infinite; animation-delay: var(--d); }
+@keyframes obCatBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.ob-cat-ic { width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(8px); }
+.ob-cat span { font-size: 9px; color: rgba(255,255,255,.5); font-weight: 600; }
+.ob-filter-note { font-size: 11px; color: rgba(255,255,255,.4); font-weight: 500; animation: obFadeUp .6s ease .5s both; }
+.ob-preview { display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: obFadeUp .6s ease .55s both; padding: 8px 0; }
+.ob-pv { border-radius: 14px; overflow: hidden; border: 2px solid rgba(255,255,255,.15); box-shadow: 0 8px 24px rgba(0,0,0,.5); background: linear-gradient(135deg,#1a2e2a,#0d1715); flex-shrink: 0; }
+.ob-pv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ob-pv-c { position: relative; width: 92px; height: 120px; z-index: 3; border-color: rgba(0,224,160,.55); box-shadow: 0 10px 30px rgba(0,224,160,.4); }
+.ob-pv-l { width: 72px; height: 96px; transform: rotate(-10deg); margin-right: -18px; z-index: 1; opacity: .9; }
+.ob-pv-r { width: 72px; height: 96px; transform: rotate(10deg); margin-left: -18px; z-index: 1; opacity: .9; }
+.ob-pv-tag { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: #00E0A0; color: #04241b; font-size: 9px; font-weight: 800; padding: 3px 9px; border-radius: 100px; white-space: nowrap; box-shadow: 0 2px 10px rgba(0,224,160,.6); z-index: 4; }
+.ob-cta { position: relative; display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg,#00E0A0,#0a9e76); border: none; border-radius: 100px; padding: 16px 30px; cursor: pointer; margin-top: 4px; box-shadow: 0 10px 36px rgba(0,224,160,.5); animation: obCtaIn .6s ease .65s both,obCtaPulse 2.4s ease 1.3s infinite; overflow: hidden; }
+@keyframes obCtaIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes obCtaPulse { 0%,100% { box-shadow: 0 10px 36px rgba(0,224,160,.5); } 50% { box-shadow: 0 10px 50px rgba(0,224,160,.85); } }
+.ob-cta-glow { position: absolute; inset: 0; background: linear-gradient(115deg,transparent 35%,rgba(255,255,255,.4) 50%,transparent 65%); animation: obShine 3s ease 1.5s infinite; }
+@keyframes obShine { 0% { transform: translateX(-100%); } 60%,100% { transform: translateX(100%); } }
+.ob-cta-icon { font-size: 20px; z-index: 1; }
+.ob-cta-text { display: flex; flex-direction: column; align-items: flex-start; color: #04241b; font-family: var(--fb); font-size: 16px; font-weight: 800; line-height: 1.1; z-index: 1; }
+.ob-cta-sub { font-size: 10px; font-weight: 600; opacity: .7; margin-top: 2px; }
+.ob-gestures { display: flex; gap: 20px; font-size: 11px; color: rgba(255,255,255,.4); font-weight: 600; animation: obFadeUp .6s ease .8s both; }
+.ob-gestures b { font-size: 13px; }
+@keyframes obFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
 /* ════════ 4e bouton "Ma carte" + CARTE PRIVILÈGE DIGITALE (export PNG) ════════ */
 .swp-act.card { width: 54px; height: 54px; background: rgba(245,166,35,.14); border: 1.5px solid rgba(245,166,35,.55); color: #F5A623; }
 .priv-overlay { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.7); backdrop-filter: blur(14px); display: none; align-items: flex-end; justify-content: center; }
@@ -5255,39 +5322,61 @@ function startSwipeLiveCounter() {
   }, 3500);
 }
 
-// Onboarding 1er lancement : explique les 3 gestes (une seule fois)
+// Écran d'accueil "Les codes secrets de la ville" : coffre/parchemin immersif,
+// montre l'idée du catalogue avant le swipe. Affiché à chaque ouverture.
 function maybeShowSwipeOnboarding() {
-  try { if (localStorage.getItem('popey_priv_onboard_v1') === '1') return; } catch (e) {}
   var existing = document.getElementById('swipeOnboard');
   if (existing) { existing.classList.remove('hide'); return; }
-  var first = String(liveState.refFirstName || 'Votre contact');
-  var n = Math.max(1, swipeState.queue.length || 0);
-  var moisLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  var first = String(liveState.refFirstName || 'Un membre Popey');
+  var n = Math.max(1, (liveState.places || []).length || swipeState.queue.length || 0);
+  var city = String(liveState.cityLabel || 'votre ville');
+  var moisLabel = new Date().toLocaleDateString('fr-FR', { month: 'long' });
   moisLabel = moisLabel.charAt(0).toUpperCase() + moisLabel.slice(1);
+  var avatar = String(liveState.refPhoto || '').trim();
+  var avatarHtml = avatar ? '<img src="' + escapeAttr(avatar) + '" alt="" onerror="this.style.display=\'none\'">' : '👤';
+
   var ob = document.createElement('div');
   ob.id = 'swipeOnboard';
-  ob.className = 'swp-onboard';
+  ob.className = 'onboard';
   ob.innerHTML =
-    '<div class="swo-inner">' +
-      '<div class="swo-logo">Pop<span>ey</span></div>' +
-      '<div class="swo-sub">Catalogue Privilège · ' + escapeHtml(liveState.cityLabel || 'votre ville') + ' · ' + escapeHtml(moisLabel) + '</div>' +
-      '<div class="swo-demo">' +
-        '<div class="swo-up"><div class="swo-arrow">⬆️</div><div class="swo-lbl" style="color:#25D366">Glissez vers le haut<br><strong>pour réserver</strong></div></div>' +
-        '<div class="swo-row">' +
-          '<div class="swo-side"><div class="swo-arrow">⬅️</div><div class="swo-lbl" style="color:#EC4899">Passer</div></div>' +
-          '<div class="swo-phone">🎁</div>' +
-          '<div class="swo-side"><div class="swo-arrow">➡️</div><div class="swo-lbl" style="color:#00C48C">Favoris</div></div>' +
+    '<div class="ob-ambient"></div><div class="ob-grain"></div>' +
+    '<div class="ob-topbar">' +
+      '<div class="ob-member"><div class="ob-member-av">' + avatarHtml + '</div>' +
+        '<div><div class="ob-member-name">' + escapeHtml(first) + '</div><div class="ob-member-prog">vous a ouvert les portes</div></div></div>' +
+      '<div class="ob-logo">Pop<span>ey</span></div>' +
+    '</div>' +
+    '<div class="ob-inner">' +
+      '<div class="ob-scroll-wrap">' +
+        '<div class="ob-seal">🔓</div>' +
+        '<div class="ob-frame">' +
+          '<span class="ob-corner tl"></span><span class="ob-corner tr"></span><span class="ob-corner bl"></span><span class="ob-corner br"></span>' +
+          '<div class="ob-parchment"><div class="ob-roll ob-roll-top"></div>' +
+            '<div class="ob-parchment-body"><div class="ob-scroll-quote">«&nbsp;On a infiltré les commerçants &amp; artisans de ' + escapeHtml(city) + ' pour réunir leurs <em>meilleurs codes promo</em> et offres secrètes du mois.&nbsp;»</div></div>' +
+            '<div class="ob-roll ob-roll-bottom"></div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="swo-intro"><strong>' + escapeHtml(first) + '</strong> vous a sélectionné <strong>' + n + ' offre' + (n > 1 ? 's' : '') + ' exclusive' + (n > 1 ? 's' : '') + '</strong> ce mois-ci.<br>Swipez pour les découvrir.<span style="display:block;margin-top:12px;font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">🔄 Chaque mois, un nouveau catalogue : promos exclusives + les sorties &amp; événements à faire dans votre ville.</span></div>' +
-      '<button class="swo-btn" id="swoBtn" type="button">C\'est parti →</button>' +
+      '<div class="ob-alert"><span class="ob-alert-fire">🔥</span><span>' + n + ' OFFRES EXCLUSIVES DE VOS COMMERÇANTS PRÉFÉRÉS</span><span class="ob-alert-fire">🔥</span></div>' +
+      '<div class="ob-cats">' +
+        '<div class="ob-cat" style="--d:0s"><div class="ob-cat-ic">☕</div><span>Commerces</span></div>' +
+        '<div class="ob-cat" style="--d:.1s"><div class="ob-cat-ic">🛍️</div><span>Boutiques</span></div>' +
+        '<div class="ob-cat" style="--d:.2s"><div class="ob-cat-ic">🎨</div><span>Artisans</span></div>' +
+        '<div class="ob-cat" style="--d:.3s"><div class="ob-cat-ic">🍽️</div><span>Restos</span></div>' +
+      '</div>' +
+      '<div class="ob-filter-note">🔍 Sélection mensuelle · 1 seul pro par métier · sans filtre</div>' +
+      '<div class="ob-preview">' +
+        '<div class="ob-pv ob-pv-l" style="display:flex;align-items:center;justify-content:center;font-size:34px;background:linear-gradient(135deg,#d6671f,#5c2808)">🎨</div>' +
+        '<div class="ob-pv ob-pv-c" style="display:flex;align-items:center;justify-content:center;font-size:44px;background:linear-gradient(135deg,#0a8f6a,#043d2c)">🏃<div class="ob-pv-tag">−50% à −100%</div></div>' +
+        '<div class="ob-pv ob-pv-r" style="display:flex;align-items:center;justify-content:center;font-size:34px;background:linear-gradient(135deg,#b8455f,#4a0e1f)">🍽️</div>' +
+      '</div>' +
+      '<button class="ob-cta" id="obCta" type="button"><span class="ob-cta-glow"></span><span class="ob-cta-icon">💬</span>' +
+        '<span class="ob-cta-text">Découvrir le catalogue<span class="ob-cta-sub">' + n + ' offre' + (n > 1 ? 's' : '') + ' · Édition de ' + escapeHtml(moisLabel) + '</span></span></button>' +
+      '<div class="ob-gestures"><span><b style="color:#EC4899">←</b> Passer</span><span><b style="color:#25D366">↑</b> Réserver</span><span><b style="color:#00E0A0">→</b> Favoris</span></div>' +
     '</div>';
   document.body.appendChild(ob);
-  var btn = ob.querySelector('#swoBtn');
+  var btn = ob.querySelector('#obCta');
   if (btn) btn.addEventListener('click', function () {
     ob.classList.add('hide');
-    try { localStorage.setItem('popey_priv_onboard_v1', '1'); } catch (e) {}
-    window.setTimeout(function () { if (ob && ob.parentNode) ob.parentNode.removeChild(ob); }, 420);
+    window.setTimeout(function () { if (ob && ob.parentNode) ob.parentNode.removeChild(ob); }, 520);
   });
 }
 
