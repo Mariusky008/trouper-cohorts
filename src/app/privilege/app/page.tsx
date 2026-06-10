@@ -9,7 +9,7 @@ export default async function PrivilegeAppPage({ searchParams }: PrivilegeAppPag
   const ville = String(resolvedSearchParams.ville || "dax").trim().toLowerCase() || "dax";
   const query = new URLSearchParams();
   query.set("ville", ville);
-  query.set("v", "20260607-immersif-v17-evtwow");
+  query.set("v", "20260607-immersif-v18-cardpop");
   for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
     if (!rawValue) continue;
     if (key === "ville") continue;
