@@ -2398,6 +2398,46 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .ob-gestures b { font-size: 13px; }
 @keyframes obFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
+/* ════════ CARTE "PROFIL TINDER" DU COMMERÇANT + ÉCRAN DE MATCH ════════ */
+.swp-card.tinder-card { background: #15121a; border: none; box-shadow: 0 26px 64px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.08); display: flex; flex-direction: column; }
+.swp-card.tinder-card .tc-photo { position: relative; flex: 1; overflow: hidden; min-height: 0; }
+.swp-card.tinder-card .tc-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tc-fun-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF6B9D,#C9457A); border-radius: 100px; padding: 5px 16px; font-size: 10px; font-weight: 800; color: #fff; letter-spacing: .05em; box-shadow: 0 4px 16px rgba(201,69,122,.5); white-space: nowrap; z-index: 6; }
+.tc-compat { position: absolute; top: 48px; right: 14px; background: rgba(255,107,157,.9); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.3); border-radius: 100px; padding: 5px 12px; font-size: 11px; font-weight: 700; color: #fff; z-index: 6; box-shadow: 0 4px 16px rgba(201,69,122,.4); animation: tcCompatPulse 2s ease infinite; }
+.tc-compat b { font-size: 13px; }
+@keyframes tcCompatPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+.tc-gradient { position: absolute; inset: 0; background: linear-gradient(to top,rgba(15,12,20,.97) 0%,rgba(15,12,20,.6) 35%,transparent 60%); z-index: 1; }
+.tc-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 18px; z-index: 2; }
+.tc-name-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.tc-name { font-family: var(--fd); font-size: 28px; font-weight: 900; color: #fff; line-height: 1; }
+.tc-age { font-size: 18px; font-weight: 400; color: rgba(255,255,255,.8); }
+.tc-verified { font-size: 14px; color: #38BDF8; }
+.tc-job { font-size: 13px; color: rgba(255,255,255,.65); margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+.tc-bio { font-size: 14px; color: rgba(255,255,255,.9); line-height: 1.5; margin-bottom: 12px; }
+.tc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tc-tag { background: rgba(255,255,255,.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 100px; padding: 5px 12px; font-size: 11px; font-weight: 600; color: #fff; }
+.tc-float-hearts { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+.tc-float-heart { position: absolute; bottom: -30px; font-size: 20px; opacity: 0; animation: tcHeartRise 4s ease-in infinite; }
+@keyframes tcHeartRise { 0% { transform: translateY(0) scale(.6) rotate(-10deg); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-460px) scale(1.2) rotate(10deg); opacity: 0; } }
+.tc-match { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; background: linear-gradient(160deg,rgba(255,107,157,.97),rgba(201,69,122,.97)); animation: matchIn .4s ease; }
+@keyframes matchIn { from { opacity: 0; } to { opacity: 1; } }
+.tc-match-hearts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tc-heart { position: absolute; font-size: 24px; animation: tcHeartFloat 3s ease-in infinite; opacity: 0; }
+@keyframes tcHeartFloat { 0% { transform: translateY(100px) scale(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-400px) scale(1.3); opacity: 0; } }
+.tc-match-avatars { display: flex; align-items: center; margin-bottom: 24px; z-index: 2; }
+.tc-match-av { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #fff; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.tc-match-av img { width: 100%; height: 100%; object-fit: cover; }
+.tc-match-av:nth-child(2) { margin-left: -16px; }
+.tc-match-title { font-family: var(--fd); font-size: 44px; font-weight: 900; color: #fff; line-height: .95; margin-bottom: 6px; text-shadow: 0 4px 20px rgba(0,0,0,.3); animation: matchPop .5s cubic-bezier(.2,1.4,.4,1) both; z-index: 2; }
+@keyframes matchPop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.tc-match-sub { font-size: 15px; color: rgba(255,255,255,.9); margin-bottom: 24px; z-index: 2; }
+.tc-match-gift { background: rgba(255,255,255,.18); backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,.3); border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; z-index: 2; max-width: 300px; }
+.tc-match-gift-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 6px; }
+.tc-match-gift-text { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; }
+.tc-match-code { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #fff; margin-top: 8px; letter-spacing: .04em; }
+.tc-match-btn { background: #fff; color: #C9457A; border: none; border-radius: 100px; padding: 15px 32px; font-family: var(--fb); font-size: 15px; font-weight: 800; cursor: pointer; z-index: 2; box-shadow: 0 8px 28px rgba(0,0,0,.25); margin-bottom: 10px; }
+.tc-match-skip { background: none; border: none; color: rgba(255,255,255,.7); font-size: 13px; font-weight: 600; cursor: pointer; z-index: 2; }
+
 /* ════════ 4e bouton "Ma carte" + CARTE PRIVILÈGE DIGITALE (export PNG) ════════ */
 .swp-act.card { width: 54px; height: 54px; background: rgba(245,166,35,.14); border: 1.5px solid rgba(245,166,35,.55); color: #F5A623; }
 .priv-overlay { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.7); backdrop-filter: blur(14px); display: none; align-items: flex-end; justify-content: center; }
@@ -3332,7 +3372,11 @@ var swipeState = {
   swipesSinceMystery: 0,
   mysteryShown: 0,
   inMystery: false,
-  curMystery: null
+  curMystery: null,
+  swipesSinceTinder: 0,
+  tinderShown: 0,
+  inTinder: false,
+  curTinder: null
 };
 var swipeActivationTarget = null;
 
@@ -3355,9 +3399,10 @@ function privSession() {
   return __privSess;
 }
 var __privTrackedViews = {};
-function trackPriv(placeId, event) {
+function trackPriv(placeId, event, profileId) {
   var id = String(placeId || '').trim();
-  if (!id && event !== 'open') return;
+  var isPlaceless = (event === 'open' || event.indexOf('tinder') === 0);
+  if (!id && !isPlaceless) return;
   if (event === 'view') { if (__privTrackedViews[id]) return; __privTrackedViews[id] = 1; }
   var ville = '', ref = '', refName = '';
   try {
@@ -3366,7 +3411,7 @@ function trackPriv(placeId, event) {
     ref = sp.get('ref_id') || sp.get('ref') || '';
     refName = sp.get('ref_name') || '';
   } catch (e) {}
-  var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville, ref: ref, refName: refName });
+  var payload = JSON.stringify({ placeId: id, event: event, sessionId: privSession(), ville: ville, ref: ref, refName: refName, profileId: String(profileId || '') });
   // fetch keepalive en PRIMAIRE (JSON fiablement parsé côté serveur) ; sendBeacon en secours.
   try {
     fetch('/api/popey-human/privilege/track', {
@@ -3832,10 +3877,13 @@ var liveState = {
   loaded: false,
   places: [],
   localEvents: [],
+  tinderProfiles: [],
+  tinderFrequency: 3,
   activeSphere: 'all',
   byId: {},
   featuredPlaceId: '',
   refFirstName: 'Votre contact',
+  refPhoto: '',
   cityLabel: 'Dax',
   refFullName: 'Votre contact',
   rewardText: 'une commission'
@@ -4026,6 +4074,23 @@ async function loadLocalEvents(citySlug) {
   } catch (error) {
     console.error('[privilege-events] load failed', error);
     liveState.localEvents = [];
+  }
+}
+
+// Profils "Tinder" des commerçants (cartes humour intercalées dans le deck)
+async function loadTinderProfiles(citySlug) {
+  try {
+    var response = await fetch('/api/popey-human/privilege/tinder-profiles?city=' + encodeURIComponent(String(citySlug || '').trim()), {
+      cache: 'no-store'
+    }).catch(function () { return null; });
+    if (!response || !response.ok) { liveState.tinderProfiles = []; return; }
+    var payload = await response.json().catch(function () { return {}; });
+    liveState.tinderProfiles = Array.isArray(payload.profiles) ? payload.profiles : [];
+    var f = parseInt(payload.frequency, 10);
+    liveState.tinderFrequency = (isFinite(f) && f >= 1) ? f : 3;
+  } catch (error) {
+    console.error('[privilege-tinder] load failed', error);
+    liveState.tinderProfiles = [];
   }
 }
 
@@ -4736,8 +4801,16 @@ function swipeAdvance(direction) {
   animateSwipeOut(direction, function () {
     swipeState.index += 1;
     swipeState.swipesSinceMystery = (swipeState.swipesSinceMystery || 0) + 1;
+    swipeState.swipesSinceTinder = (swipeState.swipesSinceTinder || 0) + 1;
     var pool = getSwipeMysteryPool();
-    if (swipeState.swipesSinceMystery >= 4 && (swipeState.mysteryShown || 0) < pool.length && swipeState.index < swipeState.queue.length) {
+    var tinderPool = liveState.tinderProfiles || [];
+    var freq = Math.max(1, liveState.tinderFrequency || 3);
+    var notAtEnd = swipeState.index < swipeState.queue.length;
+    // Compteurs indépendants. Le profil Tinder (fréquent) est prioritaire en cas d'égalité.
+    if (tinderPool.length && swipeState.swipesSinceTinder >= freq && notAtEnd) {
+      swipeState.swipesSinceTinder = 0;
+      showSwipeTinder();
+    } else if (swipeState.swipesSinceMystery >= 4 && (swipeState.mysteryShown || 0) < pool.length && notAtEnd) {
       swipeState.swipesSinceMystery = 0;
       showSwipeMystery();
     } else {
@@ -4848,7 +4921,153 @@ function spawnSwipeConfetti(parent, count) {
   }
 }
 
+// ─── Carte "Profil Tinder du commerçant" (tous les N swipes) ───
+function privMemberAvatar() {
+  var p = String(liveState.refPhoto || '').trim();
+  if (p) return p;
+  var ini = (String(liveState.refFirstName || 'P').trim().charAt(0) || 'P').toUpperCase();
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#00C48C"/><text x="60" y="80" font-size="60" font-family="Arial" font-weight="bold" fill="#04241b" text-anchor="middle">' + ini + '</text></svg>';
+  try { return 'data:image/svg+xml;base64,' + btoa(svg); } catch (e) { return 'data:image/svg+xml,' + encodeURIComponent(svg); }
+}
+
+function spawnTinderHearts(card) {
+  var photo = card.querySelector('.tc-photo');
+  if (!photo) return;
+  var layer = document.createElement('div');
+  layer.className = 'tc-float-hearts';
+  for (var i = 0; i < 8; i += 1) {
+    var h = document.createElement('div');
+    h.className = 'tc-float-heart';
+    h.textContent = ['❤️', '💕', '💘', '💖'][i % 4];
+    h.style.left = (8 + Math.random() * 84) + '%';
+    h.style.animationDelay = (Math.random() * 4) + 's';
+    h.style.animationDuration = (3.5 + Math.random() * 2) + 's';
+    layer.appendChild(h);
+  }
+  photo.appendChild(layer);
+}
+
+function playMatchSound() {
+  try {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    var ctx = new Ctx();
+    var notes = [523.25, 659.25, 783.99]; // do-mi-sol
+    notes.forEach(function (freq, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = freq;
+      o.connect(g); g.connect(ctx.destination);
+      var t0 = ctx.currentTime + i * 0.09;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.18, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
+      o.start(t0); o.stop(t0 + 0.4);
+    });
+  } catch (e) { /* contexte audio bloqué → silencieux */ }
+}
+
+function showSwipeTinder() {
+  var pool = liveState.tinderProfiles || [];
+  var t = pool[(swipeState.tinderShown || 0) % pool.length];
+  if (!t) { renderSwipeStage(); return; }
+  swipeState.tinderShown = (swipeState.tinderShown || 0) + 1;
+  swipeState.inTinder = true;
+  swipeState.curTinder = t;
+  var stage = document.getElementById('swipeStage');
+  if (!stage) return;
+  stage.innerHTML = '<div class="swp-ghost g2"></div><div class="swp-ghost g1"></div>';
+  var card = document.createElement('article');
+  card.className = 'swp-card tinder-card';
+  card.setAttribute('data-top-card', '1');
+  var photo = String(t.photo || '').trim();
+  var media = photo
+    ? '<img src="' + escapeAttr(photo) + '" alt="" onerror="this.style.display=\'none\';this.parentNode.style.background=\'linear-gradient(160deg,#c2410c,#7c2d12)\'">'
+    : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:120px;background:linear-gradient(160deg,#c2410c,#7c2d12)">🧑</div>';
+  var tags = (t.tags || []).slice(0, 4).map(function (tag) { return '<span class="tc-tag">' + escapeHtml(tag) + '</span>'; }).join('');
+  card.innerHTML =
+    '<div class="swp-overlay-stamp yes"><div class="stamp">MATCH ❤</div></div>' +
+    '<div class="swp-overlay-stamp no"><div class="stamp">NOPE ✕</div></div>' +
+    '<div class="tc-fun-badge">😍 CHERCHE DE NOUVEAUX CLIENTS</div>' +
+    '<div class="tc-compat">💘 <b>' + (Number(t.compat) || 95) + '%</b> compatibles</div>' +
+    '<div class="tc-photo">' + media +
+      '<div class="tc-gradient"></div>' +
+      '<div class="tc-info">' +
+        '<div class="tc-name-row"><span class="tc-name">' + escapeHtml(t.proName || '') + '</span>' + (t.age ? '<span class="tc-age">' + escapeHtml(t.age) + '</span>' : '') + '<span class="tc-verified">✔</span></div>' +
+        '<div class="tc-job">📍 ' + escapeHtml(t.proTitle || '') + '</div>' +
+        (t.bio ? '<div class="tc-bio">' + escapeHtml(t.bio) + '</div>' : '') +
+        (tags ? '<div class="tc-tags">' + tags + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  stage.appendChild(card);
+  wireSwipeDrag(card, t);
+  spawnTinderHearts(card);
+  trackPriv('', 'tinder_shown', t.id);
+}
+
+function tinderMatchScreen() {
+  var t = swipeState.curTinder;
+  var card = document.querySelector('.tinder-card[data-top-card="1"]');
+  if (!t || !card) return;
+  if (card.querySelector('.tc-match')) return;
+  resetTopSwipeCardVisual();
+  try { if (navigator.vibrate) navigator.vibrate([40, 30, 80]); } catch (e) {}
+  playMatchSound();
+  trackPriv('', 'tinder_match', t.id);
+  var hearts = '';
+  for (var i = 0; i < 18; i += 1) {
+    hearts += '<div class="tc-heart" style="left:' + (Math.random() * 100) + '%;animation-delay:' + (Math.random() * 2.5) + 's;font-size:' + (18 + Math.random() * 18) + 'px">' + ['❤️', '💕', '💖', '💗', '💘'][i % 5] + '</div>';
+  }
+  var memberAv = privMemberAvatar();
+  var proAv = String(t.photo || '').trim() || memberAv;
+  var match = document.createElement('div');
+  match.className = 'tc-match';
+  match.innerHTML =
+    '<div class="tc-match-hearts">' + hearts + '</div>' +
+    '<div class="tc-match-avatars"><div class="tc-match-av"><img src="' + escapeAttr(memberAv) + '" alt=""></div><div class="tc-match-av"><img src="' + escapeAttr(proAv) + '" alt="" onerror="this.src=\'' + escapeAttr(memberAv) + '\'"></div></div>' +
+    '<div class="tc-match-title">C\'est un match&nbsp;!</div>' +
+    '<div class="tc-match-sub">Vous avez matché avec ' + escapeHtml(t.proName || 'ce commerçant') + '</div>' +
+    (t.matchGift ? '<div class="tc-match-gift"><div class="tc-match-gift-label">🎁 Pour fêter ça, ' + escapeHtml(t.proName || '') + ' vous offre</div><div class="tc-match-gift-text">' + escapeHtml(t.matchGift) + '</div>' + (t.couponCode ? '<div class="tc-match-code">' + escapeHtml(t.couponCode) + '</div>' : '') + '</div>' : '') +
+    '<button class="tc-match-btn" id="tcMatchWa" type="button">💬 Lui écrire sur WhatsApp</button>' +
+    '<button class="tc-match-skip" id="tcMatchSkip" type="button">Continuer à swiper →</button>';
+  card.appendChild(match);
+  match.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  spawnSwipeConfetti(match, 28);
+  var wa = match.querySelector('#tcMatchWa');
+  if (wa) wa.addEventListener('click', function (e) { e.stopPropagation(); tinderReserve(); });
+  var skip = match.querySelector('#tcMatchSkip');
+  if (skip) skip.addEventListener('click', function (e) { e.stopPropagation(); dismissSwipeTinder('right'); });
+}
+
+function tinderReserve() {
+  var t = swipeState.curTinder;
+  if (!t) return;
+  trackPriv('', 'tinder_wa', t.id);
+  var member = String(liveState.refFirstName || 'votre contact');
+  var city = String(liveState.cityLabel || '');
+  var digits = String(t.waPhone || '').replace(/[^0-9]/g, '');
+  var msg = 'Bonjour ' + (t.proName || '') + ' ! On a matché sur Popey (' + member + (city ? ' · ' + city : '') + ') 😄'
+    + (t.couponCode ? ' Code : ' + t.couponCode + '.' : '')
+    + (t.matchGift ? ' Je viens profiter de votre offre : ' + t.matchGift + '.' : '')
+    + ' Mon prénom : ';
+  window.open((digits ? 'https://wa.me/' + digits : 'https://wa.me/') + '?text=' + encodeURIComponent(msg), '_blank');
+  window.setTimeout(function () { dismissSwipeTinder('right'); }, 300);
+}
+
+function dismissSwipeTinder(dir) {
+  animateSwipeOut(dir === 'left' ? 'left' : 'right', function () {
+    swipeState.inTinder = false;
+    swipeState.curTinder = null;
+    renderSwipeStage();
+  });
+}
+
 async function swipeCardAction(direction) {
+  if (swipeState.inTinder) {
+    // Profil Tinder : ← = NOPE (passer), → ou ↑ = MATCH (déclenche l'écran de match)
+    if (direction === 'left') { dismissSwipeTinder('left'); }
+    else { tinderMatchScreen(); }
+    return;
+  }
   if (swipeState.inMystery) {
     if (direction === 'up') { reserveSwipeMystery(); }
     else { dismissSwipeMystery(direction === 'left' ? 'left' : 'right'); }
@@ -4964,6 +5183,7 @@ function closeSwipeActivate() {
 
 // ─── Fiche du professionnel (résumé infos pro) ───
 function openInfoForCurrent() {
+  if (swipeState.inTinder) { if (swipeState.curTinder) tinderMatchScreen(); return; }
   var place = (swipeState.inMystery && swipeState.curMystery) ? swipeState.curMystery : swipeState.queue[swipeState.index];
   if (place && place.isEvent) { openEventSheet(place); return; }
   if (place) openInfoSheet(place);
@@ -5298,6 +5518,10 @@ function openSwipeMode() {
   swipeState.mysteryShown = 0;
   swipeState.inMystery = false;
   swipeState.curMystery = null;
+  swipeState.swipesSinceTinder = 0;
+  swipeState.tinderShown = 0;
+  swipeState.inTinder = false;
+  swipeState.curTinder = null;
   overlay.classList.add('open');
   renderSwipeFilters();
   renderSwipeStage();
@@ -5530,6 +5754,7 @@ async function initLiveCatalog() {
     liveState.places = rows.map(normalizePlace);
     liveState.byId = liveState.places.reduce(function (acc, p) { acc[p.id] = p; return acc; }, {});
     await loadLocalEvents(city);
+    await loadTinderProfiles(city);
     liveState.loaded = true;
     syncSwipeFavoritesWithLiveData();
 

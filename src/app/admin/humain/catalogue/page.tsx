@@ -105,6 +105,62 @@ function StatBar({ st }: { st?: Stats }) {
   );
 }
 
+// ── Profils Tinder commerçants ──
+async function fetchTinderProfiles(): Promise<TinderProfile[]> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin
+      .from("human_privilege_tinder_profiles")
+      .select("id,city,pro_name,age,pro_title,bio,tags,compat,match_gift,coupon_code,photo_url,address,phone,website,wa_phone,consent,status,sort_order")
+      .order("city", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(500);
+    if (r.error || !r.data) return [];
+    return r.data as unknown as TinderProfile[];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchTinderFrequency(): Promise<number> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin.from("human_privilege_catalogue_settings").select("value").eq("key", "tinder_frequency").maybeSingle();
+    const n = parseInt(String((r.data as { value?: string } | null)?.value || ""), 10);
+    return Number.isFinite(n) && n >= 1 ? n : 3;
+  } catch {
+    return 3;
+  }
+}
+
+async function fetchTinderStats(): Promise<Record<string, TinderStat>> {
+  const map: Record<string, TinderStat> = {};
+  try {
+    const admin = createAdminClient();
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+    const r = await admin
+      .from("human_marketplace_events")
+      .select("event_type,payload")
+      .like("event_type", "priv_tinder_%")
+      .gte("created_at", monthStart)
+      .limit(20000);
+    if (r.error || !r.data) return map;
+    (r.data as Array<{ event_type: string | null; payload: Record<string, unknown> | null }>).forEach((row) => {
+      const pid = String((row.payload || {}).profile_id || "");
+      if (!pid) return;
+      if (!map[pid]) map[pid] = { shown: 0, match: 0, wa: 0 };
+      const ev = String(row.event_type || "");
+      if (ev === "priv_tinder_shown") map[pid].shown += 1;
+      else if (ev === "priv_tinder_match") map[pid].match += 1;
+      else if (ev === "priv_tinder_wa") map[pid].wa += 1;
+    });
+    return map;
+  } catch {
+    return map;
+  }
+}
+
 // Détecte si les colonnes des migrations existent (sinon les nouveaux champs
 // sont silencieusement abandonnés à la sauvegarde → on prévient l'admin).
 async function catalogueColumnsReady(): Promise<boolean> {
@@ -414,6 +470,156 @@ function EventForm({ event, cityParam, isNew = false }: { event?: LocalEvent; ci
   );
 }
 
+type TinderProfile = {
+  id: string;
+  city: string;
+  pro_name: string;
+  age?: string | null;
+  pro_title: string;
+  bio?: string | null;
+  tags?: string | null;
+  compat?: number | null;
+  match_gift?: string | null;
+  coupon_code?: string | null;
+  photo_url?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  wa_phone?: string | null;
+  consent?: boolean | null;
+  status?: string | null;
+  sort_order?: number | null;
+};
+
+type TinderStat = { shown: number; match: number; wa: number };
+
+// Petit formulaire pour régler la fréquence globale (tous les N swipes).
+function TinderFreqForm({ cityParam, frequency }: { cityParam: string; frequency: number }) {
+  const currentUrl = `/admin/humain/catalogue?city=${encodeURIComponent(cityParam)}`;
+  return (
+    <form action="/api/admin/humain/marketplace/tinder-profiles" method="post" className="flex flex-wrap items-end gap-2 rounded-xl border border-pink-200 bg-pink-50/50 p-3">
+      <input type="hidden" name="current_url" value={currentUrl} />
+      <input type="hidden" name="city" value={cityParam} />
+      <label className="space-y-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Afficher un profil tous les… (swipes)</span>
+        <input name="frequency" type="number" min="1" max="20" step="1" defaultValue={String(frequency || 3)} className="h-9 w-40 rounded border bg-background px-2 text-sm" />
+      </label>
+      <button type="submit" name="intent" value="set_frequency" className="inline-flex h-9 items-center rounded border border-pink-300 bg-pink-100 px-4 text-xs font-black uppercase tracking-wide text-pink-800">
+        💾 Régler la fréquence
+      </button>
+      <span className="text-[11px] text-muted-foreground">Global à toutes les villes. Coexiste avec la carte mystère (tous les 4 swipes).</span>
+    </form>
+  );
+}
+
+function TinderForm({ profile, cityParam, stat, isNew = false }: { profile?: TinderProfile; cityParam: string; stat?: TinderStat; isNew?: boolean }) {
+  const p = profile || ({} as TinderProfile);
+  const currentUrl = `/admin/humain/catalogue?city=${encodeURIComponent(cityParam)}`;
+  const inp = "h-9 w-full rounded border bg-background px-2 text-sm";
+  const lbl = "text-[11px] font-bold uppercase tracking-wide text-muted-foreground";
+  const live = p.status === "active" && !!p.consent;
+  return (
+    <form action="/api/admin/humain/marketplace/tinder-profiles" method="post" encType="multipart/form-data" className="grid gap-2 border-t border-slate-200 p-4 md:grid-cols-2">
+      <input type="hidden" name="current_url" value={currentUrl} />
+      <input type="hidden" name="city" value={cityParam} />
+      {!isNew ? <input type="hidden" name="profile_id" value={p.id} /> : null}
+      {!isNew ? (
+        <div className="md:col-span-2 flex flex-wrap items-center gap-3 text-[11px]">
+          <span className={live ? "rounded-full bg-emerald-100 px-2 py-0.5 font-black uppercase text-emerald-700" : "rounded-full bg-slate-100 px-2 py-0.5 font-black uppercase text-slate-500"}>
+            {live ? "● En ligne" : "○ Hors ligne"}
+          </span>
+          {stat ? (
+            <span className="text-slate-500">👀 <strong className="text-slate-800">{stat.shown}</strong> vus · 💘 <strong className="text-slate-800">{stat.match}</strong> matchs · 💬 <strong className="text-slate-800">{stat.wa}</strong> WhatsApp <span className="text-slate-400">(ce mois)</span></span>
+          ) : null}
+        </div>
+      ) : null}
+      <label className="space-y-1">
+        <span className={lbl}>Nom / prénom</span>
+        <input name="pro_name" defaultValue={s(p.pro_name)} placeholder="Ex: Jean-Pierre" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Âge (texte)</span>
+        <input name="age" defaultValue={s(p.age)} placeholder="Ex: 52 ans" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Métier · Ville</span>
+        <input name="pro_title" defaultValue={s(p.pro_title)} placeholder="Ex: Boucher · Bordeaux" required={isNew} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>% Compatibilité (fun)</span>
+        <input name="compat" type="number" min="50" max="100" step="1" defaultValue={isNew ? "97" : String(p.compat ?? 97)} className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Bio décalée &amp; drôle (max 220)</span>
+        <textarea name="bio" defaultValue={s(p.bio)} maxLength={220} rows={2} placeholder="Ex: Aime les belles pièces de bœuf, déteste les barbecues ratés…" className="w-full rounded border bg-background px-2 py-1.5 text-sm" />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Tags fun (séparés par ·)</span>
+        <input name="tags" defaultValue={s(p.tags)} placeholder="🔥 Maturation 40j · 🏆 Meilleur ouvrier · ❤️ Conseils cuisson" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Cadeau de match</span>
+        <input name="match_gift" defaultValue={s(p.match_gift)} placeholder="Ex: un saucisson artisanal offert pour toute commande > 25€" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Code promo match</span>
+        <input name="coupon_code" defaultValue={s(p.coupon_code)} placeholder="POPEY-MATCH-JP" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Position (ordre rotation)</span>
+        <input name="sort_order" type="number" min="0" step="1" defaultValue={isNew ? "100" : String(p.sort_order ?? 100)} className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>WhatsApp (chiffres)</span>
+        <input name="wa_phone" defaultValue={s(p.wa_phone)} placeholder="33768233347" className={inp} />
+      </label>
+      <label className="space-y-1">
+        <span className={lbl}>Téléphone</span>
+        <input name="phone" defaultValue={s(p.phone)} placeholder="+33 6 …" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Adresse</span>
+        <input name="address" defaultValue={s(p.address)} placeholder="14 Rue de la Halle, Bordeaux" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Site web</span>
+        <input name="website" defaultValue={s(p.website)} placeholder="boucherie-jp.fr" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Photo (URL)</span>
+        <input name="photo_url" defaultValue={s(p.photo_url)} placeholder="https://.../photo-fun.jpg" className={inp} />
+      </label>
+      <label className="space-y-1 md:col-span-2">
+        <span className={lbl}>Photo (upload)</span>
+        <input name="photo_file" type="file" accept="image/*" className="h-9 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-pink-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-pink-900" />
+      </label>
+      <label className="md:col-span-2 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+        <input name="consent" type="checkbox" defaultChecked={!!p.consent} className="mt-0.5 h-4 w-4" />
+        <span className="text-[12px] text-amber-900">
+          <strong>Consentement commerçant.</strong> Le commerçant a validé sa photo, sa bio et le ton humoristique « profil Tinder ».
+          <span className="block text-[11px] text-amber-700">⚠️ Obligatoire : un profil ne peut pas être mis en ligne sans cette case cochée.</span>
+        </span>
+      </label>
+      <div className="flex flex-wrap items-center gap-2 pt-1 md:col-span-2">
+        <button type="submit" name="intent" value={isNew ? "create" : "update"} className="inline-flex h-10 items-center rounded border border-pink-300 bg-pink-50 px-4 text-xs font-black uppercase tracking-wide text-pink-800">
+          {isNew ? "➕ Ajouter le profil" : "💾 Enregistrer"}
+        </button>
+        {!isNew ? (
+          <>
+            <input type="hidden" name="next_status" value={p.status === "active" ? "inactive" : "active"} />
+            <button type="submit" name="intent" value="toggle" className="inline-flex h-10 items-center rounded border border-amber-300 bg-amber-50 px-4 text-xs font-black uppercase tracking-wide text-amber-800">
+              {p.status === "active" ? "Mettre hors ligne" : "Mettre en ligne"}
+            </button>
+            <button type="submit" name="intent" value="delete" className="inline-flex h-10 items-center rounded border border-red-200 bg-red-50 px-4 text-xs font-black uppercase tracking-wide text-red-700">
+              Supprimer
+            </button>
+          </>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
 export default async function AdminCataloguePage({ searchParams }: CataloguePageProps) {
   const qp = (await searchParams) || {};
   const marketStatus = typeof qp.marketStatus === "string" ? qp.marketStatus : "";
@@ -446,6 +652,14 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const colsReady = await catalogueColumnsReady();
   const cityEvents = ((snapshot.localEvents || []) as unknown as LocalEvent[])
     .filter((e) => String(e.city || "") === selectedCity)
+    .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
+  const [allTinder, tinderFrequency, tinderStats] = await Promise.all([
+    fetchTinderProfiles(),
+    fetchTinderFrequency(),
+    fetchTinderStats(),
+  ]);
+  const cityTinder = allTinder
+    .filter((t) => String(t.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
   const cityTotals = configured.reduce(
     (acc, p) => {
@@ -670,6 +884,48 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         ))}
         {cityEvents.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun événement pour cette ville. Ajoute-en un ci-dessus.</p>
+        ) : null}
+      </div>
+
+      {/* Profils Tinder commerçants (cartes humour intercalées) */}
+      <div className="space-y-2 border-t pt-5">
+        <h2 className="text-lg font-black">💘 Profils Tinder commerçants — {selectedCity || "—"}</h2>
+        <p className="text-xs text-muted-foreground">
+          Carte « profil de rencontre » qui humanise le commerçant avec humour — gros différenciateur pour le démarchage. S&apos;intercale
+          dans le deck <strong>tous les {tinderFrequency} swipes</strong>. <strong className="text-amber-700">Ne jamais publier sans le consentement du commerçant.</strong>
+        </p>
+
+        <TinderFreqForm cityParam={selectedCity} frequency={tinderFrequency} />
+
+        <details className="overflow-hidden rounded-xl border-2 border-dashed border-pink-300 bg-pink-50/40">
+          <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+            <span className="rounded-full bg-pink-200 px-2 py-0.5 text-[10px] font-black uppercase text-pink-900">+ Profil</span>
+            <strong>Ajouter un profil Tinder commerçant</strong>
+            <span className="ml-auto text-[11px] text-pink-700">créer ▾</span>
+          </summary>
+          <TinderForm cityParam={selectedCity} isNew />
+        </details>
+
+        {cityTinder.map((tp) => {
+          const live = tp.status === "active" && !!tp.consent;
+          return (
+            <details key={tp.id} className="overflow-hidden rounded-xl border bg-white">
+              <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                <span className={live ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700" : "rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-500"}>
+                  {live ? "en ligne" : "hors ligne"}
+                </span>
+                <span>💘</span>
+                <strong className="min-w-0 truncate">{s(tp.pro_name)}</strong>
+                <span className="text-muted-foreground">· {s(tp.pro_title)}</span>
+                {!tp.consent ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">consentement manquant</span> : null}
+                <span className="ml-auto text-[11px] text-slate-400">modifier ▾</span>
+              </summary>
+              <TinderForm profile={tp} cityParam={selectedCity} stat={tinderStats[tp.id]} />
+            </details>
+          );
+        })}
+        {cityTinder.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun profil Tinder pour cette ville. Ajoute-en un ci-dessus.</p>
         ) : null}
       </div>
     </section>
