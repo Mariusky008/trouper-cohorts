@@ -163,4 +163,64 @@ async headers() {
 7. Rate-limiting écritures publiques (#7).
 8. Durcir `verify…Token` + réduire l'expiration des tokens stats (#8).
 9. Plan pour repasser `ignoreBuildErrors` à `false` + `tsc` en CI (#10).
-10. Revue des **policies RLS** Supabase (non couverte par cet audit côté code — à faire dans le dashboard) : confirmer que les tables sensibles ne sont pas lisibles avec la clé **anon**, puisque beaucoup d'endpoints publics s'appuient sur le service-role.
+10. Revue des **policies RLS** Supabase → voir §7 ci-dessous.
+
+---
+
+## 6. Avancement des correctifs (2026-06-10)
+
+- ✅ **P0 fait & déployé** (commit `7c009d5`, v22) : `bootstrap` supprimé (404), 5 crons gardés (`src/lib/cron-auth.ts`, 401 sans secret — `CRON_SECRET` confirmé défini en prod), XSS `ref_name` corrigée (`escapeHtml`).
+- ✅ **P1 #4/#5 fait & déployé** (commit `b573957`, v23) : feed d'événements legacy + modale échappés (`escapeHtml` partout) + `safeUrl()` (http/https only) + `onerror` dangereux retiré ; en-têtes de sécurité ajoutés (`X-Frame-Options: SAMEORIGIN`, CSP `frame-ancestors 'self'`, `nosniff`, `Referrer-Policy`) — vérifiés en prod.
+- ✅ **P1 #6 fait** : garde admin au niveau `src/app/admin/layout.tsx` via `src/lib/admin-guard.ts` (`isCurrentUserAdmin`). Écran 403 pour un utilisateur connecté non-admin (pas de redirect → pas de boucle avec `admin-login`).
+- ⏳ **P2 reste** : rate-limiting, durcissement tokens, CI build, **RLS (§7)**.
+
+---
+
+## 7. Revue RLS Supabase (audit côté code — à confirmer dans le dashboard)
+
+> ⚠️ Je ne peux pas voir l'état RLS live depuis le repo. Mais le code révèle **le risque le plus important de toute l'app si RLS est mal configuré** : la clé **anon** (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) est publique (dans le bundle JS). Si une table sensible a **RLS désactivé** (ou une policy `USING (true)`), n'importe qui peut la vider via l'API REST Supabase (`https://<projet>.supabase.co/rest/v1/<table>?select=*`), **quelles que soient** les vérifications côté serveur.
+
+**Bonne nouvelle structurelle :** l'app lit/écrit les données sensibles via le **service-role** (`createAdminClient`), qui **bypass RLS**. Donc activer RLS + deny-par-défaut sur ces tables **ne casse pas** le code serveur — seul l'accès direct anon est bloqué.
+
+### Étape 1 — AUDIT : lister les tables sans RLS (à coller dans Supabase → SQL Editor)
+```sql
+select n.nspname as schema, c.relname as table,
+       c.relrowsecurity as rls_enabled,
+       (select count(*) from pg_policies p where p.schemaname=n.nspname and p.tablename=c.relname) as nb_policies
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'r'
+order by rls_enabled asc, c.relname;
+```
+→ Tout ce qui ressort avec `rls_enabled = false` est lisible avec la clé anon. **Priorité absolue** sur les tables ci-dessous.
+
+### Tables SENSIBLES (PII / business) — doivent avoir RLS **activé + deny anon**
+Accédées uniquement via service-role côté code, donc activer RLS est **safe** :
+`human_review_clients_finaux` (📞 tél + email clients), `human_review_commercants`, `human_leads`, `commando_applications`, `human_members`, `admins`, `human_scouts`, `human_scout_referrals`, `human_scout_invites`, `human_marketplace_offers`, `human_marketplace_places`, `human_marketplace_landing_activations`, `human_marketplace_commission_ledger`, `human_marketplace_commission_requests`, `human_notifications`, `human_whatsapp_outbound_queue`, `human_whatsapp_events`, `human_voice_outbound_queue`, `human_smart_scan_*`, `network_matches`, `network_match_outcomes`, `analytics_events`, `trust_scores`, `human_privilege_tinder_profiles`, `human_privilege_local_events`, `human_privilege_catalogue_settings`, `human_marketplace_events`.
+
+**Remédiation type** (pour chaque table service-role-only) :
+```sql
+alter table public.<table> enable row level security;
+-- pas de policy permissive pour anon/authenticated → deny par défaut.
+-- (Le service-role bypass RLS, donc l'app serveur continue de fonctionner.)
+```
+
+### Tables touchées par le client NAVIGATEUR (anon) — RLS activé + **policies fines** (ne pas deny en bloc)
+Ces tables sont lues/écrites directement depuis le front, il faut des policies scopées (sinon l'app casse) :
+`profiles`, `pre_registrations`, `proofs`, `proof_likes`, `cohort_messages`, `messages`, `avatars`, `public_sessions`, `user_mission_stats`, `user_mission_steps`, `mission_steps`, `missions`, `trust_scores`, `network_settings`, `network_requests`, `network_opportunities`.
+
+**Exemple de policy scopée** (un user ne voit/modifie que ses lignes) :
+```sql
+alter table public.profiles enable row level security;
+create policy "profiles_select_own" on public.profiles
+  for select to authenticated using (id = auth.uid());
+create policy "profiles_update_own" on public.profiles
+  for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+```
+(Adapter la colonne d'appartenance — `id`, `user_id`, `owner_member_id`… — table par table. Pour les données réellement publiques, ex. `proofs` affichées publiquement, une policy `for select using (true)` est OK **en lecture seule**.)
+
+### Méthode conseillée
+1. Lancer la requête d'audit (étape 1).
+2. Traiter d'abord les tables PII de la 1ʳᵉ liste qui ressortent en `rls_enabled = false` (impact maximal).
+3. Pour chaque table du front, écrire la policy scopée avant d'activer RLS, et **tester l'app** (login, dashboard, chat, proofs) après chaque lot.
+4. Vérifier le **Security Advisor** du dashboard Supabase (Database → Advisors) qui liste automatiquement les tables sans RLS — il existe déjà une migration `20240218_fix_security_advisor.sql`, signe que ça a été partiellement traité une fois.

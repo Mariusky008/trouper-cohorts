@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AdminNoServiceWorkerGuard } from "@/components/admin/admin-no-sw-guard";
+import { isCurrentUserAdmin } from "@/lib/admin-guard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,6 +11,26 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Défense en profondeur : le middleware exige l'authentification sur /admin/humain
+  // mais PAS le rôle admin. On bloque ici tout utilisateur connecté non-admin.
+  // On affiche un écran 403 (pas de redirect → évite la boucle avec admin-login,
+  // qui renvoie un user connecté vers /admin/humain).
+  if (!(await isCurrentUserAdmin())) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center">
+        <h1 className="text-2xl font-black text-slate-900">Accès réservé aux administrateurs</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Ce compte n&apos;a pas les droits administrateur. Si tu penses que c&apos;est une erreur, contacte un administrateur Popey.
+        </p>
+        <form method="post" action="/auth/signout?next=%2Fpopey-human%2Flogin">
+          <Button type="submit" variant="outline" size="sm">
+            Se déconnecter
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/40">
       <AdminNoServiceWorkerGuard />
