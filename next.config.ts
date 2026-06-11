@@ -30,6 +30,23 @@ const config: NextConfig = {
   // turbopack: { // Turbopack does not support webpack plugins yet (like next-pwa)
   //   root: __dirname,
   // },
+  async headers() {
+    // En-têtes de sécurité de base. On se limite volontairement à `frame-ancestors`
+    // côté CSP (anti-clickjacking) pour ne PAS casser les scripts/handlers inline
+    // du catalogue. Le catalogue est servi same-origin → SAMEORIGIN n'empêche pas
+    // l'iframe interne. Élargir la CSP (script-src…) plus tard, après tests.
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {

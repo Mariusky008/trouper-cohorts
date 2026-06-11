@@ -3473,6 +3473,15 @@ function escapeHtml(text) {
 function escapeAttr(text) {
   return escapeHtml(text).replace(/`/g, '&#096;');
 }
+// Ne laisse passer que des URLs http(s) (bloque javascript:, data:, vbscript:…)
+function safeUrl(url) {
+  var u = String(url || '').trim();
+  if (!u) return '';
+  try {
+    var p = new URL(u, window.location.href);
+    return (p.protocol === 'http:' || p.protocol === 'https:') ? u : '';
+  } catch (e) { return ''; }
+}
 function uuidv4Fallback() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = Math.random() * 16 | 0;
@@ -4156,18 +4165,19 @@ function renderLocalEventsFeed() {
     return;
   }
   feedEl.innerHTML = events.map(function (ev) {
-    var visual = ev.imageUrl
-      ? '<img src="' + ev.imageUrl + '" alt="' + ev.title + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'' + ev.emoji + '\'">'
-      : ev.emoji;
+    var imgU = safeUrl(ev.imageUrl);
+    var visual = imgU
+      ? '<img src="' + escapeAttr(imgU) + '" alt="' + escapeAttr(ev.title) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
+      : escapeHtml(ev.emoji);
     return ''
       + '<article class="event-card">'
       + '  <div class="event-img" style="background:' + ev.bg + '">' + visual + '</div>'
       + '  <div class="event-body">'
-      + '    <div class="event-day">' + ev.day + '</div>'
-      + '    <div class="event-name">' + ev.title + '</div>'
-      + '    <div class="event-loc">📍 ' + ev.spot + '</div>'
-      + (ev.badge ? ('    <div class="event-free">' + ev.badge + '</div>') : '')
-      + (ev.sponsor ? ('    <div class="event-sponsor">Sponsorisé par <span>' + ev.sponsor + '</span></div>') : '')
+      + '    <div class="event-day">' + escapeHtml(ev.day) + '</div>'
+      + '    <div class="event-name">' + escapeHtml(ev.title) + '</div>'
+      + '    <div class="event-loc">📍 ' + escapeHtml(ev.spot) + '</div>'
+      + (ev.badge ? ('    <div class="event-free">' + escapeHtml(ev.badge) + '</div>') : '')
+      + (ev.sponsor ? ('    <div class="event-sponsor">Sponsorisé par <span>' + escapeHtml(ev.sponsor) + '</span></div>') : '')
       + '  </div>'
       + '</article>';
   }).join('');
@@ -4184,18 +4194,19 @@ function renderEventsModal() {
     return;
   }
   body.innerHTML = localEventsCache.map(function(ev) {
-    var media = ev.imageUrl
-      ? '<img src="' + ev.imageUrl + '" alt="' + ev.title + '" style="width:100%;height:100%;object-fit:cover;">'
-      : ev.emoji;
+    var imgU = safeUrl(ev.imageUrl);
+    var media = imgU
+      ? '<img src="' + escapeAttr(imgU) + '" alt="' + escapeAttr(ev.title) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
+      : escapeHtml(ev.emoji);
     return ''
       + '<article class="events-modal-card">'
       + '  <div class="events-modal-media" style="background:' + ev.bg + '">' + media + '</div>'
       + '  <div class="events-modal-content">'
-      + '    <div class="events-modal-day">' + ev.day + '</div>'
-      + '    <div class="events-modal-name">' + ev.title + '</div>'
-      + '    <div class="events-modal-loc">📍 ' + ev.spot + '</div>'
-      + '    <div class="events-modal-desc">' + (ev.detail || '') + '</div>'
-      + '    <div class="events-modal-foot"><span class="events-modal-badge">' + ev.badge + '</span><span class="events-modal-sponsor">Sponsorisé par ' + ev.sponsor + '</span></div>'
+      + '    <div class="events-modal-day">' + escapeHtml(ev.day) + '</div>'
+      + '    <div class="events-modal-name">' + escapeHtml(ev.title) + '</div>'
+      + '    <div class="events-modal-loc">📍 ' + escapeHtml(ev.spot) + '</div>'
+      + '    <div class="events-modal-desc">' + escapeHtml(ev.detail || '') + '</div>'
+      + '    <div class="events-modal-foot"><span class="events-modal-badge">' + escapeHtml(ev.badge) + '</span><span class="events-modal-sponsor">Sponsorisé par ' + escapeHtml(ev.sponsor) + '</span></div>'
       + '  </div>'
       + '</article>';
   }).join('');
