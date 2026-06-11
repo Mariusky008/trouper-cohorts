@@ -330,6 +330,13 @@ function CatalogueOfferForm({
       <label className="space-y-1">
         <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Photo (upload)</span>
         <input name="offer_photo_file" type="file" accept="image/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
+        {s(place.offer_photo_url) ? (
+          <span className="mt-1 flex items-center gap-2 text-[11px] text-emerald-700">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={s(place.offer_photo_url)} alt="" className="h-12 w-12 rounded object-cover border" />
+            ✓ Photo enregistrée (le champ fichier reste vide, c&apos;est normal — la photo ci-contre est bien sauvegardée).
+          </span>
+        ) : null}
       </label>
 
       <label className="space-y-1">
