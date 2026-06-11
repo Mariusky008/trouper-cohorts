@@ -4467,7 +4467,10 @@ function renderSwipeStage() {
         return;
       }
     }
-    stage.innerHTML += '<div class="swp-empty">Vous avez parcouru toutes les offres pour ce filtre.</div>';
+    var noOffersAtAll = !(liveState.places || []).length;
+    stage.innerHTML += '<div class="swp-empty">' + (noOffersAtAll
+      ? '✨ Pas encore d\'offre à ' + escapeHtml(String(liveState.cityLabel || 'cette ville')) + '.<br><span style="opacity:.7;font-size:13px">Un nouveau catalogue arrive chaque mois — touche 📍 en haut pour changer de ville.</span>'
+      : 'Vous avez parcouru toutes les offres pour ce filtre.') + '</div>';
     renderSwipeProgress();
     return;
   }
@@ -5973,11 +5976,12 @@ async function initLiveCatalog() {
     refreshLiveCounters();
     renderLiveOffers();
     document.documentElement.setAttribute('data-live-ready', '1');
-    // Catalogue swipe DIRECT (brief) : on ouvre l'expérience swipe par défaut
-    // une fois les offres chargées (file non vide). Opt-out via ?view=landing.
+    // Catalogue swipe DIRECT (brief) : on ouvre TOUJOURS l'expérience swipe par
+    // défaut (même si la ville n'a aucune offre → on montre le nouvel écran
+    // d'accueil + un état vide, jamais l'ancienne landing). Opt-out via ?view=landing.
     try {
       var autoView = new URLSearchParams(window.location.search).get('view');
-      if (autoView !== 'landing' && !swipeState.open && liveState.places && liveState.places.length > 0) openSwipeMode();
+      if (autoView !== 'landing' && !swipeState.open) openSwipeMode();
     } catch (_swErr) {}
     hideBootSplash();
   } catch (error) {
