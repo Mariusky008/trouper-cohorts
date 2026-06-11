@@ -4416,7 +4416,9 @@ function interleaveEvents(pool, sphere) {
 }
 
 function getSwipePoolBySphere(sphere) {
-  var pool = liveState.places.slice();
+  // Les offres mystère sont EXCLUES du deck normal : elles ne se découvrent que
+  // via la carte "🎁 Offre Mystère" (révélée tous les 4 swipes / en fin de deck).
+  var pool = liveState.places.filter(function (p) { return p && !p.isMystery; });
   if (sphere && sphere !== 'all') pool = pool.filter(function (p) { return p.sphere === sphere; });
   return interleaveEvents(pool, sphere);
 }
@@ -4456,6 +4458,15 @@ function renderSwipeStage() {
   if (!stage) return;
   stage.innerHTML = '<div class="swp-ghost g2"></div><div class="swp-ghost g1"></div>';
   if (!swipeState.queue.length || swipeState.index >= swipeState.queue.length) {
+    // Deck normal épuisé : s'il reste une offre mystère non révélée, on la montre
+    // en bonus (couvre aussi le cas d'une ville qui n'a QUE des offres mystère).
+    if (!swipeState.inMystery) {
+      var mpool = getSwipeMysteryPool();
+      if (mpool.length && (swipeState.mysteryShown || 0) < mpool.length) {
+        showSwipeMystery();
+        return;
+      }
+    }
     stage.innerHTML += '<div class="swp-empty">Vous avez parcouru toutes les offres pour ce filtre.</div>';
     renderSwipeProgress();
     return;
@@ -4952,12 +4963,8 @@ function swipeAdvance(direction) {
     } else if (!atEnd && mysteryAvail && swipeState.swipesSinceMystery >= 4) {
       swipeState.swipesSinceMystery = 0;
       showSwipeMystery();
-    } else if (atEnd && mysteryAvail) {
-      // Deck terminé sans avoir montré l'offre mystère → on la révèle en bonus
-      // (garantit son apparition même dans une ville à peu d'offres).
-      swipeState.swipesSinceMystery = 0;
-      showSwipeMystery();
     } else {
+      // En fin de deck, renderSwipeStage révèle l'offre mystère restante en bonus.
       renderSwipeStage();
     }
   });
