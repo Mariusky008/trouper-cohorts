@@ -1,3 +1,5 @@
+import { PrivilegeFreshGuard } from "@/components/privilege/privilege-fresh-guard";
+
 type PrivilegePageProps = {
   params:
     | {
@@ -30,6 +32,7 @@ export default async function PrivilegeByCityPage({ params, searchParams }: Priv
   }
   return (
     <main className="h-dvh w-full overflow-hidden bg-[#F8F5EE]">
+      <PrivilegeFreshGuard />
       <iframe
         title="Popey Privilege Catalogue"
         src={`/popey-privilege-catalogue.html?${query.toString()}`}

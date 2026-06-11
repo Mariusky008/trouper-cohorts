@@ -1,3 +1,5 @@
+import { PrivilegeFreshGuard } from "@/components/privilege/privilege-fresh-guard";
+
 type PrivilegeAppPageProps = {
   searchParams?: Promise<{
     [key: string]: string | string[] | undefined;
@@ -23,6 +25,7 @@ export default async function PrivilegeAppPage({ searchParams }: PrivilegeAppPag
   }
   return (
     <main className="h-dvh w-full overflow-hidden bg-[#F8F5EE]">
+      <PrivilegeFreshGuard />
       <iframe
         title="Popey Privilege Catalogue"
         src={`/popey-privilege-catalogue.html?${query.toString()}`}
