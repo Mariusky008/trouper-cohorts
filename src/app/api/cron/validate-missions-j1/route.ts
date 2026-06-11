@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { autoValidateMissionOutcomesForDate } from "@/lib/actions/network-feedback";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ const getYesterdayInParis = () => {
 };
 
 async function handleValidation(request: Request) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get("date");
   const targetDate = dateParam || getYesterdayInParis();

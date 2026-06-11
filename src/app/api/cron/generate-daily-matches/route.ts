@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateMatches } from '@/lib/matching';
+import { isCronAuthorized } from '@/lib/cron-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
 }
 
 async function handleMatching(request: Request) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
   

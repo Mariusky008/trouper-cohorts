@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import type { ReactElement } from "react";
 import { HumanDailyBriefEmail } from "@/emails/human-daily-brief-email";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
 }
 
 async function handleSendHumanDailyEmails(request: Request) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
   const logs: string[] = [];
   const log = (message: string) => {
     logs.push(message);

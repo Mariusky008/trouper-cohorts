@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { DailyMatchEmail } from '@/emails/daily-match-email';
 import { generateMatches } from '@/lib/matching';
+import { isCronAuthorized } from '@/lib/cron-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds execution time
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
 }
 
 async function handleSendEmails(request: Request) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
   const logs: string[] = [];
   const log = (msg: string) => {
       console.log(msg);

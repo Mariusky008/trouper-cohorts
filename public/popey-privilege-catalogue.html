@@ -3904,7 +3904,7 @@ function toCityLabel(raw) {
   var heroDesc = document.querySelector('.hero-desc');
   if (senderName) senderName.textContent = refName;
   if (senderMeta) senderMeta.textContent = refMetier + ' · ' + cityLabel + ' · Membre Popey';
-  if (heroTitle) heroTitle.innerHTML = 'Vos avantages<br><em>exclusifs</em><br>grâce à ' + first + '.';
+  if (heroTitle) heroTitle.innerHTML = 'Vos avantages<br><em>exclusifs</em><br>grâce à ' + escapeHtml(first) + '.';
   if (heroDesc) heroDesc.textContent = first + ' fait partie du réseau Popey — 150 professionnels de confiance sur le ' + cityLabel + '. Il vous partage ses accès. Activez en 1 tap, profitez immédiatement.';
 })();
 
