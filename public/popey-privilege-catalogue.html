@@ -787,6 +787,7 @@ html[data-live-ready="0"] .main > .sphere-divider {
   justify-content: center;
   opacity: 0;
   transition: opacity .12s;
+  pointer-events: none; /* tampons décoratifs : ne doivent JAMAIS intercepter les taps (sinon les boutons sur la carte, ex. like Tinder, ne répondent pas) */
 }
 .swp-overlay-stamp .stamp {
   font-family: var(--fd);
@@ -4942,12 +4943,18 @@ function swipeAdvance(direction) {
     var pool = getSwipeMysteryPool();
     var tinderPool = liveState.tinderProfiles || [];
     var freq = Math.max(1, liveState.tinderFrequency || 3);
-    var notAtEnd = swipeState.index < swipeState.queue.length;
+    var atEnd = swipeState.index >= swipeState.queue.length;
+    var mysteryAvail = pool.length > 0 && (swipeState.mysteryShown || 0) < pool.length;
     // Compteurs indépendants. Le profil Tinder (fréquent) est prioritaire en cas d'égalité.
-    if (tinderPool.length && swipeState.swipesSinceTinder >= freq && notAtEnd) {
+    if (!atEnd && tinderPool.length && swipeState.swipesSinceTinder >= freq) {
       swipeState.swipesSinceTinder = 0;
       showSwipeTinder();
-    } else if (swipeState.swipesSinceMystery >= 4 && (swipeState.mysteryShown || 0) < pool.length && notAtEnd) {
+    } else if (!atEnd && mysteryAvail && swipeState.swipesSinceMystery >= 4) {
+      swipeState.swipesSinceMystery = 0;
+      showSwipeMystery();
+    } else if (atEnd && mysteryAvail) {
+      // Deck terminé sans avoir montré l'offre mystère → on la révèle en bonus
+      // (garantit son apparition même dans une ville à peu d'offres).
       swipeState.swipesSinceMystery = 0;
       showSwipeMystery();
     } else {
