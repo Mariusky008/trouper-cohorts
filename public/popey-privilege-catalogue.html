@@ -1092,6 +1092,12 @@ html[data-live-ready="0"] .main > .sphere-divider {
   margin: auto;
   padding: 18px;
 }
+.emptc { margin-top: 20px; }
+.emptc-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.55); margin-bottom: 10px; }
+.emptc-list { display: flex; flex-direction: column; gap: 8px; max-width: 320px; margin: 0 auto; }
+.emptc-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 13px 16px; color: #fff; font-family: var(--fb); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s, transform .12s; }
+.emptc-btn:active { transform: scale(.98); }
+.emptc-n { font-size: 11px; font-weight: 800; color: #00E0A0; background: rgba(0,224,160,.14); border: 1px solid rgba(0,224,160,.35); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .swp-favs-overlay {
   position: fixed;
   inset: 0;
@@ -4453,6 +4459,36 @@ function renderSwipeProgress() {
   wrap.innerHTML = html;
 }
 
+// Ville vide : propose les autres villes QUI ONT des offres (cliquables).
+function renderEmptyCitySuggestions() {
+  var box = document.getElementById('emptyCities');
+  if (!box) return;
+  var cur = '';
+  try { cur = String(new URLSearchParams(window.location.search).get('ville') || '').trim().toLowerCase(); } catch (e) {}
+  function paint(cities) {
+    var avail = (cities || []).filter(function (c) { return c && c.count > 0 && String(c.slug || '').toLowerCase() !== cur; });
+    if (!avail.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="emptc-title">👉 Voir les offres d\'une autre ville :</div>'
+      + '<div class="emptc-list">' + avail.map(function (c) {
+        return '<button type="button" class="emptc-btn" data-ville="' + escapeAttr(String(c.slug)) + '"><span>📍 ' + escapeHtml(String(c.label)) + '</span><span class="emptc-n">' + Number(c.count) + ' offre' + (c.count > 1 ? 's' : '') + '</span></button>';
+      }).join('') + '</div>';
+    box.querySelectorAll('button[data-ville]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var v = String(btn.getAttribute('data-ville') || '').trim().toLowerCase();
+        if (!v) return;
+        var p = new URLSearchParams(window.location.search);
+        p.set('ville', v);
+        window.location.href = window.location.pathname + '?' + p.toString();
+      });
+    });
+  }
+  if (liveState._citiesCache) { paint(liveState._citiesCache); return; }
+  fetch('/api/popey-human/marketplace/cities?catalog=privilege', { cache: 'no-store' })
+    .then(function (r) { return r && r.ok ? r.json() : null; })
+    .then(function (d) { var cs = (d && d.cities) || []; liveState._citiesCache = cs; paint(cs); })
+    .catch(function () {});
+}
+
 function renderSwipeStage() {
   var stage = document.getElementById('swipeStage');
   if (!stage) return;
@@ -4469,9 +4505,10 @@ function renderSwipeStage() {
     }
     var noOffersAtAll = !(liveState.places || []).length;
     stage.innerHTML += '<div class="swp-empty">' + (noOffersAtAll
-      ? '✨ Pas encore d\'offre à ' + escapeHtml(String(liveState.cityLabel || 'cette ville')) + '.<br><span style="opacity:.7;font-size:13px">Un nouveau catalogue arrive chaque mois — touche 📍 en haut pour changer de ville.</span>'
+      ? '✨ Pas encore d\'offre à <strong>' + escapeHtml(String(liveState.cityLabel || 'cette ville')) + '</strong> pour le moment.<br><span style="opacity:.7;font-size:13px">Un nouveau catalogue arrive chaque mois.</span><div id="emptyCities" class="emptc"></div>'
       : 'Vous avez parcouru toutes les offres pour ce filtre.') + '</div>';
     renderSwipeProgress();
+    if (noOffersAtAll) renderEmptyCitySuggestions();
     return;
   }
   var place = swipeState.queue[swipeState.index];
