@@ -5195,8 +5195,13 @@ function showSwipeTinder() {
   spawnTinderHearts(card);
   var supportBtn = card.querySelector('#tcSupport');
   if (supportBtn) {
+    // Sur tactile, le drag de la carte peut "manger" le click → on déclenche au
+    // pointerup ET au click (tinderMatchScreen est idempotent). stopPropagation
+    // empêche le drag de démarrer quand on presse le bouton.
+    var fireSupport = function (e) { e.stopPropagation(); if (e.cancelable) e.preventDefault(); tinderMatchScreen(); };
     supportBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-    supportBtn.addEventListener('click', function (e) { e.stopPropagation(); tinderMatchScreen(); });
+    supportBtn.addEventListener('pointerup', fireSupport);
+    supportBtn.addEventListener('click', fireSupport);
   }
   trackPriv('', 'tinder_shown', t.id);
 }
