@@ -2461,8 +2461,16 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .tc-bio { font-size: 14px; color: rgba(255,255,255,.9); line-height: 1.5; margin-bottom: 12px; }
 .tc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tc-tag { background: rgba(255,255,255,.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 100px; padding: 5px 12px; font-size: 11px; font-weight: 600; color: #fff; }
-.tc-support { margin-top: 12px; width: 100%; border: none; border-radius: 100px; padding: 13px; font-family: var(--fb); font-size: 14.5px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #FF6B9D, #C9457A); box-shadow: 0 8px 24px rgba(201,69,122,.5); cursor: pointer; transition: transform .12s ease; }
-.tc-support:active { transform: scale(.98); }
+.tc-support { margin-top: 10px; width: 100%; border: none; border-radius: 100px; padding: 13px; font-family: var(--fb); font-size: 14.5px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #FF6B9D, #C9457A); box-shadow: 0 8px 24px rgba(201,69,122,.5); cursor: pointer; transition: transform .12s ease; animation: ctaBreath 2.6s ease-in-out infinite; }
+.tc-support:active { transform: scale(.96); animation: none; }
+/* Preuve sociale : compteur de soutiens (façon Live TikTok/Insta) */
+.tc-support-count { margin-top: 12px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.92); text-shadow: 0 1px 6px rgba(0,0,0,.55); }
+.tc-support-count b { font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; display: inline-block; }
+.tc-support-count b.bump { animation: tcCountBump .42s cubic-bezier(.34,1.56,.64,1); }
+@keyframes tcCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.4); color: #7CF2B0; } 100% { transform: scale(1); } }
+.tc-like-fly { position: absolute; bottom: 84px; font-size: 26px; pointer-events: none; z-index: 9; will-change: transform, opacity; animation: tcLikeFly 1.45s cubic-bezier(.4,0,.5,1) forwards; }
+@keyframes tcLikeFly { 0% { transform: translate(0,0) scale(.5); opacity: 0; } 14% { opacity: 1; transform: translate(0,-12px) scale(1.15); } 100% { transform: translate(var(--dx,0), -340px) scale(.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tc-support, .tc-like-fly, .tc-support-count b.bump { animation: none !important; } }
 .tc-float-hearts { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
 .tc-float-heart { position: absolute; bottom: -30px; font-size: 20px; opacity: 0; animation: tcHeartRise 4s ease-in infinite; }
 @keyframes tcHeartRise { 0% { transform: translateY(0) scale(.6) rotate(-10deg); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-460px) scale(1.2) rotate(10deg); opacity: 0; } }
@@ -5240,6 +5248,53 @@ function spawnTinderHearts(card) {
   photo.appendChild(layer);
 }
 
+// ─── Likes de soutien cumulés (preuve sociale "Live") ───────────────────────
+function hashStr(s) { var h = 0, i; s = String(s || ''); for (i = 0; i < s.length; i += 1) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h); }
+function cityDemonym(label) {
+  var c = String(label || '').trim().toLowerCase();
+  var map = { 'dax': 'Dacquois', 'bordeaux': 'Bordelais', 'bayonne': 'Bayonnais', 'biarritz': 'Biarrots',
+    'anglet': 'Angloys', 'pau': 'Palois', 'mont-de-marsan': 'Montois', 'paris': 'Parisiens',
+    'lyon': 'Lyonnais', 'toulouse': 'Toulousains', 'nantes': 'Nantais', 'marseille': 'Marseillais', 'lille': 'Lillois' };
+  return map[c] || 'voisins';
+}
+function bumpSupportCount(delta) {
+  var n = document.getElementById('tcSupportN');
+  if (!n) return;
+  var v = (parseInt(n.getAttribute('data-n'), 10) || 0) + delta;
+  n.setAttribute('data-n', v);
+  n.textContent = v.toLocaleString('fr-FR');
+  n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump');
+}
+function spawnLikeHeart(card) {
+  if (!card) return;
+  var h = document.createElement('div');
+  h.className = 'tc-like-fly';
+  h.textContent = ['❤️', '💚', '💖', '💕', '💘'][Math.floor(Math.random() * 5)];
+  h.style.left = (46 + (Math.random() * 24 - 12)) + '%';
+  h.style.setProperty('--dx', (Math.random() * 70 - 35) + 'px');
+  card.appendChild(h);
+  window.setTimeout(function () { if (h.parentNode) h.parentNode.removeChild(h); }, 1500);
+}
+function sendTinderSupport(card) {
+  spawnLikeHeart(card);
+  bumpSupportCount(1);
+  try { Sfx.swipeLike(); } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(14); } catch (e) {}
+  try { trackPriv('', 'tinder_support', (swipeState.curTinder && swipeState.curTinder.id) || ''); } catch (e) {}
+}
+// Compteur qui s'incrémente "en direct" (d'autres voisins soutiennent) — s'auto-arrête quand la carte disparaît
+function startTinderSupportLive() {
+  if (swipeState.tinderSupportTimer) { clearInterval(swipeState.tinderSupportTimer); }
+  swipeState.tinderSupportTimer = window.setInterval(function () {
+    var n = document.getElementById('tcSupportN');
+    if (!n) { clearInterval(swipeState.tinderSupportTimer); swipeState.tinderSupportTimer = null; return; }
+    if (Math.random() < 0.55) {
+      bumpSupportCount(1);
+      spawnLikeHeart(document.querySelector('.tinder-card[data-top-card="1"]'));
+    }
+  }, 2800);
+}
+
 function playMatchSound() {
   try {
     var Ctx = window.AudioContext || window.webkitAudioContext;
@@ -5266,6 +5321,9 @@ function showSwipeTinder() {
   swipeState.tinderShown = (swipeState.tinderShown || 0) + 1;
   swipeState.inTinder = true;
   swipeState.curTinder = t;
+  var firstName = String(t.proName || '').split(' ')[0] || 'ce commerçant';
+  var demonym = cityDemonym(liveState.cityLabel);
+  var supportBase = Number(t.supporters) || (160 + (hashStr(t.id || t.proName || '') % 560));
   var stage = document.getElementById('swipeStage');
   if (!stage) return;
   stage.innerHTML = '<div class="swp-ghost g2"></div><div class="swp-ghost g1"></div>';
@@ -5289,6 +5347,7 @@ function showSwipeTinder() {
         '<div class="tc-job">📍 ' + escapeHtml(t.proTitle || '') + '</div>' +
         (t.bio ? '<div class="tc-bio">' + escapeHtml(t.bio) + '</div>' : '') +
         (tags ? '<div class="tc-tags">' + tags + '</div>' : '') +
+        '<div class="tc-support-count">💚 <b id="tcSupportN" data-n="' + supportBase + '">' + supportBase.toLocaleString('fr-FR') + '</b> ' + escapeHtml(demonym) + ' soutiennent ' + escapeHtml(firstName) + '</div>' +
         '<button type="button" class="tc-support" id="tcSupport">💚 Envoyez-lui un like de soutien</button>' +
       '</div>' +
     '</div>';
@@ -5297,14 +5356,20 @@ function showSwipeTinder() {
   spawnTinderHearts(card);
   var supportBtn = card.querySelector('#tcSupport');
   if (supportBtn) {
-    // Sur tactile, le drag de la carte peut "manger" le click → on déclenche au
-    // pointerup ET au click (tinderMatchScreen est idempotent). stopPropagation
-    // empêche le drag de démarrer quand on presse le bouton.
-    var fireSupport = function (e) { e.stopPropagation(); if (e.cancelable) e.preventDefault(); tinderMatchScreen(); };
-    supportBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    // "Like de soutien" : chaque tap envoie un cœur + incrémente le compteur (façon Live).
+    // Le match reste accessible en swipant à droite / via la barre du bas.
+    // pointerdown stopPropagation empêche le drag ; un flag "pending" dédoublonne pointerup+click.
+    var pending = false;
+    supportBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); pending = true; });
+    var fireSupport = function (e) {
+      e.stopPropagation(); if (e.cancelable) e.preventDefault();
+      if (!pending) return; pending = false;
+      sendTinderSupport(card);
+    };
     supportBtn.addEventListener('pointerup', fireSupport);
     supportBtn.addEventListener('click', fireSupport);
   }
+  startTinderSupportLive();
   trackPriv('', 'tinder_shown', t.id);
 }
 
@@ -5313,6 +5378,7 @@ function tinderMatchScreen() {
   var card = document.querySelector('.tinder-card[data-top-card="1"]');
   if (!t || !card) return;
   if (card.querySelector('.tc-match')) return;
+  if (swipeState.tinderSupportTimer) { clearInterval(swipeState.tinderSupportTimer); swipeState.tinderSupportTimer = null; }
   resetTopSwipeCardVisual();
   try { if (navigator.vibrate) navigator.vibrate([40, 30, 80]); } catch (e) {}
   playMatchSound();
@@ -5358,6 +5424,7 @@ function tinderReserve() {
 }
 
 function dismissSwipeTinder(dir) {
+  if (swipeState.tinderSupportTimer) { clearInterval(swipeState.tinderSupportTimer); swipeState.tinderSupportTimer = null; }
   animateSwipeOut(dir === 'left' ? 'left' : 'right', function () {
     swipeState.inTinder = false;
     swipeState.curTinder = null;
