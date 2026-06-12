@@ -4996,8 +4996,10 @@ function swipeAdvance(direction) {
     var freq = Math.max(1, liveState.tinderFrequency || 3);
     var atEnd = swipeState.index >= swipeState.queue.length;
     var mysteryAvail = pool.length > 0 && (swipeState.mysteryShown || 0) < pool.length;
+    // Chaque profil Tinder ne s'affiche qu'UNE fois par session (pas de boucle/répétition).
+    var tinderAvail = tinderPool.length > 0 && (swipeState.tinderShown || 0) < tinderPool.length;
     // Compteurs indépendants. Le profil Tinder (fréquent) est prioritaire en cas d'égalité.
-    if (!atEnd && tinderPool.length && swipeState.swipesSinceTinder >= freq) {
+    if (!atEnd && tinderAvail && swipeState.swipesSinceTinder >= freq) {
       swipeState.swipesSinceTinder = 0;
       showSwipeTinder();
     } else if (!atEnd && mysteryAvail && swipeState.swipesSinceMystery >= 4) {
