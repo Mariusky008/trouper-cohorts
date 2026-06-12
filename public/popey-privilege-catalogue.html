@@ -2594,6 +2594,40 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swm-confetti { position: absolute; width: 9px; height: 9px; z-index: 100; pointer-events: none; animation: swmConfFall 1.6s ease-out forwards; }
 @keyframes swmConfFall { to { transform: translateY(440px) rotate(400deg); opacity: 0; } }
 
+/* ════════ Polish : micro-animations (les sons sont gérés en JS, voir Sfx) ════════ */
+@keyframes ctaBreath { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes badgePop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes chronoRoll { 0% { transform: translateY(-55%); opacity: .25; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes swmReveal { 0% { transform: scale(.72); opacity: 0; } 60% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes swmBurst { 0% { transform: translate(-50%,-50%) scale(.2); opacity: .9; } 100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0; } }
+@keyframes btnShine { 0% { left: -60%; } 60%,100% { left: 130%; } }
+
+/* CTA principal qui "respire" (réservation + ouvrir l'offre mystère) */
+.swm-btn { animation: ctaBreath 2.4s ease-in-out infinite; }
+.swp-activate-cta:not(:disabled) { animation: ctaBreath 2.6s ease-in-out infinite; }
+
+/* Badges de la carte du dessus qui poppent à l'apparition (décalés) */
+.swp-card.im[data-top-card="1"] .im-pill { animation: badgePop .45s cubic-bezier(.34,1.56,.64,1) .12s both; }
+.swp-card.im[data-top-card="1"] .im-excl { animation: badgePop .45s cubic-bezier(.34,1.56,.64,1) .22s both; }
+
+/* Compte à rebours : roulement vertical à chaque mise à jour (effet compteur) */
+.swp-card.im .im-chrono-txt { display: inline-block; }
+.swp-card.im .im-chrono-txt.rolling { animation: chronoRoll .42s cubic-bezier(.34,1.4,.5,1); }
+
+/* Reveal offre mystère : la carte surgit en grandissant + flash doré */
+.swp-mystery.revealed .swm-r-body { animation: swmReveal .55s cubic-bezier(.34,1.56,.64,1) both; }
+.swm-burst { position: absolute; left: 50%; top: 42%; width: 220px; height: 220px; border-radius: 50%; pointer-events: none; z-index: 99; background: radial-gradient(circle, rgba(255,215,0,.95) 0%, rgba(245,166,35,.55) 35%, rgba(245,166,35,0) 70%); animation: swmBurst .6s ease-out forwards; }
+
+/* Reflet brillant qui balaie un bouton secondaire (sans voler la vedette) */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after { content: ''; position: absolute; top: 0; left: -60%; width: 45%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent); transform: skewX(-18deg); animation: btnShine 3s ease-in-out infinite; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .swm-btn, .swp-activate-cta, .swp-card.im[data-top-card="1"] .im-pill,
+  .swp-card.im[data-top-card="1"] .im-excl, .swp-mystery.revealed .swm-r-body,
+  .swp-card.im .im-chrono-txt.rolling, .btn-shine::after { animation: none !important; }
+}
+
 /* ════════ Bouton changer de ville (header swipe) ════════ */
 .swp-city-btn { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.85); border-radius: 100px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .swp-city-btn:active { background: rgba(255,255,255,.14); }
@@ -3401,6 +3435,51 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 </div>
 
 <script>
+/* ════════ Sound design : moteur audio synthétique (aucun fichier externe) ════════
+   AudioContext créé à la 1re interaction (politique autoplay iOS/Android respectée).
+   Chaque son est synthétisé → 0 asset à héberger, latence nulle. */
+var Sfx = (function () {
+  var ctx = null, master = null, enabled = true;
+  function ac() {
+    if (ctx) return ctx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+    } catch (e) { ctx = null; }
+    return ctx;
+  }
+  function resume() { var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} } }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var c = ac(); if (!c || !enabled) return;
+    if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    var t0 = c.currentTime + (delay || 0);
+    var osc = c.createOscillator(), g = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(f0, t0);
+    if (f1 && f1 !== f0) { try { osc.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t0 + dur); } catch (e) {} }
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain == null ? 0.25 : gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  return {
+    resume: resume,
+    enable: function (v) { enabled = v !== false; },
+    swipePass: function () { tone('triangle', 320, 150, 0.16, 0.12); },                                   // ← passer : whoosh descendant
+    swipeLike: function () { tone('sine', 540, 880, 0.18, 0.18); tone('sine', 680, 990, 0.16, 0.09, 0.04); }, // → favori : pop montant
+    shopBell: function () { tone('sine', 1318, 1180, 0.5, 0.20); tone('sine', 1976, 1760, 0.42, 0.09, 0.005); }, // réservation : "ding" de clochette de boutique
+    pop: function () { tone('sine', 440, 880, 0.09, 0.16); },                                              // ouverture d'une fiche
+    chime: function () { tone('sine', 880, 880, 0.5, 0.09, 0); tone('sine', 1320, 1320, 0.5, 0.08, 0.08); tone('sine', 1760, 1760, 0.55, 0.07, 0.16); }, // carillon magique (offre mystère)
+    treasure: function () { var n = [523, 659, 784, 1047], i; for (i = 0; i < n.length; i++) tone('triangle', n[i], n[i], 0.42, 0.18, i * 0.09); tone('sine', 1568, 1568, 0.6, 0.10, 0.36); } // coffre / fanfare de victoire
+  };
+})();
+document.addEventListener('pointerdown', function () { Sfx.resume(); }, { once: true });
+
 var currentWA = {};
 var clientLeadResolver = null;
 var generatedApporteurLinks = null;
@@ -4940,9 +5019,16 @@ function tickSwipeChronos() {
     var hrs = Math.floor(d / 3600000); d -= hrs * 3600000;
     var mins = Math.floor(d / 60000); d -= mins * 60000;
     var secs = Math.floor(d / 1000);
-    if (days > 0) txt.textContent = days + 'j ' + hrs + 'h ' + mins + 'min';
-    else if (hrs > 0) txt.textContent = hrs + 'h ' + mins + 'min ' + secs + 's';
-    else txt.textContent = mins + 'min ' + secs + 's';
+    var newText;
+    if (days > 0) newText = days + 'j ' + hrs + 'h ' + mins + 'min';
+    else if (hrs > 0) newText = hrs + 'h ' + mins + 'min ' + secs + 's';
+    else newText = mins + 'min ' + secs + 's';
+    if (txt.textContent !== newText) {
+      txt.textContent = newText;
+      txt.classList.remove('rolling');
+      void txt.offsetWidth; // reflow → relance l'anim de roulement
+      txt.classList.add('rolling');
+    }
   }
 }
 if (!window.__popeyChronoTimer) { window.__popeyChronoTimer = window.setInterval(tickSwipeChronos, 1000); }
@@ -4959,7 +5045,7 @@ function showSwipeToast(text) {
 function resetTopSwipeCardVisual() {
   var card = document.querySelector('.swp-card[data-top-card="1"]');
   if (!card) return;
-  card.style.transition = 'transform .22s cubic-bezier(.32,1,.28,1)';
+  card.style.transition = 'transform .5s cubic-bezier(.34,1.56,.64,1)'; // ressort élastique au relâcher
   card.style.transform = 'none';
   card.style.opacity = '1';
   var yes = card.querySelector('.swp-overlay-stamp.yes');
@@ -5041,8 +5127,14 @@ function showSwipeMystery() {
     '<button class="swm-btn" id="swmOpenBtn" type="button">🎁 Ouvrir l\'offre mystère</button>';
   stage.appendChild(card);
   var btn = card.querySelector('#swmOpenBtn');
-  if (btn) btn.addEventListener('click', function (e) { e.stopPropagation(); revealSwipeMystery(); });
+  if (btn) {
+    // pointerdown stoppé : sinon la carte capture le pointeur (setPointerCapture)
+    // et le navigateur redirige le click vers la carte → le bouton ne répond jamais.
+    btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    btn.addEventListener('click', function (e) { e.stopPropagation(); revealSwipeMystery(); });
+  }
   wireSwipeDrag(card, m);
+  try { Sfx.chime(); } catch (e) {} // carillon magique à l'apparition de l'offre mystère
   renderSwipeProgress();
 }
 
@@ -5052,6 +5144,8 @@ function revealSwipeMystery() {
   if (!m || !card) return;
   trackPriv(m.id, 'mystery_reveal');
   spawnSwipeConfetti(card);
+  try { Sfx.treasure(); } catch (e) {} // coffre au trésor / fanfare de victoire
+  try { var burst = document.createElement('div'); burst.className = 'swm-burst'; card.appendChild(burst); window.setTimeout(function () { if (burst.parentNode) burst.parentNode.removeChild(burst); }, 700); } catch (e) {} // flash doré
   card.classList.add('revealed');
   var displayName = String(m.personName || m.name || 'Partenaire Popey');
   var deal = String(m.mysteryDeal || guessOfferLabel(m) || '').trim() || 'Cadeau';
@@ -5069,12 +5163,18 @@ function revealSwipeMystery() {
       '<div class="swm-r-coupon"><div class="swm-r-coupon-lbl">🎟️ Code mystère</div><div class="swm-r-coupon-code">' + escapeHtml(code) + '</div></div>' +
       '<div class="swm-r-exp">⏰ ' + escapeHtml(urgency) + '</div>' +
       '<button class="swm-r-reserve" id="swmReserveBtn" type="button">💬 Réserver via WhatsApp</button>' +
-      '<button class="swm-r-pass" id="swmPassBtn" type="button">Passer cette offre →</button>' +
+      '<button class="swm-r-pass btn-shine" id="swmPassBtn" type="button">Passer cette offre →</button>' +
     '</div>';
   var rb = card.querySelector('#swmReserveBtn');
-  if (rb) rb.addEventListener('click', function () { reserveSwipeMystery(); });
+  if (rb) {
+    rb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    rb.addEventListener('click', function () { reserveSwipeMystery(); });
+  }
   var pb = card.querySelector('#swmPassBtn');
-  if (pb) pb.addEventListener('click', function () { dismissSwipeMystery('left'); });
+  if (pb) {
+    pb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    pb.addEventListener('click', function () { dismissSwipeMystery('left'); });
+  }
 }
 
 function reserveSwipeMystery() {
@@ -5274,7 +5374,7 @@ async function swipeCardAction(direction) {
   }
   if (swipeState.inMystery) {
     if (direction === 'up') { reserveSwipeMystery(); }
-    else { dismissSwipeMystery(direction === 'left' ? 'left' : 'right'); }
+    else { try { Sfx.swipePass(); } catch (e) {} dismissSwipeMystery(direction === 'left' ? 'left' : 'right'); }
     return;
   }
   if (swipeState.index >= swipeState.queue.length) return;
@@ -5289,12 +5389,14 @@ async function swipeCardAction(direction) {
   }
   if (direction === 'left') {
     // ← Gauche = Passer
+    try { Sfx.swipePass(); } catch (e) {}
     trackPriv(place.id, 'pass');
     swipeAdvance('left');
     return;
   }
   if (direction === 'right') {
     // → Droite = Favoris (sauvegarde + passe à la carte suivante)
+    try { Sfx.swipeLike(); } catch (e) {}
     trackPriv(place.id, 'favorite');
     var id = String(place.id || '').trim();
     if (id && swipeState.favorites.indexOf(id) === -1) {
@@ -5363,6 +5465,8 @@ function openContactSheet(place) {
     + contactOptHtml('share', 'rgba(59,130,246,.14)', '📤', 'Offrir à un proche', 'Partagez cette offre')
     + '</div></div>';
   overlay.classList.add('open');
+  // Moment "réservation" : ding de boutique + confettis (l'écran "C'est un Match")
+  try { Sfx.shopBell(); spawnSwipeConfetti(overlay); } catch (e) {}
   var byKey = function (k) { return overlay.querySelector('[data-rsv="' + k + '"]'); };
   var close = function () { overlay.classList.remove('open'); };
   overlay.querySelector('#rsvClose').addEventListener('click', close);
@@ -5660,7 +5764,7 @@ function wireSwipeDrag(card, place) {
     var y = evt.clientY;
     swipeState.dx = x - swipeState.startX;
     swipeState.dy = y - swipeState.startY;
-    var rot = swipeState.dx * 0.08;
+    var rot = Math.max(-16, Math.min(16, swipeState.dx * 0.12)); // ~15° au seuil, plafonné
     card.style.transform = 'translateX(' + swipeState.dx + 'px) translateY(' + swipeState.dy + 'px) rotate(' + rot + 'deg)';
     if (yes) yes.style.opacity = '0';
     if (no) no.style.opacity = '0';
@@ -5678,7 +5782,7 @@ function wireSwipeDrag(card, place) {
     if (swipeState.dx > 110) { swipeCardAction('right'); return; }
     if (swipeState.dx < -110) { swipeCardAction('left'); return; }
     if (swipeState.dy < -120 && Math.abs(swipeState.dx) < 80) { swipeCardAction('up'); return; }
-    card.style.transition = 'transform .28s cubic-bezier(.32,1,.28,1)';
+    card.style.transition = 'transform .5s cubic-bezier(.34,1.56,.64,1)'; // ressort élastique au relâcher
     card.style.transform = 'none';
     if (yes) yes.style.opacity = '0';
     if (no) no.style.opacity = '0';
@@ -6163,7 +6267,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (passBtn) passBtn.addEventListener('click', function () { swipeCardAction('left'); });
   if (saveBtn) saveBtn.addEventListener('click', function () { swipeCardAction('right'); });
   if (likeBtn) likeBtn.addEventListener('click', function () { swipeCardAction('up'); });
-  if (cardBtn) cardBtn.addEventListener('click', function () { openInfoForCurrent(); });
+  if (cardBtn) cardBtn.addEventListener('click', function () { try { Sfx.pop(); } catch (e) {} openInfoForCurrent(); });
   if (favBtn) favBtn.addEventListener('click', function () { openSwipeFavs(); });
   if (activateConfirmBtn) activateConfirmBtn.addEventListener('click', function () { confirmSwipeActivate(); });
   initLiveCatalog();
