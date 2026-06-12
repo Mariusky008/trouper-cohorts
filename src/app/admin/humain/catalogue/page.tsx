@@ -161,6 +161,24 @@ async function fetchTinderStats(): Promise<Record<string, TinderStat>> {
   }
 }
 
+type AlertSubscriber = { id: string; place_id: string; phone: string; status: string; created_at: string };
+
+// Abonnés aux alertes WhatsApp par commerçant (résilient si table absente).
+async function fetchAlertSubscribers(): Promise<AlertSubscriber[]> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin
+      .from("human_privilege_alert_subscribers")
+      .select("id,place_id,phone,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (r.error || !r.data) return [];
+    return r.data as unknown as AlertSubscriber[];
+  } catch {
+    return [];
+  }
+}
+
 // Détecte si les colonnes des migrations existent (sinon les nouveaux champs
 // sont silencieusement abandonnés à la sauvegarde → on prévient l'admin).
 async function catalogueColumnsReady(): Promise<boolean> {
@@ -681,14 +699,37 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const cityEvents = ((snapshot.localEvents || []) as unknown as LocalEvent[])
     .filter((e) => String(e.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
-  const [allTinder, tinderFrequency, tinderStats] = await Promise.all([
+  const [allTinder, tinderFrequency, tinderStats, allAlertSubs] = await Promise.all([
     fetchTinderProfiles(),
     fetchTinderFrequency(),
     fetchTinderStats(),
+    fetchAlertSubscribers(),
   ]);
   const cityTinder = allTinder
     .filter((t) => String(t.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
+  // Abonnés aux alertes, regroupés par commerçant (offres de la ville sélectionnée).
+  const cityPlaceIds = new Set(cityPlaces.map((p) => p.id));
+  const cityAlertSubs = allAlertSubs.filter((s) => cityPlaceIds.has(s.place_id));
+  const alertSubsByPlace = new Map<string, AlertSubscriber[]>();
+  for (const sub of cityAlertSubs) {
+    const arr = alertSubsByPlace.get(sub.place_id) || [];
+    arr.push(sub);
+    alertSubsByPlace.set(sub.place_id, arr);
+  }
+  const alertTotals = cityAlertSubs.reduce(
+    (acc, s) => {
+      if (s.status === "confirmed") acc.confirmed += 1;
+      else if (s.status === "pending") acc.pending += 1;
+      else acc.unsub += 1;
+      return acc;
+    },
+    { confirmed: 0, pending: 0, unsub: 0 },
+  );
+  const placeName = (id: string): string => {
+    const p = places.find((pp) => pp.id === id);
+    return p ? `${s(p.company_name) || s(p.metier) || "Commerçant"}` : "Commerçant";
+  };
   const cityTotals = configured.reduce(
     (acc, p) => {
       const st = stats[p.id];
@@ -955,6 +996,63 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         {cityTinder.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun profil Tinder pour cette ville. Ajoute-en un ci-dessus.</p>
         ) : null}
+      </div>
+
+      {/* Abonnés aux alertes WhatsApp (par commerçant) */}
+      <div className="space-y-2 border-t pt-5">
+        <h2 className="text-lg font-black">🔔 Abonnés aux alertes WhatsApp — {selectedCity || "—"}</h2>
+        <p className="text-xs text-muted-foreground">
+          Clients ayant cliqué « Être alerté » dans le catalogue. <strong className="text-emerald-700">{alertTotals.confirmed} confirmés</strong> ·{" "}
+          <strong className="text-amber-700">{alertTotals.pending} en attente</strong> (n&apos;ont pas encore répondu OUI) ·{" "}
+          <span className="text-slate-400">{alertTotals.unsub} désinscrits</span>.
+          <br />
+          <span className="text-[11px]">L&apos;envoi du WhatsApp de confirmation + le bouton « Envoyer l&apos;alerte » arriveront avec le template approuvé (étape 4 suite).</span>
+        </p>
+
+        {alertSubsByPlace.size === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun abonné pour cette ville pour le moment.</p>
+        ) : (
+          Array.from(alertSubsByPlace.entries()).map(([placeId, subs]) => {
+            const conf = subs.filter((x) => x.status === "confirmed").length;
+            const pend = subs.filter((x) => x.status === "pending").length;
+            return (
+              <details key={placeId} className="overflow-hidden rounded-xl border bg-white">
+                <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                  <span>🔔</span>
+                  <strong className="min-w-0 truncate">{placeName(placeId)}</strong>
+                  <span className="ml-auto text-[11px] text-slate-500">
+                    <strong className="text-emerald-700">{conf}</strong> confirmés · <strong className="text-amber-700">{pend}</strong> en attente · {subs.length} total
+                  </span>
+                </summary>
+                <div className="border-t border-slate-100 px-4 py-2">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {subs.slice(0, 200).map((sub) => (
+                        <tr key={sub.id} className="border-b border-slate-50 last:border-0">
+                          <td className="py-1.5 font-mono">{s(sub.phone)}</td>
+                          <td className="py-1.5">
+                            <span
+                              className={
+                                sub.status === "confirmed"
+                                  ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
+                                  : sub.status === "pending"
+                                    ? "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700"
+                                    : "rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500"
+                              }
+                            >
+                              {sub.status === "confirmed" ? "confirmé" : sub.status === "pending" ? "en attente" : "désinscrit"}
+                            </span>
+                          </td>
+                          <td className="py-1.5 text-right text-slate-400">{new Date(sub.created_at).toLocaleDateString("fr-FR")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            );
+          })
+        )}
       </div>
     </section>
   );

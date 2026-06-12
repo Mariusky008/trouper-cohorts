@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { processWhatsAppMetaWebhook } from "@/lib/actions/whatsapp-meta";
 import { whatsappMetaConfig } from "@/lib/popey-human/whatsapp-meta-config";
 import { whatsappWebhookSchema } from "@/lib/popey-human/whatsapp-meta-validation";
+import { handlePrivilegeAlertReply } from "@/lib/popey-human/privilege-alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: "Payload webhook invalide." }, { status: 400 });
   }
+  // Abonnés aux alertes commerçant : OUI → confirmé, STOP → désinscrit. Isolé, ne bloque rien.
+  await handlePrivilegeAlertReply(payloadRaw);
   const result = await processWhatsAppMetaWebhook(parsed.data);
   if (!result.success) {
     return NextResponse.json(result, { status: 400 });
