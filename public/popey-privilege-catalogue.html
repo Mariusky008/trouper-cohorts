@@ -5281,6 +5281,108 @@ function sendTinderSupport(card) {
   try { Sfx.swipeLike(); } catch (e) {}
   try { if (navigator.vibrate) navigator.vibrate(14); } catch (e) {}
   try { trackPriv('', 'tinder_support', (swipeState.curTinder && swipeState.curTinder.id) || ''); } catch (e) {}
+  maybeOpenSupportLead(swipeState.curTinder);
+}
+
+// Opt-in léger : après un like de soutien, proposer de laisser prénom + numéro
+// pour transformer le soutien en lead qualifié (avec consentement RGPD).
+function maybeOpenSupportLead(t) {
+  if (!t || !t.id) return;
+  if (swipeState.supportLeadDismissed) return;                         // a dit "plus tard" → on n'insiste plus cette session
+  try { if (window.localStorage && localStorage.getItem('popey_support_lead') === 'done') return; } catch (e) {}
+  if (swipeState.supportLeadAskedFor === t.id) return;                 // déjà proposé pour ce commerçant
+  swipeState.supportLeadAskedFor = t.id;
+  window.setTimeout(function () { openSupportLeadSheet(t); }, 520);    // laisse le cœur s'envoler d'abord
+}
+
+function openSupportLeadSheet(t) {
+  if (!t) return;
+  var proName = String(t.proName || 'ce commerçant').split(' ')[0] || 'ce commerçant';
+  var overlay = document.getElementById('supportLeadOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'supportLeadOverlay';
+    overlay.className = 'priv-overlay';
+    document.body.appendChild(overlay);
+  }
+  var draft = (typeof loadClientLeadDraft === 'function') ? loadClientLeadDraft() : { name: '', phone: '' };
+  var inputStyle = 'width:100%;box-sizing:border-box;margin-bottom:10px;padding:13px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font-size:15px;font-family:var(--fb);outline:none;';
+  overlay.innerHTML =
+    '<div class="priv-sheet" style="max-width:420px">'
+    + '<div class="priv-handle"></div>'
+    + '<div style="padding:6px 18px 20px;text-align:center">'
+    + '<div style="font-size:42px;line-height:1">💚</div>'
+    + '<div style="font-size:19px;font-weight:900;color:#fff;margin-top:6px">Soutien envoyé à ' + escapeHtml(proName) + '&nbsp;!</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.62);margin:7px 0 16px;line-height:1.45">Laisse ton prénom et ton numéro pour que <b style="color:#fff">' + escapeHtml(proName) + '</b> puisse te remercier et te faire profiter de ses offres.</div>'
+    + '<input id="slName" type="text" autocomplete="given-name" placeholder="Ton prénom" value="' + escapeAttr(draft.name || '') + '" style="' + inputStyle + '">'
+    + '<input id="slPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ton numéro (ex. 06 12 34 56 78)" value="' + escapeAttr(draft.phone || '') + '" style="' + inputStyle + '">'
+    + '<label style="display:flex;align-items:flex-start;gap:9px;text-align:left;font-size:11.5px;color:rgba(255,255,255,.55);line-height:1.4;margin-bottom:12px;cursor:pointer">'
+    + '<input id="slConsent" type="checkbox" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#22C55E"><span>J\'accepte que ' + escapeHtml(proName) + ' me recontacte via Popey. Mes coordonnées ne servent qu\'à cette mise en relation.</span></label>'
+    + '<div id="slMsg" style="color:#ff8a8a;font-size:12px;min-height:15px;margin-bottom:4px"></div>'
+    + '<button id="slSubmit" type="button" style="width:100%;border:none;border-radius:100px;padding:14px;font-family:var(--fb);font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,#22C55E,#15803D);box-shadow:0 8px 24px rgba(21,128,61,.45);cursor:pointer">Envoyer mon soutien 💚</button>'
+    + '<button id="slLater" type="button" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:none;color:rgba(255,255,255,.45);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer">Plus tard</button>'
+    + '</div></div>';
+  overlay.classList.add('open');
+
+  var close = function (dismissed) {
+    overlay.classList.remove('open');
+    if (dismissed) swipeState.supportLeadDismissed = true;
+  };
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(true); });
+  var later = overlay.querySelector('#slLater');
+  if (later) later.addEventListener('click', function () { close(true); });
+
+  var submit = overlay.querySelector('#slSubmit');
+  if (submit) {
+    submit.addEventListener('click', function () {
+      var nameEl = overlay.querySelector('#slName');
+      var phoneEl = overlay.querySelector('#slPhone');
+      var consentEl = overlay.querySelector('#slConsent');
+      var msg = overlay.querySelector('#slMsg');
+      var name = String((nameEl && nameEl.value) || '').trim();
+      var phone = String((phoneEl && phoneEl.value) || '').trim();
+      var consent = !!(consentEl && consentEl.checked);
+      if (!name) { if (msg) msg.textContent = 'Indique ton prénom.'; return; }
+      if (phone.replace(/[^0-9]/g, '').length < 9) { if (msg) msg.textContent = 'Indique un numéro valide.'; return; }
+      if (!consent) { if (msg) msg.textContent = 'Coche la case pour accepter d\'être recontacté(e).'; return; }
+      if (msg) msg.textContent = '';
+      submit.disabled = true;
+      submit.textContent = 'Envoi…';
+      var params = new URLSearchParams(window.location.search);
+      fetch('/api/popey-human/privilege/support-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: t.id,
+          firstName: name,
+          phone: phone,
+          consent: true,
+          ville: params.get('ville') || '',
+          ref: params.get('ref_id') || params.get('ref') || '',
+          refName: params.get('ref_name') || ''
+        })
+      }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.j || res.j.error) {
+            submit.disabled = false;
+            submit.textContent = 'Envoyer mon soutien 💚';
+            if (msg) msg.textContent = (res.j && res.j.error) || 'Oups, réessaie dans un instant.';
+            return;
+          }
+          try { if (typeof saveClientLeadDraft === 'function') saveClientLeadDraft({ name: name, phone: phone }); } catch (e) {}
+          try { if (window.localStorage) localStorage.setItem('popey_support_lead', 'done'); } catch (e) {}
+          try { Sfx.shopBell(); } catch (e) {}
+          var sheet = overlay.querySelector('.priv-sheet');
+          if (sheet) sheet.innerHTML = '<div class="priv-handle"></div><div style="padding:30px 22px 36px;text-align:center"><div style="font-size:48px">🎉</div><div style="font-size:19px;font-weight:900;color:#fff;margin-top:8px">Merci ' + escapeHtml(name) + '&nbsp;!</div><div style="font-size:13.5px;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.45">' + escapeHtml(proName) + ' a bien reçu ton soutien et pourra te recontacter.</div></div>';
+          window.setTimeout(function () { overlay.classList.remove('open'); }, 1600);
+        })
+        .catch(function () {
+          submit.disabled = false;
+          submit.textContent = 'Envoyer mon soutien 💚';
+          if (msg) msg.textContent = 'Connexion impossible, réessaie.';
+        });
+    });
+  }
 }
 // Compteur qui s'incrémente "en direct" (d'autres voisins soutiennent) — s'auto-arrête quand la carte disparaît
 function startTinderSupportLive() {

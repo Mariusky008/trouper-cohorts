@@ -179,6 +179,33 @@ async function fetchAlertSubscribers(): Promise<AlertSubscriber[]> {
   }
 }
 
+type SupportLead = {
+  id: string;
+  profile_id: string;
+  pro_name: string | null;
+  first_name: string | null;
+  phone: string;
+  city: string | null;
+  ref_name: string | null;
+  created_at: string;
+};
+
+// Leads « like de soutien » (opt-in avec consentement) par commerçant — résilient si table absente.
+async function fetchSupportLeads(): Promise<SupportLead[]> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin
+      .from("human_privilege_support_leads")
+      .select("id,profile_id,pro_name,first_name,phone,city,ref_name,created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (r.error || !r.data) return [];
+    return r.data as unknown as SupportLead[];
+  } catch {
+    return [];
+  }
+}
+
 // Détecte si les colonnes des migrations existent (sinon les nouveaux champs
 // sont silencieusement abandonnés à la sauvegarde → on prévient l'admin).
 async function catalogueColumnsReady(): Promise<boolean> {
@@ -699,11 +726,12 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const cityEvents = ((snapshot.localEvents || []) as unknown as LocalEvent[])
     .filter((e) => String(e.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
-  const [allTinder, tinderFrequency, tinderStats, allAlertSubs] = await Promise.all([
+  const [allTinder, tinderFrequency, tinderStats, allAlertSubs, allSupportLeads] = await Promise.all([
     fetchTinderProfiles(),
     fetchTinderFrequency(),
     fetchTinderStats(),
     fetchAlertSubscribers(),
+    fetchSupportLeads(),
   ]);
   const cityTinder = allTinder
     .filter((t) => String(t.city || "") === selectedCity)
@@ -726,6 +754,15 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
     },
     { confirmed: 0, pending: 0, unsub: 0 },
   );
+  // Leads de soutien, regroupés par profil commerçant de la ville sélectionnée.
+  const cityTinderIds = new Set(cityTinder.map((t) => t.id));
+  const citySupportLeads = allSupportLeads.filter((l) => cityTinderIds.has(l.profile_id));
+  const supportLeadsByProfile = new Map<string, SupportLead[]>();
+  for (const lead of citySupportLeads) {
+    const arr = supportLeadsByProfile.get(lead.profile_id) || [];
+    arr.push(lead);
+    supportLeadsByProfile.set(lead.profile_id, arr);
+  }
   const placeName = (id: string): string => {
     const p = places.find((pp) => pp.id === id);
     return p ? `${s(p.company_name) || s(p.metier) || "Commerçant"}` : "Commerçant";
@@ -1052,6 +1089,52 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
               </details>
             );
           })
+        )}
+      </div>
+
+      {/* Leads « like de soutien » (opt-in) par commerçant */}
+      <div className="space-y-2 border-t pt-5">
+        <h2 className="text-lg font-black">💚 Leads de soutien — {selectedCity || "—"}</h2>
+        <p className="text-xs text-muted-foreground">
+          Visiteurs ayant laissé leur prénom + numéro après un « like de soutien » (consentement explicite).{" "}
+          <strong className="text-emerald-700">{citySupportLeads.length} lead{citySupportLeads.length > 1 ? "s" : ""}</strong> pour cette ville. Clique le numéro pour ouvrir WhatsApp.
+        </p>
+        {supportLeadsByProfile.size === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun lead de soutien pour cette ville pour le moment.</p>
+        ) : (
+          Array.from(supportLeadsByProfile.entries()).map(([profileId, leads]) => (
+            <details key={profileId} className="overflow-hidden rounded-xl border bg-white">
+              <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                <span>💚</span>
+                <strong className="min-w-0 truncate">{leads[0]?.pro_name || "Commerçant"}</strong>
+                <span className="ml-auto text-[11px] text-slate-500">
+                  <strong className="text-emerald-700">{leads.length}</strong> lead{leads.length > 1 ? "s" : ""}
+                </span>
+              </summary>
+              <div className="border-t border-slate-100 px-4 py-2">
+                <table className="w-full text-xs">
+                  <tbody>
+                    {leads.slice(0, 200).map((lead) => (
+                      <tr key={lead.id} className="border-b border-slate-50 last:border-0">
+                        <td className="py-1.5 font-semibold">{s(lead.first_name)}</td>
+                        <td className="py-1.5">
+                          <a
+                            href={`https://wa.me/${s(lead.phone).replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-emerald-700 underline"
+                          >
+                            {s(lead.phone)}
+                          </a>
+                        </td>
+                        <td className="py-1.5 text-right text-slate-400">{new Date(lead.created_at).toLocaleDateString("fr-FR")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          ))
         )}
       </div>
     </section>
