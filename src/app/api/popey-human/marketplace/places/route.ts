@@ -25,6 +25,7 @@ type PlaceRow = {
   partner_whatsapp: string | null;
   direct_contact: string | null;
   offer_photo_url: string | null;
+  offer_gallery_urls?: string[] | null;
   offer_website_url: string | null;
   offer_description: string | null;
   owner_display_name: string | null;
@@ -227,6 +228,9 @@ function toClientPlace(row: PlaceRow, rewardLabel?: string) {
     partnerWhatsapp: row.partner_whatsapp || null,
     directContact: row.direct_contact || null,
     photoUrl: row.offer_photo_url || null,
+    galleryUrls: Array.isArray(row.offer_gallery_urls)
+      ? row.offer_gallery_urls.map((u) => String(u || "").trim()).filter(Boolean)
+      : [],
     profilePhotoUrl: row.owner_profile_photo_url || null,
     contactName: row.owner_display_name || null,
     expiresAt: row.offer_expires_at || null,
@@ -333,7 +337,7 @@ export async function GET(request: NextRequest) {
     let featuredPlaceId: string | null = null;
 
     let query = supabase.from("human_marketplace_places").select(
-      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at,claimed_by_offer_id,is_mystery_offer,mystery_deal_label,offer_video_url,coup_de_coeur_text,promo_code,offer_address,total_spots",
+      "id,city,city_slug,sphere_key,sphere_label,metier,metier_slug,company_name,privilege_badge,logo_url,category_key,partner_whatsapp,direct_contact,offer_photo_url,offer_gallery_urls,offer_website_url,offer_description,owner_display_name,owner_profile_photo_url,owner_member_id,offer_expires_at,partner_offer_value_eur,status,list_price_eur,monthly_ca_eur,recos_per_year,conversion_rate,months_active,reciprocity_score,partners_count,value_growth_pct,claimed_at,claimed_by_offer_id,is_mystery_offer,mystery_deal_label,offer_video_url,coup_de_coeur_text,promo_code,offer_address,total_spots",
     );
 
     if (status === "sale") query = query.eq("status", "sale");
@@ -443,7 +447,7 @@ export async function GET(request: NextRequest) {
     }
     if (
       error &&
-      /claimed_by_offer_id|is_mystery_offer|mystery_deal_label|offer_video_url|coup_de_coeur_text|promo_code|offer_address|total_spots/i.test(
+      /claimed_by_offer_id|is_mystery_offer|mystery_deal_label|offer_video_url|coup_de_coeur_text|promo_code|offer_address|total_spots|offer_gallery_urls/i.test(
         String(error.message || ""),
       )
     ) {
@@ -694,6 +698,7 @@ export async function GET(request: NextRequest) {
           partnerWhatsapp: null,
           directContact: null,
           photoUrl: null,
+          galleryUrls: [],
           profilePhotoUrl: null,
           contactName: null,
           expiresAt: null,

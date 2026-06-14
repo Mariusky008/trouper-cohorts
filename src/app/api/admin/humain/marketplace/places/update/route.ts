@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const MARKETPLACE_PRIVILEGE_PHOTO_BUCKET = "marketplace-privilege-offers";
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // ~60MB (vidéo verticale 15s)
+const MAX_GALLERY_PHOTOS = 6; // couverture + galerie : carrousel plafonné à 6 visuels
 
 function withStatus(base: string, status: "success" | "error", message: string) {
   const sep = base.includes("?") ? "&" : "?";
@@ -85,6 +86,8 @@ export async function POST(request: Request) {
   const partnerOfferValueRaw = String(formData.get("partner_offer_value_eur") || "").trim();
   const offerPhotoFileRaw = formData.get("offer_photo_file");
   const offerVideoFileRaw = formData.get("offer_video_file");
+  const offerGalleryFilesRaw = formData.getAll("offer_gallery_files");
+  const offerGalleryUrlsRaw = String(formData.get("offer_gallery_urls") || "").trim();
   const promoCodeRaw = String(formData.get("promo_code") || "").trim();
   const offerAddressRaw = String(formData.get("offer_address") || "").trim();
   const totalSpotsRaw = String(formData.get("total_spots") || "").trim();
@@ -135,6 +138,13 @@ export async function POST(request: Request) {
       owner_display_name: ownerDisplayNameRaw || null,
       owner_profile_photo_url: ownerProfilePhotoUrlRaw || null,
       offer_photo_url: offerPhotoUrlRaw || null,
+      offer_gallery_urls: offerGalleryUrlsRaw
+        ? offerGalleryUrlsRaw
+            .split(/[\r\n]+/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .slice(0, MAX_GALLERY_PHOTOS)
+        : [],
       offer_expires_at: offerExpiresAtRaw && /^\d{4}-\d{2}-\d{2}$/.test(offerExpiresAtRaw) ? offerExpiresAtRaw : null,
       partner_offer_value_eur: partnerOfferValueRaw ? Number(partnerOfferValueRaw.replace(",", ".")) || null : null,
       promo_code: promoCodeRaw ? promoCodeRaw.toUpperCase() : null,
@@ -148,7 +158,7 @@ export async function POST(request: Request) {
     let ins = await supabaseAdmin.from("human_marketplace_places").insert(baseRow);
     if (ins.error && /column/i.test(String(ins.error.message || ""))) {
       const safeRow = { ...baseRow } as Record<string, unknown>;
-      ["promo_code", "offer_address", "total_spots", "offer_video_url", "coup_de_coeur_text", "mystery_deal_label", "is_mystery_offer", "pro_slug"].forEach(
+      ["promo_code", "offer_address", "total_spots", "offer_video_url", "coup_de_coeur_text", "mystery_deal_label", "is_mystery_offer", "pro_slug", "offer_gallery_urls"].forEach(
         (k) => delete safeRow[k],
       );
       ins = await supabaseAdmin.from("human_marketplace_places").insert(safeRow);
@@ -331,6 +341,47 @@ export async function POST(request: Request) {
       .getPublicUrl(filePath);
     patch.offer_video_url = String(videoPublic?.publicUrl || "").trim() || null;
   }
+  // Galerie photos (carrousel) : URLs saisies (1 par ligne) + uploads multiples → Supabase Storage.
+  // La couverture reste offer_photo_url ; ces visuels sont les photos additionnelles du carrousel.
+  if (intent === "reset_place" || intent === "clear_privilege") {
+    patch.offer_gallery_urls = null;
+  } else {
+    const galleryUrls: string[] = [];
+    offerGalleryUrlsRaw.split(/[\r\n]+/).forEach((line) => {
+      const u = line.trim();
+      if (u && galleryUrls.length < MAX_GALLERY_PHOTOS) galleryUrls.push(u);
+    });
+    let gi = 0;
+    for (const fileRaw of offerGalleryFilesRaw) {
+      if (galleryUrls.length >= MAX_GALLERY_PHOTOS) break;
+      if (!(fileRaw instanceof File) || fileRaw.size === 0) continue;
+      if (!String(fileRaw.type || "").startsWith("image/")) {
+        return fail("La galerie n'accepte que des images.");
+      }
+      if (fileRaw.size > MAX_PHOTO_BYTES) {
+        return fail("Une photo de galerie dépasse 8MB.");
+      }
+      const ext = safePhotoExtension(fileRaw);
+      const filePath = `marketplace-gallery/${placeId}/${Date.now()}-${gi}.${ext}`;
+      gi += 1;
+      const { error: galleryUploadError } = await supabaseAdmin.storage
+        .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+        .upload(filePath, fileRaw, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: fileRaw.type || undefined,
+        });
+      if (galleryUploadError) {
+        return fail(`Upload galerie impossible: ${galleryUploadError.message || "erreur storage"}`);
+      }
+      const { data: galleryPublic } = supabaseAdmin.storage
+        .from(MARKETPLACE_PRIVILEGE_PHOTO_BUCKET)
+        .getPublicUrl(filePath);
+      const url = String(galleryPublic?.publicUrl || "").trim();
+      if (url) galleryUrls.push(url);
+    }
+    patch.offer_gallery_urls = galleryUrls.slice(0, MAX_GALLERY_PHOTOS);
+  }
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin
     .from("human_marketplace_places")
@@ -366,6 +417,7 @@ export async function POST(request: Request) {
         "mystery_deal_label",
         "is_mystery_offer",
         "pro_slug",
+        "offer_gallery_urls",
       ].forEach((key) => {
         delete retryPatch[key];
       });

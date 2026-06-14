@@ -37,7 +37,7 @@ type CataloguePageProps = {
 };
 
 const NEW_COLS =
-  "id,promo_code,offer_address,total_spots,offer_video_url,coup_de_coeur_text,is_mystery_offer,mystery_deal_label,pro_slug";
+  "id,promo_code,offer_address,total_spots,offer_video_url,coup_de_coeur_text,is_mystery_offer,mystery_deal_label,pro_slug,offer_gallery_urls";
 
 // Récupère les nouveaux champs (résilient : si migration pas appliquée → map vide,
 // le formulaire affiche vide et la sauvegarde reste possible côté write path).
@@ -213,7 +213,7 @@ async function catalogueColumnsReady(): Promise<boolean> {
     const admin = createAdminClient();
     const r = await admin
       .from("human_marketplace_places")
-      .select("promo_code,offer_video_url,total_spots,is_mystery_offer,pro_slug")
+      .select("promo_code,offer_video_url,total_spots,is_mystery_offer,pro_slug,offer_gallery_urls")
       .limit(1);
     return !r.error;
   } catch {
@@ -245,6 +245,9 @@ function CatalogueOfferForm({
   const currentUrl = `/admin/humain/catalogue?city=${encodeURIComponent(cityParam)}`;
   const expires = s(place.offer_expires_at).slice(0, 10);
   const isMystery = Boolean(extra?.is_mystery_offer);
+  const galleryUrls = Array.isArray(extra?.offer_gallery_urls)
+    ? (extra!.offer_gallery_urls as unknown[]).map((u) => s(u).trim()).filter(Boolean)
+    : [];
   return (
     <form
       action="/api/admin/humain/marketplace/places/update"
@@ -380,6 +383,28 @@ function CatalogueOfferForm({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={s(place.offer_photo_url)} alt="" className="h-12 w-12 rounded object-cover border" />
             ✓ Photo enregistrée (le champ fichier reste vide, c&apos;est normal — la photo ci-contre est bien sauvegardée).
+          </span>
+        ) : null}
+      </label>
+
+      <label className="space-y-1 md:col-span-2">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">🖼️ Galerie photos (carrousel)</span>
+        <input name="offer_gallery_files" type="file" accept="image/*" multiple className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
+        <span className="block text-[11px] text-muted-foreground">Ajoutez plusieurs photos d&apos;un coup · max 6 · 8 Mo chacune. Elles s&apos;ajoutent aux URLs ci-dessous.</span>
+        <textarea
+          name="offer_gallery_urls"
+          defaultValue={galleryUrls.join("\n")}
+          placeholder={"https://.../photo-1.jpg\nhttps://.../photo-2.jpg"}
+          className="min-h-16 w-full rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+        />
+        <span className="block text-[11px] text-muted-foreground">1 URL par ligne · l&apos;ordre = l&apos;ordre d&apos;affichage du carrousel. La « Photo (URL/upload) » ci-dessus reste la 1ʳᵉ image (couverture).</span>
+        {galleryUrls.length ? (
+          <span className="mt-1 flex flex-wrap items-center gap-2">
+            {galleryUrls.map((u, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={u} alt="" className="h-12 w-12 rounded object-cover border" />
+            ))}
+            <span className="text-[11px] text-emerald-700">✓ {galleryUrls.length} photo{galleryUrls.length > 1 ? "s" : ""} en galerie (les champs fichier restent vides, c&apos;est normal).</span>
           </span>
         ) : null}
       </label>

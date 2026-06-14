@@ -2222,6 +2222,24 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im.has-video .swp-media::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(7,8,16,.92) 0%, rgba(7,8,16,.4) 22%, transparent 42%); }
 /* Bouton son (vidéo mp4) — toujours visible pour activer/couper le son */
 .swp-card.im .im-sound { position: absolute; top: 14px; right: 14px; z-index: 6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 15px; cursor: pointer; }
+/* ── Carrousel d'images (galerie) — repère Stories/Tinder ─────────────────────
+   Photos empilées : seule .is-on est visible (fondu), AUCUNE translation → n'interfère
+   jamais avec le transform de la carte (geste swipe). Navigation = tap (géré en JS). */
+.swp-card.im .swp-media .gal-slide { opacity: 0; transition: opacity .28s ease; }
+.swp-card.im .swp-media .gal-slide.is-on { opacity: 1; }
+.swp-card.im .im-gallery-bar { position: absolute; top: 8px; left: 10px; right: 10px; z-index: 6; display: flex; gap: 4px; pointer-events: none; }
+.swp-card.im .im-gal-seg { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.32); box-shadow: 0 1px 3px rgba(0,0,0,.45); transition: background .2s ease; }
+.swp-card.im .im-gal-seg.on { background: #fff; }
+/* Chevrons indicatifs (purement visuels — la nav se fait au tap des zones gauche/droite) */
+.swp-card.im .im-gal-nav { position: absolute; top: 0; bottom: 38%; width: 30%; z-index: 5; display: flex; align-items: center; pointer-events: none; color: rgba(255,255,255,.95); font-size: 30px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,.6); opacity: .85; transition: transform .15s ease, opacity .15s ease; }
+.swp-card.im .im-gal-nav.left { left: 0; justify-content: flex-start; padding-left: 8px; background: linear-gradient(to right, rgba(0,0,0,.26), transparent); }
+.swp-card.im .im-gal-nav.right { right: 0; justify-content: flex-end; padding-right: 8px; background: linear-gradient(to left, rgba(0,0,0,.26), transparent); }
+.swp-card.im .im-gal-nav.tap { transform: scale(1.4); opacity: 1; }
+.swp-card.im .im-gal-count { position: absolute; top: 16px; right: 14px; z-index: 6; padding: 2px 9px; border-radius: 999px; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.2); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .02em; pointer-events: none; }
+.swp-card.im .im-gal-count .im-gal-tot { opacity: .7; }
+.swp-card.im .im-gal-hint { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 7; max-width: 82%; text-align: center; padding: 9px 14px; border-radius: 14px; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); color: #fff; font-size: 13px; font-weight: 600; line-height: 1.35; box-shadow: 0 10px 30px rgba(0,0,0,.5); opacity: 1; transition: opacity .4s ease; animation: galHintPulse 1.6s ease-in-out infinite; pointer-events: none; }
+.swp-card.im .im-gal-hint.off { opacity: 0; }
+@keyframes galHintPulse { 0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,.5); } 50% { box-shadow: 0 12px 42px rgba(255,255,255,.2); } }
 .swp-card.im .swp-wash { position: absolute; inset: 0; z-index: 1; }
 .swp-card.im .im-content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 14px; }
 .swp-card.im .im-top { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; }
@@ -4120,6 +4138,13 @@ function normalizePlace(row) {
     badge: String(row.privilege_badge || row.privilegeBadge || row.badge || 'Offre privilège'),
     desc: String(row.offer_description || row.description || 'Activation immédiate en 1 tap via WhatsApp.'),
     image: coverImage,
+    images: (function () {
+      var extra = Array.isArray(row.galleryUrls) ? row.galleryUrls
+        : (Array.isArray(row.offer_gallery_urls) ? row.offer_gallery_urls : []);
+      var all = [coverImage].concat(extra).map(function (u) { return String(u || '').trim(); }).filter(Boolean);
+      var seen = {};
+      return all.filter(function (u) { if (seen[u]) return false; seen[u] = true; return true; });
+    })(),
     profileImage: profileImage || coverImage,
     expiry: expiryRaw,
     value: Number(row.partner_offer_value_eur || row.partnerOfferValueEur || 0),
@@ -4630,6 +4655,49 @@ function youtubeId(url) {
   return m ? m[1] : '';
 }
 
+// Navigue dans le carrousel d'une carte (dir = -1 précédent / +1 suivant). Met à jour la
+// slide active, la barre de segments, le compteur ; précharge la photo voisine.
+function galleryGo(card, dir) {
+  if (!card || !card._gallery || card._gallery.length < 2) return;
+  var n = card._gallery.length;
+  var idx = (typeof card._galIdx === 'number' ? card._galIdx : 0) + dir;
+  if (idx < 0) idx = 0;
+  if (idx > n - 1) idx = n - 1;
+  if (idx === card._galIdx) return;
+  card._galIdx = idx;
+  var slides = card.querySelectorAll('.swp-media .gal-slide');
+  for (var i = 0; i < slides.length; i++) {
+    if (i === idx) slides[i].classList.add('is-on'); else slides[i].classList.remove('is-on');
+  }
+  var segments = card.querySelectorAll('.im-gallery-bar .im-gal-seg');
+  for (var j = 0; j < segments.length; j++) {
+    if (j === idx) segments[j].classList.add('on'); else segments[j].classList.remove('on');
+  }
+  var cur = card.querySelector('.im-gal-cur');
+  if (cur) cur.textContent = String(idx + 1);
+  var neighbor = card._gallery[idx + 1] || card._gallery[idx - 1];
+  if (neighbor) { var im = new Image(); im.src = neighbor; }
+  // Petit flash du chevron touché → feedback tactile que « ça a marché ».
+  var nav = card.querySelector('.im-gal-nav.' + (dir > 0 ? 'right' : 'left'));
+  if (nav) { nav.classList.add('tap'); window.setTimeout(function () { nav.classList.remove('tap'); }, 180); }
+}
+
+// Coach affiché une seule fois (localStorage) sur la 1re carte à carrousel rencontrée.
+function maybeShowGalleryHint(card) {
+  try {
+    if (localStorage.getItem('popey_priv_gallery_hint_v1')) return;
+    localStorage.setItem('popey_priv_gallery_hint_v1', '1');
+  } catch (e) { /* localStorage indispo → on montre quand même une fois */ }
+  var hint = document.createElement('div');
+  hint.className = 'im-gal-hint';
+  hint.innerHTML = '👆 Touchez les côtés de la photo pour voir les autres';
+  card.appendChild(hint);
+  window.setTimeout(function () {
+    hint.classList.add('off');
+    window.setTimeout(function () { if (hint.parentNode) hint.parentNode.removeChild(hint); }, 450);
+  }, 3400);
+}
+
 function buildSwipeCard(place) {
   var card = document.createElement('article');
   card.className = 'swp-card im' + (place.videoUrl ? ' has-video' : '');
@@ -4655,18 +4723,37 @@ function buildSwipeCard(place) {
   if (place.expiry) { var dd = new Date(place.expiry); if (!isNaN(dd.getTime())) deadlineIso = dd.toISOString(); }
   if (!deadlineIso) { var nd = new Date(); deadlineIso = new Date(nd.getFullYear(), nd.getMonth() + 1, 0, 23, 59, 59).toISOString(); }
 
-  // Média plein cadre : vidéo (YouTube ou .mp4) sinon photo sinon fallback icône
+  // Média plein cadre : vidéo (YouTube ou .mp4) > galerie carrousel (≥2 photos) > photo > fallback icône
   var ytId = place.videoUrl ? youtubeId(place.videoUrl) : '';
+  var gallery = (!place.videoUrl && place.images && place.images.length > 1) ? place.images : null;
   var media;
   if (place.videoUrl && ytId) {
     media = '<iframe src="https://www.youtube.com/embed/' + ytId + '?autoplay=1&mute=1&loop=1&playlist=' + ytId + '&controls=0&playsinline=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
   } else if (place.videoUrl) {
     media = '<video src="' + escapeAttr(place.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(place.image || '') + '"></video>';
+  } else if (gallery) {
+    // Photos empilées (absolu) : seule la slide active est visible — pas de translation
+    // horizontale, pour ne JAMAIS interférer avec le transform de la carte (geste swipe).
+    media = gallery.map(function (u, i) {
+      return '<img class="gal-slide' + (i === 0 ? ' is-on' : '') + '" src="' + escapeAttr(u) + '" alt="' + escapeAttr(displayName) + '" loading="' + (i === 0 ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">';
+    }).join('')
+      + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
   } else if (place.image) {
     media = '<img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(displayName) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.swp-media-fallback\').style.display=\'flex\'">'
       + '<div class="swp-media-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
   } else {
     media = '<div class="swp-media-fallback" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-size:64px;background:#1a1c22;color:#fff;">' + meta.icon + '</div>';
+  }
+
+  // Chrome du carrousel (barre de segments + chevrons indicatifs + compteur), façon Stories/Tinder.
+  var galleryOverlay = '';
+  if (gallery) {
+    var segs = gallery.map(function (_u, i) { return '<span class="im-gal-seg' + (i === 0 ? ' on' : '') + '"></span>'; }).join('');
+    galleryOverlay =
+      '<div class="im-gallery-bar">' + segs + '</div>' +
+      '<div class="im-gal-nav left" aria-hidden="true">‹</div>' +
+      '<div class="im-gal-nav right" aria-hidden="true">›</div>' +
+      '<div class="im-gal-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + gallery.length + '</span></div>';
   }
 
   // Badge vidéo + bouton play : posés AU NIVEAU DE LA CARTE (au-dessus de .im-content)
@@ -4709,10 +4796,17 @@ function buildSwipeCard(place) {
       '</div>' +
     '</div>' +
     videoOverlay +
+    galleryOverlay +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   // Contours nets + halo teinté par la sphère → la carte ressort comme l'acteur phare
   card.style.border = '1.5px solid ' + th.pillBorder;
   card.style.boxShadow = '0 30px 72px rgba(0,0,0,.78), 0 0 0 1.5px rgba(255,255,255,.14), 0 0 60px ' + th.pillBorder;
+  // État du carrousel exposé sur la carte → lu par wireSwipeDrag (navigation par tap) + galleryGo.
+  if (gallery) {
+    card._gallery = gallery;
+    card._galIdx = 0;
+    maybeShowGalleryHint(card);
+  }
   wireSwipeDrag(card, place);
   // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)
   var vid = card.querySelector('video');
@@ -5951,6 +6045,18 @@ function wireSwipeDrag(card, place) {
     if (swipeState.dx > 110) { swipeCardAction('right'); return; }
     if (swipeState.dx < -110) { swipeCardAction('left'); return; }
     if (swipeState.dy < -120 && Math.abs(swipeState.dx) < 80) { swipeCardAction('up'); return; }
+    // Tap (quasi sans mouvement) sur une carte à carrousel → défile les photos.
+    // Zone média haute uniquement (y < 62 %) : on ne capture pas les taps sur le bloc texte/CTA du bas.
+    if (card._gallery && card._gallery.length > 1 && evt &&
+        Math.abs(swipeState.dx) < 10 && Math.abs(swipeState.dy) < 10) {
+      var rect = card.getBoundingClientRect();
+      if (rect.height > 0 && (evt.clientY - rect.top) / rect.height < 0.62) {
+        galleryGo(card, ((evt.clientX - rect.left) / rect.width) < 0.34 ? -1 : 1);
+        card.style.transition = 'transform .2s';
+        card.style.transform = 'none';
+        return;
+      }
+    }
     card.style.transition = 'transform .5s cubic-bezier(.34,1.56,.64,1)'; // ressort élastique au relâcher
     card.style.transform = 'none';
     if (yes) yes.style.opacity = '0';
