@@ -5069,6 +5069,7 @@ function buildEventCard(ev) {
     '<div class="swp-media">' + media + '</div>' +
     '<div class="evt-poster-tint" style="background:linear-gradient(168deg,' + accent + '4d 0%,transparent 38%),linear-gradient(to top,#06070cF2 6%,#06070c66 34%,transparent 60%)"></div>' +
     '<div class="evt-grain"></div>' +
+    (img ? '<div class="im-expand" id="evtExpand">⛶</div>' : '') +
     '<div class="im-content">' +
       '<div class="im-top">' +
         '<div class="evt-kicker-badge" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')">' + icon + ' ' + escapeHtml(kicker) + '</div>' +
@@ -5104,6 +5105,11 @@ function buildEventCard(ev) {
   if (evtRev) {
     evtRev.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     evtRev.addEventListener('click', function (e) { e.stopPropagation(); openReviews(ev); });
+  }
+  var evtExp = card.querySelector('#evtExpand');
+  if (evtExp) {
+    evtExp.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    evtExp.addEventListener('click', function (e) { e.stopPropagation(); openMediaFullscreen({ image: img }); });
   }
   card.addEventListener('click', function () {
     // tap simple (pas un glissement) → détails de l'événement
@@ -5745,6 +5751,7 @@ function showSwipeTinder() {
     '<div class="swp-overlay-stamp no"><div class="stamp">NOPE ✕</div></div>' +
     '<div class="tc-fun-badge">😍 CHERCHE DE NOUVEAUX CLIENTS</div>' +
     '<div class="tc-compat">💘 <b>' + (Number(t.compat) || 95) + '%</b> compatibles</div>' +
+    (photo ? '<div class="im-expand" id="tcExpand">⛶</div>' : '') +
     '<div class="tc-photo">' + media +
       '<div class="tc-gradient"></div>' +
       '<div class="tc-info">' +
@@ -5759,6 +5766,11 @@ function showSwipeTinder() {
   stage.appendChild(card);
   wireSwipeDrag(card, t);
   spawnTinderHearts(card);
+  var tcExp = card.querySelector('#tcExpand');
+  if (tcExp) {
+    tcExp.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    tcExp.addEventListener('click', function (e) { e.stopPropagation(); openMediaFullscreen({ image: photo }); });
+  }
   var supportBtn = card.querySelector('#tcSupport');
   if (supportBtn) {
     // "Like de soutien" : chaque tap envoie un cœur + incrémente le compteur (façon Live).
