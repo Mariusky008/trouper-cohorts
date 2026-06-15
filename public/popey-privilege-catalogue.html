@@ -2215,7 +2215,10 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
    height 100% + aspect-ratio 16/9 → largeur calculée plus grande que le bloc → centrée et
    rognée par le bloc (overflow hidden de la carte). pointer-events:none → le swipe marche. */
 .swp-card.im .swp-media { overflow: hidden; }
-.swp-card.im .swp-media iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 100%; width: auto; min-width: 100%; aspect-ratio: 16 / 9; border: 0; background: #050608; pointer-events: none; }
+/* Cover 16:9 garanti SANS bandes YouTube : on dimensionne l'iframe en unités de viewport
+   (177.78dvh × 100dvh = exactement 16/9) → toujours plus grand que la carte, donc YouTube
+   ne rajoute pas de bandes ; l'overflow:hidden de la carte rogne le surplus. dvh = robuste iOS. */
+.swp-card.im .swp-media iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 177.78dvh; height: 100dvh; min-width: 100%; min-height: 100%; border: 0; background: #050608; pointer-events: none; }
 /* Sur une carte vidéo : wash très léger (la vidéo prend tout le bloc) + un scrim
    bas localisé pour garder le texte lisible sans masquer la vidéo. */
 .swp-card.im.has-video .swp-wash { opacity: .35; }
@@ -2225,20 +2228,20 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 /* ── Carrousel d'images (galerie) — repère Stories/Tinder ─────────────────────
    Photos empilées : seule .is-on est visible (fondu), AUCUNE translation → n'interfère
    jamais avec le transform de la carte (geste swipe). Navigation = tap (géré en JS). */
-.swp-card.im .swp-media .gal-slide { opacity: 0; transition: opacity .28s ease; }
-.swp-card.im .swp-media .gal-slide.is-on { opacity: 1; }
-.swp-card.im .im-gallery-bar { position: absolute; top: 8px; left: 10px; right: 10px; z-index: 6; display: flex; gap: 4px; pointer-events: none; }
-.swp-card.im .im-gal-seg { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.32); box-shadow: 0 1px 3px rgba(0,0,0,.45); transition: background .2s ease; }
-.swp-card.im .im-gal-seg.on { background: #fff; }
+.swp-card .swp-media .gal-slide { opacity: 0; transition: opacity .28s ease; }
+.swp-card .swp-media .gal-slide.is-on { opacity: 1; }
+.swp-card .im-gallery-bar { position: absolute; top: 8px; left: 10px; right: 10px; z-index: 6; display: flex; gap: 4px; pointer-events: none; }
+.swp-card .im-gal-seg { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.32); box-shadow: 0 1px 3px rgba(0,0,0,.45); transition: background .2s ease; }
+.swp-card .im-gal-seg.on { background: #fff; }
 /* Chevrons indicatifs (purement visuels — la nav se fait au tap des zones gauche/droite) */
-.swp-card.im .im-gal-nav { position: absolute; top: 0; bottom: 38%; width: 30%; z-index: 5; display: flex; align-items: center; pointer-events: none; color: rgba(255,255,255,.95); font-size: 30px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,.6); opacity: .85; transition: transform .15s ease, opacity .15s ease; }
-.swp-card.im .im-gal-nav.left { left: 0; justify-content: flex-start; padding-left: 8px; background: linear-gradient(to right, rgba(0,0,0,.26), transparent); }
-.swp-card.im .im-gal-nav.right { right: 0; justify-content: flex-end; padding-right: 8px; background: linear-gradient(to left, rgba(0,0,0,.26), transparent); }
-.swp-card.im .im-gal-nav.tap { transform: scale(1.4); opacity: 1; }
-.swp-card.im .im-gal-count { position: absolute; top: 16px; right: 14px; z-index: 6; padding: 2px 9px; border-radius: 999px; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.2); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .02em; pointer-events: none; }
-.swp-card.im .im-gal-count .im-gal-tot { opacity: .7; }
-.swp-card.im .im-gal-hint { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 7; max-width: 82%; text-align: center; padding: 9px 14px; border-radius: 14px; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); color: #fff; font-size: 13px; font-weight: 600; line-height: 1.35; box-shadow: 0 10px 30px rgba(0,0,0,.5); opacity: 1; transition: opacity .4s ease; animation: galHintPulse 1.6s ease-in-out infinite; pointer-events: none; }
-.swp-card.im .im-gal-hint.off { opacity: 0; }
+.swp-card .im-gal-nav { position: absolute; top: 0; bottom: 38%; width: 30%; z-index: 5; display: flex; align-items: center; pointer-events: none; color: rgba(255,255,255,.95); font-size: 30px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,.6); opacity: .85; transition: transform .15s ease, opacity .15s ease; }
+.swp-card .im-gal-nav.left { left: 0; justify-content: flex-start; padding-left: 8px; background: linear-gradient(to right, rgba(0,0,0,.26), transparent); }
+.swp-card .im-gal-nav.right { right: 0; justify-content: flex-end; padding-right: 8px; background: linear-gradient(to left, rgba(0,0,0,.26), transparent); }
+.swp-card .im-gal-nav.tap { transform: scale(1.4); opacity: 1; }
+.swp-card .im-gal-count { position: absolute; top: 16px; right: 14px; z-index: 6; padding: 2px 9px; border-radius: 999px; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.2); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .02em; pointer-events: none; }
+.swp-card .im-gal-count .im-gal-tot { opacity: .7; }
+.swp-card .im-gal-hint { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 7; max-width: 82%; text-align: center; padding: 9px 14px; border-radius: 14px; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); color: #fff; font-size: 13px; font-weight: 600; line-height: 1.35; box-shadow: 0 10px 30px rgba(0,0,0,.5); opacity: 1; transition: opacity .4s ease; animation: galHintPulse 1.6s ease-in-out infinite; pointer-events: none; }
+.swp-card .im-gal-hint.off { opacity: 0; }
 @keyframes galHintPulse { 0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,.5); } 50% { box-shadow: 0 12px 42px rgba(255,255,255,.2); } }
 .swp-card.im .swp-wash { position: absolute; inset: 0; z-index: 1; }
 .swp-card.im .im-content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 14px; }
@@ -2583,7 +2586,11 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 
 /* ════════ CARTE MYSTÈRE (cosmique, tous les 4 swipes) ════════ */
 .swp-mystery { background: linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b); box-shadow: 0 20px 70px rgba(124,58,237,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
-.swp-mystery.revealed { padding: 0; justify-content: flex-start; align-items: stretch; overflow-y: auto; }
+.swp-mystery.revealed { padding: 0; display: block; overflow: hidden; }
+/* height:100% explicite : sinon une règle media-query `.swp-media{height:38%}` gagne
+   (en absolu sur-contraint, height l'emporte sur bottom:0) → média rogné à 38 %. */
+.swp-mystery .swp-media { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
+.swp-mystery .swp-media img, .swp-mystery .swp-media .gal-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .swm-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .swm-star { position: absolute; background: #fff; border-radius: 50%; opacity: 0; animation: swmTwinkle 2.5s ease-in-out infinite; }
 @keyframes swmTwinkle { 0%,100% { opacity: 0; transform: scale(.5); } 50% { opacity: .9; transform: scale(1); } }
@@ -2597,26 +2604,36 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swm-sub { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 14px; line-height: 1.6; z-index: 2; max-width: 250px; }
 .swm-btn { margin-top: 24px; background: linear-gradient(135deg,#7C3AED,#A855F7); border: none; border-radius: 100px; padding: 15px 32px; font-family: var(--fb); font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; z-index: 2; box-shadow: 0 8px 30px rgba(124,58,237,.6); animation: swmPulse 2s ease infinite; }
 @keyframes swmPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
-.swm-r-img { height: 150px; width: 100%; position: relative; overflow: hidden; flex-shrink: 0; }
-.swm-r-img img { width: 100%; height: 100%; object-fit: cover; }
-.swm-r-ov { position: absolute; inset: 0; background: linear-gradient(to top,#1a0b2e,rgba(124,58,237,.15) 60%,transparent); }
-.swm-r-crown { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#F5A623,#FFD700); border-radius: 100px; padding: 5px 16px; font-size: 9px; font-weight: 800; color: #1a0b2e; letter-spacing: .05em; white-space: nowrap; box-shadow: 0 4px 18px rgba(245,166,35,.6); }
-.swm-r-body { flex: 1; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(180deg,#1a0b2e,#2d1b4e); }
-.swm-r-pro { display: flex; align-items: center; gap: 10px; }
-.swm-r-pro img { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid #A855F7; object-fit: cover; flex-shrink: 0; }
-.swm-r-proname { font-size: 15px; font-weight: 700; color: #fff; }
-.swm-r-prorole { font-size: 10px; color: rgba(255,255,255,.5); }
-.swm-r-title { font-family: var(--fd); font-size: 21px; font-weight: 900; color: #fff; line-height: 1.12; }
-.swm-r-deal { background: linear-gradient(135deg,rgba(245,166,35,.22),rgba(255,215,0,.1)); border: 1.5px solid rgba(245,166,35,.4); border-radius: 14px; padding: 12px; text-align: center; }
-.swm-r-deal-lbl { font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #FFD700; margin-bottom: 4px; }
-.swm-r-deal-val { font-family: var(--fd); font-size: 30px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 2px 18px rgba(245,166,35,.6); }
-.swm-r-deal-old { font-size: 12px; color: rgba(255,255,255,.4); text-decoration: line-through; margin-top: 5px; }
-.swm-r-coupon { background: rgba(255,255,255,.06); border: 1.5px dashed rgba(168,85,247,.5); border-radius: 10px; padding: 10px; text-align: center; }
-.swm-r-coupon-lbl { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: rgba(196,181,253,.7); margin-bottom: 3px; }
-.swm-r-coupon-code { font-family: var(--fd); font-size: 17px; font-weight: 900; color: #C4B5FD; letter-spacing: .06em; }
-.swm-r-exp { font-size: 11px; color: #FCA5A5; text-align: center; font-weight: 700; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 7px; }
-.swm-r-reserve { background: #25D366; border: none; border-radius: 12px; padding: 13px; font-family: var(--fb); font-size: 13px; font-weight: 800; color: #fff; cursor: pointer; }
-.swm-r-pass { background: none; border: none; color: rgba(255,255,255,.4); font-size: 11px; padding: 4px; cursor: pointer; }
+/* ── Offre mystère RÉVÉLÉE : plein cadre immersif, magique (violet + or) ──────── */
+/* Voile assez transparent pour qu'on VOIE la photo en plein cadre, avec : teinte violette
+   en haut, halo sombre derrière le hero (-90 % lisible) et fondu sombre en bas (texte du pied). */
+.swm-veil { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(105% 55% at 50% 6%, rgba(168,85,247,.22), transparent 46%),
+    radial-gradient(86% 44% at 50% 45%, rgba(7,3,18,.58), transparent 72%),
+    linear-gradient(180deg, rgba(10,4,24,.40) 0%, rgba(12,5,28,.04) 26%, rgba(11,4,26,.38) 66%, rgba(9,3,22,.93) 100%); }
+.swm-aura { position: absolute; left: 50%; top: 45%; width: 340px; height: 340px; margin: -170px 0 0 -170px; z-index: 1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,215,0,.34), rgba(245,166,35,.12) 45%, transparent 70%); animation: swmAura 3.4s ease-in-out infinite; }
+@keyframes swmAura { 0%,100% { transform: scale(.82); opacity: .5; } 50% { transform: scale(1.18); opacity: .95; } }
+.swm-content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 18px 18px 20px; }
+.swm-crown { align-self: center; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg,#F5A623,#FFD700); border-radius: 100px; padding: 6px 16px; font-size: 10px; font-weight: 800; color: #1a0b2e; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; box-shadow: 0 6px 22px rgba(245,166,35,.55); animation: badgePop .5s cubic-bezier(.34,1.56,.64,1) both; }
+.swm-hero { margin: auto 0; text-align: center; }
+.swm-hero-kicker { font-size: 11px; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; color: #FCD34D; text-shadow: 0 2px 14px rgba(245,166,35,.55); animation: swmShimmer 2.2s ease-in-out infinite; }
+.swm-hero-val { font-family: var(--fd); font-weight: 900; font-size: 86px; line-height: .9; margin-top: 8px; color: #FFD700;
+  background: linear-gradient(180deg,#FFF7E0,#FFD700 52%,#F5A623); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 30px rgba(245,166,35,.6)); animation: swmReveal .6s cubic-bezier(.34,1.56,.64,1) both; }
+.swm-hero-old { font-size: 15px; color: rgba(255,255,255,.62); margin-top: 8px; }
+.swm-hero-old b { text-decoration: line-through; color: rgba(255,255,255,.85); font-weight: 800; }
+.swm-foot { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.swm-offer-title { font-family: var(--fd); font-size: 22px; font-weight: 900; color: #fff; line-height: 1.12; text-align: center; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
+.swm-pro { display: flex; align-items: center; gap: 9px; }
+.swm-pro img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #C4B5FD; object-fit: cover; flex-shrink: 0; }
+.swm-pro-name { font-size: 14px; font-weight: 700; color: #fff; }
+.swm-pro-role { font-size: 10px; color: rgba(255,255,255,.6); }
+.swm-exp { font-size: 11px; color: #FDE68A; font-weight: 700; background: rgba(0,0,0,.38); border: 1px solid rgba(245,166,35,.35); border-radius: 100px; padding: 6px 14px; backdrop-filter: blur(6px); }
+.swm-cue { text-align: center; font-size: 12.5px; font-weight: 700; color: #fff; opacity: .92; line-height: 1.3; }
+.swm-cue-arrow { display: block; font-size: 15px; margin-top: 1px; color: #25D366; animation: swmBob 1.4s ease-in-out infinite; }
+@keyframes swmBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 .swm-confetti { position: absolute; width: 9px; height: 9px; z-index: 100; pointer-events: none; animation: swmConfFall 1.6s ease-out forwards; }
 @keyframes swmConfFall { to { transform: translateY(440px) rotate(400deg); opacity: 0; } }
 
@@ -2641,7 +2658,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-chrono-txt.rolling { animation: chronoRoll .42s cubic-bezier(.34,1.4,.5,1); }
 
 /* Reveal offre mystère : la carte surgit en grandissant + flash doré */
-.swp-mystery.revealed .swm-r-body { animation: swmReveal .55s cubic-bezier(.34,1.56,.64,1) both; }
+.swp-mystery.revealed .swm-content { animation: swmReveal .55s cubic-bezier(.34,1.56,.64,1) both; }
 .swm-burst { position: absolute; left: 50%; top: 42%; width: 220px; height: 220px; border-radius: 50%; pointer-events: none; z-index: 99; background: radial-gradient(circle, rgba(255,215,0,.95) 0%, rgba(245,166,35,.55) 35%, rgba(245,166,35,0) 70%); animation: swmBurst .6s ease-out forwards; }
 
 /* Reflet brillant qui balaie un bouton secondaire (sans voler la vedette) */
@@ -2650,7 +2667,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 
 @media (prefers-reduced-motion: reduce) {
   .swm-btn, .swp-activate-cta, .swp-card.im[data-top-card="1"] .im-pill,
-  .swp-card.im[data-top-card="1"] .im-excl, .swp-mystery.revealed .swm-r-body,
+  .swp-card.im[data-top-card="1"] .im-excl, .swp-mystery.revealed .swm-content, .swm-hero-val, .swm-aura, .swm-cue-arrow,
   .swp-card.im .im-chrono-txt.rolling, .btn-shine::after { animation: none !important; }
 }
 
@@ -5251,32 +5268,51 @@ function revealSwipeMystery() {
   card.classList.add('revealed');
   var displayName = String(m.personName || m.name || 'Partenaire Popey');
   var deal = String(m.mysteryDeal || guessOfferLabel(m) || '').trim() || 'Cadeau';
-  var code = ('PRIV-' + m.id).slice(0, 14);
   var img = String(m.image || m.profileImage || '');
   var proImg = String(m.profileImage || m.image || '');
   var oldPrice = m.value > 0 ? euros(m.value) : '';
-  var urgency = getExpiryBadge(m.expiry);
+  var urgency = getExpiryBadge(m.expiry); // contient déjà l'icône ⏰ (ne pas la doubler)
+  // Média plein cadre (carrousel si plusieurs photos) → la photo n'est plus rognée à une bande.
+  var imagesArr = (m.images && m.images.length) ? m.images : (img ? [img] : []);
+  var hasGallery = imagesArr.length > 1;
+  var slides = imagesArr.length
+    ? imagesArr.map(function (u, i) { return '<img class="gal-slide' + (i === 0 ? ' is-on' : '') + '" src="' + escapeAttr(u) + '" alt="" loading="' + (i === 0 ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">'; }).join('')
+    : '<div style="position:absolute;inset:0;background:linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b)"></div>';
+  var galChrome = '';
+  if (hasGallery) {
+    var msegs = '';
+    for (var gi = 0; gi < imagesArr.length; gi += 1) { msegs += '<span class="im-gal-seg' + (gi === 0 ? ' on' : '') + '"></span>'; }
+    galChrome = '<div class="im-gallery-bar">' + msegs + '</div>'
+      + '<div class="im-gal-nav left" aria-hidden="true">‹</div><div class="im-gal-nav right" aria-hidden="true">›</div>'
+      + '<div class="im-gal-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + imagesArr.length + '</span></div>';
+  }
+  var mstars = '';
+  for (var si = 0; si < 20; si += 1) {
+    var ss = 1 + Math.random() * 2.2;
+    mstars += '<div class="swm-star" style="width:' + ss + 'px;height:' + ss + 'px;left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;animation-delay:' + (Math.random() * 2.5) + 's"></div>';
+  }
   card.innerHTML =
-    '<div class="swm-r-img">' + (img ? '<img src="' + escapeAttr(img) + '" alt="" onerror="this.style.display=\'none\'">' : '') + '<div class="swm-r-ov"></div><div class="swm-r-crown">👑 OFFRE MYSTÈRE EXCLUSIVE</div></div>' +
-    '<div class="swm-r-body">' +
-      '<div class="swm-r-pro">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '') + '<div style="min-width:0"><div class="swm-r-proname">' + escapeHtml(displayName) + '</div><div class="swm-r-prorole">' + escapeHtml(String(m.metier || '')) + ' · ' + escapeHtml(String(liveState.cityLabel || '')) + '</div></div></div>' +
-      '<div class="swm-r-title">' + escapeHtml(String(m.badge || 'Offre mystère')) + '</div>' +
-      '<div class="swm-r-deal"><div class="swm-r-deal-lbl">Votre privilège mystère</div><div class="swm-r-deal-val">' + escapeHtml(deal) + '</div>' + (oldPrice ? '<div class="swm-r-deal-old">' + escapeHtml(oldPrice) + '</div>' : '') + '</div>' +
-      '<div class="swm-r-coupon"><div class="swm-r-coupon-lbl">🎟️ Code mystère</div><div class="swm-r-coupon-code">' + escapeHtml(code) + '</div></div>' +
-      '<div class="swm-r-exp">⏰ ' + escapeHtml(urgency) + '</div>' +
-      '<button class="swm-r-reserve" id="swmReserveBtn" type="button">💬 Réserver via WhatsApp</button>' +
-      '<button class="swm-r-pass btn-shine" id="swmPassBtn" type="button">Passer cette offre →</button>' +
+    '<div class="swp-media">' + slides + '</div>' +
+    '<div class="swm-veil"></div>' +
+    '<div class="swm-aura"></div>' +
+    '<div class="swm-stars">' + mstars + '</div>' +
+    galChrome +
+    '<div class="swm-content">' +
+      '<div class="swm-crown">👑 Offre mystère exclusive</div>' +
+      '<div class="swm-hero">' +
+        '<div class="swm-hero-kicker">✦ Privilège débloqué ✦</div>' +
+        '<div class="swm-hero-val">' + escapeHtml(deal) + '</div>' +
+        (oldPrice ? '<div class="swm-hero-old">au lieu de <b>' + escapeHtml(oldPrice) + '</b></div>' : '') +
+      '</div>' +
+      '<div class="swm-foot">' +
+        '<div class="swm-offer-title">' + escapeHtml(String(m.badge || 'Offre mystère')) + '</div>' +
+        '<div class="swm-pro">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '') + '<div style="min-width:0;text-align:left"><div class="swm-pro-name">' + escapeHtml(displayName) + '</div><div class="swm-pro-role">' + escapeHtml(String(m.metier || '')) + ' · ' + escapeHtml(String(liveState.cityLabel || '')) + '</div></div></div>' +
+        '<div class="swm-exp">' + escapeHtml(urgency) + '</div>' +
+        '<div class="swm-cue">Réserve ton privilège avec le bouton vert<span class="swm-cue-arrow">💬 ⌄</span></div>' +
+      '</div>' +
     '</div>';
-  var rb = card.querySelector('#swmReserveBtn');
-  if (rb) {
-    rb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-    rb.addEventListener('click', function () { reserveSwipeMystery(); });
-  }
-  var pb = card.querySelector('#swmPassBtn');
-  if (pb) {
-    pb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-    pb.addEventListener('click', function () { dismissSwipeMystery('left'); });
-  }
+  // Carrousel : la navigation par tap est gérée par wireSwipeDrag.onEnd (déjà câblé sur la carte).
+  if (hasGallery) { card._gallery = imagesArr; card._galIdx = 0; }
 }
 
 function reserveSwipeMystery() {
