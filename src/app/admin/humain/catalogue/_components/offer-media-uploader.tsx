@@ -13,6 +13,19 @@ const MAX_GALLERY = 6;
 
 type Kind = "photo" | "gallery" | "video";
 
+// Avertit quand l'URL vidéo saisie ne sera pas lisible dans la carte (seuls YouTube + fichier
+// direct .mp4/.webm fonctionnent — Instagram/TikTok/Vimeo bloquent la lecture hors de leur site).
+function videoUrlWarning(url: string): string {
+  const u = String(url || "").trim();
+  if (!u) return "";
+  if (/youtube\.com|youtu\.be/i.test(u)) return "";
+  if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u)) return "";
+  if (/instagram\.com|tiktok\.com|vimeo\.com|facebook\.com|fb\.watch|dailymotion\.com/i.test(u)) {
+    return "Ce lien (Instagram, TikTok, Vimeo…) ne peut pas être lu dans la carte. Téléverse plutôt le fichier .mp4 ci-dessus, ou utilise un lien YouTube.";
+  }
+  return "Lien non reconnu : il faut un fichier .mp4/.webm (téléverse-le ci-dessus) ou un lien YouTube.";
+}
+
 async function uploadDirect(file: File, kind: Kind, placeId: string): Promise<string> {
   const signRes = await fetch("/api/admin/humain/marketplace/places/upload", {
     method: "POST",
@@ -220,6 +233,9 @@ export default function OfferMediaUploader({
           placeholder="…ou URL .mp4 directe / lien YouTube"
           className={inp}
         />
+        {videoUrlWarning(videoUrl) ? (
+          <p className="rounded bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">⚠️ {videoUrlWarning(videoUrl)}</p>
+        ) : null}
       </div>
     </div>
   );
