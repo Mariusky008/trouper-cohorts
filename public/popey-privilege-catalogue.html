@@ -2591,6 +2591,8 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
    (en absolu sur-contraint, height l'emporte sur bottom:0) → média rogné à 38 %. */
 .swp-mystery .swp-media { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
 .swp-mystery .swp-media img, .swp-mystery .swp-media .gal-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.swp-mystery .swp-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #0d0420; }
+.swp-mystery .swp-media iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 177.78dvh; height: 100dvh; min-width: 100%; min-height: 100%; border: 0; background: #0d0420; pointer-events: none; }
 .swm-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .swm-star { position: absolute; background: #fff; border-radius: 50%; opacity: 0; animation: swmTwinkle 2.5s ease-in-out infinite; }
 @keyframes swmTwinkle { 0%,100% { opacity: 0; transform: scale(.5); } 50% { opacity: .9; transform: scale(1); } }
@@ -5272,12 +5274,20 @@ function revealSwipeMystery() {
   var proImg = String(m.profileImage || m.image || '');
   var oldPrice = m.value > 0 ? euros(m.value) : '';
   var urgency = getExpiryBadge(m.expiry); // contient déjà l'icône ⏰ (ne pas la doubler)
-  // Média plein cadre (carrousel si plusieurs photos) → la photo n'est plus rognée à une bande.
+  // Média plein cadre. Précédence : vidéo > galerie (carrousel) > photo. (idem carte offre)
+  var mYtId = m.videoUrl ? youtubeId(m.videoUrl) : '';
   var imagesArr = (m.images && m.images.length) ? m.images : (img ? [img] : []);
-  var hasGallery = imagesArr.length > 1;
-  var slides = imagesArr.length
-    ? imagesArr.map(function (u, i) { return '<img class="gal-slide' + (i === 0 ? ' is-on' : '') + '" src="' + escapeAttr(u) + '" alt="" loading="' + (i === 0 ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">'; }).join('')
-    : '<div style="position:absolute;inset:0;background:linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b)"></div>';
+  var hasGallery = !m.videoUrl && imagesArr.length > 1; // galerie seulement s'il n'y a PAS de vidéo
+  var mediaInner;
+  if (m.videoUrl && mYtId) {
+    mediaInner = '<iframe src="https://www.youtube.com/embed/' + mYtId + '?autoplay=1&mute=1&loop=1&playlist=' + mYtId + '&controls=0&playsinline=1&modestbranding=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  } else if (m.videoUrl) {
+    mediaInner = '<video src="' + escapeAttr(m.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(img || '') + '"></video>';
+  } else if (imagesArr.length) {
+    mediaInner = imagesArr.map(function (u, i) { return '<img class="gal-slide' + (i === 0 ? ' is-on' : '') + '" src="' + escapeAttr(u) + '" alt="" loading="' + (i === 0 ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">'; }).join('');
+  } else {
+    mediaInner = '<div style="position:absolute;inset:0;background:linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b)"></div>';
+  }
   var galChrome = '';
   if (hasGallery) {
     var msegs = '';
@@ -5292,7 +5302,7 @@ function revealSwipeMystery() {
     mstars += '<div class="swm-star" style="width:' + ss + 'px;height:' + ss + 'px;left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;animation-delay:' + (Math.random() * 2.5) + 's"></div>';
   }
   card.innerHTML =
-    '<div class="swp-media">' + slides + '</div>' +
+    '<div class="swp-media' + (m.videoUrl ? ' has-video' : '') + '">' + mediaInner + '</div>' +
     '<div class="swm-veil"></div>' +
     '<div class="swm-aura"></div>' +
     '<div class="swm-stars">' + mstars + '</div>' +
@@ -5313,6 +5323,16 @@ function revealSwipeMystery() {
     '</div>';
   // Carrousel : la navigation par tap est gérée par wireSwipeDrag.onEnd (déjà câblé sur la carte).
   if (hasGallery) { card._gallery = imagesArr; card._galIdx = 0; }
+  // Vidéo mp4 : autoplay muet fiabilisé (le YouTube s'autolance via les params de l'iframe).
+  var mvid = card.querySelector('video');
+  if (mvid) {
+    mvid.muted = true;
+    try { mvid.setAttribute('muted', ''); mvid.setAttribute('playsinline', ''); } catch (e) {}
+    var mPlay = function () { var pr = mvid.play(); if (pr && pr.then) pr.catch(function () {}); };
+    mvid.addEventListener('canplay', mPlay, { once: true });
+    mvid.addEventListener('loadeddata', mPlay, { once: true });
+    window.setTimeout(mPlay, 600);
+  }
 }
 
 function reserveSwipeMystery() {
