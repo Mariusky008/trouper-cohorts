@@ -50,7 +50,7 @@ export default async function PrivilegeByCityPage({ params, searchParams }: Priv
   const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
-  query.set("v", "20260615-immersif-v36-reviews");
+  query.set("v", "20260615-immersif-v37-mystmedia");
   for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {

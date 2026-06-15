@@ -2223,8 +2223,10 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
    bas localisé pour garder le texte lisible sans masquer la vidéo. */
 .swp-card.im.has-video .swp-wash { opacity: .35; }
 .swp-card.im.has-video .swp-media::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(7,8,16,.92) 0%, rgba(7,8,16,.4) 22%, transparent 42%); }
-/* Bouton son (vidéo mp4) — toujours visible pour activer/couper le son */
-.swp-card.im .im-sound { position: absolute; top: 14px; right: 14px; z-index: 6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 15px; cursor: pointer; }
+/* Bouton son (vidéo) — toujours visible pour activer/couper le son */
+.swp-card .im-sound { position: absolute; top: 14px; right: 14px; z-index: 6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 15px; cursor: pointer; }
+/* Sur la mystère : son en haut-GAUCHE (le compteur 1/N occupe le haut-droit). */
+.swp-mystery .im-sound { left: 14px; right: auto; }
 /* ── Carrousel d'images (galerie) — repère Stories/Tinder ─────────────────────
    Photos empilées : seule .is-on est visible (fondu), AUCUNE translation → n'interfère
    jamais avec le transform de la carte (geste swipe). Navigation = tap (géré en JS). */
@@ -2276,8 +2278,9 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-pro-role { font-size: 9px; color: rgba(255,255,255,.6); }
 .swp-card.im .im-pro-views { margin-left: auto; font-size: 9px; color: rgba(255,255,255,.65); background: rgba(0,0,0,.4); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 /* Badge/bouton « Avis » sur la carte (ouvre le mur d'avis) */
-.swp-card.im .im-reviews { align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 6px 13px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
-.swp-card.im .im-reviews:active { transform: scale(.96); }
+.swp-card .im-reviews { align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 6px 13px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.swp-card .im-reviews:active { transform: scale(.96); }
+.swp-mystery .swm-reviews { align-self: center; margin-top: 2px; }
 /* ── Feuille « Avis » (mur d'avis modéré) ───────────────────────────────────── */
 .rv-body { padding: 4px 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 74vh; overflow-y: auto; }
 .rv-list { display: flex; flex-direction: column; gap: 10px; }
@@ -4726,6 +4729,14 @@ function galleryGo(card, dir) {
   if (cur) cur.textContent = String(idx + 1);
   var neighbor = card._gallery[idx + 1] || card._gallery[idx - 1];
   if (neighbor) { var im = new Image(); im.src = neighbor; }
+  // Si un slide contient une vidéo : ne jouer que celle du slide ACTIF (sinon audio en arrière-plan).
+  var active = slides[idx];
+  var vids = card.querySelectorAll('.swp-media video');
+  for (var v = 0; v < vids.length; v++) { try { (active && active.contains(vids[v])) ? vids[v].play() : vids[v].pause(); } catch (_e) {} }
+  var frames = card.querySelectorAll('.swp-media iframe');
+  for (var fr = 0; fr < frames.length; fr++) {
+    try { frames[fr].contentWindow.postMessage(JSON.stringify({ event: 'command', func: (active && active.contains(frames[fr])) ? 'playVideo' : 'pauseVideo', args: [] }), '*'); } catch (_e2) {}
+  }
   // Petit flash du chevron touché → feedback tactile que « ça a marché ».
   var nav = card.querySelector('.im-gal-nav.' + (dir > 0 ? 'right' : 'left'));
   if (nav) { nav.classList.add('tap'); window.setTimeout(function () { nav.classList.remove('tap'); }, 180); }
@@ -5328,27 +5339,36 @@ function revealSwipeMystery() {
   var proImg = String(m.profileImage || m.image || '');
   var oldPrice = m.value > 0 ? euros(m.value) : '';
   var urgency = getExpiryBadge(m.expiry); // contient déjà l'icône ⏰ (ne pas la doubler)
-  // Média plein cadre. Précédence : vidéo > galerie (carrousel) > photo. (idem carte offre)
+  // Média = CARROUSEL combiné : vidéo (slide 1) + photos (slides suivants). On peut donc voir
+  // la vidéo ET défiler vers les photos avec les flèches/tap. (Chaque média est un .gal-slide.)
   var mYtId = m.videoUrl ? youtubeId(m.videoUrl) : '';
   var imagesArr = (m.images && m.images.length) ? m.images : (img ? [img] : []);
-  var hasGallery = !m.videoUrl && imagesArr.length > 1; // galerie seulement s'il n'y a PAS de vidéo
-  var mediaInner;
+  var hasVideo = Boolean(m.videoUrl);
+  var slideUrls = []; // null = slide vidéo ; sinon URL photo (sert au préchargement dans galleryGo)
+  var mediaInner = '';
   if (m.videoUrl && mYtId) {
-    mediaInner = '<iframe src="https://www.youtube.com/embed/' + mYtId + '?autoplay=1&mute=1&loop=1&playlist=' + mYtId + '&controls=0&playsinline=1&modestbranding=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    mediaInner += '<div class="gal-slide is-on"><iframe src="https://www.youtube.com/embed/' + mYtId + '?autoplay=1&mute=1&loop=1&playlist=' + mYtId + '&controls=0&playsinline=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+    slideUrls.push(null);
   } else if (m.videoUrl) {
-    mediaInner = '<video src="' + escapeAttr(m.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(img || '') + '"></video>';
-  } else if (imagesArr.length) {
-    mediaInner = imagesArr.map(function (u, i) { return '<img class="gal-slide' + (i === 0 ? ' is-on' : '') + '" src="' + escapeAttr(u) + '" alt="" loading="' + (i === 0 ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">'; }).join('');
-  } else {
-    mediaInner = '<div style="position:absolute;inset:0;background:linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b)"></div>';
+    mediaInner += '<div class="gal-slide is-on"><video src="' + escapeAttr(m.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="' + escapeAttr(img || '') + '"></video></div>';
+    slideUrls.push(null);
   }
+  for (var ii = 0; ii < imagesArr.length; ii += 1) {
+    var onFirst = (!hasVideo && ii === 0);
+    mediaInner += '<img class="gal-slide' + (onFirst ? ' is-on' : '') + '" src="' + escapeAttr(imagesArr[ii]) + '" alt="" loading="' + (onFirst ? 'eager' : 'lazy') + '" onerror="this.style.display=\'none\'">';
+    slideUrls.push(imagesArr[ii]);
+  }
+  if (!mediaInner) mediaInner = '<div style="position:absolute;inset:0;background:linear-gradient(150deg,#1a0b2e,#2d1b4e,#16082b)"></div>';
+  var totalSlides = slideUrls.length;
+  var hasCarousel = totalSlides > 1;
+  var soundBtn = hasVideo ? '<div class="im-sound" id="swmSound">🔇</div>' : '';
   var galChrome = '';
-  if (hasGallery) {
+  if (hasCarousel) {
     var msegs = '';
-    for (var gi = 0; gi < imagesArr.length; gi += 1) { msegs += '<span class="im-gal-seg' + (gi === 0 ? ' on' : '') + '"></span>'; }
+    for (var gi = 0; gi < totalSlides; gi += 1) { msegs += '<span class="im-gal-seg' + (gi === 0 ? ' on' : '') + '"></span>'; }
     galChrome = '<div class="im-gallery-bar">' + msegs + '</div>'
       + '<div class="im-gal-nav left" aria-hidden="true">‹</div><div class="im-gal-nav right" aria-hidden="true">›</div>'
-      + '<div class="im-gal-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + imagesArr.length + '</span></div>';
+      + '<div class="im-gal-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + totalSlides + '</span></div>';
   }
   var mstars = '';
   for (var si = 0; si < 20; si += 1) {
@@ -5361,6 +5381,7 @@ function revealSwipeMystery() {
     '<div class="swm-aura"></div>' +
     '<div class="swm-stars">' + mstars + '</div>' +
     galChrome +
+    soundBtn +
     '<div class="swm-content">' +
       '<div class="swm-crown">👑 Offre mystère exclusive</div>' +
       '<div class="swm-hero">' +
@@ -5372,13 +5393,14 @@ function revealSwipeMystery() {
         '<div class="swm-offer-title">' + escapeHtml(String(m.badge || 'Offre mystère')) + '</div>' +
         '<div class="swm-pro">' + (proImg ? '<img src="' + escapeAttr(proImg) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '') + '<div style="min-width:0;text-align:left"><div class="swm-pro-name">' + escapeHtml(displayName) + '</div><div class="swm-pro-role">' + escapeHtml(String(m.metier || '')) + ' · ' + escapeHtml(String(liveState.cityLabel || '')) + '</div></div></div>' +
         '<div class="swm-exp">' + escapeHtml(urgency) + '</div>' +
+        '<button class="im-reviews swm-reviews" type="button">' + escapeHtml(reviewBadgeLabel(m.id)) + '</button>' +
         '<div class="swm-cue">Réserve ton privilège avec le bouton vert<span class="swm-cue-arrow">💬 ⌄</span></div>' +
       '</div>' +
     '</div>';
-  // Carrousel : la navigation par tap est gérée par wireSwipeDrag.onEnd (déjà câblé sur la carte).
-  if (hasGallery) { card._gallery = imagesArr; card._galIdx = 0; }
+  // Carrousel combiné (vidéo + photos) : navigation par tap gérée par wireSwipeDrag.onEnd + galleryGo.
+  if (hasCarousel) { card._gallery = slideUrls; card._galIdx = 0; }
   // Vidéo mp4 : autoplay muet fiabilisé (le YouTube s'autolance via les params de l'iframe).
-  var mvid = card.querySelector('video');
+  var mvid = card.querySelector('.swp-media video');
   if (mvid) {
     mvid.muted = true;
     try { mvid.setAttribute('muted', ''); mvid.setAttribute('playsinline', ''); } catch (e) {}
@@ -5387,6 +5409,35 @@ function revealSwipeMystery() {
     mvid.addEventListener('loadeddata', mPlay, { once: true });
     window.setTimeout(mPlay, 600);
   }
+  // Bouton son 🔇/🔊 (mp4 = vid.muted ; YouTube = postMessage mute/unMute via enablejsapi).
+  var swmSound = card.querySelector('#swmSound');
+  if (swmSound) {
+    var mframe = card.querySelector('.swp-media iframe');
+    swmSound.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    swmSound.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (mvid) {
+        mvid.muted = !mvid.muted;
+        swmSound.textContent = mvid.muted ? '🔇' : '🔊';
+        if (!mvid.muted) { try { mvid.play(); } catch (_e) {} }
+      } else if (mframe) {
+        var on = swmSound.getAttribute('data-on') === '1';
+        try {
+          mframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: on ? 'mute' : 'unMute', args: [] }), '*');
+          mframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+        } catch (_e2) {}
+        swmSound.setAttribute('data-on', on ? '0' : '1');
+        swmSound.textContent = on ? '🔇' : '🔊';
+      }
+    });
+  }
+  // Bouton « Avis » sur la carte mystère.
+  var mRev = card.querySelector('.swm-reviews');
+  if (mRev) {
+    mRev.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    mRev.addEventListener('click', function (e) { e.stopPropagation(); openReviews(m); });
+  }
+  ensureReviewSummaries();
 }
 
 function reserveSwipeMystery() {
@@ -5901,7 +5952,8 @@ function buildInfoSheet(place) {
     + (phone ? infoRow('📞', 'Téléphone', phone) : '')
     + (website ? infoRow('🌐', 'Site web', website) : '')
     + '<div style="padding:14px 16px 6px"><button class="rsv-opt" id="infoContact" type="button" style="justify-content:center;background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.45)"><span style="font-size:14px;font-weight:800;color:#25D366">💬 Contacter ' + escapeHtml(displayName.split(' ')[0]) + '</span></button></div>'
-    + '<div style="padding:0 16px 16px"><button class="rsv-opt" id="infoAlert" type="button" style="justify-content:center;background:rgba(245,166,35,.14);border-color:rgba(245,166,35,.45)"><span style="font-size:14px;font-weight:800;color:#F5A623">🔔 Être alerté de ses offres</span></button></div>'
+    + '<div style="padding:0 16px 10px"><button class="rsv-opt" id="infoAlert" type="button" style="justify-content:center;background:rgba(245,166,35,.14);border-color:rgba(245,166,35,.45)"><span style="font-size:14px;font-weight:800;color:#F5A623">🔔 Être alerté de ses offres</span></button></div>'
+    + '<div style="padding:0 16px 16px"><button class="rsv-opt" id="infoReviews" type="button" style="justify-content:center;background:rgba(0,200,150,.14);border-color:rgba(0,200,150,.45)"><span style="font-size:14px;font-weight:800;color:#00C896">💬 Avis & laisser un commentaire</span></button></div>'
     + '</div></div>';
 }
 function openInfoSheet(place) {
@@ -5921,6 +5973,8 @@ function openInfoSheet(place) {
   if (ct) ct.addEventListener('click', function () { overlay.classList.remove('open'); openContactSheet(place); });
   var al = overlay.querySelector('#infoAlert');
   if (al) al.addEventListener('click', function () { overlay.classList.remove('open'); openAlertSubscribe(place); });
+  var rv = overlay.querySelector('#infoReviews');
+  if (rv) rv.addEventListener('click', function () { overlay.classList.remove('open'); openReviews(place); });
 }
 
 // ─── Alertes WhatsApp : pop-up d'inscription (consentement + double opt-in) ───
