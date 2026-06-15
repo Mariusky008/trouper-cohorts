@@ -2280,7 +2280,10 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 /* Badge/bouton « Avis » sur la carte (ouvre le mur d'avis) */
 .swp-card .im-reviews { align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 6px 13px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
 .swp-card .im-reviews:active { transform: scale(.96); }
+/* Dans le bandeau pro : poussé à droite (à la place des vues), compact. */
+.swp-card.im .im-pro .im-reviews { margin: 0 0 0 auto; align-self: center; flex-shrink: 0; max-width: 56%; white-space: nowrap; padding: 5px 11px; font-size: 11.5px; }
 .swp-mystery .swm-reviews { align-self: center; margin-top: 2px; }
+.swp-card.swp-event .evt-reviews { align-self: stretch; justify-content: center; margin-top: 8px; background: rgba(0,0,0,.42); }
 /* ── Feuille « Avis » (mur d'avis modéré) ───────────────────────────────────── */
 .rv-body { padding: 4px 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 74vh; overflow-y: auto; }
 .rv-list { display: flex; flex-direction: column; gap: 10px; }
@@ -2499,8 +2502,11 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 
 /* ════════ CARTE "PROFIL TINDER" DU COMMERÇANT + ÉCRAN DE MATCH ════════ */
 .swp-card.tinder-card { background: #15121a; border: none; box-shadow: 0 26px 64px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.08); display: flex; flex-direction: column; }
-.swp-card.tinder-card .tc-photo { position: relative; flex: 1; overflow: hidden; min-height: 0; }
+.swp-card.tinder-card .tc-photo { position: relative; flex: 1; overflow: hidden; min-height: 0; background: #1a0a12; }
 .swp-card.tinder-card .tc-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Photo en ENTIER (contain) sans bandes : un même cliché flouté en fond remplit le cadre. */
+.swp-card.tinder-card .tc-photo > .tc-photo-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(26px) brightness(.5); transform: scale(1.18); z-index: 0; }
+.swp-card.tinder-card .tc-photo > .tc-photo-img { position: relative; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
 .tc-fun-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF6B9D,#C9457A); border-radius: 100px; padding: 5px 16px; font-size: 10px; font-weight: 800; color: #fff; letter-spacing: .05em; box-shadow: 0 4px 16px rgba(201,69,122,.5); white-space: nowrap; z-index: 6; }
 .tc-compat { position: absolute; top: 48px; right: 14px; background: rgba(255,107,157,.9); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.3); border-radius: 100px; padding: 5px 12px; font-size: 11px; font-weight: 700; color: #fff; z-index: 6; box-shadow: 0 4px 16px rgba(201,69,122,.4); animation: tcCompatPulse 2s ease infinite; }
 .tc-compat b { font-size: 13px; }
@@ -4856,8 +4862,7 @@ function buildSwipeCard(place) {
           '<div class="im-desc">' + escapeHtml(place.desc || '') + '</div>' +
           (String(place.desc || '').length > 55 ? '<button class="im-desc-more" type="button">Lire la suite</button>' : '') +
         '</div>' +
-        '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
-        '<button class="im-reviews" type="button">' + escapeHtml(reviewBadgeLabel(place.id)) + '</button>' +
+        '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><button class="im-reviews" type="button">' + escapeHtml(reviewBadgeLabel(place.id)) + '</button></div>' +
       '</div>' +
     '</div>' +
     videoOverlay +
@@ -5053,6 +5058,7 @@ function buildEventCard(ev) {
         (detail ? '<div class="im-desc evt-desc">' + escapeHtml(detail) + '</div>' : '') +
         sponsorHtml +
         '<button type="button" class="evt-cta" style="background:linear-gradient(135deg,' + accent + ',' + accent2 + ')"><span class="evt-cta-shine"></span>📅 Ajouter à mon agenda</button>' +
+        '<button type="button" class="im-reviews evt-reviews">💬 Avis & commentaires</button>' +
       '</div>' +
     '</div>' +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
@@ -5064,6 +5070,11 @@ function buildEventCard(ev) {
   if (cta) {
     cta.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     cta.addEventListener('click', function (e) { e.stopPropagation(); openEventGoing(ev); });
+  }
+  var evtRev = card.querySelector('.evt-reviews');
+  if (evtRev) {
+    evtRev.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    evtRev.addEventListener('click', function (e) { e.stopPropagation(); openReviews(ev); });
   }
   card.addEventListener('click', function () {
     // tap simple (pas un glissement) → détails de l'événement
@@ -5689,7 +5700,8 @@ function showSwipeTinder() {
   card.setAttribute('data-top-card', '1');
   var photo = String(t.photo || '').trim();
   var media = photo
-    ? '<img src="' + escapeAttr(photo) + '" alt="" onerror="this.style.display=\'none\';this.parentNode.style.background=\'linear-gradient(160deg,#c2410c,#7c2d12)\'">'
+    ? '<img class="tc-photo-bg" src="' + escapeAttr(photo) + '" alt="" aria-hidden="true">'
+      + '<img class="tc-photo-img" src="' + escapeAttr(photo) + '" alt="" onerror="this.style.display=\'none\';this.parentNode.style.background=\'linear-gradient(160deg,#c2410c,#7c2d12)\'">'
     : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:120px;background:linear-gradient(160deg,#c2410c,#7c2d12)">🧑</div>';
   var tags = (t.tags || []).slice(0, 4).map(function (tag) { return '<span class="tc-tag">' + escapeHtml(tag) + '</span>'; }).join('');
   card.innerHTML =
@@ -6053,7 +6065,7 @@ function ensureReviewSummaries() {
 function reviewBadgeLabel(placeId) {
   var s = reviewSummaries[placeId];
   if (s && s.count > 0) return '⭐ ' + (s.avg ? s.avg.toFixed(1) : '–') + ' · ' + s.count + ' avis';
-  return '💬 Donner mon avis';
+  return '💬 Avis';
 }
 
 function refreshReviewBadge() {
@@ -6074,8 +6086,12 @@ function reviewStarRow(n, cls) {
 function openReviews(place) {
   if (!place) return;
   var id = String(place.id || '').trim();
+  // Cible = commerçant OU événement (id préfixé "event:"). On envoie placeId ou eventId.
+  var isEvent = Boolean(place.isEvent) || /^event:/.test(id);
+  var targetId = isEvent ? id.replace(/^event:/, '') : id;
+  var qpName = isEvent ? 'eventId' : 'placeId';
   try { trackPriv(id, 'reviews_open'); } catch (e) {}
-  var proName = String(place.personName || place.name || 'ce commerçant');
+  var proName = String(place.personName || place.name || place.title || 'ce commerçant');
   var refId = '';
   try { var qp = new URLSearchParams(location.search); refId = String(qp.get('ref_id') || qp.get('ref') || ''); } catch (e) {}
   var overlay = document.getElementById('reviewsOverlay');
@@ -6116,7 +6132,7 @@ function openReviews(place) {
 
   // Avis approuvés
   var listEl = overlay.querySelector('#rvList');
-  fetch('/api/popey-human/privilege/reviews?placeId=' + encodeURIComponent(id), { cache: 'no-store' })
+  fetch('/api/popey-human/privilege/reviews?' + qpName + '=' + encodeURIComponent(targetId), { cache: 'no-store' })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       var reviews = (d && d.reviews) || [];
@@ -6143,7 +6159,7 @@ function openReviews(place) {
     btn.disabled = true; btn.textContent = 'Publication…';
     fetch('/api/popey-human/privilege/reviews', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
-      body: JSON.stringify({ placeId: id, name: name, phone: phone, rating: rating, comment: comment, ville: String(liveState.cityLabel || ''), refId: refId })
+      body: JSON.stringify((function () { var b = { name: name, phone: phone, rating: rating, comment: comment, ville: String(liveState.cityLabel || ''), refId: refId }; b[qpName] = targetId; return b; })())
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d && res.d.ok) {

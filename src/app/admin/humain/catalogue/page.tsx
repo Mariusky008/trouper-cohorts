@@ -183,7 +183,8 @@ async function fetchAlertSubscribers(): Promise<AlertSubscriber[]> {
 
 type PlaceComment = {
   id: string;
-  place_id: string;
+  place_id: string | null;
+  event_id: string | null;
   author_name: string;
   author_phone: string | null;
   rating: number | null;
@@ -193,16 +194,25 @@ type PlaceComment = {
 };
 
 // Avis catalogue (résilient si table absente). On récupère tout, on filtre par ville/statut côté page.
+// Requête résiliente : si la colonne event_id n'existe pas encore (migration), on retombe sans.
 async function fetchPlaceComments(): Promise<PlaceComment[]> {
   try {
     const admin = createAdminClient();
-    const r = await admin
+    const rich = await admin
       .from("human_marketplace_place_comments")
-      .select("id,place_id,author_name,author_phone,rating,comment,status,created_at")
+      .select("id,place_id,event_id,author_name,author_phone,rating,comment,status,created_at")
       .order("created_at", { ascending: false })
       .limit(5000);
-    if (r.error || !r.data) return [];
-    return r.data as unknown as PlaceComment[];
+    if (!rich.error && rich.data) return rich.data as unknown as PlaceComment[];
+    if (rich.error && /event_id/i.test(String(rich.error.message || ""))) {
+      const basic = await admin
+        .from("human_marketplace_place_comments")
+        .select("id,place_id,author_name,author_phone,rating,comment,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(5000);
+      if (!basic.error && basic.data) return basic.data as unknown as PlaceComment[];
+    }
+    return [];
   } catch {
     return [];
   }
@@ -746,8 +756,18 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
     fetchSupportLeads(),
     fetchPlaceComments(),
   ]);
-  // Avis du catalogue pour la ville sélectionnée : en attente (à modérer) + déjà publiés.
-  const cityComments = allComments.filter((c) => new Set(cityPlaces.map((p) => p.id)).has(c.place_id));
+  // Avis du catalogue pour la ville sélectionnée : commerçants ET événements (en attente + publiés).
+  const cityPlaceIdSet = new Set(cityPlaces.map((p) => p.id));
+  const cityEventList = ((snapshot.localEvents || []) as unknown as LocalEvent[]).filter(
+    (e) => String(e.city || "") === selectedCity,
+  );
+  const cityEventIdSet = new Set(cityEventList.map((e) => e.id));
+  const eventTitleById = new Map(((snapshot.localEvents || []) as unknown as LocalEvent[]).map((e) => [e.id, e.title]));
+  const commentTarget = (c: PlaceComment): string =>
+    c.event_id ? `🎉 ${eventTitleById.get(c.event_id) || "Événement"}` : placeName(c.place_id || "");
+  const cityComments = allComments.filter(
+    (c) => (c.place_id && cityPlaceIdSet.has(c.place_id)) || (c.event_id && cityEventIdSet.has(c.event_id)),
+  );
   const pendingComments = cityComments.filter((c) => c.status === "pending");
   const approvedComments = cityComments.filter((c) => c.status === "approved");
   const cityTinder = allTinder
@@ -1155,7 +1175,7 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="text-amber-500">{"★".repeat(Math.max(1, Math.min(5, Number(c.rating || 0))))}<span className="text-slate-300">{"★".repeat(5 - Math.max(1, Math.min(5, Number(c.rating || 0))))}</span></span>
                   <strong>{s(c.author_name)}</strong>
-                  <span className="text-[11px] text-slate-400">· {placeName(c.place_id)}</span>
+                  <span className="text-[11px] text-slate-400">· {commentTarget(c)}</span>
                   <a href={`https://wa.me/${s(c.author_phone).replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="text-[11px] font-mono text-sky-600 hover:underline">
                     {s(c.author_phone)}
                   </a>
@@ -1195,7 +1215,7 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
               {approvedComments.slice(0, 100).map((c) => (
                 <div key={c.id} className="flex items-start gap-2 border-b border-slate-50 py-1.5 text-xs last:border-0">
                   <span className="text-amber-500">{"★".repeat(Math.max(1, Math.min(5, Number(c.rating || 0))))}</span>
-                  <span><strong>{s(c.author_name)}</strong> · {placeName(c.place_id)} — {s(c.comment)}</span>
+                  <span><strong>{s(c.author_name)}</strong> · {commentTarget(c)} — {s(c.comment)}</span>
                   <form action="/api/admin/humain/privilege/reviews/moderate" method="post" className="ml-auto">
                     <input type="hidden" name="comment_id" value={c.id} />
                     <input type="hidden" name="intent" value="delete" />

@@ -33,37 +33,54 @@ export async function POST(request: NextRequest) {
       | { placeId?: string; name?: string; phone?: string; rating?: number; comment?: string; ville?: string; refId?: string }
       | null;
     const placeId = String(body?.placeId || "").trim();
+    const eventId = String((body as { eventId?: string })?.eventId || "").trim();
     const name = String(body?.name || "").trim().slice(0, 40);
     const phone = toE164(String(body?.phone || ""));
     const rating = Math.round(Number(body?.rating || 0));
     const comment = String(body?.comment || "").trim().slice(0, 600);
 
-    if (!isUuid(placeId)) return NextResponse.json({ error: "Commerçant invalide." }, { status: 400 });
+    const isEvent = !placeId && isUuid(eventId);
+    if (!isEvent && !isUuid(placeId)) return NextResponse.json({ error: "Cible invalide." }, { status: 400 });
     if (name.length < 2) return NextResponse.json({ error: "Prénom requis." }, { status: 400 });
     if (!phone) return NextResponse.json({ error: "Numéro de téléphone invalide." }, { status: 400 });
     if (!(rating >= 1 && rating <= 5)) return NextResponse.json({ error: "Note (1 à 5 étoiles) requise." }, { status: 400 });
     if (comment.length < 3) return NextResponse.json({ error: "Commentaire requis." }, { status: 400 });
 
     const supabase = createAdminClient();
-    const { data: place } = await supabase
-      .from("human_marketplace_places")
-      .select("id,city,city_slug")
-      .eq("id", placeId)
-      .maybeSingle();
-    if (!place) return NextResponse.json({ error: "Commerçant introuvable." }, { status: 404 });
-
-    const { error } = await supabase.from("human_marketplace_place_comments").insert({
-      place_id: placeId,
-      city: (place as { city?: string }).city || null,
-      city_slug: (place as { city_slug?: string }).city_slug || null,
+    const base = {
       author_name: name,
       author_phone: phone,
       rating,
       comment,
-      status: "pending",
+      status: "pending" as const,
       source: "catalogue",
       ref_id: String(body?.refId || "").trim().slice(0, 80) || null,
-    });
+    };
+    let insertRow: Record<string, unknown>;
+    if (isEvent) {
+      const { data: ev } = await supabase
+        .from("human_privilege_local_events")
+        .select("id,city")
+        .eq("id", eventId)
+        .maybeSingle();
+      if (!ev) return NextResponse.json({ error: "Événement introuvable." }, { status: 404 });
+      insertRow = { ...base, event_id: eventId, city: (ev as { city?: string }).city || null };
+    } else {
+      const { data: place } = await supabase
+        .from("human_marketplace_places")
+        .select("id,city,city_slug")
+        .eq("id", placeId)
+        .maybeSingle();
+      if (!place) return NextResponse.json({ error: "Commerçant introuvable." }, { status: 404 });
+      insertRow = {
+        ...base,
+        place_id: placeId,
+        city: (place as { city?: string }).city || null,
+        city_slug: (place as { city_slug?: string }).city_slug || null,
+      };
+    }
+
+    const { error } = await supabase.from("human_marketplace_place_comments").insert(insertRow);
     if (error) {
       if (/human_marketplace_place_comments/i.test(String(error.message || ""))) {
         return NextResponse.json({ error: "Avis pas encore activés." }, { status: 503 });
@@ -82,15 +99,18 @@ export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
     const placeId = String(params.get("placeId") || "").trim();
+    const eventId = String(params.get("eventId") || "").trim();
     const idsRaw = String(params.get("ids") || "").trim();
     const supabase = createAdminClient();
 
-    if (placeId) {
-      if (!isUuid(placeId)) return NextResponse.json({ reviews: [], count: 0, avg: 0 });
+    const targetCol = eventId ? "event_id" : "place_id";
+    const targetId = eventId || placeId;
+    if (targetId) {
+      if (!isUuid(targetId)) return NextResponse.json({ reviews: [], count: 0, avg: 0 });
       const { data, error } = await supabase
         .from("human_marketplace_place_comments")
-        .select("place_id,rating,author_name,comment,created_at")
-        .eq("place_id", placeId)
+        .select("rating,author_name,comment,created_at")
+        .eq(targetCol, targetId)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(100);
