@@ -2543,6 +2543,7 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .tc-tag { background: rgba(255,255,255,.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18); border-radius: 100px; padding: 5px 12px; font-size: 11px; font-weight: 600; color: #fff; }
 .tc-support { margin-top: 10px; width: 100%; border: none; border-radius: 100px; padding: 13px; font-family: var(--fb); font-size: 14.5px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #FF6B9D, #C9457A); box-shadow: 0 8px 24px rgba(201,69,122,.5); cursor: pointer; transition: transform .12s ease; animation: ctaBreath 2.6s ease-in-out infinite; }
 .tc-support:active { transform: scale(.96); animation: none; }
+.tc-support.liked { background: rgba(255,255,255,.12); box-shadow: none; animation: none; color: rgba(255,255,255,.85); cursor: default; }
 /* Preuve sociale : compteur de soutiens (façon Live TikTok/Insta) */
 .tc-support-count { margin-top: 12px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.92); text-shadow: 0 1px 6px rgba(0,0,0,.55); }
 .tc-support-count b { font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; display: inline-block; }
@@ -5583,6 +5584,10 @@ function spawnLikeHeart(card) {
   card.appendChild(h);
   window.setTimeout(function () { if (h.parentNode) h.parentNode.removeChild(h); }, 1500);
 }
+// Like de soutien = UN SEUL par profil (mémorisé) → on ne peut pas gonfler le compteur en spammant.
+function tinderLikeKey(id) { return 'popey_priv_tinderlike_' + String(id || ''); }
+function tinderHasLiked(id) { try { return !!(id && window.localStorage && localStorage.getItem(tinderLikeKey(id)) === '1'); } catch (e) { return false; } }
+function tinderSetLiked(id) { try { if (id && window.localStorage) localStorage.setItem(tinderLikeKey(id), '1'); } catch (e) {} }
 function sendTinderSupport(card) {
   spawnLikeHeart(card);
   bumpSupportCount(1);
@@ -5760,7 +5765,7 @@ function showSwipeTinder() {
         (t.bio ? '<div class="tc-bio">' + escapeHtml(t.bio) + '</div>' : '') +
         (tags ? '<div class="tc-tags">' + tags + '</div>' : '') +
         '<div class="tc-support-count">💚 <b id="tcSupportN" data-n="' + supportBase + '">' + supportBase.toLocaleString('fr-FR') + '</b> ' + escapeHtml(demonym) + ' soutiennent ' + escapeHtml(firstName) + '</div>' +
-        '<button type="button" class="tc-support" id="tcSupport">💚 Envoyez-lui un like de soutien</button>' +
+        '<button type="button" class="tc-support' + (tinderHasLiked(t.id) ? ' liked' : '') + '" id="tcSupport">' + (tinderHasLiked(t.id) ? '💚 Soutenu ✓' : '💚 Envoyez-lui un like de soutien') + '</button>' +
       '</div>' +
     '</div>';
   stage.appendChild(card);
@@ -5773,14 +5778,19 @@ function showSwipeTinder() {
   }
   var supportBtn = card.querySelector('#tcSupport');
   if (supportBtn) {
-    // "Like de soutien" : chaque tap envoie un cœur + incrémente le compteur (façon Live).
-    // Le match reste accessible en swipant à droite / via la barre du bas.
+    // "Like de soutien" = UN SEUL par profil (mémorisé) : pas de gonflage du compteur en spammant.
     // pointerdown stopPropagation empêche le drag ; un flag "pending" dédoublonne pointerup+click.
+    var likedThis = tinderHasLiked(t.id);
     var pending = false;
     supportBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); pending = true; });
     var fireSupport = function (e) {
       e.stopPropagation(); if (e.cancelable) e.preventDefault();
       if (!pending) return; pending = false;
+      if (likedThis) { try { showSwipeToast('Déjà soutenu 💚'); } catch (_e) {} return; }
+      likedThis = true;
+      tinderSetLiked(t.id);
+      supportBtn.classList.add('liked');
+      supportBtn.textContent = '💚 Soutenu ✓';
       sendTinderSupport(card);
     };
     supportBtn.addEventListener('pointerup', fireSupport);
