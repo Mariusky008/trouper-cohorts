@@ -477,6 +477,38 @@ export async function sendPartnerOutreach(
   };
 }
 
+// Catalogue Privilège — confirmation de double opt-in (envoi DIRECT, immédiat) après inscription
+// d'un abonné aux alertes. Template dédié {{1}}=commerçant, {{2}}=ville. No-op silencieux tant que
+// le compte Twilio ou le Content SID d'opt-in n'est pas configuré (ne casse jamais l'inscription).
+export async function sendPrivilegeAlertOptin(
+  targetPhone: string,
+  vars: { merchantName: string; city: string },
+): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
+  const cfg = whatsappTwilioConfig;
+  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertOptinContentSid) {
+    return { success: false, skipped: true };
+  }
+  const to = normalizeTwilioWhatsAppAddress(targetPhone);
+  if (!to) return { success: false, error: "Numéro cible invalide." };
+  try {
+    const client = twilio(cfg.accountSid, cfg.authToken);
+    const message = await client.messages.create({
+      from: cfg.whatsappFrom,
+      to,
+      contentSid: cfg.alertOptinContentSid,
+      contentVariables: JSON.stringify({
+        "1": String(vars.merchantName || "").trim() || "ce commerçant",
+        "2": String(vars.city || "").trim() || "votre ville",
+      }),
+      ...(cfg.statusCallbackUrl ? { statusCallback: cfg.statusCallbackUrl } : {}),
+    });
+    return { success: true, sid: String(message.sid || "").trim() };
+  } catch (error) {
+    console.error("[privilege-alerts] optin send failed", error);
+    return { success: false, error: error instanceof Error ? error.message : "Envoi opt-in impossible." };
+  }
+}
+
 export async function processTwilioWhatsAppWebhook(params: Record<string, string>) {
   const supabaseAdmin = createAdminClient();
   const messageSid = String(params.MessageSid || params.SmsSid || "").trim();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPrivilegeAlertOptin } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Le commerçant doit exister (et on récupère sa ville pour l'enregistrement).
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("id,city,city_slug")
+      .select("id,city,city_slug,company_name,owner_display_name")
       .eq("id", placeId)
       .maybeSingle();
     if (!place) return NextResponse.json({ error: "Commerçant introuvable." }, { status: 404 });
@@ -70,9 +71,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Inscription impossible pour le moment." }, { status: 500 });
     }
 
-    // NOTE : l'envoi du WhatsApp de confirmation (double opt-in) est branché à
-    // l'étape 4 (templates Meta approuvés + webhook OUI/STOP).
-    return NextResponse.json({ ok: true, pending: true });
+    // Confirmation double opt-in (envoi DIRECT, immédiat). No-op silencieux si le compte Twilio
+    // ou le Content SID d'opt-in n'est pas configuré → l'inscription n'échoue jamais pour autant.
+    const placeRow = place as { city?: string; company_name?: string; owner_display_name?: string };
+    const merchantName = String(placeRow.company_name || placeRow.owner_display_name || "").trim() || "ce commerçant";
+    const optin = await sendPrivilegeAlertOptin(phone, { merchantName, city: String(placeRow.city || "") });
+
+    return NextResponse.json({ ok: true, pending: true, confirmationSent: Boolean(optin.success) });
   } catch (error) {
     console.error("[alerts/subscribe] unexpected", error);
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });

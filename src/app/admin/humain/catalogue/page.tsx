@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 
 export const dynamic = "force-dynamic";
 
@@ -1068,7 +1069,15 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
           <strong className="text-amber-700">{alertTotals.pending} en attente</strong> (n&apos;ont pas encore répondu OUI) ·{" "}
           <span className="text-slate-400">{alertTotals.unsub} désinscrits</span>.
           <br />
-          <span className="text-[11px]">L&apos;envoi du WhatsApp de confirmation + le bouton « Envoyer l&apos;alerte » arriveront avec le template approuvé (étape 4 suite).</span>
+          {whatsappTwilioConfig.alertBroadcastContentSid ? (
+            <span className="text-[11px] text-emerald-700">
+              ✅ Envoi actif. Le bouton « 📣 Envoyer l&apos;alerte » ci-dessous diffuse l&apos;offre du commerçant à ses abonnés <strong>confirmés</strong> (template Twilio).
+            </span>
+          ) : (
+            <span className="text-[11px] text-amber-700">
+              ⚠️ Pour activer l&apos;envoi : créez le template de diffusion et renseignez l&apos;env <code>TWILIO_WHATSAPP_CONTENT_SID_ALERT_BROADCAST</code> (+ <code>…_ALERT_OPTIN</code> pour la confirmation).
+            </span>
+          )}
         </p>
 
         {alertSubsByPlace.size === 0 ? (
@@ -1110,6 +1119,27 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
                       ))}
                     </tbody>
                   </table>
+                  {conf > 0 && whatsappTwilioConfig.alertBroadcastContentSid ? (
+                    <form
+                      action="/api/admin/humain/privilege/alerts/send"
+                      method="post"
+                      className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-2"
+                    >
+                      <input type="hidden" name="place_id" value={placeId} />
+                      <input type="hidden" name="current_url" value={`/admin/humain/catalogue?city=${encodeURIComponent(selectedCity)}`} />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                      >
+                        📣 Envoyer l&apos;alerte ({conf} confirmé{conf > 1 ? "s" : ""})
+                      </button>
+                      <span className="text-[11px] text-slate-400">Diffuse l&apos;offre actuelle du commerçant via WhatsApp.</span>
+                    </form>
+                  ) : conf > 0 ? (
+                    <p className="mt-2 border-t border-slate-100 pt-2 text-[11px] text-amber-700">
+                      Configurez <code>TWILIO_WHATSAPP_CONTENT_SID_ALERT_BROADCAST</code> pour activer l&apos;envoi aux {conf} confirmé{conf > 1 ? "s" : ""}.
+                    </p>
+                  ) : null}
                 </div>
               </details>
             );
