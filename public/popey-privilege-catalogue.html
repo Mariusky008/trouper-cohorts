@@ -2259,7 +2259,11 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-chrono-ico { font-size: 11px; }
 .swp-card.im .im-chrono-txt { font-size: 11px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
 .swp-card.im .im-chrono-unit { font-size: 9px; color: rgba(255,255,255,.55); }
-.swp-card.im .im-desc { font-size: 12.5px; color: rgba(255,255,255,.8); line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.swp-card.im .im-desc { font-size: 12.5px; color: rgba(255,255,255,.8); line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.swp-card.im .im-desc.expanded { -webkit-line-clamp: unset; max-height: 34vh; overflow-y: auto; }
+.swp-card.im .im-desc-more { margin-top: 3px; display: inline-flex; align-items: center; gap: 3px; background: none; border: none; padding: 0; color: rgba(255,255,255,.92); font-size: 11px; font-weight: 800; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.swp-card.im .im-desc-more::after { content: ' ⌄'; }
+.swp-card.im .im-desc-more.open::after { content: ' ⌃'; }
 .swp-card.im .im-coupon { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.38); backdrop-filter: blur(10px); border: 1px dashed rgba(255,255,255,.28); border-radius: 10px; padding: 5px 10px; }
 .swp-card.im .im-coupon-lbl { font-size: 7px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); }
 .swp-card.im .im-coupon-code { font-family: var(--fd); font-size: 13px; font-weight: 900; color: #fff; letter-spacing: .04em; }
@@ -4810,7 +4814,10 @@ function buildSwipeCard(place) {
         (place.coupText ? '<div class="im-coeur"><span style="font-size:15px">💖</span><div class="im-coeur-txt"><strong>' + escapeHtml(liveState.refFirstName || 'Votre contact') + ' :</strong> «&nbsp;' + escapeHtml(place.coupText) + '&nbsp;»</div></div>' : '') +
         '<div class="im-chrono" data-deadline="' + deadlineIso + '"><span class="im-chrono-ico">⏳</span><span class="im-chrono-txt" data-chrono>--</span><span class="im-chrono-unit">avant la fin de l\'offre</span></div>' +
         (pos === 'bottom' ? titleHtml : '') +
-        '<div class="im-desc">' + escapeHtml(place.desc || '') + '</div>' +
+        '<div class="im-desc-wrap">' +
+          '<div class="im-desc">' + escapeHtml(place.desc || '') + '</div>' +
+          (String(place.desc || '').length > 55 ? '<button class="im-desc-more" type="button">Lire la suite</button>' : '') +
+        '</div>' +
         '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
       '</div>' +
     '</div>' +
@@ -4827,6 +4834,18 @@ function buildSwipeCard(place) {
     maybeShowGalleryHint(card);
   }
   wireSwipeDrag(card, place);
+  // Descriptif : 1 ligne + « Lire la suite » qui déplie au tap (stopPropagation → pas de swipe).
+  var descMore = card.querySelector('.im-desc-more');
+  if (descMore) {
+    var descEl = card.querySelector('.im-desc');
+    descMore.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    descMore.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = descEl && descEl.classList.toggle('expanded');
+      descMore.classList.toggle('open', open);
+      descMore.firstChild ? (descMore.firstChild.nodeValue = open ? 'Réduire' : 'Lire la suite') : (descMore.textContent = open ? 'Réduire' : 'Lire la suite');
+    });
+  }
   // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)
   var vid = card.querySelector('video');
   if (vid) {
