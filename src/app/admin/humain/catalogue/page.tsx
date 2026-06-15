@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import OfferMediaUploader from "./_components/offer-media-uploader";
 
 export const dynamic = "force-dynamic";
 
@@ -371,58 +372,16 @@ function CatalogueOfferForm({
         </select>
       </label>
 
-      <label className="space-y-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Photo (URL)</span>
-        <input name="offer_photo_url" defaultValue={s(place.offer_photo_url)} placeholder="https://.../photo.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
-      </label>
-
-      <label className="space-y-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Photo (upload)</span>
-        <input name="offer_photo_file" type="file" accept="image/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
-        {s(place.offer_photo_url) ? (
-          <span className="mt-1 flex items-center gap-2 text-[11px] text-emerald-700">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s(place.offer_photo_url)} alt="" className="h-12 w-12 rounded object-cover border" />
-            ✓ Photo enregistrée (le champ fichier reste vide, c&apos;est normal — la photo ci-contre est bien sauvegardée).
-          </span>
-        ) : null}
-      </label>
-
-      <label className="space-y-1 md:col-span-2">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">🖼️ Galerie photos (carrousel)</span>
-        <input name="offer_gallery_files" type="file" accept="image/*" multiple className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-amber-900" />
-        <span className="block text-[11px] text-muted-foreground">Ajoutez plusieurs photos d&apos;un coup · max 6 · 8 Mo chacune. Elles s&apos;ajoutent aux URLs ci-dessous.</span>
-        <textarea
-          name="offer_gallery_urls"
-          defaultValue={galleryUrls.join("\n")}
-          placeholder={"https://.../photo-1.jpg\nhttps://.../photo-2.jpg"}
-          className="min-h-16 w-full rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
-        />
-        <span className="block text-[11px] text-muted-foreground">1 URL par ligne · l&apos;ordre = l&apos;ordre d&apos;affichage du carrousel. La « Photo (URL/upload) » ci-dessus reste la 1ʳᵉ image (couverture).</span>
-        {galleryUrls.length ? (
-          <span className="mt-1 flex flex-wrap items-center gap-2">
-            {galleryUrls.map((u, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={u} alt="" className="h-12 w-12 rounded object-cover border" />
-            ))}
-            <span className="text-[11px] text-emerald-700">✓ {galleryUrls.length} photo{galleryUrls.length > 1 ? "s" : ""} en galerie (les champs fichier restent vides, c&apos;est normal).</span>
-          </span>
-        ) : null}
-      </label>
+      <OfferMediaUploader
+        placeId={s(place.id)}
+        defaultPhotoUrl={s(place.offer_photo_url)}
+        defaultGalleryUrls={galleryUrls}
+        defaultVideoUrl={s(extra?.offer_video_url)}
+      />
 
       <label className="space-y-1">
         <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Photo profil (URL)</span>
         <input name="owner_profile_photo_url" defaultValue={s(place.owner_profile_photo_url)} placeholder="https://.../profil.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
-      </label>
-
-      <label className="space-y-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-sky-700">🎬 Vidéo verticale (URL .mp4)</span>
-        <input name="offer_video_url" defaultValue={s(extra?.offer_video_url)} placeholder="https://.../video.mp4" className="h-10 w-full rounded border border-sky-300 bg-sky-50 px-3 text-sm" />
-      </label>
-
-      <label className="space-y-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-sky-700">🎬 Vidéo (upload direct .mp4/.webm)</span>
-        <input name="offer_video_file" type="file" accept="video/*" className="h-10 w-full rounded border bg-background px-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-sky-100 file:px-3 file:py-1 file:text-xs file:font-bold file:text-sky-900" />
       </label>
 
       <label className="space-y-1 md:col-span-2">
