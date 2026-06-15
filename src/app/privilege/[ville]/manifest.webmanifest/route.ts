@@ -29,14 +29,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ vil
   const ville = String(resolvedParams?.ville || "dax").trim().toLowerCase() || "dax";
   const label = toCityLabel(ville);
   const startUrl = buildStartUrl(ville, request);
-  const scope = `/privilege/${ville}`;
   const manifest = {
     name: `Catalogue Popey — ${label}`,
     short_name: `Popey ${label}`,
     description: "Catalogue privilèges Popey.",
-    id: scope,
+    // id distinct par ville → install séparée par ville ; scope large → le changement de
+    // ville in-app et le catalogue restent en mode standalone (pas d'ouverture navigateur).
+    id: `/privilege/${ville}`,
     start_url: startUrl,
-    scope,
+    scope: "/privilege/",
     display: "standalone",
     background_color: "#E2D9BC",
     theme_color: "#0A0B0C",
