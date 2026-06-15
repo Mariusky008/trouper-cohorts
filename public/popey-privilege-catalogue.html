@@ -2225,8 +2225,28 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im.has-video .swp-media::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(7,8,16,.92) 0%, rgba(7,8,16,.4) 22%, transparent 42%); }
 /* Bouton son (vidéo) — toujours visible pour activer/couper le son */
 .swp-card .im-sound { position: absolute; top: 14px; right: 14px; z-index: 6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 15px; cursor: pointer; }
-/* Sur la mystère : son en haut-GAUCHE (le compteur 1/N occupe le haut-droit). */
-.swp-mystery .im-sound { left: 14px; right: auto; }
+/* Sur la mystère : son en haut-GAUCHE, 2e position (le bouton ⛶ occupe le 1er ; compteur en haut-droit). */
+.swp-mystery .im-sound { left: 54px; right: auto; }
+/* Bouton ⛶ « plein écran » du média (haut-gauche) → vue immersive sans texte ni boutons. */
+.swp-card .im-expand { position: absolute; top: 14px; left: 14px; z-index: 7; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 16px; cursor: pointer; }
+.swp-card .im-expand:active { transform: scale(.92); }
+/* Overlay plein écran : SEULEMENT le média (vidéo/photos), fond noir, navigable. */
+.mfs-overlay { position: fixed; inset: 0; z-index: 11000; background: #000; opacity: 0; visibility: hidden; transition: opacity .25s ease; }
+.mfs-overlay.open { opacity: 1; visibility: visible; }
+/* height/width:100% explicites : .mfs-media porte aussi .swp-media (qu'une media-query met à 38%). */
+.mfs-overlay .mfs-media { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mfs-media .gal-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .25s ease; }
+.mfs-media .gal-slide.is-on { opacity: 1; }
+.mfs-media video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.mfs-media iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100vw; height: 56.25vw; max-width: 177.78vh; max-height: 100vh; border: 0; background: #000; }
+.mfs-close { position: absolute; top: 16px; right: 16px; z-index: 4; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 18px; cursor: pointer; }
+.mfs-sound { position: absolute; top: 16px; left: 16px; z-index: 4; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 16px; cursor: pointer; }
+.mfs-nav { position: absolute; top: 12%; bottom: 12%; width: 34%; display: flex; align-items: center; z-index: 3; color: rgba(255,255,255,.85); font-size: 46px; font-weight: 300; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.mfs-nav.left { left: 0; justify-content: flex-start; padding-left: 12px; }
+.mfs-nav.right { right: 0; justify-content: flex-end; padding-right: 12px; }
+.mfs-nav:active { color: #fff; }
+.mfs-count { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 4; padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.22); color: #fff; font-size: 12px; font-weight: 700; }
+.mfs-count .im-gal-tot { opacity: .7; }
 /* ── Carrousel d'images (galerie) — repère Stories/Tinder ─────────────────────
    Photos empilées : seule .is-on est visible (fondu), AUCUNE translation → n'interfère
    jamais avec le transform de la carte (geste swipe). Navigation = tap (géré en JS). */
@@ -4822,6 +4842,8 @@ function buildSwipeCard(place) {
       '<div class="im-gal-nav right" aria-hidden="true">›</div>' +
       '<div class="im-gal-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + gallery.length + '</span></div>';
   }
+  // Bouton ⛶ « plein écran » : dès qu'il y a une vidéo ou au moins une photo.
+  var expandBtn = (place.videoUrl || (place.images && place.images.length > 0)) ? '<div class="im-expand" id="imExpand">⛶</div>' : '';
 
   // Badge vidéo + bouton play : posés AU NIVEAU DE LA CARTE (au-dessus de .im-content)
   // pour être visibles et CLIQUABLES (sinon piégés sous le contenu à cause du z-index).
@@ -4867,6 +4889,7 @@ function buildSwipeCard(place) {
     '</div>' +
     videoOverlay +
     galleryOverlay +
+    expandBtn +
     '<div class="swp-counter">' + (swipeState.index + 1) + ' / ' + swipeState.queue.length + '</div>';
   // Contours nets + halo teinté par la sphère → la carte ressort comme l'acteur phare
   card.style.border = '1.5px solid ' + th.pillBorder;
@@ -4895,6 +4918,12 @@ function buildSwipeCard(place) {
   if (revBtn) {
     revBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     revBtn.addEventListener('click', function (e) { e.stopPropagation(); openReviews(place); });
+  }
+  // ⛶ Plein écran média (vidéo/photos sans texte).
+  var expBtn = card.querySelector('#imExpand');
+  if (expBtn) {
+    expBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    expBtn.addEventListener('click', function (e) { e.stopPropagation(); openMediaFullscreen(place); });
   }
   ensureReviewSummaries();
   // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)
@@ -5393,6 +5422,7 @@ function revealSwipeMystery() {
     '<div class="swm-stars">' + mstars + '</div>' +
     galChrome +
     soundBtn +
+    ((hasVideo || imagesArr.length) ? '<div class="im-expand" id="swmExpand">⛶</div>' : '') +
     '<div class="swm-content">' +
       '<div class="swm-crown">👑 Offre mystère exclusive</div>' +
       '<div class="swm-hero">' +
@@ -5447,6 +5477,12 @@ function revealSwipeMystery() {
   if (mRev) {
     mRev.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     mRev.addEventListener('click', function (e) { e.stopPropagation(); openReviews(m); });
+  }
+  // ⛶ Plein écran média sur la mystère.
+  var mExp = card.querySelector('#swmExpand');
+  if (mExp) {
+    mExp.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    mExp.addEventListener('click', function (e) { e.stopPropagation(); openMediaFullscreen(m); });
   }
   ensureReviewSummaries();
 }
@@ -6081,6 +6117,81 @@ function reviewStarRow(n, cls) {
   var html = '';
   for (var i = 1; i <= 5; i += 1) html += '<span class="' + (cls || 'rv-star') + (i <= full ? ' on' : '') + '">★</span>';
   return html;
+}
+
+// ─── Vue MÉDIA plein écran (vidéo/photos seules, sans aucun texte ni bouton de la carte) ───
+function openMediaFullscreen(obj) {
+  if (!obj) return;
+  var yt = obj.videoUrl ? youtubeId(obj.videoUrl) : '';
+  var imgs = (obj.images && obj.images.length) ? obj.images : (obj.image ? [obj.image] : []);
+  var hasVideo = Boolean(obj.videoUrl);
+  var slides = '';
+  var urls = [];
+  if (obj.videoUrl && yt) {
+    slides += '<div class="gal-slide is-on"><iframe src="https://www.youtube.com/embed/' + yt + '?autoplay=1&mute=1&loop=1&playlist=' + yt + '&controls=1&playsinline=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+    urls.push(null);
+  } else if (obj.videoUrl) {
+    slides += '<div class="gal-slide is-on"><video src="' + escapeAttr(obj.videoUrl) + '" muted autoplay loop playsinline webkit-playsinline preload="auto" controls></video></div>';
+    urls.push(null);
+  }
+  for (var i = 0; i < imgs.length; i += 1) {
+    var on = (!hasVideo && i === 0);
+    slides += '<img class="gal-slide' + (on ? ' is-on' : '') + '" src="' + escapeAttr(imgs[i]) + '" alt="" onerror="this.style.display=\'none\'">';
+    urls.push(imgs[i]);
+  }
+  if (!slides) return;
+  var total = urls.length;
+  var overlay = document.getElementById('mediaFsOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'mediaFsOverlay';
+    overlay.className = 'mfs-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML =
+    '<div class="swp-media mfs-media">' + slides + '</div>' +
+    '<button class="mfs-close" id="mfsClose" type="button">✕</button>' +
+    (hasVideo ? '<div class="mfs-sound" id="mfsSound">🔇</div>' : '') +
+    (total > 1
+      ? '<div class="mfs-nav left" id="mfsPrev">‹</div><div class="mfs-nav right" id="mfsNext">›</div>'
+        + '<div class="mfs-count"><span class="im-gal-cur">1</span><span class="im-gal-tot">/' + total + '</span></div>'
+      : '');
+  overlay.classList.add('open');
+  overlay._gallery = urls;
+  overlay._galIdx = 0;
+  var close = function () { overlay.classList.remove('open'); window.setTimeout(function () { overlay.innerHTML = ''; }, 260); };
+  overlay.querySelector('#mfsClose').addEventListener('click', close);
+  var prev = overlay.querySelector('#mfsPrev');
+  if (prev) prev.addEventListener('click', function () { galleryGo(overlay, -1); });
+  var next = overlay.querySelector('#mfsNext');
+  if (next) next.addEventListener('click', function () { galleryGo(overlay, 1); });
+  var fvid = overlay.querySelector('video');
+  if (fvid) {
+    fvid.muted = true;
+    try { fvid.setAttribute('muted', ''); } catch (e) {}
+    var fp = function () { var pr = fvid.play(); if (pr && pr.then) pr.catch(function () {}); };
+    fvid.addEventListener('canplay', fp, { once: true });
+    window.setTimeout(fp, 400);
+  }
+  var fsnd = overlay.querySelector('#mfsSound');
+  if (fsnd) {
+    var ffr = overlay.querySelector('iframe');
+    fsnd.addEventListener('click', function () {
+      if (fvid) {
+        fvid.muted = !fvid.muted;
+        fsnd.textContent = fvid.muted ? '🔇' : '🔊';
+        if (!fvid.muted) { try { fvid.play(); } catch (e) {} }
+      } else if (ffr) {
+        var on2 = fsnd.getAttribute('data-on') === '1';
+        try {
+          ffr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: on2 ? 'mute' : 'unMute', args: [] }), '*');
+          ffr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+        } catch (e) {}
+        fsnd.setAttribute('data-on', on2 ? '0' : '1');
+        fsnd.textContent = on2 ? '🔇' : '🔊';
+      }
+    });
+  }
 }
 
 function openReviews(place) {
