@@ -2275,6 +2275,32 @@ body { padding-bottom: calc(var(--safe-bottom) + var(--vv-bottom) + 14px) !impor
 .swp-card.im .im-pro-name { font-size: 12px; font-weight: 700; color: #fff; }
 .swp-card.im .im-pro-role { font-size: 9px; color: rgba(255,255,255,.6); }
 .swp-card.im .im-pro-views { margin-left: auto; font-size: 9px; color: rgba(255,255,255,.65); background: rgba(0,0,0,.4); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+/* Badge/bouton « Avis » sur la carte (ouvre le mur d'avis) */
+.swp-card.im .im-reviews { align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 6px 13px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.swp-card.im .im-reviews:active { transform: scale(.96); }
+/* ── Feuille « Avis » (mur d'avis modéré) ───────────────────────────────────── */
+.rv-body { padding: 4px 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 74vh; overflow-y: auto; }
+.rv-list { display: flex; flex-direction: column; gap: 10px; }
+.rv-empty { font-size: 13px; color: rgba(255,255,255,.55); text-align: center; padding: 12px; }
+.rv-agg { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,.85); padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.rv-agg .rv-star, .rv-agg .rv-star.on { font-size: 13px; letter-spacing: 1px; }
+.rv-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px 12px; }
+.rv-item-hd { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; }
+.rv-item-stars .rv-star { font-size: 11px; letter-spacing: 1px; }
+.rv-item-cmt { font-size: 12.5px; color: rgba(255,255,255,.78); line-height: 1.45; margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+.rv-star { color: rgba(255,255,255,.25); }
+.rv-star.on { color: #F5A623; }
+.rv-form { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.rv-form-title { font-size: 14px; font-weight: 800; color: #fff; }
+.rv-stars { display: flex; gap: 8px; }
+.rv-pick { font-size: 32px; color: rgba(255,255,255,.25); cursor: pointer; line-height: 1; transition: transform .1s ease, color .15s ease; }
+.rv-pick.on { color: #F5A623; text-shadow: 0 0 12px rgba(245,166,35,.6); }
+.rv-pick:active { transform: scale(1.25); }
+.rv-in { height: 46px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; padding: 0 14px; font-size: 16px; }
+.rv-ta { height: 84px; padding: 12px 14px; resize: none; line-height: 1.4; font-family: inherit; }
+.rv-msg { font-size: 12.5px; min-height: 16px; }
+.rv-submit { height: 50px; border: none; border-radius: 100px; background: linear-gradient(135deg,#00C896,#00A070); color: #04241b; font-size: 15px; font-weight: 800; cursor: pointer; }
+.rv-note { font-size: 10.5px; color: rgba(255,255,255,.45); text-align: center; line-height: 1.4; }
 .swp-card.im .im-coeur { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.4); backdrop-filter: blur(8px); border: 1px solid rgba(244,114,182,.4); border-radius: 10px; padding: 7px 10px; }
 .swp-card.im .im-coeur-txt { font-size: 10px; font-style: italic; color: rgba(255,255,255,.82); line-height: 1.35; }
 /* ── Carte ÉVÉNEMENT / animation locale (premium immersive) ── */
@@ -4725,6 +4751,7 @@ function buildSwipeCard(place) {
   var card = document.createElement('article');
   card.className = 'swp-card im' + (place.videoUrl ? ' has-video' : '');
   card.setAttribute('data-top-card', '1');
+  card.setAttribute('data-place-id', String(place.id || ''));
   var meta = sphereMeta[place.sphere] || sphereMeta.digital;
   var th = swipeTheme(place.sphere);
   var pos = SWIPE_TITLE_POS[place.sphere] || 'bottom';
@@ -4819,6 +4846,7 @@ function buildSwipeCard(place) {
           (String(place.desc || '').length > 55 ? '<button class="im-desc-more" type="button">Lire la suite</button>' : '') +
         '</div>' +
         '<div class="im-pro">' + proHtml + '<div style="min-width:0"><div class="im-pro-name">' + escapeHtml(displayName) + '</div><div class="im-pro-role">' + escapeHtml(metier) + ' · ' + escapeHtml(city) + '</div></div><div class="im-pro-views">👁 ' + views + '</div></div>' +
+        '<button class="im-reviews" type="button">' + escapeHtml(reviewBadgeLabel(place.id)) + '</button>' +
       '</div>' +
     '</div>' +
     videoOverlay +
@@ -4846,6 +4874,13 @@ function buildSwipeCard(place) {
       descMore.firstChild ? (descMore.firstChild.nodeValue = open ? 'Réduire' : 'Lire la suite') : (descMore.textContent = open ? 'Réduire' : 'Lire la suite');
     });
   }
+  // Avis : ouvre le mur d'avis (stopPropagation → pas de swipe) + charge les résumés (1 fois).
+  var revBtn = card.querySelector('.im-reviews');
+  if (revBtn) {
+    revBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    revBtn.addEventListener('click', function (e) { e.stopPropagation(); openReviews(place); });
+  }
+  ensureReviewSummaries();
   // Vidéo : autoplay muet (fiable) + bouton play cliquable (avec son au tap)
   var vid = card.querySelector('video');
   if (vid) {
@@ -5942,6 +5977,132 @@ function openAlertSubscribe(place) {
         }
       })
       .catch(function () { msg.textContent = 'Connexion impossible. Réessaie.'; btn.disabled = false; btn.textContent = 'Recevoir les offres'; });
+  });
+}
+
+// ─── Avis clients (mur d'avis modéré : note ⭐ + commentaire) ───
+var reviewSummaries = {};      // { placeId: {count, avg} }
+var reviewSummariesState = 0;  // 0=idle 1=loading 2=done
+
+function ensureReviewSummaries() {
+  if (reviewSummariesState !== 0) return;
+  var ids = (liveState.places || []).map(function (p) { return String(p.id || ''); })
+    .filter(function (x) { return /^[0-9a-f-]{36}$/i.test(x); });
+  if (!ids.length) return;
+  reviewSummariesState = 1;
+  fetch('/api/popey-human/privilege/reviews?ids=' + encodeURIComponent(ids.slice(0, 300).join(',')), { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { reviewSummaries = (d && d.summary) || {}; reviewSummariesState = 2; refreshReviewBadge(); })
+    .catch(function () { reviewSummariesState = 2; });
+}
+
+function reviewBadgeLabel(placeId) {
+  var s = reviewSummaries[placeId];
+  if (s && s.count > 0) return '⭐ ' + (s.avg ? s.avg.toFixed(1) : '–') + ' · ' + s.count + ' avis';
+  return '💬 Donner mon avis';
+}
+
+function refreshReviewBadge() {
+  var card = document.querySelector('.swp-card.im[data-top-card="1"]');
+  if (!card) return;
+  var b = card.querySelector('.im-reviews');
+  var pid = card.getAttribute('data-place-id');
+  if (b && pid) b.textContent = reviewBadgeLabel(pid);
+}
+
+function reviewStarRow(n, cls) {
+  var full = Math.max(0, Math.min(5, Math.round(n || 0)));
+  var html = '';
+  for (var i = 1; i <= 5; i += 1) html += '<span class="' + (cls || 'rv-star') + (i <= full ? ' on' : '') + '">★</span>';
+  return html;
+}
+
+function openReviews(place) {
+  if (!place) return;
+  var id = String(place.id || '').trim();
+  try { trackPriv(id, 'reviews_open'); } catch (e) {}
+  var proName = String(place.personName || place.name || 'ce commerçant');
+  var refId = '';
+  try { var qp = new URLSearchParams(location.search); refId = String(qp.get('ref_id') || qp.get('ref') || ''); } catch (e) {}
+  var overlay = document.getElementById('reviewsOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'reviewsOverlay';
+    overlay.className = 'priv-overlay';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML =
+    '<div class="priv-sheet">'
+    + '<div class="priv-handle"></div>'
+    + '<div class="priv-sheet-hd"><div class="priv-sheet-title">💬 Avis · ' + escapeHtml(proName) + '</div><button class="priv-close" id="rvClose" type="button">✕</button></div>'
+    + '<div class="rv-body">'
+      + '<div class="rv-list" id="rvList"><div class="rv-empty">Chargement…</div></div>'
+      + '<div class="rv-form">'
+        + '<div class="rv-form-title">Laisse ton avis ✍️</div>'
+        + '<div class="rv-stars" id="rvStars">' + reviewStarRow(0, 'rv-pick') + '</div>'
+        + '<input id="rvName" placeholder="Ton prénom" maxlength="40" class="rv-in" />'
+        + '<input id="rvPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ton numéro (privé, jamais affiché)" class="rv-in" />'
+        + '<textarea id="rvComment" placeholder="Partage ton expérience avec ce commerçant…" maxlength="600" class="rv-in rv-ta"></textarea>'
+        + '<div id="rvMsg" class="rv-msg"></div>'
+        + '<button id="rvSubmit" type="button" class="rv-submit">Publier mon avis</button>'
+        + '<div class="rv-note">🛡️ Ton avis est vérifié avant publication. Ton numéro reste privé.</div>'
+      + '</div>'
+    + '</div></div>';
+  overlay.classList.add('open');
+  overlay.querySelector('#rvClose').addEventListener('click', function () { overlay.classList.remove('open'); });
+
+  // Sélecteur d'étoiles
+  var rating = 0;
+  var picks = overlay.querySelectorAll('#rvStars .rv-pick');
+  function paintStars() { for (var i = 0; i < picks.length; i += 1) picks[i].classList.toggle('on', i < rating); }
+  for (var pi = 0; pi < picks.length; pi += 1) {
+    (function (idx) { picks[idx].addEventListener('click', function () { rating = idx + 1; paintStars(); }); })(pi);
+  }
+
+  // Avis approuvés
+  var listEl = overlay.querySelector('#rvList');
+  fetch('/api/popey-human/privilege/reviews?placeId=' + encodeURIComponent(id), { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var reviews = (d && d.reviews) || [];
+      if (!reviews.length) { listEl.innerHTML = '<div class="rv-empty">Sois le premier à laisser un avis ✨</div>'; return; }
+      var head = '<div class="rv-agg">' + reviewStarRow(d.avg) + ' <strong>' + (d.avg ? d.avg.toFixed(1) : '–') + '</strong> · ' + d.count + ' avis</div>';
+      listEl.innerHTML = head + reviews.map(function (rv) {
+        return '<div class="rv-item"><div class="rv-item-hd"><strong>' + escapeHtml(rv.name) + '</strong><span class="rv-item-stars">' + reviewStarRow(rv.rating) + '</span></div><div class="rv-item-cmt">' + escapeHtml(rv.comment) + '</div></div>';
+      }).join('');
+    })
+    .catch(function () { listEl.innerHTML = '<div class="rv-empty">Impossible de charger les avis.</div>'; });
+
+  // Envoi
+  var btn = overlay.querySelector('#rvSubmit');
+  var msg = overlay.querySelector('#rvMsg');
+  btn.addEventListener('click', function () {
+    var name = String((overlay.querySelector('#rvName') || {}).value || '').trim();
+    var phone = String((overlay.querySelector('#rvPhone') || {}).value || '').trim();
+    var comment = String((overlay.querySelector('#rvComment') || {}).value || '').trim();
+    msg.style.color = '#FCA5A5';
+    if (name.length < 2) { msg.textContent = 'Entre ton prénom.'; return; }
+    if (!rating) { msg.textContent = 'Mets une note (1 à 5 étoiles).'; return; }
+    if (phone.replace(/[^0-9]/g, '').length < 9) { msg.textContent = 'Entre un numéro valide.'; return; }
+    if (comment.length < 3) { msg.textContent = 'Écris un petit commentaire.'; return; }
+    btn.disabled = true; btn.textContent = 'Publication…';
+    fetch('/api/popey-human/privilege/reviews', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+      body: JSON.stringify({ placeId: id, name: name, phone: phone, rating: rating, comment: comment, ville: String(liveState.cityLabel || ''), refId: refId })
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d && res.d.ok) {
+          msg.style.color = '#86EFAC';
+          msg.textContent = '✅ Merci ! Ton avis sera publié après vérification.';
+          btn.textContent = 'Envoyé ✓';
+          window.setTimeout(function () { overlay.classList.remove('open'); }, 2600);
+        } else {
+          msg.textContent = (res.d && res.d.error) ? res.d.error : 'Publication impossible.';
+          btn.disabled = false; btn.textContent = 'Publier mon avis';
+        }
+      })
+      .catch(function () { msg.textContent = 'Connexion impossible. Réessaie.'; btn.disabled = false; btn.textContent = 'Publier mon avis'; });
   });
 }
 

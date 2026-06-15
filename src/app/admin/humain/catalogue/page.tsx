@@ -181,6 +181,33 @@ async function fetchAlertSubscribers(): Promise<AlertSubscriber[]> {
   }
 }
 
+type PlaceComment = {
+  id: string;
+  place_id: string;
+  author_name: string;
+  author_phone: string | null;
+  rating: number | null;
+  comment: string;
+  status: string;
+  created_at: string;
+};
+
+// Avis catalogue (résilient si table absente). On récupère tout, on filtre par ville/statut côté page.
+async function fetchPlaceComments(): Promise<PlaceComment[]> {
+  try {
+    const admin = createAdminClient();
+    const r = await admin
+      .from("human_marketplace_place_comments")
+      .select("id,place_id,author_name,author_phone,rating,comment,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (r.error || !r.data) return [];
+    return r.data as unknown as PlaceComment[];
+  } catch {
+    return [];
+  }
+}
+
 type SupportLead = {
   id: string;
   profile_id: string;
@@ -711,13 +738,18 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const cityEvents = ((snapshot.localEvents || []) as unknown as LocalEvent[])
     .filter((e) => String(e.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
-  const [allTinder, tinderFrequency, tinderStats, allAlertSubs, allSupportLeads] = await Promise.all([
+  const [allTinder, tinderFrequency, tinderStats, allAlertSubs, allSupportLeads, allComments] = await Promise.all([
     fetchTinderProfiles(),
     fetchTinderFrequency(),
     fetchTinderStats(),
     fetchAlertSubscribers(),
     fetchSupportLeads(),
+    fetchPlaceComments(),
   ]);
+  // Avis du catalogue pour la ville sélectionnée : en attente (à modérer) + déjà publiés.
+  const cityComments = allComments.filter((c) => new Set(cityPlaces.map((p) => p.id)).has(c.place_id));
+  const pendingComments = cityComments.filter((c) => c.status === "pending");
+  const approvedComments = cityComments.filter((c) => c.status === "approved");
   const cityTinder = allTinder
     .filter((t) => String(t.city || "") === selectedCity)
     .sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100));
@@ -1104,6 +1136,77 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
             );
           })
         )}
+      </div>
+
+      {/* Avis catalogue à modérer */}
+      <div className="space-y-2 border-t pt-5">
+        <h2 className="text-lg font-black">💬 Avis clients — {selectedCity || "—"}</h2>
+        <p className="text-xs text-muted-foreground">
+          Avis laissés dans le catalogue (note + commentaire). <strong className="text-amber-700">{pendingComments.length} à modérer</strong> ·{" "}
+          <strong className="text-emerald-700">{approvedComments.length} publiés</strong>. Un avis ne s&apos;affiche publiquement qu&apos;une fois <strong>approuvé</strong>. Le numéro n&apos;est jamais montré aux visiteurs.
+        </p>
+
+        {pendingComments.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun avis en attente. ✅</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingComments.map((c) => (
+              <div key={c.id} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-amber-500">{"★".repeat(Math.max(1, Math.min(5, Number(c.rating || 0))))}<span className="text-slate-300">{"★".repeat(5 - Math.max(1, Math.min(5, Number(c.rating || 0))))}</span></span>
+                  <strong>{s(c.author_name)}</strong>
+                  <span className="text-[11px] text-slate-400">· {placeName(c.place_id)}</span>
+                  <a href={`https://wa.me/${s(c.author_phone).replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="text-[11px] font-mono text-sky-600 hover:underline">
+                    {s(c.author_phone)}
+                  </a>
+                  <span className="ml-auto text-[11px] text-slate-400">{new Date(c.created_at).toLocaleDateString("fr-FR")}</span>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{s(c.comment)}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(["approve", "reject", "delete"] as const).map((intent) => (
+                    <form key={intent} action="/api/admin/humain/privilege/reviews/moderate" method="post">
+                      <input type="hidden" name="comment_id" value={c.id} />
+                      <input type="hidden" name="intent" value={intent} />
+                      <input type="hidden" name="current_url" value={`/admin/humain/catalogue?city=${encodeURIComponent(selectedCity)}`} />
+                      <button
+                        type="submit"
+                        className={
+                          intent === "approve"
+                            ? "rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-700"
+                            : intent === "reject"
+                              ? "rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-300"
+                              : "rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 hover:bg-red-200"
+                        }
+                      >
+                        {intent === "approve" ? "✅ Publier" : intent === "reject" ? "Rejeter" : "🗑 Supprimer"}
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {approvedComments.length > 0 ? (
+          <details className="mt-2 overflow-hidden rounded-xl border bg-white">
+            <summary className="cursor-pointer px-4 py-2 text-sm font-bold">✅ {approvedComments.length} avis publié{approvedComments.length > 1 ? "s" : ""}</summary>
+            <div className="space-y-1 border-t border-slate-100 px-4 py-2">
+              {approvedComments.slice(0, 100).map((c) => (
+                <div key={c.id} className="flex items-start gap-2 border-b border-slate-50 py-1.5 text-xs last:border-0">
+                  <span className="text-amber-500">{"★".repeat(Math.max(1, Math.min(5, Number(c.rating || 0))))}</span>
+                  <span><strong>{s(c.author_name)}</strong> · {placeName(c.place_id)} — {s(c.comment)}</span>
+                  <form action="/api/admin/humain/privilege/reviews/moderate" method="post" className="ml-auto">
+                    <input type="hidden" name="comment_id" value={c.id} />
+                    <input type="hidden" name="intent" value="delete" />
+                    <input type="hidden" name="current_url" value={`/admin/humain/catalogue?city=${encodeURIComponent(selectedCity)}`} />
+                    <button type="submit" className="text-[11px] text-red-600 hover:underline">retirer</button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : null}
       </div>
 
       {/* Leads « like de soutien » (opt-in) par commerçant */}
