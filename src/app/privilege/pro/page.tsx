@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMerchantStatsToken } from "@/lib/popey-human/marketplace-landing-token";
 import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
@@ -8,6 +9,26 @@ export const dynamic = "force-dynamic";
 type ProPageProps = {
   searchParams?: Promise<{ token?: string; p?: string; tab?: string }>;
 };
+
+// Manifest PWA propre à l'espace commerçant (sinon héritage du /manifest.json racine →
+// l'app installée ouvre /mon-reseau-local/dashboard). On préserve p / token / tab dans le start_url.
+export async function generateMetadata({ searchParams }: ProPageProps): Promise<Metadata> {
+  const sp = (await searchParams) || {};
+  const query = new URLSearchParams();
+  (["p", "token", "tab"] as const).forEach((key) => {
+    const value = sp[key];
+    if (typeof value === "string" && value.length > 0) query.set(key, value);
+  });
+  const qs = query.toString();
+  return {
+    manifest: `/privilege/pro/manifest.webmanifest${qs ? `?${qs}` : ""}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "Popey Pro",
+    },
+  };
+}
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
