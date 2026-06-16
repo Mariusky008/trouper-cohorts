@@ -340,6 +340,22 @@
       <button class="btn btn-mint" onclick="submitReview()">Publier mon avis</button>
       <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
     </div>
+
+    <!-- Réserver : capture de l'identité (numéro) si inconnue -->
+    <div class="sheet" id="sheetReserve">
+      <div class="grab"></div>
+      <div class="sheet-kicker">Réserver chez <span class="mint" id="rsvName">le pro</span></div>
+      <div class="sheet-sub">Ton numéro sert à générer ton <b>code</b> et à te prévenir en premier de ses bons plans. Jamais affiché publiquement.</div>
+      <input class="field-in" id="rsvFirst" placeholder="Ton prénom">
+      <input class="field-in" id="rsvPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ton numéro (06…)">
+      <label style="display:flex;align-items:flex-start;gap:9px;font-family:'Inter';font-size:11.5px;color:var(--grey);line-height:1.45;cursor:pointer;margin:2px 0 4px"><input id="rsvConsent" type="checkbox" checked style="margin-top:2px;width:16px;height:16px;flex-shrink:0"><span>J'accepte d'être prévenu·e par WhatsApp des bons plans de ce commerçant (accès prioritaire selon mon niveau). STOP à tout moment.</span></label>
+      <div class="msg" id="rsvMsg"></div>
+      <button class="btn btn-wa" onclick="doReserve()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#06241a"><path d="M12 2a10 10 0 0 0-8.7 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg>
+        Confirmer ma réservation
+      </button>
+      <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
+    </div>
   </div>
 
 <script>
@@ -493,7 +509,7 @@ function submitReview(){const o=offers[currentPro];const first=document.getEleme
       else{leaveMsg.textContent=(res.d&&res.d.error)?res.d.error:'Publication impossible.';}
     }).catch(()=>{leaveMsg.textContent='Connexion impossible. Réessaie.';});}
 
-function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');}
+function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');}
 function closeSheets(){scrimBg.classList.remove('show');closeOnly();}
 function keepForLater(){closeSheets();}
 function openMine(){
@@ -511,24 +527,59 @@ function saveMember(first,phone){try{localStorage.setItem('popey_member',JSON.st
 
 /* ───────── Réservation + partage ───────── */
 function waText(){const o=offers[currentPro];return `${o.emoji} Je viens de chopper ${o.product.toLowerCase()} à ${o.newP}${o.oldP?` (au lieu de ${o.oldP})`:''} chez ${o.name} sur Popey !\n\nChaque mois les commerçants de ${CITY_LABEL} lâchent leurs offres secrètes. Ouvre ton édition 👉 ${location.origin}/m/${VILLE}`;}
-function reserve(){closeSheets();const o=offers[currentPro];shareName.textContent=o.name;shareP.textContent=`${o.name} t'attend. Présente-toi, c'est tout.`;
-  var lvl=o.relLvl||0;shareHearts.textContent=hearts(lvl);
+function isRealId(id){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id||''));}
+function reserve(){
+  var o=offers[currentPro];var m=loadMember();
+  if(m&&m.phone&&m.phone.replace(/[^0-9]/g,'').length>=9){doReserve();return;}
+  // On a besoin du numéro (identité légère) → petite capture.
+  document.getElementById('rsvName').textContent=o.name;
+  if(m){document.getElementById('rsvFirst').value=m.first||'';document.getElementById('rsvPhone').value=m.phone||'';}
+  document.getElementById('rsvMsg').textContent='';
+  closeOnly();scrimBg.classList.add('show');sheetReserve.classList.add('open');
+}
+function doReserve(){
+  var o=offers[currentPro];var m=loadMember()||{};
+  var first=(document.getElementById('rsvFirst').value||'').trim()||m.first||'';
+  var phone=(document.getElementById('rsvPhone').value||'').trim()||m.phone||'';
+  var consent=document.getElementById('rsvConsent').checked;
+  if(sheetReserve.classList.contains('open')){
+    var msgEl=document.getElementById('rsvMsg');msgEl.style.color='#FCA5A5';
+    if(first.length<2){msgEl.textContent='Entre ton prénom.';return;}
+    if(phone.replace(/[^0-9]/g,'').length<9){msgEl.textContent='Entre un numéro valide.';return;}
+    saveMember(first,phone);
+  }
+  closeSheets();
+  fetch('/api/popey-human/privilege/reserve',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
+    .then(r=>r.json().catch(()=>({}))).then(d=>{var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;showShare(o,lvl,(d&&d.code)||'',d&&d.next);})
+    .catch(()=>{showShare(o,o.relLvl||0,'',null);});
+}
+function showShare(o,lvl,code,next){
+  shareName.textContent=o.name;shareP.textContent=o.name+" t'attend. Présente-toi, c'est tout.";
+  shareHearts.textContent=hearts(lvl);
   document.getElementById('shareRelL').textContent='🎉 Rendez-vous pris';
-  document.getElementById('shareRelN').innerHTML=`Relation avec <b>${esc(o.name)}</b> : niveau ${lvl}/5. Tu gagnes <b>+1 cœur</b> dès que ${esc(o.name)} valide ta visite en boutique.`;
+  var nextTxt=next?(' — au niveau '+next.threshold+' : '+esc(next.reward)):'';
+  document.getElementById('shareRelN').innerHTML='Relation avec <b>'+esc(o.name)+'</b> : niveau '+lvl+'/5. Tu gagnes <b>+1 cœur</b> dès que '+esc(o.name)+' valide ta visite en boutique'+nextTxt+'.';
+  if(code){document.getElementById('codeCard').style.display='';document.getElementById('codeVal').textContent=String(code).split('').join(' ');}
+  else{document.getElementById('codeCard').style.display='none';}
   waPreview.innerHTML=esc(waText()).replace(/\n/g,'<br>').replace(esc(o.name),'<b>'+esc(o.name)+'</b>');
-  recordReservation(o);
-  setTimeout(()=>go('share'),200);}
+  setTimeout(()=>go('share'),150);
+}
 function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent(waText()),'_blank');}
 
-/* Enregistre la réservation + récupère un code de visite si on connaît le membre (Sprint 3). */
-function recordReservation(o){
-  var m=loadMember();
-  document.getElementById('codeCard').style.display='none';
-  // Branchement réel des codes : Sprint 3 (API visit-code). Ici on prépare l'UI.
-}
-
 /* ───────── Relations & avis réels (best-effort) ───────── */
-function loadRelation(o){ /* Sprint 2 : GET relationship?placeId&phone → met à jour les cœurs/niveau. */ }
+function loadRelation(o){
+  var m=loadMember();if(!m||!m.phone||!isRealId(o.id))return;
+  fetch('/api/popey-human/privilege/relationship?placeId='+encodeURIComponent(o.id)+'&phone='+encodeURIComponent(m.phone),{cache:'no-store'})
+    .then(r=>r.json()).then(d=>{
+      if(!d||typeof d.level!=='number')return;o.relLvl=d.level;
+      var need=d.next?Math.max(1,d.next.threshold-d.level):0;
+      o.relNext=d.next?('Plus que '+need+' visite'+(need>1?'s':'')+' → <b>'+esc(d.next.reward)+'</b>'):'Tu as débloqué toutes les récompenses 🎉';
+      var open=offers.indexOf(o)===currentPro;
+      if(open&&sheetWant.classList.contains('open')){wRelLvl.textContent=relStatus(d.level);wHearts.textContent=hearts(d.level);wRelTag.textContent='niveau '+d.level+'/5';wRelNext.innerHTML='🎟️ +1 cœur à chaque <b>visite validée</b> par le pro. '+o.relNext;}
+      if(open&&sheetPro.classList.contains('open')){proHearts.textContent=hearts(d.level);proRelTag.textContent='niveau '+d.level+'/5 · '+relStatus(d.level);proRelNext.innerHTML=o.relNext;}
+    }).catch(()=>{});
+}
 function loadReviews(o){
   fetch('/api/popey-human/privilege/reviews?placeId='+encodeURIComponent(o.id),{cache:'no-store'})
     .then(r=>r.json()).then(d=>{if(d&&d.reviews){o.reviews=d.reviews.map(r=>({name:r.name,s:r.rating,t:r.comment,d:'',av:'🙂'}));o.stars=d.avg||0;

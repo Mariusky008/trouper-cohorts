@@ -12,7 +12,7 @@ export default async function PopeyClientAppPage({ params, searchParams }: Props
   const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
-  query.set("v", "20260616-v3-sprint1");
+  query.set("v", "20260616-v3-sprint3");
   for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {
