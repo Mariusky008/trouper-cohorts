@@ -509,6 +509,46 @@ export async function sendPrivilegeAlertOptin(
   }
 }
 
+// Catalogue Privilège — diffusion d'une offre aux abonnés CONFIRMÉS (envoi DIRECT immédiat).
+// Template dédié {{1}}=commerçant {{2}}=offre {{3}}=lien. Renvoie le résultat par numéro (pour
+// traçabilité/anti-doublon). No-op si Twilio/Content SID de diffusion non configuré.
+export async function sendPrivilegeAlertBroadcast(
+  phones: string[],
+  vars: { merchantName: string; offerText: string; link: string },
+): Promise<{ skipped?: boolean; results: Array<{ phone: string; sid: string | null; error: string | null }> }> {
+  const cfg = whatsappTwilioConfig;
+  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertBroadcastContentSid) {
+    return { skipped: true, results: [] };
+  }
+  const client = twilio(cfg.accountSid, cfg.authToken);
+  const contentVariables = JSON.stringify({
+    "1": String(vars.merchantName || "").trim(),
+    "2": String(vars.offerText || "").trim(),
+    "3": String(vars.link || "").trim(),
+  });
+  const results: Array<{ phone: string; sid: string | null; error: string | null }> = [];
+  for (const phone of phones.slice(0, 300)) {
+    const to = normalizeTwilioWhatsAppAddress(phone);
+    if (!to) {
+      results.push({ phone, sid: null, error: "Numéro invalide" });
+      continue;
+    }
+    try {
+      const message = await client.messages.create({
+        from: cfg.whatsappFrom,
+        to,
+        contentSid: cfg.alertBroadcastContentSid,
+        contentVariables,
+        ...(cfg.statusCallbackUrl ? { statusCallback: cfg.statusCallbackUrl } : {}),
+      });
+      results.push({ phone, sid: String(message.sid || "").trim() || null, error: null });
+    } catch (error) {
+      results.push({ phone, sid: null, error: error instanceof Error ? error.message : "échec" });
+    }
+  }
+  return { results };
+}
+
 export async function processTwilioWhatsAppWebhook(params: Record<string, string>) {
   const supabaseAdmin = createAdminClient();
   const messageSid = String(params.MessageSid || params.SmsSid || "").trim();

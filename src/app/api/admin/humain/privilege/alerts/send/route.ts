@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import { sendPrivilegeAlertBroadcast } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -19,11 +20,7 @@ function toAbsolute(requestUrl: string, maybeRelative: string) {
   }
 }
 
-function randomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Diffuse l'offre d'un commerçant à ses abonnés CONFIRMÉS via la file WhatsApp Twilio
+// Diffuse l'offre d'un commerçant à ses abonnés CONFIRMÉS (envoi WhatsApp Twilio direct)
 // (sweep cron `twilio-whatsapp-queue`). owner_member_id = l'admin connecté (comme la campagne).
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -108,35 +105,38 @@ export async function POST(request: Request) {
   const targets = phones.filter((ph) => !recentSet.has(ph));
   if (targets.length === 0) return fail("Alerte déjà envoyée à ces abonnés il y a moins de 10 min.");
 
-  const now = Date.now();
-  let cumulativeMs = 0;
-  const rows = targets.map((phone) => {
-    cumulativeMs += randomInt(15_000, 45_000); // étalement doux (~1/min géré aussi par le sweep)
-    return {
-      owner_member_id: ownerMemberId,
-      phone_e164: phone,
-      template_name: contentSid,
-      language_code: "fr",
-      vars: [merchantName, offerText, link],
-      quick_reply_payload: [],
-      source: "privilege_alert_broadcast",
-      metadata: {
-        provider: "twilio_campaign",
-        content_sid: contentSid,
-        kind: "privilege_alert_broadcast",
-        place_id: placeId,
-        city: p.city || null,
-      },
-      status: "scheduled",
-      attempt_count: 0,
-      max_attempts: 3,
-      not_before_at: new Date(now + cumulativeMs).toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  });
+  // Envoi DIRECT immédiat (abonnés déjà consentants) — pas la file/cron (1×/jour, trop lent).
+  const { skipped, results } = await sendPrivilegeAlertBroadcast(targets, { merchantName, offerText, link });
+  if (skipped) return fail("Template d'alerte non configuré (env TWILIO_WHATSAPP_CONTENT_SID_ALERT_BROADCAST).");
+  const sentResults = results.filter((r) => r.sid);
+  const nowIso = new Date().toISOString();
 
-  const { error: insertError } = await supabaseAdmin.from("human_whatsapp_outbound_queue").insert(rows);
-  if (insertError) return fail(insertError.message || "Mise en file impossible.");
+  // Trace les envois (status 'sent') → historique + anti-doublon des 10 min ci-dessus.
+  if (sentResults.length > 0) {
+    await supabaseAdmin.from("human_whatsapp_outbound_queue").insert(
+      sentResults.map((r) => ({
+        owner_member_id: ownerMemberId,
+        phone_e164: r.phone,
+        template_name: contentSid,
+        language_code: "fr",
+        vars: [merchantName, offerText, link],
+        source: "privilege_alert_broadcast",
+        metadata: { provider: "twilio", content_sid: contentSid, kind: "privilege_alert_broadcast", place_id: placeId, city: p.city || null },
+        status: "sent",
+        provider_message_id: r.sid,
+        sent_at: nowIso,
+        attempt_count: 1,
+        max_attempts: 1,
+        updated_at: nowIso,
+      })),
+    );
+  }
 
-  return ok(`Alerte programmée pour ${rows.length} abonné${rows.length > 1 ? "s" : ""} de ${merchantName}.`);
+  const failed = results.length - sentResults.length;
+  if (sentResults.length === 0) return fail(`Aucun envoi (${failed} échec${failed > 1 ? "s" : ""}). Vérifie la config Twilio.`);
+  return ok(
+    `Alerte envoyée à ${sentResults.length} abonné${sentResults.length > 1 ? "s" : ""} de ${merchantName}` +
+      (failed > 0 ? ` (${failed} échec${failed > 1 ? "s" : ""})` : "") +
+      ".",
+  );
 }
