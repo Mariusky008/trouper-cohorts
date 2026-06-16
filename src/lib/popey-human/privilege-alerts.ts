@@ -1,9 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Traite les réponses WhatsApp entrantes pour les abonnés aux alertes commerçant.
-// Isolé du cœur du webhook Meta : on ne fait que mettre à jour le statut de l'abonné.
 //   - "OUI / yes / ok / je confirme…" sur un abonné 'pending' → 'confirmed' (double opt-in)
-//   - "STOP / arrêt / désinscri…"                            → 'unsubscribed'
+//   - "NON / STOP / arrêt / désinscri…"                       → 'unsubscribed'
+// Les alertes partant via Twilio, les réponses arrivent au webhook Twilio (form From/Body/ButtonText)
+// ET, le cas échéant, au webhook Meta (payload entry/changes/messages) : on gère les deux formats.
 // Ne casse jamais le webhook : toute erreur est avalée.
 
 type MetaInboundMessage = {
@@ -32,41 +33,60 @@ function normalize(text: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
+// Désinscription : NON (template opt-in) OU STOP (template diffusion) + variantes.
+const UNSUB_RE = /\b(non|stop|arret|arretez|desinscri|desabonn|unsubscribe)\b/;
+// Confirmation : OUI + variantes.
+const CONFIRM_RE = /\b(oui|yes|ok|confirme|confirmer|interesse|interessee|d'accord|daccord)\b/;
+
+// Cœur partagé : applique la réponse d'un numéro à son abonnement (résilient).
+async function applyAlertReply(phoneE164: string, rawText: string): Promise<void> {
+  const norm = normalize(rawText);
+  if (!phoneE164 || !norm) return;
+  const supabase = createAdminClient();
+  const nowIso = new Date().toISOString();
+  if (UNSUB_RE.test(norm)) {
+    await supabase
+      .from("human_privilege_alert_subscribers")
+      .update({ status: "unsubscribed", unsubscribed_at: nowIso, updated_at: nowIso })
+      .eq("phone", phoneE164)
+      .neq("status", "unsubscribed");
+  } else if (CONFIRM_RE.test(norm)) {
+    await supabase
+      .from("human_privilege_alert_subscribers")
+      .update({ status: "confirmed", confirmed_at: nowIso, updated_at: nowIso })
+      .eq("phone", phoneE164)
+      .eq("status", "pending");
+  }
+}
+
+// Webhook META (payload entry/changes/messages).
 export async function handlePrivilegeAlertReply(payload: unknown): Promise<void> {
   try {
     const data = payload as MetaWebhookPayload;
     const entries = Array.isArray(data?.entry) ? data.entry : [];
     if (!entries.length) return;
-
-    const supabase = createAdminClient();
-    const nowIso = new Date().toISOString();
-
     for (const entry of entries) {
       for (const change of entry?.changes || []) {
         for (const msg of change?.value?.messages || []) {
           const fromDigits = String(msg?.from || "").replace(/[^\d]/g, "");
           if (!fromDigits) continue;
-          const phoneE164 = "+" + fromDigits;
-          const norm = normalize(extractText(msg));
-          if (!norm) continue;
-
-          if (/\b(stop|arret|arretez|desinscri|desabonn|unsubscribe)\b/.test(norm)) {
-            await supabase
-              .from("human_privilege_alert_subscribers")
-              .update({ status: "unsubscribed", unsubscribed_at: nowIso, updated_at: nowIso })
-              .eq("phone", phoneE164)
-              .neq("status", "unsubscribed");
-          } else if (/\b(oui|yes|ok|confirme|confirmer|interesse|interessee|d'accord|daccord)\b/.test(norm)) {
-            await supabase
-              .from("human_privilege_alert_subscribers")
-              .update({ status: "confirmed", confirmed_at: nowIso, updated_at: nowIso })
-              .eq("phone", phoneE164)
-              .eq("status", "pending");
-          }
+          await applyAlertReply("+" + fromDigits, extractText(msg));
         }
       }
     }
   } catch (error) {
-    console.error("[privilege-alerts] reply handling failed", error);
+    console.error("[privilege-alerts] meta reply handling failed", error);
+  }
+}
+
+// Webhook TWILIO (form data : From=whatsapp:+33…, Body, ButtonText, ButtonPayload).
+export async function handlePrivilegeAlertReplyTwilio(params: Record<string, string>): Promise<void> {
+  try {
+    const fromDigits = String(params.From || params.WaId || "").replace(/[^\d]/g, "");
+    if (!fromDigits) return;
+    const text = String(params.ButtonText || params.Body || params.ButtonPayload || "");
+    await applyAlertReply("+" + fromDigits, text);
+  } catch (error) {
+    console.error("[privilege-alerts] twilio reply handling failed", error);
   }
 }

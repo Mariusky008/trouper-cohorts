@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
 import { processTwilioWhatsAppWebhook } from "@/lib/actions/whatsapp-twilio";
+import { handlePrivilegeAlertReplyTwilio } from "@/lib/popey-human/privilege-alerts";
 import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Signature Twilio invalide." }, { status: 403 });
     }
   }
+
+  // Réponses aux alertes commerçant (OUI → confirmé / NON|STOP → désinscrit). Isolé, ne bloque rien.
+  await handlePrivilegeAlertReplyTwilio(params);
 
   const result = await processTwilioWhatsAppWebhook(params);
   if (!result.success) {
