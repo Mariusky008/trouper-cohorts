@@ -205,6 +205,20 @@
   .share-cta{margin-top:18px;width:100%;}
   .secondary{margin-top:10px;background:none;border:none;color:#aeb2b8;font-family:'Poppins';font-weight:600;font-size:14px;cursor:pointer;}
   @media (prefers-reduced-motion:reduce){.card.top{transition:none!important;}}
+  /* Overlay « C'est un match » (1ʳᵉ visite validée → relation réelle) */
+  .matchov{position:absolute;inset:0;z-index:200;background:rgba(5,6,10,.95);backdrop-filter:blur(10px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:34px;text-align:center;}
+  .matchov.show{display:flex;animation:matchin .45s ease;}
+  @keyframes matchin{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
+  .matchov .burst{font-size:62px;animation:mpop .6s cubic-bezier(.2,1.5,.4,1);}
+  @keyframes mpop{0%{transform:scale(0) rotate(-12deg)}100%{transform:scale(1) rotate(0)}}
+  .matchov h2{font-family:'Fraunces',serif;font-weight:700;font-size:30px;line-height:1.1;margin:16px 0 4px;}
+  .matchov h2 .mint{color:var(--mint);}
+  .matchov .who{font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:#fff;margin-bottom:8px;}
+  .matchov .mh{font-size:30px;letter-spacing:4px;margin:8px 0;animation:mpop .8s cubic-bezier(.2,1.5,.4,1);}
+  .matchov .lvl{font-family:'Poppins';font-weight:700;font-size:13px;color:var(--mint);text-transform:uppercase;letter-spacing:1px;}
+  .matchov .rw{margin-top:16px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.4);border-radius:15px;padding:13px 17px;font-family:'Inter';font-size:13.5px;color:#bff0de;line-height:1.45;max-width:300px;}
+  .matchov .nx{margin-top:11px;font-family:'Inter';font-size:12.5px;color:var(--grey);max-width:300px;line-height:1.4;}
+  .matchov .btn{margin-top:24px;max-width:280px;width:100%;}
 </style>
 </head>
 <body>
@@ -387,6 +401,18 @@
       <div class="sheet-sub">Chaque ville a son édition. Change quand tu veux.</div>
       <div id="cityList" style="margin-top:14px"></div>
       <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
+    </div>
+
+    <!-- Overlay « C'est un match » (déclenché quand le pro valide la 1ʳᵉ visite / un nouveau niveau) -->
+    <div class="matchov" id="matchOv">
+      <div class="burst">💚</div>
+      <h2>C'est un <span class="mint">match</span> !</h2>
+      <div class="who" id="matchName">Le commerçant</div>
+      <div class="mh" id="matchHearts">💚🤍🤍🤍🤍</div>
+      <div class="lvl" id="matchLvl">Niveau 1 atteint</div>
+      <div class="rw" id="matchReward" style="display:none"></div>
+      <div class="nx" id="matchNext" style="display:none"></div>
+      <button class="btn btn-mint" onclick="closeMatch()">Génial, on continue 💚</button>
     </div>
   </div>
 
@@ -617,7 +643,7 @@ function doReserve(){
     body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;var code=(d&&d.code)||'';
-      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});
+      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl); // baseline → le passage 0→1 déclenchera le « match »
       fillShare(o,lvl,code,(d&&d.next)||null);
     }).catch(()=>{fillShare(o,o.relLvl||0,'',null);});
 }
@@ -709,8 +735,48 @@ function loadAllRelations(){
       offers.forEach(o=>{if(relMap[o.id]>0)o.relLvl=relMap[o.id];});
       if(document.getElementById('v-launch').classList.contains('active'))renderLaunch();
       if(document.getElementById('v-deck').classList.contains('active'))renderMain();
+      checkMatches(relMap);
     }).catch(()=>{});
 }
+
+/* ───────── « C'est un match » : célèbre un passage de niveau (visite validée par le pro) ───────── */
+function loadRelSeen(){try{return JSON.parse(localStorage.getItem('popey_relseen')||'{}');}catch(e){return {};}}
+function saveRelSeen(m){try{localStorage.setItem('popey_relseen',JSON.stringify(m));}catch(e){}}
+function setSeen(id,lvl){var m=loadRelSeen();m[id]=lvl;saveRelSeen(m);}
+var matchQueue=[];
+function checkMatches(levels){
+  var seen=loadRelSeen(),fire=[];
+  Object.keys(levels||{}).forEach(function(id){
+    var lvl=levels[id]||0;if(lvl<1)return;
+    // entrée connue + niveau plus haut → match ; pas d'entrée → init silencieuse (pas de fausse alerte sur device neuf)
+    if(Object.prototype.hasOwnProperty.call(seen,id)){if(lvl>seen[id])fire.push({id:id,lvl:lvl});}
+    seen[id]=lvl;
+  });
+  saveRelSeen(seen);
+  if(fire.length){matchQueue=matchQueue.concat(fire);setTimeout(showNextMatch,700);}
+}
+function showNextMatch(){
+  var ov=document.getElementById('matchOv');if(ov.classList.contains('show'))return;
+  var it=matchQueue.shift();if(!it)return;
+  var o=offers.find(function(x){return x.id===it.id;});var name=o?o.name:'ce commerçant';var m=loadMember();
+  fetch('/api/popey-human/privilege/relationship?placeId='+encodeURIComponent(it.id)+(m&&m.phone?'&phone='+encodeURIComponent(m.phone):''),{cache:'no-store'})
+    .then(r=>r.json()).then(function(d){
+      var tiers=(d&&d.tiers)||[],reached=null;
+      tiers.slice().sort(function(a,b){return a.threshold_visits-b.threshold_visits;}).forEach(function(t){if(t.threshold_visits<=it.lvl)reached=t;});
+      renderMatch(name,it.lvl,reached?reached.reward_text:'',d&&d.next);
+    }).catch(function(){renderMatch(name,it.lvl,'',null);});
+}
+function renderMatch(name,lvl,reward,next){
+  document.getElementById('matchName').textContent=name;
+  document.getElementById('matchHearts').textContent=hearts(lvl);
+  document.getElementById('matchLvl').textContent=(lvl===1?'Vous êtes liés · niveau 1':'Niveau '+lvl+' atteint');
+  var rw=document.getElementById('matchReward');
+  if(reward){rw.style.display='';rw.innerHTML='🎁 Tu débloques : <b>'+esc(reward)+'</b>';}else rw.style.display='none';
+  var nx=document.getElementById('matchNext');
+  if(next){var need=Math.max(1,next.threshold-lvl);nx.style.display='';nx.innerHTML='Prochaine étape : '+need+' visite'+(need>1?'s':'')+' → '+esc(next.reward);}else nx.style.display='none';
+  document.getElementById('matchOv').classList.add('show');
+}
+function closeMatch(){document.getElementById('matchOv').classList.remove('show');setTimeout(showNextMatch,350);}
 
 /* ───────── Coups de feu en cours (bandeau in-app, gratuit) ───────── */
 function loadCoups(){

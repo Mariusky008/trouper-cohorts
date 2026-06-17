@@ -10,7 +10,7 @@ export default async function PopeyOfferPage({ params, searchParams }: Props) {
   const sp = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("id", String(offerId || "").trim());
-  query.set("v", "20260617-coup-v1");
+  query.set("v", "20260617-coup-v2");
   const ref = sp.ref_id || sp.ref;
   if (typeof ref === "string" && ref) query.set("ref_id", ref);
 

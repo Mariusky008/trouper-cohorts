@@ -188,6 +188,7 @@ function doReserve(first,phone,consent){
     body:JSON.stringify({id:OFFER_ID,phone:phone,name:first,consent:consent})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       if(!d||d.error){$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';showClosed(d&&d.error==='Plus de place disponible.'?'Complet 😣':'Oups',d&&d.error||'Réessaie.');return;}
+      try{var rs=JSON.parse(localStorage.getItem('popey_relseen')||'{}');if(DATA&&DATA.placeId)rs[DATA.placeId]=d.level||0;localStorage.setItem('popey_relseen',JSON.stringify(rs));}catch(e){} // baseline → « match » au catalogue quand le pro validera
       showDone(d,first);
     }).catch(()=>{$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';});
 }
