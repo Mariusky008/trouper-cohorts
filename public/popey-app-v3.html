@@ -219,6 +219,16 @@
   .matchov .rw{margin-top:16px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.4);border-radius:15px;padding:13px 17px;font-family:'Inter';font-size:13.5px;color:#bff0de;line-height:1.45;max-width:300px;}
   .matchov .nx{margin-top:11px;font-family:'Inter';font-size:12.5px;color:var(--grey);max-width:300px;line-height:1.4;}
   .matchov .btn{margin-top:24px;max-width:280px;width:100%;}
+  /* Carte mystère : voile sur l'offre jusqu'à la révélation */
+  .mystery-veil{position:absolute;inset:0;z-index:8;background:linear-gradient(160deg,#241640,#0e0a1c 70%);display:flex;align-items:center;justify-content:center;text-align:center;padding:26px;border-radius:inherit;transition:opacity .42s,transform .42s;}
+  .mystery-veil.gone{opacity:0;transform:scale(1.08);pointer-events:none;}
+  .mystery-veil .memoji{font-size:62px;animation:mfloat 3s ease-in-out infinite;}
+  @keyframes mfloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+  .mystery-veil .mkick{font-family:'Poppins';font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#c4b1ff;margin-top:10px;}
+  .mystery-veil .mtit{font-family:'Playfair Display',serif;font-weight:800;font-size:30px;color:#fff;line-height:1.1;margin-top:4px;}
+  .mystery-veil .msub{font-family:'Inter';font-size:13px;color:#b9a8e0;margin-top:8px;line-height:1.4;max-width:240px;}
+  .mystery-veil .mbtn{margin-top:20px;border:none;border-radius:14px;padding:13px 24px;font-family:'Poppins';font-weight:800;font-size:15px;background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;cursor:pointer;box-shadow:0 12px 30px rgba(124,92,255,.4);}
+  .card-mystery-badge{position:absolute;top:52px;right:14px;z-index:5;font-family:'Poppins';font-weight:700;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(124,92,255,.22);border:1px solid rgba(168,139,255,.6);color:#d8caff;}
 </style>
 </head>
 <body>
@@ -479,11 +489,14 @@ function cardHTML(o,cls,idx){
   const bg = m.poster ? `${o.grad}` : o.grad;
   var rl=(relMap[o.id]||o.relLvl||0);
   var relBadge=rl>0?`<div class="rel-badge">💚 ${rl}/5</div>`:'';
+  var isMyst=o.mystery&&!isRevealed(o.id);
+  var mystBadge=o.mystery?`<div class="card-mystery-badge">🎁 Mystère</div>`:'';
+  var veil=isMyst?`<div class="mystery-veil"><div><div class="memoji">🎁</div><div class="mkick">Offre mystère</div><div class="mtit">Surprise !</div><div class="msub">${esc(o.name)} cache une offre rien que pour toi.</div>${cls==='top'?`<button class="mbtn" onpointerdown="event.stopPropagation()" onclick="revealMystery(event,'${esc(o.id)}')">Révéler 🎁</button>`:''}</div></div>`:'';
   return `<div class="card ${cls}" data-bg="${o.grad}" style="background:${bg}">
     <div class="media" ${m.poster?`style="background-image:url(${esc(m.poster)})"`:''}>${mediaInner(o,idx,cls==='top')}</div>
     <div class="scrim"></div>
     <div class="countdown" data-end="${o.endTs}">⏳ <span class="cd"></span></div>
-    ${relBadge}
+    ${relBadge}${mystBadge}${veil}
     <div class="stamp yes">Je veux</div><div class="stamp no">Passer</div><div class="stamp up">Le pro</div>
     <div class="card-info">
       <div class="card-name">${esc(o.name)}</div>
@@ -550,7 +563,7 @@ const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 function autoHint(){if(reduce)return;const top=document.querySelector('#mainDeck .card.top');if(!top)return;const yes=top.querySelector('.stamp.yes'),no=top.querySelector('.stamp.no');[[0,()=>top.style.transition='transform .5s ease,opacity .5s'],[400,()=>{top.style.transform='translateX(54px) rotate(3deg)';yes.style.opacity=1;}],[1000,()=>{top.style.transform='translateX(0)';yes.style.opacity=0;}],[1500,()=>{top.style.transform='translateX(-54px) rotate(-3deg)';no.style.opacity=1;}],[2100,()=>{top.style.transform='translateX(0)';no.style.opacity=0;}]].forEach(([t,fn])=>setTimeout(fn,t));}
 
 /* ───────── Sheets ───────── */
-function openWant(i){currentPro=i;const o=offers[i];wIc.textContent=o.emoji;wIc.style.background=o.grad;if(o.poster){wIc.style.backgroundImage='url('+o.poster+')';wIc.textContent='';}wProd.textContent=o.product;wMerch.textContent=o.name+' · '+o.role;wNew.textContent=o.newP;wOld.textContent=o.oldP||'';
+function openWant(i){currentPro=i;const o=offers[i];if(o.mystery&&!isRevealed(o.id))setRevealed(o.id);/* Je veux sur un mystère = on révèle */wIc.textContent=o.emoji;wIc.style.background=o.grad;if(o.poster){wIc.style.backgroundImage='url('+o.poster+')';wIc.textContent='';}wProd.textContent=o.product;wMerch.textContent=o.name+' · '+o.role;wNew.textContent=o.newP;wOld.textContent=o.oldP||'';
   var lvl=o.relLvl||0;wRelLvl.textContent=relStatus(lvl);wHearts.textContent=hearts(lvl);wRelTag.textContent='niveau '+lvl+'/5';
   wRelNext.innerHTML='🎟️ +1 cœur à chaque <b>visite validée</b> par le pro. '+(o.relNext||'Reviens pour faire monter ta relation.');
   if(!savedOffers.includes(i))savedOffers.push(i);
@@ -708,13 +721,15 @@ function mapPlace(p){
   if(free){newP='Offert';off='GRATUIT';if(val>0)oldP=val+' €';}
   else if(pct){newP='−'+pct[0].replace(/[^0-9]/g,'')+'%';if(val>0)oldP=val+' €';}
   else if(val>0){newP=val+' €';}
+  var mystery=!!p.isMystery,mysteryDeal=String(p.mysteryDeal||'');
   return {
     id:String(p.id||''),emoji:String(p.icon||'🏷️'),grad:'linear-gradient(160deg,#2a2f3a,#0d1016)',poster:poster,
     name:String(p.companyName||p.contactName||p.metier||'Commerçant'),
     role:String(p.metier||''),meta:'📍 '+String(p.metier||'')+' · '+CITY_LABEL,
-    product:badge,oldP:oldP,newP:newP,off:off,
+    product:(mystery&&mysteryDeal)?mysteryDeal:badge,oldP:oldP,newP:newP,off:off,
     bio:String(p.description||''),support:'',endTs:end,
     media:media,phone:String(p.partnerWhatsapp||p.directContact||''),
+    mystery:mystery,mysteryDeal:mysteryDeal,
     relLvl:0,relNext:'',stars:0,reviews:[]
   };
 }
@@ -777,6 +792,18 @@ function renderMatch(name,lvl,reward,next){
   document.getElementById('matchOv').classList.add('show');
 }
 function closeMatch(){document.getElementById('matchOv').classList.remove('show');setTimeout(showNextMatch,350);}
+
+/* ───────── Carte mystère : révélation ───────── */
+function loadRevealed(){try{return JSON.parse(localStorage.getItem('popey_revealed')||'{}');}catch(e){return {};}}
+function isRevealed(id){return !!loadRevealed()[id];}
+function setRevealed(id){try{var m=loadRevealed();m[id]=1;localStorage.setItem('popey_revealed',JSON.stringify(m));}catch(e){}}
+function revealMystery(e,id){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  setRevealed(id);
+  var veil=(e&&e.target&&e.target.closest)?e.target.closest('.mystery-veil'):null;
+  if(veil){veil.classList.add('gone');setTimeout(function(){renderMain();},440);}
+  else renderMain();
+}
 
 /* ───────── Coups de feu en cours (bandeau in-app, gratuit) ───────── */
 function loadCoups(){
