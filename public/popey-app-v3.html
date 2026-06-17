@@ -445,7 +445,8 @@
       <div class="lvl" id="matchLvl">Niveau 1 atteint</div>
       <div class="rw" id="matchReward" style="display:none"></div>
       <div class="nx" id="matchNext" style="display:none"></div>
-      <button class="btn btn-mint" onclick="closeMatch()">Génial, on continue 💚</button>
+      <button class="btn btn-mint" id="matchReviewBtn" onclick="matchReview()" style="display:none">⭐ Noter <span id="matchRevName"></span></button>
+      <button class="btn btn-ghost" onclick="closeMatch()">Génial, on continue 💚</button>
     </div>
   </div>
 
@@ -455,6 +456,7 @@ var QP = new URLSearchParams(location.search);
 var VILLE = (QP.get('ville') || 'dax').trim().toLowerCase() || 'dax';
 var REF = QP.get('ref_id') || QP.get('ref') || '';
 var REFNAME = QP.get('ref_name') || '';
+var MATCH = (QP.get('match') || '').trim(); // deep-link notif « C'est un match » → force l'animation pour ce commerçant
 var CITY_LABEL = VILLE.charAt(0).toUpperCase() + VILLE.slice(1).replace(/-/g,' ');
 
 /* ───────── Données de repli (si l'API ne répond pas) ───────── */
@@ -781,7 +783,7 @@ function loadAllRelations(){
 function loadRelSeen(){try{return JSON.parse(localStorage.getItem('popey_relseen')||'{}');}catch(e){return {};}}
 function saveRelSeen(m){try{localStorage.setItem('popey_relseen',JSON.stringify(m));}catch(e){}}
 function setSeen(id,lvl){var m=loadRelSeen();m[id]=lvl;saveRelSeen(m);}
-var matchQueue=[];
+var matchQueue=[],matchProIdx=-1;
 function checkMatches(levels){
   var seen=loadRelSeen(),fire=[];
   Object.keys(levels||{}).forEach(function(id){
@@ -791,12 +793,15 @@ function checkMatches(levels){
     seen[id]=lvl;
   });
   saveRelSeen(seen);
+  // Notif « match » : on FORCE l'animation pour le commerçant du deep-link, même si déjà vue.
+  if(MATCH&&levels&&levels[MATCH]>0&&!matchQueue.some(function(x){return x.id===MATCH;})&&!fire.some(function(x){return x.id===MATCH;})){fire.push({id:MATCH,lvl:levels[MATCH]});}
   if(fire.length){matchQueue=matchQueue.concat(fire);setTimeout(showNextMatch,700);}
 }
 function showNextMatch(){
   var ov=document.getElementById('matchOv');if(ov.classList.contains('show'))return;
   var it=matchQueue.shift();if(!it)return;
-  var o=offers.find(function(x){return x.id===it.id;});var name=o?o.name:'ce commerçant';var m=loadMember();
+  matchProIdx=offers.findIndex(function(x){return x.id===it.id;});
+  var name=matchProIdx>=0?offers[matchProIdx].name:'ce commerçant';var m=loadMember();
   fetch('/api/popey-human/privilege/relationship?placeId='+encodeURIComponent(it.id)+(m&&m.phone?'&phone='+encodeURIComponent(m.phone):''),{cache:'no-store'})
     .then(r=>r.json()).then(function(d){
       var tiers=(d&&d.tiers)||[],reached=null;
@@ -812,8 +817,12 @@ function renderMatch(name,lvl,reward,next){
   if(reward){rw.style.display='';rw.innerHTML='🎁 Tu débloques : <b>'+esc(reward)+'</b>';}else rw.style.display='none';
   var nx=document.getElementById('matchNext');
   if(next){var need=Math.max(1,next.threshold-lvl);nx.style.display='';nx.innerHTML='Prochaine étape : '+need+' visite'+(need>1?'s':'')+' → '+esc(next.reward);}else nx.style.display='none';
+  // Bouton « Noter » : l'instant idéal pour un avis vérifié (visite tout juste validée).
+  var rb=document.getElementById('matchReviewBtn');
+  if(matchProIdx>=0){document.getElementById('matchRevName').textContent=name;rb.style.display='';}else rb.style.display='none';
   document.getElementById('matchOv').classList.add('show');
 }
+function matchReview(){document.getElementById('matchOv').classList.remove('show');if(matchProIdx>=0){currentPro=matchProIdx;openLeave();}}
 function closeMatch(){document.getElementById('matchOv').classList.remove('show');setTimeout(showNextMatch,350);}
 
 /* ───────── Carte mystère : révélation ───────── */

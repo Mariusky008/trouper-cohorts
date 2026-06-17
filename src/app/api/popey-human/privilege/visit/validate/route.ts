@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
 import { statusForLevel, DEFAULT_TIERS, type LoyaltyTier } from "@/lib/popey-human/loyalty";
+import { sendPrivilegeMatchNotif } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +88,10 @@ export async function POST(request: Request) {
     }
     const reachedTier = tiers.find((t) => t.threshold_visits === newLevel);
 
-    // Prénom du membre (affichage).
+    // Prénom du membre (affichage) + nom/ville du commerçant (pour la notif match).
     let name = "Client";
+    let merchantName = "ton commerçant";
+    let citySlug = "";
     try {
       const { data: mem } = await supabase
         .from("human_privilege_members")
@@ -97,6 +100,38 @@ export async function POST(request: Request) {
         .maybeSingle();
       const fn = String((mem as { first_name?: string } | null)?.first_name || "").trim();
       if (fn) name = fn;
+    } catch {
+      /* résilient */
+    }
+    try {
+      const { data: place } = await supabase
+        .from("human_marketplace_places")
+        .select("company_name,owner_display_name,city_slug")
+        .eq("id", placeId)
+        .maybeSingle();
+      const pl = (place as Record<string, unknown>) || {};
+      merchantName = String(pl.company_name || pl.owner_display_name || "").trim() || merchantName;
+      citySlug = String(pl.city_slug || "").trim();
+    } catch {
+      /* résilient */
+    }
+
+    // « C'est un match » : notif WhatsApp directe → l'animation match + l'avis vérifié (no-op si
+    // le template n'est pas encore configuré ; ne bloque jamais la validation).
+    try {
+      const origin = (() => {
+        try {
+          return new URL(request.url).origin;
+        } catch {
+          return "https://www.popey.academy";
+        }
+      })();
+      const link = citySlug ? `${origin}/m/${citySlug}?match=${placeId}` : origin;
+      await sendPrivilegeMatchNotif(memberPhone, {
+        merchantName,
+        reward: reachedTier ? reachedTier.reward_text : `niveau ${newLevel}`,
+        link,
+      });
     } catch {
       /* résilient */
     }

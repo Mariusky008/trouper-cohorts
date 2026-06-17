@@ -549,6 +549,40 @@ export async function sendPrivilegeAlertBroadcast(
   return { results };
 }
 
+// Popey v3 — « C'est un match » : notif WhatsApp DIRECTE au client juste après que le pro a validé
+// sa visite (le seul moment où la relation monte). Le lien ouvre l'animation match + l'avis vérifié.
+// Template dédié {{1}}=commerçant {{2}}=récompense {{3}}=lien. No-op si Twilio/Content SID non configuré
+// (ne casse jamais la validation). À catégoriser « utility » côté Meta (message transactionnel).
+export async function sendPrivilegeMatchNotif(
+  targetPhone: string,
+  vars: { merchantName: string; reward: string; link: string },
+): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
+  const cfg = whatsappTwilioConfig;
+  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.matchContentSid) {
+    return { success: false, skipped: true };
+  }
+  const to = normalizeTwilioWhatsAppAddress(targetPhone);
+  if (!to) return { success: false, error: "Numéro cible invalide." };
+  try {
+    const client = twilio(cfg.accountSid, cfg.authToken);
+    const message = await client.messages.create({
+      from: cfg.whatsappFrom,
+      to,
+      contentSid: cfg.matchContentSid,
+      contentVariables: JSON.stringify({
+        "1": String(vars.merchantName || "").trim() || "ton commerçant",
+        "2": String(vars.reward || "").trim() || "une nouvelle étape",
+        "3": String(vars.link || "").trim(),
+      }),
+      ...(cfg.statusCallbackUrl ? { statusCallback: cfg.statusCallbackUrl } : {}),
+    });
+    return { success: true, sid: String(message.sid || "").trim() };
+  } catch (error) {
+    console.error("[privilege-match] notif send failed", error);
+    return { success: false, error: error instanceof Error ? error.message : "Envoi match impossible." };
+  }
+}
+
 export async function processTwilioWhatsAppWebhook(params: Record<string, string>) {
   const supabaseAdmin = createAdminClient();
   const messageSid = String(params.MessageSid || params.SmsSid || "").trim();

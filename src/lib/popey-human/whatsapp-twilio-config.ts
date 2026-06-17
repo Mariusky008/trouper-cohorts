@@ -17,6 +17,7 @@ export const whatsappTwilioConfig = {
   // Catalogue Privilège — alertes commerçant (templates dédiés, approuvés par Meta) :
   alertOptinContentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID_ALERT_OPTIN || "").trim(), // confirmation double opt-in ({{1}}=commerçant, {{2}}=ville)
   alertBroadcastContentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID_ALERT_BROADCAST || "").trim(), // diffusion d'une offre ({{1}}=commerçant, {{2}}=offre, {{3}}=lien)
+  matchContentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID_MATCH || "").trim(), // « C'est un match » après visite validée ({{1}}=commerçant, {{2}}=récompense, {{3}}=lien)
   isSandbox: readBoolean(process.env.TWILIO_WHATSAPP_SANDBOX_MODE, true),
   inboundWebhookUrl: String(process.env.TWILIO_WHATSAPP_INBOUND_WEBHOOK_URL || "").trim(),
   statusCallbackUrl: String(process.env.TWILIO_WHATSAPP_STATUS_CALLBACK_URL || "").trim(),
