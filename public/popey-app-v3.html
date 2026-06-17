@@ -12,8 +12,14 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   /* En prod : plein écran (pas de mockup téléphone). Le fond sombre prend tout. */
-  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--cream);overflow:hidden;}
-  .phone{position:relative;width:100%;height:100%;height:100dvh;background:var(--bg);overflow:hidden;}
+  body{background:#05060a;font-family:'Inter',sans-serif;color:var(--cream);overflow:hidden;}
+  .phone{position:relative;width:100%;max-width:480px;height:100dvh;margin:0 auto;background:var(--bg);overflow:hidden;}
+  /* Desktop : on garde le format téléphone centré (au lieu d'étirer plein écran). */
+  @media(min-width:540px){.phone{height:min(880px,100dvh);top:50%;transform:translateY(-50%);border-radius:32px;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);}}
+  /* Vidéo plein cadre dans la carte (mp4 cover ; YouTube recadré via wrapper). */
+  .media .vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;border:0;background:#000;}
+  .media .vidwrap{position:absolute;inset:0;overflow:hidden;z-index:1;}
+  .media .vidwrap iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:135%;width:auto;min-width:135%;aspect-ratio:16/9;border:0;background:#000;pointer-events:none;}
   .view{position:absolute;inset:0;opacity:0;transform:translateX(10px);pointer-events:none;transition:opacity .35s ease,transform .35s ease;}
   .view.active{opacity:1;transform:none;pointer-events:auto;}
   .glow::before{content:"";position:absolute;top:-12%;left:50%;transform:translateX(-50%);width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(0,224,160,.18),transparent 62%);pointer-events:none;}
@@ -58,7 +64,8 @@
   .card-name{font-family:'Playfair Display',serif;font-weight:700;font-size:26px;line-height:1;color:#fff;}
   .card-meta{font-family:'Inter';font-size:13px;color:#cfd2d6;margin-top:6px;}
   .offer{margin-top:11px;}
-  .offer-product{font-family:'Poppins';font-weight:600;font-size:13px;color:#e9ebed;}
+  .offer-product{font-family:'Poppins';font-weight:600;font-size:13px;color:#e9ebed;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .price-row .new{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .price-row{margin-top:8px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
   .price-row .new{font-family:'Poppins';font-weight:800;font-size:27px;color:var(--mint);line-height:1;}
   .price-row .old{font-family:'Inter';font-size:15px;color:#9a9ea4;text-decoration:line-through;}
@@ -212,7 +219,7 @@
       <div class="deckscreen">
         <div class="dhead">
           <div class="logo">Pop<span>ey</span></div>
-          <div class="pill-city" id="pillCity">📍 Dax</div>
+          <div class="pill-city" id="pillCity" onclick="openCity()" style="cursor:pointer">📍 Dax ▾</div>
           <div class="pill-mine" onclick="openMine()">❤ Mes offres <span class="n" id="mineCount">0</span></div>
         </div>
         <div class="deck-wrap"><div class="deck" id="mainDeck"></div></div>
@@ -356,6 +363,15 @@
       </button>
       <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
     </div>
+
+    <!-- Choisir la ville -->
+    <div class="sheet" id="sheetCity">
+      <div class="grab"></div>
+      <div class="sheet-kicker">Choisis ta <span class="mint">ville</span></div>
+      <div class="sheet-sub">Chaque ville a son édition. Change quand tu veux.</div>
+      <div id="cityList" style="margin-top:14px"></div>
+      <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
+    </div>
   </div>
 
 <script>
@@ -395,12 +411,17 @@ function hearts(n){n=Math.max(0,Math.min(5,n||0));return '💚'.repeat(n)+'🤍'
 function starline(s){const f=Math.round(s);return '★'.repeat(f)+'☆'.repeat(5-f);}
 function relStatus(lvl){return ['Nouvelle rencontre','Premier rendez-vous','Régulier·e','Régulier·e','Habitué·e','Habitué·e'][Math.min(5,lvl||0)];}
 
-function mediaInner(o,idx){
+function youtubeId(url){var m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);return m?m[1]:'';}
+function mediaInner(o,idx,isTop){
   const m=o.media[idx]||o.media[0]||{type:'img'};
   const bars=o.media.map((_,j)=>`<div class="bar ${j===idx?'on':''}"></div>`).join('');
   let content;
-  if(m.type==="video"){
-    content=`<div class="videoplay" data-play="1">▶</div>`;
+  if(m.type==="video"&&m.url&&isTop){
+    var yt=youtubeId(m.url);
+    if(yt){content=`<div class="vidwrap"><iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" loading="lazy"></iframe></div><div class="videoplay" data-snd>🔇</div>`;}
+    else{content=`<video class="vid" src="${esc(m.url)}" muted autoplay loop playsinline webkit-playsinline preload="auto" ${m.poster?`poster="${esc(m.poster)}"`:''}></video><div class="videoplay" data-snd>🔇</div>`;}
+  }else if(m.type==="video"&&m.poster){
+    content=`<img class="ph" src="${esc(m.poster)}" alt=""><div class="videoplay">▶</div>`;
   }else if(m.url){
     content=`<img class="ph" src="${esc(m.url)}" alt="" onerror="this.style.display='none'">`;
   }else{
@@ -414,7 +435,7 @@ function cardHTML(o,cls,idx){
   const m=o.media[idx]||o.media[0]||{};
   const bg = m.poster ? `${o.grad}` : o.grad;
   return `<div class="card ${cls}" data-bg="${o.grad}" style="background:${bg}">
-    <div class="media" ${m.poster?`style="background-image:url(${esc(m.poster)})"`:''}>${mediaInner(o,idx)}</div>
+    <div class="media" ${m.poster?`style="background-image:url(${esc(m.poster)})"`:''}>${mediaInner(o,idx,cls==='top')}</div>
     <div class="scrim"></div>
     <div class="countdown" data-end="${o.endTs}">⏳ <span class="cd"></span></div>
     <div class="stamp yes">Je veux</div><div class="stamp no">Passer</div><div class="stamp up">Le pro</div>
@@ -437,13 +458,21 @@ function go(name){
 function renderLaunch(){const d=document.getElementById('launchDeck');if(!offers.length){d.innerHTML='';return;}const a=offers[0],b=offers[1%offers.length],c=offers[2%offers.length];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),true);}
 function renderMain(){topMediaIdx=0;const d=document.getElementById('mainDeck');if(!offers.length){d.innerHTML='<div class="deck-empty">✨ Pas encore d\'offre à '+esc(CITY_LABEL)+'.<br>Reviens vite, une nouvelle édition arrive chaque mois.</div>';return;}const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);}
 
-function setMedia(top,o,idx){topMediaIdx=idx;const mediaEl=top.querySelector('.media');const m=o.media[idx]||{};mediaEl.style.backgroundImage=m.poster?`url(${m.poster})`:'';mediaEl.innerHTML=mediaInner(o,idx);bindPlay(top);}
-function bindPlay(top){const p=top.querySelector('[data-play]');if(p)p.addEventListener('pointerdown',e=>{e.stopPropagation();p.textContent=p.textContent==='▶'?'⏸':'▶';});}
+function setMedia(top,o,idx){topMediaIdx=idx;const mediaEl=top.querySelector('.media');const m=o.media[idx]||{};mediaEl.style.backgroundImage=m.poster?`url(${m.poster})`:'';mediaEl.innerHTML=mediaInner(o,idx,true);wireMedia(top);}
+function wireMedia(top){
+  var vid=top.querySelector('video.vid');
+  if(vid){vid.muted=true;try{vid.setAttribute('muted','');vid.setAttribute('playsinline','');}catch(e){}var play=function(){var pr=vid.play();if(pr&&pr.then)pr.catch(function(){});};vid.addEventListener('canplay',play,{once:true});vid.addEventListener('loadeddata',play,{once:true});setTimeout(play,400);}
+  var snd=top.querySelector('[data-snd]');
+  if(snd){snd.addEventListener('pointerdown',e=>e.stopPropagation());snd.addEventListener('click',function(e){e.stopPropagation();
+    if(vid){vid.muted=!vid.muted;snd.textContent=vid.muted?'🔇':'🔊';if(!vid.muted){try{vid.play();}catch(_e){}}}
+    else{var fr=top.querySelector('.vidwrap iframe');if(fr){var on=snd.getAttribute('data-on')==='1';try{fr.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'mute':'unMute',args:[]}),'*');fr.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*');}catch(_e2){}snd.setAttribute('data-on',on?'0':'1');snd.textContent=on?'🔇':'🔊';}}
+  });}
+}
 
 let drag=null;
 function bindCard(top,launchMode){
   if(!top)return;
-  bindPlay(top);
+  wireMedia(top);
   const o = launchMode?offers[0]:offers[mainIdx%offers.length];
   const yes=top.querySelector('.stamp.yes'),no=top.querySelector('.stamp.no'),up=top.querySelector('.stamp.up');
   let rect=null,moved=0;
@@ -509,13 +538,20 @@ function submitReview(){const o=offers[currentPro];const first=document.getEleme
       else{leaveMsg.textContent=(res.d&&res.d.error)?res.d.error:'Publication impossible.';}
     }).catch(()=>{leaveMsg.textContent='Connexion impossible. Réessaie.';});}
 
-function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');}
+function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');}
+/* Sélecteur de ville */
+var CITIES=[{label:'Dax',slug:'dax'},{label:'Bordeaux',slug:'bordeaux'},{label:'Bayonne',slug:'bayonne'},{label:'Mont-de-Marsan',slug:'mont-de-marsan'}];
+function openCity(){
+  document.getElementById('cityList').innerHTML=CITIES.map(function(c){return '<div class="mine-row" style="cursor:pointer" onclick="gotoCity(\''+c.slug+'\')"><div class="ic" style="background:rgba(0,224,160,.12);font-size:20px">📍</div><div class="t"><b>'+esc(c.label)+'</b><small>'+(c.slug===VILLE?'Ville actuelle':'Voir le catalogue')+'</small></div><div style="color:var(--mint);font-weight:700;font-size:18px">'+(c.slug===VILLE?'✓':'›')+'</div></div>';}).join('');
+  closeOnly();scrimBg.classList.add('show');sheetCity.classList.add('open');
+}
+function gotoCity(slug){if(slug===VILLE){closeSheets();return;}location.href='/m/'+slug+(location.search||'');}
 function closeSheets(){scrimBg.classList.remove('show');closeOnly();}
 function keepForLater(){closeSheets();}
 function openMine(){
   const list=[...new Set(savedOffers)];
   document.getElementById('mineList').innerHTML = list.length
-    ? list.map(i=>{const o=offers[i];return `<div class="mine-row"><div class="ic" style="background:${o.grad}${o.poster?`;background-image:url(${o.poster})`:''}">${o.poster?'':o.emoji}</div><div class="t"><b>${esc(o.product)}</b><small>${esc(o.name)} · ${esc(o.newP)}${o.oldP?' au lieu de '+esc(o.oldP):''}</small></div><button class="rsv" onclick="reserveFromMine(${i})">Réserver</button></div>`;}).join('')
+    ? list.map(i=>{const o=offers[i];var rv=getReserved(o.id);var btn=rv?`<button class="rsv" style="background:linear-gradient(90deg,var(--mint),var(--mint-deep))" onclick="openShareFor(${i})">📲 Mon code</button>`:`<button class="rsv" onclick="reserveFromMine(${i})">Réserver</button>`;return `<div class="mine-row"><div class="ic" style="background:${o.grad}${o.poster?`;background-image:url(${o.poster})`:''}">${o.poster?'':o.emoji}</div><div class="t"><b>${esc(o.product)}</b><small>${esc(o.name)} · ${esc(o.newP)}${o.oldP?' au lieu de '+esc(o.oldP):''}</small></div>${btn}</div>`;}).join('')
     : `<div class="mine-empty">Rien de gardé pour l'instant.<br>Swipe à droite sur une offre qui te plaît 👉</div>`;
   closeOnly();scrimBg.classList.add('show');sheetMine.classList.add('open');
 }
@@ -537,6 +573,10 @@ function reserve(){
   document.getElementById('rsvMsg').textContent='';
   closeOnly();scrimBg.classList.add('show');sheetReserve.classList.add('open');
 }
+/* Réservations gardées (code + niveau) → on remplace « Réserver » par « Mon code » ensuite. */
+function loadReserved(){try{return JSON.parse(localStorage.getItem('popey_reserved')||'{}');}catch(e){return {};}}
+function getReserved(id){var r=loadReserved();return r[id]||null;}
+function setReserved(id,data){try{var r=loadReserved();r[id]=data;localStorage.setItem('popey_reserved',JSON.stringify(r));}catch(e){}}
 function doReserve(){
   var o=offers[currentPro];var m=loadMember()||{};
   var first=(document.getElementById('rsvFirst').value||'').trim()||m.first||'';
@@ -549,11 +589,27 @@ function doReserve(){
     saveMember(first,phone);
   }
   closeSheets();
+  // Transition IMMÉDIATE vers l'écran de confirmation (feedback instant) ; le code se remplit après.
+  showShare(o,o.relLvl||0,'',null);
+  document.getElementById('codeCard').style.display='';document.getElementById('codeVal').textContent='· · · ·';
+  document.getElementById('shareP').textContent='On prépare ta réservation…';
   fetch('/api/popey-human/privilege/reserve',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
     body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
-    .then(r=>r.json().catch(()=>({}))).then(d=>{var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;showShare(o,lvl,(d&&d.code)||'',d&&d.next);})
-    .catch(()=>{showShare(o,o.relLvl||0,'',null);});
+    .then(r=>r.json().catch(()=>({}))).then(d=>{
+      var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;var code=(d&&d.code)||'';
+      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});
+      fillShare(o,lvl,code,(d&&d.next)||null);
+    }).catch(()=>{fillShare(o,o.relLvl||0,'',null);});
 }
+function fillShare(o,lvl,code,next){
+  document.getElementById('shareP').textContent=o.name+" t'attend. Présente-toi, c'est tout.";
+  shareHearts.textContent=hearts(lvl);
+  document.getElementById('codeVal').textContent=code?String(code).split('').join(' '):'—';
+  document.getElementById('codeCard').style.display=code?'':'none';
+  var nextTxt=next?(' — au niveau '+next.threshold+' : '+esc(next.reward)):'';
+  document.getElementById('shareRelN').innerHTML='Relation avec <b>'+esc(o.name)+'</b> : niveau '+lvl+'/5. Tu gagnes <b>+1 cœur</b> dès que '+esc(o.name)+' valide ta visite en boutique'+nextTxt+'.';
+}
+function openShareFor(i){currentPro=i;var o=offers[i];var rv=getReserved(o.id)||{};closeSheets();showShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null);fillShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null);}
 function showShare(o,lvl,code,next){
   shareName.textContent=o.name;shareP.textContent=o.name+" t'attend. Présente-toi, c'est tout.";
   shareHearts.textContent=hearts(lvl);
@@ -588,12 +644,6 @@ function loadReviews(o){
 }
 
 /* ───────── Chargement des offres réelles ───────── */
-function parseOff(badge,desc,value){
-  var t=(String(badge||'')+' '+String(desc||'')).toLowerCase();
-  if(/\bgratuit\b|\boffert/.test(t))return 'Gratuit';
-  var pct=t.match(/-?\d+\s*%/);if(pct)return '−'+pct[0].replace(/[^0-9]/g,'')+'%';
-  return '';
-}
 function mapPlace(p){
   var media=[];
   if(p.videoUrl)media.push({type:'video',url:p.videoUrl});
@@ -602,12 +652,21 @@ function mapPlace(p){
   if(!media.length)media.push({type:'img',e:'🏷️'});
   var poster=imgs[0]||'';
   var end=p.expiresAt?new Date(p.expiresAt).getTime():(now+30*86400000);
+  // Prix : le gros libellé vert (.new) doit être COURT. Le titre de l'offre = la ligne produit.
+  var badge=String(p.badge||p.description||'Offre privilège');
+  var val=Number(p.partnerOfferValueEur||0);
+  var t=(String(p.badge||'')+' '+String(p.description||'')).toLowerCase();
+  var free=/\bgratuit\b|\boffert/.test(t);
+  var pct=t.match(/-?\d+\s*%/);
+  var newP='Voir l\'offre',oldP='',off='';
+  if(free){newP='Offert';off='GRATUIT';if(val>0)oldP=val+' €';}
+  else if(pct){newP='−'+pct[0].replace(/[^0-9]/g,'')+'%';if(val>0)oldP=val+' €';}
+  else if(val>0){newP=val+' €';}
   return {
     id:String(p.id||''),emoji:String(p.icon||'🏷️'),grad:'linear-gradient(160deg,#2a2f3a,#0d1016)',poster:poster,
     name:String(p.companyName||p.contactName||p.metier||'Commerçant'),
     role:String(p.metier||''),meta:'📍 '+String(p.metier||'')+' · '+CITY_LABEL,
-    product:String(p.badge||p.description||'Offre privilège'),
-    oldP:p.partnerOfferValueEur?(p.partnerOfferValueEur+' €'):'',newP:String(p.badge||'Offre'),off:parseOff(p.badge,p.description,p.partnerOfferValueEur),
+    product:badge,oldP:oldP,newP:newP,off:off,
     bio:String(p.description||''),support:'',endTs:end,
     media:media,phone:String(p.partnerWhatsapp||p.directContact||''),
     relLvl:0,relNext:'',stars:0,reviews:[]
@@ -624,7 +683,7 @@ function loadOffers(){
 
 /* ───────── Init ───────── */
 document.getElementById('edition').textContent='ÉDITION '+CITY_LABEL.toUpperCase()+' · 2026';
-document.getElementById('pillCity').textContent='📍 '+CITY_LABEL;
+document.getElementById('pillCity').textContent='📍 '+CITY_LABEL+' ▾';
 document.getElementById('ctaSub').textContent='Édition · '+CITY_LABEL;
 renderLaunch();tick();
 loadOffers();
