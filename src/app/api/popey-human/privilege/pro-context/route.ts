@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
 import { DEFAULT_TIERS, type LoyaltyTier } from "@/lib/popey-human/loyalty";
+import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
 
 export const dynamic = "force-dynamic";
+
+// Badge de statut « mission » (repris de l'ancien espace pro) : dépend du jour de propulsion,
+// des clics et des contacts déclarés. kind = code couleur côté front.
+function statutBadge(clics: number, day: number | null, declared: number | null, today: number): { label: string; kind: string } {
+  if (day && today < day) return { label: "⏳ Bientôt", kind: "soon" };
+  if (clics === 0) return { label: "⚠️ À relancer", kind: "warn" };
+  if (declared && clics >= Math.max(5, declared * 0.15)) return { label: "🚀 Au top", kind: "top" };
+  return { label: "✅ Actif", kind: "ok" };
+}
 
 // GET ?p=<cred> → contexte de l'espace pro : commerçant, stats (funnel + ROI), offre catalogue,
 // paliers de fidélité, aperçu des vagues (fans par niveau), activité récente. Tout résilient.
@@ -17,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("id,company_name,owner_display_name,metier,city,privilege_badge,partner_offer_value_eur,logo_url")
+      .select("id,company_name,owner_display_name,metier,city,privilege_badge,partner_offer_value_eur,logo_url,pro_slug,owner_member_id")
       .eq("id", placeId)
       .maybeSingle();
     const p = (place as Record<string, unknown>) || {};
@@ -140,6 +150,69 @@ export async function GET(request: NextRequest) {
       emoji: "🏷️",
     };
 
+    // Lien à partager (canal GRATUIT, le nerf de la croissance) + classement/mission de la ville.
+    const origin = (() => {
+      try {
+        return new URL(request.url).origin;
+      } catch {
+        return "https://www.popey.academy";
+      }
+    })();
+    const proSlug = String(p.pro_slug || "").trim();
+    const shareLink = `${origin}/c/${encodeURIComponent(proSlug || placeId)}`;
+
+    let leaderboard: unknown = null;
+    try {
+      const lb = await getCatalogueLeaderboard(String(p.city || "") || undefined);
+      const ownerId = String(p.owner_member_id || "").trim();
+      const myKey = ownerId || `place:${placeId}`;
+      const myName = String(p.company_name || p.owner_display_name || "").trim().toLowerCase();
+      let myIndex = -1;
+      for (let i = 0; i < lb.rows.length; i += 1) {
+        const r = lb.rows[i];
+        if (r.ref === myKey || (ownerId && r.ref === ownerId) || (myName && r.name.trim().toLowerCase() === myName)) {
+          myIndex = i;
+          break;
+        }
+      }
+      const myRow = myIndex >= 0 ? lb.rows[myIndex] : null;
+      const today = new Date().getDate();
+      const top = lb.rows.slice(0, 5).map((r, i) => ({
+        rank: i + 1,
+        name: r.name,
+        clics: r.clics,
+        coupons: r.coupons,
+        isMe: i === myIndex,
+        statut: statutBadge(r.clics, r.day, r.declared, today),
+      }));
+      if (myIndex >= 5 && myRow) {
+        top.push({
+          rank: myIndex + 1,
+          name: myRow.name,
+          clics: myRow.clics,
+          coupons: myRow.coupons,
+          isMe: true,
+          statut: statutBadge(myRow.clics, myRow.day, myRow.declared, today),
+        });
+      }
+      leaderboard = {
+        monthLabel: lb.monthLabel,
+        cityLabel: String(p.city || ""),
+        rank: myIndex >= 0 ? myIndex + 1 : null,
+        total: lb.rows.length,
+        me: {
+          clics: myRow?.clics ?? 0,
+          coupons: myRow?.coupons ?? 0,
+          declared: myRow?.declared ?? null,
+          day: myRow?.day ?? null,
+          statut: statutBadge(myRow?.clics ?? 0, myRow?.day ?? null, myRow?.declared ?? null, today),
+        },
+        rows: top,
+      };
+    } catch {
+      leaderboard = null;
+    }
+
     return NextResponse.json({
       placeId,
       merchant,
@@ -157,6 +230,9 @@ export async function GET(request: NextRequest) {
       offer,
       tiers: tiers.map((t) => ({ idx: t.idx, threshold: t.threshold_visits, reward: t.reward_text })),
       waves,
+      shareLink,
+      proSlug,
+      leaderboard,
     });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });

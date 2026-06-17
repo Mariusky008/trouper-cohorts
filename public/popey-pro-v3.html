@@ -166,6 +166,30 @@
   .btn-ghost{background:none;color:#aeb2b8;font-weight:600;font-size:14px;padding:10px;}
   .fans-asset{display:flex;align-items:center;justify-content:space-between;background:rgba(0,224,160,.06);border:1px solid rgba(0,224,160,.25);border-radius:14px;padding:13px 15px;margin-top:10px;font-family:'Inter';font-size:13px;color:#9fd8c2;}
   .fans-asset b{color:var(--mint);font-family:'Poppins';font-weight:800;font-size:17px;}
+  /* Lien à partager (canal gratuit) */
+  .share-card{background:rgba(0,224,160,.06);border:1px solid rgba(0,224,160,.3);border-radius:18px;padding:15px;margin-bottom:16px;}
+  .share-card .sh-lbl{font-family:'Poppins';font-weight:700;font-size:12px;color:var(--mint);text-transform:uppercase;letter-spacing:.4px;}
+  .share-card .sh-sub{font-family:'Inter';font-size:11.5px;color:var(--grey);margin:3px 0 10px;line-height:1.45;}
+  .share-card .sh-link{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:10px 12px;font-family:monospace;font-size:11.5px;color:rgba(255,255,255,.72);word-break:break-all;}
+  .share-card .sh-actions{display:flex;gap:9px;margin-top:10px;}
+  .share-card .sh-actions .btn{flex:1;margin-top:0;}
+  .btn-wa{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;}
+  /* Mission + classement */
+  .mission{display:flex;gap:9px;}
+  .mission .mbox{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 6px;text-align:center;}
+  .mission .mbox .mv{font-family:'Poppins';font-weight:800;font-size:22px;color:#fff;}
+  .mission .mbox .mv.mint{color:var(--mint);}
+  .mission .mbox .mt{font-family:'Inter';font-size:9.5px;color:var(--grey);margin-top:4px;line-height:1.25;}
+  .mission-foot{display:flex;gap:14px;flex-wrap:wrap;font-family:'Inter';font-size:12px;color:var(--grey);margin:11px 0 14px;}
+  .mission-foot b{color:#fff;}
+  .lb-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:10px 12px;margin-bottom:7px;}
+  .lb-row.me{border-color:rgba(0,224,160,.4);background:rgba(0,224,160,.07);}
+  .lb-row .rk{width:24px;text-align:center;font-family:'Poppins';font-weight:800;color:rgba(255,255,255,.6);flex-shrink:0;font-size:14px;}
+  .lb-row .nm{font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lb-row .sc{font-family:'Inter';font-size:11px;color:var(--grey);white-space:nowrap;}
+  .lb-row .bdg{font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:999px;white-space:nowrap;font-family:'Poppins';}
+  .bdg.top{background:rgba(0,224,160,.16);color:#7ef0ce;} .bdg.ok{background:rgba(56,189,248,.16);color:#7dd3fc;} .bdg.warn{background:rgba(248,113,113,.16);color:#fca5a5;} .bdg.soon{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);}
+  .lb-foot{font-family:'Inter';font-size:11.5px;color:var(--grey);text-align:center;margin-top:8px;}
   .coupbtn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding-top:4px;}
   .coupbtn .cf{width:54px;height:54px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 8px 22px rgba(0,224,160,.45);margin-top:-20px;border:3px solid var(--bg);}
   .coupbtn .cflbl{font-family:'Poppins';font-weight:700;font-size:10.5px;color:var(--mint);}
@@ -197,6 +221,16 @@
           <div class="cf-go">›</div>
         </button>
 
+        <div class="share-card" id="shareCard" style="display:none">
+          <div class="sh-lbl">🔗 Ton lien à partager</div>
+          <div class="sh-sub">Envoie-le à tes contacts WhatsApp — chaque ouverture compte pour ton classement. C'est gratuit et ça fait monter ta boutique.</div>
+          <div class="sh-link" id="shLink">—</div>
+          <div class="sh-actions">
+            <button class="btn btn-ghost" onclick="copyLink()">📋 Copier</button>
+            <button class="btn btn-wa" onclick="shareLinkWA()">💬 Partager sur WhatsApp</button>
+          </div>
+        </div>
+
         <div class="hero">
           <div class="lbl">💚 Clients fidélisés grâce à Popey</div>
           <div class="big"><span id="mHabitues">0</span> habitués</div>
@@ -218,6 +252,10 @@
           <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Devenus habitués</span><span class="v" id="fHab">0</span></div>
         </div>
         <div class="fans-asset"><span>📣 Fans abonnés à tes alertes (joignables d'un clic)</span><b id="mFans">0</b></div>
+
+        <div class="ptitle" id="rankTitle" style="display:none"><span class="k">🏆 Classement &amp; mission</span></div>
+        <div id="missionBox" style="display:none"></div>
+        <div id="lbBox" style="display:none"></div>
 
         <div class="ptitle"><span class="k">Activité récente</span></div>
         <div class="funnel" id="activityList">
@@ -467,6 +505,37 @@ function renderLadder(){document.getElementById('ladder').innerHTML=levels.map((
 function editPerk(i){const v=prompt("Récompense du niveau "+levels[i].n+" :",levels[i].perk);if(v!==null&&v.trim()){levels[i].perk=v.trim();renderLadder();saveTiers();toast("✅ Récompense mise à jour");}}
 function saveTiers(){if(!PLACE_ID)return;fetch('/api/popey-human/privilege/loyalty-tiers',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({token:PRO,placeId:PLACE_ID,tiers:levels.map((l,i)=>({idx:i+1,threshold:parseInt(l.cond)||(i+1),reward:l.perk}))})}).catch(()=>{});}
 
+/* ───────── LIEN À PARTAGER (canal gratuit) + CLASSEMENT / MISSION ───────── */
+var SHARE_LINK='';
+function renderShare(link){if(!link)return;SHARE_LINK=link;document.getElementById('shLink').textContent=link;document.getElementById('shareCard').style.display='';}
+function copyLink(){
+  if(!SHARE_LINK)return;var ok=function(){toast('🔗 Lien copié');};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(SHARE_LINK).then(ok).catch(fb);}else fb();
+  function fb(){try{var ta=document.createElement('textarea');ta.value=SHARE_LINK;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);ok();}catch(e){}}
+}
+function shareLinkWA(){
+  if(!SHARE_LINK)return;
+  var t='Alerte pépite ! ⚡️\n\nVoici le catalogue Popey des meilleurs commerçants de '+((MERCHANT&&MERCHANT.city)||'ta ville')+'.\nDes gratuités, des privilèges, et tout l\'agenda de la semaine.\n\nClique et swipe 👇\n🍿 '+SHARE_LINK;
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+}
+function rankEmoji(r){return r<=3?['🥇','🥈','🥉'][r-1]:('#'+r);}
+function renderLeaderboard(lb){
+  if(!lb)return;
+  var title=document.getElementById('rankTitle');title.style.display='';title.querySelector('.k').textContent='🏆 Classement & mission'+(lb.cityLabel?' · '+lb.cityLabel:'');
+  var me=lb.me||{clics:0,coupons:0,declared:null,day:null,statut:{label:''}};
+  var mb=document.getElementById('missionBox');mb.style.display='';
+  mb.innerHTML='<div class="ptitle" style="margin-top:0"><span class="k">🎯 Ta mission · '+esc(lb.monthLabel||'')+'</span></div>'+
+    '<div class="mission">'+
+      '<div class="mbox"><div class="mv">'+(me.day||'—')+'</div><div class="mt">📅 Jour de propulsion</div></div>'+
+      '<div class="mbox"><div class="mv">'+(me.declared!=null?me.declared:'—')+'</div><div class="mt">📱 Contacts à toucher</div></div>'+
+      '<div class="mbox"><div class="mv mint">'+(me.clics||0)+'</div><div class="mt">👆 Clics générés</div></div>'+
+    '</div>'+
+    '<div class="mission-foot"><span>'+(me.statut?esc(me.statut.label):'')+'</span><span>🎟️ <b>'+(me.coupons||0)+'</b> coupons</span>'+(lb.rank?('<span>🏆 <b>#'+lb.rank+'</b> / '+lb.total+'</span>'):'')+'</div>';
+  var rows=Array.isArray(lb.rows)?lb.rows:[];var box=document.getElementById('lbBox');box.style.display='';
+  if(!rows.length){box.innerHTML='<div class="lb-foot">Le classement s\'affichera dès que les commerçants partageront leur lien.</div>';return;}
+  box.innerHTML=rows.map(function(r){return '<div class="lb-row'+(r.isMe?' me':'')+'"><div class="rk">'+rankEmoji(r.rank)+'</div><div class="nm">'+esc(r.name)+(r.isMe?' (toi)':'')+'</div><div class="sc">👆 '+r.clics+' · 🎟️ '+r.coupons+'</div><div class="bdg '+((r.statut&&r.statut.kind)||'ok')+'">'+((r.statut&&esc(r.statut.label))||'')+'</div></div>';}).join('')+'<div class="lb-foot">Plus tu partages ton lien, plus tu montes. 🚀</div>';
+}
+
 /* ───────── Données pro réelles ───────── */
 function loadProData(){
   fetch('/api/popey-human/privilege/pro-context?'+(PRO?('p='+encodeURIComponent(PRO)):''),{cache:'no-store'})
@@ -489,6 +558,7 @@ function loadProData(){
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
+      renderShare(d.shareLink);renderLeaderboard(d.leaderboard);
     }).catch(()=>{});
 }
 
