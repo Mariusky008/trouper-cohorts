@@ -98,6 +98,20 @@
   .pill-city{font-family:'Poppins';font-weight:600;font-size:12px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);}
   .pill-mine{font-family:'Poppins';font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.35);color:var(--mint);display:flex;align-items:center;gap:6px;cursor:pointer;}
   .pill-mine .n{background:var(--mint);color:var(--ink);border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0 4px;}
+  .pill-agenda{font-family:'Poppins';font-weight:700;font-size:13px;padding:7px 10px;border-radius:999px;background:rgba(124,92,255,.13);border:1px solid rgba(168,139,255,.4);color:#d8caff;display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .pill-agenda .n{background:#a98bff;color:#1a1230;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;padding:0 4px;font-weight:800;}
+  /* Agenda : lignes d'événements */
+  .ev-row{display:flex;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;margin-bottom:10px;}
+  .ev-ic{width:54px;height:54px;border-radius:13px;background:rgba(124,92,255,.14);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background-size:cover;background-position:center;}
+  .ev-b{flex:1;min-width:0;}
+  .ev-b .et{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:#fff;line-height:1.15;}
+  .ev-b .ed{font-family:'Poppins';font-weight:700;font-size:12px;color:#d8caff;margin-top:3px;}
+  .ev-b .ep{font-family:'Inter';font-size:12px;color:var(--grey);margin-top:1px;}
+  .ev-b .ex{font-family:'Inter';font-size:12px;color:#aeb2b8;margin-top:6px;line-height:1.4;}
+  .ev-act{display:flex;gap:8px;margin-top:10px;}
+  .ev-act a,.ev-act button{flex:1;text-align:center;text-decoration:none;border:none;cursor:pointer;border-radius:11px;padding:9px;font-family:'Poppins';font-weight:700;font-size:12.5px;}
+  .ev-cal{background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;}
+  .ev-share{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12)!important;}
   .hint{text-align:center;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;}
   /* Bandeau Coups de feu en cours (in-app, gratuit, complément du push WhatsApp) */
   .cf-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 0;margin-top:2px;scrollbar-width:none;}
@@ -259,6 +273,7 @@
         <div class="dhead">
           <div class="logo">Pop<span>ey</span></div>
           <div class="pill-city" id="pillCity" onclick="openCity()" style="cursor:pointer">📍 Dax ▾</div>
+          <div class="pill-agenda" id="pillAgenda" onclick="openAgenda()" style="display:none">📅<span class="n" id="agendaCount">0</span></div>
           <div class="pill-mine" onclick="openMine()">❤ Mes offres <span class="n" id="mineCount">0</span></div>
         </div>
         <div class="cf-strip" id="cfStrip"></div>
@@ -410,6 +425,14 @@
       <div class="sheet-kicker">Choisis ta <span class="mint">ville</span></div>
       <div class="sheet-sub">Chaque ville a son édition. Change quand tu veux.</div>
       <div id="cityList" style="margin-top:14px"></div>
+      <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
+    </div>
+
+    <div class="sheet" id="sheetAgenda">
+      <div class="grab"></div>
+      <div class="sheet-kicker">📅 L'agenda de <span class="mint" id="agendaCity">ta ville</span></div>
+      <div class="sheet-sub">Les animations du coin. Ajoute-les à ton agenda, sans inscription.</div>
+      <div id="agendaList" style="margin-top:16px"></div>
       <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
     </div>
 
@@ -597,7 +620,7 @@ function submitReview(){const o=offers[currentPro];const first=document.getEleme
       else{leaveMsg.textContent=(res.d&&res.d.error)?res.d.error:'Publication impossible.';}
     }).catch(()=>{leaveMsg.textContent='Connexion impossible. Réessaie.';});}
 
-function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');}
+function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');sheetAgenda.classList.remove('open');}
 /* Sélecteur de ville */
 var CITIES=[{label:'Dax',slug:'dax'},{label:'Bordeaux',slug:'bordeaux'},{label:'Bayonne',slug:'bayonne'},{label:'Mont-de-Marsan',slug:'mont-de-marsan'}];
 function openCity(){
@@ -821,6 +844,49 @@ function renderCoupStrip(coups){
 }
 function openCoupOffer(id){location.href='/o/'+encodeURIComponent(id)+(location.search||'');}
 
+/* ───────── Agenda de la ville (événements, sans fidélité ni code) ───────── */
+var EVENTS=[];
+function loadEvents(){
+  fetch('/api/popey-human/privilege/local-events?city='+encodeURIComponent(VILLE),{cache:'no-store'})
+    .then(r=>r.json()).then(function(d){
+      EVENTS=(d&&d.events)||[];
+      var pill=document.getElementById('pillAgenda'),cnt=document.getElementById('agendaCount');
+      if(EVENTS.length){pill.style.display='';cnt.textContent=EVENTS.length;}else pill.style.display='none';
+    }).catch(function(){});
+}
+function pad2(n){return (n<10?'0':'')+n;}
+function gcalDates(ev){
+  var d=ev.eventDate?new Date(ev.eventDate):null;if(!d||isNaN(d.getTime()))return '';
+  var start=''+d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate());
+  var d2=new Date(d.getTime()+86400000);var end=''+d2.getFullYear()+pad2(d2.getMonth()+1)+pad2(d2.getDate());
+  return start+'/'+end;
+}
+function gcalLink(ev){
+  var u='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(ev.title||('Événement '+CITY_LABEL));
+  var dates=gcalDates(ev);if(dates)u+='&dates='+dates;
+  var det=[ev.details||'',ev.placeLabel?('Lieu : '+ev.placeLabel):'','Via Popey · '+CITY_LABEL].filter(Boolean).join('\n');
+  u+='&details='+encodeURIComponent(det);
+  if(ev.placeLabel)u+='&location='+encodeURIComponent(ev.placeLabel);
+  return u;
+}
+function shareEvent(i){var ev=EVENTS[i];if(!ev)return;var t=(ev.emoji||'📅')+' '+(ev.title||'Événement')+(ev.dayLabel?(' · '+ev.dayLabel):'')+(ev.placeLabel?(' · '+ev.placeLabel):'')+'\n\nÀ '+CITY_LABEL+', vu sur Popey 👉 '+location.origin+'/m/'+VILLE;window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');}
+function renderAgenda(){
+  var box=document.getElementById('agendaList');
+  if(!EVENTS.length){box.innerHTML='<div style="text-align:center;color:#8b93a3;font-family:Inter;font-size:13px;padding:24px 0">Pas encore d\'événement à '+esc(CITY_LABEL)+'.<br>Reviens vite ✨</div>';return;}
+  box.innerHTML=EVENTS.map(function(ev,i){
+    var icStyle=ev.imageUrl?(' style="background-image:url('+esc(ev.imageUrl)+')"'):'';
+    var ic=ev.imageUrl?'':esc(ev.emoji||'📅');
+    return '<div class="ev-row"><div class="ev-ic"'+icStyle+'>'+ic+'</div><div class="ev-b">'+
+      '<div class="et">'+esc(ev.title||'Événement')+'</div>'+
+      (ev.dayLabel?'<div class="ed">'+esc(ev.dayLabel)+'</div>':'')+
+      (ev.placeLabel?'<div class="ep">📍 '+esc(ev.placeLabel)+'</div>':'')+
+      (ev.details?'<div class="ex">'+esc(ev.details)+'</div>':'')+
+      '<div class="ev-act"><a class="ev-cal" href="'+gcalLink(ev)+'" target="_blank" rel="noopener">📅 Ajouter</a><button class="ev-share" onclick="shareEvent('+i+')">📲 Partager</button></div>'+
+    '</div></div>';
+  }).join('');
+}
+function openAgenda(){document.getElementById('agendaCity').textContent=CITY_LABEL;renderAgenda();closeOnly();scrimBg.classList.add('show');sheetAgenda.classList.add('open');}
+
 /* ───────── Init ───────── */
 document.getElementById('edition').textContent='ÉDITION '+CITY_LABEL.toUpperCase()+' · 2026';
 document.getElementById('pillCity').textContent='📍 '+CITY_LABEL+' ▾';
@@ -828,6 +894,7 @@ document.getElementById('ctaSub').textContent='Édition · '+CITY_LABEL;
 renderLaunch();tick();
 loadOffers();
 loadCoups();setInterval(loadCoups,90000);
+loadEvents();
 </script>
 </body>
 </html>
