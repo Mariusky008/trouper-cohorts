@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Popey — Espace Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0B0D12;--mint:#00E0A0;--mint-deep:#07B083;--rose:#F0608F;--ink:#15181D;--cream:#FBFAF7;--grey:#5C6168;--yellow:#FFC400;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--cream);overflow:hidden;}
+  .phone{position:relative;width:100%;height:100%;height:100dvh;background:var(--bg);overflow:hidden;}
+
+  .content{position:absolute;top:0;bottom:78px;left:0;right:0;overflow-y:auto;padding:18px 20px 24px;}
+  .pane{display:none;}
+  .pane.active{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .logo{font-family:'Playfair Display',serif;font-weight:800;font-size:21px;}
+  .logo span{color:var(--mint);}
+  .pro-badge{font-family:'Poppins';font-weight:700;font-size:10px;letter-spacing:.1em;color:var(--ink);background:var(--mint);padding:3px 8px;border-radius:6px;margin-left:6px;}
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .greet b{font-family:'Playfair Display',serif;font-weight:700;font-size:23px;color:#fff;}
+  .greet small{display:block;font-family:'Inter';font-size:12px;color:var(--grey);margin-top:2px;}
+  .ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(160deg,#6b4a1e,#1a1208);display:flex;align-items:center;justify-content:center;font-size:20px;}
+
+  .ptitle{font-family:'Poppins';font-weight:700;font-size:13px;letter-spacing:.02em;color:#fff;margin:18px 0 10px;display:flex;align-items:center;gap:7px;}
+  .ptitle .k{font-size:10px;color:var(--grey);font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+
+  .hero{background:linear-gradient(155deg,rgba(0,224,160,.16),rgba(0,224,160,.03));border:1px solid rgba(0,224,160,.3);border-radius:22px;padding:20px;position:relative;overflow:hidden;}
+  .hero .lbl{font-family:'Poppins';font-weight:600;font-size:12px;color:#bfeede;}
+  .hero .big{font-family:'Fraunces',serif;font-weight:700;font-size:52px;line-height:1;color:#fff;margin:6px 0 2px;}
+  .hero .big span{color:var(--mint);}
+  .hero .sub{font-family:'Inter';font-size:12.5px;color:#9fd8c2;}
+  .roi{display:flex;gap:10px;margin-top:16px;}
+  .roi .box{flex:1;background:rgba(0,0,0,.25);border-radius:14px;padding:11px 12px;}
+  .roi .box .v{font-family:'Poppins';font-weight:800;font-size:18px;color:#fff;}
+  .roi .box .v.mint{color:var(--mint);}
+  .roi .box .t{font-family:'Inter';font-size:10.5px;color:var(--grey);margin-top:2px;}
+  .pitch{font-family:'Inter';font-size:12px;color:#9fd8c2;margin-top:14px;line-height:1.5;border-top:1px solid rgba(0,224,160,.15);padding-top:12px;}
+  .pitch b{color:#fff;}
+
+  .funnel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:8px 16px;}
+  .frow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+  .frow:last-child{border-bottom:none;}
+  .frow .l{font-family:'Inter';font-size:13.5px;color:#cdd0d4;display:flex;align-items:center;gap:9px;}
+  .frow .l .d{width:8px;height:8px;border-radius:50%;}
+  .frow .v{font-family:'Poppins';font-weight:700;font-size:15px;color:#fff;}
+  .frow.key .v{color:var(--mint);}
+
+  .act-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06);align-items:flex-start;}
+  .act-row:last-child{border:none;}
+  .act-row .ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .act-row .x b{font-family:'Poppins';font-weight:600;font-size:13px;color:#fff;}
+  .act-row .x small{display:block;font-family:'Inter';font-size:12px;color:var(--grey);margin-top:1px;}
+  .act-row .when{margin-left:auto;font-family:'Inter';font-size:11px;color:var(--grey);white-space:nowrap;}
+
+  .val-intro{text-align:center;padding:6px 0 14px;}
+  .val-intro h2{font-family:'Fraunces',serif;font-weight:600;font-size:26px;color:#fff;}
+  .val-intro p{font-family:'Inter';font-size:13px;color:#aeb2b8;margin-top:8px;line-height:1.5;}
+  .codebox{display:flex;justify-content:center;gap:10px;margin:18px 0;}
+  .digit{width:54px;height:64px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;font-size:28px;color:#fff;}
+  .digit.fill{border-color:var(--mint);background:rgba(0,224,160,.08);}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;}
+  .key{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;font-family:'Poppins';font-weight:700;font-size:22px;color:#fff;cursor:pointer;transition:transform .1s;}
+  .key:active{transform:scale(.94);background:rgba(255,255,255,.1);}
+  .key.fn{font-size:15px;color:var(--grey);}
+  .or{text-align:center;font-family:'Inter';font-size:12px;color:var(--grey);margin:18px 0;}
+  .qrbtn{width:100%;border:1px dashed rgba(255,255,255,.2);background:rgba(255,255,255,.02);border-radius:16px;padding:14px;color:#cdd0d4;font-family:'Poppins';font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .val-msg{text-align:center;font-family:'Inter';font-size:13px;min-height:18px;margin-top:14px;}
+
+  .ov{position:absolute;inset:0;z-index:120;background:rgba(5,6,10,.96);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+  .ov.show{opacity:1;pointer-events:auto;}
+  .ov .check{width:84px;height:84px;border-radius:50%;background:linear-gradient(160deg,var(--mint),var(--mint-deep));display:flex;align-items:center;justify-content:center;font-size:44px;color:#06231a;box-shadow:0 0 50px rgba(0,224,160,.45);}
+  .ov h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;margin-top:18px;}
+  .ov h2 .mint{color:var(--mint);}
+  .ov .who{font-family:'Inter';font-size:13.5px;color:#aeb2b8;margin-top:6px;}
+  .lvlcard{background:rgba(0,224,160,.07);border:1px solid rgba(0,224,160,.3);border-radius:18px;padding:18px;margin-top:22px;width:100%;}
+  .lvlcard .step{font-family:'Poppins';font-weight:700;font-size:13px;color:var(--mint);}
+  .lvlcard .hearts{font-size:24px;letter-spacing:5px;margin:10px 0;}
+  .lvlcard .unlock{font-family:'Inter';font-size:13px;color:#fff;background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.4);border-radius:12px;padding:10px;margin-top:6px;}
+  .ov .note{font-family:'Inter';font-size:11.5px;color:var(--grey);margin-top:16px;line-height:1.5;max-width:300px;}
+
+  .card-block{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:14px;}
+  .cb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cb-head .t{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;}
+  .status{font-family:'Poppins';font-weight:700;font-size:10.5px;padding:4px 9px;border-radius:999px;}
+  .status.on{color:#06231a;background:var(--mint);}
+  .status.off{color:#cdd0d4;background:rgba(255,255,255,.1);}
+  .cb-offer{display:flex;align-items:center;gap:12px;}
+  .cb-offer .em{width:46px;height:46px;border-radius:12px;background:linear-gradient(160deg,#6b4a1e,#1a1208);display:flex;align-items:center;justify-content:center;font-size:24px;background-size:cover;background-position:center;}
+  .cb-offer .o b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
+  .cb-offer .o small{font-family:'Inter';font-size:12px;color:var(--grey);}
+  .cb-offer .price{margin-left:auto;font-family:'Poppins';font-weight:800;color:var(--mint);font-size:17px;}
+  .cb-note{font-family:'Inter';font-size:12px;color:#9aa0a6;margin-top:11px;line-height:1.5;border-top:1px solid rgba(255,255,255,.07);padding-top:11px;}
+  .cb-note b{color:#cdd0d4;}
+  .field{margin-top:10px;}
+  .field label{font-family:'Poppins';font-weight:600;font-size:12px;color:#cdd0d4;display:block;margin-bottom:6px;}
+  .field input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-family:'Inter';font-size:14px;padding:12px;outline:none;}
+  .field input:focus{border-color:rgba(0,224,160,.5);}
+  .seg{display:flex;gap:8px;}
+  .seg button{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px;color:#cdd0d4;font-family:'Poppins';font-weight:600;font-size:13px;cursor:pointer;}
+  .seg button.on{border-color:var(--mint);background:rgba(0,224,160,.1);color:var(--mint);}
+  .btn{width:100%;border:none;cursor:pointer;border-radius:15px;padding:14px;font-family:'Poppins';font-weight:700;font-size:15px;margin-top:14px;transition:transform .12s;}
+  .btn:active{transform:scale(.98);}
+  .btn-mint{background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;}
+  .btn-wa{background:#25D366;color:#06241a;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+  .fid-intro{font-family:'Inter';font-size:13px;color:#aeb2b8;line-height:1.55;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:16px;}
+  .fid-intro b{color:#fff;}
+  .ladder{position:relative;}
+  .lvl{display:flex;gap:13px;align-items:flex-start;padding:4px 0;}
+  .lvl .rail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .lvl .dot{width:30px;height:30px;border-radius:50%;background:rgba(0,224,160,.12);border:2px solid var(--mint);color:var(--mint);display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;font-size:13px;}
+  .lvl .line{width:2px;flex:1;min-height:26px;background:rgba(0,224,160,.25);margin:3px 0;}
+  .lvl:last-child .line{display:none;}
+  .lvl .body{flex:1;padding-bottom:14px;}
+  .lvl .name{font-family:'Poppins';font-weight:700;font-size:13.5px;color:#fff;}
+  .lvl .cond{font-family:'Inter';font-size:11.5px;color:var(--grey);}
+  .lvl .perk{display:flex;align-items:center;gap:8px;background:rgba(255,196,0,.1);border:1px solid rgba(255,196,0,.35);border-radius:12px;padding:9px 12px;margin-top:8px;cursor:pointer;}
+  .lvl .perk .pk{font-family:'Inter';font-size:13px;color:#ffe49a;flex:1;}
+  .lvl .perk .edit{font-size:13px;opacity:.6;}
+
+  .cf-prompt{width:100%;border:none;cursor:pointer;text-align:left;display:flex;align-items:center;gap:13px;background:linear-gradient(90deg,rgba(0,224,160,.16),rgba(0,224,160,.04));border:1px solid rgba(0,224,160,.4);border-radius:18px;padding:15px;margin-bottom:16px;}
+  .cf-prompt .cf-ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 6px 18px rgba(0,224,160,.35);}
+  .cf-prompt .cf-tx b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
+  .cf-prompt .cf-tx small{font-family:'Inter';font-size:11.5px;color:#9fd8c2;display:block;margin-top:2px;line-height:1.35;}
+  .cf-prompt .cf-go{margin-left:auto;color:var(--mint);font-size:22px;font-weight:700;}
+  .cf-head{text-align:center;padding:8px 0 6px;}
+  .cf-title{font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:#fff;}
+  .cf-sub{font-family:'Inter';font-size:13px;color:#aeb2b8;margin-top:6px;}
+  .cf-reasons{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .cf-reasons .rsn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 12px;color:#cdd0d4;font-family:'Poppins';font-weight:600;font-size:13px;cursor:pointer;text-align:left;}
+  .cf-reasons .rsn.on{border-color:var(--mint);background:rgba(0,224,160,.1);color:var(--mint);}
+  .cf-aud{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px 15px;margin-top:16px;font-family:'Inter';font-size:13px;color:#cdd0d4;line-height:1.6;}
+  .cf-aud b{color:#fff;}
+  .cf-aud .prio{color:#ffd84d;font-weight:600;}
+  .cf-live-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:14px auto 0;box-shadow:0 0 50px rgba(0,224,160,.45);}
+  .cf-live-h{font-family:'Fraunces',serif;font-weight:600;font-size:27px;text-align:center;margin-top:16px;}
+  .cf-live-h .mint{color:var(--mint);}
+  .cf-stats{display:flex;gap:10px;margin-top:22px;}
+  .cf-stats .cs{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 8px;text-align:center;}
+  .cf-stats .cs .v{font-family:'Poppins';font-weight:800;font-size:26px;color:#fff;}
+  .cf-stats .cs .v.mint{color:var(--mint);}
+  .cf-stats .cs .t{font-family:'Inter';font-size:11px;color:var(--grey);margin-top:3px;}
+  .cf-prio-note{background:rgba(255,196,0,.1);border:1px solid rgba(255,196,0,.35);border-radius:14px;padding:13px;margin-top:18px;font-family:'Inter';font-size:12.5px;color:#ffe49a;line-height:1.5;text-align:center;}
+  .cf-prio-note b{color:#fff;}
+  .cf-row2{display:flex;gap:10px;}
+  .cf-row2 .field2{flex:1;}
+  .cf-row2 .field2 label{font-family:'Poppins';font-weight:600;font-size:12px;color:#cdd0d4;display:block;margin-bottom:6px;}
+  .cf-row2 .field2 input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-family:'Inter';font-size:14px;padding:12px;outline:none;}
+  .cf-waves-preview{display:flex;flex-direction:column;gap:6px;}
+  .cf-waves-preview .wv{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 13px;}
+  .cf-waves-preview .wv.dim{opacity:.5;}
+  .cf-waves-preview .wv .b{font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;}
+  .cf-waves-preview .wv .f{font-family:'Inter';font-size:12px;color:var(--grey);}
+  .cf-places{text-align:center;font-family:'Poppins';font-weight:700;font-size:14px;color:var(--mint);margin-top:16px;}
+  .wave-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;margin-top:10px;}
+  .wave-row .wl{font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;}
+  .wave-row .wm{font-family:'Inter';font-size:11.5px;color:var(--grey);}
+  .wave-row .wr{margin-left:auto;font-family:'Poppins';font-weight:800;font-size:16px;color:var(--mint);}
+  .cf-complete{text-align:center;font-family:'Fraunces',serif;font-weight:600;font-size:21px;color:#fff;margin-top:18px;}
+  .btn-ghost{background:none;color:#aeb2b8;font-weight:600;font-size:14px;padding:10px;}
+  .fans-asset{display:flex;align-items:center;justify-content:space-between;background:rgba(0,224,160,.06);border:1px solid rgba(0,224,160,.25);border-radius:14px;padding:13px 15px;margin-top:10px;font-family:'Inter';font-size:13px;color:#9fd8c2;}
+  .fans-asset b{color:var(--mint);font-family:'Poppins';font-weight:800;font-size:17px;}
+  .coupbtn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding-top:4px;}
+  .coupbtn .cf{width:54px;height:54px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 8px 22px rgba(0,224,160,.45);margin-top:-20px;border:3px solid var(--bg);}
+  .coupbtn .cflbl{font-family:'Poppins';font-weight:700;font-size:10.5px;color:var(--mint);}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(11,13,18,.92);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);display:flex;z-index:100;padding-bottom:10px;}
+  .tab{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--grey);font-family:'Poppins';font-weight:600;font-size:10.5px;padding-top:10px;}
+  .tab .i{font-size:21px;line-height:1;filter:grayscale(1) opacity(.6);}
+  .tab.on{color:var(--mint);}
+  .tab.on .i{filter:none;}
+
+  .toast{position:absolute;left:20px;right:20px;bottom:92px;background:#1c2128;border:1px solid rgba(0,224,160,.4);color:#fff;font-family:'Poppins';font-weight:600;font-size:13.5px;padding:13px 16px;border-radius:14px;text-align:center;z-index:130;opacity:0;transform:translateY(10px);transition:.3s;}
+  .toast.show{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+  <div class="phone">
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="pane active" id="tab-dash">
+        <div class="head">
+          <div class="greet"><b id="greetName">Bonjour 👋</b><small id="greetSub">· <span class="logo" style="font-size:13px">Pop<span>ey</span></span><span class="pro-badge">PRO</span></small></div>
+          <div class="ava" id="ava">🏪</div>
+        </div>
+
+        <button class="cf-prompt" onclick="openCoup()">
+          <div class="cf-ic">⚡</div>
+          <div class="cf-tx"><b>Boutique calme ? Lance un coup de feu.</b><small id="cfPromptSub">Fais venir tes fans en 10 min · tes fidèles prévenus en premier</small></div>
+          <div class="cf-go">›</div>
+        </button>
+
+        <div class="hero">
+          <div class="lbl">💚 Clients fidélisés grâce à Popey</div>
+          <div class="big"><span id="mHabitues">0</span> habitués</div>
+          <div class="sub">des inconnus devenus clients réguliers</div>
+          <div class="roi">
+            <div class="box"><div class="v" id="mPromos">0 €</div><div class="t">promos offertes</div></div>
+            <div class="box"><div class="v mint" id="mAfter">0 €</div><div class="t">générés après la promo</div></div>
+            <div class="box"><div class="v mint" id="mRoi">—</div><div class="t">retour / promo</div></div>
+          </div>
+          <div class="pitch" id="mPitch">La promo n'est pas une perte : c'est un premier rendez-vous.</div>
+        </div>
+
+        <div class="ptitle"><span class="k">Le parcours</span></div>
+        <div class="funnel">
+          <div class="frow"><span class="l"><span class="d" style="background:#5C6168"></span>Vues du catalogue</span><span class="v" id="fViews">0</span></div>
+          <div class="frow"><span class="l"><span class="d" style="background:#7a8a9a"></span>« Je veux »</span><span class="v" id="fWant">0</span></div>
+          <div class="frow"><span class="l"><span class="d" style="background:#9ab0a6"></span>Réservations</span><span class="v" id="fReserve">0</span></div>
+          <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Visites validées</span><span class="v" id="fVisits">0</span></div>
+          <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Devenus habitués</span><span class="v" id="fHab">0</span></div>
+        </div>
+        <div class="fans-asset"><span>📣 Fans abonnés à tes alertes (joignables d'un clic)</span><b id="mFans">0</b></div>
+
+        <div class="ptitle"><span class="k">Activité récente</span></div>
+        <div class="funnel" id="activityList">
+          <div class="act-row"><div class="ic">✨</div><div class="x"><b>Bienvenue sur ton espace Popey</b><small>Tes visites validées et tes avis apparaîtront ici.</small></div></div>
+        </div>
+      </div>
+
+      <!-- ===== VALIDER ===== -->
+      <div class="pane" id="tab-valider">
+        <div class="val-intro">
+          <h2>Valider une visite</h2>
+          <p>Le client te montre son code Popey. C'est <b>le seul moment</b> où un cœur s'ajoute, où l'avis se débloque, et où le revenu est compté.</p>
+        </div>
+        <div class="codebox" id="codebox">
+          <div class="digit"></div><div class="digit"></div><div class="digit"></div><div class="digit"></div>
+        </div>
+        <div class="keypad" id="keypad">
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key fn" data-fn="clear">Effacer</div><div class="key">0</div><div class="key fn" data-fn="del">⌫</div>
+        </div>
+        <div class="val-msg" id="valMsg"></div>
+        <div class="or">— ou —</div>
+        <button class="qrbtn" onclick="toast('📷 Le scan QR arrive bientôt — saisis le code à 4 chiffres pour le moment.')">📷 Scanner le QR du client</button>
+      </div>
+
+      <!-- ===== OFFRES ===== -->
+      <div class="pane" id="tab-offres">
+        <div class="ptitle"><span class="k">Acquisition · 1 par mois</span></div>
+        <div class="card-block">
+          <div class="cb-head"><span class="t">Offre du catalogue</span><span class="status on" id="offerStatus">EN LIGNE</span></div>
+          <div class="cb-offer">
+            <div class="em" id="offerEm">🏷️</div>
+            <div class="o"><b id="offerProd">—</b><small id="offerEd">Édition en cours</small></div>
+            <div class="price" id="offerPrice"></div>
+          </div>
+          <div class="cb-note">📅 <b>Une seule par édition.</b> C'est le coup de projecteur mensuel qui crée la rareté et amène les nouveaux clients.</div>
+        </div>
+
+        <div class="ptitle"><span class="k">Réactivation · quand tu veux</span></div>
+        <div class="card-block" onclick="openCoup()" style="cursor:pointer">
+          <div class="cb-head"><span class="t">⚡ Coup de feu</span><span class="status on">RAPIDE</span></div>
+          <div class="cb-offer">
+            <div class="em" style="background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a">⚡</div>
+            <div class="o"><b>Fais venir tes clients maintenant</b><small>Rappelle tes fans par WhatsApp en 2 clics</small></div>
+            <div class="price" style="font-size:24px">›</div>
+          </div>
+          <div class="cb-note">⚡ Pour un mardi creux, des invendus, une nouveauté. <b>Tes fidèles sont prévenus en premier.</b> Une flash ne fait pas monter de niveau — seule la visite qui en découle le peut.</div>
+        </div>
+      </div>
+
+      <!-- ===== FIDÉLITÉ ===== -->
+      <div class="pane" id="tab-fidelite">
+        <div class="ptitle"><span class="k">La relation · configuré une fois</span></div>
+        <div class="fid-intro">La promo amène le client. <b>Ton programme le fait revenir.</b> Tu choisis la récompense de chaque palier — débloquée à chaque <b>visite validée</b>, jamais en tapant un bouton. Modifiable quand tu veux.</div>
+        <div class="ladder" id="ladder"></div>
+      </div>
+
+      <!-- ===== COUP DE FEU ===== -->
+      <div class="pane" id="tab-coupdefeu">
+        <div class="cf-head">
+          <div class="cf-title">⚡ Coup de feu</div>
+          <div class="cf-sub">Fais venir tes clients, maintenant.</div>
+        </div>
+        <div id="cfCompose">
+          <div class="ptitle"><span class="k">1 · Pourquoi ?</span></div>
+          <div class="cf-reasons" id="cfReasons">
+            <button class="rsn on">🥐 Invendus à écouler</button>
+            <button class="rsn">🕐 Heure creuse</button>
+            <button class="rsn">✨ Nouveauté</button>
+            <button class="rsn">🎉 Évènement</button>
+          </div>
+          <div class="ptitle"><span class="k">2 · Ton offre</span></div>
+          <div class="field"><input id="cfOffer" placeholder="Ex : −50% sur la fournée de 17h"></div>
+          <div class="cf-row2">
+            <div class="field2"><label>Places</label><input id="cfPlaces" value="20" inputmode="numeric"></div>
+            <div class="field2"><label>Durée</label><div class="seg" id="cfDur"><button class="on">1 h</button><button>2 h</button><button>Soir</button></div></div>
+          </div>
+          <div class="ptitle"><span class="k">3 · À qui ? · par vagues</span></div>
+          <div class="cf-waves-preview" id="cfWavesPreview"></div>
+          <div class="cf-aud">🥇 <b>On commence par tes fidèles</b>, on élargit seulement si les places ne se remplissent pas. Tu ne déranges (et ne paies) que le nécessaire.</div>
+          <button class="btn btn-mint" onclick="fireCoup()">🚀 Lancer la 1ʳᵉ vague</button>
+        </div>
+        <div id="cfLive" style="display:none">
+          <div class="cf-live-check">⚡</div>
+          <h2 class="cf-live-h">Coup de feu <span class="mint">en cours</span></h2>
+          <div class="cf-places" id="cfPlacesLeft"></div>
+          <div id="cfWaveList"></div>
+          <div id="cfWaveAction"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- success overlay -->
+    <div class="ov" id="ov">
+      <div class="check">✓</div>
+      <h2>Visite <span class="mint">validée</span></h2>
+      <div class="who" id="ovWho"></div>
+      <div class="lvlcard">
+        <div class="step" id="ovStep"></div>
+        <div class="hearts" id="ovHearts"></div>
+        <div class="unlock" id="ovUnlock"></div>
+      </div>
+      <div class="note">Ce geste vient d'ajouter +1 cœur, de débloquer son avis vérifié, et de compter sa visite dans ton tableau de bord.</div>
+      <button class="btn btn-mint" style="width:100%;max-width:300px" onclick="closeOv()">Terminer</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- tabbar -->
+    <div class="tabbar">
+      <button class="tab on" data-tab="dash"><span class="i">📊</span>Activité</button>
+      <button class="tab" data-tab="valider"><span class="i">✅</span>Valider</button>
+      <button class="coupbtn" onclick="openCoup()"><span class="cf">⚡</span><span class="cflbl">Coup de feu</span></button>
+      <button class="tab" data-tab="offres"><span class="i">🏷️</span>Offres</button>
+      <button class="tab" data-tab="fidelite"><span class="i">💚</span>Fidélité</button>
+    </div>
+  </div>
+
+<script>
+var QP=new URLSearchParams(location.search);
+var PRO=(QP.get('p')||QP.get('token')||'').trim();
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var PLACE_ID='';      // résolu par /api pro-context
+var MERCHANT={name:'',metier:'',city:'',emoji:'🏪'};
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  t.classList.add('on');
+  document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  document.querySelector('.content').scrollTop=0;
+}));
+function gotoTab(name){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));var t=document.querySelector('.tab[data-tab="'+name+'"]');if(t)t.classList.add('on');document.getElementById('tab-'+name).classList.add('active');document.querySelector('.content').scrollTop=0;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function hearts(n){n=Math.max(0,Math.min(5,n||0));return '💚'.repeat(n)+'🤍'.repeat(5-n);}
+
+/* ───────── VALIDER : code 4 chiffres → API ───────── */
+let code="";
+function renderCode(){const d=document.querySelectorAll('#codebox .digit');d.forEach((el,i)=>{el.textContent=code[i]||"";el.classList.toggle('fill',!!code[i]);});}
+document.querySelectorAll('#keypad .key').forEach(k=>k.addEventListener('click',()=>{
+  const fn=k.dataset.fn;
+  if(fn==='clear')code="";
+  else if(fn==='del')code=code.slice(0,-1);
+  else if(code.length<4)code+=k.textContent;
+  renderCode();document.getElementById('valMsg').textContent='';
+  if(code.length===4)setTimeout(doValidate,180);
+}));
+function doValidate(){
+  var msg=document.getElementById('valMsg');msg.style.color='#aeb2b8';msg.textContent='Vérification…';
+  fetch('/api/popey-human/privilege/visit/validate',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({token:PRO,placeId:PLACE_ID,code:code})})
+    .then(r=>r.json().catch(()=>({})).then(d=>({ok:r.ok,d}))).then(res=>{
+      if(res.ok&&res.d&&res.d.ok){showOv(res.d);code="";renderCode();}
+      else{msg.style.color='#FCA5A5';msg.textContent=(res.d&&res.d.error)||'Code invalide ou expiré.';}
+    }).catch(()=>{msg.style.color='#FCA5A5';msg.textContent='Connexion impossible.';});
+}
+function showOv(d){
+  document.getElementById('ovWho').textContent=(d.name||'Client')+' · '+(d.level)+(d.level>1?'ᵉ':'ʳᵉ')+' visite chez toi';
+  document.getElementById('ovStep').textContent='Niveau '+(d.level-1)+' → '+d.level+' · '+(d.status||'');
+  document.getElementById('ovHearts').textContent=hearts(d.level);
+  var unlock=document.getElementById('ovUnlock');
+  if(d.reward){unlock.style.display='';unlock.innerHTML='🎁 Récompense débloquée : <b>'+esc(d.reward)+'</b> — pense à lui proposer !';}
+  else{unlock.style.display='none';}
+  document.getElementById('ov').classList.add('show');
+}
+function closeOv(){document.getElementById('ov').classList.remove('show');gotoTab('dash');loadProData();}
+
+/* ───────── COUP DE FEU (simulation maquette + envoi réel à brancher) ───────── */
+document.querySelectorAll('#cfReasons .rsn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfReasons .rsn').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+document.querySelectorAll('#cfDur button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfDur button').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+var cfWaves=[{lbl:"🥇 Niveau 5",fans:0,res:0,prio:true},{lbl:"Niveau 4",fans:0,res:0,prio:true},{lbl:"Niveau 3",fans:0,res:0,prio:true},{lbl:"Niveau 1-2 · tous",fans:0,res:0,prio:false}];
+function renderWavesPreview(){document.getElementById('cfWavesPreview').innerHTML=cfWaves.map((w,i)=>`<div class="wv ${i===cfWaves.length-1?'dim':''}"><span class="b">${w.lbl}</span><span class="f">${w.fans} fans</span></div>`).join('');}
+function openCoup(){gotoTab('coupdefeu');document.getElementById('cfCompose').style.display='';document.getElementById('cfLive').style.display='none';}
+let cfTotal=20,cfReserved=0,cfWaveIdx=-1,cfSent=[],cfPrio=0;
+function fireCoup(){cfTotal=parseInt(document.getElementById('cfPlaces').value)||20;cfReserved=0;cfWaveIdx=-1;cfSent=[];cfPrio=0;document.getElementById('cfCompose').style.display='none';document.getElementById('cfLive').style.display='';document.querySelector('.content').scrollTop=0;sendNextWave();}
+function sendNextWave(){cfWaveIdx++;const w=cfWaves[cfWaveIdx];const remaining=cfTotal-cfReserved;const got=Math.max(0,Math.min(w.res||Math.ceil(w.fans*0.2),remaining));cfReserved+=got;if(w.prio)cfPrio+=got;cfSent.push({lbl:w.lbl,fans:w.fans,res:got});renderWaves();}
+function renderWaves(){
+  document.getElementById('cfPlacesLeft').textContent=cfReserved+' / '+cfTotal+' places réservées';
+  document.getElementById('cfWaveList').innerHTML=cfSent.map(s=>`<div class="wave-row"><div><div class="wl">${s.lbl}</div><div class="wm">${s.fans} fans prévenus</div></div><div class="wr">+${s.res}</div></div>`).join('');
+  const full=cfReserved>=cfTotal,last=cfWaveIdx>=cfWaves.length-1;const act=document.getElementById('cfWaveAction');
+  if(full||last){const totalFans=cfSent.reduce((a,s)=>a+s.fans,0);act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${cfReserved} places remplies avec <b>${totalFans} fans prévenus</b>. <b>${cfPrio} fidèles servis en priorité.</b> Chaque visite validée = +1 cœur.</div><button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;}
+  else{const next=cfWaves[cfWaveIdx+1];act.innerHTML=`<div class="cf-prio-note">Il reste <b>${cfTotal-cfReserved} places</b>. Élargir à la vague suivante ?</div><button class="btn btn-mint" onclick="sendNextWave()">Élargir → ${next.lbl} (${next.fans} fans)</button><button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;}
+}
+function endCoup(){gotoTab('dash');}
+
+/* ───────── FIDÉLITÉ : paliers (lecture/édition via API) ───────── */
+var levels=[{n:1,cond:"1ʳᵉ visite validée",perk:"Bienvenue + ta carte Popey démarrée"},{n:2,cond:"2 visites",perk:"−10 % sur l'addition"},{n:3,cond:"3 visites",perk:"Café offert ☕"},{n:4,cond:"5 visites",perk:"Une viennoiserie offerte"},{n:5,cond:"10 visites",perk:"Habitué·e : ta baguette offerte chaque semaine"}];
+function renderLadder(){document.getElementById('ladder').innerHTML=levels.map((l,i)=>`<div class="lvl"><div class="rail"><div class="dot">${l.n}</div><div class="line"></div></div><div class="body"><div class="name">Niveau ${l.n}</div><div class="cond">${esc(l.cond)}</div><div class="perk" onclick="editPerk(${i})"><span class="pk">🎁 ${esc(l.perk)}</span><span class="edit">✏️</span></div></div></div>`).join('');}
+function editPerk(i){const v=prompt("Récompense du niveau "+levels[i].n+" :",levels[i].perk);if(v!==null&&v.trim()){levels[i].perk=v.trim();renderLadder();saveTiers();toast("✅ Récompense mise à jour");}}
+function saveTiers(){if(!PLACE_ID)return;fetch('/api/popey-human/privilege/loyalty-tiers',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({token:PRO,placeId:PLACE_ID,tiers:levels.map((l,i)=>({idx:i+1,threshold:parseInt(l.cond)||(i+1),reward:l.perk}))})}).catch(()=>{});}
+
+/* ───────── Données pro réelles ───────── */
+function loadProData(){
+  fetch('/api/popey-human/privilege/pro-context?'+(PRO?('p='+encodeURIComponent(PRO)):''),{cache:'no-store'})
+    .then(r=>r.json()).then(d=>{
+      if(!d||d.error)return;
+      PLACE_ID=d.placeId||'';MERCHANT=d.merchant||MERCHANT;
+      document.getElementById('greetName').textContent='Bonjour '+(MERCHANT.name||'')+' 👋';
+      document.getElementById('greetSub').innerHTML=esc((MERCHANT.metier||'')+(MERCHANT.city?' · '+MERCHANT.city:''))+' · <span class="logo" style="font-size:13px">Pop<span>ey</span></span><span class="pro-badge">PRO</span>';
+      if(MERCHANT.emoji)document.getElementById('ava').textContent=MERCHANT.emoji;
+      var s=d.stats||{};
+      document.getElementById('mHabitues').textContent=s.habitues||0;
+      document.getElementById('mPromos').textContent=(s.promosEur||0)+' €';
+      document.getElementById('mAfter').textContent=(s.afterEur||0)+' €';
+      document.getElementById('mRoi').textContent=s.roi?('×'+s.roi):'—';
+      if(s.promosEur||s.afterEur)document.getElementById('mPitch').innerHTML='Tu as offert <b>'+(s.promosEur||0)+' €</b> de promo. Ils sont revenus <b>au plein tarif</b> et t\'ont rapporté <b>'+(s.afterEur||0)+' €</b>. <b>La promo n\'était pas une perte, c\'était un premier rendez-vous.</b>';
+      document.getElementById('fViews').textContent=s.views||0;document.getElementById('fWant').textContent=s.want||0;document.getElementById('fReserve').textContent=s.reservations||0;document.getElementById('fVisits').textContent=s.visits||0;document.getElementById('fHab').textContent=s.habitues||0;
+      document.getElementById('mFans').textContent=s.fans||0;
+      document.getElementById('cfPromptSub').textContent='Fais venir tes '+(s.fans||0)+' fans en 10 min · tes fidèles prévenus en premier';
+      if(Array.isArray(d.activity)&&d.activity.length){document.getElementById('activityList').innerHTML=d.activity.map(a=>`<div class="act-row"><div class="ic">${a.icon||'•'}</div><div class="x"><b>${esc(a.title)}</b><small>${esc(a.sub||'')}</small></div><span class="when">${esc(a.when||'')}</span></div>`).join('');}
+      if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
+      if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
+      if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
+    }).catch(()=>{});
+}
+
+/* ───────── Init ───────── */
+renderLadder();renderCode();renderWavesPreview();
+loadProData();
+</script>
+</body>
+</html>
