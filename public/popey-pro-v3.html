@@ -190,6 +190,31 @@
   .lb-row .bdg{font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:999px;white-space:nowrap;font-family:'Poppins';}
   .bdg.top{background:rgba(0,224,160,.16);color:#7ef0ce;} .bdg.ok{background:rgba(56,189,248,.16);color:#7dd3fc;} .bdg.warn{background:rgba(248,113,113,.16);color:#fca5a5;} .bdg.soon{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);}
   .lb-foot{font-family:'Inter';font-size:11.5px;color:var(--grey);text-align:center;margin-top:8px;}
+  /* Mes fans + quota + ajout client */
+  .quota-line{font-family:'Inter';font-size:12px;color:var(--grey);margin-bottom:12px;}
+  .quota-line b{color:#fff;}
+  .quota-line .bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden;}
+  .quota-line .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));border-radius:999px;}
+  .fans-pending{font-family:'Inter';font-size:12px;color:#ffd84d;background:rgba(255,216,77,.08);border:1px solid rgba(255,216,77,.25);border-radius:11px;padding:9px 12px;margin-bottom:10px;line-height:1.4;}
+  .fans-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+  .fan-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 12px;}
+  .fan-row .av{width:30px;height:30px;border-radius:9px;background:rgba(0,224,160,.14);color:var(--mint);display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;font-size:13px;flex-shrink:0;}
+  .fan-row .fn{flex:1;min-width:0;}
+  .fan-row .fn b{font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fan-row .fn small{font-family:'Inter';font-size:11px;color:var(--grey);}
+  .fan-row .lv{font-family:'Inter';font-size:11px;color:var(--grey);white-space:nowrap;}
+  .fan-row .pend{font-size:10px;font-weight:700;color:#ffd84d;background:rgba(255,216,77,.12);padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .pscrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .25s;z-index:130;}
+  .pscrim.show{opacity:1;pointer-events:auto;}
+  .psheet{position:absolute;left:0;right:0;bottom:0;background:#11151d;border-radius:24px 24px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(115%);transition:transform .3s cubic-bezier(.2,.9,.2,1);z-index:131;border-top:1px solid rgba(255,255,255,.08);}
+  .psheet.open{transform:translateY(0);}
+  .psheet h3{font-family:'Poppins';font-weight:800;font-size:18px;margin-bottom:4px;}
+  .psheet .psub{color:var(--grey);font-size:12.5px;margin-bottom:14px;line-height:1.45;}
+  .psheet .field{margin-bottom:11px;}
+  .psheet .field label{display:block;font-size:11.5px;color:var(--grey);margin-bottom:5px;font-weight:600;}
+  .psheet .field input{width:100%;background:#0B0D12;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px;color:#fff;font-size:15px;font-family:'Inter';}
+  .psheet .field input:focus{outline:none;border-color:var(--mint);}
+  .psheet .pmsg{font-size:12.5px;min-height:14px;margin-bottom:8px;}
   .coupbtn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding-top:4px;}
   .coupbtn .cf{width:54px;height:54px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 8px 22px rgba(0,224,160,.45);margin-top:-20px;border:3px solid var(--bg);}
   .coupbtn .cflbl{font-family:'Poppins';font-weight:700;font-size:10.5px;color:var(--mint);}
@@ -339,6 +364,12 @@
           <div class="cf-waves-preview" id="cfWavesPreview"></div>
           <div class="cf-aud">🥇 <b>On commence par tes fidèles</b>, on élargit seulement si les places ne se remplissent pas. Tu ne déranges (et ne paies) que le nécessaire.</div>
           <button class="btn btn-mint" onclick="fireCoup()">🚀 Lancer la 1ʳᵉ vague</button>
+
+          <div class="ptitle"><span class="k">👥 Tes fans · <span id="fansCount">—</span></span></div>
+          <div class="quota-line" id="quotaLine" style="display:none"></div>
+          <div class="fans-pending" id="fansPending" style="display:none"></div>
+          <div class="fans-list" id="fansList"></div>
+          <button class="btn btn-ghost" onclick="openAddClient()">➕ Ajouter un client à mes alertes</button>
         </div>
         <div id="cfLive" style="display:none">
           <div class="cf-live-check">⚡</div>
@@ -363,6 +394,18 @@
       </div>
       <div class="note">Ce geste vient d'ajouter +1 cœur, de débloquer son avis vérifié, et de compter sa visite dans ton tableau de bord.</div>
       <button class="btn btn-mint" style="width:100%;max-width:300px" onclick="closeOv()">Terminer</button>
+    </div>
+
+    <!-- ajouter un client (double opt-in) -->
+    <div class="pscrim" id="addScrim" onclick="closeAddClient()"></div>
+    <div class="psheet" id="addSheet">
+      <h3>Ajouter un client</h3>
+      <div class="psub">On lui envoie <b>un seul</b> WhatsApp de confirmation. Il rejoint tes alertes <b>uniquement s'il répond OUI</b> (obligatoire, RGPD). Pas d'app à installer.</div>
+      <div class="pmsg" id="addMsg"></div>
+      <div class="field"><label>Prénom</label><input id="acName" placeholder="Léa" autocomplete="given-name"></div>
+      <div class="field"><label>Numéro de téléphone</label><input id="acPhone" type="tel" placeholder="06 12 34 56 78" autocomplete="tel"></div>
+      <button class="btn btn-mint" onclick="submitAddClient()">Envoyer l'invitation</button>
+      <button class="btn btn-ghost" onclick="closeAddClient()">Annuler</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -437,7 +480,7 @@ function durMinutes(){var b=document.querySelector('#cfDur button.on');var t=b?b
 function selectedReason(){var b=document.querySelector('#cfReasons .rsn.on');return b?b.textContent.trim():'';}
 /* À l'ouverture : reprend une campagne live en cours, sinon affiche le composer + l'aperçu des vagues. */
 function openCoup(){
-  gotoTab('coupdefeu');
+  gotoTab('coupdefeu');loadFans();
   fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d&&Array.isArray(d.wavesPreview)&&d.wavesPreview.length){cfWaves=d.wavesPreview.map(w=>({lbl:w.label,fans:w.fans}));renderWavesPreview();}
     if(d&&d.active){CAMPAIGN=d.active;showLive();renderLive();startPoll();}
@@ -498,6 +541,39 @@ function renderLive(){
   }
 }
 function endCoup(){if(cfPollTimer)clearInterval(cfPollTimer);CAMPAIGN=null;gotoTab('dash');loadProData();}
+
+/* ───────── MES FANS (liste + quota) + AJOUTER UN CLIENT (double opt-in) ───────── */
+function avatarLetter(name){var n=String(name||'').trim();return n?n[0].toUpperCase():'•';}
+function loadFans(){fetch('/api/popey-human/privilege/fans?p='+encodeURIComponent(PRO),{cache:'no-store'}).then(r=>r.json()).then(renderFans).catch(()=>{});}
+function renderFans(d){
+  if(!d)return;
+  document.getElementById('fansCount').textContent=(d.confirmed||0)+(d.pending?(' · '+d.pending+' en attente'):'');
+  var q=d.quota||{};var ql=document.getElementById('quotaLine');
+  if(q.included){var pct=Math.min(100,Math.round((q.used||0)/q.included*100));ql.style.display='';ql.innerHTML='💬 <b>'+(q.used||0)+'</b> / '+q.included+' messages coup de feu ce mois'+(q.monthLabel?(' · '+esc(q.monthLabel)):'')+'<div class="bar"><i style="width:'+pct+'%"></i></div>';}
+  var pend=document.getElementById('fansPending');
+  if(d.pending){pend.style.display='';pend.innerHTML='⏳ '+d.pending+' client'+(d.pending>1?'s':'')+' en attente de confirmation (doit répondre OUI par WhatsApp).';}else pend.style.display='none';
+  var list=Array.isArray(d.list)?d.list:[];var box=document.getElementById('fansList');
+  if(!list.length){box.innerHTML='<div class="lb-foot" style="text-align:left">Pas encore de fan. Ajoute tes clients ci-dessous ou partage ton lien pour qu\'ils s\'abonnent.</div>';return;}
+  box.innerHTML=list.map(function(f){
+    var st=f.status==='pending'?'<span class="pend">en attente</span>':'<span class="lv">'+hearts(f.level)+'</span>';
+    return '<div class="fan-row"><div class="av">'+esc(avatarLetter(f.name))+'</div><div class="fn"><b>'+esc(f.name||'Client')+'</b><small>'+esc(f.phoneMasked||'')+(f.addedByPro?' · ajouté par toi':'')+'</small></div>'+st+'</div>';
+  }).join('');
+}
+function openAddClient(){document.getElementById('acName').value='';document.getElementById('acPhone').value='';document.getElementById('addMsg').textContent='';document.getElementById('addScrim').classList.add('show');document.getElementById('addSheet').classList.add('open');}
+function closeAddClient(){document.getElementById('addScrim').classList.remove('show');document.getElementById('addSheet').classList.remove('open');}
+function submitAddClient(){
+  var name=(document.getElementById('acName').value||'').trim();
+  var phone=(document.getElementById('acPhone').value||'').trim();
+  var msg=document.getElementById('addMsg');msg.style.color='#FCA5A5';
+  if(name.length<2){msg.textContent='Entre le prénom.';return;}
+  if(phone.replace(/[^0-9]/g,'').length<9){msg.textContent='Entre un numéro valide.';return;}
+  msg.style.color='#9fd8c2';msg.textContent='Envoi…';
+  fetch('/api/popey-human/privilege/fans',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({p:PRO,name:name,phone:phone})})
+    .then(r=>r.json().catch(()=>({}))).then(d=>{
+      if(!d||d.error){msg.style.color='#FCA5A5';msg.textContent=(d&&d.error)||'Impossible.';return;}
+      closeAddClient();toast('📲 '+(d.message||'Invitation envoyée'));loadFans();
+    }).catch(()=>{msg.style.color='#FCA5A5';msg.textContent='Connexion impossible.';});
+}
 
 /* ───────── FIDÉLITÉ : paliers (lecture/édition via API) ───────── */
 var levels=[{n:1,cond:"1ʳᵉ visite validée",perk:"Bienvenue + ta carte Popey démarrée"},{n:2,cond:"2 visites",perk:"−10 % sur l'addition"},{n:3,cond:"3 visites",perk:"Café offert ☕"},{n:4,cond:"5 visites",perk:"Une viennoiserie offerte"},{n:5,cond:"10 visites",perk:"Habitué·e : ta baguette offerte chaque semaine"}];

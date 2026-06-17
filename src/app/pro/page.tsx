@@ -7,7 +7,7 @@ type Props = {
 export default async function PopeyProAppPage({ searchParams }: Props) {
   const sp = (await searchParams) || {};
   const query = new URLSearchParams();
-  query.set("v", "20260617-pro-share-rank");
+  query.set("v", "20260617-pro-fans");
   for (const [key, rawValue] of Object.entries(sp)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {
