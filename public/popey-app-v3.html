@@ -99,6 +99,17 @@
   .pill-mine{font-family:'Poppins';font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.35);color:var(--mint);display:flex;align-items:center;gap:6px;cursor:pointer;}
   .pill-mine .n{background:var(--mint);color:var(--ink);border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0 4px;}
   .hint{text-align:center;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;}
+  /* Bandeau Coups de feu en cours (in-app, gratuit, complément du push WhatsApp) */
+  .cf-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 0;margin-top:2px;scrollbar-width:none;}
+  .cf-strip::-webkit-scrollbar{display:none;}
+  .cf-strip:empty{display:none;}
+  .cf-chip{flex:0 0 auto;max-width:86%;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(240,96,143,.2),rgba(240,96,143,.05));border:1px solid rgba(240,96,143,.55);border-radius:15px;padding:9px 13px;cursor:pointer;animation:cfpulse 2.4s ease-in-out infinite;}
+  @keyframes cfpulse{0%,100%{box-shadow:0 0 0 0 rgba(240,96,143,.0);}50%{box-shadow:0 0 0 4px rgba(240,96,143,.12);}}
+  .cf-chip .ic{font-size:19px;flex-shrink:0;}
+  .cf-chip .tx{min-width:0;}
+  .cf-chip .tx b{display:block;font-family:'Poppins';font-weight:700;font-size:12.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cf-chip .tx small{display:block;font-family:'Inter';font-size:10.5px;color:#ffb4cd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cf-chip .go{margin-left:2px;color:#ffb4cd;font-weight:800;flex-shrink:0;}
   .actionbar{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:10px;}
   .act{border:none;cursor:pointer;border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;color:var(--grey);font-family:'Poppins';font-weight:600;font-size:11px;}
   .act .circle{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;transition:transform .12s;}
@@ -226,6 +237,7 @@
           <div class="pill-city" id="pillCity" onclick="openCity()" style="cursor:pointer">📍 Dax ▾</div>
           <div class="pill-mine" onclick="openMine()">❤ Mes offres <span class="n" id="mineCount">0</span></div>
         </div>
+        <div class="cf-strip" id="cfStrip"></div>
         <div class="deck-wrap"><div class="deck" id="mainDeck"></div></div>
         <div class="hint">tape la photo pour voir la vidéo & les images · swipe pour décider</div>
         <div class="actionbar">
@@ -700,12 +712,29 @@ function loadAllRelations(){
     }).catch(()=>{});
 }
 
+/* ───────── Coups de feu en cours (bandeau in-app, gratuit) ───────── */
+function loadCoups(){
+  var m=loadMember();
+  var u='/api/popey-human/privilege/coup/active?city='+encodeURIComponent(VILLE)+(m&&m.phone?'&phone='+encodeURIComponent(m.phone):'');
+  fetch(u,{cache:'no-store'}).then(r=>r.json()).then(d=>renderCoupStrip((d&&d.coups)||[])).catch(()=>{});
+}
+function renderCoupStrip(coups){
+  var el=document.getElementById('cfStrip');if(!el)return;
+  if(!coups.length){el.innerHTML='';return;}
+  el.innerHTML=coups.map(function(c){
+    var places=c.placesLeft!=null?(' · 🔥 '+c.placesLeft+' place'+(c.placesLeft>1?'s':'')):'';
+    return '<div class="cf-chip" onclick="openCoupOffer(\''+esc(c.id)+'\')"><div class="ic">⚡</div><div class="tx"><b>'+esc(c.merchant)+(c.priority?' 🥇':'')+'</b><small>'+esc(c.offerText||'Coup de feu')+places+'</small></div><div class="go">›</div></div>';
+  }).join('');
+}
+function openCoupOffer(id){location.href='/o/'+encodeURIComponent(id)+(location.search||'');}
+
 /* ───────── Init ───────── */
 document.getElementById('edition').textContent='ÉDITION '+CITY_LABEL.toUpperCase()+' · 2026';
 document.getElementById('pillCity').textContent='📍 '+CITY_LABEL+' ▾';
 document.getElementById('ctaSub').textContent='Édition · '+CITY_LABEL;
 renderLaunch();tick();
 loadOffers();
+loadCoups();setInterval(loadCoups,90000);
 </script>
 </body>
 </html>
