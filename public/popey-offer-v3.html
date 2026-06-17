@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Popey — Coup de feu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:#05060a;font-family:'Inter',system-ui,sans-serif;color:#fff;min-height:100dvh;}
+  .phone{position:relative;width:100%;max-width:480px;min-height:100dvh;margin:0 auto;background:#0B0D12;display:flex;flex-direction:column;overflow:hidden;}
+  @media(min-width:540px){.phone{min-height:auto;height:min(900px,100dvh);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:32px;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);}}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;}
+  .logo{font-family:'Poppins';font-weight:800;font-size:20px;letter-spacing:-.5px;}
+  .logo b{color:#34d399;}
+  .pill{font-family:'Poppins';font-weight:700;font-size:11px;padding:6px 11px;border-radius:999px;background:rgba(240,96,143,.16);border:1px solid rgba(240,96,143,.5);color:#ffb4cd;display:flex;align-items:center;gap:5px;}
+  .scroll{flex:1;overflow-y:auto;padding:8px 20px 140px;}
+  .hero{margin-top:10px;border-radius:24px;overflow:hidden;background:linear-gradient(160deg,#1a1f2b,#0d1016);border:1px solid rgba(255,255,255,.07);position:relative;}
+  .hero .ph{width:100%;height:190px;object-fit:cover;display:block;background:#11151d;}
+  .hero .noph{height:120px;display:flex;align-items:center;justify-content:center;font-size:54px;background:radial-gradient(circle at 50% 30%,#26408a33,transparent);}
+  .hero-body{padding:18px;}
+  .merchant{font-family:'Poppins';font-weight:800;font-size:23px;line-height:1.15;}
+  .meta{color:#9aa3b2;font-size:13px;margin-top:4px;}
+  .flame{margin:16px 0 6px;font-family:'Poppins';font-weight:800;font-size:13px;color:#ffb4cd;letter-spacing:.3px;text-transform:uppercase;display:flex;align-items:center;gap:7px;}
+  .offer{font-family:'Poppins';font-weight:700;font-size:20px;line-height:1.3;color:#fff;}
+  .rowinfo{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .chip{padding:10px 13px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .chip.fire{background:rgba(240,96,143,.12);border-color:rgba(240,96,143,.4);color:#ffd0e0;}
+  .chip b{font-family:'Poppins';font-weight:800;}
+  .prio{margin-top:16px;border-radius:16px;padding:13px 15px;background:linear-gradient(135deg,rgba(250,204,21,.16),rgba(250,204,21,.04));border:1px solid rgba(250,204,21,.4);font-size:13.5px;line-height:1.4;}
+  .prio b{color:#fde68a;font-family:'Poppins';}
+  .rel{margin-top:14px;border-radius:16px;padding:13px 15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:13px;color:#c7cdd9;line-height:1.5;}
+  .rel .hearts{font-size:18px;letter-spacing:2px;margin-bottom:4px;}
+  .cta{position:absolute;left:0;right:0;bottom:0;padding:16px 20px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,#0B0D12 28%);}
+  .btn{width:100%;border:0;border-radius:16px;padding:17px;font-family:'Poppins';font-weight:800;font-size:16px;cursor:pointer;background:linear-gradient(135deg,#34d399,#22c55e);color:#04130c;box-shadow:0 12px 30px rgba(34,197,94,.32);}
+  .btn:disabled{opacity:.5;filter:grayscale(.4);box-shadow:none;cursor:default;}
+  .btn.ghost{background:rgba(255,255,255,.07);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.12);}
+  .btn.wa{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;box-shadow:0 12px 30px rgba(37,211,102,.3);}
+  .sub{text-align:center;color:#8b93a3;font-size:12px;margin-top:10px;}
+  /* feuille réservation */
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20;}
+  .scrim.show{opacity:1;pointer-events:auto;}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#11151d;border-radius:26px 26px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .32s cubic-bezier(.2,.9,.2,1);z-index:21;border-top:1px solid rgba(255,255,255,.08);}
+  .sheet.open{transform:translateY(0);}
+  .sheet h3{font-family:'Poppins';font-weight:800;font-size:19px;margin-bottom:4px;}
+  .sheet p{color:#9aa3b2;font-size:13px;margin-bottom:16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;color:#9aa3b2;margin-bottom:6px;font-weight:600;}
+  .field input{width:100%;background:#0B0D12;border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;color:#fff;font-size:15px;font-family:'Inter';}
+  .field input:focus{outline:none;border-color:#34d399;}
+  .consent{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:#9aa3b2;margin:4px 0 16px;line-height:1.4;}
+  .consent input{margin-top:2px;width:16px;height:16px;accent-color:#34d399;flex:0 0 auto;}
+  .msg{font-size:13px;margin-bottom:10px;min-height:16px;}
+  /* code */
+  .codecard{margin-top:18px;border-radius:20px;padding:20px;text-align:center;background:linear-gradient(160deg,#10261c,#0b1410);border:1px solid rgba(52,211,153,.35);}
+  .codecard .lbl{font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+  .codecard .code{font-family:'Poppins';font-weight:800;font-size:46px;letter-spacing:10px;color:#34d399;margin:8px 0;}
+  .center{text-align:center;padding:60px 28px;color:#9aa3b2;}
+  .center .big{font-size:54px;margin-bottom:14px;}
+  .center h2{font-family:'Poppins';font-weight:800;font-size:22px;color:#fff;margin-bottom:8px;}
+  .hide{display:none !important;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <div class="logo">Pop<b>ey</b></div>
+    <div class="pill">⚡ Coup de feu</div>
+  </div>
+
+  <!-- état chargement / erreur -->
+  <div class="scroll" id="loadView"><div class="center"><div class="big">⚡</div><h2>On charge l'offre…</h2></div></div>
+
+  <!-- état offre -->
+  <div class="scroll hide" id="offerView">
+    <div class="hero">
+      <div id="heroMedia"></div>
+      <div class="hero-body">
+        <div class="merchant" id="mName">—</div>
+        <div class="meta" id="mMeta">—</div>
+        <div class="flame">🔥 Coup de feu · maintenant</div>
+        <div class="offer" id="oText">—</div>
+        <div class="rowinfo" id="oChips"></div>
+        <div class="prio hide" id="prioBox"></div>
+        <div class="rel" id="relBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- état réservé (code) -->
+  <div class="scroll hide" id="doneView"></div>
+
+  <div class="cta hide" id="ctaBox">
+    <button class="btn" id="reserveBtn" onclick="onReserve()">Réserver ma place</button>
+    <div class="sub" id="ctaSub">Réservation gratuite · présente-toi en boutique</div>
+  </div>
+
+  <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <h3>Réserver ma place</h3>
+    <p id="sheetSub">Juste ton prénom et ton numéro — pas de compte.</p>
+    <div class="msg" id="rMsg"></div>
+    <div class="field"><label>Prénom</label><input id="rFirst" placeholder="Léa" autocomplete="given-name"/></div>
+    <div class="field"><label>Numéro de téléphone</label><input id="rPhone" type="tel" placeholder="06 12 34 56 78" autocomplete="tel"/></div>
+    <label class="consent"><input type="checkbox" id="rConsent" checked/><span>Je veux être prévenu·e en premier des prochains coups de feu de ce commerçant (STOP à tout moment).</span></label>
+    <button class="btn" id="rSubmit" onclick="submitReserve()">Confirmer ma place</button>
+  </div>
+</div>
+
+<script>
+var P=new URLSearchParams(location.search);
+var OFFER_ID=(P.get('id')||'').trim();
+var DATA=null, CDTIMER=null;
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function loadMember(){try{var s=localStorage.getItem('popey_member');return s?JSON.parse(s):null;}catch(e){return null;}}
+function saveMember(first,phone){try{localStorage.setItem('popey_member',JSON.stringify({first:first||'',phone:phone||''}));}catch(e){}}
+function hearts(n){n=Math.max(0,Math.min(5,n||0));return '💚'.repeat(n)+'🤍'.repeat(5-n);}
+
+function fmtLeft(ts){if(!ts)return '';var d=new Date(ts).getTime()-Date.now();if(d<=0)return 'Terminé';var h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000);return h>0?(h+'h'+(m<10?'0':'')+m):(m+' min');}
+
+function load(){
+  if(!/^[0-9a-f-]{36}$/i.test(OFFER_ID)){showClosed('Offre introuvable','Ce lien n\'est plus valide.');return;}
+  var m=loadMember();
+  var u='/api/popey-human/privilege/coup/offer?id='+encodeURIComponent(OFFER_ID)+(m&&m.phone?'&phone='+encodeURIComponent(m.phone):'');
+  fetch(u,{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    if(!d||d.error){showClosed('Offre indisponible',d&&d.error||'Réessaie plus tard.');return;}
+    DATA=d;render(d);
+  }).catch(()=>showClosed('Connexion impossible','Vérifie ta connexion et réessaie.'));
+}
+
+function render(d){
+  $('loadView').classList.add('hide');$('doneView').classList.add('hide');
+  $('offerView').classList.remove('hide');$('ctaBox').classList.remove('hide');
+  // média
+  if(d.photo){$('heroMedia').innerHTML='<img class="ph" src="'+esc(d.photo)+'" alt="" onerror="this.parentNode.innerHTML=\'<div class=&quot;noph&quot;>🏪</div>\'">';}
+  else{$('heroMedia').innerHTML='<div class="noph">'+(d.logo?'<img class="ph" style="height:120px" src="'+esc(d.logo)+'" alt="">':'🏪')+'</div>';}
+  $('mName').textContent=d.merchant||'Commerçant';
+  $('mMeta').textContent=[d.metier,d.city].filter(Boolean).join(' · ')||'';
+  $('oText').textContent=d.offerText||'Offre spéciale';
+  // chips places + temps
+  var chips='';
+  if(d.placesLeft!=null){chips+='<div class="chip fire">🔥 <b>'+d.placesLeft+'</b> place'+(d.placesLeft>1?'s':'')+' restante'+(d.placesLeft>1?'s':'')+'</div>';}
+  if(d.expiresAt){chips+='<div class="chip">⏳ <b id="cdLeft">'+esc(fmtLeft(d.expiresAt))+'</b></div>';}
+  $('oChips').innerHTML=chips;
+  if(d.expiresAt){if(CDTIMER)clearInterval(CDTIMER);CDTIMER=setInterval(function(){var el=$('cdLeft');if(el)el.textContent=fmtLeft(d.expiresAt);},30000);}
+  // priorité (niveau >=3)
+  if(d.priority){$('prioBox').classList.remove('hide');$('prioBox').innerHTML='🥇 <b>'+esc(d.relStatus)+'</b> — tu fais partie des fidèles, tu es prévenu·e en premier. Ta place est prioritaire.';}
+  else{$('prioBox').classList.add('hide');}
+  // relation
+  $('relBox').innerHTML='<div class="hearts">'+hearts(d.level)+'</div>Relation niveau <b>'+(d.level||0)+'/5</b> avec '+esc(d.merchant)+'. Tu gagnes <b>+1 cœur</b> dès que le pro valide ta visite en boutique.';
+  // CTA état
+  if(!d.open){
+    $('reserveBtn').disabled=true;
+    $('reserveBtn').textContent=(d.placesLeft===0?'Complet — plus de place':'Coup de feu terminé');
+    $('ctaSub').textContent='Reste à l\'affût du prochain 🔥';
+  }else{
+    $('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';
+    $('ctaSub').textContent='Réservation gratuite · présente-toi en boutique';
+  }
+}
+
+function showClosed(title,sub){
+  $('loadView').classList.add('hide');$('offerView').classList.add('hide');$('ctaBox').classList.add('hide');
+  $('doneView').classList.remove('hide');
+  $('doneView').innerHTML='<div class="center"><div class="big">🕊️</div><h2>'+esc(title)+'</h2><p>'+esc(sub)+'</p></div>';
+}
+
+function onReserve(){
+  if(!DATA||!DATA.open)return;
+  var m=loadMember()||{};
+  if(m.phone&&m.phone.replace(/[^0-9]/g,'').length>=9){doReserve(m.first||'',m.phone,true);return;}
+  $('rFirst').value=m.first||'';$('rPhone').value=m.phone||'';$('rMsg').textContent='';
+  $('scrim').classList.add('show');$('sheet').classList.add('open');
+}
+function closeSheet(){$('scrim').classList.remove('show');$('sheet').classList.remove('open');}
+function submitReserve(){
+  var first=($('rFirst').value||'').trim(),phone=($('rPhone').value||'').trim(),consent=$('rConsent').checked;
+  var msg=$('rMsg');msg.style.color='#FCA5A5';
+  if(first.length<2){msg.textContent='Entre ton prénom.';return;}
+  if(phone.replace(/[^0-9]/g,'').length<9){msg.textContent='Entre un numéro valide.';return;}
+  saveMember(first,phone);closeSheet();doReserve(first,phone,consent);
+}
+function doReserve(first,phone,consent){
+  $('reserveBtn').disabled=true;$('reserveBtn').textContent='On réserve ta place…';
+  fetch('/api/popey-human/privilege/coup/reserve',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({id:OFFER_ID,phone:phone,name:first,consent:consent})})
+    .then(r=>r.json().catch(()=>({}))).then(d=>{
+      if(!d||d.error){$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';showClosed(d&&d.error==='Plus de place disponible.'?'Complet 😣':'Oups',d&&d.error||'Réessaie.');return;}
+      showDone(d,first);
+    }).catch(()=>{$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';});
+}
+function waText(){var d=DATA||{};return '✅ Place réservée pour le coup de feu de '+(d.merchant||'')+' sur Popey : '+(d.offerText||'')+' !';}
+function showDone(d,first){
+  if(CDTIMER)clearInterval(CDTIMER);
+  $('offerView').classList.add('hide');$('loadView').classList.add('hide');$('ctaBox').classList.add('hide');
+  var nextTxt=d.next?(' Au niveau '+d.next.threshold+' : <b>'+esc(d.next.reward)+'</b>.'):'';
+  var left=(d.placesLeft!=null)?('<div class="sub" style="margin-top:14px">Il reste '+d.placesLeft+' place'+(d.placesLeft>1?'s':'')+' après toi.</div>'):'';
+  $('doneView').classList.remove('hide');
+  $('doneView').innerHTML=''+
+    '<div class="center" style="padding:34px 6px 6px"><div class="big">✨</div><h2>C\'est réservé'+(first?', '+esc(first):'')+' !</h2>'+
+      '<p>'+esc((DATA&&DATA.merchant)||'Le commerçant')+' t\'attend. Présente-toi, c\'est tout.</p></div>'+
+    '<div class="codecard"><div class="lbl">Ton code à montrer en boutique</div>'+
+      '<div class="code">'+(d.code?String(d.code).split('').join(' '):'— — — —')+'</div>'+
+      '<div class="sub">Le commerçant le saisit pour valider ta visite.</div></div>'+
+    '<div class="rel" style="margin-top:16px"><div class="hearts">'+hearts(d.level)+'</div>'+
+      'Relation niveau <b>'+(d.level||0)+'/5</b>. <b>+1 cœur</b> dès que le pro valide ta visite.'+nextTxt+'</div>'+
+    left+
+    '<div style="margin-top:20px"><button class="btn wa" onclick="shareWA()">📲 Partager sur WhatsApp</button></div>';
+}
+function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent(waText()),'_blank');}
+
+load();
+</script>
+</body>
+</html>

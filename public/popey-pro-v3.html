@@ -389,23 +389,77 @@ function showOv(d){
 }
 function closeOv(){document.getElementById('ov').classList.remove('show');gotoTab('dash');loadProData();}
 
-/* ───────── COUP DE FEU (simulation maquette + envoi réel à brancher) ───────── */
+/* ───────── COUP DE FEU (envoi réel par vagues de niveau via l'API) ───────── */
 document.querySelectorAll('#cfReasons .rsn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfReasons .rsn').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
 document.querySelectorAll('#cfDur button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfDur button').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
 var cfWaves=[{lbl:"🥇 Niveau 5",fans:0,res:0,prio:true},{lbl:"Niveau 4",fans:0,res:0,prio:true},{lbl:"Niveau 3",fans:0,res:0,prio:true},{lbl:"Niveau 1-2 · tous",fans:0,res:0,prio:false}];
 function renderWavesPreview(){document.getElementById('cfWavesPreview').innerHTML=cfWaves.map((w,i)=>`<div class="wv ${i===cfWaves.length-1?'dim':''}"><span class="b">${w.lbl}</span><span class="f">${w.fans} fans</span></div>`).join('');}
-function openCoup(){gotoTab('coupdefeu');document.getElementById('cfCompose').style.display='';document.getElementById('cfLive').style.display='none';}
-let cfTotal=20,cfReserved=0,cfWaveIdx=-1,cfSent=[],cfPrio=0;
-function fireCoup(){cfTotal=parseInt(document.getElementById('cfPlaces').value)||20;cfReserved=0;cfWaveIdx=-1;cfSent=[];cfPrio=0;document.getElementById('cfCompose').style.display='none';document.getElementById('cfLive').style.display='';document.querySelector('.content').scrollTop=0;sendNextWave();}
-function sendNextWave(){cfWaveIdx++;const w=cfWaves[cfWaveIdx];const remaining=cfTotal-cfReserved;const got=Math.max(0,Math.min(w.res||Math.ceil(w.fans*0.2),remaining));cfReserved+=got;if(w.prio)cfPrio+=got;cfSent.push({lbl:w.lbl,fans:w.fans,res:got});renderWaves();}
-function renderWaves(){
-  document.getElementById('cfPlacesLeft').textContent=cfReserved+' / '+cfTotal+' places réservées';
-  document.getElementById('cfWaveList').innerHTML=cfSent.map(s=>`<div class="wave-row"><div><div class="wl">${s.lbl}</div><div class="wm">${s.fans} fans prévenus</div></div><div class="wr">+${s.res}</div></div>`).join('');
-  const full=cfReserved>=cfTotal,last=cfWaveIdx>=cfWaves.length-1;const act=document.getElementById('cfWaveAction');
-  if(full||last){const totalFans=cfSent.reduce((a,s)=>a+s.fans,0);act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${cfReserved} places remplies avec <b>${totalFans} fans prévenus</b>. <b>${cfPrio} fidèles servis en priorité.</b> Chaque visite validée = +1 cœur.</div><button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;}
-  else{const next=cfWaves[cfWaveIdx+1];act.innerHTML=`<div class="cf-prio-note">Il reste <b>${cfTotal-cfReserved} places</b>. Élargir à la vague suivante ?</div><button class="btn btn-mint" onclick="sendNextWave()">Élargir → ${next.lbl} (${next.fans} fans)</button><button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;}
+var CAMPAIGN=null,cfBusy=false,cfPollTimer=null;
+function durMinutes(){var b=document.querySelector('#cfDur button.on');var t=b?b.textContent.trim():'1 h';if(/soir/i.test(t))return 300;if(/2/.test(t))return 120;return 60;}
+function selectedReason(){var b=document.querySelector('#cfReasons .rsn.on');return b?b.textContent.trim():'';}
+/* À l'ouverture : reprend une campagne live en cours, sinon affiche le composer + l'aperçu des vagues. */
+function openCoup(){
+  gotoTab('coupdefeu');
+  fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO),{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    if(d&&Array.isArray(d.wavesPreview)&&d.wavesPreview.length){cfWaves=d.wavesPreview.map(w=>({lbl:w.label,fans:w.fans}));renderWavesPreview();}
+    if(d&&d.active){CAMPAIGN=d.active;showLive();renderLive();startPoll();}
+    else showCompose();
+  }).catch(showCompose);
 }
-function endCoup(){gotoTab('dash');}
+function showCompose(){document.getElementById('cfCompose').style.display='';document.getElementById('cfLive').style.display='none';}
+function showLive(){document.getElementById('cfCompose').style.display='none';document.getElementById('cfLive').style.display='';document.querySelector('.content').scrollTop=0;}
+/* LANCE le coup de feu → crée la campagne et envoie la 1ʳᵉ vague (niveau 5) par WhatsApp. */
+function fireCoup(){
+  if(cfBusy)return;
+  var offer=(document.getElementById('cfOffer').value||'').trim();
+  if(offer.length<3){toast('Décris ton offre d\'abord');document.getElementById('cfOffer').focus();return;}
+  var total=parseInt(document.getElementById('cfPlaces').value)||0;
+  cfBusy=true;
+  fetch('/api/popey-human/privilege/coup',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({p:PRO,offerText:offer,totalPlaces:total,durationMin:durMinutes(),reason:selectedReason()})})
+    .then(r=>r.json().catch(()=>({}))).then(d=>{cfBusy=false;
+      if(!d||d.error){toast(d&&d.error||'Lancement impossible');return;}
+      CAMPAIGN=d.campaign;showLive();
+      if(d.whatsappConfigured===false)toast('⚠️ WhatsApp non configuré — campagne créée');
+      else toast('🚀 Vague 1 envoyée à '+((d.wave&&d.wave.sent)||0)+' fidèle'+(((d.wave&&d.wave.sent)||0)>1?'s':''));
+      renderLive();startPoll();
+    }).catch(()=>{cfBusy=false;toast('Connexion impossible');});
+}
+/* ÉLARGIT à la vague suivante (niveau inférieur). */
+function expandCoup(){
+  if(cfBusy||!CAMPAIGN)return;cfBusy=true;
+  fetch('/api/popey-human/privilege/coup/expand',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({p:PRO,id:CAMPAIGN.id})})
+    .then(r=>r.json().catch(()=>({}))).then(d=>{cfBusy=false;
+      if(!d||d.error){toast(d&&d.error||'Impossible');return;}
+      if(d.done){if(CAMPAIGN)CAMPAIGN.status='done';toast('Toutes les vagues envoyées');renderLive();return;}
+      CAMPAIGN=d.campaign;toast('Vague élargie · '+((d.wave&&d.wave.sent)||0)+' prévenu'+(((d.wave&&d.wave.sent)||0)>1?'s':''));renderLive();
+    }).catch(()=>{cfBusy=false;});
+}
+function startPoll(){if(cfPollTimer)clearInterval(cfPollTimer);cfPollTimer=setInterval(pollCoup,15000);}
+function pollCoup(){
+  if(!CAMPAIGN||CAMPAIGN.status!=='live'){if(cfPollTimer)clearInterval(cfPollTimer);return;}
+  fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO)+'&id='+encodeURIComponent(CAMPAIGN.id),{cache:'no-store'})
+    .then(r=>r.json()).then(d=>{if(d&&d.campaign){CAMPAIGN=d.campaign;renderLive();}}).catch(()=>{});
+}
+function renderLive(){
+  var c=CAMPAIGN;if(!c)return;
+  var total=Number(c.total_places)||0,taken=Number(c.places_taken)||0;
+  document.getElementById('cfPlacesLeft').textContent=total>0?(taken+' / '+total+' places réservées'):(taken+' réservation'+(taken>1?'s':''));
+  var waves=Array.isArray(c.waves)?c.waves:[];var sentWaves=waves.filter(w=>w.sent_at);
+  document.getElementById('cfWaveList').innerHTML=sentWaves.map(s=>`<div class="wave-row"><div><div class="wl">${esc(s.label)}</div><div class="wm">${s.sent} fan${s.sent>1?'s':''} prévenu${s.sent>1?'s':''}</div></div><div class="wr">✓</div></div>`).join('');
+  var full=total>0&&taken>=total,done=c.status!=='live';
+  var nextIdx=(typeof c.current_wave==='number'?c.current_wave:-1)+1,hasNext=nextIdx<waves.length;
+  var act=document.getElementById('cfWaveAction');
+  if(full||done||!hasNext){
+    var prevenu=sentWaves.reduce((a,s)=>a+(Number(s.sent)||0),0);
+    act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${taken} place${taken>1?'s':''} remplie${taken>1?'s':''} · <b>${prevenu} fan${prevenu>1?'s':''} prévenu${prevenu>1?'s':''}</b>. Chaque visite validée = +1 cœur.</div><button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;
+  }else{
+    var nx=waves[nextIdx]||{label:'vague suivante',fans:0};
+    act.innerHTML=`<div class="cf-prio-note">Il reste <b>${total>0?(total-taken)+' places':'des places'}</b>. Les fidèles n'ont pas tout pris ?</div><button class="btn btn-mint" onclick="expandCoup()">Élargir → ${esc(nx.label)} (${nx.fans} fans)</button><button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;
+  }
+}
+function endCoup(){if(cfPollTimer)clearInterval(cfPollTimer);CAMPAIGN=null;gotoTab('dash');loadProData();}
 
 /* ───────── FIDÉLITÉ : paliers (lecture/édition via API) ───────── */
 var levels=[{n:1,cond:"1ʳᵉ visite validée",perk:"Bienvenue + ta carte Popey démarrée"},{n:2,cond:"2 visites",perk:"−10 % sur l'addition"},{n:3,cond:"3 visites",perk:"Café offert ☕"},{n:4,cond:"5 visites",perk:"Une viennoiserie offerte"},{n:5,cond:"10 visites",perk:"Habitué·e : ta baguette offerte chaque semaine"}];
