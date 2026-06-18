@@ -142,6 +142,12 @@
   .act.want .circle{width:66px;height:66px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));border:none;color:#06231a;box-shadow:0 10px 28px rgba(0,224,160,.35);font-size:26px;}
   .act.want{color:var(--mint);}
   .deck-empty{text-align:center;color:var(--grey);font-family:'Inter';font-size:14px;line-height:1.6;padding:40px 20px;}
+  .deck-end{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 22px;height:100%;}
+  .de-emoji{font-size:54px;margin-bottom:12px;}
+  .de-title{font-family:'Fraunces',serif;font-weight:700;font-size:23px;color:#fff;line-height:1.2;}
+  .de-sub{font-family:'Inter';font-size:13.5px;color:var(--grey);margin:10px 0 22px;line-height:1.5;max-width:300px;}
+  .de-btn{width:100%;max-width:320px;border:none;cursor:pointer;border-radius:15px;padding:15px;font-family:'Poppins';font-weight:700;font-size:15px;margin-bottom:11px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;}
+  .de-btn.ghost{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff;}
 
   .scrim-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90;}
   .scrim-bg.show{opacity:1;pointer-events:auto;}
@@ -305,7 +311,6 @@
       <div class="deckscreen">
         <div class="dhead">
           <div class="logo">Pop<span>ey</span></div>
-          <div class="snd-toggle" id="sndBtn" onclick="sndToggle()" title="Sons">🔊</div>
           <div class="pill-city" id="pillCity" onclick="sndTap();openCity()" style="cursor:pointer">📍 Dax ▾</div>
           <div class="pill-agenda" id="pillAgenda" onclick="sndTap();openAgenda()" style="display:none">📅<span class="n" id="agendaCount">0</span></div>
           <div class="pill-mine" onclick="sndTap();openCard()">💚 Ma carte <span class="n" id="mineCount">0</span></div>
@@ -612,7 +617,25 @@ function go(name){
 }
 
 function renderLaunch(){const d=document.getElementById('launchDeck');if(!offers.length){d.innerHTML='';return;}const a=offers[0],b=offers[1%offers.length],c=offers[2%offers.length];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),true);}
-function renderMain(){topMediaIdx=0;const d=document.getElementById('mainDeck');if(!offers.length){d.innerHTML='<div class="deck-empty">✨ Pas encore d\'offre à '+esc(CITY_LABEL)+'.<br>Reviens vite, une nouvelle édition arrive chaque mois.</div>';return;}const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);trackView(a);}
+function renderMain(){
+  topMediaIdx=0;const d=document.getElementById('mainDeck');
+  if(!offers.length){d.innerHTML=endDeckHTML(true);return;}
+  if(mainIdx>=offers.length){d.innerHTML=endDeckHTML(false);return;} // tout vu → on ne boucle plus à l'infini
+  const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];
+  d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);trackView(a);
+}
+function endDeckHTML(empty){
+  var agendaBtn=(typeof EVENTS!=='undefined'&&EVENTS.length)?'<button class="de-btn ghost" onclick="sndTap();openAgenda()">📅 L\'agenda de '+esc(CITY_LABEL)+'</button>':'';
+  var revoir=empty?'':'<button class="de-btn ghost" onclick="sndTap();restartDeck()">🔄 Revoir les offres</button>';
+  var title=empty?('Pas encore d\'offre à '+esc(CITY_LABEL)):('Tu as tout vu à '+esc(CITY_LABEL)+' ✨');
+  return '<div class="deck-end"><div class="de-emoji">'+(empty?'🌱':'✨')+'</div>'+
+    '<div class="de-title">'+title+'</div>'+
+    '<div class="de-sub">Une nouvelle édition arrive chaque mois. En attendant, fais découvrir Popey autour de toi 👇</div>'+
+    '<button class="de-btn" onclick="sndTap();shareApp()">📲 Inviter mes amis sur Popey</button>'+
+    agendaBtn+revoir+'</div>';
+}
+function restartDeck(){mainIdx=0;renderMain();}
+function shareApp(){var t='Tu connais Popey ? Les bons plans des commerçants de '+CITY_LABEL+' à swiper — et tu deviens leur habitué·e 💚\n👉 '+location.origin+'/m/'+VILLE;window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');}
 
 function setMedia(top,o,idx){topMediaIdx=idx;const mediaEl=top.querySelector('.media');const m=o.media[idx]||{};mediaEl.style.backgroundImage=m.poster?`url(${m.poster})`:'';mediaEl.innerHTML=mediaInner(o,idx,true);wireMedia(top);}
 function wireMedia(top){
@@ -1031,7 +1054,6 @@ function openAgenda(){document.getElementById('agendaCity').textContent=CITY_LAB
 
 /* ───────── Init ───────── */
 document.getElementById('edition').textContent='ÉDITION '+CITY_LABEL.toUpperCase()+' · 2026';
-document.getElementById('sndBtn').textContent=SND_ON?'🔊':'🔇';
 document.getElementById('pillCity').textContent='📍 '+CITY_LABEL+' ▾';
 document.getElementById('ctaSub').textContent='Édition · '+CITY_LABEL;
 renderLaunch();tick();
