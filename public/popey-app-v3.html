@@ -98,6 +98,8 @@
   .pill-city{font-family:'Poppins';font-weight:600;font-size:12px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);}
   .pill-mine{font-family:'Poppins';font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.35);color:var(--mint);display:flex;align-items:center;gap:6px;cursor:pointer;}
   .pill-mine .n{background:var(--mint);color:var(--ink);border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0 4px;}
+  .dhead{gap:7px;}
+  .snd-toggle{flex:0 0 auto;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);cursor:pointer;}
   .pill-agenda{font-family:'Poppins';font-weight:700;font-size:13px;padding:7px 10px;border-radius:999px;background:rgba(124,92,255,.13);border:1px solid rgba(168,139,255,.4);color:#d8caff;display:flex;align-items:center;gap:5px;cursor:pointer;}
   .pill-agenda .n{background:#a98bff;color:#1a1230;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;padding:0 4px;font-weight:800;}
   /* Agenda : lignes d'événements */
@@ -173,6 +175,11 @@
   .pro-photo .pvtag{position:absolute;top:10px;left:10px;}
   .pro-photo .pn{font-family:'Playfair Display',serif;font-weight:700;font-size:24px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5);}
   .pro-bio{font-family:'Inter';font-size:13px;color:#cdd0d4;line-height:1.5;}
+  .pro-loc{margin-bottom:12px;}
+  .pro-loc .pl-addr{font-family:'Inter';font-size:13px;color:#e6e9ef;margin-bottom:9px;line-height:1.4;}
+  .pro-loc .pl-act{display:flex;gap:8px;flex-wrap:wrap;}
+  .pro-loc .pl-pill{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-family:'Poppins';font-weight:700;font-size:13px;padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff;}
+  .pro-loc .pl-pill.go{background:linear-gradient(90deg,var(--mint),var(--mint-deep));border:none;color:#06231a;}
   .rate-chip{display:inline-flex;align-items:center;gap:7px;font-family:'Poppins';font-weight:700;font-size:13px;background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.4);color:#ffd84d;padding:8px 13px;border-radius:999px;margin-top:12px;cursor:pointer;}
   .rate-chip .go{color:#ffd84d;opacity:.7;}
 
@@ -263,7 +270,7 @@
         <div class="free-line" id="freeLine">🛡️ <b>100% gratuit</b> · sans inscription</div>
       </div>
       <div class="launch-cta">
-        <button class="cta" onclick="go('deck')">Découvrir le catalogue<small id="ctaSub">Édition · Dax</small></button>
+        <button class="cta" onclick="sndTap();go('deck')">Découvrir le catalogue<small id="ctaSub">Édition · Dax</small></button>
       </div>
     </div>
 
@@ -272,9 +279,10 @@
       <div class="deckscreen">
         <div class="dhead">
           <div class="logo">Pop<span>ey</span></div>
-          <div class="pill-city" id="pillCity" onclick="openCity()" style="cursor:pointer">📍 Dax ▾</div>
-          <div class="pill-agenda" id="pillAgenda" onclick="openAgenda()" style="display:none">📅<span class="n" id="agendaCount">0</span></div>
-          <div class="pill-mine" onclick="openMine()">❤ Mes offres <span class="n" id="mineCount">0</span></div>
+          <div class="snd-toggle" id="sndBtn" onclick="sndToggle()" title="Sons">🔊</div>
+          <div class="pill-city" id="pillCity" onclick="sndTap();openCity()" style="cursor:pointer">📍 Dax ▾</div>
+          <div class="pill-agenda" id="pillAgenda" onclick="sndTap();openAgenda()" style="display:none">📅<span class="n" id="agendaCount">0</span></div>
+          <div class="pill-mine" onclick="sndTap();openMine()">❤ Mes offres <span class="n" id="mineCount">0</span></div>
         </div>
         <div class="cf-strip" id="cfStrip"></div>
         <div class="deck-wrap"><div class="deck" id="mainDeck"></div></div>
@@ -351,6 +359,7 @@
         <div class="pn" id="proName">Noah Lebrun</div>
       </div>
       <div class="card-meta" id="proMeta" style="margin-bottom:10px">📍 Boulanger · Dax</div>
+      <div class="pro-loc" id="proLoc" style="display:none"></div>
       <div class="pro-bio" id="proBio"></div>
       <div class="rate-chip" id="proRate" onclick="openReviews(currentPro)"><span id="proRateTxt">⭐ —</span><span class="go">›</span></div>
       <div class="rel">
@@ -358,7 +367,7 @@
         <div class="hearts" id="proHearts">🤍🤍🤍🤍🤍</div>
         <div class="rel-next" id="proRelNext"></div>
       </div>
-      <button class="btn btn-mint" onclick="closeSheets();setTimeout(()=>openWant(currentPro),250)">Voir son offre du mois</button>
+      <button class="btn btn-mint" onclick="sndTap();closeSheets();setTimeout(()=>openWant(currentPro),250)">Voir son offre du mois</button>
       <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
     </div>
 
@@ -495,6 +504,18 @@ var _viewed={};
 function trackPriv(event,placeId){try{fetch('/api/popey-human/privilege/track',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',keepalive:true,body:JSON.stringify({placeId:placeId||'',event:event,sessionId:SESSION_ID,ville:CITY_LABEL,ref:REF,refName:REFNAME})}).catch(function(){});}catch(e){}}
 function trackView(o){if(!o||!isRealId(o.id)||_viewed[o.id])return;_viewed[o.id]=1;trackPriv('view',o.id);}
 
+/* ───────── Identité sonore (Web Audio — sons courts générés, aucun fichier) ───────── */
+var SND_ON=(function(){try{return localStorage.getItem('popey_snd')!=='0';}catch(e){return true;}})();
+var _ac=null;
+function _actx(){if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _ac;}
+function tone(freq,dur,type,vol,delay){if(!SND_ON)return;var ac=_actx();if(!ac)return;try{if(ac.state==='suspended')ac.resume();var t=ac.currentTime+(delay||0);var o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,t);o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||0.06,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12));o.start(t);o.stop(t+(dur||0.12)+0.03);}catch(e){}}
+function sndTap(){tone(430,0.07,'triangle',0.05);}
+function sndWant(){tone(620,0.08,'sine',0.06);tone(880,0.11,'sine',0.06,0.07);}      // 2 notes montantes = oui
+function sndPass(){tone(300,0.09,'sine',0.045);tone(200,0.11,'sine',0.04,0.06);}     // 2 notes descendantes = passer
+function sndUp(){tone(520,0.08,'sine',0.05);tone(700,0.1,'sine',0.05,0.06);}          // swipe « le pro »
+function sndSuccess(){tone(523,0.11,'sine',0.06);tone(784,0.12,'sine',0.06,0.09);tone(1047,0.2,'sine',0.055,0.2);} // accord = réservé / match
+function sndToggle(){SND_ON=!SND_ON;try{localStorage.setItem('popey_snd',SND_ON?'1':'0');}catch(e){}var b=document.getElementById('sndBtn');if(b)b.textContent=SND_ON?'🔊':'🔇';if(SND_ON)sndTap();}
+
 function youtubeId(url){var m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);return m?m[1]:'';}
 function mediaInner(o,idx,isTop){
   const m=o.media[idx]||o.media[0]||{type:'img'};
@@ -576,19 +597,19 @@ function bindCard(top,launchMode){
     if(moved<8){ // tap → navigation média
       setPos(0,0);
       const lx=e.clientX-rect.left;
-      if(lx<rect.width*0.34){if(topMediaIdx>0)setMedia(top,o,topMediaIdx-1);}
-      else{if(topMediaIdx<o.media.length-1)setMedia(top,o,topMediaIdx+1);}
+      if(lx<rect.width*0.34){if(topMediaIdx>0){sndTap();setMedia(top,o,topMediaIdx-1);}}
+      else{if(topMediaIdx<o.media.length-1){sndTap();setMedia(top,o,topMediaIdx+1);}}
       drag=null;return;
     }
-    if(dy<-90&&Math.abs(dx)<70){setPos(0,0);drag=null;if(!launchMode)openPro(mainIdx%offers.length);return;}
-    if(Math.abs(dx)>90){const dir=dx>0?1:-1;top.style.transform=`translate(${dir*520}px,${dy}px) rotate(${dir*22}deg)`;top.style.opacity='0';const wanted=dir>0;setTimeout(()=>{if(launchMode){renderLaunch();}else{const i=mainIdx%offers.length;mainIdx++;renderMain();if(wanted)openWant(i);}},300);}
+    if(dy<-90&&Math.abs(dx)<70){setPos(0,0);drag=null;if(!launchMode){sndUp();openPro(mainIdx%offers.length);}return;}
+    if(Math.abs(dx)>90){const dir=dx>0?1:-1;top.style.transform=`translate(${dir*520}px,${dy}px) rotate(${dir*22}deg)`;top.style.opacity='0';const wanted=dir>0;wanted?sndWant():sndPass();setTimeout(()=>{if(launchMode){renderLaunch();}else{const i=mainIdx%offers.length;mainIdx++;renderMain();if(wanted)openWant(i);}},300);}
     else setPos(0,0);
     drag=null;
   });
   top.addEventListener('pointercancel',()=>{if(drag){top.style.transition='transform .3s';setPos(0,0);drag=null;}});
 }
 
-function swipeBtn(kind){const top=document.querySelector('#mainDeck .card.top');if(!top||!offers.length)return;if(kind===2){openPro(mainIdx%offers.length);return;}top.style.transition='transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s';const dir=kind>0?1:-1;top.style.transform=`translateX(${dir*520}px) rotate(${dir*22}deg)`;top.style.opacity='0';top.querySelector(dir>0?'.stamp.yes':'.stamp.no').style.opacity=1;const i=mainIdx%offers.length;mainIdx++;setTimeout(()=>{renderMain();if(dir>0)openWant(i);},300);}
+function swipeBtn(kind){const top=document.querySelector('#mainDeck .card.top');if(!top||!offers.length)return;if(kind===2){sndUp();openPro(mainIdx%offers.length);return;}kind>0?sndWant():sndPass();top.style.transition='transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s';const dir=kind>0?1:-1;top.style.transform=`translateX(${dir*520}px) rotate(${dir*22}deg)`;top.style.opacity='0';top.querySelector(dir>0?'.stamp.yes':'.stamp.no').style.opacity=1;const i=mainIdx%offers.length;mainIdx++;setTimeout(()=>{renderMain();if(dir>0)openWant(i);},300);}
 
 const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 function autoHint(){if(reduce)return;const top=document.querySelector('#mainDeck .card.top');if(!top)return;const yes=top.querySelector('.stamp.yes'),no=top.querySelector('.stamp.no');[[0,()=>top.style.transition='transform .5s ease,opacity .5s'],[400,()=>{top.style.transform='translateX(54px) rotate(3deg)';yes.style.opacity=1;}],[1000,()=>{top.style.transform='translateX(0)';yes.style.opacity=0;}],[1500,()=>{top.style.transform='translateX(-54px) rotate(-3deg)';no.style.opacity=1;}],[2100,()=>{top.style.transform='translateX(0)';no.style.opacity=0;}]].forEach(([t,fn])=>setTimeout(fn,t));}
@@ -601,7 +622,20 @@ function openWant(i){currentPro=i;const o=offers[i];if(o.mystery&&!isRevealed(o.
   document.getElementById('mineCount').textContent=[...new Set(savedOffers)].length;
   loadRelation(o); // rafraîchit le niveau réel si on connaît le membre
   scrimBg.classList.add('show');sheetWant.classList.add('open');}
-function openPro(i){currentPro=i;const o=offers[i];proName.textContent=o.name;proMeta.textContent=o.meta;proBio.textContent=o.bio||'';proPhoto.style.background=o.grad;if(o.poster)proPhoto.style.backgroundImage='url('+o.poster+')';
+function renderProLoc(o){
+  var box=document.getElementById('proLoc');var addr=(o.address||'').trim();
+  var dest=encodeURIComponent(addr||((o.name||'')+' '+CITY_LABEL));
+  var maps='https://www.google.com/maps/dir/?api=1&destination='+dest;
+  var html='';
+  if(addr)html+='<div class="pl-addr">📍 '+esc(addr)+'</div>';
+  html+='<div class="pl-act"><a class="pl-pill go" href="'+maps+'" target="_blank" rel="noopener" onclick="sndTap()">🧭 Y aller</a>';
+  var ph=(o.phone||'').replace(/[^0-9+]/g,'');
+  if(ph.replace(/[^0-9]/g,'').length>=6)html+='<a class="pl-pill" href="tel:'+ph+'" onclick="sndTap()">📞 Appeler</a>';
+  if(o.website)html+='<a class="pl-pill" href="'+esc(o.website)+'" target="_blank" rel="noopener" onclick="sndTap()">🌐 Site</a>';
+  html+='</div>';
+  box.innerHTML=html;box.style.display='';
+}
+function openPro(i){currentPro=i;const o=offers[i];proName.textContent=o.name;proMeta.textContent=o.meta;proBio.textContent=o.bio||'';renderProLoc(o);proPhoto.style.background=o.grad;if(o.poster)proPhoto.style.backgroundImage='url('+o.poster+')';
   proRateTxt.textContent=o.stars>0?('⭐ '+o.stars.toString().replace('.',',')+' · '+o.reviews.length+' avis'):'💬 Donner mon avis';
   var lvl=o.relLvl||0;proHearts.textContent=hearts(lvl);proRelTag.textContent='niveau '+lvl+'/5 · '+relStatus(lvl);proRelNext.innerHTML=o.relNext||'Première visite validée → tu démarres ta relation.';
   const vt=proPhoto.querySelector('.pvtag');const hasV=o.media.find(m=>m.type==='video');vt.style.display=hasV?'inline-flex':'none';
@@ -687,7 +721,7 @@ function doReserve(){
     body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;var code=(d&&d.code)||'';
-      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl);trackPriv('reserve',o.id); // baseline → le passage 0→1 déclenchera le « match »
+      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl);trackPriv('reserve',o.id);sndSuccess(); // baseline → le passage 0→1 déclenchera le « match »
       fillShare(o,lvl,code,(d&&d.next)||null);
     }).catch(()=>{fillShare(o,o.relLvl||0,'',null);});
 }
@@ -759,7 +793,7 @@ function mapPlace(p){
     role:String(p.metier||''),meta:'📍 '+String(p.metier||'')+' · '+CITY_LABEL,
     product:(mystery&&mysteryDeal)?mysteryDeal:badge,oldP:oldP,newP:newP,off:off,
     bio:String(p.description||''),support:'',endTs:end,
-    media:media,phone:String(p.partnerWhatsapp||p.directContact||''),
+    media:media,phone:String(p.partnerWhatsapp||p.directContact||''),address:String(p.address||''),website:String(p.websiteUrl||''),
     mystery:mystery,mysteryDeal:mysteryDeal,
     relLvl:0,relNext:'',stars:0,reviews:[]
   };
@@ -826,7 +860,7 @@ function renderMatch(name,lvl,reward,next){
   // Bouton « Noter » : l'instant idéal pour un avis vérifié (visite tout juste validée).
   var rb=document.getElementById('matchReviewBtn');
   if(matchProIdx>=0){document.getElementById('matchRevName').textContent=name;rb.style.display='';}else rb.style.display='none';
-  document.getElementById('matchOv').classList.add('show');
+  document.getElementById('matchOv').classList.add('show');sndSuccess();
 }
 function matchReview(){document.getElementById('matchOv').classList.remove('show');if(matchProIdx>=0){currentPro=matchProIdx;openLeave();}}
 function closeMatch(){document.getElementById('matchOv').classList.remove('show');setTimeout(showNextMatch,350);}
@@ -904,6 +938,7 @@ function openAgenda(){document.getElementById('agendaCity').textContent=CITY_LAB
 
 /* ───────── Init ───────── */
 document.getElementById('edition').textContent='ÉDITION '+CITY_LABEL.toUpperCase()+' · 2026';
+document.getElementById('sndBtn').textContent=SND_ON?'🔊':'🔇';
 document.getElementById('pillCity').textContent='📍 '+CITY_LABEL+' ▾';
 document.getElementById('ctaSub').textContent='Édition · '+CITY_LABEL;
 renderLaunch();tick();
