@@ -101,7 +101,6 @@
   .pill-mine{font-family:'Poppins';font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;background:rgba(0,224,160,.1);border:1px solid rgba(0,224,160,.35);color:var(--mint);display:flex;align-items:center;gap:6px;cursor:pointer;}
   .pill-mine .n{background:var(--mint);color:var(--ink);border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0 4px;}
   .dhead{gap:7px;}
-  .snd-toggle{flex:0 0 auto;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);cursor:pointer;}
   .pill-agenda{font-family:'Poppins';font-weight:700;font-size:13px;padding:7px 10px;border-radius:999px;background:rgba(124,92,255,.13);border:1px solid rgba(168,139,255,.4);color:#d8caff;display:flex;align-items:center;gap:5px;cursor:pointer;}
   .pill-agenda .n{background:#a98bff;color:#1a1230;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;padding:0 4px;font-weight:800;}
   /* Agenda : lignes d'événements */
@@ -433,14 +432,6 @@
     </div>
 
     <!-- Mes offres -->
-    <div class="sheet" id="sheetMine">
-      <div class="grab"></div>
-      <div class="sheet-kicker">Mes <span class="mint">offres</span></div>
-      <div class="sheet-sub">Tes coups de cœur gardés. Réserve quand tu veux — rien ne se perd.</div>
-      <div id="mineList" style="margin-top:14px"></div>
-      <button class="btn btn-ghost" onclick="closeSheets()">Fermer</button>
-    </div>
-
     <!-- Reviews -->
     <div class="sheet" id="sheetReviews">
       <div class="grab"></div>
@@ -603,7 +594,6 @@ function sndWant(){tone(620,0.08,'sine',0.06);tone(880,0.11,'sine',0.06,0.07);} 
 function sndPass(){tone(300,0.09,'sine',0.045);tone(200,0.11,'sine',0.04,0.06);}     // 2 notes descendantes = passer
 function sndUp(){tone(520,0.08,'sine',0.05);tone(700,0.1,'sine',0.05,0.06);}          // swipe « le pro »
 function sndSuccess(){tone(523,0.11,'sine',0.06);tone(784,0.12,'sine',0.06,0.09);tone(1047,0.2,'sine',0.055,0.2);} // accord = réservé / match
-function sndToggle(){SND_ON=!SND_ON;try{localStorage.setItem('popey_snd',SND_ON?'1':'0');}catch(e){}var b=document.getElementById('sndBtn');if(b)b.textContent=SND_ON?'🔊':'🔇';if(SND_ON)sndTap();}
 
 function youtubeId(url){var m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);return m?m[1]:'';}
 function mediaInner(o,idx,isTop){
@@ -771,7 +761,7 @@ function submitReview(){const o=offers[currentPro];const first=document.getEleme
       else{leaveMsg.textContent=(res.d&&res.d.error)?res.d.error:'Publication impossible.';}
     }).catch(()=>{leaveMsg.textContent='Connexion impossible. Réessaie.';});}
 
-function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');sheetAgenda.classList.remove('open');sheetLead.classList.remove('open');}
+function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');sheetAgenda.classList.remove('open');sheetLead.classList.remove('open');}
 /* Sélecteur de ville */
 var CITIES=[{label:'Dax',slug:'dax'},{label:'Bordeaux',slug:'bordeaux'},{label:'Bayonne',slug:'bayonne'},{label:'Mont-de-Marsan',slug:'mont-de-marsan'}];
 function openCity(){
@@ -810,13 +800,6 @@ function showCodeFull(merchant,code){document.getElementById('cfMerch').textCont
 function closeCodeFull(){document.getElementById('codeFull').classList.remove('show');}
 function presentCodeIdx(i){var o=offers[i];if(!o)return;var rv=getReserved(o.id);if(rv&&rv.code)showCodeFull(o.name,rv.code);}
 function keepForLater(){closeSheets();}
-function openMine(){
-  const list=[...new Set(savedOffers)];
-  document.getElementById('mineList').innerHTML = list.length
-    ? list.map(i=>{const o=offers[i];var rv=getReserved(o.id);var btn=rv?`<button class="rsv" style="background:linear-gradient(90deg,var(--mint),var(--mint-deep))" onclick="openShareFor(${i})">📲 Mon code</button>`:`<button class="rsv" onclick="reserveFromMine(${i})">Réserver</button>`;return `<div class="mine-row"><div class="ic" style="background:${o.grad}${o.poster?`;background-image:url(${o.poster})`:''}">${o.poster?'':o.emoji}</div><div class="t"><b>${esc(o.product)}</b><small>${esc(o.name)} · ${esc(o.newP)}${o.oldP?' au lieu de '+esc(o.oldP):''}</small></div>${btn}</div>`;}).join('')
-    : `<div class="mine-empty">Rien de gardé pour l'instant.<br>Swipe à droite sur une offre qui te plaît 👉</div>`;
-  closeOnly();scrimBg.classList.add('show');sheetMine.classList.add('open');
-}
 function reserveFromMine(i){currentPro=i;reserve();}
 
 /* ───────── Ma carte Popey (wallet : relations de fidélité + offres gardées) ───────── */
