@@ -114,6 +114,11 @@ export async function GET(request: NextRequest) {
       /* résilient */
     }
 
+    // ROI : promo offerte = nb visites validées × valeur de l'offre ; ROI = encaissé / promo offerte.
+    const offerValueEur = Number((p as { partner_offer_value_eur?: number }).partner_offer_value_eur) || 0;
+    const promosEur = Math.round(visits * offerValueEur);
+    const roi = promosEur > 0 ? Math.round((afterEur / promosEur) * 10) / 10 : 0;
+
     // Aperçu des vagues = fans confirmés du commerçant, regroupés par niveau de relation.
     const waves = [
       { lbl: "🥇 Niveau 5", fans: 0, res: 0, prio: true },
@@ -237,9 +242,9 @@ export async function GET(request: NextRequest) {
       merchant,
       stats: {
         habitues,
-        promosEur: 0, // TODO formule à confirmer
+        promosEur,
         afterEur,
-        roi: 0,
+        roi,
         views,
         want,
         reservations,

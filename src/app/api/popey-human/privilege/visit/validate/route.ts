@@ -138,6 +138,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
+      visitId: (visit as { id: string }).id,
       name,
       level: newLevel,
       status: statusForLevel(newLevel),
