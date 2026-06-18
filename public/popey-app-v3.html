@@ -123,6 +123,8 @@
   .fs-overlay.show{display:flex;}
   .fs-overlay img{max-width:100%;max-height:88%;border-radius:14px;object-fit:contain;}
   .fs-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;}
+  .toast{position:absolute;left:50%;bottom:98px;transform:translate(-50%,18px);background:rgba(11,13,18,.96);border:1px solid rgba(255,255,255,.14);color:#fff;font-family:'Poppins';font-weight:600;font-size:13px;padding:11px 16px;border-radius:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:250;max-width:84%;text-align:center;line-height:1.35;}
+  .toast.show{opacity:1;transform:translate(-50%,0);}
   .hint{text-align:center;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;}
   /* Bandeau Coups de feu en cours (in-app, gratuit, complément du push WhatsApp) */
   .cf-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 0;margin-top:2px;scrollbar-width:none;}
@@ -474,6 +476,19 @@
       <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
     </div>
 
+    <!-- Capture du lead (après 3 « Je veux ») : être prévenu des coups de feu -->
+    <div class="sheet" id="sheetLead">
+      <div class="grab"></div>
+      <div class="sheet-kicker">Sois prévenu·e <span class="mint">en premier</span> ⚡</div>
+      <div class="sheet-sub">Tes commerçants lâchent parfois un <b>« coup de feu »</b> : une offre éclair, en quantité limitée. Laisse ton numéro et tu es prévenu·e <b>avant tout le monde</b>. Pas de compte, STOP quand tu veux.</div>
+      <input class="field-in" id="leadFirst" placeholder="Ton prénom">
+      <input class="field-in" id="leadPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ton numéro (06…)">
+      <label style="display:flex;align-items:flex-start;gap:9px;font-family:'Inter';font-size:11.5px;color:var(--grey);line-height:1.45;cursor:pointer;margin:2px 0 4px"><input id="leadConsent" type="checkbox" checked style="margin-top:2px;width:16px;height:16px;flex-shrink:0"><span>Je veux être prévenu·e par WhatsApp des coups de feu de mes commerçants. STOP à tout moment.</span></label>
+      <div class="msg" id="leadMsg"></div>
+      <button class="btn btn-mint" onclick="submitLead()">⚡ Être prévenu·e en premier</button>
+      <button class="btn btn-ghost" onclick="skipLead()">Plus tard</button>
+    </div>
+
     <!-- Choisir la ville -->
     <div class="sheet" id="sheetCity">
       <div class="grab"></div>
@@ -506,6 +521,7 @@
 
     <!-- Lightbox plein écran (photo d'événement) -->
     <div class="fs-overlay" id="fsOverlay" onclick="closeFs()"><img id="fsImg" src="" alt=""><div class="fs-close">✕</div></div>
+    <div class="toast" id="toast"></div>
   </div>
 
 <script>
@@ -688,6 +704,7 @@ function openWant(i){currentPro=i;const o=offers[i];if(o.mystery&&!isRevealed(o.
   wRelNext.innerHTML='🎟️ +1 cœur à chaque <b>visite validée</b> par le pro. '+(o.relNext||'Reviens pour faire monter ta relation.');
   if(!savedOffers.includes(i))savedOffers.push(i);
   document.getElementById('mineCount').textContent=[...new Set(savedOffers)].length;
+  maybeQueueLead(); // 3 « Je veux » → on proposera (à la fermeture) de garder le numéro pour les coups de feu
   loadRelation(o); // rafraîchit le niveau réel si on connaît le membre
   scrimBg.classList.add('show');sheetWant.classList.add('open');}
 function renderProLoc(o){
@@ -730,7 +747,7 @@ function submitReview(){const o=offers[currentPro];const first=document.getEleme
       else{leaveMsg.textContent=(res.d&&res.d.error)?res.d.error:'Publication impossible.';}
     }).catch(()=>{leaveMsg.textContent='Connexion impossible. Réessaie.';});}
 
-function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');sheetAgenda.classList.remove('open');}
+function closeOnly(){sheetWant.classList.remove('open');sheetPro.classList.remove('open');sheetReviews.classList.remove('open');sheetLeave.classList.remove('open');sheetMine.classList.remove('open');sheetReserve.classList.remove('open');sheetCity.classList.remove('open');sheetAgenda.classList.remove('open');sheetLead.classList.remove('open');}
 /* Sélecteur de ville */
 var CITIES=[{label:'Dax',slug:'dax'},{label:'Bordeaux',slug:'bordeaux'},{label:'Bayonne',slug:'bayonne'},{label:'Mont-de-Marsan',slug:'mont-de-marsan'}];
 function openCity(){
@@ -738,7 +755,31 @@ function openCity(){
   closeOnly();scrimBg.classList.add('show');sheetCity.classList.add('open');
 }
 function gotoCity(slug){if(slug===VILLE){closeSheets();return;}location.href='/m/'+slug+(location.search||'');}
-function closeSheets(){scrimBg.classList.remove('show');closeOnly();}
+function closeSheets(){scrimBg.classList.remove('show');closeOnly();if(leadPending){leadPending=false;if(!memberHasPhone()){setLeadSeen();setTimeout(openLead,330);}}}
+
+/* ───────── Capture du lead après 3 « Je veux » (skippable) → base de fans Coup de feu ───────── */
+var leadPending=false;
+function memberHasPhone(){var m=loadMember();return !!(m&&m.phone&&String(m.phone).replace(/[^0-9]/g,'').length>=9);}
+function leadSeen(){try{return localStorage.getItem('popey_lead_seen')==='1';}catch(e){return false;}}
+function setLeadSeen(){try{localStorage.setItem('popey_lead_seen','1');}catch(e){}}
+function maybeQueueLead(){if([...new Set(savedOffers)].length>=3&&!memberHasPhone()&&!leadSeen())leadPending=true;}
+function openLead(){var m=loadMember()||{};document.getElementById('leadFirst').value=m.first||'';document.getElementById('leadPhone').value=m.phone||'';document.getElementById('leadConsent').checked=true;document.getElementById('leadMsg').textContent='';scrimBg.classList.add('show');sheetLead.classList.add('open');}
+function skipLead(){closeSheets();}
+function favPlaceIds(){return [...new Set(savedOffers)].map(i=>offers[i]&&offers[i].id).filter(id=>id&&isRealId(id));}
+function submitLead(){
+  var first=(document.getElementById('leadFirst').value||'').trim();
+  var phone=(document.getElementById('leadPhone').value||'').trim();
+  var consent=document.getElementById('leadConsent').checked;
+  var msg=document.getElementById('leadMsg');msg.style.color='#FCA5A5';
+  if(first.length<2){msg.textContent='Entre ton prénom.';return;}
+  if(phone.replace(/[^0-9]/g,'').length<9){msg.textContent='Entre un numéro valide.';return;}
+  saveMember(first,phone);
+  fetch('/api/popey-human/privilege/follow',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+    body:JSON.stringify({phone:phone,name:first,ville:CITY_LABEL,placeIds:favPlaceIds(),consent:consent})}).catch(function(){});
+  closeSheets();toast('⚡ C\'est noté '+first+' — tu seras prévenu·e en premier');sndSuccess();
+  loadAllRelations();
+}
+function toast(msg){var t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},2800);}
 function keepForLater(){closeSheets();}
 function openMine(){
   const list=[...new Set(savedOffers)];
