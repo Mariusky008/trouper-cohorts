@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       const link = citySlug ? `${origin}/m/${citySlug}?match=${placeId}` : origin;
       await sendPrivilegeMatchNotif(memberPhone, {
         merchantName,
-        reward: reachedTier ? reachedTier.reward_text : `niveau ${newLevel}`,
+        reward: reachedTier ? reachedTier.reward_text : "une nouvelle étape de ta relation",
         link,
       });
     } catch {
