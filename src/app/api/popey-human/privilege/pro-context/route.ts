@@ -237,6 +237,79 @@ export async function GET(request: NextRequest) {
       leaderboard = null;
     }
 
+    // Activité récente RÉELLE : visites validées + réservations + avis, fusionnées (date décroissante).
+    const relTime = (ts: number): string => {
+      if (!Number.isFinite(ts) || ts <= 0) return "";
+      const min = Math.floor((Date.now() - ts) / 60000);
+      if (min < 1) return "à l'instant";
+      if (min < 60) return `il y a ${min} min`;
+      const h = Math.floor(min / 60);
+      if (h < 24) return `il y a ${h} h`;
+      const d = Math.floor(h / 24);
+      if (d === 1) return "hier";
+      if (d < 30) return `il y a ${d} j`;
+      return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    };
+    type Act = { icon: string; title: string; sub: string; ts: number };
+    const acts: Act[] = [];
+    try {
+      const { data: vs } = await supabase
+        .from("human_privilege_visits")
+        .select("member_phone,validated_at,amount_eur")
+        .eq("place_id", placeId)
+        .eq("status", "validated")
+        .order("validated_at", { ascending: false })
+        .limit(10);
+      const rows = (vs as Array<{ member_phone: string; validated_at: string; amount_eur: number | null }> | null) || [];
+      const phones = Array.from(new Set(rows.map((r) => r.member_phone).filter(Boolean)));
+      const nameByPhone = new Map<string, string>();
+      if (phones.length) {
+        try {
+          const { data: mem } = await supabase.from("human_privilege_members").select("phone_e164,first_name").in("phone_e164", phones);
+          ((mem as Array<{ phone_e164: string; first_name: string | null }> | null) || []).forEach((m) => nameByPhone.set(m.phone_e164, String(m.first_name || "")));
+        } catch {
+          /* résilient */
+        }
+      }
+      for (const r of rows) {
+        const nm = nameByPhone.get(r.member_phone) || "Un client";
+        acts.push({ icon: "💚", title: `${nm} · visite validée`, sub: r.amount_eur ? `${r.amount_eur} € encaissés` : "+1 cœur", ts: Date.parse(r.validated_at) || 0 });
+      }
+    } catch {
+      /* résilient */
+    }
+    try {
+      const { data: rs } = await supabase
+        .from("human_privilege_reservations")
+        .select("created_at")
+        .eq("place_id", placeId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      for (const r of (rs as Array<{ created_at: string }> | null) || []) {
+        acts.push({ icon: "📲", title: "Nouvelle réservation", sub: "via le catalogue", ts: Date.parse(r.created_at) || 0 });
+      }
+    } catch {
+      /* résilient */
+    }
+    try {
+      const { data: cs } = await supabase
+        .from("human_marketplace_place_comments")
+        .select("author_name,rating,created_at")
+        .eq("place_id", placeId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      for (const r of (cs as Array<{ author_name: string | null; rating: number | null; created_at: string }> | null) || []) {
+        const stars = Math.max(0, Math.min(5, Number(r.rating) || 0));
+        acts.push({ icon: "⭐", title: `Nouvel avis ${stars}/5`, sub: r.author_name ? `de ${r.author_name}` : "", ts: Date.parse(r.created_at) || 0 });
+      }
+    } catch {
+      /* résilient */
+    }
+    const activity = acts
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 8)
+      .map((a) => ({ icon: a.icon, title: a.title, sub: a.sub, when: relTime(a.ts) }));
+
     return NextResponse.json({
       placeId,
       merchant,
@@ -257,6 +330,7 @@ export async function GET(request: NextRequest) {
       shareLink,
       proSlug,
       leaderboard,
+      activity,
     });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });
