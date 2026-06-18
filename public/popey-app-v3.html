@@ -55,14 +55,15 @@
   .videoplay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;background:rgba(11,13,18,.5);backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;cursor:pointer;box-shadow:0 0 30px rgba(0,0,0,.4);z-index:6;transition:top .5s cubic-bezier(.2,.8,.2,1),left .5s cubic-bezier(.2,.8,.2,1),width .4s cubic-bezier(.2,.8,.2,1),height .4s cubic-bezier(.2,.8,.2,1),font-size .4s,transform .5s cubic-bezier(.2,.8,.2,1),background .3s,border-color .3s;}
   .videoplay[data-snd]:not(.moved){animation:sndpulse 2.2s ease-in-out infinite;}
   @keyframes sndpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.4),0 0 30px rgba(0,0,0,.4);}50%{box-shadow:0 0 0 11px rgba(255,255,255,0),0 0 30px rgba(0,0,0,.4);}}
-  .videoplay.moved{top:52px;left:calc(100% - 50px);transform:translate(0,0);width:36px;height:36px;font-size:16px;border-width:1.5px;background:rgba(11,13,18,.45);border-color:rgba(255,255,255,.6);box-shadow:0 4px 14px rgba(0,0,0,.35);}
-  .rel-badge{position:absolute;top:52px;left:14px;z-index:5;display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:rgba(11,13,18,.55);backdrop-filter:blur(6px);border:1px solid rgba(34,197,94,.55);font-family:'Poppins';font-weight:700;font-size:12.5px;color:#fff;white-space:nowrap;}
+  .videoplay.moved{top:24px;left:calc(100% - 48px);transform:translate(0,0);width:34px;height:34px;font-size:15px;border-width:1.5px;background:rgba(11,13,18,.45);border-color:rgba(255,255,255,.6);box-shadow:0 4px 14px rgba(0,0,0,.35);}
+  .card-tl{position:absolute;top:24px;left:14px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+.rel-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:rgba(11,13,18,.55);backdrop-filter:blur(6px);border:1px solid rgba(34,197,94,.55);font-family:'Poppins';font-weight:700;font-size:12.5px;color:#fff;white-space:nowrap;}
   .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,13,18,.05) 38%,rgba(11,13,18,.55) 62%,rgba(11,13,18,.96) 100%);pointer-events:none;z-index:2;}
   .storybars{position:absolute;top:12px;left:14px;right:14px;display:flex;gap:4px;z-index:5;}
   .bar{flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.28);overflow:hidden;}
   .bar.on{background:#fff;}
   .videotag{font-family:'Poppins';font-weight:700;font-size:10.5px;letter-spacing:.04em;color:#fff;background:rgba(11,13,18,.5);backdrop-filter:blur(6px);padding:5px 9px;border-radius:999px;display:flex;align-items:center;gap:5px;}
-  .countdown{position:absolute;top:52px;left:50%;transform:translateX(-50%);font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;background:rgba(11,13,18,.55);border:1px solid rgba(240,96,143,.55);padding:6px 12px;border-radius:999px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:6px;white-space:nowrap;z-index:5;}
+  .countdown{position:absolute;top:24px;left:50%;transform:translateX(-50%);font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;background:rgba(11,13,18,.55);border:1px solid rgba(240,96,143,.55);padding:6px 12px;border-radius:999px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:6px;white-space:nowrap;z-index:5;}
   .countdown .cd{color:#ffd1de;font-variant-numeric:tabular-nums;}
   .card-info{position:absolute;left:18px;right:18px;bottom:18px;z-index:6;}
   .card-name{font-family:'Playfair Display',serif;font-weight:700;font-size:26px;line-height:1;color:#fff;}
@@ -103,17 +104,24 @@
   .pill-agenda{font-family:'Poppins';font-weight:700;font-size:13px;padding:7px 10px;border-radius:999px;background:rgba(124,92,255,.13);border:1px solid rgba(168,139,255,.4);color:#d8caff;display:flex;align-items:center;gap:5px;cursor:pointer;}
   .pill-agenda .n{background:#a98bff;color:#1a1230;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;padding:0 4px;font-weight:800;}
   /* Agenda : lignes d'événements */
-  .ev-row{display:flex;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;margin-bottom:10px;}
-  .ev-ic{width:54px;height:54px;border-radius:13px;background:rgba(124,92,255,.14);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background-size:cover;background-position:center;}
-  .ev-b{flex:1;min-width:0;}
-  .ev-b .et{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:#fff;line-height:1.15;}
-  .ev-b .ed{font-family:'Poppins';font-weight:700;font-size:12px;color:#d8caff;margin-top:3px;}
-  .ev-b .ep{font-family:'Inter';font-size:12px;color:var(--grey);margin-top:1px;}
-  .ev-b .ex{font-family:'Inter';font-size:12px;color:#aeb2b8;margin-top:6px;line-height:1.4;}
-  .ev-act{display:flex;gap:8px;margin-top:10px;}
-  .ev-act a,.ev-act button{flex:1;text-align:center;text-decoration:none;border:none;cursor:pointer;border-radius:11px;padding:9px;font-family:'Poppins';font-weight:700;font-size:12.5px;}
+  .ev-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;margin-bottom:12px;}
+  .ev-banner{height:150px;background-size:cover;background-position:center;background-color:#181c26;position:relative;cursor:pointer;}
+  .ev-banner .ev-zoom{position:absolute;bottom:8px;right:8px;font-family:'Poppins';font-weight:700;font-size:11.5px;color:#fff;background:rgba(0,0,0,.55);border-radius:9px;padding:4px 9px;}
+  .ev-body{padding:13px 15px;}
+  .ev-body .et{font-family:'Playfair Display',serif;font-weight:700;font-size:17px;color:#fff;line-height:1.18;display:flex;align-items:center;flex-wrap:wrap;gap:7px;}
+  .ev-badge{display:inline-block;font-family:'Poppins';font-weight:700;font-size:10px;color:#1a1230;background:#a98bff;padding:2px 8px;border-radius:999px;}
+  .ev-body .ed{font-family:'Poppins';font-weight:700;font-size:12.5px;color:#d8caff;margin-top:5px;}
+  .ev-body .ep{font-family:'Inter';font-size:12.5px;color:#c7cdd9;margin-top:3px;}
+  .ev-body .ex{font-family:'Inter';font-size:12.5px;color:#aeb2b8;margin-top:8px;line-height:1.45;}
+  .ev-act{display:flex;gap:8px;margin-top:12px;}
+  .ev-act a,.ev-act button{flex:1;text-align:center;text-decoration:none;border:none;cursor:pointer;border-radius:11px;padding:10px 6px;font-family:'Poppins';font-weight:700;font-size:12.5px;}
   .ev-cal{background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;}
-  .ev-share{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12)!important;}
+  .ev-site{background:rgba(124,92,255,.16);color:#d8caff;border:1px solid rgba(168,139,255,.4);}
+  .ev-share{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12);}
+  .fs-overlay{position:absolute;inset:0;z-index:300;background:rgba(0,0,0,.93);display:none;align-items:center;justify-content:center;padding:18px;}
+  .fs-overlay.show{display:flex;}
+  .fs-overlay img{max-width:100%;max-height:88%;border-radius:14px;object-fit:contain;}
+  .fs-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;}
   .hint{text-align:center;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;}
   /* Bandeau Coups de feu en cours (in-app, gratuit, complément du push WhatsApp) */
   .cf-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 0;margin-top:2px;scrollbar-width:none;}
@@ -249,7 +257,7 @@
   .mystery-veil .mtit{font-family:'Playfair Display',serif;font-weight:800;font-size:30px;color:#fff;line-height:1.1;margin-top:4px;}
   .mystery-veil .msub{font-family:'Inter';font-size:13px;color:#b9a8e0;margin-top:8px;line-height:1.4;max-width:240px;}
   .mystery-veil .mbtn{margin-top:20px;border:none;border-radius:14px;padding:13px 24px;font-family:'Poppins';font-weight:800;font-size:15px;background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;cursor:pointer;box-shadow:0 12px 30px rgba(124,92,255,.4);}
-  .card-mystery-badge{position:absolute;top:52px;right:14px;z-index:5;font-family:'Poppins';font-weight:700;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(124,92,255,.22);border:1px solid rgba(168,139,255,.6);color:#d8caff;}
+  .card-mystery-badge{display:inline-flex;align-items:center;font-family:'Poppins';font-weight:700;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(124,92,255,.22);border:1px solid rgba(168,139,255,.6);color:#d8caff;}
 </style>
 </head>
 <body>
@@ -457,6 +465,9 @@
       <button class="btn btn-mint" id="matchReviewBtn" onclick="matchReview()" style="display:none">⭐ Noter <span id="matchRevName"></span></button>
       <button class="btn btn-ghost" onclick="closeMatch()">Génial, on continue 💚</button>
     </div>
+
+    <!-- Lightbox plein écran (photo d'événement) -->
+    <div class="fs-overlay" id="fsOverlay" onclick="closeFs()"><img id="fsImg" src="" alt=""><div class="fs-close">✕</div></div>
   </div>
 
 <script>
@@ -548,7 +559,7 @@ function cardHTML(o,cls,idx){
     <div class="media" ${m.poster?`style="background-image:url(${esc(m.poster)})"`:''}>${mediaInner(o,idx,cls==='top')}</div>
     <div class="scrim"></div>
     <div class="countdown" data-end="${o.endTs}">⏳ <span class="cd"></span></div>
-    ${relBadge}${mystBadge}${veil}
+    <div class="card-tl">${relBadge}${mystBadge}</div>${veil}
     <div class="stamp yes">Je veux</div><div class="stamp no">Passer</div><div class="stamp up">Le pro</div>
     <div class="card-info">
       <div class="card-name">${esc(o.name)}</div>
@@ -919,18 +930,26 @@ function gcalLink(ev){
   return u;
 }
 function shareEvent(i){var ev=EVENTS[i];if(!ev)return;var t=(ev.emoji||'📅')+' '+(ev.title||'Événement')+(ev.dayLabel?(' · '+ev.dayLabel):'')+(ev.placeLabel?(' · '+ev.placeLabel):'')+'\n\nÀ '+CITY_LABEL+', vu sur Popey 👉 '+location.origin+'/m/'+VILLE;window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');}
+function firstUrl(s){var m=String(s||'').match(/https?:\/\/[^\s)]+/i);return m?m[0]:'';}
+function openFs(url){if(!url)return;document.getElementById('fsImg').src=url;document.getElementById('fsOverlay').classList.add('show');sndTap();}
+function closeFs(){document.getElementById('fsOverlay').classList.remove('show');document.getElementById('fsImg').src='';}
 function renderAgenda(){
   var box=document.getElementById('agendaList');
   if(!EVENTS.length){box.innerHTML='<div style="text-align:center;color:#8b93a3;font-family:Inter;font-size:13px;padding:24px 0">Pas encore d\'événement à '+esc(CITY_LABEL)+'.<br>Reviens vite ✨</div>';return;}
   box.innerHTML=EVENTS.map(function(ev,i){
-    var icStyle=ev.imageUrl?(' style="background-image:url('+esc(ev.imageUrl)+')"'):'';
-    var ic=ev.imageUrl?'':esc(ev.emoji||'📅');
-    return '<div class="ev-row"><div class="ev-ic"'+icStyle+'>'+ic+'</div><div class="ev-b">'+
-      '<div class="et">'+esc(ev.title||'Événement')+'</div>'+
-      (ev.dayLabel?'<div class="ed">'+esc(ev.dayLabel)+'</div>':'')+
+    var web=ev.website||firstUrl(ev.details);
+    var banner=ev.imageUrl?('<div class="ev-banner" style="background-image:url('+esc(ev.imageUrl)+')" onclick="openFs(\''+esc(ev.imageUrl)+'\')"><span class="ev-zoom">⤢ Agrandir</span></div>'):'';
+    var emoji=(!ev.imageUrl&&ev.emoji)?(esc(ev.emoji)+' '):'';
+    var badge=ev.badge?'<span class="ev-badge">'+esc(ev.badge)+'</span>':'';
+    return '<div class="ev-card">'+banner+'<div class="ev-body">'+
+      '<div class="et">'+emoji+esc(ev.title||'Événement')+badge+'</div>'+
+      (ev.dayLabel?'<div class="ed">📅 '+esc(ev.dayLabel)+'</div>':'')+
       (ev.placeLabel?'<div class="ep">📍 '+esc(ev.placeLabel)+'</div>':'')+
+      (ev.sponsorNames?'<div class="ep">🤝 '+esc(ev.sponsorNames)+'</div>':'')+
       (ev.details?'<div class="ex">'+esc(ev.details)+'</div>':'')+
-      '<div class="ev-act"><a class="ev-cal" href="'+gcalLink(ev)+'" target="_blank" rel="noopener">📅 Ajouter</a><button class="ev-share" onclick="shareEvent('+i+')">📲 Partager</button></div>'+
+      '<div class="ev-act"><a class="ev-cal" href="'+gcalLink(ev)+'" target="_blank" rel="noopener" onclick="sndTap()">📅 Ajouter</a>'+
+      (web?'<a class="ev-site" href="'+esc(web)+'" target="_blank" rel="noopener" onclick="sndTap()">🌐 Site</a>':'')+
+      '<button class="ev-share" onclick="sndTap();shareEvent('+i+')">📲 Partager</button></div>'+
     '</div></div>';
   }).join('');
 }

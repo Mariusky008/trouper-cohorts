@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(30);
 
-    // Tente avec event_date/event_type ; si ces colonnes n'existent pas encore
+    // Tente avec event_date/event_type/website_url ; si ces colonnes n'existent pas encore
     // (migration non appliquée), on retombe sur les colonnes de base.
-    let { data, error } = await runQuery(baseCols + ",event_date,event_type");
-    if (error && /event_date|event_type/i.test(String(error.message || ""))) {
+    let { data, error } = await runQuery(baseCols + ",event_date,event_type,website_url");
+    if (error && /event_date|event_type|website_url/i.test(String(error.message || ""))) {
       ({ data, error } = await runQuery(baseCols));
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       sortOrder: Number(row.sort_order || 100),
       eventDate: row.event_date ? String(row.event_date) : "",
       eventType: String(row.event_type || ""),
+      website: String(row.website_url || ""),
     }));
 
     return NextResponse.json({ events, citySlug });
