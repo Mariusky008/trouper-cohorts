@@ -147,6 +147,16 @@
   .cf-aud{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px 15px;margin-top:16px;font-family:'Inter';font-size:13px;color:#cdd0d4;line-height:1.6;}
   .cf-aud b{color:#fff;}
   .cf-aud .prio{color:#ffd84d;font-weight:600;}
+  .cf-mode-note{font-family:'Inter';font-size:12.5px;color:#cdd0d4;line-height:1.5;margin:10px 0 14px;}
+  .cf-mode-note b{color:#fff;}
+  .cf-channel{background:rgba(124,92,255,.08);border:1px solid rgba(168,139,255,.4);border-radius:16px;padding:14px;margin:16px 0;text-align:left;}
+  .cf-ch-h{font-family:'Poppins';font-weight:700;font-size:13px;color:#fff;margin-bottom:8px;}
+  .cf-ch-h span{font-size:10px;font-weight:800;color:#1a1230;background:#a98bff;padding:2px 7px;border-radius:999px;margin-left:5px;}
+  .cf-channel textarea{width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:11px;color:#e6e1ff;font-family:'Inter';font-size:12.5px;line-height:1.5;resize:none;}
+  .cf-ch-act{display:flex;gap:9px;margin-top:10px;}
+  .cf-ch-act .btn{flex:1;margin-top:0;}
+  .cf-ch-act .btn-mint{background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;}
+  .cf-channel small{display:block;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;line-height:1.4;}
   .cf-live-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:14px auto 0;box-shadow:0 0 50px rgba(0,224,160,.45);}
   .cf-live-h{font-family:'Fraunces',serif;font-weight:600;font-size:27px;text-align:center;margin-top:16px;}
   .cf-live-h .mint{color:var(--mint);}
@@ -369,10 +379,14 @@
             <div class="field2"><label>Places</label><input id="cfPlaces" value="20" inputmode="numeric"></div>
             <div class="field2"><label>Durée</label><div class="seg" id="cfDur"><button class="on">1 h</button><button>2 h</button><button>Soir</button></div></div>
           </div>
-          <div class="ptitle"><span class="k">3 · À qui ? · par vagues</span></div>
+          <div class="ptitle"><span class="k">3 · Comment l'envoyer ?</span></div>
+          <div class="seg cf-mode" id="cfMode">
+            <button class="on" data-mode="wave">🎯 Ciblé · payant</button>
+            <button data-mode="channel">📣 Canal · gratuit</button>
+          </div>
+          <div class="cf-mode-note" id="cfModeNote">🥇 Tes <b>fidèles d'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).</div>
           <div class="cf-waves-preview" id="cfWavesPreview"></div>
-          <div class="cf-aud">🥇 <b>On commence par tes fidèles</b>, on élargit seulement si les places ne se remplissent pas. Tu ne déranges (et ne paies) que le nécessaire.</div>
-          <button class="btn btn-mint" onclick="fireCoup()">🚀 Lancer la 1ʳᵉ vague</button>
+          <button class="btn btn-mint" id="cfLaunchBtn" onclick="fireCoup()">🚀 Lancer</button>
 
           <div class="ptitle"><span class="k">👥 Tes fans · <span id="fansCount">—</span></span></div>
           <div class="quota-line" id="quotaLine" style="display:none"></div>
@@ -503,6 +517,12 @@ function closeOv(){document.getElementById('ov').classList.remove('show');gotoTa
 /* ───────── COUP DE FEU (envoi réel par vagues de niveau via l'API) ───────── */
 document.querySelectorAll('#cfReasons .rsn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfReasons .rsn').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
 document.querySelectorAll('#cfDur button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfDur button').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+document.querySelectorAll('#cfMode button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfMode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  var ch=b.dataset.mode==='channel';
+  document.getElementById('cfModeNote').innerHTML=ch?'📣 <b>Gratuit</b> : tu postes l\'offre dans le canal WhatsApp Popey de ta ville. Large, mais ouverture plus faible — et 0 € (rien n\'est décompté).':'🥇 Tes <b>fidèles d\'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).';
+  document.getElementById('cfLaunchBtn').textContent=ch?'📣 Préparer le post canal':'🚀 Lancer';
+}));
+function selectedMode(){var b=document.querySelector('#cfMode button.on');return b&&b.dataset.mode==='channel'?'channel':'wave';}
 var cfWaves=[{lbl:"🥇 Niveau 5",fans:0,res:0,prio:true},{lbl:"Niveau 4",fans:0,res:0,prio:true},{lbl:"Niveau 3",fans:0,res:0,prio:true},{lbl:"Niveau 1-2 · tous",fans:0,res:0,prio:false}];
 function renderWavesPreview(){document.getElementById('cfWavesPreview').innerHTML=cfWaves.map((w,i)=>`<div class="wv ${i===cfWaves.length-1?'dim':''}"><span class="b">${w.lbl}</span><span class="f">${w.fans} fans</span></div>`).join('');}
 var CAMPAIGN=null,cfBusy=false,cfPollTimer=null;
@@ -524,14 +544,15 @@ function fireCoup(){
   if(cfBusy)return;
   var offer=(document.getElementById('cfOffer').value||'').trim();
   if(offer.length<3){toast('Décris ton offre d\'abord');document.getElementById('cfOffer').focus();return;}
-  var total=parseInt(document.getElementById('cfPlaces').value)||0;
+  var total=parseInt(document.getElementById('cfPlaces').value)||0;var mode=selectedMode();
   cfBusy=true;
   fetch('/api/popey-human/privilege/coup',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
-    body:JSON.stringify({p:PRO,offerText:offer,totalPlaces:total,durationMin:durMinutes(),reason:selectedReason()})})
+    body:JSON.stringify({p:PRO,offerText:offer,totalPlaces:total,durationMin:durMinutes(),reason:selectedReason(),mode:mode})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{cfBusy=false;
       if(!d||d.error){toast(d&&d.error||'Lancement impossible');return;}
       CAMPAIGN=d.campaign;showLive();
-      if(d.whatsappConfigured===false)toast('⚠️ WhatsApp non configuré — campagne créée');
+      if(d.mode==='channel')toast('📣 Coup de feu prêt — copie le post pour le canal');
+      else if(d.whatsappConfigured===false)toast('⚠️ WhatsApp non configuré — campagne créée');
       else toast('🚀 Vague 1 envoyée à '+((d.wave&&d.wave.sent)||0)+' fidèle'+(((d.wave&&d.wave.sent)||0)>1?'s':''));
       renderLive();startPoll();
     }).catch(()=>{cfBusy=false;toast('Connexion impossible');});
@@ -553,21 +574,31 @@ function pollCoup(){
   fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO)+'&id='+encodeURIComponent(CAMPAIGN.id),{cache:'no-store'})
     .then(r=>r.json()).then(d=>{if(d&&d.campaign){CAMPAIGN=d.campaign;renderLive();}}).catch(()=>{});
 }
+function channelPostText(){var c=CAMPAIGN||{};var link=location.origin+'/o/'+(c.id||'');return '⚡ COUP DE FEU — '+((MERCHANT&&MERCHANT.name)||'ton commerce')+'\n'+(c.offer_text||'')+'\n👉 Réserve ta place : '+link;}
+function channelBlockHTML(){return '<div class="cf-channel"><div class="cf-ch-h">📣 Post pour le canal WhatsApp <span>gratuit</span></div><textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea><div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button><button class="btn btn-ghost" onclick="shareChannel()">Partager</button></div><small>Colle-le dans le canal Popey de ta ville (gratuit, large — ouverture plus faible mais 0 €).</small></div>';}
+function copyChannel(){var t=channelPostText();var ok=function(){toast('📋 Post copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();function fb(){try{var ta=document.getElementById('cfChannelTxt');ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');ok();}catch(e){}}}
+function shareChannel(){window.open('https://wa.me/?text='+encodeURIComponent(channelPostText()),'_blank');}
 function renderLive(){
   var c=CAMPAIGN;if(!c)return;
   var total=Number(c.total_places)||0,taken=Number(c.places_taken)||0;
   document.getElementById('cfPlacesLeft').textContent=total>0?(taken+' / '+total+' places réservées'):(taken+' réservation'+(taken>1?'s':''));
   var waves=Array.isArray(c.waves)?c.waves:[];var sentWaves=waves.filter(w=>w.sent_at);
-  document.getElementById('cfWaveList').innerHTML=sentWaves.map(s=>`<div class="wave-row"><div><div class="wl">${esc(s.label)}</div><div class="wm">${s.sent} fan${s.sent>1?'s':''} prévenu${s.sent>1?'s':''}</div></div><div class="wr">✓</div></div>`).join('');
+  var isChannel=(typeof c.current_wave==='number'?c.current_wave:-1)<0; // aucune vague payante envoyée → mode canal
   var full=total>0&&taken>=total,done=c.status!=='live';
+  var list=document.getElementById('cfWaveList'),act=document.getElementById('cfWaveAction');
+  if(isChannel){
+    list.innerHTML='';
+    act.innerHTML=channelBlockHTML()+'<button class="btn btn-ghost" onclick="endCoup()">Terminer</button>';
+    return;
+  }
+  list.innerHTML=sentWaves.map(s=>`<div class="wave-row"><div><div class="wl">${esc(s.label)}</div><div class="wm">${s.sent} fan${s.sent>1?'s':''} prévenu${s.sent>1?'s':''}</div></div><div class="wr">✓</div></div>`).join('');
   var nextIdx=(typeof c.current_wave==='number'?c.current_wave:-1)+1,hasNext=nextIdx<waves.length;
-  var act=document.getElementById('cfWaveAction');
   if(full||done||!hasNext){
     var prevenu=sentWaves.reduce((a,s)=>a+(Number(s.sent)||0),0);
-    act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${taken} place${taken>1?'s':''} remplie${taken>1?'s':''} · <b>${prevenu} fan${prevenu>1?'s':''} prévenu${prevenu>1?'s':''}</b>. Chaque visite validée = +1 cœur.</div><button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;
+    act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${taken} place${taken>1?'s':''} remplie${taken>1?'s':''} · <b>${prevenu} fan${prevenu>1?'s':''} prévenu${prevenu>1?'s':''}</b>. Chaque visite validée = +1 cœur.</div>`+channelBlockHTML()+`<button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;
   }else{
     var nx=waves[nextIdx]||{label:'vague suivante',fans:0};
-    act.innerHTML=`<div class="cf-prio-note">Il reste <b>${total>0?(total-taken)+' places':'des places'}</b>. Les fidèles n'ont pas tout pris ?</div><button class="btn btn-mint" onclick="expandCoup()">Élargir → ${esc(nx.label)} (${nx.fans} fans)</button><button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;
+    act.innerHTML=`<div class="cf-prio-note">Il reste <b>${total>0?(total-taken)+' places':'des places'}</b>. Les fidèles n'ont pas tout pris ?</div><button class="btn btn-mint" onclick="expandCoup()">Élargir → ${esc(nx.label)} (${nx.fans} fans)</button>`+channelBlockHTML()+`<button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;
   }
 }
 function endCoup(){if(cfPollTimer)clearInterval(cfPollTimer);CAMPAIGN=null;gotoTab('dash');loadProData();}

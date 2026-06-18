@@ -81,12 +81,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => null)) as
-      | { p?: string; token?: string; offerText?: string; totalPlaces?: number; durationMin?: number; reason?: string }
+      | { p?: string; token?: string; offerText?: string; totalPlaces?: number; durationMin?: number; reason?: string; mode?: string }
       | null;
     const cred = String(body?.p || body?.token || "").trim();
     const placeId = await resolveProPlaceId(cred);
     if (!placeId) return NextResponse.json({ error: "Accès pro non reconnu." }, { status: 403 });
 
+    // mode : "wave" (vagues payantes, défaut) | "channel" (canal gratuit → on n'envoie AUCUN message payant,
+    // le pro copie le post dans le canal WhatsApp à la main). Dans les deux cas la fiche /o/<id> est créée.
+    const mode = String(body?.mode || "wave").trim() === "channel" ? "channel" : "wave";
     const offerText = String(body?.offerText || "").trim().slice(0, 160);
     if (offerText.length < 3) return NextResponse.json({ error: "Décris ton offre (l'offre du Coup de feu)." }, { status: 400 });
     const totalPlaces = Math.max(0, Math.min(999, Math.floor(Number(body?.totalPlaces) || 0)));
@@ -101,18 +104,21 @@ export async function POST(request: NextRequest) {
     const buckets = await loadWaveBuckets(placeId);
     const waves: WaveSnapshot[] = snapshotFromBuckets(buckets);
 
-    // Garde quota : on ne lance pas si la 1ʳᵉ vague dépasse le quota mensuel restant (maîtrise du coût WhatsApp).
-    const used = await monthlyMessagesUsed(placeId);
-    const remaining = Math.max(0, COUP_MONTHLY_QUOTA - used);
-    const wave0Size = buckets[0]?.phones.length || 0;
-    if (wave0Size > remaining) {
-      return NextResponse.json(
-        {
-          error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette 1ʳᵉ vague en demande ${wave0Size}. Réessaie le mois prochain ou augmente ton quota.`,
-          quota: { used, included: COUP_MONTHLY_QUOTA, remaining },
-        },
-        { status: 409 },
-      );
+    // Garde quota : seulement en mode vagues (le canal est gratuit). On ne lance pas si la 1ʳᵉ vague
+    // dépasse le quota mensuel restant (maîtrise du coût WhatsApp).
+    if (mode !== "channel") {
+      const used = await monthlyMessagesUsed(placeId);
+      const remaining = Math.max(0, COUP_MONTHLY_QUOTA - used);
+      const wave0Size = buckets[0]?.phones.length || 0;
+      if (wave0Size > remaining) {
+        return NextResponse.json(
+          {
+            error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette 1ʳᵉ vague en demande ${wave0Size}. Réessaie le mois prochain ou augmente ton quota.`,
+            quota: { used, included: COUP_MONTHLY_QUOTA, remaining },
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // 1) Crée la campagne (on a besoin de l'id pour le deep-link AVANT d'envoyer).
@@ -140,29 +146,33 @@ export async function POST(request: NextRequest) {
     const campaignId = String((created as { id: string }).id);
     const link = `${originOf(request)}/o/${campaignId}`;
 
-    // 2) Envoie la VAGUE 0 (les plus fidèles) — réutilise la diffusion Twilio des alertes.
+    // 2) Mode VAGUES : envoie la vague 0 (les plus fidèles) via Twilio + marque current_wave=0.
+    //    Mode CANAL : on n'envoie rien de payant (current_wave reste -1) ; le pro postera le canal à la main.
     const wave0 = buckets[0];
     let sent0 = 0;
     let skipped = false;
-    if (wave0 && wave0.phones.length > 0) {
-      const name = await merchantName(placeId);
-      const res = await sendPrivilegeAlertBroadcast(wave0.phones, { merchantName: name, offerText, link });
-      skipped = res.skipped === true;
-      sent0 = res.results.filter((r) => r.sid).length;
+    let updated: Record<string, unknown> | null = created as Record<string, unknown>;
+    if (mode !== "channel") {
+      if (wave0 && wave0.phones.length > 0) {
+        const name = await merchantName(placeId);
+        const res = await sendPrivilegeAlertBroadcast(wave0.phones, { merchantName: name, offerText, link });
+        skipped = res.skipped === true;
+        sent0 = res.results.filter((r) => r.sid).length;
+      }
+      waves[0] = { ...waves[0], sent: sent0, sent_at: nowIso };
+      const { data: upd } = await supabase
+        .from("human_privilege_coup_campaigns")
+        .update({ current_wave: 0, waves, updated_at: nowIso })
+        .eq("id", campaignId)
+        .select("*")
+        .maybeSingle();
+      updated = (upd as Record<string, unknown>) || (created as Record<string, unknown>);
     }
-    waves[0] = { ...waves[0], sent: sent0, sent_at: nowIso };
-
-    // 3) Marque la vague 0 comme envoyée.
-    const { data: updated } = await supabase
-      .from("human_privilege_coup_campaigns")
-      .update({ current_wave: 0, waves, updated_at: nowIso })
-      .eq("id", campaignId)
-      .select("*")
-      .maybeSingle();
 
     return NextResponse.json({
       ok: true,
-      campaign: updated || created,
+      mode,
+      campaign: updated,
       link,
       wave: { idx: 0, fans: wave0?.phones.length || 0, sent: sent0 },
       whatsappConfigured: !skipped,
