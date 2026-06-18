@@ -42,9 +42,28 @@ export async function GET(request: NextRequest) {
     let reservations = 0;
     let visits = 0;
     let fans = 0;
+    let views = 0;
+    let want = 0;
     try {
       const { count } = await supabase.from("human_privilege_reservations").select("id", { count: "exact", head: true }).eq("place_id", placeId);
       reservations = Number(count || 0);
+    } catch {
+      /* résilient */
+    }
+    // Haut du funnel : vues + « Je veux » du mois (events priv_* émis par le catalogue v3).
+    try {
+      const now = new Date();
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+      const { data: evs } = await supabase
+        .from("human_marketplace_events")
+        .select("event_type")
+        .eq("place_id", placeId)
+        .gte("created_at", monthStart)
+        .limit(50000);
+      for (const e of (evs as Array<{ event_type: string }> | null) || []) {
+        if (e.event_type === "priv_view") views += 1;
+        else if (e.event_type === "priv_favorite") want += 1;
+      }
     } catch {
       /* résilient */
     }
@@ -221,8 +240,8 @@ export async function GET(request: NextRequest) {
         promosEur: 0, // TODO formule à confirmer
         afterEur,
         roi: 0,
-        views: 0, // TODO tracking
-        want: 0, // TODO (Mes offres = localStorage côté client)
+        views,
+        want,
         reservations,
         visits,
         fans,

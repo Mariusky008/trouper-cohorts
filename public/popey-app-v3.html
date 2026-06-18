@@ -489,6 +489,12 @@ function hearts(n){n=Math.max(0,Math.min(5,n||0));return '💚'.repeat(n)+'🤍'
 function starline(s){const f=Math.round(s);return '★'.repeat(f)+'☆'.repeat(5-f);}
 function relStatus(lvl){return ['Nouvelle rencontre','Premier rendez-vous','Régulier·e','Régulier·e','Habitué·e','Habitué·e'][Math.min(5,lvl||0)];}
 
+/* ───────── Tracking funnel (ouverture, vues, je veux) → human_marketplace_events ───────── */
+var SESSION_ID=(function(){try{var s=sessionStorage.getItem('popey_sess');if(!s){s=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem('popey_sess',s);}return s;}catch(e){return Math.random().toString(36).slice(2);}})();
+var _viewed={};
+function trackPriv(event,placeId){try{fetch('/api/popey-human/privilege/track',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',keepalive:true,body:JSON.stringify({placeId:placeId||'',event:event,sessionId:SESSION_ID,ville:CITY_LABEL,ref:REF,refName:REFNAME})}).catch(function(){});}catch(e){}}
+function trackView(o){if(!o||!isRealId(o.id)||_viewed[o.id])return;_viewed[o.id]=1;trackPriv('view',o.id);}
+
 function youtubeId(url){var m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);return m?m[1]:'';}
 function mediaInner(o,idx,isTop){
   const m=o.media[idx]||o.media[0]||{type:'img'};
@@ -540,7 +546,7 @@ function go(name){
 }
 
 function renderLaunch(){const d=document.getElementById('launchDeck');if(!offers.length){d.innerHTML='';return;}const a=offers[0],b=offers[1%offers.length],c=offers[2%offers.length];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),true);}
-function renderMain(){topMediaIdx=0;const d=document.getElementById('mainDeck');if(!offers.length){d.innerHTML='<div class="deck-empty">✨ Pas encore d\'offre à '+esc(CITY_LABEL)+'.<br>Reviens vite, une nouvelle édition arrive chaque mois.</div>';return;}const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);}
+function renderMain(){topMediaIdx=0;const d=document.getElementById('mainDeck');if(!offers.length){d.innerHTML='<div class="deck-empty">✨ Pas encore d\'offre à '+esc(CITY_LABEL)+'.<br>Reviens vite, une nouvelle édition arrive chaque mois.</div>';return;}const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);trackView(a);}
 
 function setMedia(top,o,idx){topMediaIdx=idx;const mediaEl=top.querySelector('.media');const m=o.media[idx]||{};mediaEl.style.backgroundImage=m.poster?`url(${m.poster})`:'';mediaEl.innerHTML=mediaInner(o,idx,true);wireMedia(top);}
 function wireMedia(top){
@@ -588,7 +594,7 @@ const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 function autoHint(){if(reduce)return;const top=document.querySelector('#mainDeck .card.top');if(!top)return;const yes=top.querySelector('.stamp.yes'),no=top.querySelector('.stamp.no');[[0,()=>top.style.transition='transform .5s ease,opacity .5s'],[400,()=>{top.style.transform='translateX(54px) rotate(3deg)';yes.style.opacity=1;}],[1000,()=>{top.style.transform='translateX(0)';yes.style.opacity=0;}],[1500,()=>{top.style.transform='translateX(-54px) rotate(-3deg)';no.style.opacity=1;}],[2100,()=>{top.style.transform='translateX(0)';no.style.opacity=0;}]].forEach(([t,fn])=>setTimeout(fn,t));}
 
 /* ───────── Sheets ───────── */
-function openWant(i){currentPro=i;const o=offers[i];if(o.mystery&&!isRevealed(o.id))setRevealed(o.id);/* Je veux sur un mystère = on révèle */wIc.textContent=o.emoji;wIc.style.background=o.grad;if(o.poster){wIc.style.backgroundImage='url('+o.poster+')';wIc.textContent='';}wProd.textContent=o.product;wMerch.textContent=o.name+' · '+o.role;wNew.textContent=o.newP;wOld.textContent=o.oldP||'';
+function openWant(i){currentPro=i;const o=offers[i];if(o.mystery&&!isRevealed(o.id))setRevealed(o.id);/* Je veux sur un mystère = on révèle */trackPriv('favorite',o.id);wIc.textContent=o.emoji;wIc.style.background=o.grad;if(o.poster){wIc.style.backgroundImage='url('+o.poster+')';wIc.textContent='';}wProd.textContent=o.product;wMerch.textContent=o.name+' · '+o.role;wNew.textContent=o.newP;wOld.textContent=o.oldP||'';
   var lvl=o.relLvl||0;wRelLvl.textContent=relStatus(lvl);wHearts.textContent=hearts(lvl);wRelTag.textContent='niveau '+lvl+'/5';
   wRelNext.innerHTML='🎟️ +1 cœur à chaque <b>visite validée</b> par le pro. '+(o.relNext||'Reviens pour faire monter ta relation.');
   if(!savedOffers.includes(i))savedOffers.push(i);
@@ -681,7 +687,7 @@ function doReserve(){
     body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;var code=(d&&d.code)||'';
-      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl); // baseline → le passage 0→1 déclenchera le « match »
+      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl);trackPriv('reserve',o.id); // baseline → le passage 0→1 déclenchera le « match »
       fillShare(o,lvl,code,(d&&d.next)||null);
     }).catch(()=>{fillShare(o,o.relLvl||0,'',null);});
 }
@@ -831,7 +837,7 @@ function isRevealed(id){return !!loadRevealed()[id];}
 function setRevealed(id){try{var m=loadRevealed();m[id]=1;localStorage.setItem('popey_revealed',JSON.stringify(m));}catch(e){}}
 function revealMystery(e,id){
   if(e&&e.stopPropagation)e.stopPropagation();
-  setRevealed(id);
+  setRevealed(id);trackPriv('mystery_reveal',id);
   var veil=(e&&e.target&&e.target.closest)?e.target.closest('.mystery-veil'):null;
   if(veil){veil.classList.add('gone');setTimeout(function(){renderMain();},440);}
   else renderMain();
@@ -904,6 +910,7 @@ renderLaunch();tick();
 loadOffers();
 loadCoups();setInterval(loadCoups,90000);
 loadEvents();
+trackPriv('open'); // ouverture du catalogue (alimente les « clics » du classement pro)
 </script>
 </body>
 </html>
