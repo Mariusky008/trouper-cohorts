@@ -574,8 +574,13 @@ function pollCoup(){
   fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO)+'&id='+encodeURIComponent(CAMPAIGN.id),{cache:'no-store'})
     .then(r=>r.json()).then(d=>{if(d&&d.campaign){CAMPAIGN=d.campaign;renderLive();}}).catch(()=>{});
 }
+var CHANNEL_URL='';
 function channelPostText(){var c=CAMPAIGN||{};var link=location.origin+'/o/'+(c.id||'');return '⚡ COUP DE FEU — '+((MERCHANT&&MERCHANT.name)||'ton commerce')+'\n'+(c.offer_text||'')+'\n👉 Réserve ta place : '+link;}
-function channelBlockHTML(){return '<div class="cf-channel"><div class="cf-ch-h">📣 Post pour le canal WhatsApp <span>gratuit</span></div><textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea><div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button><button class="btn btn-ghost" onclick="shareChannel()">Partager</button></div><small>Colle-le dans le canal Popey de ta ville (gratuit, large — ouverture plus faible mais 0 €).</small></div>';}
+function openChannel(){if(CHANNEL_URL)window.open(CHANNEL_URL,'_blank');}
+function channelBlockHTML(){
+  var openBtn=CHANNEL_URL?'<button class="btn btn-ghost cf-ch-open" onclick="openChannel()">📣 Ouvrir le canal de ta ville</button>':'';
+  return '<div class="cf-channel"><div class="cf-ch-h">📣 Post pour le canal WhatsApp <span>gratuit</span></div><textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea><div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button><button class="btn btn-ghost" onclick="shareChannel()">Partager</button></div>'+openBtn+'<small>Copie le post, ouvre le canal Popey de ta ville et colle-le (gratuit, large — ouverture plus faible mais 0 €).</small></div>';
+}
 function copyChannel(){var t=channelPostText();var ok=function(){toast('📋 Post copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();function fb(){try{var ta=document.getElementById('cfChannelTxt');ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');ok();}catch(e){}}}
 function shareChannel(){window.open('https://wa.me/?text='+encodeURIComponent(channelPostText()),'_blank');}
 function renderLive(){
@@ -695,6 +700,7 @@ function loadProData(){
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
+      CHANNEL_URL=d.channelUrl||'';
       renderShare(d.shareLink);renderLeaderboard(d.leaderboard);
     }).catch(()=>{});
 }

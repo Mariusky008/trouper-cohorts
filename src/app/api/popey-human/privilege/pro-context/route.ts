@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
 import { DEFAULT_TIERS, type LoyaltyTier } from "@/lib/popey-human/loyalty";
 import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
+import { cityChannelUrl } from "@/lib/popey-human/channels";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("id,company_name,owner_display_name,metier,city,privilege_badge,partner_offer_value_eur,logo_url,pro_slug,owner_member_id")
+      .select("id,company_name,owner_display_name,metier,city,city_slug,privilege_badge,partner_offer_value_eur,logo_url,pro_slug,owner_member_id")
       .eq("id", placeId)
       .maybeSingle();
     const p = (place as Record<string, unknown>) || {};
@@ -331,6 +332,7 @@ export async function GET(request: NextRequest) {
       proSlug,
       leaderboard,
       activity,
+      channelUrl: cityChannelUrl(String(p.city_slug || "")),
     });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });
