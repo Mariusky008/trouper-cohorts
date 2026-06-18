@@ -3,11 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
 import { toE164 } from "@/lib/popey-human/loyalty";
 import { sendPrivilegeAlertOptin } from "@/lib/actions/whatsapp-twilio";
+import { COUP_MONTHLY_QUOTA, monthlyMessagesUsed } from "@/lib/popey-human/coup";
 
 export const dynamic = "force-dynamic";
-
-// Quota de messages Coup de feu inclus dans l'abonnement (affichage ; pas d'enforcement pour l'instant).
-const INCLUDED_MONTHLY = 300;
 
 // Masque un numéro pour l'affichage pro (reconnaissable sans exposer le numéro complet).
 function maskPhone(e164: string): string {
@@ -15,11 +13,6 @@ function maskPhone(e164: string): string {
   if (d.length < 4) return "••";
   const nat = d.startsWith("33") ? "0" + d.slice(2) : d;
   return nat.slice(0, 2) + " •• •• •• " + nat.slice(-2);
-}
-
-function monthStartIso(): string {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
 // GET ?p=<cred> → « Mes fans » de l'espace pro : abonnés confirmés + en attente (opt-in non confirmé),
@@ -81,21 +74,8 @@ export async function GET(request: NextRequest) {
       addedByPro: s.source === "pro_added",
     }));
 
-    // Quota : somme des messages envoyés par les Coups de feu du mois (vagues).
-    let used = 0;
-    try {
-      const { data: camps } = await supabase
-        .from("human_privilege_coup_campaigns")
-        .select("waves,created_at")
-        .eq("place_id", placeId)
-        .gte("created_at", monthStartIso())
-        .limit(200);
-      for (const c of (camps as Array<{ waves: Array<{ sent?: number }> }> | null) || []) {
-        for (const w of Array.isArray(c.waves) ? c.waves : []) used += Number(w.sent) || 0;
-      }
-    } catch {
-      /* résilient */
-    }
+    // Quota : somme des messages envoyés par les Coups de feu du mois (helper partagé avec l'enforcement).
+    const used = await monthlyMessagesUsed(placeId);
     const monthLabel = (() => {
       const m = new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
       return m.charAt(0).toUpperCase() + m.slice(1);
@@ -105,10 +85,10 @@ export async function GET(request: NextRequest) {
       confirmed,
       pending,
       list,
-      quota: { used, included: INCLUDED_MONTHLY, remaining: Math.max(0, INCLUDED_MONTHLY - used), monthLabel },
+      quota: { used, included: COUP_MONTHLY_QUOTA, remaining: Math.max(0, COUP_MONTHLY_QUOTA - used), monthLabel },
     });
   } catch {
-    return NextResponse.json({ confirmed: 0, pending: 0, list: [], quota: { used: 0, included: INCLUDED_MONTHLY, remaining: INCLUDED_MONTHLY, monthLabel: "" } });
+    return NextResponse.json({ confirmed: 0, pending: 0, list: [], quota: { used: 0, included: COUP_MONTHLY_QUOTA, remaining: COUP_MONTHLY_QUOTA, monthLabel: "" } });
   }
 }
 

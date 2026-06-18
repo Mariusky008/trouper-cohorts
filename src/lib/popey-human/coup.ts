@@ -65,3 +65,28 @@ export type WaveSnapshot = { idx: number; label: string; fans: number; sent: num
 export function snapshotFromBuckets(buckets: WaveBucket[]): WaveSnapshot[] {
   return buckets.map((b) => ({ idx: b.idx, label: b.label, fans: b.phones.length, sent: 0, sent_at: null }));
 }
+
+// Quota mensuel de messages Coup de feu inclus dans l'abonnement (maîtrise du coût WhatsApp).
+export const COUP_MONTHLY_QUOTA = 300;
+
+// Nombre de messages Coup de feu déjà envoyés ce mois pour un commerçant (somme des vagues envoyées).
+export async function monthlyMessagesUsed(placeId: string): Promise<number> {
+  const supabase = createAdminClient();
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  let used = 0;
+  try {
+    const { data: camps } = await supabase
+      .from("human_privilege_coup_campaigns")
+      .select("waves,created_at")
+      .eq("place_id", placeId)
+      .gte("created_at", monthStart)
+      .limit(200);
+    for (const c of (camps as Array<{ waves: Array<{ sent?: number }> }> | null) || []) {
+      for (const w of Array.isArray(c.waves) ? c.waves : []) used += Number(w.sent) || 0;
+    }
+  } catch {
+    /* résilient */
+  }
+  return used;
+}

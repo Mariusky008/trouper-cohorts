@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
-import { loadWaveBuckets, snapshotFromBuckets, type WaveSnapshot } from "@/lib/popey-human/coup";
+import { loadWaveBuckets, snapshotFromBuckets, monthlyMessagesUsed, COUP_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
 import { sendPrivilegeAlertBroadcast } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
@@ -100,6 +100,20 @@ export async function POST(request: NextRequest) {
     // Vagues figées à la création (compteurs de fans).
     const buckets = await loadWaveBuckets(placeId);
     const waves: WaveSnapshot[] = snapshotFromBuckets(buckets);
+
+    // Garde quota : on ne lance pas si la 1ʳᵉ vague dépasse le quota mensuel restant (maîtrise du coût WhatsApp).
+    const used = await monthlyMessagesUsed(placeId);
+    const remaining = Math.max(0, COUP_MONTHLY_QUOTA - used);
+    const wave0Size = buckets[0]?.phones.length || 0;
+    if (wave0Size > remaining) {
+      return NextResponse.json(
+        {
+          error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette 1ʳᵉ vague en demande ${wave0Size}. Réessaie le mois prochain ou augmente ton quota.`,
+          quota: { used, included: COUP_MONTHLY_QUOTA, remaining },
+        },
+        { status: 409 },
+      );
+    }
 
     // 1) Crée la campagne (on a besoin de l'id pour le deep-link AVANT d'envoyer).
     const { data: created, error: insErr } = await supabase

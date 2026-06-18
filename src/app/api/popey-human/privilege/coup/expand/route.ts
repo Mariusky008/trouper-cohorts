@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
-import { loadWaveBuckets, COUP_WAVES, type WaveSnapshot } from "@/lib/popey-human/coup";
+import { loadWaveBuckets, COUP_WAVES, monthlyMessagesUsed, COUP_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
 import { sendPrivilegeAlertBroadcast } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +44,21 @@ export async function POST(request: NextRequest) {
     // Recalcule les destinataires de la vague visée (au cas où de nouveaux fans/niveaux).
     const buckets = await loadWaveBuckets(placeId);
     const bucket = buckets.find((b) => b.idx === nextIdx);
+
+    // Garde quota : on n'élargit pas si la vague dépasse le quota mensuel restant (maîtrise du coût).
+    const used = await monthlyMessagesUsed(placeId);
+    const remaining = Math.max(0, COUP_MONTHLY_QUOTA - used);
+    const bucketSize = bucket?.phones.length || 0;
+    if (bucketSize > remaining) {
+      return NextResponse.json(
+        {
+          error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette vague en demande ${bucketSize}. Augmente ton quota pour élargir.`,
+          quota: { used, included: COUP_MONTHLY_QUOTA, remaining },
+        },
+        { status: 409 },
+      );
+    }
+
     const nowIso = new Date().toISOString();
     let sent = 0;
     let skipped = false;
