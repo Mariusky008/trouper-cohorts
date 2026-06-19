@@ -69,6 +69,8 @@
   .card-name{font-family:'Playfair Display',serif;font-weight:700;font-size:26px;line-height:1;color:#fff;}
   .card-meta{font-family:'Inter';font-size:13px;color:#cfd2d6;margin-top:6px;}
   .card-rate{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-family:'Poppins';font-weight:700;font-size:12.5px;color:#ffd84d;background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.35);padding:4px 10px;border-radius:999px;}
+  .card-rate.want{color:#7ef0ce;background:rgba(0,224,160,.12);border-color:rgba(0,224,160,.4);}
+  .card-rate.new{color:#cdd0d4;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);}
   .offer{margin-top:11px;}
   .offer-product{font-family:'Poppins';font-weight:600;font-size:13px;color:#e9ebed;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .price-row .new{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -295,6 +297,12 @@
   .rel-card .rc-next{font-family:'Inter';font-size:12.5px;color:#c7cdd9;margin-top:7px;line-height:1.4;}
   .rel-card .rc-next b{color:#fff;}
   .rel-card .rel-code{margin-top:12px;border:none;cursor:pointer;border-radius:11px;padding:9px 15px;font-family:'Poppins';font-weight:700;font-size:13px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;}
+  .code-row{display:flex;align-items:center;gap:12px;background:rgba(255,196,0,.08);border:1px solid rgba(255,196,0,.35);border-radius:14px;padding:12px 14px;margin-bottom:9px;}
+  .code-row .cr-tx{flex:1;min-width:0;}
+  .code-row .cr-tx b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
+  .code-row .cr-tx small{font-family:'Inter';font-size:11.5px;color:#cdd0d4;display:block;margin-top:2px;line-height:1.35;}
+  .code-row .cr-tx small b{color:#ffd84d;}
+  .code-row .cr-btn{flex-shrink:0;border:none;cursor:pointer;border-radius:11px;padding:10px 14px;font-family:'Poppins';font-weight:700;font-size:12.5px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;}
 </style>
 </head>
 <body>
@@ -378,6 +386,8 @@
           <div class="cw-title">Ma carte <span class="mint">Popey</span></div>
         </div>
         <div class="cw-sub">Tes relations et tes offres gardées, au même endroit.</div>
+        <div class="cw-sec" id="cwCodesTitle" style="display:none">⏳ Tes codes à utiliser</div>
+        <div id="cwCodes"></div>
         <div class="cw-sec">💚 Mes relations</div>
         <div id="cwRel"></div>
         <div class="cw-sec">❤ Mes offres gardées</div>
@@ -632,7 +642,7 @@ function cardHTML(o,cls,idx){
     <div class="card-info">
       <div class="card-name">${esc(o.name)}</div>
       <div class="card-meta">${esc(o.meta)}</div>
-      ${o.stars>0?`<div class="card-rate">⭐ ${Number(o.stars).toFixed(1).replace('.',',')} · ${o.reviewN||0} avis</div>`:''}
+      ${o.stars>0?`<div class="card-rate">⭐ ${Number(o.stars).toFixed(1).replace('.',',')} · ${o.reviewN||0} avis</div>`:(o.wantN>0?`<div class="card-rate want">💚 ${o.wantN} ${o.wantN>1?'ont dit':'a dit'} « Je veux »</div>`:`<div class="card-rate new">✨ Nouveau sur Popey</div>`)}
       <div class="offer"><div class="offer-product">${o.emoji} ${esc(o.product)}</div>
         <div class="price-row"><span class="new">${esc(o.newP)}</span>${o.oldP?`<span class="old">${esc(o.oldP)}</span>`:''}${o.off?`<span class="off">${esc(o.off)}</span>`:''}</div>
       </div>
@@ -803,7 +813,21 @@ function keepForLater(){closeSheets();}
 function reserveFromMine(i){currentPro=i;reserve();}
 
 /* ───────── Ma carte Popey (wallet : relations de fidélité + offres gardées) ───────── */
-function openCard(){go('card');renderWalletFav();loadMyCard();}
+function openCard(){go('card');renderWalletCodes();renderWalletFav();loadMyCard();}
+/* D — pousse les codes réservés pas encore validés en haut du wallet (réservation → visite). */
+function renderWalletCodes(){
+  var title=document.getElementById('cwCodesTitle'),box=document.getElementById('cwCodes');
+  var reserved=loadReserved();var rows=[];
+  Object.keys(reserved).forEach(function(pid){
+    var rv=reserved[pid];if(!rv||!rv.code)return;
+    var i=offers.findIndex(function(o){return o.id===pid;});if(i<0)return; // besoin du nom du commerçant
+    if((relMap[pid]||0)>(rv.lvl||0))return; // visite déjà validée → code consommé
+    rows.push(i);
+  });
+  if(!rows.length){title.style.display='none';box.innerHTML='';return;}
+  title.style.display='';title.textContent='⏳ Tes codes à utiliser ('+rows.length+')';
+  box.innerHTML=rows.map(function(i){var o=offers[i];return '<div class="code-row"><div class="cr-tx"><b>'+esc(o.name)+'</b><small>Montre ce code en boutique → tu gagnes <b>+1 cœur</b></small></div><button class="cr-btn" onclick="presentCodeIdx('+i+')">📲 Présenter</button></div>';}).join('');
+}
 function loadMyCard(){
   var m=loadMember();
   if(!m||!m.phone){renderWalletRel([]);return;}
@@ -946,7 +970,7 @@ function mapPlace(p){
     bio:String(p.description||''),support:'',endTs:end,
     media:media,phone:String(p.partnerWhatsapp||p.directContact||''),address:String(p.address||''),website:String(p.websiteUrl||''),
     mystery:mystery,mysteryDeal:mysteryDeal,
-    relLvl:0,relNext:'',stars:0,reviewN:0,reviews:[]
+    relLvl:0,relNext:'',stars:0,reviewN:0,wantN:0,reviews:[]
   };
 }
 function loadOffers(){
@@ -954,7 +978,7 @@ function loadOffers(){
   fetch(url,{cache:'no-store'}).then(r=>r.json()).then(d=>{
     var places=(d&&(d.places||d.data))||[];
     var mapped=places.filter(p=>p&&p.id&&!String(p.id).startsWith('generated-')).map(mapPlace);
-    if(mapped.length){offers=mapped;renderLaunch();if(document.getElementById('v-deck').classList.contains('active'))renderMain();loadAllRelations();loadReviewSummaries();}
+    if(mapped.length){offers=mapped;renderLaunch();if(document.getElementById('v-deck').classList.contains('active'))renderMain();loadAllRelations();loadReviewSummaries();loadWantCounts();}
   }).catch(()=>{});
 }
 /* Note + nb d'avis de toutes les cartes en un appel (preuve sociale sur le deck). */
@@ -964,6 +988,16 @@ function loadReviewSummaries(){
     .then(r=>r.json()).then(d=>{
       var s=(d&&d.summary)||{};var any=false;
       offers.forEach(o=>{var x=s[o.id];if(x&&x.avg>0){o.stars=x.avg||0;o.reviewN=x.count||0;any=true;}});
+      if(any){if(document.getElementById('v-launch').classList.contains('active'))renderLaunch();if(document.getElementById('v-deck').classList.contains('active'))renderMain();}
+    }).catch(()=>{});
+}
+/* E — compteur « Je veux » par commerçant (preuve sociale quand pas encore d'avis). */
+function loadWantCounts(){
+  var ids=offers.filter(o=>isRealId(o.id)).map(o=>o.id);if(!ids.length)return;
+  fetch('/api/popey-human/privilege/want-counts?ids='+encodeURIComponent(ids.join(',')),{cache:'no-store'})
+    .then(r=>r.json()).then(d=>{
+      var c=(d&&d.counts)||{};var any=false;
+      offers.forEach(o=>{if(c[o.id]>0){o.wantN=c[o.id];any=true;}});
       if(any){if(document.getElementById('v-launch').classList.contains('active'))renderLaunch();if(document.getElementById('v-deck').classList.contains('active'))renderMain();}
     }).catch(()=>{});
 }
