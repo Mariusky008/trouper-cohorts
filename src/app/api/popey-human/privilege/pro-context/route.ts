@@ -45,6 +45,16 @@ export async function GET(request: NextRequest) {
     let fans = 0;
     let views = 0;
     let want = 0;
+    let campaignsCount = 0;
+    try {
+      const { count } = await supabase
+        .from("human_privilege_coup_campaigns")
+        .select("id", { count: "exact", head: true })
+        .eq("place_id", placeId);
+      campaignsCount = Number(count || 0);
+    } catch {
+      /* table absente → 0 */
+    }
     try {
       const { count } = await supabase.from("human_privilege_reservations").select("id", { count: "exact", head: true }).eq("place_id", placeId);
       reservations = Number(count || 0);
@@ -332,6 +342,7 @@ export async function GET(request: NextRequest) {
       proSlug,
       leaderboard,
       activity,
+      campaignsCount,
       channelUrl: cityChannelUrl(String(p.city_slug || "")),
     });
   } catch {
