@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("id,company_name,owner_display_name,metier,city,logo_url,offer_photo_url")
+      .select("id,company_name,owner_display_name,metier,city,city_slug,logo_url,offer_photo_url")
       .eq("id", c.place_id)
       .maybeSingle();
     const p = (place as Record<string, unknown>) || {};
@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       merchant: String(p.company_name || p.owner_display_name || p.metier || "Commerçant"),
       metier: String(p.metier || ""),
       city: String(p.city || ""),
+      citySlug: String(p.city_slug || ""),
       logo: String(p.logo_url || ""),
       photo: String(p.offer_photo_url || ""),
       offerText: c.offer_text,

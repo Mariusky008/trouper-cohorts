@@ -11,7 +11,9 @@
   body{background:#05060a;font-family:'Inter',system-ui,sans-serif;color:#fff;min-height:100dvh;}
   .phone{position:relative;width:100%;max-width:480px;min-height:100dvh;margin:0 auto;background:#0B0D12;display:flex;flex-direction:column;overflow:hidden;}
   @media(min-width:540px){.phone{min-height:auto;height:min(900px,100dvh);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:32px;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);}}
-  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;}
+  .top{display:flex;align-items:center;gap:10px;padding:18px 20px 6px;}
+  .top .back{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer;flex-shrink:0;}
+  .top .pill{margin-left:auto;}
   .logo{font-family:'Poppins';font-weight:800;font-size:20px;letter-spacing:-.5px;}
   .logo b{color:#34d399;}
   .pill{font-family:'Poppins';font-weight:700;font-size:11px;padding:6px 11px;border-radius:999px;background:rgba(240,96,143,.16);border:1px solid rgba(240,96,143,.5);color:#ffb4cd;display:flex;align-items:center;gap:5px;}
@@ -65,6 +67,7 @@
 <body>
 <div class="phone">
   <div class="top">
+    <div class="back" onclick="goBack()" title="Retour au catalogue">←</div>
     <div class="logo">Pop<b>ey</b></div>
     <div class="pill">⚡ Coup de feu</div>
   </div>
@@ -119,6 +122,13 @@ function saveMember(first,phone){try{localStorage.setItem('popey_member',JSON.st
 function hearts(n){n=Math.max(0,Math.min(5,n||0));return '💚'.repeat(n)+'🤍'.repeat(5-n);}
 
 function fmtLeft(ts){if(!ts)return '';var d=new Date(ts).getTime()-Date.now();if(d<=0)return 'Terminé';var h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000);return h>0?(h+'h'+(m<10?'0':'')+m):(m+' min');}
+/* Retour au catalogue : on connaît la ville via la fiche ; sinon on revient en arrière (bandeau in-app). */
+function goBack(){
+  var slug=(DATA&&DATA.citySlug)||P.get('ville')||'';
+  if(slug){location.href='/m/'+encodeURIComponent(slug);return;}
+  if(history.length>1){history.back();return;}
+  location.href='/m/dax';
+}
 
 function load(){
   if(!/^[0-9a-f-]{36}$/i.test(OFFER_ID)){showClosed('Offre introuvable','Ce lien n\'est plus valide.');return;}
@@ -208,7 +218,8 @@ function showDone(d,first){
     '<div class="rel" style="margin-top:16px"><div class="hearts">'+hearts(d.level)+'</div>'+
       'Relation niveau <b>'+(d.level||0)+'/5</b>. <b>+1 cœur</b> dès que le pro valide ta visite.'+nextTxt+'</div>'+
     left+
-    '<div style="margin-top:20px"><button class="btn wa" onclick="shareWA()">📲 Partager sur WhatsApp</button></div>';
+    '<div style="margin-top:20px"><button class="btn wa" onclick="shareWA()">📲 Partager sur WhatsApp</button></div>'+
+    '<div style="margin-top:10px"><button class="btn ghost" onclick="goBack()">Découvrir le catalogue</button></div>';
 }
 function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent(waText()),'_blank');}
 
