@@ -583,6 +583,39 @@ export async function sendPrivilegeMatchNotif(
   }
 }
 
+// Popey v3 — digest hebdo au commerçant (rétention) : « cette semaine : N visites validées · M avis ».
+// Template dédié {{1}}=commerçant {{2}}=résumé {{3}}=lien à partager. No-op si Twilio/Content SID non
+// configuré. À catégoriser « utility » côté Meta. Renvoie le sid pour traçabilité.
+export async function sendPrivilegeProDigest(
+  targetPhone: string,
+  vars: { merchantName: string; summary: string; link: string },
+): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
+  const cfg = whatsappTwilioConfig;
+  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.proDigestContentSid) {
+    return { success: false, skipped: true };
+  }
+  const to = normalizeTwilioWhatsAppAddress(targetPhone);
+  if (!to) return { success: false, error: "Numéro cible invalide." };
+  try {
+    const client = twilio(cfg.accountSid, cfg.authToken);
+    const message = await client.messages.create({
+      from: cfg.whatsappFrom,
+      to,
+      contentSid: cfg.proDigestContentSid,
+      contentVariables: JSON.stringify({
+        "1": String(vars.merchantName || "").trim() || "ton commerce",
+        "2": String(vars.summary || "").trim(),
+        "3": String(vars.link || "").trim(),
+      }),
+      ...(cfg.statusCallbackUrl ? { statusCallback: cfg.statusCallbackUrl } : {}),
+    });
+    return { success: true, sid: String(message.sid || "").trim() };
+  } catch (error) {
+    console.error("[privilege-pro-digest] send failed", error);
+    return { success: false, error: error instanceof Error ? error.message : "Envoi digest impossible." };
+  }
+}
+
 export async function processTwilioWhatsAppWebhook(params: Record<string, string>) {
   const supabaseAdmin = createAdminClient();
   const messageSid = String(params.MessageSid || params.SmsSid || "").trim();
