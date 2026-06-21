@@ -164,6 +164,11 @@
   .dash-btn .db-go{color:var(--grey);font-size:22px;font-weight:700;}
   .rank-sheet{max-height:86%;overflow-y:auto;}
   .rank-sheet h3{font-family:'Poppins';font-weight:800;font-size:18px;margin-bottom:14px;}
+  .qr-wrap{background:#fff;border-radius:16px;padding:14px;display:flex;justify-content:center;margin:14px 0;}
+  .qr-wrap img{width:100%;max-width:260px;display:block;}
+  .qr-link{font-family:monospace;font-size:11.5px;color:rgba(255,255,255,.72);background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:10px 12px;word-break:break-all;}
+  .qr-act{display:flex;gap:9px;margin:11px 0;}
+  .qr-act .btn{flex:1;margin-top:0;}
   .cf-head{text-align:center;padding:8px 0 6px;}
   .cf-title{font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:#fff;}
   .cf-sub{font-family:'Inter';font-size:13px;color:#aeb2b8;margin-top:6px;}
@@ -412,6 +417,7 @@
           <div class="fans-pending" id="fansPending" style="display:none"></div>
           <div class="fans-list" id="fansList"></div>
           <button class="btn btn-ghost" onclick="openAddClient()">➕ Ajouter un client à mes alertes</button>
+          <button class="btn btn-ghost" onclick="openQr()">📱 Afficher mon QR (à mettre en boutique)</button>
         </div>
         <div id="cfLive" style="display:none">
           <div class="cf-live-check">⚡</div>
@@ -486,6 +492,17 @@
         <div class="act-row"><div class="ic">✨</div><div class="x"><b>Bienvenue sur ton espace Popey</b><small>Tes visites validées et tes avis apparaîtront ici.</small></div></div>
       </div>
       <button class="btn btn-ghost" onclick="closeActivity()">Fermer</button>
+    </div>
+
+    <!-- QR « Être prévenu·e » à mettre en boutique (popup) -->
+    <div class="pscrim" id="qrScrim" onclick="closeQr()"></div>
+    <div class="psheet rank-sheet" id="qrSheet">
+      <h3>📱 Ton QR « Être prévenu·e »</h3>
+      <div class="psub">Imprime-le et mets-le en caisse/vitrine. Tes clients le scannent et s'abonnent à tes coups de feu — sans rien installer.</div>
+      <div class="qr-wrap"><img id="qrImg" alt="QR du commerçant"></div>
+      <div class="qr-link" id="qrLink">—</div>
+      <div class="qr-act"><button class="btn btn-mint" onclick="copySubLink()">📋 Copier le lien</button><button class="btn btn-ghost" onclick="shareSubLink()">Partager</button></div>
+      <button class="btn btn-ghost" onclick="closeQr()">Fermer</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -719,6 +736,12 @@ function openFunnel(){document.getElementById('funnelScrim').classList.add('show
 function closeFunnel(){document.getElementById('funnelScrim').classList.remove('show');document.getElementById('funnelSheet').classList.remove('open');}
 function openActivity(){document.getElementById('activityScrim').classList.add('show');document.getElementById('activitySheet').classList.add('open');}
 function closeActivity(){document.getElementById('activityScrim').classList.remove('show');document.getElementById('activitySheet').classList.remove('open');}
+var PRO_SLUG='';
+function subLink(){return location.origin+'/s/'+encodeURIComponent(PRO_SLUG||PLACE_ID||'');}
+function openQr(){var link=subLink();document.getElementById('qrLink').textContent=link;document.getElementById('qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data='+encodeURIComponent(link);document.getElementById('qrScrim').classList.add('show');document.getElementById('qrSheet').classList.add('open');}
+function closeQr(){document.getElementById('qrScrim').classList.remove('show');document.getElementById('qrSheet').classList.remove('open');}
+function copySubLink(){var t=subLink();var ok=function(){toast('🔗 Lien copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(function(){});}else ok();}
+function shareSubLink(){window.open('https://wa.me/?text='+encodeURIComponent('Sois prévenu·e en premier de mes bons plans 👉 '+subLink()),'_blank');}
 function renderLeaderboard(lb){
   if(!lb)return;
   document.getElementById('rankSheetTitle').innerHTML='🏆 Classement &amp; mission'+(lb.cityLabel?' · '+esc(lb.cityLabel):'');
@@ -763,7 +786,7 @@ function loadProData(){
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
-      CHANNEL_URL=d.channelUrl||'';
+      CHANNEL_URL=d.channelUrl||'';PRO_SLUG=d.proSlug||'';
       PRO_DATA=d;
       renderShare(d.shareLink);renderLeaderboard(d.leaderboard);renderChecklist(d);
     }).catch(()=>{});
