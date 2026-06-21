@@ -50,6 +50,9 @@ export default async function AdminLayout({
             <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
             </a>
+            <a href="/admin/humain/privilege-sante" className="hover:underline font-semibold text-emerald-700">
+              🩺 Santé Privilège
+            </a>
             <a href="/admin/humain/affiliation" className="hover:underline">
               Affiliation
             </a>
