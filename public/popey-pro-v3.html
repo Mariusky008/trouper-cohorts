@@ -156,12 +156,12 @@
   .cl-tx small{font-family:'Inter';font-size:11.5px;color:var(--grey);display:block;margin-top:2px;line-height:1.35;}
   .cl-cta{flex-shrink:0;border:none;cursor:pointer;border-radius:10px;padding:8px 12px;font-family:'Poppins';font-weight:700;font-size:11.5px;background:rgba(0,224,160,.16);color:var(--mint);white-space:nowrap;}
   /* Classement & mission : bouton compact + popup */
-  .rank-btn{width:100%;border:none;cursor:pointer;text-align:left;display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;margin-top:18px;}
-  .rank-btn .rb-ic{font-size:22px;flex-shrink:0;}
-  .rank-btn .rb-tx{flex:1;min-width:0;}
-  .rank-btn .rb-tx b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
-  .rank-btn .rb-tx small{font-family:'Inter';font-size:12px;color:var(--grey);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .rank-btn .rb-go{color:var(--grey);font-size:22px;font-weight:700;}
+  .dash-btn{width:100%;border:none;cursor:pointer;text-align:left;display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:13px 14px;margin-bottom:9px;}
+  .dash-btn .db-ic{font-size:21px;flex-shrink:0;}
+  .dash-btn .db-tx{flex:1;min-width:0;}
+  .dash-btn .db-tx b{font-family:'Poppins';font-weight:700;font-size:13.5px;color:#fff;display:block;}
+  .dash-btn .db-tx small{font-family:'Inter';font-size:12px;color:var(--grey);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dash-btn .db-go{color:var(--grey);font-size:22px;font-weight:700;}
   .rank-sheet{max-height:86%;overflow-y:auto;}
   .rank-sheet h3{font-family:'Poppins';font-weight:800;font-size:18px;margin-bottom:14px;}
   .cf-head{text-align:center;padding:8px 0 6px;}
@@ -318,26 +318,12 @@
           <div class="pitch" id="mPitch">La promo n'est pas une perte : c'est un premier rendez-vous.</div>
         </div>
 
-        <div class="ptitle"><span class="k">Le parcours</span></div>
-        <div class="funnel">
-          <div class="frow"><span class="l"><span class="d" style="background:#5C6168"></span>Vues du catalogue</span><span class="v" id="fViews">0</span></div>
-          <div class="frow"><span class="l"><span class="d" style="background:#7a8a9a"></span>« Je veux »</span><span class="v" id="fWant">0</span></div>
-          <div class="frow"><span class="l"><span class="d" style="background:#9ab0a6"></span>Réservations</span><span class="v" id="fReserve">0</span></div>
-          <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Visites validées</span><span class="v" id="fVisits">0</span></div>
-          <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Devenus habitués</span><span class="v" id="fHab">0</span></div>
-        </div>
         <div class="fans-asset"><span>📣 Fans abonnés à tes alertes (joignables d'un clic)</span><b id="mFans">0</b></div>
 
-        <button class="rank-btn" id="rankBtn" onclick="openRankModal()" style="display:none">
-          <span class="rb-ic">🏆</span>
-          <span class="rb-tx"><b>Classement &amp; mission</b><small id="rankBtnSummary">—</small></span>
-          <span class="rb-go">›</span>
-        </button>
-
-        <div class="ptitle"><span class="k">Activité récente</span></div>
-        <div class="funnel" id="activityList">
-          <div class="act-row"><div class="ic">✨</div><div class="x"><b>Bienvenue sur ton espace Popey</b><small>Tes visites validées et tes avis apparaîtront ici.</small></div></div>
-        </div>
+        <div class="ptitle"><span class="k">Voir le détail</span></div>
+        <button class="dash-btn" onclick="openFunnel()"><span class="db-ic">📊</span><span class="db-tx"><b>Le parcours du client</b><small id="funnelSummary">—</small></span><span class="db-go">›</span></button>
+        <button class="dash-btn" id="rankBtn" onclick="openRankModal()" style="display:none"><span class="db-ic">🏆</span><span class="db-tx"><b>Classement &amp; mission</b><small id="rankBtnSummary">—</small></span><span class="db-go">›</span></button>
+        <button class="dash-btn" onclick="openActivity()"><span class="db-ic">🕒</span><span class="db-tx"><b>Activité récente</b><small id="activitySummary">—</small></span><span class="db-go">›</span></button>
       </div>
 
       <!-- ===== VALIDER ===== -->
@@ -476,6 +462,30 @@
       <div id="missionBox"></div>
       <div id="lbBox"></div>
       <button class="btn btn-ghost" onclick="closeRankModal()">Fermer</button>
+    </div>
+
+    <!-- Le parcours du client (popup) -->
+    <div class="pscrim" id="funnelScrim" onclick="closeFunnel()"></div>
+    <div class="psheet rank-sheet" id="funnelSheet">
+      <h3>📊 Le parcours du client</h3>
+      <div class="funnel">
+        <div class="frow"><span class="l"><span class="d" style="background:#5C6168"></span>Vues du catalogue</span><span class="v" id="fViews">0</span></div>
+        <div class="frow"><span class="l"><span class="d" style="background:#7a8a9a"></span>« Je veux »</span><span class="v" id="fWant">0</span></div>
+        <div class="frow"><span class="l"><span class="d" style="background:#9ab0a6"></span>Réservations</span><span class="v" id="fReserve">0</span></div>
+        <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Visites validées</span><span class="v" id="fVisits">0</span></div>
+        <div class="frow key"><span class="l"><span class="d" style="background:var(--mint)"></span>Devenus habitués</span><span class="v" id="fHab">0</span></div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeFunnel()">Fermer</button>
+    </div>
+
+    <!-- Activité récente (popup) -->
+    <div class="pscrim" id="activityScrim" onclick="closeActivity()"></div>
+    <div class="psheet rank-sheet" id="activitySheet">
+      <h3>🕒 Activité récente</h3>
+      <div class="funnel" id="activityList">
+        <div class="act-row"><div class="ic">✨</div><div class="x"><b>Bienvenue sur ton espace Popey</b><small>Tes visites validées et tes avis apparaîtront ici.</small></div></div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeActivity()">Fermer</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -705,6 +715,10 @@ function shareLinkWA(){
 function rankEmoji(r){return r<=3?['🥇','🥈','🥉'][r-1]:('#'+r);}
 function openRankModal(){document.getElementById('rankScrim').classList.add('show');document.getElementById('rankSheet').classList.add('open');}
 function closeRankModal(){document.getElementById('rankScrim').classList.remove('show');document.getElementById('rankSheet').classList.remove('open');}
+function openFunnel(){document.getElementById('funnelScrim').classList.add('show');document.getElementById('funnelSheet').classList.add('open');}
+function closeFunnel(){document.getElementById('funnelScrim').classList.remove('show');document.getElementById('funnelSheet').classList.remove('open');}
+function openActivity(){document.getElementById('activityScrim').classList.add('show');document.getElementById('activitySheet').classList.add('open');}
+function closeActivity(){document.getElementById('activityScrim').classList.remove('show');document.getElementById('activitySheet').classList.remove('open');}
 function renderLeaderboard(lb){
   if(!lb)return;
   document.getElementById('rankSheetTitle').innerHTML='🏆 Classement &amp; mission'+(lb.cityLabel?' · '+esc(lb.cityLabel):'');
@@ -742,9 +756,10 @@ function loadProData(){
       if(s.promosEur||s.afterEur)document.getElementById('mPitch').innerHTML='Tu as offert <b>'+(s.promosEur||0)+' €</b> de promo. Ils sont revenus <b>au plein tarif</b> et t\'ont rapporté <b>'+(s.afterEur||0)+' €</b>. <b>La promo n\'était pas une perte, c\'était un premier rendez-vous.</b>';
       else document.getElementById('mPitch').innerHTML='💡 <b>Tes premiers résultats arrivent.</b> Suis les étapes ci-dessus : partage ton lien, ajoute tes clients, valide leurs visites — chaque visite validée = un cœur et un client qui revient.';
       document.getElementById('fViews').textContent=s.views||0;document.getElementById('fWant').textContent=s.want||0;document.getElementById('fReserve').textContent=s.reservations||0;document.getElementById('fVisits').textContent=s.visits||0;document.getElementById('fHab').textContent=s.habitues||0;
+      document.getElementById('funnelSummary').textContent=(s.views||0)+' vues · '+(s.reservations||0)+' réserv. · '+(s.visits||0)+' visites';
       document.getElementById('mFans').textContent=s.fans||0;
       document.getElementById('cfPromptSub').textContent='Fais venir tes '+(s.fans||0)+' fans en 10 min · tes fidèles prévenus en premier';
-      if(Array.isArray(d.activity)&&d.activity.length){document.getElementById('activityList').innerHTML=d.activity.map(a=>`<div class="act-row"><div class="ic">${a.icon||'•'}</div><div class="x"><b>${esc(a.title)}</b><small>${esc(a.sub||'')}</small></div><span class="when">${esc(a.when||'')}</span></div>`).join('');}
+      if(Array.isArray(d.activity)&&d.activity.length){document.getElementById('activityList').innerHTML=d.activity.map(a=>`<div class="act-row"><div class="ic">${a.icon||'•'}</div><div class="x"><b>${esc(a.title)}</b><small>${esc(a.sub||'')}</small></div><span class="when">${esc(a.when||'')}</span></div>`).join('');document.getElementById('activitySummary').textContent=(d.activity[0]?(d.activity[0].title+' · '+(d.activity[0].when||'')):d.activity.length+' événements');}
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
