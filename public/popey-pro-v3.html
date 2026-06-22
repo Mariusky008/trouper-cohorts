@@ -695,6 +695,7 @@ function renderFans(d){
   }).join('');
 }
 function openAddClient(){document.getElementById('acName').value='';document.getElementById('acPhone').value='';document.getElementById('addMsg').textContent='';document.getElementById('addScrim').classList.add('show');document.getElementById('addSheet').classList.add('open');}
+function addFirstClients(){openCoup();openAddClient();} // raccourci checklist : onglet Coup de feu + formulaire d'ajout direct
 function closeAddClient(){document.getElementById('addScrim').classList.remove('show');document.getElementById('addSheet').classList.remove('open');}
 function submitAddClient(){
   var name=(document.getElementById('acName').value||'').trim();
@@ -805,7 +806,7 @@ function renderChecklist(d){
   var hasCoup=((d&&d.campaignsCount)||0)>0||clFlag('coup');
   var steps=[
     {done:hasShared,e:'🔗',t:'Partage ton lien',s:'Envoie-le à tes contacts — c\'est ce qui t\'amène tes premiers clients.',cta:'Mon lien',act:'scrollShare()'},
-    {done:hasFans,e:'👥',t:'Ajoute tes premiers clients',s:'Construis ta base de fans (avec leur accord) pour pouvoir les rappeler.',cta:'Ajouter',act:'openCoup()'},
+    {done:hasFans,e:'👥',t:'Ajoute tes premiers clients',s:'Construis ta base de fans (avec leur accord) pour pouvoir les rappeler.',cta:'Ajouter',act:'addFirstClients()'},
     {done:hasVisit,e:'✅',t:'Valide ta 1ʳᵉ visite',s:'Un client te montre son code Popey → tu le saisis → +1 cœur. La magie démarre.',cta:'Valider',act:"gotoTab('valider')"},
     {done:hasCoup,e:'⚡',t:'Lance ton 1ᵉʳ coup de feu',s:hasFans?'Fais revenir tes fans avec une offre éclair.':'Ajoute d\'abord des clients (étape 2), puis fais-les revenir.',cta:'Coup de feu',act:'openCoup()'}
   ];
