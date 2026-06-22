@@ -107,13 +107,18 @@ function pct(visits: number, reservations: number): string {
 export default async function PrivilegeSantePage() {
   const { rows, totals } = await loadHealth();
   const cfg = whatsappTwilioConfig;
-  const wa: Array<{ label: string; ok: boolean }> = [
-    { label: "Compte Twilio (SID/Token/From)", ok: Boolean(cfg.accountSid && cfg.authToken && cfg.whatsappFrom) },
-    { label: "Mode production (pas sandbox)", ok: cfg.isSandbox === false },
-    { label: "Template Opt-in", ok: Boolean(cfg.alertOptinContentSid) },
-    { label: "Template Diffusion / Coup de feu", ok: Boolean(cfg.alertBroadcastContentSid) },
-    { label: "Template Match", ok: Boolean(cfg.matchContentSid) },
-    { label: "Template Digest hebdo", ok: Boolean(cfg.proDigestContentSid) },
+  const fromIsReal = Boolean(cfg.whatsappFrom) && cfg.whatsappFrom !== "whatsapp:+14155238886";
+  const wa: Array<{ label: string; ok: boolean; hint: string }> = [
+    { label: "Compte Twilio (SID + Token)", ok: Boolean(cfg.accountSid && cfg.authToken), hint: "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN" },
+    {
+      label: "Numéro émetteur réel (pas le n° démo Twilio)",
+      ok: fromIsReal,
+      hint: "TWILIO_WHATSAPP_FROM = whatsapp:+33… (et non +14155238886) + TWILIO_WHATSAPP_SANDBOX_MODE=false",
+    },
+    { label: "Template Opt-in (ajout de clients)", ok: Boolean(cfg.alertOptinContentSid), hint: "TWILIO_WHATSAPP_CONTENT_SID_ALERT_OPTIN" },
+    { label: "Template Diffusion / Coup de feu", ok: Boolean(cfg.alertBroadcastContentSid), hint: "TWILIO_WHATSAPP_CONTENT_SID_ALERT_BROADCAST" },
+    { label: "Template Match (visite validée)", ok: Boolean(cfg.matchContentSid), hint: "TWILIO_WHATSAPP_CONTENT_SID_MATCH" },
+    { label: "Template Digest hebdo", ok: Boolean(cfg.proDigestContentSid), hint: "TWILIO_WHATSAPP_CONTENT_SID_PRO_DIGEST" },
   ];
 
   const Cell = ({ children, head = false }: { children: React.ReactNode; head?: boolean }) => (
@@ -181,15 +186,24 @@ export default async function PrivilegeSantePage() {
       </div>
 
       <h2 className="mt-8 text-lg font-black text-slate-900">📲 Config WhatsApp</h2>
-      <ul className="mt-3 space-y-1.5">
+      <p className="mt-1 text-sm text-slate-500">
+        Tout doit être <b>✅</b> pour que les WhatsApp partent à de vrais clients. Un <b>❌</b> = ce message ne part pas (variable d&apos;env à poser dans Vercel, indiquée à droite).
+      </p>
+      <ul className="mt-3 space-y-2">
         {wa.map((w) => (
-          <li key={w.label} className="flex items-center gap-2 text-sm text-slate-700">
+          <li key={w.label} className="flex items-start gap-2 text-sm">
             <span>{w.ok ? "✅" : "❌"}</span>
-            <span>{w.label}</span>
+            <span className="flex-1">
+              <span className="text-slate-700">{w.label}</span>
+              {w.ok ? null : <code className="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs text-rose-700">{w.hint}</code>}
+            </span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-slate-400">Valeurs jamais affichées — uniquement « configuré ou non ». Le webhook entrant Twilio (réponses OUI/NON) se vérifie côté console Twilio.</p>
+      <p className="mt-3 text-xs text-slate-400">
+        Les valeurs ne sont jamais affichées — uniquement « configuré ou non ». À vérifier aussi côté console Twilio (pas une variable) :
+        le <b>webhook entrant</b> pour les réponses OUI/NON.
+      </p>
     </div>
   );
 }
