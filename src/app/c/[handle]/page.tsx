@@ -47,9 +47,10 @@ export default async function ShortShareRedirect({ params }: ShortLinkProps) {
     place = (byId.data as Row | null) || null;
   }
 
-  if (!place) redirect("/privilege/dax");
+  if (!place) redirect("/m/dax");
   const citySlug = slugifyCity(place.city || "") || "dax";
   const name = String(place.company_name || place.owner_display_name || place.metier || "Popey");
   const ref = String(place.owner_member_id || place.id);
-  redirect(`/privilege/${citySlug}?ref_id=${encodeURIComponent(ref)}&ref_name=${encodeURIComponent(name)}`);
+  // → nouvelle app v3 (catalogue /m/<ville>), avec le référent du commerçant pour le classement.
+  redirect(`/m/${citySlug}?ref_id=${encodeURIComponent(ref)}&ref_name=${encodeURIComponent(name)}`);
 }

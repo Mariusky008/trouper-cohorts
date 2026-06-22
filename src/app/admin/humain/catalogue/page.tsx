@@ -3,6 +3,7 @@ import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 import OfferMediaUploader from "./_components/offer-media-uploader";
+import ProfilePhotoUploader from "./_components/profile-photo-uploader";
 
 export const dynamic = "force-dynamic";
 
@@ -416,10 +417,7 @@ function CatalogueOfferForm({
         defaultVideoUrl={s(extra?.offer_video_url)}
       />
 
-      <label className="space-y-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Photo profil (URL)</span>
-        <input name="owner_profile_photo_url" defaultValue={s(place.owner_profile_photo_url)} placeholder="https://.../profil.jpg" className="h-10 w-full rounded border bg-background px-3 text-sm" />
-      </label>
+      <ProfilePhotoUploader placeId={s(place.id)} defaultUrl={s(place.owner_profile_photo_url)} />
 
       <label className="space-y-1 md:col-span-2">
         <span className="text-[11px] font-bold uppercase tracking-wide text-pink-700">💖 Coup de cœur du membre (note)</span>
@@ -817,13 +815,13 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
     { view: 0, favorite: 0, reserve: 0 },
   );
 
-  // Lien "espace commerçant" court & lisible : /privilege/pro?p=<slug> (fallback id).
+  // Lien "espace commerçant" court & lisible : /pro?p=<slug> (nouvelle app v3, fallback id).
   const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
   const merchantLinks: Record<string, string> = {};
   const shareLinks: Record<string, string> = {};
   configured.forEach((p) => {
     const slug = String((extra[p.id] as { pro_slug?: string } | undefined)?.pro_slug || p.id);
-    merchantLinks[p.id] = (appBase || "") + "/privilege/pro?p=" + encodeURIComponent(slug);
+    merchantLinks[p.id] = (appBase || "") + "/pro?p=" + encodeURIComponent(slug);
     // Lien COURT à partager par le commerçant (/c/<slug> → catalogue avec son ref)
     shareLinks[p.id] = (appBase || "") + "/c/" + encodeURIComponent(slug);
   });
