@@ -36,7 +36,7 @@ export default async function PopeyClientAppPage({ params, searchParams }: Props
   const resolvedSearchParams = (await searchParams) || {};
   const query = new URLSearchParams();
   query.set("ville", citySlug);
-  query.set("v", "20260619-conv-proof");
+  query.set("v", "20260622-media-zoom");
   for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {

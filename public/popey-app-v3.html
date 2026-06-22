@@ -124,6 +124,10 @@
   .fs-overlay.show{display:flex;}
   .fs-overlay img{max-width:100%;max-height:88%;border-radius:14px;object-fit:contain;}
   .fs-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;}
+  .media-zoom{position:absolute;top:64px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(11,13,18,.45);border:1.5px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;z-index:6;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35);}
+  #mediaFs .fs-body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  #mediaFs img,#mediaFs video{max-width:100%;max-height:88%;border-radius:14px;object-fit:contain;background:#000;}
+  #mediaFs iframe{width:100%;max-width:520px;height:72%;border:0;border-radius:14px;background:#000;}
   .toast{position:absolute;left:50%;bottom:98px;transform:translate(-50%,18px);background:rgba(11,13,18,.96);border:1px solid rgba(255,255,255,.14);color:#fff;font-family:'Poppins';font-weight:600;font-size:13px;padding:11px 16px;border-radius:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:250;max-width:84%;text-align:center;line-height:1.35;}
   .toast.show{opacity:1;transform:translate(-50%,0);}
   /* Présenter mon code (plein écran) */
@@ -535,6 +539,7 @@
 
     <!-- Lightbox plein écran (photo d'événement) -->
     <div class="fs-overlay" id="fsOverlay" onclick="closeFs()"><img id="fsImg" src="" alt=""><div class="fs-close">✕</div></div>
+    <div class="fs-overlay" id="mediaFs" onclick="if(event.target===this)closeMediaFs()"><div class="fs-body" id="mediaFsBody"></div><div class="fs-close" onclick="closeMediaFs()">✕</div></div>
 
     <!-- Présenter mon code en boutique (plein écran, gros code) -->
     <div class="codefull" id="codeFull">
@@ -577,7 +582,7 @@ const FALLBACK_OFFERS=[
 let offers=FALLBACK_OFFERS.slice();
 var relMap={}; // placeId -> niveau réel (relations du membre connu, affichées en badge sur la carte)
 
-let mineCount=0,currentPro=0,mainIdx=0,leaveStars=0,topMediaIdx=0,savedOffers=[];
+let mineCount=0,currentPro=0,mainIdx=0,leaveStars=0,topMediaIdx=0,savedOffers=[],topOffer=null;
 
 /* ───────── Helpers ───────── */
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -621,7 +626,8 @@ function mediaInner(o,idx,isTop){
   }else{
     content=`<span class="emoji">${m.e||o.emoji}</span>`;
   }
-  return `<div class="storybars">${bars}</div>${content}`;
+  var zoom=isTop?`<div class="media-zoom" onpointerdown="event.stopPropagation()" onclick="zoomMedia(event)" title="Agrandir">⤢</div>`:'';
+  return `<div class="storybars">${bars}</div>${content}${zoom}`;
 }
 
 function cardHTML(o,cls,idx){
@@ -656,12 +662,12 @@ function go(name){
   if(name==='deck'){renderMain();setTimeout(autoHint,250);}
 }
 
-function renderLaunch(){const d=document.getElementById('launchDeck');if(!offers.length){d.innerHTML='';return;}const a=offers[0],b=offers[1%offers.length],c=offers[2%offers.length];d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),true);}
+function renderLaunch(){const d=document.getElementById('launchDeck');if(!offers.length){d.innerHTML='';return;}const a=offers[0],b=offers[1%offers.length],c=offers[2%offers.length];topOffer=a;d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),true);}
 function renderMain(){
   topMediaIdx=0;const d=document.getElementById('mainDeck');
   if(!offers.length){d.innerHTML=endDeckHTML(true);return;}
   if(mainIdx>=offers.length){d.innerHTML=endDeckHTML(false);return;} // tout vu → on ne boucle plus à l'infini
-  const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];
+  const n=offers.length;const a=offers[mainIdx%n],b=offers[(mainIdx+1)%n],c=offers[(mainIdx+2)%n];topOffer=a;
   d.innerHTML=cardHTML(c,'behind2',0)+cardHTML(b,'behind',0)+cardHTML(a,'top',0);tick();bindCard(d.querySelector('.card.top'),false);trackView(a);
 }
 function endDeckHTML(empty){
@@ -1117,6 +1123,19 @@ function shareEvent(i){var ev=EVENTS[i];if(!ev)return;var t=(ev.emoji||'📅')+'
 function firstUrl(s){var m=String(s||'').match(/https?:\/\/[^\s)]+/i);return m?m[0]:'';}
 function openFs(url){if(!url)return;document.getElementById('fsImg').src=url;document.getElementById('fsOverlay').classList.add('show');sndTap();}
 function closeFs(){document.getElementById('fsOverlay').classList.remove('show');document.getElementById('fsImg').src='';}
+function zoomMedia(e){if(e){e.stopPropagation();}if(!topOffer||!topOffer.media)return;var m=topOffer.media[topMediaIdx]||topOffer.media[0];if(m)openMediaFs(m);}
+function openMediaFs(m){
+  var box=document.getElementById('mediaFsBody');if(!box)return;var html='';
+  if(m.type==='video'&&m.url){
+    var yt=youtubeId(m.url);
+    if(yt){html='<iframe src="https://www.youtube.com/embed/'+yt+'?autoplay=1&loop=1&playlist='+yt+'&playsinline=1&modestbranding=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>';}
+    else{html='<video src="'+esc(m.url)+'" controls autoplay playsinline webkit-playsinline'+(m.poster?' poster="'+esc(m.poster)+'"':'')+'></video>';}
+  }else{
+    var url=m.url||m.poster||'';if(!url)return;html='<img src="'+esc(url)+'" alt="">';
+  }
+  box.innerHTML=html;document.getElementById('mediaFs').classList.add('show');sndTap();
+}
+function closeMediaFs(){document.getElementById('mediaFs').classList.remove('show');document.getElementById('mediaFsBody').innerHTML='';}
 function renderAgenda(){
   var box=document.getElementById('agendaList');
   if(!EVENTS.length){box.innerHTML='<div style="text-align:center;color:#8b93a3;font-family:Inter;font-size:13px;padding:24px 0">Pas encore d\'événement à '+esc(CITY_LABEL)+'.<br>Reviens vite ✨</div>';return;}
