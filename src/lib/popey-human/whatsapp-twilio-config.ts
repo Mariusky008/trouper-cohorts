@@ -1,3 +1,13 @@
+// Normalise le numéro émetteur WhatsApp. Twilio exige le canal en préfixe (`whatsapp:+E164`).
+// On tolère qu'on saisisse juste `+33612345678` (on ajoute `whatsapp:`) pour éviter l'échec silencieux.
+// On NE convertit PAS `06…` : ce format local est invalide pour Twilio (il faut `+336…`).
+function normalizeWhatsAppFrom(value: string | undefined): string {
+  const raw = String(value || "").trim();
+  if (!raw) return "whatsapp:+14155238886"; // défaut = numéro démo (sandbox)
+  if (raw.toLowerCase().startsWith("whatsapp:")) return `whatsapp:${raw.slice("whatsapp:".length).trim()}`;
+  return `whatsapp:${raw}`;
+}
+
 function readBoolean(value: string | undefined, fallback: boolean): boolean {
   const normalized = String(value || "")
     .trim()
@@ -11,7 +21,7 @@ function readBoolean(value: string | undefined, fallback: boolean): boolean {
 export const whatsappTwilioConfig = {
   accountSid: String(process.env.TWILIO_ACCOUNT_SID || "").trim(),
   authToken: String(process.env.TWILIO_AUTH_TOKEN || "").trim(),
-  whatsappFrom: String(process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886").trim(),
+  whatsappFrom: normalizeWhatsAppFrom(process.env.TWILIO_WHATSAPP_FROM),
   contentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID || "").trim(),
   directContentSid: String(process.env.TWILIO_WHATSAPP_CONTENT_SID_DIRECT || "").trim(),
   // Catalogue Privilège — alertes commerçant (templates dédiés, approuvés par Meta) :
