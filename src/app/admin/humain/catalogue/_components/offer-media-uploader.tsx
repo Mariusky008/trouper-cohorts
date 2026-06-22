@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { uploadDirect, type UploadKind } from "./upload-direct";
 
 // Upload DIRECT navigateur → Supabase Storage (via URL signée) pour contourner la limite
 // Vercel de 4,5 Mo (le fichier ne passe plus par la fonction serverless). On ne soumet au
@@ -11,7 +11,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // 10 Mo / photo
 const MAX_VIDEO_BYTES = 80 * 1024 * 1024; // 80 Mo / vidéo (vérifier la limite du bucket Supabase)
 const MAX_GALLERY = 6;
 
-type Kind = "photo" | "gallery" | "video";
+type Kind = UploadKind;
 
 // Avertit quand l'URL vidéo saisie ne sera pas lisible dans la carte (seuls YouTube + fichier
 // direct .mp4/.webm fonctionnent — Instagram/TikTok/Vimeo bloquent la lecture hors de leur site).
@@ -24,28 +24,6 @@ function videoUrlWarning(url: string): string {
     return "Ce lien (Instagram, TikTok, Vimeo…) ne peut pas être lu dans la carte. Téléverse plutôt le fichier .mp4 ci-dessus, ou utilise un lien YouTube.";
   }
   return "Lien non reconnu : il faut un fichier .mp4/.webm (téléverse-le ci-dessus) ou un lien YouTube.";
-}
-
-async function uploadDirect(file: File, kind: Kind, placeId: string): Promise<string> {
-  const signRes = await fetch("/api/admin/humain/marketplace/places/upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ placeId, kind, fileName: file.name, contentType: file.type }),
-  });
-  if (!signRes.ok) {
-    const j = (await signRes.json().catch(() => ({}))) as { error?: string };
-    throw new Error(j.error || "Signature de l'upload impossible.");
-  }
-  const { bucket, path, token, publicUrl } = (await signRes.json()) as {
-    bucket: string;
-    path: string;
-    token: string;
-    publicUrl: string;
-  };
-  const supabase = createClient();
-  const { error } = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, file, { contentType: file.type });
-  if (error) throw new Error(error.message || "Upload Supabase échoué.");
-  return publicUrl;
 }
 
 export default function OfferMediaUploader({

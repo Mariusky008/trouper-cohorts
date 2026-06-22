@@ -12,6 +12,7 @@ const KIND_DIR: Record<string, string> = {
   photo: "marketplace-offers",
   gallery: "marketplace-gallery",
   video: "marketplace-videos",
+  profile: "marketplace-profiles",
 };
 
 function pickExtension(fileName: string, contentType: string): string {
