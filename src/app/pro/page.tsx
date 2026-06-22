@@ -29,7 +29,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function PopeyProAppPage({ searchParams }: Props) {
   const sp = (await searchParams) || {};
   const query = new URLSearchParams();
-  query.set("v", "20260622-add-client");
+  query.set("v", "20260622-fans-refresh");
   for (const [key, rawValue] of Object.entries(sp)) {
     if (!rawValue) continue;
     if (Array.isArray(rawValue)) {

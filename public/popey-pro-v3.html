@@ -412,7 +412,7 @@
           <div class="cf-waves-preview" id="cfWavesPreview"></div>
           <button class="btn btn-mint" id="cfLaunchBtn" onclick="fireCoup()">🚀 Lancer</button>
 
-          <div class="ptitle"><span class="k">👥 Tes fans · <span id="fansCount">—</span></span></div>
+          <div class="ptitle"><span class="k">👥 Tes fans · <span id="fansCount">—</span></span><button onclick="loadFans()" title="Rafraîchir la liste" style="margin-left:auto;background:none;border:0;color:var(--mint);font-size:15px;cursor:pointer;padding:2px 6px">🔄</button></div>
           <div class="quota-line" id="quotaLine" style="display:none"></div>
           <div class="fans-pending" id="fansPending" style="display:none"></div>
           <div class="fans-list" id="fansList"></div>
@@ -798,9 +798,8 @@ function clFlag(k){try{return localStorage.getItem('popey_pro_'+k)==='1';}catch(
 function setClFlag(k){try{localStorage.setItem('popey_pro_'+k,'1');}catch(e){}if(PRO_DATA)renderChecklist(PRO_DATA);}
 function scrollShare(){var el=document.getElementById('shareCard');if(el){el.style.display='';el.scrollIntoView({behavior:'smooth',block:'center'});}}
 function renderChecklist(d){
-  var s=(d&&d.stats)||{},lb=(d&&d.leaderboard)||{};
-  var clics=(lb.me&&lb.me.clics)||0;
-  var hasShared=clics>0||clFlag('shared');
+  var s=(d&&d.stats)||{};
+  var hasShared=clFlag('shared'); // coché seulement quand TU as utilisé « copier / partager » (tester ton propre lien ne compte plus)
   var hasFans=(s.fans||0)>0||clFlag('added');
   var hasVisit=(s.visits||0)>0;
   var hasCoup=((d&&d.campaignsCount)||0)>0||clFlag('coup');
