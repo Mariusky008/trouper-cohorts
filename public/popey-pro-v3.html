@@ -690,9 +690,18 @@ function renderFans(d){
   var list=Array.isArray(d.list)?d.list:[];var box=document.getElementById('fansList');
   if(!list.length){box.innerHTML='<div class="lb-foot" style="text-align:left">Pas encore de fan. Ajoute tes clients ci-dessous ou partage ton lien pour qu\'ils s\'abonnent.</div>';return;}
   box.innerHTML=list.map(function(f){
-    var st=f.status==='pending'?'<span class="pend">en attente</span>':'<span class="lv">'+hearts(f.level)+'</span>';
+    var st=f.status==='pending'
+      ?'<span class="pend">en attente</span><button onclick="confirmFan(\''+esc(f.id)+'\')" title="Le client est déjà d\'accord ? Confirme-le" style="margin-left:8px;background:var(--mint);color:#06281f;border:0;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer">✅ Confirmer</button>'
+      :'<span class="lv">'+hearts(f.level)+'</span>';
     return '<div class="fan-row"><div class="av">'+esc(avatarLetter(f.name))+'</div><div class="fn"><b>'+esc(f.name||'Client')+'</b><small>'+esc(f.phoneMasked||'')+(f.addedByPro?' · ajouté par toi':'')+'</small></div>'+st+'</div>';
   }).join('');
+}
+function confirmFan(id){
+  if(!id)return;
+  if(!confirm('Confirmer que ce client est bien d\'accord pour recevoir tes alertes ?'))return;
+  fetch('/api/popey-human/privilege/fans?p='+encodeURIComponent(PRO),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({p:PRO,id:id,action:'confirm'})})
+    .then(r=>r.json()).then(function(d){if(d&&d.ok){toast('✅ Client confirmé');setClFlag('added');loadFans();}else toast('❌ '+((d&&d.error)||'Échec'));})
+    .catch(function(){toast('❌ Réseau');});
 }
 function openAddClient(){document.getElementById('acName').value='';document.getElementById('acPhone').value='';document.getElementById('addMsg').textContent='';document.getElementById('addScrim').classList.add('show');document.getElementById('addSheet').classList.add('open');}
 function addFirstClients(){openCoup();openAddClient();} // raccourci checklist : onglet Coup de feu + formulaire d'ajout direct

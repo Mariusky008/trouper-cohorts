@@ -24,11 +24,11 @@ export async function GET(request: NextRequest) {
     if (!placeId) return NextResponse.json({ error: "Accès pro non reconnu." }, { status: 403 });
     const supabase = createAdminClient();
 
-    let subs: Array<{ phone: string; status: string; source: string | null; created_at: string }> = [];
+    let subs: Array<{ id: string; phone: string; status: string; source: string | null; created_at: string }> = [];
     try {
       const { data } = await supabase
         .from("human_privilege_alert_subscribers")
-        .select("phone,status,source,created_at")
+        .select("id,phone,status,source,created_at")
         .eq("place_id", placeId)
         .neq("status", "unsubscribed")
         .order("created_at", { ascending: false })
@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
     const confirmed = subs.filter((s) => s.status === "confirmed").length;
     const pending = subs.filter((s) => s.status === "pending").length;
     const list = subs.slice(0, 60).map((s) => ({
+      id: s.id,
       name: nameByPhone.get(s.phone) || "Client",
       phoneMasked: maskPhone(s.phone),
       level: levelByPhone.get(s.phone) || 0,
@@ -172,6 +173,42 @@ export async function POST(request: NextRequest) {
         ? `${name || "Ton client"} va recevoir un WhatsApp de confirmation. Il rejoint tes alertes dès qu'il répond OUI.`
         : `${name || "Ton client"} est enregistré. L'envoi WhatsApp d'opt-in n'est pas encore configuré.`,
     });
+  } catch {
+    return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });
+  }
+}
+
+// PATCH { p|token, id, action: 'confirm'|'unsubscribe' } — filet de sécurité : le pro confirme
+// MANUELLEMENT un client en attente (il atteste que le client est d'accord) si le OUI WhatsApp
+// n'arrive pas, ou le retire. Normalement le passage en 'confirmed' est automatique via le webhook.
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = (await request.json().catch(() => null)) as { p?: string; token?: string; id?: string; action?: string } | null;
+    const cred = String(body?.p || body?.token || "").trim();
+    const placeId = await resolveProPlaceId(cred);
+    if (!placeId) return NextResponse.json({ error: "Accès pro non reconnu." }, { status: 403 });
+    const id = String(body?.id || "").trim();
+    if (!id) return NextResponse.json({ error: "Abonné manquant." }, { status: 400 });
+    const action = String(body?.action || "confirm");
+    const supabase = createAdminClient();
+    const nowIso = new Date().toISOString();
+
+    if (action === "unsubscribe") {
+      await supabase
+        .from("human_privilege_alert_subscribers")
+        .update({ status: "unsubscribed", unsubscribed_at: nowIso, updated_at: nowIso })
+        .eq("id", id)
+        .eq("place_id", placeId);
+      return NextResponse.json({ ok: true, status: "unsubscribed" });
+    }
+
+    await supabase
+      .from("human_privilege_alert_subscribers")
+      .update({ status: "confirmed", confirmed_at: nowIso, updated_at: nowIso })
+      .eq("id", id)
+      .eq("place_id", placeId)
+      .eq("status", "pending");
+    return NextResponse.json({ ok: true, status: "confirmed" });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });
   }
