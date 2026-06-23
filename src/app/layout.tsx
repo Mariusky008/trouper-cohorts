@@ -22,19 +22,20 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Popey Academy — La force du groupe",
-  description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
+  metadataBase: new URL("https://www.popey.academy"),
+  title: "Popey — le club des bons plans de ta ville",
+  description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
   openGraph: {
-    title: "Popey Academy — La force du groupe",
-    description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
-    siteName: "Popey Academy",
+    title: "Popey — le club des bons plans de ta ville",
+    description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
+    siteName: "Popey",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey Academy — La force du groupe",
-    description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
+    title: "Popey — le club des bons plans de ta ville",
+    description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
   },
   manifest: "/manifest.json",
   appleWebApp: {
