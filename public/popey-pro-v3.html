@@ -736,7 +736,8 @@ function copyLink(){
 }
 function shareLinkWA(){
   if(!SHARE_LINK)return;setClFlag('shared');
-  var t='Pssst… 🎁 le catalogue Popey des meilleurs commerçants de '+((MERCHANT&&MERCHANT.city)||'ta ville')+' !\n\nDes offres, des gratuités et des privilèges à swiper, et tout l\'agenda de la semaine.\n\nClique et swipe 👇\n'+SHARE_LINK;
+  var city=(MERCHANT&&MERCHANT.city)||'ta ville';
+  var t='Voici le catalogue Popey des meilleurs commerçants de '+city+' !\n\nDes offres, des gratuités et des privilèges à swiper, et tous les événements de '+city+' ce mois-ci.\n\nClique, swipe et profite :\n'+SHARE_LINK;
   window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
 }
 function rankEmoji(r){return r<=3?['🥇','🥈','🥉'][r-1]:('#'+r);}
@@ -751,7 +752,7 @@ function subLink(){return location.origin+'/s/'+encodeURIComponent(PRO_SLUG||PLA
 function openQr(){var link=subLink();document.getElementById('qrLink').textContent=link;document.getElementById('qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data='+encodeURIComponent(link);document.getElementById('qrScrim').classList.add('show');document.getElementById('qrSheet').classList.add('open');}
 function closeQr(){document.getElementById('qrScrim').classList.remove('show');document.getElementById('qrSheet').classList.remove('open');}
 function copySubLink(){var t=subLink();var ok=function(){toast('🔗 Lien copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(function(){});}else ok();}
-function shareSubLink(){window.open('https://wa.me/?text='+encodeURIComponent('Sois prévenu·e en premier de mes bons plans 👉 '+subLink()),'_blank');}
+function shareSubLink(){window.open('https://wa.me/?text='+encodeURIComponent('Sois prévenu·e en premier de mes bons plans : '+subLink()),'_blank');}
 function renderLeaderboard(lb){
   if(!lb)return;
   document.getElementById('rankSheetTitle').innerHTML='🏆 Classement &amp; mission'+(lb.cityLabel?' · '+esc(lb.cityLabel):'');
