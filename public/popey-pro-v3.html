@@ -736,7 +736,7 @@ function copyLink(){
 }
 function shareLinkWA(){
   if(!SHARE_LINK)return;setClFlag('shared');
-  var t='Alerte pépite ! ⚡️\n\nVoici le catalogue Popey des meilleurs commerçants de '+((MERCHANT&&MERCHANT.city)||'ta ville')+'.\nDes gratuités, des privilèges, et tout l\'agenda de la semaine.\n\nClique et swipe 👇\n🍿 '+SHARE_LINK;
+  var t='Pssst… 🎁 le catalogue Popey des meilleurs commerçants de '+((MERCHANT&&MERCHANT.city)||'ta ville')+' !\n\nDes offres, des gratuités et des privilèges à swiper, et tout l\'agenda de la semaine.\n\nClique et swipe 👇\n'+SHARE_LINK;
   window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
 }
 function rankEmoji(r){return r<=3?['🥇','🥈','🥉'][r-1]:('#'+r);}

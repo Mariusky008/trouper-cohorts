@@ -24,7 +24,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     }
   }
   const qs = q.toString();
+  const cityLabel = citySlug.charAt(0).toUpperCase() + citySlug.slice(1);
+  const title = `Popey — les bons plans de ${cityLabel}`;
+  const description = `Le catalogue des meilleurs commerçants de ${cityLabel} : offres, gratuités et privilèges à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.`;
   return {
+    title,
+    description,
+    openGraph: { title, description, siteName: "Popey", locale: "fr_FR", type: "website" },
+    twitter: { card: "summary_large_image", title, description },
     manifest: `/m/${citySlug}/manifest.webmanifest${qs ? `?${qs}` : ""}`,
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Popey" },
   };
