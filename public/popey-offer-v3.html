@@ -114,7 +114,7 @@
 <script>
 var P=new URLSearchParams(location.search);
 var OFFER_ID=(P.get('id')||'').trim();
-var DATA=null, CDTIMER=null;
+var DATA=null, CDTIMER=null, LAST_RESERVE=null;
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function loadMember(){try{var s=localStorage.getItem('popey_member');return s?JSON.parse(s):null;}catch(e){return null;}}
@@ -198,6 +198,7 @@ function doReserve(first,phone,consent){
     body:JSON.stringify({id:OFFER_ID,phone:phone,name:first,consent:consent})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       if(!d||d.error){$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';showClosed(d&&d.error==='Plus de place disponible.'?'Complet 😣':'Oups',d&&d.error||'Réessaie.');return;}
+      LAST_RESERVE=d;
       try{var rs=JSON.parse(localStorage.getItem('popey_relseen')||'{}');if(DATA&&DATA.placeId)rs[DATA.placeId]=d.level||0;localStorage.setItem('popey_relseen',JSON.stringify(rs));}catch(e){} // baseline → « match » au catalogue quand le pro validera
       showDone(d,first);
     }).catch(()=>{$('reserveBtn').disabled=false;$('reserveBtn').textContent='Réserver ma place';});
@@ -218,9 +219,21 @@ function showDone(d,first){
     '<div class="rel" style="margin-top:16px"><div class="hearts">'+hearts(d.level)+'</div>'+
       'Relation niveau <b>'+(d.level||0)+'/5</b>. <b>+1 cœur</b> dès que le pro valide ta visite.'+nextTxt+'</div>'+
     left+
-    '<div style="margin-top:20px"><button class="btn wa" onclick="shareWA()">📲 Partager sur WhatsApp</button></div>'+
+    (d.proWhatsapp
+      ? '<div style="margin-top:20px"><button class="btn wa" onclick="notifyPro()">📲 Prévenir le commerçant</button></div>'+
+        '<div class="sub" style="margin-top:8px;text-align:center">Il reçoit ta réservation sur son WhatsApp et te garde ta place.</div>'+
+        '<div style="margin-top:12px"><button class="btn ghost" onclick="shareWA()">Partager ce bon plan</button></div>'
+      : '<div style="margin-top:20px"><button class="btn wa" onclick="shareWA()">📲 Partager sur WhatsApp</button></div>')+
     '<div style="margin-top:10px"><button class="btn ghost" onclick="goBack()">Découvrir le catalogue</button></div>';
 }
+/* #5 — le client prévient le commerçant en DIRECT depuis SON WhatsApp (0 € Twilio) : le pro reçoit
+   la réservation + le code, et récupère le vrai numéro du client pour répondre. */
+function proWaText(){
+  var dd=DATA||{},d=LAST_RESERVE||{};var code=d.code?String(d.code):'';
+  return 'Bonjour'+(dd.merchant?(' '+dd.merchant):'')+', je viens de réserver votre coup de feu sur Popey'+
+    (dd.offerText?(' : '+dd.offerText):'')+(code?('. Mon code de visite : '+code):'')+'. À tout de suite !';
+}
+function notifyPro(){var d=LAST_RESERVE||{};if(!d.proWhatsapp)return;window.open('https://wa.me/'+d.proWhatsapp+'?text='+encodeURIComponent(proWaText()),'_blank');}
 function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent(waText()),'_blank');}
 
 load();

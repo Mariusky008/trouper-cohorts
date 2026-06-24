@@ -142,6 +142,19 @@
   .cf-prompt .cf-tx b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
   .cf-prompt .cf-tx small{font-family:'Inter';font-size:11.5px;color:#9fd8c2;display:block;margin-top:2px;line-height:1.35;}
   .cf-prompt .cf-go{margin-left:auto;color:var(--mint);font-size:22px;font-weight:700;}
+  /* Réservations — carte « notification » en évidence sur le dashboard (#4) */
+  .resv-card{width:100%;border:none;cursor:pointer;text-align:left;display:flex;align-items:center;gap:13px;background:linear-gradient(90deg,rgba(255,196,0,.18),rgba(255,196,0,.04));border:1px solid rgba(255,196,0,.5);border-radius:18px;padding:15px;margin-bottom:16px;}
+  .resv-card .resv-ic{position:relative;width:44px;height:44px;border-radius:12px;background:linear-gradient(90deg,#FFC400,#ff9d00);color:#3a2600;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 6px 18px rgba(255,196,0,.3);}
+  .resv-card .resv-tx{flex:1;min-width:0;}
+  .resv-card .resv-tx b{font-family:'Poppins';font-weight:700;font-size:14px;color:#fff;display:block;}
+  .resv-card .resv-tx small{font-family:'Inter';font-size:11.5px;color:#ffe49a;display:block;margin-top:2px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .resv-card .resv-cnt{margin-left:auto;flex-shrink:0;background:#FFC400;color:#3a2600;font-family:'Poppins';font-weight:800;font-size:14px;border-radius:999px;padding:4px 12px;}
+  .resv-row{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px 12px;margin-bottom:7px;}
+  .resv-row .ra{width:32px;height:32px;border-radius:9px;background:rgba(255,196,0,.16);color:#FFC400;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;font-size:14px;flex-shrink:0;}
+  .resv-row .rn{flex:1;min-width:0;}
+  .resv-row .rn b{font-family:'Poppins';font-weight:700;font-size:13.5px;color:#fff;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .resv-row .rn small{font-family:'Inter';font-size:11px;color:var(--grey);}
+  .resv-row .rw{font-family:'Inter';font-size:11px;color:var(--grey);white-space:nowrap;flex-shrink:0;}
   /* Checklist d'activation (onboarding commerçant) */
   .checklist{background:linear-gradient(160deg,rgba(0,224,160,.1),rgba(255,255,255,.02));border:1px solid rgba(0,224,160,.35);border-radius:18px;padding:16px;margin-bottom:16px;}
   .cl-title{font-family:'Poppins';font-weight:800;font-size:15px;color:#fff;margin-bottom:12px;}
@@ -188,6 +201,11 @@
   .cf-ch-act .btn{flex:1;margin-top:0;}
   .cf-ch-act .btn-mint{background:linear-gradient(90deg,#a98bff,#7c5cff);color:#fff;}
   .cf-channel small{display:block;font-family:'Inter';font-size:11px;color:var(--grey);margin-top:8px;line-height:1.4;}
+  .cf-ch-step{display:flex;gap:10px;align-items:flex-start;margin-top:13px;font-family:'Inter';font-size:12.5px;color:#cdd0d4;line-height:1.45;}
+  .cf-ch-step .cf-ch-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#a98bff;color:#1a1230;font-family:'Poppins';font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .cf-ch-step .cf-ch-bd{flex:1;min-width:0;}
+  .cf-ch-step .cf-ch-act{margin-top:8px;}
+  .cf-ch-step .cf-ch-act .btn{margin-top:0;}
   .cf-live-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:14px auto 0;box-shadow:0 0 50px rgba(0,224,160,.45);}
   .cf-live-h{font-family:'Fraunces',serif;font-weight:600;font-size:27px;text-align:center;margin-top:16px;}
   .cf-live-h .mint{color:var(--mint);}
@@ -295,6 +313,12 @@
           <div class="cl-items" id="clItems"></div>
         </div>
 
+        <button class="resv-card" id="resvCard" onclick="openReservations()" style="display:none">
+          <div class="resv-ic">📲</div>
+          <div class="resv-tx"><b id="resvTitle">Réservations</b><small id="resvSub">—</small></div>
+          <div class="resv-cnt" id="resvCnt">0</div>
+        </button>
+
         <button class="cf-prompt" id="cfPrompt" onclick="openCoup()">
           <div class="cf-ic">⚡</div>
           <div class="cf-tx"><b>Boutique calme ? Lance un coup de feu.</b><small id="cfPromptSub">Fais venir tes fans en 10 min · tes fidèles prévenus en premier</small></div>
@@ -364,15 +388,11 @@
           <div class="cb-note">📅 <b>Une seule par édition.</b> C'est le coup de projecteur mensuel qui crée la rareté et amène les nouveaux clients.</div>
         </div>
 
-        <div class="ptitle"><span class="k">Réactivation · quand tu veux</span></div>
-        <div class="card-block" onclick="openCoup()" style="cursor:pointer">
-          <div class="cb-head"><span class="t">⚡ Coup de feu</span><span class="status on">RAPIDE</span></div>
-          <div class="cb-offer">
-            <div class="em" style="background:linear-gradient(90deg,var(--mint),var(--mint-deep));color:#06231a">⚡</div>
-            <div class="o"><b>Fais venir tes clients maintenant</b><small>Rappelle tes fans par WhatsApp en 2 clics</small></div>
-            <div class="price" style="font-size:24px">›</div>
-          </div>
-          <div class="cb-note">⚡ Pour un mardi creux, des invendus, une nouveauté. <b>Tes fidèles sont prévenus en premier.</b> Une flash ne fait pas monter de niveau — seule la visite qui en découle le peut.</div>
+        <div class="ptitle"><span class="k">Réservations · tes clients qui arrivent</span></div>
+        <div class="card-block">
+          <div class="cb-head"><span class="t">📲 Tes réservations</span><span class="status on" id="offResvCnt">0</span></div>
+          <div id="offResvList"><div class="cb-note" style="border:0;padding-top:0">Les réservations de tes clients (catalogue + coups de feu) apparaîtront ici. Chacune = un client qui vient, à valider en boutique.</div></div>
+          <button class="btn btn-ghost" style="margin-top:4px" onclick="openReservations()">Voir toutes les réservations</button>
         </div>
       </div>
 
@@ -392,12 +412,12 @@
         <div id="cfCompose">
           <div class="ptitle"><span class="k">1 · Pourquoi ?</span></div>
           <div class="cf-reasons" id="cfReasons">
-            <button class="rsn on">🥐 Invendus à écouler</button>
-            <button class="rsn">🕐 Heure creuse</button>
-            <button class="rsn">✨ Nouveauté</button>
-            <button class="rsn">🎉 Évènement</button>
+            <button class="rsn on" data-suggest="−40 % sur les invendus du jour">🥐 Invendus à écouler</button>
+            <button class="rsn" data-suggest="Offre flash : −20 % pendant l'heure creuse">🕐 Heure creuse</button>
+            <button class="rsn" data-suggest="Nouveauté à découvrir — petit cadeau pour les premiers">✨ Nouveauté</button>
+            <button class="rsn" data-suggest="Offre spéciale ce soir, places limitées">🎉 Évènement</button>
           </div>
-          <div class="ptitle"><span class="k">2 · Ton offre</span></div>
+          <div class="ptitle"><span class="k">2 · Ton offre</span> <span style="margin-left:auto;font-size:10px;color:var(--grey);font-weight:600;text-transform:none">pré-remplie — modifie si besoin</span></div>
           <div class="field"><input id="cfOffer" placeholder="Ex : −50% sur la fournée de 17h"></div>
           <div class="cf-row2">
             <div class="field2"><label>Places</label><input id="cfPlaces" value="20" inputmode="numeric"></div>
@@ -411,8 +431,9 @@
           <div class="cf-mode-note" id="cfModeNote">🥇 Tes <b>fidèles d'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).</div>
           <div class="cf-waves-preview" id="cfWavesPreview"></div>
           <button class="btn btn-mint" id="cfLaunchBtn" onclick="fireCoup()">🚀 Lancer</button>
+          <div style="text-align:center;font-family:'Inter';font-size:11.5px;color:var(--grey);margin-top:8px;line-height:1.4">⚡ Tes fidèles sont prévenus en premier. Tu pourras élargir en 1 tap si besoin.</div>
 
-          <div class="ptitle"><span class="k">👥 Tes fans · <span id="fansCount">—</span></span><button onclick="loadFans()" title="Rafraîchir la liste" style="margin-left:auto;background:none;border:0;color:var(--mint);font-size:15px;cursor:pointer;padding:2px 6px">🔄</button></div>
+          <div class="ptitle" style="margin-top:22px"><span class="k">👥 Ta base de fans · <span id="fansCount">—</span></span><button onclick="loadFans()" title="Rafraîchir la liste" style="margin-left:auto;background:none;border:0;color:var(--mint);font-size:15px;cursor:pointer;padding:2px 6px">🔄</button></div>
           <div class="quota-line" id="quotaLine" style="display:none"></div>
           <div class="fans-pending" id="fansPending" style="display:none"></div>
           <div class="fans-list" id="fansList"></div>
@@ -492,6 +513,15 @@
         <div class="act-row"><div class="ic">✨</div><div class="x"><b>Bienvenue sur ton espace Popey</b><small>Tes visites validées et tes avis apparaîtront ici.</small></div></div>
       </div>
       <button class="btn btn-ghost" onclick="closeActivity()">Fermer</button>
+    </div>
+
+    <!-- Réservations (popup) -->
+    <div class="pscrim" id="resScrim" onclick="closeReservations()"></div>
+    <div class="psheet rank-sheet" id="resSheet">
+      <h3>📲 Tes réservations</h3>
+      <div class="psub">Chaque réservation = un client qui vient. Il te montre son code à 4 chiffres en boutique → tu le valides (onglet Valider) → +1 cœur.</div>
+      <div id="resSheetList"></div>
+      <button class="btn btn-ghost" onclick="closeReservations()">Fermer</button>
     </div>
 
     <!-- QR « Être prévenu·e » à mettre en boutique (popup) -->
@@ -584,16 +614,40 @@ function saveAmount(){
 function closeOv(){document.getElementById('ov').classList.remove('show');gotoTab('dash');loadProData();}
 
 /* ───────── COUP DE FEU (envoi réel par vagues de niveau via l'API) ───────── */
-document.querySelectorAll('#cfReasons .rsn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfReasons .rsn').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+/* #1 — la raison choisie pré-remplit l'offre (zéro page blanche). On ne remplace QUE si le champ est
+   vide ou contient encore une de nos suggestions (jamais un texte tapé par le pro). */
+var CF_SUGGESTIONS=[];
+function applyReasonSuggestion(b){
+  var inp=document.getElementById('cfOffer');if(!inp)return;var sug=b.getAttribute('data-suggest')||'';var cur=(inp.value||'').trim();
+  if(sug&&(cur===''||CF_SUGGESTIONS.indexOf(cur)>=0))inp.value=sug;
+}
+document.querySelectorAll('#cfReasons .rsn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfReasons .rsn').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyReasonSuggestion(b);}));
 document.querySelectorAll('#cfDur button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfDur button').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
-document.querySelectorAll('#cfMode button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfMode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  var ch=b.dataset.mode==='channel';
-  document.getElementById('cfModeNote').innerHTML=ch?'📣 <b>Gratuit</b> : tu postes l\'offre dans le canal WhatsApp Popey de ta ville. Large, mais ouverture plus faible — et 0 € (rien n\'est décompté).':'🥇 Tes <b>fidèles d\'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).';
+var CHANNEL_QUOTA=null;
+function setModeNote(ch){
+  var note=document.getElementById('cfModeNote');
+  if(ch){
+    var q=CHANNEL_QUOTA||{};var left=(typeof q.remaining==='number')?q.remaining:null;
+    var quotaTxt=(left!=null)?(' · il te reste <b>'+left+'/'+(q.included||8)+'</b> posts canal ce mois'):'';
+    note.innerHTML='📣 <b>Gratuit</b> : tu postes l\'offre dans le canal WhatsApp Popey de ta ville. Large, ouverture plus faible — 0 €'+quotaTxt+'.';
+  }else{
+    note.innerHTML='🥇 Tes <b>fidèles d\'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).';
+  }
   document.getElementById('cfLaunchBtn').textContent=ch?'📣 Préparer le post canal':'🚀 Lancer';
-}));
+}
+document.querySelectorAll('#cfMode button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfMode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');setModeNote(b.dataset.mode==='channel');}));
 function selectedMode(){var b=document.querySelector('#cfMode button.on');return b&&b.dataset.mode==='channel'?'channel':'wave';}
 var cfWaves=[{lbl:"🥇 Niveau 5",fans:0,res:0,prio:true},{lbl:"Niveau 4",fans:0,res:0,prio:true},{lbl:"Niveau 3",fans:0,res:0,prio:true},{lbl:"Niveau 1-2 · tous",fans:0,res:0,prio:false}];
-function renderWavesPreview(){document.getElementById('cfWavesPreview').innerHTML=cfWaves.map((w,i)=>`<div class="wv ${i===cfWaves.length-1?'dim':''}"><span class="b">${w.lbl}</span><span class="f">${w.fans} fans</span></div>`).join('');}
+function renderWavesPreview(){
+  // #2 — on grise les niveaux vides et on marque le 1ᵉʳ niveau peuplé comme point de départ : le pro
+  // voit qu'on ira direct au bon niveau (aucune vague à blanc).
+  var startIdx=-1;for(var k=0;k<cfWaves.length;k++){if((Number(cfWaves[k].fans)||0)>0){startIdx=k;break;}}
+  document.getElementById('cfWavesPreview').innerHTML=cfWaves.map(function(w,i){
+    var empty=(Number(w.fans)||0)===0;
+    var tag=i===startIdx?' <span style="color:var(--mint);font-weight:700">🚀 départ</span>':(empty?' <span style="color:var(--grey)">· sauté</span>':'');
+    return `<div class="wv ${empty?'dim':''}"><span class="b">${w.lbl}${tag}</span><span class="f">${w.fans} fan${w.fans>1?'s':''}</span></div>`;
+  }).join('');
+}
 var CAMPAIGN=null,cfBusy=false,cfPollTimer=null;
 function durMinutes(){var b=document.querySelector('#cfDur button.on');var t=b?b.textContent.trim():'1 h';if(/soir/i.test(t))return 300;if(/2/.test(t))return 120;return 60;}
 function selectedReason(){var b=document.querySelector('#cfReasons .rsn.on');return b?b.textContent.trim():'';}
@@ -602,6 +656,7 @@ function openCoup(){
   gotoTab('coupdefeu');loadFans();
   fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d&&Array.isArray(d.wavesPreview)&&d.wavesPreview.length){cfWaves=d.wavesPreview.map(w=>({lbl:w.label,fans:w.fans}));renderWavesPreview();}
+    if(d&&d.channelQuota){CHANNEL_QUOTA=d.channelQuota;setModeNote(selectedMode()==='channel');}
     if(d&&d.active){CAMPAIGN=d.active;showLive();renderLive();startPoll();}
     else showCompose();
   }).catch(showCompose);
@@ -622,7 +677,7 @@ function fireCoup(){
       setClFlag('coup');CAMPAIGN=d.campaign;showLive();
       if(d.mode==='channel')toast('📣 Coup de feu prêt — copie le post pour le canal');
       else if(d.whatsappConfigured===false)toast('⚠️ WhatsApp non configuré — campagne créée');
-      else toast('🚀 Vague 1 envoyée à '+((d.wave&&d.wave.sent)||0)+' fidèle'+(((d.wave&&d.wave.sent)||0)>1?'s':''));
+      else{var wv=d.wave||{};toast('🚀 '+(wv.label||'Vague 1')+' · '+(wv.sent||0)+' prévenu'+((wv.sent||0)>1?'s':''));}
       renderLive();startPoll();
     }).catch(()=>{cfBusy=false;toast('Connexion impossible');});
 }
@@ -633,8 +688,8 @@ function expandCoup(){
     body:JSON.stringify({p:PRO,id:CAMPAIGN.id})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{cfBusy=false;
       if(!d||d.error){toast(d&&d.error||'Impossible');return;}
-      if(d.done){if(CAMPAIGN)CAMPAIGN.status='done';toast('Toutes les vagues envoyées');renderLive();return;}
-      CAMPAIGN=d.campaign;toast('Vague élargie · '+((d.wave&&d.wave.sent)||0)+' prévenu'+(((d.wave&&d.wave.sent)||0)>1?'s':''));renderLive();
+      if(d.done){if(CAMPAIGN)CAMPAIGN.status='done';toast(d.message||'Tous tes fans ont été prévenus');renderLive();return;}
+      CAMPAIGN=d.campaign;var wv=d.wave||{};toast('Élargi → '+(wv.label||'vague suivante')+' · '+(wv.sent||0)+' prévenu'+((wv.sent||0)>1?'s':''));renderLive();
     }).catch(()=>{cfBusy=false;});
 }
 function startPoll(){if(cfPollTimer)clearInterval(cfPollTimer);cfPollTimer=setInterval(pollCoup,15000);}
@@ -647,8 +702,18 @@ var CHANNEL_URL='';
 function channelPostText(){var c=CAMPAIGN||{};var link=location.origin+'/o/'+(c.id||'');return '⚡ COUP DE FEU — '+((MERCHANT&&MERCHANT.name)||'ton commerce')+'\n'+(c.offer_text||'')+'\n👉 Réserve ta place : '+link;}
 function openChannel(){if(CHANNEL_URL)window.open(CHANNEL_URL,'_blank');}
 function channelBlockHTML(){
-  var openBtn=CHANNEL_URL?'<button class="btn btn-ghost cf-ch-open" onclick="openChannel()">📣 Ouvrir le canal de ta ville</button>':'';
-  return '<div class="cf-channel"><div class="cf-ch-h">📣 Post pour le canal WhatsApp <span>gratuit</span></div><textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea><div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button><button class="btn btn-ghost" onclick="shareChannel()">Partager</button></div>'+openBtn+'<small>Copie le post, ouvre le canal Popey de ta ville et colle-le (gratuit, large — ouverture plus faible mais 0 €).</small></div>';
+  var city=(MERCHANT&&MERCHANT.city)?(' '+MERCHANT.city):' ta ville';
+  var hasUrl=!!CHANNEL_URL;
+  // Pas-à-pas clair 1-2-3 : copier → ouvrir le canal (bouton en avant) → coller. Repli si le canal de
+  // la ville n'est pas encore configuré (le pro partage le post à ses contacts en attendant).
+  var step2=hasUrl
+    ? '<div class="cf-ch-step"><span class="cf-ch-num">2</span><div class="cf-ch-bd">Ouvre le canal Popey de'+esc(city)+'<div class="cf-ch-act"><button class="btn btn-mint" onclick="openChannel()">📣 Ouvrir le canal de'+esc(city)+'</button></div></div></div>'
+      +'<div class="cf-ch-step"><span class="cf-ch-num">3</span><div class="cf-ch-bd">Colle le post (appui long → Coller) et publie. C\'est tout 🎉</div></div>'
+    : '<div class="cf-ch-step"><span class="cf-ch-num">2</span><div class="cf-ch-bd">Le canal Popey de'+esc(city)+' n\'est pas encore ouvert. En attendant, partage le post à tes contacts WhatsApp :<div class="cf-ch-act"><button class="btn btn-mint" onclick="shareChannel()">💬 Partager le post</button></div></div></div>';
+  return '<div class="cf-channel"><div class="cf-ch-h">📣 Poste ton offre dans le canal <span>gratuit</span></div>'
+    +'<textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea>'
+    +'<div class="cf-ch-step"><span class="cf-ch-num">1</span><div class="cf-ch-bd">Copie le post ci-dessus<div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button></div></div></div>'
+    +step2+'</div>';
 }
 function copyChannel(){var t=channelPostText();var ok=function(){toast('📋 Post copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();function fb(){try{var ta=document.getElementById('cfChannelTxt');ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');ok();}catch(e){}}}
 function shareChannel(){window.open('https://wa.me/?text='+encodeURIComponent(channelPostText()),'_blank');}
@@ -665,13 +730,19 @@ function renderLive(){
     act.innerHTML=channelBlockHTML()+'<button class="btn btn-ghost" onclick="endCoup()">Terminer</button>';
     return;
   }
-  list.innerHTML=sentWaves.map(s=>`<div class="wave-row"><div><div class="wl">${esc(s.label)}</div><div class="wm">${s.sent} fan${s.sent>1?'s':''} prévenu${s.sent>1?'s':''}</div></div><div class="wr">✓</div></div>`).join('');
-  var nextIdx=(typeof c.current_wave==='number'?c.current_wave:-1)+1,hasNext=nextIdx<waves.length;
-  if(full||done||!hasNext){
+  // Vagues envoyées (réelles) + niveaux automatiquement sautés (0 fan) — le pro voit qu'on est allé
+  // direct au bon niveau, sans rien faire de sa part (#2).
+  list.innerHTML=sentWaves.map(function(s){
+    if(s.skipped)return `<div class="wave-row dim" style="opacity:.55"><div><div class="wl">${esc(s.label)}</div><div class="wm">personne à ce niveau · sauté</div></div><div class="wr" style="color:var(--grey)">↪︎</div></div>`;
+    return `<div class="wave-row"><div><div class="wl">${esc(s.label)}</div><div class="wm">${s.sent} fan${s.sent>1?'s':''} prévenu${s.sent>1?'s':''}</div></div><div class="wr">✓</div></div>`;
+  }).join('');
+  // Prochaine vague RÉELLEMENT peuplée (on saute aussi les niveaux vides côté aperçu).
+  var cw=(typeof c.current_wave==='number'?c.current_wave:-1);var nx=null;
+  for(var j=cw+1;j<waves.length;j++){if(waves[j]&&!waves[j].sent_at&&(Number(waves[j].fans)||0)>0){nx=waves[j];break;}}
+  if(full||done||!nx){
     var prevenu=sentWaves.reduce((a,s)=>a+(Number(s.sent)||0),0);
-    act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Vagues épuisées'}</div><div class="cf-prio-note">${taken} place${taken>1?'s':''} remplie${taken>1?'s':''} · <b>${prevenu} fan${prevenu>1?'s':''} prévenu${prevenu>1?'s':''}</b>. Chaque visite validée = +1 cœur.</div>`+channelBlockHTML()+`<button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;
+    act.innerHTML=`<div class="cf-complete">${full?'✅ Complet !':'Tous tes fans prévenus'}</div><div class="cf-prio-note">${taken} place${taken>1?'s':''} remplie${taken>1?'s':''} · <b>${prevenu} fan${prevenu>1?'s':''} prévenu${prevenu>1?'s':''}</b>. Chaque visite validée = +1 cœur.</div>`+channelBlockHTML()+`<button class="btn btn-mint" onclick="endCoup()">Terminer</button>`;
   }else{
-    var nx=waves[nextIdx]||{label:'vague suivante',fans:0};
     act.innerHTML=`<div class="cf-prio-note">Il reste <b>${total>0?(total-taken)+' places':'des places'}</b>. Les fidèles n'ont pas tout pris ?</div><button class="btn btn-mint" onclick="expandCoup()">Élargir → ${esc(nx.label)} (${nx.fans} fans)</button>`+channelBlockHTML()+`<button class="btn btn-ghost" onclick="endCoup()">Stop, c'est bon</button>`;
   }
 }
@@ -747,6 +818,25 @@ function openFunnel(){document.getElementById('funnelScrim').classList.add('show
 function closeFunnel(){document.getElementById('funnelScrim').classList.remove('show');document.getElementById('funnelSheet').classList.remove('open');}
 function openActivity(){document.getElementById('activityScrim').classList.add('show');document.getElementById('activitySheet').classList.add('open');}
 function closeActivity(){document.getElementById('activityScrim').classList.remove('show');document.getElementById('activitySheet').classList.remove('open');}
+/* #4 — réservations rendues VISIBLES : carte notif (dashboard) + récap (Offres) + feuille complète. */
+var RESV=[];
+function openReservations(){document.getElementById('resScrim').classList.add('show');document.getElementById('resSheet').classList.add('open');}
+function closeReservations(){document.getElementById('resScrim').classList.remove('show');document.getElementById('resSheet').classList.remove('open');}
+function resRowHTML(r){return '<div class="resv-row"><div class="ra">'+esc(String(r.name||'?').slice(0,1).toUpperCase())+'</div><div class="rn"><b>'+esc(r.name||'Un client')+'</b><small>'+esc([r.source,r.phoneMasked].filter(Boolean).join(' · '))+'</small></div><div class="rw">'+esc(r.when||'')+'</div></div>';}
+function renderReservations(list,count){
+  RESV=Array.isArray(list)?list:[];var total=count||RESV.length;
+  var card=document.getElementById('resvCard');
+  if(RESV.length){
+    card.style.display='';document.getElementById('resvCnt').textContent=total;
+    document.getElementById('resvTitle').textContent=(total>1?(total+' réservations'):'1 réservation');
+    var l=RESV[0];document.getElementById('resvSub').textContent=l?(l.name+' · '+(l.source||'')+' · '+(l.when||'')):'';
+  }else{card.style.display='none';}
+  var sheet=document.getElementById('resSheetList');
+  sheet.innerHTML=RESV.length?RESV.map(resRowHTML).join(''):'<div class="lb-foot" style="text-align:left">Pas encore de réservation. Partage ton lien et lance un coup de feu pour faire venir tes clients.</div>';
+  var offCnt=document.getElementById('offResvCnt');if(offCnt)offCnt.textContent=total;
+  var offList=document.getElementById('offResvList');
+  if(offList&&RESV.length)offList.innerHTML=RESV.slice(0,3).map(resRowHTML).join('');
+}
 var PRO_SLUG='';
 function subLink(){return location.origin+'/s/'+encodeURIComponent(PRO_SLUG||PLACE_ID||'');}
 function openQr(){var link=subLink();document.getElementById('qrLink').textContent=link;document.getElementById('qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data='+encodeURIComponent(link);document.getElementById('qrScrim').classList.add('show');document.getElementById('qrSheet').classList.add('open');}
@@ -794,6 +884,7 @@ function loadProData(){
       document.getElementById('mFans').textContent=s.fans||0;
       document.getElementById('cfPromptSub').textContent='Fais venir tes '+(s.fans||0)+' fans en 10 min · tes fidèles prévenus en premier';
       if(Array.isArray(d.activity)&&d.activity.length){document.getElementById('activityList').innerHTML=d.activity.map(a=>`<div class="act-row"><div class="ic">${a.icon||'•'}</div><div class="x"><b>${esc(a.title)}</b><small>${esc(a.sub||'')}</small></div><span class="when">${esc(a.when||'')}</span></div>`).join('');document.getElementById('activitySummary').textContent=(d.activity[0]?(d.activity[0].title+' · '+(d.activity[0].when||'')):d.activity.length+' événements');}
+      renderReservations(d.reservationsList||[],d.reservationsCount||0);
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
@@ -831,6 +922,8 @@ function renderChecklist(d){
 }
 
 /* ───────── Init ───────── */
+CF_SUGGESTIONS=Array.prototype.map.call(document.querySelectorAll('#cfReasons .rsn'),function(b){return b.getAttribute('data-suggest')||'';});
+(function(){var act=document.querySelector('#cfReasons .rsn.on');if(act)applyReasonSuggestion(act);})(); // offre pré-remplie d'emblée
 renderLadder();renderCode();renderWavesPreview();
 loadProData();
 </script>

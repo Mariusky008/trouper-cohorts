@@ -31,12 +31,16 @@ export async function POST(request: Request) {
 
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("id,city,city_slug,company_name")
+      .select("id,city,city_slug,company_name,partner_whatsapp,direct_contact")
       .eq("id", placeId)
       .maybeSingle();
     if (!place) return NextResponse.json({ error: "Commerçant introuvable." }, { status: 404 });
     const city = (place as { city?: string }).city || null;
     const citySlug = (place as { city_slug?: string }).city_slug || null;
+    // Numéro WhatsApp public du commerçant (digits sans +) → le client le prévient en direct depuis
+    // son propre WhatsApp (0 € Twilio). "" si non renseigné → pas de bouton côté client.
+    const pl = place as { partner_whatsapp?: string; direct_contact?: string };
+    const proWhatsapp = (toE164(String(pl.partner_whatsapp || pl.direct_contact || "")) || "").replace("+", "");
 
     // 1) Membre (identité légère par numéro).
     try {
@@ -140,6 +144,7 @@ export async function POST(request: Request) {
       level,
       status: statusForLevel(level),
       next: nextReward(level, tiers),
+      proWhatsapp,
     });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });

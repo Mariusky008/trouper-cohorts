@@ -59,7 +59,16 @@ export async function loadWaveBuckets(placeId: string): Promise<WaveBucket[]> {
   }));
 }
 
-export type WaveSnapshot = { idx: number; label: string; fans: number; sent: number; sent_at: string | null };
+// skipped = vague traversée automatiquement car 0 fan à ce niveau (le pro n'a rien à faire).
+export type WaveSnapshot = { idx: number; label: string; fans: number; sent: number; sent_at: string | null; skipped?: boolean };
+
+// Index de la 1ʳᵉ vague qui a des fans, à partir de `from` (incl.). -1 si plus aucune vague non vide.
+export function firstNonEmptyWave(buckets: WaveBucket[], from = 0): number {
+  for (let i = Math.max(0, from); i < buckets.length; i += 1) {
+    if ((buckets[i]?.phones.length || 0) > 0) return i;
+  }
+  return -1;
+}
 
 // Snapshot initial des vagues (compteurs de fans figés à la création de la campagne, rien d'envoyé).
 export function snapshotFromBuckets(buckets: WaveBucket[]): WaveSnapshot[] {
@@ -68,6 +77,29 @@ export function snapshotFromBuckets(buckets: WaveBucket[]): WaveSnapshot[] {
 
 // Quota mensuel de messages Coup de feu inclus dans l'abonnement (maîtrise du coût WhatsApp).
 export const COUP_MONTHLY_QUOTA = 300;
+
+// Quota mensuel de posts « canal gratuit ». Le canal ne coûte rien à Popey, MAIS un coup de feu doit
+// rester rare/spécial (sinon spam du canal de la ville → les fans se désabonnent). On le plafonne.
+export const COUP_CHANNEL_MONTHLY_QUOTA = 8;
+
+// Nombre de posts canal déjà publiés ce mois pour un commerçant. Un coup de feu en mode canal ne pousse
+// AUCUNE vague payante → il reste à current_wave = -1 (le mode vagues passe immédiatement à >= 0).
+export async function monthlyChannelPostsUsed(placeId: string): Promise<number> {
+  const supabase = createAdminClient();
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  try {
+    const { count } = await supabase
+      .from("human_privilege_coup_campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("place_id", placeId)
+      .eq("current_wave", -1)
+      .gte("created_at", monthStart);
+    return Number(count || 0);
+  } catch {
+    return 0; // table absente → résilient
+  }
+}
 
 // Nombre de messages Coup de feu déjà envoyés ce mois pour un commerçant (somme des vagues envoyées).
 export async function monthlyMessagesUsed(placeId: string): Promise<number> {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
-import { loadWaveBuckets, snapshotFromBuckets, monthlyMessagesUsed, COUP_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
+import { loadWaveBuckets, snapshotFromBuckets, monthlyMessagesUsed, monthlyChannelPostsUsed, firstNonEmptyWave, COUP_MONTHLY_QUOTA, COUP_CHANNEL_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
 import { sendPrivilegeAlertBroadcast } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +69,13 @@ export async function GET(request: NextRequest) {
       /* table absente → pas de campagne active */
     }
 
-    return NextResponse.json({ wavesPreview, totalFans: wavesPreview.reduce((a, w) => a + w.fans, 0), active });
+    const usedChannel = await monthlyChannelPostsUsed(placeId);
+    const channelQuota = {
+      used: usedChannel,
+      included: COUP_CHANNEL_MONTHLY_QUOTA,
+      remaining: Math.max(0, COUP_CHANNEL_MONTHLY_QUOTA - usedChannel),
+    };
+    return NextResponse.json({ wavesPreview, totalFans: wavesPreview.reduce((a, w) => a + w.fans, 0), active, channelQuota });
   } catch {
     return NextResponse.json({ wavesPreview: [], totalFans: 0, active: null });
   }
@@ -104,16 +110,36 @@ export async function POST(request: NextRequest) {
     const buckets = await loadWaveBuckets(placeId);
     const waves: WaveSnapshot[] = snapshotFromBuckets(buckets);
 
+    // #2 — on démarre DIRECTEMENT à la 1ʳᵉ vague qui a des fans (les niveaux supérieurs vides sont
+    // sautés automatiquement). Le pro ne « élargit » plus à blanc à travers des niveaux à 0 fan.
+    const firstIdx = firstNonEmptyWave(buckets);
+    const startIdx = firstIdx >= 0 ? firstIdx : 0;
+
+    // Garde quota CANAL : gratuit mais plafonné (un coup de feu doit rester rare, sinon spam du canal).
+    if (mode === "channel") {
+      const usedChannel = await monthlyChannelPostsUsed(placeId);
+      const remainingChannel = Math.max(0, COUP_CHANNEL_MONTHLY_QUOTA - usedChannel);
+      if (remainingChannel <= 0) {
+        return NextResponse.json(
+          {
+            error: `Limite atteinte : ${COUP_CHANNEL_MONTHLY_QUOTA} posts canal ce mois. Un coup de feu doit rester rare pour garder son impact. Réessaie le mois prochain, ou préviens tes fidèles en mode ciblé.`,
+            channelQuota: { used: usedChannel, included: COUP_CHANNEL_MONTHLY_QUOTA, remaining: 0 },
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     // Garde quota : seulement en mode vagues (le canal est gratuit). On ne lance pas si la 1ʳᵉ vague
-    // dépasse le quota mensuel restant (maîtrise du coût WhatsApp).
+    // (réellement peuplée) dépasse le quota mensuel restant (maîtrise du coût WhatsApp).
     if (mode !== "channel") {
       const used = await monthlyMessagesUsed(placeId);
       const remaining = Math.max(0, COUP_MONTHLY_QUOTA - used);
-      const wave0Size = buckets[0]?.phones.length || 0;
-      if (wave0Size > remaining) {
+      const startSize = buckets[startIdx]?.phones.length || 0;
+      if (startSize > remaining) {
         return NextResponse.json(
           {
-            error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette 1ʳᵉ vague en demande ${wave0Size}. Réessaie le mois prochain ou augmente ton quota.`,
+            error: `Quota mensuel atteint : il te reste ${remaining} message${remaining > 1 ? "s" : ""} ce mois et cette vague en demande ${startSize}. Réessaie le mois prochain ou augmente ton quota.`,
             quota: { used, included: COUP_MONTHLY_QUOTA, remaining },
           },
           { status: 409 },
@@ -146,23 +172,27 @@ export async function POST(request: NextRequest) {
     const campaignId = String((created as { id: string }).id);
     const link = `${originOf(request)}/o/${campaignId}`;
 
-    // 2) Mode VAGUES : envoie la vague 0 (les plus fidèles) via Twilio + marque current_wave=0.
+    // 2) Mode VAGUES : on saute les niveaux vides et on envoie à la 1ʳᵉ vague peuplée (startIdx) via
+    //    Twilio + marque current_wave=startIdx. Les niveaux sautés sont tracés (skipped) pour info.
     //    Mode CANAL : on n'envoie rien de payant (current_wave reste -1) ; le pro postera le canal à la main.
-    const wave0 = buckets[0];
+    const startBucket = buckets[startIdx];
     let sent0 = 0;
     let skipped = false;
     let updated: Record<string, unknown> | null = created as Record<string, unknown>;
     if (mode !== "channel") {
-      if (wave0 && wave0.phones.length > 0) {
+      if (startBucket && startBucket.phones.length > 0) {
         const name = await merchantName(placeId);
-        const res = await sendPrivilegeAlertBroadcast(wave0.phones, { merchantName: name, offerText, link });
+        const res = await sendPrivilegeAlertBroadcast(startBucket.phones, { merchantName: name, offerText, link });
         skipped = res.skipped === true;
         sent0 = res.results.filter((r) => r.sid).length;
       }
-      waves[0] = { ...waves[0], sent: sent0, sent_at: nowIso };
+      // Niveaux supérieurs vides → marqués « sautés » (0 fan, pas d'envoi) pour que le pro voie qu'on
+      // est allé direct au bon niveau, sans rien faire de sa part.
+      for (let i = 0; i < startIdx; i += 1) waves[i] = { ...waves[i], sent: 0, sent_at: nowIso, skipped: true };
+      waves[startIdx] = { ...waves[startIdx], sent: sent0, sent_at: nowIso, skipped: false };
       const { data: upd } = await supabase
         .from("human_privilege_coup_campaigns")
-        .update({ current_wave: 0, waves, updated_at: nowIso })
+        .update({ current_wave: startIdx, waves, updated_at: nowIso })
         .eq("id", campaignId)
         .select("*")
         .maybeSingle();
@@ -174,7 +204,7 @@ export async function POST(request: NextRequest) {
       mode,
       campaign: updated,
       link,
-      wave: { idx: 0, fans: wave0?.phones.length || 0, sent: sent0 },
+      wave: { idx: startIdx, label: waves[startIdx]?.label || "", fans: startBucket?.phones.length || 0, sent: sent0 },
       whatsappConfigured: !skipped,
     });
   } catch {

@@ -289,15 +289,37 @@ export async function GET(request: NextRequest) {
     } catch {
       /* résilient */
     }
+    // Réservations récentes — liste dédiée pour l'espace pro (nom du client + quand + origine), pour
+    // les rendre VISIBLES (notif/section) et pas seulement noyées dans l'activité (#4).
+    const maskPhone = (raw: string): string => {
+      const d = String(raw || "").replace(/\D/g, "");
+      return d ? `•••• ${d.slice(-2)}` : "";
+    };
+    const reservationsList: Array<{ name: string; phoneMasked: string; when: string; source: string; ts: number }> = [];
     try {
       const { data: rs } = await supabase
         .from("human_privilege_reservations")
-        .select("created_at")
+        .select("member_phone,campaign_id,created_at")
         .eq("place_id", placeId)
         .order("created_at", { ascending: false })
-        .limit(10);
-      for (const r of (rs as Array<{ created_at: string }> | null) || []) {
-        acts.push({ icon: "📲", title: "Nouvelle réservation", sub: "via le catalogue", ts: Date.parse(r.created_at) || 0 });
+        .limit(20);
+      const rows = (rs as Array<{ member_phone: string; campaign_id: string | null; created_at: string }> | null) || [];
+      const phones = Array.from(new Set(rows.map((r) => r.member_phone).filter(Boolean)));
+      const nameByPhone = new Map<string, string>();
+      if (phones.length) {
+        try {
+          const { data: mem } = await supabase.from("human_privilege_members").select("phone_e164,first_name").in("phone_e164", phones);
+          ((mem as Array<{ phone_e164: string; first_name: string | null }> | null) || []).forEach((m) => nameByPhone.set(m.phone_e164, String(m.first_name || "")));
+        } catch {
+          /* résilient */
+        }
+      }
+      for (const r of rows) {
+        const nm = nameByPhone.get(r.member_phone) || "Un client";
+        const src = r.campaign_id ? "via un coup de feu ⚡" : "via le catalogue";
+        const ts = Date.parse(r.created_at) || 0;
+        reservationsList.push({ name: nm, phoneMasked: maskPhone(r.member_phone), when: relTime(ts), source: src, ts });
+        acts.push({ icon: "📲", title: `${nm} · réservation`, sub: src, ts });
       }
     } catch {
       /* résilient */
@@ -342,6 +364,8 @@ export async function GET(request: NextRequest) {
       proSlug,
       leaderboard,
       activity,
+      reservationsList: reservationsList.slice(0, 12),
+      reservationsCount: reservations,
       campaignsCount,
       channelUrl: cityChannelUrl(String(p.city_slug || "")),
     });

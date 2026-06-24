@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
-import { loadWaveBuckets, COUP_WAVES, monthlyMessagesUsed, COUP_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
+import { loadWaveBuckets, COUP_WAVES, monthlyMessagesUsed, firstNonEmptyWave, COUP_MONTHLY_QUOTA, type WaveSnapshot } from "@/lib/popey-human/coup";
 import { sendPrivilegeAlertBroadcast } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
@@ -28,22 +28,39 @@ export async function POST(request: NextRequest) {
     if (!campaign) return NextResponse.json({ error: "Campagne introuvable." }, { status: 404 });
     const c = campaign as { current_wave: number; offer_text: string; status: string; waves: WaveSnapshot[] };
 
-    const nextIdx = Number(c.current_wave) + 1;
     if (c.status !== "live") return NextResponse.json({ error: "Cette campagne est terminée." }, { status: 409 });
-    if (nextIdx >= COUP_WAVES.length) {
-      // Plus de vague → on clôt la campagne.
-      await supabase.from("human_privilege_coup_campaigns").update({ status: "done", updated_at: new Date().toISOString() }).eq("id", id);
-      return NextResponse.json({ ok: true, done: true, message: "Toutes les vagues ont été envoyées." });
-    }
+    const fromIdx = Number(c.current_wave) + 1;
+
+    // Recalcule les destinataires (au cas où de nouveaux fans/niveaux) et SAUTE les niveaux vides :
+    // on vise la 1ʳᵉ vague peuplée à partir de fromIdx. Le pro n'élargit plus à blanc.
+    const buckets = await loadWaveBuckets(placeId);
+    const targetIdx = firstNonEmptyWave(buckets, fromIdx);
 
     const waves: WaveSnapshot[] = Array.isArray(c.waves) ? c.waves : [];
-    if (waves[nextIdx] && waves[nextIdx].sent_at) {
+    const nowIso = new Date().toISOString();
+    const ensureWave = (i: number) => {
+      while (waves.length <= i) waves.push({ idx: waves.length, label: COUP_WAVES[waves.length]?.label || "", fans: 0, sent: 0, sent_at: null });
+    };
+    const markSkipped = (i: number) => {
+      ensureWave(i);
+      if (!waves[i].sent_at) waves[i] = { ...waves[i], sent: 0, sent_at: nowIso, skipped: true };
+    };
+
+    // Plus aucune vague peuplée en dessous → on marque les niveaux restants comme sautés et on clôt.
+    if (targetIdx < 0) {
+      for (let i = fromIdx; i < COUP_WAVES.length; i += 1) markSkipped(i);
+      await supabase
+        .from("human_privilege_coup_campaigns")
+        .update({ status: "done", current_wave: COUP_WAVES.length - 1, waves, updated_at: nowIso })
+        .eq("id", id);
+      return NextResponse.json({ ok: true, done: true, message: "Tous tes fans ont été prévenus." });
+    }
+
+    if (waves[targetIdx] && waves[targetIdx].sent_at) {
       return NextResponse.json({ error: "Cette vague a déjà été envoyée." }, { status: 409 });
     }
 
-    // Recalcule les destinataires de la vague visée (au cas où de nouveaux fans/niveaux).
-    const buckets = await loadWaveBuckets(placeId);
-    const bucket = buckets.find((b) => b.idx === nextIdx);
+    const bucket = buckets[targetIdx];
 
     // Garde quota : on n'élargit pas si la vague dépasse le quota mensuel restant (maîtrise du coût).
     const used = await monthlyMessagesUsed(placeId);
@@ -59,7 +76,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const nowIso = new Date().toISOString();
     let sent = 0;
     let skipped = false;
     if (bucket && bucket.phones.length > 0) {
@@ -76,12 +92,14 @@ export async function POST(request: NextRequest) {
       sent = res.results.filter((r) => r.sid).length;
     }
 
-    while (waves.length <= nextIdx) waves.push({ idx: waves.length, label: COUP_WAVES[waves.length]?.label || "", fans: 0, sent: 0, sent_at: null });
-    waves[nextIdx] = { ...waves[nextIdx], fans: bucket?.phones.length || waves[nextIdx].fans || 0, sent, sent_at: nowIso };
+    // Niveaux intermédiaires vides (entre l'ancienne vague et la cible) → marqués sautés.
+    for (let i = fromIdx; i < targetIdx; i += 1) markSkipped(i);
+    ensureWave(targetIdx);
+    waves[targetIdx] = { ...waves[targetIdx], fans: bucket?.phones.length || waves[targetIdx].fans || 0, sent, sent_at: nowIso, skipped: false };
 
     const { data: updated } = await supabase
       .from("human_privilege_coup_campaigns")
-      .update({ current_wave: nextIdx, waves, updated_at: nowIso })
+      .update({ current_wave: targetIdx, waves, updated_at: nowIso })
       .eq("id", id)
       .select("*")
       .maybeSingle();
@@ -89,7 +107,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       campaign: updated || campaign,
-      wave: { idx: nextIdx, fans: bucket?.phones.length || 0, sent },
+      wave: { idx: targetIdx, label: waves[targetIdx]?.label || "", fans: bucket?.phones.length || 0, sent },
       whatsappConfigured: !skipped,
     });
   } catch {

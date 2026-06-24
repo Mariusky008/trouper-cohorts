@@ -379,7 +379,9 @@
           <div class="bubble" id="waPreview"></div>
         </div>
         <div class="share-cta">
-          <button class="btn btn-wa" onclick="shareWA()">
+          <button class="btn btn-wa" id="notifyProBtn" style="display:none" onclick="notifyPro()">📲 Prévenir le commerçant</button>
+          <div class="n" id="notifyProNote" style="display:none;text-align:center;font-family:'Inter';font-size:11.5px;color:var(--grey);margin-top:-2px">Il reçoit ta réservation sur son WhatsApp et te garde ta place.</div>
+          <button class="btn btn-wa" id="shareWaBtn" onclick="shareWA()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#06241a"><path d="M12 2a10 10 0 0 0-8.7 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg>
             Partager sur WhatsApp
           </button>
@@ -908,20 +910,37 @@ function doReserve(){
     body:JSON.stringify({placeId:o.id,phone:phone,name:first,ville:CITY_LABEL,refId:REF,consent:consent,offerId:isRealId(o.id)?o.id:undefined})})
     .then(r=>r.json().catch(()=>({}))).then(d=>{
       var lvl=(d&&typeof d.level==='number')?d.level:(o.relLvl||0);o.relLvl=lvl;var code=(d&&d.code)||'';
-      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null});setSeen(o.id,lvl);trackPriv('reserve',o.id);sndSuccess(); // baseline → le passage 0→1 déclenchera le « match »
-      fillShare(o,lvl,code,(d&&d.next)||null);
-    }).catch(()=>{fillShare(o,o.relLvl||0,'',null);});
+      var proWa=(d&&d.proWhatsapp)||'';
+      setReserved(o.id,{code:code,lvl:lvl,next:(d&&d.next)||null,proWa:proWa});setSeen(o.id,lvl);trackPriv('reserve',o.id);sndSuccess(); // baseline → le passage 0→1 déclenchera le « match »
+      fillShare(o,lvl,code,(d&&d.next)||null,proWa);
+    }).catch(()=>{fillShare(o,o.relLvl||0,'',null,'');});
 }
-function fillShare(o,lvl,code,next){
+function fillShare(o,lvl,code,next,proWa){
   document.getElementById('shareP').textContent=o.name+" t'attend. Présente-toi, c'est tout.";
   shareHearts.textContent=hearts(lvl);
   document.getElementById('codeVal').textContent=code?String(code).split('').join(' '):'—';
   document.getElementById('codeCard').style.display=code?'':'none';
   var nextTxt=next?(' — au niveau '+next.threshold+' : '+esc(next.reward)):'';
   document.getElementById('shareRelN').innerHTML='Relation avec <b>'+esc(o.name)+'</b> : niveau '+lvl+'/5. Tu gagnes <b>+1 cœur</b> dès que '+esc(o.name)+' valide ta visite en boutique'+nextTxt+'.';
+  applyProNotify(proWa);
 }
-function openShareFor(i){currentPro=i;var o=offers[i];var rv=getReserved(o.id)||{};closeSheets();showShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null);fillShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null);}
-function showShare(o,lvl,code,next){
+/* #5 — le client prévient le commerçant en DIRECT depuis SON WhatsApp (0 € Twilio). */
+var CUR_PRO_WA='';
+function applyProNotify(proWa){
+  CUR_PRO_WA=proWa||'';
+  var btn=document.getElementById('notifyProBtn'),note=document.getElementById('notifyProNote'),share=document.getElementById('shareWaBtn');
+  if(CUR_PRO_WA){ // pro joignable → « Prévenir » devient l'action principale, « Partager » passe en secondaire
+    btn.style.display='';note.style.display='';
+    if(share){share.className='secondary';share.innerHTML='Partager ce bon plan';}
+  }else{
+    btn.style.display='none';note.style.display='none';
+    if(share){share.className='btn btn-wa';share.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="#06241a"><path d="M12 2a10 10 0 0 0-8.7 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg> Partager sur WhatsApp';}
+  }
+}
+function proWaText(){var o=offers[currentPro]||{};var rv=getReserved(o.id)||{};var code=rv.code?String(rv.code):'';return 'Bonjour'+(o.name?(' '+o.name):'')+', je viens de réserver sur Popey'+(o.product?(' : '+o.product+(o.newP?(' à '+o.newP):'')):'')+(code?('. Mon code de visite : '+code):'')+'. À tout de suite !';}
+function notifyPro(){if(!CUR_PRO_WA)return;window.open('https://wa.me/'+CUR_PRO_WA+'?text='+encodeURIComponent(proWaText()),'_blank');}
+function openShareFor(i){currentPro=i;var o=offers[i];var rv=getReserved(o.id)||{};closeSheets();showShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null,rv.proWa||'');fillShare(o,rv.lvl||o.relLvl||0,rv.code||'',rv.next||null,rv.proWa||'');}
+function showShare(o,lvl,code,next,proWa){
   shareName.textContent=o.name;shareP.textContent=o.name+" t'attend. Présente-toi, c'est tout.";
   shareHearts.textContent=hearts(lvl);
   document.getElementById('shareRelL').textContent='🎉 Rendez-vous pris';
@@ -930,6 +949,7 @@ function showShare(o,lvl,code,next){
   if(code){document.getElementById('codeCard').style.display='';document.getElementById('codeVal').textContent=String(code).split('').join(' ');}
   else{document.getElementById('codeCard').style.display='none';}
   waPreview.innerHTML=esc(waText()).replace(/\n/g,'<br>').replace(esc(o.name),'<b>'+esc(o.name)+'</b>');
+  applyProNotify(proWa);
   setTimeout(()=>go('share'),150);
 }
 function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent(waText()),'_blank');}
