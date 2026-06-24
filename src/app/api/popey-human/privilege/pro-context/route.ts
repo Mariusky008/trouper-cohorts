@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveProPlaceId } from "@/lib/popey-human/pro-auth";
 import { DEFAULT_TIERS, type LoyaltyTier } from "@/lib/popey-human/loyalty";
 import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
-import { cityChannelUrl } from "@/lib/popey-human/channels";
+import { cityChannelUrl, channelSubmitWhatsApp } from "@/lib/popey-human/channels";
 
 export const dynamic = "force-dynamic";
 
@@ -368,6 +368,7 @@ export async function GET(request: NextRequest) {
       reservationsCount: reservations,
       campaignsCount,
       channelUrl: cityChannelUrl(String(p.city_slug || "")),
+      channelSubmitWhatsapp: channelSubmitWhatsApp(),
     });
   } catch {
     return NextResponse.json({ error: "Erreur inattendue." }, { status: 500 });

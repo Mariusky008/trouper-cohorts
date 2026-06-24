@@ -629,7 +629,7 @@ function setModeNote(ch){
   if(ch){
     var q=CHANNEL_QUOTA||{};var left=(typeof q.remaining==='number')?q.remaining:null;
     var quotaTxt=(left!=null)?(' · il te reste <b>'+left+'/'+(q.included||8)+'</b> posts canal ce mois'):'';
-    note.innerHTML='📣 <b>Gratuit</b> : tu postes l\'offre dans le canal WhatsApp Popey de ta ville. Large, ouverture plus faible — 0 €'+quotaTxt+'.';
+    note.innerHTML='📣 <b>Gratuit</b> : tu envoies l\'offre à Popey, on la publie dans le canal de ta ville. Large, ouverture plus faible — 0 €'+quotaTxt+'.';
   }else{
     note.innerHTML='🥇 Tes <b>fidèles d\'abord</b>, par vagues. Message WhatsApp direct = forte ouverture (décompté de ton quota).';
   }
@@ -675,7 +675,7 @@ function fireCoup(){
     .then(r=>r.json().catch(()=>({}))).then(d=>{cfBusy=false;
       if(!d||d.error){toast(d&&d.error||'Lancement impossible');return;}
       setClFlag('coup');CAMPAIGN=d.campaign;showLive();
-      if(d.mode==='channel')toast('📣 Coup de feu prêt — copie le post pour le canal');
+      if(d.mode==='channel')toast('📣 Post prêt — envoie-le à Popey pour le canal');
       else if(d.whatsappConfigured===false)toast('⚠️ WhatsApp non configuré — campagne créée');
       else{var wv=d.wave||{};toast('🚀 '+(wv.label||'Vague 1')+' · '+(wv.sent||0)+' prévenu'+((wv.sent||0)>1?'s':''));}
       renderLive();startPoll();
@@ -698,22 +698,24 @@ function pollCoup(){
   fetch('/api/popey-human/privilege/coup?p='+encodeURIComponent(PRO)+'&id='+encodeURIComponent(CAMPAIGN.id),{cache:'no-store'})
     .then(r=>r.json()).then(d=>{if(d&&d.campaign){CAMPAIGN=d.campaign;renderLive();}}).catch(()=>{});
 }
-var CHANNEL_URL='';
+var CHANNEL_URL='', CHANNEL_SUBMIT='';
 function channelPostText(){var c=CAMPAIGN||{};var link=location.origin+'/o/'+(c.id||'');return '⚡ COUP DE FEU — '+((MERCHANT&&MERCHANT.name)||'ton commerce')+'\n'+(c.offer_text||'')+'\n👉 Réserve ta place : '+link;}
 function openChannel(){if(CHANNEL_URL)window.open(CHANNEL_URL,'_blank');}
+// Sur une chaîne WhatsApp seul l'admin publie → le pro ENVOIE son post à Popey (1 tap), Popey le publie.
+function channelSubmitText(){var city=(MERCHANT&&MERCHANT.city)||'';return '📣 À publier dans le canal Popey'+(city?(' '+city):'')+' :\n\n'+channelPostText();}
+function submitToPopey(){if(!CHANNEL_SUBMIT){toast('Canal pas encore activé');return;}window.open('https://wa.me/'+CHANNEL_SUBMIT+'?text='+encodeURIComponent(channelSubmitText()),'_blank');}
 function channelBlockHTML(){
   var city=(MERCHANT&&MERCHANT.city)?(' '+MERCHANT.city):' ta ville';
-  var hasUrl=!!CHANNEL_URL;
-  // Pas-à-pas clair 1-2-3 : copier → ouvrir le canal (bouton en avant) → coller. Repli si le canal de
-  // la ville n'est pas encore configuré (le pro partage le post à ses contacts en attendant).
-  var step2=hasUrl
-    ? '<div class="cf-ch-step"><span class="cf-ch-num">2</span><div class="cf-ch-bd">Ouvre le canal Popey de'+esc(city)+'<div class="cf-ch-act"><button class="btn btn-mint" onclick="openChannel()">📣 Ouvrir le canal de'+esc(city)+'</button></div></div></div>'
-      +'<div class="cf-ch-step"><span class="cf-ch-num">3</span><div class="cf-ch-bd">Colle le post (appui long → Coller) et publie. C\'est tout 🎉</div></div>'
-    : '<div class="cf-ch-step"><span class="cf-ch-num">2</span><div class="cf-ch-bd">Le canal Popey de'+esc(city)+' n\'est pas encore ouvert. En attendant, partage le post à tes contacts WhatsApp :<div class="cf-ch-act"><button class="btn btn-mint" onclick="shareChannel()">💬 Partager le post</button></div></div></div>';
-  return '<div class="cf-channel"><div class="cf-ch-h">📣 Poste ton offre dans le canal <span>gratuit</span></div>'
+  var hasSubmit=!!CHANNEL_SUBMIT;
+  var viewBtn=CHANNEL_URL?'<div class="cf-ch-act"><button class="btn btn-ghost" onclick="openChannel()">👀 Voir le canal de'+esc(city)+'</button></div>':'';
+  var body=hasSubmit
+    ? '<div class="cf-ch-step"><span class="cf-ch-num">1</span><div class="cf-ch-bd">Envoie ton post à Popey en 1 tap<div class="cf-ch-act"><button class="btn btn-mint" onclick="submitToPopey()">📣 Envoyer mon post à Popey</button></div></div></div>'
+      +'<div class="cf-ch-step"><span class="cf-ch-num">2</span><div class="cf-ch-bd">On le publie dans le canal de'+esc(city)+' (en général sous 1 h). Tu n\'as rien d\'autre à faire 🎉'+viewBtn+'</div></div>'
+    : '<div class="cf-ch-step"><span class="cf-ch-num">1</span><div class="cf-ch-bd">Le canal Popey de'+esc(city)+' n\'est pas encore actif. En attendant, partage le post à tes contacts WhatsApp :<div class="cf-ch-act"><button class="btn btn-mint" onclick="shareChannel()">💬 Partager le post</button></div></div></div>';
+  return '<div class="cf-channel"><div class="cf-ch-h">📣 Diffuse dans le canal <span>gratuit</span></div>'
+    +'<div class="cf-ch-sub" style="font-family:\'Inter\';font-size:11.5px;color:var(--grey);margin:2px 0 4px;line-height:1.4">Popey publie pour toi dans le canal de la ville (sur une chaîne WhatsApp, seul Popey peut publier).</div>'
     +'<textarea id="cfChannelTxt" readonly rows="4">'+esc(channelPostText())+'</textarea>'
-    +'<div class="cf-ch-step"><span class="cf-ch-num">1</span><div class="cf-ch-bd">Copie le post ci-dessus<div class="cf-ch-act"><button class="btn btn-mint" onclick="copyChannel()">📋 Copier le post</button></div></div></div>'
-    +step2+'</div>';
+    +body+'</div>';
 }
 function copyChannel(){var t=channelPostText();var ok=function(){toast('📋 Post copié');};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();function fb(){try{var ta=document.getElementById('cfChannelTxt');ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');ok();}catch(e){}}}
 function shareChannel(){window.open('https://wa.me/?text='+encodeURIComponent(channelPostText()),'_blank');}
@@ -888,7 +890,7 @@ function loadProData(){
       if(d.offer){document.getElementById('offerProd').textContent=d.offer.product||'—';document.getElementById('offerPrice').textContent=d.offer.price||'';if(d.offer.emoji)document.getElementById('offerEm').textContent=d.offer.emoji;document.getElementById('offerStatus').textContent=d.offer.status||'EN LIGNE';}
       if(Array.isArray(d.tiers)&&d.tiers.length){levels=d.tiers.map(t=>({n:t.idx,cond:(t.threshold===1?'1ʳᵉ visite validée':t.threshold+' visites'),perk:t.reward}));renderLadder();}
       if(Array.isArray(d.waves)){cfWaves=d.waves;renderWavesPreview();}
-      CHANNEL_URL=d.channelUrl||'';PRO_SLUG=d.proSlug||'';
+      CHANNEL_URL=d.channelUrl||'';CHANNEL_SUBMIT=d.channelSubmitWhatsapp||'';PRO_SLUG=d.proSlug||'';
       PRO_DATA=d;
       renderShare(d.shareLink);renderLeaderboard(d.leaderboard);renderChecklist(d);
     }).catch(()=>{});
