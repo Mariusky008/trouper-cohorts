@@ -1,6 +1,5 @@
 // /admin/rejoindre/lettre/[slug] — Aperçu recto+verso de la lettre d'invitation
 // Imprimer via Cmd+P → Enregistrer en PDF (format A4, sans marges).
-import { notFound } from "next/navigation";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,19 +20,55 @@ export default async function LettreSlugPage({ params }: { params: { slug: strin
   const { slug } = params;
 
   const supabase = createAdminClient();
-  const { data: place } = await supabase
-    .from("human_marketplace_places")
-    .select("id, company_name, prenom, genre, metier, city, city_slug, commerce_slug, reco_status, deadline_at")
-    .eq("commerce_slug", slug)
-    .maybeSingle();
+  // Résilient : si une colonne récente (genre) manque encore en base, on réessaie
+  // sans elle plutôt que de renvoyer un 404 muet.
+  let place: Record<string, unknown> | null = null;
+  let lookupError: string | null = null;
+  {
+    const full = await supabase
+      .from("human_marketplace_places")
+      .select("id, company_name, prenom, genre, metier, city, city_slug, commerce_slug, reco_status, deadline_at")
+      .eq("commerce_slug", slug)
+      .maybeSingle();
+    if (full.error) {
+      const safe = await supabase
+        .from("human_marketplace_places")
+        .select("id, company_name, prenom, metier, city, commerce_slug")
+        .eq("commerce_slug", slug)
+        .maybeSingle();
+      place = (safe.data as Record<string, unknown> | null) ?? null;
+      lookupError = safe.error ? safe.error.message || String(safe.error) : null;
+    } else {
+      place = (full.data as Record<string, unknown> | null) ?? null;
+    }
+  }
 
-  if (!place) notFound();
+  if (!place) {
+    return (
+      <div style={{ padding: 40, fontFamily: "sans-serif" }}>
+        <h1 style={{ color: "#b91c1c" }}>Commerçant introuvable</h1>
+        <p>
+          Aucune ligne avec <code>commerce_slug = &quot;{slug}&quot;</code>.
+        </p>
+        {lookupError && (
+          <p style={{ marginTop: 12, color: "#b91c1c" }}>
+            Erreur base : <code>{lookupError}</code>
+          </p>
+        )}
+        <p style={{ marginTop: 16, color: "#555" }}>
+          Vérifie que la migration <code>20260625120000_create_reco_system.sql</code> (colonnes
+          <code> commerce_slug, prenom, genre, reco_status, deadline_at</code>) a bien été appliquée.
+        </p>
+      </div>
+    );
+  }
 
-  const prenom = place.prenom ?? place.company_name ?? "";
+  const str = (v: unknown) => (v == null ? "" : String(v));
+  const prenom = str(place.prenom) || str(place.company_name);
   const fondateur_trice = place.genre === "F" ? "fondatrice" : "fondateur";
-  const commerce = place.company_name ?? place.prenom ?? place.metier ?? "";
-  const ville = place.city ?? "";
-  const metier = place.metier ?? "";
+  const commerce = str(place.company_name) || str(place.prenom) || str(place.metier);
+  const ville = str(place.city);
+  const metier = str(place.metier);
 
   const qrTargetUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy"}/rejoindre/${slug}`;
   // QR généré via API publique, converti en data-URI pour rester autonome dans le PDF.
