@@ -110,6 +110,8 @@ export async function POST(request: Request) {
     const cityNew = String(formData.get("city") || "").trim();
     const newMetier = String(formData.get("new_metier") || "").trim();
     const sphereKey = String(formData.get("sphere_key") || "digital").trim();
+    const newPrenom = String(formData.get("new_prenom") || "").trim() || null;
+    const newGenre = String(formData.get("new_genre") || "M").trim();
     if (!cityNew || !newMetier) return fail("Ville et métier requis pour créer une offre.");
     const sphereLabels: Record<string, string> = {
       "evenements-locaux": "Évènements locaux",
@@ -119,6 +121,21 @@ export async function POST(request: Request) {
       mariage: "Mariage · Évènementiel",
       finance: "Finance · Juridique",
     };
+    // Génère un commerce_slug unique : {metier-slug}-{city-slug}[-N si doublon]
+    const baseSlug = [slugifyPart(newMetier), slugifyPart(cityNew)].filter(Boolean).join("-");
+    let commerceSlug = baseSlug;
+    for (let attempt = 2; attempt <= 99; attempt++) {
+      const { data: existing } = await supabaseAdmin
+        .from("human_marketplace_places")
+        .select("id")
+        .eq("commerce_slug", commerceSlug)
+        .maybeSingle();
+      if (!existing) break;
+      commerceSlug = `${baseSlug}-${attempt}`;
+    }
+
+    const deadlineAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
     const baseRow: Record<string, unknown> = {
       city: cityNew,
       city_slug: slugifyPart(cityNew),
@@ -128,6 +145,11 @@ export async function POST(request: Request) {
       metier_slug: slugifyPart(newMetier),
       status: "reserved",
       is_seeded: false,
+      prenom: newPrenom,
+      genre: newGenre,
+      commerce_slug: commerceSlug,
+      reco_status: "prospect",
+      deadline_at: deadlineAt,
       owner_member_id: ownerMemberIdRaw || null,
       company_name: companyNameRaw || null,
       privilege_badge: privilegeBadgeRaw || null,

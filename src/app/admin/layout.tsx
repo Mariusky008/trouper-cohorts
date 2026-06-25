@@ -59,6 +59,9 @@ export default async function AdminLayout({
             <a href="/admin/humain/commissions" className="hover:underline">
               Commissions
             </a>
+            <a href="/admin/rejoindre/lettre" className="hover:underline font-semibold text-emerald-600 hover:text-emerald-700">
+              📬 Lettres QR
+            </a>
             <span className="mx-4 h-4 w-px bg-slate-300" />
             <a href="/admin/humain/review-booster" className="hover:underline font-semibold text-amber-600 hover:text-amber-700">
               Avis Google

@@ -315,6 +315,17 @@ function CatalogueOfferForm({
               <option value="evenements-locaux">Évènements locaux</option>
             </select>
           </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Prénom du gérant</span>
+            <input name="new_prenom" placeholder="Ex: Sophie" className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-3 text-sm" />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Genre (pour la lettre)</span>
+            <select name="new_genre" defaultValue="M" className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-2 text-sm">
+              <option value="M">Masculin → membre fondateur</option>
+              <option value="F">Féminin → membre fondatrice</option>
+            </select>
+          </label>
         </>
       ) : (
         <>
