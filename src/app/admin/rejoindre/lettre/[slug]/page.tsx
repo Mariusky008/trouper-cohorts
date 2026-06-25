@@ -16,8 +16,8 @@ function injectVars(html: string, vars: Record<string, string>): string {
   return out;
 }
 
-export default async function LettreSlugPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function LettreSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   const supabase = createAdminClient();
   // Résilient : si une colonne récente (genre) manque encore en base, on réessaie
