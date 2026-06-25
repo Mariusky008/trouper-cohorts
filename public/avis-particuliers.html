@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Kudos — Réseau de Confiance</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#F7F8FC;--white:#fff;--blue-light:#E8EFFF;--blue-mid:#4F7DF3;
+      --blue-dark:#2563EB;--green:#2ECC71;--green-light:#E8F8F1;
+      --purple:#8B5CF6;--purple-light:#F3EFFF;--orange:#F59E0B;--orange-light:#FFFBF0;
+      --pink:#EC4899;--pink-light:#FDF2F8;--gold:#F59E0B;
+      --text:#0F172A;--muted:#64748B;
+      --shadow:0 4px 24px rgba(79,125,243,.13);--shadow-sm:0 2px 10px rgba(79,125,243,.09);
+      --r:20px;
+    }
+    body{font-family:-apple-system,'SF Pro Display','Inter',sans-serif;background:var(--bg);min-height:100vh;overflow-x:hidden}
+
+    /* ── HERO ── */
+    .hero{background:linear-gradient(150deg,#0F3460 0%,#1A5FA8 45%,#4A90D9 75%,#7EC8F7 100%);color:#fff;padding:52px 24px 88px;text-align:center;position:relative;overflow:hidden}
+    .hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:56px;background:var(--bg);border-radius:50% 50% 0 0/100% 100% 0 0}
+    .orb{position:absolute;border-radius:50%;opacity:.15;filter:blur(40px)}
+    .orb1{width:200px;height:200px;background:#7EC8F7;top:-60px;right:-40px}
+    .orb2{width:150px;height:150px;background:#fff;bottom:40px;left:-40px}
+    .hero-logo{font-size:44px;margin-bottom:10px;display:block;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes glassShimmer{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+    @keyframes glassPulse{0%,100%{opacity:.6}50%{opacity:1}}
+    .hero h1{font-size:34px;font-weight:900;letter-spacing:-.5px;margin-bottom:8px}
+    .hero-tagline{font-size:15px;opacity:.88;max-width:300px;margin:0 auto 22px;line-height:1.55}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+    .hero-pill{background:rgba(255,255,255,.18);backdrop-filter:blur(10px);padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.25)}
+
+    /* ── NAV TABS ── */
+    .nav-tabs{display:flex;gap:7px;padding:20px 16px 0;max-width:420px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+    .nav-tabs::-webkit-scrollbar{display:none}
+    .nav-tab{flex:1;min-width:72px;background:var(--white);border:none;border-radius:16px;padding:9px 4px;cursor:pointer;font-size:9px;font-weight:700;color:var(--muted);box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .nav-tab .ti{font-size:18px}
+    .nav-tab.active{background:var(--blue-dark);color:#fff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,95,168,.35)}
+
+    .section-label{text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin:14px 0 6px}
+
+    /* ── PHONE ── */
+    .phone-container{display:flex;justify-content:center;padding:0 20px}
+    .phone{width:min(330px,100%);height:640px;background:var(--white);border-radius:42px;box-shadow:0 32px 80px rgba(26,95,168,.28),0 0 0 8px #1A1A2E;overflow:hidden;display:flex;flex-direction:column;position:relative}
+    .phone-notch{background:#1A1A2E;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .notch-island{background:#000;width:100px;height:18px;border-radius:0 0 14px 14px}
+    .phone-status{background:var(--white);padding:5px 16px;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;color:var(--text);flex-shrink:0}
+
+    .screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+    .screen.active{display:flex;animation:slin .3s ease}
+    @keyframes slin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+    /* scrollable inner area for screens */
+    .screen-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+    .screen-scroll::-webkit-scrollbar{display:none}
+
+    .bottom-nav{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.28) 0%,rgba(240,246,255,.18) 100%);backdrop-filter:blur(48px) saturate(2.2) brightness(1.06);-webkit-backdrop-filter:blur(48px) saturate(2.2) brightness(1.06);display:flex;border-radius:0;margin:0;padding:10px 6px 24px;flex-shrink:0;border-top:1.5px solid rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 -8px 32px rgba(180,210,255,.2)}
+    .bottom-nav::before{content:'';position:absolute;top:0;left:0;width:32%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:glassShimmer 6s ease-in-out infinite;pointer-events:none;z-index:0}
+    .bnav-item{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:rgba(15,25,60,.44);transition:all .24s cubic-bezier(.34,1.4,.64,1);padding:7px 4px;border-radius:18px;font-size:0}
+    .bnav-item svg{width:23px;height:23px;display:block;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .24s cubic-bezier(.34,1.4,.64,1)}
+    .bnav-item span.nl{font-size:8px;font-weight:600;display:block;letter-spacing:.1px}
+    .bnav-item.active{background:linear-gradient(180deg,rgba(255,255,255,.82) 0%,rgba(255,255,255,.52) 100%);color:rgba(10,18,50,.95);box-shadow:0 2px 16px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(0,0,0,.03)}
+    .bnav-item.active svg{transform:scale(1.1)}
+    .bnav-dot{display:none}
+
+    /* ══ S1 PROFIL ══ */
+    .profile-hero{position:relative;height:155px;flex-shrink:0}
+    .profile-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.75) saturate(1.1)}
+    .profile-hero-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06) 0%,rgba(0,0,0,.55) 100%)}
+    .profile-hero-options{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.28);border-radius:18px;padding:5px 12px;font-size:14px;font-weight:900;color:#fff;cursor:pointer;letter-spacing:2px;line-height:1.2}
+    .profile-avatar-anchor{position:absolute;bottom:-32px;left:50%;transform:translateX(-50%)}
+    .profile-avatar-img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.22);display:block}
+    .profile-avatar-fb{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#F7B2BD,#FFA0AC);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;border:3px solid #fff}
+    .profile-verified{position:absolute;bottom:1px;right:1px;width:18px;height:18px;border-radius:50%;background:var(--green);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff}
+    .profile-stats{display:none}
+    .psb-item{display:none}
+    .psb-num{display:none}
+    .psb-label{display:none}
+    .psb-sep{display:none}
+    .profile-tags{display:none}
+    .profile-tag{display:none}
+    .passport-card{display:none}
+    .passport-cert{display:none}
+    /* ── REP CARD ── */
+    .rep-card{margin:-30px 12px 10px;background:var(--white);border-radius:24px;padding:44px 16px 16px;box-shadow:0 4px 32px rgba(0,0,0,.09);position:relative;text-align:center}
+    .rep-avatar-wrap{position:absolute;top:-28px;left:50%;transform:translateX(-50%)}
+    .rep-avatar-img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.15);display:block}
+    .rep-verified{position:absolute;bottom:0;right:-2px;width:18px;height:18px;background:var(--blue-mid);border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:900}
+    .rep-name{font-size:17px;font-weight:900;color:var(--text);margin-bottom:2px;letter-spacing:-.3px}
+    .rep-archetype{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:11px}
+    .rep-stars-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:3px}
+    .rep-stars{color:#F59E0B;font-size:14px;letter-spacing:1px}
+    .rep-score{font-size:17px;font-weight:900;color:var(--text)}
+    .rep-meta{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:12px}
+    .rep-quote{font-size:11px;color:var(--muted);font-style:italic;line-height:1.55;padding:10px 13px;background:var(--bg);border-radius:14px;margin-bottom:14px;text-align:left;border-left:3px solid var(--purple)}
+    .trait-bars{text-align:left;display:flex;flex-direction:column;gap:9px}
+    .tb-row{display:flex;align-items:center;gap:8px}
+    .tb-label{font-size:10px;font-weight:700;color:var(--text);width:90px;flex-shrink:0}
+    .tb-track{flex:1;height:5px;background:#EEF2F8;border-radius:3px;overflow:hidden}
+    .tb-fill{height:100%;border-radius:3px}
+    .tb-pct{font-size:9px;font-weight:800;color:var(--muted);width:26px;text-align:right;flex-shrink:0}
+    /* Badges section */
+    .badges-section{margin:0 12px 8px}
+    .bs-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+    .bs-title{font-size:13px;font-weight:800;color:var(--text)}
+    .bs-sub{font-size:10px;color:var(--muted)}
+
+    .badges-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+    .badge-card{background:var(--white);border-radius:16px;padding:9px 5px 7px;text-align:center;cursor:pointer;transition:all .18s;border:none;box-shadow:0 2px 10px rgba(0,0,0,.07);position:relative;overflow:hidden}
+    .badge-card:active{transform:scale(.93);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .badge-card.new-glow{box-shadow:0 0 0 2.5px var(--blue-mid),0 2px 12px rgba(74,144,217,.2)}
+    .badge-card.locked-card{background:#F3F4F6;box-shadow:none;cursor:pointer}
+    .badge-emoji-wrap{width:auto;height:auto;border-radius:0;background:transparent;display:block;margin:0 auto 5px;font-size:26px;line-height:1;box-shadow:none}
+    .badge-emoji-wrap.locked{filter:blur(3px)}
+    .badge-name{font-size:9px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.2}
+    .badge-count{display:inline-flex;align-items:center;gap:2px;font-size:9px;color:var(--muted);font-weight:600}
+    .badge-num{font-size:10px;font-weight:800;color:var(--muted)}
+    .badge-new-tag{position:absolute;top:4px;right:4px;background:var(--blue-mid);color:#fff;border-radius:7px;padding:1px 5px;font-size:8px;font-weight:900}
+    .badge-hot-tag{position:absolute;top:4px;right:4px;background:#F59E0B;color:#fff;border-radius:7px;padding:1px 5px;font-size:8px;font-weight:900}
+    .lock-overlay{position:absolute;inset:0;background:rgba(243,244,246,.85);backdrop-filter:blur(2px);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:14px;gap:3px}
+    .lock-icon{font-size:18px}
+    .lock-progress{font-size:9px;font-weight:800;color:var(--muted)}
+    .lock-bar{width:60%;height:4px;background:#E5E7EB;border-radius:2px;margin-top:3px;overflow:hidden}
+    .lock-bar-fill{height:100%;background:var(--blue-mid);border-radius:2px;width:66%}
+
+    /* 2nd degree trust badge */
+    .trust2-chip{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#FFFBF0,#FEF3C7);border:1px solid #FDE68A;border-radius:10px;padding:4px 8px;font-size:9px;font-weight:800;color:#92400E;margin-top:5px}
+
+    .add-badge-btn{position:relative;overflow:hidden;margin:8px 11px 6px;background:linear-gradient(180deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.14) 55%,rgba(240,245,255,.08) 100%);backdrop-filter:blur(28px) saturate(1.8) brightness(1.05);-webkit-backdrop-filter:blur(28px) saturate(1.8) brightness(1.05);color:rgba(10,16,48,.88);border:1px solid rgba(255,255,255,.7);border-bottom-color:rgba(255,255,255,.25);border-radius:20px;padding:14px;width:calc(100% - 22px);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .22s cubic-bezier(.34,1.4,.64,1);box-shadow:0 6px 24px rgba(0,0,0,.09),0 1px 3px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.95)}
+    .add-badge-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:48%;background:linear-gradient(180deg,rgba(255,255,255,.32),transparent);pointer-events:none;border-radius:20px 20px 0 0}
+    .add-badge-btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.8)}
+    .request-btn{position:relative;overflow:hidden;margin:0 11px 12px;background:linear-gradient(180deg,rgba(210,228,255,.48) 0%,rgba(180,212,255,.2) 55%,rgba(160,200,255,.08) 100%);backdrop-filter:blur(28px) saturate(1.8) brightness(1.05);-webkit-backdrop-filter:blur(28px) saturate(1.8) brightness(1.05);color:var(--blue-dark);border:1px solid rgba(140,190,255,.55);border-bottom-color:rgba(100,160,255,.18);border-radius:20px;padding:13px;width:calc(100% - 22px);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .22s cubic-bezier(.34,1.4,.64,1);box-shadow:0 6px 24px rgba(74,144,217,.12),0 1px 3px rgba(74,144,217,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+    .request-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:48%;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent);pointer-events:none;border-radius:20px 20px 0 0}
+    .request-btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(74,144,217,.1),inset 0 1px 0 rgba(255,255,255,.75)}
+
+    /* ══ S2 FEED ══ */
+    .feed-header{background:var(--white);padding:11px 14px 9px;font-size:16px;font-weight:900;color:var(--text);border-bottom:1px solid #F0F4F9;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+    .feed-badge-count{background:var(--blue-mid);color:#fff;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:800}
+    .feed-inner-tabs{display:flex;gap:6px;padding:8px 11px;border-bottom:1px solid #F0F4F9;background:var(--white);flex-shrink:0}
+    .fit{flex:1;background:var(--bg);border:none;border-radius:10px;padding:6px 4px;font-size:9px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s}
+    .fit.active{background:var(--blue-dark);color:#fff}
+    .feed-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 11px;-webkit-overflow-scrolling:touch}
+    .feed-scroll::-webkit-scrollbar{display:none}
+
+    .feed-item{background:var(--white);border-radius:16px;padding:10px 11px;margin-bottom:7px;box-shadow:var(--shadow-sm);display:flex;gap:9px;align-items:flex-start;cursor:pointer;transition:all .18s;border-left:3px solid transparent}
+    .feed-item:active{transform:scale(.98)}
+    .feed-item.unread{border-left-color:var(--blue-mid);background:#F5FAFF}
+    .feed-item.viral{border-left-color:var(--orange);background:var(--orange-light)}
+    .feed-item.match-item{border-left-color:var(--green);background:var(--green-light)}
+    .feed-avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
+    .feed-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .fa-blue{background:linear-gradient(135deg,#93C5FD,#3B82F6)}
+    .fa-pink{background:linear-gradient(135deg,#FCA5A5,#EF4444)}
+    .fa-purple{background:linear-gradient(135deg,#C4B5FD,#8B5CF6)}
+    .fa-yellow{background:linear-gradient(135deg,#FDE68A,#F59E0B)}
+    .fa-green{background:linear-gradient(135deg,#6EE7B7,#10B981)}
+    .feed-content{flex:1;min-width:0}
+    .feed-text{font-size:11px;color:var(--text);line-height:1.45}
+    .feed-text strong{color:var(--blue-dark)}
+    .badge-pill{background:var(--blue-light);color:var(--blue-dark);border-radius:7px;padding:1px 6px;font-size:10px;font-weight:800;white-space:nowrap}
+    .feed-time{font-size:9px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px}
+    .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-mid);animation:pulse 1.5s ease-in-out infinite;flex-shrink:0}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.4}}
+    .viral-bar{margin-top:6px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-radius:9px;padding:5px 9px;font-size:9px;color:#92400E;font-weight:700;display:flex;align-items:center;gap:5px}
+    .match-pill{display:inline-flex;align-items:center;gap:3px;background:var(--green-light);color:#1a7a4a;border-radius:8px;padding:3px 7px;font-size:9px;font-weight:800;margin-top:4px}
+
+    /* trending feed */
+    .trend-section-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:6px 2px 4px;display:flex;align-items:center;gap:5px}
+    .trend-card{background:var(--white);border-radius:14px;padding:10px 11px;margin-bottom:7px;box-shadow:var(--shadow-sm);cursor:pointer;transition:all .18s}
+    .trend-card:active{transform:scale(.98)}
+    .trend-top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+    .trend-rank{width:22px;height:22px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+    .tr1{background:linear-gradient(135deg,#FEF3C7,#F59E0B);color:#92400E}
+    .tr2{background:linear-gradient(135deg,#F3F4F6,#E5E7EB);color:#374151}
+    .tr3{background:linear-gradient(135deg,#FEE2E2,#F87171);color:#991B1B}
+    .trend-emoji{font-size:22px}
+    .trend-info{flex:1}
+    .trend-name{font-size:12px;font-weight:800;color:var(--text)}
+    .trend-sub{font-size:9px;color:var(--muted);margin-top:1px}
+    .trend-bar-wrap{background:#F0F4F9;border-radius:4px;height:4px;overflow:hidden;margin-bottom:4px}
+    .trend-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+    .trend-stats{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:700}
+    .trend-send-btn{background:var(--blue-light);color:var(--blue-dark);border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:800;cursor:pointer;margin-left:auto;display:block;transition:all .15s}
+    .trend-send-btn:active{transform:scale(.94)}
+
+    /* ══ S3 MESSENGER ══ */
+    .messenger-header{background:var(--white);padding:9px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #F0F4F9;flex-shrink:0}
+    .back-btn{font-size:20px;color:var(--blue-mid);cursor:pointer;font-weight:700;line-height:1}
+    .messenger-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0}
+    .messenger-avatar img{width:100%;height:100%;object-fit:cover}
+    .messenger-avatar-fb{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#93C5FD,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:15px}
+    .messenger-name{font-size:13px;font-weight:800;color:var(--text)}
+    .messenger-status{font-size:10px;color:var(--green);font-weight:700}
+    .msg-scroll{flex:1;min-height:0;overflow-y:auto;padding:11px;background:var(--bg);-webkit-overflow-scrolling:touch}
+    .msg-scroll::-webkit-scrollbar{display:none}
+    .msg-date{text-align:center;font-size:10px;color:var(--muted);margin-bottom:10px}
+    .msg{margin-bottom:8px;display:flex}
+    .msg.received{justify-content:flex-start}
+    .msg.sent{justify-content:flex-end}
+    .msg-bubble{max-width:82%;padding:8px 12px;border-radius:17px;font-size:12px;line-height:1.45}
+    .msg.received .msg-bubble{background:var(--white);color:var(--text);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
+    .msg.sent .msg-bubble{background:var(--blue-mid);color:#fff;border-bottom-right-radius:4px}
+    .msg-meta{font-size:9px;opacity:.5;margin-top:3px;text-align:right}
+    .action-bar{background:var(--white);border-top:1px solid #F0F4F9;padding:8px 11px;display:flex;gap:7px;align-items:center;flex-shrink:0}
+    .msg-input{flex:1;background:var(--bg);border:none;border-radius:20px;padding:7px 13px;font-size:12px;color:var(--text);outline:none;font-family:inherit}
+    .kudos-btn{background:linear-gradient(135deg,var(--blue-mid),var(--blue-dark));color:#fff;border:none;border-radius:20px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .2s}
+    .kudos-btn:active{transform:scale(.95)}
+    .send-btn{background:var(--blue-mid);color:#fff;border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;flex-shrink:0}
+
+    /* ══ OVERLAY / SHEET ══ */
+    .overlay{position:absolute;inset:0;background:rgba(15,20,40,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;border-radius:42px}
+    .overlay.open{display:flex;animation:fdin .2s ease}
+    @keyframes fdin{from{opacity:0}to{opacity:1}}
+    .sheet{background:var(--white);border-radius:26px 26px 0 0;width:100%;animation:slideUp .32s cubic-bezier(.34,1.56,.64,1);max-height:82%;overflow-y:auto}
+    .sheet::-webkit-scrollbar{display:none}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:36px;height:4px;background:#E0E7EF;border-radius:2px;margin:12px auto 13px}
+    .sheet-header{display:flex;justify-content:space-between;align-items:center;padding:0 20px 12px;border-bottom:1px solid #F0F4F9}
+    .sheet-title{font-size:16px;font-weight:900;color:var(--text)}
+    .sheet-close{background:#F0F4F9;border:none;border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer;color:var(--muted);font-weight:700}
+    .sheet-action{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;transition:all .15s;border-bottom:1px solid #F8FAFC}
+    .sheet-action:last-child{border-bottom:none}
+    .sheet-action:active{background:#F5FAFF}
+    .sheet-action.disabled{opacity:.36;cursor:default;pointer-events:none}
+    .sa-icon{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+    .sa-green{background:var(--green-light)}.sa-blue{background:#EFF6FF}.sa-purple{background:var(--purple-light)}.sa-yellow{background:var(--orange-light)}.sa-red{background:#FFF1F2}.sa-gold{background:linear-gradient(135deg,#FFFBF0,#FEF3C7)}
+    .sa-text strong{display:block;font-size:13px;font-weight:800;color:var(--text)}
+    .sa-text span{font-size:11px;color:var(--muted)}
+
+    /* badge picker */
+    .picker-search{margin:11px 16px 7px;position:relative}
+    .picker-search input{width:100%;background:var(--bg);border:none;border-radius:14px;padding:9px 14px 9px 35px;font-size:13px;color:var(--text);outline:none;font-family:inherit}
+    .psi{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted)}
+    .picker-cats{display:flex;gap:6px;padding:0 16px 11px;overflow-x:auto;scrollbar-width:none}
+    .picker-cats::-webkit-scrollbar{display:none}
+    .cat-pill{background:var(--bg);border:1.5px solid transparent;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+    .cat-pill.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+    .picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
+    .pbc-card{background:var(--bg);border-radius:13px;padding:10px 7px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .18s;position:relative}
+    .pbc-card:active,.pbc-card.sel{border-color:var(--blue-mid);background:#EFF6FF;transform:scale(.97)}
+    .pbc-card .pbe{font-size:24px;display:block;margin-bottom:4px}
+    .pbc-card .pbn{font-size:9px;font-weight:800;color:var(--text);line-height:1.2}
+    .pbc-card .pbc{font-size:8px;color:var(--muted);font-weight:600;margin-top:2px}
+    .phot{position:absolute;top:3px;right:3px;background:#F59E0B;color:#fff;border-radius:5px;padding:1px 4px;font-size:7px;font-weight:900}
+    .pnew{position:absolute;top:3px;right:3px;background:var(--blue-mid);color:#fff;border-radius:5px;padding:1px 4px;font-size:7px;font-weight:900}
+
+    /* custom badge */
+    .custom-badge-area{padding:0 16px 14px;border-top:1px solid #F0F4F9;margin-top:4px}
+    .cba-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px}
+    .custom-row{display:flex;gap:7px;align-items:center}
+    .emoji-btn{background:var(--bg);border:1.5px solid #E0E7EF;border-radius:11px;padding:9px 12px;font-size:20px;cursor:pointer;flex-shrink:0;transition:all .15s}
+    .emoji-btn:active{transform:scale(.88)}
+    .custom-inp{flex:1;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:11px;padding:9px 13px;font-size:12px;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+    .custom-inp:focus{border-color:var(--blue-mid)}
+    .create-btn{background:linear-gradient(135deg,var(--blue-mid),var(--blue-dark));color:#fff;border:none;border-radius:11px;padding:9px 14px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .create-btn:active{transform:scale(.94)}
+    .emoji-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid #F0F4F9}
+    .eq{font-size:21px;cursor:pointer;padding:3px;border-radius:7px;transition:transform .15s;line-height:1}
+    .eq:active{transform:scale(.84)}
+
+    /* send bar */
+    .send-kudos-bar{padding:11px 16px;border-top:1px solid #F0F4F9}
+    .skb-preview{background:linear-gradient(135deg,#EFF6FF,#D6ECFF);border-radius:12px;padding:9px 13px;margin-bottom:9px;display:flex;align-items:center;gap:9px;min-height:42px}
+    .skb-e{font-size:22px}.skb-t{font-size:12px;font-weight:700;color:var(--text)}.skb-s{font-size:10px;color:var(--muted)}
+    .kudos-msg-wrap{margin-bottom:9px}
+    .kudos-msg-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+    .kudos-msg-input{width:100%;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:9px 13px;font-size:12px;color:var(--text);outline:none;font-family:inherit;resize:none;line-height:1.5;transition:border-color .15s}
+    .kudos-msg-input:focus{border-color:var(--blue-mid)}
+    .kudos-msg-hint{font-size:9px;color:var(--muted);margin-top:3px}
+    .send-confirm-btn{width:100%;background:linear-gradient(135deg,var(--green),#16A34A);color:#fff;border:none;border-radius:13px;padding:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+    .send-confirm-btn:active{transform:scale(.97)}
+
+    /* ══ BADGE TESTIMONIALS ══ */
+    .testi-list{padding:0 20px 6px}
+    .testi-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .testi-item{background:var(--bg);border-radius:14px;padding:11px 13px;margin-bottom:8px}
+    .testi-header{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+    .testi-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0}
+    .testi-avatar img{width:100%;height:100%;object-fit:cover}
+    .testi-avatar-fb{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .testi-name{font-size:11px;font-weight:800;color:var(--text);flex:1}
+    .testi-time{font-size:9px;color:var(--muted)}
+    .testi-text{font-size:12px;color:var(--text);line-height:1.5;font-style:italic}
+    .testi-text::before{content:'"'}
+    .testi-text::after{content:'"'}
+    .testi-locked{background:linear-gradient(135deg,#F3F4F6,#E5E7EB);border-radius:14px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;opacity:.7}
+    .testi-locked-icon{font-size:20px}
+    .testi-locked-text{font-size:11px;color:var(--muted);font-weight:700;line-height:1.4}
+
+    /* request form */
+    .request-form{padding:14px 20px 22px}
+    .rf-label{display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;margin-top:13px}
+    .rf-label:first-child{margin-top:0}
+    .rf-input{width:100%;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:10px 13px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+    .rf-input:focus{border-color:var(--blue-mid)}
+    .lm-row{display:flex;gap:7px;margin-top:4px}
+    .lm-btn{flex:1;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:11px;padding:9px 6px;font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;color:var(--text)}
+    .lm-btn.active{border-color:var(--blue-mid);background:#EFF6FF;color:var(--blue-dark)}
+    .lm-icon{font-size:19px}
+    .send-req-btn{width:100%;background:linear-gradient(135deg,var(--purple),#6D28D9);color:#fff;border:none;border-radius:13px;padding:12px;font-size:13px;font-weight:900;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:7px}
+    .send-req-btn:active{transform:scale(.97)}
+
+    /* ══ WRAPPED CARD ══ */
+    .wrapped-card{margin:24px 16px 0;border-radius:var(--r);overflow:hidden;box-shadow:0 8px 40px rgba(26,95,168,.2);position:relative;cursor:pointer}
+    .wrapped-bg{background:linear-gradient(135deg,#0F3460 0%,#1A5FA8 40%,#4A90D9 70%,#7EC8F7 100%);padding:24px 20px 20px;color:#fff}
+    .wrapped-top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .wrapped-avatar{width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,.6);overflow:hidden;flex-shrink:0}
+    .wrapped-avatar img{width:100%;height:100%;object-fit:cover}
+    .wrapped-name{font-size:16px;font-weight:900}
+    .wrapped-sub{font-size:11px;opacity:.75;margin-top:2px}
+    .wrapped-year{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);padding:3px 9px;border-radius:10px;display:inline-block;margin-top:5px}
+    .wrapped-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+    .ws{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:14px;padding:12px 8px;text-align:center}
+    .ws-num{font-size:22px;font-weight:900}
+    .ws-label{font-size:9px;opacity:.8;font-weight:700;margin-top:2px}
+    .wrapped-top-badge{background:rgba(255,255,255,.18);backdrop-filter:blur(8px);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .wtb-emoji{font-size:28px}
+    .wtb-text{font-size:12px;font-weight:800}
+    .wtb-sub{font-size:10px;opacity:.75}
+    .wrapped-actions{display:flex;gap:8px}
+    .wa-btn{flex:1;border:none;border-radius:12px;padding:10px;font-size:11px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+    .wa-story{background:rgba(255,255,255,.9);color:var(--blue-dark)}
+    .wa-pdf{background:var(--blue-dark);color:#fff;border:1.5px solid rgba(255,255,255,.3)}
+    .wa-btn:active{transform:scale(.96)}
+
+    /* ══ DOSSIER PDF PREVIEW ══ */
+    .pdf-preview{background:var(--white);border-radius:var(--r);margin:16px 16px 0;box-shadow:var(--shadow);overflow:hidden}
+    .pdf-header{background:linear-gradient(90deg,#0F3460,#1A5FA8);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+    .pdf-header-title{font-size:13px;font-weight:800}
+    .pdf-header-sub{font-size:10px;opacity:.7}
+    .pdf-dl-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 12px;font-size:10px;font-weight:800;cursor:pointer;transition:all .15s}
+    .pdf-dl-btn:active{transform:scale(.94)}
+    .pdf-body{padding:14px 18px}
+    .pdf-profile-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #F0F4F9}
+    .pdf-avatar{width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0}
+    .pdf-avatar img{width:100%;height:100%;object-fit:cover}
+    .pdf-profile-name{font-size:14px;font-weight:900;color:var(--text)}
+    .pdf-profile-sub{font-size:11px;color:var(--muted);margin-top:2px}
+    .pdf-cert-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:800;color:#1a7a4a;margin-top:5px}
+    .pdf-badges-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+    .pdf-badge-item{background:#F8FBFF;border:1px solid #E0ECFF;border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--text)}
+    .pdf-badge-item span:first-child{font-size:14px}
+    .pdf-validators{background:var(--bg);border-radius:10px;padding:9px 12px}
+    .pdf-validators-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+    .pdf-validator-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+    .pdf-val-avatar{width:24px;height:24px;border-radius:50%;overflow:hidden;flex-shrink:0}
+    .pdf-val-avatar img{width:100%;height:100%;object-fit:cover}
+    .pdf-val-name{font-size:11px;font-weight:700;color:var(--text)}
+    .pdf-val-badge{font-size:10px;color:var(--muted)}
+    .pdf-val-check{margin-left:auto;color:var(--green);font-size:12px;font-weight:800}
+
+    /* ══ TRENDING OUT-OF-PHONE ══ (shown outside phone below) */
+
+    /* ══ TOAST ══ */
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-90px);background:var(--text);color:#fff;padding:10px 22px;border-radius:22px;font-size:13px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:90vw;white-space:normal;text-align:center}
+    .toast.show{transform:translateX(-50%) translateY(0)}
+
+    /* ══ ONBOARDING ══ */
+    .onboarding{position:fixed;inset:0;z-index:500;background:linear-gradient(160deg,#0F3460 0%,#1A5FA8 45%,#4A90D9 80%,#7EC8F7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;transition:opacity .5s ease,transform .5s ease}
+    .onboarding.hidden{opacity:0;pointer-events:none;transform:scale(1.04)}
+    .ob-logo{font-size:56px;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+    .ob-title{font-size:28px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:-.5px}
+    .ob-sub{font-size:14px;color:rgba(255,255,255,.82);text-align:center;line-height:1.55;max-width:300px;margin-bottom:28px}
+    .ob-contacts{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:24px}
+    .ob-avatar{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.6);overflow:hidden;margin-left:-10px;background:#4A90D9;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .ob-avatar:first-child{margin-left:0}
+    .ob-avatar img{width:100%;height:100%;object-fit:cover}
+    .ob-contacts-label{background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:800;color:#fff;margin-left:12px;border:1px solid rgba(255,255,255,.25)}
+    .ob-input-wrap{width:100%;max-width:320px;position:relative;margin-bottom:14px}
+    .ob-flag{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;line-height:1}
+    .ob-input{width:100%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);border-radius:14px;padding:13px 14px 13px 44px;font-size:15px;color:#fff;outline:none;font-family:inherit;backdrop-filter:blur(8px)}
+    .ob-input::placeholder{color:rgba(255,255,255,.55)}
+    .ob-input:focus{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.22)}
+    .ob-cta{width:100%;max-width:320px;background:#fff;color:var(--blue-dark);border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:900;cursor:pointer;transition:all .2s;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+    .ob-cta:active{transform:scale(.97)}
+    .ob-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;text-decoration:underline}
+    .ob-trust{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;justify-content:center}
+    .ob-trust-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff}
+    /* Onboarding reveal animation */
+    @keyframes revealBadge{to{opacity:1;transform:none}}
+    @keyframes revealArch{0%{opacity:0;transform:scale(.72)}60%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+    @keyframes avatarPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.18)}50%{box-shadow:0 0 0 10px rgba(255,255,255,.0)}}
+    @keyframes fadeUp{to{opacity:1;transform:none}}
+    .ob-reveal{width:100%;max-width:300px;margin:0 auto 20px;text-align:center}
+    .ob-rev-avatar{width:72px;height:72px;border-radius:50%;border:2px dashed rgba(255,255,255,.32);background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:rgba(255,255,255,.28);animation:avatarPulse 2.2s ease-in-out 3;position:relative;overflow:hidden}
+    .ob-rev-q{position:relative;z-index:1;line-height:1}
+    .ob-rev-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;animation:revealPhoto .55s ease 3.1s forwards}
+    @keyframes revealPhoto{0%{opacity:0;transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+    .ob-rev-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+    .ob-rev-badges{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:16px}
+    .ob-rev-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:100px;padding:7px 15px;font-size:12px;font-weight:700;color:#fff;opacity:0;transform:translateY(12px) scale(.82);animation:revealBadge .55s cubic-bezier(.34,1.56,.64,1) var(--d,0s) forwards}
+    .ob-rev-arch{display:inline-block;background:rgba(255,255,255,.95);color:#8B5CF6;border-radius:20px;padding:10px 22px;font-size:13px;font-weight:900;opacity:0;transform:scale(.72);animation:revealArch .65s cubic-bezier(.34,1.56,.64,1) 3.2s forwards;margin-bottom:10px}
+    .ob-rev-valid{font-size:11px;color:rgba(255,255,255,.55);font-weight:600;opacity:0;transform:translateY(6px);animation:fadeUp .5s ease 4s forwards}
+    .ob-rev-count{background:rgba(255,255,255,.22);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;color:rgba(255,255,255,.9);margin-left:4px}
+    .ob-cases{display:flex;gap:6px;width:100%;max-width:300px;margin-bottom:18px}
+    .ob-case{flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 6px;text-align:center}
+    .ob-case-icon{font-size:18px;margin-bottom:4px}
+    .ob-case-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.82);line-height:1.35}
+
+    /* ══ QR SHEET ══ */
+    .qr-wrap{padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px}
+    .qr-img{width:160px;height:160px;border-radius:16px;border:4px solid var(--blue-light);box-shadow:var(--shadow);background:var(--white);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .qr-img img{width:100%;height:100%}
+    .qr-label{font-size:14px;font-weight:800;color:var(--text);text-align:center}
+    .qr-sub{font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
+    .qr-link{background:var(--bg);border:1.5px solid #E0E7EF;border-radius:10px;padding:8px 14px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;width:100%}
+    .qr-copy-btn{background:var(--blue-mid);color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:10px;font-weight:800;cursor:pointer;margin-left:auto;white-space:nowrap}
+    .qr-actions{display:flex;gap:9px;width:100%}
+    .qr-act-btn{flex:1;border:none;border-radius:12px;padding:11px;font-size:11px;font-weight:800;cursor:pointer;transition:all .2s}
+    .qr-act-btn:active{transform:scale(.96)}
+
+    /* ══ SEARCH SCREEN ══ */
+    .search-header{background:var(--white);padding:10px 12px 8px;flex-shrink:0;border-bottom:1px solid #F0F4F9}
+    .search-bar-wrap{position:relative}
+    .search-bar-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted)}
+    .search-bar{width:100%;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:9px 12px 9px 34px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+    .search-bar:focus{border-color:var(--blue-mid)}
+    .search-filters{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid #F0F4F9;background:var(--white)}
+    .search-filters::-webkit-scrollbar{display:none}
+    .sf{background:var(--bg);border:1.5px solid transparent;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+    .sf.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark)}
+    .search-results{flex:1;min-height:0;overflow-y:auto;padding:8px 11px;-webkit-overflow-scrolling:touch}
+    .search-results::-webkit-scrollbar{display:none}
+    .search-section-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:4px 2px 8px;display:flex;align-items:center;justify-content:space-between}
+    .profile-result{background:var(--white);border-radius:16px;padding:12px;margin-bottom:8px;box-shadow:var(--shadow-sm);display:flex;gap:10px;align-items:center;cursor:pointer;transition:all .18s;border:1.5px solid transparent}
+    .profile-result:active,.profile-result:hover{border-color:var(--blue-mid);background:#F5FAFF;transform:translateX(3px)}
+    .pr-avatar{width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;position:relative}
+    .pr-avatar img{width:100%;height:100%;object-fit:cover}
+    .pr-avatar-badge{position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff}
+    .pr-info{flex:1;min-width:0}
+    .pr-name{font-size:12px;font-weight:800;color:var(--text)}
+    .pr-sub{font-size:10px;color:var(--muted);margin-top:1px}
+    .pr-badges{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+    .pr-badge-chip,.pr-badge{background:var(--blue-light);color:var(--blue-dark);border-radius:7px;padding:2px 6px;font-size:9px;font-weight:800}
+    .pr-archetype{font-size:9px;font-weight:700;color:var(--purple);background:var(--purple-light);border-radius:6px;padding:2px 6px;margin-top:4px;display:inline-block}
+    .pr-body{flex:1;min-width:0}
+    .pr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+    .pr-city{font-size:9px;color:var(--muted);font-weight:600;margin-top:1px}
+    .pr-match{background:var(--green-light);color:#1a7a4a;border-radius:10px;padding:4px 9px;font-size:9px;font-weight:800;flex-shrink:0}
+    .no-result{text-align:center;padding:32px 20px;color:var(--muted)}
+    .no-result .nr-icon{font-size:36px;margin-bottom:8px}
+    .no-result p{font-size:12px;line-height:1.5}
+
+    /* ══ CONTEXT DECLARATION ══ */
+    .ctx-decl{padding:12px 16px 0;border-top:1px solid #F0F4F9}
+    .ctx-label{font-size:10px;font-weight:800;color:var(--text);margin-bottom:7px;display:flex;align-items:center;gap:5px}
+    .ctx-required{color:#EF4444;font-size:11px}
+    .ctx-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .ctx-pill{background:var(--bg);border:1.5px solid #E0E7EF;border-radius:10px;padding:6px 11px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+    .ctx-pill.sel{background:var(--blue-light);border-color:var(--blue-mid);color:var(--blue-dark);font-weight:900}
+    .ctx-pill:active{transform:scale(.95)}
+    .ctx-error{font-size:10px;color:#EF4444;font-weight:700;margin-top:-6px;margin-bottom:8px;display:none}
+    .ctx-error.show{display:block}
+    .ctx-trust-note{background:linear-gradient(135deg,#FFFBF0,#FEF3C7);border:1px solid #FDE68A;border-radius:10px;padding:8px 11px;font-size:10px;color:#92400E;font-weight:700;display:flex;align-items:flex-start;gap:7px;margin:0 0 12px}
+
+    /* ══ REPLY TO BADGE ══ */
+    .testi-reply-btn{background:none;border:none;font-size:10px;font-weight:800;color:var(--blue-mid);cursor:pointer;padding:4px 0 0;display:flex;align-items:center;gap:3px}
+    .testi-reply-form{margin-top:8px;display:none}
+    .testi-reply-form.open{display:block}
+    .testi-reply-input{width:100%;background:var(--white);border:1.5px solid #E0E7EF;border-radius:10px;padding:7px 11px;font-size:11px;color:var(--text);outline:none;font-family:inherit;resize:none;transition:border-color .15s;line-height:1.45}
+    .testi-reply-input:focus{border-color:var(--blue-mid)}
+    .testi-reply-send{background:var(--blue-mid);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:10px;font-weight:800;cursor:pointer;margin-top:5px;float:right;transition:all .15s}
+    .testi-reply-send:active{transform:scale(.94)}
+    .testi-reply-posted{background:linear-gradient(135deg,#EFF6FF,#D6ECFF);border-radius:10px;padding:7px 10px;margin-top:7px;font-size:11px;color:var(--text);font-style:italic;border-left:2px solid var(--blue-mid)}
+    .testi-since{font-size:9px;color:var(--muted);font-weight:600;margin-top:2px}
+
+    .outer{max-width:420px;margin:0 auto;padding-bottom:80px}
+    .concept-section{background:var(--white);margin:22px 16px 0;border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)}
+    .concept-section h2{font-size:16px;font-weight:900;color:var(--text);margin-bottom:6px}
+    .concept-section p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:11px}
+    .concept-pills{display:flex;flex-wrap:wrap;gap:5px}
+    .cp{display:inline-flex;align-items:center;gap:4px;background:var(--blue-light);border-radius:10px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--blue-dark)}
+
+    /* ══ PSYCHO PROFILE ══ */
+    .psycho-card{margin-bottom:11px;background:var(--white);border-radius:18px;padding:13px;border:none;cursor:pointer;transition:all .2s;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+    .psycho-card:active{transform:scale(.98)}
+    .psycho-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.psycho-emoji{width:46px;height:46px;border-radius:14px;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:var(--shadow-sm);flex-shrink:0}
+    .psycho-name{font-size:13px;font-weight:900;color:var(--text)}
+    .psycho-sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+    .psycho-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(139,92,246,.12);border-radius:8px;padding:2px 8px;font-size:9px;font-weight:800;color:var(--purple);margin-top:4px}
+    .psycho-bars{display:flex;flex-direction:column;gap:5px}
+    .pbar-row{display:flex;align-items:center;gap:7px}
+    .pbar-label{font-size:9px;font-weight:700;color:var(--muted);width:64px;flex-shrink:0}
+    .pbar-track{flex:1;height:5px;background:rgba(0,0,0,.07);border-radius:3px;overflow:hidden}
+    .pbar-fill{height:100%;border-radius:3px}
+    .pbar-count{font-size:9px;font-weight:800;color:var(--muted);width:20px;text-align:right;flex-shrink:0}
+
+    /* ══ BADGE EXPAND ══ */
+    .badges-pills{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
+    .badge-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.9);border-radius:100px;padding:6px 13px 6px 9px;cursor:pointer;transition:all .18s;box-shadow:0 1px 8px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.05)}
+    .badge-pill:active{transform:scale(.95)}
+    .badge-pill.bp-glow{box-shadow:0 0 0 2px var(--blue-mid),0 2px 12px rgba(74,144,217,.18),inset 0 1px 0 rgba(255,255,255,.9)}
+    .badge-pill .bp-e{font-size:15px;line-height:1}
+    .badge-pill .bp-n{font-size:11px;font-weight:700;color:var(--text)}
+    .badge-pill .bp-c{font-size:10px;font-weight:600;color:var(--muted);margin-left:1px}
+    .badge-pill .bp-tag{font-size:8px;font-weight:800;background:#0D0F14;color:#fff;border-radius:6px;padding:1px 5px;margin-left:1px}
+    .badges-top-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-bottom:8px}
+    .badges-more-btn{width:100%;background:transparent;border:none;padding:10px 0 2px;font-size:11px;font-weight:600;color:var(--blue-mid);cursor:pointer;margin-top:4px;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.1px}
+    .badges-more-btn:active{transform:scale(.97)}
+    .badges-expanded{margin-top:8px;display:none}
+    .badges-expanded.open{display:block}
+    .badges-exp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-height:250px;overflow-y:auto;padding-right:2px;padding-bottom:2px}
+    .badges-exp-grid::-webkit-scrollbar{width:3px}
+    .badges-exp-grid::-webkit-scrollbar-thumb{background:var(--blue-light);border-radius:2px}
+    .beg-card{background:var(--white);border-radius:14px;padding:9px 5px 7px;text-align:center;cursor:pointer;transition:all .15s;border:none;box-shadow:0 2px 8px rgba(0,0,0,.06);position:relative}
+    .beg-card:active{transform:scale(.94)}
+    .beg-e{font-size:22px;display:block;margin-bottom:4px;line-height:1}
+    .beg-n{font-size:8px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:2px;display:block}
+    .beg-c{font-size:8px;color:var(--muted);font-weight:600;display:block}
+    .beg-hot{position:absolute;top:3px;right:3px;background:#0D0F14;color:#fff;border-radius:5px;padding:1px 4px;font-size:6px;font-weight:900}
+
+    .pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes pop{0%{transform:scale(.75);opacity:0}100%{transform:scale(1);opacity:1}}
+    .shake{animation:shake .4s ease}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .confetti-burst{position:fixed;pointer-events:none;z-index:999;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;animation:confpop .85s ease forwards}
+    @keyframes confpop{0%{opacity:1;transform:scale(.4)}60%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(1.6)}}
+  </style>
+</head>
+<body>
+
+<!-- ══ ONBOARDING ══ -->
+<div class="onboarding" id="onboarding">
+  <span class="ob-logo">✨</span>
+  <div class="ob-title">Kudos</div>
+
+  <!-- Message principal -->
+  <div class="ob-sub" style="margin-bottom:18px;font-size:15px;line-height:1.6">
+    Au départ, ton profil est vide.<br>
+    <span style="opacity:.75;font-size:13px">Chaque Kudos reçu révèle<br>qui tu es vraiment.</span>
+  </div>
+
+  <!-- Animation révélation -->
+  <div class="ob-reveal">
+    <div class="ob-rev-avatar">
+      <span class="ob-rev-q">?</span>
+      <img class="ob-rev-photo" src="https://i.pravatar.cc/160?img=47" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="ob-rev-arch">🌟 La Perle de coloc</div>
+    <div class="ob-rev-label" style="margin-top:14px">Les personnes qui te connaissent dessinent ton identité</div>
+    <div class="ob-rev-badges">
+      <span class="ob-rev-badge" style="--d:.7s">❤️ Bienveillante <span class="ob-rev-count">20 personnes</span></span>
+      <span class="ob-rev-badge" style="--d:1.3s">✨ Propre <span class="ob-rev-count">18 personnes</span></span>
+      <span class="ob-rev-badge" style="--d:1.9s">👂 À l'écoute <span class="ob-rev-count">14 personnes</span></span>
+      <span class="ob-rev-badge" style="--d:2.5s">😄 Bonne humeur <span class="ob-rev-count">11 personnes</span></span>
+    </div>
+    <div class="ob-rev-valid">Voilà qui tu es, vue par les autres ✨</div>
+  </div>
+
+  <!-- Cas d'usage -->
+  <div class="ob-cases">
+    <div class="ob-case"><div class="ob-case-icon">🏠</div><div class="ob-case-label">Trouver une coloc</div></div>
+    <div class="ob-case"><div class="ob-case-icon">💼</div><div class="ob-case-label">Inspirer confiance</div></div>
+    <div class="ob-case"><div class="ob-case-icon">🤝</div><div class="ob-case-label">Être mieux compris</div></div>
+  </div>
+
+  <div class="ob-input-wrap">
+    <span class="ob-flag">🇫🇷</span>
+    <input class="ob-input" id="obPhone" type="tel" placeholder="+33 6 XX XX XX XX" maxlength="18">
+  </div>
+  <button class="ob-cta" onclick="startApp()">✨ Rejoindre Kudos</button>
+
+  <div class="ob-skip" onclick="startApp()">Voir la démo sans s'inscrire →</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="outer">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="orb orb1"></div><div class="orb orb2"></div>
+    <span class="hero-logo">✨</span>
+    <h1>Kudos</h1>
+    <p class="hero-tagline">Le réseau de confiance entre humains. Des badges, pas des étoiles. De vraies personnes, pas des pseudos.</p>
+    <div class="hero-pills">
+      <span class="hero-pill">🏠 Colocation</span>
+      <span class="hero-pill">👔 Pro</span>
+      <span class="hero-pill">🎓 Campus</span>
+      <span class="hero-pill">🤝 Voisinage</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('profile',this)"><span class="ti">👤</span>Profil</button>
+    <button class="nav-tab" onclick="switchTab('feed',this)"><span class="ti">🔔</span>Activité</button>
+    <button class="nav-tab" onclick="switchTab('messenger',this)"><span class="ti">💬</span>Messenger</button>
+    <button class="nav-tab" onclick="switchTab('explore',this)"><span class="ti">🔥</span>Trending</button>
+  </div>
+  <div class="section-label" id="screenLabel">Écran 1 · Profil</div>
+
+  <!-- PHONE -->
+  <div class="phone-container">
+    <div class="phone">
+      <div class="phone-notch"><div class="notch-island"></div></div>
+      <div class="phone-status"><span>9:41</span><span>●●● 📶</span></div>
+
+      <!-- ══ S1 PROFIL ══ -->
+      <div class="screen active" id="screen-profile">
+        <div class="screen-scroll">
+
+        <!-- HERO PHOTO -->
+        <div class="profile-hero">
+          <img class="profile-hero-img" src="https://i.pravatar.cc/400?img=47" alt="Chloé"
+            onerror="this.style.background='linear-gradient(135deg,#1A5FA8,#4A90D9)'">
+          <div class="profile-hero-grad"></div>
+          <button class="profile-hero-options" onclick="openExportSheet()">···</button>
+        </div>
+
+        <!-- REPUTATION CARD -->
+        <div class="rep-card">
+          <div class="rep-avatar-wrap">
+            <img class="rep-avatar-img" src="https://i.pravatar.cc/160?img=47" alt="Chloé"
+              onerror="this.style.display='none'">
+            <div class="rep-verified">✓</div>
+          </div>
+          <div class="rep-name">Chloé M.</div>
+          <div class="rep-archetype">🌟 La Perle de coloc</div>
+          <div style="font-size:22px;font-weight:900;color:var(--text);margin-bottom:3px;letter-spacing:-.5px">22 <span style="font-size:13px;font-weight:700;color:var(--muted)">évaluations</span></div>
+          <div class="rep-meta">Top 5% Montpellier</div>
+          <div class="rep-quote">"La colocataire idéale : bienveillante, propre et toujours à l'écoute."</div>
+          <div class="trait-bars">
+            <div class="tb-row">
+              <span class="tb-label">❤️ Bienveillance</span>
+              <div class="tb-track"><div class="tb-fill" style="width:95%;background:#EC4899"></div></div>
+              <span class="tb-pct">95%</span>
+            </div>
+            <div class="tb-row">
+              <span class="tb-label">✨ Propreté</span>
+              <div class="tb-track"><div class="tb-fill" style="width:88%;background:#4F7DF3"></div></div>
+              <span class="tb-pct">88%</span>
+            </div>
+            <div class="tb-row">
+              <span class="tb-label">👂 Écoute</span>
+              <div class="tb-track"><div class="tb-fill" style="width:82%;background:#8B5CF6"></div></div>
+              <span class="tb-pct">82%</span>
+            </div>
+            <div class="tb-row">
+              <span class="tb-label">😄 Bonne humeur</span>
+              <div class="tb-track"><div class="tb-fill" style="width:74%;background:#F59E0B"></div></div>
+              <span class="tb-pct">74%</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="add-badge-btn" onclick="openBadgePicker()">✨ Envoyer un Kudos à Chloé</button>
+        <button class="request-btn" onclick="openRequestSheet()">📤 Demander un avis sur moi</button>
+
+        <!-- BADGES -->
+        <div class="badges-section">
+          <div class="bs-header">
+            <span class="bs-title">Ses qualités</span>
+            <span class="bs-sub">validées par la communauté</span>
+          </div>
+          <div class="badges-pills">
+            <div class="badge-pill bp-glow" onclick="openBadgeDetail('Propre',22,'✨')"><span class="bp-e">✨</span><span class="bp-n">Propre</span><span class="bp-c">22 · <span style="color:#22C55E;font-size:9px">ce mois</span></span></div>
+            <div class="badge-pill" onclick="openBadgeDetail('Bienveillante',20,'❤️')"><span class="bp-e">❤️</span><span class="bp-n">Bienveillante</span><span class="bp-c">20 · 2 ans</span></div>
+            <div class="badge-pill" onclick="openBadgeDetail('À l\'écoute',18,'👂')"><span class="bp-e">👂</span><span class="bp-n">À l'écoute</span><span class="bp-c">18 · 1 an</span></div>
+            <div class="badge-pill" onclick="openBadgeDetail('Respectueuse',16,'🤫')"><span class="bp-e">🤫</span><span class="bp-n">Respectueuse</span><span class="bp-c">16 · 8 mois</span></div>
+          </div>
+          <button class="badges-more-btn" id="badgesMoreBtn" onclick="toggleAllBadges()">
+            <span id="badgesMoreLabel">Voir les 12 autres badges →</span>
+          </button>
+          <div class="badges-expanded" id="badgesExpanded">
+            <div class="badges-pills" style="padding-top:6px">
+              <div class="badge-pill" onclick="openBadgeDetail('Chef Cuistot',15,'🍳')"><span class="bp-e">🍳</span><span class="bp-n">Chef Cuistot</span><span class="bp-c">15</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Bonne humeur',14,'😄')"><span class="bp-e">😄</span><span class="bp-n">Bonne humeur</span><span class="bp-c">14</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Paye son loyer',12,'💶')"><span class="bp-e">💶</span><span class="bp-n">Paye son loyer</span><span class="bp-c">12</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Serviable',11,'🫶')"><span class="bp-e">🫶</span><span class="bp-n">Serviable</span><span class="bp-c">11</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Réactive',9,'⚡')"><span class="bp-e">⚡</span><span class="bp-n">Réactive</span><span class="bp-c">9</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Créative',8,'💡')"><span class="bp-e">💡</span><span class="bp-n">Créative</span><span class="bp-c">8</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Calme la nuit',7,'🔇')"><span class="bp-e">🔇</span><span class="bp-n">Calme la nuit</span><span class="bp-c">7</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Zen',7,'🌊')"><span class="bp-e">🌊</span><span class="bp-n">Zen</span><span class="bp-c">7</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Apéro sympa',6,'🍷')"><span class="bp-e">🍷</span><span class="bp-n">Apéro sympa</span><span class="bp-c">6</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Dog-friendly',5,'🐕')"><span class="bp-e">🐕</span><span class="bp-n">Dog-friendly</span><span class="bp-c">5</span></div>
+              <div class="badge-pill" onclick="openBadgeDetail('Écolo',4,'♻️')"><span class="bp-e">♻️</span><span class="bp-n">Écolo</span><span class="bp-c">4</span></div>
+              <div class="badge-pill" onclick="openUnlockSheet()"><span class="bp-e">🔒</span><span class="bp-n">Badge mystère</span><span class="bp-c">2/3</span></div>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /screen-scroll -->
+
+        <div class="bottom-nav">
+          <div class="bnav-item active"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl">Profil</span></div>
+          <div class="bnav-item" onclick="switchTab('feed',null)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nl">Activité</span></div>
+          <div class="bnav-item" onclick="switchTab('messenger',null)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nl">Contacts</span></div>
+          <div class="bnav-item" onclick="switchTab('search',null)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nl">Recherche</span></div>
+          <div class="bnav-item" onclick="switchTab('explore',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span class="nl">Trending</span></div>
+        </div>
+      </div>
+
+      <!-- ══ S2 FEED ══ -->
+      <div class="screen" id="screen-feed">
+        <div class="feed-header"><span>Activité</span><span class="feed-badge-count">5 nouveaux</span></div>
+        <div class="feed-inner-tabs">
+          <button class="fit active" onclick="showFeedTab('notifs',this)">🔔 Notifs</button>
+          <button class="fit" onclick="showFeedTab('kudo',this)">✨ Kudos reçus</button>
+          <button class="fit" onclick="showFeedTab('match',this)">🤝 Matchs</button>
+        </div>
+        <div class="feed-scroll" id="feedScroll">
+          <!-- notifs tab (default) -->
+          <div id="ftab-notifs">
+            <!-- PROFIL CONSULTÉ -->
+            <div class="feed-item" onclick="openProfileViewedSheet()" style="border-left-color:#8B5CF6;background:#FAF5FF;border-left-width:3px;border-left-style:solid">
+              <div class="feed-avatar" style="background:linear-gradient(135deg,#8B5CF6,#4F7DF3);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;flex-shrink:0">👁</div>
+              <div class="feed-content">
+                <div class="feed-text" style="font-weight:700;color:#0F172A">Un propriétaire a consulté ton profil <span style="color:#8B5CF6;font-weight:800">pendant 2 min</span></div>
+                <div style="font-size:10px;color:#64748B;margin-top:3px">📍 Montpellier · Via ton lien partagé</div>
+                <div class="feed-time"><span class="pulse-dot"></span>Il y a 23 min</div>
+              </div>
+            </div>
+
+            <!-- KUDOS REÇU -->
+            <div class="feed-item unread" onclick="openKudosMoment()">
+              <div class="feed-avatar fa-blue"><img src="https://i.pravatar.cc/80?img=12" alt="" onerror="this.parentElement.textContent='👨‍🎓'"></div>
+              <div class="feed-content">
+                <div class="feed-text"><strong>Pierre</strong> t'a envoyé le badge <span class="badge-pill">❤️ Bienveillante</span> — appuie pour découvrir ✨</div>
+                <div class="feed-time"><span class="pulse-dot"></span>Il y a 13 min</div>
+              </div>
+            </div>
+            <div class="feed-item match-item" onclick="showToast('🎉 Kudo Match confirmé !')">
+              <div class="feed-avatar fa-pink"><img src="https://i.pravatar.cc/80?img=9" alt="" onerror="this.parentElement.textContent='👩'"></div>
+              <div class="feed-content">
+                <div class="feed-text"><strong>Sarah</strong> a validé ta <span class="badge-pill">🏠 Coloc</span> !</div>
+                <div class="feed-time">Il y a 14 min</div>
+                <div class="match-pill">🤝 Match mutuel confirmé</div>
+              </div>
+            </div>
+            <div class="feed-item viral" onclick="showToast('🚀 Viral · 1.2k vues !')">
+              <div class="feed-avatar fa-yellow">⚡</div>
+              <div class="feed-content">
+                <div class="feed-text">Ton badge <span class="badge-pill">💻 Machine de guerre PPT</span> est partagé en Story Insta !</div>
+                <div class="feed-time">Il y a 18 min</div>
+                <div class="viral-bar">🔥 Viral · 1.2k vues · 48 partages</div>
+              </div>
+            </div>
+            <div class="feed-item unread" onclick="showToast('🔒 Plus qu\'une validation pour débloquer !')">
+              <div class="feed-avatar fa-purple">🔮</div>
+              <div class="feed-content">
+                <div class="feed-text">Encore <strong>1 validation</strong> pour débloquer ton badge mystère 🔒</div>
+                <div class="feed-time"><span class="pulse-dot"></span>Il y a 20 min</div>
+                <div class="match-pill" style="background:#F3EFFF;color:var(--purple)">👉 Inviter quelqu'un</div>
+              </div>
+            </div>
+            <div class="feed-item unread" onclick="showToast('📤 Demande de Lucas à valider !')">
+              <div class="feed-avatar fa-green"><img src="https://i.pravatar.cc/80?img=33" alt="" onerror="this.parentElement.textContent='👦'"></div>
+              <div class="feed-content">
+                <div class="feed-text"><strong>Lucas</strong> te demande de valider <span class="badge-pill">🔑 Bon proprio</span></div>
+                <div class="feed-time"><span class="pulse-dot"></span>Il y a 22 min</div>
+                <div class="match-pill" style="background:#EFF6FF;color:var(--blue-dark)">👉 Valider maintenant</div>
+              </div>
+            </div>
+            <div class="feed-item" onclick="showToast('🌟 Kudo Match avec Thomas !')">
+              <div class="feed-avatar fa-yellow">🌟</div>
+              <div class="feed-content">
+                <div class="feed-text"><strong>Kudo Match</strong> avec <strong>Thomas</strong> ! Mutuellement validés 🎉</div>
+                <div class="feed-time">Il y a 25 min</div>
+                <div class="match-pill">⭐ Nouvelle connexion forte</div>
+              </div>
+            </div>
+          </div>
+          <div id="ftab-kudo" style="display:none">
+            <div class="feed-item unread"><div class="feed-avatar fa-blue"><img src="https://i.pravatar.cc/80?img=12" alt="" onerror="this.parentElement.textContent='👨'"></div><div class="feed-content"><div class="feed-text"><strong>Pierre</strong> → <span class="badge-pill">✨ Propre</span></div><div class="feed-time"><span class="pulse-dot"></span>13 min</div></div></div>
+            <div class="feed-item"><div class="feed-avatar fa-green"><img src="https://i.pravatar.cc/80?img=33" alt="" onerror="this.parentElement.textContent='👦'"></div><div class="feed-content"><div class="feed-text"><strong>Lucas</strong> → <span class="badge-pill">🍳 Chef Cuistot</span></div><div class="feed-time">2h</div></div></div>
+            <div class="feed-item"><div class="feed-avatar fa-purple">🏙</div><div class="feed-content"><div class="feed-text"><strong>Marie</strong> → <span class="badge-pill">❤️ Bienveillante</span></div><div class="feed-time">Hier</div></div></div>
+          </div>
+          <div id="ftab-match" style="display:none">
+            <div class="feed-item match-item"><div class="feed-avatar fa-pink"><img src="https://i.pravatar.cc/80?img=9" alt="" onerror="this.parentElement.textContent='👩'"></div><div class="feed-content"><div class="feed-text"><strong>Sarah × Chloé</strong> — Coloc 🏠 validée mutuellement</div><div class="feed-time">14 min</div><div class="match-pill">🤝 Match Coloc</div></div></div>
+            <div class="feed-item match-item"><div class="feed-avatar fa-yellow">🌟</div><div class="feed-content"><div class="feed-text"><strong>Thomas × Chloé</strong> — Fiable 🤝 mutuellement</div><div class="feed-time">25 min</div><div class="match-pill">⭐ Kudo Match fort</div></div></div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="bnav-item" onclick="switchTab('profile',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl">Profil</span></div>
+          <div class="bnav-item active"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nl">Activité</span></div>
+          <div class="bnav-item" onclick="switchTab('messenger',null)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nl">Contacts</span></div>
+          <div class="bnav-item" onclick="switchTab('search',null)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nl">Recherche</span></div>
+          <div class="bnav-item" onclick="switchTab('explore',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span class="nl">Trending</span></div>
+        </div>
+      </div>
+
+      <!-- ══ S3 CONTACTS + CHAT ══ -->
+      <div class="screen" id="screen-messenger">
+
+        <!-- VUE LISTE CONTACTS -->
+        <div id="contacts-list-view" style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:14px 14px 10px;background:var(--white);border-bottom:1px solid #F0F4F9;flex-shrink:0">
+            <div style="font-size:15px;font-weight:900;color:var(--text);margin-bottom:10px">💬 Mes contacts</div>
+            <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:8px 12px">
+              <span style="font-size:14px">🔍</span>
+              <input style="flex:1;background:none;border:none;outline:none;font-size:12px;color:var(--text);font-family:inherit" placeholder="Rechercher dans mes contacts…" oninput="filterContacts(this.value)">
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto;min-height:0" id="contactsList">
+            <!-- injecté par JS -->
+          </div>
+          <div class="bottom-nav">
+            <div class="bnav-item" onclick="switchTab('profile',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl">Profil</span></div>
+            <div class="bnav-item" onclick="switchTab('feed',null)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nl">Activité</span></div>
+            <div class="bnav-item active"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nl">Contacts</span></div>
+            <div class="bnav-item" onclick="switchTab('search',null)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nl">Recherche</span></div>
+            <div class="bnav-item" onclick="switchTab('explore',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span class="nl">Trending</span></div>
+          </div>
+        </div>
+
+        <!-- VUE CHAT -->
+        <div id="chat-view" style="display:none;flex-direction:column;height:100%">
+          <div class="messenger-header" style="flex-shrink:0">
+            <span class="back-btn" onclick="backToContacts()">‹</span>
+            <div class="messenger-avatar" id="chatAvatar" onclick="openContactProfile()" style="cursor:pointer"></div>
+            <div style="flex:1;cursor:pointer" onclick="openContactProfile()">
+              <div class="messenger-name" id="chatName"></div>
+              <div class="messenger-status" id="chatStatus"></div>
+            </div>
+            <button onclick="openContactProfile()" style="background:rgba(0,0,0,.06);color:var(--text);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;margin-right:6px">Profil</button>
+            <button onclick="openBadgePicker()" style="background:var(--blue-light);color:var(--blue-dark);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:800;cursor:pointer">✨ Kudos</button>
+          </div>
+          <div class="msg-scroll" id="msgScroll" style="flex:1;min-height:0"></div>
+          <div class="action-bar" style="flex-shrink:0">
+            <input class="msg-input" placeholder="Message..." id="msgInput" onkeypress="sendMsg(event)">
+            <button class="send-btn" onclick="sendMsgBtn()">➤</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ S4 TRENDING ══ -->
+      <div class="screen" id="screen-explore">
+        <div class="feed-header"><span>🔥 Trending Montpellier</span></div>
+        <div class="feed-scroll">
+          <div class="trend-section-title">📈 Cette semaine dans ta ville</div>
+
+          <div class="trend-card" onclick="openBadgePicker();showToast('🔥 Badge viral cette semaine !')">
+            <div class="trend-top">
+              <div class="trend-rank tr1">1</div>
+              <div class="trend-emoji">❤️</div>
+              <div class="trend-info">
+                <div class="trend-name">Bienveillant(e)</div>
+                <div class="trend-sub">Humain · 🔥 +340 envois cette semaine</div>
+              </div>
+              <button class="trend-send-btn" onclick="event.stopPropagation();openBadgePicker();showToast('✨ Ouvre le picker !')">Envoyer</button>
+            </div>
+            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:92%;background:linear-gradient(90deg,#EC4899,#F59E0B)"></div></div>
+            <div class="trend-stats"><span>👥 1.2k personnes ont ce badge</span><span>📍 Montpellier #1</span></div>
+          </div>
+
+          <div class="trend-card" onclick="showToast('⚡ Badge Pro en pleine explosion !')">
+            <div class="trend-top">
+              <div class="trend-rank tr2">2</div>
+              <div class="trend-emoji">⚡</div>
+              <div class="trend-info">
+                <div class="trend-name">Réactif(ve)</div>
+                <div class="trend-sub">Pro · 📈 +218 envois</div>
+              </div>
+              <button class="trend-send-btn" onclick="event.stopPropagation();openBadgePicker()">Envoyer</button>
+            </div>
+            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:74%;background:linear-gradient(90deg,var(--blue-mid),var(--purple))"></div></div>
+            <div class="trend-stats"><span>👥 874 personnes</span><span>📍 Pro #1</span></div>
+          </div>
+
+          <div class="trend-card" onclick="showToast('🍳 Chef Cuistot devient viral !')">
+            <div class="trend-top">
+              <div class="trend-rank tr3">3</div>
+              <div class="trend-emoji">🍳</div>
+              <div class="trend-info">
+                <div class="trend-name">Chef Cuistot</div>
+                <div class="trend-sub">Vie commune · 🆕 Nouveau cette semaine</div>
+              </div>
+              <button class="trend-send-btn" onclick="event.stopPropagation();openBadgePicker()">Envoyer</button>
+            </div>
+            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:55%;background:linear-gradient(90deg,#F59E0B,#EF4444)"></div></div>
+            <div class="trend-stats"><span>👥 512 personnes</span><span>📍 Coloc #1</span></div>
+          </div>
+
+          <div class="trend-section-title" style="margin-top:8px">🏆 Ton classement</div>
+          <div class="feed-item match-item" style="margin-bottom:7px" onclick="showToast('🏆 Tu es dans le top 5% de Montpellier !')">
+            <div class="feed-avatar" style="background:linear-gradient(135deg,#FEF3C7,#F59E0B);font-size:20px">🏆</div>
+            <div class="feed-content">
+              <div class="feed-text"><strong>Top 5%</strong> des profils Kudos à Montpellier</div>
+              <div class="feed-time">22 badges reçus · 12 validateurs</div>
+              <div class="match-pill">📈 +3 places cette semaine</div>
+            </div>
+          </div>
+
+          <div class="feed-item" onclick="openBadgePicker()">
+            <div class="feed-avatar" style="background:linear-gradient(135deg,#C4B5FD,#8B5CF6);font-size:18px">🚀</div>
+            <div class="feed-content">
+              <div class="feed-text">Envoie <strong>3 Kudos aujourd'hui</strong> pour monter dans le classement !</div>
+              <div class="feed-time">Défi quotidien · Expire dans 8h</div>
+              <div class="match-pill" style="background:var(--purple-light);color:var(--purple)">✨ Relever le défi</div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="bnav-item" onclick="switchTab('profile',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl">Profil</span></div>
+          <div class="bnav-item" onclick="switchTab('feed',null)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nl">Activité</span></div>
+          <div class="bnav-item" onclick="switchTab('messenger',null)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nl">Contacts</span></div>
+          <div class="bnav-item" onclick="switchTab('search',null)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nl">Recherche</span></div>
+          <div class="bnav-item active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span class="nl">Trending</span></div>
+        </div>
+      </div>
+
+      <!-- ══ S5 RECHERCHE ══ -->
+      <div class="screen" id="screen-search">
+        <div class="search-header">
+          <div class="search-bar-wrap">
+            <span class="search-bar-icon">🔍</span>
+            <input class="search-bar" id="searchInput" placeholder="Nom, ville, badge…" oninput="runSearch(this.value)">
+          </div>
+        </div>
+        <div class="search-filters" id="searchFilters">
+          <div class="sf active" onclick="setFilter('all',this)">✦ Tous</div>
+          <div class="sf" onclick="setFilter('coloc',this)">🏠 Coloc</div>
+          <div class="sf" onclick="setFilter('pro',this)">💼 Pro</div>
+          <div class="sf" onclick="setFilter('campus',this)">🎓 Campus</div>
+          <div class="sf" onclick="setFilter('voisin',this)">🏘 Voisinage</div>
+        </div>
+        <div class="search-results" id="searchResults">
+          <div class="search-section-title">
+            <span>✨ Profils près de toi · Montpellier</span>
+            <span style="color:var(--blue-mid)">14 résultats</span>
+          </div>
+          <!-- résultats injectés par JS -->
+        </div>
+        <div class="bottom-nav">
+          <div class="bnav-item" onclick="switchTab('profile',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl">Profil</span></div>
+          <div class="bnav-item" onclick="switchTab('feed',null)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nl">Activité</span></div>
+          <div class="bnav-item" onclick="switchTab('messenger',null)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nl">Contacts</span></div>
+          <div class="bnav-item active"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nl">Recherche</span></div>
+          <div class="bnav-item" onclick="switchTab('explore',null)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span class="nl">Trending</span></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay" onclick="closeSheet()">
+        <div class="sheet" onclick="event.stopPropagation()" id="sheetEl"></div>
+      </div>
+
+      <!-- ══ KUDOS MOMENT OVERLAY ══ -->
+      <div id="kudos-moment" style="display:none;position:absolute;inset:0;z-index:400;background:linear-gradient(160deg,#0F172A 0%,#1e3a5f 55%,#2563EB 100%);flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;text-align:center;border-radius:42px;overflow:hidden">
+        <!-- Orbes déco -->
+        <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(79,125,243,.18);top:-60px;right:-60px;filter:blur(40px)"></div>
+        <div style="position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(139,92,246,.15);bottom:-40px;left:-40px;filter:blur(30px)"></div>
+
+        <!-- Sender -->
+        <img id="km-avatar" src="https://i.pravatar.cc/160?img=12" style="width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.4);object-fit:cover;margin-bottom:14px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+        <div style="font-size:12px;color:rgba(255,255,255,.6);font-weight:600;margin-bottom:4px">Pierre D. pense que tu es</div>
+
+        <!-- Badge animé -->
+        <div id="km-badge" style="background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.3);border-radius:24px;padding:16px 28px;margin:14px 0;animation:revealArch .7s cubic-bezier(.34,1.56,.64,1) .2s both">
+          <div style="font-size:40px;margin-bottom:8px" id="km-emoji">❤️</div>
+          <div style="font-size:20px;font-weight:900;color:#fff" id="km-name">Bienveillante</div>
+        </div>
+
+        <!-- Message personnel -->
+        <div id="km-msg" style="font-size:12px;color:rgba(255,255,255,.65);font-style:italic;line-height:1.6;max-width:240px;margin-bottom:24px;padding:12px 16px;background:rgba(255,255,255,.08);border-radius:16px;border-left:3px solid rgba(139,92,246,.6)">"J'ai vécu 6 mois avec toi à Lyon. Tu rends la vie facile autour de toi."</div>
+
+        <!-- Actions -->
+        <button onclick="closeKudosMoment(true)" style="width:100%;background:#fff;color:#0F172A;border:none;border-radius:18px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;box-shadow:0 6px 24px rgba(0,0,0,.25)">✨ Remercier Pierre</button>
+        <div onclick="closeKudosMoment(false)" style="font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;text-decoration:underline">Plus tard</div>
+      </div>
+
+    </div><!-- /phone -->
+  </div>
+
+  <!-- ══ WRAPPED CARD (outside phone) ══ -->
+  <!-- Wrapped intro banner -->
+  <div style="margin:18px 16px 0;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openWrappedInfo()">
+    <div style="font-size:22px;flex-shrink:0">✨</div>
+    <div style="flex:1">
+      <div style="font-size:11px;font-weight:900;color:#fff">Ton Kudos Wrapped 2024</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:1px">Ta réputation en une carte partageable · Story, PDF, WhatsApp</div>
+    </div>
+    <div style="font-size:10px;font-weight:800;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 9px;flex-shrink:0">Voir →</div>
+  </div>
+
+  <div class="wrapped-card" style="margin-top:10px" onclick="openWrappedInfo()">
+    <div class="wrapped-bg">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:800;opacity:.7;text-transform:uppercase;letter-spacing:1px">✨ Kudos Wrapped 2024</div>
+        <button onclick="event.stopPropagation();openWrappedInfo()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:3px 9px;color:#fff;font-size:10px;font-weight:800;cursor:pointer">À quoi ça sert ?</button>
+      </div>
+      <div class="wrapped-top">
+        <div class="wrapped-avatar"><img src="https://i.pravatar.cc/120?img=47" alt="Chloé" onerror="this.parentElement.style.background='#4A90D9';this.parentElement.textContent='C'"></div>
+        <div>
+          <div class="wrapped-name">Chloé</div>
+          <div class="wrapped-sub">📍 Montpellier · Graphiste</div>
+          <div class="wrapped-year">🎖 2024 · Année de confiance</div>
+        </div>
+      </div>
+      <div class="wrapped-stats">
+        <div class="ws"><div class="ws-num">22</div><div class="ws-label">Kudos reçus</div></div>
+        <div class="ws"><div class="ws-num">12</div><div class="ws-label">Validateurs</div></div>
+        <div class="ws"><div class="ws-num">Top 5%</div><div class="ws-label">Montpellier</div></div>
+      </div>
+      <div class="wrapped-top-badge">
+        <div class="wtb-emoji">✨</div>
+        <div><div class="wtb-text">Badge #1 : Propre</div><div class="wtb-sub">22 personnes t'ont validée · Viral cette semaine 🔥</div></div>
+      </div>
+      <div class="wrapped-actions">
+        <button class="wa-btn wa-story" onclick="event.stopPropagation();burst('📸');showToast('📸 Story Wrapped copiée dans Insta !')">📸 Story Instagram</button>
+        <button class="wa-btn wa-pdf" onclick="event.stopPropagation();openDossierSheet()">📄 Dossier PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DOSSIER PDF PREVIEW ══ -->
+  <div class="pdf-preview">
+    <div class="pdf-header">
+      <div><div class="pdf-header-title">📄 Dossier de Confiance Kudos</div><div class="pdf-header-sub">Partageable · Vérifiable · Certifié</div></div>
+      <button class="pdf-dl-btn" onclick="burst('📄');showToast('📄 Dossier PDF téléchargé !')">⬇ PDF</button>
+    </div>
+    <div class="pdf-body">
+      <div class="pdf-profile-row">
+        <div class="pdf-avatar"><img src="https://i.pravatar.cc/100?img=47" alt="Chloé" onerror="this.parentElement.style.background='#4A90D9';this.parentElement.textContent='C'"></div>
+        <div>
+          <div class="pdf-profile-name">Chloé Martin</div>
+          <div class="pdf-profile-sub">📍 Montpellier · Graphiste freelance · 28 ans</div>
+          <div class="pdf-cert-badge">✅ Certifié Kudos · 12 contacts validés</div>
+        </div>
+      </div>
+      <div class="pdf-badges-row">
+        <div class="pdf-badge-item"><span>✨</span>Propre <span style="color:var(--muted);margin-left:2px">×22</span></div>
+        <div class="pdf-badge-item"><span>🤫</span>Respectueuse <span style="color:var(--muted);margin-left:2px">×18</span></div>
+        <div class="pdf-badge-item"><span>🍳</span>Chef Cuistot <span style="color:var(--muted);margin-left:2px">×15</span></div>
+      </div>
+      <div class="pdf-validators">
+        <div class="pdf-validators-title">Validateurs (extrait)</div>
+        <div class="pdf-validator-row">
+          <div class="pdf-val-avatar"><img src="https://i.pravatar.cc/48?img=12" alt="" onerror="this.parentElement.style.background='#3B82F6';this.parentElement.textContent='P'"></div>
+          <div><div class="pdf-val-name">Pierre D.</div><div class="pdf-val-badge">✨ Propre · 🤫 Respectueuse</div></div>
+          <div class="pdf-val-check">✅</div>
+        </div>
+        <div class="pdf-validator-row">
+          <div class="pdf-val-avatar"><img src="https://i.pravatar.cc/48?img=9" alt="" onerror="this.parentElement.style.background='#EF4444';this.parentElement.textContent='S'"></div>
+          <div><div class="pdf-val-name">Sarah M.</div><div class="pdf-val-badge">🏠 Coloc · ✨ Propre</div></div>
+          <div class="pdf-val-check">✅</div>
+        </div>
+        <div class="pdf-validator-row">
+          <div class="pdf-val-avatar"><img src="https://i.pravatar.cc/48?img=33" alt="" onerror="this.parentElement.style.background='#10B981';this.parentElement.textContent='L'"></div>
+          <div><div class="pdf-val-name">Lucas B.</div><div class="pdf-val-badge">🍳 Chef Cuistot</div></div>
+          <div class="pdf-val-check">✅</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCEPT -->
+  <div class="concept-section">
+    <h2>5 raisons de devenir viral 🚀</h2>
+    <p>Chaque partage du Wrapped, chaque PDF joint à un dossier de coloc, chaque badge mystère qu'on veut débloquer — tout crée un effet réseau naturel et organique.</p>
+    <div class="concept-pills">
+      <span class="cp">📸 Wrapped partageable</span>
+      <span class="cp">📄 Dossier PDF coloc/pro</span>
+      <span class="cp">🔒 Badge mystère unlock</span>
+      <span class="cp">🔗 Confiance de 2ème degré</span>
+      <span class="cp">🔥 Badges trending ville</span>
+      <span class="cp">🏆 Classement local</span>
+    </div>
+  </div>
+
+</div><!-- /outer -->
+
+<script>
+// ─── DATA ───
+const BADGES_DB = {
+  vie:[{e:'✨',n:'Propre',c:22,hot:false,newb:true},{e:'🤫',n:'Respectueux',c:18},{e:'🍳',n:'Chef Cuistot',c:15,hot:true},{e:'💶',n:'Paye son loyer',c:15},{e:'🔇',n:'Calme la nuit',c:11},{e:'🐕',n:'Dog-friendly',c:9},{e:'♻️',n:'Écolo',c:8},{e:'🔧',n:'Bricoleur',c:7},{e:'🧹',n:'Ménage OK',c:6}],
+  pro:[{e:'⚡',n:'Réactif',c:31,hot:true},{e:'📅',n:'Ponctuel',c:28,hot:true},{e:'💡',n:'Créatif',c:22},{e:'🤝',n:'Fiable',c:19},{e:'📦',n:'Livraison rapide',c:14},{e:'💬',n:'Bonne comm.',c:13},{e:'🎯',n:'Focus résultat',c:11},{e:'💻',n:'Tech-savvy',c:9},{e:'📊',n:'Rigoureux',c:8}],
+  humain:[{e:'❤️',n:'Bienveillant',c:44,hot:true},{e:'👂',n:'À l\'écoute',c:38,hot:true},{e:'😄',n:'Bonne humeur',c:29,newb:true},{e:'🫶',n:'Serviable',c:24},{e:'🧠',n:'Intelligent',c:18},{e:'🎉',n:'Festif',c:15},{e:'🌊',n:'Zen',c:14},{e:'💪',n:'Motivant',c:12},{e:'🎵',n:'Musicien',c:8}],
+  voisin:[{e:'🔑',n:'Bon proprio',c:17},{e:'🌿',n:'Jardin partagé',c:12},{e:'📮',n:'Relève courrier',c:10},{e:'🚗',n:'Covoit ok',c:9},{e:'🍷',n:'Apéro sympa',c:8},{e:'🐈',n:'Garde chat',c:7},{e:'🛠',n:'Dépannage',c:6},{e:'📻',n:'Pas de bruit',c:5},{e:'🌻',n:'Bon voisin',c:4}],
+};
+const CAT_LABELS={vie:'🏠 Vie commune',pro:'💼 Pro',humain:'❤️ Humain',voisin:'🏘 Voisinage'};
+let currentCat='vie', selectedBadge=null, customEmoji='🎖', reqMethod='sms';
+let selectedRelation=null, selectedDuration=null;
+
+// ─── TABS ───
+const SL={profile:'Écran 1 · Profil',feed:'Écran 2 · Activité',messenger:'Écran 3 · Messenger',explore:'Écran 4 · Trending',search:'Écran 5 · Recherche'};
+let searchInitialized=false, activeFilter='all';
+function switchTab(tab,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.getElementById('screenLabel').textContent=SL[tab];
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  else{const i=['profile','feed','messenger','explore','search'].indexOf(tab);document.querySelectorAll('.nav-tab')[i]?.classList.add('active');}
+  if(tab==='messenger'){initContacts();backToContacts();}
+  if(tab==='search'&&!searchInitialized){initSearch();searchInitialized=true;}
+}
+
+function showFeedTab(tab,btn){
+  ['notifs','kudo','match'].forEach(t=>{const el=document.getElementById('ftab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  document.querySelectorAll('.fit').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+
+// ─── TOAST ───
+let tT;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2600);}
+
+// ─── BURST ───
+function burst(e='🎉'){const d=document.createElement('div');d.className='confetti-burst';d.textContent=e;document.body.appendChild(d);setTimeout(()=>d.remove(),900);}
+
+// ─── SHEET ───
+function openSheet(html){document.getElementById('sheetEl').innerHTML=html;document.getElementById('overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeSheet(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';selectedBadge=null;}
+
+// ─── BADGE DETAIL ───
+// Témoignages statiques par badge (demo — en prod, vient de l'API selon contacts mutuels)
+const TESTIMONIALS = {
+  'Propre': [
+    {name:'Pierre D.',  img:'12', color:'#3B82F6', time:'Il y a 2 j',  since:'18 mois de coloc', text:'On a partagé un appart 18 mois. Chloé laissait toujours la cuisine nickel après avoir cuisiné, même à 2h du mat. Chapeau 🙌'},
+    {name:'Sarah M.',  img:'9',  color:'#EF4444', time:'Il y a 5 j',  since:'1 an de coloc',    text:'Meilleure coloc que j\'ai eue. Propre, rangée, et elle prévient toujours avant d\'avoir du monde.'},
+    {name:'Lucas B.',  img:'33', color:'#10B981', time:'Il y a 12 j', since:'8 mois de coloc',  text:'Salle de bain toujours impeccable. Un vrai luxe quand on est 4 dans l\'appart !'},
+  ],
+  'Bienveillante': [
+    {name:'Marie C.',  img:'20', color:'#8B5CF6', time:'Il y a 3 j',  since:'Amies depuis 3 ans', text:'Pendant ma période galère, Chloé était là sans que je lui demande. Une vraie présence bienveillante.'},
+    {name:'Thomas R.', img:'52', color:'#F59E0B', time:'Il y a 8 j',  since:'Collègues 2 ans',    text:'Elle sent quand ça ne va pas. Elle n\'impose rien mais elle est là. Rare.'},
+  ],
+  'Chef Cuistot': [
+    {name:'Pierre D.',  img:'12', color:'#3B82F6', time:'Il y a 4 j',  since:'18 mois de coloc', text:'Ses lasagnes le dimanche soir sont une institution dans l\'appart. On se battait pour les restes 😂'},
+    {name:'Lucas B.',  img:'33', color:'#10B981', time:'Il y a 9 j',  since:'8 mois de coloc',  text:'Elle cuisine pour 6 comme si c\'était rien. Et c\'est toujours délicieux. Chloé si tu lis ça, reviens cuisiner 🙏'},
+  ],
+};
+
+// Messages envoyés en live par l'utilisateur dans cette session
+const LIVE_MESSAGES = {};
+
+function openBadgeDetail(name, count, emoji){
+  const testiData = TESTIMONIALS[name] || [];
+  const liveMsg   = LIVE_MESSAGES[name];
+  const isContact = true; // en prod : vérifié côté serveur (contact mutuel approuvé)
+
+  // Confiance 2ème degré
+  const trust2 = (name==='Propre'||name==='Bienveillante') ?
+    `<div style="background:linear-gradient(135deg,#FFFBF0,#FEF3C7);border:1px solid #FDE68A;border-radius:10px;padding:9px 13px;margin:0 20px 12px;font-size:11px;font-weight:700;color:#92400E;display:flex;align-items:center;gap:7px">
+      <span>🔗</span><span>Pierre (ton contact) a aussi validé ce badge</span>
+    </div>` : '';
+
+  // Bloc témoignages
+  let testiHtml = '';
+  if(isContact){
+    const items = [
+      ...(liveMsg ? [{name:'Toi', img:'', color:'#4A90D9', time:'À l\'instant', text:liveMsg, isMe:true}] : []),
+      ...testiData,
+    ];
+    if(items.length){
+      testiHtml = `
+        <div class="testi-list">
+          <div class="testi-title">💬 Ce que les gens ont écrit <span style="background:var(--green-light);color:#1a7a4a;border-radius:6px;padding:2px 7px;font-size:9px">Contact approuvé ✓</span></div>
+          ${items.map((t,i)=>`
+            <div class="testi-item" id="testi-${i}" ${t.isMe?'style="border:1.5px solid var(--blue-mid)"':''}>
+              <div class="testi-header">
+                ${t.img
+                  ? `<div class="testi-avatar"><img src="https://i.pravatar.cc/64?img=${t.img}" onerror="this.parentElement.style.background='${t.color}';this.remove()"></div>`
+                  : `<div class="testi-avatar-fb" style="background:${t.color}">👤</div>`}
+                <div style="flex:1;min-width:0">
+                  <div class="testi-name">${t.name}${t.isMe?' <span style="background:var(--blue-light);color:var(--blue-dark);border-radius:5px;padding:1px 5px;font-size:9px;font-weight:900">Toi</span>':''}</div>
+                  ${t.since?`<div class="testi-since">🕐 ${t.since}</div>`:''}
+                </div>
+                <div class="testi-time">${t.time}</div>
+              </div>
+              <div class="testi-text">${t.text}</div>
+              ${!t.isMe?`<button class="testi-reply-btn" onclick="toggleReplyForm(${i})">↩ Répondre</button>
+              <div class="testi-reply-form" id="reply-form-${i}">
+                <textarea class="testi-reply-input" id="reply-input-${i}" rows="2" placeholder="Ta réponse…"></textarea>
+                <button class="testi-reply-send" onclick="postReply(${i})">Envoyer</button>
+              </div>`:''}
+            </div>`).join('')}
+          <div class="testi-locked">
+            <div class="testi-locked-icon">🔒</div>
+            <div class="testi-locked-text">${count - items.length} autre${count-items.length>1?'s':''} message${count-items.length>1?'s':''} — visible${count-items.length>1?'s':''} uniquement par ses contacts directs</div>
+          </div>
+        </div>`;
+    } else {
+      testiHtml = `
+        <div class="testi-list">
+          <div class="testi-title">💬 Messages <span style="background:var(--green-light);color:#1a7a4a;border-radius:6px;padding:2px 7px;font-size:9px">Contact approuvé ✓</span></div>
+          <div class="testi-locked"><div class="testi-locked-icon">🔒</div><div class="testi-locked-text">${count} message${count>1?'s':''} — visible${count>1?'s':''} uniquement par ses contacts directs</div></div>
+        </div>`;
+    }
+  } else {
+    testiHtml = `
+      <div class="testi-list">
+        <div class="testi-locked"><div class="testi-locked-icon">🔒</div><div class="testi-locked-text">Les messages sont réservés aux contacts mutuels approuvés. Ajoute Chloé à tes contacts pour y accéder.</div></div>
+      </div>`;
+  }
+
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;padding:18px 20px 14px">
+      <div style="width:68px;height:68px;background:linear-gradient(135deg,#EFF6FF,#D6ECFF);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 10px;box-shadow:var(--shadow)">${emoji}</div>
+      <div style="font-size:19px;font-weight:900;color:var(--text)">${name}</div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#FFF1F5;border-radius:12px;padding:5px 15px;font-size:13px;font-weight:900;color:#e05a7a;margin-top:9px">❤️ ${count} validations</div>
+    </div>
+    ${trust2}
+    ${testiHtml}
+    <div class="sheet-header" style="margin-top:4px"><span class="sheet-title">Actions</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="sheet-action" onclick="closeSheet();openBadgePickerFor('${name}','${emoji}')"><div class="sa-icon sa-green">✅</div><div class="sa-text"><strong>Valider + écrire un message</strong><span>Ton texte sera visible par ses contacts</span></div></div>
+    <div class="sheet-action" onclick="closeSheet();burst('📤');showToast('🔗 Lien copié !')"><div class="sa-icon sa-purple">📤</div><div class="sa-text"><strong>Partager ce badge</strong><span>Envoyer par SMS / WhatsApp</span></div></div>
+  `);
+}
+
+function quickVote(name,emoji){
+  closeSheet();
+  const map={'Propre':'cnt0','Respectueuse':'cnt1','Chef Cuistot':'cnt2'};
+  if(map[name]){const el=document.getElementById(map[name]);el.textContent=parseInt(el.textContent)+1;el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),400);}
+  burst(emoji);showToast('✅ Badge "'+name+'" validé !');
+}
+
+// ─── UNLOCK MYSTERY ───
+function openUnlockSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;padding:22px 20px 14px">
+      <div style="font-size:48px;margin-bottom:10px">🔒</div>
+      <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:6px">Badge mystère</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.55;max-width:260px;margin:0 auto">Quelqu'un t'a attribué un badge, mais il reste caché jusqu'à <strong>3 validations</strong>. Tu en as <strong>2/3</strong>.</div>
+      <div style="background:var(--bg);border-radius:12px;padding:12px;margin:14px 0;display:inline-flex;align-items:center;gap:8px">
+        <div style="font-size:11px;font-weight:800;color:var(--muted)">Progression</div>
+        <div style="background:#E5E7EB;border-radius:4px;height:6px;width:100px;overflow:hidden"><div style="height:100%;width:66%;background:var(--blue-mid);border-radius:4px"></div></div>
+        <div style="font-size:11px;font-weight:900;color:var(--blue-dark)">2/3</div>
+      </div>
+    </div>
+    <div class="sheet-header"><span class="sheet-title">Débloquer ?</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="sheet-action" onclick="closeSheet();openRequestSheet();showToast('📤 Demande une 3ème validation !')"><div class="sa-icon sa-purple">📤</div><div class="sa-text"><strong>Demander une 3ème validation</strong><span>Invite quelqu'un à valider ce badge</span></div></div>
+    <div class="sheet-action" onclick="closeSheet();burst('🔓');showToast('🔓 Badge "Zen" débloqué ! +1 validateur')"><div class="sa-icon sa-gold">⚡</div><div class="sa-text"><strong>Utiliser un Boost (demo)</strong><span>Débloquer immédiatement — 1 boost disponible</span></div></div>
+  `);
+}
+
+// ─── BADGE PICKER ───
+function openBadgePicker(){selectedBadge=null;currentCat='vie';openSheet(renderPicker());}
+
+function renderPicker(){
+  const badges=BADGES_DB[currentCat];
+  const cats=Object.entries(CAT_LABELS).map(([k,v])=>`<div class="cat-pill ${k===currentCat?'active':''}" onclick="changeCat('${k}')">${v}</div>`).join('');
+  const grid=badges.map((b,i)=>`<div class="pbc-card ${selectedBadge&&selectedBadge.n===b.n?'sel':''}" onclick="selectBadge(${i})">${b.hot?'<div class="phot">🔥</div>':b.newb?'<div class="pnew">NEW</div>':''}<span class="pbe">${b.e}</span><span class="pbn">${b.n}</span><span class="pbc">❤️ ${b.c}</span></div>`).join('');
+  const sel=selectedBadge;
+  return `
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">✨ Envoyer un Kudos</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="picker-search"><span class="psi">🔍</span><input placeholder="Rechercher un badge…" oninput="filterBadges(this.value)"></div>
+    <div class="picker-cats" id="pickerCats">${cats}</div>
+    <div class="picker-grid" id="pickerGrid">${grid}</div>
+    <div class="custom-badge-area">
+      <div class="cba-label">✏️ Créer un badge unique</div>
+      <div class="custom-row">
+        <button class="emoji-btn" id="emojiBtn" onclick="toggleEQ()">${customEmoji}</button>
+        <input class="custom-inp" id="customName" placeholder="Ex: Super chef comptable…" maxlength="28">
+        <button class="create-btn" onclick="createCustom()">Créer</button>
+      </div>
+      <div class="emoji-quick" id="emojiQ" style="display:none">
+        ${['🌟','🏆','⚡','🎯','🔥','💎','🚀','🎸','🧠','💪','🌈','🦁','🐝','🌺','🍀','✈️','🎓','🏄','🎨','🍕'].map(e=>`<span class="eq" onclick="pickEmoji('${e}')">${e}</span>`).join('')}
+      </div>
+    </div>
+    <div class="send-kudos-bar">
+      <div class="skb-preview" id="skbPreview">${sel?`<span class="skb-e">${sel.e}</span><div><div class="skb-t">${sel.n}</div><div class="skb-s">Sélectionné · ❤️ ${sel.c}</div></div>`:'<span style="font-size:12px;color:var(--muted)">← Sélectionne ou crée un badge</span>'}</div>
+      <div class="kudos-msg-wrap">
+        <div class="kudos-msg-label">✍️ Ton message <span style="font-weight:500;opacity:.6">(optionnel)</span></div>
+        <textarea class="kudos-msg-input" id="kudosMsg" rows="2" placeholder="Ex : On a été colocs 2 ans — Chloé est la personne la plus propre que j'aie rencontrée 😄"></textarea>
+        <div class="kudos-msg-hint">👁 Visible uniquement par ses contacts mutuels approuvés</div>
+      </div>
+
+      <!-- ── Déclaration de contexte obligatoire ── -->
+      <div class="ctx-decl">
+        <div class="ctx-label">🤝 Votre relation <span class="ctx-required">* obligatoire</span></div>
+        <div class="ctx-pills" id="ctxRelations">
+          ${[['🏠','Coloc'],['💼','Collègue'],['❤️','Ami·e'],['🏘','Voisin·e'],['👤','Autre']].map(([e,l])=>`<div class="ctx-pill" onclick="selectRelation('${l}',this)">${e} ${l}</div>`).join('')}
+        </div>
+        <div class="ctx-error" id="ctxRelError">⚠ Sélectionne votre relation</div>
+
+        <div class="ctx-label">⏱ Depuis combien de temps ? <span class="ctx-required">* obligatoire</span></div>
+        <div class="ctx-pills" id="ctxDurations">
+          ${[['< 1 mois','1m'],['1–6 mois','6m'],['6 mois–2 ans','2a'],['+ de 2 ans','2a+']].map(([l,v])=>`<div class="ctx-pill" onclick="selectDuration('${v}',this)">${l}</div>`).join('')}
+        </div>
+        <div class="ctx-error" id="ctxDurError">⚠ Sélectionne la durée</div>
+
+        <div class="ctx-trust-note">
+          <span>🔒</span>
+          <span>Ces informations pondèrent le badge — une relation longue vaut plus qu'un contact récent. Elles sont vérifiables par l'algorithme.</span>
+        </div>
+      </div>
+
+      <button class="send-confirm-btn" onclick="confirmSend()">🚀 Envoyer ce Kudos à Chloé</button>
+    </div>`;
+}
+
+function changeCat(c){currentCat=c;selectedRelation=null;selectedDuration=null;document.getElementById('sheetEl').innerHTML=renderPicker();}
+
+function selectRelation(val, el){
+  selectedRelation=val;
+  document.querySelectorAll('#ctxRelations .ctx-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ctxRelError')?.classList.remove('show');
+}
+
+function selectDuration(val, el){
+  selectedDuration=val;
+  document.querySelectorAll('#ctxDurations .ctx-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ctxDurError')?.classList.remove('show');
+}
+
+function selectBadge(i){
+  selectedBadge=BADGES_DB[currentCat][i];
+  document.querySelectorAll('.pbc-card').forEach((el,j)=>el.classList.toggle('sel',j===i));
+  const p=document.getElementById('skbPreview');
+  p.innerHTML=`<span class="skb-e">${selectedBadge.e}</span><div><div class="skb-t">${selectedBadge.n}</div><div class="skb-s">Sélectionné · ❤️ ${selectedBadge.c}</div></div>`;
+  p.classList.add('pop');setTimeout(()=>p.classList.remove('pop'),400);
+}
+
+function filterBadges(q){
+  q=q.toLowerCase().trim();
+  if(!q){document.getElementById('pickerGrid').innerHTML=BADGES_DB[currentCat].map((b,i)=>`<div class="pbc-card" onclick="selectBadge(${i})"><span class="pbe">${b.e}</span><span class="pbn">${b.n}</span><span class="pbc">❤️ ${b.c}</span></div>`).join('');return;}
+  const res=Object.values(BADGES_DB).flat().filter(b=>b.n.toLowerCase().includes(q)||b.e.includes(q)).slice(0,9);
+  document.getElementById('pickerGrid').innerHTML=res.length?res.map(b=>`<div class="pbc-card" onclick="selectCustomResult('${b.e}','${b.n}',${b.c})"><span class="pbe">${b.e}</span><span class="pbn">${b.n}</span><span class="pbc">❤️ ${b.c}</span></div>`).join(''):'<div style="grid-column:1/-1;text-align:center;padding:18px;color:var(--muted);font-size:12px">Aucun badge · Crée-en un !</div>';
+}
+
+function selectCustomResult(e,n,c){selectedBadge={e,n,c};const p=document.getElementById('skbPreview');p.innerHTML=`<span class="skb-e">${e}</span><div><div class="skb-t">${n}</div><div class="skb-s">Sélectionné</div></div>`;p.classList.add('pop');setTimeout(()=>p.classList.remove('pop'),400);}
+
+function toggleEQ(){const q=document.getElementById('emojiQ');q.style.display=q.style.display==='none'?'flex':'none';}
+function pickEmoji(e){customEmoji=e;document.getElementById('emojiBtn').textContent=e;document.getElementById('emojiQ').style.display='none';}
+
+function createCustom(){
+  const n=document.getElementById('customName').value.trim();
+  if(!n){document.getElementById('customName').classList.add('shake');setTimeout(()=>document.getElementById('customName').classList.remove('shake'),500);return;}
+  selectedBadge={e:customEmoji,n,c:0};
+  const p=document.getElementById('skbPreview');
+  p.innerHTML=`<span class="skb-e">${customEmoji}</span><div><div class="skb-t">${n}</div><div class="skb-s">Badge unique · Nouveau</div></div>`;
+  p.classList.add('pop');setTimeout(()=>p.classList.remove('pop'),400);
+  showToast('🎉 Badge "'+n+'" créé !');
+}
+
+function confirmSend(){
+  if(!selectedBadge){showToast('👆 Sélectionne un badge d\'abord !');return;}
+
+  // Validation contexte obligatoire
+  let valid = true;
+  if(!selectedRelation){
+    document.getElementById('ctxRelError')?.classList.add('show');
+    document.getElementById('ctxRelations')?.scrollIntoView({behavior:'smooth',block:'center'});
+    valid=false;
+  }
+  if(!selectedDuration){
+    document.getElementById('ctxDurError')?.classList.add('show');
+    if(valid) document.getElementById('ctxDurations')?.scrollIntoView({behavior:'smooth',block:'center'});
+    valid=false;
+  }
+  if(!valid){showToast('⚠ Déclare ta relation et la durée !');return;}
+
+  const b = selectedBadge;
+  const msg = (document.getElementById('kudosMsg')||{}).value?.trim();
+  if(msg) LIVE_MESSAGES[b.n] = msg;
+
+  const durLabel={'1m':'< 1 mois','6m':'1–6 mois','2a':'6 mois–2 ans','2a+':'+ de 2 ans'}[selectedDuration];
+  closeSheet();
+  burst(b.e);
+  showToast(b.e+' Kudos "'+b.n+'" envoyé · '+selectedRelation+' · '+durLabel);
+  addToFeed(b.e, b.n, msg, selectedRelation, durLabel);
+
+  // Bulle dans le chat si une conversation est ouverte
+  const chatView = document.getElementById('chat-view');
+  if(chatView && chatView.style.display !== 'none'){
+    const scroll = document.getElementById('msgScroll');
+    const name = document.getElementById('chatName')?.textContent || 'ton contact';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg sent pop';
+    bubble.innerHTML = `<div class="msg-bubble" style="background:linear-gradient(135deg,#4A90D9,#1A5FA8);color:#fff;border-radius:16px 16px 4px 16px">
+      <div style="font-size:18px;margin-bottom:3px">${b.e}</div>
+      <div style="font-size:11px;font-weight:800">Kudos "${b.n}" envoyé ✨</div>
+      <div style="font-size:9px;opacity:.75;margin-top:2px">🤝 ${selectedRelation} · ${durLabel}${msg?'<br>✍️ "'+msg+'"':''}</div>
+      <div class="msg-meta" style="color:rgba(255,255,255,.65)">maintenant ✓✓</div>
+    </div>`;
+    scroll.appendChild(bubble);
+    scroll.scrollTop = scroll.scrollHeight;
+    // Réponse automatique
+    setTimeout(()=>{
+      const r = document.createElement('div'); r.className='msg received pop';
+      r.innerHTML=`<div class="msg-bubble">Merci pour le Kudos ${b.e} ! Ça me touche vraiment 🙏<div class="msg-meta">maintenant</div></div>`;
+      scroll.appendChild(r); scroll.scrollTop=scroll.scrollHeight;
+      showToast('💬 '+name+' a répondu à ton Kudos !');
+    }, 1800);
+  } else {
+    setTimeout(()=>showToast('🔔 Chloé a reçu ton Kudos !'), 2400);
+  }
+
+  selectedRelation=null; selectedDuration=null;
+}
+
+// Ouvre le picker pré-sélectionné sur un badge donné et focus le message
+function openBadgePickerFor(name, emoji){
+  // Cherche le badge dans toutes les catégories
+  for(const [cat, badges] of Object.entries(BADGES_DB)){
+    const idx = badges.findIndex(b=>b.n===name||b.e===emoji);
+    if(idx>=0){ currentCat=cat; selectedBadge=badges[idx]; break; }
+  }
+  openSheet(renderPicker());
+  // Scroll vers le bas et focus le textarea après rendu
+  setTimeout(()=>{
+    const ta = document.getElementById('kudosMsg');
+    if(ta){ ta.scrollIntoView({behavior:'smooth', block:'center'}); ta.focus(); }
+  }, 120);
+}
+
+// ─── EXPORT SHEET ───
+function openExportSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="padding:18px 18px 0">
+      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px">Partager mon profil</div>
+
+      <!-- Preview carte publique style Apple Wallet -->
+      <div style="background:linear-gradient(135deg,#0F172A 0%,#1e3a5f 60%,#2563EB 100%);border-radius:22px;padding:18px;margin-bottom:16px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+        <div style="position:absolute;bottom:-20px;left:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative">
+          <img src="https://i.pravatar.cc/160?img=47" style="width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.4);object-fit:cover;flex-shrink:0">
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#fff">Chloé M.</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:1px">🌟 La Perle de coloc</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;position:relative">
+            <div style="font-size:18px;font-weight:900;color:#fff">22</div>
+            <div style="font-size:8px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">évaluations</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;position:relative">
+          ${['❤️ Bienveillante','✨ Propre','👂 À l\'écoute','😄 Bonne humeur'].map(b=>`<span style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);border-radius:100px;padding:4px 10px;font-size:10px;font-weight:700;color:#fff">${b}</span>`).join('')}
+        </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);font-size:9px;color:rgba(255,255,255,.4);font-weight:600;position:relative">kudos.app/chloe · Consultable sans compte</div>
+      </div>
+
+      <!-- CTA principal -->
+      <button onclick="navigator.clipboard?.writeText('https://kudos.app/chloe');showToast('🔗 Lien copié !');closeSheet()" style="width:100%;background:#0F172A;color:#fff;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">🔗 Copier mon lien public</button>
+
+      <!-- Options secondaires -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="closeSheet();burst('💬');showToast('💬 Partagé sur WhatsApp !')" style="flex:1;background:var(--bg);border:none;border-radius:14px;padding:12px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text)">💬 WhatsApp</button>
+        <button onclick="closeSheet();openDossierSheet()" style="flex:1;background:var(--bg);border:none;border-radius:14px;padding:12px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text)">📄 Dossier PDF</button>
+        <button onclick="closeSheet();burst('📸');showToast('📸 Story copiée !')" style="flex:1;background:var(--bg);border:none;border-radius:14px;padding:12px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text)">📸 Story</button>
+      </div>
+    </div>
+  `);
+}
+
+// ─── DOSSIER SHEET ───
+function openDossierSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📄 Dossier de Confiance</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div style="padding:16px 20px">
+      <div style="background:linear-gradient(135deg,#EFF6FF,#D6ECFF);border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--blue-dark);margin-bottom:4px">✅ Ce dossier contient :</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7">• Ta photo et tes infos vérifiées<br>• La liste de tes badges certifiés<br>• Le nombre de validateurs par badge<br>• Les initiales des personnes qui t'ont validé<br>• Un QR code de vérification Kudos</div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">Choisir le format</div>
+    </div>
+    <div class="sheet-action" onclick="openPDFPreview('coloc')"><div class="sa-icon sa-blue">🏠</div><div class="sa-text"><strong>PDF Colocation</strong><span>Inclut propreté, ponctualité, voisinage</span></div><span style="font-size:11px;color:var(--muted);flex-shrink:0">👁 Voir</span></div>
+    <div class="sheet-action" onclick="openPDFPreview('pro')"><div class="sa-icon sa-green">💼</div><div class="sa-text"><strong>PDF Freelance / Pro</strong><span>Inclut fiabilité, réactivité, compétences</span></div><span style="font-size:11px;color:var(--muted);flex-shrink:0">👁 Voir</span></div>
+    <div class="sheet-action" onclick="openPDFPreview('complet')"><div class="sa-icon sa-purple">📋</div><div class="sa-text"><strong>PDF Complet</strong><span>Tous tes badges — version longue</span></div><span style="font-size:11px;color:var(--muted);flex-shrink:0">👁 Voir</span></div>
+  `);
+}
+
+// ─── REQUEST SHEET ───
+function openRequestSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📤 Demander un avis</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="request-form">
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px">Invite quelqu'un qui te connaît à valider un badge. Il n'a pas besoin de compte — juste un lien.</p>
+      <div class="rf-label">Pour quel badge ?</div>
+      <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none" id="reqBadges">
+        ${['✨ Propre','❤️ Bienveillant','⚡ Réactif','🔑 Bon proprio','🍳 Chef Cuistot','🤝 Fiable'].map(b=>`<div class="cat-pill" style="flex-shrink:0" onclick="selReqBadge(this,'${b}')">${b}</div>`).join('')}
+      </div>
+      <input class="rf-input" id="customReqBadge" placeholder="Ou décris un badge personnalisé…" style="margin-top:8px">
+      <div class="rf-label">Qui inviter ?</div>
+      <div class="lm-row">
+        <div class="lm-btn active" id="lm-sms" onclick="selMethod('sms')"><span class="lm-icon">📱</span>SMS</div>
+        <div class="lm-btn" id="lm-wa" onclick="selMethod('wa')"><span class="lm-icon">💬</span>WhatsApp</div>
+        <div class="lm-btn" id="lm-link" onclick="selMethod('link')"><span class="lm-icon">🔗</span>Lien</div>
+        <div class="lm-btn" id="lm-email" onclick="selMethod('email')"><span class="lm-icon">📧</span>Email</div>
+      </div>
+      <div id="contactWrap" style="margin-top:9px"><input class="rf-input" id="contactVal" placeholder="Numéro de téléphone…" type="tel"></div>
+      <div class="rf-label">Message <span style="font-weight:500;opacity:.6">(optionnel)</span></div>
+      <textarea class="rf-input" rows="2" placeholder="Ex: Salut Lucas, on était colocataires. Tu peux valider mon badge Propre ?" style="resize:none;line-height:1.5"></textarea>
+      <button class="send-req-btn" onclick="sendRequest()">📤 Envoyer la demande</button>
+    </div>
+  `);
+}
+
+function selReqBadge(el,val){document.querySelectorAll('#reqBadges .cat-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('customReqBadge').value='';}
+
+function selMethod(m){
+  reqMethod=m;
+  ['sms','wa','link','email'].forEach(k=>document.getElementById('lm-'+k)?.classList.remove('active'));
+  document.getElementById('lm-'+m)?.classList.add('active');
+  const c=document.getElementById('contactWrap');
+  if(m==='link'){c.innerHTML=`<div style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:10px 13px;font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:space-between"><span>kudos.app/chloe/avis?t=x8f2k</span><button onclick="showToast('🔗 Lien copié !')" style="background:var(--blue-mid);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:10px;font-weight:800;cursor:pointer">Copier</button></div>`;}
+  else{c.innerHTML=`<input class="rf-input" id="contactVal" placeholder="${{sms:'Numéro de téléphone…',wa:'Numéro WhatsApp…',email:'Adresse email…'}[m]}" type="${m==='email'?'email':'tel'}">`;}
+}
+
+function sendRequest(){closeSheet();burst('📤');showToast('📤 Demande envoyée !');setTimeout(()=>showToast('🔔 Ton contact a reçu l\'invitation !'),2400);addToFeed('📤','Demande d\'avis envoyée');}
+
+// ─── KUDOS ACTION (messenger) ───
+function openKudosSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">Kudos Action</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="sheet-action" onclick="closeSheet();openBadgePicker()"><div class="sa-icon sa-green">✅</div><div class="sa-text"><strong>Valider un Badge de confiance</strong><span>Choisir dans la bibliothèque</span></div></div>
+    <div class="sheet-action" onclick="closeSheet();openRequestSheet()"><div class="sa-icon sa-blue">📤</div><div class="sa-text"><strong>Envoyer une Demande de Validation</strong><span>Demander à Théo de valider un de tes badges</span></div></div>
+    <div class="sheet-action disabled"><div class="sa-icon sa-yellow">🎁</div><div class="sa-text"><strong>Offrir un Coup de Pouce</strong><span>Bientôt disponible</span></div></div>
+    <div class="sheet-action disabled"><div class="sa-icon sa-red">🚫</div><div class="sa-text"><strong>Signaler un comportement</strong><span>Bientôt disponible</span></div></div>
+  `);
+}
+
+// ─── MESSENGER ───
+function sendMsg(e){if(e.key==='Enter')sendMsgBtn();}
+function sendMsgBtn(){
+  const inp=document.getElementById('msgInput');const txt=inp.value.trim();
+  if(!txt){openKudosSheet();return;}
+  const s=document.getElementById('msgScroll');
+  const d=document.createElement('div');d.className='msg sent';
+  d.innerHTML=`<div class="msg-bubble">${txt.replace(/</g,'&lt;')}<div class="msg-meta">maintenant ✓</div></div>`;
+  s.appendChild(d);inp.value='';s.scrollTop=s.scrollHeight;
+  setTimeout(()=>{const r=document.createElement('div');r.className='msg received';r.innerHTML=`<div class="msg-bubble">Super merci ! 🙏<div class="msg-meta">maintenant</div></div>`;s.appendChild(r);s.scrollTop=s.scrollHeight;showToast('💬 Théo a répondu !');},1200);
+}
+
+// ─── FEED ───
+function addToFeed(e, n, msg, relation, duree){
+  const fs = document.getElementById('feedScroll'); if(!fs) return;
+  const d = document.createElement('div'); d.className='feed-item unread pop';
+  const msgLine = msg
+    ? `<div style="margin-top:5px;background:var(--bg);border-radius:9px;padding:6px 9px;font-size:10px;color:var(--text);font-style:italic;line-height:1.45">"${msg}"</div>`
+    : '';
+  const ctxLine = (relation && duree)
+    ? `<div style="margin-top:4px;display:inline-flex;align-items:center;gap:5px;background:#FEF3C7;border-radius:7px;padding:2px 8px;font-size:9px;font-weight:800;color:#92400E">🤝 ${relation} · ${duree}</div>`
+    : '';
+  d.innerHTML=`
+    <div class="feed-avatar fa-blue">👤</div>
+    <div class="feed-content">
+      <div class="feed-text">Tu as envoyé <span class="badge-pill">${e} ${n}</span> à Chloé</div>
+      ${ctxLine}
+      ${msgLine}
+      <div class="feed-time"><span class="pulse-dot"></span>À l'instant</div>
+    </div>`;
+  const notifs=document.getElementById('ftab-notifs');
+  if(notifs) notifs.prepend(d); else fs.prepend(d);
+}
+
+// ─── TOGGLE ALL BADGES ───
+function toggleAllBadges(){
+  const exp=document.getElementById('badgesExpanded');
+  const btn=document.getElementById('badgesMoreLabel');
+  const open=exp.classList.toggle('open');
+  btn.textContent = open ? '▲ Réduire' : '✦ Voir les 13 autres badges';
+}
+
+// ─── PSYCHO PROFILE ───
+const ARCHETYPES = [
+  {
+    min:{humain:40}, emoji:'🫂', name:'L\'Âme de groupe',
+    sub:'Empathique, disponible, toujours là quand ça compte. Les gens se sentent compris à tes côtés.',
+    badge:'❤️ Pilier émotionnel',
+    tip:'Tes badges Humain dominent. Tu rayonnes par ta bienveillance — les gens te font confiance naturellement.'
+  },
+  {
+    min:{vie:35}, emoji:'🏠', name:'La Perle de coloc',
+    sub:'Propre, respectueux·se, bon·ne cuisinièr·e. Le profil qu\'on s\'arrache pour une coloc.',
+    badge:'🏠 Coloc idéal·e',
+    tip:'Tes badges Vie commune sont dominants. Ton dossier coloc va faire fureur.'
+  },
+  {
+    min:{pro:30}, emoji:'⚡', name:'La Machine à performer',
+    sub:'Réactif·ve, ponctuel·le, livraisons nickels. Un collaborateur qu\'on veut garder.',
+    badge:'💼 Top performer',
+    tip:'Tes badges Pro ressortent clairement. Tu es perçu·e comme ultra-fiable professionnellement.'
+  },
+  {
+    min:{voisin:20}, emoji:'🏘', name:'Le Pilier de quartier',
+    sub:'Toujours prêt·e à rendre service, l\'apéro chez toi est légendaire. La vie de voisinage made easy.',
+    badge:'🏘 Super voisin·e',
+    tip:'Tes badges Voisinage dominent. Tu crées du lien social autour de toi naturellement.'
+  },
+  {
+    min:{}, emoji:'🌟', name:'Le Couteau suisse',
+    sub:'Un équilibre rare : humain·e, pro, bon·ne colocataire et super voisin·e. Profil complet.',
+    badge:'✨ Profil équilibré',
+    tip:'Tes badges sont répartis sur toutes les catégories. Tu t\'adaptes à tous les contextes.'
+  },
+];
+
+function computeArchetype(scores){
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  for(const arch of ARCHETYPES){
+    const match = Object.entries(arch.min).every(([k,v])=>( scores[k]||0) >= v);
+    if(match) return arch;
+  }
+  return ARCHETYPES[ARCHETYPES.length-1];
+}
+
+// Chloé's badge scores (demo)
+const CHLOE_SCORES = { humain:52, vie:37, pro:12, voisin:7 };
+const TOTAL_BADGES = Object.values(CHLOE_SCORES).reduce((a,b)=>a+b,0);
+
+function openPsychoSheet(){
+  const arch = computeArchetype(CHLOE_SCORES);
+  const total = TOTAL_BADGES;
+  const bars = [
+    {label:'❤️ Humain',    key:'humain', color:'linear-gradient(90deg,#EC4899,#F59E0B)'},
+    {label:'🏠 Vie comm.', key:'vie',    color:'linear-gradient(90deg,#4A90D9,#8B5CF6)'},
+    {label:'💼 Pro',       key:'pro',    color:'linear-gradient(90deg,#2ECC71,#0EA5E9)'},
+    {label:'🏘 Voisinage', key:'voisin', color:'linear-gradient(90deg,#F59E0B,#EF4444)'},
+  ];
+  const max = Math.max(...bars.map(b=>CHLOE_SCORES[b.key]));
+  const barsHtml = bars.map(b=>{
+    const pct = Math.round((CHLOE_SCORES[b.key]/max)*100);
+    return `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;font-weight:800;color:var(--text)">${b.label}</span>
+          <span style="font-size:11px;font-weight:900;color:var(--muted)">${CHLOE_SCORES[b.key]} badges</span>
+        </div>
+        <div style="background:#F0F4F9;border-radius:6px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${b.color};border-radius:6px;transition:width .8s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Other profiles for comparison
+  const comparisons = [
+    {name:'Pierre',   img:'12', score:'Âme de groupe', match:'92%', emoji:'🫂'},
+    {name:'Sarah',    img:'9',  score:'Perle de coloc', match:'87%', emoji:'🏠'},
+    {name:'Lucas',    img:'33', score:'Couteau suisse', match:'74%', emoji:'🌟'},
+  ];
+  const compHtml = comparisons.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0F4F9">
+      <img src="https://i.pravatar.cc/48?img=${c.img}" style="width:32px;height:32px;border-radius:50%;object-fit:cover" onerror="this.style.background='#4A90D9';this.textContent='${c.name[0]}'">
+      <div style="flex:1"><div style="font-size:11px;font-weight:800;color:var(--text)">${c.name}</div><div style="font-size:10px;color:var(--muted)">${c.emoji} ${c.score}</div></div>
+      <div style="background:var(--green-light);color:#1a7a4a;border-radius:8px;padding:3px 9px;font-size:10px;font-weight:800">${c.match} match</div>
+    </div>`).join('');
+
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="background:linear-gradient(135deg,#F3EFFF,#EFF6FF);padding:20px 20px 16px;text-align:center">
+      <div style="font-size:52px;margin-bottom:8px">${arch.emoji}</div>
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px">${arch.name}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.55;max-width:280px;margin:0 auto 10px">${arch.sub}</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(139,92,246,.12);border-radius:10px;padding:5px 13px;font-size:11px;font-weight:800;color:var(--purple)">${arch.badge}</div>
+    </div>
+    <div class="sheet-header"><span class="sheet-title">📊 Répartition des ${total} badges</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div style="padding:14px 20px">
+      ${barsHtml}
+      <div style="background:linear-gradient(135deg,#FFFBF0,#FEF3C7);border-radius:12px;padding:11px 14px;font-size:11px;color:#92400E;font-weight:700;line-height:1.55;margin-top:4px">
+        💡 ${arch.tip}
+      </div>
+    </div>
+    <div style="padding:0 20px 6px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">🤝 Profils compatibles dans ton réseau</div>
+      ${compHtml}
+    </div>
+    <div style="padding:14px 20px 22px;display:flex;gap:9px">
+      <button onclick="closeSheet();burst('📸');showToast('📸 Profil psycho partagé en Story !')" style="flex:1;background:linear-gradient(135deg,var(--purple),#6D28D9);color:#fff;border:none;border-radius:13px;padding:12px;font-size:12px;font-weight:900;cursor:pointer">📸 Partager mon archétype</button>
+      <button onclick="closeSheet();openDossierSheet()" style="flex:1;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:13px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;color:var(--text)">📄 Ajouter au dossier</button>
+    </div>
+  `);
+}
+
+// ─── WRAPPED INFO ───
+function openWrappedInfo(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="background:linear-gradient(135deg,#0F3460,#1A5FA8,#4A90D9);padding:24px 20px 20px;text-align:center">
+      <div style="font-size:42px;margin-bottom:8px">✨</div>
+      <div style="font-size:19px;font-weight:900;color:#fff;margin-bottom:5px">Kudos Wrapped 2024</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.55;max-width:270px;margin:0 auto">Ta réputation de l'année en une carte visuelle — générée à partir des badges que les gens t'ont donnés.</div>
+    </div>
+
+    <div style="padding:16px 20px 8px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">À quoi ça sert concrètement ?</div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📸</div>
+        <div><div style="font-size:12px;font-weight:800;color:var(--text)">Partage sur tes réseaux</div><div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45">Colle ta carte en Story Instagram ou LinkedIn. Tes badges validés parlent pour toi mieux qu'un CV.</div></div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div>
+        <div><div style="font-size:12px;font-weight:800;color:var(--text)">Joins-la à ton dossier coloc</div><div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45">Un propriétaire voit en 2 secondes que t'es propre, ponctuel·le et que ça vient de vraies personnes.</div></div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#FDF4FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💼</div>
+        <div><div style="font-size:12px;font-weight:800;color:var(--text)">Rassure tes clients freelance</div><div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45">Envoie-la avec un devis. "Réactif × 31" et "Fiable × 19" valent plus que n'importe quelle description.</div></div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#FFFBF0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔗</div>
+        <div><div style="font-size:12px;font-weight:800;color:var(--text)">Crée un effet réseau</div><div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45">Chaque partage de ta carte attire de nouveaux validateurs — et fait grandir ta réputation automatiquement.</div></div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px 22px;display:flex;gap:9px">
+      <button onclick="openWrappedShare()" style="flex:1;background:linear-gradient(135deg,#0F3460,#4A90D9);color:#fff;border:none;border-radius:13px;padding:13px;font-size:12px;font-weight:900;cursor:pointer">📸 Voir et partager ma carte</button>
+      <button onclick="closeSheet();openDossierSheet()" style="flex:1;background:var(--bg);border:1.5px solid #E0E7EF;border-radius:13px;padding:13px;font-size:12px;font-weight:800;cursor:pointer;color:var(--text)">📄 Dossier PDF</button>
+    </div>
+  `);
+}
+
+function openWrappedShare(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📸 Ta carte à partager</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+
+    <!-- Aperçu de la carte Story -->
+    <div style="margin:4px 16px 16px;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(15,52,96,.35)">
+      <div style="background:linear-gradient(160deg,#0F3460 0%,#1A5FA8 40%,#4A90D9 75%,#7EC8F7 100%);padding:22px 20px 20px">
+
+        <!-- Header carte -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px">✨ Kudos · 2024</div>
+          <div style="font-size:9px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:3px 8px">kudos.app/chloe</div>
+        </div>
+
+        <!-- Profil -->
+        <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px">
+          <div style="width:56px;height:56px;border-radius:50%;border:3px solid rgba(255,255,255,.6);overflow:hidden;flex-shrink:0">
+            <img src="https://i.pravatar.cc/120?img=47" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='#4A90D9'">
+          </div>
+          <div>
+            <div style="font-size:18px;font-weight:900;color:#fff">Chloé M.</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:1px">📍 Montpellier · Graphiste</div>
+            <div style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:3px 9px;display:inline-block;margin-top:5px">🎖 Année de confiance</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+          <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:10px 8px;text-align:center">
+            <div style="font-size:20px;font-weight:900;color:#fff">22</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.65);font-weight:700;margin-top:2px">Kudos reçus</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:10px 8px;text-align:center">
+            <div style="font-size:20px;font-weight:900;color:#fff">12</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.65);font-weight:700;margin-top:2px">Validateurs</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:10px 8px;text-align:center">
+            <div style="font-size:16px;font-weight:900;color:#fff">Top 5%</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.65);font-weight:700;margin-top:2px">Montpellier</div>
+          </div>
+        </div>
+
+        <!-- Archétype -->
+        <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:28px">🫂</div>
+          <div>
+            <div style="font-size:12px;font-weight:900;color:#fff">L'Âme de groupe</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:1px">Empathique · Disponible · Bienveillante</div>
+          </div>
+        </div>
+
+        <!-- Top badges -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          ${[['✨','Propre','22'],['❤️','Bienveillant','20'],['🍳','Chef Cuistot','15']].map(([e,n,c])=>`
+            <div style="background:rgba(255,255,255,.18);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:5px">
+              <span style="font-size:14px">${e}</span>
+              <div>
+                <div style="font-size:10px;font-weight:800;color:#fff">${n}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.6)">×${c} val.</div>
+              </div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:9px;color:rgba(255,255,255,.5)">Validé par de vraies personnes · Sans étoiles</div>
+          <div style="font-size:9px;font-weight:800;color:rgba(255,255,255,.7)">kudos.app</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Destinations de partage -->
+    <div style="padding:0 16px;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Partager via</div>
+    <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+      <button onclick="shareWrapped('instagram')" style="background:#E1306C;color:#fff;border:none;border-radius:12px;padding:12px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📸 Story Instagram</button>
+      <button onclick="shareWrapped('whatsapp')" style="background:#25D366;color:#fff;border:none;border-radius:12px;padding:12px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">💬 WhatsApp</button>
+      <button onclick="shareWrapped('link')" style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:12px;font-size:11px;font-weight:800;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px">🔗 Copier le lien</button>
+      <button onclick="shareWrapped('download')" style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:12px;padding:12px;font-size:11px;font-weight:800;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px">💾 Télécharger</button>
+    </div>
+  `);
+}
+
+// ─── SHARE WRAPPED ───
+async function shareWrapped(dest){
+  const shareText = '🎖 Mon Kudos Wrapped 2024 — 22 badges reçus, Top 5% Montpellier. Découvre mon profil de confiance →';
+  const shareUrl  = 'https://kudos.app/chloe';
+
+  // Lien : copie dans le presse-papier
+  if(dest==='link'){
+    try{ await navigator.clipboard.writeText(shareUrl); showToast('🔗 Lien copié — kudos.app/chloe'); }
+    catch{ showToast('🔗 kudos.app/chloe — copie manuelle'); }
+    return;
+  }
+
+  // Sur mobile : share sheet natif du téléphone (iOS / Android)
+  if(navigator.share){
+    try{
+      await navigator.share({ title:'Mon Kudos Wrapped 2024 ✨', text: shareText, url: shareUrl });
+      showToast('✅ Partagé !');
+    } catch(e){
+      if(e.name!=='AbortError') showToast('❌ Erreur de partage');
+    }
+    return;
+  }
+
+  // Sur desktop : téléchargement d'une image générée via Canvas
+  if(dest==='download' || dest==='instagram' || dest==='whatsapp'){
+    const canvas = document.createElement('canvas');
+    canvas.width=600; canvas.height=900;
+    const ctx = canvas.getContext('2d');
+
+    // Fond dégradé
+    const grad = ctx.createLinearGradient(0,0,600,900);
+    grad.addColorStop(0,'#0F3460'); grad.addColorStop(.45,'#1A5FA8'); grad.addColorStop(.8,'#4A90D9'); grad.addColorStop(1,'#7EC8F7');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,600,900);
+
+    // Logo
+    ctx.font='bold 28px system-ui'; ctx.fillStyle='rgba(255,255,255,.6)'; ctx.textAlign='left';
+    ctx.fillText('✨ KUDOS · 2024',40,60);
+    ctx.font='18px system-ui'; ctx.fillStyle='rgba(255,255,255,.5)'; ctx.textAlign='right';
+    ctx.fillText('kudos.app/chloe',560,60);
+
+    // Nom
+    ctx.textAlign='left'; ctx.fillStyle='#fff';
+    ctx.font='bold 48px system-ui'; ctx.fillText('Chloé M.',40,160);
+    ctx.font='22px system-ui'; ctx.fillStyle='rgba(255,255,255,.7)';
+    ctx.fillText('📍 Montpellier · Graphiste',40,200);
+
+    // Séparateur
+    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(40,228,520,1);
+
+    // Stats
+    const stats=[['22','Kudos reçus'],['12','Validateurs'],['Top 5%','Montpellier']];
+    stats.forEach(([v,l],i)=>{
+      const x=40+i*185;
+      ctx.fillStyle='rgba(255,255,255,.15)'; roundRect(ctx,x,248,165,90,16); ctx.fill();
+      ctx.font='bold 36px system-ui'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+      ctx.fillText(v,x+82,293);
+      ctx.font='16px system-ui'; ctx.fillStyle='rgba(255,255,255,.6)';
+      ctx.fillText(l,x+82,318);
+    });
+    ctx.textAlign='left';
+
+    // Archétype
+    ctx.fillStyle='rgba(255,255,255,.12)'; roundRect(ctx,40,358,520,80,16); ctx.fill();
+    ctx.font='bold 28px system-ui'; ctx.fillStyle='#fff'; ctx.fillText('🫂 L\'Âme de groupe',60,398);
+    ctx.font='18px system-ui'; ctx.fillStyle='rgba(255,255,255,.65)'; ctx.fillText('Empathique · Disponible · Bienveillante',60,424);
+
+    // Badges
+    const badges=[['✨','Propre','×22'],['❤️','Bienveillant','×20'],['🍳','Chef Cuistot','×15']];
+    badges.forEach(([e,n,c],i)=>{
+      const x=40+i*178;
+      ctx.fillStyle='rgba(255,255,255,.15)'; roundRect(ctx,x,460,165,80,14); ctx.fill();
+      ctx.font='26px system-ui'; ctx.fillText(e,x+14,498);
+      ctx.font='bold 16px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(n,x+48,492);
+      ctx.font='14px system-ui'; ctx.fillStyle='rgba(255,255,255,.6)'; ctx.fillText(c,x+48,512);
+    });
+
+    // Footer
+    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(40,860,520,1);
+    ctx.font='16px system-ui'; ctx.fillStyle='rgba(255,255,255,.5)'; ctx.textAlign='center';
+    ctx.fillText('Validé par de vraies personnes · Sans étoiles · kudos.app',300,885);
+
+    // Téléchargement
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download='kudos-wrapped-2024.png';
+    a.click();
+    closeSheet();
+    showToast(dest==='instagram'?'💾 Image téléchargée — importe-la dans ta Story Instagram !':dest==='whatsapp'?'💾 Image téléchargée — envoie-la sur WhatsApp !':'💾 Image téléchargée !');
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+// ─── PDF PREVIEW ───
+function openPDFPreview(type){
+  const configs = {
+    coloc:{
+      title:'🏠 Dossier Colocation',
+      color:'#4A90D9',
+      badges:[{e:'✨',n:'Propre',c:22},{e:'🔇',n:'Calme la nuit',c:11},{e:'💶',n:'Paye son loyer',c:15},{e:'🤫',n:'Respectueuse',c:18}],
+      focus:'Idéal pour rassurer un propriétaire ou futurs colocataires.'
+    },
+    pro:{
+      title:'💼 Dossier Freelance / Pro',
+      color:'#2ECC71',
+      badges:[{e:'⚡',n:'Réactif',c:31},{e:'📅',n:'Ponctuel',c:28},{e:'🤝',n:'Fiable',c:19},{e:'💡',n:'Créatif',c:22}],
+      focus:'Parfait pour accompagner un devis ou une candidature.'
+    },
+    complet:{
+      title:'📋 Dossier Complet',
+      color:'#8B5CF6',
+      badges:[{e:'✨',n:'Propre',c:22},{e:'⚡',n:'Réactif',c:31},{e:'❤️',n:'Bienveillant',c:44},{e:'🍳',n:'Chef Cuistot',c:15},{e:'🤝',n:'Fiable',c:19},{e:'📅',n:'Ponctuel',c:28}],
+      focus:'Vue complète de ton identité de confiance — toutes catégories.'
+    }
+  };
+  const cfg = configs[type];
+  const badgesHtml = cfg.badges.map(b=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F0F4F9">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">${b.e}</span>
+        <span style="font-size:12px;font-weight:700;color:#1A1A2E">${b.n}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <div style="background:#E5E7EB;border-radius:4px;height:5px;width:60px;overflow:hidden"><div style="height:100%;width:${Math.round(b.c/44*100)}%;background:${cfg.color};border-radius:4px"></div></div>
+        <span style="font-size:10px;font-weight:800;color:var(--muted)">${b.c} val.</span>
+      </div>
+    </div>`).join('');
+
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">${cfg.title}</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+
+    <!-- Aperçu document -->
+    <div style="margin:0 16px 14px;border:2px dashed #E0E7EF;border-radius:16px;overflow:hidden">
+      <!-- En-tête doc -->
+      <div style="background:linear-gradient(135deg,${cfg.color}22,${cfg.color}11);padding:14px 16px;border-bottom:1px solid #E0E7EF;display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid ${cfg.color}55;flex-shrink:0">
+          <img src="https://i.pravatar.cc/88?img=47" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='${cfg.color}'">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:900;color:#1A1A2E">Chloé Martin</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">📍 Montpellier · Graphiste freelance</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;background:#DCFCE7;border-radius:6px;padding:2px 7px;font-size:9px;font-weight:800;color:#166534;margin-top:4px">✅ Certifié Kudos · 12 contacts</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:9px;font-weight:700;color:var(--muted)">Score</div>
+          <div style="font-size:20px;font-weight:900;color:${cfg.color}">${cfg.badges.reduce((a,b)=>a+b.c,0)}</div>
+          <div style="font-size:8px;color:var(--muted)">validations</div>
+        </div>
+      </div>
+      <!-- Badges -->
+      <div style="padding:10px 16px 4px">
+        <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Badges certifiés</div>
+        ${badgesHtml}
+      </div>
+      <!-- Validateurs -->
+      <div style="padding:10px 16px 14px">
+        <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Validateurs (extrait)</div>
+        <div style="display:flex;gap:-6px">
+          ${[{img:'12',color:'#3B82F6'},{img:'9',color:'#EF4444'},{img:'33',color:'#10B981'},{img:'52',color:'#F59E0B'}].map((v,i)=>`<img src="https://i.pravatar.cc/48?img=${v.img}" style="width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:${i?-8:0}px;object-fit:cover" onerror="this.style.background='${v.color}'">`).join('')}
+          <span style="font-size:10px;color:var(--muted);margin-left:8px;align-self:center">+ 8 autres contacts</span>
+        </div>
+      </div>
+      <!-- QR -->
+      <div style="background:#F8FAFC;border-top:1px solid #E0E7EF;padding:10px 16px;display:flex;align-items:center;gap:10px">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=kudos.app/chloe/verify&color=${cfg.color.replace('#','')}&bgcolor=FFFFFF" style="width:36px;height:36px;border-radius:6px" onerror="this.style.background='#E0E7EF'">
+        <div style="font-size:9px;color:var(--muted);line-height:1.5">QR de vérification · kudos.app/chloe/verify<br><strong style="color:#1A1A2E">Scannable par n'importe qui — sans compte</strong></div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px;font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;line-height:1.5">💡 ${cfg.focus}</div>
+
+    <div style="padding:0 16px 22px;display:flex;gap:9px">
+      <button onclick="closeSheet();burst('📄');showToast('📄 ${cfg.title} téléchargé !')" style="flex:1;background:${cfg.color};color:#fff;border:none;border-radius:13px;padding:13px;font-size:12px;font-weight:900;cursor:pointer">⬇ Télécharger le PDF</button>
+      <button onclick="closeSheet();burst('💬');showToast('💬 Dossier partagé !')" style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:13px;padding:13px 14px;font-size:16px;cursor:pointer">💬</button>
+    </div>
+  `);
+}
+
+// ─── ONBOARDING ───
+function startApp(){
+  const ob=document.getElementById('onboarding');
+  ob.classList.add('hidden');
+  setTimeout(()=>ob.style.display='none',520);
+  showToast('✨ Bienvenue sur Kudos !');
+}
+
+// ─── QR CODE ───
+function openQRSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📲 Mon QR Code Kudos</span><button class="sheet-close" onclick="closeSheet()">✕</button></div>
+    <div class="qr-wrap">
+      <div class="qr-img">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=kudos.app/chloe&color=1A5FA8&bgcolor=FFFFFF" alt="QR Kudos" onerror="this.parentElement.innerHTML='<div style=\\'font-size:64px;text-align:center\\'>📱</div>'">
+      </div>
+      <div class="qr-label">Profil de Chloé M.</div>
+      <div class="qr-sub">Scanne ce QR pour voir mon profil Kudos et valider mes badges — sans compte nécessaire.</div>
+      <div class="qr-link"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">kudos.app/chloe</span><button class="qr-copy-btn" onclick="showToast('🔗 Lien copié !')">Copier</button></div>
+      <div class="qr-actions">
+        <button class="qr-act-btn" style="background:linear-gradient(135deg,#4A90D9,#1A5FA8);color:#fff" onclick="closeSheet();burst('📸');showToast('📸 QR partagé en Story !')">📸 Story</button>
+        <button class="qr-act-btn" style="background:#25D366;color:#fff" onclick="closeSheet();burst('💬');showToast('💬 QR envoyé sur WhatsApp !')">💬 WhatsApp</button>
+        <button class="qr-act-btn" style="background:var(--bg);border:1.5px solid #E0E7EF;color:var(--text)" onclick="closeSheet();burst('💾');showToast('💾 QR enregistré !')">💾 Sauver</button>
+      </div>
+    </div>
+  `);
+}
+
+// ─── REPLY ───
+function toggleReplyForm(id){
+  const form=document.getElementById('reply-form-'+id);
+  if(!form)return;
+  form.classList.toggle('open');
+  if(form.classList.contains('open')) document.getElementById('reply-input-'+id)?.focus();
+}
+
+function postReply(id){
+  const inp=document.getElementById('reply-input-'+id);
+  const txt=inp?.value.trim();
+  if(!txt){inp?.classList.add('shake');setTimeout(()=>inp?.classList.remove('shake'),500);return;}
+  const form=document.getElementById('reply-form-'+id);
+  form.innerHTML=`<div class="testi-reply-posted">↩ Toi : "${txt}"</div>`;
+  form.classList.add('open');
+  showToast('↩ Réponse envoyée !');
+}
+
+// ─── SEARCH ───
+const SEARCH_PROFILES = [
+  {name:'Alex T.',    img:'15', city:'Paris 11e',     archetype:'⚡ Machine à performer', badges:['⚡ Réactif','🤝 Fiable','💡 Créatif'],   match:94, types:['pro']},
+  {name:'Lucie R.',   img:'44', city:'Lyon 3e',        archetype:'🏠 Perle de coloc',       badges:['✨ Propre','❤️ Bienveillant','🍳 Chef Cuistot'], match:91, types:['coloc']},
+  {name:'Karim B.',   img:'57', city:'Bordeaux',       archetype:'🫂 Âme de groupe',         badges:['❤️ Bienveillant','😄 Bonne humeur','🎉 Festif'], match:88, types:['campus','coloc']},
+  {name:'Emma S.',    img:'26', city:'Montpellier',    archetype:'🌟 Couteau suisse',        badges:['📅 Ponctuel','✨ Propre','🤝 Fiable'],  match:85, types:['pro','coloc']},
+  {name:'Théo M.',    img:'8',  city:'Paris 20e',      archetype:'🏘 Pilier de quartier',    badges:['🍷 Apéro sympa','🚗 Covoit ok','🌿 Jardin partagé'], match:82, types:['voisin']},
+  {name:'Inès L.',    img:'35', city:'Toulouse',       archetype:'🏠 Perle de coloc',        badges:['✨ Propre','🔇 Calme la nuit','💶 Paye son loyer'], match:79, types:['coloc']},
+  {name:'Romain D.',  img:'64', city:'Nantes',         archetype:'⚡ Machine à performer',   badges:['⚡ Réactif','📊 Rigoureux','📅 Ponctuel'], match:76, types:['pro']},
+  {name:'Jade F.',    img:'21', city:'Strasbourg',     archetype:'🫂 Âme de groupe',         badges:['❤️ Bienveillant','👂 À l\'écoute','🌊 Zen'], match:72, types:['campus','coloc']},
+];
+
+function initSearch(){renderResults(SEARCH_PROFILES);}
+
+function setFilter(type, btn){
+  activeFilter=type;
+  document.querySelectorAll('.sf').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const q=(document.getElementById('searchInput')||{}).value||'';
+  runSearch(q);
+}
+
+function runSearch(q){
+  q=q.toLowerCase().trim();
+  let results=SEARCH_PROFILES;
+  if(activeFilter!=='all') results=results.filter(p=>p.types.includes(activeFilter));
+  if(q) results=results.filter(p=>
+    p.name.toLowerCase().includes(q)||
+    p.city.toLowerCase().includes(q)||
+    p.badges.some(b=>b.toLowerCase().includes(q))||
+    p.archetype.toLowerCase().includes(q)
+  );
+  renderResults(results);
+}
+
+let CURRENT_RESULTS = [];
+const CONTACT_STATUS = {}; // tracks sent requests by name
+
+function renderResults(profiles){
+  CURRENT_RESULTS = profiles;
+  const el=document.getElementById('searchResults');
+  if(!el)return;
+  if(!profiles.length){
+    el.innerHTML=`<div style="text-align:center;padding:28px 16px;color:var(--muted);font-size:12px">😕 Aucun profil trouvé.<br>Essaie un autre mot-clé.</div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="search-section-title"><span>✨ Suggestions · Montpellier</span><span style="color:var(--blue-mid)">${profiles.length} profil${profiles.length>1?'s':''}</span></div>
+    ${profiles.map((p,i)=>{
+      const sent = CONTACT_STATUS[p.name];
+      return `
+      <div class="profile-result" onclick="openSearchProfile(${i})">
+        <div class="pr-avatar" style="position:relative">
+          <img src="https://i.pravatar.cc/56?img=${p.img}" onerror="this.style.background='#4A90D9';this.style.display='block'">
+          <div style="position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:var(--green);border:2px solid #fff"></div>
+        </div>
+        <div class="pr-body">
+          <div class="pr-top">
+            <div style="flex:1;min-width:0">
+              <div class="pr-name">${p.name}</div>
+              <div class="pr-city">📍 ${p.city}</div>
+            </div>
+            <div class="pr-match">${p.match}% match</div>
+          </div>
+          <div class="pr-archetype">${p.archetype}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <div class="pr-badges" style="flex:1">${p.badges.slice(0,2).map(b=>`<span class="pr-badge">${b}</span>`).join('')}</div>
+            <button onclick="event.stopPropagation();quickAddContact('${p.name}',this)" style="background:${sent?'var(--green-light)':'var(--blue-light)'};color:${sent?'#1a7a4a':'var(--blue-dark)'};border:none;border-radius:8px;padding:4px 10px;font-size:10px;font-weight:800;cursor:pointer;flex-shrink:0;transition:all .2s">${sent?'✓ Demande envoyée':'➕ Ajouter'}</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function quickAddContact(name, btn){
+  CONTACT_STATUS[name]=true;
+  btn.textContent='✓ Demande envoyée';
+  btn.style.background='var(--green-light)';
+  btn.style.color='#1a7a4a';
+  showToast('📤 Demande envoyée à '+name+' !');
+  setTimeout(()=>showToast('🔔 '+name+' a accepté ta demande !'),2800);
+}
+
+function openSearchProfile(i){
+  const p = CURRENT_RESULTS[i];
+  if(!p) return;
+  const sent = CONTACT_STATUS[p.name];
+
+  // Génère l'explication du match
+  const matchReasons = [];
+  if(p.city.includes('Montpellier')||p.city.includes('Paris')||p.types.includes('coloc')) matchReasons.push({icon:'📍',text:'Même ville · '+p.city});
+  if(p.match>=88) matchReasons.push({icon:'🧠',text:'Archétypes complémentaires · '+p.archetype.split(' ').slice(1).join(' ')});
+  if(p.types.includes('coloc')) matchReasons.push({icon:'🏠',text:'Cherche aussi une coloc'});
+  if(p.types.includes('pro')) matchReasons.push({icon:'💼',text:'Profil pro compatible'});
+  matchReasons.push({icon:'❤️',text:'Badges en commun · Bienveillant, Fiable'});
+
+  openSheet(`
+    <div class="sheet-handle"></div>
+
+    <!-- En-tête profil -->
+    <div style="background:linear-gradient(135deg,#EFF6FF,#F3EFFF);padding:20px 20px 16px;display:flex;align-items:center;gap:14px">
+      <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 4px 16px rgba(74,144,217,.3);flex-shrink:0">
+        <img src="https://i.pravatar.cc/128?img=${p.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='#4A90D9'">
+      </div>
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:900;color:var(--text)">${p.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">📍 ${p.city}</div>
+        <div style="display:inline-flex;align-items:center;gap:5px;background:var(--green-light);border-radius:8px;padding:3px 9px;font-size:10px;font-weight:800;color:#1a7a4a;margin-top:6px">${p.archetype}</div>
+      </div>
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-size:22px;font-weight:900;color:var(--blue-dark)">${p.match}%</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700">match</div>
+      </div>
+    </div>
+
+    <!-- Pourquoi ce match -->
+    <div style="padding:14px 20px 10px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px">🎯 Pourquoi ce match ?</div>
+      ${matchReasons.map(r=>`
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${r.icon}</div>
+          <div style="font-size:11px;color:var(--text);font-weight:600">${r.text}</div>
+          <div style="margin-left:auto;color:var(--green);font-size:13px;flex-shrink:0">✓</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Ses badges -->
+    <div style="padding:0 20px 14px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">✨ Ses badges</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        ${p.badges.map(b=>`<div style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text)">${b}</div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="padding:0 16px 22px;display:flex;flex-direction:column;gap:8px">
+      <button id="contactBtn-${i}" onclick="sendContactRequest('${p.name}','${i}')" style="background:${sent?'var(--green-light)':'linear-gradient(135deg,var(--blue-mid),var(--blue-dark))'};color:${sent?'#1a7a4a':'#fff'};border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:900;cursor:pointer;transition:all .2s">${sent?'✓ Demande déjà envoyée':'➕ Envoyer une demande de contact'}</button>
+      <button onclick="closeSheet();switchTab('messenger',null);showToast('💬 Conversation avec ${p.name} ouverte !')" style="background:var(--bg);border:1.5px solid #E0E7EF;border-radius:13px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;color:var(--text)">💬 Envoyer un message</button>
+    </div>
+  `);
+}
+
+function sendContactRequest(name, i){
+  if(CONTACT_STATUS[name]) return;
+  CONTACT_STATUS[name]=true;
+  const btn=document.getElementById('contactBtn-'+i);
+  if(btn){btn.textContent='✓ Demande envoyée !';btn.style.background='var(--green-light)';btn.style.color='#1a7a4a';}
+  showToast('📤 Demande envoyée à '+name+' !');
+  setTimeout(()=>showToast('🔔 '+name+' a accepté ta demande !'),2800);
+}
+
+// ─── CONTACTS ───
+const CONTACTS = [
+  { name:'Pierre D.',  img:'12', color:'#3B82F6', status:'● En ligne',   lastKudos:'✨ Propre',        lastMsg:'Super merci !',             time:'13 min', unread:2 },
+  { name:'Sarah M.',   img:'9',  color:'#EF4444', status:'● En ligne',   lastKudos:'🏠 Coloc',          lastMsg:'Tu peux valider mon badge ?', time:'1h',    unread:1 },
+  { name:'Lucas B.',   img:'33', color:'#10B981', status:'○ Il y a 2h',  lastKudos:'🍳 Chef Cuistot',   lastMsg:'Ses lasagnes 😂',            time:'2h',    unread:0 },
+  { name:'Marie C.',   img:'20', color:'#8B5CF6', status:'○ Hier',       lastKudos:'❤️ Bienveillante',  lastMsg:'Une vraie présence 🙏',      time:'Hier',  unread:0 },
+  { name:'Thomas R.',  img:'52', color:'#F59E0B', status:'○ Il y a 3j',  lastKudos:'🌊 Zen',            lastMsg:'Elle est toujours là.',      time:'3j',    unread:0 },
+  { name:'Théo M.',    img:'8',  color:'#4A90D9', status:'● En ligne',   lastKudos:'⚡ Réactif',        lastMsg:'Valide-moi Chef Cuistot 🍳', time:'9h41',  unread:0 },
+];
+
+let filteredContacts = [...CONTACTS];
+
+function initContacts(){
+  renderContacts(CONTACTS);
+}
+
+function renderContacts(list){
+  const el = document.getElementById('contactsList');
+  if(!el) return;
+  if(!list.length){
+    el.innerHTML=`<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px">😕 Aucun contact trouvé.</div>`;
+    return;
+  }
+  el.innerHTML = list.map((c,i) => `
+    <div onclick="openChat(${CONTACTS.indexOf(c)})" style="display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid #F8FAFC;cursor:pointer;transition:background .15s;background:${c.unread?'#F5FAFF':'var(--white)'}">
+      <div style="position:relative;flex-shrink:0">
+        <div style="width:46px;height:46px;border-radius:50%;overflow:hidden;border:2px solid ${c.unread?'var(--blue-mid)':'#E0E7EF'}">
+          <img src="https://i.pravatar.cc/92?img=${c.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='${c.color}'">
+        </div>
+        ${c.status.startsWith('●') ? `<div style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:var(--green);border:2px solid #fff"></div>` : ''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <div style="font-size:12px;font-weight:${c.unread?'900':'700'};color:var(--text)">${c.name}</div>
+          <div style="font-size:9px;color:${c.unread?'var(--blue-mid)':'var(--muted)'};font-weight:${c.unread?'800':'600'}">${c.time}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+          <span style="background:var(--blue-light);color:var(--blue-dark);border-radius:6px;padding:1px 6px;font-size:9px;font-weight:800">${c.lastKudos}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${c.lastMsg}</div>
+          ${c.unread ? `<div style="background:var(--blue-mid);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0">${c.unread}</div>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function filterContacts(q){
+  q = q.toLowerCase().trim();
+  const list = q ? CONTACTS.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.lastKudos.toLowerCase().includes(q)
+  ) : CONTACTS;
+  renderContacts(list);
+}
+
+const CHAT_HISTORY = {
+  0: [ // Pierre
+    {recv:true,  text:'Salut Chloé ! Je t\'ai validé ✨ Propre — colocs pendant 18 mois, tu mérites vraiment ce badge 🙌', time:'09:30'},
+    {recv:false, text:'Merci Pierre !! Tu mérites aussi un badge 🤝', time:'09:31'},
+    {recv:true,  text:'Super merci ! 😄', time:'09:32'},
+  ],
+  1: [ // Sarah
+    {recv:true,  text:'Hey ! Tu peux valider mon badge 🏠 Coloc ? On a partagé l\'appart 1 an quand même 😄', time:'08:15'},
+    {recv:false, text:'Bien sûr ! Je le fais ce soir 👍', time:'08:20'},
+  ],
+  2: [ // Lucas
+    {recv:false, text:'Ses lasagnes le dimanche soir 😂 une légende !', time:'Hier'},
+    {recv:true,  text:'Haha merci Chloé 🙏', time:'Hier'},
+  ],
+  3: [{recv:true, text:'Une vraie présence bienveillante 🙏 Merci pour tout Chloé.', time:'Hier'}],
+  4: [{recv:true, text:'Elle est toujours là, sans jamais s\'imposer. Rare.', time:'3j'}],
+  5: [ // Théo
+    {recv:true,  text:'Salut Chloé ! J\'ai vu ton profil Kudos, c\'est top !', time:'09:41'},
+    {recv:false, text:'Merci Théo ! Tu mérites aussi un badge 👀', time:'09:43'},
+    {recv:true,  text:'Haha ! Valide-moi Chef Cuistot si tu veux 🍳', time:'09:44'},
+  ],
+};
+
+let _currentChatIdx = 0;
+
+function openChat(i){
+  _currentChatIdx = i;
+  const c = CONTACTS[i];
+  if(!c) return;
+  c.unread = 0;
+  renderContacts(CONTACTS);
+
+  // Remplir le header
+  document.getElementById('chatName').textContent = c.name;
+  document.getElementById('chatStatus').textContent = c.status;
+  const av = document.getElementById('chatAvatar');
+  av.innerHTML = `<img src="https://i.pravatar.cc/80?img=${c.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none'">`;
+
+  // Remplir l'historique
+  const scroll = document.getElementById('msgScroll');
+  const msgs = CHAT_HISTORY[i] || [];
+  scroll.innerHTML = `<div class="msg-date">Aujourd'hui</div>` +
+    msgs.map(m=>`<div class="msg ${m.recv?'received':'sent'}"><div class="msg-bubble">${m.text}<div class="msg-meta">${m.time}${!m.recv?' ✓✓':''}</div></div></div>`).join('');
+
+  // Afficher vue chat
+  document.getElementById('contacts-list-view').style.display = 'none';
+  const cv = document.getElementById('chat-view');
+  cv.style.display = 'flex';
+  setTimeout(()=>{ scroll.scrollTop = scroll.scrollHeight; }, 50);
+}
+
+function backToContacts(){
+  document.getElementById('chat-view').style.display = 'none';
+  document.getElementById('contacts-list-view').style.display = 'flex';
+}
+
+function openContactProfile(){
+  const c = CONTACTS[_currentChatIdx];
+  if(!c) return;
+  const badges = ['✨ Propre','❤️ Bienveillant','🤝 Fiable','⚡ Réactif','😄 Bonne humeur'];
+  openSheet(`
+    <div style="padding:0 0 8px">
+      <div style="height:110px;background:linear-gradient(135deg,#1A1A2E,#1A5FA8);position:relative;border-radius:26px 26px 0 0">
+        <button onclick="closeSheet()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.18);border:none;border-radius:50%;width:28px;height:28px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;margin-top:-36px;padding:0 20px">
+        <img src="https://i.pravatar.cc/160?img=${c.img}" style="width:72px;height:72px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.18);object-fit:cover">
+        <div style="font-size:16px;font-weight:900;color:var(--text);margin-top:10px">${c.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.status}</div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+          ${badges.slice(0,4).map(b=>`<span style="background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.07);border-radius:100px;padding:5px 11px;font-size:10px;font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,.07)">${b}</span>`).join('')}
+        </div>
+        <div style="display:flex;width:100%;gap:8px;margin-top:16px">
+          <div style="flex:1;background:var(--bg);border-radius:16px;padding:12px;text-align:center">
+            <div style="font-size:16px;font-weight:900;color:var(--text)">14</div>
+            <div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Kudos</div>
+          </div>
+          <div style="flex:1;background:var(--bg);border-radius:16px;padding:12px;text-align:center">
+            <div style="font-size:16px;font-weight:900;color:var(--text)">8</div>
+            <div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Contacts</div>
+          </div>
+          <div style="flex:1;background:var(--bg);border-radius:16px;padding:12px;text-align:center">
+            <div style="font-size:16px;font-weight:900;color:var(--blue-mid)">Top 12%</div>
+            <div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Ville</div>
+          </div>
+        </div>
+        <button onclick="closeSheet();openBadgePicker()" style="margin-top:14px;width:100%;background:rgba(10,14,40,.07);border:1.5px solid rgba(10,14,40,.1);border-radius:16px;padding:13px;font-size:13px;font-weight:800;color:var(--text);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.06)">✨ Envoyer un Kudos</button>
+      </div>
+    </div>
+  `);
+}
+
+// ─── KUDOS MOMENT ───
+function openKudosMoment(){
+  const el = document.getElementById('kudos-moment');
+  el.style.display = 'flex';
+  el.style.animation = 'fdin .35s ease';
+}
+function closeKudosMoment(thank){
+  const el = document.getElementById('kudos-moment');
+  el.style.opacity = '0';
+  el.style.transform = 'scale(1.04)';
+  el.style.transition = 'all .3s ease';
+  setTimeout(()=>{ el.style.display='none'; el.style.opacity=''; el.style.transform=''; el.style.transition=''; },300);
+  if(thank) showToast('💌 Remerciement envoyé à Pierre !');
+}
+
+// ─── PROFILE VIEWED ───
+function openProfileViewedSheet(){
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <div style="padding:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#4F7DF3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👁</div>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:var(--text)">Ton profil a été consulté</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Il y a 23 min · Montpellier</div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg);border-radius:18px;padding:16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Ce qu'il a regardé</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;font-weight:700;color:var(--text)">🌟 Ton archétype</span>
+            <span style="font-size:11px;color:var(--muted)">48 sec</span>
+          </div>
+          <div style="height:4px;background:#EEF2F8;border-radius:2px;overflow:hidden"><div style="width:80%;height:100%;background:#8B5CF6;border-radius:2px"></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;font-weight:700;color:var(--text)">✨ Tes badges</span>
+            <span style="font-size:11px;color:var(--muted)">52 sec</span>
+          </div>
+          <div style="height:4px;background:#EEF2F8;border-radius:2px;overflow:hidden"><div style="width:88%;height:100%;background:#4F7DF3;border-radius:2px"></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;font-weight:700;color:var(--text)">📄 Dossier PDF</span>
+            <span style="font-size:11px;color:var(--muted)">22 sec</span>
+          </div>
+          <div style="height:4px;background:#EEF2F8;border-radius:2px;overflow:hidden"><div style="width:37%;height:100%;background:#2ECC71;border-radius:2px"></div></div>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(135deg,#F5F0FF,#EEF5FF);border-radius:16px;padding:13px;margin-bottom:16px;border-left:3px solid #8B5CF6">
+        <div style="font-size:11px;font-weight:800;color:#8B5CF6;margin-bottom:4px">💡 Conseil</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5">Il a passé du temps sur tes badges — demande à 2 amis de t'en envoyer un pour renforcer ton dossier.</div>
+      </div>
+
+      <button onclick="closeSheet();openRequestSheet()" style="width:100%;background:#0F172A;color:#fff;border:none;border-radius:16px;padding:13px;font-size:13px;font-weight:800;cursor:pointer">📤 Demander plus de Kudos</button>
+    </div>
+  `);
+}
+
+// ─── AUTO NUDGES ───
+setTimeout(()=>showToast('🔔 Pierre t\'a envoyé un Kudos !'),3000);
+setTimeout(()=>showToast('🔥 "Bienveillant" est #1 trending à Montpellier !'),8000);
+setTimeout(()=>showToast('🔒 Plus qu\'1 validation pour débloquer ton badge mystère !'),14000);
+</script>
+</body>
+</html>
