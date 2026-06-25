@@ -407,7 +407,7 @@ export async function POST(request: Request) {
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin
     .from("human_marketplace_places")
-    .select("id,status,city,city_slug")
+    .select("id,status,city,city_slug,metier,commerce_slug,prenom,genre")
     .eq("id", placeId)
     .maybeSingle();
   if (placeReadError || !currentPlace) return fail(placeReadError?.message || "Place introuvable.");
@@ -420,6 +420,33 @@ export async function POST(request: Request) {
     const base = slugifyPart(companyNameRaw || ownerDisplayNameRaw || "offre") || "offre";
     const citySlug = slugifyPart(String(currentPlace.city || ""));
     patch.pro_slug = [base, citySlug, placeId.slice(0, 4)].filter(Boolean).join("-");
+
+    // Prénom + genre (pour la lettre d'invitation QR)
+    const savePrenom = String(formData.get("new_prenom") || "").trim();
+    const saveGenre = String(formData.get("new_genre") || "").trim();
+    if (savePrenom) patch.prenom = savePrenom;
+    if (saveGenre) patch.genre = saveGenre;
+
+    // Génère un commerce_slug unique si la place n'en a pas encore → active la lettre QR
+    if (!currentPlace.commerce_slug) {
+      const baseSlug =
+        [slugifyPart(String(currentPlace.metier || "")), slugifyPart(String(currentPlace.city || ""))]
+          .filter(Boolean)
+          .join("-") || slugifyPart(companyNameRaw || ownerDisplayNameRaw || "commerce") || "commerce";
+      let commerceSlug = baseSlug;
+      for (let attempt = 2; attempt <= 99; attempt++) {
+        const { data: existing } = await supabaseAdmin
+          .from("human_marketplace_places")
+          .select("id")
+          .eq("commerce_slug", commerceSlug)
+          .maybeSingle();
+        if (!existing) break;
+        commerceSlug = `${baseSlug}-${attempt}`;
+      }
+      patch.commerce_slug = commerceSlug;
+      patch.reco_status = "prospect";
+      patch.deadline_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    }
   }
 
   const { error } = await supabaseAdmin.from("human_marketplace_places").update(patch).eq("id", placeId);
@@ -440,6 +467,11 @@ export async function POST(request: Request) {
         "is_mystery_offer",
         "pro_slug",
         "offer_gallery_urls",
+        "commerce_slug",
+        "reco_status",
+        "deadline_at",
+        "prenom",
+        "genre",
       ].forEach((key) => {
         delete retryPatch[key];
       });
