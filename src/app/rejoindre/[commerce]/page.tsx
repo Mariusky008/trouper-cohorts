@@ -136,10 +136,6 @@ export default function RejoindrePage() {
               <span>Cette invitation expire dans <strong>48h</strong></span>
             </div>
             <p className="pitch">
-              <strong>Votre agenda a des creux ?</strong><br />
-              Envoyez une offre. Il se remplit.
-            </p>
-            <p className="pitch" style={{ marginTop: 12 }}>
               Popey réunit les <strong>50 meilleurs commerçants de {city}</strong> dans un catalogue WhatsApp partagé. Quand vous envoyez une offre, elle arrive chez les clients des 49 autres aussi.
             </p>
             <hr className="divider" />
