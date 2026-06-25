@@ -132,9 +132,16 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
       <style
         dangerouslySetInnerHTML={{
           __html: `
+          @page { margin: 0; size: A4; }
           @media print {
             .no-print { display: none !important; }
-            body { margin: 0; }
+            /* Cache la barre admin du layout */
+            header, nav, footer, [class*="sidebar"], [class*="navbar"] { display: none !important; }
+            /* Supprime les paddings du layout */
+            body, html { margin: 0 !important; padding: 0 !important; }
+            main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+            /* Chaque page fait exactement A4 */
+            .page-sep { page-break-after: always; break-after: page; }
           }
           .no-print {
             position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
