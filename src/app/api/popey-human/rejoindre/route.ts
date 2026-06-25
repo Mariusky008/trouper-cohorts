@@ -3,7 +3,7 @@
 // Enregistre le WhatsApp pro, notifie Jean-Philippe, confirme au commerçant.
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { sendWhatsAppTextMessage, sendPrivilegeAlertOptin } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -76,16 +76,19 @@ export async function POST(request: NextRequest) {
     const prenom = place.prenom ?? place.company_name;
     const city = place.city ?? place.city_slug;
 
+    // Confirmation au commerçant via template approuvé (WhatsApp exige un template
+    // pour tout message à l'initiative de l'entreprise vers un numéro « froid »).
+    // No-op silencieux si le Content SID d'opt-in n'est pas configuré.
     try {
-      await sendWhatsAppTextMessage(
-        phone,
-        `✅ Votre place Popey est réservée, ${prenom} !\n\nJean-Philippe vous contacte très vite pour créer votre première offre ensemble.\n\nBienvenue dans le Collectif de ${city} 🎉`,
-        { source: "rejoindre_activation" }
-      );
+      await sendPrivilegeAlertOptin(phone, {
+        merchantName: place.company_name ?? prenom,
+        city,
+      });
     } catch (e) {
       console.warn("[rejoindre] confirmation WA failed:", e);
     }
 
+    // Alerte à Jean-Philippe (best-effort ; la page /admin/rejoindre reste la source fiable)
     const adminPhone = process.env.POPEY_ADMIN_PHONE;
     if (adminPhone) {
       try {
