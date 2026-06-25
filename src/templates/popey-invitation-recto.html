@@ -41,6 +41,7 @@ html,body{background:#cfd3cf;font-family:'Inter',sans-serif;color:var(--ink);}
 .r-excl{font-family:'PopSb';font-size:10.5pt;color:var(--grey);text-align:center;margin-top:4mm;font-style:italic;}
 .r-excl b{color:var(--ink);font-style:normal;}
 .r-sign{margin-top:auto;text-align:center;padding-top:4mm;}
+.r-sign .r-photo{width:16mm;height:16mm;border-radius:50%;object-fit:cover;border:1.5px solid var(--m,#07B083);box-shadow:0 1mm 3mm rgba(0,0,0,.12);margin:0 auto 2mm;display:block;}
 .r-sign .s1{font-family:'Playfair';font-size:16pt;color:var(--ink);}
 .r-sign .s2{font-family:'Inter';font-size:9.5pt;color:var(--grey);font-style:italic;margin-top:1.5mm;}
 .r-seal{margin:5mm auto 0;display:inline-flex;align-items:center;gap:3mm;border:1.4px solid var(--line);background:#fff;border-radius:99px;padding:3mm 6mm;}
@@ -92,6 +93,7 @@ html,body{background:#cfd3cf;font-family:'Inter',sans-serif;color:var(--ink);}
 .r-resv{font-family:'PopSb';font-size:12pt;color:var(--ink);text-align:center;margin-top:16mm;line-height:1.6;}
 .r-resv span{font-family:'Inter';font-size:11pt;color:var(--grey);font-style:italic;}
 .r-sign{margin-top:auto;text-align:center;padding-top:10mm;}
+.r-sign .r-photo{width:18mm;height:18mm;border-radius:50%;object-fit:cover;border:1.5px solid var(--m,#07B083);box-shadow:0 1mm 3mm rgba(0,0,0,.12);margin:0 auto 2.5mm;display:block;}
 .r-sign .s1{font-family:'Playfair';font-size:16pt;color:var(--ink);}
 .r-sign .s2{font-family:'Inter';font-size:10pt;color:var(--grey);font-style:italic;margin-top:1.5mm;}
 
@@ -143,6 +145,7 @@ html,body{background:#fff;}
   <div class="r-resv">Une seule place est réservée pour votre métier à&nbsp;Dax.<br><span>Tout est expliqué juste au dos de cette carte.</span></div>
 
   <div class="r-sign">
+    {{photo_signature}}
     <div class="s1">Audrey &amp; Jean-Philippe</div>
     <div class="s2">Vos voisins dacquois</div>
   </div>

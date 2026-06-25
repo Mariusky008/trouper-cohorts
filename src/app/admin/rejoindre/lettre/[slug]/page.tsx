@@ -111,7 +111,20 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
     );
   }
 
-  const rectoFilled = injectVars(rectoHtml, { prenom, commerce, fondateur_trice });
+  // Photo signature Audrey & Jean-Philippe (base64 → PDF autonome). Optionnelle.
+  let photoSignature = "";
+  for (const ext of ["jpg", "jpeg", "png"]) {
+    try {
+      const buf = readFileSync(join(process.cwd(), `src/templates/signature-audrey-jp.${ext}`));
+      const mime = ext === "png" ? "image/png" : "image/jpeg";
+      photoSignature = `<img class="r-photo" src="data:${mime};base64,${buf.toString("base64")}" alt="Audrey & Jean-Philippe" />`;
+      break;
+    } catch {
+      // pas de photo pour cette extension → on essaie la suivante
+    }
+  }
+
+  const rectoFilled = injectVars(rectoHtml, { prenom, commerce, fondateur_trice, photo_signature: photoSignature });
   const versoFilled = injectVars(versoHtml, { ville, metier, qr_url: qrDataUri });
 
   // Extraire <body>...</body> de chaque template pour les assembler sur une seule page
