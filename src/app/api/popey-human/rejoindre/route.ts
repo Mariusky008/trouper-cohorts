@@ -76,17 +76,7 @@ export async function POST(request: NextRequest) {
     const prenom = place.prenom ?? place.company_name;
     const city = place.city ?? place.city_slug;
 
-    // Confirmation au commerçant via template approuvé (WhatsApp exige un template
-    // pour tout message à l'initiative de l'entreprise vers un numéro « froid »).
-    // No-op silencieux si le Content SID d'opt-in n'est pas configuré.
-    try {
-      await sendPrivilegeAlertOptin(phone, {
-        merchantName: place.company_name ?? prenom,
-        city,
-      });
-    } catch (e) {
-      console.warn("[rejoindre] confirmation WA failed:", e);
-    }
+       // Pas de WhatsApp automatique au commerçant — Jean-Philippe rappelle sous 24h.
 
     // Alerte à Jean-Philippe (best-effort ; la page /admin/rejoindre reste la source fiable)
     const adminPhone = process.env.POPEY_ADMIN_PHONE;
