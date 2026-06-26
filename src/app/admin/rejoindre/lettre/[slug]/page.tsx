@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
+import { LetterActions } from "./letter-actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -62,6 +63,7 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
   const ville = str(place.city) || str(place.city_slug);
   const ville_maj = ville.toUpperCase();
   const metier = str(place.metier);
+  const activite = str(place.activite);
   const isArtisan = str(place.type_membre) === "artisan";
 
   const qrTargetUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy"}/rejoindre/${slug}`;
@@ -141,6 +143,13 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
             font-size: 14px; cursor: pointer;
           }
           .no-print a { color: #00E0A0; text-decoration: none; }
+          .no-print .la-btn {
+            background: #07B083; color: #0B0D12; border: none;
+            padding: 8px 20px; border-radius: 8px; font-weight: 800;
+            font-size: 14px; cursor: pointer;
+          }
+          .no-print .la-btn:disabled { opacity: 0.6; cursor: wait; }
+          .no-print .la-btn-wa { background: #25D366; }
           .page-sep { page-break-after: always; }
           ${extractStyles(rectoFilled)}
           ${extractStyles(versoFilled)}
@@ -154,6 +163,7 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
           {isArtisan && <span style={{ marginLeft: 8, background: "#fbbf24", color: "#000", borderRadius: 4, padding: "1px 6px", fontSize: 12 }}>Artisan</span>}
         </span>
         <PrintButton />
+        <LetterActions prenom={prenom} activite={activite} qrTargetUrl={qrTargetUrl} isArtisan={isArtisan} />
         <a href={`/admin/rejoindre`}>← Retour aux leads</a>
         <a href={`/admin/rejoindre/lettre`}>← Tous les prospects</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → {qrTargetUrl}</span>
@@ -161,12 +171,14 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
 
       {/* Recto */}
       <div
+        id="letter-recto"
         className="page-sep"
         dangerouslySetInnerHTML={{ __html: extractBody(rectoFilled) }}
       />
 
       {/* Verso */}
       <div
+        id="letter-verso"
         dangerouslySetInnerHTML={{ __html: extractBody(versoFilled) }}
       />
     </>
