@@ -112,6 +112,8 @@ export async function POST(request: Request) {
     const sphereKey = String(formData.get("sphere_key") || "digital").trim();
     const newPrenom = String(formData.get("new_prenom") || "").trim() || null;
     const newGenre = String(formData.get("new_genre") || "M").trim();
+    const newTypeMembre = String(formData.get("new_type_membre") || "commercant").trim();
+    const newActivite = String(formData.get("new_activite") || "").trim() || null;
     if (!cityNew || !newMetier) return fail("Ville et métier requis pour créer une offre.");
     const sphereLabels: Record<string, string> = {
       "evenements-locaux": "Évènements locaux",
@@ -147,6 +149,8 @@ export async function POST(request: Request) {
       is_seeded: false,
       prenom: newPrenom,
       genre: newGenre,
+      activite: newActivite,
+      type_membre: newTypeMembre,
       commerce_slug: commerceSlug,
       reco_status: "prospect",
       deadline_at: deadlineAt,

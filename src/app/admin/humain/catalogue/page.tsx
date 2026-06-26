@@ -31,6 +31,7 @@ type SnapPlace = {
   genre?: string | null;
   activite?: string | null;
   type_membre?: string | null;
+  commerce_slug?: string | null;
 };
 type ExtraFields = Record<string, unknown>;
 
@@ -765,7 +766,11 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   const selectedCity = (typeof qp.city === "string" && qp.city) || cities[0] || "";
   const cityPlaces = places.filter((p) => String(p.city || "").trim() === selectedCity);
   const configured = cityPlaces.filter(isConfigured);
-  const available = cityPlaces.filter((p) => !isConfigured(p));
+  // Prospects (lettre QR créée) remontent en tête des libres pour les retrouver facilement
+  const availableRaw = cityPlaces.filter((p) => !isConfigured(p));
+  const prospects = availableRaw.filter((p) => Boolean(p.commerce_slug));
+  const availableOthers = availableRaw.filter((p) => !Boolean(p.commerce_slug));
+  const available = [...prospects, ...availableOthers];
 
   const extra = await fetchExtraFields(cityPlaces.map((p) => p.id));
   const stats = await fetchEngagementStats(configured.map((p) => p.id));
@@ -1008,8 +1013,12 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
         {(showAll ? available : available.slice(0, 12)).map((p) => (
           <details key={p.id} className="overflow-hidden rounded-xl border border-dashed bg-white">
             <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-sm">
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-500">libre</span>
+              {p.commerce_slug
+                ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700">📬 Lettre QR</span>
+                : <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-500">libre</span>
+              }
               <strong>{s(p.metier)}</strong>
+              {p.prenom && <span className="text-xs text-emerald-700">· {s(p.prenom)}</span>}
               <span className="text-muted-foreground">· {s(p.sphere_label)}</span>
               <span className="ml-auto text-[11px] text-sky-600">configurer ▾</span>
             </summary>
