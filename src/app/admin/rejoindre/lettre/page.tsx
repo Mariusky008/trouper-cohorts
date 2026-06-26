@@ -9,7 +9,7 @@ export default async function LettreIndexPage() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_marketplace_places")
-    .select("id, company_name, prenom, metier, city, commerce_slug, reco_status, deadline_at")
+    .select("id, company_name, prenom, metier, city, commerce_slug, reco_status, deadline_at, letter_sent_at")
     .not("commerce_slug", "is", null)
     .order("created_at", { ascending: false });
 
@@ -19,6 +19,11 @@ export default async function LettreIndexPage() {
     claimed: "✅ Réclamé",
     expired: "❌ Expiré",
   };
+
+  const fmtDate = (iso: string | null | undefined) =>
+    iso
+      ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })
+      : null;
 
   return (
     <div className="space-y-6">
@@ -56,6 +61,8 @@ export default async function LettreIndexPage() {
                   <th className="px-4 py-3 font-medium">Statut</th>
                   <th className="px-4 py-3 font-medium">Slug / QR</th>
                   <th className="px-4 py-3 font-medium">Lettre</th>
+                  <th className="px-4 py-3 font-medium">Envoyée le</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -81,6 +88,43 @@ export default async function LettreIndexPage() {
                       >
                         Lettre →
                       </Link>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {fmtDate(r.letter_sent_at) ? (
+                        <span className="font-medium text-emerald-700">📬 {fmtDate(r.letter_sent_at)}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <form action="/api/admin/rejoindre/prospect" method="post">
+                          <input type="hidden" name="id" value={r.id} />
+                          <input type="hidden" name="redirect" value="/admin/rejoindre/lettre" />
+                          <input
+                            type="hidden"
+                            name="action"
+                            value={r.letter_sent_at ? "unmark_sent" : "mark_sent"}
+                          />
+                          <button
+                            type="submit"
+                            className="rounded border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                            {r.letter_sent_at ? "↩︎ Annuler envoi" : "✓ Marquer envoyée"}
+                          </button>
+                        </form>
+                        <form action="/api/admin/rejoindre/prospect" method="post">
+                          <input type="hidden" name="id" value={r.id} />
+                          <input type="hidden" name="redirect" value="/admin/rejoindre/lettre" />
+                          <input type="hidden" name="action" value="free_slot" />
+                          <button
+                            type="submit"
+                            className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                          >
+                            🗑 Libérer
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -15,6 +15,7 @@ interface Lead {
   pro_whatsapp: string | null;
   reco_status: string;
   claimed_at: string | null;
+  letter_sent_at: string | null;
 }
 
 function formatDate(iso: string | null): string {
@@ -37,7 +38,7 @@ export default async function AdminRejoindrePage() {
 
   const { data: leads } = await supabase
     .from("human_marketplace_places")
-    .select("id, company_name, prenom, metier, city, commerce_slug, pro_whatsapp, reco_status, claimed_at")
+    .select("id, company_name, prenom, metier, city, commerce_slug, pro_whatsapp, reco_status, claimed_at, letter_sent_at")
     .eq("reco_status", "claimed")
     .order("claimed_at", { ascending: false });
 
@@ -73,6 +74,7 @@ export default async function AdminRejoindrePage() {
                   <th className="px-4 py-3 font-medium">Ville</th>
                   <th className="px-4 py-3 font-medium">WhatsApp</th>
                   <th className="px-4 py-3 font-medium">Réclamé le</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,6 +106,19 @@ export default async function AdminRejoindrePage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{formatDate(lead.claimed_at)}</td>
+                      <td className="px-4 py-3">
+                        <form action="/api/admin/rejoindre/prospect" method="post">
+                          <input type="hidden" name="id" value={lead.id} />
+                          <input type="hidden" name="redirect" value="/admin/rejoindre" />
+                          <input type="hidden" name="action" value="free_slot" />
+                          <button
+                            type="submit"
+                            className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                          >
+                            🗑 Libérer
+                          </button>
+                        </form>
+                      </td>
                     </tr>
                   );
                 })}
