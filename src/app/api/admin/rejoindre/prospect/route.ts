@@ -26,11 +26,13 @@ export async function POST(req: Request) {
     patch = { letter_sent_at: null };
   } else if (action === "free_slot") {
     // On efface les infos du prospect mais on garde l'emplacement ville+métier.
+    // Emplacement libre = pas de commerce_slug + reco_status 'prospect' (la valeur
+    // par défaut). reco_status ne peut pas être null (contrainte CHECK).
     patch = {
       commerce_slug: null,
       prenom: null,
       activite: null,
-      reco_status: null,
+      reco_status: "prospect",
       claimed_at: null,
       letter_sent_at: null,
     };
