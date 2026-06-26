@@ -127,6 +127,17 @@ html,body{background:#fff;}
 .page{margin:0 auto;}
 </style></head>
 <body>
+<style>
+.v-app-row { display:flex; gap:12px; align-items:flex-start; margin:8px 0; }
+.v-app-screen { flex:0 0 auto; width:90px; border-radius:12px; overflow:hidden; border:2px solid var(--m,#07B083); }
+.v-app-screen img { width:100%; display:block; }
+.v-app-screen-empty { width:90px; min-height:160px; border-radius:12px; background:#f0fdf4; border:2px dashed var(--m,#07B083); display:flex; align-items:center; justify-content:center; font-size:10px; color:#666; text-align:center; padding:8px; }
+.v-app-desc { flex:1; }
+.v-cdf-row { display:flex; gap:12px; align-items:flex-start; margin:8px 0; }
+.v-cdf-screen { flex:0 0 auto; width:90px; border-radius:12px; overflow:hidden; border:2px solid var(--rose,#F0608F); }
+.v-cdf-screen img { width:100%; display:block; }
+.v-cdf-screen-empty { width:90px; min-height:130px; border-radius:12px; background:#fff1f5; border:2px dashed var(--rose,#F0608F); display:flex; align-items:center; justify-content:center; font-size:10px; color:#666; text-align:center; padding:8px; }
+</style>
 <div class="page verso">
   <div class="v-haze"></div>
   <div class="v-top"><div class="v-logo">Pop<span>ey</span></div><div class="v-ed">ÉDITION DAX</div></div>
@@ -136,9 +147,12 @@ html,body{background:#fff;}
     <p class="v-intro">Vos offres diffusées auprès des clients des <b>49 autres commerces</b>.</p>
   </div>
 
-  <div class="v-principe">
-    <div class="v-h">🤝 Le principe Popey</div>
-    <p class="v-principe-txt">Chaque membre partage <b>une fois par mois</b> le catalogue Popey avec ses propres clients sur WhatsApp.<br>En retour, les <b>49 autres commerçants</b> diffusent également votre offre auprès des leurs.</p>
+  <div class="v-app-row">
+    <div>{{app_screenshot}}</div>
+    <div class="v-app-desc">
+      <div class="v-h" style="margin-top:0">🤝 Le principe Popey</div>
+      <p style="font-size:12px;line-height:1.5;margin:6px 0 0">Chaque membre partage <b>une fois par mois</b> le catalogue avec ses propres clients WhatsApp.<br><br>En retour, les <b>49 autres commerçants</b> diffusent également votre offre.</p>
+    </div>
   </div>
 
   <div class="v-h">COMMENT ÇA MARCHE&nbsp;?</div>
@@ -148,9 +162,12 @@ html,body{background:#fff;}
     <div class="v-step"><div class="num">③</div><div class="tx">Votre offre rejoint le prochain catalogue Popey.</div></div>
   </div>
 
-  <div class="v-cdf">
-    <div class="v-h">🔥 En plus du catalogue… Le Coup de Feu</div>
-    <p class="v-cdf-txt">Quand vous avez un créneau à remplir, lancez une offre valable <b>2 heures</b>. Elle est envoyée instantanément à tous vos abonnés Popey sur WhatsApp.</p>
+  <div class="v-cdf-row">
+    <div>{{cdf_screenshot}}</div>
+    <div class="v-app-desc">
+      <div class="v-h" style="margin-top:0">🔥 Le Coup de Feu</div>
+      <p style="font-size:12px;line-height:1.5;margin:6px 0 0">Un créneau à remplir&nbsp;? Lancez une offre valable <b>2&nbsp;heures</b>, envoyée instantanément à tous vos abonnés Popey sur WhatsApp.</p>
+    </div>
   </div>
 
   <div class="v-qr">

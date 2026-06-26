@@ -124,8 +124,22 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
     }
   }
 
+  // Screenshots app (catalogue + coup de feu) → base64 pour PDF autonome. Optionnels.
+  function loadScreenshot(name: string): string {
+    for (const ext of ["png", "jpg", "jpeg"]) {
+      try {
+        const buf = readFileSync(join(process.cwd(), `src/templates/${name}.${ext}`));
+        const mime = ext === "png" ? "image/png" : "image/jpeg";
+        return `<img src="data:${mime};base64,${buf.toString("base64")}" alt="${name}" style="width:100%;display:block;" />`;
+      } catch { /* essaie ext suivante */ }
+    }
+    return `<div style="width:90px;min-height:150px;border-radius:12px;background:#f0fdf4;border:2px dashed #07B083;display:flex;align-items:center;justify-content:center;font-size:9px;color:#999;text-align:center;padding:6px;">Dépose<br>${name}.png<br>dans<br>src/templates/</div>`;
+  }
+  const appScreenshot = loadScreenshot("popey-app-screenshot");
+  const cdfScreenshot = loadScreenshot("popey-cdf-screenshot");
+
   const rectoFilled = injectVars(rectoHtml, { prenom, activite, fondateur_trice, photo_signature: photoSignature });
-  const versoFilled = injectVars(versoHtml, { ville, metier, qr_url: qrDataUri });
+  const versoFilled = injectVars(versoHtml, { ville, metier, qr_url: qrDataUri, app_screenshot: appScreenshot, cdf_screenshot: cdfScreenshot });
 
   // Extraire <body>...</body> de chaque template pour les assembler sur une seule page
   const extractBody = (html: string) => {
