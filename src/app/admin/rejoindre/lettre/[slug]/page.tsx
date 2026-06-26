@@ -27,7 +27,7 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
   {
     const full = await supabase
       .from("human_marketplace_places")
-      .select("id, company_name, prenom, genre, metier, city, city_slug, commerce_slug, reco_status, deadline_at")
+      .select("id, company_name, prenom, genre, activite, metier, city, city_slug, commerce_slug, reco_status, deadline_at")
       .eq("commerce_slug", slug)
       .maybeSingle();
     if (full.error) {
@@ -66,7 +66,7 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
   const str = (v: unknown) => (v == null ? "" : String(v));
   const prenom = str(place.prenom) || str(place.company_name);
   const fondateur_trice = place.genre === "F" ? "fondatrice" : "fondateur";
-  const commerce = str(place.company_name) || str(place.prenom) || str(place.metier);
+  const activite = str(place.activite) || str(place.metier);
   const ville = str(place.city);
   const metier = str(place.metier);
 
@@ -124,7 +124,7 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
     }
   }
 
-  const rectoFilled = injectVars(rectoHtml, { prenom, commerce, fondateur_trice, photo_signature: photoSignature });
+  const rectoFilled = injectVars(rectoHtml, { prenom, activite, fondateur_trice, photo_signature: photoSignature });
   const versoFilled = injectVars(versoHtml, { ville, metier, qr_url: qrDataUri });
 
   // Extraire <body>...</body> de chaque template pour les assembler sur une seule page

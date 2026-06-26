@@ -29,6 +29,7 @@ type SnapPlace = {
   partner_offer_value_eur?: number | string | null;
   prenom?: string | null;
   genre?: string | null;
+  activite?: string | null;
 };
 type ExtraFields = Record<string, unknown>;
 
@@ -337,6 +338,10 @@ function CatalogueOfferForm({
           <option value="M">Masculin → membre fondateur</option>
           <option value="F">Féminin → membre fondatrice</option>
         </select>
+      </label>
+      <label className="space-y-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Activité (pour la lettre)</span>
+        <input name="new_activite" defaultValue={s(place.activite)} placeholder="Ex: vente de vêtements féminins" className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-3 text-sm" />
       </label>
 
       <label className="space-y-1">
