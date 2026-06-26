@@ -407,7 +407,7 @@ export async function POST(request: Request) {
 
   const { data: currentPlace, error: placeReadError } = await supabaseAdmin
     .from("human_marketplace_places")
-    .select("id,status,city,city_slug,metier,commerce_slug,prenom,genre,activite")
+    .select("id,status,city,city_slug,metier,commerce_slug,prenom,genre,activite,type_membre")
     .eq("id", placeId)
     .maybeSingle();
   if (placeReadError || !currentPlace) return fail(placeReadError?.message || "Place introuvable.");
@@ -425,9 +425,11 @@ export async function POST(request: Request) {
     const savePrenom = String(formData.get("new_prenom") || "").trim();
     const saveGenre = String(formData.get("new_genre") || "").trim();
     const saveActivite = String(formData.get("new_activite") || "").trim();
+    const saveTypeMembre = String(formData.get("new_type_membre") || "").trim();
     if (savePrenom) patch.prenom = savePrenom;
     if (saveGenre) patch.genre = saveGenre;
     if (saveActivite) patch.activite = saveActivite;
+    if (saveTypeMembre) patch.type_membre = saveTypeMembre;
 
     // Génère un commerce_slug unique si la place n'en a pas encore → active la lettre QR
     if (!currentPlace.commerce_slug) {
@@ -475,6 +477,7 @@ export async function POST(request: Request) {
         "prenom",
         "genre",
         "activite",
+        "type_membre",
       ].forEach((key) => {
         delete retryPatch[key];
       });

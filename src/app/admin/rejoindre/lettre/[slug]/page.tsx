@@ -20,14 +20,12 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
 
   const supabase = createAdminClient();
-  // Résilient : si une colonne récente (genre) manque encore en base, on réessaie
-  // sans elle plutôt que de renvoyer un 404 muet.
   let place: Record<string, unknown> | null = null;
   let lookupError: string | null = null;
   {
     const full = await supabase
       .from("human_marketplace_places")
-      .select("id, company_name, prenom, genre, activite, metier, city, city_slug, commerce_slug, reco_status, deadline_at")
+      .select("id, company_name, prenom, genre, activite, metier, city, city_slug, commerce_slug, reco_status, deadline_at, type_membre")
       .eq("commerce_slug", slug)
       .maybeSingle();
     if (full.error) {
@@ -55,23 +53,18 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
             Erreur base : <code>{lookupError}</code>
           </p>
         )}
-        <p style={{ marginTop: 16, color: "#555" }}>
-          Vérifie que la migration <code>20260625120000_create_reco_system.sql</code> (colonnes
-          <code> commerce_slug, prenom, genre, reco_status, deadline_at</code>) a bien été appliquée.
-        </p>
       </div>
     );
   }
 
   const str = (v: unknown) => (v == null ? "" : String(v));
   const prenom = str(place.prenom) || str(place.company_name);
-  const fondateur_trice = place.genre === "F" ? "fondatrice" : "fondateur";
-  const activite = str(place.activite) || str(place.metier);
-  const ville = str(place.city);
+  const ville = str(place.city) || str(place.city_slug);
+  const ville_maj = ville.toUpperCase();
   const metier = str(place.metier);
+  const isArtisan = str(place.type_membre) === "artisan";
 
   const qrTargetUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy"}/rejoindre/${slug}`;
-  // QR généré via API publique, converti en data-URI pour rester autonome dans le PDF.
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(qrTargetUrl)}`;
   let qrDataUri = qrApiUrl;
   try {
@@ -81,67 +74,36 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
       qrDataUri = `data:image/png;base64,${buf.toString("base64")}`;
     }
   } catch {
-    // fallback : l'URL directe de l'API (le navigateur la chargera à l'impression)
+    // fallback : URL directe
   }
 
   let rectoHtml = "";
   let versoHtml = "";
+  const versoFile = isArtisan
+    ? "src/templates/popey-invitation-verso-artisan.html"
+    : "src/templates/popey-invitation-verso.html";
   try {
     rectoHtml = readFileSync(join(process.cwd(), "src/templates/popey-invitation-recto.html"), "utf-8");
-    versoHtml = readFileSync(join(process.cwd(), "src/templates/popey-invitation-verso.html"), "utf-8");
+    versoHtml = readFileSync(join(process.cwd(), versoFile), "utf-8");
   } catch {
     return (
       <div style={{ padding: 40, fontFamily: "sans-serif", color: "red" }}>
         <h1>Templates HTML manquants</h1>
-        <p>
-          Dépose les deux fichiers du designer dans <code>src/templates/</code> :
-        </p>
+        <p>Dépose les fichiers dans <code>src/templates/</code> :</p>
         <ul>
-          <li>
-            <code>popey-invitation-recto.html</code>
-          </li>
-          <li>
-            <code>popey-invitation-verso.html</code>
-          </li>
+          <li><code>popey-invitation-recto.html</code></li>
+          <li><code>popey-invitation-verso.html</code></li>
+          <li><code>popey-invitation-verso-artisan.html</code></li>
         </ul>
-        <p style={{ marginTop: 16, color: "#555" }}>
-          Ces fichiers ne sont pas versionés (trop lourds). Copie-les depuis ton dossier designer.
-        </p>
       </div>
     );
   }
 
-  // Photo signature Audrey & Jean-Philippe (base64 → PDF autonome). Optionnelle.
-  let photoSignature = "";
-  for (const ext of ["jpg", "jpeg", "png"]) {
-    try {
-      const buf = readFileSync(join(process.cwd(), `src/templates/signature-audrey-jp.${ext}`));
-      const mime = ext === "png" ? "image/png" : "image/jpeg";
-      photoSignature = `<img class="r-photo" src="data:${mime};base64,${buf.toString("base64")}" alt="Audrey & Jean-Philippe" />`;
-      break;
-    } catch {
-      // pas de photo pour cette extension → on essaie la suivante
-    }
-  }
+  // Variables recto : prenom + ville
+  const rectoFilled = injectVars(rectoHtml, { prenom, ville });
+  // Variables verso : ville, ville_maj, qr_url
+  const versoFilled = injectVars(versoHtml, { ville, ville_maj, qr_url: qrDataUri });
 
-  // Screenshots app (catalogue + coup de feu) → base64 pour PDF autonome. Optionnels.
-  function loadScreenshot(name: string): string {
-    for (const ext of ["png", "jpg", "jpeg"]) {
-      try {
-        const buf = readFileSync(join(process.cwd(), `src/templates/${name}.${ext}`));
-        const mime = ext === "png" ? "image/png" : "image/jpeg";
-        return `<img src="data:${mime};base64,${buf.toString("base64")}" alt="${name}" style="width:100%;display:block;" />`;
-      } catch { /* essaie ext suivante */ }
-    }
-    return `<div style="width:90px;min-height:150px;border-radius:12px;background:#f0fdf4;border:2px dashed #07B083;display:flex;align-items:center;justify-content:center;font-size:9px;color:#999;text-align:center;padding:6px;">Dépose<br>${name}.png<br>dans<br>src/templates/</div>`;
-  }
-  const appScreenshot = loadScreenshot("popey-app-screenshot");
-  const cdfScreenshot = loadScreenshot("popey-cdf-screenshot");
-
-  const rectoFilled = injectVars(rectoHtml, { prenom, activite, fondateur_trice, photo_signature: photoSignature });
-  const versoFilled = injectVars(versoHtml, { ville, metier, qr_url: qrDataUri, app_screenshot: appScreenshot, cdf_screenshot: cdfScreenshot });
-
-  // Extraire <body>...</body> de chaque template pour les assembler sur une seule page
   const extractBody = (html: string) => {
     const m = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
     return m ? m[1] : html;
@@ -162,12 +124,9 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
           @page { margin: 0; size: A4; }
           @media print {
             .no-print { display: none !important; }
-            /* Cache la barre admin du layout */
             header, nav, footer, [class*="sidebar"], [class*="navbar"] { display: none !important; }
-            /* Supprime les paddings du layout */
             body, html { margin: 0 !important; padding: 0 !important; }
             main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
-            /* Chaque page fait exactement A4 */
             .page-sep { page-break-after: always; break-after: page; }
           }
           .no-print {
@@ -189,10 +148,10 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
         }}
       />
 
-      {/* Barre admin — cachée à l'impression */}
       <div className="no-print">
         <span>
-          Lettre de <strong>{prenom || commerce}</strong> · {metier} · {ville}
+          Lettre de <strong>{prenom}</strong> · {metier} · {ville}
+          {isArtisan && <span style={{ marginLeft: 8, background: "#fbbf24", color: "#000", borderRadius: 4, padding: "1px 6px", fontSize: 12 }}>Artisan</span>}
         </span>
         <PrintButton />
         <a href={`/admin/rejoindre`}>← Retour aux leads</a>

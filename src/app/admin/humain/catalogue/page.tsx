@@ -30,6 +30,7 @@ type SnapPlace = {
   prenom?: string | null;
   genre?: string | null;
   activite?: string | null;
+  type_membre?: string | null;
 };
 type ExtraFields = Record<string, unknown>;
 
@@ -342,6 +343,13 @@ function CatalogueOfferForm({
       <label className="space-y-1">
         <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Activité (pour la lettre)</span>
         <input name="new_activite" defaultValue={s(place.activite)} placeholder="Ex: vente de vêtements féminins" className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-3 text-sm" />
+      </label>
+      <label className="space-y-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Type de membre (verso lettre)</span>
+        <select name="new_type_membre" defaultValue={s(place.type_membre) || "commercant"} className="h-10 w-full rounded border border-amber-300 bg-amber-50 px-2 text-sm">
+          <option value="commercant">Commerçant — abonnement mensuel</option>
+          <option value="artisan">Artisan — 0 € au résultat</option>
+        </select>
       </label>
 
       <label className="space-y-1">
