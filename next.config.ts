@@ -4,6 +4,12 @@ import withPWA from "@ducanh2912/next-pwa";
 const config: NextConfig = {
   /* config options here */
   output: "standalone",
+  // Force l'inclusion des templates HTML de la lettre dans le bundle serverless :
+  // ils sont lus via readFileSync avec un chemin dynamique (couleur/N&B), que le
+  // file-tracing de Next ne détecte pas automatiquement.
+  outputFileTracingIncludes: {
+    "/admin/rejoindre/lettre/[slug]": ["./src/templates/**"],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
