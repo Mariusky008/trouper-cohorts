@@ -17,8 +17,16 @@ function injectVars(html: string, vars: Record<string, string>): string {
   return out;
 }
 
-export default async function LettreSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function LettreSlugPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ bw?: string }>;
+}) {
   const { slug } = await params;
+  const { bw } = await searchParams;
+  const isBW = bw === "1";
 
   const supabase = createAdminClient();
   let place: Record<string, unknown> | null = null;
@@ -81,11 +89,18 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
 
   let rectoHtml = "";
   let versoHtml = "";
+  const rectoFile = isBW
+    ? "src/templates/popey-invitation-recto-nb.html"
+    : "src/templates/popey-invitation-recto.html";
   const versoFile = isArtisan
-    ? "src/templates/popey-invitation-verso-artisan.html"
-    : "src/templates/popey-invitation-verso.html";
+    ? isBW
+      ? "src/templates/popey-invitation-verso-artisan-nb.html"
+      : "src/templates/popey-invitation-verso-artisan.html"
+    : isBW
+      ? "src/templates/popey-invitation-verso-nb.html"
+      : "src/templates/popey-invitation-verso.html";
   try {
-    rectoHtml = readFileSync(join(process.cwd(), "src/templates/popey-invitation-recto.html"), "utf-8");
+    rectoHtml = readFileSync(join(process.cwd(), rectoFile), "utf-8");
     versoHtml = readFileSync(join(process.cwd(), versoFile), "utf-8");
   } catch {
     return (
@@ -161,6 +176,26 @@ export default async function LettreSlugPage({ params }: { params: Promise<{ slu
         <span>
           Lettre de <strong>{prenom}</strong> · {metier} · {ville}
           {isArtisan && <span style={{ marginLeft: 8, background: "#fbbf24", color: "#000", borderRadius: 4, padding: "1px 6px", fontSize: 12 }}>Artisan</span>}
+        </span>
+        <span style={{ display: "inline-flex", border: "1px solid #444", borderRadius: 8, overflow: "hidden" }}>
+          <a
+            href={`/admin/rejoindre/lettre/${slug}`}
+            style={{
+              padding: "6px 12px", fontSize: 13, fontWeight: 700, textDecoration: "none",
+              background: isBW ? "transparent" : "#07B083", color: isBW ? "#fff" : "#0B0D12",
+            }}
+          >
+            🎨 Couleur
+          </a>
+          <a
+            href={`/admin/rejoindre/lettre/${slug}?bw=1`}
+            style={{
+              padding: "6px 12px", fontSize: 13, fontWeight: 700, textDecoration: "none",
+              background: isBW ? "#fff" : "transparent", color: isBW ? "#0B0D12" : "#fff",
+            }}
+          >
+            🖤 N&amp;B
+          </a>
         </span>
         <PrintButton />
         <LetterActions prenom={prenom} activite={activite} qrTargetUrl={qrTargetUrl} isArtisan={isArtisan} />
