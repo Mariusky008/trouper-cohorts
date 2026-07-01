@@ -12,11 +12,15 @@ type Props = {
 };
 
 async function nodeToPng(elementId: string): Promise<string> {
-  const node = document.getElementById(elementId);
-  if (!node) throw new Error("Carte introuvable à l'écran.");
-  return toPng(node, {
+  const wrapper = document.getElementById(elementId);
+  if (!wrapper) throw new Error("Carte introuvable à l'écran.");
+  // On capture l'élément .page (exactement 210mm×297mm = ratio A4) et non le
+  // conteneur externe qui a du blanc autour. pixelRatio 3 = rendu haute déf
+  // (mockup téléphone + textes bien plus nets).
+  const page = (wrapper.querySelector(".page") as HTMLElement) || wrapper;
+  return toPng(page, {
     cacheBust: true,
-    pixelRatio: 2,
+    pixelRatio: 3,
     backgroundColor: "#ffffff",
   });
 }
