@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
 
 type Props = {
   prenom: string;
@@ -15,14 +14,27 @@ async function nodeToPng(elementId: string): Promise<string> {
   const wrapper = document.getElementById(elementId);
   if (!wrapper) throw new Error("Carte introuvable à l'écran.");
   // On capture l'élément .page (exactement 210mm×297mm = ratio A4) et non le
-  // conteneur externe qui a du blanc autour. pixelRatio 3 = rendu haute déf
-  // (mockup téléphone + textes bien plus nets).
+  // conteneur externe qui a du blanc autour.
   const page = (wrapper.querySelector(".page") as HTMLElement) || wrapper;
-  return toPng(page, {
-    cacheBust: true,
-    pixelRatio: 2,
-    backgroundColor: "#ffffff",
-  });
+  // Aplatir le téléphone 3D LE TEMPS de la capture : la rotation 3D est rendue
+  // floue/déformée par html-to-image. On injecte une règle temporaire, on capture,
+  // puis on la retire (l'affichage à l'écran garde le beau téléphone incliné).
+  const flat = document.createElement("style");
+  flat.textContent = `
+    #${elementId} .phone { perspective: none !important; }
+    #${elementId} .device { transform: none !important; box-shadow: none !important; }
+    #${elementId} .device::after { display: none !important; }
+  `;
+  document.head.appendChild(flat);
+  try {
+    return await toPng(page, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+    });
+  } finally {
+    flat.remove();
+  }
 }
 
 async function downloadNode(elementId: string, fileName: string) {
@@ -39,8 +51,6 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
 
   const slug = qrTargetUrl.split("/").pop() || "carte";
 
-  const [pdfBusy, setPdfBusy] = useState(false);
-
   const handleDownload = async () => {
     setBusy(true);
     try {
@@ -50,26 +60,6 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
       alert("Erreur export image : " + String(e));
     } finally {
       setBusy(false);
-    }
-  };
-
-  // PDF généré à partir du rendu PNG (fidèle à l'écran) → évite les décalages
-  // d'impression du navigateur sur le mockup téléphone.
-  const handlePdf = async () => {
-    setPdfBusy(true);
-    try {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      // .page fait exactement 210mm×297mm → placement plein cadre sans déformation.
-      const rectoPng = await nodeToPng("letter-recto");
-      pdf.addImage(rectoPng, "PNG", 0, 0, 210, 297);
-      pdf.addPage();
-      const versoPng = await nodeToPng("letter-verso");
-      pdf.addImage(versoPng, "PNG", 0, 0, 210, 297);
-      pdf.save(`popey-${slug}.pdf`);
-    } catch (e) {
-      alert("Erreur génération PDF : " + String(e));
-    } finally {
-      setPdfBusy(false);
     }
   };
 
@@ -92,9 +82,6 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
 
   return (
     <>
-      <button onClick={handlePdf} disabled={pdfBusy} className="la-btn">
-        {pdfBusy ? "⏳ PDF…" : "📄 Télécharger PDF"}
-      </button>
       <button onClick={handleDownload} disabled={busy} className="la-btn">
         {busy ? "⏳ Génération…" : "🖼️ Télécharger carte (PNG)"}
       </button>
