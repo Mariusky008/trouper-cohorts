@@ -65,15 +65,20 @@ export async function POST(request: Request) {
     // 2) Membre (identité légère par numéro).
     const { data: place } = await supabase
       .from("human_marketplace_places")
-      .select("city,city_slug,partner_whatsapp,direct_contact")
+      .select("city,city_slug,partner_whatsapp,direct_contact,type_membre")
       .eq("id", placeId)
       .maybeSingle();
     const city = (place as { city?: string } | null)?.city || null;
     const citySlug = (place as { city_slug?: string } | null)?.city_slug || null;
     // Numéro WhatsApp public du commerçant (digits sans +) → le client le prévient en direct,
     // depuis SON propre WhatsApp (0 € Twilio). "" si non renseigné → le client ne voit pas le bouton.
-    const p = (place as { partner_whatsapp?: string; direct_contact?: string } | null) || {};
-    const proWhatsapp = (toE164(String(p.partner_whatsapp || p.direct_contact || "")) || "").replace("+", "");
+    // Artisan (facturation au résultat) → les demandes arrivent sur le WhatsApp de Popey.
+    const p = (place as { partner_whatsapp?: string; direct_contact?: string; type_membre?: string } | null) || {};
+    const isArtisan = String(p.type_membre || "").trim() === "artisan";
+    const adminWhatsapp = (process.env.ADMIN_WHATSAPP || "33768233347").replace(/[^0-9]/g, "");
+    const proWhatsapp = isArtisan
+      ? adminWhatsapp
+      : (toE164(String(p.partner_whatsapp || p.direct_contact || "")) || "").replace("+", "");
     try {
       await supabase
         .from("human_privilege_members")
