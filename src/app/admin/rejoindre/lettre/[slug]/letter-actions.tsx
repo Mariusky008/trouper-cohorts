@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toPng } from "html-to-image";
+import { jsPDF } from "jspdf";
 
 type Props = {
   prenom: string;
@@ -10,17 +11,18 @@ type Props = {
   isArtisan: boolean;
 };
 
-async function downloadNode(elementId: string, fileName: string) {
+async function nodeToPng(elementId: string): Promise<string> {
   const node = document.getElementById(elementId);
-  if (!node) {
-    alert("Carte introuvable à l'écran.");
-    return;
-  }
-  const dataUrl = await toPng(node, {
+  if (!node) throw new Error("Carte introuvable à l'écran.");
+  return toPng(node, {
     cacheBust: true,
     pixelRatio: 2,
     backgroundColor: "#ffffff",
   });
+}
+
+async function downloadNode(elementId: string, fileName: string) {
+  const dataUrl = await nodeToPng(elementId);
   const link = document.createElement("a");
   link.download = fileName;
   link.href = dataUrl;
@@ -33,6 +35,8 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
 
   const slug = qrTargetUrl.split("/").pop() || "carte";
 
+  const [pdfBusy, setPdfBusy] = useState(false);
+
   const handleDownload = async () => {
     setBusy(true);
     try {
@@ -42,6 +46,27 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
       alert("Erreur export image : " + String(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  // PDF généré à partir du rendu PNG (fidèle à l'écran) → évite les décalages
+  // d'impression du navigateur sur le mockup téléphone.
+  const handlePdf = async () => {
+    setPdfBusy(true);
+    try {
+      const rectoPng = await nodeToPng("letter-recto");
+      const versoPng = await nodeToPng("letter-verso");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const w = 210;
+      const h = 297;
+      pdf.addImage(rectoPng, "PNG", 0, 0, w, h);
+      pdf.addPage();
+      pdf.addImage(versoPng, "PNG", 0, 0, w, h);
+      pdf.save(`popey-${slug}.pdf`);
+    } catch (e) {
+      alert("Erreur génération PDF : " + String(e));
+    } finally {
+      setPdfBusy(false);
     }
   };
 
@@ -64,6 +89,9 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
 
   return (
     <>
+      <button onClick={handlePdf} disabled={pdfBusy} className="la-btn">
+        {pdfBusy ? "⏳ PDF…" : "📄 Télécharger PDF"}
+      </button>
       <button onClick={handleDownload} disabled={busy} className="la-btn">
         {busy ? "⏳ Génération…" : "🖼️ Télécharger carte (PNG)"}
       </button>
