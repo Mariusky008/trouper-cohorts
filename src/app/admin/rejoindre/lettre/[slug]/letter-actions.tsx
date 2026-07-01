@@ -51,17 +51,43 @@ export function LetterActions({ prenom, activite, qrTargetUrl, isArtisan }: Prop
 
   // PDF généré à partir du rendu PNG (fidèle à l'écran) → évite les décalages
   // d'impression du navigateur sur le mockup téléphone.
+  const imgSize = (dataUrl: string): Promise<{ w: number; h: number }> =>
+    new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight });
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+
   const handlePdf = async () => {
     setPdfBusy(true);
     try {
-      const rectoPng = await nodeToPng("letter-recto");
-      const versoPng = await nodeToPng("letter-verso");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const w = 210;
-      const h = 297;
-      pdf.addImage(rectoPng, "PNG", 0, 0, w, h);
+      const pageW = 210;
+      const pageH = 297;
+      // Place une image en préservant son ratio, centrée sur la page A4.
+      const place = (dataUrl: string, size: { w: number; h: number }) => {
+        const ratio = size.w / size.h;
+        let w = pageW;
+        let h = w / ratio;
+        if (h > pageH) {
+          h = pageH;
+          w = h * ratio;
+        }
+        const x = (pageW - w) / 2;
+        const y = (pageH - h) / 2;
+        pdf.addImage(dataUrl, "PNG", x, y, w, h);
+      };
+
+      const rectoPng = await nodeToPng("letter-recto");
+      const rectoSize = await imgSize(rectoPng);
+      place(rectoPng, rectoSize);
+
       pdf.addPage();
-      pdf.addImage(versoPng, "PNG", 0, 0, w, h);
+      const versoPng = await nodeToPng("letter-verso");
+      const versoSize = await imgSize(versoPng);
+      place(versoPng, versoSize);
+
       pdf.save(`popey-${slug}.pdf`);
     } catch (e) {
       alert("Erreur génération PDF : " + String(e));
