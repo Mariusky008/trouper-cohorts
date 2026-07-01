@@ -38,7 +38,7 @@ jobs:
           cache: npm
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Validate Required Secrets
         id: validate_secrets
