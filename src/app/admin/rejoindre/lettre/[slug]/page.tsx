@@ -145,6 +145,17 @@ export default async function LettreSlugPage({
             body, html { margin: 0 !important; padding: 0 !important; }
             main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
             .page-sep { page-break-after: always; break-after: page; }
+            /* Aplatir le téléphone à l'impression : les transformations 3D
+               (rotateY/rotateX) sont rasterisées à basse résolution par les
+               navigateurs → mockup flou. Version plate = nette dans le PDF. */
+            .phone { perspective: none !important; }
+            .device {
+              transform: none !important;
+              box-shadow: none !important;
+            }
+            .device::after { display: none !important; }
+            /* Rendu net des images à l'impression */
+            .device .screen img { image-rendering: auto !important; }
           }
           .no-print {
             position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
