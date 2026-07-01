@@ -27,10 +27,21 @@ async function nodeToPng(elementId: string): Promise<string> {
   `;
   document.head.appendChild(flat);
   try {
+    // On épingle explicitement la taille de capture sur la vraie boîte de .page
+    // (210×297mm) : html-to-image calcule parfois mal la hauteur (contenu du recto
+    // → image coupée). width/height + canvas fixés = capture pleine et fiable.
+    const rect = page.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
     return await toPng(page, {
       cacheBust: true,
       pixelRatio: 2,
       backgroundColor: "#ffffff",
+      width: w,
+      height: h,
+      canvasWidth: w * 2,
+      canvasHeight: h * 2,
+      style: { margin: "0", transform: "none", transformOrigin: "top left" },
     });
   } finally {
     flat.remove();
