@@ -117,7 +117,8 @@ export default async function LettreSlugPage({
   }
 
   // Variables recto : prenom + ville
-  const rectoFilled = injectVars(rectoHtml, { prenom, ville });
+  const artisansCommercants = isArtisan ? "artisans" : "commerçants";
+  const rectoFilled = injectVars(rectoHtml, { prenom, ville, artisans_commercants: artisansCommercants });
   // Variables verso : ville, ville_maj, qr_url
   const versoFilled = injectVars(versoHtml, { ville, ville_maj, qr_url: qrDataUri });
 
