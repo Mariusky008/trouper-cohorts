@@ -8,6 +8,7 @@ import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
 import { LetterValidation } from "./letter-validation";
+import { LetterDownload } from "./letter-download";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -122,6 +123,15 @@ export default async function SiteInternetLettrePage({
   // (cf. CAHIER_DES_CHARGES_SITE_INTERNET.md §11).
   const telephone = process.env.SITE_LETTER_PHONE || "06 XX XX XX XX";
 
+  // Photo N&B optionnelle : dépose le résultat de photo_base64.py dans
+  // src/templates/site-letter-photo.html. Absent → monogramme "M" du template.
+  let photoHtml = "";
+  try {
+    photoHtml = readFileSync(join(process.cwd(), "src/templates/site-letter-photo.html"), "utf-8").trim();
+  } catch {
+    photoHtml = "";
+  }
+
   // QR → landing trackée de prise de contact directe (décision D2). Le scan est
   // enregistré, puis la landing propose WhatsApp / appel / rappel.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy";
@@ -167,7 +177,7 @@ export default async function SiteInternetLettrePage({
     concurrent1: str((diag.concurrents as string[] | undefined)?.[0]),
     concurrent2: str((diag.concurrents as string[] | undefined)?.[1]),
     annee_site: anneeSite,
-    photo_html: "", // fallback monogramme "M" dans le template (photo via photo_base64.py plus tard)
+    photo_html: photoHtml, // <img> N&B (photo_base64.py) si le fichier existe, sinon monogramme "M"
     telephone,
     qr_svg: qrSvg,
   };
@@ -252,6 +262,7 @@ export default async function SiteInternetLettrePage({
           </span>
         </span>
         <PrintButton />
+        <LetterDownload slug={slug} />
         <LetterValidation
           slug={slug}
           variant={variant}
@@ -267,7 +278,7 @@ export default async function SiteInternetLettrePage({
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → contact direct</span>
       </div>
 
-      <div dangerouslySetInnerHTML={{ __html: extractBody(filled) }} />
+      <div id="letter-root" dangerouslySetInnerHTML={{ __html: extractBody(filled) }} />
     </>
   );
 }

@@ -57,6 +57,35 @@ async function findPlace(query: string, apiKey: string): Promise<string | null> 
   }
 }
 
+// Concurrents visibles sur la requête "activite ville" (variante A) : on prend
+// les 2 premiers résultats en excluant le commerce lui-même.
+async function findCompetitors(query: string, apiKey: string, excludeName: string): Promise<string[]> {
+  const url = new URL("https://maps.googleapis.com/maps/api/place/textsearch/json");
+  url.searchParams.set("query", query);
+  url.searchParams.set("language", "fr");
+  url.searchParams.set("region", "fr");
+  url.searchParams.set("key", apiKey);
+  try {
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results: Array<{ name?: string }> = Array.isArray(data?.results) ? data.results : [];
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const self = norm(excludeName);
+    const names: string[] = [];
+    for (const r of results) {
+      const name = String(r.name || "").trim();
+      if (!name || norm(name) === self) continue;
+      if (names.some((n) => norm(n) === norm(name))) continue;
+      names.push(name);
+      if (names.length >= 2) break;
+    }
+    return names;
+  } catch {
+    return [];
+  }
+}
+
 async function placeDetails(placeId: string, apiKey: string): Promise<PlaceInfo | null> {
   const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
   url.searchParams.set("place_id", placeId);
@@ -225,11 +254,13 @@ export async function POST(request: Request) {
   const placesKey = String(process.env.GOOGLE_PLACES_API_KEY || "").trim();
   const anthropicKey = String(process.env.ANTHROPIC_API_KEY || "").trim();
 
-  // 1. Google Places
+  // 1. Google Places (fiche du commerce + concurrents sur la requête activité+ville)
   let info: PlaceInfo | null = null;
+  let concurrents: string[] = [];
   if (placesKey) {
     const placeId = await findPlace(`${businessName} ${activite} ${city}`, placesKey);
     if (placeId) info = await placeDetails(placeId, placesKey);
+    concurrents = await findCompetitors(`${activite} ${city}`, placesKey, businessName);
   }
 
   // 2. Site existant + décision variante
@@ -285,6 +316,7 @@ export async function POST(request: Request) {
       places_found: Boolean(info),
       site,
       horaires: info?.horaires ?? [],
+      concurrents,
       polished: Boolean(anthropicKey && !skipped),
       ran_at: new Date().toISOString(),
     },
