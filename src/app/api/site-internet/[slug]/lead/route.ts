@@ -4,8 +4,18 @@
 // via le slug d'une fiche channel='letter', et on n'expose rien en retour.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 
 export const dynamic = "force-dynamic";
+
+// Numéro qui reçoit l'alerte de lead (E.164). Priorité à SITE_LETTER_NOTIFY_WHATSAPP,
+// sinon on dérive de SITE_LETTER_WHATSAPP (digits "33..." -> "+33...").
+function notifyTarget(): string {
+  const explicit = String(process.env.SITE_LETTER_NOTIFY_WHATSAPP || "").trim();
+  if (explicit) return explicit.startsWith("+") ? explicit : `+${explicit.replace(/\D/g, "")}`;
+  const digits = String(process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "");
+  return digits ? `+${digits}` : "";
+}
 
 export async function POST(
   request: Request,
@@ -31,7 +41,7 @@ export async function POST(
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, metadata, contact_lead_at")
+    .select("id, metadata, contact_lead_at, business_name, city")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -52,6 +62,22 @@ export async function POST(
 
   const { error } = await supabase.from("human_vitrine_sites").update(patch).eq("id", String(row.id));
   if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
+
+  // Alerte WhatsApp best-effort : on ne bloque jamais la réponse au prospect.
+  try {
+    const target = notifyTarget();
+    if (target) {
+      const commerce = String(row.business_name || "un commerce");
+      const ville = String(row.city || "");
+      const who = name ? `${name} (${commerce}${ville ? ` · ${ville}` : ""})` : `${commerce}${ville ? ` · ${ville}` : ""}`;
+      const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+      const link = appUrl ? ` — ${appUrl}/admin/humain/site-internet` : "";
+      const text = `🔔 Nouveau contact "Site internet" : ${who} souhaite être rappelé au ${phoneRaw}.${link}`;
+      await sendWhatsAppTextMessage(target, text, { source: "site_internet_lead" });
+    }
+  } catch {
+    // notification best-effort : un échec n'impacte pas l'enregistrement du lead
+  }
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }
