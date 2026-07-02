@@ -15,14 +15,60 @@ export function SiteAddForm() {
   const [address, setAddress] = useState("");
   const [sourceWebsite, setSourceWebsite] = useState("");
   const [variant, setVariant] = useState<"" | "A" | "B">("");
-  const [status, setStatus] = useState<"idle" | "loading">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "diagnosing">("idle");
   const [error, setError] = useState("");
   const [createdSlug, setCreatedSlug] = useState("");
+  const [note, setNote] = useState("");
 
   const canSubmit = useMemo(
     () => Boolean(trim(businessName) && trim(city) && trim(activite) && status === "idle"),
     [businessName, city, activite, status]
   );
+
+  const resetForm = () => {
+    setBusinessName("");
+    setCity("");
+    setActivite("");
+    setAddress("");
+    setSourceWebsite("");
+    setVariant("");
+  };
+
+  const runDiagnose = async () => {
+    if (!canSubmit) return;
+    setStatus("diagnosing");
+    setError("");
+    setNote("");
+    setCreatedSlug("");
+    try {
+      const res = await fetch("/api/admin/humain/site-internet/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: trim(businessName),
+          city: trim(city),
+          activite: trim(activite),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(trim(json?.error) || "Erreur diagnostic.");
+        return;
+      }
+      setCreatedSlug(String(json.slug || ""));
+      setNote(
+        json.skipped
+          ? "Site jugé correct → marqué « ignoré » (rien à vendre). Tu peux quand même ouvrir la lettre pour vérifier."
+          : `Diagnostic OK → variante ${json.variant}. Ouvre la lettre pour relire et valider.`
+      );
+      resetForm();
+      router.refresh();
+    } catch {
+      setError("Erreur réseau.");
+    } finally {
+      setStatus("idle");
+    }
+  };
 
   const onSubmit = async () => {
     if (!canSubmit) return;
@@ -48,12 +94,8 @@ export function SiteAddForm() {
         return;
       }
       setCreatedSlug(String(json.slug || ""));
-      setBusinessName("");
-      setCity("");
-      setActivite("");
-      setAddress("");
-      setSourceWebsite("");
-      setVariant("");
+      setNote("Prospect créé manuellement. Ouvre la lettre pour la personnaliser.");
+      resetForm();
       router.refresh();
     } catch {
       setError("Erreur réseau.");
@@ -121,14 +163,22 @@ export function SiteAddForm() {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={runDiagnose}
+          disabled={!canSubmit}
+          className="rounded-full bg-sky-700 px-5 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {status === "diagnosing" ? "Diagnostic en cours…" : "🔍 Diagnostiquer (auto)"}
+        </button>
         <button
           type="button"
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="rounded-full bg-emerald-700 px-5 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full border border-slate-300 px-5 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {status === "loading" ? "Création…" : "Créer le prospect"}
+          {status === "loading" ? "Création…" : "Créer sans diagnostic"}
         </button>
         {createdSlug ? (
           <a
@@ -142,6 +192,7 @@ export function SiteAddForm() {
         ) : null}
       </div>
 
+      {note ? <div className="mt-3 text-sm font-medium text-sky-800">{note}</div> : null}
       {error ? <div className="mt-3 text-sm font-semibold text-red-700">{error}</div> : null}
     </div>
   );

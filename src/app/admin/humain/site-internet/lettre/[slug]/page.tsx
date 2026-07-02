@@ -7,6 +7,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
+import { LetterValidation } from "./letter-validation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -254,6 +255,17 @@ export default async function SiteInternetLettrePage({
           </span>
         </span>
         <PrintButton />
+        <LetterValidation
+          slug={slug}
+          variant={variant}
+          constats={constats.map((c) => ({
+            statut: str(c.statut) || "bad",
+            label: str(c.label),
+            titre: str(c.titre),
+          }))}
+          synthese={synthese}
+          prix={prix}
+        />
         <a href="/admin/humain/site-internet">← Liste</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → contact direct</span>
       </div>
