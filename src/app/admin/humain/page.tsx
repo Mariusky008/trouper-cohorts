@@ -81,6 +81,7 @@ export default async function AdminHumainPage() {
       title: "Pilotage commercial",
       links: [
         { href: "/admin/humain/vitrines", label: "Vitrines" },
+        { href: "/admin/humain/site-internet", label: "Site internet" },
         { href: "/admin/humain/marketplace", label: "Marketplace" },
         { href: "/admin/humain/marketplace/tour-de-controle", label: "Tour de controle" },
         { href: "/admin/humain/affiliation", label: "Affiliation publique" },

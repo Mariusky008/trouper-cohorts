@@ -47,6 +47,9 @@ export default async function AdminLayout({
             <a href="/admin/humain/vitrines" className="hover:underline">
               Vitrines
             </a>
+            <a href="/admin/humain/site-internet" className="hover:underline font-semibold text-sky-700">
+              🌐 Site internet
+            </a>
             <a href="/admin/humain/marketplace" className="hover:underline">
               Marketplace
             </a>
