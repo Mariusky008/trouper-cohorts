@@ -40,7 +40,9 @@ type PlaceInfo = {
   horaires: Array<{ jours: string; horaires: string }>;
 };
 
-async function findPlace(query: string, apiKey: string): Promise<string | null> {
+// Retourne le place_id + le statut Places (OK / ZERO_RESULTS / REQUEST_DENIED …)
+// pour qu'on puisse distinguer "vraiment introuvable" d'un "échec technique".
+async function findPlace(query: string, apiKey: string): Promise<{ placeId: string | null; status: string }> {
   const url = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
   url.searchParams.set("input", query);
   url.searchParams.set("inputtype", "textquery");
@@ -49,11 +51,11 @@ async function findPlace(query: string, apiKey: string): Promise<string | null> 
   url.searchParams.set("key", apiKey);
   try {
     const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) return null;
+    if (!res.ok) return { placeId: null, status: `HTTP_${res.status}` };
     const data = await res.json();
-    return data?.candidates?.[0]?.place_id ?? null;
+    return { placeId: data?.candidates?.[0]?.place_id ?? null, status: String(data?.status || "UNKNOWN") };
   } catch {
-    return null;
+    return { placeId: null, status: "FETCH_ERROR" };
   }
 }
 
@@ -254,14 +256,35 @@ export async function POST(request: Request) {
   const placesKey = String(process.env.GOOGLE_PLACES_API_KEY || "").trim();
   const anthropicKey = String(process.env.ANTHROPIC_API_KEY || "").trim();
 
-  // 1. Google Places (fiche du commerce + concurrents sur la requête activité+ville)
-  let info: PlaceInfo | null = null;
-  let concurrents: string[] = [];
-  if (placesKey) {
-    const placeId = await findPlace(`${businessName} ${activite} ${city}`, placesKey);
-    if (placeId) info = await placeDetails(placeId, placesKey);
-    concurrents = await findCompetitors(`${activite} ${city}`, placesKey, businessName);
+  // Sans clé Places on ne peut PAS affirmer "introuvable" : on refuse plutôt que
+  // de sortir une lettre variante A potentiellement fausse (crédibilité).
+  if (!placesKey) {
+    return NextResponse.json(
+      {
+        error:
+          "GOOGLE_PLACES_API_KEY manquant : diagnostic impossible. Ajoute la clé sur Vercel, ou crée le prospect sans diagnostic et choisis la variante à la main.",
+        placesStatus: "NO_KEY",
+      },
+      { status: 409 }
+    );
   }
+
+  // 1. Google Places : fiche du commerce (nom + ville) + concurrents (activité + ville)
+  const found = await findPlace(`${businessName} ${city}`, placesKey);
+  const fatal = found.status.startsWith("HTTP_") || ["REQUEST_DENIED", "OVER_QUERY_LIMIT", "INVALID_REQUEST", "FETCH_ERROR"].includes(found.status);
+  if (fatal) {
+    return NextResponse.json(
+      {
+        error:
+          `Google Places a refusé la requête (${found.status}). Vérifie que GOOGLE_PLACES_API_KEY a bien l'API « Places API » (Find Place / Text Search) activée et n'est pas restreinte à d'autres usages.`,
+        placesStatus: found.status,
+      },
+      { status: 409 }
+    );
+  }
+  const info: PlaceInfo | null = found.placeId ? await placeDetails(found.placeId, placesKey) : null;
+  const concurrents = await findCompetitors(`${activite} ${city}`, placesKey, businessName);
+  const placeNotFound = !found.placeId; // status OK mais aucun candidat (ZERO_RESULTS)
 
   // 2. Site existant + décision variante
   const website = info?.website || "";
@@ -269,6 +292,8 @@ export async function POST(request: Request) {
   let variant: "A" | "B";
   let skipped = false;
   if (!website) {
+    // Pas de site déclaré sur la fiche Google → variante A (à confirmer à l'écran
+    // de validation, surtout si le commerce n'a même pas été trouvé).
     variant = "A";
   } else {
     site = await analyzeSite(website);
@@ -314,6 +339,8 @@ export async function POST(request: Request) {
     site_annee: site?.year ?? null,
     diagnostic: {
       places_found: Boolean(info),
+      places_status: found.status,
+      place_not_found: placeNotFound,
       site,
       horaires: info?.horaires ?? [],
       concurrents,
@@ -325,11 +352,16 @@ export async function POST(request: Request) {
     letter_status: skipped ? "skipped" : "draft",
   };
 
+  // Avertissement remonté à l'admin (le commerce n'a pas été trouvé sur Google).
+  const warning = placeNotFound
+    ? `Commerce non trouvé sur Google (${found.status}) — variante A « introuvable » proposée, mais vérifie le nom exact avant d'imprimer.`
+    : "";
+
   if (id) {
     const { error } = await supabase.from("human_vitrine_sites").update(row).eq("id", id).eq("channel", "letter");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const { data } = await supabase.from("human_vitrine_sites").select("slug").eq("id", id).maybeSingle();
-    return NextResponse.json({ slug: data?.slug ?? "", variant, skipped }, { status: 200 });
+    return NextResponse.json({ slug: data?.slug ?? "", variant, skipped, placesStatus: found.status, placeNotFound, warning }, { status: 200 });
   }
 
   const baseSlug = slugify(businessName).slice(0, 60) || "prospect";
@@ -337,5 +369,5 @@ export async function POST(request: Request) {
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
   const { error } = await supabase.from("human_vitrine_sites").insert({ slug, ...row, metadata: { diagnosed: true } });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ slug, variant, skipped }, { status: 201 });
+  return NextResponse.json({ slug, variant, skipped, placesStatus: found.status, placeNotFound, warning }, { status: 201 });
 }

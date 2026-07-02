@@ -56,10 +56,13 @@ export function SiteAddForm() {
         return;
       }
       setCreatedSlug(String(json.slug || ""));
+      const warning = trim(json.warning);
       setNote(
-        json.skipped
-          ? "Site jugé correct → marqué « ignoré » (rien à vendre). Tu peux quand même ouvrir la lettre pour vérifier."
-          : `Diagnostic OK → variante ${json.variant}. Ouvre la lettre pour relire et valider.`
+        warning
+          ? `⚠️ ${warning}`
+          : json.skipped
+            ? "Site jugé correct → marqué « ignoré » (rien à vendre). Tu peux quand même ouvrir la lettre pour vérifier."
+            : `Diagnostic OK → variante ${json.variant}. Ouvre la lettre pour relire et valider.`
       );
       resetForm();
       router.refresh();
