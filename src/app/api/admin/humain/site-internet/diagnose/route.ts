@@ -249,6 +249,8 @@ export async function POST(request: Request) {
   const businessName = String(payload?.businessName || "").trim();
   const city = String(payload?.city || "").trim();
   const activite = String(payload?.activite || "").trim();
+  const forceVariantRaw = String(payload?.variant || "").trim().toUpperCase();
+  const forceVariant: "A" | "B" | null = forceVariantRaw === "A" || forceVariantRaw === "B" ? forceVariantRaw : null;
   if (!businessName || !city || !activite) {
     return NextResponse.json({ error: "Nom, ville et activité sont requis." }, { status: 400 });
   }
@@ -272,19 +274,21 @@ export async function POST(request: Request) {
   // 1. Google Places : fiche du commerce (nom + ville) + concurrents (activité + ville)
   const found = await findPlace(`${businessName} ${city}`, placesKey);
   const fatal = found.status.startsWith("HTTP_") || ["REQUEST_DENIED", "OVER_QUERY_LIMIT", "INVALID_REQUEST", "FETCH_ERROR"].includes(found.status);
-  if (fatal) {
+  // Places KO : on bloque seulement si l'utilisateur n'a PAS forcé la variante.
+  // S'il a choisi A ou B, on le laisse produire la lettre (constats à ajuster).
+  if (fatal && !forceVariant) {
     return NextResponse.json(
       {
         error:
-          `Google Places a refusé la requête (${found.status}). Vérifie que GOOGLE_PLACES_API_KEY a bien l'API « Places API » (Find Place / Text Search) activée et n'est pas restreinte à d'autres usages.`,
+          `Google Places a refusé la requête (${found.status}). Vérifie que GOOGLE_PLACES_API_KEY a bien l'API « Places API » (Find Place / Text Search) activée et n'est pas restreinte à d'autres usages. Astuce : tu peux forcer la variante A/B pour générer quand même la lettre.`,
         placesStatus: found.status,
       },
       { status: 409 }
     );
   }
-  const info: PlaceInfo | null = found.placeId ? await placeDetails(found.placeId, placesKey) : null;
-  const concurrents = await findCompetitors(`${activite} ${city}`, placesKey, businessName);
-  const placeNotFound = !found.placeId; // status OK mais aucun candidat (ZERO_RESULTS)
+  const info: PlaceInfo | null = fatal ? null : found.placeId ? await placeDetails(found.placeId, placesKey) : null;
+  const concurrents = fatal ? [] : await findCompetitors(`${activite} ${city}`, placesKey, businessName);
+  const placeNotFound = !fatal && !found.placeId; // status OK mais aucun candidat (ZERO_RESULTS)
 
   // 2. Site existant + décision variante
   const website = info?.website || "";
@@ -310,6 +314,13 @@ export async function POST(request: Request) {
       variant = "B";
       skipped = true;
     }
+  }
+
+  // Override manuel : si l'admin a explicitement choisi A ou B, il prime sur la
+  // décision automatique (et on ne "skip" pas).
+  if (forceVariant) {
+    variant = forceVariant;
+    skipped = false;
   }
 
   // 3. Constats + synthèse
@@ -352,10 +363,12 @@ export async function POST(request: Request) {
     letter_status: skipped ? "skipped" : "draft",
   };
 
-  // Avertissement remonté à l'admin (le commerce n'a pas été trouvé sur Google).
-  const warning = placeNotFound
-    ? `Commerce non trouvé sur Google (${found.status}) — variante A « introuvable » proposée, mais vérifie le nom exact avant d'imprimer.`
-    : "";
+  // Avertissement remonté à l'admin.
+  const warning = fatal
+    ? `Google Places indisponible (${found.status}) : lettre en variante ${variant} (forcée), sans données Google. Vérifie la clé/API, et ajuste les constats à l'écran de validation.`
+    : placeNotFound
+      ? `Commerce non trouvé sur Google (${found.status}) — vérifie le nom exact avant d'imprimer.`
+      : "";
 
   if (id) {
     const { error } = await supabase.from("human_vitrine_sites").update(row).eq("id", id).eq("channel", "letter");

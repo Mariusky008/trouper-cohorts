@@ -48,6 +48,7 @@ export function SiteAddForm() {
           businessName: trim(businessName),
           city: trim(city),
           activite: trim(activite),
+          variant, // si tu choisis A ou B, on force la variante ; sinon le diagnostic décide
         }),
       });
       const json = await res.json().catch(() => ({}));
