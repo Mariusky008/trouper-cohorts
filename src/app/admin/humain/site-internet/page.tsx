@@ -135,7 +135,10 @@ export default async function AdminSiteInternetPage() {
                       <td className="px-4 py-3 text-xs">
                         {STATUS_LABEL[normalize(r.letter_status)] ?? r.letter_status}
                         {fmtDate(r.letter_delivered_at) && (
-                          <div className="text-[11px] text-slate-400">{fmtDate(r.letter_delivered_at)}</div>
+                          <div className="text-[11px] text-slate-400">Remise {fmtDate(r.letter_delivered_at)}</div>
+                        )}
+                        {r.contact_scanned_at && (
+                          <div className="text-[11px] font-semibold text-sky-600">👁 QR scanné</div>
                         )}
                       </td>
                       <td className="px-4 py-3">

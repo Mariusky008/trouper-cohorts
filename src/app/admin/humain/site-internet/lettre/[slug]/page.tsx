@@ -121,14 +121,11 @@ export default async function SiteInternetLettrePage({
   // Numéro / expéditeur : à définir en variables d'env avant la 1re impression
   // (cf. CAHIER_DES_CHARGES_SITE_INTERNET.md §11).
   const telephone = process.env.SITE_LETTER_PHONE || "06 XX XX XX XX";
-  const whatsappDigits = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "");
 
-  // QR → prise de contact directe (décision D2). WhatsApp si numéro configuré,
-  // sinon fallback sur l'URL de l'app. La landing trackée remplacera ceci.
+  // QR → landing trackée de prise de contact directe (décision D2). Le scan est
+  // enregistré, puis la landing propose WhatsApp / appel / rappel.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy";
-  const contactUrl = whatsappDigits
-    ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`Bonjour, je vous contacte au sujet de mon site (${nom}).`)}`
-    : `${appUrl}/site-internet/${slug}`;
+  const contactUrl = `${appUrl}/site-internet/${slug}`;
   const qrSvg = await buildQrSvg(contactUrl);
 
   const now = new Date();
