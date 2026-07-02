@@ -1,19 +1,20 @@
 // Diagnostic full-auto d'un prospect "Site internet" (cf. cahier des charges §7).
-// Chaîne : Google Places (fiche, note, avis, site, horaires) -> analyse du site
-// existant (HTTPS, viewport mobile, année copyright) -> décision variante
-// A (pas de site) / B (refonte) / SKIP (site correct) -> constats rule-based
-// -> (optionnel) reformulation Claude Haiku -> upsert human_vitrine_sites.
+// Chaîne : Apify (acteur Google Maps -> fiche, note, avis, site, horaires,
+// concurrents) -> analyse du site existant (HTTPS, viewport mobile, année
+// copyright) -> décision variante A (pas de site) / B (refonte) / SKIP (site
+// correct) -> constats rule-based -> (optionnel) reformulation Claude Haiku
+// -> upsert human_vitrine_sites.
 //
-// Dégradation propre : sans GOOGLE_PLACES_API_KEY on saute Places, sans
-// ANTHROPIC_API_KEY on garde les constats rule-based. La machine propose,
-// l'admin valide (écran de validation) avant impression.
+// Source de données : Apify (APIFY_TOKEN, déjà utilisé par les Vitrines) — pas
+// de compte Google Cloud / facturation nécessaire. Sans ANTHROPIC_API_KEY on
+// garde les constats rule-based. La machine propose, l'admin valide.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { slugify } from "@/lib/popey-marketplace";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type Constat = { statut: "bad" | "mid" | "good"; label: string; titre: string };
 
@@ -30,7 +31,7 @@ async function requireAdminUser() {
   return { ok: true as const };
 }
 
-// ── Google Places ────────────────────────────────────────────────────────────
+// ── Source de données : Apify (Google Maps, sans facturation Google) ─────────
 type PlaceInfo = {
   place_id: string;
   rating: number | null;
@@ -40,84 +41,81 @@ type PlaceInfo = {
   horaires: Array<{ jours: string; horaires: string }>;
 };
 
-// Retourne le place_id + le statut Places (OK / ZERO_RESULTS / REQUEST_DENIED …)
-// pour qu'on puisse distinguer "vraiment introuvable" d'un "échec technique".
-async function findPlace(query: string, apiKey: string): Promise<{ placeId: string | null; status: string }> {
-  const url = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
-  url.searchParams.set("input", query);
-  url.searchParams.set("inputtype", "textquery");
-  url.searchParams.set("fields", "place_id");
-  url.searchParams.set("language", "fr");
-  url.searchParams.set("key", apiKey);
-  try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) return { placeId: null, status: `HTTP_${res.status}` };
-    const data = await res.json();
-    return { placeId: data?.candidates?.[0]?.place_id ?? null, status: String(data?.status || "UNKNOWN") };
-  } catch {
-    return { placeId: null, status: "FETCH_ERROR" };
-  }
-}
+const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+const matchesBusiness = (title: string, self: string) => {
+  const t = norm(title);
+  return Boolean(t) && (t.includes(self) || self.includes(t));
+};
 
-// Concurrents visibles sur la requête "activite ville" (variante A) : on prend
-// les 2 premiers résultats en excluant le commerce lui-même.
-async function findCompetitors(query: string, apiKey: string, excludeName: string): Promise<string[]> {
-  const url = new URL("https://maps.googleapis.com/maps/api/place/textsearch/json");
-  url.searchParams.set("query", query);
-  url.searchParams.set("language", "fr");
-  url.searchParams.set("region", "fr");
-  url.searchParams.set("key", apiKey);
+// Lance l'acteur Apify "compass~crawler-google-places" en synchrone et renvoie
+// les fiches Google Maps (title, website, totalScore, reviewsCount, address, openingHours).
+async function apifyRun(token: string, searchStrings: string[], locationQuery: string, limit: number): Promise<Record<string, unknown>[]> {
   try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
+    const res = await fetch(
+      `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=120`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          searchStringsArray: searchStrings,
+          locationQuery,
+          maxCrawledPlacesPerSearch: limit,
+          language: "fr",
+          countryCode: "fr",
+        }),
+      }
+    );
     if (!res.ok) return [];
-    const data = await res.json();
-    const results: Array<{ name?: string }> = Array.isArray(data?.results) ? data.results : [];
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-    const self = norm(excludeName);
-    const names: string[] = [];
-    for (const r of results) {
-      const name = String(r.name || "").trim();
-      if (!name || norm(name) === self) continue;
-      if (names.some((n) => norm(n) === norm(name))) continue;
-      names.push(name);
-      if (names.length >= 2) break;
-    }
-    return names;
+    const data = await res.json().catch(() => []);
+    return Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
   } catch {
     return [];
   }
 }
 
-async function placeDetails(placeId: string, apiKey: string): Promise<PlaceInfo | null> {
-  const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
-  url.searchParams.set("place_id", placeId);
-  url.searchParams.set("fields", "rating,user_ratings_total,website,formatted_address,opening_hours");
-  url.searchParams.set("language", "fr");
-  url.searchParams.set("key", apiKey);
-  try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.status !== "OK" || !data.result) return null;
-    const r = data.result;
-    const weekday: string[] = r.opening_hours?.weekday_text ?? [];
-    const horaires = weekday.slice(0, 2).map((line: string) => {
-      const idx = line.indexOf(":");
-      return idx > 0
-        ? { jours: line.slice(0, idx).trim(), horaires: line.slice(idx + 1).trim() }
-        : { jours: line.trim(), horaires: "" };
-    });
-    return {
-      place_id: placeId,
-      rating: typeof r.rating === "number" ? r.rating : null,
-      reviews: typeof r.user_ratings_total === "number" ? r.user_ratings_total : null,
-      website: String(r.website || "").trim(),
-      address: String(r.formatted_address || "").trim(),
-      horaires,
-    };
-  } catch {
-    return null;
+function itemToInfo(item: Record<string, unknown>): PlaceInfo {
+  const oh = Array.isArray(item.openingHours) ? (item.openingHours as Array<Record<string, unknown>>) : [];
+  const horaires = oh.slice(0, 2).map((h) => ({
+    jours: String(h.day || "").trim(),
+    horaires: String(h.hours || "").trim(),
+  }));
+  return {
+    place_id: String(item.placeId || ""),
+    rating: typeof item.totalScore === "number" ? item.totalScore : null,
+    reviews: typeof item.reviewsCount === "number" ? item.reviewsCount : null,
+    website: String(item.website || "").trim(),
+    address: String(item.address || "").trim(),
+    horaires,
+  };
+}
+
+// Cherche l'activité dans la ville (récupère le commerce + ses concurrents),
+// avec un repli ciblé sur le nom si le commerce n'apparaît pas.
+async function apifyLookup(
+  token: string,
+  businessName: string,
+  city: string,
+  activite: string
+): Promise<{ info: PlaceInfo | null; concurrents: string[]; status: "OK" | "NOT_FOUND" | "EMPTY" }> {
+  const loc = `${city}, france`;
+  const self = norm(businessName);
+  const items = await apifyRun(token, [activite], loc, 12);
+  let biz = items.find((it) => matchesBusiness(String(it.title || ""), self)) || null;
+
+  if (!biz) {
+    const byName = await apifyRun(token, [`${businessName} ${city}`], loc, 5);
+    biz = byName.find((it) => matchesBusiness(String(it.title || ""), self)) || byName[0] || null;
   }
+
+  const bizName = biz ? norm(String(biz.title || "")) : "";
+  const concurrents = items
+    .map((it) => String(it.title || "").trim())
+    .filter((t) => t && norm(t) !== self && norm(t) !== bizName)
+    .filter((t, i, arr) => arr.indexOf(t) === i)
+    .slice(0, 2);
+
+  if (!biz) return { info: null, concurrents, status: items.length ? "NOT_FOUND" : "EMPTY" };
+  return { info: itemToInfo(biz), concurrents, status: "OK" };
 }
 
 // ── Analyse du site existant ─────────────────────────────────────────────────
@@ -255,40 +253,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nom, ville et activité sont requis." }, { status: 400 });
   }
 
-  const placesKey = String(process.env.GOOGLE_PLACES_API_KEY || "").trim();
+  const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
   const anthropicKey = String(process.env.ANTHROPIC_API_KEY || "").trim();
 
-  // Sans clé Places on ne peut PAS affirmer "introuvable" : on refuse plutôt que
-  // de sortir une lettre variante A potentiellement fausse (crédibilité).
-  if (!placesKey) {
+  // Sans source de données on ne peut PAS affirmer "introuvable" : on refuse
+  // plutôt que de sortir une variante A potentiellement fausse (crédibilité),
+  // sauf si l'admin a explicitement forcé la variante.
+  if (!apifyToken && !forceVariant) {
     return NextResponse.json(
       {
         error:
-          "GOOGLE_PLACES_API_KEY manquant : diagnostic impossible. Ajoute la clé sur Vercel, ou crée le prospect sans diagnostic et choisis la variante à la main.",
-        placesStatus: "NO_KEY",
+          "APIFY_TOKEN manquant : diagnostic auto impossible. Ajoute la clé Apify (déjà utilisée par les Vitrines) sur Vercel, ou force la variante A/B à la main.",
+        placesStatus: "NO_SOURCE",
       },
       { status: 409 }
     );
   }
 
-  // 1. Google Places : fiche du commerce (nom + ville) + concurrents (activité + ville)
-  const found = await findPlace(`${businessName} ${city}`, placesKey);
-  const fatal = found.status.startsWith("HTTP_") || ["REQUEST_DENIED", "OVER_QUERY_LIMIT", "INVALID_REQUEST", "FETCH_ERROR"].includes(found.status);
-  // Places KO : on bloque seulement si l'utilisateur n'a PAS forcé la variante.
-  // S'il a choisi A ou B, on le laisse produire la lettre (constats à ajuster).
-  if (fatal && !forceVariant) {
+  // 1. Apify (Google Maps) : fiche du commerce + concurrents
+  let info: PlaceInfo | null = null;
+  let concurrents: string[] = [];
+  let sourceStatus: "OK" | "NOT_FOUND" | "EMPTY" | "NO_SOURCE" = "NO_SOURCE";
+  if (apifyToken) {
+    const r = await apifyLookup(apifyToken, businessName, city, activite);
+    info = r.info;
+    concurrents = r.concurrents;
+    sourceStatus = r.status;
+  }
+  // "EMPTY" = Apify n'a rien renvoyé (souci token/quota). Sans variante forcée
+  // et sans résultat exploitable, on bloque proprement.
+  if (sourceStatus === "EMPTY" && !forceVariant) {
     return NextResponse.json(
       {
         error:
-          `Google Places a refusé la requête (${found.status}). Vérifie que GOOGLE_PLACES_API_KEY a bien l'API « Places API » (Find Place / Text Search) activée et n'est pas restreinte à d'autres usages. Astuce : tu peux forcer la variante A/B pour générer quand même la lettre.`,
-        placesStatus: found.status,
+          "Apify n'a renvoyé aucun résultat (token invalide, quota épuisé, ou aucune fiche). Vérifie APIFY_TOKEN, ou force la variante A/B pour générer quand même la lettre.",
+        placesStatus: "EMPTY",
       },
       { status: 409 }
     );
   }
-  const info: PlaceInfo | null = fatal ? null : found.placeId ? await placeDetails(found.placeId, placesKey) : null;
-  const concurrents = fatal ? [] : await findCompetitors(`${activite} ${city}`, placesKey, businessName);
-  const placeNotFound = !fatal && !found.placeId; // status OK mais aucun candidat (ZERO_RESULTS)
+  const placeNotFound = sourceStatus === "NOT_FOUND" || sourceStatus === "EMPTY";
 
   // 2. Site existant + décision variante
   const website = info?.website || "";
@@ -296,7 +300,7 @@ export async function POST(request: Request) {
   let variant: "A" | "B";
   let skipped = false;
   if (!website) {
-    // Pas de site déclaré sur la fiche Google → variante A (à confirmer à l'écran
+    // Pas de site sur la fiche Google Maps → variante A (à confirmer à l'écran
     // de validation, surtout si le commerce n'a même pas été trouvé).
     variant = "A";
   } else {
@@ -349,8 +353,9 @@ export async function POST(request: Request) {
     google_place_id: info?.place_id || null,
     site_annee: site?.year ?? null,
     diagnostic: {
+      source: "apify",
       places_found: Boolean(info),
-      places_status: found.status,
+      source_status: sourceStatus,
       place_not_found: placeNotFound,
       site,
       horaires: info?.horaires ?? [],
@@ -364,17 +369,18 @@ export async function POST(request: Request) {
   };
 
   // Avertissement remonté à l'admin.
-  const warning = fatal
-    ? `Google Places indisponible (${found.status}) : lettre en variante ${variant} (forcée), sans données Google. Vérifie la clé/API, et ajuste les constats à l'écran de validation.`
-    : placeNotFound
-      ? `Commerce non trouvé sur Google (${found.status}) — vérifie le nom exact avant d'imprimer.`
-      : "";
+  const warning =
+    sourceStatus === "EMPTY"
+      ? `Apify n'a rien renvoyé : lettre en variante ${variant} (forcée), sans données Google. Vérifie APIFY_TOKEN, et ajuste les constats à l'écran de validation.`
+      : placeNotFound
+        ? `Commerce non trouvé sur Google Maps — variante A proposée, mais vérifie le nom exact avant d'imprimer.`
+        : "";
 
   if (id) {
     const { error } = await supabase.from("human_vitrine_sites").update(row).eq("id", id).eq("channel", "letter");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const { data } = await supabase.from("human_vitrine_sites").select("slug").eq("id", id).maybeSingle();
-    return NextResponse.json({ slug: data?.slug ?? "", variant, skipped, placesStatus: found.status, placeNotFound, warning }, { status: 200 });
+    return NextResponse.json({ slug: data?.slug ?? "", variant, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 200 });
   }
 
   const baseSlug = slugify(businessName).slice(0, 60) || "prospect";
@@ -382,5 +388,5 @@ export async function POST(request: Request) {
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
   const { error } = await supabase.from("human_vitrine_sites").insert({ slug, ...row, metadata: { diagnosed: true } });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ slug, variant, skipped, placesStatus: found.status, placeNotFound, warning }, { status: 201 });
+  return NextResponse.json({ slug, variant, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 201 });
 }
