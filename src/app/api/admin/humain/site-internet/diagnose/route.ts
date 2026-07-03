@@ -77,11 +77,11 @@ async function apifyLookup(
 ): Promise<{ info: PlaceInfo | null; concurrents: Concurrent[]; status: "OK" | "NOT_FOUND" | "EMPTY" }> {
   const loc = `${city}, france`;
   const self = norm(businessName);
-  const items = await apifyGoogleMaps(token, [activite], loc, 12);
+  const items = (await apifyGoogleMaps(token, [activite], loc, 12)).items;
   let biz = items.find((it) => matchesBusiness(String(it.title || ""), self)) || null;
 
   if (!biz) {
-    const byName = await apifyGoogleMaps(token, [`${businessName} ${city}`], loc, 5);
+    const byName = (await apifyGoogleMaps(token, [`${businessName} ${city}`], loc, 5)).items;
     biz = byName.find((it) => matchesBusiness(String(it.title || ""), self)) || byName[0] || null;
   }
 

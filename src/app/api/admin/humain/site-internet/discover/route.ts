@@ -61,10 +61,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "APIFY_TOKEN manquant sur Vercel." }, { status: 409 });
   }
 
-  const items = await apifyGoogleMaps(apifyToken, [activite], `${ville}, france`, 40);
-  if (items.length === 0) {
-    return NextResponse.json({ error: "Apify n'a renvoyé aucun résultat (token/quota ?).", candidates: [] }, { status: 200 });
+  const res = await apifyGoogleMaps(apifyToken, [activite], `${ville}, france`, 20);
+  if (!res.ok) {
+    const hint =
+      res.status === 401 || res.status === 403
+        ? "Token Apify invalide ou sans accès à l'acteur."
+        : res.status === 402 || res.status === 429
+          ? "Quota/crédits Apify épuisés (ou trop d'appels) — vérifie ton compte Apify."
+          : "Apify a échoué (peut-être un délai dépassé) — réessaie dans un instant.";
+    return NextResponse.json({ error: `Apify : ${hint} [${res.error}]`, candidates: [] }, { status: 200 });
   }
+  if (res.items.length === 0) {
+    return NextResponse.json({ error: "Aucun commerce trouvé pour ce secteur/ville. Essaie un terme plus large (ex. « coiffeur »).", candidates: [] }, { status: 200 });
+  }
+  const items = res.items;
 
   const seen = new Set<string>();
   let candidates: Candidate[] = [];
