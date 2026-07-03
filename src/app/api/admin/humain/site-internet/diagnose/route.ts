@@ -280,13 +280,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nom, ville et activité sont requis." }, { status: 400 });
   }
 
+  // Données pré-récupérées (mode Découverte : on a déjà scanné le secteur, on
+  // évite un 2e appel Apify). { website, rating, reviews, address, concurrents }
+  const pf = payload?.prefetched && typeof payload.prefetched === "object" ? (payload.prefetched as Record<string, unknown>) : null;
+  const numOrNull = (x: unknown) => {
+    const n = Number(x);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
   const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
   const anthropicKey = String(process.env.ANTHROPIC_API_KEY || "").trim();
 
   // Sans source de données on ne peut PAS affirmer "introuvable" : on refuse
   // plutôt que de sortir une variante A potentiellement fausse (crédibilité),
-  // sauf si l'admin a explicitement forcé la variante.
-  if (!apifyToken && !forceVariant) {
+  // sauf si l'admin a explicitement forcé la variante ou fourni des données.
+  if (!pf && !apifyToken && !forceVariant) {
     return NextResponse.json(
       {
         error:
@@ -297,11 +305,27 @@ export async function POST(request: Request) {
     );
   }
 
-  // 1. Apify (Google Maps) : fiche du commerce + concurrents
+  // 1. Fiche du commerce + concurrents : depuis les données pré-récupérées si
+  // fournies (Découverte), sinon via Apify (bouton Diagnostiquer d'un commerce).
   let info: PlaceInfo | null = null;
   let concurrents: Concurrent[] = [];
   let sourceStatus: "OK" | "NOT_FOUND" | "EMPTY" | "NO_SOURCE" = "NO_SOURCE";
-  if (apifyToken) {
+  if (pf) {
+    info = {
+      place_id: String(pf.placeId || ""),
+      rating: numOrNull(pf.rating),
+      reviews: numOrNull(pf.reviews),
+      website: String(pf.website || "").trim(),
+      address: String(pf.address || "").trim(),
+      horaires: [],
+    };
+    const pfc = Array.isArray(pf.concurrents) ? (pf.concurrents as Array<Record<string, unknown>>) : [];
+    concurrents = pfc
+      .map((c) => ({ name: String(c?.name || "").trim(), note: String(c?.note || "").trim() }))
+      .filter((c) => c.name)
+      .slice(0, 2);
+    sourceStatus = "OK";
+  } else if (apifyToken) {
     const r = await apifyLookup(apifyToken, businessName, city, activite);
     info = r.info;
     concurrents = r.concurrents;

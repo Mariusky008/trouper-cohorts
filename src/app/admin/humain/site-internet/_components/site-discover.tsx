@@ -11,6 +11,7 @@ type Candidate = {
   website: string;
   hasSite: boolean;
   variant: "A" | "B";
+  competitors: Array<{ name: string; note: string }>;
 };
 
 function trim(v: string) {
@@ -72,20 +73,25 @@ export function SiteDiscover() {
     setError("");
     setNote("");
     let ok = 0;
+    // On lance le diagnostic complet (analyse du site + constats + note) en
+    // réutilisant les données déjà scannées (pas de nouvel appel Apify).
     for (const c of chosen) {
       try {
-        const res = await fetch("/api/admin/humain/site-internet/create", {
+        const res = await fetch("/api/admin/humain/site-internet/diagnose", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             businessName: c.name,
             city: trim(ville),
             activite: trim(activite),
-            address: c.address,
-            sourceWebsite: c.website,
             variant: c.variant,
-            googleRating: c.rating,
-            googleReviews: c.reviews,
+            prefetched: {
+              website: c.website,
+              rating: c.rating,
+              reviews: c.reviews,
+              address: c.address,
+              concurrents: c.competitors,
+            },
           }),
         });
         if (res.ok) ok++;
@@ -94,7 +100,7 @@ export function SiteDiscover() {
       }
     }
     setStatus("idle");
-    setNote(`${ok} prospect${ok > 1 ? "s" : ""} créé${ok > 1 ? "s" : ""}. Retrouve-les dans la liste ci-dessous pour ouvrir la lettre.`);
+    setNote(`${ok} prospect${ok > 1 ? "s" : ""} diagnostiqué${ok > 1 ? "s" : ""} et créé${ok > 1 ? "s" : ""}. Retrouve-les dans la liste ci-dessous pour ouvrir la lettre.`);
     setCandidates([]);
     setSelected({});
     router.refresh();

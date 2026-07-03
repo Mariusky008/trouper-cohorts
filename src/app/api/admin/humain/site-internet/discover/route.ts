@@ -31,7 +31,10 @@ type Candidate = {
   website: string;
   hasSite: boolean;
   variant: "A" | "B";
+  competitors: Array<{ name: string; note: string }>;
 };
+
+const fmtNote = (n: number | null) => (n != null ? `${n.toFixed(1).replace(".", ",")}★` : "");
 
 export async function POST(request: Request) {
   const auth = await requireAdminUser();
@@ -89,7 +92,20 @@ export async function POST(request: Request) {
       website,
       hasSite,
       variant: hasSite ? "B" : "A",
+      competitors: [],
     });
+  }
+
+  // Concurrents = les commerces du même secteur qui ONT un site, les mieux
+  // notés d'abord. On les attache à chaque cible (sert la variante A).
+  const withSite = candidates
+    .filter((c) => c.hasSite)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  for (const c of candidates) {
+    c.competitors = withSite
+      .filter((o) => o.name.toLowerCase() !== c.name.toLowerCase())
+      .slice(0, 2)
+      .map((o) => ({ name: o.name, note: fmtNote(o.rating) }));
   }
 
   // Priorité : d'abord ceux sans site (cibles les plus évidentes), puis les
