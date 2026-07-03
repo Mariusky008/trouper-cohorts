@@ -17,7 +17,10 @@ import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-type Constat = { statut: "bad" | "mid" | "good"; label: string; titre: string };
+type Constat = { statut: "bad" | "mid" | "good"; label: string; titre: string; preuve: string };
+type Concurrent = { name: string; note: string };
+
+const fmtNote = (n: number) => `${n.toFixed(1).replace(".", ",")}★`;
 
 async function requireAdminUser() {
   const userId = await getServerUserIdWithProxyFallback();
@@ -71,7 +74,7 @@ async function apifyLookup(
   businessName: string,
   city: string,
   activite: string
-): Promise<{ info: PlaceInfo | null; concurrents: string[]; status: "OK" | "NOT_FOUND" | "EMPTY" }> {
+): Promise<{ info: PlaceInfo | null; concurrents: Concurrent[]; status: "OK" | "NOT_FOUND" | "EMPTY" }> {
   const loc = `${city}, france`;
   const self = norm(businessName);
   const items = await apifyGoogleMaps(token, [activite], loc, 12);
@@ -83,11 +86,22 @@ async function apifyLookup(
   }
 
   const bizName = biz ? norm(String(biz.title || "")) : "";
-  const concurrents = items
-    .map((it) => String(it.title || "").trim())
-    .filter((t) => t && norm(t) !== self && norm(t) !== bizName)
-    .filter((t, i, arr) => arr.indexOf(t) === i)
-    .slice(0, 2);
+  const cand = items
+    .filter((it) => {
+      const t = norm(String(it.title || ""));
+      return t && t !== self && t !== bizName;
+    })
+    .map((it) => ({
+      name: String(it.title || "").trim(),
+      note: typeof it.totalScore === "number" ? fmtNote(it.totalScore as number) : "",
+      hasSite: Boolean(String(it.website || "").trim()),
+    }))
+    .filter((c, i, arr) => arr.findIndex((x) => norm(x.name) === norm(c.name)) === i);
+  // On privilégie les concurrents qui ONT un site (c'est l'argument de la variante A).
+  const withSite = cand.filter((c) => c.hasSite);
+  const concurrents: Concurrent[] = (withSite.length >= 2 ? withSite : cand)
+    .slice(0, 2)
+    .map(({ name, note }) => ({ name, note }));
 
   if (!biz) return { info: null, concurrents, status: items.length ? "NOT_FOUND" : "EMPTY" };
   return { info: itemToInfo(biz), concurrents, status: "OK" };
@@ -132,37 +146,69 @@ async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
   return result;
 }
 
-// ── Constats rule-based ──────────────────────────────────────────────────────
+// ── Constats rule-based (avec PREUVE : d'où vient l'info) ────────────────────
 function reputationConstat(info: PlaceInfo | null): Constat {
   if (info?.rating != null && info.reviews != null && info.reviews > 0) {
-    return { statut: "good", label: "Votre réputation", titre: `Déjà ${info.rating.toFixed(1)}/5 sur Google (${info.reviews} avis)` };
+    const note = info.rating.toFixed(1).replace(".", ",");
+    return {
+      statut: "good",
+      label: "Réputation",
+      titre: `${note}/5 sur ${info.reviews} avis : une réputation en or`,
+      preuve: "Source : votre fiche Google. Il ne manque qu'une vitrine à la hauteur.",
+    };
   }
-  return { statut: "good", label: "Votre réputation", titre: "Des clients prêts à vous recommander" };
+  return {
+    statut: "good",
+    label: "Réputation",
+    titre: "Une vraie réputation locale",
+    preuve: "Vos clients vous recommandent — un site la rendrait enfin visible.",
+  };
 }
 
-function buildConstats(variant: "A" | "B", activite: string, ville: string, info: PlaceInfo | null, site: SiteAnalysis | null): Constat[] {
+function buildConstats(
+  variant: "A" | "B",
+  activite: string,
+  ville: string,
+  info: PlaceInfo | null,
+  site: SiteAnalysis | null,
+  concurrents: Concurrent[]
+): Constat[] {
   if (variant === "A") {
+    const noms = concurrents.map((c) => c.name).filter(Boolean).slice(0, 2);
+    const preuveConc = noms.length
+      ? `Sur « ${activite} ${ville} », ${noms.join(" et ")} ressortent avant vous — avec leur site.`
+      : "Ceux qui ont un site apparaissent avant vous sur Google.";
     return [
-      { statut: "bad", label: "Sur Google", titre: `Introuvable quand on cherche « ${activite} à ${ville} »` },
-      { statut: "bad", label: "Sur mobile", titre: "Aucun site à présenter à vos clients" },
+      {
+        statut: "bad",
+        label: "Sur Google",
+        titre: "Vous n'avez aucun site web",
+        preuve: "Constaté sur votre fiche Google Business : aucun site n'y est renseigné.",
+      },
+      { statut: "bad", label: "Concurrence", titre: "Vos concurrents captent vos clients", preuve: preuveConc },
       reputationConstat(info),
     ];
   }
-  const first: Constat = site?.year
-    ? { statut: "mid", label: "Votre site actuel", titre: `Conçu vers ${site.year}, il a pris un coup de vieux` }
-    : { statut: "mid", label: "Votre site actuel", titre: "Un design qui a vieilli" };
-  let second: Constat;
-  if (site && !site.https) second = { statut: "bad", label: "Sécurité", titre: "Pas de cadenas HTTPS — Google le pénalise" };
-  else if (site && !site.viewport) second = { statut: "bad", label: "Sur mobile", titre: "Illisible sur un téléphone" };
-  else if (site && site.responseMs != null && site.responseMs > 3000) second = { statut: "mid", label: "Vitesse", titre: `Lent à charger (${(site.responseMs / 1000).toFixed(1)}s)` };
-  else second = { statut: "mid", label: "Sur mobile", titre: "Pas vraiment pensé pour le téléphone" };
-  return [first, second, reputationConstat(info)];
+  const c1: Constat = site?.year
+    ? { statut: "mid", label: "Ancienneté", titre: `Un site qui date de ${site.year}`, preuve: `Mention « © ${site.year} » trouvée dans le code de votre site.` }
+    : { statut: "mid", label: "Ancienneté", titre: "Un site d'une autre époque", preuve: "Design et technologies dépassés par rapport aux standards actuels." };
+  let c2: Constat;
+  if (site && !site.viewport) {
+    c2 = { statut: "bad", label: "Mobile", titre: "Illisible sur un téléphone", preuve: "Aucune version mobile détectée (balise « responsive » absente du code)." };
+  } else if (site && !site.https) {
+    c2 = { statut: "bad", label: "Sécurité", titre: "Affiché « non sécurisé »", preuve: "Votre site n'a pas de cadenas HTTPS : Chrome prévient vos visiteurs." };
+  } else if (site && site.responseMs != null && site.responseMs > 3000) {
+    c2 = { statut: "mid", label: "Vitesse", titre: "Trop lent à s'afficher", preuve: `${(site.responseMs / 1000).toFixed(1).replace(".", ",")} s de chargement — 1 visiteur sur 2 part avant 3 s.` };
+  } else {
+    c2 = { statut: "mid", label: "Mobile", titre: "Pas vraiment pensé pour le mobile", preuve: "L'affichage sur téléphone n'est pas à la hauteur d'aujourd'hui." };
+  }
+  return [c1, c2, reputationConstat(info)];
 }
 
 function buildSynthese(variant: "A" | "B", nom: string): string {
   return variant === "A"
-    ? "Aujourd'hui, un client sur deux qui vous cherche sur son téléphone <em>ne vous trouve pas</em>."
-    : `Votre site actuel donne une image datée de <em>${nom}</em>.<br>On peut changer ça en 72 heures.`;
+    ? "Une réputation pareille sans site web, <em>c'est des clients qui filent chez le voisin</em>."
+    : `Votre site donne une image datée de <em>${nom}</em>.<br>On remet tout à neuf en 72 heures.`;
 }
 
 // ── Reformulation Claude Haiku (optionnelle) ─────────────────────────────────
@@ -201,6 +247,7 @@ async function polishWithClaude(
       statut: (["bad", "mid", "good"].includes(String(c.statut)) ? c.statut : constats[i].statut) as Constat["statut"],
       label: String(c.label || constats[i].label),
       titre: String(c.titre || constats[i].titre),
+      preuve: constats[i].preuve, // la preuve reste factuelle : Claude ne la reformule pas
     }));
     return { constats: cleaned, synthese: String(parsed.synthese || synthese) };
   } catch {
@@ -247,7 +294,7 @@ export async function POST(request: Request) {
 
   // 1. Apify (Google Maps) : fiche du commerce + concurrents
   let info: PlaceInfo | null = null;
-  let concurrents: string[] = [];
+  let concurrents: Concurrent[] = [];
   let sourceStatus: "OK" | "NOT_FOUND" | "EMPTY" | "NO_SOURCE" = "NO_SOURCE";
   if (apifyToken) {
     const r = await apifyLookup(apifyToken, businessName, city, activite);
@@ -303,7 +350,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Constats + synthèse
-  let constats = buildConstats(variant, activite, city, info, site);
+  let constats = buildConstats(variant, activite, city, info, site, concurrents);
   let synthese = buildSynthese(variant, businessName);
   if (anthropicKey && !skipped) {
     const polished = await polishWithClaude(anthropicKey, { nom: businessName, activite, ville: city, variant }, constats, synthese);

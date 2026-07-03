@@ -160,6 +160,25 @@ html,body{background:#EEE}
 .prix-note{font:600 8pt 'Inter';letter-spacing:.14em;text-transform:uppercase;
   margin-top:2.4mm;display:block}
 
+
+/* ===== Recto v2 : preuve visuelle + constats qui claquent ===== */
+.proof{width:118mm;margin:7mm auto 0}
+.proof-cap{font:600 8pt 'Inter';color:var(--grey);margin-bottom:2.5mm}
+.proof-cap b{color:var(--ink);font-weight:700}
+.gr .meta{display:block;font:500 8pt 'Inter';color:var(--grey);margin-top:1mm;white-space:nowrap}
+.gr.vous{border:1.4pt solid var(--ink);border-radius:2.4mm;padding:3mm 3.5mm;margin-top:2mm}
+.gr.vous .tag{display:inline-block;font:800 7.5pt 'Inter';letter-spacing:.12em;text-transform:uppercase;color:var(--ink);border:1.2pt solid var(--ink);border-radius:12pt;padding:1.2mm 3mm}
+.audit{width:118mm;margin:1mm auto 0;border:1.3pt solid var(--ink);border-radius:2.6mm;overflow:hidden}
+.au{display:flex;justify-content:space-between;align-items:center;padding:2.8mm 4mm;border-bottom:.7pt solid var(--hair);font:500 9.5pt 'Inter'}
+.au:last-child{border-bottom:none}
+.au .k{color:#333}
+.au .v{font:800 9.5pt 'Inter'}
+.au .v.bad:before{content:"\2715 "}
+.au .v.good:before{content:"\2713 "}
+.facts{display:flex;flex-direction:column;gap:4.5mm;margin-top:7mm}
+.fact{align-items:flex-start}
+.fact .t .ft{font:700 13.5pt/1.15 'Fraunces';letter-spacing:-.01em;color:var(--ink)}
+.fact .t .fp{font:400 8.5pt/1.35 'Inter';color:var(--grey);margin-top:1mm}
 </style></head><body>
 <div class="page {{variante_classe}}">
  <div class="frame"><div class="frame-in">
@@ -169,38 +188,32 @@ html,body{background:#EEE}
     <div class="address">{{adresse}}</div>
   </div>
 
-  <!-- Visuel A : la recherche Google où vous n'apparaissez pas -->
-  <div class="gsearch only-a">
+  <!-- PREUVE — variante A : la recherche Google reelle -->
+  <div class="proof only-a">
+    <div class="proof-cap">Ce que voient vos clients en cherchant sur Google&nbsp;:</div>
     <div class="gbar"><div class="loupe"></div><b>{{requete}}</b></div>
     <div class="gres">
-      <div class="gr"><div class="nm">{{concurrent1}}<span>Site internet · Fiche complète</span></div><div class="stars">★★★★★</div></div>
-      <div class="gr"><div class="nm">{{concurrent2}}<span>Site internet · Fiche complète</span></div><div class="stars">★★★★☆</div></div>
-      <div class="gr vous"><div class="nm">{{nom}}</div><div class="tag">Introuvable</div></div>
+      <div class="gr"><div class="nm">{{concurrent1}}<span class="meta">{{concurrent1_note}} &middot; a un site web</span></div></div>
+      <div class="gr"><div class="nm">{{concurrent2}}<span class="meta">{{concurrent2_note}} &middot; a un site web</span></div></div>
+      <div class="gr vous"><div class="nm">{{nom}}</div><div class="tag">aucun site web</div></div>
     </div>
   </div>
 
-  <!-- Visuel B : votre site actuel sur un téléphone -->
-  <div class="only-b">
-    <div class="oldphone">
-      <div class="notch"></div>
-      <div class="badge2013">{{annee_site}}</div>
-      <div class="mini">
-        <div class="tline"></div><div class="tline s"></div>
-        <div class="mrow"><div class="box"></div><div class="box"></div><div class="box"></div></div>
-        <div class="tline"></div><div class="tline"></div><div class="tline s"></div>
-        <div class="mrow"><div class="box b2"></div><div class="box b2"></div></div>
-        <div class="tline"></div><div class="tline s"></div><div class="tline"></div>
-        <div class="mrow"><div class="box"></div><div class="box"></div><div class="box"></div><div class="box"></div></div>
-        <div class="tline"></div><div class="tline"></div>
-      </div>
+  <!-- PREUVE — variante B : analyse automatique de votre site -->
+  <div class="proof only-b">
+    <div class="proof-cap">Analyse automatique de <b>{{site_url}}</b>&nbsp;:</div>
+    <div class="audit">
+      <div class="au"><span class="k">Dernière refonte estimée</span><span class="v">{{site_annee}}</span></div>
+      <div class="au"><span class="k">Version mobile</span><span class="v {{site_mobile_cls}}">{{site_mobile}}</span></div>
+      <div class="au"><span class="k">Connexion sécurisée (HTTPS)</span><span class="v {{site_https_cls}}">{{site_https}}</span></div>
+      <div class="au"><span class="k">Vitesse d'affichage</span><span class="v {{site_vitesse_cls}}">{{site_vitesse}}</span></div>
     </div>
-    <div class="pinch">Votre site actuel, vu depuis un téléphone — sans lunettes, bon courage.</div>
   </div>
 
   <div class="facts">
-    <div class="fact {{constat1_statut}}"><div class="fx"></div><div class="t"><b>{{constat1_label}}</b> <span>— {{constat1_titre}}</span></div></div>
-    <div class="fact {{constat2_statut}}"><div class="fx"></div><div class="t"><b>{{constat2_label}}</b> <span>— {{constat2_titre}}</span></div></div>
-    <div class="fact {{constat3_statut}}"><div class="fx"></div><div class="t"><b>{{constat3_label}}</b> <span>— {{constat3_titre}}</span></div></div>
+    <div class="fact {{constat1_statut}}"><div class="fx"></div><div class="t"><div class="ft">{{constat1_titre}}</div><div class="fp">{{constat1_preuve}}</div></div></div>
+    <div class="fact {{constat2_statut}}"><div class="fx"></div><div class="t"><div class="ft">{{constat2_titre}}</div><div class="fp">{{constat2_preuve}}</div></div></div>
+    <div class="fact {{constat3_statut}}"><div class="fx"></div><div class="t"><div class="ft">{{constat3_titre}}</div><div class="fp">{{constat3_preuve}}</div></div></div>
   </div>
 
   <div class="synth">{{synthese}}</div>

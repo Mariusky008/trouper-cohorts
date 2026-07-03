@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       statut: ["bad", "mid", "good"].includes(String(c?.statut)) ? String(c.statut) : "bad",
       label: String(c?.label || "").slice(0, 60),
       titre: String(c?.titre || "").slice(0, 140),
+      preuve: String(c?.preuve || "").slice(0, 200),
     }));
     patch.constats = constats;
   }

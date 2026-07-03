@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Constat = { statut: string; label: string; titre: string };
+type Constat = { statut: string; label: string; titre: string; preuve: string };
 
 type Props = {
   slug: string;
@@ -22,7 +22,7 @@ export function LetterValidation(props: Props) {
   const [variant, setVariant] = useState<"A" | "B">(props.variant);
   const [constats, setConstats] = useState<Constat[]>(() => {
     const base = [...props.constats];
-    while (base.length < 3) base.push({ statut: "bad", label: "", titre: "" });
+    while (base.length < 3) base.push({ statut: "bad", label: "", titre: "", preuve: "" });
     return base.slice(0, 3);
   });
   const [synthese, setSynthese] = useState(props.synthese);
@@ -114,8 +114,8 @@ export function LetterValidation(props: Props) {
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
             Constat {i + 1} {i === 2 ? "(positif)" : ""}
           </div>
-          <input style={{ ...inputStyle, marginBottom: 6 }} value={c.label} placeholder="Libellé (gauche)" onChange={(e) => setConstat(i, "label", e.target.value)} />
-          <input style={{ ...inputStyle, marginBottom: 6 }} value={c.titre} placeholder="Constat" onChange={(e) => setConstat(i, "titre", e.target.value)} />
+          <input style={{ ...inputStyle, marginBottom: 6 }} value={c.titre} placeholder="Constat (gros titre)" onChange={(e) => setConstat(i, "titre", e.target.value)} />
+          <input style={{ ...inputStyle, marginBottom: 6 }} value={c.preuve} placeholder="Preuve / source (petite ligne)" onChange={(e) => setConstat(i, "preuve", e.target.value)} />
           <div style={{ display: "flex", gap: 6 }}>
             {STATUTS.map((s) => (
               <button

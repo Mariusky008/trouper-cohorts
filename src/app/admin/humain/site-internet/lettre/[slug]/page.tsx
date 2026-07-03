@@ -13,7 +13,7 @@ import { LetterDownload } from "./letter-download";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type Constat = { statut?: string; label?: string; titre?: string; texte?: string };
+type Constat = { statut?: string; label?: string; titre?: string; preuve?: string; texte?: string };
 
 function injectVars(html: string, vars: Record<string, string>): string {
   let out = html;
@@ -33,15 +33,15 @@ const MOIS = [
 function defaultConstats(variant: string): Constat[] {
   if (variant === "A") {
     return [
-      { statut: "bad", label: "Sur Google", titre: "Votre commerce est introuvable" },
-      { statut: "bad", label: "Sur mobile", titre: "Aucun site à présenter" },
-      { statut: "good", label: "Votre réputation", titre: "Des clients prêts à vous recommander" },
+      { statut: "bad", titre: "Vous n'avez aucun site web", preuve: "Aucun site n'est renseigné sur votre fiche Google Business." },
+      { statut: "bad", titre: "Vos concurrents captent vos clients", preuve: "Ceux qui ont un site apparaissent avant vous sur Google." },
+      { statut: "good", titre: "Une vraie réputation locale", preuve: "Vos clients vous recommandent — un site la rendrait visible." },
     ];
   }
   return [
-    { statut: "bad", label: "Votre site actuel", titre: "Conçu il y a plus de 10 ans" },
-    { statut: "mid", label: "Sur mobile", titre: "Difficile à lire sur un téléphone" },
-    { statut: "good", label: "Votre réputation", titre: "Une base de clients fidèles" },
+    { statut: "mid", titre: "Un site d'une autre époque", preuve: "Design et technologies dépassés par rapport à aujourd'hui." },
+    { statut: "bad", titre: "Illisible sur un téléphone", preuve: "Pas de version mobile adaptée aux smartphones." },
+    { statut: "good", titre: "Une base de clients fidèles", preuve: "Votre réputation mérite une vitrine à la hauteur." },
   ];
 }
 
@@ -119,6 +119,28 @@ export default async function SiteInternetLettrePage({
   const diag = (place.diagnostic && typeof place.diagnostic === "object" ? place.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
 
+  // Concurrents (variante A) : {name, note}. On tolère l'ancien format string[].
+  const concRaw = Array.isArray(diag.concurrents) ? diag.concurrents : [];
+  const conc = concRaw.map((c) =>
+    typeof c === "string"
+      ? { name: c, note: "" }
+      : { name: str((c as Record<string, unknown>)?.name), note: str((c as Record<string, unknown>)?.note) }
+  );
+
+  // Bulletin d'analyse du site (variante B), depuis le diagnostic.
+  const siteA = (diag.site && typeof diag.site === "object" ? diag.site : {}) as {
+    https?: boolean; viewport?: boolean; year?: number | null; responseMs?: number | null; reachable?: boolean;
+  };
+  const siteUrl = str(place.source_website)
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/+$/, "") || "votre site";
+  const siteAnnee = anneeSite || "il y a 10 ans+";
+  const yesNo = (b: boolean | undefined) => (b ? "Oui" : "Non");
+  const cls = (ok: boolean) => (ok ? "good" : "bad");
+  const ms = typeof siteA.responseMs === "number" ? siteA.responseMs : null;
+  const vitesse = ms != null ? `${(ms / 1000).toFixed(1).replace(".", ",")} s` : "—";
+
   // Numéro / expéditeur : à définir en variables d'env avant la 1re impression
   // (cf. CAHIER_DES_CHARGES_SITE_INTERNET.md §11).
   const telephone = process.env.SITE_LETTER_PHONE || "06 XX XX XX XX";
@@ -158,14 +180,14 @@ export default async function SiteInternetLettrePage({
     jours2: horaires[1]?.jours ?? "Samedi",
     horaires2: horaires[1]?.horaires ?? "9h00 — 12h00",
     constat1_statut: constats[0]?.statut ?? "bad",
-    constat1_label: constats[0]?.label ?? "",
     constat1_titre: constats[0]?.titre ?? "",
+    constat1_preuve: constats[0]?.preuve ?? "",
     constat2_statut: constats[1]?.statut ?? "bad",
-    constat2_label: constats[1]?.label ?? "",
     constat2_titre: constats[1]?.titre ?? "",
+    constat2_preuve: constats[1]?.preuve ?? "",
     constat3_statut: constats[2]?.statut ?? "good",
-    constat3_label: constats[2]?.label ?? "",
     constat3_titre: constats[2]?.titre ?? "",
+    constat3_preuve: constats[2]?.preuve ?? "",
     synthese,
     offre_titre: offre.titre,
     offre_sub: offre.sub,
@@ -174,9 +196,20 @@ export default async function SiteInternetLettrePage({
     prix_note: "Tout compris, sans abonnement.",
     variante_classe: variant === "A" ? "vA" : "vB",
     requete: `${activite} ${ville}`.trim().toLowerCase(),
-    concurrent1: str((diag.concurrents as string[] | undefined)?.[0]),
-    concurrent2: str((diag.concurrents as string[] | undefined)?.[1]),
-    annee_site: anneeSite,
+    // Variante A : concurrents réels + leur note
+    concurrent1: conc[0]?.name || "Un concurrent",
+    concurrent1_note: conc[0]?.note || "sur Google",
+    concurrent2: conc[1]?.name || "Un autre",
+    concurrent2_note: conc[1]?.note || "sur Google",
+    // Variante B : bulletin d'analyse du site
+    site_url: siteUrl,
+    site_annee: siteAnnee,
+    site_mobile: yesNo(siteA.viewport),
+    site_mobile_cls: cls(Boolean(siteA.viewport)),
+    site_https: yesNo(siteA.https),
+    site_https_cls: cls(Boolean(siteA.https)),
+    site_vitesse: vitesse,
+    site_vitesse_cls: ms != null && ms > 3000 ? "bad" : ms != null ? "good" : "bad",
     photo_html: photoHtml, // <img> N&B (photo_base64.py) si le fichier existe, sinon monogramme "M"
     telephone,
     qr_svg: qrSvg,
@@ -270,6 +303,7 @@ export default async function SiteInternetLettrePage({
             statut: str(c.statut) || "bad",
             label: str(c.label),
             titre: str(c.titre),
+            preuve: str(c.preuve),
           }))}
           synthese={synthese}
           prix={prix}
