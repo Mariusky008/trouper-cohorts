@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { slugify } from "@/lib/popey-marketplace";
+import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -41,37 +42,11 @@ type PlaceInfo = {
   horaires: Array<{ jours: string; horaires: string }>;
 };
 
-const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+const norm = normName;
 const matchesBusiness = (title: string, self: string) => {
   const t = norm(title);
   return Boolean(t) && (t.includes(self) || self.includes(t));
 };
-
-// Lance l'acteur Apify "compass~crawler-google-places" en synchrone et renvoie
-// les fiches Google Maps (title, website, totalScore, reviewsCount, address, openingHours).
-async function apifyRun(token: string, searchStrings: string[], locationQuery: string, limit: number): Promise<Record<string, unknown>[]> {
-  try {
-    const res = await fetch(
-      `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=120`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          searchStringsArray: searchStrings,
-          locationQuery,
-          maxCrawledPlacesPerSearch: limit,
-          language: "fr",
-          countryCode: "fr",
-        }),
-      }
-    );
-    if (!res.ok) return [];
-    const data = await res.json().catch(() => []);
-    return Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 function itemToInfo(item: Record<string, unknown>): PlaceInfo {
   const oh = Array.isArray(item.openingHours) ? (item.openingHours as Array<Record<string, unknown>>) : [];
@@ -99,11 +74,11 @@ async function apifyLookup(
 ): Promise<{ info: PlaceInfo | null; concurrents: string[]; status: "OK" | "NOT_FOUND" | "EMPTY" }> {
   const loc = `${city}, france`;
   const self = norm(businessName);
-  const items = await apifyRun(token, [activite], loc, 12);
+  const items = await apifyGoogleMaps(token, [activite], loc, 12);
   let biz = items.find((it) => matchesBusiness(String(it.title || ""), self)) || null;
 
   if (!biz) {
-    const byName = await apifyRun(token, [`${businessName} ${city}`], loc, 5);
+    const byName = await apifyGoogleMaps(token, [`${businessName} ${city}`], loc, 5);
     biz = byName.find((it) => matchesBusiness(String(it.title || ""), self)) || byName[0] || null;
   }
 
