@@ -57,6 +57,12 @@ export async function POST(request: Request) {
   if (!city) return NextResponse.json({ error: "La ville est obligatoire." }, { status: 400 });
   if (!activite) return NextResponse.json({ error: "L'activité est obligatoire." }, { status: 400 });
 
+  // Champs optionnels (fournis par le mode Découverte : note/avis Google).
+  const ratingRaw = Number(payload?.googleRating);
+  const googleRating = Number.isFinite(ratingRaw) && ratingRaw > 0 ? ratingRaw : null;
+  const reviewsRaw = Number(payload?.googleReviews);
+  const googleReviews = Number.isFinite(reviewsRaw) && reviewsRaw >= 0 ? Math.round(reviewsRaw) : null;
+
   const baseSlug = slugify(businessName).slice(0, 60) || "prospect";
   const suffix = slugify(crypto.randomUUID()).slice(0, 6) || String(Date.now()).slice(-6);
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
@@ -71,6 +77,8 @@ export async function POST(request: Request) {
     address,
     source_website: sourceWebsite,
     variant,
+    google_rating: googleRating,
+    google_reviews: googleReviews,
     letter_status: "draft",
     metadata: { manual: true },
   });

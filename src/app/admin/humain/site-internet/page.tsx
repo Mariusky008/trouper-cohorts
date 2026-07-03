@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { SiteAddForm } from "./_components/site-add-form";
+import { SiteDiscover } from "./_components/site-discover";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -79,6 +80,8 @@ export default async function AdminSiteInternetPage() {
           </div>
         </div>
       </div>
+
+      <SiteDiscover />
 
       <SiteAddForm />
 
