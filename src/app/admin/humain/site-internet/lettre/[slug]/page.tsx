@@ -107,7 +107,6 @@ export default async function SiteInternetLettrePage({
   const ville = str(place.city);
   const activite = str(place.activite);
   const adresse = str(place.address);
-  const anneeSite = str(place.site_annee);
   const synthese = str(place.synthese);
   const prix = str(place.prix) || "690";
 
@@ -127,19 +126,47 @@ export default async function SiteInternetLettrePage({
       : { name: str((c as Record<string, unknown>)?.name), note: str((c as Record<string, unknown>)?.note) }
   );
 
-  // Bulletin d'analyse du site (variante B), depuis le diagnostic.
+  const esc = (x: string) =>
+    x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Variante A — lignes de résultats Google : uniquement de VRAIS concurrents
+  // (nom + note). Aucun concurrent réel → on n'invente pas, on n'affiche que la
+  // ligne « vous ». Le commerce ciblé est toujours mis en évidence « aucun site ».
+  const compRows = conc
+    .filter((c) => c.name)
+    .slice(0, 2)
+    .map((c) => {
+      const meta = `${c.note ? `${esc(c.note)} · ` : ""}a un site web`;
+      return `<div class="gr"><div class="nm">${esc(c.name)}<span class="meta">${meta}</span></div></div>`;
+    })
+    .join("");
+  const googleRows =
+    compRows +
+    `<div class="gr vous"><div class="nm">${esc(nom)}</div><div class="tag">aucun site web</div></div>`;
+
+  // Variante B — bulletin d'analyse : on n'affiche QUE ce qu'on a mesuré.
   const siteA = (diag.site && typeof diag.site === "object" ? diag.site : {}) as {
     https?: boolean; viewport?: boolean; year?: number | null; responseMs?: number | null; reachable?: boolean;
   };
+  const hasSiteData = Boolean(diag.site && typeof diag.site === "object");
   const siteUrl = str(place.source_website)
     .replace(/^https?:\/\//i, "")
     .replace(/^www\./i, "")
     .replace(/\/+$/, "") || "votre site";
-  const siteAnnee = anneeSite || "il y a 10 ans+";
-  const yesNo = (b: boolean | undefined) => (b ? "Oui" : "Non");
-  const cls = (ok: boolean) => (ok ? "good" : "bad");
   const ms = typeof siteA.responseMs === "number" ? siteA.responseMs : null;
-  const vitesse = ms != null ? `${(ms / 1000).toFixed(1).replace(".", ",")} s` : "—";
+  const auRow = (k: string, v: string, klass = "") =>
+    `<div class="au"><span class="k">${k}</span><span class="v ${klass}">${v}</span></div>`;
+  let auditRows = "";
+  if (!hasSiteData) {
+    auditRows = auRow("Analyse détaillée", "au dos, sur demande");
+  } else if (siteA.reachable === false) {
+    auditRows = auRow("Votre site aujourd'hui", "Injoignable", "bad");
+  } else {
+    if (siteA.year) auditRows += auRow("Dernière refonte estimée", String(siteA.year));
+    auditRows += auRow("Version mobile", siteA.viewport ? "Oui" : "Non", siteA.viewport ? "good" : "bad");
+    auditRows += auRow("Connexion sécurisée (HTTPS)", siteA.https ? "Oui" : "Non", siteA.https ? "good" : "bad");
+    if (ms != null) auditRows += auRow("Vitesse d'affichage", `${(ms / 1000).toFixed(1).replace(".", ",")} s`, ms > 3000 ? "bad" : "good");
+  }
 
   // Numéro / expéditeur : à définir en variables d'env avant la 1re impression
   // (cf. CAHIER_DES_CHARGES_SITE_INTERNET.md §11).
@@ -163,10 +190,12 @@ export default async function SiteInternetLettrePage({
   const now = new Date();
   const dateStr = `${MOIS[now.getMonth()]} ${now.getFullYear()}`;
 
-  const offre =
-    variant === "A"
-      ? { titre: "Votre site, en ligne en 72 heures.", sub: "Enfin visible sur Google et impeccable sur mobile." }
-      : { titre: "Une refonte complète en 72 heures.", sub: "Un site moderne et mobile, sans y passer de temps." };
+  // Verso : on vend la garantie AVANT le prix (cf. retour terrain).
+  const offreTitre = "Vous ne payez rien aujourd'hui.";
+  const offreSub = "On crée votre site, on vous le montre, vous décidez ensuite — et vous ne payez que s'il vous plaît.";
+  const demoTitre = "Voir gratuitement la maquette de votre futur site";
+  const demoTexte =
+    "Scannez et dites bonjour : je crée un aperçu de votre nouveau site rien que pour vous et je vous le montre. Il vous plaît ? On lance. Sinon, ça s'arrête là — sans frais, sans relance.";
 
   const vars: Record<string, string> = {
     date: dateStr,
@@ -189,27 +218,20 @@ export default async function SiteInternetLettrePage({
     constat3_titre: constats[2]?.titre ?? "",
     constat3_preuve: constats[2]?.preuve ?? "",
     synthese,
-    offre_titre: offre.titre,
-    offre_sub: offre.sub,
+    offre_titre: offreTitre,
+    offre_sub: offreSub,
+    demo_titre: demoTitre,
+    demo_texte: demoTexte,
     prix,
     prix_avant: "",
-    prix_note: "Tout compris, sans abonnement.",
+    prix_note: "",
     variante_classe: variant === "A" ? "vA" : "vB",
     requete: `${activite} ${ville}`.trim().toLowerCase(),
-    // Variante A : concurrents réels + leur note
-    concurrent1: conc[0]?.name || "Un concurrent",
-    concurrent1_note: conc[0]?.note || "sur Google",
-    concurrent2: conc[1]?.name || "Un autre",
-    concurrent2_note: conc[1]?.note || "sur Google",
-    // Variante B : bulletin d'analyse du site
+    // Variante A : lignes Google réelles (concurrents + « vous »)
+    google_rows: googleRows,
+    // Variante B : bulletin d'analyse (uniquement les faits mesurés)
     site_url: siteUrl,
-    site_annee: siteAnnee,
-    site_mobile: yesNo(siteA.viewport),
-    site_mobile_cls: cls(Boolean(siteA.viewport)),
-    site_https: yesNo(siteA.https),
-    site_https_cls: cls(Boolean(siteA.https)),
-    site_vitesse: vitesse,
-    site_vitesse_cls: ms != null && ms > 3000 ? "bad" : ms != null ? "good" : "bad",
+    audit_rows: auditRows,
     photo_html: photoHtml, // <img> N&B (photo_base64.py) si le fichier existe, sinon monogramme "M"
     telephone,
     qr_svg: qrSvg,

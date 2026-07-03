@@ -146,22 +146,27 @@ async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
   return result;
 }
 
-// ── Constats rule-based (avec PREUVE : d'où vient l'info) ────────────────────
-function reputationConstat(info: PlaceInfo | null): Constat {
+// ── Constats rule-based — on vend le RÉSULTAT (clients), avec une PREUVE ─────
+// 3e constat = positif. On n'affirme une réputation chiffrée QUE si on a une
+// vraie note Google ; sinon on reste sur une projection honnête (pas d'invention).
+function reputationConstat(info: PlaceInfo | null, variant: "A" | "B"): Constat {
   if (info?.rating != null && info.reviews != null && info.reviews > 0) {
     const note = info.rating.toFixed(1).replace(".", ",");
     return {
       statut: "good",
       label: "Réputation",
-      titre: `${note}/5 sur ${info.reviews} avis : une réputation en or`,
-      preuve: "Source : votre fiche Google. Il ne manque qu'une vitrine à la hauteur.",
+      titre: `${note}/5 sur ${info.reviews} avis : vos clients vous adorent`,
+      preuve:
+        variant === "A"
+          ? "Il ne manque qu'un site pour transformer cette réputation en appels."
+          : "Votre site mérite d'être à la hauteur de cette réputation.",
     };
   }
   return {
     statut: "good",
-    label: "Réputation",
-    titre: "Une vraie réputation locale",
-    preuve: "Vos clients vous recommandent — un site la rendrait enfin visible.",
+    label: "Opportunité",
+    titre: "Vos futurs clients sont déjà sur Google",
+    preuve: "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.",
   };
 }
 
@@ -176,39 +181,39 @@ function buildConstats(
   if (variant === "A") {
     const noms = concurrents.map((c) => c.name).filter(Boolean).slice(0, 2);
     const preuveConc = noms.length
-      ? `Sur « ${activite} ${ville} », ${noms.join(" et ")} ressortent avant vous — avec leur site.`
-      : "Ceux qui ont un site apparaissent avant vous sur Google.";
+      ? `Sur « ${activite} ${ville} », ${noms.join(" et ")} apparaissent avec leur site. Pas vous.`
+      : `Chaque jour, des clients tapent « ${activite} ${ville} » — et tombent sur ceux qui ont un site.`;
     return [
       {
         statut: "bad",
-        label: "Sur Google",
-        titre: "Vous n'avez aucun site web",
-        preuve: "Constaté sur votre fiche Google Business : aucun site n'y est renseigné.",
+        label: "Visibilité",
+        titre: "Vos clients ne voient pas votre travail",
+        preuve: "Votre fiche Google n'affiche aucun site : juste une adresse et un numéro.",
       },
-      { statut: "bad", label: "Concurrence", titre: "Vos concurrents captent vos clients", preuve: preuveConc },
-      reputationConstat(info),
+      { statut: "bad", label: "Concurrence", titre: "Ils tombent sur vos concurrents", preuve: preuveConc },
+      reputationConstat(info, variant),
     ];
   }
   const c1: Constat = site?.year
-    ? { statut: "mid", label: "Ancienneté", titre: `Un site qui date de ${site.year}`, preuve: `Mention « © ${site.year} » trouvée dans le code de votre site.` }
-    : { statut: "mid", label: "Ancienneté", titre: "Un site d'une autre époque", preuve: "Design et technologies dépassés par rapport aux standards actuels." };
+    ? { statut: "mid", label: "Image", titre: "Votre vitrine ne reflète plus la qualité de votre commerce", preuve: `Site conçu vers ${site.year} — figé depuis, alors que votre métier a évolué.` }
+    : { statut: "mid", label: "Image", titre: "Votre vitrine ne reflète plus la qualité de votre commerce", preuve: "Un site figé depuis des années, en décalage avec votre commerce d'aujourd'hui." };
   let c2: Constat;
   if (site && !site.viewport) {
-    c2 = { statut: "bad", label: "Mobile", titre: "Illisible sur un téléphone", preuve: "Aucune version mobile détectée (balise « responsive » absente du code)." };
+    c2 = { statut: "bad", label: "Mobile", titre: "Sur téléphone, vous perdez des appels", preuve: "Votre site n'a pas de version mobile — or la plupart de vos clients vous cherchent sur smartphone." };
   } else if (site && !site.https) {
-    c2 = { statut: "bad", label: "Sécurité", titre: "Affiché « non sécurisé »", preuve: "Votre site n'a pas de cadenas HTTPS : Chrome prévient vos visiteurs." };
+    c2 = { statut: "bad", label: "Confiance", titre: "Vos visiteurs sont mis en garde", preuve: "Sans cadenas HTTPS, Chrome affiche « site non sécurisé » — beaucoup ferment aussitôt." };
   } else if (site && site.responseMs != null && site.responseMs > 3000) {
-    c2 = { statut: "mid", label: "Vitesse", titre: "Trop lent à s'afficher", preuve: `${(site.responseMs / 1000).toFixed(1).replace(".", ",")} s de chargement — 1 visiteur sur 2 part avant 3 s.` };
+    c2 = { statut: "mid", label: "Attente", titre: "Vos visiteurs partent avant même de vous voir", preuve: `${(site.responseMs / 1000).toFixed(1).replace(".", ",")} s de chargement — 1 visiteur sur 2 abandonne avant 3 s.` };
   } else {
-    c2 = { statut: "mid", label: "Mobile", titre: "Pas vraiment pensé pour le mobile", preuve: "L'affichage sur téléphone n'est pas à la hauteur d'aujourd'hui." };
+    c2 = { statut: "mid", label: "Mobile", titre: "Il ne donne pas envie de vous appeler", preuve: "L'expérience, surtout sur téléphone, n'incite pas à passer le pas." };
   }
-  return [c1, c2, reputationConstat(info)];
+  return [c1, c2, reputationConstat(info, variant)];
 }
 
-function buildSynthese(variant: "A" | "B", nom: string): string {
+function buildSynthese(variant: "A" | "B"): string {
   return variant === "A"
-    ? "Une réputation pareille sans site web, <em>c'est des clients qui filent chez le voisin</em>."
-    : `Votre site donne une image datée de <em>${nom}</em>.<br>On remet tout à neuf en 72 heures.`;
+    ? `Chaque semaine, des clients cherchent vos services sur Google.<br>Ils trouvent vos concurrents. <em>Pas vous.</em>`
+    : `Des clients vous découvrent sur leur téléphone chaque jour.<br>Aujourd'hui, votre site <em>ne leur donne pas envie de vous choisir.</em>`;
 }
 
 // ── Reformulation Claude Haiku (optionnelle) ─────────────────────────────────
@@ -351,7 +356,7 @@ export async function POST(request: Request) {
 
   // 3. Constats + synthèse
   let constats = buildConstats(variant, activite, city, info, site, concurrents);
-  let synthese = buildSynthese(variant, businessName);
+  let synthese = buildSynthese(variant);
   if (anthropicKey && !skipped) {
     const polished = await polishWithClaude(anthropicKey, { nom: businessName, activite, ville: city, variant }, constats, synthese);
     if (polished) {

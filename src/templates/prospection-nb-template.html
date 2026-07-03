@@ -179,11 +179,30 @@ html,body{background:#EEE}
 .fact{align-items:flex-start}
 .fact .t .ft{font:700 13.5pt/1.15 'Fraunces';letter-spacing:-.01em;color:var(--ink)}
 .fact .t .fp{font:400 8.5pt/1.35 'Inter';color:var(--grey);margin-top:1mm}
+
+/* ===== Verso v2 : bénéfices d'abord, prix ensuite, QR avec une raison ===== */
+.v-title{font:700 27pt/1.04 'Fraunces';letter-spacing:-.015em;margin-top:3mm}
+.v-sub{font:400 12pt/1.35 'Inter';color:#333;margin-top:3mm}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);border:1.4pt solid var(--ink);border-radius:2.8mm;overflow:hidden;margin:8mm 0 0}
+.step{padding:5mm 2.5mm;text-align:center;border-right:.7pt solid var(--hair)}
+.step:last-child{border-right:none}
+.step b{display:block;font:700 19pt/1 'Fraunces'}
+.step span{display:block;font:500 7.5pt/1.25 'Inter';color:var(--grey);margin-top:2mm}
+.qr-cta{display:flex;gap:6mm;align-items:center;border:1.4pt solid var(--ink);border-radius:2.8mm;padding:6mm;margin-top:7mm}
+.qr-cta .qr{width:32mm;height:32mm;flex:none}
+.qr-cta .qr svg,.qr-cta .qr img{width:100%;height:100%;display:block}
+.qr-h{font:700 15pt/1.15 'Fraunces';letter-spacing:-.01em}
+.qr-txt p{font:400 9.5pt/1.45 'Inter';color:#333;margin:2.5mm 0 0}
+.priceline{margin-top:7mm;text-align:center}
+.priceline .p{font:700 22pt 'Fraunces'}
+.priceline .p small{font:600 9pt 'Inter';color:var(--grey);margin-left:2mm}
+.priceline .cond{font:400 8.5pt 'Inter';color:var(--grey);margin-top:2mm}
+.contact{margin-top:auto}
 </style></head><body>
 <div class="page {{variante_classe}}">
  <div class="frame"><div class="frame-in">
   <div class="r-top">
-    <div class="eyebrow">Diagnostic offert · {{date}}</div>
+    <div class="eyebrow">Diagnostic Google offert · {{date}}</div>
     <div class="merchant">{{nom}}</div>
     <div class="address">{{adresse}}</div>
   </div>
@@ -192,22 +211,13 @@ html,body{background:#EEE}
   <div class="proof only-a">
     <div class="proof-cap">Ce que voient vos clients en cherchant sur Google&nbsp;:</div>
     <div class="gbar"><div class="loupe"></div><b>{{requete}}</b></div>
-    <div class="gres">
-      <div class="gr"><div class="nm">{{concurrent1}}<span class="meta">{{concurrent1_note}} &middot; a un site web</span></div></div>
-      <div class="gr"><div class="nm">{{concurrent2}}<span class="meta">{{concurrent2_note}} &middot; a un site web</span></div></div>
-      <div class="gr vous"><div class="nm">{{nom}}</div><div class="tag">aucun site web</div></div>
-    </div>
+    <div class="gres">{{google_rows}}</div>
   </div>
 
   <!-- PREUVE — variante B : analyse automatique de votre site -->
   <div class="proof only-b">
     <div class="proof-cap">Analyse automatique de <b>{{site_url}}</b>&nbsp;:</div>
-    <div class="audit">
-      <div class="au"><span class="k">Dernière refonte estimée</span><span class="v">{{site_annee}}</span></div>
-      <div class="au"><span class="k">Version mobile</span><span class="v {{site_mobile_cls}}">{{site_mobile}}</span></div>
-      <div class="au"><span class="k">Connexion sécurisée (HTTPS)</span><span class="v {{site_https_cls}}">{{site_https}}</span></div>
-      <div class="au"><span class="k">Vitesse d'affichage</span><span class="v {{site_vitesse_cls}}">{{site_vitesse}}</span></div>
-    </div>
+    <div class="audit">{{audit_rows}}</div>
   </div>
 
   <div class="facts">
@@ -229,45 +239,24 @@ html,body{background:#EEE}
     <div class="v-sub">{{offre_sub}}</div>
   </div>
 
-  <div class="v-main">
-    <div>
-      <div class="newphone">
-        <div class="notch"></div>
-        <div class="np-hero">
-          <div class="tag">{{activite}}</div>
-          <div class="nm">{{nom}}</div>
-          <div class="ct">{{ville}} · depuis {{depuis}}</div>
-        </div>
-        <div class="np-cta"><div class="np-btn solid">Appeler</div><div class="np-btn">Itinéraire</div></div>
-        <div class="np-sec">
-          <div class="st">Horaires</div>
-          <div class="np-line"><span>{{jours1}}</span><b>{{horaires1}}</b></div>
-          <div class="np-line"><span>{{jours2}}</span><b>{{horaires2}}</b></div>
-        </div>
-        <div class="np-grid"><div class="np-im"></div><div class="np-im"></div><div class="np-im"></div></div>
-        <div class="np-foot">Nous écrire sur WhatsApp</div>
-      </div>
-      <div class="np-cap">Votre futur site — aperçu réel</div>
-    </div>
+  <div class="steps">
+    <div class="step"><b>72 h</b><span>votre site en ligne</span></div>
+    <div class="step"><b>0</b><span>démarche de votre côté</span></div>
+    <div class="step"><b>0</b><span>abonnement, le site est à vous</span></div>
+    <div class="step"><b>0 €</b><span>tant que vous n'avez pas dit oui</span></div>
+  </div>
 
-    <div class="v-offer">
-      <div class="big-incl">
-        <div class="bi"><div class="n">72<span style="font:600 7pt 'Inter'">h</span></div><div>Votre site livré en 72 heures, clé en main</div></div>
-        <div class="bi"><div class="n">1<span style="font:600 7pt 'Inter'">an</span></div><div>Hébergement et nom de domaine offerts</div></div>
-        <div class="bi"><div class="n">0</div><div>Aucun abonnement — le site vous appartient</div></div>
-      </div>
-      <div class="priceline">
-        <span class="prix-avant">{{prix_avant}}</span>
-        <div class="p">{{prix}}&nbsp;€<small>tout compris</small></div>
-        <span class="prix-note">{{prix_note}}</span>
-        <div class="cond">Payable à la livraison, jamais avant.</div>
-      </div>
-      <div class="garantie">
-        <div class="qr">{{qr_svg}}</div>
-        <div><b>Vous ne payez que si vous aimez.</b>
-        <p>Scannez, dites bonjour sur WhatsApp — je prépare la maquette de <em>votre</em> site et je vous la montre. Elle vous plaît&nbsp;? On lance. Sinon, ça s'arrête là, sans frais.</p></div>
-      </div>
+  <div class="qr-cta">
+    <div class="qr">{{qr_svg}}</div>
+    <div class="qr-txt">
+      <div class="qr-h">{{demo_titre}}</div>
+      <p>{{demo_texte}}</p>
     </div>
+  </div>
+
+  <div class="priceline">
+    <div class="p">{{prix}}&nbsp;€ <small>tout compris</small></div>
+    <div class="cond">Payable à la livraison, jamais avant. {{prix_note}}</div>
   </div>
 
   <div class="contact">
