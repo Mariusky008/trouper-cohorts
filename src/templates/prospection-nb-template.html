@@ -198,6 +198,29 @@ html,body{background:#EEE}
 .priceline .p small{font:600 9pt 'Inter';color:var(--grey);margin-left:2mm}
 .priceline .cond{font:400 8.5pt 'Inter';color:var(--grey);margin-top:2mm}
 .contact{margin-top:auto}
+
+/* ===== Avant / Après (variante B) ===== */
+.ba{display:grid;grid-template-columns:1fr auto 1fr;gap:3mm;align-items:stretch;width:118mm;margin:2mm auto 0}
+.ba-col{display:flex;flex-direction:column}
+.ba-lbl{font:700 6.5pt 'Inter';letter-spacing:.14em;text-transform:uppercase;color:var(--grey);text-align:center;margin-bottom:2mm;min-height:6mm}
+.ba-arrow{align-self:center;font:700 15pt 'Fraunces';color:var(--ink)}
+.ba .audit{flex:1;width:auto;margin:0}
+.ba .au{padding:2.2mm 3mm;font:600 8.5pt 'Inter'}
+.ba .au .k{color:#333}
+.ba .au .v{font:800 8.5pt 'Inter'}
+.mini-new{flex:1;border:1.3pt solid var(--ink);border-radius:2.6mm;padding:3mm;display:flex;flex-direction:column;gap:2mm;background:#fff}
+.mn-bar{display:flex;gap:1.5mm}
+.mn-bar i{width:2mm;height:2mm;border-radius:50%;background:var(--hair)}
+.mn-hero{border-radius:1.8mm;background:var(--ink);padding:3mm;display:flex;flex-direction:column;gap:1.6mm}
+.mn-t{height:2.6mm;width:72%;background:#fff;border-radius:1mm}
+.mn-s{height:1.7mm;width:48%;background:#9a9a9a;border-radius:1mm}
+.mn-btn{align-self:flex-start;margin-top:1.4mm;font:800 7pt 'Inter';background:#fff;color:var(--ink);border-radius:7pt;padding:1.2mm 3.5mm}
+.mn-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.6mm}
+.mn-grid span{height:7mm;background:var(--hair);border-radius:1.2mm}
+.mn-line{height:1.7mm;background:var(--hair);border-radius:1mm}
+.mn-line.short{width:60%}
+/* Projection verso */
+.v-project{font:italic 400 11.5pt/1.45 'Fraunces';color:#222;margin-top:4mm;padding:1mm 0 1mm 4mm;border-left:2.6pt solid var(--ink)}
 </style></head><body>
 <div class="page {{variante_classe}}">
  <div class="frame"><div class="frame-in">
@@ -217,7 +240,22 @@ html,body{background:#EEE}
   <!-- PREUVE — variante B : analyse automatique de votre site -->
   <div class="proof only-b">
     <div class="proof-cap">Analyse automatique de <b>{{site_url}}</b>&nbsp;:</div>
-    <div class="audit">{{audit_rows}}</div>
+    <div class="ba">
+      <div class="ba-col">
+        <div class="ba-lbl">Votre site aujourd'hui</div>
+        <div class="audit">{{audit_rows}}</div>
+      </div>
+      <div class="ba-arrow">&rarr;</div>
+      <div class="ba-col">
+        <div class="ba-lbl">Votre site dans 72 h</div>
+        <div class="mini-new">
+          <div class="mn-bar"><i></i><i></i><i></i></div>
+          <div class="mn-hero"><div class="mn-t"></div><div class="mn-s"></div><div class="mn-btn">Appeler</div></div>
+          <div class="mn-grid"><span></span><span></span><span></span></div>
+          <div class="mn-line"></div><div class="mn-line short"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="facts">
@@ -237,6 +275,7 @@ html,body{background:#EEE}
     <div class="eyebrow">La solution</div>
     <div class="v-title">{{offre_titre}}</div>
     <div class="v-sub">{{offre_sub}}</div>
+    <div class="v-project">Imaginez&nbsp;: un client cherche vos services, tombe sur votre nouveau site, découvre votre travail — et appuie sur <b>Appeler</b>.</div>
   </div>
 
   <div class="steps">

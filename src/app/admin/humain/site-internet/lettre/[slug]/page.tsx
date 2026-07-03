@@ -156,16 +156,17 @@ export default async function SiteInternetLettrePage({
   const ms = typeof siteA.responseMs === "number" ? siteA.responseMs : null;
   const auRow = (k: string, v: string, klass = "") =>
     `<div class="au"><span class="k">${k}</span><span class="v ${klass}">${v}</span></div>`;
+  // Libellés courts : le bulletin est affiché dans une colonne étroite (avant/après).
   let auditRows = "";
   if (!hasSiteData) {
-    auditRows = auRow("Analyse détaillée", "au dos, sur demande");
+    auditRows = auRow("Analyse", "à venir");
   } else if (siteA.reachable === false) {
-    auditRows = auRow("Votre site aujourd'hui", "Injoignable", "bad");
+    auditRows = auRow("Votre site", "Injoignable", "bad");
   } else {
-    if (siteA.year) auditRows += auRow("Dernière refonte estimée", String(siteA.year));
-    auditRows += auRow("Version mobile", siteA.viewport ? "Oui" : "Non", siteA.viewport ? "good" : "bad");
-    auditRows += auRow("Connexion sécurisée (HTTPS)", siteA.https ? "Oui" : "Non", siteA.https ? "good" : "bad");
-    if (ms != null) auditRows += auRow("Vitesse d'affichage", `${(ms / 1000).toFixed(1).replace(".", ",")} s`, ms > 3000 ? "bad" : "good");
+    if (siteA.year) auditRows += auRow("Refonte", String(siteA.year), "bad");
+    auditRows += auRow("Mobile", siteA.viewport ? "Oui" : "Non", siteA.viewport ? "good" : "bad");
+    auditRows += auRow("HTTPS", siteA.https ? "Oui" : "Non", siteA.https ? "good" : "bad");
+    if (ms != null) auditRows += auRow("Vitesse", `${(ms / 1000).toFixed(1).replace(".", ",")} s`, ms > 3000 ? "bad" : "good");
   }
 
   // Numéro / expéditeur : à définir en variables d'env avant la 1re impression
