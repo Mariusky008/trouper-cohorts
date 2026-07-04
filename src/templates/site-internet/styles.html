@@ -107,7 +107,7 @@
   .webbar{background:#EDEBE5;padding:6px 8px;display:flex;gap:4px;align-items:center;border-bottom:1px solid #E1DED6;}
   .webbar i{width:6px;height:6px;border-radius:50%;background:#CFCCC4;}
   .webbar .u{flex:1;background:#fff;border:1px solid #DEDBD3;border-radius:8px;height:9px;margin-left:5px;}
-  .webscreen{height:158px;overflow:hidden;}
+  .webscreen{height:158px;overflow:hidden;position:relative;}
   .dated .banner{background:#2A2A24;color:#fff;text-align:center;font-family:'Fraunces',serif;font-size:11px;padding:8px;letter-spacing:.02em;}
   .dated .nav2{display:flex;font-size:6.5px;color:#fff;background:#4A4A42;}
   .dated .nav2 span{flex:1;text-align:center;padding:4px 0;border-right:1px solid #5A5A52;}
@@ -170,6 +170,21 @@
   .sign-body .s-role{font-size:13px;color:var(--ink-soft);margin-top:2px;}
   .sign-body .s-phone{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-top:6px;letter-spacing:.01em;}
   .sign-body .s-meta{font-size:11px;color:var(--ink-soft);margin-top:3px;}
+
+  /* ---------- CAPTURE RÉELLE du site (dans phone/navigateur) ---------- */
+  .shot{position:absolute;top:0;left:0;width:100%;display:block;background:#fff;}
+  .shot-wrap{position:absolute;inset:0;overflow:hidden;background:#fff;}
+  .ghost-over{position:absolute;left:8px;right:8px;bottom:10px;border:1.6px dashed #C1BEB4;border-radius:20px;
+    padding:9px;display:flex;align-items:center;justify-content:center;gap:6px;color:#8A877E;font-size:11px;font-weight:600;
+    background:rgba(255,255,255,.92);}
+  .ghost-over .gtag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#fff;font-size:7px;
+    letter-spacing:.12em;text-transform:uppercase;color:#B4B1A8;padding:0 6px;white-space:nowrap;}
+  .resa-over{position:absolute;left:8px;right:8px;bottom:10px;border:1.6px dashed #C1BEB4;border-radius:12px;
+    padding:9px 8px;text-align:center;color:#8A877E;background:rgba(255,255,255,.94);}
+  .resa-over .clock{font-family:'Fraunces',serif;font-size:14px;color:var(--ink);}
+  .resa-over .clock .closed{font-family:'Inter',sans-serif;font-size:7px;color:#B4B1A8;letter-spacing:.14em;text-transform:uppercase;margin-left:5px;}
+  .resa-over .rw-txt{font-size:8px;margin-top:5px;line-height:1.35;}
+  .shot-cap{text-align:center;font-size:11px;color:var(--ink-faint);margin-top:10px;letter-spacing:.02em;}
 
   @media print{
     @page{size:A4;margin:0;}

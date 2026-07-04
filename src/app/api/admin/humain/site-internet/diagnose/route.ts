@@ -367,7 +367,13 @@ export async function POST(request: Request) {
   // le plus fort), sinon EXCLU. On ne déclenche un module que sur une mesure sûre.
   const website = info?.website || "";
   let site: SiteAnalysis | null = null;
-  if (website) site = await analyzeSite(website);
+  if (website) {
+    site = await analyzeSite(website);
+    // Préchauffe la capture mShots (génération asynchrone) pour qu'elle soit
+    // prête quand l'admin ouvrira la lettre. Best-effort, non bloquant.
+    const shotUrl = /^https?:\/\//i.test(website) ? website : `https://${website}`;
+    fetch(`https://s.wordpress.com/mshots/v1/${encodeURIComponent(shotUrl)}?w=1024`).catch(() => {});
+  }
 
   let typeDiag = routeDiagnostic(Boolean(website), site);
   // La Découverte force A (sans site) / B (avec site) ; A ⇒ SANS_SITE, B ⇒ on

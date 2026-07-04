@@ -45,6 +45,29 @@ function readTpl(rel: string): string {
   return readFileSync(join(process.cwd(), "src/templates/site-internet", rel), "utf-8");
 }
 
+// Capture réelle du site via WordPress mShots (gratuit, sans clé). Génération
+// asynchrone : le 1er appel peut renvoyer un placeholder (petit) → on renvoie
+// null et on retombe sur un aperçu neutre ; au rechargement, la vraie capture
+// est prête (elle est aussi préchauffée au moment du diagnostic).
+async function fetchSiteShot(rawUrl: string): Promise<string | null> {
+  let url = rawUrl.trim();
+  if (!url) return null;
+  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+  const m = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=1024`;
+  try {
+    const r = await fetch(m, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return null;
+    const ct = r.headers.get("content-type") || "";
+    if (!/image\//i.test(ct)) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length < 3000) return null; // placeholder "en cours de génération"
+    const mime = ct.toLowerCase().includes("png") ? "image/png" : "image/jpeg";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function SiteInternetLettrePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = createAdminClient();
@@ -172,6 +195,14 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const qr_maquette = await buildQr(`${appUrl}/site-internet/apercu/${slug}`);
   const sous_titre = `${activite}${ville ? ` · ${ville}` : ""}`;
 
+  // Capture réelle du site (modules « site existant »). Sinon aperçu neutre.
+  const website = str(place.source_website);
+  let site_shot = `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#B4B1A8;font-size:10px;padding:12px;background:#fff;">Aperçu de<br>${esc(urlDomain)}</div>`;
+  if (type !== "SANS_SITE" && website) {
+    const shot = await fetchSiteShot(website);
+    if (shot) site_shot = `<img class="shot" src="${shot}" alt="Votre site actuel" />`;
+  }
+
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
     requete_metier: requete,
@@ -186,6 +217,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     sous_titre,
     vetuste_annee: year ? `est resté en ${year}.` : "est resté à une autre époque.",
     compteur_line: "Visiteurs : 004821",
+    site_shot,
     qr_maquette,
     photo_marius,
   };
