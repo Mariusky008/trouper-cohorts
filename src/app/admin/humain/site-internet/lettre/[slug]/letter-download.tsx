@@ -32,7 +32,7 @@ export function LetterDownload({ slug }: { slug: string }) {
   const handle = async () => {
     setBusy(true);
     try {
-      const pages = Array.from(document.querySelectorAll<HTMLElement>("#letter-root .page"));
+      const pages = Array.from(document.querySelectorAll<HTMLElement>("#letter-root .sheet"));
       if (pages.length === 0) throw new Error("Lettre introuvable à l'écran.");
       const names = ["recto", "verso"];
       for (let i = 0; i < pages.length; i++) {

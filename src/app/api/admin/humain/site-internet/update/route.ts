@@ -35,20 +35,13 @@ export async function POST(request: Request) {
 
   const patch: Record<string, unknown> = {};
 
-  const variantRaw = String(payload?.variant || "").trim().toUpperCase();
-  if (variantRaw === "A" || variantRaw === "B") patch.variant = variantRaw;
-
-  if (Array.isArray(payload?.constats)) {
-    const constats = (payload!.constats as Array<Record<string, unknown>>).slice(0, 3).map((c) => ({
-      statut: ["bad", "mid", "good"].includes(String(c?.statut)) ? String(c.statut) : "bad",
-      label: String(c?.label || "").slice(0, 60),
-      titre: String(c?.titre || "").slice(0, 140),
-      preuve: String(c?.preuve || "").slice(0, 200),
-    }));
-    patch.constats = constats;
+  // Module choisi à la main (corrige le routing auto).
+  const MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA", "EXCLU"];
+  const typeRaw = String(payload?.type_diagnostic || "").trim().toUpperCase();
+  if (MODULES.includes(typeRaw)) {
+    patch.type_diagnostic = typeRaw;
+    patch.variant = typeRaw === "SANS_SITE" ? "A" : "B";
   }
-
-  if (typeof payload?.synthese === "string") patch.synthese = payload.synthese.slice(0, 400);
 
   if (payload?.prix != null) {
     const prix = parseInt(String(payload.prix), 10);
@@ -56,6 +49,7 @@ export async function POST(request: Request) {
   }
 
   if (payload?.validate === true) patch.letter_status = "validated";
+  else if (typeRaw === "EXCLU") patch.letter_status = "excluded";
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Rien à mettre à jour." }, { status: 400 });

@@ -114,10 +114,11 @@ type SiteAnalysis = {
   viewport: boolean;
   year: number | null;
   responseMs: number | null;
+  hasCallButton: boolean;
 };
 
 async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
-  const result: SiteAnalysis = { reachable: false, https: false, viewport: false, year: null, responseMs: null };
+  const result: SiteAnalysis = { reachable: false, https: false, viewport: false, year: null, responseMs: null, hasCallButton: false };
   let url = rawUrl.trim();
   if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
   result.https = url.toLowerCase().startsWith("https://");
@@ -136,6 +137,7 @@ async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
     result.https = res.url.toLowerCase().startsWith("https://");
     const html = (await res.text()).slice(0, 200000);
     result.viewport = /<meta[^>]+name=["']viewport["']/i.test(html);
+    result.hasCallButton = /href=["']tel:/i.test(html);
     const years = Array.from(html.matchAll(/(?:©|&copy;|copyright)[^0-9]{0,20}(20\d{2})/gi)).map((m) => parseInt(m[1], 10));
     if (years.length) result.year = Math.max(...years);
   } catch {
@@ -208,6 +210,22 @@ function buildConstats(
     c2 = { statut: "mid", label: "Mobile", titre: "Il ne donne pas envie de vous appeler", preuve: "L'expérience, surtout sur téléphone, n'incite pas à passer le pas." };
   }
   return [c1, c2, reputationConstat(info, variant)];
+}
+
+// Routing V2 : le premier défaut réellement mesuré, dans l'ordre de douleur.
+// DECLASSE_GOOGLE et SANS_RESA sont volontairement écartés ici (mesure peu
+// fiable → risque de verdict faux) ; l'admin peut les choisir à la main.
+type TypeDiag =
+  | "SANS_SITE" | "MOBILE_CASSE" | "FUITE_APPEL" | "NON_SECURISE" | "VETUSTE" | "EXCLU";
+
+function routeDiagnostic(hasSite: boolean, site: SiteAnalysis | null): TypeDiag {
+  if (!hasSite) return "SANS_SITE";
+  if (!site || site.reachable === false) return "VETUSTE"; // site injoignable/cassé
+  if (!site.viewport) return "MOBILE_CASSE";
+  if (!site.hasCallButton) return "FUITE_APPEL";
+  if (!site.https) return "NON_SECURISE";
+  if (site.year != null && site.year <= new Date().getFullYear() - 6) return "VETUSTE";
+  return "EXCLU"; // site responsive, cliquable, sécurisé, récent → rien à vendre
 }
 
 function buildSynthese(variant: "A" | "B"): string {
@@ -345,38 +363,19 @@ export async function POST(request: Request) {
   }
   const placeNotFound = sourceStatus === "NOT_FOUND" || sourceStatus === "EMPTY";
 
-  // 2. Site existant + décision variante
+  // 2. Analyse du site + routing V2 : un seul type_diagnostic (le défaut réel
+  // le plus fort), sinon EXCLU. On ne déclenche un module que sur une mesure sûre.
   const website = info?.website || "";
   let site: SiteAnalysis | null = null;
-  let variant: "A" | "B";
-  let skipped = false;
-  if (!website) {
-    // Pas de site sur la fiche Google Maps → variante A (à confirmer à l'écran
-    // de validation, surtout si le commerce n'a même pas été trouvé).
-    variant = "A";
-  } else {
-    site = await analyzeSite(website);
-    const hasDefect =
-      !site.reachable ||
-      !site.https ||
-      !site.viewport ||
-      (site.year != null && site.year <= new Date().getFullYear() - 5) ||
-      (site.responseMs != null && site.responseMs > 4000);
-    if (hasDefect) {
-      variant = "B";
-    } else {
-      // Site correct → rien à vendre : on marque skipped mais on garde la fiche.
-      variant = "B";
-      skipped = true;
-    }
-  }
+  if (website) site = await analyzeSite(website);
 
-  // Override manuel : si l'admin a explicitement choisi A ou B, il prime sur la
-  // décision automatique (et on ne "skip" pas).
-  if (forceVariant) {
-    variant = forceVariant;
-    skipped = false;
-  }
+  let typeDiag = routeDiagnostic(Boolean(website), site);
+  // La Découverte force A (sans site) / B (avec site) ; A ⇒ SANS_SITE, B ⇒ on
+  // garde le module choisi par l'analyse du site.
+  if (forceVariant === "A") typeDiag = "SANS_SITE";
+
+  const variant: "A" | "B" = typeDiag === "SANS_SITE" ? "A" : "B";
+  const skipped = typeDiag === "EXCLU";
 
   // 3. Constats + synthèse
   let constats = buildConstats(variant, activite, city, info, site, concurrents);
@@ -399,6 +398,7 @@ export async function POST(request: Request) {
     address: info?.address || "",
     source_website: website,
     variant,
+    type_diagnostic: typeDiag,
     google_rating: info?.rating ?? null,
     google_reviews: info?.reviews ?? null,
     google_place_id: info?.place_id || null,
@@ -416,22 +416,24 @@ export async function POST(request: Request) {
     },
     constats,
     synthese,
-    letter_status: skipped ? "skipped" : "draft",
+    letter_status: skipped ? "excluded" : "draft",
   };
 
   // Avertissement remonté à l'admin.
   const warning =
     sourceStatus === "EMPTY"
-      ? `Apify n'a rien renvoyé : lettre en variante ${variant} (forcée), sans données Google. Vérifie APIFY_TOKEN, et ajuste les constats à l'écran de validation.`
-      : placeNotFound
-        ? `Commerce non trouvé sur Google Maps — variante A proposée, mais vérifie le nom exact avant d'imprimer.`
-        : "";
+      ? `Apify n'a rien renvoyé : sans données Google. Vérifie APIFY_TOKEN, et ajuste à l'écran de validation.`
+      : skipped
+        ? `Site correct (responsive, sécurisé, cliquable, récent) → EXCLU : rien à vendre honnêtement. Choisis un autre angle ou ne l'envoie pas.`
+        : placeNotFound
+          ? `Commerce non trouvé sur Google Maps — vérifie le nom exact avant d'imprimer.`
+          : "";
 
   if (id) {
     const { error } = await supabase.from("human_vitrine_sites").update(row).eq("id", id).eq("channel", "letter");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const { data } = await supabase.from("human_vitrine_sites").select("slug").eq("id", id).maybeSingle();
-    return NextResponse.json({ slug: data?.slug ?? "", variant, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 200 });
+    return NextResponse.json({ slug: data?.slug ?? "", variant, typeDiag, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 200 });
   }
 
   const baseSlug = slugify(businessName).slice(0, 60) || "prospect";
@@ -439,5 +441,5 @@ export async function POST(request: Request) {
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
   const { error } = await supabase.from("human_vitrine_sites").insert({ slug, ...row, metadata: { diagnosed: true } });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ slug, variant, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 201 });
+  return NextResponse.json({ slug, variant, typeDiag, skipped, placesStatus: sourceStatus, placeNotFound, warning }, { status: 201 });
 }
