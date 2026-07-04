@@ -4,6 +4,7 @@
 // {{…}}. Imprimer via Cmd+P → PDF (A4). Cf. BRIEF_LETTRE_PROSPECTION_V2.
 import { readFileSync } from "fs";
 import { join } from "path";
+import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
@@ -25,14 +26,19 @@ function injectVars(html: string, vars: Record<string, string>): string {
 }
 
 async function buildQr(targetUrl: string): Promise<string> {
-  const base = "https://api.qrserver.com/v1/create-qr-code/";
+  // QR généré localement (lib qrcode) → aucune dépendance réseau, toujours
+  // présent et scannable, imprimable en vectoriel.
   try {
-    const resp = await fetch(`${base}?size=600x600&margin=8&format=svg&data=${encodeURIComponent(targetUrl)}`, { cache: "no-store" });
-    if (resp.ok) return (await resp.text()).replace(/<\?xml[^>]*\?>/i, "").trim();
+    const svg = await QRCode.toString(targetUrl, {
+      type: "svg",
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#14140F", light: "#00000000" },
+    });
+    return svg.replace(/<\?xml[^>]*\?>/i, "").trim();
   } catch {
-    /* fallback */
+    return "";
   }
-  return `<img src="${base}?size=600x600&margin=8&data=${encodeURIComponent(targetUrl)}" alt="QR" />`;
 }
 
 function readTpl(rel: string): string {
@@ -98,15 +104,27 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const noteStr = rating != null ? `${rating.toFixed(1).replace(".", ",")} ★` : "";
   const urlDomain = str(place.source_website).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "") || "votre-site.fr";
 
-  // Réputation (constat positif) — chiffrée seulement si vraie note.
-  const hasNote = rating != null && reviews != null && reviews > 0;
+  // Réputation (3e constat) — 3 paliers HONNÊTES selon le volume d'avis :
+  //  ≥ 50 avis  → vraie preuve sociale, on la met en avant
+  //  1-49 avis  → pas encore assez pour rassurer : un site moderne aide à en gagner
+  //  0 avis     → opportunité pure
+  const TRUST_REVIEWS = 50;
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : "";
-  const reputation_titre = hasNote ? `${note}/5 sur ${reviews} avis : vos clients vous adorent` : "Vos futurs clients sont déjà sur Google";
-  const reputation_texte = hasNote
-    ? type === "SANS_SITE"
-      ? "Il ne manque qu'un site pour transformer cette réputation en appels."
-      : "Votre site mérite d'être à la hauteur de cette réputation."
-    : "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.";
+  let reputation_titre: string;
+  let reputation_texte: string;
+  if (rating != null && reviews != null && reviews >= TRUST_REVIEWS) {
+    reputation_titre = `${note}/5 sur ${reviews} avis : vos clients vous adorent`;
+    reputation_texte =
+      type === "SANS_SITE"
+        ? "Il ne manque qu'un site pour transformer cette réputation en appels."
+        : "Votre site mérite d'être à la hauteur de cette réputation.";
+  } else if (reviews != null && reviews >= 1) {
+    reputation_titre = "Pas encore assez d'avis pour rassurer";
+    reputation_texte = `Avec ${reviews} avis${note ? ` (${note}/5)` : ""}, un nouveau client hésite encore. Un site moderne et bien visible inspire confiance — et donne envie d'en laisser plus.`;
+  } else {
+    reputation_titre = "Vos futurs clients sont déjà sur Google";
+    reputation_texte = "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.";
+  }
 
   // Résultats Google (SANS_SITE)
   const compResults = conc
