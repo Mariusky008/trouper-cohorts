@@ -129,17 +129,29 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     serpComp +
     `<div class="sgap">· · ·</div><div class="srow me"><div class="srank">↓</div><div><div class="sname">${esc(nom)}</div><div class="smeta">${noteStr ? noteStr + " · " : ""}plus bas dans les résultats</div></div><div class="sbadge">Vous êtes ici</div></div>`;
 
-  // Photo signature (optionnelle)
+  // Photo signature (optionnelle). On accepte un fichier image direct
+  // (src/templates/site_photo.jpg|png) encodé en base64, ou un HTML pré-fait.
   let photo_marius = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.4"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0"/></svg>`;
-  try {
-    photo_marius = readFileSync(join(process.cwd(), "src/templates/site-letter-photo.html"), "utf-8").trim() || photo_marius;
-  } catch {
-    /* garde le monogramme */
-  }
+  const photoImg = (() => {
+    for (const [file, mime] of [["site_photo.jpg", "image/jpeg"], ["site_photo.png", "image/png"], ["site_photo.jpeg", "image/jpeg"]] as const) {
+      try {
+        const buf = readFileSync(join(process.cwd(), "src/templates", file));
+        return `<img src="data:${mime};base64,${buf.toString("base64")}" alt="Marius" />`;
+      } catch {
+        /* essaie le suivant */
+      }
+    }
+    try {
+      return readFileSync(join(process.cwd(), "src/templates/site-letter-photo.html"), "utf-8").trim() || null;
+    } catch {
+      return null;
+    }
+  })();
+  if (photoImg) photo_marius = photoImg;
 
   const telephone = process.env.SITE_LETTER_PHONE || "07 XX XX XX XX";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy";
-  const qr_maquette = await buildQr(`${appUrl}/site-internet/${slug}`);
+  const qr_maquette = await buildQr(`${appUrl}/site-internet/apercu/${slug}`);
   const sous_titre = `${activite}${ville ? ` · ${ville}` : ""}`;
 
   const vars: Record<string, string> = {
