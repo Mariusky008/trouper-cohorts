@@ -136,6 +136,27 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     reputation_texte = "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.";
   }
 
+  // Bulletin de note ("scorecard") — UNIQUEMENT des critères réellement mesurés,
+  // pour que chaque étoile soit défendable. Aucun axe inventé.
+  //  Mobile   ← balise viewport détectée sur la page
+  //  Sécurité ← HTTPS
+  //  Appel    ← lien tel: cliquable présent
+  //  Avis     ← volume d'avis Google
+  const starRow = (n: number) =>
+    Array.from({ length: 5 }, (_, i) => `<span class="${i < n ? "on" : "off"}">★</span>`).join("");
+  const scCell = (label: string, n: number) =>
+    `<div class="sc-cell"><div class="sc-l">${label}</div><div class="sc-stars">${starRow(n)}</div></div>`;
+  let scorecard = "";
+  if (type !== "SANS_SITE") {
+    const nMobile = siteA.viewport === true ? 4 : siteA.viewport === false ? 1 : 3;
+    const nSecu = siteA.https === true ? 5 : 1;
+    const nAppel = siteA.hasCallButton === true ? 5 : 2;
+    const nAvis = nbAvis >= 80 ? 5 : nbAvis >= 30 ? 4 : nbAvis >= 10 ? 3 : nbAvis >= 1 ? 2 : 1;
+    scorecard =
+      `<div class="scorecard"><div class="sc-cap">Votre présence en ligne, aujourd'hui</div>` +
+      `<div class="sc-row">${scCell("Mobile", nMobile)}${scCell("Sécurité", nSecu)}${scCell("Appel", nAppel)}${scCell("Avis", nAvis)}</div></div>`;
+  }
+
   // Résultats Google (SANS_SITE)
   const compResults = conc
     .slice(0, 2)
@@ -221,6 +242,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     vetuste_annee: year ? `est resté en ${year}.` : "est resté à une autre époque.",
     compteur_line: "Visiteurs : 004821",
     site_shot,
+    scorecard,
     qr_maquette,
     photo_marius,
   };
