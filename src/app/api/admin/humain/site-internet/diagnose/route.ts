@@ -220,12 +220,16 @@ type TypeDiag =
 
 function routeDiagnostic(hasSite: boolean, site: SiteAnalysis | null): TypeDiag {
   if (!hasSite) return "SANS_SITE";
-  if (!site || site.reachable === false) return "VETUSTE"; // site injoignable/cassé
-  if (!site.viewport) return "MOBILE_CASSE";
-  if (!site.hasCallButton) return "FUITE_APPEL";
-  if (!site.https) return "NON_SECURISE";
-  if (site.year != null && site.year <= new Date().getFullYear() - 6) return "VETUSTE";
-  return "EXCLU"; // site responsive, cliquable, sécurisé, récent → rien à vendre
+  // Site injoignable : peut être un blocage anti-bot de NOTRE côté, pas un vrai
+  // défaut → on n'affirme rien (EXCLU). L'admin tranche à la main si besoin.
+  if (!site || site.reachable === false) return "EXCLU";
+  if (!site.viewport) return "MOBILE_CASSE"; // pas de balise responsive = vrai défaut mobile
+  if (!site.https) return "NON_SECURISE"; // pas de HTTPS = fiable
+  if (site.year != null && site.year <= new Date().getFullYear() - 8) return "VETUSTE"; // copyright très ancien
+  // FUITE_APPEL (pas de tel:) est trop souvent un FAUX positif (bouton RDV,
+  // formulaire, WhatsApp…) → laissé au choix manuel, jamais auto.
+  // Site responsive, sécurisé, récent → rien à vendre honnêtement.
+  return "EXCLU";
 }
 
 function buildSynthese(variant: "A" | "B"): string {
