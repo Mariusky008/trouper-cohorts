@@ -48,6 +48,19 @@ export async function POST(request: Request) {
     if (Number.isFinite(prix) && prix >= 0) patch.prix = prix;
   }
 
+  // Capture manuelle du site actuel (data URI image, compressée côté client).
+  // Chaîne vide = on efface (retour au schéma neutre par défaut).
+  if (payload?.site_shot !== undefined) {
+    const shot = String(payload.site_shot || "").trim();
+    if (shot === "") {
+      patch.site_shot_manual = null;
+    } else if (/^data:image\/(png|jpe?g|webp);base64,/i.test(shot) && shot.length <= 900_000) {
+      patch.site_shot_manual = shot;
+    } else {
+      return NextResponse.json({ error: "Capture invalide (image trop lourde ou format non supporté)." }, { status: 400 });
+    }
+  }
+
   if (payload?.validate === true) patch.letter_status = "validated";
   else if (typeRaw === "EXCLU") patch.letter_status = "excluded";
 

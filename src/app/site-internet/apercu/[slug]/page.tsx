@@ -78,6 +78,16 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .hsub{color:#C7CBD4;font-size:14px;}
           .mq .rev{margin-top:14px;font-size:14px;color:#EBD9A8;}
           .mq .rev b{color:#fff;font-weight:700;}
+          /* ---- Avis Google : ils sautent au visage au scan ---- */
+          .mq .grev{margin-top:20px;background:#fff;color:#14140F;border-radius:18px;padding:18px 20px;display:flex;align-items:center;gap:18px;box-shadow:0 10px 30px rgba(0,0,0,.28);}
+          .mq .grev-score{font-family:Georgia,serif;font-size:46px;font-weight:700;line-height:1;color:#14140F;}
+          .mq .grev-right{flex:1;min-width:0;}
+          .mq .grev-stars{color:#FBBC04;font-size:22px;letter-spacing:2px;line-height:1;}
+          .mq .grev-glabel{margin-top:7px;font-size:13.5px;color:#5F6368;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+          .mq .glogo{font-weight:700;font-size:15px;letter-spacing:-.5px;font-family:Arial,sans-serif;}
+          .mq .glogo .b{color:#4285F4;}.mq .glogo .r{color:#EA4335;}.mq .glogo .y{color:#FBBC04;}.mq .glogo .b2{color:#4285F4;}.mq .glogo .g{color:#34A853;}.mq .glogo .r2{color:#EA4335;}
+          .mq .grev-link{display:inline-block;margin-top:2px;font-size:13px;color:#1a73e8;font-weight:600;text-decoration:none;}
+          .mq .grev-badge{margin-left:auto;flex:none;align-self:flex-start;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#188038;background:#E6F4EA;border-radius:999px;padding:5px 10px;}
           .mq .cta{display:flex;gap:10px;margin-top:20px;}
           .mq .cta a{flex:1;text-align:center;padding:14px;border-radius:14px;font-weight:700;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;}
           .mq .cta .call{background:var(--cr);color:var(--dk);}
@@ -107,9 +117,22 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <div className="kicker">{activite}{ville ? ` · ${ville}` : ""}</div>
         <div className="hname">{nom}</div>
         <div className="hsub">Votre nouvelle vitrine, claire et mobile — comme la verraient vos clients.</div>
-        {note && (
-          <div className="rev"><b>{stars}</b> &nbsp;{note}/5{reviews != null ? ` · ${reviews} avis Google` : ""}</div>
-        )}
+        {note && reviews != null && reviews > 0 ? (
+          <div className="grev">
+            <div className="grev-score">{note}</div>
+            <div className="grev-right">
+              <div className="grev-stars">{stars}</div>
+              <div className="grev-glabel">
+                <span className="glogo"><span className="b">G</span><span className="r">o</span><span className="y">o</span><span className="b2">g</span><span className="g">l</span><span className="r2">e</span></span>
+                <span>· {reviews} avis</span>
+              </div>
+              <a className="grev-link" href={mapsHref} target="_blank" rel="noreferrer">Voir les avis →</a>
+            </div>
+            {rating != null && rating >= 4.5 && <span className="grev-badge">Recommandé</span>}
+          </div>
+        ) : note ? (
+          <div className="rev"><b>{stars}</b> &nbsp;{note}/5</div>
+        ) : null}
         <div className="cta">
           {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
           {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}

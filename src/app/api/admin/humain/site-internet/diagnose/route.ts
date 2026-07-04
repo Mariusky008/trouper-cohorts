@@ -373,10 +373,8 @@ export async function POST(request: Request) {
   let site: SiteAnalysis | null = null;
   if (website) {
     site = await analyzeSite(website);
-    // Préchauffe la capture mShots (génération asynchrone) pour qu'elle soit
-    // prête quand l'admin ouvrira la lettre. Best-effort, non bloquant.
-    const shotUrl = /^https?:\/\//i.test(website) ? website : `https://${website}`;
-    fetch(`https://s.wordpress.com/mshots/v1/${encodeURIComponent(shotUrl)}?w=1024`).catch(() => {});
+    // (Capture auto mShots retirée : trompeuse. Le recto montre un schéma neutre
+    // honnête, l'admin peut coller sa propre capture fidèle depuis la lettre.)
   }
 
   let typeDiag = routeDiagnostic(Boolean(website), site);

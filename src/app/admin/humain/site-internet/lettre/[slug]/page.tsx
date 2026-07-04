@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
+import { ScreenshotUpload } from "./screenshot-upload";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,35 +46,12 @@ function readTpl(rel: string): string {
   return readFileSync(join(process.cwd(), "src/templates/site-internet", rel), "utf-8");
 }
 
-// Capture réelle du site via WordPress mShots (gratuit, sans clé). Génération
-// asynchrone : le 1er appel peut renvoyer un placeholder (petit) → on renvoie
-// null et on retombe sur un aperçu neutre ; au rechargement, la vraie capture
-// est prête (elle est aussi préchauffée au moment du diagnostic).
-async function fetchSiteShot(rawUrl: string): Promise<string | null> {
-  let url = rawUrl.trim();
-  if (!url) return null;
-  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-  const m = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=1024`;
-  try {
-    const r = await fetch(m, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-    if (!r.ok) return null;
-    const ct = r.headers.get("content-type") || "";
-    if (!/image\//i.test(ct)) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
-    if (buf.length < 3000) return null; // placeholder "en cours de génération"
-    const mime = ct.toLowerCase().includes("png") ? "image/png" : "image/jpeg";
-    return `data:${mime};base64,${buf.toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
-
 export default async function SiteInternetLettrePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("human_vitrine_sites")
-    .select("id,slug,business_name,city,activite,address,variant,type_diagnostic,site_annee,google_rating,google_reviews,prix,diagnostic,letter_status,source_website")
+    .select("id,slug,business_name,city,activite,address,variant,type_diagnostic,site_annee,google_rating,google_reviews,prix,diagnostic,letter_status,source_website,site_shot_manual")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -127,23 +105,32 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const noteStr = rating != null ? `${rating.toFixed(1).replace(".", ",")} ★` : "";
   const urlDomain = str(place.source_website).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "") || "votre-site.fr";
 
-  // Réputation (3e constat) — 3 paliers HONNÊTES selon le volume d'avis :
-  //  ≥ 50 avis  → vraie preuve sociale, on la met en avant
-  //  1-49 avis  → pas encore assez pour rassurer : un site moderne aide à en gagner
-  //  0 avis     → opportunité pure
-  const TRUST_REVIEWS = 50;
+  // Réputation (3e constat) — 4 paliers HONNÊTES selon le volume d'avis.
+  // Aucune formule flatteuse tant que le volume ne la justifie pas.
+  //  0-10   → réputation encore peu visible (opportunité)
+  //  10-30  → pas encore assez d'avis pour rassurer
+  //  30-80  → bonne réputation à mieux mettre en valeur
+  //  80+    → excellente réputation, le site doit la porter
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : "";
+  const noteFrag = note ? ` (${note}/5)` : "";
+  const nbAvis = reviews ?? 0;
   let reputation_titre: string;
   let reputation_texte: string;
-  if (rating != null && reviews != null && reviews >= TRUST_REVIEWS) {
-    reputation_titre = `${note}/5 sur ${reviews} avis : vos clients vous adorent`;
+  if (nbAvis >= 80) {
+    reputation_titre = `Une excellente réputation${note ? ` : ${note}/5 sur ${nbAvis} avis` : ""}`;
     reputation_texte =
       type === "SANS_SITE"
         ? "Il ne manque qu'un site pour transformer cette réputation en appels."
-        : "Votre site mérite d'être à la hauteur de cette réputation.";
-  } else if (reviews != null && reviews >= 1) {
+        : "Votre site devrait la mettre davantage en avant — aujourd'hui, elle ne se voit pas.";
+  } else if (nbAvis >= 30) {
+    reputation_titre = "Une bonne réputation qui mérite d'être mise en valeur";
+    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, la confiance est là. Un site clair la rend visible et donne envie de vous appeler.`;
+  } else if (nbAvis >= 10) {
     reputation_titre = "Pas encore assez d'avis pour rassurer";
-    reputation_texte = `Avec ${reviews} avis${note ? ` (${note}/5)` : ""}, un nouveau client hésite encore. Un site moderne et bien visible inspire confiance — et donne envie d'en laisser plus.`;
+    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, un nouveau client hésite encore. Votre réputation est bonne — donnez-lui une vitrine qui inspire confiance et incite davantage de clients à en laisser.`;
+  } else if (nbAvis >= 1) {
+    reputation_titre = "Votre réputation est encore peu visible";
+    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, elle ne rassure pas encore. Un site soigné met vos clients en confiance et donne envie d'en laisser davantage.`;
   } else {
     reputation_titre = "Vos futurs clients sont déjà sur Google";
     reputation_texte = "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.";
@@ -195,16 +182,32 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const qr_maquette = await buildQr(`${appUrl}/site-internet/apercu/${slug}`);
   const sous_titre = `${activite}${ville ? ` · ${ville}` : ""}`;
 
-  // Capture réelle du site (modules « site existant »). Sinon aperçu neutre.
-  const website = str(place.source_website);
-  let site_shot = `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#B4B1A8;font-size:10px;padding:12px;background:#fff;">Aperçu de<br>${esc(urlDomain)}</div>`;
-  if (type !== "SANS_SITE" && website) {
-    const shot = await fetchSiteShot(website);
-    if (shot) site_shot = `<img class="shot" src="${shot}" alt="Votre site actuel" />`;
+  // Représentation du site actuel (modules « site existant ») — OPTION A honnête.
+  // Par défaut : un schéma neutre, clairement un croquis (jamais une fausse capture
+  // qui prétendrait être le site exact du commerçant). Le vrai diagnostic est porté
+  // par le texte des constats (signaux réellement mesurés) et par les surcouches.
+  // Si l'admin a collé SA propre capture (prise sur mobile, fidèle), elle prime.
+  const shotManual = str(place.site_shot_manual);
+  const wireframe =
+    `<div class="wireframe">` +
+    `<div class="wf-bar"></div><div class="wf-hero"></div>` +
+    `<div class="wf-l"></div><div class="wf-l s"></div><div class="wf-l"></div><div class="wf-l s"></div>` +
+    `<div class="wf-tag">Schéma — votre site actuel</div>` +
+    `</div>`;
+  let site_shot = wireframe;
+  if (type !== "SANS_SITE" && /^data:image\//i.test(shotManual)) {
+    site_shot = `<img class="shot" src="${shotManual}" alt="Votre site actuel" />`;
   }
+
+  // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
+  // Jamais de fausse mention (ex. « réalisé manuellement en 14 min »).
+  const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`]
+    .filter(Boolean)
+    .join(" · ");
 
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
+    diag_eyebrow,
     requete_metier: requete,
     google_results,
     concurrents_phrase,
@@ -250,6 +253,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
         <PrintButton />
         <LetterDownload slug={slug} />
         <LetterValidation slug={slug} type={type} prix={prix} />
+        {type !== "SANS_SITE" && <ScreenshotUpload slug={slug} hasShot={/^data:image\//i.test(shotManual)} />}
         <a href="/admin/humain/site-internet" style={{ color: "#00E0A0", textDecoration: "none" }}>← Liste</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → contact direct</span>
       </div>
