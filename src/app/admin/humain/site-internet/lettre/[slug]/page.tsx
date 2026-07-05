@@ -237,9 +237,16 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     .filter(Boolean)
     .join(" · ");
 
+  // Titre auto-rétréci pour les noms longs (évite le débordement A4 sur 2 lignes).
+  const nameLen = nom.length;
+  const title_style =
+    nameLen > 42 ? "font-size:26px;line-height:1.06" :
+    nameLen > 34 ? "font-size:30px;line-height:1.06" :
+    nameLen > 24 ? "font-size:36px;line-height:1.05" : "";
+
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
-    diag_eyebrow,
+    diag_eyebrow, title_style,
     requete_metier: requete,
     google_results,
     concurrents_phrase,
