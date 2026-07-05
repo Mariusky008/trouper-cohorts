@@ -6,6 +6,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDirectoryUrl } from "@/lib/site-internet/directories";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
@@ -85,10 +86,15 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     .map((c) => (typeof c === "string" ? { name: c, note: "" } : { name: str((c as Record<string, unknown>)?.name), note: str((c as Record<string, unknown>)?.note) }))
     .filter((c) => c.name);
 
+  // Une fiche d'annuaire (Doctolib, Facebook, PagesJaunes…) n'est pas le site du
+  // commerçant → on la traite comme absence de site (honnêteté).
+  const rawSource = str(place.source_website);
+  const website = isDirectoryUrl(rawSource) ? "" : rawSource;
+
   // type_diagnostic (fallback dérivé pour les anciennes fiches)
   let type = str(place.type_diagnostic);
   if (!MODULES.includes(type)) {
-    const hasSite = Boolean(str(place.source_website));
+    const hasSite = Boolean(website);
     if (!hasSite) type = "SANS_SITE";
     else if (siteA.viewport === false) type = "MOBILE_CASSE";
     else if (siteA.hasCallButton === false) type = "FUITE_APPEL";
@@ -106,7 +112,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // Domaine seul (sans protocole, www, chemin ni paramètres) — sinon on affiche
   // des URL énormes type « doctolib.fr/dieteticien/...?profile_skipped=true ».
   const urlDomain =
-    str(place.source_website)
+    website
       .replace(/^https?:\/\//i, "")
       .replace(/^www\./i, "")
       .split(/[/?#]/)[0]

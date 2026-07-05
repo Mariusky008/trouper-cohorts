@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { slugify } from "@/lib/popey-marketplace";
 import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
+import { isDirectoryUrl } from "@/lib/site-internet/directories";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -369,7 +370,13 @@ export async function POST(request: Request) {
 
   // 2. Analyse du site + routing V2 : un seul type_diagnostic (le défaut réel
   // le plus fort), sinon EXCLU. On ne déclenche un module que sur une mesure sûre.
-  const website = info?.website || "";
+  // Une fiche Doctolib / page Facebook / PagesJaunes n'est PAS le site du
+  // commerçant : on ne peut pas la critiquer comme « votre site actuel ». Ces
+  // cas basculent en SANS_SITE (il n'a pas de site à lui). On garde la trace de
+  // l'annuaire détecté à titre informatif.
+  const rawWebsite = info?.website || "";
+  const websiteIsDirectory = isDirectoryUrl(rawWebsite);
+  const website = websiteIsDirectory ? "" : rawWebsite;
   let site: SiteAnalysis | null = null;
   if (website) {
     site = await analyzeSite(website);
@@ -416,6 +423,7 @@ export async function POST(request: Request) {
       places_found: Boolean(info),
       source_status: sourceStatus,
       place_not_found: placeNotFound,
+      directory_url: websiteIsDirectory ? rawWebsite : null,
       site,
       horaires: info?.horaires ?? [],
       concurrents,
@@ -431,11 +439,13 @@ export async function POST(request: Request) {
   const warning =
     sourceStatus === "EMPTY"
       ? `Apify n'a rien renvoyé : sans données Google. Vérifie APIFY_TOKEN, et ajuste à l'écran de validation.`
-      : skipped
-        ? `Site correct (responsive, sécurisé, cliquable, récent) → EXCLU : rien à vendre honnêtement. Choisis un autre angle ou ne l'envoie pas.`
-        : placeNotFound
-          ? `Commerce non trouvé sur Google Maps — vérifie le nom exact avant d'imprimer.`
-          : "";
+      : websiteIsDirectory
+        ? `Le « site » détecté est un annuaire/une fiche (${rawWebsite.replace(/^https?:\/\//i, "").split(/[/?#]/)[0]}), pas un vrai site à lui → traité comme SANS_SITE. Vérifie qu'il n'a pas de site propre avant d'imprimer.`
+        : skipped
+          ? `Site correct (responsive, sécurisé, cliquable, récent) → EXCLU : rien à vendre honnêtement. Choisis un autre angle ou ne l'envoie pas.`
+          : placeNotFound
+            ? `Commerce non trouvé sur Google Maps — vérifie le nom exact avant d'imprimer.`
+            : "";
 
   if (id) {
     const { error } = await supabase.from("human_vitrine_sites").update(row).eq("id", id).eq("channel", "letter");
