@@ -10,7 +10,8 @@ export async function apifyGoogleMaps(
   token: string,
   searchStrings: string[],
   locationQuery: string,
-  limit: number
+  limit: number,
+  opts?: { maxImages?: number; maxReviews?: number; reviewsSort?: string }
 ): Promise<ApifyResult> {
   try {
     const res = await fetch(
@@ -24,6 +25,11 @@ export async function apifyGoogleMaps(
           maxCrawledPlacesPerSearch: limit,
           language: "fr",
           countryCode: "fr",
+          // Par défaut 0 (découverte/diagnostic léger). La maquette demande les
+          // photos + avis réels du commerce (contenus publics du pro).
+          maxImages: opts?.maxImages ?? 0,
+          maxReviews: opts?.maxReviews ?? 0,
+          reviewsSort: opts?.reviewsSort ?? "newest",
         }),
       }
     );

@@ -108,6 +108,45 @@ async function apifyLookup(
   return { info: itemToInfo(biz), concurrents, status: "OK" };
 }
 
+// Photos + avis RÉELS du commerce (contenus publics de sa fiche Google), pour
+// nourrir la maquette. Appel Apify ciblé (avec maxImages/maxReviews) — 1 appel
+// de plus par diagnostic, uniquement sur le commerce concerné.
+export type ReviewSnippet = { name: string; text: string; stars: number | null };
+function extractMedia(item: Record<string, unknown>): { photos: string[]; reviews: ReviewSnippet[] } {
+  const imgs = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+  const photos = imgs
+    .map((u) => String(u))
+    .filter((u) => /^https?:\/\//i.test(u))
+    .slice(0, 8);
+  const rv = Array.isArray(item.reviews) ? (item.reviews as Array<Record<string, unknown>>) : [];
+  const reviews = rv
+    .map((r) => ({
+      name: String(r?.name || "").trim(),
+      text: String(r?.text || r?.textTranslated || "").replace(/\s+/g, " ").trim(),
+      stars: typeof r?.stars === "number" ? (r.stars as number) : typeof r?.rating === "number" ? (r.rating as number) : null,
+    }))
+    .filter((r) => r.text.length >= 12);
+  return { photos, reviews };
+}
+
+async function fetchPlaceMedia(token: string, businessName: string, city: string): Promise<{ photos: string[]; reviews: ReviewSnippet[] }> {
+  try {
+    const items = (
+      await apifyGoogleMaps(token, [`${businessName} ${city}`], `${city}, france`, 2, {
+        maxImages: 8,
+        maxReviews: 8,
+        reviewsSort: "newest",
+      })
+    ).items;
+    const self = norm(businessName);
+    const it = items.find((x) => matchesBusiness(String(x.title || ""), self)) || items[0];
+    if (!it) return { photos: [], reviews: [] };
+    return extractMedia(it);
+  } catch {
+    return { photos: [], reviews: [] };
+  }
+}
+
 // ── Analyse du site existant ─────────────────────────────────────────────────
 type SiteAnalysis = {
   reachable: boolean;
@@ -354,6 +393,17 @@ export async function POST(request: Request) {
     concurrents = r.concurrents;
     sourceStatus = r.status;
   }
+  // Photos + avis réels du commerce (pour la maquette). Contenus publics de sa
+  // fiche Google → honnête. On ne fetch que si un commerce a bien été identifié.
+  let photos: string[] = [];
+  let reviewsTop: ReviewSnippet[] = [];
+  if (info && apifyToken && sourceStatus === "OK") {
+    const media = await fetchPlaceMedia(apifyToken, businessName, city);
+    photos = media.photos;
+    // Avis positifs, avec texte, les 3 plus récents (ordre déjà "newest").
+    reviewsTop = media.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
+  }
+
   // "EMPTY" = Apify n'a rien renvoyé (souci token/quota). Sans variante forcée
   // et sans résultat exploitable, on bloque proprement.
   if (sourceStatus === "EMPTY" && !forceVariant) {
@@ -425,6 +475,8 @@ export async function POST(request: Request) {
       place_not_found: placeNotFound,
       directory_url: websiteIsDirectory ? rawWebsite : null,
       site,
+      photos,
+      reviews_top: reviewsTop,
       horaires: info?.horaires ?? [],
       concurrents,
       polished: Boolean(anthropicKey && !skipped),
