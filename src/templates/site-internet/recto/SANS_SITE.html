@@ -3,29 +3,18 @@
   <div class="title" style="{{title_style}}">{{nom_commerce}}</div>
   <div class="addr">{{adresse}}</div>
 
-  <div class="lead-label">Ce que voient vos clients en cherchant sur Google :</div>
+  <div class="story-scene">Un client cherche <b>« {{requete_metier}} »</b> sur Google.<br>Voici, dans l'ordre, ce qu'il voit :</div>
+
   <div class="search">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
     <span>{{requete_metier}}</span>
   </div>
   {{google_results}}
 
-  <div class="constats">
-    <div class="constat">
-      <span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/><line x1="15.5" y1="8.5" x2="8.5" y2="15.5"/></svg></span>
-      <div><h4>{{sans_titre1}}</h4><p>{{sans_texte1}}</p></div>
-    </div>
-    <div class="constat">
-      <span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/><line x1="15.5" y1="8.5" x2="8.5" y2="15.5"/></svg></span>
-      <div><h4>Ils tombent sur vos concurrents</h4><p>{{concurrents_phrase}}</p></div>
-    </div>
-    <div class="constat">
-      <span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="#14140F"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#FCFBF9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      <div><h4>{{reputation_titre}}</h4><p>{{reputation_texte}}</p></div>
-    </div>
-  </div>
-
   <div class="spacer"></div>
-  <div class="bascule">Chaque semaine, des clients cherchent vos services sur Google.<br>Ils trouvent vos concurrents. <u>Pas vous.</u></div>
+  <div class="story-conseq">{{sans_conseq}}</div>
+  <div class="spacer"></div>
+
+  <div class="climax">Chaque semaine, des clients cherchent vos services.<br>Ils trouvent vos concurrents. <u>Pas vous.</u></div>
   <div class="foot-rule"><div class="foot-cta">La solution est au dos&nbsp;↓</div></div>
 </div></div>

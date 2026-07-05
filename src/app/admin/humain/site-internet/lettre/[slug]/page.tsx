@@ -183,16 +183,28 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     ? `Sur ${platform}, vous êtes une ligne parmi d'autres. Un site à vous ne parle que de vous — et il vous appartient.`
     : "Votre fiche Google n'affiche aucun site : juste une adresse et un numéro.";
 
-  // Résultats Google (SANS_SITE)
+  // SANS_SITE — le SERP raconte un parcours : les concurrents (qui ont un site)
+  // d'abord, puis ↓, puis vous tout en bas (aucun site). L'œil descend l'histoire.
   const compResults = conc
     .slice(0, 2)
     .map((c) => `<div class="result"><div class="r-name">${esc(c.name)}</div><div class="r-meta">${c.note ? esc(c.note) + " · " : ""}a un site web</div></div>`)
     .join("");
-  const google_results = compResults + `<div class="result me"><div class="r-name">${esc(nom)}</div><div class="badge">Aucun site web</div></div>`;
+  const meRow = `<div class="result me"><div class="r-name">${esc(nom)}</div><div class="badge">Aucun site web</div></div>`;
+  const google_results = conc.length
+    ? `<div class="serp-hint">D'abord, ceux qui ont un site :</div>${compResults}<div class="serp-down">↓ et vous, tout en bas</div>${meRow}`
+    : meRow;
   const noms = conc.slice(0, 2).map((c) => c.name);
   const concurrents_phrase = noms.length
     ? `Sur « ${esc(requete)} », ${esc(noms.join(" et "))} apparaissent avec leur site. Pas vous.`
     : `Chaque jour, des clients cherchent « ${esc(requete)} » — et tombent sur ceux qui ont un site.`;
+
+  // Conséquence honnête (ACTE final avant le climax) — adaptée à la situation.
+  // On parle du SITE qui manque, jamais d'une invisibilité totale (fiche Google existe).
+  const sans_conseq = platform
+    ? `Vous êtes sur ${platform}, mais pas sur un site à vous — une ligne parmi d'autres.`
+    : reviews != null && reviews >= 1 && note
+      ? `Vos clients vous notent ${note}/5 sur Google. Mais sans site, rien ne transforme les curieux en appels.`
+      : `Le client clique sur ceux qui ont un site. Le vôtre n'existe pas encore.`;
 
   // SERP (DECLASSE_GOOGLE)
   let rank = 1;
@@ -295,7 +307,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     concurrents_phrase,
     serp_rows,
     reputation_titre, reputation_texte,
-    sans_titre1, sans_texte1,
+    sans_titre1, sans_texte1, sans_conseq,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
     ba_neg_3: year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur",
