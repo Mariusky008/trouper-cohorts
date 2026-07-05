@@ -103,7 +103,14 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const requete = `${activite} ${ville}`.trim().toLowerCase();
   const year = typeof siteA.year === "number" ? siteA.year : null;
   const noteStr = rating != null ? `${rating.toFixed(1).replace(".", ",")} ★` : "";
-  const urlDomain = str(place.source_website).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "") || "votre-site.fr";
+  // Domaine seul (sans protocole, www, chemin ni paramètres) — sinon on affiche
+  // des URL énormes type « doctolib.fr/dieteticien/...?profile_skipped=true ».
+  const urlDomain =
+    str(place.source_website)
+      .replace(/^https?:\/\//i, "")
+      .replace(/^www\./i, "")
+      .split(/[/?#]/)[0]
+      .trim() || "votre-site.fr";
 
   // Réputation (3e constat) — 4 paliers HONNÊTES selon le volume d'avis.
   // Aucune formule flatteuse tant que le volume ne la justifie pas.
