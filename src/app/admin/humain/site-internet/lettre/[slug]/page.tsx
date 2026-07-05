@@ -51,7 +51,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("human_vitrine_sites")
-    .select("id,slug,business_name,city,activite,address,variant,type_diagnostic,site_annee,google_rating,google_reviews,prix,diagnostic,letter_status,source_website,site_shot_manual")
+    .select("id,slug,business_name,city,activite,address,variant,type_diagnostic,site_annee,google_rating,google_reviews,prix,diagnostic,letter_status,source_website")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -208,7 +208,18 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // qui prétendrait être le site exact du commerçant). Le vrai diagnostic est porté
   // par le texte des constats (signaux réellement mesurés) et par les surcouches.
   // Si l'admin a collé SA propre capture (prise sur mobile, fidèle), elle prime.
-  const shotManual = str(place.site_shot_manual);
+  // Lecture tolérante de la capture manuelle : la colonne peut ne pas encore
+  // exister (migration non appliquée) → on ignore sans casser la lettre.
+  let shotManual = "";
+  {
+    const { data: shotRow } = await supabase
+      .from("human_vitrine_sites")
+      .select("site_shot_manual")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    shotManual = str((shotRow as Record<string, unknown> | null)?.site_shot_manual);
+  }
   const wireframe =
     `<div class="wireframe">` +
     `<div class="wf-bar"></div><div class="wf-hero"></div>` +
