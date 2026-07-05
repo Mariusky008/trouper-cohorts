@@ -63,7 +63,10 @@
   .new-stars{color:#E8C24A;font-size:9px;letter-spacing:1.5px;margin:6px 0 9px;}
   .new-stars b{color:#EBD9A8;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0;margin-left:3px;}
   .new-hero{height:44px;border-radius:9px;background:linear-gradient(150deg,#242A36,#14171F 60%,#0C0E14);border:1px solid #2A2F3B;margin-bottom:10px;position:relative;overflow:hidden;}
-  .new-hero::before{content:"";position:absolute;top:-16px;right:-16px;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,rgba(232,194,74,.32),transparent 70%);}
+  .new-hero::before{content:"";position:absolute;top:-16px;right:-16px;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,rgba(232,194,74,.32),transparent 70%);z-index:0;}
+  /* Vraie photo Google du pro dans l'aperçu (repli sur le dégradé si absente/erreur) */
+  .mk-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:1;display:block;}
+  .mk-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(11,13,18,.12),rgba(11,13,18,.74));}
   .new-call{background:#E8C24A;color:#14140F;font-weight:700;font-size:11px;text-align:center;padding:10px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:11px;box-shadow:0 3px 10px rgba(232,194,74,.28);}
   .new-chips{display:flex;gap:6px;}
   .new-chips span{flex:1;height:24px;border-radius:6px;background:#171B24;border:1px solid #262B36;}
@@ -147,7 +150,7 @@
   .modern .m-stars b{color:#EBD9A8;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0;margin-left:3px;}
   .modern .m-hero{flex:1;min-height:30px;border-radius:8px;background:linear-gradient(150deg,#242A36 0%,#14171F 60%,#0C0E14 100%);border:1px solid #2A2F3B;position:relative;overflow:hidden;margin-bottom:9px;display:flex;align-items:flex-end;padding:9px;}
   .modern .m-hero::before{content:"";position:absolute;top:-18px;right:-18px;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(232,194,74,.32),transparent 70%);}
-  .modern .m-call{background:#E8C24A;color:#14140F;font-weight:700;font-size:9px;padding:7px 13px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(232,194,74,.28);}
+  .modern .m-call{position:relative;z-index:3;background:#E8C24A;color:#14140F;font-weight:700;font-size:9px;padding:7px 13px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(232,194,74,.28);}
   .modern .m-chips{display:flex;gap:5px;}
   .modern .m-chips span{flex:1;text-align:center;font-size:7px;color:#C7CBD4;background:#171B24;border:1px solid #262B36;border-radius:6px;padding:6px 0;}
 

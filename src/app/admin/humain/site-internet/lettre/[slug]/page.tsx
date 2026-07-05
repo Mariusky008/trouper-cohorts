@@ -257,6 +257,15 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     site_shot = `<img class="shot" src="${shotManual}" alt="Votre site actuel" />`;
   }
 
+  // Vraie 1re photo Google du pro pour le mockup « Demain/Possible ». Repli propre :
+  // si absente ou si elle ne charge pas à l'impression, on retombe sur le dégradé.
+  const previewPhoto = (Array.isArray(diag.photos) ? diag.photos : [])
+    .map((p) => str(p))
+    .find((u) => /^https?:\/\//i.test(u)) || "";
+  const demain_hero = previewPhoto
+    ? `<img class="mk-shot" src="${esc(previewPhoto)}" alt="" onerror="this.remove()" /><span class="mk-scrim"></span>`
+    : "";
+
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
   // Jamais de fausse mention (ex. « réalisé manuellement en 14 min »).
   const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`]
@@ -288,6 +297,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     compteur_line: "Visiteurs : 004821",
     site_shot,
     scorecard,
+    demain_hero,
     note_txt: note ? ` ${note}` : "",
     qr_maquette,
     photo_marius,
