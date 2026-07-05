@@ -50,3 +50,39 @@ export function isDirectoryUrl(raw: string | null | undefined): boolean {
   if (!s) return false;
   return DIRECTORY_PATTERNS.some((p) => s.includes(p));
 }
+
+// Nom lisible de la plateforme détectée (pour l'angle « vous êtes sur Doctolib
+// mais vous n'avez pas de site à vous »). Renvoie "" si non reconnu.
+const PLATFORM_NAMES: Array<[string, string]> = [
+  ["doctolib", "Doctolib"],
+  ["maiia", "Maiia"],
+  ["keldoc", "Keldoc"],
+  ["resalib", "Resalib"],
+  ["planity", "Planity"],
+  ["treatwell", "Treatwell"],
+  ["thefork", "TheFork"],
+  ["lafourchette", "LaFourchette"],
+  ["pagesjaunes", "les Pages Jaunes"],
+  ["facebook", "Facebook"],
+  ["instagram", "Instagram"],
+  ["linkedin", "LinkedIn"],
+  ["tripadvisor", "TripAdvisor"],
+  ["yelp", "Yelp"],
+  ["ubereats", "Uber Eats"],
+  ["deliveroo", "Deliveroo"],
+  ["just-eat", "Just Eat"],
+  ["justacote", "Justacote"],
+  ["mappy", "Mappy"],
+  ["leboncoin", "Leboncoin"],
+  ["google", "Google Maps"],
+  ["g.page", "Google Maps"],
+  ["business.site", "Google Business"],
+  ["linktr.ee", "Linktree"],
+];
+
+export function directoryPlatformName(raw: string | null | undefined): string {
+  const s = (raw || "").trim().toLowerCase();
+  if (!s) return "";
+  const hit = PLATFORM_NAMES.find(([k]) => s.includes(k));
+  return hit ? hit[1] : "";
+}

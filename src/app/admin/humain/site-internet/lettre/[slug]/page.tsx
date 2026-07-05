@@ -6,7 +6,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDirectoryUrl } from "@/lib/site-internet/directories";
+import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
@@ -90,6 +90,10 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // commerçant → on la traite comme absence de site (honnêteté).
   const rawSource = str(place.source_website);
   const website = isDirectoryUrl(rawSource) ? "" : rawSource;
+  // Plateforme/annuaire éventuel (Doctolib, Facebook…) : sert l'angle SANS_SITE
+  // « vous êtes sur X mais vous n'avez pas de site à vous ».
+  const directoryUrl = str(diag.directory_url) || (isDirectoryUrl(rawSource) ? rawSource : "");
+  const platform = directoryPlatformName(directoryUrl);
 
   // type_diagnostic (fallback dérivé pour les anciennes fiches)
   let type = str(place.type_diagnostic);
@@ -169,6 +173,15 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
       `<div class="scorecard"><div class="sc-cap">Votre présence en ligne, aujourd'hui</div>` +
       `<div class="sc-row">${scCell("Mobile", nMobile)}${scCell("Sécurité", nSecu)}${scCell("Appel", nAppel)}${scCell("Avis", nAvis)}</div></div>`;
   }
+
+  // 1er constat SANS_SITE — adapté si le commerçant n'a qu'une fiche annuaire :
+  // on ne dit pas « aucune présence » (faux), mais « pas de site À VOUS ».
+  const sans_titre1 = platform
+    ? `Vous avez une fiche ${platform}, mais pas de site à vous`
+    : "Vos clients ne voient pas votre travail";
+  const sans_texte1 = platform
+    ? `Sur ${platform}, vous êtes une ligne parmi d'autres. Un site à vous ne parle que de vous — et il vous appartient.`
+    : "Votre fiche Google n'affiche aucun site : juste une adresse et un numéro.";
 
   // Résultats Google (SANS_SITE)
   const compResults = conc
@@ -265,6 +278,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     concurrents_phrase,
     serp_rows,
     reputation_titre, reputation_texte,
+    sans_titre1, sans_texte1,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
     ba_neg_3: year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur",
