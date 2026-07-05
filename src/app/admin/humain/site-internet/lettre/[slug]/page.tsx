@@ -266,6 +266,14 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     ? `<img class="mk-shot" src="${esc(previewPhoto)}" alt="" onerror="this.remove()" /><span class="mk-scrim"></span>`
     : "";
 
+  // Conclusion visuelle sous l'avant/après (résultat business, pas fonctionnalité).
+  const SYNTHESES: Record<string, string> = {
+    FUITE_APPEL: "La différence entre les deux : <b>un client qui hésite… ou un client qui appelle.</b>",
+    MOBILE_CASSE: "La différence entre les deux : <b>un client qui referme… ou un client qui vous appelle.</b>",
+    VETUSTE: "La différence entre les deux : <b>un client qui doute… ou un client qui vous choisit.</b>",
+  };
+  const ba_synthese = SYNTHESES[type] ?? "";
+
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
   // Jamais de fausse mention (ex. « réalisé manuellement en 14 min »).
   const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`]
@@ -298,6 +306,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     site_shot,
     scorecard,
     demain_hero,
+    ba_synthese,
     note_txt: note ? ` ${note}` : "",
     qr_maquette,
     photo_marius,
