@@ -6,7 +6,8 @@
   }
   .si-root *{box-sizing:border-box;}
   .sheet{ background:var(--paper); width:210mm; height:297mm; padding:12mm; color:var(--ink);
-    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .frame{ border:1px solid var(--frame); height:100%; width:100%; padding:14mm 15mm 11mm;
     display:flex; flex-direction:column; }
 
@@ -214,7 +215,15 @@
 
   @media print{
     @page{size:A4;margin:0;}
+    html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
+    /* Masque le chrome admin (header nav + padding du main) qui, sinon,
+       décale la feuille A4 vers le bas et la fait déborder sur une 2e page. */
+    body header{display:none !important;}
+    body main{padding:0 !important;margin:0 !important;max-width:none !important;}
     .no-print{display:none !important;}
+    #letter-root{padding:0 !important;}
+    /* Force l'impression des fonds (mockups sombres, schéma, scorecard, or…). */
+    .si-root, .sheet, .sheet *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
     .sheet{page-break-after:always;}
     .sheet:last-child{page-break-after:auto;}
   }
