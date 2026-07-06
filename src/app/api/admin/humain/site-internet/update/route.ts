@@ -93,12 +93,28 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("human_vitrine_sites")
-    .update(patch)
-    .eq("slug", slug)
-    .eq("channel", "letter");
+  const doUpdate = (p: Record<string, unknown>) =>
+    supabase.from("human_vitrine_sites").update(p).eq("slug", slug).eq("channel", "letter");
+
+  let { error } = await doUpdate(patch);
+
+  // Résilience : si une colonne récente n'est pas encore migrée (letter_overrides,
+  // search_volume, site_shot_manual), on la retire et on réessaie pour ne pas
+  // bloquer le reste de la sauvegarde. On signale ce qui a été ignoré.
+  const skipped: string[] = [];
+  const OPTIONAL = ["letter_overrides", "search_volume", "site_shot_manual"];
+  while (error && /column .* does not exist|schema cache|Could not find the '(\w+)' column/i.test(error.message)) {
+    const missing = OPTIONAL.find((c) => c in patch && error!.message.includes(c));
+    if (!missing) break;
+    delete patch[missing];
+    skipped.push(missing);
+    if (Object.keys(patch).length === 0) { error = null; break; }
+    ({ error } = await doUpdate(patch));
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return NextResponse.json(
+    { ok: true, ...(skipped.length ? { warning: `Colonnes non migrées, ignorées : ${skipped.join(", ")}. Applique le SQL pour les activer.` } : {}) },
+    { status: 200 }
+  );
 }

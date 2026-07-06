@@ -61,6 +61,9 @@ export default async function AdminSiteInternetPage() {
           Prospection par lettre remise en main propre : on propose aux commerçants de refaire (ou créer) leur site.
           Chaque prospect génère une lettre N&amp;B personnalisée à imprimer.
         </p>
+        <Link href="/admin/humain/site-internet/marche" className="mt-3 inline-block text-sm font-semibold text-amber-700 hover:underline">
+          🔍 Recherches Google par métier &amp; ville →
+        </Link>
         <div className="mt-4 grid gap-3 sm:grid-cols-4">
           <div className="rounded-2xl border bg-slate-50 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Total</p>

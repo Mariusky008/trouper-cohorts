@@ -22,10 +22,9 @@ export function LetterContentEdit({ slug, fields }: { slug: string; fields: Fiel
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug, ...body }),
     });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      throw new Error(j.error || `Erreur ${r.status}`);
-    }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `Erreur ${r.status}`);
+    if (j.warning) alert(j.warning);
   };
 
   const save = async () => {
