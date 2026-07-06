@@ -32,11 +32,17 @@ export function LetterContentEdit({ slug, fields }: { slug: string; fields: Fiel
     setBusy(true);
     try {
       const overrides: Record<string, string> = {};
+      const extra: Record<string, unknown> = {};
       for (const f of fields) {
         const v = (vals[f.key] || "").trim();
+        // search_volume est une donnée (colonne), pas un texte override.
+        if (f.key === "search_volume") {
+          extra.search_volume = v ? parseInt(v.replace(/\D/g, ""), 10) || 0 : 0;
+          continue;
+        }
         if (v) overrides[f.key] = v;
       }
-      await post({ overrides });
+      await post({ overrides, ...extra });
       location.reload();
     } catch (e) {
       alert("Enregistrement impossible : " + String(e));

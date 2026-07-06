@@ -79,6 +79,12 @@ export async function POST(request: Request) {
     patch.letter_overrides = Object.keys(clean).length ? clean : null;
   }
 
+  // Volume de recherches Google/mois (chiffre réel saisi). 0/vide = masqué (null).
+  if (payload?.search_volume !== undefined) {
+    const n = parseInt(String(payload.search_volume).replace(/\D/g, ""), 10);
+    patch.search_volume = Number.isFinite(n) && n > 0 ? n : null;
+  }
+
   if (payload?.validate === true) patch.letter_status = "validated";
   else if (typeRaw === "EXCLU") patch.letter_status = "excluded";
 

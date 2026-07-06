@@ -251,10 +251,11 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // exister (migration non appliquée) → on ignore sans casser la lettre.
   let shotManual = "";
   let overrides: Record<string, string> = {};
+  let searchVolume: number | null = null;
   {
     const { data: row2, error: e2 } = await supabase
       .from("human_vitrine_sites")
-      .select("site_shot_manual, letter_overrides")
+      .select("site_shot_manual, letter_overrides, search_volume")
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
@@ -262,6 +263,8 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
       shotManual = str((row2 as Record<string, unknown>).site_shot_manual);
       const o = (row2 as Record<string, unknown>).letter_overrides;
       if (o && typeof o === "object") overrides = o as Record<string, string>;
+      const sv = (row2 as Record<string, unknown>).search_volume;
+      if (typeof sv === "number" && sv > 0) searchVolume = sv;
     } else {
       // Colonne letter_overrides pas encore migrée → on lit juste la capture.
       const { data: d3 } = await supabase
@@ -355,6 +358,13 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   }
   if (type === "SANS_SITE") editableFields.push({ key: "sans_conseq", label: "Conséquence", value: ov("sans_conseq", sans_conseq), multiline: true });
 
+  // Bloc « demande » (recherches Google/mois) — HONNÊTE : affiché seulement si un
+  // vrai chiffre est renseigné. Jamais de valeur par défaut inventée.
+  const search_volume_block = searchVolume
+    ? `<div class="demand"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A6D1E" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><span>Recherches Google à ${esc(ville)} — environ <b>${searchVolume}</b> personnes cherchent « ${esc(activite)} » chaque mois.</span></div>`
+    : "";
+  editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
+
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
   // Jamais de fausse mention (ex. « réalisé manuellement en 14 min »).
   const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`]
@@ -378,6 +388,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     reputation_titre, reputation_texte,
     sans_titre1, sans_texte1, sans_conseq: ov("sans_conseq", sans_conseq),
     lead_label, ba_points_neg, ba_points_pos, c1_titre, c1_texte,
+    search_volume_block,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
     ba_neg_3: year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur",

@@ -15,6 +15,10 @@ import { slugify } from "@/lib/popey-marketplace";
 import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
 import { isDirectoryUrl } from "@/lib/site-internet/directories";
 
+// Normalisation souple pour matcher métier/ville (minuscules, sans accents, espaces).
+const normLoose = (s: string) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -455,7 +459,29 @@ export async function POST(request: Request) {
 
   // 4. Upsert
   const supabase = createAdminClient();
+
+  // Remplissage auto du volume de recherches depuis la table de référence
+  // (métier + ville). Aucune valeur inventée : rien trouvé = on ne renseigne pas.
+  let marketVolume: number | null = null;
+  try {
+    const { data: md } = await supabase
+      .from("human_site_market_data")
+      .select("metier, city, monthly_searches");
+    if (Array.isArray(md)) {
+      const na = normLoose(activite);
+      const nc = normLoose(city);
+      const hit = md.find(
+        (r) => normLoose(String((r as Record<string, unknown>).metier)) === na && normLoose(String((r as Record<string, unknown>).city)) === nc
+      ) as Record<string, unknown> | undefined;
+      if (hit && typeof hit.monthly_searches === "number" && hit.monthly_searches > 0) marketVolume = hit.monthly_searches;
+    }
+  } catch {
+    /* table pas encore migrée → on ignore */
+  }
+  const marketExtra = marketVolume != null ? { search_volume: marketVolume } : {};
+
   const row = {
+    ...marketExtra,
     channel: "letter" as const,
     business_name: businessName,
     city,
