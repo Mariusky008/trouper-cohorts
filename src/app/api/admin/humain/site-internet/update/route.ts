@@ -61,6 +61,24 @@ export async function POST(request: Request) {
     }
   }
 
+  // Corrections de texte (overrides). reset_overrides = tout remettre par défaut.
+  if (payload?.reset_overrides === true) {
+    patch.letter_overrides = null;
+  } else if (payload?.overrides && typeof payload.overrides === "object") {
+    const clean: Record<string, string> = {};
+    for (const [k, v] of Object.entries(payload.overrides as Record<string, unknown>)) {
+      if (typeof v !== "string" || !/^[a-z0-9_]{1,40}$/i.test(k)) continue;
+      const s = v
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/ on\w+="[^"]*"/gi, "")
+        .replace(/ on\w+='[^']*'/gi, "")
+        .slice(0, 600)
+        .trim();
+      if (s) clean[k] = s;
+    }
+    patch.letter_overrides = Object.keys(clean).length ? clean : null;
+  }
+
   if (payload?.validate === true) patch.letter_status = "validated";
   else if (typeRaw === "EXCLU") patch.letter_status = "excluded";
 

@@ -11,6 +11,7 @@ import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
 import { ScreenshotUpload } from "./screenshot-upload";
+import { LetterContentEdit } from "./letter-content-edit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -249,15 +250,33 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // Lecture tolérante de la capture manuelle : la colonne peut ne pas encore
   // exister (migration non appliquée) → on ignore sans casser la lettre.
   let shotManual = "";
+  let overrides: Record<string, string> = {};
   {
-    const { data: shotRow } = await supabase
+    const { data: row2, error: e2 } = await supabase
       .from("human_vitrine_sites")
-      .select("site_shot_manual")
+      .select("site_shot_manual, letter_overrides")
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
-    shotManual = str((shotRow as Record<string, unknown> | null)?.site_shot_manual);
+    if (!e2 && row2) {
+      shotManual = str((row2 as Record<string, unknown>).site_shot_manual);
+      const o = (row2 as Record<string, unknown>).letter_overrides;
+      if (o && typeof o === "object") overrides = o as Record<string, string>;
+    } else {
+      // Colonne letter_overrides pas encore migrée → on lit juste la capture.
+      const { data: d3 } = await supabase
+        .from("human_vitrine_sites")
+        .select("site_shot_manual")
+        .eq("slug", slug)
+        .eq("channel", "letter")
+        .maybeSingle();
+      shotManual = str((d3 as Record<string, unknown> | null)?.site_shot_manual);
+    }
   }
+  const ov = (k: string, def: string) => {
+    const v = overrides[k];
+    return typeof v === "string" && v.trim() ? v : def;
+  };
   const wireframe =
     `<div class="wireframe">` +
     `<div class="wf-bar"></div><div class="wf-hero"></div>` +
@@ -278,13 +297,63 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     ? `<img class="mk-shot" src="${esc(previewPhoto)}" alt="" onerror="this.remove()" /><span class="mk-scrim"></span>`
     : "";
 
-  // Conclusion visuelle sous l'avant/après (résultat business, pas fonctionnalité).
+  // ── Textes éditables (corrections par prospect) ──────────────────────────
+  // Chaque texte a un DÉFAUT calculé ; l'admin peut le remplacer (ov(clé, défaut)).
   const SYNTHESES: Record<string, string> = {
     FUITE_APPEL: "La différence entre les deux : <b>un client qui hésite… ou un client qui appelle.</b>",
     MOBILE_CASSE: "La différence entre les deux : <b>un client qui referme… ou un client qui vous appelle.</b>",
     VETUSTE: "La différence entre les deux : <b>un client qui doute… ou un client qui vous choisit.</b>",
   };
-  const ba_synthese = SYNTHESES[type] ?? "";
+  const LEADS: Record<string, string> = {
+    FUITE_APPEL: "Ce qu'un client doit faire pour vous joindre <b>aujourd'hui</b> — et ce que ce serait demain :",
+    MOBILE_CASSE: "Voici votre site <b>tel que vos clients le voient sur leur téléphone</b> :",
+    VETUSTE: "Votre travail est soigné. Voici <b>l'image que votre site en donne</b> :",
+  };
+  const NEG: Record<string, string[]> = {
+    FUITE_APPEL: ["Numéro à recopier à la main", "4 gestes avant le 1er appel", "Beaucoup renoncent en route"],
+    MOBILE_CASSE: ["Illisible sans zoomer", "Pensé pour l'ordinateur, pas le mobile", year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur"],
+  };
+  const POS: Record<string, string[]> = {
+    FUITE_APPEL: ["Appeler en un seul geste", "Avis Google mis en avant", "Réservation en ligne possible"],
+    MOBILE_CASSE: ["Clair au premier regard", "Appel en un geste", "Moderne, à votre image"],
+  };
+  const C1: Record<string, { t: string; p: string }> = {
+    FUITE_APPEL: { t: "Vos visiteurs ne peuvent pas vous appeler en un geste", p: "Le numéro est là, mais pas cliquable : il faut le chercher et le recopier à la main." },
+    MOBILE_CASSE: { t: "La moitié de vos clients vous voient comme ça", p: "La plupart des recherches se font sur téléphone — et sur téléphone, votre site est illisible." },
+    VETUSTE: { t: "Votre vitrine ne reflète plus votre niveau", p: "Un design d'un autre temps, en décalage avec la qualité de votre travail." },
+  };
+  const negIcon = '<svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
+  const posIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg>';
+  const baPointsHtml = (items: string[], kind: "neg" | "pos") =>
+    `<div class="ba-points">${items.map((t) => `<div class="ba-pt ${kind}"><span class="m">${kind === "neg" ? negIcon : posIcon}</span>${esc(t)}</div>`).join("")}</div>`;
+
+  const ba_synthese = ov("ba_synthese", SYNTHESES[type] ?? "");
+  const lead_label = ov("lead_label", LEADS[type] ?? "");
+  const negItems = (NEG[type] ?? []).map((d, i) => ov(`neg${i + 1}`, d));
+  const posItems = (POS[type] ?? []).map((d, i) => ov(`pos${i + 1}`, d));
+  const ba_points_neg = negItems.length ? baPointsHtml(negItems, "neg") : "";
+  const ba_points_pos = posItems.length ? baPointsHtml(posItems, "pos") : "";
+  const c1def = C1[type] ?? { t: "", p: "" };
+  const c1_titre = ov("c1_titre", c1def.t);
+  const c1_texte = ov("c1_texte", c1def.p);
+  reputation_titre = ov("reputation_titre", reputation_titre);
+  reputation_texte = ov("reputation_texte", reputation_texte);
+
+  // Liste des champs éditables du module courant (pour le panneau d'édition).
+  const editableFields: { key: string; label: string; value: string; multiline?: boolean }[] = [];
+  if (LEADS[type]) editableFields.push({ key: "lead_label", label: "Phrase d'introduction", value: lead_label, multiline: true });
+  negItems.forEach((v, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: v }));
+  posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
+  if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
+  if (C1[type]) {
+    editableFields.push({ key: "c1_titre", label: "Constat — titre", value: c1_titre });
+    editableFields.push({ key: "c1_texte", label: "Constat — texte", value: c1_texte, multiline: true });
+  }
+  if (type !== "SANS_SITE") {
+    editableFields.push({ key: "reputation_titre", label: "Réputation — titre", value: reputation_titre });
+    editableFields.push({ key: "reputation_texte", label: "Réputation — texte", value: reputation_texte, multiline: true });
+  }
+  if (type === "SANS_SITE") editableFields.push({ key: "sans_conseq", label: "Conséquence", value: ov("sans_conseq", sans_conseq), multiline: true });
 
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
   // Jamais de fausse mention (ex. « réalisé manuellement en 14 min »).
@@ -307,7 +376,8 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     concurrents_phrase,
     serp_rows,
     reputation_titre, reputation_texte,
-    sans_titre1, sans_texte1, sans_conseq,
+    sans_titre1, sans_texte1, sans_conseq: ov("sans_conseq", sans_conseq),
+    lead_label, ba_points_neg, ba_points_pos, c1_titre, c1_texte,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
     ba_neg_3: year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur",
@@ -353,6 +423,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
         <LetterDownload slug={slug} />
         <LetterValidation slug={slug} type={type} prix={prix} />
         {type !== "SANS_SITE" && <ScreenshotUpload slug={slug} hasShot={/^data:image\//i.test(shotManual)} />}
+        <LetterContentEdit slug={slug} fields={editableFields} />
         <a href="/admin/humain/site-internet" style={{ color: "#00E0A0", textDecoration: "none" }}>← Liste</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → contact direct</span>
       </div>

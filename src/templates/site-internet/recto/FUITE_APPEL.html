@@ -3,7 +3,7 @@
   <div class="title" style="{{title_style}}">{{nom_commerce}}</div>
   <div class="addr">{{adresse}}</div>
   {{scorecard}}
-  <div class="lead-label" style="text-align:center;">Ce qu'un client doit faire pour vous joindre <b>aujourd'hui</b> — et ce que ce serait demain :</div>
+  <div class="lead-label" style="text-align:center;">{{lead_label}}</div>
   <div class="beforeafter">
     <div class="ba-col">
       <div class="ba-tag">Aujourd'hui</div>
@@ -13,11 +13,7 @@
         <div class="ghost-over"><span class="gtag">Absent</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A877E" stroke-width="1.8"><path d="M6 3h3l2 5-2 1.5a11 11 0 0 0 5 5L17 17l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 6.2 2 2 0 0 1 6 4z"/><line x1="3" y1="3" x2="21" y2="21"/></svg>Pas de bouton « Appeler »</div>
       </div></div>
-      <div class="ba-points">
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>Numéro à recopier à la main</div>
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>4 gestes avant le 1er appel</div>
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>Beaucoup renoncent en route</div>
-      </div>
+      {{ba_points_neg}}
     </div>
 
     <div class="ba-arrow">
@@ -39,17 +35,13 @@
         <div class="new-spacer"></div>
         <div class="new-tabbar"><i></i><i></i><i></i></div>
       </div></div>
-      <div class="ba-points">
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Appeler en un seul geste</div>
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Avis Google mis en avant</div>
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Réservation en ligne possible</div>
-      </div>
+      {{ba_points_pos}}
     </div>
   </div>
   <div class="ba-synth">{{ba_synthese}}</div>
   <div class="spacer"></div>
   <div class="constats">
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r=".5" fill="#14140F" stroke-width="1.2"/></svg></span><div><h4>Vos visiteurs ne peuvent pas vous appeler en un geste</h4><p>Le numéro est là, mais pas cliquable : il faut le chercher et le recopier à la main.</p></div></div>
+    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r=".5" fill="#14140F" stroke-width="1.2"/></svg></span><div><h4>{{c1_titre}}</h4><p>{{c1_texte}}</p></div></div>
     <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="#14140F"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#FCFBF9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h4>{{reputation_titre}}</h4><p>{{reputation_texte}}</p></div></div>
   </div>
   <div class="spacer"></div>

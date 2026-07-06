@@ -4,7 +4,7 @@
   <div class="addr">{{adresse}}</div>
   {{scorecard}}
 
-  <div class="lead-label" style="text-align:center;">Voici votre site <b>tel que vos clients le voient sur leur téléphone</b> :</div>
+  <div class="lead-label" style="text-align:center;">{{lead_label}}</div>
 
   <div class="beforeafter">
     <div class="ba-col">
@@ -13,11 +13,7 @@
         <div class="old-url">{{url_site}}</div>
         <div class="shot-wrap" style="top:20px;">{{site_shot}}</div>
       </div></div>
-      <div class="ba-points">
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>Illisible sans zoomer</div>
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>Pensé pour l'ordinateur, pas le mobile</div>
-        <div class="ba-pt neg"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg></span>{{ba_neg_3}}</div>
-      </div>
+      {{ba_points_neg}}
     </div>
 
     <div class="ba-arrow">
@@ -39,11 +35,7 @@
         <div class="new-spacer"></div>
         <div class="new-tabbar"><i></i><i></i><i></i></div>
       </div></div>
-      <div class="ba-points">
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Clair au premier regard</div>
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Appel en un geste</div>
-        <div class="ba-pt pos"><span class="m"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg></span>Moderne, à votre image</div>
-      </div>
+      {{ba_points_pos}}
     </div>
   </div>
   <div class="ba-synth">{{ba_synthese}}</div>
@@ -51,7 +43,7 @@
   <div class="constats">
     <div class="constat">
       <span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r=".5" fill="#14140F" stroke="#14140F" stroke-width="1.2"/></svg></span>
-      <div><h4>La moitié de vos clients vous voient comme ça</h4><p>La plupart des recherches se font sur téléphone — et sur téléphone, votre site est illisible.</p></div>
+      <div><h4>{{c1_titre}}</h4><p>{{c1_texte}}</p></div>
     </div>
     <div class="constat">
       <span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="#14140F"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#FCFBF9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
