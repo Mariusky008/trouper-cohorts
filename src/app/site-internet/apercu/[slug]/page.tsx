@@ -157,14 +157,18 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .dock a{flex:1;text-align:center;padding:13px;border-radius:12px;font-weight:800;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;}
           .mq .dock .call{background:var(--dk);color:#fff;}
           .mq .dock .wa{background:#25D366;color:#052e16;}
-          /* ===== Blocs « parcours de conviction » (aperçu, côté propriétaire) ===== */
-          .mq .proban{background:#FBF4E2;border-top:1px solid #EAD9A9;border-bottom:1px solid #EAD9A9;padding:20px 22px;}
-          .mq .proban .lab{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8A6D1E;font-weight:700;border:1px solid #E3D2A2;border-radius:20px;padding:4px 10px;background:#fff;}
-          .mq .proban h3{font-family:Georgia,serif;font-size:19px;margin:12px 0 12px;color:#3A2E10;}
-          .mq .proban ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
-          .mq .proban li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;color:#4A3E1E;line-height:1.35;}
-          .mq .proban li b{font-weight:700;color:#3A2E10;}
-          .mq .proban .ic{font-size:17px;flex:none;line-height:1.2;}
+          /* ===== ACTE 2 — l'explication, APRÈS l'immersion dans le site ===== */
+          /* Projection émotionnelle (bloc chaud) → bascule vers « pourquoi ce site ». */
+          .mq .project{padding:32px 22px;text-align:center;background:#FBF7EF;border-top:1px solid #EEE7D9;border-bottom:1px solid #EEE7D9;}
+          .mq .project .p-lead{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#14140F;}
+          .mq .project .p-body{font-size:15px;color:#5A554C;line-height:1.55;margin:12px auto 0;max-width:392px;}
+          .mq .project .p-body b{color:#14140F;}
+          .mq .project .p-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px auto 0;max-width:360px;}
+          .mq .project .p-acts span{background:#fff;border:1px solid #E4DECF;border-radius:999px;padding:8px 14px;font-size:13px;color:#3A3A32;font-weight:500;}
+          .mq .project .p-tail{font-family:Georgia,serif;font-style:italic;font-size:15px;color:#8A857A;margin-top:16px;}
+          /* Phrase qui résume tout, juste avant le formulaire. */
+          .mq .finalline{padding:28px 22px;text-align:center;font-family:Georgia,serif;font-size:19px;line-height:1.42;color:#14140F;border-bottom:1px solid #EEECE6;}
+          .mq .finalline b{font-weight:700;}
           .mq .spot{background:var(--dk);color:var(--cr);padding:30px 24px;text-align:center;}
           .mq .spot .pre{font-family:Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;}
           .mq .spot .feat{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:#171B24;border:1px solid #2A2F3B;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;color:#E8C24A;}
@@ -225,17 +229,6 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
             {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
           </div>
         </div>
-      </section>
-
-      <section className="proban">
-        <span className="lab">🔒 Réservé au propriétaire · invisible pour vos clients</span>
-        <h3>Ce que votre futur site fera pour vous</h3>
-        <ul>
-          <li><span className="ic">📈</span><span><b>Plus visible sur Google</b> — un site récent et sécurisé remonte dans les résultats.</span></li>
-          <li><span className="ic">⭐</span><span><b>Plus d&apos;avis</b> — en un geste après chaque client (voir plus bas).</span></li>
-          <li><span className="ic">💬</span><span><b>Contact WhatsApp en 1 clic</b> — vos clients vous joignent sans friction.</span></li>
-          <li><span className="ic">📱</span><span><b>Parfait sur mobile</b> — là où se font 8 recherches sur 10.</span></li>
-        </ul>
       </section>
 
       <section className="sec">
@@ -302,6 +295,13 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <a href={mapsHref} style={{ color: "#14140F", fontWeight: 600, textDecoration: "underline" }}>Voir l&apos;itinéraire →</a>
       </section>
 
+      <section className="project">
+        <div className="p-lead">Imaginez.</div>
+        <div className="p-body">Ce soir, un habitant de {ville || "votre ville"} cherche un {activite.toLowerCase()}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
+        <div className="p-acts"><span>📞 vous appeler</span><span>💬 vous écrire</span><span>⭐ lire vos avis</span><span>📍 vous localiser</span></div>
+        <div className="p-tail">Sans chercher. Sans hésiter.</div>
+      </section>
+
       <section className="spot">
         <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui travaille pour vous.</div>
         <div className="feat">⭐ Assistant Avis Google</div>
@@ -342,6 +342,8 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           </div>
         </div>
       </section>
+
+      <div className="finalline">Votre futur site n&apos;a qu&apos;un objectif : <b>transformer des visiteurs en clients.</b></div>
 
       <div className="lead-wrap">
         <div className="lead-kick">En ligne sous 72 h</div>
