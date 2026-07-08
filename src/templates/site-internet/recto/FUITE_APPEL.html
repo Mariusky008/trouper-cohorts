@@ -1,10 +1,11 @@
 <div class="sheet"><div class="frame">
   <div class="eyebrow">{{diag_eyebrow}}</div>
-  <div class="title" style="{{title_style}}">{{nom_commerce}}</div>
-  <div class="addr">{{adresse}}</div>
-  {{search_volume_block}}
-  {{scorecard}}
-  <div class="lead-label" style="text-align:center;">{{lead_label}}</div>
+  {{hook_block}}
+  {{hook_id}}
+
+  <div class="spacer"></div>
+
+  <div class="story-step">{{story_step}}</div>
   <div class="beforeafter">
     <div class="ba-col">
       <div class="ba-tag">Aujourd'hui</div>
@@ -40,11 +41,12 @@
     </div>
   </div>
   <div class="ba-synth">{{ba_synthese}}</div>
+
   <div class="spacer"></div>
-  <div class="constats">
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r=".5" fill="#14140F" stroke-width="1.2"/></svg></span><div><h4>{{c1_titre}}</h4><p>{{c1_texte}}</p></div></div>
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="#14140F"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#FCFBF9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h4>{{reputation_titre}}</h4><p>{{reputation_texte}}</p></div></div>
-  </div>
+
+  <div class="story-result">{{story_result}}</div>
+  {{proof_strip}}
+
   <div class="spacer"></div>
-  <div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Aperçu — <b>le site complet est au dos</b> ↓</div>
+  {{preview_cta}}
 </div></div>

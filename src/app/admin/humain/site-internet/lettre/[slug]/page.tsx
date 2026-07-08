@@ -123,56 +123,23 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
       .split(/[/?#]/)[0]
       .trim() || "votre-site.fr";
 
-  // Réputation (3e constat) — 4 paliers HONNÊTES selon le volume d'avis.
-  // Aucune formule flatteuse tant que le volume ne la justifie pas.
-  //  0-10   → réputation encore peu visible (opportunité)
-  //  10-30  → pas encore assez d'avis pour rassurer
-  //  30-80  → bonne réputation à mieux mettre en valeur
-  //  80+    → excellente réputation, le site doit la porter
+  // Bulletin discret ("proof strip") — UNIQUEMENT des critères réellement mesurés,
+  // rétrogradé SOUS le récit (plus un gros bloc en tête). Chaque étoile défendable.
+  //  Mobile ← balise viewport · Sécurité ← HTTPS · Appel ← lien tel: · Avis ← volume Google
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : "";
-  const noteFrag = note ? ` (${note}/5)` : "";
   const nbAvis = reviews ?? 0;
-  let reputation_titre: string;
-  let reputation_texte: string;
-  if (nbAvis >= 80) {
-    reputation_titre = `Une excellente réputation${note ? ` : ${note}/5 sur ${nbAvis} avis` : ""}`;
-    reputation_texte =
-      type === "SANS_SITE"
-        ? "Il ne manque qu'un site pour transformer cette réputation en appels."
-        : "Votre site devrait la mettre davantage en avant — aujourd'hui, elle ne se voit pas.";
-  } else if (nbAvis >= 30) {
-    reputation_titre = "Une bonne réputation qui mérite d'être mise en valeur";
-    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, la confiance est là. Un site clair la rend visible et donne envie de vous appeler.`;
-  } else if (nbAvis >= 10) {
-    reputation_titre = "Pas encore assez d'avis pour rassurer";
-    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, un nouveau client hésite encore. Votre réputation est bonne — donnez-lui une vitrine qui inspire confiance et incite davantage de clients à en laisser.`;
-  } else if (nbAvis >= 1) {
-    reputation_titre = "Votre réputation est encore peu visible";
-    reputation_texte = `Avec ${nbAvis} avis${noteFrag}, elle ne rassure pas encore. Un site soigné met vos clients en confiance et donne envie d'en laisser davantage.`;
-  } else {
-    reputation_titre = "Vos futurs clients sont déjà sur Google";
-    reputation_texte = "Il suffit d'un bon site pour transformer les curieux en appels et en rendez-vous.";
-  }
-
-  // Bulletin de note ("scorecard") — UNIQUEMENT des critères réellement mesurés,
-  // pour que chaque étoile soit défendable. Aucun axe inventé.
-  //  Mobile   ← balise viewport détectée sur la page
-  //  Sécurité ← HTTPS
-  //  Appel    ← lien tel: cliquable présent
-  //  Avis     ← volume d'avis Google
-  const starRow = (n: number) =>
-    Array.from({ length: 5 }, (_, i) => `<span class="${i < n ? "on" : "off"}">★</span>`).join("");
-  const scCell = (label: string, n: number) =>
-    `<div class="sc-cell"><div class="sc-l">${label}</div><div class="sc-stars">${starRow(n)}</div></div>`;
-  let scorecard = "";
+  const proofItem = (label: string, n: number) =>
+    `<span class="proof-item">${label} <span class="st"><span class="on">${"★".repeat(n)}</span><span class="off">${"★".repeat(5 - n)}</span></span></span>`;
+  let proof_strip = "";
   if (type !== "SANS_SITE") {
     const nMobile = siteA.viewport === true ? 4 : siteA.viewport === false ? 1 : 3;
     const nSecu = siteA.https === true ? 5 : 1;
     const nAppel = siteA.hasCallButton === true ? 5 : 2;
     const nAvis = nbAvis >= 80 ? 5 : nbAvis >= 30 ? 4 : nbAvis >= 10 ? 3 : nbAvis >= 1 ? 2 : 1;
-    scorecard =
-      `<div class="scorecard"><div class="sc-cap">Votre présence en ligne, aujourd'hui</div>` +
-      `<div class="sc-row">${scCell("Mobile", nMobile)}${scCell("Sécurité", nSecu)}${scCell("Appel", nAppel)}${scCell("Avis", nAvis)}</div></div>`;
+    proof_strip =
+      `<div class="proof"><span class="proof-lab">Mesuré sur votre présence</span>` +
+      proofItem("Mobile", nMobile) + proofItem("Sécurité", nSecu) + proofItem("Appel", nAppel) + proofItem("Avis", nAvis) +
+      `</div>`;
   }
 
   // 1er constat SANS_SITE — adapté si le commerçant n'a qu'une fiche annuaire :
@@ -300,30 +267,25 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     ? `<img class="mk-shot" src="${esc(previewPhoto)}" alt="" onerror="this.remove()" /><span class="mk-scrim"></span>`
     : "";
 
-  // ── Textes éditables (corrections par prospect) ──────────────────────────
+  // ── « UNE SEULE HISTOIRE » — un seul fil narratif, lu en < 10 s ───────────
+  // Grammaire commune à tous les modules :
+  //   crochet (chiffre de demande OU accroche) → identité → étape → visuel
+  //   → conséquence rebouclée → preuve discrète → un seul CTA (au dos).
   // Chaque texte a un DÉFAUT calculé ; l'admin peut le remplacer (ov(clé, défaut)).
+
+  // Points avant/après (before/after) — inchangés, toujours éditables.
   const SYNTHESES: Record<string, string> = {
-    FUITE_APPEL: "La différence entre les deux : <b>un client qui hésite… ou un client qui appelle.</b>",
-    MOBILE_CASSE: "La différence entre les deux : <b>un client qui referme… ou un client qui vous appelle.</b>",
-    VETUSTE: "La différence entre les deux : <b>un client qui doute… ou un client qui vous choisit.</b>",
-  };
-  const LEADS: Record<string, string> = {
-    FUITE_APPEL: "Ce qu'un client doit faire pour vous joindre <b>aujourd'hui</b> — et ce que ce serait demain :",
-    MOBILE_CASSE: "Voici votre site <b>tel que vos clients le voient sur leur téléphone</b> :",
-    VETUSTE: "Votre travail est soigné. Voici <b>l'image que votre site en donne</b> :",
+    FUITE_APPEL: "La différence : <b>un client qui hésite… ou un client qui vous appelle.</b>",
+    MOBILE_CASSE: "La différence : <b>un client qui referme… ou un client qui vous appelle.</b>",
+    VETUSTE: "La différence : <b>un client qui doute… ou un client qui vous choisit.</b>",
   };
   const NEG: Record<string, string[]> = {
-    FUITE_APPEL: ["Numéro à recopier à la main", "4 gestes avant le 1er appel", "Beaucoup renoncent en route"],
-    MOBILE_CASSE: ["Illisible sans zoomer", "Pensé pour l'ordinateur, pas le mobile", year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur"],
+    FUITE_APPEL: ["Numéro à recopier à la main", "Beaucoup renoncent en route"],
+    MOBILE_CASSE: ["Illisible sans zoomer", "Pensé pour l'ordinateur, pas le mobile"],
   };
   const POS: Record<string, string[]> = {
-    FUITE_APPEL: ["Appeler en un seul geste", "Avis Google mis en avant", "Réservation en ligne possible"],
-    MOBILE_CASSE: ["Clair au premier regard", "Appel en un geste", "Moderne, à votre image"],
-  };
-  const C1: Record<string, { t: string; p: string }> = {
-    FUITE_APPEL: { t: "Vos visiteurs ne peuvent pas vous appeler en un geste", p: "Le numéro est là, mais pas cliquable : il faut le chercher et le recopier à la main." },
-    MOBILE_CASSE: { t: "La moitié de vos clients vous voient comme ça", p: "La plupart des recherches se font sur téléphone — et sur téléphone, votre site est illisible." },
-    VETUSTE: { t: "Votre vitrine ne reflète plus votre niveau", p: "Un design d'un autre temps, en décalage avec la qualité de votre travail." },
+    FUITE_APPEL: ["Appeler en un seul geste", "Avis Google mis en avant"],
+    MOBILE_CASSE: ["Clair au premier regard", "Appel en un geste"],
   };
   const negIcon = '<svg width="13" height="13" viewBox="0 0 24 24" stroke="#A6A69C" stroke-width="2.5" fill="none"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
   const posIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2.2"><polyline points="5,12.5 10,17 19,7"/></svg>';
@@ -331,48 +293,71 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     `<div class="ba-points">${items.map((t) => `<div class="ba-pt ${kind}"><span class="m">${kind === "neg" ? negIcon : posIcon}</span>${esc(t)}</div>`).join("")}</div>`;
 
   const ba_synthese = ov("ba_synthese", SYNTHESES[type] ?? "");
-  const lead_label = ov("lead_label", LEADS[type] ?? "");
   const negItems = (NEG[type] ?? []).map((d, i) => ov(`neg${i + 1}`, d));
   const posItems = (POS[type] ?? []).map((d, i) => ov(`pos${i + 1}`, d));
   const ba_points_neg = negItems.length ? baPointsHtml(negItems, "neg") : "";
   const ba_points_pos = posItems.length ? baPointsHtml(posItems, "pos") : "";
-  const c1def = C1[type] ?? { t: "", p: "" };
-  const c1_titre = ov("c1_titre", c1def.t);
-  const c1_texte = ov("c1_texte", c1def.p);
 
-  // Si un VRAI volume de recherche est renseigné, le 3e constat devient l'argument
-  // « demande » (bien plus fort que la réputation). Honnête (« environ »). On ne
-  // duplique pas le chiffre : le bandeau du haut ne s'affiche alors que sur
-  // SANS_SITE (qui n'a pas ce constat).
-  const demandInConstat = Boolean(searchVolume) && type !== "SANS_SITE";
-  if (demandInConstat) {
-    reputation_titre = `Chaque mois, environ ${searchVolume} personnes recherchent un ${activite.toLowerCase()} à ${ville}.`;
-    reputation_texte = `Quand elles comparent plusieurs professionnels, elles choisissent souvent celui dont la présence inspire le plus confiance : site récent, avis vérifiés, contact en un clic. Votre savoir-faire mérite une vitrine à la hauteur.`;
-  }
-  reputation_titre = ov("reputation_titre", reputation_titre);
-  reputation_texte = ov("reputation_texte", reputation_texte);
+  // 1) LE CROCHET (hook_block). Si un VRAI volume de recherche est saisi, il devient
+  //    le titre — le chiffre qui fait mal. Sinon, une accroche honnête par module
+  //    (aucun chiffre inventé). L'identité (nom + adresse) passe en sous-ligne.
+  const HOOK_FALLBACK: Record<string, string> = {
+    FUITE_APPEL: "Un client qui vous trouve sur Google<br>doit pouvoir vous appeler en un geste.",
+    MOBILE_CASSE: "Aujourd'hui, la plupart de vos clients<br>vous découvrent sur leur téléphone.",
+    VETUSTE: `Votre travail a évolué.<br>Votre site, lui, ${year ? `est resté en ${year}.` : "est resté à une autre époque."}`,
+    NON_SECURISE: "Avant même d'ouvrir votre site,<br>vos clients lisent « Non sécurisé ».",
+    DECLASSE_GOOGLE: "Vos clients cherchent, vos concurrents apparaissent.<br>Vous, plus bas.",
+    SANS_RESA: "Vos clients réservent le soir, à 22 h.<br>À cette heure-là, votre site ne répond pas.",
+    SANS_SITE: "", // l'ouverture est portée par la scène (« Un client cherche… »)
+  };
+  const hook_headline = ov("hook_headline", HOOK_FALLBACK[type] ?? "");
+  const hook_block = searchVolume
+    ? `<div class="hook"><div class="hook-num">≈ ${searchVolume}</div><div class="hook-cap">recherches Google pour <b>« ${esc(activite.toLowerCase())} à ${esc(ville)} »</b><br>chaque mois, près de chez vous.</div></div>`
+    : hook_headline
+      ? `<div class="hook"><div class="hook-cap big">${hook_headline}</div></div>`
+      : "";
+  const hook_id = `<div class="hook-id">${esc(nom)}${adresse ? ` · ${esc(adresse)}` : ""}</div>`;
+
+  // 2) L'ÉTAPE (story_step) : introduit le visuel du module.
+  const STEP: Record<string, string> = {
+    FUITE_APPEL: "Aujourd'hui, voici ce qu'il trouve en vous cherchant — et ce que ce serait <b>demain</b> :",
+    MOBILE_CASSE: "Voici votre site <b>tel qu'il s'affiche sur un téléphone</b> — et ce que ce serait demain :",
+    VETUSTE: "Votre site aujourd'hui — et ce qu'il pourrait être <b>dès cette semaine</b> :",
+    NON_SECURISE: "Voici ce que votre navigateur affiche <b>avant même votre site</b> :",
+    DECLASSE_GOOGLE: `Sur « ${esc(requete)} », voici <b>l'ordre dans lequel Google vous classe</b> :`,
+    SANS_RESA: "Voici votre site quand un client veut réserver, un soir :",
+    SANS_SITE: "",
+  };
+  const story_step = ov("story_step", STEP[type] ?? "");
+
+  // 3) LA CONSÉQUENCE (story_result), rebouclée sur le chiffre quand il existe.
+  const RESULT_FALLBACK: Record<string, string> = {
+    SANS_SITE: sans_conseq,
+    DECLASSE_GOOGLE: "Presque personne ne descend jusqu'en bas. Les appels partent chez ceux qui apparaissent en premier.",
+    NON_SECURISE: "Avant même de voir votre travail, vos clients lisent « Non sécurisé » — et Google vous classe plus bas.",
+    SANS_RESA: "Le soir et le dimanche — quand vos clients décident — la demande part chez celui qui, lui, se réserve en ligne.",
+  };
+  const resultConfidence =
+    "Vos clients comparent en quelques secondes. Ils choisissent souvent celui dont la présence <b>inspire le plus confiance</b> : contact facile, avis en avant, site récent.";
+  const story_result = ov(
+    "story_result",
+    searchVolume
+      ? `Sur ces ≈ ${searchVolume} recherches, beaucoup choisissent le professionnel dont la présence <b>inspire le plus confiance</b> : contact en un clic, avis en avant, site récent. Votre savoir-faire mérite une vitrine à la hauteur.`
+      : RESULT_FALLBACK[type] ?? resultConfidence
+  );
+
+  // 4) LE CTA unique vers le verso (au dos).
+  const preview_cta =
+    `<div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Votre nouvelle présence — <b>elle vous attend au dos</b> ↓</div>`;
 
   // Liste des champs éditables du module courant (pour le panneau d'édition).
   const editableFields: { key: string; label: string; value: string; multiline?: boolean }[] = [];
-  if (LEADS[type]) editableFields.push({ key: "lead_label", label: "Phrase d'introduction", value: lead_label, multiline: true });
+  if (!searchVolume && HOOK_FALLBACK[type]) editableFields.push({ key: "hook_headline", label: "Accroche (titre, si pas de chiffre)", value: hook_headline, multiline: true });
+  if (STEP[type]) editableFields.push({ key: "story_step", label: "Phrase d'introduction du visuel", value: story_step, multiline: true });
   negItems.forEach((v, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: v }));
   posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
   if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
-  if (C1[type]) {
-    editableFields.push({ key: "c1_titre", label: "Constat — titre", value: c1_titre });
-    editableFields.push({ key: "c1_texte", label: "Constat — texte", value: c1_texte, multiline: true });
-  }
-  if (type !== "SANS_SITE") {
-    editableFields.push({ key: "reputation_titre", label: "Réputation — titre", value: reputation_titre });
-    editableFields.push({ key: "reputation_texte", label: "Réputation — texte", value: reputation_texte, multiline: true });
-  }
-  if (type === "SANS_SITE") editableFields.push({ key: "sans_conseq", label: "Conséquence", value: ov("sans_conseq", sans_conseq), multiline: true });
-
-  // Bandeau « demande » en haut — HONNÊTE (jamais de chiffre inventé). On l'affiche
-  // seulement quand le chiffre n'est PAS déjà porté par le constat (donc SANS_SITE).
-  const search_volume_block = searchVolume && !demandInConstat
-    ? `<div class="demand"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A6D1E" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><span>Recherches Google à ${esc(ville)} — environ <b>${searchVolume}</b> personnes cherchent « ${esc(activite)} » chaque mois.</span></div>`
-    : "";
+  editableFields.push({ key: "story_result", label: "Conséquence (phrase du bas)", value: story_result, multiline: true });
   editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
 
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
@@ -381,33 +366,23 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     .filter(Boolean)
     .join(" · ");
 
-  // Titre auto-rétréci pour les noms longs (évite le débordement A4 sur 2 lignes).
-  const nameLen = nom.length;
-  const title_style =
-    nameLen > 42 ? "font-size:26px;line-height:1.06" :
-    nameLen > 34 ? "font-size:30px;line-height:1.06" :
-    nameLen > 24 ? "font-size:36px;line-height:1.05" : "";
-
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
-    diag_eyebrow, title_style,
+    diag_eyebrow,
+    hook_block, hook_id, story_step, story_result, proof_strip, preview_cta,
     requete_metier: requete,
     google_results,
     concurrents_phrase,
     serp_rows,
-    reputation_titre, reputation_texte,
-    sans_titre1, sans_texte1, sans_conseq: ov("sans_conseq", sans_conseq),
-    lead_label, ba_points_neg, ba_points_pos, c1_titre, c1_texte,
-    search_volume_block,
+    sans_titre1, sans_texte1, sans_conseq: ov("story_result", sans_conseq),
+    ba_points_neg, ba_points_pos,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
-    ba_neg_3: year ? `Figé depuis ${year}` : "Pensé pour l'ordinateur",
     new_sub: `${activite}${ville ? ` · ${ville}` : ""}`,
     sous_titre,
     vetuste_annee: year ? `est resté en ${year}.` : "est resté à une autre époque.",
     compteur_line: "Visiteurs : 004821",
     site_shot,
-    scorecard,
     demain_hero,
     ba_synthese,
     note_txt: note ? ` ${note}` : "",

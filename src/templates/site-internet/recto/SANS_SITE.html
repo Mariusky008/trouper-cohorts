@@ -1,8 +1,9 @@
 <div class="sheet"><div class="frame">
   <div class="eyebrow">{{diag_eyebrow}}</div>
-  <div class="title" style="{{title_style}}">{{nom_commerce}}</div>
-  <div class="addr">{{adresse}}</div>
-  {{search_volume_block}}
+  {{hook_block}}
+  {{hook_id}}
+
+  <div class="spacer"></div>
 
   <div class="story-scene">Un client cherche <b>« {{requete_metier}} »</b> sur Google.<br>Voici, dans l'ordre, ce qu'il voit :</div>
 
@@ -13,9 +14,9 @@
   {{google_results}}
 
   <div class="spacer"></div>
-  <div class="story-conseq">{{sans_conseq}}</div>
-  <div class="spacer"></div>
 
-  <div class="climax">Chaque semaine, des clients cherchent vos services.<br>Ils trouvent vos concurrents. <u>Pas vous.</u></div>
-  <div class="foot-rule"><div class="foot-cta">La solution est au dos&nbsp;↓</div></div>
+  <div class="story-result">{{story_result}}</div>
+
+  <div class="spacer"></div>
+  {{preview_cta}}
 </div></div>

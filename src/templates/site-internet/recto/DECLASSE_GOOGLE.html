@@ -1,20 +1,21 @@
 <div class="sheet"><div class="frame">
   <div class="eyebrow">{{diag_eyebrow}}</div>
-  <div class="title" style="{{title_style}}">{{nom_commerce}}</div>
-  <div class="addr">{{adresse}}</div>
-  {{search_volume_block}}
-  {{scorecard}}
-  <div class="lead-label" style="text-align:center;">Sur « {{requete_metier}} », voici <b>l'ordre dans lequel Google vous classe</b> :</div>
+  {{hook_block}}
+  {{hook_id}}
+
+  <div class="spacer"></div>
+
+  <div class="story-step">{{story_step}}</div>
   <div class="module">
     <div class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><span>{{requete_metier}}</span></div>
     <div class="serp">{{serp_rows}}</div>
   </div>
-  <div class="constats">
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/><line x1="15.5" y1="8.5" x2="8.5" y2="15.5"/></svg></span><div><h4>Vos concurrents passent devant vous</h4><p>Plusieurs enseignes apparaissent avant la vôtre quand on cherche vos services.</p></div></div>
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/><line x1="15.5" y1="8.5" x2="8.5" y2="15.5"/></svg></span><div><h4>Presque personne ne descend jusqu'à vous</h4><p>Plus bas dans les résultats, on ne vous trouve quasiment plus. Les appels partent chez eux.</p></div></div>
-    <div class="constat"><span class="ic"><svg width="23" height="23" viewBox="0 0 24 24" fill="#14140F"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#FCFBF9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h4>{{reputation_titre}}</h4><p>{{reputation_texte}}</p></div></div>
-  </div>
+
   <div class="spacer"></div>
-  <div class="bascule">Vous avez un site. Mais quand on cherche vos services à {{ville}},<br><u>on tombe sur eux avant vous.</u></div>
-  <div class="foot-rule"><div class="foot-cta">La solution est au dos&nbsp;↓</div></div>
+
+  <div class="story-result">{{story_result}}</div>
+  {{proof_strip}}
+
+  <div class="spacer"></div>
+  {{preview_cta}}
 </div></div>
