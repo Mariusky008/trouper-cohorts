@@ -66,6 +66,11 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const ville = str(row.city);
   const activite = str(row.activite) || "Commerce";
   const adresse = str(row.address);
+  // Affichage propre : ville en Capitale, métier au singulier (les données sont
+  // parfois stockées « dax » / « psychologues » → « Dax » / « psychologue »).
+  const capWords = (s: string) => s.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_m, p, c) => p + c.toUpperCase());
+  const villeAff = capWords(ville);
+  const metierSing = activite.trim().toLowerCase().replace(/s$/u, "") || "professionnel";
   const rating = typeof row.google_rating === "number" ? row.google_rating : null;
   const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
@@ -297,7 +302,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
 
       <section className="project">
         <div className="p-lead">Imaginez.</div>
-        <div className="p-body">Ce soir, un habitant de {ville || "votre ville"} cherche un {activite.toLowerCase()}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
+        <div className="p-body">Ce soir, un habitant de {villeAff || "votre ville"} cherche un {metierSing}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
         <div className="p-acts"><span>📞 vous appeler</span><span>💬 vous écrire</span><span>⭐ lire vos avis</span><span>📍 vous localiser</span></div>
         <div className="p-tail">Sans chercher. Sans hésiter.</div>
       </section>
@@ -318,7 +323,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       {searchVolume && (
         <section className="demand2">
           <div className="num">≈ {searchVolume}</div>
-          <div className="cap">personnes cherchent <b>« {activite.toLowerCase()}{ville ? ` à ${ville}` : ""} »</b><br />sur Google, chaque mois.</div>
+          <div className="cap">personnes cherchent <b>« {metierSing}{villeAff ? ` à ${villeAff}` : ""} »</b><br />sur Google, chaque mois.</div>
           <div className="tie">⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents.</div>
         </section>
       )}

@@ -76,6 +76,11 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const activite = str(place.activite);
   const adresse = str(place.address);
   const prix = str(place.prix) || "690";
+  // Affichage propre : ville en Capitale, métier au singulier (données parfois
+  // stockées « dax » / « psychologues » → « Dax » / « psychologue »).
+  const capWords = (s: string) => s.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_m, p, c) => p + c.toUpperCase());
+  const villeAff = capWords(ville);
+  const metierSing = activite.trim().toLowerCase().replace(/s$/u, "") || "professionnel";
   const rating = typeof place.google_rating === "number" ? place.google_rating : null;
   const reviews = typeof place.google_reviews === "number" ? place.google_reviews : null;
 
@@ -301,7 +306,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   };
   const hook_headline = ov("hook_headline", HOOK_FALLBACK[type] ?? "");
   const hook_block = searchVolume
-    ? `<div class="hook"><div class="hook-num">≈ ${searchVolume}</div><div class="hook-cap">recherches Google pour <b>« ${esc(activite.toLowerCase())} à ${esc(ville)} »</b><br>chaque mois, près de chez vous.</div></div>`
+    ? `<div class="hook"><div class="hook-num">≈ ${searchVolume}</div><div class="hook-cap">recherches Google pour <b>« ${esc(metierSing)} à ${esc(villeAff)} »</b><br>chaque mois, près de chez vous.</div></div>`
     : hook_headline
       ? `<div class="hook"><div class="hook-cap big">${hook_headline}</div></div>`
       : "";
