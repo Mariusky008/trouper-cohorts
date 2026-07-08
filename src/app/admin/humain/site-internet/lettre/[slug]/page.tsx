@@ -124,24 +124,11 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
       .split(/[/?#]/)[0]
       .trim() || "votre-site.fr";
 
-  // Bulletin discret ("proof strip") — UNIQUEMENT des critères réellement mesurés,
-  // rétrogradé SOUS le récit (plus un gros bloc en tête). Chaque étoile défendable.
-  //  Mobile ← balise viewport · Sécurité ← HTTPS · Appel ← lien tel: · Avis ← volume Google
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : "";
-  const nbAvis = reviews ?? 0;
-  const proofItem = (label: string, n: number) =>
-    `<span class="proof-item">${label} <span class="st"><span class="on">${"★".repeat(n)}</span><span class="off">${"★".repeat(5 - n)}</span></span></span>`;
-  let proof_strip = "";
-  if (type !== "SANS_SITE") {
-    const nMobile = siteA.viewport === true ? 4 : siteA.viewport === false ? 1 : 3;
-    const nSecu = siteA.https === true ? 5 : 1;
-    const nAppel = siteA.hasCallButton === true ? 5 : 2;
-    const nAvis = nbAvis >= 80 ? 5 : nbAvis >= 30 ? 4 : nbAvis >= 10 ? 3 : nbAvis >= 1 ? 2 : 1;
-    proof_strip =
-      `<div class="proof"><span class="proof-lab">Mesuré sur votre présence</span>` +
-      proofItem("Mobile", nMobile) + proofItem("Sécurité", nSecu) + proofItem("Appel", nAppel) + proofItem("Avis", nAvis) +
-      `</div>`;
-  }
+  // Le gros bulletin d'étoiles est retiré (trop clinique, il concurrençait le
+  // récit). On garde le signal « c'est mesuré, pas une opinion » via une micro-
+  // mention sous le visuel + le défaut réel porté par les puces « Aujourd'hui ».
+  const constate_tag = type !== "SANS_SITE" ? `<div class="constate">Constaté sur votre site</div>` : "";
 
   // 1er constat SANS_SITE — adapté si le commerçant n'a qu'une fiche annuaire :
   // on ne dit pas « aucune présence » (faux), mais « pas de site À VOUS ».
@@ -280,9 +267,10 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     MOBILE_CASSE: "La différence : <b>un client qui referme… ou un client qui vous appelle.</b>",
     VETUSTE: "La différence : <b>un client qui doute… ou un client qui vous choisit.</b>",
   };
+  // Constat → conséquence : chaque défaut est suivi de son effet business réel.
   const NEG: Record<string, string[]> = {
-    FUITE_APPEL: ["Numéro à recopier à la main", "Beaucoup renoncent en route"],
-    MOBILE_CASSE: ["Illisible sans zoomer", "Pensé pour l'ordinateur, pas le mobile"],
+    FUITE_APPEL: ["Numéro à recopier à la main → moins d'appels", "Rien n'invite à vous joindre tout de suite"],
+    MOBILE_CASSE: ["Illisible sans zoomer → on referme", "Pensé pour l'ordinateur, pas le mobile"],
   };
   const POS: Record<string, string[]> = {
     FUITE_APPEL: ["Appeler en un seul geste", "Avis Google mis en avant"],
@@ -331,25 +319,32 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   };
   const story_step = ov("story_step", STEP[type] ?? "");
 
-  // 3) LA CONSÉQUENCE (story_result), rebouclée sur le chiffre quand il existe.
-  const RESULT_FALLBACK: Record<string, string> = {
-    SANS_SITE: sans_conseq,
-    DECLASSE_GOOGLE: "Presque personne ne descend jusqu'en bas. Les appels partent chez ceux qui apparaissent en premier.",
-    NON_SECURISE: "Avant même de voir votre travail, vos clients lisent « Non sécurisé » — et Google vous classe plus bas.",
-    SANS_RESA: "Le soir et le dimanche — quand vos clients décident — la demande part chez celui qui, lui, se réserve en ligne.",
-  };
-  const resultConfidence =
-    "Vos clients comparent en quelques secondes. Ils choisissent souvent celui dont la présence <b>inspire le plus confiance</b> : contact facile, avis en avant, site récent.";
-  const story_result = ov(
-    "story_result",
+  // 3) LA CONSÉQUENCE — une QUESTION qui engage + les détails qui font la différence.
+  //    (remplace le long paragraphe). Le chiffre est déjà porté par le crochet en
+  //    tête : ici on reboucle par « elles » sans le répéter.
+  const story_q = ov(
+    "story_q",
     searchVolume
-      ? `Sur ces ≈ ${searchVolume} recherches, beaucoup choisissent le professionnel dont la présence <b>inspire le plus confiance</b> : contact en un clic, avis en avant, site récent. Votre savoir-faire mérite une vitrine à la hauteur.`
-      : RESULT_FALLBACK[type] ?? resultConfidence
+      ? "Pourquoi vous choisiraient-elles, plutôt qu'un autre&nbsp;?"
+      : "Pourquoi un client vous choisirait-il, plutôt qu'un autre&nbsp;?"
   );
+  const story_d = ov(
+    "story_d",
+    "Souvent, ce sont les détails : <b>appeler en un clic</b> · <b>des avis rassurants</b> · <b>un site récent et mobile</b>."
+  );
+  const story_result = `<div class="story-q">${story_q}</div><div class="story-d">${story_d}</div>`;
 
-  // 4) LE CTA unique vers le verso (au dos).
+  // 4) L'ÉMOTION juste avant le renvoi au dos : la version existe DÉJÀ (vraie —
+  //    la maquette est réellement générée pour ce prospect) → projection.
+  const prepared_line = ov("prepared_line", "Cette version existe déjà. Nous l'avons préparée pour vous.");
+  const prepared_block = `<div class="prepared">${prepared_line}</div>`;
+
+  // 5) LE CTA unique vers le verso (au dos) — concret : « votre futur site, déjà prêt ».
   const preview_cta =
-    `<div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Votre nouvelle présence — <b>elle vous attend au dos</b> ↓</div>`;
+    `<div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Au dos : scannez pour voir <b>votre futur site, déjà prêt</b> →</div>`;
+
+  // Micro-tag « préparée pour vous » au-dessus du téléphone « Demain » (before/after).
+  const prep_tag = `<div class="prep-tag">✦ Version préparée pour vous</div>`;
 
   // Liste des champs éditables du module courant (pour le panneau d'édition).
   const editableFields: { key: string; label: string; value: string; multiline?: boolean }[] = [];
@@ -358,7 +353,9 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   negItems.forEach((v, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: v }));
   posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
   if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
-  editableFields.push({ key: "story_result", label: "Conséquence (phrase du bas)", value: story_result, multiline: true });
+  editableFields.push({ key: "story_q", label: "Question du bas", value: story_q, multiline: true });
+  editableFields.push({ key: "story_d", label: "Détails (sous la question)", value: story_d, multiline: true });
+  editableFields.push({ key: "prepared_line", label: "Phrase « préparée pour vous » (avant le QR)", value: prepared_line, multiline: true });
   editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
 
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
@@ -370,12 +367,12 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
     diag_eyebrow,
-    hook_block, hook_id, story_step, story_result, proof_strip, preview_cta,
+    hook_block, hook_id, story_step, story_result, constate_tag, prepared_block, prep_tag, preview_cta,
     requete_metier: requete,
     google_results,
     concurrents_phrase,
     serp_rows,
-    sans_titre1, sans_texte1, sans_conseq: ov("story_result", sans_conseq),
+    sans_titre1, sans_texte1, sans_conseq,
     ba_points_neg, ba_points_pos,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",

@@ -8,7 +8,7 @@
   <div class="story-step">{{story_step}}</div>
   <div class="beforeafter">
     <div class="ba-col">
-      <div class="ba-tag">Aujourd'hui</div>
+      <div class="ba-head"><div class="ba-tag">Aujourd'hui</div></div>
       <div class="phone"><div class="screen old">
         <div class="old-url">{{url_site}}</div>
         <div class="shot-wrap" style="top:20px;">{{site_shot}}</div>
@@ -23,7 +23,7 @@
     </div>
 
     <div class="ba-col">
-      <div class="ba-tag">Demain</div>
+      <div class="ba-head"><div class="ba-tag">Demain</div>{{prep_tag}}</div>
       <div class="phone"><div class="screen new">
         <div class="new-name">{{nom_commerce}}</div>
         <div class="new-sub">{{new_sub}}</div>
@@ -41,12 +41,14 @@
     </div>
   </div>
   <div class="ba-synth">{{ba_synthese}}</div>
+  {{constate_tag}}
 
   <div class="spacer"></div>
 
-  <div class="story-result">{{story_result}}</div>
-  {{proof_strip}}
+  {{story_result}}
 
   <div class="spacer"></div>
+
+  {{prepared_block}}
   {{preview_cta}}
 </div></div>
