@@ -5,6 +5,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LeadForm } from "../../[slug]/lead-form";
 import { IntroOverlay } from "./intro-overlay";
+import { FeedbackNudge } from "./feedback-nudge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -204,6 +205,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       />
 
       <IntroOverlay />
+      <FeedbackNudge targetId="mq-act2" />
 
       <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 
@@ -300,7 +302,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <a href={mapsHref} style={{ color: "#14140F", fontWeight: 600, textDecoration: "underline" }}>Voir l&apos;itinéraire →</a>
       </section>
 
-      <section className="project">
+      <section className="project" id="mq-act2">
         <div className="p-lead">Imaginez.</div>
         <div className="p-body">Ce soir, un habitant de {villeAff || "votre ville"} cherche un {metierSing}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
         <div className="p-acts"><span>📞 vous appeler</span><span>💬 vous écrire</span><span>⭐ lire vos avis</span><span>📍 vous localiser</span></div>
