@@ -1,0 +1,161 @@
+// Espace Pro privé — l'« Assistant Avis Google ».
+// Le commerçant ouvre ce lien privé (token dans l'URL, ?k=…) sur son téléphone.
+// En un geste après chaque client, il ouvre WhatsApp avec un message pré-rédigé
+// contenant le lien d'avis Google. Aucun CRM, aucune API : un simple wa.me.
+// Ses clients ne voient jamais cette page (aucun lien public n'y mène).
+import { createAdminClient } from "@/lib/supabase/admin";
+import { ProActions } from "./pro-actions";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const str = (v: unknown) => (v == null ? "" : String(v));
+
+function NotFound() {
+  return (
+    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", padding: 24, textAlign: "center" }}>
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Lien introuvable</h1>
+        <p style={{ color: "#666" }}>Ce lien privé n&apos;est plus valide. Contactez-nous directement.</p>
+      </div>
+    </main>
+  );
+}
+
+export default async function EspacePro({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ k?: string }>;
+}) {
+  const { slug } = await params;
+  const { k } = await searchParams;
+  const token = str(k).trim();
+  if (!token) return <NotFound />;
+
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("human_vitrine_sites")
+    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+
+  const row = (data as Record<string, unknown> | null) ?? null;
+  // Accès refusé si le jeton ne correspond pas (ou n'a pas encore été généré).
+  if (!row || !row.pro_token || str(row.pro_token) !== token) return <NotFound />;
+
+  const nom = str(row.business_name) || "Votre commerce";
+  const ville = str(row.city);
+  const activite = str(row.activite) || "Commerce";
+  const placeId = str(row.google_place_id);
+  const rating = typeof row.google_rating === "number" ? row.google_rating : null;
+  const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
+
+  // Lien d'avis Google : le deep link « écrire un avis » si on a le place_id
+  // (récupéré au diagnostic), sinon un repli honnête vers la fiche Maps.
+  const reviewLink = placeId
+    ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${nom} ${ville}`)}`;
+
+  // Journal du jour (« vos demandes du jour »).
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  let history: { client_name: string | null; created_at: string }[] = [];
+  try {
+    const { data: reqs } = await supabase
+      .from("human_site_review_requests")
+      .select("client_name, created_at")
+      .eq("site_id", str(row.id))
+      .gte("created_at", startOfDay.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (Array.isArray(reqs)) history = reqs as typeof history;
+  } catch {
+    /* table pas encore migrée → historique vide, la page reste fonctionnelle */
+  }
+
+  const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
+  // Objectif motivant (pas une promesse) : le prochain palier au-dessus du réel.
+  const goal = reviews != null ? Math.max(100, Math.ceil((reviews + 20) / 50) * 50) : 100;
+  const goalPct = reviews != null ? Math.min(100, Math.round((reviews / goal) * 100)) : 0;
+
+  return (
+    <main className="pro">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .pro{--paper:#FCFBF9;--ink:#14140F;--soft:#6E6E64;--faint:#A6A69C;--hair:#E7E4DC;--gold:#E8C24A;
+            font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:#EDEBE5;
+            min-height:100vh;-webkit-font-smoothing:antialiased;}
+          .pro *{box-sizing:border-box;}
+          .pro .wrap{max-width:440px;margin:0 auto;background:var(--paper);min-height:100vh;}
+          .pro .pad{padding:26px 22px 40px;}
+          .pro .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:600;border:1px solid var(--hair);border-radius:20px;padding:5px 11px;}
+          .pro .eyebrow svg{width:11px;height:11px;}
+          .pro .name{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:27px;line-height:1.1;margin:14px 0 3px;letter-spacing:-.01em;}
+          .pro .role{font-size:13px;color:var(--soft);}
+          .pro .gcard{margin-top:20px;border:1px solid var(--hair);border-radius:16px;padding:16px 18px;background:#fff;}
+          .pro .gcard .top{display:flex;align-items:center;justify-content:space-between;}
+          .pro .gcard .lab{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);font-weight:600;}
+          .pro .gcard .g{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--soft);}
+          .pro .gcard .val{display:flex;align-items:baseline;gap:11px;margin-top:9px;}
+          .pro .gcard .num{font-family:Georgia,serif;font-weight:700;font-size:34px;line-height:1;}
+          .pro .gcard .stars{color:var(--gold);font-size:15px;letter-spacing:1px;}
+          .pro .gcard .rate{font-size:13px;color:var(--soft);}
+          .pro .gcard .empty{font-size:13px;color:var(--soft);line-height:1.45;}
+          .pro .bar{height:7px;border-radius:5px;background:#EFEDE7;margin-top:14px;overflow:hidden;}
+          .pro .bar i{display:block;height:100%;background:var(--ink);border-radius:5px;}
+          .pro .goal{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:6px;}
+          .pro .lock{margin-top:26px;text-align:center;font-size:11.5px;color:var(--faint);display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.4;}
+          .pro .lock svg{width:12px;height:12px;flex:none;}
+          `,
+        }}
+      />
+      <div className="wrap">
+        <div className="pad">
+          <span className="eyebrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6E6E64" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            Espace pro · privé
+          </span>
+          <div className="name">{nom}</div>
+          <div className="role">{activite}{ville ? ` · ${ville}` : ""}</div>
+
+          <div className="gcard">
+            <div className="top">
+              <span className="lab">Vos avis Google</span>
+              <span className="g">
+                <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-2 3.2-4.9 3.2-7.9z" /><path fill="#34A853" d="M12 23c2.9 0 5.3-1 7.1-2.6l-3.6-2.8c-1 .7-2.3 1.1-3.5 1.1-2.7 0-5-1.8-5.8-4.3H2.5v2.8A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M6.2 14.4a6.6 6.6 0 0 1 0-4.2V7.4H2.5a11 11 0 0 0 0 9.8z" /><path fill="#EA4335" d="M12 5.5c1.5 0 2.9.5 4 1.5l3-3A11 11 0 0 0 2.5 7.4l3.7 2.8C7 7.3 9.3 5.5 12 5.5z" /></svg>
+                Google
+              </span>
+            </div>
+            {reviews != null ? (
+              <>
+                <div className="val">
+                  <span className="num">{reviews}</span>
+                  <span>
+                    <span className="stars">★★★★★</span>
+                    <br />
+                    <span className="rate">{note ? `${note} sur 5 · ` : ""}avis vérifiés</span>
+                  </span>
+                </div>
+                <div className="bar"><i style={{ width: `${goalPct}%` }} /></div>
+                <div className="goal"><span>Aujourd&apos;hui : {reviews}</span><span>Objectif : {goal}</span></div>
+              </>
+            ) : (
+              <div className="empty" style={{ marginTop: 8 }}>Chaque avis renforce votre visibilité locale. Commencez à en récolter dès aujourd&apos;hui.</div>
+            )}
+          </div>
+
+          <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} />
+
+          <div className="lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#A6A69C" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            Espace privé — vos clients ne voient jamais cette page.
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

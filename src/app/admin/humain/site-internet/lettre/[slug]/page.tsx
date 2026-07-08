@@ -12,6 +12,7 @@ import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
 import { ScreenshotUpload } from "./screenshot-upload";
 import { LetterContentEdit } from "./letter-content-edit";
+import { ProLinkButton } from "./pro-link-button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -420,6 +421,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
         <LetterValidation slug={slug} type={type} prix={prix} />
         {type !== "SANS_SITE" && <ScreenshotUpload slug={slug} hasShot={/^data:image\//i.test(shotManual)} />}
         <LetterContentEdit slug={slug} fields={editableFields} />
+        <ProLinkButton slug={slug} />
         <a href="/admin/humain/site-internet" style={{ color: "#00E0A0", textDecoration: "none" }}>← Liste</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → contact direct</span>
       </div>
