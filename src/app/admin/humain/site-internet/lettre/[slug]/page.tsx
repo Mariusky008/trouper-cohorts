@@ -339,6 +339,16 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   const c1def = C1[type] ?? { t: "", p: "" };
   const c1_titre = ov("c1_titre", c1def.t);
   const c1_texte = ov("c1_texte", c1def.p);
+
+  // Si un VRAI volume de recherche est renseigné, le 3e constat devient l'argument
+  // « demande » (bien plus fort que la réputation). Honnête (« environ »). On ne
+  // duplique pas le chiffre : le bandeau du haut ne s'affiche alors que sur
+  // SANS_SITE (qui n'a pas ce constat).
+  const demandInConstat = Boolean(searchVolume) && type !== "SANS_SITE";
+  if (demandInConstat) {
+    reputation_titre = `Chaque mois, environ ${searchVolume} personnes recherchent un ${activite.toLowerCase()} à ${ville}.`;
+    reputation_texte = `Quand elles comparent plusieurs professionnels, elles choisissent souvent celui dont la présence inspire le plus confiance : site récent, avis vérifiés, contact en un clic. Votre savoir-faire mérite une vitrine à la hauteur.`;
+  }
   reputation_titre = ov("reputation_titre", reputation_titre);
   reputation_texte = ov("reputation_texte", reputation_texte);
 
@@ -358,9 +368,9 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   }
   if (type === "SANS_SITE") editableFields.push({ key: "sans_conseq", label: "Conséquence", value: ov("sans_conseq", sans_conseq), multiline: true });
 
-  // Bloc « demande » (recherches Google/mois) — HONNÊTE : affiché seulement si un
-  // vrai chiffre est renseigné. Jamais de valeur par défaut inventée.
-  const search_volume_block = searchVolume
+  // Bandeau « demande » en haut — HONNÊTE (jamais de chiffre inventé). On l'affiche
+  // seulement quand le chiffre n'est PAS déjà porté par le constat (donc SANS_SITE).
+  const search_volume_block = searchVolume && !demandInConstat
     ? `<div class="demand"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A6D1E" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><span>Recherches Google à ${esc(ville)} — environ <b>${searchVolume}</b> personnes cherchent « ${esc(activite)} » chaque mois.</span></div>`
     : "";
   editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
