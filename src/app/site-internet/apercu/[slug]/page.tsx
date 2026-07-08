@@ -4,6 +4,7 @@
 // Un bandeau discret rappelle que c'est une maquette préparée par Marius. Scan tracké.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LeadForm } from "../../[slug]/lead-form";
+import { IntroOverlay } from "./intro-overlay";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,6 +32,23 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         </div>
       </main>
     );
+  }
+
+  // Volume de recherches réel (si renseigné) — lecture tolérante : la colonne
+  // peut ne pas être migrée. Honnête : aucun chiffre inventé, le bloc « demande »
+  // ne s'affiche que si un vrai nombre existe.
+  let searchVolume: number | null = null;
+  try {
+    const { data: r2 } = await supabase
+      .from("human_vitrine_sites")
+      .select("search_volume")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    const sv = (r2 as Record<string, unknown> | null)?.search_volume;
+    if (typeof sv === "number" && sv > 0) searchVolume = sv;
+  } catch {
+    /* colonne non migrée → pas de bloc demande */
   }
 
   // Tracking du scan (première fois).
@@ -139,9 +157,44 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .dock a{flex:1;text-align:center;padding:13px;border-radius:12px;font-weight:800;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;}
           .mq .dock .call{background:var(--dk);color:#fff;}
           .mq .dock .wa{background:#25D366;color:#052e16;}
+          /* ===== Blocs « parcours de conviction » (aperçu, côté propriétaire) ===== */
+          .mq .proban{background:#FBF4E2;border-top:1px solid #EAD9A9;border-bottom:1px solid #EAD9A9;padding:20px 22px;}
+          .mq .proban .lab{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8A6D1E;font-weight:700;border:1px solid #E3D2A2;border-radius:20px;padding:4px 10px;background:#fff;}
+          .mq .proban h3{font-family:Georgia,serif;font-size:19px;margin:12px 0 12px;color:#3A2E10;}
+          .mq .proban ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
+          .mq .proban li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;color:#4A3E1E;line-height:1.35;}
+          .mq .proban li b{font-weight:700;color:#3A2E10;}
+          .mq .proban .ic{font-size:17px;flex:none;line-height:1.2;}
+          .mq .spot{background:var(--dk);color:var(--cr);padding:30px 24px;text-align:center;}
+          .mq .spot .pre{font-family:Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;}
+          .mq .spot .feat{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:#171B24;border:1px solid #2A2F3B;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;color:#E8C24A;}
+          .mq .spot .flow{margin-top:22px;display:flex;flex-direction:column;gap:0;}
+          .mq .spot .step{display:flex;align-items:center;gap:12px;text-align:left;padding:11px 14px;background:#12161E;border:1px solid #232833;border-radius:12px;}
+          .mq .spot .step .n{width:24px;height:24px;border-radius:50%;background:#E8C24A;color:#14140F;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none;}
+          .mq .spot .step .tx{font-size:13.5px;color:#DFE3EA;line-height:1.3;}
+          .mq .spot .arw{color:#3A4150;font-size:15px;padding:3px 0;}
+          .mq .spot .concl{margin-top:20px;font-size:14px;color:#AEB2BC;line-height:1.5;}
+          .mq .spot .concl b{color:#E8C24A;}
+          .mq .demand2{padding:28px 22px;text-align:center;border-bottom:1px solid #EEECE6;}
+          .mq .demand2 .num{font-family:Georgia,serif;font-size:42px;font-weight:700;line-height:1;color:#14140F;}
+          .mq .demand2 .cap{font-size:15px;color:#6E6E64;margin-top:8px;line-height:1.45;}
+          .mq .demand2 .cap b{color:#14140F;}
+          .mq .demand2 .tie{margin-top:14px;font-size:13.5px;color:#8A6D1E;background:#FBF4E2;border:1px solid #EAD9A9;border-radius:10px;padding:10px 14px;line-height:1.4;}
+          .mq .cmp{padding:26px 22px;border-bottom:1px solid #EEECE6;}
+          .mq .cmp h2{font-family:Georgia,serif;font-size:20px;margin-bottom:4px;}
+          .mq .cmp .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+          .mq .cmp .col{border:1px solid #E4E1D9;border-radius:14px;padding:15px 14px;}
+          .mq .cmp .col.you{border-color:#14140F;box-shadow:0 6px 18px rgba(0,0,0,.08);}
+          .mq .cmp .col .t{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8A877E;margin-bottom:10px;}
+          .mq .cmp .col.you .t{color:#14140F;}
+          .mq .cmp .col .li{display:flex;gap:7px;align-items:flex-start;font-size:13px;padding:4px 0;color:#3A3A32;line-height:1.3;}
+          .mq .cmp .col .li .c{color:#188038;font-weight:800;flex:none;}
+          .mq .cmp .col .end{font-size:11.5px;color:#B4B1A8;margin-top:6px;font-style:italic;}
         `,
         }}
       />
+
+      <IntroOverlay />
 
       <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 
@@ -172,6 +225,17 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
             {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
           </div>
         </div>
+      </section>
+
+      <section className="proban">
+        <span className="lab">🔒 Réservé au propriétaire · invisible pour vos clients</span>
+        <h3>Ce que votre futur site fera pour vous</h3>
+        <ul>
+          <li><span className="ic">📈</span><span><b>Plus visible sur Google</b> — un site récent et sécurisé remonte dans les résultats.</span></li>
+          <li><span className="ic">⭐</span><span><b>Plus d&apos;avis</b> — en un geste après chaque client (voir plus bas).</span></li>
+          <li><span className="ic">💬</span><span><b>Contact WhatsApp en 1 clic</b> — vos clients vous joignent sans friction.</span></li>
+          <li><span className="ic">📱</span><span><b>Parfait sur mobile</b> — là où se font 8 recherches sur 10.</span></li>
+        </ul>
       </section>
 
       <section className="sec">
@@ -236,6 +300,47 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <h2>Nous trouver</h2>
         <p style={{ margin: "0 0 12px", color: "#6E6E64", fontSize: 14.5 }}>{adresse || ville}</p>
         <a href={mapsHref} style={{ color: "#14140F", fontWeight: 600, textDecoration: "underline" }}>Voir l&apos;itinéraire →</a>
+      </section>
+
+      <section className="spot">
+        <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui travaille pour vous.</div>
+        <div className="feat">⭐ Assistant Avis Google</div>
+        <div className="flow">
+          <div className="step"><span className="n">1</span><span className="tx">Après chaque client, vous ouvrez votre espace privé.</span></div>
+          <div className="arw">↓</div>
+          <div className="step"><span className="n">2</span><span className="tx">Un clic : votre message de remerciement est déjà prêt sur WhatsApp.</span></div>
+          <div className="arw">↓</div>
+          <div className="step"><span className="n">3</span><span className="tx">Le client laisse son avis Google en quelques secondes.</span></div>
+        </div>
+        <div className="concl">Après chaque client, <b>un geste suffit</b>. Votre réputation grandit, semaine après semaine.</div>
+      </section>
+
+      {searchVolume && (
+        <section className="demand2">
+          <div className="num">≈ {searchVolume}</div>
+          <div className="cap">personnes cherchent <b>« {activite.toLowerCase()}{ville ? ` à ${ville}` : ""} »</b><br />sur Google, chaque mois.</div>
+          <div className="tie">⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents.</div>
+        </section>
+      )}
+
+      <section className="cmp">
+        <h2>La différence</h2>
+        <div className="grid">
+          <div className="col">
+            <div className="t">Site classique</div>
+            <div className="li"><span className="c">✓</span>Beau</div>
+            <div className="li"><span className="c">✓</span>Moderne</div>
+            <div className="end">…et c&apos;est tout.</div>
+          </div>
+          <div className="col you">
+            <div className="t">Votre futur site</div>
+            <div className="li"><span className="c">✓</span>Beau</div>
+            <div className="li"><span className="c">✓</span>Moderne</div>
+            <div className="li"><span className="c">✓</span>Demande des avis</div>
+            <div className="li"><span className="c">✓</span>Facilite les contacts</div>
+            <div className="li"><span className="c">✓</span>Travaille votre visibilité</div>
+          </div>
+        </div>
       </section>
 
       <div className="lead-wrap">
