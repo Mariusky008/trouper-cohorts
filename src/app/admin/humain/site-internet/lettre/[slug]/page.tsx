@@ -313,7 +313,10 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     : hook_headline
       ? `<div class="hook"><div class="hook-cap big">${hook_headline}</div></div>`
       : "";
-  const hook_id = `<div class="hook-id">${esc(nom)}${adresse ? ` · ${esc(adresse)}` : ""}</div>`;
+  // Identité : le NOM seul (l'adresse ne sert aucun argument sur le diagnostic et
+  // fait déborder les noms à rallonge). Auto-rétréci si le nom est très long.
+  const hookid_style = nom.length > 52 ? "font-size:10.5px" : nom.length > 40 ? "font-size:11.5px" : "";
+  const hook_id = `<div class="hook-id" style="${hookid_style}">${esc(nom)}</div>`;
 
   // 2) L'ÉTAPE (story_step) : introduit le visuel du module.
   const STEP: Record<string, string> = {
