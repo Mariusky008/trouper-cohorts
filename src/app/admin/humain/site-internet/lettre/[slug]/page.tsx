@@ -313,10 +313,22 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     : hook_headline
       ? `<div class="hook"><div class="hook-cap big">${hook_headline}</div></div>`
       : "";
-  // Identité : le NOM seul (l'adresse ne sert aucun argument sur le diagnostic et
-  // fait déborder les noms à rallonge). Auto-rétréci si le nom est très long.
-  const hookid_style = nom.length > 52 ? "font-size:10.5px" : nom.length > 40 ? "font-size:11.5px" : "";
-  const hook_id = `<div class="hook-id" style="${hookid_style}">${esc(nom)}</div>`;
+  // Identité (destinataire) = nom + adresse courte (rue + ville, sans code postal
+  // ni « France »). Si l'ensemble est trop long (nom à rallonge), on retire
+  // l'adresse ; si le nom seul reste très long, on rétrécit la police.
+  const shortAddr = adresse
+    .replace(/,?\s*France\s*$/i, "")
+    .replace(/\b\d{4,6}\b/g, "")
+    .replace(/\s*,\s*,\s*/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/[\s,]+$/, "")
+    .trim();
+  const idFull = shortAddr ? `${nom} · ${shortAddr}` : nom;
+  const withAddr = Boolean(shortAddr) && idFull.length <= 56;
+  const idText = withAddr ? `${esc(nom)} · ${esc(shortAddr)}` : esc(nom);
+  const idLen = (withAddr ? idFull : nom).length;
+  const hookid_style = idLen > 58 ? "font-size:11.5px" : idLen > 44 ? "font-size:13px" : "";
+  const hook_id = `<div class="hook-id" style="${hookid_style}">${idText}</div>`;
 
   // 2) L'ÉTAPE (story_step) : introduit le visuel du module.
   const STEP: Record<string, string> = {
@@ -398,7 +410,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     ba_points_neg, ba_points_pos,
     url_site: urlDomain,
     copyright_line: year ? `© ${year} — Tous droits réservés` : "",
-    new_sub: `${activite}${ville ? ` · ${ville}` : ""}`,
+    new_sub: `${activite}${villeAff ? ` · ${villeAff}` : ""}`,
     sous_titre,
     vetuste_annee: year ? `est resté en ${year}.` : "est resté à une autre époque.",
     compteur_line: "Visiteurs : 004821",
