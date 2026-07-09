@@ -191,10 +191,16 @@ export async function POST(request: Request) {
     });
   }
 
-  // Concurrents = les commerces du même secteur qui ONT un site, les mieux
-  // notés d'abord. On les attache à chaque cible (sert la variante A).
+  // Concurrents = les commerces du même secteur qui ONT un site, DANS LA VILLE
+  // ciblée (Google Maps remonte les communes voisines — un psy bayonnais ne doit
+  // pas voir un « concurrent » d'une autre ville), les mieux notés d'abord.
+  const nvCity = norm(ville);
+  const inCity = (addr: string) => norm(addr).includes(nvCity);
+  // Strict : uniquement des concurrents DANS la ville (pas de repli hors-ville,
+  // qui casserait l'effet « il a vraiment regardé »). Mieux vaut moins de
+  // concurrents mais tous crédibles.
   const withSite = candidates
-    .filter((c) => c.hasSite)
+    .filter((c) => c.hasSite && inCity(c.address))
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
   for (const c of candidates) {
     c.competitors = withSite

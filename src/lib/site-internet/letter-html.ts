@@ -352,10 +352,18 @@ export async function composeLetterHtml(input: {
     : `<div class="ss-cap big">Vos futurs clients cherchent un <b>${esc(metierSing)}</b> à <b>${esc(villeAff)}</b> sur Google.</div>` +
       `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`;
   // 2) LA PREUVE — 3 concurrents « qui ont un site », propres, aérés.
+  // Nom propre du concurrent : Apify colle souvent le métier/la ville au nom
+  // (« Fanny Moleres - Psychologue à … », « X (Volckaert), Psychologue, EMDR »).
+  // On coupe au 1er séparateur pour ne garder que le nom.
+  const cleanCompName = (raw: string) => {
+    const s = str(raw).trim();
+    const cut = s.split(/\s[-–—]\s| \(|,\s/)[0].trim();
+    return cut.length >= 2 ? cut : s;
+  };
   const concRow = (c: { name: string; note: string; avis: number | null }) => {
     const noteNum = str(c.note).replace(/★/g, "").trim();
     const bits = [noteNum ? `★ ${noteNum}` : "", c.avis != null ? `${c.avis} avis` : ""].filter(Boolean).join("&nbsp;·&nbsp;");
-    return `<div class="cc-row"><div class="cc-name">${esc(c.name)}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
+    return `<div class="cc-row"><div class="cc-name">${esc(cleanCompName(c.name))}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
   };
   // Volontairement : le prospect N'apparaît PAS dans cette liste simulée (sans
   // site, Google ne l'affiche pas ici). Son absence est mise en scène dans la
@@ -381,7 +389,17 @@ export async function composeLetterHtml(input: {
   // 4) L'ACTION — on pivote direct vers la solution (le problème est déjà porté
   //    par le face-à-face + sa légende). Accroche + 3 bénéfices, puis le QR.
   const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
-  const ss_p3 = ov("ss_p3", `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`);
+  // Meilleur angle quand la réputation existe déjà (vraie note ≥ 4,5) : on
+  // valorise l'actif réel — « d'excellents avis, mais aucun site pour les
+  // mettre en valeur » — ce qui rend cohérent le ★ (sa vraie note) de la carte
+  // Demain. Sinon accroche standard. Aucun chiffre inventé.
+  const goodRep = reviews != null && reviews >= 1 && rating != null && rating >= 4.5 && Boolean(note);
+  const ss_p3 = ov(
+    "ss_p3",
+    goodRep
+      ? `Vous avez déjà d'excellents avis (${note}/5) — mais aucun site pour les mettre en valeur. J'ai préparé le vôtre, pour transformer ${introN} en clients qui vous découvrent :`
+      : `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`
+  );
   const ss_b1 = ov("ss_b1", "Appel en un geste, pour une prise de contact fluide.");
   const ss_b2 = ov("ss_b2", "Avis Google en avant, pour rassurer instantanément.");
   // Honnêteté : l'Assistant Avis n'est pas « automatique » (le pro clique) → on
@@ -390,8 +408,9 @@ export async function composeLetterHtml(input: {
   const ss_action =
     `<div class="ss-action"><p class="ss-lead">${ss_p3}</p>` +
     `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
-  // Pied « audit » formel : nom administratif complet conservé.
-  const ss_footer = `<div class="ss-footer">Diagnostic établi pour ${esc(nom)}${shortAddr ? ` · ${esc(shortAddr)}` : ""}</div>`;
+  // Pied : nom d'usage (jamais l'état civil complet — effet « scrapé »/Big
+  // Brother qui casse la chaleur du « j'ai préparé ça pour vous »).
+  const ss_footer = `<div class="ss-footer">Diagnostic préparé pour ${esc(destName)}</div>`;
   const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre maquette en direct →</div>`;
 
   if (type === "SANS_SITE") {

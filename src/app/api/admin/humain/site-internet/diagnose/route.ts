@@ -91,6 +91,9 @@ async function apifyLookup(
   }
 
   const bizName = biz ? norm(String(biz.title || "")) : "";
+  // Concurrents crédibles = même secteur, DANS la ville (Maps remonte les
+  // communes voisines → un concurrent hors-ville casse l'effet « il a regardé »).
+  const nCity = norm(city);
   const cand = items
     .filter((it) => {
       const t = norm(String(it.title || ""));
@@ -101,11 +104,12 @@ async function apifyLookup(
       note: typeof it.totalScore === "number" ? fmtNote(it.totalScore as number) : "",
       avis: typeof it.reviewsCount === "number" ? (it.reviewsCount as number) : null,
       hasSite: Boolean(String(it.website || "").trim()),
+      inCity: norm(String(it.address || "")).includes(nCity),
     }))
     .filter((c, i, arr) => arr.findIndex((x) => norm(x.name) === norm(c.name)) === i);
-  // On privilégie les concurrents qui ONT un site (c'est l'argument de la variante A).
-  const withSite = cand.filter((c) => c.hasSite);
-  const concurrents: Concurrent[] = (withSite.length >= 2 ? withSite : cand)
+  // Uniquement ceux qui ONT un site ET sont dans la ville (l'argument variante A).
+  const concurrents: Concurrent[] = cand
+    .filter((c) => c.hasSite && c.inCity)
     .slice(0, 3)
     .map(({ name, note, avis }) => ({ name, note, avis }));
 
