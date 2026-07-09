@@ -305,8 +305,11 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     SANS_SITE: "", // l'ouverture est portée par la scène (« Un client cherche… »)
   };
   const hook_headline = ov("hook_headline", HOOK_FALLBACK[type] ?? "");
+  // Sous le chiffre : la tension (hypothèse honnête — « il semblerait », « une
+  // partie » — que la lettre substantie ensuite avec le défaut réel).
+  const hook_miss = ov("hook_miss", "Et il semblerait que vous passiez à côté d'une partie de ces clients.");
   const hook_block = searchVolume
-    ? `<div class="hook"><div class="hook-num">≈ ${searchVolume}</div><div class="hook-cap">recherches Google pour <b>« ${esc(metierSing)} à ${esc(villeAff)} »</b><br>chaque mois, près de chez vous.</div></div>`
+    ? `<div class="hook"><div class="hook-num">≈ ${searchVolume}</div><div class="hook-cap">recherches Google pour <b>« ${esc(metierSing)} à ${esc(villeAff)} »</b> chaque mois.</div><div class="hook-miss">${hook_miss}</div></div>`
     : hook_headline
       ? `<div class="hook"><div class="hook-cap big">${hook_headline}</div></div>`
       : "";
@@ -344,15 +347,14 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     "J'ai préparé une première version de votre site, pensée pour que ceux qui vous découvrent aient tout de suite envie de vous contacter : <b>appel en un geste</b>, <b>avis en avant</b>, une vraie clarté — et un moyen simple d'obtenir <b>plus d'avis Google</b>, en un geste après chaque client."
   );
   const story_result =
-    `<div class="closing-label">La nouvelle version optimisée</div>` +
     `<div class="story-q">${story_q}</div>` +
     `<div class="story-d">${story_d}</div>` +
     `<div class="optim-body">${optim_body}</div>`;
 
-  // 4) L'ÉMOTION juste avant le renvoi au dos : la version est prête (vraie — la
-  //    maquette est réellement générée pour ce prospect) → projection.
-  const prepared_line = ov("prepared_line", "Cette version est prête. Elle pourrait être en ligne cette semaine.");
-  const prepared_block = `<div class="prepared">${prepared_line}</div>`;
+  // 4) Ligne « c'est prêt » juste avant le renvoi au dos — VIDE par défaut
+  //    (faisait doublon avec le paragraphe). Réactivable par prospect (override).
+  const prepared_line = ov("prepared_line", "");
+  const prepared_block = prepared_line ? `<div class="prepared">${prepared_line}</div>` : "";
 
   // 5) LE CTA unique vers le verso (au dos) — concret : « retournez la feuille ».
   const preview_cta =
@@ -364,6 +366,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // Liste des champs éditables du module courant (pour le panneau d'édition).
   const editableFields: { key: string; label: string; value: string; multiline?: boolean }[] = [];
   if (!searchVolume && HOOK_FALLBACK[type]) editableFields.push({ key: "hook_headline", label: "Accroche (titre, si pas de chiffre)", value: hook_headline, multiline: true });
+  if (searchVolume) editableFields.push({ key: "hook_miss", label: "Phrase sous le chiffre (la tension)", value: hook_miss, multiline: true });
   if (STEP[type]) editableFields.push({ key: "story_step", label: "Phrase d'introduction du visuel", value: story_step, multiline: true });
   negItems.forEach((v, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: v }));
   posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
