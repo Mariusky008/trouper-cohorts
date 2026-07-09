@@ -41,6 +41,7 @@ type Candidate = {
   variant: "A" | "B";
   // Signaux "encore en activité" (anti-piège du pro qui ne pratique plus).
   active: boolean;
+  recent: boolean; // avis daté < 18 mois (sert le tri : les plus vivants d'abord)
   closed: boolean;
   lastReviewMonths: number | null; // âge du dernier avis en mois (null = inconnu)
   alreadyProspect: boolean; // déjà transformé en prospect (pour le « +N de plus »)
@@ -152,17 +153,20 @@ export async function POST(request: Request) {
     const rating = typeof it.totalScore === "number" ? (it.totalScore as number) : null;
     const reviews = typeof it.reviewsCount === "number" ? (it.reviewsCount as number) : null;
 
-    // ── Signaux « encore en activité » ──────────────────────────────────────
+    // ── Signaux « encore en activité » (filtre assoupli) ────────────────────
+    // On n'exclut QUE les cas certains : fiche fermée, ou dernier avis très
+    // ancien (> 30 mois = a très probablement arrêté). On ne peut pas prouver
+    // qu'un pro a cessé juste parce que sa fiche Google est pauvre (beaucoup de
+    // sophrologues/énergéticiens n'ont ni horaires ni avis récents tout en
+    // exerçant) → dans le doute on GARDE, la remise en main propre permet de
+    // juger sur place.
     const closed = Boolean(it.permanentlyClosed) || Boolean(it.temporarilyClosed);
     const lastReviewMonths = monthsSinceLastReview(it);
-    const hasHours = Array.isArray(it.openingHours) && (it.openingHours as unknown[]).length > 0;
-    // Piège : dernier avis très ancien (> 24 mois) = a probablement arrêté.
-    const likelyStopped = lastReviewMonths != null && lastReviewMonths > 24;
-    // On écarte franchement les commerces fermés ou manifestement inactifs.
+    const likelyStopped = lastReviewMonths != null && lastReviewMonths > 30;
     if (closed || likelyStopped) continue;
-    let active = false;
-    if (lastReviewMonths != null) active = lastReviewMonths <= 18;
-    else active = hasHours; // pas d'avis daté → on se fie aux horaires renseignées
+    // Non prouvé inactif → considéré comme actif (les avis récents priment au tri).
+    const active = true;
+    const recent = lastReviewMonths != null && lastReviewMonths <= 18;
 
     // Filtre note optionnel : on écarte les commerces clairement au-dessus du
     // seuil (mais on GARDE ceux sans note et ceux sans site).
@@ -179,6 +183,7 @@ export async function POST(request: Request) {
       directory: isDir ? directoryPlatformName(website) : "",
       variant: hasSite ? "B" : "A",
       active,
+      recent,
       closed,
       lastReviewMonths,
       alreadyProspect: already.has(norm(name)),
@@ -204,7 +209,7 @@ export async function POST(request: Request) {
   candidates = candidates
     .sort((a, b) => {
       if (a.alreadyProspect !== b.alreadyProspect) return a.alreadyProspect ? 1 : -1;
-      if (a.active !== b.active) return a.active ? -1 : 1;
+      if (a.recent !== b.recent) return a.recent ? -1 : 1; // les plus vivants d'abord
       if (a.hasSite !== b.hasSite) return a.hasSite ? 1 : -1;
       const ra = a.rating ?? 3.5;
       const rb = b.rating ?? 3.5;
