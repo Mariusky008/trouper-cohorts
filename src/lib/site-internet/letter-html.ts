@@ -358,24 +358,24 @@ export async function composeLetterHtml(input: {
     return `<div class="cc-row"><div class="cc-name">${esc(c.name)}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
   };
   const concurrents_list = conc.slice(0, 3).map(concRow).join("");
-  // 3) LE FACE-À-FACE — Aujourd'hui (rien) vs Demain (site + actions). Étoiles
-  //    = la VRAIE note Google (honnête). Sans note → « Nouveau ».
+  // 3) LE FACE-À-FACE — deux cartes Avant/Après (bien plus lisible qu'un tableau).
+  //    Étoiles = la VRAIE note Google (honnête). Sans note → « Nouveau ».
   const round = rating != null ? Math.max(1, Math.min(5, Math.round(rating))) : 0;
   const foStars = rating != null
-    ? `<span class="fo-stars">${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}</span>`
-    : `<span class="fo-stars"><span class="off">★★★★★</span>&nbsp;Nouveau</span>`;
+    ? `${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}`
+    : `<span class="off">★★★★★</span>&nbsp;Nouveau`;
   const faceoff =
-    `<div class="faceoff">` +
-    `<div class="fo-row fo-now"><span class="fo-when">Aujourd'hui</span><span class="fo-name">${esc(destName)}</span><span class="fo-none">Aucun site web</span></div>` +
-    `<div class="fo-row fo-next"><span class="fo-when">Demain</span><span class="fo-name">${esc(destName)}</span><span class="fo-tags">${foStars}<span class="fo-tag">Site web</span><span class="fo-tag">Appeler</span><span class="fo-tag">WhatsApp</span></span></div>` +
+    `<div class="faceoff2">` +
+    `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-cn">${esc(destName)}</div><div class="fo-empty">Aucun site web</div></div>` +
+    `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
+    `<div class="fo-card fo-tomorrow"><div class="fo-lbl">Demain</div><div class="fo-cn">${esc(destName)}</div><div class="fo-cstars">${foStars}</div><div class="fo-cact"><span>Site web</span><span>Appeler</span><span>WhatsApp</span></div></div>` +
     `</div>`;
   const ss_transition = ov(
     "ss_transition",
     "Aujourd'hui, quand un client cherche un professionnel comme vous, il découvre des concurrents qui présentent leur activité avec un site, des avis et des moyens de contact simples. Vous, il n'a pratiquement rien à consulter."
   );
-  // 4) L'ACTION — 2 paragraphes noirs + 3 bénéfices, puis le grand bouton QR.
+  // 4) L'ACTION — 1 paragraphe de constat + accroche + 3 bénéfices, puis le QR.
   const ss_p1 = ov("ss_p1", "Sans site internet, Google a très peu de raisons de vous mettre en avant. Et même lorsqu'un client tombe sur votre fiche, il ne trouve rien pour le rassurer.");
-  const ss_p2 = ov("ss_p2", "Aujourd'hui, vous êtes invisible là où tout le monde cherche. En quelques secondes sur son téléphone, un visiteur choisit le professionnel qui inspire le plus confiance.");
   const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
   const ss_p3 = ov("ss_p3", `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`);
   const ss_b1 = ov("ss_b1", "Appel en un geste, pour une prise de contact fluide.");
@@ -384,7 +384,7 @@ export async function composeLetterHtml(input: {
   // dit « en un geste », pas « automatique ».
   const ss_b3 = ov("ss_b3", "Un système simple pour récolter plus d'avis, en un geste, et faire monter votre note.");
   const ss_action =
-    `<div class="ss-action"><p>${ss_p1}</p><p>${ss_p2}</p><p class="ss-lead">${ss_p3}</p>` +
+    `<div class="ss-action"><p>${ss_p1}</p><p class="ss-lead">${ss_p3}</p>` +
     `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
   // Pied « audit » formel : nom administratif complet conservé.
   const ss_footer = `<div class="ss-footer">Diagnostic établi pour ${esc(nom)}${shortAddr ? ` · ${esc(shortAddr)}` : ""}</div>`;
@@ -392,8 +392,7 @@ export async function composeLetterHtml(input: {
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
-    editableFields.push({ key: "ss_p1", label: "Paragraphe 1 (invisibilité)", value: ss_p1, multiline: true });
-    editableFields.push({ key: "ss_p2", label: "Paragraphe 2 (le choix du client)", value: ss_p2, multiline: true });
+    editableFields.push({ key: "ss_p1", label: "Paragraphe de constat", value: ss_p1, multiline: true });
     editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
     editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
     editableFields.push({ key: "ss_b2", label: "Bénéfice 2", value: ss_b2 });
