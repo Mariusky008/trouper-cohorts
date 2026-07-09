@@ -357,6 +357,9 @@ export async function composeLetterHtml(input: {
     const bits = [noteNum ? `★ ${noteNum}` : "", c.avis != null ? `${c.avis} avis` : ""].filter(Boolean).join("&nbsp;·&nbsp;");
     return `<div class="cc-row"><div class="cc-name">${esc(c.name)}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
   };
+  // Volontairement : le prospect N'apparaît PAS dans cette liste simulée (sans
+  // site, Google ne l'affiche pas ici). Son absence est mise en scène dans la
+  // carte « Aujourd'hui » du face-à-face ci-dessous.
   const concurrents_list = conc.slice(0, 3).map(concRow).join("");
   // 3) LE FACE-À-FACE — deux cartes Avant/Après (bien plus lisible qu'un tableau).
   //    Étoiles = la VRAIE note Google (honnête). Sans note → « Nouveau ».
@@ -364,15 +367,16 @@ export async function composeLetterHtml(input: {
   const foStars = rating != null
     ? `${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}`
     : `<span class="off">★★★★★</span>&nbsp;Nouveau`;
+  const eyeOff = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7c2.1 0 3.9.8 5.4 1.9"/><path d="M22 12s-3.6 7-10 7c-2.1 0-3.9-.8-5.4-1.9"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
   const faceoff =
     `<div class="faceoff2">` +
-    `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-cn">${esc(destName)}</div><div class="fo-empty">Aucun site web</div></div>` +
+    `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-eye">${eyeOff}</div><div class="fo-cn">${esc(destName)}</div><div class="fo-invis">Invisible sur cette recherche</div><div class="fo-invsub">Absent des premiers résultats</div></div>` +
     `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
     `<div class="fo-card fo-tomorrow"><div class="fo-lbl">Demain</div><div class="fo-cn">${esc(destName)}</div><div class="fo-cstars">${foStars}</div><div class="fo-cact"><span>Site web</span><span>Appeler</span><span>WhatsApp</span></div></div>` +
     `</div>`;
   const ss_transition = ov(
     "ss_transition",
-    "Aujourd'hui, quand un client cherche un professionnel comme vous, il découvre des concurrents qui présentent leur activité avec un site, des avis et des moyens de contact simples. Vous, il n'a pratiquement rien à consulter."
+    "Aujourd'hui, quand un client tape cette recherche, il tombe sur vos concurrents — avec leur site, leurs avis, un moyen de les joindre. Votre cabinet, lui, n'apparaît pas dans ces résultats."
   );
   // 4) L'ACTION — 1 paragraphe de constat + accroche + 3 bénéfices, puis le QR.
   const ss_p1 = ov("ss_p1", "Sans site internet, Google a très peu de raisons de vous mettre en avant. Et même lorsqu'un client tombe sur votre fiche, il ne trouve rien pour le rassurer.");
