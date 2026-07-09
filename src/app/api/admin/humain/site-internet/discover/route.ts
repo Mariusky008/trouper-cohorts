@@ -45,7 +45,7 @@ type Candidate = {
   closed: boolean;
   lastReviewMonths: number | null; // âge du dernier avis en mois (null = inconnu)
   alreadyProspect: boolean; // déjà transformé en prospect (pour le « +N de plus »)
-  competitors: Array<{ name: string; note: string }>;
+  competitors: Array<{ name: string; note: string; avis: number | null }>;
 };
 
 const fmtNote = (n: number | null) => (n != null ? `${n.toFixed(1).replace(".", ",")}★` : "");
@@ -199,8 +199,8 @@ export async function POST(request: Request) {
   for (const c of candidates) {
     c.competitors = withSite
       .filter((o) => o.name.toLowerCase() !== c.name.toLowerCase())
-      .slice(0, 2)
-      .map((o) => ({ name: o.name, note: fmtNote(o.rating) }));
+      .slice(0, 3)
+      .map((o) => ({ name: o.name, note: fmtNote(o.rating), avis: o.reviews }));
   }
 
   // Priorité : cibles fraîches et actives sans vrai site d'abord (les plus

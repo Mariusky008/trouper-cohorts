@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 type Constat = { statut: "bad" | "mid" | "good"; label: string; titre: string; preuve: string };
-type Concurrent = { name: string; note: string };
+type Concurrent = { name: string; note: string; avis?: number | null };
 
 const fmtNote = (n: number) => `${n.toFixed(1).replace(".", ",")}★`;
 
@@ -99,14 +99,15 @@ async function apifyLookup(
     .map((it) => ({
       name: String(it.title || "").trim(),
       note: typeof it.totalScore === "number" ? fmtNote(it.totalScore as number) : "",
+      avis: typeof it.reviewsCount === "number" ? (it.reviewsCount as number) : null,
       hasSite: Boolean(String(it.website || "").trim()),
     }))
     .filter((c, i, arr) => arr.findIndex((x) => norm(x.name) === norm(c.name)) === i);
   // On privilégie les concurrents qui ONT un site (c'est l'argument de la variante A).
   const withSite = cand.filter((c) => c.hasSite);
   const concurrents: Concurrent[] = (withSite.length >= 2 ? withSite : cand)
-    .slice(0, 2)
-    .map(({ name, note }) => ({ name, note }));
+    .slice(0, 3)
+    .map(({ name, note, avis }) => ({ name, note, avis }));
 
   if (!biz) return { info: null, concurrents, status: items.length ? "NOT_FOUND" : "EMPTY" };
   return { info: itemToInfo(biz), concurrents, status: "OK" };
@@ -391,9 +392,13 @@ export async function POST(request: Request) {
     };
     const pfc = Array.isArray(pf.concurrents) ? (pf.concurrents as Array<Record<string, unknown>>) : [];
     concurrents = pfc
-      .map((c) => ({ name: String(c?.name || "").trim(), note: String(c?.note || "").trim() }))
+      .map((c) => ({
+        name: String(c?.name || "").trim(),
+        note: String(c?.note || "").trim(),
+        avis: typeof c?.avis === "number" ? (c.avis as number) : typeof c?.reviews === "number" ? (c.reviews as number) : null,
+      }))
       .filter((c) => c.name)
-      .slice(0, 2);
+      .slice(0, 3);
     sourceStatus = "OK";
   } else if (apifyToken) {
     const r = await apifyLookup(apifyToken, businessName, city, activite);
