@@ -417,7 +417,12 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     site_shot,
     demain_hero,
     ba_synthese,
-    note_txt: note ? ` ${note}` : "",
+    // Étoiles du mockup « Demain » = la VRAIE note Google (honnêteté : pas 5
+    // étoiles pleines si la note est de 3,9). Sans note → « Nouveau ».
+    stars_html:
+      rating != null
+        ? `${"★".repeat(Math.max(1, Math.min(5, Math.round(rating))))}<span class="off">${"★".repeat(5 - Math.max(1, Math.min(5, Math.round(rating))))}</span><b> ${note}</b>`
+        : `<span class="off">★★★★★</span><b> Nouveau</b>`,
     qr_maquette,
     photo_marius,
   };

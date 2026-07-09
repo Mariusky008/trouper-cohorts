@@ -115,6 +115,8 @@
   .new-sub{font-size:8px;color:#8E93A0;margin:4px 0 0;letter-spacing:.02em;}
   .new-stars{color:#E8C24A;font-size:9px;letter-spacing:1.5px;margin:6px 0 9px;}
   .new-stars b{color:#EBD9A8;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0;margin-left:3px;}
+  /* Étoiles « éteintes » (note < 5) : demi-teinte, pour refléter la vraie note. */
+  .new-stars .off,.modern .m-stars .off{color:rgba(232,194,74,.30);}
   .new-hero{height:44px;border-radius:9px;background:linear-gradient(150deg,#242A36,#14171F 60%,#0C0E14);border:1px solid #2A2F3B;margin-bottom:10px;position:relative;overflow:hidden;}
   .new-hero::before{content:"";position:absolute;top:-16px;right:-16px;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,rgba(232,194,74,.32),transparent 70%);z-index:0;}
   /* Vraie photo Google du pro dans l'aperçu (repli sur le dégradé si absente/erreur) */
@@ -256,7 +258,7 @@
      (gagne de la place en bas du verso). */
   .closing{font-family:'Fraunces',serif;font-weight:500;font-size:14.5px;color:var(--ink);text-align:center;line-height:1.5;max-width:600px;margin:13px auto 0;}
   .closing b{font-weight:700;}
-  .sign{border-top:1px solid var(--hair);margin-top:16px;padding-top:14px;display:flex;align-items:center;gap:20px;}
+  .sign{border-top:1px solid var(--hair);margin-top:16px;padding-top:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;}
   .photo{flex:none;width:66px;height:66px;border-radius:50%;border:1px solid var(--hair);background:#F1EFEA;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);overflow:hidden;}
   .photo img{width:100%;height:100%;object-fit:cover;}
   .sign-body .s-name{font-weight:600;font-size:14.5px;}
