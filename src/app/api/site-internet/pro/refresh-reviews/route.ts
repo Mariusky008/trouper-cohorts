@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, google_reviews, google_rating, google_reviews_refreshed_at, pro_reviews_baseline, pro_token")
+    .select("id, business_name, city, google_reviews, google_rating, google_reviews_refreshed_at, pro_reviews_baseline, google_place_id, pro_token")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
 
   let newReviews = currentReviews;
   let newRating = currentRating;
+  let newPlaceId = "";
   if (res.ok && res.items.length) {
     const target = normName(nom);
     const items = res.items;
@@ -62,8 +63,12 @@ export async function POST(request: Request) {
       items[0];
     const rc = (best as Record<string, unknown>).reviewsCount;
     const ts = (best as Record<string, unknown>).totalScore;
+    const pid = String((best as Record<string, unknown>).placeId || "");
     if (typeof rc === "number") newReviews = rc;
     if (typeof ts === "number") newRating = ts;
+    // Backfill du place_id manquant → le lien « Laisser un avis » devient direct
+    // (writereview) au lieu d'une recherche Maps.
+    if (pid && !String(site.google_place_id || "").trim()) newPlaceId = pid;
   } else if (!res.ok) {
     return NextResponse.json({ ok: false, error: "Google injoignable pour le moment. Réessayez plus tard.", reviews: currentReviews, rating: currentRating }, { status: 200 });
   }
@@ -74,6 +79,7 @@ export async function POST(request: Request) {
     google_rating: newRating,
     google_reviews_refreshed_at: nowIso,
   };
+  if (newPlaceId) patch.google_place_id = newPlaceId;
   // 1re fois : on ancre le point de départ du suivi.
   if (site.pro_reviews_baseline == null && typeof newReviews === "number") {
     patch.pro_reviews_baseline = newReviews;
