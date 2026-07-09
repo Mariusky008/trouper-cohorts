@@ -101,9 +101,18 @@ export default async function DecouvertePage() {
             const total = metiers.reduce((n, m) => n + m.rows.length, 0);
             return (
               <div key={v.label} className="rounded-2xl border bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b px-5 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3">
                   <h2 className="text-lg font-black text-slate-900">{v.label}</h2>
-                  <span className="text-xs font-semibold text-slate-500">{total} prospect{total > 1 ? "s" : ""}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-slate-500">{total} prospect{total > 1 ? "s" : ""}</span>
+                    <Link
+                      href={`/admin/humain/site-internet/lettres/${encodeURIComponent(v.label)}`}
+                      target="_blank"
+                      className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700"
+                    >
+                      🖨️ Toutes les lettres ({total}) → PDF
+                    </Link>
+                  </div>
                 </div>
                 <div className="divide-y">
                   {metiers.map((m) => (
