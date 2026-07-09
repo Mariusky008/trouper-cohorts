@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { LeadForm } from "../../[slug]/lead-form";
 import { IntroOverlay } from "./intro-overlay";
 import { FeedbackNudge } from "./feedback-nudge";
+import { FlowReveal } from "./flow-reveal";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -193,6 +194,18 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .spot .arw{color:#3A4150;font-size:15px;padding:3px 0;}
           .mq .spot .concl{margin-top:20px;font-size:14px;color:#AEB2BC;line-height:1.5;}
           .mq .spot .concl b{color:#E8C24A;}
+          /* Apparition en cascade du flux (JS ajoute reveal-ready puis in). */
+          .mq .spot .flow.reveal-ready > *{opacity:0;transform:translateY(14px);}
+          .mq .spot .flow.reveal-ready.in > *{animation:mqFlowIn .5s cubic-bezier(.2,.7,.3,1) forwards;}
+          @keyframes mqFlowIn{to{opacity:1;transform:none;}}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(1){animation-delay:.04s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(2){animation-delay:.12s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(3){animation-delay:.20s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(4){animation-delay:.28s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(5){animation-delay:.36s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(6){animation-delay:.44s}
+          .mq .spot .flow.reveal-ready.in > *:nth-child(7){animation-delay:.52s}
+          @media (prefers-reduced-motion:reduce){.mq .spot .flow.reveal-ready > *{opacity:1;transform:none;animation:none;}}
           .mq .demand2{padding:28px 22px;text-align:center;border-bottom:1px solid #EEECE6;}
           .mq .demand2 .num{font-family:Georgia,serif;font-size:42px;font-weight:700;line-height:1;color:#14140F;}
           .mq .demand2 .cap{font-size:15px;color:#6E6E64;margin-top:8px;line-height:1.45;}
@@ -214,6 +227,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
 
       <IntroOverlay />
       <FeedbackNudge targetId="mq-act2" />
+      <FlowReveal />
 
       <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 

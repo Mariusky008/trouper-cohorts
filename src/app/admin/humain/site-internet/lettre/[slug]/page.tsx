@@ -287,8 +287,15 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
     `<div class="ba-points">${items.map((t) => `<div class="ba-pt ${kind}"><span class="m">${kind === "neg" ? negIcon : posIcon}</span>${esc(t)}</div>`).join("")}</div>`;
 
   const ba_synthese = ov("ba_synthese", SYNTHESES[type] ?? "");
-  const negItems = (NEG[type] ?? []).map((d, i) => ov(`neg${i + 1}`, d));
-  const posItems = (POS[type] ?? []).map((d, i) => ov(`pos${i + 1}`, d));
+  const negDefaults = NEG[type] ?? [];
+  const posDefaults = POS[type] ?? [];
+  const negItems = negDefaults.map((d, i) => ov(`neg${i + 1}`, d));
+  const posItems = posDefaults.map((d, i) => ov(`pos${i + 1}`, d));
+  // 3e point OPTIONNEL (vide par défaut) : l'admin peut l'ajouter via ✏️ Textes.
+  const neg3 = ov("neg3", "");
+  const pos3 = ov("pos3", "");
+  if (neg3) negItems.push(neg3);
+  if (pos3) posItems.push(pos3);
   const ba_points_neg = negItems.length ? baPointsHtml(negItems, "neg") : "";
   const ba_points_pos = posItems.length ? baPointsHtml(posItems, "pos") : "";
 
@@ -383,8 +390,10 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   if (!searchVolume && HOOK_FALLBACK[type]) editableFields.push({ key: "hook_headline", label: "Accroche (titre, si pas de chiffre)", value: hook_headline, multiline: true });
   if (searchVolume) editableFields.push({ key: "hook_miss", label: "Phrase sous le chiffre (la tension)", value: hook_miss, multiline: true });
   if (STEP[type]) editableFields.push({ key: "story_step", label: "Phrase d'introduction du visuel", value: story_step, multiline: true });
-  negItems.forEach((v, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: v }));
-  posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
+  negDefaults.forEach((_, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: negItems[i] ?? "" }));
+  if (negDefaults.length) editableFields.push({ key: "neg3", label: "Aujourd'hui — point 3 (facultatif)", value: neg3 });
+  posDefaults.forEach((_, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: posItems[i] ?? "" }));
+  if (posDefaults.length) editableFields.push({ key: "pos3", label: "Demain — point 3 (facultatif)", value: pos3 });
   if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
   editableFields.push({ key: "story_q", label: "Question du bas", value: story_q, multiline: true });
   editableFields.push({ key: "story_d", label: "Le comportement du visiteur (sous la question)", value: story_d, multiline: true });
