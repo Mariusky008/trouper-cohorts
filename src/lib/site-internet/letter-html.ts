@@ -125,8 +125,10 @@ export async function composeLetterHtml(input: {
     .map((c) => `<div class="result"><div class="r-name">${esc(c.name)}</div><div class="r-meta">${c.note ? esc(c.note) + " · " : ""}a un site web</div></div>`)
     .join("");
   const meRow = `<div class="result me"><div class="r-name">${esc(nom)}</div><div class="badge">Aucun site web</div></div>`;
+  // Honnête : sans site, le pro n'est pas « tout en bas » de la page — il
+  // n'apparaît simplement PAS dans ces résultats cliquables (il n'a qu'une fiche).
   const google_results = conc.length
-    ? `<div class="serp-hint">D'abord, ceux qui ont un site :</div>${compResults}<div class="serp-down">↓ et vous, tout en bas</div>${meRow}`
+    ? `<div class="serp-hint">Ceux qui ont un site s'affichent, cliquables :</div>${compResults}<div class="serp-down">Et vous&nbsp;: une fiche Google, mais aucun site à ouvrir.</div>${meRow}`
     : meRow;
   const noms = conc.slice(0, 2).map((c) => c.name);
   const concurrents_phrase = noms.length
@@ -138,6 +140,15 @@ export async function composeLetterHtml(input: {
     : reviews != null && reviews >= 1 && note
       ? `Vos clients vous notent ${note}/5 sur Google. Mais sans site, rien ne transforme les curieux en appels.`
       : `Le client clique sur ceux qui ont un site. Le vôtre n'existe pas encore.`;
+
+  // Compteur d'avis RÉEL (honnête) — SANS_SITE avec une réputation existante :
+  // on montre l'actif déjà acquis (chiffre présent, vrai), la promesse (un site
+  // + l'Assistant Avis pour en récolter plus) reste portée par optim_body. Aucun
+  // chiffre futur inventé. Vide si pas d'avis → pas de ligne (A4 préservé).
+  const reputation_line =
+    reviews != null && reviews >= 1 && note
+      ? `<div class="rep-line"><b>Déjà ${reviews} avis</b> sur Google (${note}/5) : une vraie réputation — mais sans site, rien ne la transforme en appels.</div>`
+      : "";
 
   let rank = 1;
   const serpComp = conc
@@ -313,6 +324,7 @@ export async function composeLetterHtml(input: {
     hook_block, hook_id, story_step, story_result, constate_tag, prepared_block, prep_tag, preview_cta,
     requete_metier: requete,
     google_results,
+    reputation_line,
     concurrents_phrase,
     serp_rows,
     sans_titre1, sans_texte1, sans_conseq,

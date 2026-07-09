@@ -116,11 +116,12 @@ export default async function DecouvertePage() {
                 </div>
                 <div className="divide-y">
                   {metiers.map((m) => (
-                    <div key={m.label} className="px-5 py-4">
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-sky-700">
-                        {m.label} <span className="text-slate-400">· {m.rows.length}</span>
-                      </p>
-                      <div className="overflow-x-auto">
+                    <details key={m.label} className="group px-5 py-3">
+                      <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-xs font-black uppercase tracking-wide text-sky-700 marker:content-none [&::-webkit-details-marker]:hidden">
+                        <span>{m.label} <span className="text-slate-400">· {m.rows.length}</span></span>
+                        <span className="text-slate-400 transition-transform group-open:rotate-180">▾</span>
+                      </summary>
+                      <div className="mt-2 overflow-x-auto">
                         <table className="w-full text-sm">
                           <tbody>
                             {m.rows.map((r) => (
@@ -183,7 +184,7 @@ export default async function DecouvertePage() {
                           </tbody>
                         </table>
                       </div>
-                    </div>
+                    </details>
                   ))}
                 </div>
               </div>
