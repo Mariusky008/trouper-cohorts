@@ -5,6 +5,7 @@
 // Ses clients ne voient jamais cette page (aucun lien public n'y mène).
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ProActions } from "./pro-actions";
+import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -81,6 +82,37 @@ export default async function EspacePro({
   const goal = reviews != null ? Math.max(100, Math.ceil((reviews + 20) / 50) * 50) : 100;
   const goalPct = reviews != null ? Math.min(100, Math.round((reviews / goal) * 100)) : 0;
 
+  // Suivi dans le temps (« +N avis ») — lecture tolérante : colonnes peut-être
+  // pas migrées. Au 1er passage, on ancre le point de départ = total actuel.
+  let baseline: number | null = null;
+  let refreshedAt = "";
+  try {
+    const { data: t } = await supabase
+      .from("human_vitrine_sites")
+      .select("pro_reviews_baseline, google_reviews_refreshed_at")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    if (t) {
+      baseline = typeof (t as Record<string, unknown>).pro_reviews_baseline === "number" ? ((t as Record<string, unknown>).pro_reviews_baseline as number) : null;
+      refreshedAt = str((t as Record<string, unknown>).google_reviews_refreshed_at);
+    }
+    if (baseline == null && reviews != null) {
+      await supabase
+        .from("human_vitrine_sites")
+        .update({ pro_reviews_baseline: reviews, pro_baseline_at: new Date().toISOString() })
+        .eq("id", str(row.id));
+      baseline = reviews;
+    }
+  } catch {
+    /* colonnes non migrées → pas de delta, la carte reste fonctionnelle */
+  }
+  const delta = baseline != null && reviews != null && reviews - baseline > 0 ? reviews - baseline : 0;
+
+  // Étoiles honnêtes : reflètent la vraie note (pas 5 pleines si 3,9).
+  const rStars = rating != null ? Math.max(1, Math.min(5, Math.round(rating))) : 5;
+  const starsOn = "★".repeat(rStars);
+  const starsOff = "★".repeat(5 - rStars);
+
   return (
     <main className="pro">
       <style
@@ -103,11 +135,16 @@ export default async function EspacePro({
           .pro .gcard .val{display:flex;align-items:baseline;gap:11px;margin-top:9px;}
           .pro .gcard .num{font-family:Georgia,serif;font-weight:700;font-size:34px;line-height:1;}
           .pro .gcard .stars{color:var(--gold);font-size:15px;letter-spacing:1px;}
+          .pro .gcard .stars .off{color:rgba(232,194,74,.30);}
           .pro .gcard .rate{font-size:13px;color:var(--soft);}
+          .pro .gcard .delta{margin-left:auto;align-self:flex-start;font-size:12px;font-weight:700;color:#188038;background:#E6F4EA;border-radius:999px;padding:5px 10px;white-space:nowrap;}
           .pro .gcard .empty{font-size:13px;color:var(--soft);line-height:1.45;}
           .pro .bar{height:7px;border-radius:5px;background:#EFEDE7;margin-top:14px;overflow:hidden;}
           .pro .bar i{display:block;height:100%;background:var(--ink);border-radius:5px;}
           .pro .goal{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:6px;}
+          .pro .rr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);}
+          .pro .rr-date{font-size:11.5px;color:var(--faint);}
+          .pro .rr-btn{background:#F1EFEA;border:1px solid var(--hair);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .lock{margin-top:26px;text-align:center;font-size:11.5px;color:var(--faint);display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.4;}
           .pro .lock svg{width:12px;height:12px;flex:none;}
           `,
@@ -135,16 +172,21 @@ export default async function EspacePro({
                 <div className="val">
                   <span className="num">{reviews}</span>
                   <span>
-                    <span className="stars">★★★★★</span>
+                    <span className="stars">{starsOn}<span className="off">{starsOff}</span></span>
                     <br />
                     <span className="rate">{note ? `${note} sur 5 · ` : ""}avis vérifiés</span>
                   </span>
+                  {delta > 0 && <span className="delta">📈 +{delta} depuis le début</span>}
                 </div>
                 <div className="bar"><i style={{ width: `${goalPct}%` }} /></div>
                 <div className="goal"><span>Aujourd&apos;hui : {reviews}</span><span>Objectif : {goal}</span></div>
+                <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
               </>
             ) : (
-              <div className="empty" style={{ marginTop: 8 }}>Chaque avis renforce votre visibilité locale. Commencez à en récolter dès aujourd&apos;hui.</div>
+              <>
+                <div className="empty" style={{ marginTop: 8 }}>Chaque avis renforce votre visibilité locale. Commencez à en récolter dès aujourd&apos;hui.</div>
+                <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
+              </>
             )}
           </div>
 
