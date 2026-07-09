@@ -342,6 +342,10 @@ export async function POST(request: Request) {
   const activite = String(payload?.activite || "").trim();
   const forceVariantRaw = String(payload?.variant || "").trim().toUpperCase();
   const forceVariant: "A" | "B" | null = forceVariantRaw === "A" || forceVariantRaw === "B" ? forceVariantRaw : null;
+  // Découverte en lot (Famille B) : si l'analyse conclut que le site est correct
+  // (EXCLU), on ne veut PAS créer de prospect « à vendre honnêtement » → on
+  // renvoie sans rien insérer. L'admin ne se retrouve qu'avec de vraies cibles.
+  const noInsertOnExclu = payload?.noInsertOnExclu === true;
   if (!businessName || !city || !activite) {
     return NextResponse.json({ error: "Nom, ville et activité sont requis." }, { status: 400 });
   }
@@ -445,6 +449,14 @@ export async function POST(request: Request) {
 
   const variant: "A" | "B" = typeDiag === "SANS_SITE" ? "A" : "B";
   const skipped = typeDiag === "EXCLU";
+
+  // Lot Famille B : site correct → on n'insère rien (pas de fausse cible).
+  if (skipped && noInsertOnExclu && !id) {
+    return NextResponse.json(
+      { notCreated: true, skipped: true, typeDiag, variant, placesStatus: sourceStatus },
+      { status: 200 }
+    );
+  }
 
   // 3. Constats + synthèse
   let constats = buildConstats(variant, activite, city, info, site, concurrents);
