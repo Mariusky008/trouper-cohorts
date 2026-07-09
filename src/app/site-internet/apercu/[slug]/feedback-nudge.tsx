@@ -23,7 +23,7 @@ export function FeedbackNudge({ targetId }: { targetId: string }) {
       const el = document.getElementById(targetId);
       if (el && el.getBoundingClientRect().top < window.innerHeight * 0.9) return;
       setShow(true);
-    }, 25000);
+    }, 14000);
     return () => clearTimeout(t);
   }, [targetId]);
 

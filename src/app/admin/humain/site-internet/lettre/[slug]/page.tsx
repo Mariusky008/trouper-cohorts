@@ -335,13 +335,13 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   );
   const story_d = ov(
     "story_d",
-    "Souvent, ce sont les détails : <b>appeler en un clic</b> · <b>des avis rassurants</b> · <b>un site récent et mobile</b>."
+    "En quelques secondes, un visiteur décide : <b>vous contacter</b>… ou continuer ses recherches ailleurs."
   );
   const story_result = `<div class="story-q">${story_q}</div><div class="story-d">${story_d}</div>`;
 
   // 4) L'ÉMOTION juste avant le renvoi au dos : la version existe DÉJÀ (vraie —
   //    la maquette est réellement générée pour ce prospect) → projection.
-  const prepared_line = ov("prepared_line", "Cette version existe déjà. Nous l'avons préparée pour vous.");
+  const prepared_line = ov("prepared_line", "Cette version existe déjà. Elle pourrait être en ligne cette semaine.");
   const prepared_block = `<div class="prepared">${prepared_line}</div>`;
 
   // 5) LE CTA unique vers le verso (au dos) — concret : « votre futur site, déjà prêt ».
