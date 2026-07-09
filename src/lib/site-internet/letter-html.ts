@@ -42,6 +42,21 @@ export function readLetterStyles(): string {
   return readTpl("styles.html");
 }
 
+// Nom d'usage professionnel pour l'en-tête : « Rodriguez Marc Daniel Gérard
+// Antoine » → « Marc Rodriguez ». On ne devine pas l'ordre à 3 mots pile (trop
+// risqué) ; à 4 mots et plus, l'état civil FR est presque toujours « NOM Prénom
+// Prénom… » → on rend « Prénom NOM ». Les raisons sociales (Cabinet, Centre…)
+// ne sont jamais inversées. Toujours corrigeable à la main (champ éditable).
+const BIZ_WORDS = /(cabinet|centre|espace|maison|institut|studio|sarl|eurl|sasu|sas|eirl|\bei\b|scp|scm|clinique|p[oô]le|groupe|association|asso|sophro|kin[eé]|ost[eé]o|psycho|naturo|coach|therap)/i;
+export function usageName(full: string): string {
+  const clean = str(full).replace(/\s+/g, " ").trim();
+  const tokens = clean.split(" ").filter(Boolean);
+  if (tokens.length <= 2) return clean;
+  if (BIZ_WORDS.test(clean)) return tokens.slice(0, 3).join(" ");
+  if (tokens.length >= 4) return `${tokens[1]} ${tokens[0]}`; // NOM P1 P2 P3 → P1 NOM
+  return tokens.slice(0, 2).join(" "); // 3 mots : ordre incertain → on garde tel quel
+}
+
 export type EditableField = { key: string; label: string; value: string; multiline?: boolean };
 
 export type ComposedLetter = {
@@ -78,7 +93,12 @@ export async function composeLetterHtml(input: {
   };
   const concRaw = Array.isArray(diag.concurrents) ? diag.concurrents : [];
   const conc = concRaw
-    .map((c) => (typeof c === "string" ? { name: c, note: "" } : { name: str((c as Record<string, unknown>)?.name), note: str((c as Record<string, unknown>)?.note) }))
+    .map((c) => {
+      if (typeof c === "string") return { name: c, note: "", avis: null as number | null };
+      const o = c as Record<string, unknown>;
+      const avisNum = typeof o.avis === "number" ? o.avis : typeof o.reviews === "number" ? o.reviews : null;
+      return { name: str(o.name), note: str(o.note), avis: avisNum };
+    })
     .filter((c) => c.name);
 
   const rawSource = str(place.source_website);
@@ -302,21 +322,84 @@ export async function composeLetterHtml(input: {
   const prep_tag = `<div class="prep-tag">✦ Version préparée pour vous</div>`;
 
   const editableFields: EditableField[] = [];
-  if (!searchVolume && HOOK_FALLBACK[type]) editableFields.push({ key: "hook_headline", label: "Accroche (titre, si pas de chiffre)", value: hook_headline, multiline: true });
-  if (searchVolume) editableFields.push({ key: "hook_miss", label: "Phrase sous le chiffre (la tension)", value: hook_miss, multiline: true });
-  if (STEP[type]) editableFields.push({ key: "story_step", label: "Phrase d'introduction du visuel", value: story_step, multiline: true });
-  negDefaults.forEach((_, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: negItems[i] ?? "" }));
-  if (negDefaults.length) editableFields.push({ key: "neg3", label: "Aujourd'hui — point 3 (facultatif)", value: neg3 });
-  posDefaults.forEach((_, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: posItems[i] ?? "" }));
-  if (posDefaults.length) editableFields.push({ key: "pos3", label: "Demain — point 3 (facultatif)", value: pos3 });
-  if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
-  editableFields.push({ key: "story_q", label: "Question du bas", value: story_q, multiline: true });
-  editableFields.push({ key: "story_d", label: "Le comportement du visiteur (sous la question)", value: story_d, multiline: true });
-  editableFields.push({ key: "optim_body", label: "Ce que j'ai préparé (paragraphe)", value: optim_body, multiline: true });
-  editableFields.push({ key: "prepared_line", label: "Phrase avant le QR (« c'est prêt »)", value: prepared_line, multiline: true });
+  // SANS_SITE a sa propre grammaire (refonte) → champs dédiés plus bas.
+  if (type !== "SANS_SITE") {
+    if (!searchVolume && HOOK_FALLBACK[type]) editableFields.push({ key: "hook_headline", label: "Accroche (titre, si pas de chiffre)", value: hook_headline, multiline: true });
+    if (searchVolume) editableFields.push({ key: "hook_miss", label: "Phrase sous le chiffre (la tension)", value: hook_miss, multiline: true });
+    if (STEP[type]) editableFields.push({ key: "story_step", label: "Phrase d'introduction du visuel", value: story_step, multiline: true });
+    negDefaults.forEach((_, i) => editableFields.push({ key: `neg${i + 1}`, label: `Aujourd'hui — point ${i + 1}`, value: negItems[i] ?? "" }));
+    if (negDefaults.length) editableFields.push({ key: "neg3", label: "Aujourd'hui — point 3 (facultatif)", value: neg3 });
+    posDefaults.forEach((_, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: posItems[i] ?? "" }));
+    if (posDefaults.length) editableFields.push({ key: "pos3", label: "Demain — point 3 (facultatif)", value: pos3 });
+    if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
+    editableFields.push({ key: "story_q", label: "Question du bas", value: story_q, multiline: true });
+    editableFields.push({ key: "story_d", label: "Le comportement du visiteur (sous la question)", value: story_d, multiline: true });
+    editableFields.push({ key: "optim_body", label: "Ce que j'ai préparé (paragraphe)", value: optim_body, multiline: true });
+    editableFields.push({ key: "prepared_line", label: "Phrase avant le QR (« c'est prêt »)", value: prepared_line, multiline: true });
+  }
   editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
 
   const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`].filter(Boolean).join(" · ");
+
+  // ── Recto SANS_SITE (refonte UX : Choc → Preuve → Face-à-face → Action) ─────
+  // Nom d'usage pour l'en-tête (corrigeable), nom complet gardé pour le pied.
+  const destName = ov("display_name", usageName(nom));
+  // 1) LE CHOC — le chiffre en héros, la phrase, puis le destinataire.
+  const ss_hero = searchVolume
+    ? `<div class="ss-num">≈ ${searchVolume}</div>` +
+      `<div class="ss-cap">personnes recherchent un <b>${esc(metierSing)}</b> à <b>${esc(villeAff)}</b> chaque mois.</div>` +
+      `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`
+    : `<div class="ss-cap big">Vos futurs clients cherchent un <b>${esc(metierSing)}</b> à <b>${esc(villeAff)}</b> sur Google.</div>` +
+      `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`;
+  // 2) LA PREUVE — 3 concurrents « qui ont un site », propres, aérés.
+  const concRow = (c: { name: string; note: string; avis: number | null }) => {
+    const noteNum = str(c.note).replace(/★/g, "").trim();
+    const bits = [noteNum ? `★ ${noteNum}` : "", c.avis != null ? `${c.avis} avis` : ""].filter(Boolean).join("&nbsp;·&nbsp;");
+    return `<div class="cc-row"><div class="cc-name">${esc(c.name)}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
+  };
+  const concurrents_list = conc.slice(0, 3).map(concRow).join("");
+  // 3) LE FACE-À-FACE — Aujourd'hui (rien) vs Demain (site + actions). Étoiles
+  //    = la VRAIE note Google (honnête). Sans note → « Nouveau ».
+  const round = rating != null ? Math.max(1, Math.min(5, Math.round(rating))) : 0;
+  const foStars = rating != null
+    ? `<span class="fo-stars">${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}</span>`
+    : `<span class="fo-stars"><span class="off">★★★★★</span>&nbsp;Nouveau</span>`;
+  const faceoff =
+    `<div class="faceoff">` +
+    `<div class="fo-row fo-now"><span class="fo-when">Aujourd'hui</span><span class="fo-name">${esc(destName)}</span><span class="fo-none">Aucun site web</span></div>` +
+    `<div class="fo-row fo-next"><span class="fo-when">Demain</span><span class="fo-name">${esc(destName)}</span><span class="fo-tags">${foStars}<span class="fo-tag">Site web</span><span class="fo-tag">Appeler</span><span class="fo-tag">WhatsApp</span></span></div>` +
+    `</div>`;
+  const ss_transition = ov(
+    "ss_transition",
+    "Aujourd'hui, quand un client cherche un professionnel comme vous, il découvre des concurrents qui présentent leur activité avec un site, des avis et des moyens de contact simples. Vous, il n'a pratiquement rien à consulter."
+  );
+  // 4) L'ACTION — 2 paragraphes noirs + 3 bénéfices, puis le grand bouton QR.
+  const ss_p1 = ov("ss_p1", "Sans site internet, Google a très peu de raisons de vous mettre en avant. Et même lorsqu'un client tombe sur votre fiche, il ne trouve rien pour le rassurer.");
+  const ss_p2 = ov("ss_p2", "Aujourd'hui, vous êtes invisible là où tout le monde cherche. En quelques secondes sur son téléphone, un visiteur choisit le professionnel qui inspire le plus confiance.");
+  const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
+  const ss_p3 = ov("ss_p3", `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`);
+  const ss_b1 = ov("ss_b1", "Appel en un geste, pour une prise de contact fluide.");
+  const ss_b2 = ov("ss_b2", "Avis Google en avant, pour rassurer instantanément.");
+  // Honnêteté : l'Assistant Avis n'est pas « automatique » (le pro clique) → on
+  // dit « en un geste », pas « automatique ».
+  const ss_b3 = ov("ss_b3", "Un système simple pour récolter plus d'avis, en un geste, et faire monter votre note.");
+  const ss_action =
+    `<div class="ss-action"><p>${ss_p1}</p><p>${ss_p2}</p><p class="ss-lead">${ss_p3}</p>` +
+    `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
+  // Pied « audit » formel : nom administratif complet conservé.
+  const ss_footer = `<div class="ss-footer">Diagnostic établi pour ${esc(nom)}${shortAddr ? ` · ${esc(shortAddr)}` : ""}</div>`;
+  const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre maquette en direct →</div>`;
+
+  if (type === "SANS_SITE") {
+    editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
+    editableFields.push({ key: "ss_p1", label: "Paragraphe 1 (invisibilité)", value: ss_p1, multiline: true });
+    editableFields.push({ key: "ss_p2", label: "Paragraphe 2 (le choix du client)", value: ss_p2, multiline: true });
+    editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
+    editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
+    editableFields.push({ key: "ss_b2", label: "Bénéfice 2", value: ss_b2 });
+    editableFields.push({ key: "ss_b3", label: "Bénéfice 3", value: ss_b3 });
+    editableFields.push({ key: "ss_transition", label: "Constat sous le face-à-face", value: ss_transition, multiline: true });
+  }
 
   const vars: Record<string, string> = {
     mois, annee, nom_commerce: nom, adresse, ville, telephone, prix,
@@ -325,6 +408,15 @@ export async function composeLetterHtml(input: {
     requete_metier: requete,
     google_results,
     reputation_line,
+    // Recto SANS_SITE refondu
+    ss_hero,
+    concurrents_list,
+    faceoff,
+    ss_transition,
+    ss_action,
+    ss_footer,
+    cta_full,
+    dest_name: destName,
     concurrents_phrase,
     serp_rows,
     sans_titre1, sans_texte1, sans_conseq,
