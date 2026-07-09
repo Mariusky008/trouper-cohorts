@@ -7,6 +7,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import QRCode from "qrcode";
 import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 export const LETTER_MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA"];
@@ -342,14 +343,31 @@ export async function composeLetterHtml(input: {
   const diag_eyebrow = ["Diagnostic personnalisé", ville, `${mois} ${annee}`].filter(Boolean).join(" · ");
 
   // ── Recto SANS_SITE (refonte UX : Choc → Preuve → Face-à-face → Action) ─────
-  // Nom d'usage pour l'en-tête (corrigeable), nom complet gardé pour le pied.
+  // Le PROFIL du métier (config métier-profiles) pilote le vocabulaire, les
+  // contacts, le volet avis et les 3 bénéfices — sans réécrire la lettre. Métier
+  // hors liste → profil A (générique). C = santé encadrée : « patients », aucun
+  // avis, pas de WhatsApp, ton sobre.
+  const mp = resolveMetier(activite);
+  const def = mp.def;
+  const termePublic = def.terme_public; // clients / patients
+  const termeSing = termePublic.replace(/s$/u, ""); // client / patient
+  // Libellé métier + article corrigeables par prospect (genre : « une
+  // psychologue » ; précision : « coach de vie »). Défauts = config.
+  const metierLabel = ov("display_metier", mp.entry?.label || metierSing);
+  const metierArticle = ov("metier_article", mp.entry?.article || "un");
+  // Nom d'usage pour l'en-tête et le pied (jamais l'état civil complet).
   const destName = ov("display_name", usageName(nom));
-  // 1) LE CHOC — le chiffre en héros, la phrase, puis le destinataire.
+  // 1) LE CHOC — le chiffre en héros, la phrase (au vocabulaire du profil), le
+  //    destinataire. Profil C : sous-ligne sobre recentrée sur la findabilité.
+  const heroCap = `${def.heroSujet} ${def.heroVerbe} ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b> chaque mois.`;
+  const heroSubHtml = def.heroSub ? `<div class="ss-herosub">${esc(def.heroSub)}</div>` : "";
   const ss_hero = searchVolume
     ? `<div class="ss-num">≈ ${searchVolume}</div>` +
-      `<div class="ss-cap">personnes recherchent un <b>${esc(metierSing)}</b> à <b>${esc(villeAff)}</b> chaque mois.</div>` +
+      `<div class="ss-cap">${heroCap}</div>` +
+      heroSubHtml +
       `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`
-    : `<div class="ss-cap big">Vos futurs clients cherchent un <b>${esc(metierSing)}</b> à <b>${esc(villeAff)}</b> sur Google.</div>` +
+    : `<div class="ss-cap big">Vos futurs ${esc(termePublic)} cherchent ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b> sur Google.</div>` +
+      heroSubHtml +
       `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`;
   // 2) LA PREUVE — 3 concurrents « qui ont un site », propres, aérés.
   // Nom propre du concurrent : Apify colle souvent le métier/la ville au nom
@@ -370,41 +388,43 @@ export async function composeLetterHtml(input: {
   // carte « Aujourd'hui » du face-à-face ci-dessous.
   const concurrents_list = conc.slice(0, 3).map(concRow).join("");
   // 3) LE FACE-À-FACE — deux cartes Avant/Après (bien plus lisible qu'un tableau).
-  //    Étoiles = la VRAIE note Google (honnête). Sans note → « Nouveau ».
+  //    Carte DEMAIN : contacts + volet avis pilotés par le PROFIL.
+  //    Volet avis : on = ★ (vraie note, « Nouveau » si aucune) ; doux = ★
+  //    seulement si des avis existent déjà ; off (santé encadrée) = aucune ★.
   const round = rating != null ? Math.max(1, Math.min(5, Math.round(rating))) : 0;
-  const foStars = rating != null
-    ? `${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}`
-    : `<span class="off">★★★★★</span>&nbsp;Nouveau`;
+  const showStars = def.bloc_avis === "on" ? true : def.bloc_avis === "doux" ? rating != null : false;
+  const foStarsHtml = showStars
+    ? `<div class="fo-cstars">${rating != null ? `${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}` : `<span class="off">★★★★★</span>&nbsp;Nouveau`}</div>`
+    : "";
+  const contactsHtml = def.contacts.map((c) => `<span>${esc(c)}</span>`).join("");
   const eyeOff = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7c2.1 0 3.9.8 5.4 1.9"/><path d="M22 12s-3.6 7-10 7c-2.1 0-3.9-.8-5.4-1.9"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
   const faceoff =
     `<div class="faceoff2">` +
     `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-eye">${eyeOff}</div><div class="fo-cn">${esc(destName)}</div><div class="fo-invis">Invisible sur cette recherche</div><div class="fo-invsub">Absent des premiers résultats</div></div>` +
     `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
-    `<div class="fo-card fo-tomorrow"><div class="fo-lbl">Demain</div><div class="fo-cn">${esc(destName)}</div><div class="fo-cstars">${foStars}</div><div class="fo-cact"><span>Site web</span><span>Appeler</span><span>WhatsApp</span></div></div>` +
+    `<div class="fo-card fo-tomorrow"><div class="fo-lbl">Demain</div><div class="fo-cn">${esc(destName)}</div>${foStarsHtml}<div class="fo-cact">${contactsHtml}</div></div>` +
     `</div>`;
   const ss_transition = ov(
     "ss_transition",
-    "Aujourd'hui, quand un client tape cette recherche, il tombe sur vos concurrents — avec leur site, leurs avis, un moyen de les joindre. Votre cabinet, lui, n'apparaît pas dans ces résultats."
+    `Aujourd'hui, quand un ${termeSing} tape cette recherche, il tombe sur vos concurrents — présents, avec un site et un moyen de les joindre. Votre cabinet, lui, n'apparaît pas dans ces résultats.`
   );
-  // 4) L'ACTION — on pivote direct vers la solution (le problème est déjà porté
-  //    par le face-à-face + sa légende). Accroche + 3 bénéfices, puis le QR.
+  // 4) L'ACTION — on pivote direct vers la solution. Accroche + 3 bénéfices (du
+  //    profil), puis le QR. Vocabulaire clients/patients selon le profil.
   const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
-  // Meilleur angle quand la réputation existe déjà (vraie note ≥ 4,5) : on
-  // valorise l'actif réel — « d'excellents avis, mais aucun site pour les
-  // mettre en valeur » — ce qui rend cohérent le ★ (sa vraie note) de la carte
-  // Demain. Sinon accroche standard. Aucun chiffre inventé.
-  const goodRep = reviews != null && reviews >= 1 && rating != null && rating >= 4.5 && Boolean(note);
+  // Angle avis autorisé seulement si le profil le permet (pas en C). Quand une
+  // vraie réputation existe (note ≥ 4,5), on la valorise sans rien inventer.
+  const avisAllowed = def.bloc_avis !== "off";
+  const goodRep = avisAllowed && reviews != null && reviews >= 1 && rating != null && rating >= 4.5 && Boolean(note);
   const ss_p3 = ov(
     "ss_p3",
     goodRep
-      ? `Vous avez déjà d'excellents avis (${note}/5) — mais aucun site pour les mettre en valeur. J'ai préparé le vôtre, pour transformer ${introN} en clients qui vous découvrent :`
-      : `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`
+      ? `Vous avez déjà d'excellents avis (${note}/5) — mais aucun site pour les mettre en valeur. J'ai préparé le vôtre, pour transformer ${introN} en ${termePublic} qui vous découvrent :`
+      : `J'ai préparé la première version de votre site pour transformer ${introN} en ${termePublic} qui vous découvrent :`
   );
-  const ss_b1 = ov("ss_b1", "Appel en un geste, pour une prise de contact fluide.");
-  const ss_b2 = ov("ss_b2", "Avis Google en avant, pour rassurer instantanément.");
-  // Honnêteté : l'Assistant Avis n'est pas « automatique » (le pro clique) → on
-  // dit « en un geste », pas « automatique ».
-  const ss_b3 = ov("ss_b3", "Un système simple pour récolter plus d'avis, en un geste, et faire monter votre note.");
+  // Les 3 bénéfices viennent du PROFIL (déontologie respectée). Corrigeables.
+  const ss_b1 = ov("ss_b1", def.benefices[0]);
+  const ss_b2 = ov("ss_b2", def.benefices[1]);
+  const ss_b3 = ov("ss_b3", def.benefices[2]);
   const ss_action =
     `<div class="ss-action"><p class="ss-lead">${ss_p3}</p>` +
     `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
@@ -415,6 +435,8 @@ export async function composeLetterHtml(input: {
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
+    editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
+    editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
     editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
     editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
     editableFields.push({ key: "ss_b2", label: "Bénéfice 2", value: ss_b2 });
