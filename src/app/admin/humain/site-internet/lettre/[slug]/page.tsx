@@ -133,7 +133,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   // Le gros bulletin d'étoiles est retiré (trop clinique, il concurrençait le
   // récit). On garde le signal « c'est mesuré, pas une opinion » via une micro-
   // mention sous le visuel + le défaut réel porté par les puces « Aujourd'hui ».
-  const constate_tag = type !== "SANS_SITE" ? `<div class="constate">Constaté sur votre site</div>` : "";
+  const constate_tag = ""; // retiré (« Constaté sur votre site » : prenait de la place pour peu de valeur)
 
   // 1er constat SANS_SITE — adapté si le commerçant n'a qu'une fiche annuaire :
   // on ne dit pas « aucune présence » (faux), mais « pas de site À VOUS ».
@@ -335,18 +335,28 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   );
   const story_d = ov(
     "story_d",
-    "En quelques secondes, un visiteur décide : <b>vous contacter</b>… ou continuer ses recherches ailleurs."
+    "En quelques secondes sur son téléphone, un visiteur décide : <b>vous contacter</b>… ou continuer ses recherches ailleurs."
   );
-  const story_result = `<div class="story-q">${story_q}</div><div class="story-d">${story_d}</div>`;
+  // Ce que j'ai préparé (1re personne, honnête — « un geste », pas « automatique »).
+  // « préparé une première version » marche que le pro ait déjà un site ou non.
+  const optim_body = ov(
+    "optim_body",
+    "J'ai préparé une première version de votre site, pensée pour que ceux qui vous découvrent aient tout de suite envie de vous contacter : <b>appel en un geste</b>, <b>avis en avant</b>, une vraie clarté — et un moyen simple d'obtenir <b>plus d'avis Google</b>, en un geste après chaque client."
+  );
+  const story_result =
+    `<div class="closing-label">La nouvelle version optimisée</div>` +
+    `<div class="story-q">${story_q}</div>` +
+    `<div class="story-d">${story_d}</div>` +
+    `<div class="optim-body">${optim_body}</div>`;
 
-  // 4) L'ÉMOTION juste avant le renvoi au dos : la version existe DÉJÀ (vraie —
-  //    la maquette est réellement générée pour ce prospect) → projection.
-  const prepared_line = ov("prepared_line", "Cette version existe déjà. Elle pourrait être en ligne cette semaine.");
+  // 4) L'ÉMOTION juste avant le renvoi au dos : la version est prête (vraie — la
+  //    maquette est réellement générée pour ce prospect) → projection.
+  const prepared_line = ov("prepared_line", "Cette version est prête. Elle pourrait être en ligne cette semaine.");
   const prepared_block = `<div class="prepared">${prepared_line}</div>`;
 
-  // 5) LE CTA unique vers le verso (au dos) — concret : « votre futur site, déjà prêt ».
+  // 5) LE CTA unique vers le verso (au dos) — concret : « retournez la feuille ».
   const preview_cta =
-    `<div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Au dos : scannez pour voir <b>votre futur site, déjà prêt</b> →</div>`;
+    `<div class="preview-cta" style="margin:0 auto;"><span class="qr-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><line x1="14.5" y1="14.5" x2="14.5" y2="21"/><line x1="18" y1="14.5" x2="18" y2="18"/><line x1="21" y1="17.5" x2="21" y2="21"/></svg></span>Retournez la feuille : scannez le QR, <b>essayez votre maquette en direct</b> →</div>`;
 
   // Micro-tag « préparée pour vous » au-dessus du téléphone « Demain » (before/after).
   const prep_tag = `<div class="prep-tag">✦ Version préparée pour vous</div>`;
@@ -359,8 +369,9 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
   posItems.forEach((v, i) => editableFields.push({ key: `pos${i + 1}`, label: `Demain — point ${i + 1}`, value: v }));
   if (SYNTHESES[type]) editableFields.push({ key: "ba_synthese", label: "Phrase de synthèse", value: ba_synthese, multiline: true });
   editableFields.push({ key: "story_q", label: "Question du bas", value: story_q, multiline: true });
-  editableFields.push({ key: "story_d", label: "Détails (sous la question)", value: story_d, multiline: true });
-  editableFields.push({ key: "prepared_line", label: "Phrase « préparée pour vous » (avant le QR)", value: prepared_line, multiline: true });
+  editableFields.push({ key: "story_d", label: "Le comportement du visiteur (sous la question)", value: story_d, multiline: true });
+  editableFields.push({ key: "optim_body", label: "Ce que j'ai préparé (paragraphe)", value: optim_body, multiline: true });
+  editableFields.push({ key: "prepared_line", label: "Phrase avant le QR (« c'est prêt »)", value: prepared_line, multiline: true });
   editableFields.push({ key: "search_volume", label: "Recherches Google / mois (chiffre réel — vide = masqué)", value: searchVolume ? String(searchVolume) : "" });
 
   // Bandeau honnête : « Diagnostic personnalisé · {ville} · {mois} {annee} ».
