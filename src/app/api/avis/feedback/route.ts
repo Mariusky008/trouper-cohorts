@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Instanciation PARESSEUSE : `new Resend` lève si la clé manque. Au chargement
+// du module (build « collecting page data »), ça casserait TOUT le déploiement.
+// On l'instancie à la requête → une clé absente ne bloque plus jamais le build.
+let _resend: Resend | null = null;
+const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""));
 
 function formatPhoneToE164(raw: string): string | null {
   if (!raw) return null;
@@ -63,7 +67,7 @@ export async function POST(request: Request) {
 
   // ── Email vers l'admin ──
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Trouper Avis <contact@popey.academy>",
       to: adminEmail,
       subject: `⚠️ Avis négatif — ${commerce.nom}`,

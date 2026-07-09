@@ -5,7 +5,10 @@ import { revalidatePath } from "next/cache";
 import { Resend } from 'resend';
 import WelcomeEmail from '@/emails/welcome-email';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Instanciation paresseuse : évite que `new Resend` (qui lève sans clé) casse
+// le build au chargement du module.
+let _resend: Resend | null = null;
+const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""));
 
 export async function validateRegistration(registrationId: string) {
   const supabase = await createClient();
@@ -144,7 +147,7 @@ export async function validateRegistration(registrationId: string) {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.popey.academy';
         const loginUrl = `${baseUrl}/login?email=${encodeURIComponent(email)}`;
 
-        await resend.emails.send({
+        await getResend().emails.send({
             from: 'Popey Academy <contact@popey.academy>',
             to: email,
             subject: 'Bienvenue à bord ! ⚓️',

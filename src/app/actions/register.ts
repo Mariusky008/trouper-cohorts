@@ -5,7 +5,10 @@ import { z } from "zod";
 import { Resend } from 'resend';
 import ConfirmationEmail from '@/emails/confirmation-email';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Instanciation paresseuse : évite que `new Resend` (qui lève sans clé) casse
+// le build au chargement du module.
+let _resend: Resend | null = null;
+const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""));
 
 const registrationSchema = z.object({
   firstName: z.string().min(2, "Le prénom doit faire au moins 2 caractères"),
@@ -74,7 +77,7 @@ export async function submitRegistration(formData: FormData) {
   // Envoi de l'email de confirmation
   if (process.env.RESEND_API_KEY) {
       try {
-          await resend.emails.send({
+          await getResend().emails.send({
               from: 'Popey Academy <contact@popey.academy>',
               to: data.email,
               subject: 'Candidature reçue ! ⚓️',
