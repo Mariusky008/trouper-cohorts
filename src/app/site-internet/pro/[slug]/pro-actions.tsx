@@ -25,11 +25,22 @@ export function ProActions({
   initialHistory: Req[];
 }) {
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [history, setHistory] = useState<Req[]>(initialHistory);
 
-  const greeting = name.trim() ? `Bonjour ${name.trim()} 👋` : "Bonjour 👋";
-  const message = `${greeting}\nMerci beaucoup pour votre confiance aujourd'hui. Si vous avez une minute, votre avis Google nous aiderait énormément 🙏\n\n⭐ Laisser un avis : ${reviewLink}\n\nMerci !`;
-  const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  // Message SANS emoji : certains téléphones les affichent en « � » quand ils
+  // passent par le lien wa.me. Texte simple = fiable partout.
+  const greeting = name.trim() ? `Bonjour ${name.trim()},` : "Bonjour,";
+  const message = `${greeting}\nMerci beaucoup pour votre confiance aujourd'hui. Si vous avez une minute, votre avis Google nous aiderait énormément :\n${reviewLink}\nMerci beaucoup !`;
+
+  // Numéro du client (facultatif) → ouvre la conversation directement, même si
+  // ce n'est PAS un contact enregistré. Vide → WhatsApp propose de choisir un
+  // contact existant. On normalise les numéros français (06… → 336…).
+  const digits = phone.replace(/\D/g, "");
+  const intl = digits.startsWith("33") ? digits : digits.startsWith("0") ? "33" + digits.slice(1) : digits;
+  const waHref = intl
+    ? `https://wa.me/${intl}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
   const onSend = () => {
     const client_name = name.trim() || null;
@@ -61,6 +72,7 @@ export function ProActions({
           .pro .opt label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);}
           .pro .opt input{width:100%;margin-top:6px;border:1px solid var(--hair);border-radius:11px;padding:12px 14px;font-size:14px;font-family:inherit;background:#fff;}
           .pro .opt input::placeholder{color:#C4C1B8;}
+          .pro .opt .hint{font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.35;}
           .pro .bubble{margin-top:18px;background:#EAF4E4;border:1px solid #CFE6C2;border-radius:14px;border-top-left-radius:4px;padding:13px 15px;font-size:13px;line-height:1.5;color:#25381C;position:relative;white-space:pre-line;}
           .pro .bubble .wa{position:absolute;top:-9px;left:-9px;width:26px;height:26px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;}
           .pro .bubble .wa svg{width:15px;height:15px;}
@@ -93,12 +105,26 @@ export function ProActions({
           />
         </div>
 
+        <div className="opt">
+          <label htmlFor="pro-tel">Numéro du client (si ce n&apos;est pas un contact)</label>
+          <input
+            id="pro-tel"
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="06 12 34 56 78 — ou laissez vide"
+            autoComplete="off"
+          />
+          <div className="hint">{intl ? "La conversation s'ouvrira directement, même sans l'enregistrer." : "Vide : WhatsApp vous laissera choisir un contact existant."}</div>
+        </div>
+
         <div className="bubble">
           <span className="wa">
             <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.2 14.8l-.3-.2-2.9.9.9-2.8-.2-.3A8 8 0 0 1 12 4zm-3 4c-.2 0-.5.1-.7.4-.3.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.5 3.9 2.2.9 2.7.7 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.2-.5-.3l-1.6-.8c-.2-.1-.4-.1-.6.1l-.7.9c-.1.2-.3.2-.5.1-.7-.3-1.4-.6-2.2-1.6-.6-.7-.5-.9-.4-1.1l.4-.5c.1-.2 0-.4 0-.5l-.7-1.6c-.2-.4-.3-.4-.5-.4z" /></svg>
           </span>
           {greeting}
-          {"\n"}Merci beaucoup pour votre confiance aujourd&apos;hui. Si vous avez une minute, votre avis Google nous aiderait énormément 🙏
+          {"\n"}Merci beaucoup pour votre confiance aujourd&apos;hui. Si vous avez une minute, votre avis Google nous aiderait énormément :
           <div className="rev">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="#FBBC05"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.5 1.6 6.7L12 17l-6.2 3.6 1.6-6.7L2.2 8.9l6.9-.6z" /></svg>
             Laisser un avis
@@ -109,7 +135,7 @@ export function ProActions({
           <svg viewBox="0 0 24 24" fill="#14140F"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
           Ouvrir WhatsApp
         </button>
-        <div className="btn-note">Aucun numéro à saisir · aucune appli à installer</div>
+        <div className="btn-note">Aucun CRM · aucune appli à installer</div>
       </div>
 
       <div className="hist">
