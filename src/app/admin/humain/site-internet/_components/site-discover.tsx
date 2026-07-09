@@ -10,6 +10,7 @@ type Candidate = {
   reviews: number | null;
   website: string;
   hasSite: boolean;
+  directory?: string;
   variant: "A" | "B";
   competitors: Array<{ name: string; note: string }>;
 };
@@ -177,7 +178,13 @@ export function SiteDiscover() {
                     <td className="px-3 py-2 text-slate-700">{c.rating != null ? c.rating.toFixed(1) : "—"}</td>
                     <td className="px-3 py-2 text-slate-700">{c.reviews ?? "—"}</td>
                     <td className="px-3 py-2">
-                      {c.hasSite ? <span className="text-slate-500">✓ oui</span> : <span className="font-semibold text-amber-600">✗ aucun</span>}
+                      {c.hasSite ? (
+                        <span className="text-slate-500">✓ oui</span>
+                      ) : c.directory ? (
+                        <span className="font-semibold text-amber-600">✗ aucun<span className="block text-[11px] font-normal text-slate-400">fiche {c.directory}</span></span>
+                      ) : (
+                        <span className="font-semibold text-amber-600">✗ aucun</span>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <span className="rounded px-2 py-0.5 text-xs font-bold text-black" style={{ background: c.variant === "A" ? "#fbbf24" : "#93c5fd" }}>

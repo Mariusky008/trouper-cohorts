@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { apifyGoogleMaps } from "@/lib/site-internet/apify";
+import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -30,6 +31,7 @@ type Candidate = {
   reviews: number | null;
   website: string;
   hasSite: boolean;
+  directory: string; // plateforme si le "site" n'est qu'une fiche annuaire (Doctolib…)
   variant: "A" | "B";
   competitors: Array<{ name: string; note: string }>;
 };
@@ -86,7 +88,10 @@ export async function POST(request: Request) {
     seen.add(key);
 
     const website = String(it.website || "").trim();
-    const hasSite = Boolean(website);
+    // Une fiche d'annuaire (Doctolib, Facebook, PagesJaunes…) n'est PAS un site
+    // à soi → le commerçant est en réalité SANS_SITE (meilleure cible).
+    const isDir = Boolean(website) && isDirectoryUrl(website);
+    const hasSite = Boolean(website) && !isDir;
     const rating = typeof it.totalScore === "number" ? (it.totalScore as number) : null;
     const reviews = typeof it.reviewsCount === "number" ? (it.reviewsCount as number) : null;
 
@@ -101,6 +106,7 @@ export async function POST(request: Request) {
       reviews,
       website,
       hasSite,
+      directory: isDir ? directoryPlatformName(website) : "",
       variant: hasSite ? "B" : "A",
       competitors: [],
     });
