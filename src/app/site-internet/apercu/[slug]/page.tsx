@@ -172,9 +172,17 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .project .p-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px auto 0;max-width:360px;}
           .mq .project .p-acts span{background:#fff;border:1px solid #E4DECF;border-radius:999px;padding:8px 14px;font-size:13px;color:#3A3A32;font-weight:500;}
           .mq .project .p-tail{font-family:Georgia,serif;font-style:italic;font-size:15px;color:#8A857A;margin-top:16px;}
-          /* Phrase qui résume tout, juste avant le formulaire. */
-          .mq .finalline{padding:28px 22px;text-align:center;font-family:Georgia,serif;font-size:19px;line-height:1.42;color:#14140F;border-bottom:1px solid #EEECE6;}
-          .mq .finalline b{font-weight:700;}
+          /* Dernier maillon du flux : la feature aboutit au bénéfice business. */
+          .mq .spot .step.out{background:#171B24;border-color:#3A3320;}
+          .mq .spot .step.out .n{background:transparent;color:#E8C24A;font-size:16px;}
+          .mq .spot .step.out .tx b{color:#E8C24A;}
+          /* Projection « dans 6 mois » — QUALITATIVE (aucun chiffre inventé). */
+          .mq .six{padding:30px 22px;text-align:center;background:#FBF7EF;border-top:1px solid #EEE7D9;border-bottom:1px solid #EEE7D9;}
+          .mq .six .six-lead{font-family:Georgia,serif;font-size:23px;font-weight:700;color:#14140F;}
+          .mq .six .six-items{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px auto 0;max-width:380px;}
+          .mq .six .six-items span{background:#fff;border:1px solid #E4DECF;border-radius:999px;padding:8px 14px;font-size:13px;color:#3A3A32;font-weight:500;}
+          .mq .six .six-tail{margin-top:16px;font-size:14.5px;color:#5A554C;line-height:1.5;}
+          .mq .six .six-tail b{color:#14140F;font-weight:700;}
           .mq .spot{background:var(--dk);color:var(--cr);padding:30px 24px;text-align:center;}
           .mq .spot .pre{font-family:Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;}
           .mq .spot .feat{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:#171B24;border:1px solid #2A2F3B;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;color:#E8C24A;}
@@ -318,8 +326,10 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           <div className="step"><span className="n">2</span><span className="tx">Un clic : votre message de remerciement est déjà prêt sur WhatsApp.</span></div>
           <div className="arw">↓</div>
           <div className="step"><span className="n">3</span><span className="tx">Le client laisse son avis Google en quelques secondes.</span></div>
+          <div className="arw">↓</div>
+          <div className="step out"><span className="n">↗</span><span className="tx">Votre visibilité Google grandit — <b>plus d&apos;appels, plus de clients</b>.</span></div>
         </div>
-        <div className="concl">Après chaque client, <b>un geste suffit</b>. Votre réputation grandit, semaine après semaine.</div>
+        <div className="concl">Après chaque client, <b>un geste suffit</b>. Votre réputation travaille pour vous, semaine après semaine.</div>
       </section>
 
       {searchVolume && (
@@ -350,7 +360,16 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         </div>
       </section>
 
-      <div className="finalline">Votre futur site n&apos;a qu&apos;un objectif : <b>transformer des visiteurs en clients.</b></div>
+      <section className="six">
+        <div className="six-lead">Et dans six mois&nbsp;?</div>
+        <div className="six-items">
+          <span>⭐ Plus d&apos;avis Google</span>
+          <span>📞 Plus d&apos;appels</span>
+          <span>💬 Plus de demandes WhatsApp</span>
+          <span>🌍 Une meilleure visibilité</span>
+        </div>
+        <div className="six-tail">Votre futur site n&apos;a qu&apos;un objectif : <b>transformer des visiteurs en clients.</b></div>
+      </section>
 
       <div className="lead-wrap">
         <div className="lead-kick">En ligne sous 72 h</div>
