@@ -378,8 +378,8 @@ export async function composeLetterHtml(input: {
     "ss_transition",
     "Aujourd'hui, quand un client tape cette recherche, il tombe sur vos concurrents — avec leur site, leurs avis, un moyen de les joindre. Votre cabinet, lui, n'apparaît pas dans ces résultats."
   );
-  // 4) L'ACTION — 1 paragraphe de constat + accroche + 3 bénéfices, puis le QR.
-  const ss_p1 = ov("ss_p1", "Sans site internet, Google a très peu de raisons de vous mettre en avant. Et même lorsqu'un client tombe sur votre fiche, il ne trouve rien pour le rassurer.");
+  // 4) L'ACTION — on pivote direct vers la solution (le problème est déjà porté
+  //    par le face-à-face + sa légende). Accroche + 3 bénéfices, puis le QR.
   const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
   const ss_p3 = ov("ss_p3", `J'ai préparé la première version de votre site pour transformer ${introN} en clients qui vous découvrent :`);
   const ss_b1 = ov("ss_b1", "Appel en un geste, pour une prise de contact fluide.");
@@ -388,7 +388,7 @@ export async function composeLetterHtml(input: {
   // dit « en un geste », pas « automatique ».
   const ss_b3 = ov("ss_b3", "Un système simple pour récolter plus d'avis, en un geste, et faire monter votre note.");
   const ss_action =
-    `<div class="ss-action"><p>${ss_p1}</p><p class="ss-lead">${ss_p3}</p>` +
+    `<div class="ss-action"><p class="ss-lead">${ss_p3}</p>` +
     `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
   // Pied « audit » formel : nom administratif complet conservé.
   const ss_footer = `<div class="ss-footer">Diagnostic établi pour ${esc(nom)}${shortAddr ? ` · ${esc(shortAddr)}` : ""}</div>`;
@@ -396,7 +396,6 @@ export async function composeLetterHtml(input: {
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
-    editableFields.push({ key: "ss_p1", label: "Paragraphe de constat", value: ss_p1, multiline: true });
     editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
     editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
     editableFields.push({ key: "ss_b2", label: "Bénéfice 2", value: ss_b2 });
