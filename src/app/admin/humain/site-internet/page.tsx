@@ -52,6 +52,16 @@ export default async function AdminSiteInternetPage() {
   const fmtDate = (iso: string | null) =>
     iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : null;
 
+  // État de la configuration — lu CÔTÉ SERVEUR (prod). On n'expose que des
+  // booléens, jamais les valeurs.
+  const env = process.env;
+  const cfg: Array<{ label: string; ok: boolean; hint: string }> = [
+    { label: "Apify (diagnostic + découverte)", ok: Boolean(env.APIFY_TOKEN), hint: "APIFY_TOKEN" },
+    { label: "Claude (FAQ accueil)", ok: Boolean(env.ANTHROPIC_API_KEY), hint: "ANTHROPIC_API_KEY" },
+    { label: "SMS / buzz (Twilio)", ok: Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_SMS_FROM || env.TWILIO_MESSAGING_SERVICE_SID)), hint: "TWILIO_ACCOUNT_SID + AUTH_TOKEN + SMS_FROM (ou MESSAGING_SERVICE_SID)" },
+    { label: "Notif email des réservations", ok: Boolean(env.SITE_NOTIFY_EMAIL && env.RESEND_API_KEY && env.RESEND_FROM), hint: "SITE_NOTIFY_EMAIL + RESEND_API_KEY + RESEND_FROM" },
+  ];
+
   return (
     <section className="space-y-6">
       <div className="rounded-2xl border bg-white p-5 shadow-sm sm:p-7">
@@ -85,6 +95,19 @@ export default async function AdminSiteInternetPage() {
           <div className="rounded-2xl border bg-slate-50 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Contacts reçus</p>
             <p className="mt-1 text-3xl font-black text-slate-950">{count("contacted")}</p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border bg-slate-50 p-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Configuration (prod)</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {cfg.map((c) => (
+              <div key={c.label} className="flex items-center gap-2 text-sm">
+                <span className={c.ok ? "text-emerald-600" : "text-red-500"}>{c.ok ? "✓" : "✗"}</span>
+                <span className="font-semibold text-slate-800">{c.label}</span>
+                {!c.ok && <span className="text-[11px] text-slate-400">— {c.hint}</span>}
+              </div>
+            ))}
           </div>
         </div>
       </div>
