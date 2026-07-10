@@ -83,10 +83,13 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   // la vedette. A/B → avis + accueil. L'accueil est présent pour tous.
   const mp = resolveMetier(activite);
   const profil = mp.profil;
-  const termePublic = mp.def.terme_public; // clients / patients
+  const termePublic = mp.entry?.terme || mp.def.terme_public; // clients / patients
   const avisOn = mp.def.bloc_avis !== "off";
   const accent = profil === "C" ? "#2E4A3C" : "#1F5C4A";
-  const isPsy = /psycholog|psychoth/i.test(activite); // encart urgence (psychisme)
+  // Encart urgence = drapeau par métier (psychisme), DÉCOUPLÉ du profil C.
+  const showUrgence = mp.entry?.encartUrgence ?? false;
+  const confirmation = mp.entry?.confirmation ?? "reserve";
+  const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
   const projActs = avisOn
     ? ["📞 vous appeler", "💬 vous écrire", "⭐ lire vos avis", "📍 vous localiser"]
     : ["🗓️ prendre rendez-vous", "📞 vous appeler", "💬 vous écrire", "📍 vous localiser"];
@@ -263,7 +266,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       <IntroOverlay />
       <FeedbackNudge targetId="mq-act2" />
       <FlowReveal />
-      <AccueilIntelligent slug={slug} profil={profil} praticien={nom} termePublic={termePublic} accent={accent} faq={faq} showUrgence={isPsy} />
+      <AccueilIntelligent slug={slug} profil={profil} praticien={nom} termePublic={termePublic} accent={accent} faq={faq} showUrgence={showUrgence} confirmation={confirmation} busyWord={busyWord} />
 
       <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 

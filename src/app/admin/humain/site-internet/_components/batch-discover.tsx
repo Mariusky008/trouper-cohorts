@@ -9,20 +9,13 @@
 // jamais recréer les commerces déjà faits.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { METIER_LABELS, METIER_DEFAULT_ON } from "@/lib/site-internet/metier-profiles";
 
-// Métiers cibles (au singulier : c'est ce qui est stocké et affiché sur la lettre).
-const METIERS_DEFAUT = [
-  "sophrologue",
-  "psychologue",
-  "hypnothérapeute",
-  "énergéticien",
-  "naturopathe",
-  "réflexologue",
-  "coach",
-  "diététicien",
-  "ostéopathe",
-  "kinésithérapeute",
-];
+// Tous les métiers connus (source unique : metier-profiles). Cochés par défaut =
+// les métiers « réserve » prêts (bien-être, beauté, santé) ; les autres (artisans,
+// droit) sont disponibles mais décochés.
+const METIERS_DEFAUT = METIER_LABELS;
+const DEFAULT_ON = new Set(METIER_DEFAULT_ON);
 const VILLES_DEFAUT = ["Dax", "Bayonne", "Anglet", "Biarritz", "Pau", "Bordeaux"];
 
 type ComboState = {
@@ -42,7 +35,7 @@ export function BatchDiscover() {
   const [metiers, setMetiers] = useState<string[]>(METIERS_DEFAUT);
   const [villes, setVilles] = useState<string[]>(VILLES_DEFAUT);
   const [selMetiers, setSelMetiers] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(METIERS_DEFAUT.map((m) => [m, true]))
+    () => Object.fromEntries(METIERS_DEFAUT.map((m) => [m, DEFAULT_ON.has(m)]))
   );
   const [selVilles, setSelVilles] = useState<Record<string, boolean>>(
     () => Object.fromEntries(VILLES_DEFAUT.map((v) => [v, true]))

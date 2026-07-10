@@ -94,6 +94,11 @@ export const PROFILES: Record<Profil, ProfileDef> = {
   },
 };
 
+// Libellé de la pastille de confirmation de l'accueil (carte « Demain » + démo).
+export type Confirmation = "reserve" | "rappel" | "devis" | "acompte";
+// Cadre déontologique (au-delà du profil) : sobriété du ton / affichage.
+export type Deontologie = "none" | "sante" | "droit";
+
 export type MetierEntry = {
   /** Racines (sans accents) pour reconnaître le métier depuis l'activité saisie. */
   match: string[];
@@ -102,21 +107,101 @@ export type MetierEntry = {
   /** Article par défaut ; corrigeable par prospect (un/une selon la personne). */
   article: string;
   profil: Profil;
+  /** Terme public : override du terme du profil (ex. conseiller B mais « clients »). */
+  terme?: string;
+  /** Type de confirmation de l'accueil (réserve / rappel / devis / acompte). */
+  confirmation: Confirmation;
+  /** Encart urgence 15/3114 — DÉCOUPLÉ du profil C : réservé au psychisme. */
+  encartUrgence: boolean;
+  /** Vraies urgences opérationnelles (fuite, panne…) → tri urgence/devis. */
+  urgencesOps: boolean;
+  /** Cadre déontologique : none / sante / droit. */
+  deontologie: Deontologie;
 };
 
-// Les 10 métiers cibles (données — édite/ajoute librement).
+// Les 38 métiers ciblés (données — édite/ajoute librement).
+// Ordre : le PREMIER match gagne → mettre le plus spécifique avant le générique.
+const M = (
+  match: string[],
+  label: string,
+  profil: Profil,
+  confirmation: Confirmation,
+  opts?: { terme?: string; encartUrgence?: boolean; urgencesOps?: boolean; deontologie?: Deontologie; article?: string }
+): MetierEntry => ({
+  match,
+  label,
+  article: opts?.article ?? "un",
+  profil,
+  terme: opts?.terme,
+  confirmation,
+  encartUrgence: opts?.encartUrgence ?? false,
+  urgencesOps: opts?.urgencesOps ?? false,
+  deontologie: opts?.deontologie ?? "none",
+});
+
 export const METIERS: MetierEntry[] = [
-  { match: ["sophrolog"], label: "sophrologue", article: "un", profil: "A" },
-  { match: ["hypno"], label: "hypnothérapeute", article: "un", profil: "A" },
-  { match: ["energetic"], label: "énergéticien", article: "un", profil: "A" },
-  { match: ["naturopath"], label: "naturopathe", article: "un", profil: "A" },
-  { match: ["reflexolog"], label: "réflexologue", article: "un", profil: "A" },
-  { match: ["coach"], label: "coach", article: "un", profil: "A" },
-  { match: ["dietetic"], label: "diététicien", article: "un", profil: "B" },
-  { match: ["osteopath"], label: "ostéopathe", article: "un", profil: "B" },
-  { match: ["psycholog"], label: "psychologue", article: "un", profil: "C" },
-  { match: ["kinesither", "kine"], label: "kinésithérapeute", article: "un", profil: "C" },
+  // ── Bien-être & soin non réglementé (profil A) ──
+  M(["sophrolog"], "sophrologue", "A", "reserve"),
+  M(["hypno"], "hypnothérapeute", "A", "reserve"),
+  M(["energetic"], "énergéticien", "A", "reserve"),
+  M(["naturopath"], "naturopathe", "A", "reserve"),
+  M(["reflexolog"], "réflexologue", "A", "reserve"),
+  M(["coach"], "coach", "A", "reserve"),
+  M(["massage", "bien etre", "bien-etre", "praticien bien"], "praticien bien-être", "A", "reserve"),
+  M(["institut de beaute", "institut beaute"], "institut de beauté", "A", "reserve"),
+  M(["esthetic"], "esthéticienne", "A", "reserve", { article: "une" }),
+  M(["ongulaire", "onglerie", "prothesiste ongul"], "prothésiste ongulaire", "A", "reserve"),
+  M(["coiffeur", "coiffure", "coiffeuse"], "coiffeur", "A", "reserve"),
+  M(["barbier", "barber"], "barbier", "A", "reserve"),
+  M(["tatoueur", "tatouage", "tattoo"], "tatoueur", "A", "acompte"),
+  M(["yoga", "pilates"], "professeur de yoga", "A", "reserve"),
+  M(["danse", "cours de danse"], "professeur de danse", "A", "reserve"),
+  // ── Santé « praticité » (profil B — Doctolib, avis doux) ──
+  M(["osteopath"], "ostéopathe", "B", "reserve", { deontologie: "sante" }),
+  M(["dietetic"], "diététicien", "B", "reserve", { deontologie: "sante" }),
+  M(["podolog", "pedicure"], "pédicure-podologue", "B", "reserve", { deontologie: "sante" }),
+  M(["acupunct"], "acupuncteur", "B", "reserve", { deontologie: "sante" }),
+  M(["conseiller en gestion", "gestion de patrimoine", "conseiller patrimoine"], "conseiller en gestion", "B", "rappel", { terme: "clients" }),
+  // ── Santé encadrée (profil C — sobre, pas d'avis, pas de WhatsApp) ──
+  M(["psycholog"], "psychologue", "C", "reserve", { encartUrgence: true, deontologie: "sante" }),
+  M(["kinesither", "kine"], "kinésithérapeute", "C", "reserve", { deontologie: "sante" }),
+  M(["orthoptist"], "orthoptiste", "C", "reserve", { deontologie: "sante" }),
+  // ── Artisans (profil A — mais rappel/devis, urgences pour certains) ──
+  M(["plombier", "plomberie"], "plombier", "A", "rappel", { urgencesOps: true }),
+  M(["electricien", "electricite"], "électricien", "A", "rappel", { urgencesOps: true }),
+  M(["serrurier", "serrurerie"], "serrurier", "A", "rappel", { urgencesOps: true }),
+  M(["chauffagiste", "chauffage"], "chauffagiste", "A", "devis", { urgencesOps: true }),
+  M(["garagiste", "garage auto", "garage automobile"], "garagiste", "A", "rappel"),
+  M(["carrossier", "carrosserie"], "carrossier", "A", "devis"),
+  M(["paysagiste", "paysag"], "paysagiste", "A", "devis"),
+  M(["ramoneur", "ramonage"], "ramoneur", "A", "rappel"),
+  M(["macon", "carreleur", "platrier", "menuisier", "peintre en batiment", "artisan du batiment", "batiment"], "artisan du bâtiment", "A", "devis"),
+  // ── Droit & chiffre (profil C — déontologie publicité stricte, pas d'avis) ──
+  M(["avocat"], "avocat", "C", "rappel", { terme: "clients", deontologie: "droit" }),
+  M(["notaire"], "notaire", "C", "rappel", { terme: "clients", deontologie: "droit" }),
+  M(["huissier", "commissaire de justice"], "commissaire de justice", "C", "rappel", { terme: "clients", deontologie: "droit" }),
+  M(["expert comptable", "expert-comptable", "comptable"], "expert-comptable", "C", "rappel", { terme: "clients", deontologie: "droit" }),
 ];
+
+// Liste des libellés (pour la Découverte). Cochés par défaut = métiers « réserve »
+// (bien-être, beauté, santé) dont l'accueil est prêt ; artisans/droit disponibles
+// mais décochés (leur parcours accueil se peaufine).
+export const METIER_LABELS: string[] = METIERS.map((m) => m.label);
+export const METIER_DEFAULT_ON: string[] = METIERS.filter((m) => m.confirmation === "reserve").map((m) => m.label);
+
+// Libellé de la pastille de confirmation (carte « Demain »).
+export function confirmationBooked(confirmation: Confirmation, slot: string): string {
+  switch (confirmation) {
+    case "rappel":
+      return "Rappel programmé";
+    case "devis":
+      return "Devis envoyé";
+    case "acompte":
+      return "Acompte reçu";
+    default:
+      return `Réservé — ${slot}`;
+  }
+}
 
 // Secteur inconnu (ex. commerce classique) → A : on garde le comportement
 // générique existant, on ne force pas un vocabulaire « patients » à tort.

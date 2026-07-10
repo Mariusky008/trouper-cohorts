@@ -15,6 +15,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type Profil = "A" | "B" | "C";
 type FaqItem = { q: string; a: string };
 
+type Confirmation = "reserve" | "rappel" | "devis" | "acompte";
+
 type Props = {
   slug: string;
   profil: Profil;
@@ -23,6 +25,8 @@ type Props = {
   accent: string;
   faq: FaqItem[];
   showUrgence: boolean; // encart urgence permanent (profil psychisme)
+  confirmation?: Confirmation; // réserve un créneau, ou rappel/devis/acompte
+  busyWord?: string; // « en séance » (soin) / « en intervention » (artisan)
 };
 
 type Who = "ai" | "me";
@@ -50,7 +54,8 @@ function upcomingSlots(): string[] {
   return out.map((o) => o.label);
 }
 
-export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence }: Props) {
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", busyWord = "en séance" }: Props) {
+  const isReserve = confirmation === "reserve";
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("home");
   const [thread, setThread] = useState<Msg[]>([]);
@@ -135,9 +140,35 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setStep("coord");
   };
 
-  const toSlots = () => {
-    push([{ who: "me", text: `${prenom} · ${tel}` }, { who: "ai", text: "Merci. Voici les prochains créneaux disponibles :" }]);
-    setStep("slots");
+  const submitCoord = async () => {
+    push([{ who: "me", text: `${prenom} · ${tel}` }]);
+    if (isReserve) {
+      push([{ who: "ai", text: "Merci. Voici les prochains créneaux disponibles :" }]);
+      setStep("slots");
+      return;
+    }
+    // rappel / devis / acompte : pas de créneau à choisir, on enregistre la demande.
+    setBooking(true);
+    try {
+      await fetch("/api/site-internet/apercu/book-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, prenom, tel, pourQui, premiere, slot: "" }),
+        keepalive: true,
+      });
+    } catch {
+      /* la confirmation s'affiche quand même (démo) */
+    }
+    setBooking(false);
+    const msg =
+      confirmation === "rappel"
+        ? `C'est noté. ${praticien} vous rappelle au plus vite.`
+        : confirmation === "devis"
+          ? `Votre demande de devis est transmise à ${praticien}. Il revient vers vous rapidement.`
+          : `Votre demande est enregistrée. ${praticien} vous recontacte pour l'acompte et le rendez-vous.`;
+    const extra = sing === "patient" ? [{ who: "ai" as const, text: "Aucune donnée de santé ne vous a été demandée." }] : [];
+    push([{ who: "ai", text: msg }, ...extra]);
+    setStep("confirm");
   };
 
   const chooseSlot = async (s: string) => {
@@ -157,7 +188,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setBooking(false);
     push([
       { who: "ai", text: `C'est réservé : ${s}. Un rappel par SMS vous sera envoyé la veille.` },
-      { who: "ai", text: "Aucune donnée de santé ne vous a été demandée." },
+      ...(sing === "patient" ? [{ who: "ai" as const, text: "Aucune donnée de santé ne vous a été demandée." }] : []),
     ]);
     setStep("confirm");
   };
@@ -307,7 +338,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               </div>
               {step === "confirm" && (
                 <div className="acc-reveal">
-                  Pendant ce temps, <b>{praticien}</b> était en séance. À la pause, il retrouve : <b>nouveau rendez-vous</b> · {pourQui || "premier RDV"} · {slot}. Il n’a rien raté, sans jamais décrocher.
+                  Pendant ce temps, <b>{praticien}</b> était {busyWord}. À la pause, il retrouve : <b>{isReserve ? "nouveau rendez-vous" : "nouvelle demande"}</b>{pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Il n’a rien raté, sans jamais décrocher.
                 </div>
               )}
             </div>
@@ -331,7 +362,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
                     <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
                     <span>J’accepte d’être recontacté(e) au sujet de ce rendez-vous. Aucune donnée de santé n’est demandée.</span>
                   </label>
-                  <button type="button" className="acc-cta" disabled={!prenom.trim() || tel.replace(/\D/g, "").length < 8 || !consent} onClick={toSlots}>Voir les créneaux</button>
+                  <button type="button" className="acc-cta" disabled={!prenom.trim() || tel.replace(/\D/g, "").length < 8 || !consent} onClick={submitCoord}>{isReserve ? "Voir les créneaux" : "Envoyer ma demande"}</button>
                 </div>
               )}
               {step === "slots" && (slots.map((s) => chip(s, () => chooseSlot(s), s)))}

@@ -7,7 +7,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import QRCode from "qrcode";
 import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
-import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { resolveMetier, confirmationBooked } from "@/lib/site-internet/metier-profiles";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 export const LETTER_MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA"];
@@ -349,7 +349,7 @@ export async function composeLetterHtml(input: {
   // avis, pas de WhatsApp, ton sobre.
   const mp = resolveMetier(activite);
   const def = mp.def;
-  const termePublic = def.terme_public; // clients / patients
+  const termePublic = mp.entry?.terme || def.terme_public; // clients / patients (override métier possible)
   const termeSing = termePublic.replace(/s$/u, ""); // client / patient
   // Libellé métier + article corrigeables par prospect (genre : « une
   // psychologue » ; précision : « coach de vie »). Défauts = config.
@@ -396,9 +396,11 @@ export async function composeLetterHtml(input: {
   const ai_bubble = ov("ai_bubble", def.accueilBubble);
   const ai_line = ov("ai_line", def.accueilLine);
   const ai_slot = ov("ai_slot", def.accueilSlot);
+  // Pastille de confirmation selon le métier (réserve / rappel / devis / acompte).
+  const ai_booked = confirmationBooked(mp.entry?.confirmation ?? "reserve", ai_slot);
   const aiPreview =
     `<div class="ai-bubble">${ai_bubble}</div>` +
-    `<div class="ai-booked">${check} Réservé — ${esc(ai_slot)}</div>` +
+    `<div class="ai-booked">${check} ${esc(ai_booked)}</div>` +
     `<div class="ai-line">${ai_line}</div>`;
   const faceoff =
     `<div class="faceoff2">` +
