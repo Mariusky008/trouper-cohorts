@@ -26,7 +26,7 @@ type Props = {
 };
 
 type Who = "ai" | "me";
-type Msg = { who: Who; text: string };
+type Msg = { who: Who; text: string; urg?: boolean };
 type Step = "home" | "qualif1" | "qualif2" | "qualif3" | "coord" | "slots" | "confirm" | "faq";
 
 // Créneaux de démo réalistes calculés à partir d'aujourd'hui.
@@ -61,6 +61,9 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const [consent, setConsent] = useState(false);
   const [slot, setSlot] = useState("");
   const [booking, setBooking] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [qInput, setQInput] = useState("");
+  const [forceUrgence, setForceUrgence] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient
@@ -167,6 +170,31 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setStep("qualif1");
   };
 
+  // FAQ en texte libre → API filtrée (détresse/médical bloqués avant le modèle).
+  const sendFreeText = async () => {
+    const q = qInput.trim();
+    if (!q || typing) return;
+    setQInput("");
+    push([{ who: "me", text: q }]);
+    setTyping(true);
+    try {
+      const r = await fetch("/api/site-internet/apercu/accueil-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, message: q }),
+      });
+      const j = await r.json().catch(() => ({}));
+      const reply = String(j?.reply || "").trim() || "Je transmets votre question au cabinet. Souhaitez-vous que je vous propose un rendez-vous ?";
+      const isUrg = j?.kind === "urgence";
+      if (isUrg) setForceUrgence(true);
+      push([{ who: "ai", text: reply, urg: isUrg }]);
+    } catch {
+      push([{ who: "ai", text: "Je n'ai pas pu récupérer la réponse. Souhaitez-vous que je vous propose un rendez-vous ?" }]);
+    } finally {
+      setTyping(false);
+    }
+  };
+
   const chip = (label: string, onClick: () => void, key?: string) => (
     <button key={key || label} type="button" className="acc-chip" onClick={onClick}>{label}</button>
   );
@@ -193,6 +221,16 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         .acc-msg{max-width:82%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.42;overflow-wrap:anywhere;}
         .acc-msg.ai{background:#fff;color:#1C201C;border-bottom-left-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
         .acc-msg.me{background:${accent};color:#fff;border-bottom-right-radius:5px;}
+        .acc-msg.urg{background:#F7EAEA;color:#7A2020;border:1px solid #E3B4B4;font-weight:500;}
+        .acc-typing{display:flex;gap:4px;align-items:center;}
+        .acc-typing span{width:6px;height:6px;border-radius:50%;background:#B7B3A8;animation:accBlink 1s infinite;}
+        .acc-typing span:nth-child(2){animation-delay:.15s;}
+        .acc-typing span:nth-child(3){animation-delay:.3s;}
+        @keyframes accBlink{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
+        .acc-ask{display:flex;gap:8px;width:100%;margin-top:2px;}
+        .acc-ask-in{flex:1;height:42px;border:1px solid #D8D5CC;border-radius:11px;padding:0 13px;font-size:15px;background:#fff;}
+        .acc-ask-send{width:44px;height:42px;flex:none;border:none;border-radius:11px;background:${accent};color:#fff;font-size:19px;font-weight:700;cursor:pointer;}
+        .acc-ask-send:disabled{opacity:.45;cursor:not-allowed;}
         .acc-actions{padding:10px 14px 12px;border-top:1px solid #E3E0D7;background:#F6F4EF;display:flex;flex-wrap:wrap;gap:8px;}
         .acc-chip{background:#fff;border:1px solid ${accent};color:${accent};font-size:13.5px;font-weight:600;border-radius:999px;padding:9px 14px;cursor:pointer;}
         .acc-chip:hover{background:${accent};color:#fff;}
@@ -235,9 +273,14 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               <div className="acc-row">
                 {thread.map((m, i) => (
                   <div key={i} className={`acc-line ${m.who}`}>
-                    <div className={`acc-msg ${m.who}`}>{m.text}</div>
+                    <div className={`acc-msg ${m.who}${m.urg ? " urg" : ""}`}>{m.text}</div>
                   </div>
                 ))}
+                {typing && (
+                  <div className="acc-line ai">
+                    <div className="acc-msg ai acc-typing"><span></span><span></span><span></span></div>
+                  </div>
+                )}
               </div>
               {step === "confirm" && (
                 <div className="acc-reveal">
@@ -278,12 +321,22 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
                 <>
                   {faq.map((it) => chip(it.q, () => askFaq(it), it.q))}
                   {chip("Prendre rendez-vous", resetToRdv)}
+                  <div className="acc-ask">
+                    <input
+                      className="acc-ask-in"
+                      placeholder="Écrire ma question…"
+                      value={qInput}
+                      onChange={(e) => setQInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") sendFreeText(); }}
+                    />
+                    <button type="button" className="acc-ask-send" onClick={sendFreeText} disabled={!qInput.trim() || typing} aria-label="Envoyer">→</button>
+                  </div>
                 </>
               )}
               {booking && <span style={{ fontSize: 12, color: "#5A5F58" }}>Réservation…</span>}
             </div>
 
-            {showUrgence && (
+            {(showUrgence || forceUrgence) && (
               <div className="acc-urgence">
                 En cas d’urgence ou de grande souffrance : <b>15</b> (Samu) · <b>3114</b> (prévention du suicide, 24 h/24, gratuit) · <b>112</b>.
               </div>
