@@ -3,10 +3,12 @@
 // Google publics (photos + avis réels) → elle ressemble vraiment à son commerce.
 // Un bandeau discret rappelle que c'est une maquette préparée par Marius. Scan tracké.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { LeadForm } from "../../[slug]/lead-form";
 import { IntroOverlay } from "./intro-overlay";
 import { FeedbackNudge } from "./feedback-nudge";
 import { FlowReveal } from "./flow-reveal";
+import { AccueilIntelligent } from "./accueil-intelligent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -75,6 +77,33 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const metierSing = activite.trim().toLowerCase().replace(/s$/u, "") || "professionnel";
   const rating = typeof row.google_rating === "number" ? row.google_rating : null;
   const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
+
+  // ── Profil métier : pilote ce que le site a le DROIT d'afficher ─────────────
+  // C (santé encadrée) → PAS d'avis (déontologie) : l'accueil intelligent devient
+  // la vedette. A/B → avis + accueil. L'accueil est présent pour tous.
+  const mp = resolveMetier(activite);
+  const profil = mp.profil;
+  const termePublic = mp.def.terme_public; // clients / patients
+  const avisOn = mp.def.bloc_avis !== "off";
+  const accent = profil === "C" ? "#2E4A3C" : "#1F5C4A";
+  const isPsy = /psycholog|psychoth/i.test(activite); // encart urgence (psychisme)
+  const projActs = avisOn
+    ? ["📞 vous appeler", "💬 vous écrire", "⭐ lire vos avis", "📍 vous localiser"]
+    : ["🗓️ prendre rendez-vous", "📞 vous appeler", "💬 vous écrire", "📍 vous localiser"];
+  const youList = avisOn
+    ? ["Beau", "Moderne", "Demande des avis", "Facilite les contacts", "Travaille votre visibilité"]
+    : ["Sobre et professionnel", "Clair sur mobile", "Prise de rendez-vous intégrée", "Accueille 24 h/24", "Rappels la veille"];
+  const sixItems = avisOn
+    ? ["⭐ Plus d'avis Google", "📞 Plus d'appels", "💬 Plus de demandes WhatsApp", "🌍 Une meilleure visibilité"]
+    : ["🗓️ Des rendez-vous pris 24 h/24", "📞 Moins d'appels manqués", "🔔 Moins de rendez-vous oubliés", "🧘 Vous restez concentré sur vos séances"];
+  const sixTail = avisOn ? "transformer des visiteurs en clients." : `accueillir et organiser vos ${termePublic}, même quand vous êtes occupé.`;
+  const faq = [
+    { q: "Tarif", a: "Le tarif d'une séance vous est indiqué avant le rendez-vous. Vous pouvez le demander sans engagement." },
+    { q: "Remboursement", a: "Selon votre situation et votre mutuelle, une prise en charge peut être possible. Le cabinet vous renseignera lors de la prise de contact." },
+    { q: "Déroulé d'une première fois", a: "La première rencontre sert surtout à faire connaissance et à comprendre votre besoin, dans un cadre bienveillant et confidentiel." },
+    { q: "Accès / stationnement", a: `Le cabinet se situe ${adresse || `à ${villeAff}`}. Les modalités d'accès et de stationnement vous sont précisées à la confirmation du rendez-vous.` },
+  ];
+
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
 
@@ -156,6 +185,12 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .hours div b{font-weight:600;}
           .mq .svc{display:flex;gap:10px;flex-wrap:wrap;}
           .mq .svc span{border:1px solid #E0DDD4;border-radius:999px;padding:8px 14px;font-size:13.5px;color:#444;}
+          /* ---- Section « Prendre rendez-vous » (ouvre l'accueil) ---- */
+          .mq .rdv-sec .rdv-lead{color:#5A554C;font-size:14.5px;line-height:1.5;margin:-4px 0 14px;}
+          .mq .rdv-btn{width:100%;border:none;border-radius:14px;background:#14140F;color:#fff;font-size:15.5px;font-weight:700;padding:15px;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;}
+          .mq .rdv-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+          .mq .rdv-mini{text-align:center;color:#9A968C;font-size:12px;margin:9px 0 0;}
+          .mq .spot .spot-try{margin-top:12px;background:transparent;border:1px solid #E8C24A;color:#E8C24A;border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;}
           .mq .lead-wrap{padding:26px 22px 8px;}
           .mq .lead-kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
           .mq .maq-note{padding:20px 22px;background:#FBFAF7;border-top:1px solid #EEECE6;color:#6E6E64;font-size:13px;line-height:1.5;text-align:center;}
@@ -228,6 +263,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       <IntroOverlay />
       <FeedbackNudge targetId="mq-act2" />
       <FlowReveal />
+      <AccueilIntelligent slug={slug} profil={profil} praticien={nom} termePublic={termePublic} accent={accent} faq={faq} showUrgence={isPsy} />
 
       <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 
@@ -237,7 +273,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           <div className="kicker">{activite}{ville ? ` · ${ville}` : ""}</div>
           <div className="hname">{nom}</div>
           <div className="hsub">Votre nouvelle vitrine, claire et mobile — comme la verraient vos clients.</div>
-          {note && reviews != null && reviews > 0 ? (
+          {avisOn && note && reviews != null && reviews > 0 ? (
             <div className="grev">
               <div className="grev-score">{note}</div>
               <div className="grev-right">
@@ -250,7 +286,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
               </div>
               {rating != null && rating >= 4.5 && <span className="grev-badge">Recommandé</span>}
             </div>
-          ) : note ? (
+          ) : avisOn && note ? (
             <div className="rev"><b>{stars}</b> &nbsp;{note}/5</div>
           ) : null}
           <div className="cta">
@@ -267,6 +303,15 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
             <span key={s}>{s}</span>
           ))}
         </div>
+      </section>
+
+      <section className="sec rdv-sec">
+        <h2>Prendre rendez-vous</h2>
+        <p className="rdv-lead">Un accueil qui vous répond, vous propose un créneau et vous confirme — même quand {nom} est en {profil === "A" ? "activité" : "séance"}.</p>
+        <button type="button" className="rdv-btn" data-accueil-open>
+          <span className="rdv-dot" style={{ background: accent }} /> Prendre rendez-vous en ligne →
+        </button>
+        <p className="rdv-mini">Réponse immédiate · sans créer de compte</p>
       </section>
 
       <section className="sec">
@@ -290,7 +335,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         )}
       </section>
 
-      {reviewsTop.length > 0 && (
+      {avisOn && reviewsTop.length > 0 && (
         <section className="sec">
           <h2>Ils en parlent</h2>
           {note && <div className="sub">{stars} {note}/5 sur Google{reviews != null ? ` · ${reviews} avis` : ""}</div>}
@@ -327,30 +372,49 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       <section className="project" id="mq-act2">
         <div className="p-lead">Imaginez.</div>
         <div className="p-body">Ce soir, un habitant de {villeAff || "votre ville"} cherche un {metierSing}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
-        <div className="p-acts"><span>📞 vous appeler</span><span>💬 vous écrire</span><span>⭐ lire vos avis</span><span>📍 vous localiser</span></div>
+        <div className="p-acts">{projActs.map((a) => (<span key={a}>{a}</span>))}</div>
         <div className="p-tail">Sans chercher. Sans hésiter.</div>
       </section>
 
-      <section className="spot">
-        <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui travaille pour vous.</div>
-        <div className="feat">⭐ Assistant Avis Google</div>
-        <div className="flow">
-          <div className="step"><span className="n">1</span><span className="tx">Après chaque client, vous ouvrez votre espace privé.</span></div>
-          <div className="arw">↓</div>
-          <div className="step"><span className="n">2</span><span className="tx">Un clic : votre message de remerciement est déjà prêt sur WhatsApp.</span></div>
-          <div className="arw">↓</div>
-          <div className="step"><span className="n">3</span><span className="tx">Le client laisse son avis Google en quelques secondes.</span></div>
-          <div className="arw">↓</div>
-          <div className="step out"><span className="n">↗</span><span className="tx">Votre visibilité Google grandit — <b>plus d&apos;appels, plus de clients</b>.</span></div>
-        </div>
-        <div className="concl">Après chaque client, <b>un geste suffit</b>. Votre réputation travaille pour vous, semaine après semaine.</div>
-      </section>
+      {avisOn ? (
+        <section className="spot">
+          <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui travaille pour vous.</div>
+          <div className="feat">⭐ Assistant Avis Google</div>
+          <div className="flow">
+            <div className="step"><span className="n">1</span><span className="tx">Après chaque client, vous ouvrez votre espace privé.</span></div>
+            <div className="arw">↓</div>
+            <div className="step"><span className="n">2</span><span className="tx">Un clic : votre message de remerciement est déjà prêt sur WhatsApp.</span></div>
+            <div className="arw">↓</div>
+            <div className="step"><span className="n">3</span><span className="tx">Le client laisse son avis Google en quelques secondes.</span></div>
+            <div className="arw">↓</div>
+            <div className="step out"><span className="n">↗</span><span className="tx">Votre visibilité Google grandit — <b>plus d&apos;appels, plus de clients</b>.</span></div>
+          </div>
+          <div className="concl">Après chaque client, <b>un geste suffit</b>. Votre réputation travaille pour vous, semaine après semaine.</div>
+        </section>
+      ) : (
+        <section className="spot">
+          <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui vous accueille vos {termePublic}.</div>
+          <div className="feat">💬 Accueil intelligent</div>
+          <div className="flow">
+            <div className="step"><span className="n">1</span><span className="tx">Un {termePublic.replace(/s$/u, "")} vous cherche, un soir, pendant que vous êtes en séance.</span></div>
+            <div className="arw">↓</div>
+            <div className="step"><span className="n">2</span><span className="tx">L&apos;accueil répond, qualifie sa demande et propose vos créneaux — sans jamais vous déranger.</span></div>
+            <div className="arw">↓</div>
+            <div className="step"><span className="n">3</span><span className="tx">Il réserve. Un rappel SMS lui est envoyé la veille.</span></div>
+            <div className="arw">↓</div>
+            <div className="step out"><span className="n">↗</span><span className="tx">À la pause, vous retrouvez un rendez-vous — <b>vous n&apos;avez rien raté</b>.</span></div>
+          </div>
+          <div className="concl">Vous consultez. <b>L&apos;accueil s&apos;occupe du téléphone</b>, 24 h/24.
+            <br /><button type="button" className="spot-try" data-accueil-open>Essayer l&apos;accueil →</button>
+          </div>
+        </section>
+      )}
 
       {searchVolume && (
         <section className="demand2">
           <div className="num">≈ {searchVolume}</div>
           <div className="cap">personnes cherchent <b>« {metierSing}{villeAff ? ` à ${villeAff}` : ""} »</b><br />sur Google, chaque mois.</div>
-          <div className="tie">⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents.</div>
+          <div className="tie">{avisOn ? "⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents." : "🗓️ Un accueil qui répond et réserve à toute heure — vous ne manquez plus ces demandes."}</div>
         </section>
       )}
 
@@ -365,11 +429,9 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           </div>
           <div className="col you">
             <div className="t">Votre futur site</div>
-            <div className="li"><span className="c">✓</span>Beau</div>
-            <div className="li"><span className="c">✓</span>Moderne</div>
-            <div className="li"><span className="c">✓</span>Demande des avis</div>
-            <div className="li"><span className="c">✓</span>Facilite les contacts</div>
-            <div className="li"><span className="c">✓</span>Travaille votre visibilité</div>
+            {youList.map((it) => (
+              <div className="li" key={it}><span className="c">✓</span>{it}</div>
+            ))}
           </div>
         </div>
       </section>
@@ -377,12 +439,9 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       <section className="six">
         <div className="six-lead">Et dans six mois&nbsp;?</div>
         <div className="six-items">
-          <span>⭐ Plus d&apos;avis Google</span>
-          <span>📞 Plus d&apos;appels</span>
-          <span>💬 Plus de demandes WhatsApp</span>
-          <span>🌍 Une meilleure visibilité</span>
+          {sixItems.map((it) => (<span key={it}>{it}</span>))}
         </div>
-        <div className="six-tail">Votre futur site n&apos;a qu&apos;un objectif : <b>transformer des visiteurs en clients.</b></div>
+        <div className="six-tail">Votre futur site n&apos;a qu&apos;un objectif : <b>{sixTail}</b></div>
       </section>
 
       <div className="lead-wrap">
