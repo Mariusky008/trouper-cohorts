@@ -387,22 +387,24 @@ export async function composeLetterHtml(input: {
   // site, Google ne l'affiche pas ici). Son absence est mise en scène dans la
   // carte « Aujourd'hui » du face-à-face ci-dessous.
   const concurrents_list = conc.slice(0, 3).map(concRow).join("");
-  // 3) LE FACE-À-FACE — deux cartes Avant/Après (bien plus lisible qu'un tableau).
-  //    Carte DEMAIN : contacts + volet avis pilotés par le PROFIL.
-  //    Volet avis : on = ★ (vraie note, « Nouveau » si aucune) ; doux = ★
-  //    seulement si des avis existent déjà ; off (santé encadrée) = aucune ★.
-  const round = rating != null ? Math.max(1, Math.min(5, Math.round(rating))) : 0;
-  const showStars = def.bloc_avis === "on" ? true : def.bloc_avis === "doux" ? rating != null : false;
-  const foStarsHtml = showStars
-    ? `<div class="fo-cstars">${rating != null ? `${"★".repeat(round)}<span class="off">${"★".repeat(5 - round)}</span>&nbsp;${note}` : `<span class="off">★★★★★</span>&nbsp;Nouveau`}</div>`
-    : "";
-  const contactsHtml = def.contacts.map((c) => `<span>${esc(c)}</span>`).join("");
+  // 3) LE FACE-À-FACE — deux cartes Avant/Après. Carte DEMAIN = mini-aperçu de
+  //    l'ACCUEIL INTELLIGENT (bulle + « Réservé ✓ » + ligne aspirationnelle),
+  //    réglé par profil (A chaleureux 24 h/24 ; C sobre « en séance »). Plus de
+  //    volet avis/contacts ici : la réputation vit dans la maquette (profil A).
   const eyeOff = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7c2.1 0 3.9.8 5.4 1.9"/><path d="M22 12s-3.6 7-10 7c-2.1 0-3.9-.8-5.4-1.9"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
+  const check = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FBFAF7" stroke-width="2.6"><polyline points="5,12.5 10,17 19,7"/></svg>`;
+  const ai_bubble = ov("ai_bubble", def.accueilBubble);
+  const ai_line = ov("ai_line", def.accueilLine);
+  const ai_slot = ov("ai_slot", def.accueilSlot);
+  const aiPreview =
+    `<div class="ai-bubble">${ai_bubble}</div>` +
+    `<div class="ai-booked">${check} Réservé — ${esc(ai_slot)}</div>` +
+    `<div class="ai-line">${ai_line}</div>`;
   const faceoff =
     `<div class="faceoff2">` +
     `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-eye">${eyeOff}</div><div class="fo-cn">${esc(destName)}</div><div class="fo-invis">Invisible sur cette recherche</div><div class="fo-invsub">Absent des premiers résultats</div></div>` +
     `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
-    `<div class="fo-card fo-tomorrow"><div class="fo-lbl">Demain</div><div class="fo-cn">${esc(destName)}</div>${foStarsHtml}<div class="fo-cact">${contactsHtml}</div></div>` +
+    `<div class="fo-card fo-tomorrow ai-card"><div class="fo-lbl">Demain</div>${aiPreview}</div>` +
     `</div>`;
   const ss_transition = ov(
     "ss_transition",
@@ -431,7 +433,7 @@ export async function composeLetterHtml(input: {
   // Pied : nom d'usage (jamais l'état civil complet — effet « scrapé »/Big
   // Brother qui casse la chaleur du « j'ai préparé ça pour vous »).
   const ss_footer = `<div class="ss-footer">Diagnostic préparé pour ${esc(destName)}</div>`;
-  const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre maquette en direct →</div>`;
+  const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre accueil en direct →</div>`;
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });

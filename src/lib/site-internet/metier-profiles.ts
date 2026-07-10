@@ -39,6 +39,10 @@ export type ProfileDef = {
   heroSub?: string;
   /** Les 3 bénéfices (bullets). Rédigés au bon vocabulaire par profil. */
   benefices: [string, string, string];
+  /** Carte « Demain » du recto : mini-aperçu de l'accueil intelligent. */
+  accueilBubble: string; // 1re bulle de l'assistant
+  accueilLine: string; // ligne aspirationnelle sous la conversation
+  accueilSlot: string; // créneau illustratif « Réservé — … »
 };
 
 export const PROFILES: Record<Profil, ProfileDef> = {
@@ -53,6 +57,9 @@ export const PROFILES: Record<Profil, ProfileDef> = {
       "Vos avis Google mis en avant — pour rassurer avant le premier contact.",
       "Une présentation claire de votre approche — pour attirer les personnes que vous aidez le mieux.",
     ],
+    accueilBubble: "Bonjour ! Je réponds à vos questions et je prends votre rendez-vous.",
+    accueilLine: "Accueille et réserve vos clients 24 h/24, même quand vous êtes occupé.",
+    accueilSlot: "Sam. 15h30",
   },
   B: {
     terme_public: "patients",
@@ -65,6 +72,9 @@ export const PROFILES: Record<Profil, ProfileDef> = {
       "Une présentation professionnelle de votre pratique — pour rassurer avant la première consultation.",
       "Des informations pratiques claires — accès, horaires, motifs de consultation.",
     ],
+    accueilBubble: "Bonjour, je prends votre rendez-vous.",
+    accueilLine: "Accueille et réserve vos patients, même quand vous êtes en séance.",
+    accueilSlot: "Jeu. 9h00",
   },
   C: {
     terme_public: "patients",
@@ -78,6 +88,9 @@ export const PROFILES: Record<Profil, ProfileDef> = {
       "Une présentation sobre et professionnelle de votre pratique, conforme à votre cadre.",
       "Des informations pratiques pour vos patients — accès, horaires, prise en charge.",
     ],
+    accueilBubble: "Bonjour, je prends votre rendez-vous.",
+    accueilLine: "Accueille et réserve vos patients, même quand vous êtes en séance.",
+    accueilSlot: "Mar. 18h30",
   },
 };
 
