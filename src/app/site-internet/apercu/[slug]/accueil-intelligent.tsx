@@ -64,6 +64,8 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const [typing, setTyping] = useState(false);
   const [qInput, setQInput] = useState("");
   const [forceUrgence, setForceUrgence] = useState(false);
+  const [notifPhone, setNotifPhone] = useState("");
+  const [notifSent, setNotifSent] = useState<"" | "sending" | "done" | "err">("");
   const scroller = useRef<HTMLDivElement | null>(null);
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient
@@ -195,6 +197,24 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     }
   };
 
+  // « Buzz dans la poche » : envoie un vrai SMS au numéro du testeur.
+  const sendBuzz = async () => {
+    const ph = notifPhone.trim();
+    if (!ph || notifSent === "sending") return;
+    setNotifSent("sending");
+    try {
+      const r = await fetch("/api/site-internet/apercu/demo-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, phone: ph, slot, pourQui }),
+      });
+      const j = await r.json().catch(() => ({}));
+      setNotifSent(j?.ok ? "done" : "err");
+    } catch {
+      setNotifSent("err");
+    }
+  };
+
   const chip = (label: string, onClick: () => void, key?: string) => (
     <button key={key || label} type="button" className="acc-chip" onClick={onClick}>{label}</button>
   );
@@ -231,6 +251,9 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         .acc-ask-in{flex:1;height:42px;border:1px solid #D8D5CC;border-radius:11px;padding:0 13px;font-size:15px;background:#fff;}
         .acc-ask-send{width:44px;height:42px;flex:none;border:none;border-radius:11px;background:${accent};color:#fff;font-size:19px;font-weight:700;cursor:pointer;}
         .acc-ask-send:disabled{opacity:.45;cursor:not-allowed;}
+        .acc-buzz-lead{font-size:13px;color:#3A3F38;font-weight:600;margin-bottom:7px;}
+        .acc-buzz-done{font-size:13.5px;color:${accent};background:#EAF0EC;border:1px solid #CBDBD0;border-radius:12px;padding:11px 13px;line-height:1.45;font-weight:500;}
+        .acc-buzz-err{font-size:11.5px;color:#9A6A6A;margin-top:6px;}
         .acc-actions{padding:10px 14px 12px;border-top:1px solid #E3E0D7;background:#F6F4EF;display:flex;flex-wrap:wrap;gap:8px;}
         .acc-chip{background:#fff;border:1px solid ${accent};color:${accent};font-size:13.5px;font-weight:600;border-radius:999px;padding:9px 14px;cursor:pointer;}
         .acc-chip:hover{background:${accent};color:#fff;}
@@ -313,9 +336,21 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               )}
               {step === "slots" && (slots.map((s) => chip(s, () => chooseSlot(s), s)))}
               {step === "confirm" && (
-                <>
-                  {chip("Revenir au site", () => setOpen(false))}
-                </>
+                <div style={{ width: "100%" }}>
+                  {notifSent === "done" ? (
+                    <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que le praticien reçoit, en séance, sans décrocher.</div>
+                  ) : (
+                    <>
+                      <div className="acc-buzz-lead">📲 Recevez la notif comme si vous étiez le praticien :</div>
+                      <div className="acc-ask">
+                        <input className="acc-ask-in" placeholder="Votre numéro" inputMode="tel" value={notifPhone} onChange={(e) => setNotifPhone(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendBuzz(); }} />
+                        <button type="button" className="acc-ask-send" onClick={sendBuzz} disabled={!notifPhone.trim() || notifSent === "sending"} aria-label="Recevoir la notif">→</button>
+                      </div>
+                      {notifSent === "err" && <div className="acc-buzz-err">Envoi indisponible pour le moment.</div>}
+                    </>
+                  )}
+                  <button type="button" className="acc-chip" style={{ marginTop: 10 }} onClick={() => setOpen(false)}>Revenir au site</button>
+                </div>
               )}
               {step === "faq" && (
                 <>
