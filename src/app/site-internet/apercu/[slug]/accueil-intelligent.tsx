@@ -1,0 +1,299 @@
+"use client";
+
+// Accueil intelligent — secrétariat automatique intégré dans la maquette.
+// Phase 1 : parcours 100% à CHIPS (pas de saisie libre médicale → sûr par
+// construction) qui réserve un vrai créneau de démo et notifie le vendeur.
+// Vit dans le site : bulle flottante (toutes pages) + section « Prendre
+// rendez-vous » (via [data-accueil-open]), ouverture en surimpression, sans
+// quitter le site. Réglé par profil (C sobre santé encadrée / A chaleureux).
+//
+// Garde-fous codés en dur : se déclare automatique, qualification NON clinique
+// (jamais de symptômes), consentement avant coordonnées, aucune donnée de santé,
+// encart d'urgence permanent (15 / 3114 / 112) pour le profil « psychisme ».
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type Profil = "A" | "B" | "C";
+type FaqItem = { q: string; a: string };
+
+type Props = {
+  slug: string;
+  profil: Profil;
+  praticien: string;
+  termePublic: string; // clients / patients
+  accent: string;
+  faq: FaqItem[];
+  showUrgence: boolean; // encart urgence permanent (profil psychisme)
+};
+
+type Who = "ai" | "me";
+type Msg = { who: Who; text: string };
+type Step = "home" | "qualif1" | "qualif2" | "qualif3" | "coord" | "slots" | "confirm" | "faq";
+
+// Créneaux de démo réalistes calculés à partir d'aujourd'hui.
+function upcomingSlots(): string[] {
+  const days = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  const now = new Date();
+  const out: { label: string }[] = [];
+  const hours = ["9 h 00", "14 h 30", "18 h 30"];
+  let d = 1;
+  while (out.length < 3 && d < 12) {
+    const date = new Date(now.getTime() + d * 86400000);
+    const dow = date.getDay();
+    if (dow !== 0) {
+      const jour = days[dow];
+      const h = hours[out.length % hours.length];
+      const cap = jour.charAt(0).toUpperCase() + jour.slice(1);
+      out.push({ label: `${cap} ${date.getDate()} · ${h}` });
+    }
+    d++;
+  }
+  return out.map((o) => o.label);
+}
+
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence }: Props) {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<Step>("home");
+  const [thread, setThread] = useState<Msg[]>([]);
+  const [pourQui, setPourQui] = useState("");
+  const [premiere, setPremiere] = useState("");
+  const [prenom, setPrenom] = useState("");
+  const [tel, setTel] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [slot, setSlot] = useState("");
+  const [booking, setBooking] = useState(false);
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const slots = useMemo(() => upcomingSlots(), []);
+  const sing = termePublic.replace(/s$/u, ""); // client / patient
+
+  const push = (msgs: Msg[]) => setThread((t) => [...t, ...msgs]);
+
+  const start = () => {
+    setThread([
+      { who: "ai", text: `Bonjour, je suis l'accueil automatique du cabinet de ${praticien}.` },
+      { who: "ai", text: `Je peux prendre votre rendez-vous ou répondre à une question pratique. Que puis-je faire pour vous ?` },
+    ]);
+    setStep("home");
+    setPourQui(""); setPremiere(""); setPrenom(""); setTel(""); setConsent(false); setSlot("");
+  };
+
+  // Ouverture depuis la bulle OU depuis les [data-accueil-open] de la page.
+  useEffect(() => {
+    const openIt = () => { setOpen(true); if (thread.length === 0) start(); };
+    const handler = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest("[data-accueil-open]")) { e.preventDefault(); openIt(); }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread.length, praticien]);
+
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
+  }, [thread, step]);
+
+  const openBubble = () => { setOpen(true); if (thread.length === 0) start(); };
+
+  // ── Transitions (toutes déclenchées par des chips) ─────────────────────────
+  const choosePorte = (p: string) => {
+    push([{ who: "me", text: p }]);
+    if (p.startsWith("Prendre")) {
+      push([{ who: "ai", text: "Avec plaisir. C'est pour qui ?" }]);
+      setStep("qualif1");
+    } else if (p.startsWith("Poser")) {
+      push([{ who: "ai", text: "Bien sûr. Sur quoi puis-je vous renseigner ?" }]);
+      setStep("faq");
+    } else {
+      push([{ who: "ai", text: "C'est tout à fait normal d'hésiter. Je peux simplement vous proposer un premier rendez-vous, sans engagement — ou répondre à une question. Que préférez-vous ?" }]);
+      setStep("home");
+    }
+  };
+
+  const chooseQui = (v: string) => {
+    push([{ who: "me", text: v }]);
+    setPourQui(v);
+    if (/enfant/i.test(v)) push([{ who: "ai", text: "Très bien. Le rendez-vous se prendra avec vous, en tant que représentant légal." }]);
+    push([{ who: "ai", text: "Première fois au cabinet, ou vous êtes déjà suivi(e) ?" }]);
+    setStep("qualif2");
+  };
+
+  const choosePremiere = (v: string) => {
+    push([{ who: "me", text: v }]);
+    setPremiere(v);
+    push([{ who: "ai", text: "Parfait. Vous préférez plutôt quand ?" }]);
+    setStep("qualif3");
+  };
+
+  const chooseDispo = (v: string) => {
+    push([{ who: "me", text: v }]);
+    push([{ who: "ai", text: "Il me faut juste un prénom et un numéro pour confirmer le rendez-vous — rien de plus." }]);
+    setStep("coord");
+  };
+
+  const toSlots = () => {
+    push([{ who: "me", text: `${prenom} · ${tel}` }, { who: "ai", text: "Merci. Voici les prochains créneaux disponibles :" }]);
+    setStep("slots");
+  };
+
+  const chooseSlot = async (s: string) => {
+    setSlot(s);
+    push([{ who: "me", text: s }]);
+    setBooking(true);
+    try {
+      await fetch("/api/site-internet/apercu/book-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, prenom, tel, pourQui, premiere, slot: s }),
+        keepalive: true,
+      });
+    } catch {
+      /* la confirmation s'affiche quand même (démo) */
+    }
+    setBooking(false);
+    push([
+      { who: "ai", text: `C'est réservé : ${s}. Un rappel par SMS vous sera envoyé la veille.` },
+      { who: "ai", text: "Aucune donnée de santé ne vous a été demandée." },
+    ]);
+    setStep("confirm");
+  };
+
+  const askFaq = (item: FaqItem) => {
+    push([{ who: "me", text: item.q }, { who: "ai", text: item.a }]);
+    // reste en step "faq" → on repropose les sujets + prendre RDV
+  };
+
+  const resetToRdv = () => {
+    push([{ who: "me", text: "Prendre rendez-vous" }, { who: "ai", text: "Avec plaisir. C'est pour qui ?" }]);
+    setStep("qualif1");
+  };
+
+  const chip = (label: string, onClick: () => void, key?: string) => (
+    <button key={key || label} type="button" className="acc-chip" onClick={onClick}>{label}</button>
+  );
+
+  return (
+    <>
+      <style>{`
+        .acc-bubble{position:fixed;right:16px;bottom:84px;z-index:60;display:flex;align-items:center;gap:0;}
+        .acc-bubble .lab{background:${accent};color:#fff;font-size:13px;font-weight:700;padding:10px 14px;border-radius:999px 0 0 999px;box-shadow:0 6px 20px rgba(0,0,0,.18);}
+        .acc-bubble .ic{width:52px;height:52px;border-radius:50%;background:${accent};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.22);border:2px solid #fff;}
+        .acc-ov{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center;background:rgba(12,14,12,.42);}
+        .acc-sheet{background:#F6F4EF;width:100%;max-width:520px;height:86vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:accUp .32s cubic-bezier(.2,.7,.3,1);}
+        @keyframes accUp{from{transform:translateY(100%);}to{transform:none;}}
+        @media (prefers-reduced-motion:reduce){.acc-sheet{animation:none;}}
+        .acc-head{background:${accent};color:#fff;padding:14px 16px;display:flex;align-items:center;gap:11px;}
+        .acc-head .avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none;}
+        .acc-head .h-nm{font-weight:700;font-size:15px;line-height:1.1;}
+        .acc-head .h-sub{font-size:11.5px;opacity:.85;margin-top:2px;}
+        .acc-head .x{margin-left:auto;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px;}
+        .acc-body{flex:1;overflow-y:auto;padding:16px 14px 8px;}
+        .acc-row{display:block;}
+        .acc-line{display:flex;margin-bottom:9px;}
+        .acc-line.me{justify-content:flex-end;}
+        .acc-msg{max-width:82%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.42;overflow-wrap:anywhere;}
+        .acc-msg.ai{background:#fff;color:#1C201C;border-bottom-left-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+        .acc-msg.me{background:${accent};color:#fff;border-bottom-right-radius:5px;}
+        .acc-actions{padding:10px 14px 12px;border-top:1px solid #E3E0D7;background:#F6F4EF;display:flex;flex-wrap:wrap;gap:8px;}
+        .acc-chip{background:#fff;border:1px solid ${accent};color:${accent};font-size:13.5px;font-weight:600;border-radius:999px;padding:9px 14px;cursor:pointer;}
+        .acc-chip:hover{background:${accent};color:#fff;}
+        .acc-field{width:100%;height:44px;border:1px solid #D8D5CC;border-radius:11px;padding:0 13px;font-size:15px;background:#fff;margin-bottom:8px;}
+        .acc-consent{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:#5A5F58;line-height:1.4;margin:2px 0 10px;}
+        .acc-cta{width:100%;background:${accent};color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+        .acc-cta:disabled{opacity:.5;cursor:not-allowed;}
+        .acc-reveal{margin:4px 2px 2px;background:#EAF0EC;border:1px solid #CBDBD0;border-radius:14px;padding:14px 15px;font-size:13.5px;color:#1C201C;line-height:1.5;}
+        .acc-reveal b{color:${accent};}
+        .acc-urgence{font-size:11px;color:#7A5B5B;background:#F6ECEC;border-top:1px solid #EAD7D7;padding:9px 14px;line-height:1.4;text-align:center;}
+        .acc-urgence b{color:#8A2B2B;}
+        .acc-legal{font-size:10.5px;color:#9A968C;text-align:center;padding:8px 14px 12px;line-height:1.4;}
+      `}</style>
+
+      {/* Bulle flottante (toutes les pages) */}
+      {!open && (
+        <button type="button" className="acc-bubble" onClick={openBubble} aria-label="Ouvrir l'accueil">
+          <span className="lab">Prendre RDV</span>
+          <span className="ic">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.4-4.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+          </span>
+        </button>
+      )}
+
+      {open && (
+        <div className="acc-ov" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="acc-sheet" role="dialog" aria-label="Accueil du cabinet">
+            <div className="acc-head">
+              <span className="avatar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.4-4.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+              </span>
+              <div>
+                <div className="h-nm">Accueil du cabinet</div>
+                <div className="h-sub">Automatique · réponse immédiate</div>
+              </div>
+              <button type="button" className="x" onClick={() => setOpen(false)} aria-label="Fermer">×</button>
+            </div>
+
+            <div className="acc-body" ref={scroller}>
+              <div className="acc-row">
+                {thread.map((m, i) => (
+                  <div key={i} className={`acc-line ${m.who}`}>
+                    <div className={`acc-msg ${m.who}`}>{m.text}</div>
+                  </div>
+                ))}
+              </div>
+              {step === "confirm" && (
+                <div className="acc-reveal">
+                  Pendant ce temps, <b>{praticien}</b> était en séance. À la pause, il retrouve : <b>nouveau rendez-vous</b> · {pourQui || "premier RDV"} · {slot}. Il n’a rien raté, sans jamais décrocher.
+                </div>
+              )}
+            </div>
+
+            <div className="acc-actions">
+              {step === "home" && (
+                <>
+                  {chip("Prendre un premier rendez-vous", () => choosePorte("Prendre un premier rendez-vous"))}
+                  {chip("Poser une question", () => choosePorte("Poser une question"))}
+                  {chip("Je ne sais pas trop…", () => choosePorte("Je ne sais pas trop…"))}
+                </>
+              )}
+              {step === "qualif1" && (["Moi", "Mon enfant", "Un proche"].map((v) => chip(v, () => chooseQui(v), v)))}
+              {step === "qualif2" && (["Première fois", "Déjà suivi(e)"].map((v) => chip(v, () => choosePremiere(v), v)))}
+              {step === "qualif3" && (["En semaine", "Le soir", "Le week-end", "Peu importe"].map((v) => chip(v, () => chooseDispo(v), v)))}
+              {step === "coord" && (
+                <div style={{ width: "100%" }}>
+                  <input className="acc-field" placeholder="Votre prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} />
+                  <input className="acc-field" placeholder="Votre téléphone" inputMode="tel" value={tel} onChange={(e) => setTel(e.target.value)} />
+                  <label className="acc-consent">
+                    <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                    <span>J’accepte d’être recontacté(e) au sujet de ce rendez-vous. Aucune donnée de santé n’est demandée.</span>
+                  </label>
+                  <button type="button" className="acc-cta" disabled={!prenom.trim() || tel.replace(/\D/g, "").length < 8 || !consent} onClick={toSlots}>Voir les créneaux</button>
+                </div>
+              )}
+              {step === "slots" && (slots.map((s) => chip(s, () => chooseSlot(s), s)))}
+              {step === "confirm" && (
+                <>
+                  {chip("Revenir au site", () => setOpen(false))}
+                </>
+              )}
+              {step === "faq" && (
+                <>
+                  {faq.map((it) => chip(it.q, () => askFaq(it), it.q))}
+                  {chip("Prendre rendez-vous", resetToRdv)}
+                </>
+              )}
+              {booking && <span style={{ fontSize: 12, color: "#5A5F58" }}>Réservation…</span>}
+            </div>
+
+            {showUrgence && (
+              <div className="acc-urgence">
+                En cas d’urgence ou de grande souffrance : <b>15</b> (Samu) · <b>3114</b> (prévention du suicide, 24 h/24, gratuit) · <b>112</b>.
+              </div>
+            )}
+            <div className="acc-legal">
+              Accueil automatique · vos coordonnées servent uniquement à la prise de rendez-vous. {sing === "patient" ? "Aucune question médicale n'est traitée ici." : ""}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
