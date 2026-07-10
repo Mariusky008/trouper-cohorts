@@ -59,7 +59,7 @@ export default async function AdminSiteInternetPage() {
     { label: "Apify (diagnostic + découverte)", ok: Boolean(env.APIFY_TOKEN), hint: "APIFY_TOKEN" },
     { label: "Claude (FAQ accueil)", ok: Boolean(env.ANTHROPIC_API_KEY), hint: "ANTHROPIC_API_KEY" },
     { label: "SMS / buzz (Twilio)", ok: Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_SMS_FROM || env.TWILIO_MESSAGING_SERVICE_SID)), hint: "TWILIO_ACCOUNT_SID + AUTH_TOKEN + SMS_FROM (ou MESSAGING_SERVICE_SID)" },
-    { label: "Notif email des réservations", ok: Boolean(env.SITE_NOTIFY_EMAIL && env.RESEND_API_KEY && env.RESEND_FROM), hint: "SITE_NOTIFY_EMAIL + RESEND_API_KEY + RESEND_FROM" },
+    { label: "Notif email des réservations", ok: Boolean(env.RESEND_API_KEY && (env.SITE_NOTIFY_EMAIL || env.ADMIN_NOTIFICATION_EMAIL)), hint: "RESEND_API_KEY + (SITE_NOTIFY_EMAIL ou ADMIN_NOTIFICATION_EMAIL)" },
   ];
 
   return (

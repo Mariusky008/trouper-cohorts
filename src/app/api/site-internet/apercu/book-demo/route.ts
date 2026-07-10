@@ -59,11 +59,12 @@ export async function POST(request: Request) {
     /* table pas encore migrée → best-effort */
   }
 
-  // Notification vendeur (email best-effort). WhatsApp = à câbler quand le
-  // template Twilio sera approuvé (cf. plan Phase 1).
-  const to = String(process.env.SITE_NOTIFY_EMAIL || "").trim();
+  // Notification vendeur (email best-effort). On réutilise la config Resend
+  // existante : destinataire = SITE_NOTIFY_EMAIL sinon ADMIN_NOTIFICATION_EMAIL ;
+  // expéditeur = RESEND_FROM sinon l'adresse par défaut du projet.
+  const to = String(process.env.SITE_NOTIFY_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || "").trim();
   const key = String(process.env.RESEND_API_KEY || "").trim();
-  const from = String(process.env.RESEND_FROM || "").trim();
+  const from = String(process.env.RESEND_FROM || "Popey Academy <contact@popey.academy>").trim();
   if (to && key && from) {
     try {
       const { Resend } = await import("resend");
