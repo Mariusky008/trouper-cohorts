@@ -417,7 +417,7 @@ export async function composeLetterHtml(input: {
   const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
   // Angle avis autorisé seulement si le profil le permet (pas en C). Quand une
   // vraie réputation existe (note ≥ 4,5), on la valorise sans rien inventer.
-  const avisAllowed = def.bloc_avis !== "off";
+  const avisAllowed = def.avis_affichage;
   const goodRep = avisAllowed && reviews != null && reviews >= 1 && rating != null && rating >= 4.5 && Boolean(note);
   const ss_p3 = ov(
     "ss_p3",

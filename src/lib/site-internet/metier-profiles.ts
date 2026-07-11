@@ -21,7 +21,6 @@
 // commerce classique) on retombe sur A (comportement générique existant).
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type BlocAvis = "on" | "doux" | "off";
 export type Profil = "A" | "B" | "C";
 
 export type ProfileDef = {
@@ -29,9 +28,12 @@ export type ProfileDef = {
   terme_public: string;
   /** Boutons de la carte DEMAIN (max 3). Pas de WhatsApp en B/C. */
   contacts: string[];
-  /** on = avis en avant ; doux = valoriser l'existant sans « faire monter » ;
-   *  off = aucun volet avis/note (déontologie). */
-  bloc_avis: BlocAvis;
+  // Deux notions DISTINCTES (constater ≠ quémander) — cf. déontologie santé :
+  /** Afficher la note / les avis Google DÉJÀ existants (les constater). A, B. */
+  avis_affichage: boolean;
+  /** Proposer un système pour en RÉCOLTER davantage (les solliciter). A seul.
+   *  En santé encadrée (B/C), terrain miné (secret pro, ordre) → jamais. */
+  avis_sollicitation: boolean;
   /** Sujet + verbe de l'accroche hero : « {sujet} {verbe} un {métier} à … ». */
   heroSujet: string; // "personnes" | "patients"
   heroVerbe: string; // "recherchent" | "cherchent"
@@ -49,7 +51,8 @@ export const PROFILES: Record<Profil, ProfileDef> = {
   A: {
     terme_public: "clients",
     contacts: ["Prendre RDV", "Appeler", "WhatsApp"],
-    bloc_avis: "on",
+    avis_affichage: true,
+    avis_sollicitation: true,
     heroSujet: "personnes",
     heroVerbe: "recherchent",
     benefices: [
@@ -64,7 +67,8 @@ export const PROFILES: Record<Profil, ProfileDef> = {
   B: {
     terme_public: "patients",
     contacts: ["Prendre RDV", "Appeler", "Site web"],
-    bloc_avis: "doux",
+    avis_affichage: true,
+    avis_sollicitation: false,
     heroSujet: "patients",
     heroVerbe: "cherchent",
     benefices: [
@@ -79,7 +83,8 @@ export const PROFILES: Record<Profil, ProfileDef> = {
   C: {
     terme_public: "patients",
     contacts: ["Prendre RDV", "Appeler", "Site web"],
-    bloc_avis: "off",
+    avis_affichage: false,
+    avis_sollicitation: false,
     heroSujet: "patients",
     heroVerbe: "cherchent",
     heroSub: "Sans site, vous êtes difficile à identifier et à joindre.",

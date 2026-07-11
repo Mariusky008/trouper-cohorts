@@ -89,8 +89,8 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   //  • avisHarvest = flux ACTIF « Assistant Avis Google » via WhatsApp (A seul).
   // B (santé « doux ») affiche ses avis sobrement mais ne récolte pas et n'a
   // pas de WhatsApp ; C (santé encadrée) n'affiche aucun avis.
-  const avisShow = mp.def.bloc_avis !== "off";
-  const avisHarvest = mp.def.bloc_avis === "on";
+  const avisShow = mp.def.avis_affichage;
+  const avisHarvest = mp.def.avis_sollicitation;
   // WhatsApp est piloté par le PROFIL (contacts), pas par la seule présence de
   // la variable d'env : seul le profil A (commerce/bien-être libre) l'autorise.
   // B/C (santé) → jamais de WhatsApp, déontologie.
