@@ -79,7 +79,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   // vocabulaire cabinet/séance/suivi ; les autres (rappel/devis/acompte —
   // artisans & co.) passent à un vocabulaire neutre, sans « cabinet »,
   // « pour qui / enfant » ni « suivi(e) », qui sonneraient faux.
-  const lieuAccueil = isReserve ? `du cabinet de ${praticien}` : `de ${praticien}`;
+  // « de {nom} » sans « cabinet » : {praticien} porte déjà le nom de
+  // l'établissement (souvent « Cabinet … »), donc « du cabinet de Cabinet … »
+  // ferait doublon et trahirait le gabarit.
+  const lieuAccueil = `de ${praticien}`;
+  // Sujet neutre pour la narration à la 3ᵉ personne (un nom d'établissement ne
+  // peut pas être « en séance »).
+  const proNoun = isReserve ? "le praticien" : "le professionnel";
   const porteQ = isReserve
     ? "Je peux prendre votre rendez-vous ou répondre à une question pratique. Que puis-je faire pour vous ?"
     : "Je peux transmettre votre demande ou répondre à une question pratique. Que puis-je faire pour vous ?";
@@ -274,7 +280,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   return (
     <>
       <style>{`
-        .acc-bubble{position:fixed;right:16px;bottom:84px;z-index:60;display:flex;align-items:center;gap:0;}
+        .acc-bubble{position:fixed;right:16px;bottom:20px;z-index:60;display:flex;align-items:center;gap:0;}
         .acc-bubble .lab{background:${accent};color:#fff;font-size:13px;font-weight:700;padding:10px 14px;border-radius:999px 0 0 999px;box-shadow:0 6px 20px rgba(0,0,0,.18);}
         .acc-bubble .ic{width:52px;height:52px;border-radius:50%;background:${accent};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.22);border:2px solid #fff;}
         .acc-ov{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center;background:rgba(12,14,12,.42);}
@@ -323,7 +329,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
       {/* Bulle flottante (toutes les pages) */}
       {!open && (
         <button type="button" className="acc-bubble" onClick={openBubble} aria-label="Ouvrir l'accueil">
-          <span className="lab">Prendre RDV</span>
+          <span className="lab">{isReserve ? "Prendre RDV" : "Nous contacter"}</span>
           <span className="ic">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.4-4.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
           </span>
@@ -359,7 +365,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               </div>
               {step === "confirm" && (
                 <div className="acc-reveal">
-                  Pendant ce temps, <b>{praticien}</b> était {busyWord}. À la pause, il retrouve : <b>{isReserve ? "nouveau rendez-vous" : "nouvelle demande"}</b>{pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Il n’a rien raté, sans jamais décrocher.
+                  Pendant ce temps, <b>{proNoun}</b> était {busyWord}. À la pause, il retrouve : <b>{isReserve ? "nouveau rendez-vous" : "nouvelle demande"}</b>{pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Rien n’a été raté, sans jamais décrocher.
                 </div>
               )}
             </div>
@@ -390,7 +396,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               {step === "confirm" && (
                 <div style={{ width: "100%" }}>
                   {notifSent === "done" ? (
-                    <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que {praticien} reçoit, {busyWord}, sans décrocher.</div>
+                    <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que {proNoun} reçoit, {busyWord}, sans décrocher.</div>
                   ) : (
                     <>
                       <div className="acc-buzz-lead">📲 Recevez la notif comme si vous étiez le praticien :</div>

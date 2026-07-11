@@ -84,22 +84,34 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const mp = resolveMetier(activite);
   const profil = mp.profil;
   const termePublic = mp.entry?.terme || mp.def.terme_public; // clients / patients
-  const avisOn = mp.def.bloc_avis !== "off";
+  // Deux niveaux distincts (le profil pilote les deux) :
+  //  • avisShow    = afficher la note / les avis Google EXISTANTS (A + B).
+  //  • avisHarvest = flux ACTIF « Assistant Avis Google » via WhatsApp (A seul).
+  // B (santé « doux ») affiche ses avis sobrement mais ne récolte pas et n'a
+  // pas de WhatsApp ; C (santé encadrée) n'affiche aucun avis.
+  const avisShow = mp.def.bloc_avis !== "off";
+  const avisHarvest = mp.def.bloc_avis === "on";
+  // WhatsApp est piloté par le PROFIL (contacts), pas par la seule présence de
+  // la variable d'env : seul le profil A (commerce/bien-être libre) l'autorise.
+  // B/C (santé) → jamais de WhatsApp, déontologie.
+  const waAllowed = mp.def.contacts.includes("WhatsApp");
   const accent = profil === "C" ? "#2E4A3C" : "#1F5C4A";
   // Encart urgence = drapeau par métier (psychisme), DÉCOUPLÉ du profil C.
   const showUrgence = mp.entry?.encartUrgence ?? false;
   const confirmation = mp.entry?.confirmation ?? "reserve";
   const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
-  const projActs = avisOn
+  const projActs = avisHarvest
     ? ["📞 vous appeler", "💬 vous écrire", "⭐ lire vos avis", "📍 vous localiser"]
-    : ["🗓️ prendre rendez-vous", "📞 vous appeler", "💬 vous écrire", "📍 vous localiser"];
-  const youList = avisOn
+    : avisShow
+      ? ["🗓️ prendre rendez-vous", "📞 vous appeler", "⭐ lire vos avis", "📍 vous localiser"]
+      : ["🗓️ prendre rendez-vous", "📞 vous appeler", "🕑 voir vos horaires", "📍 vous localiser"];
+  const youList = avisHarvest
     ? ["Beau", "Moderne", "Demande des avis", "Facilite les contacts", "Travaille votre visibilité"]
     : ["Sobre et professionnel", "Clair sur mobile", "Prise de rendez-vous intégrée", "Accueille 24 h/24", "Rappels la veille"];
-  const sixItems = avisOn
+  const sixItems = avisHarvest
     ? ["⭐ Plus d'avis Google", "📞 Plus d'appels", "💬 Plus de demandes WhatsApp", "🌍 Une meilleure visibilité"]
     : ["🗓️ Des rendez-vous pris 24 h/24", "📞 Moins d'appels manqués", "🔔 Moins de rendez-vous oubliés", "🧘 Vous restez concentré sur vos séances"];
-  const sixTail = avisOn ? "transformer des visiteurs en clients." : `accueillir et organiser vos ${termePublic}, même quand vous êtes occupé.`;
+  const sixTail = avisHarvest ? "transformer des visiteurs en clients." : `accueillir et organiser vos ${termePublic}, même quand vous êtes occupé.`;
   const faq = [
     { q: "Tarif", a: "Le tarif d'une séance vous est indiqué avant le rendez-vous. Vous pouvez le demander sans engagement." },
     { q: "Remboursement", a: "Selon votre situation et votre mutuelle, une prise en charge peut être possible. Le cabinet vous renseignera lors de la prise de contact." },
@@ -126,13 +138,11 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const waDigits = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "");
   const phoneDisplay = process.env.SITE_LETTER_PHONE || "";
   const telHref = waDigits ? `tel:+${waDigits}` : "";
-  const waHref = waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(`Bonjour, j'ai vu la maquette pour ${nom}, elle me plaît !`)}` : "";
+  const waHref = waAllowed && waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(`Bonjour, j'ai vu la maquette pour ${nom}, elle me plaît !`)}` : "";
   const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`)}`;
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
   const stars = rating != null ? "★".repeat(Math.round(rating)) + "☆".repeat(Math.max(0, 5 - Math.round(rating))) : "";
   const rvStars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
-
-  const services = ["Nos prestations", "Prendre rendez-vous", "Nous contacter"];
 
   return (
     <main className="mq">
@@ -141,7 +151,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           __html: `
           .mq{--dk:#0B0D12;--cr:#FBFAF7;--gold:#B8A87A;--soft:#8E93A0;
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:#14140F;background:#fff;
-            max-width:520px;margin:0 auto;padding-bottom:96px;-webkit-font-smoothing:antialiased;}
+            max-width:520px;margin:0 auto;padding-bottom:40px;-webkit-font-smoothing:antialiased;}
           .mq *{box-sizing:border-box;}
           .mq .ribbon{background:var(--gold);color:#14140F;font-size:12.5px;font-weight:600;text-align:center;padding:8px 14px;line-height:1.3;}
           .mq .hero{position:relative;background:var(--dk);color:var(--cr);overflow:hidden;}
@@ -167,6 +177,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .cta a{flex:1;text-align:center;padding:14px;border-radius:14px;font-weight:700;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;}
           .mq .cta .call{background:var(--cr);color:var(--dk);}
           .mq .cta .wa{background:#25D366;color:#052e16;}
+          .mq .cta .book{background:${accent};color:#fff;border:none;cursor:pointer;}
           .mq .sec{padding:24px 22px;border-bottom:1px solid #EEECE6;}
           .mq .sec h2{font-family:Georgia,serif;font-size:20px;margin:0 0 12px;}
           .mq .sec .sub{color:#8A877E;font-size:13px;margin:-6px 0 14px;}
@@ -186,8 +197,6 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .rvname{font-size:12.5px;color:#8A877E;font-weight:600;}
           .mq .hours div{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F0EEE8;font-size:14.5px;}
           .mq .hours div b{font-weight:600;}
-          .mq .svc{display:flex;gap:10px;flex-wrap:wrap;}
-          .mq .svc span{border:1px solid #E0DDD4;border-radius:999px;padding:8px 14px;font-size:13.5px;color:#444;}
           /* ---- Section « Prendre rendez-vous » (ouvre l'accueil) ---- */
           .mq .rdv-sec .rdv-lead{color:#5A554C;font-size:14.5px;line-height:1.5;margin:-4px 0 14px;}
           .mq .rdv-btn{width:100%;border:none;border-radius:14px;background:#14140F;color:#fff;font-size:15.5px;font-weight:700;padding:15px;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;}
@@ -198,11 +207,12 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
           .mq .lead-kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
           .mq .maq-note{padding:20px 22px;background:#FBFAF7;border-top:1px solid #EEECE6;color:#6E6E64;font-size:13px;line-height:1.5;text-align:center;}
           .mq .maq-note b{color:#14140F;}
-          .mq .dock{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid #E4E1D9;padding:10px 14px;display:flex;gap:10px;}
-          .mq .dock a{flex:1;text-align:center;padding:13px;border-radius:12px;font-weight:800;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;}
-          .mq .dock .call{background:var(--dk);color:#fff;}
-          .mq .dock .wa{background:#25D366;color:#052e16;}
           /* ===== ACTE 2 — l'explication, APRÈS l'immersion dans le site ===== */
+          /* Séparateur net : on quitte « le site tel que vos patients le voient »
+             pour « parlons de vous » (le pitch destiné au praticien). */
+          .mq .switch{padding:30px 22px;text-align:center;background:var(--dk);color:var(--cr);}
+          .mq .switch-line{font-family:Georgia,serif;font-size:19px;line-height:1.35;color:#EBE7DE;}
+          .mq .switch-sub{font-family:Georgia,serif;font-size:22px;font-weight:700;margin-top:6px;color:#fff;}
           /* Projection émotionnelle (bloc chaud) → bascule vers « pourquoi ce site ». */
           .mq .project{padding:32px 22px;text-align:center;background:#FBF7EF;border-top:1px solid #EEE7D9;border-bottom:1px solid #EEE7D9;}
           .mq .project .p-lead{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#14140F;}
@@ -275,8 +285,8 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <div className="hero-inner">
           <div className="kicker">{activite}{ville ? ` · ${ville}` : ""}</div>
           <div className="hname">{nom}</div>
-          <div className="hsub">Votre nouvelle vitrine, claire et mobile — comme la verraient vos clients.</div>
-          {avisOn && note && reviews != null && reviews > 0 ? (
+          <div className="hsub">Votre nouvelle vitrine, claire et mobile — comme la verraient vos {termePublic}.</div>
+          {avisShow && note && reviews != null && reviews > 0 ? (
             <div className="grev">
               <div className="grev-score">{note}</div>
               <div className="grev-right">
@@ -289,56 +299,47 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
               </div>
               {rating != null && rating >= 4.5 && <span className="grev-badge">Recommandé</span>}
             </div>
-          ) : avisOn && note ? (
+          ) : avisShow && note ? (
             <div className="rev"><b>{stars}</b> &nbsp;{note}/5</div>
           ) : null}
           <div className="cta">
-            {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
-            {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
+            {waAllowed ? (
+              <>
+                {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
+                {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
+              </>
+            ) : (
+              <>
+                <button type="button" className="book" data-accueil-open>🗓️ Prendre rendez-vous</button>
+                {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
+              </>
+            )}
           </div>
-        </div>
-      </section>
-
-      <section className="sec">
-        <h2>Ce que nous faisons</h2>
-        <div className="svc">
-          {services.map((s) => (
-            <span key={s}>{s}</span>
-          ))}
         </div>
       </section>
 
       <section className="sec rdv-sec">
         <h2>Prendre rendez-vous</h2>
-        <p className="rdv-lead">Un accueil qui vous répond, vous propose un créneau et vous confirme — même quand {nom} est en {profil === "A" ? "activité" : "séance"}.</p>
+        <p className="rdv-lead">Un accueil qui vous répond, vous propose un créneau et vous confirme — même quand vous êtes {busyWord}.</p>
         <button type="button" className="rdv-btn" data-accueil-open>
           <span className="rdv-dot" style={{ background: accent }} /> Prendre rendez-vous en ligne →
         </button>
         <p className="rdv-mini">Réponse immédiate · sans créer de compte</p>
       </section>
 
-      <section className="sec">
-        <h2>En images</h2>
-        {galleryPhotos.length > 0 ? (
+      {galleryPhotos.length > 0 && (
+        <section className="sec">
+          <h2>En images</h2>
           <div className="gallery">
             {galleryPhotos.map((src, i) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img key={i} className={galleryPhotos.length >= 3 && i === 0 ? "big" : ""} src={src} alt={`${nom} — photo ${i + 1}`} loading="lazy" />
             ))}
           </div>
-        ) : (
-          <>
-            <div className="sub">Vos plus belles photos seront mises en avant ici.</div>
-            <div className="cards">
-              <div className="card">Vos photos</div>
-              <div className="card">Vos photos</div>
-              <div className="card">Vos photos</div>
-            </div>
-          </>
-        )}
-      </section>
+        </section>
+      )}
 
-      {avisOn && reviewsTop.length > 0 && (
+      {avisShow && reviewsTop.length > 0 && (
         <section className="sec">
           <h2>Ils en parlent</h2>
           {note && <div className="sub">{stars} {note}/5 sur Google{reviews != null ? ` · ${reviews} avis` : ""}</div>}
@@ -372,14 +373,19 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         <a href={mapsHref} style={{ color: "#14140F", fontWeight: 600, textDecoration: "underline" }}>Voir l&apos;itinéraire →</a>
       </section>
 
-      <section className="project" id="mq-act2">
+      <div className="switch" id="mq-act2">
+        <div className="switch-line">Voilà ce que verraient vos {termePublic}.</div>
+        <div className="switch-sub">Maintenant, parlons de vous.</div>
+      </div>
+
+      <section className="project">
         <div className="p-lead">Imaginez.</div>
         <div className="p-body">Ce soir, un habitant de {villeAff || "votre ville"} cherche un {metierSing}. Il tombe sur cette page. En moins de <b>10 secondes</b>, il peut :</div>
         <div className="p-acts">{projActs.map((a) => (<span key={a}>{a}</span>))}</div>
         <div className="p-tail">Sans chercher. Sans hésiter.</div>
       </section>
 
-      {avisOn ? (
+      {avisHarvest ? (
         <section className="spot">
           <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui travaille pour vous.</div>
           <div className="feat">⭐ Assistant Avis Google</div>
@@ -396,7 +402,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         </section>
       ) : (
         <section className="spot">
-          <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui vous accueille vos {termePublic}.</div>
+          <div className="pre">Ce n&apos;est pas qu&apos;une vitrine.<br />C&apos;est un site qui accueille vos {termePublic}.</div>
           <div className="feat">💬 Accueil intelligent</div>
           <div className="flow">
             <div className="step"><span className="n">1</span><span className="tx">Un {termePublic.replace(/s$/u, "")} vous cherche, un soir, pendant que vous êtes en séance.</span></div>
@@ -413,11 +419,11 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         </section>
       )}
 
-      {searchVolume && (
+      {searchVolume && profil !== "C" && (
         <section className="demand2">
           <div className="num">≈ {searchVolume}</div>
           <div className="cap">personnes cherchent <b>« {metierSing}{villeAff ? ` à ${villeAff}` : ""} »</b><br />sur Google, chaque mois.</div>
-          <div className="tie">{avisOn ? "⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents." : "🗓️ Un accueil qui répond et réserve à toute heure — vous ne manquez plus ces demandes."}</div>
+          <div className="tie">{avisHarvest ? "⭐ Chaque nouvel avis vous rapproche de la première place — devant vos concurrents." : "🗓️ Un accueil qui répond et réserve à toute heure — vous ne manquez plus ces demandes."}</div>
         </section>
       )}
 
@@ -462,10 +468,6 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         {phoneDisplay ? <><br />Marius · {phoneDisplay}</> : null}
       </div>
 
-      <div className="dock">
-        {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
-        {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
-      </div>
     </main>
   );
 }
