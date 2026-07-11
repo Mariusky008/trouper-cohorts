@@ -62,8 +62,17 @@ export function MaquetteConfigurateur({ slug }: { slug: string }) {
     if (!agenda || !secret || !pain) return;
     const k = route(agenda, secret, pain);
     setResult(k);
-    // Étape 2 (à venir) : persister + notifier Marius.
-    void slug;
+    // Persiste la situation déclarée + notifie Marius (best-effort, non bloquant).
+    try {
+      fetch("/api/site-internet/apercu/maquette-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, agenda, secret, pain, brique: k }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* le résultat s'affiche quand même */
+    }
     // Laisse le temps au bloc de s'afficher avant de scroller.
     requestAnimationFrame(() => {
       document.getElementById("mqc-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
