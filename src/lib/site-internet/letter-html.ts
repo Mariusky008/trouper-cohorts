@@ -437,53 +437,36 @@ export async function composeLetterHtml(input: {
   const ss_footer = `<div class="ss-footer">Diagnostic préparé pour ${esc(destName)}</div>`;
   const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre accueil en direct →</div>`;
 
-  // ── Recto PROFIL C v2 (santé encadrée : psychologue, kiné, orthoptiste) ──────
-  // On NE VEND PAS du volume (le praticien est souvent déjà plein, liste
-  // d'attente) : lui vendre « ne les manquez plus » lui vend un problème qu'il
-  // n'a pas. Sa vraie douleur = l'interruption + les RDV oubliés + un patient
-  // mal accueilli. Le chiffre reste, mais sert à décrire le COMPORTEMENT du
-  // patient (il se renseigne, hésite), pas à promettre du volume. Constater ≠
-  // quémander : aucun avis, jamais.
-  const cs_hero_lead = ov("cs_hero_lead", `Avant de vous appeler, un ${termeSing} veut savoir à qui il a affaire.`);
-  const cs_hero_ctx = ov(
-    "cs_hero_ctx",
-    searchVolume
-      ? `Chaque mois, environ <b>${searchVolume}</b> personnes cherchent ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b>.`
-      : `Chaque mois, des personnes cherchent ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b>.`
+  // ── Recto PROFIL C v3 (santé encadrée : psychologue, kiné, orthoptiste) ──────
+  // Hook FACTUEL (« très peu d'infos » sur vous en ligne), preuve (mock Google
+  // avec des consœurs qui ont un site), carte Aujourd'hui→Demain (l'accueil),
+  // puis UNE seule bascule : « une secrétaire ne répond pas à 21 h — votre site,
+  // si ». Pas de volume, pas d'avis. Le chiffre de recherches disparaît du recto.
+  const cs_hook_sub = ov("cs_hook_sub", `C'est ce que vos futurs ${termePublic} trouvent sur vous en ligne.`);
+  const cs_who = ov("cs_who", `Diagnostic préparé pour <b>${esc(destName)}</b> — ${esc(metierLabel)} à ${esc(villeAff)}.`);
+  const csv3ConcRow = (c: { name: string }) =>
+    `<div class="res"><div><div class="n">${esc(cleanCompName(c.name))}</div><div class="m">${esc(metierLabel)} · ${esc(villeAff)}</div></div><div class="tagweb">Site web</div></div>`;
+  const csv3_concurrents = conc.slice(0, 2).map(csv3ConcRow).join("");
+  const cs_pivot = ov(
+    "cs_pivot",
+    `Une secrétaire ne répond pas à 21 h, ni le dimanche.<br><b>Votre site, <span class="u">si</span>.</b> Et il ne vous interrompt jamais<br>pour redonner vos tarifs.`
   );
-  const cs_hero_behav = ov(
-    "cs_hero_behav",
-    `Voici ce qu'elles font : elles se renseignent, cherchent vos horaires et vos tarifs, veulent savoir si vous prenez de nouveaux ${termePublic} — et hésitent avant de décrocher.`
+  const cs_prep = ov(
+    "cs_prep",
+    `<b>J'ai préparé la première version de votre site.</b> Il présente votre approche, répond aux questions pratiques à toute heure, et prend les rendez-vous — sans jamais vous déranger.`
   );
-  const csConstat = (mark: string, cls: string, titre: string, corps: string) =>
-    `<div class="cs-constat ${cls}"><span class="cs-mark">${mark}</span><span class="cs-ctxt"><b>${titre}</b> ${corps}</span></div>`;
-  const cs_constats =
-    csConstat("!", "warn", "Ils cherchent à se rassurer.", "Sans site, ils n'ont rien pour se faire une idée de vous avant le premier appel.") +
-    csConstat("!", "warn", "Ils ont des questions pratiques — accès, tarif, remboursement, délai.", "Alors ils appellent. Pendant vos séances.") +
-    csConstat("●", "soft", "Ils hésitent à franchir le pas.", "Décrocher son téléphone est un premier pas difficile. Beaucoup renoncent — surtout les plus fragiles.");
-  const cs_bascule = ov(
-    "cs_bascule",
-    `Vous n'avez pas besoin de plus d'appels.<br>Vous avez besoin d'être <b>moins interrompu</b> — et que vos ${termePublic} soient <b>bien accueillis</b>.`
-  );
-  const cs_action =
-    `<div class="ss-action"><p class="ss-lead">J'ai préparé la première version de votre site. Ce n'est pas qu'une vitrine : <b>c'est un accueil.</b></p>` +
-    `<div class="ss-bullets">` +
-    `<div>— Il <b>rassure</b> : votre pratique, présentée sobrement, conforme à votre cadre.</div>` +
-    `<div>— Il <b>répond aux questions pratiques</b>, à toute heure — accès, tarifs, prise en charge.</div>` +
-    `<div>— Il <b>prend les rendez-vous</b> et envoie un rappel la veille — moins de rendez-vous oubliés.</div>` +
-    `<div>— Vous restez en séance. <b>L'accueil s'occupe du téléphone.</b></div>` +
-    `</div></div>`;
+  const cs_stamp = `Diagnostic préparé pour ${esc(destName)} · ${esc(villeAff)}`;
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
     editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
     if (mp.profil === "C") {
-      // Recto C v2 : champs propres à la narration « accueil » (pas de volume).
-      editableFields.push({ key: "cs_hero_lead", label: "Accroche (ligne 1)", value: cs_hero_lead, multiline: true });
-      editableFields.push({ key: "cs_hero_ctx", label: "Accroche — contexte (chiffre)", value: cs_hero_ctx, multiline: true });
-      editableFields.push({ key: "cs_hero_behav", label: "Accroche — comportement du patient", value: cs_hero_behav, multiline: true });
-      editableFields.push({ key: "cs_bascule", label: "La bascule (moins d'interruptions)", value: cs_bascule, multiline: true });
+      // Recto C v3 : champs propres au hook factuel + pivot « secrétaire ».
+      editableFields.push({ key: "cs_hook_sub", label: "Hook — sous-titre", value: cs_hook_sub, multiline: true });
+      editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
+      editableFields.push({ key: "cs_pivot", label: "La bascule (secrétaire / 21 h)", value: cs_pivot, multiline: true });
+      editableFields.push({ key: "cs_prep", label: "Proposition (j'ai préparé…)", value: cs_prep, multiline: true });
     } else {
       editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
       editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
@@ -508,8 +491,9 @@ export async function composeLetterHtml(input: {
     ss_action,
     ss_footer,
     cta_full,
-    // Recto PROFIL C v2 (santé encadrée)
-    cs_hero_lead, cs_hero_ctx, cs_hero_behav, cs_constats, cs_bascule, cs_action,
+    // Recto PROFIL C v3 (santé encadrée)
+    cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp,
+    ai_bubble, ai_booked,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,
