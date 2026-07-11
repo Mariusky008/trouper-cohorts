@@ -27,6 +27,7 @@ type Props = {
   showUrgence: boolean; // encart urgence permanent (profil psychisme)
   confirmation?: Confirmation; // réserve un créneau, ou rappel/devis/acompte
   busyWord?: string; // « en séance » (soin) / « en intervention » (artisan)
+  hideBubble?: boolean; // masque la bulle flottante (quand une barre fixe gère le CTA)
 };
 
 type Who = "ai" | "me";
@@ -54,7 +55,7 @@ function upcomingSlots(): string[] {
   return out.map((o) => o.label);
 }
 
-export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", busyWord = "en séance" }: Props) {
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", busyWord = "en séance", hideBubble = false }: Props) {
   const isReserve = confirmation === "reserve";
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("home");
@@ -326,8 +327,8 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         .acc-legal{font-size:10.5px;color:#9A968C;text-align:center;padding:8px 14px 12px;line-height:1.4;}
       `}</style>
 
-      {/* Bulle flottante (toutes les pages) */}
-      {!open && (
+      {/* Bulle flottante (toutes les pages) — masquée si une barre fixe gère le CTA */}
+      {!open && !hideBubble && (
         <button type="button" className="acc-bubble" onClick={openBubble} aria-label="Ouvrir l'accueil">
           <span className="lab">{isReserve ? "Prendre RDV" : "Nous contacter"}</span>
           <span className="ic">

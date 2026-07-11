@@ -10,6 +10,7 @@ import { FeedbackNudge } from "./feedback-nudge";
 import { FlowReveal } from "./flow-reveal";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteSante } from "./maquette-sante";
+import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -156,13 +157,13 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         villeAff={villeAff}
         adresse={adresse}
         horaires={horaires}
-        heroPhoto={heroPhoto}
+        photos={photos}
         accent={accent}
         showUrgence={showUrgence}
         termePublic={termePublic}
         confirmation={confirmation}
         busyWord={busyWord}
-        faq={faq}
+        content={resolveMetierContent(activite)}
         telHref={telHref}
         mapsHref={mapsHref}
         phoneDisplay={phoneDisplay}

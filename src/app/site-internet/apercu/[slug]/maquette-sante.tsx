@@ -1,30 +1,29 @@
-// Maquette PROFIL C (santé encadrée : psychologue, kiné, orthoptiste).
-// Reskin complet calé sur la référence accueil_intelligent_maquette.html :
-// palette sauge/crème, ton sobre, AUCUN avis, AUCUN WhatsApp, vocabulaire
-// « patients », encart urgence en pied (si le métier le demande), site court et
-// plein (approche · rendez-vous · infos pratiques). L'accueil intelligent (bulle
-// + conversation) est fourni par <AccueilIntelligent> — la vedette du profil C.
-// Les profils A/B gardent la maquette « commerce » (page.tsx).
+// Maquette PROFIL C (santé encadrée) — SPEC « maquette configurable » v2.
+// Un vrai site plein des données Google du praticien (photos, horaires, adresse,
+// téléphone) + textes proposés par métier (catalogue déterministe). Au milieu :
+// le configurateur (3 questions) qui met en avant LA brique qui le sert. Aucun
+// avis, aucun WhatsApp (déontologie), encart urgence en pied. Une seule barre
+// fixe (Appeler + Prendre RDV) ; l'accueil intelligent s'ouvre en surimpression.
 import { LeadForm } from "../../[slug]/lead-form";
 import { AccueilIntelligent } from "./accueil-intelligent";
+import { MaquetteConfigurateur } from "./maquette-configurateur";
 import type { Confirmation } from "@/lib/site-internet/metier-profiles";
-
-type FaqItem = { q: string; a: string };
+import type { MetierContent } from "@/lib/site-internet/metier-content";
 
 export type MaquetteSanteProps = {
   slug: string;
   nom: string;
-  metierLabel: string; // « Psychologue » (singulier, capitalisé)
+  metierLabel: string;
   villeAff: string;
   adresse: string;
   horaires: Array<{ jours?: string; horaires?: string }>;
-  heroPhoto: string;
+  photos: string[];
   accent: string;
   showUrgence: boolean;
-  termePublic: string; // patients
+  termePublic: string;
   confirmation: Confirmation;
   busyWord: string;
-  faq: FaqItem[];
+  content: MetierContent;
   telHref: string;
   mapsHref: string;
   phoneDisplay: string;
@@ -32,60 +31,120 @@ export type MaquetteSanteProps = {
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
-    slug, nom, metierLabel, villeAff, adresse, horaires, heroPhoto, accent,
-    showUrgence, termePublic, confirmation, busyWord, faq, telHref, mapsHref, phoneDisplay,
+    slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent,
+    showUrgence, termePublic, confirmation, busyWord, content, telHref, mapsHref, phoneDisplay,
   } = p;
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
+  const heroPhoto = photos[0] || "";
+  const gallery = photos.slice(heroPhoto ? 1 : 0);
+  const galClass = gallery.length >= 4 ? "g4" : gallery.length === 3 ? "g3" : gallery.length === 2 ? "g2" : gallery.length === 1 ? "g1" : "";
+  const shortAddr = adresse.replace(/,?\s*France\s*$/i, "").trim();
+  const heures = horaires.filter((h) => h.jours || h.horaires).slice(0, 7);
 
   return (
     <main className="mqc">
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .mqc{--bg:#F6F4EF;--surface:#FFFFFF;--ink:#1C201C;--muted:#71766C;--line:#E7E4DC;
+          .mqc{--bg:#F6F4EF;--surface:#FFF;--ink:#1C201C;--muted:#71766C;--line:#E7E4DC;
             --accent:${accent};--accent-soft:#E9F0EA;--cream:#FBFAF7;
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);
-            max-width:520px;margin:0 auto;padding-bottom:40px;-webkit-font-smoothing:antialiased;}
+            max-width:520px;margin:0 auto;padding-bottom:78px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
           .mqc *{box-sizing:border-box;}
-          .mqc .ribbon{background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:8px 14px;line-height:1.3;letter-spacing:.01em;}
-          .mqc .nav{position:sticky;top:0;background:rgba(246,244,239,.92);backdrop-filter:blur(6px);
-            border-bottom:1px solid var(--line);padding:13px 20px;display:flex;justify-content:space-between;align-items:center;z-index:5;}
-          .mqc .brand{font-family:Georgia,'Times New Roman',serif;font-weight:600;font-size:16px;line-height:1.1;}
-          .mqc .brand span{display:block;font-family:inherit;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.04em;margin-top:2px;font-family:'Inter',sans-serif;}
-          .mqc .nav .m{display:flex;flex-direction:column;gap:3px;}
-          .mqc .nav .m i{width:18px;height:1.6px;background:var(--ink);display:block;}
-          .mqc section{padding:26px 22px;}
+          .mqc .banner{background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:9px 14px;line-height:1.35;}
+          /* HERO photo */
+          .mqc .hero{position:relative;height:290px;overflow:hidden;}
+          .mqc .hero .img{position:absolute;inset:0;background:linear-gradient(160deg,#5E6B5C,#39423A);background-size:cover;background-position:center;}
+          .mqc .hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,20,15,.12),rgba(15,20,15,.86));}
+          .mqc .hero .txt{position:absolute;left:0;right:0;bottom:0;padding:20px;color:var(--cream);}
+          .mqc .hero .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;}
+          .mqc .hero h2{font-family:Georgia,serif;font-weight:600;font-size:27px;line-height:1.08;margin:7px 0 5px;}
+          .mqc .hero .sub{font-size:12.5px;opacity:.85;margin-bottom:13px;}
+          .mqc .hero .acts{display:flex;gap:8px;}
+          .mqc .hero .acts a{flex:1;text-align:center;text-decoration:none;border-radius:24px;padding:12px;font-size:12.5px;font-weight:600;cursor:pointer;}
+          .mqc .a-call{background:var(--cream);color:var(--ink);}
+          .mqc .a-rdv{background:var(--accent);color:var(--cream);}
+          /* TEASER */
+          .mqc .teaser{background:var(--accent-soft);border-bottom:1px solid var(--line);padding:13px 18px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);}
+          .mqc .teaser .ic{flex:none;color:var(--accent);display:flex;}
+          .mqc .teaser .tx{font-size:12.5px;line-height:1.45;}
+          .mqc .teaser .tx b{color:var(--accent);font-weight:600;}
+          .mqc .teaser .go2{margin-left:auto;flex:none;color:var(--accent);font-weight:700;font-size:16px;}
+          /* SECTIONS */
+          .mqc section{padding:24px 20px;}
           .mqc .alt{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
-          .mqc .hero{padding-top:30px;}
-          .mqc .hero h2{font-family:Georgia,serif;font-weight:600;font-size:27px;line-height:1.14;letter-spacing:-.01em;}
-          .mqc .hero .role{font-size:13px;color:var(--muted);margin:11px 0 16px;letter-spacing:.02em;}
-          .mqc .hero .photo{height:158px;border-radius:14px;background:linear-gradient(150deg,#DFE5DC,#CBD6C6);margin-bottom:18px;
-            background-size:cover;background-position:center;}
-          .mqc .btn-primary{background:var(--accent);color:var(--cream);border:none;border-radius:26px;padding:15px;
-            font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;}
-          .mqc .sec-k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px;}
-          .mqc .sec-h{font-family:Georgia,serif;font-weight:600;font-size:20px;margin-bottom:10px;line-height:1.2;}
+          .mqc .sec-k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px;}
+          .mqc .sec-h{font-family:Georgia,serif;font-weight:600;font-size:20px;margin-bottom:9px;line-height:1.2;}
           .mqc .sec-p{font-size:13.5px;color:var(--muted);line-height:1.6;}
-          .mqc .rdv{background:var(--accent);color:var(--cream);border-radius:16px;padding:22px;text-align:center;}
-          .mqc .rdv h3{font-family:Georgia,serif;font-weight:600;font-size:19px;margin-bottom:7px;}
-          .mqc .rdv p{font-size:12.5px;color:#CFE0D3;line-height:1.5;margin-bottom:15px;}
-          .mqc .rdv button{background:var(--cream);color:var(--accent);border:none;border-radius:24px;padding:13px 18px;
-            font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;}
-          .mqc .infos div{font-size:13px;color:var(--muted);line-height:1.85;}
-          .mqc .infos b{color:var(--ink);font-weight:600;}
-          .mqc .infos .maplink{display:inline-block;margin-top:10px;color:var(--accent);font-weight:600;text-decoration:underline;font-size:13px;}
-          .mqc .foot{padding:24px 22px 30px;border-top:1px solid var(--line);}
-          .mqc .foot .fn{font-size:13.5px;color:var(--ink);font-weight:600;}
-          .mqc .foot .urg{font-size:11px;color:var(--muted);line-height:1.5;margin-top:9px;}
-          .mqc .foot .urg b{color:var(--ink);}
-          /* Séparateur net : le site → « parlons de vous » (pitch au praticien). */
-          .mqc .switch{padding:30px 22px;text-align:center;background:var(--accent);color:var(--cream);}
-          .mqc .switch-line{font-family:Georgia,serif;font-size:18px;line-height:1.35;color:#E7EFE8;}
-          .mqc .switch-sub{font-family:Georgia,serif;font-size:21px;font-weight:700;margin-top:6px;color:#fff;}
-          .mqc .lead-wrap{padding:28px 22px 8px;}
-          .mqc .lead-kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;}
-          .mqc .maq-note{padding:22px;background:var(--surface);border-top:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1.55;text-align:center;}
-          .mqc .maq-note b{color:var(--ink);}
+          .mqc .proposed{font-size:10.5px;color:var(--muted);font-style:italic;margin-top:10px;opacity:.85;}
+          /* GALERIE adaptative */
+          .mqc .g1 img{width:100%;height:180px;object-fit:cover;border-radius:12px;display:block;}
+          .mqc .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+          .mqc .g2 img{width:100%;height:120px;object-fit:cover;border-radius:10px;display:block;}
+          .mqc .g3{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:82px 82px;gap:8px;}
+          .mqc .g3 img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
+          .mqc .g3 img:first-child{grid-row:1/3;}
+          .mqc .g4{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+          .mqc .g4 img{width:100%;height:104px;object-fit:cover;border-radius:10px;display:block;}
+          /* CARTES */
+          .mqc .cards{display:flex;flex-direction:column;gap:9px;margin-top:12px;}
+          .mqc .c{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:var(--bg);}
+          .mqc .c h4{font-family:Georgia,serif;font-size:14.5px;font-weight:600;margin-bottom:3px;}
+          .mqc .c p{font-size:11.5px;color:var(--muted);line-height:1.45;}
+          /* HORAIRES + CARTE */
+          .mqc .hours{display:flex;flex-direction:column;margin-top:4px;}
+          .mqc .hr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+          .mqc .hr:last-child{border:none;}
+          .mqc .hr .h{color:var(--muted);}
+          .mqc .map{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+          .mqc .map .canvas{height:110px;position:relative;background:
+            repeating-linear-gradient(0deg,#E8E6DF,#E8E6DF 1px,transparent 1px,transparent 22px),
+            repeating-linear-gradient(90deg,#E8E6DF,#E8E6DF 1px,transparent 1px,transparent 22px),#F1EFE9;}
+          .mqc .map .pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);color:var(--accent);}
+          .mqc .map .addr{padding:11px 13px;background:var(--surface);font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+          .mqc .map .addr a{color:var(--accent);font-weight:600;text-decoration:none;white-space:nowrap;font-size:11.5px;}
+          /* FAQ */
+          .mqc .faq details{border-bottom:1px solid var(--line);}
+          .mqc .faq summary{padding:12px 0;font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:10px;}
+          .mqc .faq summary::-webkit-details-marker{display:none;}
+          .mqc .faq summary::after{content:"+";color:var(--accent);font-weight:600;}
+          .mqc .faq details[open] summary::after{content:"–";}
+          .mqc .faq p{font-size:12.5px;color:var(--muted);line-height:1.55;padding:0 0 12px;}
+          /* CONFIGURATEUR */
+          .mqc .cfg{background:var(--accent);color:var(--cream);padding:24px 18px;}
+          .mqc .cfg-lead{font-family:Georgia,serif;font-weight:600;font-size:20px;line-height:1.22;}
+          .mqc .cfg-sub{font-size:12.5px;color:#CFE0D3;margin:8px 0 18px;line-height:1.5;}
+          .mqc .cfg .q{margin-bottom:16px;}
+          .mqc .cfg .lab{font-size:11.5px;font-weight:600;margin-bottom:8px;color:#DDEAE0;}
+          .mqc .cfg .opts{display:flex;flex-direction:column;gap:6px;}
+          .mqc .cfg .opt{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);border-radius:11px;padding:11px 13px;font-size:12.5px;font-family:inherit;cursor:pointer;text-align:left;color:var(--cream);}
+          .mqc .cfg .opt.on{background:var(--cream);color:var(--accent);font-weight:600;border-color:var(--cream);}
+          .mqc .cfg .go{width:100%;background:var(--cream);color:var(--accent);border:none;border-radius:24px;padding:13px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:4px;}
+          .mqc .cfg .go:disabled{opacity:.4;cursor:not-allowed;}
+          .mqc .result{background:var(--accent-soft);border-top:1px solid var(--line);padding:22px 18px;}
+          .mqc .result .ack{font-size:12.5px;line-height:1.5;margin-bottom:14px;}
+          .mqc .result .ack b{color:var(--accent);}
+          .mqc .feat{border:1px solid var(--accent);border-radius:13px;padding:15px;background:var(--surface);position:relative;}
+          .mqc .feat .pill{position:absolute;top:-9px;left:13px;background:var(--accent);color:var(--cream);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:12px;}
+          .mqc .feat h4{font-family:Georgia,serif;font-size:15px;font-weight:600;margin-bottom:5px;}
+          .mqc .feat p{font-size:12px;color:var(--muted);line-height:1.5;}
+          .mqc .feat ul{margin-top:8px;list-style:none;}
+          .mqc .feat li{font-size:11.5px;padding:4px 0 4px 15px;position:relative;line-height:1.4;}
+          .mqc .feat li::before{content:"—";position:absolute;left:0;color:var(--accent);}
+          .mqc .others{margin-top:10px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+          /* CLÔTURE */
+          .mqc .close{padding:24px 20px 28px;text-align:center;border-top:1px solid var(--line);}
+          .mqc .close .t{font-family:Georgia,serif;font-size:18px;font-weight:600;margin-bottom:6px;}
+          .mqc .close .p{font-size:12.5px;color:var(--muted);line-height:1.55;}
+          .mqc .close .p b{color:var(--ink);}
+          .mqc .close .lead{margin-top:16px;}
+          .mqc .close .urg{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.45;}
+          .mqc .close .urg b{color:var(--ink);}
+          /* BARRE FIXE unique */
+          .mqc .bar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px 14px;display:flex;gap:8px;z-index:20;}
+          .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px;font-size:12.5px;font-weight:600;cursor:pointer;}
+          .mqc .bar .call{border:1px solid var(--ink);color:var(--ink);}
+          .mqc .bar .rdv{background:var(--accent);color:var(--cream);}
         `,
         }}
       />
@@ -96,85 +155,111 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         praticien={nom}
         termePublic={termePublic}
         accent={accent}
-        faq={faq}
+        faq={content.faq}
         showUrgence={showUrgence}
         confirmation={confirmation}
         busyWord={busyWord}
+        hideBubble
       />
 
-      <div className="ribbon">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
+      <div className="banner">✦ Maquette préparée pour {nom} — pas encore en ligne</div>
 
-      <div className="nav">
-        <div className="brand">{nom}<span>{roleLine}</span></div>
-        <div className="m"><i /><i /><i /></div>
+      <div className="hero">
+        <div className="img" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
+        <div className="veil" />
+        <div className="txt">
+          <div className="k">{roleLine}</div>
+          <h2>{nom}</h2>
+          <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
+          <div className="acts">
+            {telHref && <a className="a-call" href={telHref}>📞 Appeler</a>}
+            <a className="a-rdv" data-accueil-open>Prendre rendez-vous</a>
+          </div>
+        </div>
       </div>
 
-      <section className="hero">
-        <h2>Un accompagnement,<br />à votre rythme.</h2>
-        <div className="role">{roleLine}</div>
-        <div className="photo" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
-        <button type="button" className="btn-primary" data-accueil-open>Prendre rendez-vous</button>
-      </section>
-
-      <section className="alt">
-        <div className="sec-k">Mon approche</div>
-        <div className="sec-h">Un premier échange, sans engagement</div>
-        <div className="sec-p">
-          Un premier rendez-vous pour faire connaissance et comprendre votre besoin. Vous êtes
-          accueilli(e) dans un cadre attentif et confidentiel, à votre rythme.
-        </div>
-      </section>
+      <a className="teaser" href="#mqc-cfg">
+        <span className="ic">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" /><circle cx="12" cy="12" r="3.2" /></svg>
+        </span>
+        <span className="tx">Ce site n’est pas figé : <b>il s’adaptera à votre façon de travailler.</b></span>
+        <span className="go2">↓</span>
+      </a>
 
       <section>
+        <div className="sec-k">Mon approche</div>
+        <div className="sec-h">{content.approcheTitre}</div>
+        <div className="sec-p">{content.approcheCorps}</div>
+      </section>
+
+      {gallery.length > 0 && (
+        <section className="alt">
+          <div className="sec-k">Le cabinet</div>
+          <div className="sec-h">En images</div>
+          <div className={galClass}>
+            {(gallery.length >= 4 ? gallery.slice(0, 4) : gallery).map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={src} alt={`${nom} — photo ${i + 1}`} loading="lazy" />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {content.consultTitre && content.consultCartes.length > 0 && (
+        <section>
+          <div className="sec-k">Consultations</div>
+          <div className="sec-h">{content.consultTitre}</div>
+          <div className="cards">
+            {content.consultCartes.map((c) => (
+              <div className="c" key={c.h}><h4>{c.h}</h4><p>{c.p}</p></div>
+            ))}
+          </div>
+          <div className="proposed">Textes proposés, ajustables ensemble.</div>
+        </section>
+      )}
+
+      <MaquetteConfigurateur slug={slug} />
+
+      <section id="rdv">
         <div className="sec-k">Rendez-vous</div>
-        <div className="rdv">
-          <h3>Un créneau, à toute heure</h3>
-          <p>Même le soir ou le week-end : posez une question pratique ou réservez, l’accueil s’en occupe — sans jamais vous déranger {busyWord}.</p>
-          <button type="button" data-accueil-open>Ouvrir l’accueil →</button>
+        <div className="sec-h">Horaires &amp; accès</div>
+        {heures.length > 0 && (
+          <div className="hours">
+            {heures.map((h, i) => (
+              <div className="hr" key={i}><span className="d">{h.jours || ""}</span><span className="h">{h.horaires || ""}</span></div>
+            ))}
+          </div>
+        )}
+        <div className="map">
+          <div className="canvas"><div className="pin"><svg width="24" height="24" viewBox="0 0 24 24" fill={accent}><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" /></svg></div></div>
+          <div className="map-addr addr"><span>{shortAddr || villeAff}</span><a href={mapsHref} target="_blank" rel="noreferrer">Itinéraire →</a></div>
         </div>
       </section>
 
-      <section className="alt">
-        <div className="sec-k">Infos pratiques</div>
-        <div className="sec-h">Le cabinet</div>
-        <div className="infos">
-          {adresse && <div><b>Adresse</b> — {adresse}</div>}
-          {horaires.filter((h) => h.jours || h.horaires).length > 0 ? (
-            horaires.filter((h) => h.jours || h.horaires).slice(0, 7).map((h, i) => (
-              <div key={i}><b>{h.jours || ""}</b>{h.horaires ? ` — ${h.horaires}` : ""}</div>
-            ))
-          ) : (
-            <div><b>Consultations</b> — sur rendez-vous</div>
-          )}
-          <a className="maplink" href={mapsHref} target="_blank" rel="noreferrer">Voir l’itinéraire →</a>
-        </div>
+      <section className="alt faq">
+        <div className="sec-k">Questions fréquentes</div>
+        <div className="sec-h">Avant de venir</div>
+        {content.faq.map((f, i) => (
+          <details key={i}><summary>{f.q}</summary><p>{f.a}</p></details>
+        ))}
       </section>
 
-      <div className="foot">
-        <div className="fn">{roleLine ? `${nom} · ${roleLine}` : nom}</div>
+      <div className="close">
+        <div className="t">Ce site peut être le vôtre.</div>
+        <div className="p">
+          Il vous plaît ? On le met en ligne sous 72 h — ou on change ce que vous voulez.<br />
+          Sinon, ça s’arrête là — sans frais, sans relance.
+          {phoneDisplay ? <><br /><b>Marius · {phoneDisplay}</b></> : null}
+        </div>
+        <div className="lead"><LeadForm slug={slug} /></div>
         {showUrgence && (
           <div className="urg"><b>En cas d’urgence</b> : 15 (Samu) · 3114 (prévention du suicide, 24 h/24) · 112</div>
         )}
       </div>
 
-      <div className="switch">
-        <div className="switch-line">Voilà ce que verraient vos {termePublic}.</div>
-        <div className="switch-sub">Maintenant, parlons de vous.</div>
-      </div>
-
-      <div className="lead-wrap">
-        <div className="lead-kick">En ligne sous 72 h</div>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 22, margin: "0 0 6px" }}>Ce site peut être le vôtre.</h2>
-        <p style={{ color: "#5A5F58", fontSize: 14, margin: "0 0 14px" }}>
-          Il ne manque que votre accord. Laissez votre numéro ou appelez-moi — c’est Marius. Vous ne payez que s’il vous plaît.
-        </p>
-        <LeadForm slug={slug} />
-      </div>
-
-      <div className="maq-note">
-        <b>C’est une maquette, faite pour {nom}.</b><br />
-        Elle vous plaît ? On la met en ligne en 72 h. Sinon, ça s’arrête là — sans frais, sans engagement.
-        {telHref && phoneDisplay ? <><br />Marius · {phoneDisplay}</> : null}
+      <div className="bar">
+        {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
+        <a className="rdv" data-accueil-open>Prendre rendez-vous</a>
       </div>
     </main>
   );
