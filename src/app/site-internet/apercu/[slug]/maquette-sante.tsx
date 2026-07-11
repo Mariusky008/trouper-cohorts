@@ -7,11 +7,14 @@
 import { LeadForm } from "../../[slug]/lead-form";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteConfigurateur } from "./maquette-configurateur";
-import type { Confirmation } from "@/lib/site-internet/metier-profiles";
+import type { Confirmation, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent } from "@/lib/site-internet/metier-content";
+
+export type ReviewSnippet = { name: string; text: string; stars: number | null };
 
 export type MaquetteSanteProps = {
   slug: string;
+  profil: Profil;
   nom: string;
   metierLabel: string;
   villeAff: string;
@@ -19,21 +22,32 @@ export type MaquetteSanteProps = {
   horaires: Array<{ jours?: string; horaires?: string }>;
   photos: string[];
   accent: string;
+  accentSoft: string;
   showUrgence: boolean;
   termePublic: string;
   confirmation: Confirmation;
   busyWord: string;
   content: MetierContent;
+  // Avis : "prominent" (A), "doux" (B), "none" (C). Rien ne s'affiche sans vrais avis.
+  avisMode: "prominent" | "doux" | "none";
+  note: string | null;
+  reviewsCount: number | null;
+  reviewsTop: ReviewSnippet[];
   telHref: string;
+  waHref: string; // WhatsApp (profil A seulement, sinon "")
+  doctolibHref: string; // réservation en ligne existante (profil B), sinon ""
   mapsHref: string;
   phoneDisplay: string;
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
-    slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent,
-    showUrgence, termePublic, confirmation, busyWord, content, telHref, mapsHref, phoneDisplay,
+    slug, profil, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
+    showUrgence, termePublic, confirmation, busyWord, content,
+    avisMode, note, reviewsCount, reviewsTop, telHref, waHref, doctolibHref, mapsHref, phoneDisplay,
   } = p;
+  const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
+  const showAvis = avisMode !== "none" && note != null && reviewsCount != null && reviewsCount > 0;
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
   const heroPhoto = photos[0] || "";
   const gallery = photos.slice(heroPhoto ? 1 : 0);
@@ -47,7 +61,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         dangerouslySetInnerHTML={{
           __html: `
           .mqc{--bg:#F6F4EF;--surface:#FFF;--ink:#1C201C;--muted:#71766C;--line:#E7E4DC;
-            --accent:${accent};--accent-soft:#E9F0EA;--cream:#FBFAF7;
+            --accent:${accent};--accent-soft:${accentSoft};--cream:#FBFAF7;--gold:#B8862F;
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);
             max-width:520px;margin:0 auto;padding-bottom:78px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
           .mqc *{box-sizing:border-box;}
@@ -86,6 +100,22 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .g3 img:first-child{grid-row:1/3;}
           .mqc .g4{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
           .mqc .g4 img{width:100%;height:104px;object-fit:cover;border-radius:10px;display:block;}
+          /* AVIS — prominent (A) / doux (B) */
+          .mqc .rev-top{display:flex;align-items:center;gap:11px;margin-bottom:13px;}
+          .mqc .rev-score{font-family:Georgia,serif;font-size:30px;font-weight:600;line-height:1;}
+          .mqc .rev-stars{color:var(--gold);font-size:15px;letter-spacing:1px;}
+          .mqc .rev-meta{font-size:11.5px;color:var(--muted);margin-top:3px;}
+          .mqc .rev-c{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);margin-bottom:9px;}
+          .mqc .rev-c .q{font-size:12.5px;line-height:1.45;font-style:italic;}
+          .mqc .rev-c .a{font-size:11px;color:var(--muted);margin-top:6px;}
+          .mqc .rev-c .a .s{color:var(--gold);}
+          .mqc .rev-line{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
+          .mqc .rev-line .st{color:var(--gold);letter-spacing:.5px;}
+          .mqc .rev-line b{color:var(--ink);font-weight:600;}
+          /* CONTACT (WhatsApp A / Doctolib B) */
+          .mqc .contact{display:flex;gap:10px;margin-top:14px;}
+          .mqc .contact a{flex:1;text-align:center;border:1px solid var(--accent);color:var(--accent);border-radius:22px;padding:11px;font-size:12.5px;font-weight:600;text-decoration:none;}
+          .mqc .contact a.wa{border-color:#25843f;color:#1a6b31;}
           /* CARTES */
           .mqc .cards{display:flex;flex-direction:column;gap:9px;margin-top:12px;}
           .mqc .c{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:var(--bg);}
@@ -218,7 +248,35 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      <MaquetteConfigurateur slug={slug} />
+      {showAvis && avisMode === "prominent" && (
+        <section className="alt">
+          <div className="sec-k">Avis</div>
+          <div className="rev-top">
+            <div className="rev-score">{note}</div>
+            <div><div className="rev-stars">{stars(Number((note || "0").replace(",", ".")))}</div><div className="rev-meta">{reviewsCount} avis Google</div></div>
+          </div>
+          {reviewsTop.slice(0, 2).map((r, i) => (
+            <div className="rev-c" key={i}>
+              <div className="q">« {r.text.length > 180 ? r.text.slice(0, 179).trimEnd() + "…" : r.text} »</div>
+              <div className="a"><span className="s">{stars(r.stars)}</span>{r.name ? ` · ${r.name}` : ""} · Google</div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {showAvis && avisMode === "doux" && (
+        <section className="alt">
+          <div className="rev-line"><span className="st">{stars(Number((note || "0").replace(",", ".")))}</span> <b>{note}</b> · {reviewsCount} avis Google</div>
+          {reviewsTop.slice(0, 1).map((r, i) => (
+            <div className="rev-c" key={i} style={{ marginTop: 12 }}>
+              <div className="q">« {r.text.length > 160 ? r.text.slice(0, 159).trimEnd() + "…" : r.text} »</div>
+              <div className="a"><span className="s">{stars(r.stars)}</span> · Patient vérifié · Google</div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <MaquetteConfigurateur slug={slug} profil={profil} />
 
       <section id="rdv">
         <div className="sec-k">Rendez-vous</div>
@@ -234,6 +292,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <div className="canvas"><div className="pin"><svg width="24" height="24" viewBox="0 0 24 24" fill={accent}><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" /></svg></div></div>
           <div className="map-addr addr"><span>{shortAddr || villeAff}</span><a href={mapsHref} target="_blank" rel="noreferrer">Itinéraire →</a></div>
         </div>
+        {(waHref || doctolibHref) && (
+          <div className="contact">
+            {telHref && <a href={telHref}>📞 Appeler</a>}
+            {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
+            {doctolibHref && <a href={doctolibHref} target="_blank" rel="noreferrer">Doctolib</a>}
+          </div>
+        )}
       </section>
 
       <section className="alt faq">

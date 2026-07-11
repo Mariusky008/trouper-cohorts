@@ -22,8 +22,44 @@ const FAQ_SOIN: FaqItem[] = [
   { q: "Comment se passe le premier rendez-vous ?", a: "Il sert surtout à faire connaissance et à comprendre votre besoin, dans un cadre bienveillant et confidentiel, sans engagement pour la suite." },
 ];
 
+const FAQ_COMMERCE: FaqItem[] = [
+  { q: "Quels sont vos tarifs ?", a: "Les tarifs vous sont communiqués à la réservation ou sur place — n'hésitez pas à les demander via l'accueil ou par téléphone." },
+  { q: "Comment prendre rendez-vous ?", a: "En quelques secondes via l'accueil du site, à toute heure, ou par téléphone pendant les horaires d'ouverture." },
+  { q: "Quels moyens de paiement ?", a: "Les moyens de paiement acceptés vous sont précisés sur place. La plupart des cartes et espèces sont acceptées." },
+];
+
 // Catalogue par métier. La clé est testée par inclusion sur l'activité normalisée.
 const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
+  {
+    match: /coiff|barbier/,
+    content: {
+      approcheTitre: "Un moment pour vous",
+      approcheCorps:
+        "On prend le temps de comprendre ce que vous voulez, puis on s'en occupe — dans une ambiance simple et soignée. Sur rendez-vous, pour être bien reçu.",
+      consultTitre: "Prestations",
+      consultCartes: [
+        { h: "Coupe & brushing", p: "Femme, homme, enfant — selon vos envies." },
+        { h: "Couleur & mèches", p: "Coloration, balayage, patine." },
+        { h: "Coiffage & occasions", p: "Chignon, mise en beauté pour vos événements." },
+      ],
+      faq: FAQ_COMMERCE,
+    },
+  },
+  {
+    match: /esth[eé]|institut|beaut[eé]|ongle|onglerie/,
+    content: {
+      approcheTitre: "Prendre soin de vous",
+      approcheCorps:
+        "Un moment de détente et de soin, adapté à votre peau et à vos envies. On vous accueille sur rendez-vous, dans un cadre calme et propre.",
+      consultTitre: "Prestations",
+      consultCartes: [
+        { h: "Soins du visage", p: "Nettoyage, éclat, anti-âge." },
+        { h: "Épilations", p: "Visage et corps, à la cire ou au fil." },
+        { h: "Beauté des mains & pieds", p: "Manucure, pose, soin." },
+      ],
+      faq: FAQ_COMMERCE,
+    },
+  },
   {
     match: /psycho/,
     content: {
@@ -98,7 +134,8 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
   },
 ];
 
-const FALLBACK: MetierContent = {
+// Fallback SOIN (profils B/C) : ton attentif, « patients », pas de cartes inventées.
+const FALLBACK_CARE: MetierContent = {
   approcheTitre: "Un accompagnement attentif",
   approcheCorps:
     "Un premier rendez-vous pour faire connaissance et comprendre votre besoin, sans engagement. Vous êtes accompagné(e) dans un cadre attentif et confidentiel, à votre rythme.",
@@ -107,11 +144,22 @@ const FALLBACK: MetierContent = {
   faq: FAQ_SOIN,
 };
 
+// Fallback COMMERCE (profil A) : ton chaleureux, « clients ».
+const FALLBACK_COMMERCE: MetierContent = {
+  approcheTitre: "Un savoir-faire à votre service",
+  approcheCorps:
+    "On prend le temps de bien faire, avec le sourire. Sur rendez-vous pour être bien reçu — posez votre question ou réservez, l'accueil s'en occupe.",
+  consultTitre: null,
+  consultCartes: [],
+  faq: FAQ_COMMERCE,
+};
+
 const normLoose = (s: string) =>
   (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
-export function resolveMetierContent(activite: string): MetierContent {
+export function resolveMetierContent(activite: string, profil: "A" | "B" | "C" = "C"): MetierContent {
   const a = normLoose(activite);
   const hit = CATALOG.find((c) => c.match.test(a));
-  return hit ? hit.content : FALLBACK;
+  if (hit) return hit.content;
+  return profil === "A" ? FALLBACK_COMMERCE : FALLBACK_CARE;
 }
