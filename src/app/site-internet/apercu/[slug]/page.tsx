@@ -9,6 +9,7 @@ import { IntroOverlay } from "./intro-overlay";
 import { FeedbackNudge } from "./feedback-nudge";
 import { FlowReveal } from "./flow-reveal";
 import { AccueilIntelligent } from "./accueil-intelligent";
+import { MaquetteSante } from "./maquette-sante";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -143,6 +144,31 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
   const stars = rating != null ? "★".repeat(Math.round(rating)) + "☆".repeat(Math.max(0, 5 - Math.round(rating))) : "";
   const rvStars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
+
+  // Profil C (santé encadrée) → maquette dédiée sauge/crème, sobre, sans avis ni
+  // WhatsApp, calée sur la référence. Les profils A/B gardent la maquette commerce.
+  if (profil === "C") {
+    return (
+      <MaquetteSante
+        slug={slug}
+        nom={nom}
+        metierLabel={capWords(metierSing)}
+        villeAff={villeAff}
+        adresse={adresse}
+        horaires={horaires}
+        heroPhoto={heroPhoto}
+        accent={accent}
+        showUrgence={showUrgence}
+        termePublic={termePublic}
+        confirmation={confirmation}
+        busyWord={busyWord}
+        faq={faq}
+        telHref={telHref}
+        mapsHref={mapsHref}
+        phoneDisplay={phoneDisplay}
+      />
+    );
+  }
 
   return (
     <main className="mq">
@@ -419,7 +445,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         </section>
       )}
 
-      {searchVolume && profil !== "C" && (
+      {searchVolume && (
         <section className="demand2">
           <div className="num">≈ {searchVolume}</div>
           <div className="cap">personnes cherchent <b>« {metierSing}{villeAff ? ` à ${villeAff}` : ""} »</b><br />sur Google, chaque mois.</div>
