@@ -13,7 +13,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { slugify } from "@/lib/popey-marketplace";
 import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
-import { isDirectoryUrl } from "@/lib/site-internet/directories";
+import { isDirectoryUrl, bookingPlatformName } from "@/lib/site-internet/directories";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 
 // Normalisation souple pour matcher métier/ville (minuscules, sans accents, espaces).
 const normLoose = (s: string) =>
@@ -164,10 +165,12 @@ type SiteAnalysis = {
   year: number | null;
   responseMs: number | null;
   hasCallButton: boolean;
+  // Profil C : un accueil qui fonctionne déjà (secrétariat / standard) → EXCLU.
+  mentionsSecretariat: boolean;
 };
 
 async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
-  const result: SiteAnalysis = { reachable: false, https: false, viewport: false, year: null, responseMs: null, hasCallButton: false };
+  const result: SiteAnalysis = { reachable: false, https: false, viewport: false, year: null, responseMs: null, hasCallButton: false, mentionsSecretariat: false };
   let url = rawUrl.trim();
   if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
   result.https = url.toLowerCase().startsWith("https://");
@@ -187,6 +190,8 @@ async function analyzeSite(rawUrl: string): Promise<SiteAnalysis> {
     const html = (await res.text()).slice(0, 200000);
     result.viewport = /<meta[^>]+name=["']viewport["']/i.test(html);
     result.hasCallButton = /href=["']tel:/i.test(html);
+    // Accueil déjà en place : mention explicite d'un secrétariat / standard.
+    result.mentionsSecretariat = /secr[ée]tariat|secr[ée]taire|standard t[ée]l[ée]phonique|accueil t[ée]l[ée]phonique|permanence t[ée]l[ée]phonique/i.test(html);
     const years = Array.from(html.matchAll(/(?:©|&copy;|copyright)[^0-9]{0,20}(20\d{2})/gi)).map((m) => parseInt(m[1], 10));
     if (years.length) result.year = Math.max(...years);
   } catch {
@@ -456,6 +461,21 @@ export async function POST(request: Request) {
   // garde le module choisi par l'analyse du site.
   if (forceVariant === "A") typeDiag = "SANS_SITE";
 
+  // ── Critère d'exclusion PROFIL C (santé encadrée) ───────────────────────────
+  // Cible idéale = praticien SOLO sans accueil. S'il en a déjà un qui fonctionne
+  // (réservation en ligne active type Doctolib, ou secrétariat/standard), on ne
+  // résout pas son problème → EXCLU (prolongement du garde-fou d'honnêteté).
+  // Note : Doctolib est aussi un « annuaire » (website vidé plus haut) → on lit
+  // rawWebsite pour le détecter. Prend le pas sur un éventuel forçage A.
+  const profil = resolveMetier(activite).profil;
+  const bookingPlatform = bookingPlatformName(rawWebsite);
+  let cExclusion: string | null = null;
+  if (profil === "C") {
+    if (bookingPlatform) cExclusion = `réservation en ligne active (${bookingPlatform})`;
+    else if (site?.mentionsSecretariat) cExclusion = "secrétariat / standard mentionné";
+    if (cExclusion) typeDiag = "EXCLU";
+  }
+
   const variant: "A" | "B" = typeDiag === "SANS_SITE" ? "A" : "B";
   const skipped = typeDiag === "EXCLU";
 
@@ -521,6 +541,8 @@ export async function POST(request: Request) {
       source_status: sourceStatus,
       place_not_found: placeNotFound,
       directory_url: websiteIsDirectory ? rawWebsite : null,
+      profil,
+      c_exclusion: cExclusion,
       site,
       photos,
       reviews_top: reviewsTop,
@@ -536,7 +558,9 @@ export async function POST(request: Request) {
 
   // Avertissement remonté à l'admin.
   const warning =
-    sourceStatus === "EMPTY"
+    cExclusion
+      ? `Profil C (santé encadrée) : ${cExclusion} → accueil déjà en place, EXCLU. On ne résout pas un problème qu'il n'a pas. ${bookingPlatform ? "Cible plutôt un praticien solo sans réservation en ligne (psychologue idéalement)." : ""}`.trim()
+      : sourceStatus === "EMPTY"
       ? `Apify n'a rien renvoyé : sans données Google. Vérifie APIFY_TOKEN, et ajuste à l'écran de validation.`
       : websiteIsDirectory
         ? `Le « site » détecté est un annuaire/une fiche (${rawWebsite.replace(/^https?:\/\//i, "").split(/[/?#]/)[0]}), pas un vrai site à lui → traité comme SANS_SITE. Vérifie qu'il n'a pas de site propre avant d'imprimer.`

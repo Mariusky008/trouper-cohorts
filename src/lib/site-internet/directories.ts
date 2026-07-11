@@ -86,3 +86,24 @@ export function directoryPlatformName(raw: string | null | undefined): string {
   const hit = PLATFORM_NAMES.find(([k]) => s.includes(k));
   return hit ? hit[1] : "";
 }
+
+// Plateformes de RÉSERVATION EN LIGNE fonctionnelles (≠ simple annuaire) : leur
+// présence signifie que le praticien a déjà un accueil/agenda qui tourne. Pour
+// un profil C (santé encadrée), c'est un critère d'EXCLUSION : on ne résout pas
+// un problème qu'il n'a pas. Sous-ensemble volontairement restreint aux vraies
+// prises de RDV santé/bien-être (pas Facebook/PagesJaunes, qui ne réservent rien).
+const BOOKING_PLATFORMS: Array<[string, string]> = [
+  ["doctolib", "Doctolib"],
+  ["maiia", "Maiia"],
+  ["keldoc", "Keldoc"],
+  ["resalib", "Resalib"],
+  ["planity", "Planity"],
+  ["treatwell", "Treatwell"],
+];
+
+export function bookingPlatformName(raw: string | null | undefined): string {
+  const s = (raw || "").trim().toLowerCase();
+  if (!s) return "";
+  const hit = BOOKING_PLATFORMS.find(([k]) => s.includes(k));
+  return hit ? hit[1] : "";
+}
