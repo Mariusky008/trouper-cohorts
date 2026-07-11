@@ -75,12 +75,29 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient
 
+  // Garde-fou de formulation : les métiers « réservation » (soin) gardent le
+  // vocabulaire cabinet/séance/suivi ; les autres (rappel/devis/acompte —
+  // artisans & co.) passent à un vocabulaire neutre, sans « cabinet »,
+  // « pour qui / enfant » ni « suivi(e) », qui sonneraient faux.
+  const lieuAccueil = isReserve ? `du cabinet de ${praticien}` : `de ${praticien}`;
+  const porteQ = isReserve
+    ? "Je peux prendre votre rendez-vous ou répondre à une question pratique. Que puis-je faire pour vous ?"
+    : "Je peux transmettre votre demande ou répondre à une question pratique. Que puis-je faire pour vous ?";
+  const qui1Q = isReserve
+    ? "Avec plaisir. C’est pour qui ?"
+    : "Avec plaisir. Vous êtes un particulier ou un professionnel ?";
+  const qui1Chips = isReserve ? ["Moi", "Mon enfant", "Un proche"] : ["Un particulier", "Un professionnel"];
+  const premiereQ = isReserve
+    ? "Première fois au cabinet, ou vous êtes déjà suivi(e) ?"
+    : "C’est une première demande, ou vous êtes déjà client(e) ?";
+  const premiereChips = isReserve ? ["Première fois", "Déjà suivi(e)"] : ["Première demande", "Déjà client(e)"];
+
   const push = (msgs: Msg[]) => setThread((t) => [...t, ...msgs]);
 
   const start = () => {
     setThread([
-      { who: "ai", text: `Bonjour, je suis l'accueil automatique du cabinet de ${praticien}.` },
-      { who: "ai", text: `Je peux prendre votre rendez-vous ou répondre à une question pratique. Que puis-je faire pour vous ?` },
+      { who: "ai", text: `Bonjour, je suis l'accueil automatique ${lieuAccueil}.` },
+      { who: "ai", text: porteQ },
     ]);
     setStep("home");
     setPourQui(""); setPremiere(""); setPrenom(""); setTel(""); setConsent(false); setSlot("");
@@ -107,15 +124,17 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   // ── Transitions (toutes déclenchées par des chips) ─────────────────────────
   const choosePorte = (p: string) => {
     push([{ who: "me", text: p }]);
-    if (p.startsWith("Prendre")) {
-      push([{ who: "ai", text: "Avec plaisir. C'est pour qui ?" }]);
-      setStep("qualif1");
-    } else if (p.startsWith("Poser")) {
+    if (p.startsWith("Poser")) {
       push([{ who: "ai", text: "Bien sûr. Sur quoi puis-je vous renseigner ?" }]);
       setStep("faq");
-    } else {
-      push([{ who: "ai", text: "C'est tout à fait normal d'hésiter. Je peux simplement vous proposer un premier rendez-vous, sans engagement — ou répondre à une question. Que préférez-vous ?" }]);
+    } else if (p.startsWith("Je ne sais")) {
+      push([{ who: "ai", text: isReserve
+        ? "C'est tout à fait normal d'hésiter. Je peux simplement vous proposer un premier rendez-vous, sans engagement — ou répondre à une question. Que préférez-vous ?"
+        : "C'est tout à fait normal d'hésiter. Je peux simplement transmettre votre demande, sans engagement — ou répondre à une question. Que préférez-vous ?" }]);
       setStep("home");
+    } else {
+      push([{ who: "ai", text: qui1Q }]);
+      setStep("qualif1");
     }
   };
 
@@ -123,7 +142,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     push([{ who: "me", text: v }]);
     setPourQui(v);
     if (/enfant/i.test(v)) push([{ who: "ai", text: "Très bien. Le rendez-vous se prendra avec vous, en tant que représentant légal." }]);
-    push([{ who: "ai", text: "Première fois au cabinet, ou vous êtes déjà suivi(e) ?" }]);
+    push([{ who: "ai", text: premiereQ }]);
     setStep("qualif2");
   };
 
@@ -136,7 +155,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
 
   const chooseDispo = (v: string) => {
     push([{ who: "me", text: v }]);
-    push([{ who: "ai", text: "Il me faut juste un prénom et un numéro pour confirmer le rendez-vous — rien de plus." }]);
+    push([{ who: "ai", text: isReserve ? "Il me faut juste un prénom et un numéro pour confirmer le rendez-vous — rien de plus." : "Il me faut juste un prénom et un numéro pour transmettre votre demande — rien de plus." }]);
     setStep("coord");
   };
 
@@ -199,7 +218,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   };
 
   const resetToRdv = () => {
-    push([{ who: "me", text: "Prendre rendez-vous" }, { who: "ai", text: "Avec plaisir. C'est pour qui ?" }]);
+    push([{ who: "me", text: isReserve ? "Prendre rendez-vous" : "Faire une demande" }, { who: "ai", text: qui1Q }]);
     setStep("qualif1");
   };
 
@@ -217,12 +236,14 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         body: JSON.stringify({ slug, message: q }),
       });
       const j = await r.json().catch(() => ({}));
-      const reply = String(j?.reply || "").trim() || "Je transmets votre question au cabinet. Souhaitez-vous que je vous propose un rendez-vous ?";
+      const reply = String(j?.reply || "").trim() || (isReserve
+        ? `Je transmets votre question à ${praticien}. Souhaitez-vous que je vous propose un rendez-vous ?`
+        : `Je transmets votre question à ${praticien}. Souhaitez-vous laisser une demande ?`);
       const isUrg = j?.kind === "urgence";
       if (isUrg) setForceUrgence(true);
       push([{ who: "ai", text: reply, urg: isUrg }]);
     } catch {
-      push([{ who: "ai", text: "Je n'ai pas pu récupérer la réponse. Souhaitez-vous que je vous propose un rendez-vous ?" }]);
+      push([{ who: "ai", text: isReserve ? "Je n'ai pas pu récupérer la réponse. Souhaitez-vous que je vous propose un rendez-vous ?" : "Je n'ai pas pu récupérer la réponse. Souhaitez-vous laisser une demande ?" }]);
     } finally {
       setTyping(false);
     }
@@ -311,13 +332,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
 
       {open && (
         <div className="acc-ov" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          <div className="acc-sheet" role="dialog" aria-label="Accueil du cabinet">
+          <div className="acc-sheet" role="dialog" aria-label={isReserve ? "Accueil du cabinet" : "Accueil"}>
             <div className="acc-head">
               <span className="avatar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.4-4.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
               </span>
               <div>
-                <div className="h-nm">Accueil du cabinet</div>
+                <div className="h-nm">{isReserve ? "Accueil du cabinet" : "Accueil"}</div>
                 <div className="h-sub">Automatique · réponse immédiate</div>
               </div>
               <button type="button" className="x" onClick={() => setOpen(false)} aria-label="Fermer">×</button>
@@ -346,13 +367,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
             <div className="acc-actions">
               {step === "home" && (
                 <>
-                  {chip("Prendre un premier rendez-vous", () => choosePorte("Prendre un premier rendez-vous"))}
+                  {chip(isReserve ? "Prendre un premier rendez-vous" : "Faire une demande", () => choosePorte(isReserve ? "Prendre un premier rendez-vous" : "Faire une demande"))}
                   {chip("Poser une question", () => choosePorte("Poser une question"))}
                   {chip("Je ne sais pas trop…", () => choosePorte("Je ne sais pas trop…"))}
                 </>
               )}
-              {step === "qualif1" && (["Moi", "Mon enfant", "Un proche"].map((v) => chip(v, () => chooseQui(v), v)))}
-              {step === "qualif2" && (["Première fois", "Déjà suivi(e)"].map((v) => chip(v, () => choosePremiere(v), v)))}
+              {step === "qualif1" && (qui1Chips.map((v) => chip(v, () => chooseQui(v), v)))}
+              {step === "qualif2" && (premiereChips.map((v) => chip(v, () => choosePremiere(v), v)))}
               {step === "qualif3" && (["En semaine", "Le soir", "Le week-end", "Peu importe"].map((v) => chip(v, () => chooseDispo(v), v)))}
               {step === "coord" && (
                 <div style={{ width: "100%" }}>
@@ -360,7 +381,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
                   <input className="acc-field" placeholder="Votre téléphone" inputMode="tel" value={tel} onChange={(e) => setTel(e.target.value)} />
                   <label className="acc-consent">
                     <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                    <span>J’accepte d’être recontacté(e) au sujet de ce rendez-vous. Aucune donnée de santé n’est demandée.</span>
+                    <span>J’accepte d’être recontacté(e) au sujet de {isReserve ? "ce rendez-vous" : "cette demande"}.{sing === "patient" ? " Aucune donnée de santé n’est demandée." : ""}</span>
                   </label>
                   <button type="button" className="acc-cta" disabled={!prenom.trim() || tel.replace(/\D/g, "").length < 8 || !consent} onClick={submitCoord}>{isReserve ? "Voir les créneaux" : "Envoyer ma demande"}</button>
                 </div>
@@ -369,7 +390,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               {step === "confirm" && (
                 <div style={{ width: "100%" }}>
                   {notifSent === "done" ? (
-                    <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que le praticien reçoit, en séance, sans décrocher.</div>
+                    <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que {praticien} reçoit, {busyWord}, sans décrocher.</div>
                   ) : (
                     <>
                       <div className="acc-buzz-lead">📲 Recevez la notif comme si vous étiez le praticien :</div>
@@ -386,7 +407,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               {step === "faq" && (
                 <>
                   {faq.map((it) => chip(it.q, () => askFaq(it), it.q))}
-                  {chip("Prendre rendez-vous", resetToRdv)}
+                  {chip(isReserve ? "Prendre rendez-vous" : "Faire une demande", resetToRdv)}
                   <div className="acc-ask">
                     <input
                       className="acc-ask-in"
@@ -408,7 +429,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               </div>
             )}
             <div className="acc-legal">
-              Accueil automatique · vos coordonnées servent uniquement à la prise de rendez-vous. {sing === "patient" ? "Aucune question médicale n'est traitée ici." : ""}
+              Accueil automatique · vos coordonnées servent uniquement à {isReserve ? "la prise de rendez-vous" : "traiter votre demande"}. {sing === "patient" ? "Aucune question médicale n'est traitée ici." : ""}
             </div>
           </div>
         </div>
