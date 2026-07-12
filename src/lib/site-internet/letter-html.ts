@@ -49,13 +49,23 @@ export function readLetterStyles(): string {
 // Prénom… » → on rend « Prénom NOM ». Les raisons sociales (Cabinet, Centre…)
 // ne sont jamais inversées. Toujours corrigeable à la main (champ éditable).
 const BIZ_WORDS = /(cabinet|centre|espace|maison|institut|studio|sarl|eurl|sasu|sas|eirl|\bei\b|scp|scm|clinique|p[oô]le|groupe|association|asso|sophro|kin[eé]|ost[eé]o|psycho|naturo|coach|therap)/i;
+// Nettoie une ponctuation orpheline en début/fin (« Cabinet d'Ostéopathie - » →
+// « Cabinet d'Ostéopathie ») : sur une lettre personnalisée, un tiret esseulé
+// hurle « template automatique ».
+const trimName = (s: string) => s.replace(/^[\s\-–—,;:·|/]+|[\s\-–—,;:·|/]+$/gu, "").trim();
 export function usageName(full: string): string {
   const clean = str(full).replace(/\s+/g, " ").trim();
   const tokens = clean.split(" ").filter(Boolean);
-  if (tokens.length <= 2) return clean;
-  if (BIZ_WORDS.test(clean)) return tokens.slice(0, 3).join(" ");
-  if (tokens.length >= 4) return `${tokens[1]} ${tokens[0]}`; // NOM P1 P2 P3 → P1 NOM
-  return tokens.slice(0, 2).join(" "); // 3 mots : ordre incertain → on garde tel quel
+  let out: string;
+  if (tokens.length <= 2) out = clean;
+  else if (BIZ_WORDS.test(clean)) {
+    // Raison sociale : on garde jusqu'à 3 mots, mais on ne coupe pas juste avant
+    // une ponctuation (sinon tiret orphelin) → on l'inclut ou on s'arrête avant.
+    out = trimName(tokens.slice(0, 3).join(" "));
+    if (!out) out = trimName(tokens.slice(0, 2).join(" "));
+  } else if (tokens.length >= 4) out = `${tokens[1]} ${tokens[0]}`; // NOM P1 P2 P3 → P1 NOM
+  else out = tokens.slice(0, 2).join(" "); // 3 mots : ordre incertain → tel quel
+  return trimName(out) || clean;
 }
 
 export type EditableField = { key: string; label: string; value: string; multiline?: boolean };
@@ -349,6 +359,8 @@ export async function composeLetterHtml(input: {
   // avis, pas de WhatsApp, ton sobre.
   const mp = resolveMetier(activite);
   const def = mp.def;
+  // Santé (B + C) sans site → recto sobre « Très peu d'infos » (anti-volume).
+  const useCRecto = (mp.profil === "B" || mp.profil === "C") && type === "SANS_SITE";
   const termePublic = mp.entry?.terme || def.terme_public; // clients / patients (override métier possible)
   const termeSing = termePublic.replace(/s$/u, ""); // client / patient
   // Libellé métier + article corrigeables par prospect (genre : « une
@@ -375,8 +387,16 @@ export async function composeLetterHtml(input: {
   // On coupe au 1er séparateur pour ne garder que le nom.
   const cleanCompName = (raw: string) => {
     const s = str(raw).trim();
-    const cut = s.split(/\s[-–—]\s| \(|,\s/)[0].trim();
-    return cut.length >= 2 ? cut : s;
+    let cut = s.split(/\s[-–—]\s| \(|,\s/)[0].trim();
+    if (cut.length < 2) cut = s;
+    cut = trimName(cut);
+    // Nom trop long → tronque proprement au mot, pour ne pas déborder sur 2 lignes.
+    if (cut.length > 30) {
+      const words = cut.slice(0, 30).split(" ");
+      words.pop();
+      cut = trimName(words.join(" ")) + "…";
+    }
+    return cut;
   };
   const concRow = (c: { name: string; note: string; avis: number | null }) => {
     const noteNum = str(c.note).replace(/★/g, "").trim();
@@ -398,15 +418,28 @@ export async function composeLetterHtml(input: {
   const ai_slot = ov("ai_slot", def.accueilSlot);
   // Pastille de confirmation selon le métier (réserve / rappel / devis / acompte).
   const ai_booked = confirmationBooked(mp.entry?.confirmation ?? "reserve", ai_slot);
-  const aiPreview =
-    `<div class="ai-bubble">${ai_bubble}</div>` +
-    `<div class="ai-booked">${check} ${esc(ai_booked)}</div>` +
-    `<div class="ai-line">${ai_line}</div>`;
+  // ── Carte DEMAIN v2 : un MINI-SITE (hero + boutons + galerie), avec l'accueil
+  //    (bulle + « Réservé ») qui vit dedans. Rend DEMAIN nettement plus fort que
+  //    AUJOURD'HUI (rien → une vraie vitrine). Étoiles schématiques SEULEMENT si
+  //    le profil affiche les avis (jamais en C, déontologie).
+  const busyWordL = mp.profil === "A" ? "occupé" : "en séance"; // commerce vs soin
+  const dmStars = def.avis_affichage && note ? `<div class="dm-stars">★★★★★ ${note}</div>` : "";
+  const demain_card =
+    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
+    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
+    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
+    dmStars +
+    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
+    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
+    `</div></div>` +
+    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
+    `<div class="dm-tail">Une vraie vitrine — <b>et un accueil qui répond et réserve.</b><br><i>Même ${busyWordL}. Même à 23 h.</i></div>`;
+  void ai_line;
   const faceoff =
     `<div class="faceoff2">` +
     `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-eye">${eyeOff}</div><div class="fo-cn">${esc(destName)}</div><div class="fo-invis">Invisible sur cette recherche</div><div class="fo-invsub">Absent des premiers résultats</div></div>` +
     `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
-    `<div class="fo-card fo-tomorrow ai-card"><div class="fo-lbl">Demain</div>${aiPreview}</div>` +
+    `<div class="fo-card fo-tomorrow ai-card"><div class="fo-lbl">Demain</div>${demain_card}</div>` +
     `</div>`;
   const ss_transition = ov(
     "ss_transition",
@@ -461,8 +494,8 @@ export async function composeLetterHtml(input: {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
     editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
-    if (mp.profil === "C") {
-      // Recto C v3 : champs propres au hook factuel + pivot « secrétaire ».
+    if (useCRecto) {
+      // Recto santé (B/C) : champs propres au hook factuel + pivot « secrétaire ».
       editableFields.push({ key: "cs_hook_sub", label: "Hook — sous-titre", value: cs_hook_sub, multiline: true });
       editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
       editableFields.push({ key: "cs_pivot", label: "La bascule (secrétaire / 21 h)", value: cs_pivot, multiline: true });
@@ -493,7 +526,7 @@ export async function composeLetterHtml(input: {
     cta_full,
     // Recto PROFIL C v3 (santé encadrée)
     cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp,
-    ai_bubble, ai_booked,
+    ai_bubble, ai_booked, demain_card,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,
@@ -516,9 +549,10 @@ export async function composeLetterHtml(input: {
     photo_marius,
   };
 
-  // Profil C (santé encadrée) sans site → gabarit dédié v2 (anti-volume,
-  // constats centrés sur le patient, bascule « moins d'interruptions »).
-  const rectoFile = mp.profil === "C" && type === "SANS_SITE" ? "recto/SANS_SITE_C.html" : `recto/${type}.html`;
+  // Santé (profils B et C) sans site → recto sobre « Très peu d'infos » (pas de
+  // volume : un praticien de santé est souvent déjà plein). Seul le profil A
+  // (commerce) garde le recto volume + avis.
+  const rectoFile = useCRecto ? "recto/SANS_SITE_C.html" : `recto/${type}.html`;
   const recto = injectVars(readTpl(rectoFile), vars);
   const verso = injectVars(readTpl("verso.html"), vars);
   return { recto, verso, type, editableFields };

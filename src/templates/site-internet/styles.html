@@ -120,6 +120,32 @@
   .ai-bubble{background:#F0EEE7;border-radius:12px;border-bottom-left-radius:4px;padding:8px 11px;font-size:11px;color:var(--ink);align-self:flex-start;max-width:96%;line-height:1.36;}
   .ai-booked{align-self:flex-end;margin-top:9px;background:var(--ink);color:var(--cream);border-radius:20px;padding:5px 12px;font-size:10.5px;font-weight:600;display:inline-flex;gap:5px;align-items:center;white-space:nowrap;}
   .ai-line{font-size:11px;color:var(--ink);margin-top:auto;padding-top:12px;line-height:1.4;font-weight:500;text-align:center;border-top:1px solid var(--hair);}
+  /* ---- Carte DEMAIN v2 : le mini-site (avec l'accueil dedans) ---- */
+  .dm-wrap{position:relative;padding-right:40px;margin-top:2px;}
+  .dm-mini{width:110px;margin:0 auto;border:1.6px solid var(--ink);border-radius:13px;padding:4px;background:#fff;position:relative;}
+  .dm-mini::before{content:"";position:absolute;top:6px;left:50%;transform:translateX(-50%);width:24px;height:2.4px;border-radius:2px;background:#D8D5CD;z-index:3;}
+  .dm-screen{border-radius:9px;overflow:hidden;background:#F4F2EC;}
+  .dm-hero{height:48px;background:linear-gradient(160deg,#4A4F47,#22261F);padding:6px;display:flex;flex-direction:column;justify-content:flex-end;}
+  .dm-role{font-size:4.5px;color:#C9CFC5;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1px;}
+  .dm-name{font-family:'Fraunces',serif;font-size:8px;color:#FBFAF7;font-weight:600;line-height:1.1;}
+  .dm-btns{display:flex;gap:3px;padding:4px;}
+  .dm-btns span{flex:1;height:8px;border-radius:5px;}
+  .dm-btns .b1{background:#E4E1D9;border:.5px solid #D3D0C7;}
+  .dm-btns .b2{background:var(--ink);}
+  .dm-stars{font-size:5px;color:#9A8A5C;padding:0 4px 3px;letter-spacing:.5px;}
+  .dm-row{padding:0 4px 4px;}
+  .dm-row .dm-l{height:2.4px;background:#E4E1D9;border-radius:2px;margin-bottom:2.4px;}
+  .dm-row .dm-l.s{width:62%;}
+  .dm-gal{display:flex;gap:2.5px;padding:0 4px 5px;}
+  .dm-gal i{flex:1;height:13px;border-radius:3px;background:#DFDCD3;}
+  .dm-gal i:nth-child(2){background:#D5D2C9;}
+  .dm-gal i:nth-child(3){background:#E3E0D7;}
+  .dm-bubble{position:absolute;right:-40px;bottom:22px;background:var(--ink);color:var(--cream);border-radius:10px;padding:6px 8px;font-size:8px;line-height:1.3;width:98px;}
+  .dm-bubble::after{content:"";position:absolute;left:-4px;bottom:9px;width:8px;height:8px;background:var(--ink);transform:rotate(45deg);}
+  .dm-ok{display:flex;align-items:center;gap:3px;font-weight:600;font-size:8px;margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.2);}
+  .dm-tail{font-size:10.5px;color:var(--ink);margin-top:14px;line-height:1.4;font-weight:500;text-align:center;padding-top:11px;border-top:1px solid var(--hair);}
+  .dm-tail b{font-weight:600;}
+  .dm-tail i{font-style:italic;color:var(--ink-soft);font-size:10px;display:inline-block;margin-top:3px;}
   .fo-arrow{flex:none;align-self:center;display:flex;}
   .ss-transition{font-size:12.5px;font-style:italic;color:var(--ink-soft);text-align:center;line-height:1.45;max-width:480px;margin:12px auto 0;}
   .ss-action{max-width:492px;margin:0 auto;text-align:center;}

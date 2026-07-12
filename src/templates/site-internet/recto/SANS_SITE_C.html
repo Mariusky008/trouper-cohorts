@@ -16,7 +16,9 @@
     .csv3 .res.me{border:1px solid #1B1B15;border-radius:9px;padding:13px 15px;margin-top:14px;background:#fff;}
     .csv3 .res.me .badge{font-size:10px;letter-spacing:.12em;text-transform:uppercase;border:1px solid #1B1B15;border-radius:20px;padding:6px 12px;font-weight:600;white-space:nowrap;}
     .csv3 .zone{display:flex;align-items:stretch;gap:14px;justify-content:center;margin-top:16px;}
-    .csv3 .card{width:215px;border-radius:12px;padding:13px;display:flex;flex-direction:column;}
+    .csv3 .card{width:224px;border-radius:12px;padding:13px;display:flex;flex-direction:column;justify-content:center;}
+    /* Concurrents : liste VERTICALE (SERP) — un par ligne, jamais 2 colonnes. */
+    .csv3 .proof .res{width:100%;}
     .csv3 .arrow{display:flex;align-items:center;color:#A6A69C;flex:none;}
     .csv3 .today{background:var(--today);border:1px solid #DEDBD2;text-align:center;align-items:center;justify-content:center;}
     .csv3 .today .tag{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#A6A69C;font-weight:600;margin-bottom:10px;}
@@ -62,9 +64,7 @@
     <div class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
     <div class="card tomorrow">
       <div class="tag">Demain</div>
-      <div class="ai-b">{{ai_bubble}}</div>
-      <div class="ai-ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FBFAF7" stroke-width="2.4"><polyline points="5,12.5 10,17 19,7"/></svg>{{ai_booked}}</div>
-      <div class="ai-l">Un accueil qui répond et réserve,<br>même quand vous êtes en séance.</div>
+      {{demain_card}}
     </div>
   </div>
 
