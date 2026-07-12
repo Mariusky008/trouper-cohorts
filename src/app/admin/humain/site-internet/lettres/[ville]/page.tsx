@@ -5,6 +5,7 @@
 // Réutilise composeLetterHtml → rendu identique à la lettre unique.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composeLetterHtml, readLetterStyles } from "@/lib/site-internet/letter-html";
+import { FitLetter } from "../../lettre/[slug]/fit-letter";
 import { PrintButton } from "../../lettre/[slug]/print-button";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +129,7 @@ export default async function LettresVillePage({ params }: { params: Promise<{ v
       </div>
 
       <div id="letter-root" className="si-root" style={{ paddingTop: 8 }} dangerouslySetInnerHTML={{ __html: styles + bodies.join("") }} />
+      <FitLetter />
     </>
   );
 }

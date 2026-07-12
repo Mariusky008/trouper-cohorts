@@ -4,6 +4,7 @@
 // (partagée avec l'impression en lot). Imprimer via Cmd+P → PDF (A4).
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composeLetterHtml, readLetterStyles } from "@/lib/site-internet/letter-html";
+import { FitLetter } from "./fit-letter";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
 import { LetterValidation } from "./letter-validation";
@@ -107,6 +108,7 @@ export default async function SiteInternetLettrePage({ params }: { params: Promi
       </div>
 
       <div id="letter-root" className="si-root" style={{ paddingTop: 8 }} dangerouslySetInnerHTML={{ __html: styles + recto + verso }} />
+      <FitLetter />
     </>
   );
 }
