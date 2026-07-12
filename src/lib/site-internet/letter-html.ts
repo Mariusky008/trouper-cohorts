@@ -480,7 +480,9 @@ export async function composeLetterHtml(input: {
   // puis UNE seule bascule : « une secrétaire ne répond pas à 21 h — votre site,
   // si ». Pas de volume, pas d'avis. Le chiffre de recherches disparaît du recto.
   const cs_hook_sub = ov("cs_hook_sub", `C'est ce que vos futurs ${termePublic} trouvent sur vous en ligne.`);
-  const cs_who = ov("cs_who", `Diagnostic préparé pour <b>${esc(destName)}</b> — ${esc(metierLabel)} à ${esc(villeAff)}.`);
+  // Juste le nom : le métier + la ville sont déjà dans l'en-tête, la recherche
+  // et sous chaque concurrent → « — métier à ville » ici serait redondant.
+  const cs_who = ov("cs_who", `Diagnostic préparé pour <b>${esc(destName)}</b>.`);
   const csv3ConcRow = (c: { name: string }) =>
     `<div class="res"><div><div class="n">${esc(cleanCompName(c.name))}</div><div class="m">${esc(metierLabel)} · ${esc(villeAff)}</div></div><div class="tagweb">Site web</div></div>`;
   const csv3_concurrents = conc.slice(0, 2).map(csv3ConcRow).join("");
