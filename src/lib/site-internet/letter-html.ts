@@ -495,6 +495,14 @@ export async function composeLetterHtml(input: {
     `<b>J'ai préparé la première version de votre site.</b> Il présente votre approche, répond aux questions pratiques à toute heure, et prend les rendez-vous — sans jamais vous déranger.`
   );
   const cs_stamp = `Diagnostic préparé pour ${esc(destName)} · ${esc(villeAff)}`;
+  // Liste des questions répétitives (moteur M3 « Cabinet ») — la meilleure
+  // accroche pour ce moteur : concrète, vécue. Adaptée selon que le métier est
+  // conventionné (carte Vitale / ordonnance) ou non (tarifs / première fois).
+  const reimbursed = /kin[eé]|orthopt|orthophon|podolog|infirmi|sage[- ]?femme|dentiste|p[ée]dicure/i.test(activite);
+  const csQlist = reimbursed
+    ? ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Prenez-vous la carte Vitale ? »", "« Comment modifier mon rendez-vous ? »", "« Faut-il apporter une ordonnance ? »", "« Avez-vous de la place cette semaine ? »"]
+    : ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Quels sont vos tarifs ? »", "« Comment modifier mon rendez-vous ? »", "« C'est comment, une première séance ? »", "« Avez-vous de la place cette semaine ? »"];
+  const cs_questions = csQlist.map((q) => `<span>${esc(q)}</span>`).join("");
 
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
@@ -531,7 +539,7 @@ export async function composeLetterHtml(input: {
     ss_footer,
     cta_full,
     // Recto PROFIL C v3 (santé encadrée)
-    cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp,
+    cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp, cs_questions,
     ai_bubble, ai_booked, demain_card,
     dest_name: destName,
     concurrents_phrase,

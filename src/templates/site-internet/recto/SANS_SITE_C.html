@@ -35,6 +35,13 @@
     .csv3 .prep{font-size:12.5px;color:#6E6E64;text-align:center;margin-top:13px;line-height:1.5;max-width:430px;margin-left:auto;margin-right:auto;}
     .csv3 .prep b{color:#14140F;font-weight:600;}
     .csv3 .stamp{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#A6A69C;text-align:center;margin-bottom:12px;}
+    /* Questions répétitives (moteur M3) */
+    .csv3 .qbox{margin-top:14px;background:#fff;border:1px solid #DEDBD2;border-radius:9px;padding:11px 14px;}
+    .csv3 .qbox .qt{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#6E6E64;font-weight:600;margin-bottom:8px;text-align:center;}
+    .csv3 .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;}
+    .csv3 .qgrid span{font-size:10.5px;color:#14140F;line-height:1.35;font-style:italic;}
+    .csv3 .qfoot{margin-top:9px;padding-top:8px;border-top:1px solid #DEDBD2;font-size:11px;color:#6E6E64;text-align:center;}
+    .csv3 .qfoot b{color:#14140F;font-weight:600;}
   </style>
 
   <div class="eyebrow">{{diag_eyebrow}}</div>
@@ -66,6 +73,12 @@
       <div class="tag">Demain</div>
       {{demain_card}}
     </div>
+  </div>
+
+  <div class="qbox">
+    <div class="qt">Aujourd’hui — ce qu’on vous demande au téléphone</div>
+    <div class="qgrid">{{cs_questions}}</div>
+    <div class="qfoot">Chaque appel interrompt une séance. <b>Votre site peut répondre à tout cela — avant que le téléphone sonne.</b></div>
   </div>
 
   <div class="pivot">{{cs_pivot}}</div>
