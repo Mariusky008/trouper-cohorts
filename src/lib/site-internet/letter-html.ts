@@ -54,7 +54,11 @@ const BIZ_WORDS = /(cabinet|centre|espace|maison|institut|studio|sarl|eurl|sasu|
 // hurle « template automatique ».
 const trimName = (s: string) => s.replace(/^[\s\-–—,;:·|/]+|[\s\-–—,;:·|/]+$/gu, "").trim();
 export function usageName(full: string): string {
-  const clean = str(full).replace(/\s+/g, " ").trim();
+  // Apify colle souvent la catégorie/ville au nom (« Cabinet d'Ostéopathie -
+  // ostéopathe à Bayonne », « Marie Dupont, Psychologue, Bayonne ») → on coupe
+  // au premier séparateur «  -  » / «  , » pour ne garder que le vrai nom.
+  const cut = str(full).split(/\s[-–—]\s|,\s/)[0];
+  const clean = cut.replace(/\s+/g, " ").trim();
   const tokens = clean.split(" ").filter(Boolean);
   let out: string;
   if (tokens.length <= 2) out = clean;
