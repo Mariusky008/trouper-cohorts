@@ -504,11 +504,69 @@ export async function composeLetterHtml(input: {
     : ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Quels sont vos tarifs ? »", "« Comment modifier mon rendez-vous ? »", "« C'est comment, une première séance ? »", "« Avez-vous de la place cette semaine ? »"];
   const cs_questions = csQlist.map((q) => `<span>${esc(q)}</span>`).join("");
 
+  // ── Recto M1 — ACQUISITION (commerce, déonto none) : la JAUGE d'avis ────────
+  // Pour un commerce avec des avis existants + des concurrents mieux notés : on
+  // montre la PROGRESSION (barre + objectif 50), on classe les concurrents par
+  // nombre d'avis RÉELS (badge « Site web », fait vérifiable), on donne un cap.
+  // JAMAIS de promesse chiffrée de résultat. Déclenché seulement si les données
+  // rendent la jauge crédible (le prospect a des avis, des concurrents chiffrés).
+  const useM1 =
+    mp.profil === "A" && type === "SANS_SITE" && Boolean(searchVolume) &&
+    reviews != null && reviews >= 1 && conc.some((c) => c.avis != null);
+  const m1Goal = 50;
+  const m1Reviews = reviews ?? 0;
+  const m1FillPct = Math.max(6, Math.min(100, Math.round((m1Reviews / m1Goal) * 100)));
+  const m1_gauge =
+    `<div class="m1-gtop"><div class="l">Avis Google</div><div class="n">${m1Reviews}${note ? ` <span>· ★ ${note}</span>` : ""}</div></div>` +
+    `<div class="m1-bar"><div class="m1-fill" style="width:${m1FillPct}%"></div></div>` +
+    `<div class="m1-legend"><span>${m1Reviews} avis</span><span>Objectif conseillé : <b>${m1Goal} avis</b></span></div>`;
+  const m1_concurrents = conc
+    .filter((c) => c.avis != null)
+    .slice()
+    .sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0))
+    .slice(0, 3)
+    .map((c) => `<div class="m1-crow"><span class="nm">${esc(cleanCompName(c.name))}</span><span class="right"><span class="av">${c.avis} <i>avis</i></span><span class="tagweb">Site web</span></span></div>`)
+    .join("");
+  // Ligne de synthèse CONDITIONNELLE : ne jamais dire « pas de site » à qui en a un.
+  const m1_synth = ov("m1_synth", website
+    ? `Toutes ont un site qui rassure et donne envie.<br><b>Le vôtre s'arrête à la vitrine.</b>`
+    : `Toutes ont un site.<br><b>Vous n'apparaissez nulle part.</b>`);
+  const m1_verdict = ov("m1_verdict", `Votre réputation existe.<br><b>Elle n'est pas encore assez visible.</b>`);
+  const m1_hook_sub = ov("m1_hook_sub", `personnes recherchent <b>« ${esc(requete)} »</b><br>chaque mois sur Google.`);
+  const m1_today = ov("m1_today", website ? "Un site vitrine.<br>Et c'est tout." : "Une fiche Google.<br>Et c'est tout.");
+  const m1_hook_big = `≈ ${searchVolume}`;
+  const m1_comp_intro = ov("m1_comp_intro", `Les plus visibles de votre secteur en ont bien plus :`);
+  const m1_prep = ov(
+    "m1_prep",
+    `<b>J'ai déjà préparé une première version de votre nouveau site.</b> Il met vos avis en valeur, répond aux questions à toute heure, et prend les rendez-vous.`
+  );
+  // Carte DEMAIN M1 : mini-site + les 3 FONCTIONS (dont « demande l'avis » si permis).
+  const m1SolicitFn = def.avis_sollicitation ? `<div><span class="ck">—</span><span><b>Demande l'avis</b> après chaque ${esc(termeSing)}</span></div>` : "";
+  const demain_m1 =
+    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
+    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
+    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
+    (note ? `<div class="dm-stars">★★★★★ ${note}</div>` : "") +
+    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
+    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
+    `</div></div>` +
+    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
+    `<div class="m1-fx"><div><span class="ck">—</span><span><b>Répond</b> aux questions, 24 h/24</span></div>` +
+    `<div><span class="ck">—</span><span><b>Réserve</b> les rendez-vous</span></div>` +
+    m1SolicitFn + `</div>`;
+
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
     editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
-    if (useCRecto) {
+    if (useM1) {
+      // Recto M1 (commerce, jauge d'avis) : champs propres à l'angle acquisition.
+      editableFields.push({ key: "m1_hook_sub", label: "Hook — sous-titre (recherches/mois)", value: m1_hook_sub, multiline: true });
+      editableFields.push({ key: "m1_comp_intro", label: "Intro concurrents (jauge)", value: m1_comp_intro, multiline: true });
+      editableFields.push({ key: "m1_synth", label: "Synthèse sous les concurrents", value: m1_synth, multiline: true });
+      editableFields.push({ key: "m1_verdict", label: "Verdict (réputation visible)", value: m1_verdict, multiline: true });
+      editableFields.push({ key: "m1_prep", label: "Proposition (j'ai préparé…)", value: m1_prep, multiline: true });
+    } else if (useCRecto) {
       // Recto santé (B/C) : champs propres au hook factuel + pivot « secrétaire ».
       editableFields.push({ key: "cs_hook_sub", label: "Hook — sous-titre", value: cs_hook_sub, multiline: true });
       editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
@@ -541,6 +599,9 @@ export async function composeLetterHtml(input: {
     // Recto PROFIL C v3 (santé encadrée)
     cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp, cs_questions,
     ai_bubble, ai_booked, demain_card,
+    // Recto M1 (acquisition commerce : jauge d'avis)
+    m1_hook_big, m1_hook_sub, m1_gauge, m1_comp_intro, m1_concurrents, m1_synth,
+    m1_verdict, m1_today, demain_m1, m1_prep,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,
@@ -566,7 +627,11 @@ export async function composeLetterHtml(input: {
   // Santé (profils B et C) sans site → recto sobre « Très peu d'infos » (pas de
   // volume : un praticien de santé est souvent déjà plein). Seul le profil A
   // (commerce) garde le recto volume + avis.
-  const rectoFile = useCRecto ? "recto/SANS_SITE_C.html" : `recto/${type}.html`;
+  const rectoFile = useM1
+    ? "recto/SANS_SITE_M1.html"
+    : useCRecto
+      ? "recto/SANS_SITE_C.html"
+      : `recto/${type}.html`;
   const recto = injectVars(readTpl(rectoFile), vars);
   const verso = injectVars(readTpl("verso.html"), vars);
   return { recto, verso, type, editableFields };
