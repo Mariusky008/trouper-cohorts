@@ -1,0 +1,63 @@
+<div class="sheet"><div class="frame m4r">
+  <style>
+    .m4r{--today:#F1EFE9;display:flex;flex-direction:column;}
+    .m4r .hook{text-align:center;margin-top:18px;}
+    .m4r .hook .big{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:36px;line-height:1.08;letter-spacing:-.018em;color:#14140F;}
+    .m4r .hook .sub{font-size:14px;color:#14140F;margin-top:12px;line-height:1.42;max-width:450px;margin-left:auto;margin-right:auto;}
+    .m4r .hook .who{font-size:11.5px;color:#6E6E64;margin-top:12px;}
+    .m4r .hook .who b{color:#14140F;font-weight:600;}
+    .m4r .proof{margin-top:18px;background:#fff;border:1px solid #DEDBD2;border-radius:9px;padding:14px 18px;}
+    .m4r .proof .pt{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#6E6E64;font-weight:600;margin-bottom:10px;text-align:center;}
+    .m4r .m4-pt{font-size:12px;color:#14140F;line-height:1.5;display:flex;gap:8px;align-items:flex-start;padding:4px 0;}
+    .m4r .m4-pt .ck{color:#6E6E64;flex:none;}
+    .m4r .zone{display:flex;align-items:stretch;gap:13px;justify-content:center;margin-top:16px;}
+    .m4r .card{width:214px;border-radius:12px;padding:13px;display:flex;flex-direction:column;}
+    .m4r .arrow{display:flex;align-items:center;color:#A6A69C;flex:none;}
+    .m4r .today{background:var(--today);border:1px solid #DEDBD2;text-align:center;align-items:center;justify-content:center;}
+    .m4r .today .tg{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#A6A69C;font-weight:600;margin-bottom:10px;}
+    .m4r .today .nm{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:500;margin-top:6px;}
+    .m4r .today .st{font-size:11.5px;color:#6E6E64;margin-top:7px;line-height:1.35;}
+    .m4r .tom{background:#fff;border:1px solid #1B1B15;}
+    .m4r .tom .tg{font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:#14140F;font-weight:600;text-align:center;margin-bottom:10px;}
+    .m4r .pivot{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:19px;line-height:1.38;text-align:center;margin-top:18px;}
+    .m4r .pivot b{font-weight:600;}
+    .m4r .pivot .u{border-bottom:1.5px solid #14140F;}
+    .m4r .prep{font-size:12.5px;color:#6E6E64;text-align:center;margin-top:13px;line-height:1.5;max-width:450px;margin-left:auto;margin-right:auto;}
+    .m4r .prep b{color:#14140F;font-weight:600;}
+    .m4r .stamp{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#A6A69C;text-align:center;margin-bottom:12px;}
+  </style>
+
+  <div class="eyebrow">{{diag_eyebrow}}</div>
+
+  <div class="hook">
+    <div class="big">{{m4_hook}}</div>
+    <div class="sub">{{m4_hook_sub}}</div>
+    <div class="who">{{cs_who}}</div>
+  </div>
+
+  <div class="proof">
+    <div class="pt">Ce qu'un client cherche à savoir — avant de vous appeler</div>
+    {{m4_points}}
+  </div>
+
+  <div class="zone">
+    <div class="card today">
+      <div class="tg">Aujourd'hui</div>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/><line x1="4" y1="20" x2="20" y2="4"/></svg>
+      <div class="nm">{{dest_name}}</div>
+      <div class="st">{{m4_today}}</div>
+    </div>
+    <div class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
+    <div class="card tom">
+      <div class="tg">Demain — votre site intelligent</div>
+      {{demain_m4}}
+    </div>
+  </div>
+
+  <div class="pivot">{{m4_pivot}}</div>
+  <div class="prep">{{m4_prep}}</div>
+
+  <div class="spacer"></div>
+  <div class="stamp">{{cs_stamp}}</div>
+  {{cta_full}}
+</div></div>

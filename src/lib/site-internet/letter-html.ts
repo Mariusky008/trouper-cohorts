@@ -60,8 +60,12 @@ export function usageName(full: string): string {
   const cut = str(full).split(/\s[-–—]\s|,\s/)[0];
   const clean = cut.replace(/\s+/g, " ").trim();
   const tokens = clean.split(" ").filter(Boolean);
+  // Titre honorifique (avocat, notaire, médecin) : « Maître Claire Etcheverry »
+  // → « Maître Etcheverry » (titre + nom), jamais « Maître Claire » (trop familier).
+  const HONORIFIC = /^(ma[iî]tre|me|dr|docteur|pr|professeur)\.?$/i;
   let out: string;
-  if (tokens.length <= 2) out = clean;
+  if (tokens.length >= 3 && HONORIFIC.test(tokens[0])) out = `${tokens[0]} ${tokens[tokens.length - 1]}`;
+  else if (tokens.length <= 2) out = clean;
   else if (BIZ_WORDS.test(clean)) {
     // Raison sociale : on garde jusqu'à 3 mots, mais on ne coupe pas juste avant
     // une ponctuation (sinon tiret orphelin) → on l'inclut ou on s'arrête avant.
@@ -363,8 +367,17 @@ export async function composeLetterHtml(input: {
   // avis, pas de WhatsApp, ton sobre.
   const mp = resolveMetier(activite);
   const def = mp.def;
-  // Santé (B + C) sans site → recto sobre « Très peu d'infos » (anti-volume).
-  const useCRecto = (mp.profil === "B" || mp.profil === "C") && type === "SANS_SITE";
+  // MOTEUR = l'angle de la lettre (hypothèse ; le configurateur corrige après le
+  // scan). Il pilote QUEL recto sans site on utilise. La déontologie (portée par
+  // le profil / def) reste ce qui limite ce qu'on a le droit d'écrire.
+  const moteur = mp.entry?.moteur ?? "M1_acquisition";
+  const isSansSite = type === "SANS_SITE";
+  // M3 « cabinet » (santé, B + C) → recto sobre « Très peu d'infos » + questions.
+  const useCRecto = isSansSite && moteur === "M3_cabinet";
+  // M4 « confiance » (droit/chiffre, patrimoine) → recto expertise, aucun avis.
+  const useM4 = isSansSite && moteur === "M4_confiance";
+  // M2 « temps » (artisans établis) → recto « votre téléphone travaille plus que vous ».
+  const useM2 = isSansSite && moteur === "M2_temps";
   const termePublic = mp.entry?.terme || def.terme_public; // clients / patients (override métier possible)
   const termeSing = termePublic.replace(/s$/u, ""); // client / patient
   // Libellé métier + article corrigeables par prospect (genre : « une
@@ -510,8 +523,10 @@ export async function composeLetterHtml(input: {
   // nombre d'avis RÉELS (badge « Site web », fait vérifiable), on donne un cap.
   // JAMAIS de promesse chiffrée de résultat. Déclenché seulement si les données
   // rendent la jauge crédible (le prospect a des avis, des concurrents chiffrés).
+  // M1 « acquisition » : la jauge d'avis n'est crédible que s'il y a un volume,
+  // des avis existants et au moins un concurrent chiffré. Sinon → recto générique.
   const useM1 =
-    mp.profil === "A" && type === "SANS_SITE" && Boolean(searchVolume) &&
+    isSansSite && moteur === "M1_acquisition" && Boolean(searchVolume) &&
     reviews != null && reviews >= 1 && conc.some((c) => c.avis != null);
   const m1Goal = 50;
   const m1Reviews = reviews ?? 0;
@@ -555,6 +570,89 @@ export async function composeLetterHtml(input: {
     `<div><span class="ck">—</span><span><b>Réserve</b> les rendez-vous</span></div>` +
     m1SolicitFn + `</div>`;
 
+  // ── Recto M2 — TEMPS (artisans, déonto none) : « votre téléphone travaille ──
+  //    plus que vous ». Le site filtre les appels ; l'artisan ne rappelle que
+  //    les vraies demandes. Confirmation = devis/rappel (jamais « Réservé »).
+  const urgent = Boolean(mp.entry?.urgencesOps);
+  const m2_hook = ov("m2_hook", `Votre téléphone travaille<br>plus que vous.`);
+  const m2_hook_sub = ov(
+    "m2_hook_sub",
+    `Chaque appel vous interrompt en plein chantier — souvent pour la même question.`
+  );
+  // Les questions qui coupent une intervention (concrètes, vécues). Vraies.
+  const m2Qlist = [
+    "« Vous intervenez sur quelle zone ? »",
+    "« C'est quoi vos tarifs ? »",
+    "« Vous faites des devis gratuits ? »",
+    "« Vous pouvez venir quand ? »",
+    "« Vous êtes disponible en urgence ? »",
+    "« Vous vous déplacez le week-end ? »",
+  ];
+  const m2_questions = m2Qlist.map((q) => `<span>${esc(q)}</span>`).join("");
+  const m2_pivot = ov(
+    "m2_pivot",
+    `<b>Votre site répond à tout ça pendant que vous travaillez.</b><br>Vous ne rappelez que les <span class="u">vraies</span> demandes.`
+  );
+  const m2_today = ov("m2_today", `Un numéro.<br>Et le téléphone qui sonne<br>en plein chantier.`);
+  const m2_prep = ov(
+    "m2_prep",
+    `<b>J'ai préparé la première version de votre site.</b> Il répond aux questions, oriente les devis, et ${urgent ? "trie l'urgence" : "filtre les demandes"} — pour ne vous laisser que les appels qui en valent la peine.`
+  );
+  // Carte DEMAIN M2 : mini-site + 3 fonctions « assistant » (pas d'avis : l'angle
+  // est le temps, pas la réputation). Tri urgence si urgencesOps.
+  const m2Fn3 = urgent
+    ? `<div><span class="ck">—</span><span><b>Trie l'urgence</b> et vous alerte tout de suite</span></div>`
+    : `<div><span class="ck">—</span><span><b>Filtre</b> les demandes, ne garde que les vraies</span></div>`;
+  const demain_m2 =
+    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
+    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
+    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
+    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
+    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
+    `</div></div>` +
+    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
+    `<div class="m1-fx"><div><span class="ck">—</span><span><b>Répond</b> zone, tarifs, délais — 24 h/24</span></div>` +
+    `<div><span class="ck">—</span><span><b>Prépare</b> les demandes de devis</span></div>` +
+    m2Fn3 + `</div>`;
+
+  // ── Recto M4 — CONFIANCE (droit/chiffre, déonto droit) : « votre premier ────
+  //    rendez-vous commence avant que le client pousse la porte ». Le site est
+  //    une PREUVE d'expertise, pas une pub. Jamais d'avis, de volume, de promesse.
+  const m4_hook = ov("m4_hook", `Votre premier rendez-vous<br>commence bien avant.`);
+  const m4_hook_sub = ov(
+    "m4_hook_sub",
+    `Avant de pousser votre porte, un ${esc(termeSing)} cherche à savoir qui vous êtes — et ne trouve presque rien.`
+  );
+  // Ce que le site mettra en avant (contenu, pas affirmation invérifiable).
+  const m4Plist = [
+    "Votre parcours et vos années d'exercice",
+    "Vos domaines d'intervention",
+    "Votre méthode, expliquée simplement",
+    "Le cadre et le déroulé d'un premier rendez-vous",
+  ];
+  const m4_points = m4Plist.map((p) => `<div class="m4-pt"><span class="ck">—</span><span>${esc(p)}</span></div>`).join("");
+  const m4_pivot = ov(
+    "m4_pivot",
+    `On ne choisit pas ${metierArticle === "une" ? "une" : "un"} ${esc(metierLabel)} au hasard.<br><b>On choisit celui en qui on a <span class="u">confiance</span></b> — et la confiance se prépare en ligne.`
+  );
+  const m4_today = ov("m4_today", `Une adresse.<br>Un numéro.<br>Et rien sur qui vous êtes.`);
+  const m4_prep = ov(
+    "m4_prep",
+    `<b>J'ai préparé la première version de votre site.</b> Il présente votre parcours, vos domaines et votre méthode — pour qu'un ${esc(termeSing)} vous accorde sa confiance avant même le premier rendez-vous.`
+  );
+  // Carte DEMAIN M4 : mini-site + 3 fonctions « prestige ». Aucun avis.
+  const demain_m4 =
+    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
+    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
+    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
+    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
+    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
+    `</div></div>` +
+    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
+    `<div class="m1-fx"><div><span class="ck">—</span><span><b>Présente</b> votre parcours et vos domaines</span></div>` +
+    `<div><span class="ck">—</span><span><b>Explique</b> le déroulé d'un rendez-vous</span></div>` +
+    `<div><span class="ck">—</span><span><b>Prend</b> les premiers rendez-vous</span></div></div>`;
+
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
@@ -572,6 +670,18 @@ export async function composeLetterHtml(input: {
       editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
       editableFields.push({ key: "cs_pivot", label: "La bascule (secrétaire / 21 h)", value: cs_pivot, multiline: true });
       editableFields.push({ key: "cs_prep", label: "Proposition (j'ai préparé…)", value: cs_prep, multiline: true });
+    } else if (useM2) {
+      // Recto M2 (artisans, temps) : hook « téléphone » + bascule « vraies demandes ».
+      editableFields.push({ key: "m2_hook", label: "Hook (accroche)", value: m2_hook, multiline: true });
+      editableFields.push({ key: "m2_hook_sub", label: "Hook — sous-titre", value: m2_hook_sub, multiline: true });
+      editableFields.push({ key: "m2_pivot", label: "La bascule (vraies demandes)", value: m2_pivot, multiline: true });
+      editableFields.push({ key: "m2_prep", label: "Proposition (j'ai préparé…)", value: m2_prep, multiline: true });
+    } else if (useM4) {
+      // Recto M4 (droit, confiance) : hook « avant la porte » + registre sobre.
+      editableFields.push({ key: "m4_hook", label: "Hook (accroche)", value: m4_hook, multiline: true });
+      editableFields.push({ key: "m4_hook_sub", label: "Hook — sous-titre", value: m4_hook_sub, multiline: true });
+      editableFields.push({ key: "m4_pivot", label: "La bascule (confiance)", value: m4_pivot, multiline: true });
+      editableFields.push({ key: "m4_prep", label: "Proposition (j'ai préparé…)", value: m4_prep, multiline: true });
     } else {
       editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
       editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
@@ -602,6 +712,10 @@ export async function composeLetterHtml(input: {
     // Recto M1 (acquisition commerce : jauge d'avis)
     m1_hook_big, m1_hook_sub, m1_gauge, m1_comp_intro, m1_concurrents, m1_synth,
     m1_verdict, m1_today, demain_m1, m1_prep,
+    // Recto M2 (artisans : temps)
+    m2_hook, m2_hook_sub, m2_questions, m2_pivot, m2_today, demain_m2, m2_prep,
+    // Recto M4 (droit : confiance)
+    m4_hook, m4_hook_sub, m4_points, m4_pivot, m4_today, demain_m4, m4_prep,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,
@@ -629,9 +743,13 @@ export async function composeLetterHtml(input: {
   // (commerce) garde le recto volume + avis.
   const rectoFile = useM1
     ? "recto/SANS_SITE_M1.html"
-    : useCRecto
-      ? "recto/SANS_SITE_C.html"
-      : `recto/${type}.html`;
+    : useM2
+      ? "recto/SANS_SITE_M2.html"
+      : useM4
+        ? "recto/SANS_SITE_M4.html"
+        : useCRecto
+          ? "recto/SANS_SITE_C.html"
+          : `recto/${type}.html`;
   const recto = injectVars(readTpl(rectoFile), vars);
   const verso = injectVars(readTpl("verso.html"), vars);
   return { recto, verso, type, editableFields };
