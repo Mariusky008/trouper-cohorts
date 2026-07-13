@@ -8,6 +8,7 @@ import { join } from "path";
 import QRCode from "qrcode";
 import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
 import { resolveMetier, confirmationBooked } from "@/lib/site-internet/metier-profiles";
+import type { Secteur } from "@/lib/site-internet/metier-profiles";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 export const LETTER_MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA"];
@@ -74,6 +75,24 @@ export function usageName(full: string): string {
   } else if (tokens.length >= 4) out = `${tokens[1]} ${tokens[0]}`; // NOM P1 P2 P3 → P1 NOM
   else out = tokens.slice(0, 2).join(" "); // 3 mots : ordre incertain → tel quel
   return trimName(out) || clean;
+}
+
+// SECTEUR → une seule ligne de constat (§5 bis MOTEURS_ET_DEONTOLOGIE). Elle
+// énonce un COMPORTEMENT général du client final (autorisé), jamais un procès
+// d'intention sur ce que pensent SES clients. Le secteur ne change QUE cette
+// ligne et le vocabulaire, jamais la structure. {metier} = libellé au singulier.
+function secteurConstat(secteur: Secteur, metier: string): string {
+  switch (secteur) {
+    case "urgence":
+      return `Quand on cherche un ${metier}, on retient celui qu'on peut joindre tout de suite — et celui qui rassure.`;
+    case "soin":
+      return `Choisir un ${metier}, c'est intime. On veut comprendre votre approche avant d'oser appeler — souvent tard le soir.`;
+    case "emotion":
+      return `Pour un choix aussi personnel, on ne compare pas des prix : on cherche un style, un univers. Le vôtre se découvre en ligne.`;
+    case "flux":
+    default:
+      return `On choisit avec les yeux : vos photos, vos horaires, vos avis — en moins de trois secondes, sur mobile.`;
+  }
 }
 
 export type EditableField = { key: string; label: string; value: string; multiline?: boolean };
@@ -378,6 +397,7 @@ export async function composeLetterHtml(input: {
   const useM4 = isSansSite && moteur === "M4_confiance";
   // M2 « temps » (artisans établis) → recto « votre téléphone travaille plus que vous ».
   const useM2 = isSansSite && moteur === "M2_temps";
+  const secteur: Secteur = mp.entry?.secteur ?? "flux";
   const termePublic = mp.entry?.terme || def.terme_public; // clients / patients (override métier possible)
   const termeSing = termePublic.replace(/s$/u, ""); // client / patient
   // Libellé métier + article corrigeables par prospect (genre : « une
@@ -386,6 +406,8 @@ export async function composeLetterHtml(input: {
   const metierArticle = ov("metier_article", mp.entry?.article || "un");
   // Nom d'usage pour l'en-tête et le pied (jamais l'état civil complet).
   const destName = ov("display_name", usageName(nom));
+  // Ligne de constat sectorielle (une seule ligne, corrigeable) — §5 bis.
+  const secteur_constat = ov("secteur_constat", secteurConstat(secteur, metierLabel));
   // 1) LE CHOC — le chiffre en héros, la phrase (au vocabulaire du profil), le
   //    destinataire. Profil C : sous-ligne sobre recentrée sur la findabilité.
   const heroCap = `${def.heroSujet} ${def.heroVerbe} ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b> chaque mois.`;
@@ -657,6 +679,7 @@ export async function composeLetterHtml(input: {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
     editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
+    if (!useM4) editableFields.push({ key: "secteur_constat", label: "Ligne de constat (secteur)", value: secteur_constat, multiline: true });
     if (useM1) {
       // Recto M1 (commerce, jauge d'avis) : champs propres à l'angle acquisition.
       editableFields.push({ key: "m1_hook_sub", label: "Hook — sous-titre (recherches/mois)", value: m1_hook_sub, multiline: true });
@@ -716,6 +739,8 @@ export async function composeLetterHtml(input: {
     m2_hook, m2_hook_sub, m2_questions, m2_pivot, m2_today, demain_m2, m2_prep,
     // Recto M4 (droit : confiance)
     m4_hook, m4_hook_sub, m4_points, m4_pivot, m4_today, demain_m4, m4_prep,
+    // Ligne de constat sectorielle (§5 bis)
+    secteur_constat,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,

@@ -208,9 +208,9 @@ export const METIERS: MetierEntry[] = [
   M(["chauffagiste", "chauffage"], "chauffagiste", "A", "devis", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
   M(["garagiste", "garage auto", "garage automobile"], "garagiste", "A", "rappel", { moteur: "M2_temps", secteur: "urgence" }),
   M(["carrossier", "carrosserie"], "carrossier", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
-  M(["paysagiste", "paysag"], "paysagiste", "A", "devis", { moteur: "M2_temps", secteur: "emotion" }),
+  M(["paysagiste", "paysag"], "paysagiste", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
   M(["ramoneur", "ramonage"], "ramoneur", "A", "rappel", { moteur: "M2_temps", secteur: "urgence" }),
-  M(["macon", "carreleur", "platrier", "menuisier", "peintre en batiment", "artisan du batiment", "batiment"], "artisan du bâtiment", "A", "devis", { moteur: "M2_temps", secteur: "emotion" }),
+  M(["macon", "carreleur", "platrier", "menuisier", "peintre en batiment", "artisan du batiment", "batiment"], "artisan du bâtiment", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
   // ── Droit & chiffre (profil C — déontologie publicité stricte, pas d'avis) ──
   M(["avocat"], "avocat", "C", "rappel", { terme: "clients", deontologie: "droit" }),
   M(["notaire"], "notaire", "C", "rappel", { terme: "clients", deontologie: "droit" }),
