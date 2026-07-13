@@ -16,6 +16,7 @@ type Profil = "A" | "B" | "C";
 type FaqItem = { q: string; a: string };
 
 type Confirmation = "reserve" | "rappel" | "devis" | "acompte";
+type Moteur = "M1_acquisition" | "M2_temps" | "M3_cabinet" | "M4_confiance";
 
 type Props = {
   slug: string;
@@ -26,6 +27,7 @@ type Props = {
   faq: FaqItem[];
   showUrgence: boolean; // encart urgence permanent (profil psychisme)
   confirmation?: Confirmation; // réserve un créneau, ou rappel/devis/acompte
+  moteur?: Moteur; // pilote UNIQUEMENT l'ordre + le libellé des portes d'entrée
   busyWord?: string; // « en séance » (soin) / « en intervention » (artisan)
   hideBubble?: boolean; // masque la bulle flottante (quand une barre fixe gère le CTA)
 };
@@ -55,7 +57,7 @@ function upcomingSlots(): string[] {
   return out.map((o) => o.label);
 }
 
-export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", busyWord = "en séance", hideBubble = false }: Props) {
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", moteur = "M3_cabinet", busyWord = "en séance", hideBubble = false }: Props) {
   const isReserve = confirmation === "reserve";
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("home");
@@ -229,6 +231,54 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setStep("qualif1");
   };
 
+  // Porte « informative » (prestations, zones, méthode…) → on route vers la FAQ
+  // (chips + question libre filtrée). On ne promet aucune fonction non construite.
+  const chooseInfoPorte = (label: string) => {
+    push([
+      { who: "me", text: label },
+      { who: "ai", text: "Bien sûr. Choisissez un sujet ci-dessous, ou posez-moi votre question." },
+    ]);
+    setStep("faq");
+  };
+
+  // ── Les PORTES d'entrée, réordonnées par MOTEUR (§5 MOTEURS_ET_DEONTOLOGIE) ──
+  // Le socle ne change pas : seules la 1re porte (action) et les portes
+  // informatives varient. Conversion (M1) · Assistant (M2) · Cabinet (M3) ·
+  // Prestige (M4). Libellé de l'action piloté par le type de confirmation.
+  const bookLabel =
+    confirmation === "devis" ? "Demander un devis"
+      : confirmation === "rappel" ? "Être rappelé(e)"
+        : confirmation === "acompte" ? "Réserver ma date"
+          : "Prendre rendez-vous";
+  type Porte = { label: string; kind: "book" | "info" };
+  const portes = useMemo<Porte[]>(() => {
+    const ask: Porte = { label: "Poser une question", kind: "info" };
+    const book: Porte = { label: bookLabel, kind: "book" };
+    let list: Porte[];
+    switch (moteur) {
+      case "M2_temps": // Accueil Assistant : filtrer les appels, faciliter les devis
+        list = [book, { label: "Zones desservies", kind: "info" }, { label: "Délais d'intervention", kind: "info" }, ask];
+        break;
+      case "M4_confiance": // Accueil Prestige : lever les doutes avant le 1er RDV
+        list = [{ label: "Nos domaines d'intervention", kind: "info" }, { label: "Notre méthode", kind: "info" }, book];
+        break;
+      case "M3_cabinet": // Accueil Cabinet : orienter le patient tout de suite
+        list = [book, { label: "Modifier un rendez-vous", kind: "info" }, { label: "Accès & horaires", kind: "info" }, ask];
+        break;
+      default: // M1 — Accueil Conversion : transformer le visiteur en client
+        list = [book, { label: "Voir les prestations", kind: "info" }, ask];
+    }
+    // Porte empathique pour le psychisme (hésitation légitime) — garde-fou conservé.
+    if (showUrgence) list = [...list, { label: "Je ne sais pas trop…", kind: "info" }];
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moteur, bookLabel, showUrgence]);
+  const clickPorte = (pt: Porte) => {
+    if (pt.kind === "book" || pt.label.startsWith("Je ne sais")) choosePorte(pt.label);
+    else if (pt.label.startsWith("Poser")) choosePorte(pt.label);
+    else chooseInfoPorte(pt.label);
+  };
+
   // FAQ en texte libre → API filtrée (détresse/médical bloqués avant le modèle).
   const sendFreeText = async () => {
     const q = qInput.trim();
@@ -372,13 +422,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
             </div>
 
             <div className="acc-actions">
-              {step === "home" && (
-                <>
-                  {chip(isReserve ? "Prendre un premier rendez-vous" : "Faire une demande", () => choosePorte(isReserve ? "Prendre un premier rendez-vous" : "Faire une demande"))}
-                  {chip("Poser une question", () => choosePorte("Poser une question"))}
-                  {chip("Je ne sais pas trop…", () => choosePorte("Je ne sais pas trop…"))}
-                </>
-              )}
+              {step === "home" && portes.map((pt) => chip(pt.label, () => clickPorte(pt), pt.label))}
               {step === "qualif1" && (qui1Chips.map((v) => chip(v, () => chooseQui(v), v)))}
               {step === "qualif2" && (premiereChips.map((v) => chip(v, () => choosePremiere(v), v)))}
               {step === "qualif3" && (["En semaine", "Le soir", "Le week-end", "Peu importe"].map((v) => chip(v, () => chooseDispo(v), v)))}

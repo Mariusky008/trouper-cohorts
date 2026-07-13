@@ -69,6 +69,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const accentSoft = profil === "A" ? "#F3E7E2" : profil === "B" ? "#E3EDF1" : "#E9F0EA";
   const showUrgence = mp.entry?.encartUrgence ?? false; // encart urgence (psychisme), découplé
   const confirmation = mp.entry?.confirmation ?? "reserve";
+  const moteur = mp.entry?.moteur ?? "M1_acquisition";
   const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
@@ -110,6 +111,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       showUrgence={showUrgence}
       termePublic={termePublic}
       confirmation={confirmation}
+      moteur={moteur}
       busyWord={busyWord}
       content={resolveMetierContent(activite, profil)}
       avisMode={avisMode}

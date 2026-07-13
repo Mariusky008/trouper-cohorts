@@ -7,7 +7,7 @@
 import { LeadForm } from "../../[slug]/lead-form";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteConfigurateur } from "./maquette-configurateur";
-import type { Confirmation, Profil } from "@/lib/site-internet/metier-profiles";
+import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
@@ -26,6 +26,7 @@ export type MaquetteSanteProps = {
   showUrgence: boolean;
   termePublic: string;
   confirmation: Confirmation;
+  moteur: Moteur;
   busyWord: string;
   content: MetierContent;
   // Avis : "prominent" (A), "doux" (B), "none" (C). Rien ne s'affiche sans vrais avis.
@@ -43,7 +44,7 @@ export type MaquetteSanteProps = {
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, profil, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
-    showUrgence, termePublic, confirmation, busyWord, content,
+    showUrgence, termePublic, confirmation, moteur, busyWord, content,
     avisMode, note, reviewsCount, reviewsTop, telHref, waHref, doctolibHref, mapsHref, phoneDisplay,
   } = p;
   const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
@@ -188,6 +189,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         faq={content.faq}
         showUrgence={showUrgence}
         confirmation={confirmation}
+        moteur={moteur}
         busyWord={busyWord}
         hideBubble
       />
