@@ -518,9 +518,18 @@ export async function composeLetterHtml(input: {
   // Juste le nom : le métier + la ville sont déjà dans l'en-tête, la recherche
   // et sous chaque concurrent → « — métier à ville » ici serait redondant.
   const cs_who = ov("cs_who", `Diagnostic préparé pour <b>${esc(destName)}</b>.`);
-  const csv3ConcRow = (c: { name: string }) =>
-    `<div class="res"><div><div class="n">${esc(cleanCompName(c.name))}</div><div class="m">${esc(metierLabel)} · ${esc(villeAff)}</div></div><div class="tagweb">Site web</div></div>`;
-  const csv3_concurrents = conc.slice(0, 2).map(csv3ConcRow).join("");
+  // Concurrents : source ÉDITABLE (un nom par ligne). L'opérateur peut supprimer
+  // une ligne hors-sujet (ex. un salon de massage remonté à tort par Google). On
+  // fournit jusqu'à 3 candidats ; les 2 premières lignes s'affichent sur la lettre.
+  const cs_concurrents_src = ov(
+    "cs_concurrents_src",
+    conc.slice(0, 3).map((c) => cleanCompName(c.name)).join("\n")
+  );
+  const csv3ConcRow = (name: string) =>
+    `<div class="res"><div><div class="n">${esc(name)}</div><div class="m">${esc(metierLabel)} · ${esc(villeAff)}</div></div><div class="tagweb">Site web</div></div>`;
+  const csv3_concurrents = cs_concurrents_src
+    .split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 2)
+    .map(csv3ConcRow).join("");
   const cs_pivot = ov(
     "cs_pivot",
     `Une secrétaire ne répond pas à 21 h, ni le dimanche.<br><b>Votre site, <span class="u">si</span>.</b> Et il ne vous interrompt jamais<br>pour redonner vos tarifs.`
@@ -557,12 +566,36 @@ export async function composeLetterHtml(input: {
     `<div class="m1-gtop"><div class="l">Avis Google</div><div class="n">${m1Reviews}${note ? ` <span>· ★ ${note}</span>` : ""}</div></div>` +
     `<div class="m1-bar"><div class="m1-fill" style="width:${m1FillPct}%"></div></div>` +
     `<div class="m1-legend"><span>${m1Reviews} avis</span><span>Objectif conseillé : <b>${m1Goal} avis</b></span></div>`;
-  const m1_concurrents = conc
-    .filter((c) => c.avis != null)
-    .slice()
-    .sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0))
+  // Concurrents : source ÉDITABLE (un par ligne : « Nom | nb avis »). L'opérateur
+  // peut supprimer une ligne hors-sujet. On fournit jusqu'à 4 candidats triés par
+  // nombre d'avis ; les 3 premières lignes s'affichent → supprimer un intrus fait
+  // remonter le suivant tout en gardant 3 lignes.
+  const m1_concurrents_src = ov(
+    "m1_concurrents_src",
+    conc
+      .filter((c) => c.avis != null)
+      .slice()
+      .sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0))
+      .slice(0, 4)
+      .map((c) => `${cleanCompName(c.name)} | ${c.avis}`)
+      .join("\n")
+  );
+  const m1_concurrents = m1_concurrents_src
+    .split("\n").map((l) => l.trim()).filter(Boolean)
+    .map((line) => {
+      // On extrait le dernier nombre de la ligne comme nombre d'avis ; le reste
+      // (débarrassé du séparateur final) est le nom — tolère les noms à tiret.
+      const m = line.match(/^(.*?)[\s|—–-]*(\d[\d\s]*)\s*(?:avis)?$/i);
+      const name = (m ? m[1] : line).trim();
+      const avis = m ? m[2].replace(/\s/g, "") : "";
+      return { name, avis };
+    })
+    .filter((r) => r.name)
     .slice(0, 3)
-    .map((c) => `<div class="m1-crow"><span class="nm">${esc(cleanCompName(c.name))}</span><span class="right"><span class="av">${c.avis} <i>avis</i></span><span class="tagweb">Site web</span></span></div>`)
+    .map((r) => {
+      const av = r.avis ? `<span class="av">${esc(r.avis)} <i>avis</i></span>` : "";
+      return `<div class="m1-crow"><span class="nm">${esc(r.name)}</span><span class="right">${av}<span class="tagweb">Site web</span></span></div>`;
+    })
     .join("");
   // Ligne de synthèse CONDITIONNELLE : ne jamais dire « pas de site » à qui en a un.
   const m1_synth = ov("m1_synth", website
@@ -684,6 +717,7 @@ export async function composeLetterHtml(input: {
       // Recto M1 (commerce, jauge d'avis) : champs propres à l'angle acquisition.
       editableFields.push({ key: "m1_hook_sub", label: "Hook — sous-titre (recherches/mois)", value: m1_hook_sub, multiline: true });
       editableFields.push({ key: "m1_comp_intro", label: "Intro concurrents (jauge)", value: m1_comp_intro, multiline: true });
+      editableFields.push({ key: "m1_concurrents_src", label: "Concurrents — 1 par ligne « Nom | avis ». Supprimez une ligne hors-sujet ; les 3 premières s'affichent.", value: m1_concurrents_src, multiline: true });
       editableFields.push({ key: "m1_synth", label: "Synthèse sous les concurrents", value: m1_synth, multiline: true });
       editableFields.push({ key: "m1_verdict", label: "Verdict (réputation visible)", value: m1_verdict, multiline: true });
       editableFields.push({ key: "m1_prep", label: "Proposition (j'ai préparé…)", value: m1_prep, multiline: true });
@@ -691,6 +725,7 @@ export async function composeLetterHtml(input: {
       // Recto santé (B/C) : champs propres au hook factuel + pivot « secrétaire ».
       editableFields.push({ key: "cs_hook_sub", label: "Hook — sous-titre", value: cs_hook_sub, multiline: true });
       editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
+      editableFields.push({ key: "cs_concurrents_src", label: "Concurrents — 1 par ligne. Supprimez une ligne hors-sujet ; les 2 premières s'affichent.", value: cs_concurrents_src, multiline: true });
       editableFields.push({ key: "cs_pivot", label: "La bascule (secrétaire / 21 h)", value: cs_pivot, multiline: true });
       editableFields.push({ key: "cs_prep", label: "Proposition (j'ai préparé…)", value: cs_prep, multiline: true });
     } else if (useM2) {
