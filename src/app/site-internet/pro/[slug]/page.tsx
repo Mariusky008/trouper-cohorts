@@ -4,7 +4,9 @@
 // contenant le lien d'avis Google. Aucun CRM, aucune API : un simple wa.me.
 // Ses clients ne voient jamais cette page (aucun lien public n'y mène).
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { ProActions } from "./pro-actions";
+import { ProRelance } from "./pro-relance";
 import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +55,14 @@ export default async function EspacePro({
   const placeId = str(row.google_place_id);
   const rating = typeof row.google_rating === "number" ? row.google_rating : null;
   const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
+
+  // Garde-fou déontologique (NON négociable) : la sollicitation d'avis et la
+  // relance créneaux sont réservées aux métiers non réglementés (déonto none).
+  // En santé (B/C) et droit (D) : AUCUN bouton — ni avis sollicités, ni relance
+  // commerciale. L'affichage des avis existants reste permis si avis_affichage.
+  const mp = resolveMetier(activite);
+  const soliciter = mp.def.avis_sollicitation; // A commerce/bien-être uniquement
+  const afficherAvis = mp.def.avis_affichage; // A + B ; jamais C/D
 
   // Lien d'avis Google : le deep link « écrire un avis » si on a le place_id
   // (récupéré au diagnostic), sinon un repli honnête vers la fiche Maps.
@@ -159,6 +169,7 @@ export default async function EspacePro({
           <div className="name">{nom}</div>
           <div className="role">{activite}{ville ? ` · ${ville}` : ""}</div>
 
+          {afficherAvis && (
           <div className="gcard">
             <div className="top">
               <span className="lab">Vos avis Google</span>
@@ -189,8 +200,22 @@ export default async function EspacePro({
               </>
             )}
           </div>
+          )}
 
-          <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} />
+          {soliciter ? (
+            <>
+              <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} />
+              <ProRelance slug={slug} token={token} />
+            </>
+          ) : (
+            <div className="gcard" style={{ marginTop: 20 }}>
+              <div className="empty">
+                Votre espace est volontairement sobre. Votre profession étant encadrée, nous ne sollicitons pas
+                d&apos;avis et n&apos;envoyons aucune relance commerciale en votre nom. Votre site et votre accueil
+                intelligent travaillent pour vous — dans le respect de votre cadre déontologique.
+              </div>
+            </div>
+          )}
 
           <div className="lock">
             <svg viewBox="0 0 24 24" fill="none" stroke="#A6A69C" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
