@@ -515,46 +515,6 @@ export async function composeLetterHtml(input: {
   const ss_footer = `<div class="ss-footer">Diagnostic préparé pour ${esc(destName)}</div>`;
   const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre accueil en direct →</div>`;
 
-  // ── Recto PROFIL C v3 (santé encadrée : psychologue, kiné, orthoptiste) ──────
-  // Hook FACTUEL (« très peu d'infos » sur vous en ligne), preuve (mock Google
-  // avec des consœurs qui ont un site), carte Aujourd'hui→Demain (l'accueil),
-  // puis UNE seule bascule : « une secrétaire ne répond pas à 21 h — votre site,
-  // si ». Pas de volume, pas d'avis. Le chiffre de recherches disparaît du recto.
-  const cs_hook_sub = ov("cs_hook_sub", `C'est ce que vos futurs ${termePublic} trouvent sur vous en ligne.`);
-  // Juste le nom : le métier + la ville sont déjà dans l'en-tête, la recherche
-  // et sous chaque concurrent → « — métier à ville » ici serait redondant.
-  const cs_who = ov("cs_who", `Diagnostic préparé pour <b>${esc(destName)}</b>.`);
-  // Concurrents : source ÉDITABLE (un nom par ligne). L'opérateur peut supprimer
-  // une ligne hors-sujet (ex. un salon de massage remonté à tort par Google). On
-  // fournit jusqu'à 3 candidats ; les 2 premières lignes s'affichent sur la lettre.
-  const cs_concurrents_src = ov(
-    "cs_concurrents_src",
-    conc.slice(0, 3).map((c) => cleanCompName(c.name)).join("\n")
-  );
-  const csv3ConcRow = (name: string) =>
-    `<div class="res"><div><div class="n">${esc(name)}</div><div class="m">${esc(metierLabel)} · ${esc(villeAff)}</div></div><div class="tagweb">Site web</div></div>`;
-  const csv3_concurrents = cs_concurrents_src
-    .split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 2)
-    .map(csv3ConcRow).join("");
-  const cs_pivot = ov(
-    "cs_pivot",
-    `Une secrétaire ne répond pas à 21 h, ni le dimanche.<br><b>Votre site, <span class="u">si</span>.</b> Et il ne vous interrompt jamais<br>pour redonner vos tarifs.`
-  );
-  const cs_prep = ov(
-    "cs_prep",
-    `<b>J'ai préparé la première version de votre site.</b> Il présente votre approche, répond aux questions pratiques à toute heure, et prend les rendez-vous — sans jamais vous déranger.`
-  );
-  const cs_stamp = `Diagnostic préparé pour ${esc(destName)} · ${esc(villeAff)}`;
-  // Liste des questions répétitives (moteur M3 « Cabinet ») — la meilleure
-  // accroche pour ce moteur : concrète, vécue. Adaptée selon que le métier est
-  // conventionné (carte Vitale / ordonnance) ou non (tarifs / première fois).
-  const reimbursed = /kin[eé]|orthopt|orthophon|podolog|infirmi|sage[- ]?femme|dentiste|p[ée]dicure/i.test(activite);
-  const csQlist = reimbursed
-    ? ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Prenez-vous la carte Vitale ? »", "« Comment modifier mon rendez-vous ? »", "« Faut-il apporter une ordonnance ? »", "« Avez-vous de la place cette semaine ? »"]
-    : ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Quels sont vos tarifs ? »", "« Comment modifier mon rendez-vous ? »", "« C'est comment, une première séance ? »", "« Avez-vous de la place cette semaine ? »"];
-  const cs_questions = csQlist.map((q) => `<span>${esc(q)}</span>`).join("");
-
-
   // ══ GABARIT UNIQUE (lettre profil A, décliné B/C/D) ═════════════════════════
   // Un seul design (recto/SANS_SITE.html) paramétré par DEUX axes indépendants :
   //  • déonto (A commerce / B santé praticité / C santé encadrée / D droit) →
@@ -771,8 +731,6 @@ export async function composeLetterHtml(input: {
     ss_action,
     ss_footer,
     cta_full,
-    // Recto PROFIL C v3 (santé encadrée)
-    cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp, cs_questions,
     ai_bubble, ai_booked, demain_card,
     // Ligne de constat sectorielle (§5 bis)
     secteur_constat,
