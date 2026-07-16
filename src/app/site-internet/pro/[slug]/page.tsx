@@ -3,6 +3,7 @@
 // En un geste après chaque client, il ouvre WhatsApp avec un message pré-rédigé
 // contenant le lien d'avis Google. Aucun CRM, aucune API : un simple wa.me.
 // Ses clients ne voient jamais cette page (aucun lien public n'y mène).
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { ProActions } from "./pro-actions";
@@ -12,6 +13,15 @@ import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Lien PRIVÉ (jeton ?k=…) : jamais indexé, et aucun aperçu de partage hérité du
+// catalogue Privilège. Neutre et discret si le pro le colle quelque part.
+export const metadata: Metadata = {
+  title: "Espace pro privé",
+  description: "Votre espace privé.",
+  robots: { index: false, follow: false },
+  openGraph: { title: "Espace pro privé", description: "", images: [] },
+};
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 

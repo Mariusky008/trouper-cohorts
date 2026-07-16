@@ -59,7 +59,7 @@ const matchesBusiness = (title: string, self: string) => {
 
 function itemToInfo(item: Record<string, unknown>): PlaceInfo {
   const oh = Array.isArray(item.openingHours) ? (item.openingHours as Array<Record<string, unknown>>) : [];
-  const horaires = oh.slice(0, 2).map((h) => ({
+  const horaires = oh.slice(0, 7).map((h) => ({
     jours: String(h.day || "").trim(),
     horaires: String(h.hours || "").trim(),
   }));

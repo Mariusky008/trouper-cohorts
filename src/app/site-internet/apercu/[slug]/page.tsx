@@ -2,6 +2,7 @@
 // Data-loader : lit les données Google réelles du prospect + résout son PROFIL,
 // puis rend la maquette UNIFIÉE (composant MaquetteSante) qui s'adapte au profil
 // (A commerce / B santé praticité / C santé encadrée) — palette, avis, contact.
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
@@ -12,6 +13,43 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const str = (v: unknown) => (v == null ? "" : String(v));
+
+// Aperçu de partage (WhatsApp, SMS, réseaux) PROPRE à la maquette — sinon la page
+// héritait de l'Open Graph racine (« Popey — le club des bons plans… »). Non
+// indexée (maquette privée), mais l'aperçu de partage reste soigné.
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const noindex = { robots: { index: false, follow: false } };
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("human_vitrine_sites")
+      .select("business_name, city, activite, diagnostic")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    const row = (data as Record<string, unknown> | null) ?? null;
+    if (!row) return { title: "Votre nouveau site", ...noindex };
+    const nom = str(row.business_name) || "Votre commerce";
+    const ville = str(row.city);
+    const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+    const photo = (Array.isArray(diag.photos) ? diag.photos : [])
+      .map((x) => str(x))
+      .find((u) => /^https?:\/\//i.test(u));
+    const title = `${nom} — votre nouveau site`;
+    const description = `La maquette du site de ${nom}${ville ? ` à ${ville}` : ""} : prise de rendez-vous, avis, et un assistant qui répond pour vous.`;
+    const images = photo ? [{ url: photo }] : [];
+    return {
+      title,
+      description,
+      ...noindex,
+      openGraph: { title, description, images, type: "website" },
+      twitter: { card: photo ? "summary_large_image" : "summary", title, description, images },
+    };
+  } catch {
+    return { title: "Votre nouveau site", ...noindex };
+  }
+}
 
 export default async function ApercuMaquette({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

@@ -6,9 +6,11 @@
 // fixe (Appeler + Prendre RDV) ; l'accueil intelligent s'ouvre en surimpression.
 import { LeadForm } from "../../[slug]/lead-form";
 import { Gallery } from "./gallery";
+import { ScrollReveal } from "./scroll-reveal";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
 import { TeaserIntro } from "./teaser-intro";
+import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent } from "@/lib/site-internet/metier-content";
 
@@ -58,6 +60,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const gallery = photos.slice(heroPhoto ? 1 : 0);
   const shortAddr = adresse.replace(/,?\s*France\s*$/i, "").trim();
   const heures = horaires.filter((h) => h.jours || h.horaires).slice(0, 7);
+  // Badge « Ouvert maintenant » depuis les vrais horaires (null si incertain).
+  const openState = computeOpenState(horaires);
+  const openLabel = openState
+    ? openState.open
+      ? openState.until === "24 h"
+        ? "Ouvert 24 h/24"
+        : `Ouvert · ferme à ${openState.until}`
+      : openState.next
+        ? `Fermé · ouvre à ${openState.next}`
+        : "Fermé aujourd'hui"
+    : "";
 
   // ── L'assistante « Confier une tâche » (P1b) : une bulle unique, 3 tâches
   // guidées, animations réutilisées. Déonto : avis + créneau seulement en commerce
@@ -101,6 +114,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .hero .txt{position:absolute;left:0;right:0;bottom:0;padding:20px;color:var(--cream);}
           .mqc .hero .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;}
           .mqc .hero h2{font-family:Georgia,serif;font-weight:600;font-size:27px;line-height:1.08;margin:7px 0 5px;}
+          .mqc .hero-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;}
+          .mqc .hb{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+          .mqc .hb.note{background:rgba(255,255,255,.93);color:#1C201C;}
+          .mqc .hb.note::before{content:"★";color:var(--gold);}
+          .mqc .hb.open{background:rgba(24,128,56,.94);color:#fff;}
+          .mqc .hb.open.off{background:rgba(20,20,15,.5);color:#EEEDE7;}
+          .mqc .hb.open i{width:7px;height:7px;border-radius:50%;background:#7BE39A;box-shadow:0 0 0 3px rgba(123,227,154,.3);}
+          .mqc .hb.open.off i{background:#C9C7BE;box-shadow:none;}
+          /* Apparition au scroll (classe ajoutée par ScrollReveal ; sinon visible) */
+          .mqc .rvl{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease;}
+          .mqc .rvl.rvl-in{opacity:1;transform:none;}
           .mqc .hero .sub{font-size:12.5px;opacity:.85;margin-bottom:13px;}
           .mqc .hero .acts{display:flex;gap:8px;}
           .mqc .hero .acts a{flex:1;text-align:center;text-decoration:none;border-radius:24px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
@@ -222,6 +246,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />
       <MaquetteAssistant accent={accent} data={assistantData} />
+      <ScrollReveal />
 
       <button type="button" className="banner" data-assistant-open>
         ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
@@ -234,6 +259,14 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <div className="k">{roleLine}</div>
           <h2>{nom}</h2>
           <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
+          {(showAvis || openState) && (
+            <div className="hero-badges">
+              {showAvis && <span className="hb note">{note} · {reviewsCount} avis</span>}
+              {openState && (
+                <span className={`hb open${openState.open ? "" : " off"}`}><i />{openLabel}</span>
+              )}
+            </div>
+          )}
           <div className="acts">
             <a className="a-call" data-accueil-open>💬 Parler à mon assistante</a>
             <a className="a-rdv" data-accueil-open>Prendre rendez-vous</a>
