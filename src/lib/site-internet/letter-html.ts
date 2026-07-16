@@ -445,7 +445,7 @@ export async function composeLetterHtml(input: {
 
   const hero_big = searchVolume ? `≈ ${searchVolume}` : "Très peu.";
   const hero_l1 = searchVolume
-    ? `personnes recherchent <b>« ${esc(metierLabel)} à ${esc(villeAff)} »</b> chaque mois.`
+    ? `recherches Google pour <b>« ${esc(metierLabel)} à ${esc(villeAff)} »</b> chaque mois.`
     : `C'est ce que vos futurs ${esc(termePublic)} trouvent sur vous en ligne.`;
   const hero_l2 = ov(
     "hero_l2",
@@ -454,7 +454,7 @@ export async function composeLetterHtml(input: {
       : deonto === "none"
         ? goodReput
           ? `Bonne nouvelle : votre réputation est déjà l'une des meilleures de ${esc(villeAff)}. Mais aujourd'hui, presque personne ne la voit.`
-          : `Aujourd'hui, ceux qui vous cherchent tombent d'abord sur des concurrents déjà bien présents en ligne.`
+          : `Aujourd'hui, les personnes qui vous cherchent découvrent d'abord des établissements déjà bien présents en ligne.`
         : `Aujourd'hui, sans site, on vous trouve — mais on ne vous découvre pas.`
   );
   const diag_label = deonto === "none" ? (goodReput ? "Le diagnostic — deux choses à savoir" : "Le diagnostic — deux raisons à cela") : "Le diagnostic — deux constats";

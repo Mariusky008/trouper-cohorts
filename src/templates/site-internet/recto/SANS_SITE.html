@@ -5,11 +5,13 @@
     .la .top{text-align:center;}
     .la .top .for{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#6E6E64;font-weight:600;}
     .la .top .for b{color:#16160F;}
-    .la .hero{text-align:center;margin-top:8px;}
-    .la .hero .big{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:38px;line-height:1;letter-spacing:-.02em;}
-    .la .hero .l1{font-size:14px;color:#16160F;margin-top:9px;line-height:1.35;}
+    /* Titre principal : PAS de cadre (on annule le .hero global des autres rectos).
+       Le chiffre porte la page ; blanc + alignement suffisent. */
+    .la .hero{border:none;border-radius:0;padding:0;display:block;background:none;text-align:center;margin:12px auto 2px;max-width:520px;}
+    .la .hero .big{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:52px;line-height:.98;letter-spacing:-.025em;}
+    .la .hero .l1{font-size:15px;color:#16160F;margin-top:7px;line-height:1.32;}
     .la .hero .l1 b{font-weight:600;}
-    .la .hero .l2{font-size:12px;color:#6E6E64;margin-top:8px;line-height:1.4;max-width:410px;margin-left:auto;margin-right:auto;}
+    .la .hero .l2{font-size:12.5px;color:#6E6E64;margin-top:11px;line-height:1.45;max-width:440px;margin-left:auto;margin-right:auto;}
     .la .divider{display:flex;align-items:center;gap:12px;margin:10px 0 8px;}
     .la .divider .ln{flex:1;height:1px;background:#E2DFD6;}
     .la .divider .lb{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#6E6E64;font-weight:600;}
@@ -62,7 +64,8 @@
     .la .qmini .qt{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#6E6E64;font-weight:700;margin-bottom:2px;}
     .la .qmini span.q{font-size:9.5px;color:#16160F;font-style:italic;line-height:1.3;}
     /* SOLUTION */
-    .la .sol{margin-top:8px;background:linear-gradient(160deg,#FDFBF6,#F5F0E5);border:1px solid #E6DCC6;border-radius:16px;padding:11px 18px 11px;}
+    /* Chapitre « solution » : pas de bordure, juste un fond crème très léger. */
+    .la .sol{margin-top:10px;background:linear-gradient(160deg,#FCFAF4,#F7F2E9);border:none;border-radius:16px;padding:13px 18px;}
     .la .sol .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;text-align:center;}
     .la .sol h3{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;text-align:center;margin:4px 0 9px;line-height:1.2;}
     .la .solrow{display:flex;gap:20px;align-items:center;}
