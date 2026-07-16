@@ -29,6 +29,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
   const [stageOn, setStageOn] = useState(false);
   const [fn, setFn] = useState("");
   const [ph, setPh] = useState("");
+  const [atBottom, setAtBottom] = useState(false); // masque la pilule au pied de page
   const cardRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<number[]>([]);
 
@@ -71,6 +72,22 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     };
     document.addEventListener("click", onDoc);
     return () => document.removeEventListener("click", onDoc);
+  }, []);
+
+  // Masque la pilule quand on atteint le pied de page (sinon elle recouvre le
+  // formulaire « être rappelé »). Réaffichée dès qu'on remonte.
+  useEffect(() => {
+    const onScroll = () => {
+      const rest = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+      setAtBottom(rest < 150);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   const n0 = data.reviewsCount ?? 0;
@@ -284,10 +301,10 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     <>
       <style>{styles(accent)}</style>
 
-      {!open && !stageOn && (
-        <button className="asx-fab" onClick={() => { setOpen(true); setView("home"); }} aria-label="Parler à mon assistante">
+      {!open && !stageOn && !atBottom && (
+        <button className="asx-fab" onClick={() => { setOpen(true); setView("home"); }} aria-label="Côté pro : confier une tâche à mon assistante">
           <span className="orb">✦</span>
-          <span className="lab">Parler à mon assistante</span>
+          <span className="lab"><small>Côté pro · aperçu</small>Confier une tâche</span>
           <span className="chev">›</span>
         </button>
       )}
@@ -339,7 +356,8 @@ function styles(accent: string): string {
     background:linear-gradient(135deg,#20201A,#0D0D09);color:#FBFAF7;border-radius:32px;padding:9px 20px 9px 10px;
     box-shadow:0 14px 36px -10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(184,134,47,.4);animation:asxBreathe 7s ease-in-out infinite;}
   .asx-fab .orb{width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#E4B850,#9A7526);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex:none;box-shadow:0 5px 14px -3px rgba(184,134,47,.75);}
-  .asx-fab .lab{font-size:15px;font-weight:700;white-space:nowrap;}
+  .asx-fab .lab{font-size:14.5px;font-weight:700;white-space:nowrap;line-height:1.08;text-align:left;}
+  .asx-fab .lab small{display:block;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#E4B850;font-weight:700;margin-bottom:1px;}
   .asx-fab .chev{font-size:22px;color:#D8B056;font-weight:700;margin-left:1px;line-height:1;}
   @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
   @media (prefers-reduced-motion:reduce){.asx-fab{animation:none;}}

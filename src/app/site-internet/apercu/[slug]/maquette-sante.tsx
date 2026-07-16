@@ -35,6 +35,8 @@ export type MaquetteSanteProps = {
   note: string | null;
   reviewsCount: number | null;
   reviewsTop: ReviewSnippet[];
+  reviewLink: string; // deep link « écrire un avis Google »
+  reviewsUrl: string; // page des avis Google existants
   telHref: string;
   waHref: string; // WhatsApp (profil A seulement, sinon "")
   doctolibHref: string; // réservation en ligne existante (profil B), sinon ""
@@ -46,7 +48,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, telHref, waHref, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, doctolibHref, mapsHref, phoneDisplay,
   } = p;
   const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
   const showAvis = avisMode !== "none" && note != null && reviewsCount != null && reviewsCount > 0;
@@ -70,6 +72,15 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     avisAllowed: avisMode === "prominent",
   };
 
+  // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en
+  // avant ET ceux révélés via « Voir plus ».
+  const reviewCard = (r: ReviewSnippet, i: number) => (
+    <div className="rev-c" key={i}>
+      <div className="q">« {r.text.length > 180 ? r.text.slice(0, 179).trimEnd() + "…" : r.text} »</div>
+      <div className="a"><span className="s">{stars(r.stars)}</span>{r.name ? ` · ${r.name}` : ""} · Google</div>
+    </div>
+  );
+
   return (
     <main className="mqc">
       <style
@@ -78,9 +89,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc{--bg:#F6F4EF;--surface:#FFF;--ink:#1C201C;--muted:#71766C;--line:#E7E4DC;
             --accent:${accent};--accent-soft:${accentSoft};--cream:#FBFAF7;--gold:#B8862F;
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);
-            max-width:520px;margin:0 auto;padding-bottom:78px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+            max-width:520px;margin:0 auto;padding-bottom:92px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
           .mqc *{box-sizing:border-box;}
-          .mqc .banner{background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:9px 14px;line-height:1.35;}
+          .mqc .banner{display:block;width:100%;border:none;font-family:inherit;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:10px 14px;line-height:1.35;cursor:pointer;}
+          .mqc .banner b{font-weight:700;}
+          .mqc .banner:hover{filter:brightness(.98);}
           /* HERO photo */
           .mqc .hero{position:relative;height:290px;overflow:hidden;}
           .mqc .hero .img{position:absolute;inset:0;background:linear-gradient(160deg,#5E6B5C,#39423A);background-size:cover;background-position:center;}
@@ -127,6 +140,14 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .rev-line{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
           .mqc .rev-line .st{color:var(--gold);letter-spacing:.5px;}
           .mqc .rev-line b{color:var(--ink);font-weight:600;}
+          .mqc .rev-more{margin-bottom:4px;}
+          .mqc .rev-more summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent);padding:7px 0;}
+          .mqc .rev-more summary::-webkit-details-marker{display:none;}
+          .mqc .rev-more summary::after{content:" ▾";}
+          .mqc .rev-more[open] summary::after{content:" ▴";}
+          .mqc .rev-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px;}
+          .mqc .rev-links a{flex:1;min-width:145px;text-align:center;text-decoration:none;border:1px solid var(--accent);border-radius:22px;padding:11px;font-size:12.5px;font-weight:600;color:var(--accent);background:var(--surface);}
+          .mqc .rev-links a.leave{background:var(--gold);border-color:var(--gold);color:#fff;}
           /* CONTACT (WhatsApp A / Doctolib B) */
           .mqc .contact{display:flex;gap:10px;margin-top:14px;}
           .mqc .contact a{flex:1;text-align:center;border:1px solid var(--accent);color:var(--accent);border-radius:22px;padding:11px;font-size:12.5px;font-weight:600;text-decoration:none;}
@@ -211,7 +232,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />
       <MaquetteAssistant accent={accent} data={assistantData} />
 
-      <div className="banner">✦ Maquette préparée pour {nom} — confiez une tâche à votre assistante ↘</div>
+      <button type="button" className="banner" data-assistant-open>
+        ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
+      </button>
 
       <div className="hero">
         <div className="img" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
@@ -221,7 +244,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <h2>{nom}</h2>
           <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
           <div className="acts">
-            <a className="a-call" data-assistant-open>💬 Parler à mon assistante</a>
+            <a className="a-call" data-accueil-open>💬 Parler à mon assistante</a>
             <a className="a-rdv" data-accueil-open>Prendre rendez-vous</a>
           </div>
         </div>
@@ -266,12 +289,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
             <div className="rev-score">{note}</div>
             <div><div className="rev-stars">{stars(Number((note || "0").replace(",", ".")))}</div><div className="rev-meta"><span id="mqd-avis-count">{reviewsCount}</span> avis Google</div></div>
           </div>
-          {reviewsTop.slice(0, 2).map((r, i) => (
-            <div className="rev-c" key={i}>
-              <div className="q">« {r.text.length > 180 ? r.text.slice(0, 179).trimEnd() + "…" : r.text} »</div>
-              <div className="a"><span className="s">{stars(r.stars)}</span>{r.name ? ` · ${r.name}` : ""} · Google</div>
-            </div>
-          ))}
+          {reviewsTop.slice(0, 2).map((r, i) => reviewCard(r, i))}
+          {reviewsTop.length > 2 && (
+            <details className="rev-more">
+              <summary>Voir plus d&apos;avis</summary>
+              {reviewsTop.slice(2).map((r, i) => reviewCard(r, i + 2))}
+            </details>
+          )}
+          <div className="rev-links">
+            <a href={reviewsUrl} target="_blank" rel="noreferrer">Voir tous les avis sur Google →</a>
+            <a className="leave" href={reviewLink} target="_blank" rel="noreferrer">★ Laisser un avis</a>
+          </div>
         </section>
       )}
 
@@ -284,6 +312,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
               <div className="a"><span className="s">{stars(r.stars)}</span> · Patient vérifié · Google</div>
             </div>
           ))}
+          <div className="rev-links">
+            <a href={reviewsUrl} target="_blank" rel="noreferrer">Voir les avis sur Google →</a>
+          </div>
         </section>
       )}
 
@@ -301,11 +332,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <div className="canvas"><div className="pin"><svg width="24" height="24" viewBox="0 0 24 24" fill={accent}><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" /></svg></div></div>
           <div className="map-addr addr"><span>{shortAddr || villeAff}</span><a href={mapsHref} target="_blank" rel="noreferrer">Itinéraire →</a></div>
         </div>
-        {(waHref || doctolibHref) && (
+        {doctolibHref && (
           <div className="contact">
-            {telHref && <a href={telHref}>📞 Appeler</a>}
-            {waHref && <a className="wa" href={waHref}>💬 WhatsApp</a>}
-            {doctolibHref && <a href={doctolibHref} target="_blank" rel="noreferrer">Doctolib</a>}
+            <a href={doctolibHref} target="_blank" rel="noreferrer">Réserver en ligne</a>
           </div>
         )}
       </section>
@@ -332,7 +361,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       </div>
 
       <div className="bar">
-        <a className="call" data-assistant-open>💬 Parler à mon assistante</a>
+        <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
         <a className="rdv" data-accueil-open>Prendre rendez-vous</a>
       </div>
     </main>
