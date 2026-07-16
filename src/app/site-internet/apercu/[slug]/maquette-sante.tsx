@@ -6,8 +6,9 @@
 // fixe (Appeler + Prendre RDV) ; l'accueil intelligent s'ouvre en surimpression.
 import { LeadForm } from "../../[slug]/lead-form";
 import { AccueilIntelligent } from "./accueil-intelligent";
-import { DemoPastille, MaquetteDemos } from "./maquette-demos";
-import { confirmationBooked, type Confirmation, type Moteur, type Profil } from "@/lib/site-internet/metier-profiles";
+import { MaquetteAssistant } from "./maquette-demos";
+import { TeaserIntro } from "./teaser-intro";
+import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
@@ -56,24 +57,18 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const shortAddr = adresse.replace(/,?\s*France\s*$/i, "").trim();
   const heures = horaires.filter((h) => h.jours || h.horaires).slice(0, 7);
 
-  // ── « Moments wahoo » (pastilles ✨) : LE site + 3 démos greffées + bilan ──────
-  // Déonto : les démos « avis » et « créneau/offre » n'existent qu'en commerce
-  // (avisMode « prominent » = avis_sollicitation autorisé). En santé/droit, on ne
-  // propose que « répondre » et « préparer ». Le compteur d'avis réel se met à jour
-  // à la fin de la démo avis (#mqd-avis-count). Pastilles = mode maquette propriétaire.
-  const demoAllowed = avisMode === "prominent";
-  const demoSlot = "samedi 15 h 30";
-  const demoData = {
+  // ── L'assistante « Confier une tâche » (P1b) : une bulle unique, 3 tâches
+  // guidées, animations réutilisées. Déonto : avis + créneau seulement en commerce
+  // (avisMode « prominent » = avis_sollicitation) ; santé/droit → répondre +
+  // préparer. Le vrai compteur d'avis (#mqd-avis-count) se met à jour à la fin de
+  // la démo avis. Mode maquette propriétaire uniquement.
+  const assistantData = {
+    nom,
     clientTerm: (termePublic || "client").replace(/s$/u, ""),
     reviewsCount,
-    slot: demoSlot,
-    bookedLabel: confirmationBooked(confirmation, demoSlot),
-    practicalQ: content.faq[0]?.q || "quels sont vos horaires ?",
-    avisAllowed: demoAllowed,
+    slot: "samedi 15 h 30",
+    avisAllowed: avisMode === "prominent",
   };
-  // Pastille mise en avant en premier selon le profil connu (spec §2) : commerce
-  // peu d'avis → réputation ; commerce établi → créneau ; santé → répondre.
-  const primaryKind = demoAllowed ? ((reviewsCount ?? 0) < 50 ? "avis" : "creneau") : "repondre";
 
   return (
     <main className="mqc">
@@ -213,9 +208,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         hideBubble
       />
 
-      <MaquetteDemos accent={accent} data={demoData} />
+      <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />
+      <MaquetteAssistant accent={accent} data={assistantData} />
 
-      <div className="banner">✦ Maquette préparée pour {nom} — touchez les ✨ pour la voir travailler</div>
+      <div className="banner">✦ Maquette préparée pour {nom} — confiez une tâche à votre assistante ↘</div>
 
       <div className="hero">
         <div className="img" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
@@ -264,8 +260,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {showAvis && avisMode === "prominent" && (
-        <section className="alt" style={{ position: "relative" }}>
-          <DemoPastille kind="avis" primary={primaryKind === "avis"} promise="Vos avis grandissent tout seuls." benefit="Après chaque client satisfait, votre site part chercher un nouvel avis Google — sans jamais conditionner l'accès au lien." />
+        <section className="alt">
           <div className="sec-k">Avis</div>
           <div className="rev-top">
             <div className="rev-score">{note}</div>
@@ -292,21 +287,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {demoAllowed && (
-        <section className="alt" style={{ position: "relative" }}>
-          <DemoPastille kind="creneau" primary={primaryKind === "creneau"} promise="Une annulation ? Il la comble." benefit="Un créneau se libère : vos clients fidèles sont prévenus, et la place repart aussitôt." />
-          <div className="sec-k">Un creux dans l’agenda ?</div>
-          <div className="sec-h">Le remplir en un geste</div>
-          <div className="sec-p">Une annulation de dernière minute n’est plus une place perdue : votre site prévient vos clients fidèles et propose le créneau libéré.</div>
-        </section>
-      )}
-
-      <section id="rdv" style={{ position: "relative" }}>
-        {demoAllowed ? (
-          <DemoPastille kind="rdv" promise="Il répond et réserve à votre place." benefit="Pendant que vous travaillez, un client réserve son rendez-vous sans que vous ayez à décrocher." />
-        ) : (
-          <DemoPastille kind="preparer" promise="Il prépare la consultation." benefit="Avant le rendez-vous, votre site transmet l’accès, les documents utiles et le déroulé — sans que vous ayez à y penser." />
-        )}
+      <section id="rdv">
         <div className="sec-k">Rendez-vous</div>
         <div className="sec-h">Horaires &amp; accès</div>
         {heures.length > 0 && (
@@ -329,10 +310,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         )}
       </section>
 
-      <section className="alt faq" style={{ position: "relative" }}>
-        {!demoAllowed && (
-          <DemoPastille kind="repondre" primary={primaryKind === "repondre"} promise="Il répond à votre place, à toute heure." benefit="Le soir, le week-end : vos patients trouvent leurs réponses et prennent rendez-vous, sans vous déranger." />
-        )}
+      <section className="alt faq">
         <div className="sec-k">Questions fréquentes</div>
         <div className="sec-h">Avant de venir</div>
         {content.faq.map((f, i) => (
