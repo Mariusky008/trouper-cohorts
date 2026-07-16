@@ -16,6 +16,7 @@ type Contact = {
   phone_e164: string;
   last_contacted_at: string | null;
   created_at: string;
+  unsub_token: string;
 };
 
 export function ProContacts({ slug, token, reviewLink }: { slug: string; token: string; reviewLink: string }) {
@@ -92,7 +93,8 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
   // Demande d'avis à un client stocké : ouvre WhatsApp (son numéro) pré-rempli.
   const askReview = (c: Contact) => {
     const greeting = c.prenom ? `Bonjour ${c.prenom},` : "Bonjour,";
-    const message = `${greeting}\nMerci beaucoup pour votre confiance. Si vous avez une minute, votre avis Google nous aiderait énormément :\n${reviewLink}\nMerci beaucoup !`;
+    const stopUrl = `${window.location.origin}/site-internet/stop/${c.unsub_token}`;
+    const message = `${greeting}\nMerci beaucoup pour votre confiance. Si vous avez une minute, votre avis Google nous aiderait énormément :\n${reviewLink}\nMerci beaucoup !\n\nPour ne plus être recontacté·e : ${stopUrl}`;
     const href = `https://wa.me/${toWaDigits(c.phone_e164)}?text=${encodeURIComponent(message)}`;
     // Journalise (best-effort, ne bloque pas l'ouverture).
     try {

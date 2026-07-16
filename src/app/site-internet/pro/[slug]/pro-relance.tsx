@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
 
-type Contact = { id: string; prenom: string | null; phone_e164: string };
+type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
 
 export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [slot, setSlot] = useState("");
@@ -102,7 +102,9 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
     } catch {
       /* best-effort */
     }
-    window.location.assign(`https://wa.me/${toWaDigits(c.phone_e164)}?text=${encodeURIComponent(message)}`);
+    const stopUrl = `${window.location.origin}/site-internet/stop/${c.unsub_token}`;
+    const full = `${message}\n\nPour ne plus être prévenu·e : ${stopUrl}`;
+    window.location.assign(`https://wa.me/${toWaDigits(c.phone_e164)}?text=${encodeURIComponent(full)}`);
   };
 
   return (

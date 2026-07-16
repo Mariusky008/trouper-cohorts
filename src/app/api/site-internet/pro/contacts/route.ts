@@ -20,6 +20,7 @@ type Contact = {
   phone_e164: string;
   last_contacted_at: string | null;
   created_at: string;
+  unsub_token: string;
 };
 
 export async function POST(request: Request) {
@@ -68,8 +69,26 @@ export async function POST(request: Request) {
     }
     const prenomRaw = s(p?.prenom);
     const prenom = prenomRaw ? prenomRaw.slice(0, 80) : null;
+    // Respect des désinscriptions : un numéro qui s'est retiré ne peut PAS être
+    // rajouté en douce (on ne réécrit jamais opted_out_at à null).
+    try {
+      const { data: existing } = await supabase
+        .from("human_site_contacts")
+        .select("opted_out_at")
+        .eq("site_id", siteId)
+        .eq("phone_e164", phone)
+        .maybeSingle();
+      if (existing && (existing as Record<string, unknown>).opted_out_at) {
+        return NextResponse.json(
+          { error: "Ce numéro s'est désinscrit : il ne peut pas être rajouté." },
+          { status: 409 }
+        );
+      }
+    } catch {
+      /* table non migrée → on laisse passer */
+    }
     const { error } = await supabase.from("human_site_contacts").upsert(
-      { site_id: siteId, prenom, phone_e164: phone, consent: true, source: "pro", opted_out_at: null },
+      { site_id: siteId, prenom, phone_e164: phone, consent: true, source: "pro" },
       { onConflict: "site_id,phone_e164" }
     );
     if (error && !migrationMissing(error.message)) {
@@ -97,7 +116,7 @@ export async function POST(request: Request) {
   try {
     const { data } = await supabase
       .from("human_site_contacts")
-      .select("id, prenom, phone_e164, last_contacted_at, created_at")
+      .select("id, prenom, phone_e164, last_contacted_at, created_at, unsub_token")
       .eq("site_id", siteId)
       .is("opted_out_at", null)
       .order("created_at", { ascending: false })
