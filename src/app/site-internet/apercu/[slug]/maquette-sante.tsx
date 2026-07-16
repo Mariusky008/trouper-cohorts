@@ -5,6 +5,7 @@
 // avis, aucun WhatsApp (déontologie), encart urgence en pied. Une seule barre
 // fixe (Appeler + Prendre RDV) ; l'accueil intelligent s'ouvre en surimpression.
 import { LeadForm } from "../../[slug]/lead-form";
+import { Gallery } from "./gallery";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
 import { TeaserIntro } from "./teaser-intro";
@@ -55,7 +56,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
   const heroPhoto = photos[0] || "";
   const gallery = photos.slice(heroPhoto ? 1 : 0);
-  const galClass = gallery.length >= 4 ? "g4" : gallery.length === 3 ? "g3" : gallery.length === 2 ? "g2" : gallery.length === 1 ? "g1" : "";
   const shortAddr = adresse.replace(/,?\s*France\s*$/i, "").trim();
   const heures = horaires.filter((h) => h.jours || h.horaires).slice(0, 7);
 
@@ -119,15 +119,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .sec-h{font-family:Georgia,serif;font-weight:600;font-size:20px;margin-bottom:9px;line-height:1.2;}
           .mqc .sec-p{font-size:13.5px;color:var(--muted);line-height:1.6;}
           .mqc .proposed{font-size:10.5px;color:var(--muted);font-style:italic;margin-top:10px;opacity:.85;}
-          /* GALERIE adaptative */
-          .mqc .g1 img{width:100%;height:180px;object-fit:cover;border-radius:12px;display:block;}
-          .mqc .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-          .mqc .g2 img{width:100%;height:120px;object-fit:cover;border-radius:10px;display:block;}
-          .mqc .g3{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:82px 82px;gap:8px;}
-          .mqc .g3 img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
-          .mqc .g3 img:first-child{grid-row:1/3;}
-          .mqc .g4{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-          .mqc .g4 img{width:100%;height:104px;object-fit:cover;border-radius:10px;display:block;}
           /* AVIS — prominent (A) / doux (B) */
           .mqc .rev-top{display:flex;align-items:center;gap:11px;margin-bottom:13px;}
           .mqc .rev-score{font-family:Georgia,serif;font-size:30px;font-weight:600;line-height:1;}
@@ -258,14 +249,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       {gallery.length > 0 && (
         <section className="alt">
-          <div className="sec-k">Le cabinet</div>
+          <div className="sec-k">Le lieu</div>
           <div className="sec-h">En images</div>
-          <div className={galClass}>
-            {(gallery.length >= 4 ? gallery.slice(0, 4) : gallery).map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={src} alt={`${nom} — photo ${i + 1}`} loading="lazy" />
-            ))}
-          </div>
+          <Gallery photos={gallery} nom={nom} />
         </section>
       )}
 
