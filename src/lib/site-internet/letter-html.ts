@@ -554,78 +554,6 @@ export async function composeLetterHtml(input: {
     : ["« Où est-ce qu'on peut se garer ? »", "« Quels sont vos horaires ? »", "« Quels sont vos tarifs ? »", "« Comment modifier mon rendez-vous ? »", "« C'est comment, une première séance ? »", "« Avez-vous de la place cette semaine ? »"];
   const cs_questions = csQlist.map((q) => `<span>${esc(q)}</span>`).join("");
 
-  // ── Recto M1 — ACQUISITION (commerce, déonto none) : la JAUGE d'avis ────────
-  // Pour un commerce avec des avis existants + des concurrents mieux notés : on
-  // montre la PROGRESSION (barre + objectif 50), on classe les concurrents par
-  // nombre d'avis RÉELS (badge « Site web », fait vérifiable), on donne un cap.
-  // JAMAIS de promesse chiffrée de résultat. Déclenché seulement si les données
-  // rendent la jauge crédible (le prospect a des avis, des concurrents chiffrés).
-  const m1Goal = 50;
-  const m1Reviews = reviews ?? 0;
-  const m1FillPct = Math.max(6, Math.min(100, Math.round((m1Reviews / m1Goal) * 100)));
-  const m1_gauge =
-    `<div class="m1-gtop"><div class="l">Avis Google</div><div class="n">${m1Reviews}${note ? ` <span>· ★ ${note}</span>` : ""}</div></div>` +
-    `<div class="m1-bar"><div class="m1-fill" style="width:${m1FillPct}%"></div></div>` +
-    `<div class="m1-legend"><span>${m1Reviews} avis</span><span>Objectif conseillé : <b>${m1Goal} avis</b></span></div>`;
-  // Concurrents : source ÉDITABLE (un par ligne : « Nom | nb avis »). L'opérateur
-  // peut supprimer une ligne hors-sujet. On fournit jusqu'à 4 candidats triés par
-  // nombre d'avis ; les 3 premières lignes s'affichent → supprimer un intrus fait
-  // remonter le suivant tout en gardant 3 lignes.
-  const m1_concurrents_src = ov(
-    "m1_concurrents_src",
-    conc
-      .filter((c) => c.avis != null)
-      .slice()
-      .sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0))
-      .slice(0, 4)
-      .map((c) => `${cleanCompName(c.name)} | ${c.avis}`)
-      .join("\n")
-  );
-  const m1_concurrents = m1_concurrents_src
-    .split("\n").map((l) => l.trim()).filter(Boolean)
-    .map((line) => {
-      // On extrait le dernier nombre de la ligne comme nombre d'avis ; le reste
-      // (débarrassé du séparateur final) est le nom — tolère les noms à tiret.
-      const m = line.match(/^(.*?)[\s|—–-]*(\d[\d\s]*)\s*(?:avis)?$/i);
-      const name = (m ? m[1] : line).trim();
-      const avis = m ? m[2].replace(/\s/g, "") : "";
-      return { name, avis };
-    })
-    .filter((r) => r.name)
-    .slice(0, 3)
-    .map((r) => {
-      const av = r.avis ? `<span class="av">${esc(r.avis)} <i>avis</i></span>` : "";
-      return `<div class="m1-crow"><span class="nm">${esc(r.name)}</span><span class="right">${av}<span class="tagweb">Site web</span></span></div>`;
-    })
-    .join("");
-  // Ligne de synthèse CONDITIONNELLE : ne jamais dire « pas de site » à qui en a un.
-  const m1_synth = ov("m1_synth", website
-    ? `Toutes ont un site qui rassure et donne envie.<br><b>Le vôtre s'arrête à la vitrine.</b>`
-    : `Toutes ont un site.<br><b>Vous n'apparaissez nulle part.</b>`);
-  const m1_verdict = ov("m1_verdict", `Votre réputation existe.<br><b>Elle n'est pas encore assez visible.</b>`);
-  const m1_hook_sub = ov("m1_hook_sub", `personnes recherchent <b>« ${esc(requete)} »</b><br>chaque mois sur Google.`);
-  const m1_today = ov("m1_today", website ? "Un site vitrine.<br>Et c'est tout." : "Une fiche Google.<br>Et c'est tout.");
-  const m1_hook_big = `≈ ${searchVolume}`;
-  const m1_comp_intro = ov("m1_comp_intro", `Les plus visibles de votre secteur en ont bien plus :`);
-  const m1_prep = ov(
-    "m1_prep",
-    `<b>J'ai déjà préparé une première version de votre nouveau site.</b> Il met vos avis en valeur, répond aux questions à toute heure, et prend les rendez-vous.`
-  );
-  // Carte DEMAIN M1 : mini-site + les 3 FONCTIONS (dont « demande l'avis » si permis).
-  const m1SolicitFn = def.avis_sollicitation ? `<div><span class="ck">—</span><span><b>Demande l'avis</b> après chaque ${esc(termeSing)}</span></div>` : "";
-  const demain_m1 =
-    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
-    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
-    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
-    (note ? `<div class="dm-stars">★★★★★ ${note}</div>` : "") +
-    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
-    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
-    `</div></div>` +
-    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
-    `<div class="m1-fx"><div><span class="ck">—</span><span><b>Répond</b> aux questions, 24 h/24</span></div>` +
-    `<div><span class="ck">—</span><span><b>Réserve</b> les rendez-vous</span></div>` +
-    m1SolicitFn + `</div>`;
-
 
   // ══ GABARIT UNIQUE (lettre profil A, décliné B/C/D) ═════════════════════════
   // Un seul design (recto/SANS_SITE.html) paramétré par DEUX axes indépendants :
@@ -846,9 +774,6 @@ export async function composeLetterHtml(input: {
     // Recto PROFIL C v3 (santé encadrée)
     cs_hook_sub, cs_who, csv3_concurrents, cs_pivot, cs_prep, cs_stamp, cs_questions,
     ai_bubble, ai_booked, demain_card,
-    // Recto M1 (acquisition commerce : jauge d'avis)
-    m1_hook_big, m1_hook_sub, m1_gauge, m1_comp_intro, m1_concurrents, m1_synth,
-    m1_verdict, m1_today, demain_m1, m1_prep,
     // Ligne de constat sectorielle (§5 bis)
     secteur_constat,
     // Gabarit unique (lettre profil A, décliné B/C/D)
