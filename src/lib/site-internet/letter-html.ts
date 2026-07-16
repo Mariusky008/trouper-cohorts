@@ -626,50 +626,6 @@ export async function composeLetterHtml(input: {
     `<div><span class="ck">—</span><span><b>Réserve</b> les rendez-vous</span></div>` +
     m1SolicitFn + `</div>`;
 
-  // ── Recto M2 — TEMPS (artisans, déonto none) : « votre téléphone travaille ──
-  //    plus que vous ». Le site filtre les appels ; l'artisan ne rappelle que
-  //    les vraies demandes. Confirmation = devis/rappel (jamais « Réservé »).
-  const urgent = Boolean(mp.entry?.urgencesOps);
-  const m2_hook = ov("m2_hook", `Votre téléphone travaille<br>plus que vous.`);
-  const m2_hook_sub = ov(
-    "m2_hook_sub",
-    `Chaque appel vous interrompt en plein chantier — souvent pour la même question.`
-  );
-  // Les questions qui coupent une intervention (concrètes, vécues). Vraies.
-  const m2Qlist = [
-    "« Vous intervenez sur quelle zone ? »",
-    "« C'est quoi vos tarifs ? »",
-    "« Vous faites des devis gratuits ? »",
-    "« Vous pouvez venir quand ? »",
-    "« Vous êtes disponible en urgence ? »",
-    "« Vous vous déplacez le week-end ? »",
-  ];
-  const m2_questions = m2Qlist.map((q) => `<span>${esc(q)}</span>`).join("");
-  const m2_pivot = ov(
-    "m2_pivot",
-    `<b>Votre site répond à tout ça pendant que vous travaillez.</b><br>Vous ne rappelez que les <span class="u">vraies</span> demandes.`
-  );
-  const m2_today = ov("m2_today", `Un numéro.<br>Et le téléphone qui sonne<br>en plein chantier.`);
-  const m2_prep = ov(
-    "m2_prep",
-    `<b>J'ai préparé la première version de votre site.</b> Il répond aux questions, oriente les devis, et ${urgent ? "trie l'urgence" : "filtre les demandes"} — pour ne vous laisser que les appels qui en valent la peine.`
-  );
-  // Carte DEMAIN M2 : mini-site + 3 fonctions « assistant » (pas d'avis : l'angle
-  // est le temps, pas la réputation). Tri urgence si urgencesOps.
-  const m2Fn3 = urgent
-    ? `<div><span class="ck">—</span><span><b>Trie l'urgence</b> et vous alerte tout de suite</span></div>`
-    : `<div><span class="ck">—</span><span><b>Filtre</b> les demandes, ne garde que les vraies</span></div>`;
-  const demain_m2 =
-    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
-    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
-    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
-    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
-    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
-    `</div></div>` +
-    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
-    `<div class="m1-fx"><div><span class="ck">—</span><span><b>Répond</b> zone, tarifs, délais — 24 h/24</span></div>` +
-    `<div><span class="ck">—</span><span><b>Prépare</b> les demandes de devis</span></div>` +
-    m2Fn3 + `</div>`;
 
   // ══ GABARIT UNIQUE (lettre profil A, décliné B/C/D) ═════════════════════════
   // Un seul design (recto/SANS_SITE.html) paramétré par DEUX axes indépendants :
@@ -893,8 +849,6 @@ export async function composeLetterHtml(input: {
     // Recto M1 (acquisition commerce : jauge d'avis)
     m1_hook_big, m1_hook_sub, m1_gauge, m1_comp_intro, m1_concurrents, m1_synth,
     m1_verdict, m1_today, demain_m1, m1_prep,
-    // Recto M2 (artisans : temps)
-    m2_hook, m2_hook_sub, m2_questions, m2_pivot, m2_today, demain_m2, m2_prep,
     // Ligne de constat sectorielle (§5 bis)
     secteur_constat,
     // Gabarit unique (lettre profil A, décliné B/C/D)
