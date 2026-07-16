@@ -94,6 +94,44 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
   const rtn = `<button class="asx-rtn" data-return>Revenir à mon assistante ✦</button>`;
   const tiny = (t: string) => `<div class="asx-tiny">${t}</div>`;
 
+  // ── BILAN cumulatif ─ Le meilleur moment de vente : à partir de la 2ᵉ tâche
+  //    vécue (pic émotionnel), on récapitule UNIQUEMENT ce que le pro vient de
+  //    vivre (jamais une promesse inventée) puis on pousse à l'installation.
+  const doneRef = useRef<string[]>([]);
+  const bilanLine: Record<string, string> = {
+    avis: "obtenir un nouvel avis Google",
+    question: `répondre à un·e ${term}`,
+    creneau: avisAllowed ? "aider à remplir un créneau libéré ou vendre un produit" : "aider à remplir un créneau libéré",
+    preparer: "préparer une réservation",
+  };
+  const bilanHtml = () => {
+    const items = doneRef.current
+      .map((k) => `<div class="asx-bl"><span>✓</span> ${esc(bilanLine[k] || "")}</div>`)
+      .join("");
+    return (
+      `<div class="asx-final" style="margin-top:0">Pendant cette minute, votre futur site aurait déjà pu&nbsp;:</div>` +
+      `<div class="asx-blist">${items}</div>` +
+      `<div class="asx-blsig">Ce site ne se contente pas d'être beau.<br><b>Il travaille avec vous.</b></div>` +
+      `<button class="asx-cta" data-cta>⚡ Je veux ce site — être rappelé</button>` +
+      `<button class="asx-rtn" data-continue>Continuer à explorer</button>`
+    );
+  };
+  // Fin d'une démo : bilan dès la 2ᵉ tâche vécue, sinon la conclusion simple.
+  const showFinal = (key: string, coreHtml: string) => {
+    if (!doneRef.current.includes(key)) doneRef.current.push(key);
+    setCard(doneRef.current.length >= 2 ? bilanHtml() : coreHtml + rtn);
+  };
+  // « Je veux ce site » : ferme l'assistante et amène au formulaire d'appel.
+  const goBuy = () => {
+    clearTimers();
+    setStageOn(false);
+    setOpen(false);
+    setView("home");
+    requestAnimationFrame(() =>
+      document.getElementById("site-rappel")?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
+  };
+
   // ── AVIS : message envoyé → l'avis Google apparaît → compteur n → n+1 ─────────
   const playAvis = () => {
     const who = fn.trim() || `votre ${term}`;
@@ -118,10 +156,10 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       });
     });
     after(6300, () =>
-      setCard(
+      showFinal("avis",
         `<div class="asx-final"><span class="em">Un nouvel avis Google</span> vient renforcer votre réputation.</div>` +
           `<div class="asx-starline" style="font-size:13px;margin-top:6px">${n0} → ${n0 + 1} avis</div>` +
-          tiny("simulation") + rtn
+          tiny("simulation")
       )
     );
   };
@@ -150,9 +188,9 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       if (sl) { sl.classList.add("filled"); sl.innerHTML = `✓ ${esc(heure)} — réservé par Julie`; }
     });
     after(5900, () =>
-      setCard(
+      showFinal("creneau",
         `<div class="asx-final">Votre créneau vide vient d'être comblé —<br><span class="em">avant même que vous ayez rangé votre poste.</span></div>` +
-          tiny("simulation") + rtn
+          tiny("simulation")
       )
     );
   };
@@ -177,7 +215,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       const fin = book
         ? `<div class="asx-stamp">✓ Réservé — ${esc(slot)}</div><div class="asx-final">Pendant que vous étiez occupé·e,<br><span class="em">un nouveau ${term} a déjà été pris en charge.</span></div>`
         : `<div class="asx-final">Votre ${term} a eu sa réponse —<br><span class="em">sans que vous ayez à décrocher.</span></div>`;
-      setCard(fin + tiny(`${avisAllowed ? "vous n'avez pas décroché" : "aucune donnée de santé demandée"} · simulation`) + rtn);
+      showFinal("question", fin + tiny(`${avisAllowed ? "vous n'avez pas décroché" : "aucune donnée de santé demandée"} · simulation`));
     });
   };
 
@@ -191,13 +229,14 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     const ch = () => document.getElementById("asx-ch");
     seq.forEach(([w, t], i) => after(600 + i * 1050, () => { const c = ch(); if (c) c.innerHTML += `<div class="asx-msg ${w}">${t}</div>`; }));
     after(600 + seq.length * 1050 + 500, () =>
-      setCard(`<div class="asx-final">Votre ${term} arrive préparé —<br><span class="em">la séance commence dans les meilleures conditions.</span></div>` + tiny("simulation") + rtn)
+      showFinal("preparer", `<div class="asx-final">Votre ${term} arrive préparé —<br><span class="em">la séance commence dans les meilleures conditions.</span></div>` + tiny("simulation"))
     );
   };
 
   const onStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const t = e.target as HTMLElement;
-    if (t.closest("[data-return]")) backHome();
+    if (t.closest("[data-cta]")) goBuy();
+    else if (t.closest("[data-return],[data-continue]")) backHome();
   };
 
   // ── Rendu du corps du panneau (React) ────────────────────────────────────────
@@ -419,6 +458,13 @@ function styles(accent: string): string {
   .asx-final .em{color:#B8862F;}
   .asx-tiny{font-size:9px;color:#A6A69C;margin-top:8px;font-style:italic;}
   .asx-rtn{margin-top:15px;background:#16160F;color:#FBFAF7;border:none;border-radius:20px;padding:11px 18px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;}
+  .asx-blist{margin:12px 0 4px;text-align:left;display:flex;flex-direction:column;gap:7px;}
+  .asx-bl{font-size:12.5px;color:#25381C;line-height:1.35;display:flex;gap:7px;align-items:flex-start;}
+  .asx-bl span{color:#1B7A3E;font-weight:800;flex:none;}
+  .asx-blsig{font-family:Georgia,serif;font-size:14px;line-height:1.4;margin:13px 0 2px;color:#16160F;}
+  .asx-cta{margin-top:14px;width:100%;background:${accent};color:#fff;border:none;border-radius:20px;padding:13px 18px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 10px 24px -8px ${accent}cc;}
+  .asx-cta:active{transform:translateY(1px);}
+  .asx-rtn[data-continue]{margin-top:9px;background:none;color:#71766C;}
   .asx-conf{position:absolute;width:7px;height:7px;border-radius:1px;opacity:0;}
   @keyframes asxConf{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(70px) rotate(220deg)}}
   `;

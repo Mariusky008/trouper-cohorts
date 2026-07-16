@@ -347,7 +347,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         ))}
       </section>
 
-      <div className="close">
+      <div className="close" id="site-rappel">
         <div className="t">Ce site peut être le vôtre.</div>
         <div className="p">
           Il vous plaît ? On le met en ligne sous 72 h — ou on change ce que vous voulez.<br />
