@@ -8,7 +8,6 @@ import { join } from "path";
 import QRCode from "qrcode";
 import { isDirectoryUrl, directoryPlatformName, bookingPlatformName } from "@/lib/site-internet/directories";
 import { resolveMetier, confirmationBooked } from "@/lib/site-internet/metier-profiles";
-import type { Secteur } from "@/lib/site-internet/metier-profiles";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 export const LETTER_MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA"];
@@ -80,24 +79,6 @@ export function usageName(full: string): string {
     out = enseigne ? clean : tokens.slice(0, 2).join(" ");
   }
   return trimName(out) || clean;
-}
-
-// SECTEUR → une seule ligne de constat (§5 bis MOTEURS_ET_DEONTOLOGIE). Elle
-// énonce un COMPORTEMENT général du client final (autorisé), jamais un procès
-// d'intention sur ce que pensent SES clients. Le secteur ne change QUE cette
-// ligne et le vocabulaire, jamais la structure. {metier} = libellé au singulier.
-function secteurConstat(secteur: Secteur, metier: string): string {
-  switch (secteur) {
-    case "urgence":
-      return `Quand on cherche un ${metier}, on retient celui qu'on peut joindre tout de suite — et celui qui rassure.`;
-    case "soin":
-      return `Choisir un ${metier}, c'est intime. On veut comprendre votre approche avant d'oser appeler — souvent tard le soir.`;
-    case "emotion":
-      return `Pour un choix aussi personnel, on ne compare pas des prix : on cherche un style, un univers. Le vôtre se découvre en ligne.`;
-    case "flux":
-    default:
-      return `On choisit avec les yeux : vos photos, vos horaires, vos avis — en moins de trois secondes, sur mobile.`;
-  }
 }
 
 export type EditableField = { key: string; label: string; value: string; multiline?: boolean };
@@ -400,7 +381,6 @@ export async function composeLetterHtml(input: {
   // scan). Il pilote QUEL recto sans site on utilise. La déontologie (portée par
   // le profil / def) reste ce qui limite ce qu'on a le droit d'écrire.
   const moteur = mp.entry?.moteur ?? "M1_acquisition";
-  const secteur: Secteur = mp.entry?.secteur ?? "flux";
   // Déontologie : pilote ce que la lettre a le DROIT de dire (avis, WhatsApp,
   // ton). Le moteur, lui, n'ajuste que l'angle de l'accroche. Un seul gabarit.
   const deonto = mp.entry?.deontologie ?? "none";
@@ -412,21 +392,6 @@ export async function composeLetterHtml(input: {
   const metierArticle = ov("metier_article", mp.entry?.article || "un");
   // Nom d'usage pour l'en-tête et le pied (jamais l'état civil complet).
   const destName = ov("display_name", usageName(nom));
-  // Ligne de constat sectorielle (une seule ligne, corrigeable) — §5 bis.
-  const secteur_constat = ov("secteur_constat", secteurConstat(secteur, metierLabel));
-  // 1) LE CHOC — le chiffre en héros, la phrase (au vocabulaire du profil), le
-  //    destinataire. Profil C : sous-ligne sobre recentrée sur la findabilité.
-  const heroCap = `${def.heroSujet} ${def.heroVerbe} ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b> chaque mois.`;
-  const heroSubHtml = def.heroSub ? `<div class="ss-herosub">${esc(def.heroSub)}</div>` : "";
-  const ss_hero = searchVolume
-    ? `<div class="ss-num">≈ ${searchVolume}</div>` +
-      `<div class="ss-cap">${heroCap}</div>` +
-      heroSubHtml +
-      `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`
-    : `<div class="ss-cap big">Vos futurs ${esc(termePublic)} cherchent ${metierArticle} <b>${esc(metierLabel)}</b> à <b>${esc(villeAff)}</b> sur Google.</div>` +
-      heroSubHtml +
-      `<div class="ss-dest">Diagnostic personnalisé pour <b>${esc(destName)}</b>.</div>`;
-  // 2) LA PREUVE — 3 concurrents « qui ont un site », propres, aérés.
   // Nom propre du concurrent : Apify colle souvent le métier/la ville au nom
   // (« Fanny Moleres - Psychologue à … », « X (Volckaert), Psychologue, EMDR »).
   // On coupe au 1er séparateur pour ne garder que le nom.
@@ -443,77 +408,11 @@ export async function composeLetterHtml(input: {
     }
     return cut;
   };
-  const concRow = (c: { name: string; note: string; avis: number | null }) => {
-    const noteNum = str(c.note).replace(/★/g, "").trim();
-    const bits = [noteNum ? `★ ${noteNum}` : "", c.avis != null ? `${c.avis} avis` : ""].filter(Boolean).join("&nbsp;·&nbsp;");
-    return `<div class="cc-row"><div class="cc-name">${esc(cleanCompName(c.name))}</div><div class="cc-meta">${bits}</div><div class="cc-site">Site web</div></div>`;
-  };
-  // Volontairement : le prospect N'apparaît PAS dans cette liste simulée (sans
-  // site, Google ne l'affiche pas ici). Son absence est mise en scène dans la
-  // carte « Aujourd'hui » du face-à-face ci-dessous.
-  const concurrents_list = conc.slice(0, 3).map(concRow).join("");
-  // 3) LE FACE-À-FACE — deux cartes Avant/Après. Carte DEMAIN = mini-aperçu de
-  //    l'ACCUEIL INTELLIGENT (bulle + « Réservé ✓ » + ligne aspirationnelle),
-  //    réglé par profil (A chaleureux 24 h/24 ; C sobre « en séance »). Plus de
-  //    volet avis/contacts ici : la réputation vit dans la maquette (profil A).
-  const eyeOff = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7c2.1 0 3.9.8 5.4 1.9"/><path d="M22 12s-3.6 7-10 7c-2.1 0-3.9-.8-5.4-1.9"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
-  const check = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FBFAF7" stroke-width="2.6"><polyline points="5,12.5 10,17 19,7"/></svg>`;
+  // Accueil intelligent (bulle + créneau) — réutilisé par le mini-téléphone du
+  // gabarit. La pastille de confirmation dépend du métier (réserve/rappel/devis).
   const ai_bubble = ov("ai_bubble", def.accueilBubble);
-  const ai_line = ov("ai_line", def.accueilLine);
   const ai_slot = ov("ai_slot", def.accueilSlot);
-  // Pastille de confirmation selon le métier (réserve / rappel / devis / acompte).
   const ai_booked = confirmationBooked(mp.entry?.confirmation ?? "reserve", ai_slot);
-  // ── Carte DEMAIN v2 : un MINI-SITE (hero + boutons + galerie), avec l'accueil
-  //    (bulle + « Réservé ») qui vit dedans. Rend DEMAIN nettement plus fort que
-  //    AUJOURD'HUI (rien → une vraie vitrine). Étoiles schématiques SEULEMENT si
-  //    le profil affiche les avis (jamais en C, déontologie).
-  const busyWordL = mp.profil === "A" ? "occupé" : "en séance"; // commerce vs soin
-  const dmStars = def.avis_affichage && note ? `<div class="dm-stars">★★★★★ ${note}</div>` : "";
-  const demain_card =
-    `<div class="dm-wrap"><div class="dm-mini"><div class="dm-screen">` +
-    `<div class="dm-hero"><div class="dm-role">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="dm-name">${esc(destName)}</div></div>` +
-    `<div class="dm-btns"><span class="b1"></span><span class="b2"></span></div>` +
-    dmStars +
-    `<div class="dm-row"><div class="dm-l"></div><div class="dm-l s"></div></div>` +
-    `<div class="dm-gal"><i></i><i></i><i></i></div>` +
-    `</div></div>` +
-    `<div class="dm-bubble">${ai_bubble}<div class="dm-ok">${check} ${esc(ai_booked)}</div></div></div>` +
-    `<div class="dm-tail">Une vraie vitrine — <b>et un accueil qui répond et réserve.</b><br><i>Même ${busyWordL}. Même à 23 h.</i></div>`;
-  void ai_line;
-  const faceoff =
-    `<div class="faceoff2">` +
-    `<div class="fo-card fo-today"><div class="fo-lbl">Aujourd'hui</div><div class="fo-eye">${eyeOff}</div><div class="fo-cn">${esc(destName)}</div><div class="fo-invis">Invisible sur cette recherche</div><div class="fo-invsub">Absent des premiers résultats</div></div>` +
-    `<div class="fo-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="1.8"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 20,12 13,18"/></svg></div>` +
-    `<div class="fo-card fo-tomorrow ai-card"><div class="fo-lbl">Demain</div>${demain_card}</div>` +
-    `</div>`;
-  const ss_transition = ov(
-    "ss_transition",
-    `Aujourd'hui, quand un ${termeSing} tape cette recherche, il tombe sur vos concurrents — présents, avec un site et un moyen de les joindre. Votre cabinet, lui, n'apparaît pas dans ces résultats.`
-  );
-  // 4) L'ACTION — on pivote direct vers la solution. Accroche + 3 bénéfices (du
-  //    profil), puis le QR. Vocabulaire clients/patients selon le profil.
-  const introN = searchVolume ? `ces ${searchVolume} recherches` : "ces recherches";
-  // Angle avis autorisé seulement si le profil le permet (pas en C). Quand une
-  // vraie réputation existe (note ≥ 4,5), on la valorise sans rien inventer.
-  const avisAllowed = def.avis_affichage;
-  const goodRep = avisAllowed && reviews != null && reviews >= 1 && rating != null && rating >= 4.5 && Boolean(note);
-  const ss_p3 = ov(
-    "ss_p3",
-    goodRep
-      ? `Vous avez déjà d'excellents avis (${note}/5) — mais aucun site pour les mettre en valeur. J'ai préparé le vôtre, pour transformer ${introN} en ${termePublic} qui vous découvrent :`
-      : `J'ai préparé la première version de votre site pour transformer ${introN} en ${termePublic} qui vous découvrent :`
-  );
-  // Les 3 bénéfices viennent du PROFIL (déontologie respectée). Corrigeables.
-  const ss_b1 = ov("ss_b1", def.benefices[0]);
-  const ss_b2 = ov("ss_b2", def.benefices[1]);
-  const ss_b3 = ov("ss_b3", def.benefices[2]);
-  const ss_action =
-    `<div class="ss-action"><p class="ss-lead">${ss_p3}</p>` +
-    `<div class="ss-bullets"><div>— ${ss_b1}</div><div>— ${ss_b2}</div><div>— ${ss_b3}</div></div></div>`;
-  // Pied : nom d'usage (jamais l'état civil complet — effet « scrapé »/Big
-  // Brother qui casse la chaleur du « j'ai préparé ça pour vous »).
-  const ss_footer = `<div class="ss-footer">Diagnostic préparé pour ${esc(destName)}</div>`;
-  const cta_full = `<div class="cta-full">Retournez la feuille : scannez le QR, essayez votre accueil en direct →</div>`;
 
   // ══ GABARIT UNIQUE (lettre profil A, décliné B/C/D) ═════════════════════════
   // Un seul design (recto/SANS_SITE.html) paramétré par DEUX axes indépendants :
@@ -723,17 +622,6 @@ export async function composeLetterHtml(input: {
     requete_metier: requete,
     google_results,
     reputation_line,
-    // Recto SANS_SITE refondu
-    ss_hero,
-    concurrents_list,
-    faceoff,
-    ss_transition,
-    ss_action,
-    ss_footer,
-    cta_full,
-    ai_bubble, ai_booked, demain_card,
-    // Ligne de constat sectorielle (§5 bis)
-    secteur_constat,
     // Gabarit unique (lettre profil A, décliné B/C/D)
     hero_big, hero_l1, hero_l2, diag_label,
     r1_title, r1_text, r1_proof, r2_title, r2_text, r2_proof,
