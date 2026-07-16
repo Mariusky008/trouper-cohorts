@@ -58,6 +58,21 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
 
   useEffect(() => () => clearTimers(), []);
 
+  // Ouverture depuis les CTA du site (« 💬 Parler à mon assistante »).
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("[data-assistant-open]")) {
+        e.preventDefault();
+        setView("home");
+        setStageOn(false);
+        setOpen(true);
+      }
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
   const n0 = data.reviewsCount ?? 0;
   const rtn = `<button class="asx-rtn" data-return>Revenir à mon assistante ✦</button>`;
   const tiny = (t: string) => `<div class="asx-tiny">${t}</div>`;
@@ -85,7 +100,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
         if (real) real.textContent = String(n0 + 1);
       });
     });
-    after(4400, () =>
+    after(6300, () =>
       setCard(
         `<div class="asx-final"><span class="em">Un nouvel avis Google</span> vient renforcer votre réputation.</div>` +
           `<div class="asx-starline" style="font-size:13px;margin-top:6px">${n0} → ${n0 + 1} avis</div>` +
@@ -229,27 +244,36 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       );
     }
     // home
+    const plural = term === "patient" ? "patients" : "client·es";
     return (
       <>
-        <div className="asx-say">Pendant que vous travaillez avec vos {term === "patient" ? "patients" : "client·es"}, <b>je m’occupe du reste.</b><br />Que souhaitez-vous me confier&nbsp;?</div>
+        <div className="asx-say">Pendant que vous êtes avec vos {plural}, je peux m’occuper du reste 🙂<br /><b>Que souhaitez-vous que je fasse&nbsp;?</b></div>
         <div className="asx-tasks">
           {avisAllowed && (
-            <button className="asx-task" onClick={() => setView("avisIn")}>
-              <span className="ic">⭐</span><span><span className="tt">Obtenir un nouvel avis Google</span><span className="ts">après un·e client·e satisfait·e</span></span><span className="go">→</span>
-            </button>
+            <div className="asx-task">
+              <span className="ic">⭐</span>
+              <span className="tx"><span className="tt">Demander un avis Google à un {term}</span><span className="ts">après un·e {term} satisfait·e</span></span>
+              <button className="asx-do" onClick={() => setView("avisIn")}>▶ Lui demander</button>
+            </div>
           )}
           {avisAllowed && (
-            <button className="asx-task" onClick={() => setView("creneauIn")}>
-              <span className="ic">📣</span><span><span className="tt">Remplir un créneau annulé</span><span className="ts">prévenir vos habitué·es sur WhatsApp</span></span><span className="go">→</span>
-            </button>
+            <div className="asx-task">
+              <span className="ic">📣</span>
+              <span className="tx"><span className="tt">Prévenir mes {plural} d’une place libre</span><span className="ts">un créneau vient de se libérer</span></span>
+              <button className="asx-do" onClick={() => setView("creneauIn")}>▶ C’est parti</button>
+            </div>
           )}
-          <button className="asx-task" onClick={() => setView("questionIn")}>
-            <span className="ic">💬</span><span><span className="tt">Laisser mon site répondre à ma place</span><span className="ts">quand un·e {term} pose une question</span></span><span className="go">→</span>
-          </button>
+          <div className="asx-task">
+            <span className="ic">💬</span>
+            <span className="tx"><span className="tt">Répondre à un {term} pendant que je travaille</span><span className="ts">rendez-vous, infos pratiques</span></span>
+            <button className="asx-do" onClick={() => setView("questionIn")}>▶ Voir comment</button>
+          </div>
           {!avisAllowed && (
-            <button className="asx-task" onClick={playPreparer}>
-              <span className="ic">📋</span><span><span className="tt">Préparer la consultation</span><span className="ts">infos pratiques la veille du rendez-vous</span></span><span className="go">→</span>
-            </button>
+            <div className="asx-task">
+              <span className="ic">📋</span>
+              <span className="tx"><span className="tt">Préparer la consultation</span><span className="ts">infos pratiques la veille du rendez-vous</span></span>
+              <button className="asx-do" onClick={playPreparer}>▶ Voir comment</button>
+            </div>
           )}
         </div>
       </>
@@ -261,9 +285,10 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       <style>{styles(accent)}</style>
 
       {!open && !stageOn && (
-        <button className="asx-fab" onClick={() => { setOpen(true); setView("home"); }} aria-label="Confier une tâche">
-          <span className="lab">Confier une tâche</span>
+        <button className="asx-fab" onClick={() => { setOpen(true); setView("home"); }} aria-label="Parler à mon assistante">
           <span className="orb">✦</span>
+          <span className="lab">Parler à mon assistante</span>
+          <span className="chev">›</span>
         </button>
       )}
 
@@ -307,12 +332,17 @@ function cap(s: string): string {
 
 function styles(accent: string): string {
   return `
-  .asx-fab{position:fixed;right:16px;bottom:74px;z-index:55;max-width:520px;display:flex;align-items:center;cursor:pointer;border:none;background:none;font-family:inherit;}
-  .asx-fab .lab{background:#16160F;color:#FBFAF7;font-size:12px;font-weight:600;padding:9px 26px 9px 13px;border-radius:22px;margin-right:-16px;white-space:nowrap;box-shadow:0 8px 22px -8px rgba(0,0,0,.5);}
-  .asx-fab .orb{width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,#C79A3A,#9A7526);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 8px 22px -6px rgba(184,134,47,.7);position:relative;}
-  .asx-fab .orb::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #B8862F;animation:asxPulse 2.2s infinite;}
-  @keyframes asxPulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.7);opacity:0}}
-  @media (prefers-reduced-motion:reduce){.asx-fab .orb::after{animation:none;}}
+  /* Le bouton STAR : une vraie pilule premium, centrée au-dessus de la barre.
+     « Respiration » discrète toutes les ~7 s pour attirer le regard sans agiter. */
+  .asx-fab{position:fixed;left:0;right:0;margin:0 auto;bottom:82px;z-index:55;width:max-content;max-width:calc(100% - 28px);
+    display:flex;align-items:center;gap:11px;cursor:pointer;border:none;font-family:inherit;height:60px;
+    background:linear-gradient(135deg,#20201A,#0D0D09);color:#FBFAF7;border-radius:32px;padding:9px 20px 9px 10px;
+    box-shadow:0 14px 36px -10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(184,134,47,.4);animation:asxBreathe 7s ease-in-out infinite;}
+  .asx-fab .orb{width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#E4B850,#9A7526);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex:none;box-shadow:0 5px 14px -3px rgba(184,134,47,.75);}
+  .asx-fab .lab{font-size:15px;font-weight:700;white-space:nowrap;}
+  .asx-fab .chev{font-size:22px;color:#D8B056;font-weight:700;margin-left:1px;line-height:1;}
+  @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
+  @media (prefers-reduced-motion:reduce){.asx-fab{animation:none;}}
   .asx-sheet{position:fixed;left:0;right:0;bottom:0;z-index:56;max-width:520px;margin:0 auto;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -18px 50px -12px rgba(0,0,0,.4);max-height:88vh;display:flex;flex-direction:column;animation:asxUp .38s cubic-bezier(.22,1,.36,1);}
   @keyframes asxUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
   .asx-grip{width:38px;height:4px;border-radius:2px;background:#DBD8CF;margin:10px auto 4px;}
@@ -325,12 +355,15 @@ function styles(accent: string): string {
   .asx-say{background:${accent}14;border-radius:14px;border-top-left-radius:5px;padding:12px 14px;font-size:13px;line-height:1.45;color:#26382E;margin-bottom:15px;}
   .asx-say b{font-weight:600;}
   .asx-tasks{display:flex;flex-direction:column;gap:9px;}
-  .asx-task{display:flex;align-items:center;gap:12px;border:1px solid #E7E4DC;border-radius:13px;padding:13px 14px;cursor:pointer;background:#fff;transition:.15s;text-align:left;font-family:inherit;width:100%;}
-  .asx-task:hover{border-color:#B8862F;background:#FDFBF6;}
+  .asx-task{display:flex;align-items:center;gap:12px;border:1px solid #E7E4DC;border-radius:13px;padding:12px 12px 12px 14px;background:#fff;transition:.15s;}
+  .asx-task:hover{border-color:${accent};background:#FDFBF6;}
   .asx-task .ic{width:34px;height:34px;border-radius:9px;background:${accent}14;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;}
-  .asx-task .tt{font-size:13.5px;font-weight:600;display:block;}
+  .asx-task .tx{flex:1;min-width:0;}
+  .asx-task .tt{font-size:13px;font-weight:600;display:block;line-height:1.25;}
   .asx-task .ts{font-size:11px;color:#71766C;display:block;margin-top:1px;}
-  .asx-task .go{margin-left:auto;color:#B8862F;font-size:17px;}
+  .asx-do{flex:none;background:${accent};color:#fff;border:none;border-radius:20px;padding:9px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 6px 14px -6px ${accent}99;transition:.15s;}
+  .asx-do:hover{filter:brightness(1.06);}
+  .asx-do:active{transform:translateY(1px);}
   .asx-quick{display:flex;flex-direction:column;gap:8px;}
   .asx-quick button{border:1px solid #E7E4DC;background:#fff;border-radius:13px;padding:12px 14px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:500;text-align:left;}
   .asx-quick button:hover{border-color:#B8862F;}

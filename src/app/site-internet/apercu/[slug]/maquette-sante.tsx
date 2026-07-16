@@ -90,8 +90,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .hero h2{font-family:Georgia,serif;font-weight:600;font-size:27px;line-height:1.08;margin:7px 0 5px;}
           .mqc .hero .sub{font-size:12.5px;opacity:.85;margin-bottom:13px;}
           .mqc .hero .acts{display:flex;gap:8px;}
-          .mqc .hero .acts a{flex:1;text-align:center;text-decoration:none;border-radius:24px;padding:12px;font-size:12.5px;font-weight:600;cursor:pointer;}
-          .mqc .a-call{background:var(--cream);color:var(--ink);}
+          .mqc .hero .acts a{flex:1;text-align:center;text-decoration:none;border-radius:24px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
+          .mqc .a-call{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
           .mqc .a-rdv{background:var(--accent);color:var(--cream);}
           /* TEASER */
           .mqc .teaser{background:var(--accent-soft);border-bottom:1px solid var(--line);padding:13px 18px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);}
@@ -187,8 +187,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .close .urg b{color:var(--ink);}
           /* BARRE FIXE unique */
           .mqc .bar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px 14px;display:flex;gap:8px;z-index:20;}
-          .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px;font-size:12.5px;font-weight:600;cursor:pointer;}
-          .mqc .bar .call{border:1px solid var(--ink);color:var(--ink);}
+          .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
+          .mqc .bar .call{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);}
           .mqc .bar .rdv{background:var(--accent);color:var(--cream);}
         `,
         }}
@@ -221,7 +221,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <h2>{nom}</h2>
           <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
           <div className="acts">
-            {telHref && <a className="a-call" href={telHref}>📞 Appeler</a>}
+            <a className="a-call" data-assistant-open>💬 Parler à mon assistante</a>
             <a className="a-rdv" data-accueil-open>Prendre rendez-vous</a>
           </div>
         </div>
@@ -332,7 +332,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       </div>
 
       <div className="bar">
-        {telHref && <a className="call" href={telHref}>📞 Appeler</a>}
+        <a className="call" data-assistant-open>💬 Parler à mon assistante</a>
         <a className="rdv" data-accueil-open>Prendre rendez-vous</a>
       </div>
     </main>
