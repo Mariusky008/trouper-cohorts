@@ -32,19 +32,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     if (!row) return { title: "Votre nouveau site", ...noindex };
     const nom = str(row.business_name) || "Votre commerce";
     const ville = str(row.city);
-    const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-    const photo = (Array.isArray(diag.photos) ? diag.photos : [])
-      .map((x) => str(x))
-      .find((u) => /^https?:\/\//i.test(u));
     const title = `${nom} — votre nouveau site`;
     const description = `La maquette du site de ${nom}${ville ? ` à ${ville}` : ""} : prise de rendez-vous, avis, et un assistant qui répond pour vous.`;
-    const images = photo ? [{ url: photo }] : [];
+    // L'image de partage est fournie par opengraph-image.tsx (carte générée).
     return {
       title,
       description,
       ...noindex,
-      openGraph: { title, description, images, type: "website" },
-      twitter: { card: photo ? "summary_large_image" : "summary", title, description, images },
+      openGraph: { title, description, type: "website" },
+      twitter: { card: "summary_large_image", title, description },
     };
   } catch {
     return { title: "Votre nouveau site", ...noindex };
