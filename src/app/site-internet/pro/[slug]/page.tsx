@@ -6,6 +6,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { ProActions } from "./pro-actions";
+import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -205,6 +206,7 @@ export default async function EspacePro({
           {soliciter ? (
             <>
               <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} />
+              <ProContacts slug={slug} token={token} reviewLink={reviewLink} />
               <ProRelance slug={slug} token={token} />
             </>
           ) : (

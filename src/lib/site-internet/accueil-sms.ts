@@ -3,6 +3,7 @@
 // (TWILIO_SMS_FROM) ou un Messaging Service (TWILIO_MESSAGING_SERVICE_SID).
 // Best-effort : ne jette jamais, renvoie un statut.
 import twilio from "twilio";
+import { toE164 } from "./phone";
 
 const sid = () => String(process.env.TWILIO_ACCOUNT_SID || "").trim();
 const token = () => String(process.env.TWILIO_AUTH_TOKEN || "").trim();
@@ -13,17 +14,8 @@ export function isSmsConfigured(): boolean {
   return Boolean(sid() && token() && (smsFrom() || messagingSid()));
 }
 
-// Normalise un numéro FR (ou déjà international) en E.164.
-export function toE164(raw: string): string {
-  let d = String(raw || "").replace(/[^\d+]/g, "");
-  if (d.startsWith("+")) return d;
-  d = d.replace(/\D/g, "");
-  if (d.startsWith("00")) return "+" + d.slice(2);
-  if (d.startsWith("33")) return "+" + d;
-  if (d.startsWith("0")) return "+33" + d.slice(1);
-  if (d.length >= 6) return "+33" + d; // repli FR
-  return "";
-}
+// Re-export : la normalisation E.164 vit désormais dans ./phone (client-safe).
+export { toE164 };
 
 export async function sendSms(to: string, body: string): Promise<{ ok: boolean; reason?: string }> {
   if (!isSmsConfigured()) return { ok: false, reason: "not_configured" };
