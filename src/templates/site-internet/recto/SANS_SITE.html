@@ -1,29 +1,141 @@
-<div class="sheet"><div class="frame ss-frame">
-  <div class="eyebrow">{{diag_eyebrow}}</div>
+<div class="sheet"><div class="frame la">
+  <style>
+    .la{display:flex;flex-direction:column;--gold:#A8842E;--sage:#2E4A3C;padding:9mm 12mm 7mm;}
+    .sheet:has(.frame.la){padding:10mm;}
+    .la .top{text-align:center;}
+    .la .top .for{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#6E6E64;font-weight:600;}
+    .la .top .for b{color:#16160F;}
+    .la .hero{text-align:center;margin-top:8px;}
+    .la .hero .big{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:38px;line-height:1;letter-spacing:-.02em;}
+    .la .hero .l1{font-size:14px;color:#16160F;margin-top:9px;line-height:1.35;}
+    .la .hero .l1 b{font-weight:600;}
+    .la .hero .l2{font-size:12px;color:#6E6E64;margin-top:8px;line-height:1.4;max-width:410px;margin-left:auto;margin-right:auto;}
+    .la .divider{display:flex;align-items:center;gap:12px;margin:10px 0 8px;}
+    .la .divider .ln{flex:1;height:1px;background:#E2DFD6;}
+    .la .divider .lb{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#6E6E64;font-weight:600;}
+    .la .probs{display:flex;flex-direction:column;gap:8px;}
+    .la .pcard{border:1px solid #E2DFD6;border-radius:12px;padding:9px 14px;display:flex;gap:15px;align-items:center;}
+    .la .pcard .head{flex:1;}
+    .la .pcard .num{display:inline-flex;width:21px;height:21px;border-radius:50%;background:#16160F;color:#FBFAF7;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-bottom:7px;}
+    .la .pcard h4{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;line-height:1.15;margin-bottom:6px;}
+    .la .pcard p{font-size:11.5px;color:#6E6E64;line-height:1.5;}
+    .la .pcard .pf{width:216px;flex:none;background:#fff;border:1px solid #E2DFD6;border-radius:10px;padding:11px 12px;}
+    /* preuve avis — barres proportionnelles */
+    .la .pf-h{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#6E6E64;font-weight:700;margin-bottom:9px;}
+    .la .pf-h .g{font-family:'Fraunces',Georgia,serif;font-weight:700;color:#16160F;letter-spacing:0;font-size:11px;}
+    .la .brow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+    .la .brow:last-of-type{margin-bottom:0;}
+    .la .brow .bn{font-size:10px;width:78px;flex:none;color:#6E6E64;line-height:1.1;}
+    .la .brow.me .bn{color:#16160F;font-weight:700;}
+    .la .brow .bn small{display:block;font-size:7.5px;color:#A6A69C;letter-spacing:.05em;text-transform:uppercase;}
+    .la .brow .btrack{flex:1;height:10px;background:#EFEBE1;border-radius:5px;overflow:hidden;}
+    .la .brow .bf{height:100%;background:#A6A69C;border-radius:5px;}
+    .la .brow.me .bf{background:#16160F;}
+    .la .brow .bv{font-size:11px;font-weight:700;width:30px;flex:none;text-align:right;}
+    .la .pf-cap{margin-top:9px;padding-top:8px;border-top:1px solid #E2DFD6;font-size:9.5px;color:#6E6E64;line-height:1.4;}
+    .la .pf-cap b{color:#16160F;}
+    /* preuve avis — carte réputation (bonne réputation) */
+    .la .repcard{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .la .rep-h{font-family:'Fraunces',Georgia,serif;font-size:11px;font-weight:700;color:#16160F;margin-bottom:4px;}
+    .la .rep-big{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:600;line-height:1;}
+    .la .rep-stars{color:#A8842E;font-size:14px;letter-spacing:2px;margin:5px 0 3px;}
+    .la .rep-n{font-size:11px;color:#6E6E64;font-weight:600;}
+    .la .rep-cap{margin-top:9px;padding-top:8px;border-top:1px solid #E2DFD6;font-size:9.5px;color:#6E6E64;line-height:1.4;}
+    .la .rep-cap b{color:#16160F;}
+    /* preuve fiche google nue */
+    .la .gname{font-family:'Fraunces',Georgia,serif;font-size:13px;font-weight:600;}
+    .la .gmeta{font-size:9.5px;color:#6E6E64;margin:2px 0 8px;}
+    .la .gbtns{display:flex;gap:5px;margin-bottom:9px;}
+    .la .gbtns span{font-size:8.5px;border:1px solid #E2DFD6;border-radius:12px;padding:3px 8px;color:#6E6E64;}
+    .la .gmiss{display:flex;flex-direction:column;gap:4px;}
+    .la .gmiss span{font-size:9.5px;color:#A6A69C;display:flex;align-items:center;gap:6px;}
+    /* preuve SERP (santé/droit) : concurrents avec site, vous sans */
+    .la .serp{display:flex;flex-direction:column;gap:6px;}
+    .la .srow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;}
+    .la .srow .sn{font-family:'Fraunces',Georgia,serif;font-size:12px;font-weight:500;}
+    .la .srow .stag{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#6E6E64;border:1px solid #E2DFD6;border-radius:10px;padding:2px 7px;white-space:nowrap;}
+    .la .srow.me{border-top:1px solid #E2DFD6;padding-top:7px;margin-top:1px;}
+    .la .srow.me .sn{font-weight:700;}
+    .la .srow.me .stag{border-color:#16160F;color:#16160F;font-weight:700;}
+    /* preuve questions (santé/droit) */
+    .la .qmini{display:flex;flex-direction:column;gap:5px;}
+    .la .qmini .qt{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#6E6E64;font-weight:700;margin-bottom:2px;}
+    .la .qmini span.q{font-size:9.5px;color:#16160F;font-style:italic;line-height:1.3;}
+    /* SOLUTION */
+    .la .sol{margin-top:8px;background:linear-gradient(160deg,#FDFBF6,#F5F0E5);border:1px solid #E6DCC6;border-radius:16px;padding:11px 18px 11px;}
+    .la .sol .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;text-align:center;}
+    .la .sol h3{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;text-align:center;margin:4px 0 9px;line-height:1.2;}
+    .la .solrow{display:flex;gap:20px;align-items:center;}
+    .la .minicol{flex:none;text-align:center;}
+    .la .mini{width:156px;border:2.5px solid #16160F;border-radius:20px;padding:5px;background:#16160F;position:relative;}
+    .la .mini::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:34px;height:3px;border-radius:2px;background:#3A3A32;z-index:3;}
+    .la .msc{border-radius:15px;overflow:hidden;background:#fff;position:relative;}
+    .la .mtop{height:72px;background:linear-gradient(155deg,#6a5c50,#2a231d);position:relative;padding:8px;display:flex;flex-direction:column;justify-content:flex-end;}
+    .la .mtop::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(20,16,12,.55));}
+    .la .mtop .z{position:relative;z-index:2;}
+    .la .mtop .mr{font-size:5px;color:#E7DFD4;letter-spacing:.12em;text-transform:uppercase;}
+    .la .mtop .mn{font-family:'Fraunces',Georgia,serif;font-size:11px;color:#fff;font-weight:600;line-height:1.05;margin-top:1px;}
+    .la .mstars{display:flex;align-items:center;gap:3px;padding:6px 8px 4px;font-size:7px;color:#6E6E64;}
+    .la .mstars .s{color:var(--gold);font-size:8px;letter-spacing:.5px;}
+    .la .mcap{padding:6px 8px 4px;font-size:6.4px;color:#6E6E64;letter-spacing:.04em;}
+    .la .mbtns{display:flex;gap:4px;padding:0 8px 6px;}
+    .la .mbtns span{flex:1;height:13px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:5.6px;font-weight:600;}
+    .la .mbtns .call{border:1px solid #D8D5CC;color:#6E6E64;}
+    .la .mbtns .rdv{background:var(--sage);color:#fff;}
+    .la .mgl{display:flex;gap:3px;padding:0 8px 8px;}
+    .la .mgl i{flex:1;height:22px;border-radius:4px;}
+    .la .mgl i:nth-child(1){background:#E4E0D6;} .la .mgl i:nth-child(2){background:#D9D5CB;} .la .mgl i:nth-child(3){background:#ECE8DE;}
+    .la .mbub{position:absolute;left:8px;right:8px;bottom:8px;background:#16160F;color:#FBFAF7;border-radius:9px;padding:6px 8px;font-size:6.6px;line-height:1.3;box-shadow:0 4px 12px rgba(0,0,0,.25);}
+    .la .mbub .ok{margin-top:3px;color:#9FCBA9;font-weight:700;}
+    .la .mtag{text-align:center;font-size:9px;color:var(--gold);font-weight:700;margin-top:9px;letter-spacing:.06em;text-transform:uppercase;}
+    .la .caps{flex:1;display:flex;flex-direction:column;gap:8px;}
+    .la .cap{display:flex;gap:10px;align-items:flex-start;}
+    .la .cap .ic{width:26px;height:26px;border-radius:50%;border:1px solid #E0D5BE;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;color:#16160F;}
+    .la .cap .tx .sit{font-size:11px;color:#6E6E64;line-height:1.25;}
+    .la .cap .tx .res{font-size:12.5px;color:#16160F;font-weight:600;line-height:1.25;margin-top:1px;}
+    .la .cta{background:#16160F;color:#FBFAF7;border-radius:9px;padding:12px;text-align:center;margin-top:8px;}
+    .la .cta .t{font-family:'Fraunces',Georgia,serif;font-size:16.5px;font-weight:600;margin-bottom:5px;line-height:1.25;}
+    .la .cta .mid{font-size:11.5px;color:#C7C2B6;}
+    .la .cta .arrow{color:var(--gold);font-size:14px;margin:5px 0 4px;}
+    .la .cta .do{font-size:14px;font-weight:600;letter-spacing:.02em;}
+  </style>
 
-  <div class="ss-hero">{{ss_hero}}</div>
+  <div class="top"><div class="for">Diagnostic préparé pour <b>{{dest_name}}</b> · {{ville}}</div></div>
 
-  <div class="spacer"></div>
+  <div class="hero">
+    <div class="big">{{hero_big}}</div>
+    <div class="l1">{{hero_l1}}</div>
+    <div class="l2">{{hero_l2}}</div>
+  </div>
 
-  <div class="ss-proof">
-    <div class="search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14140F" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-      <span>{{requete_metier}}</span>
+  <div class="divider"><span class="ln"></span><span class="lb">{{diag_label}}</span><span class="ln"></span></div>
+
+  <div class="probs">
+    <div class="pcard">
+      <div class="head"><div class="num">1</div><h4>{{r1_title}}</h4><p>{{r1_text}}</p></div>
+      <div class="pf">{{r1_proof}}</div>
     </div>
-    <div class="cc-list">{{concurrents_list}}</div>
+    <div class="pcard">
+      <div class="head"><div class="num">2</div><h4>{{r2_title}}</h4><p>{{r2_text}}</p></div>
+      <div class="pf">{{r2_proof}}</div>
+    </div>
+  </div>
+
+  <div class="sol">
+    <div class="k">{{sol_k}}</div>
+    <h3>{{sol_h}}</h3>
+    <div class="solrow">
+      <div class="minicol">{{mini_phone}}<div class="mtag">Essayez-le au dos →</div></div>
+      <div class="caps">{{caps}}</div>
+    </div>
   </div>
 
   <div class="spacer"></div>
 
-  {{faceoff}}
-  <div class="ss-transition">{{ss_transition}}</div>
-
-  <div class="spacer"></div>
-
-  {{ss_action}}
-
-  <div class="spacer"></div>
-
-  {{ss_footer}}
-  {{cta_full}}
+  <div class="cta">
+    <div class="t">{{cta_t}}</div>
+    <div class="mid">{{cta_mid}}</div>
+    <div class="arrow">↓</div>
+    <div class="do">Retournez la feuille.&nbsp;&nbsp;Scannez le QR.</div>
+  </div>
 </div></div>

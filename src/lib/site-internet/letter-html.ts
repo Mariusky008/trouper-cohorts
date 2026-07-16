@@ -6,7 +6,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import QRCode from "qrcode";
-import { isDirectoryUrl, directoryPlatformName } from "@/lib/site-internet/directories";
+import { isDirectoryUrl, directoryPlatformName, bookingPlatformName } from "@/lib/site-internet/directories";
 import { resolveMetier, confirmationBooked } from "@/lib/site-internet/metier-profiles";
 import type { Secteur } from "@/lib/site-internet/metier-profiles";
 
@@ -73,7 +73,12 @@ export function usageName(full: string): string {
     out = trimName(tokens.slice(0, 3).join(" "));
     if (!out) out = trimName(tokens.slice(0, 2).join(" "));
   } else if (tokens.length >= 4) out = `${tokens[1]} ${tokens[0]}`; // NOM P1 P2 P3 → P1 NOM
-  else out = tokens.slice(0, 2).join(" "); // 3 mots : ordre incertain → tel quel
+  else {
+    // 3 mots : « L'Atelier de Sophie » (enseigne avec liaison / apostrophe) → on
+    // garde tout ; « Jean Martin Dupont » (état civil) → on garde les 2 premiers.
+    const enseigne = /\b(de|du|des|le|la|les|aux?|au|chez|et|by)\b|['&]/i.test(clean);
+    out = enseigne ? clean : tokens.slice(0, 2).join(" ");
+  }
   return trimName(out) || clean;
 }
 
@@ -143,6 +148,11 @@ export async function composeLetterHtml(input: {
   const website = isDirectoryUrl(rawSource) ? "" : rawSource;
   const directoryUrl = str(diag.directory_url) || (isDirectoryUrl(rawSource) ? rawSource : "");
   const platform = directoryPlatformName(directoryUrl);
+  // Signaux pour le gabarit (photo-gating / résa-gating) : on n'affirme « aucune
+  // photo » / « aucune réservation » QUE si c'est vrai sur la fiche Google.
+  const gPhotoCount = (Array.isArray(diag.photos) ? diag.photos : []).filter((p) => /^https?:\/\//i.test(str(p))).length;
+  const hasGooglePhotos = gPhotoCount > 0;
+  const hasOnlineBooking = Boolean(bookingPlatformName(directoryUrl)) || Boolean(website);
 
   let type = str(place.type_diagnostic);
   if (!LETTER_MODULES.includes(type)) {
@@ -390,14 +400,10 @@ export async function composeLetterHtml(input: {
   // scan). Il pilote QUEL recto sans site on utilise. La déontologie (portée par
   // le profil / def) reste ce qui limite ce qu'on a le droit d'écrire.
   const moteur = mp.entry?.moteur ?? "M1_acquisition";
-  const isSansSite = type === "SANS_SITE";
-  // M3 « cabinet » (santé, B + C) → recto sobre « Très peu d'infos » + questions.
-  const useCRecto = isSansSite && moteur === "M3_cabinet";
-  // M4 « confiance » (droit/chiffre, patrimoine) → recto expertise, aucun avis.
-  const useM4 = isSansSite && moteur === "M4_confiance";
-  // M2 « temps » (artisans établis) → recto « votre téléphone travaille plus que vous ».
-  const useM2 = isSansSite && moteur === "M2_temps";
   const secteur: Secteur = mp.entry?.secteur ?? "flux";
+  // Déontologie : pilote ce que la lettre a le DROIT de dire (avis, WhatsApp,
+  // ton). Le moteur, lui, n'ajuste que l'angle de l'accroche. Un seul gabarit.
+  const deonto = mp.entry?.deontologie ?? "none";
   const termePublic = mp.entry?.terme || def.terme_public; // clients / patients (override métier possible)
   const termeSing = termePublic.replace(/s$/u, ""); // client / patient
   // Libellé métier + article corrigeables par prospect (genre : « une
@@ -554,11 +560,6 @@ export async function composeLetterHtml(input: {
   // nombre d'avis RÉELS (badge « Site web », fait vérifiable), on donne un cap.
   // JAMAIS de promesse chiffrée de résultat. Déclenché seulement si les données
   // rendent la jauge crédible (le prospect a des avis, des concurrents chiffrés).
-  // M1 « acquisition » : la jauge d'avis n'est crédible que s'il y a un volume,
-  // des avis existants et au moins un concurrent chiffré. Sinon → recto générique.
-  const useM1 =
-    isSansSite && moteur === "M1_acquisition" && Boolean(searchVolume) &&
-    reviews != null && reviews >= 1 && conc.some((c) => c.avis != null);
   const m1Goal = 50;
   const m1Reviews = reviews ?? 0;
   const m1FillPct = Math.max(6, Math.min(100, Math.round((m1Reviews / m1Goal) * 100)));
@@ -708,44 +709,204 @@ export async function composeLetterHtml(input: {
     `<div><span class="ck">—</span><span><b>Explique</b> le déroulé d'un rendez-vous</span></div>` +
     `<div><span class="ck">—</span><span><b>Prend</b> les premiers rendez-vous</span></div></div>`;
 
+  // ══ GABARIT UNIQUE (lettre profil A, décliné B/C/D) ═════════════════════════
+  // Un seul design (recto/SANS_SITE.html) paramétré par DEUX axes indépendants :
+  //  • déonto (A commerce / B santé praticité / C santé encadrée / D droit) →
+  //    ce que la lettre a le DROIT de dire (avis, WhatsApp, ton).
+  //  • moteur → ajuste UNIQUEMENT l'accroche.
+  // Structure invariante : HERO → 2 raisons (jamais 3) → solution « employé
+  // numérique » → QR. Barres d'avis PROPORTIONNELLES. Aucune affirmation
+  // invérifiable. Bloc avis/relance (les 4 situations « commerce ») ABSENT en C/D.
+  const avisAff = def.avis_affichage; // A + B
+  const avisSol = def.avis_sollicitation; // A seul
+  const goodReput = avisAff && Boolean(note) && reviews != null && reviews >= 30 && rating != null && rating >= 4.5;
+  const concAvis = conc.filter((c) => c.avis != null).slice().sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0));
+  // Concurrents éditables (barres / SERP) : source « Nom | avis », 1 par ligne.
+  // L'opérateur peut retirer une ligne hors-sujet ; le nombre d'avis est reparsé.
+  const la_concurrents_src = ov(
+    "la_concurrents_src",
+    concAvis.slice(0, 3).map((c) => `${cleanCompName(c.name)} | ${c.avis}`).join("\n")
+  );
+  const concForProof = la_concurrents_src
+    .split("\n").map((l) => l.trim()).filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^(.*?)[\s|—–-]*(\d[\d\s]*)?\s*(?:avis)?$/i);
+      const name = (m ? m[1] : line).trim();
+      const avis = m && m[2] ? parseInt(m[2].replace(/\s/g, ""), 10) : null;
+      return { name, avis };
+    })
+    .filter((r) => r.name);
+  const concProofAvis = concForProof.filter((c) => c.avis != null) as Array<{ name: string; avis: number }>;
+
+  const hero_big = searchVolume ? `≈ ${searchVolume}` : "Très peu.";
+  const hero_l1 = searchVolume
+    ? `personnes recherchent <b>« ${esc(metierLabel)} à ${esc(villeAff)} »</b> chaque mois.`
+    : `C'est ce que vos futurs ${esc(termePublic)} trouvent sur vous en ligne.`;
+  const hero_l2 = ov(
+    "hero_l2",
+    moteur === "M2_temps"
+      ? `Aujourd'hui, tout passe par votre téléphone — et il sonne souvent pour des questions auxquelles un site répondrait seul.`
+      : deonto === "none"
+        ? goodReput
+          ? `Bonne nouvelle : votre réputation est déjà l'une des meilleures de ${esc(villeAff)}. Mais aujourd'hui, presque personne ne la voit.`
+          : `Aujourd'hui, ceux qui vous cherchent tombent d'abord sur des concurrents déjà bien présents en ligne.`
+        : `Aujourd'hui, sans site, on vous trouve — mais on ne vous découvre pas.`
+  );
+  const diag_label = deonto === "none" ? (goodReput ? "Le diagnostic — deux choses à savoir" : "Le diagnostic — deux raisons à cela") : "Le diagnostic — deux constats";
+
+  // ── Proof builders ──────────────────────────────────────────────────────────
+  const repcardHtml = (big: string, n: number | null, cap: string, showStars: boolean) =>
+    `<div class="repcard"><div class="rep-h">★ Avis Google</div><div class="rep-big">${esc(big)}</div>` +
+    (showStars ? `<div class="rep-stars">★★★★★</div>` : "") +
+    `<div class="rep-n">${n != null ? n : 0} avis</div>` +
+    `<div class="rep-cap">${cap}</div></div>`;
+  const barsHtml = (rows: Array<{ name: string; avis: number; me?: boolean }>, cap: string) => {
+    const maxA = Math.max(1, ...rows.map((r) => r.avis));
+    const body = rows
+      .map((r) => {
+        const pct = Math.max(r.me ? 2 : 4, Math.round((r.avis / maxA) * 100));
+        const sub = r.me ? "" : `<small>concurrent</small>`;
+        return `<div class="brow${r.me ? " me" : ""}"><span class="bn">${esc(r.name)}${sub}</span><span class="btrack"><span class="bf" style="width:${pct}%"></span></span><span class="bv">${r.avis}</span></div>`;
+      })
+      .join("");
+    return `<div class="pf-h"><span class="g">★ Avis Google</span> — à ${esc(villeAff)}</div>${body}<div class="pf-cap">${cap}</div>`;
+  };
+  const ficheHtml = (miss: string[]) => {
+    const cross = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A6A69C" stroke-width="2"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>`;
+    const rows = miss.map((m) => `<span>${cross} ${m}</span>`).join("");
+    return `<div class="gname">${esc(destName)}</div><div class="gmeta">${esc(metierLabel)} · ${esc(villeAff)}</div>` +
+      `<div class="gbtns"><span>Appeler</span><span>Itinéraire</span></div><div class="gmiss">${rows}</div>`;
+  };
+  const serpHtml = () => {
+    const top = (concForProof.length ? concForProof : conc.map((c) => ({ name: c.name }))).slice(0, 3);
+    const rows = top
+      .map((c) => `<div class="srow"><span class="sn">${esc(c.name)}</span><span class="stag">Site web</span></div>`)
+      .join("");
+    return `${rows}<div class="srow me"><span class="sn">${esc(destName)}</span><span class="stag">Aucun site</span></div>`;
+  };
+  const reimbursedM = /kin[eé]|orthopt|orthophon|podolog|infirmi|sage[- ]?femme|dentiste|p[ée]dicure/i.test(activite);
+  const qList = reimbursedM
+    ? ["« Prenez-vous la carte Vitale ? »", "« Quels sont vos horaires ? »", "« Où est-ce qu'on peut se garer ? »", "« Faut-il une ordonnance ? »"]
+    : ["« Quels sont vos horaires ? »", "« Quels sont vos tarifs ? »", "« Où est-ce qu'on peut se garer ? »", "« Avez-vous de la place ? »"];
+  const questionsHtml = () =>
+    `<div class="qt">Ce qu'on vous demande au téléphone</div>` + qList.map((q) => `<span class="q">${esc(q)}</span>`).join("");
+
+  // ── Raison 1 ────────────────────────────────────────────────────────────────
+  let r1_title: string, r1_text: string, r1_proof: string;
+  if (avisAff) {
+    if (goodReput) {
+      r1_title = ov("r1_title", "Votre réputation est<br>un véritable atout.");
+      r1_text = ov("r1_text", `${reviews} avis, une note de ${note} : peu de professionnels atteignent ce niveau. C'est déjà l'un de vos meilleurs arguments pour convaincre un nouveau ${esc(termeSing)}.`);
+      r1_proof = repcardHtml(note as string, reviews, "Une base de confiance déjà solide.", true);
+    } else if (concProofAvis.length >= 1) {
+      const top = concProofAvis.slice(0, 2);
+      r1_title = ov("r1_title", "Votre réputation n'est pas<br>encore assez visible.");
+      r1_text = ov("r1_text", `Vos ${esc(termePublic)} vous recommandent déjà. Mais avec ${reviews ?? 0} avis, une personne qui ne vous connaît pas hésitera plus qu'en voyant un concurrent à ${top[0].avis}.`);
+      r1_proof = barsHtml(
+        [{ name: "Vous", avis: reviews ?? 0, me: true }, ...top.map((c) => ({ name: c.name, avis: c.avis }))],
+        `<b>Vos concurrents directs</b> sont déjà bien plus visibles sur Google.`
+      );
+    } else {
+      r1_title = ov("r1_title", "Votre réputation<br>ne se voit pas encore.");
+      r1_text = ov("r1_text", `Avec ${reviews != null ? `${reviews} avis` : "peu d'avis"} et aucun site, une personne qui ne vous connaît pas a peu d'éléments pour vous choisir.`);
+      r1_proof = repcardHtml(note || "Nouveau", reviews, "Chaque avis compte — encore faut-il qu'on les voie.", Boolean(note));
+    }
+  } else {
+    r1_title = ov("r1_title", "On vous trouve,<br>mais on ne vous découvre pas.");
+    r1_text = ov("r1_text", `Quand un ${esc(termeSing)} cherche ${metierArticle} ${esc(metierLabel)} à ${esc(villeAff)}, il tombe d'abord sur des confrères qui ont un site — et une image claire de leur cabinet.`);
+    r1_proof = concForProof.length || conc.length ? `<div class="serp">${serpHtml()}</div>` : ficheHtml(["Aucun site à visiter", "Aucune présentation de votre cabinet"]);
+  }
+
+  // ── Raison 2 ────────────────────────────────────────────────────────────────
+  let r2_title: string, r2_text: string, r2_proof: string;
+  if (avisAff) {
+    const miss: string[] = [];
+    if (!hasGooglePhotos) miss.push("Aucune photo de vos réalisations");
+    miss.push("Aucun site à visiter");
+    if (!hasOnlineBooking) miss.push("Aucune réservation en ligne");
+    r2_title = ov("r2_title", `Vos futurs ${esc(termePublic)} ne<br>découvrent presque rien de vous.`);
+    r2_text = ov("r2_text", `Sur Google, on trouve une adresse et un numéro. Aucune présentation de qui vous êtes, ni de ce qui vous rend différent.`);
+    r2_proof = ficheHtml(miss);
+  } else {
+    r2_title = ov("r2_title", `Sans site, tout repose<br>sur le téléphone.`);
+    r2_text = ov("r2_text", `On vous appelle pour des questions simples — horaires, accès, prise en charge. Autant d'interruptions, et de ${esc(termePublic)} qui renoncent quand ça sonne occupé.`);
+    r2_proof = `<div class="qmini">${questionsHtml()}</div>`;
+  }
+
+  // ── Solution : mini-site personnalisé + 4 situations (adaptées à la déonto) ──
+  const rdvLabel = deonto === "none" ? "Réserver" : "Prendre RDV";
+  const mStarsOrCap = avisAff && note
+    ? `<div class="mstars"><span class="s">★★★★★</span> ${note}${reviews != null ? ` · ${reviews} avis` : ""}</div>`
+    : `<div class="mcap">Prise de rendez-vous en ligne · infos pratiques</div>`;
+  const mini_phone =
+    `<div class="mini"><div class="msc">` +
+    `<div class="mtop"><div class="z"><div class="mr">${esc(metierLabel)} · ${esc(villeAff)}</div><div class="mn">${esc(destName)}</div></div></div>` +
+    mStarsOrCap +
+    `<div class="mbtns"><span class="call">Appeler</span><span class="rdv">${rdvLabel}</span></div>` +
+    `<div class="mgl"><i></i><i></i><i></i></div><div style="height:26px"></div>` +
+    `<div class="mbub">${ai_bubble}<div class="ok">✓ ${esc(ai_booked)}</div></div>` +
+    `</div></div>`;
+  const capIco = {
+    chat: `<path d="M4 5h16v11H8l-4 4z"/>`,
+    cal: `<rect x="4" y="5" width="16" height="16" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="9" y1="3" x2="9" y2="6"/><line x1="15" y1="3" x2="15" y2="6"/>`,
+    star: `<polygon points="12,3 14.5,9 21,9.5 16,13.5 17.5,20 12,16.5 6.5,20 8,13.5 3,9.5 9.5,9"/>`,
+    heart: `<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>`,
+    shield: `<path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/>`,
+  };
+  const capHtml = (ico: string, sit: string, res: string) =>
+    `<div class="cap"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16160F" stroke-width="1.6">${ico}</svg></span><div class="tx"><div class="sit">${sit}</div><div class="res">${res}</div></div></div>`;
+  let capsArr: string[];
+  if (avisSol) {
+    // A — commerce : le bloc « employé numérique » complet (avis + relance).
+    capsArr = [
+      capHtml(capIco.chat, "Un client hésite.", "Votre site le rassure immédiatement."),
+      capHtml(capIco.cal, "Une place se libère demain.", "Votre site aide à la remplir."),
+      capHtml(capIco.star, "Une prestation vient de se terminer.", "Votre prochain avis Google est déjà en préparation."),
+      capHtml(capIco.heart, "Un ancien client vous a oublié.", "Votre site lui rappelle que vous existez."),
+    ];
+  } else if (avisAff) {
+    // B — santé praticité : sobre, sans avis sollicités ni relance commerciale.
+    capsArr = [
+      capHtml(capIco.chat, "Un patient hésite à franchir le pas.", "Votre site le met en confiance."),
+      capHtml(capIco.chat, "Une question, tard le soir.", "Votre site y répond, sans vous déranger."),
+      capHtml(capIco.cal, "Avant le rendez-vous.", "Votre site transmet l'essentiel : accès, déroulé."),
+      capHtml(capIco.cal, "Votre agenda tourne.", "Votre site prend les rendez-vous, même en séance."),
+    ];
+  } else {
+    // C / D — santé encadrée & droit : registre confiance, aucun avis, aucune relance.
+    capsArr = [
+      capHtml(capIco.shield, `Un futur ${esc(termeSing)} vous découvre.`, "Votre site inspire d'emblée le sérieux."),
+      capHtml(capIco.chat, "Une question pratique, hors horaires.", "Votre site y répond, avec sobriété."),
+      capHtml(capIco.cal, "Avant la première rencontre.", "Votre site en explique le cadre."),
+      capHtml(capIco.cal, "Un rendez-vous à prendre.", "Votre site s'en charge, à toute heure."),
+    ];
+  }
+  const caps = capsArr.join("");
+  const sol_k = "Votre nouveau site & assistant";
+  const sol_h = ov(
+    "sol_h",
+    deonto === "none"
+      ? `Pendant que vous travaillez,<br>votre site accueille vos ${esc(termePublic)}.`
+      : `Votre site présente votre ${deonto === "droit" ? "cabinet" : "pratique"}<br>et répond à vos ${esc(termePublic)}, à toute heure.`
+  );
+  const cta_t = deonto === "none"
+    ? "Découvrez ce que votre futur site ferait — dès cette semaine."
+    : "Découvrez votre nouveau site — il est déjà prêt.";
+  const cta_mid = "Il est déjà prêt. Comptez moins de deux minutes.";
+
   if (type === "SANS_SITE") {
     editableFields.push({ key: "display_name", label: "Nom d'usage (en-tête)", value: destName });
     editableFields.push({ key: "display_metier", label: `Métier affiché (profil ${mp.profil})`, value: metierLabel });
     editableFields.push({ key: "metier_article", label: "Article (un / une)", value: metierArticle });
-    if (!useM4) editableFields.push({ key: "secteur_constat", label: "Ligne de constat (secteur)", value: secteur_constat, multiline: true });
-    if (useM1) {
-      // Recto M1 (commerce, jauge d'avis) : champs propres à l'angle acquisition.
-      editableFields.push({ key: "m1_hook_sub", label: "Hook — sous-titre (recherches/mois)", value: m1_hook_sub, multiline: true });
-      editableFields.push({ key: "m1_comp_intro", label: "Intro concurrents (jauge)", value: m1_comp_intro, multiline: true });
-      editableFields.push({ key: "m1_concurrents_src", label: "Concurrents — 1 par ligne « Nom | avis ». Supprimez une ligne hors-sujet ; les 3 premières s'affichent.", value: m1_concurrents_src, multiline: true });
-      editableFields.push({ key: "m1_synth", label: "Synthèse sous les concurrents", value: m1_synth, multiline: true });
-      editableFields.push({ key: "m1_verdict", label: "Verdict (réputation visible)", value: m1_verdict, multiline: true });
-      editableFields.push({ key: "m1_prep", label: "Proposition (j'ai préparé…)", value: m1_prep, multiline: true });
-    } else if (useCRecto) {
-      // Recto santé (B/C) : champs propres au hook factuel + pivot « secrétaire ».
-      editableFields.push({ key: "cs_hook_sub", label: "Hook — sous-titre", value: cs_hook_sub, multiline: true });
-      editableFields.push({ key: "cs_who", label: "Ligne « diagnostic préparé pour »", value: cs_who, multiline: true });
-      editableFields.push({ key: "cs_concurrents_src", label: "Concurrents — 1 par ligne. Supprimez une ligne hors-sujet ; les 2 premières s'affichent.", value: cs_concurrents_src, multiline: true });
-      editableFields.push({ key: "cs_pivot", label: "La bascule (secrétaire / 21 h)", value: cs_pivot, multiline: true });
-      editableFields.push({ key: "cs_prep", label: "Proposition (j'ai préparé…)", value: cs_prep, multiline: true });
-    } else if (useM2) {
-      // Recto M2 (artisans, temps) : hook « téléphone » + bascule « vraies demandes ».
-      editableFields.push({ key: "m2_hook", label: "Hook (accroche)", value: m2_hook, multiline: true });
-      editableFields.push({ key: "m2_hook_sub", label: "Hook — sous-titre", value: m2_hook_sub, multiline: true });
-      editableFields.push({ key: "m2_pivot", label: "La bascule (vraies demandes)", value: m2_pivot, multiline: true });
-      editableFields.push({ key: "m2_prep", label: "Proposition (j'ai préparé…)", value: m2_prep, multiline: true });
-    } else if (useM4) {
-      // Recto M4 (droit, confiance) : hook « avant la porte » + registre sobre.
-      editableFields.push({ key: "m4_hook", label: "Hook (accroche)", value: m4_hook, multiline: true });
-      editableFields.push({ key: "m4_hook_sub", label: "Hook — sous-titre", value: m4_hook_sub, multiline: true });
-      editableFields.push({ key: "m4_pivot", label: "La bascule (confiance)", value: m4_pivot, multiline: true });
-      editableFields.push({ key: "m4_prep", label: "Proposition (j'ai préparé…)", value: m4_prep, multiline: true });
-    } else {
-      editableFields.push({ key: "ss_p3", label: "Phrase d'accroche des bénéfices", value: ss_p3, multiline: true });
-      editableFields.push({ key: "ss_b1", label: "Bénéfice 1", value: ss_b1 });
-      editableFields.push({ key: "ss_b2", label: "Bénéfice 2", value: ss_b2 });
-      editableFields.push({ key: "ss_b3", label: "Bénéfice 3", value: ss_b3 });
-      editableFields.push({ key: "ss_transition", label: "Constat sous le face-à-face", value: ss_transition, multiline: true });
+    // Gabarit unique : champs communs A/B/C/D.
+    editableFields.push({ key: "hero_l2", label: "Accroche — 2e ligne (sous le chiffre)", value: hero_l2, multiline: true });
+    editableFields.push({ key: "r1_title", label: "Raison 1 — titre", value: r1_title, multiline: true });
+    editableFields.push({ key: "r1_text", label: "Raison 1 — texte", value: r1_text, multiline: true });
+    editableFields.push({ key: "r2_title", label: "Raison 2 — titre", value: r2_title, multiline: true });
+    editableFields.push({ key: "r2_text", label: "Raison 2 — texte", value: r2_text, multiline: true });
+    editableFields.push({ key: "sol_h", label: "Solution — titre", value: sol_h, multiline: true });
+    if (avisAff) {
+      editableFields.push({ key: "la_concurrents_src", label: "Concurrents (barres) — 1 par ligne « Nom | avis ». Supprimez une ligne hors-sujet.", value: la_concurrents_src, multiline: true });
     }
   }
 
@@ -776,6 +937,10 @@ export async function composeLetterHtml(input: {
     m4_hook, m4_hook_sub, m4_points, m4_pivot, m4_today, demain_m4, m4_prep,
     // Ligne de constat sectorielle (§5 bis)
     secteur_constat,
+    // Gabarit unique (lettre profil A, décliné B/C/D)
+    hero_big, hero_l1, hero_l2, diag_label,
+    r1_title, r1_text, r1_proof, r2_title, r2_text, r2_proof,
+    sol_k, sol_h, mini_phone, caps, cta_t, cta_mid,
     dest_name: destName,
     concurrents_phrase,
     serp_rows,
@@ -798,18 +963,10 @@ export async function composeLetterHtml(input: {
     photo_marius,
   };
 
-  // Santé (profils B et C) sans site → recto sobre « Très peu d'infos » (pas de
-  // volume : un praticien de santé est souvent déjà plein). Seul le profil A
-  // (commerce) garde le recto volume + avis.
-  const rectoFile = useM1
-    ? "recto/SANS_SITE_M1.html"
-    : useM2
-      ? "recto/SANS_SITE_M2.html"
-      : useM4
-        ? "recto/SANS_SITE_M4.html"
-        : useCRecto
-          ? "recto/SANS_SITE_C.html"
-          : `recto/${type}.html`;
+  // UN SEUL gabarit pour SANS_SITE (recto/SANS_SITE.html), décliné A/B/C/D par la
+  // déontologie et l'accroche par le moteur. Les autres diagnostics (site vétuste,
+  // mobile cassé…) gardent leur recto dédié.
+  const rectoFile = `recto/${type}.html`;
   const recto = injectVars(readTpl(rectoFile), vars);
   const verso = injectVars(readTpl("verso.html"), vars);
   return { recto, verso, type, editableFields };
