@@ -138,7 +138,7 @@ export type MetierEntry = {
   secteur: Secteur;
 };
 
-// Les 38 métiers ciblés (données — édite/ajoute librement).
+// Les métiers ciblés (données — édite/ajoute librement).
 // Ordre : le PREMIER match gagne → mettre le plus spécifique avant le générique.
 // Moteur par défaut = dérivé de la déontologie (hypothèse raisonnable sur le
 // papier) : droit → confiance, santé → cabinet, sinon acquisition. Override
@@ -180,43 +180,101 @@ export const METIERS: MetierEntry[] = [
   M(["energetic"], "énergéticien", "A", "reserve", { secteur: "soin" }),
   M(["naturopath"], "naturopathe", "A", "reserve", { secteur: "soin" }),
   M(["reflexolog"], "réflexologue", "A", "reserve", { secteur: "soin" }),
+  // coach SPORTIF (flux, preuve sociale) AVANT le coach générique de vie (soin).
+  M(["coach sportif", "coaching sportif", "personal trainer"], "coach sportif", "A", "reserve", { secteur: "flux" }),
   M(["coach"], "coach", "A", "reserve", { secteur: "soin" }),
+  // ── Beauté, bien-être marchand & fitness (profil A, secteur « flux ») ──
+  //    « salon de massage » (commerce) AVANT « praticien bien-être » (soin).
+  M(["salon de massage", "spa massage"], "salon de massage", "A", "reserve", { secteur: "flux" }),
   M(["massage", "bien etre", "bien-etre", "praticien bien"], "praticien bien-être", "A", "reserve", { secteur: "soin" }),
+  M(["spa", "hammam", "balneo"], "spa", "A", "reserve", { secteur: "flux" }),
   M(["institut de beaute", "institut beaute"], "institut de beauté", "A", "reserve", { secteur: "flux" }),
+  // « centre esthétique auto » AVANT « esthéticienne » (les deux contiennent « esthetic »).
+  M(["centre esthetique auto", "esthetique automobile", "detailing auto"], "centre esthétique automobile", "A", "reserve", { secteur: "flux" }),
   M(["esthetic"], "esthéticienne", "A", "reserve", { article: "une", secteur: "flux" }),
+  M(["maquilleu", "make up", "make-up"], "maquilleuse", "A", "reserve", { article: "une", secteur: "flux" }),
+  M(["salon de bronzage", "bronzage"], "salon de bronzage", "A", "reserve", { secteur: "flux" }),
   M(["ongulaire", "onglerie", "prothesiste ongul"], "prothésiste ongulaire", "A", "reserve", { secteur: "flux" }),
+  // « coiffeur à domicile » AVANT « coiffeur » générique.
+  M(["coiffeur a domicile", "coiffure a domicile"], "coiffeur à domicile", "A", "reserve", { secteur: "flux" }),
   M(["coiffeur", "coiffure", "coiffeuse"], "coiffeur", "A", "reserve", { secteur: "flux" }),
   M(["barbier", "barber"], "barbier", "A", "reserve", { secteur: "flux" }),
   M(["tatoueur", "tatouage", "tattoo"], "tatoueur", "A", "acompte", { secteur: "emotion" }),
   M(["yoga", "pilates"], "professeur de yoga", "A", "reserve", { secteur: "flux" }),
   M(["danse", "cours de danse"], "professeur de danse", "A", "reserve", { secteur: "flux" }),
+  M(["salle de sport", "salle de fitness", "fitness", "musculation"], "salle de sport", "A", "reserve", { secteur: "flux" }),
+  // ── Mariage & événementiel (profil A, secteur « emotion » : projet chargé d'affect) ──
+  M(["robe de mariee", "robes de mariee", "mariee boutique"], "boutique de robes de mariée", "A", "acompte", { secteur: "emotion" }),
+  M(["photographe de mariage", "photographe mariage", "photographe evenement"], "photographe de mariage", "A", "acompte", { secteur: "emotion" }),
+  M(["organisateur de mariage", "wedding planner", "organisation mariage"], "organisateur de mariage", "A", "acompte", { secteur: "emotion" }),
+  M(["traiteur"], "traiteur événementiel", "A", "devis", { secteur: "emotion" }),
+  // ── Commerces de bouche & boutiques (profil A, secteur « flux ») ──
+  M(["caviste", "cave a vin"], "caviste", "A", "reserve", { secteur: "flux" }),
+  M(["chocolatier", "chocolaterie"], "chocolatier", "A", "reserve", { secteur: "flux" }),
+  M(["epicerie fine", "epicerie"], "épicerie fine", "A", "reserve", { secteur: "flux" }),
+  M(["magasin de decoration", "decoration interieur", "deco maison"], "magasin de décoration", "A", "reserve", { secteur: "flux" }),
+  M(["bijouterie", "bijoutier", "joaillerie"], "bijouterie", "A", "reserve", { secteur: "flux" }),
+  M(["fleuriste", "fleurs"], "fleuriste", "A", "reserve", { secteur: "flux" }),
+  // ── Animaux (profil A) ──
+  M(["toiletteur", "toilettage"], "toiletteur", "A", "reserve", { secteur: "flux" }),
+  M(["pension canine", "pension pour chien", "pension animal"], "pension canine", "A", "reserve", { secteur: "flux" }),
+  M(["educateur canin", "education canine", "dresseur"], "éducateur canin", "A", "reserve", { secteur: "soin" }),
   // ── Santé « praticité » (profil B — Doctolib, avis doux) ──
   M(["osteopath"], "ostéopathe", "B", "reserve", { deontologie: "sante" }),
   M(["dietetic"], "diététicien", "B", "reserve", { deontologie: "sante" }),
+  M(["nutritionniste"], "nutritionniste", "B", "reserve", { deontologie: "sante" }),
   M(["podolog", "pedicure"], "pédicure-podologue", "B", "reserve", { deontologie: "sante" }),
   M(["acupunct"], "acupuncteur", "B", "reserve", { deontologie: "sante" }),
   M(["conseiller en gestion", "gestion de patrimoine", "conseiller patrimoine"], "conseiller en gestion", "B", "rappel", { terme: "clients" }),
   // ── Santé encadrée (profil C — sobre, pas d'avis, pas de WhatsApp) ──
   M(["psycholog"], "psychologue", "C", "reserve", { encartUrgence: true, deontologie: "sante" }),
   M(["kinesither", "kine"], "kinésithérapeute", "C", "reserve", { deontologie: "sante" }),
+  M(["orthophonist"], "orthophoniste", "C", "reserve", { deontologie: "sante" }),
   M(["orthoptist"], "orthoptiste", "C", "reserve", { deontologie: "sante" }),
-  // ── Artisans (profil A) — moteur M2 (temps : filtrer les appels), secteur
-  //    « urgence » pour les dépannages, « emotion »/« flux » pour le projet. ──
+  // ── Artisans du bâtiment & dépannage (profil A) — moteur M2 (temps : filtrer les
+  //    appels), secteur « urgence ». Entrées spécifiques AVANT « artisan du bâtiment ». ──
   M(["plombier", "plomberie"], "plombier", "A", "rappel", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
   M(["electricien", "electricite"], "électricien", "A", "rappel", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
   M(["serrurier", "serrurerie"], "serrurier", "A", "rappel", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
   M(["chauffagiste", "chauffage"], "chauffagiste", "A", "devis", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
+  M(["climatisation", "climaticien", "clim reversible"], "climatisation", "A", "devis", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
+  M(["couvreur", "couverture toiture", "toiture"], "couvreur", "A", "devis", { urgencesOps: true, moteur: "M2_temps", secteur: "urgence" }),
+  M(["ramoneur", "ramonage"], "ramoneur", "A", "rappel", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["menuisier", "menuiserie"], "menuisier", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["peintre"], "peintre", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["pisciniste", "piscine"], "pisciniste", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["paysagiste", "paysag"], "paysagiste", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["entreprise de renovation", "renovation"], "entreprise de rénovation", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["macon", "carreleur", "platrier", "artisan du batiment", "batiment"], "artisan du bâtiment", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  // ── Automobile (profil A) ──
   M(["garagiste", "garage auto", "garage automobile"], "garagiste", "A", "rappel", { moteur: "M2_temps", secteur: "urgence" }),
   M(["carrossier", "carrosserie"], "carrossier", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
-  M(["paysagiste", "paysag"], "paysagiste", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
-  M(["ramoneur", "ramonage"], "ramoneur", "A", "rappel", { moteur: "M2_temps", secteur: "urgence" }),
-  M(["macon", "carreleur", "platrier", "menuisier", "peintre en batiment", "artisan du batiment", "batiment"], "artisan du bâtiment", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
+  M(["controle technique"], "contrôle technique", "A", "rappel", { secteur: "flux" }),
+  M(["lavage automobile", "lavage auto", "station de lavage"], "lavage automobile premium", "A", "reserve", { secteur: "flux" }),
   // ── Droit & chiffre (profil C — déontologie publicité stricte, pas d'avis) ──
   M(["avocat"], "avocat", "C", "rappel", { terme: "clients", deontologie: "droit" }),
   M(["notaire"], "notaire", "C", "rappel", { terme: "clients", deontologie: "droit" }),
   M(["huissier", "commissaire de justice"], "commissaire de justice", "C", "rappel", { terme: "clients", deontologie: "droit" }),
   M(["expert comptable", "expert-comptable", "comptable"], "expert-comptable", "C", "rappel", { terme: "clients", deontologie: "droit" }),
 ];
+
+// Famille MÉTIER/DÉONTO telle que la pense Marius (ce que la lettre a le DROIT de
+// dire), dérivée du couple (profil, déontologie) :
+//   A = commerce libre · B = santé praticité · C = santé encadrée · D = droit & chiffre.
+export type MetierFamily = "A" | "B" | "C" | "D";
+export function metierFamily(entry: Pick<MetierEntry, "profil" | "deontologie"> | null): MetierFamily {
+  if (!entry) return "A";
+  if (entry.deontologie === "droit") return "D";
+  if (entry.profil === "B") return "B";
+  if (entry.profil === "C") return "C";
+  return "A";
+}
+export const FAMILY_LABEL: Record<MetierFamily, string> = {
+  A: "Commerce",
+  B: "Santé praticité",
+  C: "Santé encadrée",
+  D: "Droit & chiffre",
+};
 
 // Liste des libellés (pour la Découverte). Cochés par défaut = métiers « réserve »
 // (bien-être, beauté, santé) dont l'accueil est prêt ; artisans/droit disponibles

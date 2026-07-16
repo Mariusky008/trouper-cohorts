@@ -5,6 +5,15 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { BatchDiscover } from "../_components/batch-discover";
+import { resolveMetier, metierFamily, FAMILY_LABEL, type MetierFamily } from "@/lib/site-internet/metier-profiles";
+
+// Pastille « famille » (A commerce / B santé praticité / C santé encadrée / D droit).
+const FAM_BADGE: Record<MetierFamily, string> = {
+  A: "bg-amber-100 text-amber-700",
+  B: "bg-teal-100 text-teal-700",
+  C: "bg-indigo-100 text-indigo-700",
+  D: "bg-slate-200 text-slate-700",
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -117,10 +126,24 @@ export default async function DecouvertePage() {
                 <div className="divide-y">
                   {metiers.map((m) => (
                     <details key={m.label} className="group px-5 py-3">
-                      <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-xs font-black uppercase tracking-wide text-sky-700 marker:content-none [&::-webkit-details-marker]:hidden">
-                        <span>{m.label} <span className="text-slate-400">· {m.rows.length}</span></span>
-                        <span className="text-slate-400 transition-transform group-open:rotate-180">▾</span>
-                      </summary>
+                      {(() => {
+                        const fam = metierFamily(resolveMetier(m.label).entry);
+                        return (
+                          <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-xs font-black uppercase tracking-wide text-sky-700 marker:content-none [&::-webkit-details-marker]:hidden">
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-black ${FAM_BADGE[fam]}`}
+                                title={`Profil ${fam} — ${FAMILY_LABEL[fam]}`}
+                              >
+                                {fam}
+                              </span>
+                              {m.label} <span className="text-slate-400">· {m.rows.length}</span>
+                              <span className="hidden font-semibold normal-case tracking-normal text-slate-400 sm:inline">— {FAMILY_LABEL[fam]}</span>
+                            </span>
+                            <span className="text-slate-400 transition-transform group-open:rotate-180">▾</span>
+                          </summary>
+                        );
+                      })()}
                       <div className="mt-2 overflow-x-auto">
                         <table className="w-full text-sm">
                           <tbody>

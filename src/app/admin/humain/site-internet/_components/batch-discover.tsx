@@ -9,7 +9,23 @@
 // jamais recréer les commerces déjà faits.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { METIER_LABELS, METIER_DEFAULT_ON } from "@/lib/site-internet/metier-profiles";
+import {
+  METIER_LABELS,
+  METIER_DEFAULT_ON,
+  resolveMetier,
+  metierFamily,
+  FAMILY_LABEL,
+  type MetierFamily,
+} from "@/lib/site-internet/metier-profiles";
+
+// Couleurs de la pastille « famille » (ce que la lettre a le droit de dire).
+const FAM_BADGE: Record<MetierFamily, string> = {
+  A: "bg-amber-100 text-amber-700",
+  B: "bg-teal-100 text-teal-700",
+  C: "bg-indigo-100 text-indigo-700",
+  D: "bg-slate-200 text-slate-700",
+};
+const familyOf = (label: string): MetierFamily => metierFamily(resolveMetier(label).entry);
 
 // Tous les métiers connus (source unique : metier-profiles). Cochés par défaut =
 // les métiers « réserve » prêts (bien-être, beauté, santé) ; les autres (artisans,
@@ -229,18 +245,30 @@ export function BatchDiscover() {
       {/* Sélecteurs */}
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Métiers ({activeMetiers.length})</p>
-          <div className="flex flex-wrap gap-2">
-            {metiers.map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => toggle(setSelMetiers, m)}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${selMetiers[m] ? "border-sky-600 bg-sky-50 text-sky-800" : "border-slate-200 bg-white text-slate-400"}`}
-              >
-                {m}
-              </button>
+          <p className="mb-1 text-xs font-black uppercase tracking-wide text-slate-500">Métiers ({activeMetiers.length})</p>
+          <p className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+            {(["A", "B", "C", "D"] as const).map((f) => (
+              <span key={f} className="inline-flex items-center gap-1">
+                <span className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-black ${FAM_BADGE[f]}`}>{f}</span>
+                {FAMILY_LABEL[f]}
+              </span>
             ))}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {metiers.map((m) => {
+              const fam = familyOf(m);
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => toggle(setSelMetiers, m)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${selMetiers[m] ? "border-sky-600 bg-sky-50 text-sky-800" : "border-slate-200 bg-white text-slate-400"}`}
+                >
+                  <span className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-black ${FAM_BADGE[fam]}`} title={FAMILY_LABEL[fam]}>{fam}</span>
+                  {m}
+                </button>
+              );
+            })}
           </div>
           <div className="mt-2 flex gap-2">
             <input value={newMetier} onChange={(e) => setNewMetier(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addMetier()} placeholder="+ métier" className="h-8 flex-1 rounded-lg border bg-background px-2 text-xs" />
