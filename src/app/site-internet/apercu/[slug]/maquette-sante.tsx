@@ -102,7 +102,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc{--bg:#F6F4EF;--surface:#FFF;--ink:#1C201C;--muted:#71766C;--line:#E7E4DC;
             --accent:${accent};--accent-soft:${accentSoft};--cream:#FBFAF7;--gold:#B8862F;
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);
-            max-width:520px;margin:0 auto;padding-bottom:92px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+            max-width:520px;margin:0 auto;scroll-behavior:smooth;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;}
           .mqc *{box-sizing:border-box;}
           .mqc .banner{display:block;width:100%;border:none;font-family:inherit;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:10px 14px;line-height:1.35;cursor:pointer;}
           .mqc .banner b{font-weight:700;}
@@ -114,14 +114,15 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .hero .txt{position:absolute;left:0;right:0;bottom:0;padding:20px;color:var(--cream);}
           .mqc .hero .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;}
           .mqc .hero h2{font-family:Georgia,serif;font-weight:600;font-size:27px;line-height:1.08;margin:7px 0 5px;}
-          .mqc .hero-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;}
-          .mqc .hb{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
-          .mqc .hb.note{background:rgba(255,255,255,.93);color:#1C201C;}
-          .mqc .hb.note::before{content:"★";color:var(--gold);}
-          .mqc .hb.open{background:rgba(24,128,56,.94);color:#fff;}
-          .mqc .hb.open.off{background:rgba(20,20,15,.5);color:#EEEDE7;}
-          .mqc .hb.open i{width:7px;height:7px;border-radius:50%;background:#7BE39A;box-shadow:0 0 0 3px rgba(123,227,154,.3);}
-          .mqc .hb.open.off i{background:#C9C7BE;box-shadow:none;}
+          .mqc .hero .meta{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:10px;font-size:12.5px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.45);}
+          .mqc .hero .meta .m-note{display:inline-flex;align-items:center;gap:5px;}
+          .mqc .hero .meta .m-note b{color:#FFCF4D;font-weight:400;font-size:14px;line-height:1;}
+          .mqc .hero .meta .m-sub{opacity:.85;font-weight:500;}
+          .mqc .hero .meta .m-sep{opacity:.4;}
+          .mqc .hero .meta .m-open{display:inline-flex;align-items:center;gap:6px;}
+          .mqc .hero .meta .m-open i{width:7px;height:7px;border-radius:50%;background:#5FD98A;box-shadow:0 0 0 3px rgba(95,217,138,.32);}
+          .mqc .hero .meta .m-open.off{opacity:.92;}
+          .mqc .hero .meta .m-open.off i{background:#D6D3C8;box-shadow:none;}
           /* Apparition au scroll (classe ajoutée par ScrollReveal ; sinon visible) */
           .mqc .rvl{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease;}
           .mqc .rvl.rvl-in{opacity:1;transform:none;}
@@ -178,10 +179,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .hr:last-child{border:none;}
           .mqc .hr .h{color:var(--muted);}
           .mqc .map{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-          .mqc .map .canvas{height:110px;position:relative;background:
-            repeating-linear-gradient(0deg,#E8E6DF,#E8E6DF 1px,transparent 1px,transparent 22px),
-            repeating-linear-gradient(90deg,#E8E6DF,#E8E6DF 1px,transparent 1px,transparent 22px),#F1EFE9;}
-          .mqc .map .pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);color:var(--accent);}
+          .mqc .map .mapf{width:100%;height:160px;border:0;display:block;}
           .mqc .map .addr{padding:11px 13px;background:var(--surface);font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
           .mqc .map .addr a{color:var(--accent);font-weight:600;text-decoration:none;white-space:nowrap;font-size:11.5px;}
           /* FAQ */
@@ -222,7 +220,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .close .urg{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.45;}
           .mqc .close .urg b{color:var(--ink);}
           /* BARRE FIXE unique */
-          .mqc .bar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px 14px;display:flex;gap:8px;z-index:20;}
+          .mqc .bar{position:sticky;bottom:0;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:20;}
           .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
           .mqc .bar .call{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);}
           .mqc .bar .rdv{background:var(--accent);color:var(--cream);}
@@ -260,11 +258,12 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           <h2>{nom}</h2>
           <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
           {(showAvis || openState) && (
-            <div className="hero-badges">
-              {showAvis && <span className="hb note">{note} · {reviewsCount} avis</span>}
-              {openState && (
-                <span className={`hb open${openState.open ? "" : " off"}`}><i />{openLabel}</span>
+            <div className="meta">
+              {showAvis && (
+                <span className="m-note"><b>★</b> {note}<span className="m-sub"> · {reviewsCount} avis</span></span>
               )}
+              {showAvis && openState && <span className="m-sep">•</span>}
+              {openState && <span className={`m-open${openState.open ? "" : " off"}`}><i />{openLabel}</span>}
             </div>
           )}
           <div className="acts">
@@ -348,7 +347,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           </div>
         )}
         <div className="map">
-          <div className="canvas"><div className="pin"><svg width="24" height="24" viewBox="0 0 24 24" fill={accent}><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" /></svg></div></div>
+          <iframe
+            className="mapf"
+            title={`Localisation de ${nom}`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(`${nom} ${shortAddr || villeAff}`)}&z=15&output=embed`}
+          />
           <div className="map-addr addr"><span>{shortAddr || villeAff}</span><a href={mapsHref} target="_blank" rel="noreferrer">Itinéraire →</a></div>
         </div>
         {doctolibHref && (
