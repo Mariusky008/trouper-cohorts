@@ -25,11 +25,11 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
           .pro .protabbar{position:fixed;left:0;right:0;bottom:0;max-width:440px;margin:0 auto;z-index:40;
             display:flex;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
             border-top:1px solid var(--hair);padding-bottom:env(safe-area-inset-bottom);}
-          .pro .protabbar button{flex:1;background:none;border:none;cursor:pointer;font-family:inherit;
-            padding:9px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);
+          .pro .protabbar button{flex:1;min-width:0;background:none;border:none;cursor:pointer;font-family:inherit;
+            padding:9px 1px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);
             border-top:2px solid transparent;margin-top:-1px;}
-          .pro .protabbar button .ic{font-size:19px;line-height:1;}
-          .pro .protabbar button .lb{font-size:10px;font-weight:600;letter-spacing:.01em;}
+          .pro .protabbar button .ic{font-size:18px;line-height:1;}
+          .pro .protabbar button .lb{font-size:9.5px;font-weight:600;letter-spacing:.005em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
           .pro .protabbar button.on{color:var(--ink);border-top-color:var(--gold);}
           `,
         }}

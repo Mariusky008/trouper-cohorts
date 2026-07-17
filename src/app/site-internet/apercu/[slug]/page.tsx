@@ -52,7 +52,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published")
+    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -109,11 +109,16 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
 
-  // Contenus RÉELS de la fiche Google.
-  const photos = (Array.isArray(diag.photos) ? diag.photos : [])
+  // Photos : celles gérées par le pro en priorité (data URI), sinon Google.
+  const proPhotos = (Array.isArray(row.gallery_photos) ? row.gallery_photos : [])
+    .map((p) => str(p))
+    .filter((u) => /^data:image\//i.test(u))
+    .slice(0, 10);
+  const googlePhotos = (Array.isArray(diag.photos) ? diag.photos : [])
     .map((p) => str(p))
     .filter((u) => /^https?:\/\//i.test(u))
     .slice(0, 6);
+  const photos = proPhotos.length ? proPhotos : googlePhotos;
   const reviewsTop = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
     .map((r) => (typeof r === "object" && r ? (r as Record<string, unknown>) : {}))
     .map((r) => ({ name: str(r.name), text: str(r.text), stars: typeof r.stars === "number" ? (r.stars as number) : null }))

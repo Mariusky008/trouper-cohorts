@@ -11,6 +11,7 @@ import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
+import { ProGallery } from "./pro-gallery";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -195,6 +196,7 @@ export default async function EspacePro({
       : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} /> },
     { key: "assistant", label: "Assistante", icon: "🧠", node: <ProAssistant slug={slug} token={token} /> },
+    { key: "photos", label: "Photos", icon: "🖼️", node: <ProGallery slug={slug} token={token} /> },
   ];
 
   return (
