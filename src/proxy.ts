@@ -75,6 +75,23 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
   }
 
+  // DOMAINE PERSO d'un commerçant (ex. salon-elodie.fr) : tout host inconnu de
+  // Popey, sur la RACINE uniquement, est servi par le résolveur de domaine (qui
+  // retrouve le site publié via l'en-tête Host). Périmètre volontairement étroit
+  // (racine seule) pour ne rien changer aux autres chemins/hôtes.
+  const isKnownPopeyHost =
+    !vitrineHost ||
+    vitrineHost.includes("popey.academy") ||
+    vitrineHost.endsWith(".vercel.app") ||
+    /(^|\.)popey\.link$/i.test(vitrineHost) ||
+    vitrineHost === "localhost" ||
+    vitrineHost === "127.0.0.1";
+  if (!isKnownPopeyHost && pathname === "/") {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = "/site-internet/domain";
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+  }
+
   const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {
