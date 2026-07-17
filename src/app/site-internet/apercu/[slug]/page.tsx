@@ -139,6 +139,20 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     : mapsHref;
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
 
+  // Mini-agenda : si le pro a configuré des disponibilités, « Prendre rendez-vous »
+  // ouvre la vraie page de réservation ; sinon on garde l'accueil (démo).
+  let bookingEnabled = false;
+  try {
+    const { count } = await supabase
+      .from("human_site_availability")
+      .select("id", { count: "exact", head: true })
+      .eq("site_id", str(row.id));
+    bookingEnabled = (count ?? 0) > 0;
+  } catch {
+    /* table non migrée → pas de réservation réelle, accueil démo */
+  }
+  const bookingHref = bookingEnabled ? `/site-internet/rdv/${slug}` : "";
+
   return (
     <MaquetteSante
       slug={slug}
@@ -163,6 +177,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       reviewsTop={reviewsTop}
       reviewLink={reviewLink}
       reviewsUrl={reviewsUrl}
+      bookingHref={bookingHref}
       telHref={telHref}
       waHref={waHref}
       doctolibHref={doctolibHref}

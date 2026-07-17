@@ -9,6 +9,7 @@ import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
+import { ProAgenda } from "./pro-agenda";
 import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
@@ -228,6 +229,9 @@ export default async function EspacePro({
               </div>
             </div>
           )}
+
+          {/* Mini-agenda : disponible pour tous les métiers (la santé en profite le plus). */}
+          <ProAgenda slug={slug} token={token} />
 
           <div className="lock">
             <svg viewBox="0 0 24 24" fill="none" stroke="#A6A69C" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>

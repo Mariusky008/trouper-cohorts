@@ -40,6 +40,7 @@ export type MaquetteSanteProps = {
   reviewsTop: ReviewSnippet[];
   reviewLink: string; // deep link « écrire un avis Google »
   reviewsUrl: string; // page des avis Google existants
+  bookingHref: string; // page de réservation réelle si dispos configurées, sinon ""
   telHref: string;
   waHref: string; // WhatsApp (profil A seulement, sinon "")
   doctolibHref: string; // réservation en ligne existante (profil B), sinon ""
@@ -51,8 +52,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, doctolibHref, mapsHref, phoneDisplay,
   } = p;
+  // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
+  const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
   const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
   const showAvis = avisMode !== "none" && note != null && reviewsCount != null && reviewsCount > 0;
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
@@ -268,7 +271,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           )}
           <div className="acts">
             <a className="a-call" data-accueil-open>💬 Parler à mon assistante</a>
-            <a className="a-rdv" data-accueil-open>Prendre rendez-vous</a>
+            <a className="a-rdv" {...rdvProps}>Prendre rendez-vous</a>
           </div>
         </div>
       </div>
@@ -386,7 +389,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       <div className="bar">
         <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
-        <a className="rdv" data-accueil-open>Prendre rendez-vous</a>
+        <a className="rdv" {...rdvProps}>Prendre rendez-vous</a>
       </div>
     </main>
   );
