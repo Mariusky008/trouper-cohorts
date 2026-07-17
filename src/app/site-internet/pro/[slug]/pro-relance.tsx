@@ -12,8 +12,18 @@ import { toWaDigits } from "@/lib/site-internet/phone";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
 
+const DEFAULT_MESSAGE =
+  "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
+
+// Modèles rapides pour pré-remplir (le pro édite ensuite librement).
+const TEMPLATES: Array<{ label: string; text: string }> = [
+  { label: "🕐 Créneau libre", text: "Bonjour, une place se libère [jour/heure]. Envie d'en profiter ? Répondez-moi, je vous la réserve." },
+  { label: "🏷️ Promo", text: "Bonjour ! Cette semaine : [produit/prestation] à -[XX]%. Ça vous tente ? Répondez-moi 🙂" },
+  { label: "✨ Nouveauté", text: "Bonjour ! Petite nouveauté chez nous : [à compléter]. Passez la découvrir 😊" },
+];
+
 export function ProRelance({ slug, token }: { slug: string; token: string }) {
-  const [slot, setSlot] = useState("");
+  const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [cap, setCap] = useState(3);
   const [busy, setBusy] = useState(false);
@@ -57,14 +67,11 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
     };
   }, [slug, token]);
 
-  const when = slot.trim();
-  const message =
-    `Bonjour, une place se libère${when ? ` ${when}` : " prochainement"}. ` +
-    `Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.`;
-  const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const msg = message.trim() || DEFAULT_MESSAGE;
+  const waHref = `https://wa.me/?text=${encodeURIComponent(msg)}`;
   // Version à coller dans une liste de diffusion (pas de lien de désinscription
   // par personne possible en diffusion → invitation à répondre STOP).
-  const broadcastMessage = `${message}\n\nRépondez STOP pour ne plus recevoir ces messages.`;
+  const broadcastMessage = `${msg}\n\nRépondez STOP pour ne plus recevoir ces messages.`;
 
   const copyMsg = async () => {
     try {
@@ -85,7 +92,7 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
       const r = await fetch("/api/site-internet/pro/relance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, slot: when }),
+        body: JSON.stringify({ slug, token, slot: msg.slice(0, 120) }),
         keepalive: true,
       });
       const j = await r.json().catch(() => ({}));
@@ -117,7 +124,7 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
       /* best-effort */
     }
     const stopUrl = `${window.location.origin}/site-internet/stop/${c.unsub_token}`;
-    const full = `${message}\n\nPour ne plus être prévenu·e : ${stopUrl}`;
+    const full = `${msg}\n\nPour ne plus être prévenu·e : ${stopUrl}`;
     window.location.assign(`https://wa.me/${toWaDigits(c.phone_e164)}?text=${encodeURIComponent(full)}`);
   };
 
@@ -129,6 +136,12 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
           .pro .relance .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
+          .pro .relance .tmpl{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px;}
+          .pro .relance .tmpl button{border:1px solid var(--hair);background:#fff;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
+          .pro .relance .tmpl button:hover{border-color:var(--gold);}
+          .pro .relance .opt{margin-top:12px;}
+          .pro .relance .opt label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:6px;}
+          .pro .relance .opt textarea{width:100%;border:1px solid var(--hair);border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;line-height:1.5;}
           .pro .relance .rbub{margin-top:18px;background:#EAF4E4;border:1px solid #CFE6C2;border-radius:14px;border-top-left-radius:4px;padding:13px 15px;font-size:13px;line-height:1.5;color:#25381C;white-space:pre-line;}
           .pro .relance .rbtn{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:15.5px;border:none;border-radius:15px;padding:16px;cursor:pointer;}
           .pro .relance .rbtn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
@@ -159,24 +172,28 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
         }}
       />
       <div className="relance">
-        <div className="a-title">📣 Relancer un créneau</div>
+        <div className="a-title">📣 Prévenir mes clients</div>
         <div className="a-sub">
-          Une annulation, un trou dans la journée ? Prévenez vos clients fidèles en un geste. Vous choisissez
-          les destinataires dans WhatsApp — rien n&apos;est envoyé sans vous.
+          Un créneau qui se libère, une promo, une nouveauté… <b>Écrivez votre message</b>, puis envoyez-le.
+          Vous choisissez les destinataires dans WhatsApp — rien n&apos;est envoyé sans vous.
+        </div>
+
+        <div className="tmpl">
+          {TEMPLATES.map((t) => (
+            <button key={t.label} type="button" onClick={() => setMessage(t.text)}>{t.label}</button>
+          ))}
         </div>
 
         <div className="opt">
-          <label htmlFor="pro-slot">Quand se libère la place&nbsp;?</label>
-          <input
-            id="pro-slot"
-            value={slot}
-            onChange={(e) => setSlot(e.target.value)}
-            placeholder="Ex. aujourd'hui à 15 h — ou laissez vide"
-            autoComplete="off"
+          <label htmlFor="pro-msg">Votre message</label>
+          <textarea
+            id="pro-msg"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={4}
+            placeholder="Écrivez exactement ce que vous proposez…"
           />
         </div>
-
-        <div className="rbub">{message}</div>
 
         <button className="rbtn" onClick={onSend} disabled={atCap || busy}>
           <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
