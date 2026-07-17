@@ -22,6 +22,7 @@ type Row = {
   id: string;
   slug: string;
   business_name: string | null;
+  address: string | null;
   city: string | null;
   activite: string | null;
   variant: string | null;
@@ -51,7 +52,7 @@ export default async function DecouvertePage() {
   const { data, error } = await supabase
     .from("human_vitrine_sites")
     .select(
-      "id,slug,business_name,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at"
+      "id,slug,business_name,address,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at"
     )
     .eq("channel", "letter")
     .order("created_at", { ascending: false })
@@ -149,7 +150,14 @@ export default async function DecouvertePage() {
                           <tbody>
                             {m.rows.map((r) => (
                               <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50">
-                                <td className="py-2 pr-3 font-semibold text-slate-900">{r.business_name || "—"}</td>
+                                <td className="py-2 pr-3">
+                                  <div className="font-semibold text-slate-900">{r.business_name || "—"}</div>
+                                  {r.address && (
+                                    <div className="mt-0.5 text-xs font-normal text-slate-500">
+                                      {txt(r.address).replace(/,?\s*France\s*$/i, "")}
+                                    </div>
+                                  )}
+                                </td>
                                 <td className="py-2 pr-3">
                                   {r.variant ? (
                                     <span

@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { sendSms } from "@/lib/site-internet/accueil-sms";
 
 export const dynamic = "force-dynamic";
 
@@ -63,20 +64,47 @@ export async function POST(
   const { error } = await supabase.from("human_vitrine_sites").update(patch).eq("id", String(row.id));
   if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
 
-  // Alerte WhatsApp best-effort : on ne bloque jamais la réponse au prospect.
+  // ── Alertes best-effort (jamais bloquantes). Plusieurs canaux pour la fiabilité :
+  //    e-mail + SMS (fiables, sans fenêtre de 24 h) + WhatsApp (bonus). ──────────
+  const commerce = String(row.business_name || "un commerce");
+  const ville = String(row.city || "");
+  const who = name ? `${name} (${commerce}${ville ? ` · ${ville}` : ""})` : `${commerce}${ville ? ` · ${ville}` : ""}`;
+  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const adminLink = appUrl ? `${appUrl}/admin/humain/site-internet` : "";
+  const text = `🔔 Nouveau contact « Site internet » : ${who} souhaite être rappelé au ${phoneRaw}.`;
+
+  // E-mail (Resend).
   try {
-    const target = notifyTarget();
-    if (target) {
-      const commerce = String(row.business_name || "un commerce");
-      const ville = String(row.city || "");
-      const who = name ? `${name} (${commerce}${ville ? ` · ${ville}` : ""})` : `${commerce}${ville ? ` · ${ville}` : ""}`;
-      const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
-      const link = appUrl ? ` — ${appUrl}/admin/humain/site-internet` : "";
-      const text = `🔔 Nouveau contact "Site internet" : ${who} souhaite être rappelé au ${phoneRaw}.${link}`;
-      await sendWhatsAppTextMessage(target, text, { source: "site_internet_lead" });
+    const to = String(process.env.SITE_NOTIFY_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || "").trim();
+    const key = String(process.env.RESEND_API_KEY || "").trim();
+    const from = String(process.env.RESEND_FROM || "").trim() || "Popey Academy <contact@popey.academy>";
+    if (to && key) {
+      const { Resend } = await import("resend");
+      await new Resend(key).emails.send({
+        from,
+        to,
+        subject: `Nouveau contact — ${commerce}${ville ? ` (${ville})` : ""}`,
+        text: `${text}\n\n${adminLink ? `Admin : ${adminLink}` : ""}`,
+      });
     }
   } catch {
-    // notification best-effort : un échec n'impacte pas l'enregistrement du lead
+    /* best-effort */
+  }
+
+  // SMS (Twilio) vers le numéro d'alerte.
+  try {
+    const smsTo = String(process.env.SITE_LETTER_NOTIFY_SMS || process.env.SITE_LETTER_PHONE || "").trim() || notifyTarget();
+    if (smsTo) await sendSms(smsTo, text);
+  } catch {
+    /* best-effort */
+  }
+
+  // WhatsApp (bonus — peut échouer hors fenêtre de session, d'où l'e-mail/SMS).
+  try {
+    const target = notifyTarget();
+    if (target) await sendWhatsAppTextMessage(target, `${text}${adminLink ? ` — ${adminLink}` : ""}`, { source: "site_internet_lead" });
+  } catch {
+    /* best-effort */
   }
 
   return NextResponse.json({ ok: true }, { status: 200 });
