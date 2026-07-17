@@ -19,6 +19,7 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [busy, setBusy] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [sent, setSent] = useState<Record<string, boolean>>({});
+  const [copied, setCopied] = useState(false);
 
   // Quota restant du jour (lecture au montage — best-effort).
   useEffect(() => {
@@ -61,6 +62,19 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
     `Bonjour, une place se libère${when ? ` ${when}` : " prochainement"}. ` +
     `Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.`;
   const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  // Version à coller dans une liste de diffusion (pas de lien de désinscription
+  // par personne possible en diffusion → invitation à répondre STOP).
+  const broadcastMessage = `${message}\n\nRépondez STOP pour ne plus recevoir ces messages.`;
+
+  const copyMsg = async () => {
+    try {
+      await navigator.clipboard.writeText(broadcastMessage);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* clipboard indisponible → l'aperçu reste sélectionnable à la main */
+    }
+  };
 
   const atCap = remaining !== null && remaining <= 0;
 
@@ -119,6 +133,19 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance .rbtn{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:15.5px;border:none;border-radius:15px;padding:16px;cursor:pointer;}
           .pro .relance .rbtn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
           .pro .relance .rbtn svg{width:19px;height:19px;}
+          .pro .relance .rcopy{margin-top:9px;width:100%;background:#F1EFEA;border:1px solid var(--hair);color:var(--ink);border-radius:13px;padding:12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+          .pro .relance .rguide{margin-top:12px;border:1px solid var(--hair);border-radius:13px;background:#fff;overflow:hidden;}
+          .pro .relance .rguide summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:13px;font-weight:600;color:var(--ink);}
+          .pro .relance .rguide summary::-webkit-details-marker{display:none;}
+          .pro .relance .rguide[open] summary{border-bottom:1px solid var(--hair);}
+          .pro .relance .rguide-body{padding:12px 15px 15px;}
+          .pro .relance .rguide-body ol{margin:0 0 0 18px;padding:0;font-size:12.5px;color:var(--soft);line-height:1.55;}
+          .pro .relance .rguide-body li{margin-bottom:6px;}
+          .pro .relance .rguide-body li b{color:var(--ink);font-weight:600;}
+          .pro .relance .rwarn{margin-top:12px;background:#FBF3E4;border:1px solid #EBD9AE;border-radius:11px;padding:10px 12px;font-size:12px;color:#6B5418;line-height:1.45;}
+          .pro .relance .rwarn b{color:#4A3A10;}
+          .pro .relance .rtip{margin-top:10px;font-size:11.5px;color:var(--faint);line-height:1.45;}
+          .pro .relance .rtip b{color:var(--soft);}
           .pro .relance .quota{text-align:center;font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.4;}
           .pro .relance .cap{margin-top:14px;background:#FBF3E4;border:1px solid #EBD9AE;border-radius:12px;padding:11px 13px;font-size:12.5px;color:#6B5418;line-height:1.45;}
           .pro .relance .aud{margin-top:22px;border-top:1px dashed var(--hair);padding-top:18px;}
@@ -155,6 +182,29 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
           Prévenir mes clients
         </button>
+
+        <button className="rcopy" onClick={copyMsg}>{copied ? "✓ Message copié" : "📋 Copier le message (pour une liste de diffusion)"}</button>
+
+        <details className="rguide">
+          <summary>ⓘ Prévenir tous mes clients d&apos;un seul envoi</summary>
+          <div className="rguide-body">
+            <ol>
+              <li>Dans WhatsApp&nbsp;: <b>Nouvelle discussion → Nouvelle diffusion</b>.</li>
+              <li>Cochez vos clients (jusqu&apos;à 256), créez la liste. <b>Une seule fois.</b></li>
+              <li>À chaque place libre&nbsp;: <b>« Copier le message »</b> ci-dessus, collez-le dans votre liste de diffusion, envoyez. Un envoi&nbsp;→&nbsp;tout le monde le reçoit en privé.</li>
+            </ol>
+            <div className="rwarn">
+              ⚠️ Un client ne reçoit votre diffusion <b>que s&apos;il a enregistré votre numéro</b> dans ses contacts.
+              Prenez l&apos;habitude de lui demander&nbsp;: « Enregistrez mon numéro pour être prévenu·e des places qui se
+              libèrent et de mes bons plans. »
+            </div>
+            <div className="rtip">
+              Astuce&nbsp;: pour des offres <b>non urgentes</b>, votre <b>Statut WhatsApp</b> (Actu) marche aussi — vous
+              publiez une fois, visible 24&nbsp;h par vos contacts. Pour une place à combler <b>vite</b>, la liste de
+              diffusion est plus efficace (le message arrive droit dans leur conversation).
+            </div>
+          </div>
+        </details>
 
         {atCap ? (
           <div className="cap">
