@@ -10,6 +10,7 @@ import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
+import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
@@ -135,6 +136,65 @@ export default async function EspacePro({
   const starsOn = "★".repeat(rStars);
   const starsOff = "★".repeat(5 - rStars);
 
+  // ── Onglet ACCUEIL : carte avis Google (A, B) et/ou note sobre (santé/droit) ──
+  const accueilNode = (
+    <>
+      {afficherAvis && (
+        <div className="gcard">
+          <div className="top">
+            <span className="lab">Vos avis Google</span>
+            <span className="g">
+              <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-2 3.2-4.9 3.2-7.9z" /><path fill="#34A853" d="M12 23c2.9 0 5.3-1 7.1-2.6l-3.6-2.8c-1 .7-2.3 1.1-3.5 1.1-2.7 0-5-1.8-5.8-4.3H2.5v2.8A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M6.2 14.4a6.6 6.6 0 0 1 0-4.2V7.4H2.5a11 11 0 0 0 0 9.8z" /><path fill="#EA4335" d="M12 5.5c1.5 0 2.9.5 4 1.5l3-3A11 11 0 0 0 2.5 7.4l3.7 2.8C7 7.3 9.3 5.5 12 5.5z" /></svg>
+              Google
+            </span>
+          </div>
+          {reviews != null ? (
+            <>
+              <div className="val">
+                <span className="num">{reviews}</span>
+                <span>
+                  <span className="stars">{starsOn}<span className="off">{starsOff}</span></span>
+                  <br />
+                  <span className="rate">{note ? `${note} sur 5 · ` : ""}avis vérifiés</span>
+                </span>
+                {delta > 0 && <span className="delta">📈 +{delta} depuis le début</span>}
+              </div>
+              <div className="bar"><i style={{ width: `${goalPct}%` }} /></div>
+              <div className="goal"><span>Aujourd&apos;hui : {reviews}</span><span>Objectif : {goal}</span></div>
+              <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
+            </>
+          ) : (
+            <>
+              <div className="empty" style={{ marginTop: 8 }}>Chaque avis renforce votre visibilité locale. Commencez à en récolter dès aujourd&apos;hui.</div>
+              <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
+            </>
+          )}
+        </div>
+      )}
+      {!soliciter && (
+        <div className="gcard" style={{ marginTop: afficherAvis ? 14 : 6 }}>
+          <div className="empty">
+            Votre espace est volontairement sobre. Votre profession étant encadrée, nous ne sollicitons pas
+            d&apos;avis et n&apos;envoyons aucune relance commerciale en votre nom. Votre site et votre accueil
+            intelligent travaillent pour vous — dans le respect de votre cadre déontologique.
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const proTabs: ProTab[] = [
+    { key: "accueil", label: "Accueil", icon: "🏠", node: accueilNode },
+    ...(soliciter
+      ? ([
+          { key: "avis", label: "Avis", icon: "⭐", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
+          { key: "clients", label: "Clients", icon: "👥", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
+          { key: "relance", label: "Relance", icon: "📣", node: <ProRelance slug={slug} token={token} /> },
+        ] as ProTab[])
+      : []),
+    { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} /> },
+  ];
+
   return (
     <main className="pro">
       <style
@@ -145,7 +205,7 @@ export default async function EspacePro({
             min-height:100vh;-webkit-font-smoothing:antialiased;}
           .pro *{box-sizing:border-box;}
           .pro .wrap{max-width:440px;margin:0 auto;background:var(--paper);min-height:100vh;}
-          .pro .pad{padding:26px 22px 40px;}
+          .pro .pad{padding:24px 20px 94px;}
           .pro .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:600;border:1px solid var(--hair);border-radius:20px;padding:5px 11px;}
           .pro .eyebrow svg{width:11px;height:11px;}
           .pro .name{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:27px;line-height:1.1;margin:14px 0 3px;letter-spacing:-.01em;}
@@ -167,8 +227,7 @@ export default async function EspacePro({
           .pro .rr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);}
           .pro .rr-date{font-size:11.5px;color:var(--faint);}
           .pro .rr-btn{background:#F1EFEA;border:1px solid var(--hair);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
-          .pro .lock{margin-top:26px;text-align:center;font-size:11.5px;color:var(--faint);display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.4;}
-          .pro .lock svg{width:12px;height:12px;flex:none;}
+          .pro .lockline{font-size:11px;color:var(--faint);margin:9px 0 2px;line-height:1.4;}
           `,
         }}
       />
@@ -180,63 +239,9 @@ export default async function EspacePro({
           </span>
           <div className="name">{nom}</div>
           <div className="role">{activite}{ville ? ` · ${ville}` : ""}</div>
+          <div className="lockline">🔒 Espace privé — vos clients ne voient jamais cette page.</div>
 
-          {afficherAvis && (
-          <div className="gcard">
-            <div className="top">
-              <span className="lab">Vos avis Google</span>
-              <span className="g">
-                <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-2 3.2-4.9 3.2-7.9z" /><path fill="#34A853" d="M12 23c2.9 0 5.3-1 7.1-2.6l-3.6-2.8c-1 .7-2.3 1.1-3.5 1.1-2.7 0-5-1.8-5.8-4.3H2.5v2.8A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M6.2 14.4a6.6 6.6 0 0 1 0-4.2V7.4H2.5a11 11 0 0 0 0 9.8z" /><path fill="#EA4335" d="M12 5.5c1.5 0 2.9.5 4 1.5l3-3A11 11 0 0 0 2.5 7.4l3.7 2.8C7 7.3 9.3 5.5 12 5.5z" /></svg>
-                Google
-              </span>
-            </div>
-            {reviews != null ? (
-              <>
-                <div className="val">
-                  <span className="num">{reviews}</span>
-                  <span>
-                    <span className="stars">{starsOn}<span className="off">{starsOff}</span></span>
-                    <br />
-                    <span className="rate">{note ? `${note} sur 5 · ` : ""}avis vérifiés</span>
-                  </span>
-                  {delta > 0 && <span className="delta">📈 +{delta} depuis le début</span>}
-                </div>
-                <div className="bar"><i style={{ width: `${goalPct}%` }} /></div>
-                <div className="goal"><span>Aujourd&apos;hui : {reviews}</span><span>Objectif : {goal}</span></div>
-                <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
-              </>
-            ) : (
-              <>
-                <div className="empty" style={{ marginTop: 8 }}>Chaque avis renforce votre visibilité locale. Commencez à en récolter dès aujourd&apos;hui.</div>
-                <ReviewRefresh slug={slug} token={token} refreshedAt={refreshedAt} />
-              </>
-            )}
-          </div>
-          )}
-
-          {soliciter ? (
-            <>
-              <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} />
-              <ProContacts slug={slug} token={token} reviewLink={reviewLink} />
-              <ProRelance slug={slug} token={token} />
-            </>
-          ) : (
-            <div className="gcard" style={{ marginTop: 20 }}>
-              <div className="empty">
-                Votre espace est volontairement sobre. Votre profession étant encadrée, nous ne sollicitons pas
-                d&apos;avis et n&apos;envoyons aucune relance commerciale en votre nom. Votre site et votre accueil
-                intelligent travaillent pour vous — dans le respect de votre cadre déontologique.
-              </div>
-            </div>
-          )}
-
-          {/* Mini-agenda : disponible pour tous les métiers (la santé en profite le plus). */}
-          <ProAgenda slug={slug} token={token} />
-
-          <div className="lock">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#A6A69C" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
-            Espace privé — vos clients ne voient jamais cette page.
-          </div>
+          <ProTabs tabs={proTabs} />
         </div>
       </div>
     </main>
