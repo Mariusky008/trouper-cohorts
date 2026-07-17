@@ -30,12 +30,13 @@ export async function POST(request: Request) {
   let activite = "";
   let adresse = "";
   let horaires: Array<{ jours?: string; horaires?: string }> = [];
+  let kbText = ""; // fiche de connaissances remplie par le pro (spécialités, FAQ)
   if (slug) {
     try {
       const supabase = createAdminClient();
       const { data } = await supabase
         .from("human_vitrine_sites")
-        .select("business_name, city, activite, address, diagnostic")
+        .select("business_name, city, activite, address, diagnostic, assistant_kb")
         .eq("slug", slug)
         .eq("channel", "letter")
         .maybeSingle();
@@ -47,6 +48,20 @@ export async function POST(request: Request) {
         adresse = str(row.address);
         const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
         horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
+        // Fiche de connaissances renseignée par le pro.
+        const kb = (row.assistant_kb && typeof row.assistant_kb === "object" ? row.assistant_kb : {}) as Record<string, unknown>;
+        const spec = str(kb.specialites);
+        const excl = str(kb.exclusions);
+        const faq = (Array.isArray(kb.faq) ? kb.faq : []) as Array<{ q?: string; a?: string }>;
+        const faqTxt = faq
+          .map((f) => `Q: ${str(f.q)} → R: ${str(f.a)}`)
+          .filter((l) => l.length > 8)
+          .slice(0, 20)
+          .join("\n");
+        kbText =
+          (spec ? `Spécialités / ce que propose ${praticien} : ${spec}\n` : "") +
+          (excl ? `Ce que ${praticien} ne propose PAS : ${excl}\n` : "") +
+          (faqTxt ? `Questions fréquentes (réponds à partir de ça) :\n${faqTxt}\n` : "");
       }
     } catch {
       /* best-effort */
@@ -70,22 +85,26 @@ export async function POST(request: Request) {
     .join(" ; ");
 
   const system =
-    `Tu es l'accueil AUTOMATIQUE du cabinet de ${praticien}` +
+    `Tu es l'accueil AUTOMATIQUE de ${praticien}` +
     (activite ? `, ${activite}` : "") +
     (ville ? ` à ${ville}` : "") +
-    `. Tu réponds UNIQUEMENT à des questions pratiques et d'organisation : accès, stationnement, horaires, ` +
-    `déroulé d'un rendez-vous, séances en visio, moyens de paiement, durée, prise de rendez-vous.\n` +
+    `.\n` +
+    `Tu réponds aux questions pratiques et d'organisation (accès, stationnement, horaires, déroulé, ` +
+    `moyens de paiement, prise de rendez-vous)` +
+    (kbText ? ` ET aux questions sur les prestations, en t'appuyant UNIQUEMENT sur la fiche ci-dessous.` : `.`) +
+    `\n` +
     `RÈGLES ABSOLUES :\n` +
     `- JAMAIS de conseil médical, d'interprétation de symptômes, de diagnostic ni d'avis sur un traitement. ` +
     `Si on te pose une question de santé, réponds : « Je ne peux pas répondre à une question de santé ; ` +
     `parlez-en directement avec ${praticien}. Souhaitez-vous un rendez-vous ? »\n` +
-    `- N'INVENTE rien. Si tu ne connais pas une information (tarif, horaire précis…), dis-le simplement ` +
-    `(« le cabinet vous le précisera ») et propose un rendez-vous.\n` +
+    `- Réponds à partir des INFOS CONNUES ci-dessous. Hors de ces infos, n'invente RIEN : dis simplement ` +
+    `« je vérifie ce point avec ${praticien} » et propose un rendez-vous ou de transmettre la demande.\n` +
     `- Ne demande AUCUNE donnée de santé.\n` +
-    `- Réponses courtes (1 à 3 phrases), ton posé et rassurant, en français. Tu peux toujours proposer un rendez-vous.\n` +
-    `INFOS CONNUES :` +
-    (adresse ? ` Adresse : ${adresse}.` : "") +
-    (horairesTxt ? ` Horaires : ${horairesTxt}.` : " Horaires non communiqués.") ;
+    `- Réponses courtes (1 à 3 phrases), ton posé et chaleureux, en français. Tu peux toujours proposer un rendez-vous.\n` +
+    `INFOS CONNUES :\n` +
+    (adresse ? `Adresse : ${adresse}.\n` : "") +
+    (horairesTxt ? `Horaires : ${horairesTxt}.\n` : "Horaires non communiqués.\n") +
+    (kbText || "");
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
