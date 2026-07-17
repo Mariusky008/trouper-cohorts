@@ -57,6 +57,7 @@ export async function POST(request: Request) {
   }
 
   const siteId = s(site.id);
+  let summary: Record<string, number> | null = null;
 
   if (action === "add") {
     // Consentement EXPLICITE requis : sans lui, on n'enregistre rien.
@@ -94,6 +95,67 @@ export async function POST(request: Request) {
     if (error && !migrationMissing(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+  } else if (action === "add_bulk") {
+    // Import en masse (liste collée). Consentement global obligatoire.
+    if (p?.consent !== true) {
+      return NextResponse.json({ error: "Le consentement est requis." }, { status: 400 });
+    }
+    const raw = Array.isArray(p?.items) ? (p.items as unknown[]) : [];
+    // Normalise + dédoublonne dans le lot.
+    const seen = new Set<string>();
+    const valid: Array<{ phone: string; prenom: string | null }> = [];
+    let invalid = 0;
+    for (const it of raw.slice(0, 1000)) {
+      const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+      const phone = toE164(s(o.phone));
+      if (!phone || phone.replace(/\D/g, "").length < 9) {
+        invalid++;
+        continue;
+      }
+      if (seen.has(phone)) continue;
+      seen.add(phone);
+      const pr = s(o.prenom).slice(0, 80);
+      valid.push({ phone, prenom: pr || null });
+    }
+
+    let added = 0;
+    let updated = 0;
+    let optedOut = 0;
+    if (valid.length) {
+      const phones = valid.map((v) => v.phone);
+      const existing = new Set<string>();
+      const opted = new Set<string>();
+      try {
+        const { data: ex } = await supabase
+          .from("human_site_contacts")
+          .select("phone_e164, opted_out_at")
+          .eq("site_id", siteId)
+          .in("phone_e164", phones);
+        if (Array.isArray(ex)) {
+          for (const r of ex as Array<Record<string, unknown>>) {
+            existing.add(s(r.phone_e164));
+            if (r.opted_out_at) opted.add(s(r.phone_e164));
+          }
+        }
+      } catch {
+        /* table non migrée */
+      }
+      // On n'écrase JAMAIS une désinscription.
+      const toInsert = valid.filter((v) => !opted.has(v.phone));
+      optedOut = valid.length - toInsert.length;
+      added = toInsert.filter((v) => !existing.has(v.phone)).length;
+      updated = toInsert.length - added;
+      if (toInsert.length) {
+        const { error } = await supabase.from("human_site_contacts").upsert(
+          toInsert.map((v) => ({ site_id: siteId, prenom: v.prenom, phone_e164: v.phone, consent: true, source: "pro" })),
+          { onConflict: "site_id,phone_e164" }
+        );
+        if (error && !migrationMissing(error.message)) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      }
+    }
+    summary = { received: raw.length, added, updated, invalid, optedOut };
   } else if (action === "remove") {
     const id = s(p?.id);
     if (id) {
@@ -126,5 +188,5 @@ export async function POST(request: Request) {
     /* table pas encore migrée → liste vide, la page reste fonctionnelle */
   }
 
-  return NextResponse.json({ ok: true, contacts }, { status: 200 });
+  return NextResponse.json({ ok: true, contacts, summary }, { status: 200 });
 }

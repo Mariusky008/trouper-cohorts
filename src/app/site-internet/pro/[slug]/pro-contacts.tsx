@@ -19,6 +19,23 @@ type Contact = {
   unsub_token: string;
 };
 
+// Parse une liste collée : un client par ligne (« Julie, 06 12 34 56 78 »,
+// « Julie 0612345678 », ou juste le numéro). On repère le numéro (suite de
+// chiffres), le reste de la ligne = prénom. Fonction pure (module-level).
+function parseContactLines(text: string): Array<{ prenom: string; phone: string }> {
+  const out: Array<{ prenom: string; phone: string }> = [];
+  for (const line of String(text || "").split(/\r?\n/)) {
+    const l = line.trim();
+    if (!l) continue;
+    const m = l.match(/\+?\d[\d\s.\-()]{7,}\d/);
+    if (!m) continue;
+    const phone = m[0];
+    const prenom = l.replace(phone, "").replace(/[,;:\t]+/g, " ").replace(/\s+/g, " ").trim();
+    out.push({ prenom, phone });
+  }
+  return out;
+}
+
 export function ProContacts({ slug, token, reviewLink }: { slug: string; token: string; reviewLink: string }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -27,6 +44,11 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // Import en masse (liste collée).
+  const [imp, setImp] = useState("");
+  const [impConsent, setImpConsent] = useState(false);
+  const [impBusy, setImpBusy] = useState(false);
+  const [impMsg, setImpMsg] = useState("");
 
   const call = async (body: Record<string, unknown>) => {
     const r = await fetch("/api/site-internet/pro/contacts", {
@@ -78,6 +100,36 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
       setErr("Réseau indisponible.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const parsedImport = parseContactLines(imp);
+  const canImport = impConsent && parsedImport.length > 0 && !impBusy;
+
+  const runImport = async () => {
+    if (!canImport) return;
+    setImpBusy(true);
+    setImpMsg("");
+    try {
+      const { ok, j } = await call({ action: "add_bulk", consent: true, items: parsedImport });
+      if (ok && Array.isArray(j.contacts)) {
+        setContacts(j.contacts as Contact[]);
+        const su = (j.summary && typeof j.summary === "object" ? j.summary : {}) as Record<string, number>;
+        const parts: string[] = [];
+        if (su.added) parts.push(`${su.added} ajouté${su.added > 1 ? "s" : ""}`);
+        if (su.updated) parts.push(`${su.updated} déjà présent${su.updated > 1 ? "s" : ""}`);
+        if (su.optedOut) parts.push(`${su.optedOut} désinscrit${su.optedOut > 1 ? "s" : ""} (ignoré${su.optedOut > 1 ? "s" : ""})`);
+        if (su.invalid) parts.push(`${su.invalid} invalide${su.invalid > 1 ? "s" : ""}`);
+        setImpMsg(parts.length ? parts.join(" · ") : "Rien à importer.");
+        setImp("");
+        setImpConsent(false);
+      } else {
+        setImpMsg(typeof j.error === "string" ? j.error : "Import impossible.");
+      }
+    } catch {
+      setImpMsg("Réseau indisponible.");
+    } finally {
+      setImpBusy(false);
     }
   };
 
@@ -140,6 +192,15 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
           .pro .contacts .c .ask svg{width:14px;height:14px;}
           .pro .contacts .c .rm{flex:none;border:none;background:none;color:var(--faint);font-size:15px;cursor:pointer;padding:4px;}
           .pro .contacts .none{margin-top:16px;font-size:13px;color:var(--faint);line-height:1.45;}
+          .pro .contacts .imp{margin-top:12px;border:1px solid var(--hair);border-radius:14px;background:#fff;overflow:hidden;}
+          .pro .contacts .imp summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:13.5px;font-weight:600;color:var(--ink);}
+          .pro .contacts .imp summary::-webkit-details-marker{display:none;}
+          .pro .contacts .imp[open] summary{border-bottom:1px solid var(--hair);}
+          .pro .contacts .imp-body{padding:14px;}
+          .pro .contacts .imp-hint{font-size:12px;color:var(--soft);line-height:1.45;margin-bottom:10px;}
+          .pro .contacts .imp-body textarea{width:100%;border:1px solid var(--hair);border-radius:11px;padding:11px 13px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;line-height:1.5;}
+          .pro .contacts .imp-body textarea::placeholder{color:#C4C1B8;}
+          .pro .contacts .imp-msg{margin-top:10px;font-size:12.5px;color:#1B7A3E;font-weight:600;line-height:1.4;}
           `,
         }}
       />
@@ -178,6 +239,27 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
           </button>
           {err && <div className="err">{err}</div>}
         </div>
+
+        <details className="imp">
+          <summary>📋 Importer une liste de clients</summary>
+          <div className="imp-body">
+            <div className="imp-hint">Collez vos clients, <b>un par ligne</b> (prénom et numéro). Ex. « Julie, 06 12 34 56 78 ».</div>
+            <textarea
+              value={imp}
+              onChange={(e) => setImp(e.target.value)}
+              placeholder={"Julie, 06 12 34 56 78\nMarc 06 98 76 54 32\n07 11 22 33 44"}
+              rows={5}
+            />
+            <label className="consent">
+              <input type="checkbox" checked={impConsent} onChange={(e) => setImpConsent(e.target.checked)} />
+              <span>Tous ces clients m&apos;ont donné leur accord pour être recontactés par WhatsApp.</span>
+            </label>
+            <button className="addbtn" onClick={runImport} disabled={!canImport}>
+              {impBusy ? "Import…" : parsedImport.length > 0 ? `Importer ${parsedImport.length} client${parsedImport.length > 1 ? "s" : ""}` : "Importer"}
+            </button>
+            {impMsg && <div className="imp-msg">{impMsg}</div>}
+          </div>
+        </details>
 
         {loaded && contacts.length === 0 ? (
           <div className="none">
