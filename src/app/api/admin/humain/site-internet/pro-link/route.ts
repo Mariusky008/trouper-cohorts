@@ -50,7 +50,9 @@ export async function POST(request: Request) {
 
   let token = String(site.pro_token || "");
   if (!token) {
-    token = randomBytes(24).toString("base64url");
+    // Jeton court (12 caractères, ~72 bits) : suffisant pour un lien privé non
+    // devinable, et un lien à envoyer bien plus court.
+    token = randomBytes(9).toString("base64url");
     const { error: updErr } = await supabase
       .from("human_vitrine_sites")
       .update({ pro_token: token })
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy";
-  const url = `${appUrl}/site-internet/pro/${slug}?k=${token}`;
+  // Lien court à envoyer au commerçant : /p/<jeton> → redirige vers son espace.
+  const url = `${appUrl}/p/${token}`;
   return NextResponse.json({ ok: true, url }, { status: 200 });
 }

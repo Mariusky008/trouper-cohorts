@@ -52,7 +52,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic")
+    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -178,6 +178,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       reviewLink={reviewLink}
       reviewsUrl={reviewsUrl}
       bookingHref={bookingHref}
+      published={Boolean(row.published)}
       telHref={telHref}
       waHref={waHref}
       doctolibHref={doctolibHref}

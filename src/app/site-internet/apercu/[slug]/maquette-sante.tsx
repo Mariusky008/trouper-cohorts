@@ -41,6 +41,7 @@ export type MaquetteSanteProps = {
   reviewLink: string; // deep link « écrire un avis Google »
   reviewsUrl: string; // page des avis Google existants
   bookingHref: string; // page de réservation réelle si dispos configurées, sinon ""
+  published: boolean; // true = site en ligne pour de vrai (retire l'habillage démo)
   telHref: string;
   waHref: string; // WhatsApp (profil A seulement, sinon "")
   doctolibHref: string; // réservation en ligne existante (profil B), sinon ""
@@ -52,7 +53,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, published, doctolibHref, mapsHref, phoneDisplay,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -245,13 +246,16 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         hideBubble
       />
 
-      <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />
-      <MaquetteAssistant accent={accent} data={assistantData} />
+      {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
+      {!published && <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />}
+      {!published && <MaquetteAssistant accent={accent} data={assistantData} />}
       <ScrollReveal />
 
-      <button type="button" className="banner" data-assistant-open>
-        ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
-      </button>
+      {!published && (
+        <button type="button" className="banner" data-assistant-open>
+          ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
+        </button>
+      )}
 
       <div className="hero">
         <div className="img" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
@@ -374,18 +378,32 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         ))}
       </section>
 
-      <div className="close" id="site-rappel">
-        <div className="t">Ce site peut être le vôtre.</div>
-        <div className="p">
-          Il vous plaît ? On le met en ligne sous 72 h — ou on change ce que vous voulez.<br />
-          Sinon, ça s’arrête là — sans frais, sans relance.
-          {phoneDisplay ? <><br /><b>Marius · {phoneDisplay}</b></> : null}
+      {published ? (
+        <div className="close" id="site-rappel">
+          <div className="t">{nom}</div>
+          <div className="p">
+            {roleLine}
+            {shortAddr ? <><br />{shortAddr}</> : null}
+          </div>
+          <div className="lead"><a className="a-rdv" {...rdvProps} style={{ display: "inline-block", textDecoration: "none", background: accent, color: "var(--cream)", borderRadius: 24, padding: "12px 22px", fontSize: 13, fontWeight: 600 }}>Prendre rendez-vous</a></div>
+          {showUrgence && (
+            <div className="urg"><b>En cas d’urgence</b> : 15 (Samu) · 3114 (prévention du suicide, 24 h/24) · 112</div>
+          )}
         </div>
-        <div className="lead"><LeadForm slug={slug} /></div>
-        {showUrgence && (
-          <div className="urg"><b>En cas d’urgence</b> : 15 (Samu) · 3114 (prévention du suicide, 24 h/24) · 112</div>
-        )}
-      </div>
+      ) : (
+        <div className="close" id="site-rappel">
+          <div className="t">Ce site peut être le vôtre.</div>
+          <div className="p">
+            Il vous plaît ? On le met en ligne sous 72 h — ou on change ce que vous voulez.<br />
+            Sinon, ça s’arrête là — sans frais, sans relance.
+            {phoneDisplay ? <><br /><b>Marius · {phoneDisplay}</b></> : null}
+          </div>
+          <div className="lead"><LeadForm slug={slug} /></div>
+          {showUrgence && (
+            <div className="urg"><b>En cas d’urgence</b> : 15 (Samu) · 3114 (prévention du suicide, 24 h/24) · 112</div>
+          )}
+        </div>
+      )}
 
       <div className="bar">
         <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
