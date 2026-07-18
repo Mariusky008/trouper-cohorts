@@ -52,7 +52,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, site_views, services")
+    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -79,11 +79,25 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   } catch {
     /* best-effort */
   }
+  // Colonnes RÉCENTES (site_views, services) : lecture séparée et défensive. Si
+  // la migration n'est pas encore appliquée, cette requête échoue seule — la page
+  // (et toutes les sections pilotées par la config métier) s'affiche quand même.
+  let siteViews = 0;
+  let proServicesRaw: unknown = [];
   try {
-    const cur = typeof row.site_views === "number" ? row.site_views : 0;
-    await supabase.from("human_vitrine_sites").update({ site_views: cur + 1 }).eq("id", str(row.id));
+    const { data: extra } = await supabase
+      .from("human_vitrine_sites")
+      .select("site_views, services")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    const ex = (extra as Record<string, unknown> | null) ?? null;
+    if (ex) {
+      siteViews = typeof ex.site_views === "number" ? ex.site_views : 0;
+      proServicesRaw = ex.services;
+    }
+    await supabase.from("human_vitrine_sites").update({ site_views: siteViews + 1 }).eq("id", str(row.id));
   } catch {
-    /* best-effort */
+    /* colonnes non migrées → best-effort, la page reste complète */
   }
 
   const nom = str(row.business_name) || "Votre commerce";
@@ -128,7 +142,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   // Prestations RÉELLES saisies par le pro (« Mes accompagnements »). Bornées et
   // nettoyées. Les exemples de la maquette viennent de la config métier (côté
   // composant) : ici, aucun tarif inventé.
-  const proServices = (Array.isArray(row.services) ? row.services : [])
+  const proServices = (Array.isArray(proServicesRaw) ? proServicesRaw : [])
     .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
     .map((x) => ({
       name: str(x.name).slice(0, 80),

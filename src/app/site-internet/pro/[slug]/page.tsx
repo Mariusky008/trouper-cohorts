@@ -58,7 +58,7 @@ export default async function EspacePro({
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token, site_views")
+    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -145,7 +145,16 @@ export default async function EspacePro({
 
   // ── Tableau de bord : chiffres réels agrégés (best-effort). ──────────────────
   const siteId = str(row.id);
-  const views = typeof row.site_views === "number" ? row.site_views : 0;
+  // Vues : colonne récente → lecture séparée et défensive (page complète même si
+  // la migration site_views n'a pas encore été appliquée).
+  let views = 0;
+  try {
+    const { data: v } = await supabase.from("human_vitrine_sites").select("site_views").eq("id", siteId).maybeSingle();
+    const vr = (v as Record<string, unknown> | null) ?? null;
+    if (vr && typeof vr.site_views === "number") views = vr.site_views;
+  } catch {
+    /* colonne non migrée → 0 */
+  }
   const monthIso = (() => {
     const d = new Date();
     d.setDate(1);
