@@ -164,36 +164,51 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     );
   };
 
-  // ── ANNONCE : un message → TOUS les clients sur WhatsApp → ils reviennent ─────
+  // ── ANNONCE : un message → TOUS les clients d'un coup → réponses en cascade ──
   const playCreneau = (msg: string) => {
     const plur = term === "patient" ? "patients" : "client·es";
+    // 1) Le message + la PORTÉE (un envoi touche tout le monde en même temps).
+    let dots = "";
+    for (let i = 0; i < 18; i++) dots += `<span class="asx-avdot" style="animation-delay:${i * 70}ms"></span>`;
     openStage(
-      `<div class="asx-ctx">Annonce envoyée à <b>tous vos ${plur}</b> inscrit·es…</div>` +
+      `<div class="asx-ctx" id="asx-ctx">Un seul envoi part vers <b>tous vos ${plur}</b> en même temps…</div>` +
         `<div class="asx-chat"><div class="asx-msg wa">${esc(msg)}</div></div>` +
-        `<div id="asx-act" style="margin-top:8px"></div>`
+        `<div id="asx-reach" style="margin-top:14px"></div>` +
+        `<div id="asx-rep" style="margin-top:10px"></div>`
     );
-    after(1400, () => {
-      const a = document.getElementById("asx-act");
-      if (a) a.innerHTML = `<div class="asx-tiny" style="margin-bottom:6px">Reçu à l'instant sur le WhatsApp de vos ${plur}</div><div class="asx-dots"><span>•</span><span>•</span><span>•</span></div>`;
+    after(650, () => {
+      const r = document.getElementById("asx-reach");
+      if (r) r.innerHTML = `<div class="asx-reachbig"><span id="asx-rc">0</span></div><div class="asx-reachlb">${plur} le reçoivent à l'instant</div><div class="asx-avrow">${dots}</div>`;
     });
-    // Les réponses arrivent en cascade → l'effet « ça rapporte ».
-    const reply = (who: string) => {
-      const a = document.getElementById("asx-act");
-      a?.querySelector(".asx-dots")?.remove();
-      if (a) a.innerHTML += `<div class="asx-msg c" style="opacity:1;transform:none;margin-top:6px">${who}</div><div class="asx-dots"><span>•</span><span>•</span><span>•</span></div>`;
+    // Compteur qui grimpe (illustratif) → l'effet « ça touche du monde ».
+    const rc = (n: number) => {
+      const c = document.getElementById("asx-rc");
+      if (c) c.textContent = String(n);
     };
-    after(2700, () => reply("Julie — OUI, je réserve ❤️"));
-    after(3600, () => reply("Marc — j'en profite, à samedi 🙌"));
-    after(4500, () => reply("Léa — parfait, je viens ✨"));
-    after(5600, () => {
-      const a = document.getElementById("asx-act");
-      a?.querySelector(".asx-dots")?.remove();
+    after(1000, () => rc(9));
+    after(1350, () => rc(21));
+    after(1700, () => rc(34));
+    after(2050, () => rc(46));
+    after(2650, () => {
+      const c = document.getElementById("asx-ctx");
+      if (c) c.innerHTML = `✓ <b>Distribué</b> — sans appeler personne, sans coller une affiche.`;
     });
-    after(6100, () =>
+    // 2) Les réponses arrivent, espacées pour être lues.
+    const reply = (who: string) => {
+      const a = document.getElementById("asx-rep");
+      a?.querySelector(".asx-dots")?.remove();
+      if (a) a.innerHTML += `<div class="asx-msg c" style="opacity:1;transform:none;margin-top:6px">${who}</div><div class="asx-dots" style="margin-top:8px"><span>•</span><span>•</span><span>•</span></div>`;
+    };
+    after(3500, () => reply("Julie — OUI, je réserve ❤️"));
+    after(5000, () => reply("Marc — j'en profite, à samedi 🙌"));
+    after(6500, () => reply("Léa — parfait, je viens ✨"));
+    after(7200, () => document.getElementById("asx-rep")?.querySelector(".asx-dots")?.remove());
+    // 3) Écran de valeur — laissé assez tard pour lire la cascade.
+    after(8600, () =>
       showFinal("creneau",
         `<div class="asx-final">Une annonce → <span class="em">vos ${plur} reviennent.</span></div>` +
           `<div class="asx-starline" style="font-size:12px;margin-top:7px;letter-spacing:0;color:#71766C">Créneau à combler · promo · événement — votre outil pour <b style="color:#16160F">vendre plus</b>, en 10 secondes.</div>` +
-          tiny("simulation")
+          tiny("simulation — le nombre dépend de votre liste de client·es")
       )
     );
   };
@@ -442,12 +457,18 @@ function styles(accent: string): string {
   .asx-prev .asx-to{font-size:10.5px;color:#71766C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
   .asx-wac{background:#E6F5DC;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.4;color:#1F3A17;}
   .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(12,14,11,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(2px);}
-  .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;text-align:center;position:relative;overflow:hidden;animation:asxCardin .35s;}
+  .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;max-height:calc(100dvh - 44px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
   @keyframes asxCardin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
   .asx-ctx{font-size:11.5px;color:#71766C;margin-bottom:14px;line-height:1.4;}
   .asx-big{font-family:Georgia,serif;font-size:54px;font-weight:600;line-height:1;color:${accent};display:inline-block;}
   .asx-big.bump{animation:asxBump .4s;}@keyframes asxBump{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
   .asx-starline{color:#B8862F;font-size:16px;margin-top:6px;letter-spacing:2px;}
+  .asx-reachbig{font-family:Georgia,serif;font-size:44px;font-weight:700;line-height:1;text-align:center;color:#16160F;}
+  .asx-reachbig #asx-rc{display:inline-block;min-width:1.2em;}
+  .asx-reachlb{font-size:12px;color:#71766C;text-align:center;margin-top:3px;}
+  .asx-avrow{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:12px;}
+  .asx-avdot{width:14px;height:14px;border-radius:50%;background:${accent};opacity:0;transform:scale(.3);animation:asxPop .45s forwards;}
+  @keyframes asxPop{to{opacity:1;transform:scale(1)}}
   .asx-chat{display:flex;flex-direction:column;gap:7px;text-align:left;}
   .asx-msg{padding:9px 12px;border-radius:13px;font-size:12px;line-height:1.35;max-width:90%;opacity:0;transform:translateY(6px);animation:asxMsgin .35s forwards;}
   .asx-msg.c{background:#EEEBE4;border-bottom-left-radius:4px;align-self:flex-start;}
