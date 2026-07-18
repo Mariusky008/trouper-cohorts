@@ -101,7 +101,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
   const bilanLine: Record<string, string> = {
     avis: "obtenir un nouvel avis Google",
     question: `répondre à un·e ${term}`,
-    creneau: avisAllowed ? "aider à remplir un créneau libéré ou vendre un produit" : "aider à remplir un créneau libéré",
+    creneau: avisAllowed ? "faire une annonce à tous vos client·es (créneau, promo, événement) pour vendre plus" : "aider à remplir un créneau libéré",
     preparer: "préparer une réservation",
   };
   const bilanHtml = () => {
@@ -164,32 +164,35 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     );
   };
 
-  // ── CRÉNEAU : alerte à la liste → tension → « OUI je prends » → comblé ────────
-  const playCreneau = (heure: string) => {
+  // ── ANNONCE : un message → TOUS les clients sur WhatsApp → ils reviennent ─────
+  const playCreneau = (msg: string) => {
+    const plur = term === "patient" ? "patients" : "client·es";
     openStage(
-      `<div class="asx-chat"><div class="asx-msg notif">⚠ Créneau libéré — ${esc(heure)}</div></div>` +
-        `<div class="asx-slot" id="asx-sl">${esc(heure)} — libre</div><div id="asx-act" style="margin-top:6px"></div>`
+      `<div class="asx-ctx">Annonce envoyée à <b>tous vos ${plur}</b> inscrit·es…</div>` +
+        `<div class="asx-chat"><div class="asx-msg wa">${esc(msg)}</div></div>` +
+        `<div id="asx-act" style="margin-top:8px"></div>`
     );
-    after(1100, () => {
+    after(1400, () => {
       const a = document.getElementById("asx-act");
-      if (a) a.innerHTML = `<div class="asx-tiny" style="margin-bottom:6px">Envoyé à vos ${term === "patient" ? "patients" : "client·es"} inscrit·es à vos alertes WhatsApp</div><div class="asx-msg wa" style="opacity:1;transform:none">Une place se libère ${esc(heure)} chez ${esc(nom)}. Envie d’en profiter ? Répondez OUI 🙂</div>`;
+      if (a) a.innerHTML = `<div class="asx-tiny" style="margin-bottom:6px">Reçu à l'instant sur le WhatsApp de vos ${plur}</div><div class="asx-dots"><span>•</span><span>•</span><span>•</span></div>`;
     });
-    after(2600, () => {
-      const a = document.getElementById("asx-act");
-      if (a) a.innerHTML += `<div class="asx-dots" style="margin-top:10px"><span>•</span><span>•</span><span>•</span></div>`;
-    });
-    after(4200, () => {
+    // Les réponses arrivent en cascade → l'effet « ça rapporte ».
+    const reply = (who: string) => {
       const a = document.getElementById("asx-act");
       a?.querySelector(".asx-dots")?.remove();
-      if (a) a.innerHTML += `<div class="asx-msg c" style="opacity:1;transform:none;margin-top:6px">Julie — OUI je prends ❤️</div>`;
+      if (a) a.innerHTML += `<div class="asx-msg c" style="opacity:1;transform:none;margin-top:6px">${who}</div><div class="asx-dots"><span>•</span><span>•</span><span>•</span></div>`;
+    };
+    after(2700, () => reply("Julie — OUI, je réserve ❤️"));
+    after(3600, () => reply("Marc — j'en profite, à samedi 🙌"));
+    after(4500, () => reply("Léa — parfait, je viens ✨"));
+    after(5600, () => {
+      const a = document.getElementById("asx-act");
+      a?.querySelector(".asx-dots")?.remove();
     });
-    after(5000, () => {
-      const sl = document.getElementById("asx-sl");
-      if (sl) { sl.classList.add("filled"); sl.innerHTML = `✓ ${esc(heure)} — réservé par Julie`; }
-    });
-    after(5900, () =>
+    after(6100, () =>
       showFinal("creneau",
-        `<div class="asx-final">Votre créneau vide vient d'être comblé —<br><span class="em">avant même que vous ayez rangé votre poste.</span></div>` +
+        `<div class="asx-final">Une annonce → <span class="em">vos ${plur} reviennent.</span></div>` +
+          `<div class="asx-starline" style="font-size:12px;margin-top:7px;letter-spacing:0;color:#71766C">Créneau à combler · promo · événement — votre outil pour <b style="color:#16160F">vendre plus</b>, en 10 secondes.</div>` +
           tiny("simulation")
       )
     );
@@ -243,7 +246,13 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
   const questions = avisAllowed
     ? ["« Vous auriez de la place cette semaine ? »", "« Comment prendre rendez-vous ? »", "« Vous êtes ouvert ce week-end ? »"]
     : ["« Comment prendre rendez-vous ? »", "« Prenez-vous de nouveaux patients ? »", "« Où êtes-vous situé ? »"];
-  const heures = [`aujourd'hui 15 h`, `demain 10 h`, `demain 14 h`];
+  // Ce que le pro peut ANNONCER à tous ses clients d'un coup (le levier de CA).
+  const offres: Array<{ label: string; msg: string }> = [
+    { label: "🕐 Une place se libère", msg: `Une place se libère cet après-midi chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
+    { label: "🏷️ Une promo", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
+    { label: "🎉 Un événement", msg: `Samedi chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
+  ];
+  const plural = term === "patient" ? "patients" : "client·es";
 
   const renderBody = () => {
     if (view === "avisIn") {
@@ -273,8 +282,8 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
-          <div className="asx-say">Parfait. À quelle heure est le créneau qui se libère&nbsp;? Je préviendrai vos client·es inscrit·es aux alertes WhatsApp.</div>
-          <div className="asx-quick">{heures.map((h) => <button key={h} onClick={() => { setFn(h); setView("creneauPrev"); }}>{cap(h)}</button>)}</div>
+          <div className="asx-say">Que voulez-vous annoncer à vos {plural}&nbsp;? Ils la reçoivent <b>directement sur leur WhatsApp</b> — c’est votre meilleur levier pour <b>remplir vos journées et vendre plus</b>.</div>
+          <div className="asx-quick asx-quick-col">{offres.map((o) => <button key={o.label} onClick={() => { setFn(o.msg); setView("creneauPrev"); }}>{o.label}</button>)}</div>
         </>
       );
     }
@@ -282,9 +291,9 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-say">Voici l’alerte que j’enverrai à <b>vos client·es inscrit·es</b>. Vous validez&nbsp;?</div>
-          <div className="asx-prev"><div className="asx-to">📱 Liste WhatsApp · vos client·es inscrit·es</div><div className="asx-wac">Une place se libère {fn} chez {nom}. Envie d’en profiter&nbsp;? Répondez OUI pour la réserver 🙂</div></div>
-          <button className="asx-send" onClick={() => playCreneau(fn)}>Envoyer l’alerte ✦</button>
+          <div className="asx-say">Voici l’annonce que j’enverrai à <b>tous vos {plural} inscrit·es</b>. Vous validez&nbsp;? <span className="asx-mini2">(vous pourrez la personnaliser)</span></div>
+          <div className="asx-prev"><div className="asx-to">📱 Liste WhatsApp · tous vos {plural}</div><div className="asx-wac">{fn}</div></div>
+          <button className="asx-send" onClick={() => playCreneau(fn)}>Envoyer à mes {plural} ✦</button>
         </>
       );
     }
@@ -300,7 +309,6 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       );
     }
     // home
-    const plural = term === "patient" ? "patients" : "client·es";
     return (
       <>
         <div className="asx-say">Pendant que vous êtes avec vos {plural}, je peux m’occuper du reste 🙂<br /><b>Que souhaitez-vous que je fasse&nbsp;?</b></div>
@@ -313,10 +321,10 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
             </div>
           )}
           {avisAllowed && (
-            <div className="asx-task">
+            <div className="asx-task asx-task-hero">
               <span className="ic">📣</span>
-              <span className="tx"><span className="tt">Prévenir mes {plural} d’une place libre</span><span className="ts">un créneau vient de se libérer</span></span>
-              <button className="asx-do" onClick={() => setView("creneauIn")}>▶ C’est parti</button>
+              <span className="tx"><span className="tt">Faire une annonce à tous mes {plural}</span><span className="ts">créneau libre, promo, événement — reçu direct sur leur WhatsApp 💸</span></span>
+              <button className="asx-do" onClick={() => setView("creneauIn")}>▶ Voir comment</button>
             </div>
           )}
           <div className="asx-task">
@@ -382,9 +390,6 @@ function confettiHtml(accent: string): string {
   }
   return h;
 }
-function cap(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
 
 function styles(accent: string): string {
   return `
@@ -414,6 +419,8 @@ function styles(accent: string): string {
   .asx-tasks{display:flex;flex-direction:column;gap:9px;}
   .asx-task{display:flex;align-items:center;gap:12px;border:1px solid #E7E4DC;border-radius:13px;padding:12px 12px 12px 14px;background:#fff;transition:.15s;}
   .asx-task:hover{border-color:${accent};background:#FDFBF6;}
+  .asx-task.asx-task-hero{border-color:${accent};background:linear-gradient(180deg,${accent}12,#fff);}
+  .asx-mini2{font-size:11px;color:#9A9A90;font-weight:400;}
   .asx-task .ic{width:34px;height:34px;border-radius:9px;background:${accent}14;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;}
   .asx-task .tx{flex:1;min-width:0;}
   .asx-task .tt{font-size:13px;font-weight:600;display:block;line-height:1.25;}
