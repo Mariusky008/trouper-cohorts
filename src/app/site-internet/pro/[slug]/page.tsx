@@ -6,12 +6,15 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
+import { ProDashboard } from "./pro-dashboard";
 import { ProGallery } from "./pro-gallery";
+import { ProServices } from "./pro-services";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -55,7 +58,7 @@ export default async function EspacePro({
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token")
+    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token, site_views")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -78,6 +81,8 @@ export default async function EspacePro({
   const mp = resolveMetier(activite);
   const soliciter = mp.def.avis_sollicitation; // A commerce/bien-être uniquement
   const afficherAvis = mp.def.avis_affichage; // A + B ; jamais C/D
+  // Prestations suggérées (exemples métier) pour amorcer « Mes accompagnements ».
+  const serviceSuggestions = resolveMetierContent(activite, mp.profil).demoServices ?? [];
 
   // Lien d'avis Google : le deep link « écrire un avis » si on a le place_id
   // (récupéré au diagnostic), sinon un repli honnête vers la fiche Maps.
@@ -138,9 +143,47 @@ export default async function EspacePro({
   const starsOn = "★".repeat(rStars);
   const starsOff = "★".repeat(5 - rStars);
 
-  // ── Onglet ACCUEIL : carte avis Google (A, B) et/ou note sobre (santé/droit) ──
+  // ── Tableau de bord : chiffres réels agrégés (best-effort). ──────────────────
+  const siteId = str(row.id);
+  const views = typeof row.site_views === "number" ? row.site_views : 0;
+  const monthIso = (() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const nowKey = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .format(new Date())
+    .replace(" ", "T")
+    .slice(0, 16);
+  const cnt = async (q: PromiseLike<{ count: number | null }>): Promise<number> => {
+    try {
+      const { count } = await q;
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  };
+  const [clientsCount, annoncesCount, demandesCount, rdvCount] = await Promise.all([
+    cnt(supabase.from("human_site_contacts").select("id", { count: "exact", head: true }).eq("site_id", siteId).is("opted_out_at", null)),
+    cnt(supabase.from("human_site_relances").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
+    cnt(supabase.from("human_site_review_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
+    cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", nowKey)),
+  ]);
+
+  // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
   const accueilNode = (
     <>
+      <ProDashboard
+        views={views}
+        rdv={rdvCount}
+        avis={delta}
+        annonces={annoncesCount}
+        demandes={demandesCount}
+        clients={clientsCount}
+        soliciter={soliciter}
+        afficherAvis={afficherAvis}
+      />
       {afficherAvis && (
         <div className="gcard">
           <div className="top">
@@ -194,7 +237,8 @@ export default async function EspacePro({
           { key: "relance", label: "Relance", icon: "📣", node: <ProRelance slug={slug} token={token} /> },
         ] as ProTab[])
       : []),
-    { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} /> },
+    { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
+    { key: "services", label: "Offres", icon: "📋", node: <ProServices slug={slug} token={token} suggestions={serviceSuggestions} /> },
     { key: "assistant", label: "Assistante", icon: "🧠", node: <ProAssistant slug={slug} token={token} /> },
     { key: "photos", label: "Photos", icon: "🖼️", node: <ProGallery slug={slug} token={token} /> },
   ];

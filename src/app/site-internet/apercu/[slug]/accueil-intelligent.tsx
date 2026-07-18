@@ -112,11 +112,37 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setPourQui(""); setPremiere(""); setPrenom(""); setTel(""); setConsent(false); setSlot("");
   };
 
+  // Démarrage « pré-qualifié » depuis un motif (section « Pour quoi venir me
+  // voir ? »). L'assistante accuse réception du motif puis enchaîne 2-3 questions
+  // rapides → l'effet « elle prépare le rendez-vous pour moi ».
+  const startWithMotif = (motif: string) => {
+    const m = (motif || "").trim();
+    if (!m) { start(); return; }
+    setThread([
+      { who: "ai", text: `Bonjour, je suis l'accueil automatique ${lieuAccueil}.` },
+      { who: "me", text: m },
+      { who: "ai", text: isReserve
+        ? "Je comprends, c'est un motif fréquent. Je vous propose un premier rendez-vous, sans engagement — quelques questions rapides pour bien le préparer."
+        : "Je comprends, c'est un motif fréquent. Je transmets votre demande — quelques questions rapides pour bien la préparer." },
+      { who: "ai", text: qui1Q },
+    ]);
+    setStep("qualif1");
+    setPourQui(""); setPremiere(""); setPrenom(""); setTel(""); setConsent(false); setSlot("");
+  };
+
   // Ouverture depuis la bulle OU depuis les [data-accueil-open] de la page.
+  // Un [data-accueil-motif="…"] ouvre en pré-qualifiant sur ce motif.
   useEffect(() => {
     const openIt = () => { setOpen(true); if (thread.length === 0) start(); };
     const handler = (e: Event) => {
       const t = e.target as HTMLElement | null;
+      const motifEl = t ? (t.closest("[data-accueil-motif]") as HTMLElement | null) : null;
+      if (motifEl) {
+        e.preventDefault();
+        setOpen(true);
+        startWithMotif(motifEl.getAttribute("data-accueil-motif") || "");
+        return;
+      }
       if (t && t.closest("[data-accueil-open]")) { e.preventDefault(); openIt(); }
     };
     document.addEventListener("click", handler);

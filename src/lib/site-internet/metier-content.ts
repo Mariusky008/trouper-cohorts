@@ -8,12 +8,22 @@
 
 export type ConsultationCard = { h: string; p: string };
 export type FaqItem = { q: string; a: string };
+// « Pour quoi venir me voir ? » — capte l'intention par le PROBLÈME, pas la
+// technique. Générique et honnête par métier (pas de résultat promis). Le clic
+// ouvre l'assistante pré-qualifiée (motif transmis via data-accueil-motif).
+export type UseCase = { icon: string; title: string; desc: string };
+// « Mes accompagnements » — le menu des prestations. En maquette : EXEMPLES de
+// présentation (labellisés, tarifs indicatifs à personnaliser). En ligne : ce
+// sont les vraies prestations saisies par le pro (jamais de tarif inventé publié).
+export type Service = { name: string; duration?: string; price?: string; desc?: string };
 export type MetierContent = {
   approcheTitre: string;
   approcheCorps: string;
   consultTitre: string | null; // null → section omise
   consultCartes: ConsultationCard[];
   faq: FaqItem[];
+  motifs?: UseCase[]; // vide/absent → section « Pour quoi venir me voir ? » omise
+  demoServices?: Service[]; // exemples de menu pour la maquette (jamais publiés tels quels)
 };
 
 const FAQ_SOIN: FaqItem[] = [
@@ -43,6 +53,12 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { h: "Coiffage & occasions", p: "Chignon, mise en beauté pour vos événements." },
       ],
       faq: FAQ_COMMERCE,
+      demoServices: [
+        { name: "Coupe femme", duration: "45 min", desc: "Shampoing, coupe, brushing." },
+        { name: "Coupe homme", duration: "30 min", desc: "Coupe et finitions." },
+        { name: "Couleur & mèches", duration: "1 h 30", desc: "Coloration, balayage ou patine." },
+        { name: "Chignon & occasions", duration: "1 h", desc: "Mariage, événement, mise en beauté." },
+      ],
     },
   },
   {
@@ -58,6 +74,12 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { h: "Beauté des mains & pieds", p: "Manucure, pose, soin." },
       ],
       faq: FAQ_COMMERCE,
+      demoServices: [
+        { name: "Soin du visage", duration: "1 h", desc: "Nettoyage, éclat, hydratation." },
+        { name: "Épilation", duration: "30 min", desc: "Visage ou corps, à la cire ou au fil." },
+        { name: "Beauté des mains", duration: "45 min", desc: "Manucure, pose de vernis semi-permanent." },
+        { name: "Beauté des pieds", duration: "45 min", desc: "Soin, gommage, pose." },
+      ],
     },
   },
   {
@@ -76,6 +98,12 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { q: "Combien coûte une séance ?", a: "Une séance dure environ 50 minutes. Le tarif vous est indiqué avant le rendez-vous, sans engagement." },
         { q: "Est-ce remboursé ?", a: "Pas par l'Assurance Maladie, mais de nombreuses mutuelles prennent en charge. Le dispositif « Mon soutien psy » peut s'appliquer selon votre situation." },
         { q: "Comment se passe le premier rendez-vous ?", a: "Il sert à faire connaissance et à comprendre votre demande, sans engagement pour la suite." },
+      ],
+      motifs: [
+        { icon: "😔", title: "Anxiété & stress", desc: "Angoisses, ruminations, pression qui monte." },
+        { icon: "💔", title: "Coup dur & deuil", desc: "Séparation, perte, épreuve à traverser." },
+        { icon: "🪞", title: "Estime de soi", desc: "Confiance, image de soi, relations." },
+        { icon: "🧭", title: "Transition de vie", desc: "Changement, décision, sentiment de blocage." },
       ],
     },
   },
@@ -129,6 +157,39 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { q: "Combien coûte une consultation ?", a: "La consultation dure environ 50 minutes. Le tarif vous est indiqué avant le rendez-vous." },
         { q: "Est-ce remboursé ?", a: "Pas par l'Assurance Maladie, mais la plupart des mutuelles prennent en charge, souvent plusieurs séances par an." },
         { q: "Faut-il une ordonnance ?", a: "Non, vous pouvez consulter directement. En cas de doute, l'accueil vous renseigne." },
+      ],
+      motifs: [
+        { icon: "🌿", title: "Dos, nuque, articulations", desc: "Douleurs du quotidien, tensions, faux mouvement." },
+        { icon: "🏃", title: "Sport & récupération", desc: "Préparation, récupération, prévention." },
+        { icon: "🤰", title: "Nourrissons & grossesse", desc: "Suivi doux et adapté." },
+        { icon: "😮‍💨", title: "Stress & tensions", desc: "Le corps sous pression, sommeil, respiration." },
+      ],
+    },
+  },
+  // Thérapeute / praticien·ne bien-être (énergéticien, magnétiseur, sophrologue,
+  // naturopathe, réflexologue, hypnothérapeute…). Placé APRÈS « psycho » pour que
+  // « psychothérapeute » retombe bien sur l'entrée psychologue.
+  {
+    match: /[eé]nerg|magn[eé]t|reiki|sophro|naturo|holist|hypno|relaxolog|kinesiolog|r[eé]flexolog|th[eé]rapeut|praticien.*bien|bien.?[eê]tre/,
+    content: {
+      approcheTitre: "Un accompagnement vers votre équilibre",
+      approcheCorps:
+        "Un premier échange pour comprendre ce que vous traversez, sans jugement. On avance ensuite à votre rythme, avec des séances adaptées à votre besoin, dans un cadre calme et bienveillant.",
+      consultTitre: null, // remplacé par les motifs ci-dessous
+      consultCartes: [],
+      faq: FAQ_SOIN,
+      motifs: [
+        { icon: "🌿", title: "Stress & burn-out", desc: "Tensions, surcharge mentale, épuisement." },
+        { icon: "💤", title: "Sommeil & fatigue", desc: "Sommeil difficile, fatigue qui s'installe." },
+        { icon: "💗", title: "Équilibre émotionnel", desc: "Émotions envahissantes, période sensible." },
+        { icon: "🧭", title: "Transition & blocages", desc: "Passage de vie, décision, sentiment d'être bloqué·e." },
+        { icon: "🌀", title: "Douleurs & tensions", desc: "Gênes chroniques, corps sous pression." },
+      ],
+      demoServices: [
+        { name: "Séance découverte", duration: "45 min", desc: "Premier rendez-vous : faire connaissance et cibler votre besoin." },
+        { name: "Séance énergétique globale", duration: "1 h 15", desc: "Séance complète de rééquilibrage." },
+        { name: "Bilan holistique", duration: "1 h 30", desc: "Bilan approfondi et plan d'accompagnement." },
+        { name: "Suivi", duration: "1 h", desc: "Séance de suivi personnalisée." },
       ],
     },
   },

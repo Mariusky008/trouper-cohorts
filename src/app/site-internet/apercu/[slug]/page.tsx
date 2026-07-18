@@ -52,7 +52,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos")
+    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, site_views, services")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -69,13 +69,19 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     );
   }
 
-  // Tracking du scan (première fois).
+  // Tracking du scan (première fois) + compteur de vues (best-effort).
   try {
     await supabase
       .from("human_vitrine_sites")
       .update({ contact_scanned_at: new Date().toISOString() })
       .eq("id", str(row.id))
       .is("contact_scanned_at", null);
+  } catch {
+    /* best-effort */
+  }
+  try {
+    const cur = typeof row.site_views === "number" ? row.site_views : 0;
+    await supabase.from("human_vitrine_sites").update({ site_views: cur + 1 }).eq("id", str(row.id));
   } catch {
     /* best-effort */
   }
@@ -119,6 +125,19 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     .filter((u) => /^https?:\/\//i.test(u))
     .slice(0, 6);
   const photos = proPhotos.length ? proPhotos : googlePhotos;
+  // Prestations RÉELLES saisies par le pro (« Mes accompagnements »). Bornées et
+  // nettoyées. Les exemples de la maquette viennent de la config métier (côté
+  // composant) : ici, aucun tarif inventé.
+  const proServices = (Array.isArray(row.services) ? row.services : [])
+    .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
+    .map((x) => ({
+      name: str(x.name).slice(0, 80),
+      duration: str(x.duration).slice(0, 40) || undefined,
+      price: str(x.price).slice(0, 40) || undefined,
+      desc: str(x.desc).slice(0, 160) || undefined,
+    }))
+    .filter((x) => x.name.length > 0)
+    .slice(0, 12);
   const reviewsTop = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
     .map((r) => (typeof r === "object" && r ? (r as Record<string, unknown>) : {}))
     .map((r) => ({ name: str(r.name), text: str(r.text), stars: typeof r.stars === "number" ? (r.stars as number) : null }))
@@ -183,6 +202,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       reviewLink={reviewLink}
       reviewsUrl={reviewsUrl}
       bookingHref={bookingHref}
+      services={proServices}
       published={Boolean(row.published)}
       telHref={telHref}
       waHref={waHref}

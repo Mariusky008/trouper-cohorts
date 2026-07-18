@@ -69,6 +69,8 @@ export async function POST(request: Request) {
   let slotMinutes = typeof site.booking_slot_minutes === "number" ? site.booking_slot_minutes : 30;
   const windows: Array<{ weekday: number; start_min: number; end_min: number }> = [];
   const bookings: Array<{ id: string; slot: string; label: string; prenom: string; tel: string }> = [];
+  // RDV passés (honorés) → pour le booster d'avis : proposer la demande d'avis au bon moment.
+  const past: Array<{ id: string; slot: string; label: string; prenom: string; tel: string }> = [];
   try {
     const { data: sm } = await supabase.from("human_vitrine_sites").select("booking_slot_minutes").eq("id", siteId).maybeSingle();
     if (sm && typeof (sm as Record<string, unknown>).booking_slot_minutes === "number") {
@@ -101,9 +103,26 @@ export async function POST(request: Request) {
         bookings.push({ id: s(b.id), slot, label: slotLabel(slot), prenom: s(b.prenom), tel: s(b.tel) });
       }
     }
+
+    // RDV passés (honorés) → booster d'avis : proposer la demande d'avis au bon moment.
+    const { data: pbk } = await supabase
+      .from("human_site_bookings")
+      .select("id, slot_local, prenom, tel")
+      .eq("site_id", siteId)
+      .eq("status", "confirmed")
+      .lt("slot_local", nowKey)
+      .order("slot_local", { ascending: false })
+      .limit(15);
+    if (Array.isArray(pbk)) {
+      for (const b of pbk as Array<Record<string, unknown>>) {
+        const slot = s(b.slot_local);
+        if (!isValidSlotKey(slot)) continue;
+        past.push({ id: s(b.id), slot, label: slotLabel(slot), prenom: s(b.prenom), tel: s(b.tel) });
+      }
+    }
   } catch {
     /* tables non migrées → agenda vide, la page reste fonctionnelle */
   }
 
-  return NextResponse.json({ ok: true, slotMinutes, windows, bookings });
+  return NextResponse.json({ ok: true, slotMinutes, windows, bookings, past });
 }

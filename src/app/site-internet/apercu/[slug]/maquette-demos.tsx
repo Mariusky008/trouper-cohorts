@@ -171,14 +171,14 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     let dots = "";
     for (let i = 0; i < 18; i++) dots += `<span class="asx-avdot" style="animation-delay:${i * 70}ms"></span>`;
     openStage(
-      `<div class="asx-ctx" id="asx-ctx">Un seul envoi part vers <b>tous vos ${plur}</b> en même temps…</div>` +
+      `<div class="asx-ctx" id="asx-ctx">Un seul envoi part sur le <b>WhatsApp de vos ${plur} fidèles</b> — celles et ceux qui vous suivent et vous laissent un avis ⭐</div>` +
         `<div class="asx-chat"><div class="asx-msg wa">${esc(msg)}</div></div>` +
         `<div id="asx-reach" style="margin-top:14px"></div>` +
         `<div id="asx-rep" style="margin-top:10px"></div>`
     );
     after(650, () => {
       const r = document.getElementById("asx-reach");
-      if (r) r.innerHTML = `<div class="asx-reachbig"><span id="asx-rc">0</span></div><div class="asx-reachlb">${plur} le reçoivent à l'instant</div><div class="asx-avrow">${dots}</div>`;
+      if (r) r.innerHTML = `<div class="asx-reachbig"><span id="asx-rc">0</span></div><div class="asx-reachlb">${plur} le reçoivent sur WhatsApp</div><div class="asx-avrow">${dots}</div>`;
     });
     // Compteur qui grimpe (illustratif) → l'effet « ça touche du monde ».
     const rc = (n: number) => {
@@ -191,7 +191,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     after(2050, () => rc(46));
     after(2650, () => {
       const c = document.getElementById("asx-ctx");
-      if (c) c.innerHTML = `✓ <b>Distribué</b> — sans appeler personne, sans coller une affiche.`;
+      if (c) c.innerHTML = `✓ <b>Distribué sur WhatsApp — gratuitement.</b> Sans payer de pub Facebook ni Instagram.`;
     });
     // 2) Les réponses arrivent, espacées pour être lues.
     const reply = (who: string) => {
@@ -207,7 +207,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     after(8600, () =>
       showFinal("creneau",
         `<div class="asx-final">Une annonce → <span class="em">vos ${plur} reviennent.</span></div>` +
-          `<div class="asx-starline" style="font-size:12px;margin-top:7px;letter-spacing:0;color:#71766C">Créneau à combler · promo · événement — votre outil pour <b style="color:#16160F">vendre plus</b>, en 10 secondes.</div>` +
+          `<div class="asx-starline" style="font-size:12.5px;margin-top:9px;letter-spacing:0;color:#71766C;line-height:1.5">Vos client·es satisfait·es — celles et ceux qui vous laissent un avis ⭐ — deviennent votre <b style="color:#16160F">audience gratuite sur WhatsApp</b>.<br>Plus vous avez d'avis, plus vous touchez de monde en 1 clic — <b style="color:#16160F">sans dépendre de la pub payante</b>.</div>` +
           tiny("simulation — le nombre dépend de votre liste de client·es")
       )
     );

@@ -12,7 +12,7 @@ import { MaquetteAssistant } from "./maquette-demos";
 import { TeaserIntro } from "./teaser-intro";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
-import type { MetierContent } from "@/lib/site-internet/metier-content";
+import type { MetierContent, Service } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
 
@@ -41,6 +41,7 @@ export type MaquetteSanteProps = {
   reviewLink: string; // deep link « écrire un avis Google »
   reviewsUrl: string; // page des avis Google existants
   bookingHref: string; // page de réservation réelle si dispos configurées, sinon ""
+  services: Service[]; // prestations RÉELLES saisies par le pro (jamais de tarif inventé publié)
   published: boolean; // true = site en ligne pour de vrai (retire l'habillage démo)
   telHref: string;
   waHref: string; // WhatsApp (profil A seulement, sinon "")
@@ -53,10 +54,23 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, published, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, published, doctolibHref, mapsHref, phoneDisplay,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
+
+  // ── Sections « Pour quoi venir me voir ? » (motifs) et « Mes accompagnements »
+  // (menu). Pilotées par la config métier : rien à afficher → section omise.
+  // Honnêteté tarifs : les vrais tarifs viennent du pro (services) ; en maquette
+  // on montre des EXEMPLES de présentation (labellisés), sans euro inventé.
+  const motifs = content.motifs ?? [];
+  const proServices = Array.isArray(services) ? services : [];
+  const demoServices = content.demoServices ?? [];
+  const serviceList = proServices.length ? proServices : published ? [] : demoServices;
+  const servicesAreExamples = !proServices.length && !published && demoServices.length > 0;
+  // CTA d'une prestation : vraie page de réservation si dispo, sinon l'accueil
+  // pré-qualifié sur cette prestation (effet « réservation sur la bonne offre »).
+  const svcCta = (name: string) => (bookingHref ? { href: bookingHref } : { "data-accueil-motif": `Je voudrais réserver : ${name}` });
   const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
   const showAvis = avisMode !== "none" && note != null && reviewsCount != null && reviewsCount > 0;
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
@@ -177,6 +191,26 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .c{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:var(--bg);}
           .mqc .c h4{font-family:Georgia,serif;font-size:14.5px;font-weight:600;margin-bottom:3px;}
           .mqc .c p{font-size:11.5px;color:var(--muted);line-height:1.45;}
+          /* POUR QUOI VENIR ME VOIR (motifs cliquables) */
+          .mqc .uc{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px;}
+          .mqc .uc button{display:flex;flex-direction:column;align-items:flex-start;gap:5px;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:13px;text-align:left;font-family:inherit;cursor:pointer;color:var(--ink);transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease;}
+          .mqc .uc button:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 6px 16px -10px rgba(0,0,0,.35);}
+          .mqc .uc .uc-i{font-size:21px;line-height:1;}
+          .mqc .uc .uc-t{font-family:Georgia,serif;font-size:14px;font-weight:600;line-height:1.2;}
+          .mqc .uc .uc-d{font-size:11px;color:var(--muted);line-height:1.4;}
+          .mqc .uc-hint{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.5;}
+          .mqc .uc-hint b{color:var(--accent);font-weight:600;}
+          /* MES ACCOMPAGNEMENTS (menu de prestations) */
+          .mqc .svc{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+          .mqc .svc .s{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:13px;padding:13px 14px;background:var(--surface);}
+          .mqc .svc .s .l{min-width:0;flex:1;}
+          .mqc .svc .s .l .n{font-family:Georgia,serif;font-size:15px;font-weight:600;line-height:1.2;}
+          .mqc .svc .s .l .meta{font-size:11.5px;color:var(--muted);margin-top:3px;}
+          .mqc .svc .s .l .d{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:4px;}
+          .mqc .svc .s .r{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+          .mqc .svc .s .r .price{font-family:Georgia,serif;font-size:15px;font-weight:600;white-space:nowrap;}
+          .mqc .svc .s .r .price.ask{font-size:11px;color:var(--muted);font-family:inherit;font-weight:500;}
+          .mqc .svc .s .r .cta{text-decoration:none;background:var(--accent);color:var(--cream);border-radius:20px;padding:8px 14px;font-size:11.5px;font-weight:600;white-space:nowrap;cursor:pointer;}
           /* HORAIRES + CARTE */
           .mqc .hours{display:flex;flex-direction:column;margin-top:4px;}
           .mqc .hr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
@@ -248,6 +282,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
             .mqc .sec-k{font-size:11px;letter-spacing:.22em;}
             .mqc .sec-h{font-size:30px;line-height:1.18;}
             .mqc .sec-p{font-size:16.5px;line-height:1.75;}
+            .mqc .uc{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:22px;}
+            .mqc .uc .uc-t{font-size:16px;}
+            .mqc .uc .uc-d{font-size:12.5px;}
+            .mqc .svc{margin-top:22px;gap:10px;}
+            .mqc .svc .s .l .n{font-size:17px;}
             .mqc .map .mapf{height:230px;}
             .mqc .close{padding:64px max(40px,calc((100% - 780px)/2)) 110px;}
             .mqc .close .t{font-size:28px;}
@@ -317,6 +356,48 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <div className="sec-p">{content.approcheCorps}</div>
       </section>
 
+      {motifs.length > 0 && (
+        <section className="alt">
+          <div className="sec-k">Pour quoi venir me voir&nbsp;?</div>
+          <div className="sec-h">Vous vous reconnaissez&nbsp;?</div>
+          <div className="uc">
+            {motifs.map((m) => (
+              <button type="button" key={m.title} data-accueil-motif={m.title}>
+                <span className="uc-i">{m.icon}</span>
+                <span className="uc-t">{m.title}</span>
+                <span className="uc-d">{m.desc}</span>
+              </button>
+            ))}
+          </div>
+          <div className="uc-hint">Touchez ce qui vous ressemble&nbsp;: <b>l&apos;accueil vous répond</b> et prépare votre rendez-vous.</div>
+        </section>
+      )}
+
+      {serviceList.length > 0 && (
+        <section>
+          <div className="sec-k">Prestations</div>
+          <div className="sec-h">Mes accompagnements</div>
+          <div className="svc">
+            {serviceList.map((s, i) => (
+              <div className="s" key={`${s.name}-${i}`}>
+                <div className="l">
+                  <div className="n">{s.name}</div>
+                  {s.duration ? <div className="meta">{s.duration}</div> : null}
+                  {s.desc ? <div className="d">{s.desc}</div> : null}
+                </div>
+                <div className="r">
+                  {s.price ? <div className="price">{s.price}</div> : <div className="price ask">Sur demande</div>}
+                  <a className="cta" {...svcCta(s.name)}>Choisir</a>
+                </div>
+              </div>
+            ))}
+          </div>
+          {servicesAreExamples && (
+            <div className="proposed">Exemple de présentation — vos prestations et tarifs, à personnaliser ensemble.</div>
+          )}
+        </section>
+      )}
+
       {gallery.length > 0 && (
         <section className="alt">
           <div className="sec-k">Le lieu</div>
@@ -325,7 +406,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {content.consultTitre && content.consultCartes.length > 0 && (
+      {serviceList.length === 0 && content.consultTitre && content.consultCartes.length > 0 && (
         <section>
           <div className="sec-k">Consultations</div>
           <div className="sec-h">{content.consultTitre}</div>

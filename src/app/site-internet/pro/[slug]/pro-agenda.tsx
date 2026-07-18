@@ -22,10 +22,22 @@ const DEFAULT: Record<number, DayState> = Object.fromEntries(
   ORDER.map((wd) => [wd, { open: false, start: "09:00", end: "18:00" } as DayState])
 );
 
-export function ProAgenda({ slug, token }: { slug: string; token: string }) {
+export function ProAgenda({
+  slug,
+  token,
+  canAskReview = false,
+  reviewLink = "",
+}: {
+  slug: string;
+  token: string;
+  canAskReview?: boolean;
+  reviewLink?: string;
+}) {
   const [slotMin, setSlotMin] = useState(30);
   const [dayState, setDayState] = useState<Record<number, DayState>>(DEFAULT);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [past, setPast] = useState<Booking[]>([]);
+  const [asked, setAsked] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -50,6 +62,31 @@ export function ProAgenda({ slug, token }: { slug: string; token: string }) {
     }
     setDayState(next);
     if (Array.isArray(j.bookings)) setBookings(j.bookings as Booking[]);
+    if (Array.isArray(j.past)) setPast(j.past as Booking[]);
+  };
+
+  // Booster d'avis : après un RDV honoré, ouvrir WhatsApp avec la demande d'avis
+  // pré-rédigée (même message que l'onglet « Demander un avis »), et journaliser.
+  const askReview = (b: Booking) => {
+    const greeting = b.prenom ? `Bonjour ${b.prenom},` : "Bonjour,";
+    const message = `${greeting}\nMerci beaucoup pour votre confiance. Si vous avez une minute, votre avis Google nous aiderait énormément :\n${reviewLink}\nMerci beaucoup !`;
+    const digits = String(b.tel || "").replace(/\D/g, "");
+    const intl = digits.startsWith("33") ? digits : digits.startsWith("0") ? "33" + digits.slice(1) : digits;
+    const waHref = intl
+      ? `https://wa.me/${intl}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    try {
+      fetch("/api/site-internet/pro/review-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, client_name: b.prenom || null }),
+        keepalive: true,
+      });
+    } catch {
+      /* best-effort */
+    }
+    setAsked((a) => ({ ...a, [b.id]: true }));
+    window.location.assign(waHref);
   };
 
   useEffect(() => {
@@ -131,6 +168,11 @@ export function ProAgenda({ slug, token }: { slug: string; token: string }) {
           .pro .agenda .b .info span{font-size:11.5px;color:var(--faint);}
           .pro .agenda .b .x{margin-left:auto;flex:none;border:1px solid var(--hair);background:none;color:var(--soft);border-radius:9px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;}
           .pro .agenda .none{font-size:13px;color:var(--faint);line-height:1.45;}
+          .pro .agenda .past{margin-top:26px;}
+          .pro .agenda .past .h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);font-weight:600;margin-bottom:6px;}
+          .pro .agenda .past .sub{font-size:12px;color:var(--faint);line-height:1.4;margin-bottom:11px;}
+          .pro .agenda .ask{margin-left:auto;flex:none;border:1px solid var(--gold);background:linear-gradient(180deg,#FBF3E0,#fff);color:#7A5A12;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+          .pro .agenda .ask.done{border-color:var(--hair);background:none;color:var(--faint);font-weight:600;}
           `,
         }}
       />
@@ -191,6 +233,27 @@ export function ProAgenda({ slug, token }: { slug: string; token: string }) {
             ))
           )}
         </div>
+
+        {canAskReview && past.length > 0 && (
+          <div className="past">
+            <div className="h">⭐ Rendez-vous honorés</div>
+            <div className="sub">Le bon moment pour demander un avis : juste après la séance. Un geste, WhatsApp fait le reste.</div>
+            {past.map((b) => (
+              <div className="b" key={b.id}>
+                <div className="info">
+                  <b>{b.label}</b>
+                  <span>{b.prenom}{b.tel ? ` · ${b.tel}` : ""}</span>
+                </div>
+                <button
+                  className={`ask${asked[b.id] ? " done" : ""}`}
+                  onClick={() => askReview(b)}
+                >
+                  {asked[b.id] ? "✓ Demandé" : "⭐ Demander l'avis"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
