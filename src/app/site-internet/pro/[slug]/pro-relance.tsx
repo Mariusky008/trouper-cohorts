@@ -30,6 +30,36 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [sent, setSent] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
+  // Générateur d'annonce IA : le pro décrit son offre, Claude rédige le message.
+  const [brief, setBrief] = useState("");
+  const [gening, setGening] = useState(false);
+  const [aiUsed, setAiUsed] = useState(false);
+  const [aiErr, setAiErr] = useState("");
+
+  const generate = async () => {
+    const b = brief.trim();
+    if (!b || gening) return;
+    setGening(true);
+    setAiErr("");
+    try {
+      const r = await fetch("/api/site-internet/pro/announce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, brief: b.slice(0, 400) }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && typeof j.text === "string" && j.text.trim()) {
+        setMessage(j.text.trim());
+        setAiUsed(true);
+      } else {
+        setAiErr(typeof j.error === "string" ? j.error : "Impossible de générer le message. Réessayez.");
+      }
+    } catch {
+      setAiErr("Impossible de générer le message. Réessayez.");
+    } finally {
+      setGening(false);
+    }
+  };
 
   // Quota restant du jour (lecture au montage — best-effort).
   useEffect(() => {
@@ -136,6 +166,17 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
           .pro .relance .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
+          .pro .relance .ai{margin-top:16px;border:1px solid #D9CFF0;background:linear-gradient(180deg,#F6F2FF,#fff);border-radius:14px;padding:14px;}
+          .pro .relance .ai .aih{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#5B3FA6;}
+          .pro .relance .ai .ais{font-size:12px;color:var(--soft);line-height:1.45;margin-top:4px;}
+          .pro .relance .ai textarea{width:100%;margin-top:10px;border:1px solid #D9CFF0;border-radius:11px;padding:11px 13px;font-size:13.5px;font-family:inherit;background:#fff;resize:vertical;line-height:1.45;}
+          .pro .relance .ai .aibtn{margin-top:10px;width:100%;background:#5B3FA6;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+          .pro .relance .ai .aibtn:disabled{opacity:.55;cursor:not-allowed;}
+          .pro .relance .ai .aierr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
+          .pro .relance .ai .aiok{margin-top:8px;font-size:11.5px;color:#5B3FA6;line-height:1.4;}
+          .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
+          @keyframes aispin{to{transform:rotate(360deg)}}
+          @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}
           .pro .relance .tmpl{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px;}
           .pro .relance .tmpl button{border:1px solid var(--hair);background:#fff;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .relance .tmpl button:hover{border-color:var(--gold);}
@@ -176,6 +217,22 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
         <div className="a-sub">
           Un créneau qui se libère, une promo, une nouveauté… <b>Écrivez votre message</b>, puis envoyez-le.
           Vous choisissez les destinataires dans WhatsApp — rien n&apos;est envoyé sans vous.
+        </div>
+
+        <div className="ai">
+          <div className="aih">✨ Écrire mon annonce avec l&apos;IA</div>
+          <div className="ais">Dites en quelques mots ce que vous proposez — l&apos;assistante rédige le message pour vous.</div>
+          <textarea
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+            rows={2}
+            placeholder="Ex. fraises gariguettes en promo -20% ce week-end"
+          />
+          <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
+            {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
+          </button>
+          {aiErr && <div className="aierr">{aiErr}</div>}
+          {aiUsed && !aiErr && <div className="aiok">✓ Message rédigé ci-dessous — relisez et ajustez avant d&apos;envoyer.</div>}
         </div>
 
         <div className="tmpl">
