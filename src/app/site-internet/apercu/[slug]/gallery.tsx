@@ -51,6 +51,14 @@ export function Gallery({ photos, nom }: { photos: string[]; nom: string }) {
           .mqg .it img{width:100%;height:240px;object-fit:cover;display:block;}
           .mqg .it .zo{position:absolute;bottom:9px;right:9px;width:26px;height:26px;border-radius:50%;background:rgba(12,14,12,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;}
           .mqg-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:9px;letter-spacing:.02em;}
+          /* Ordinateur : grille au lieu du carrousel */
+          @media (min-width:860px){
+            .mqg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0;padding:2px 0 4px;overflow:visible;}
+            .mqg .it{flex:none;}
+            .mqg.one{grid-template-columns:1fr;}
+            .mqg .it img{height:210px;}
+            .mqg-hint{display:none;}
+          }
           /* Plein écran */
           .mql{position:fixed;inset:0;z-index:90;background:rgba(8,9,8,.94);display:flex;align-items:center;justify-content:center;padding:16px;animation:mqlIn .2s ease;}
           @keyframes mqlIn{from{opacity:0}to{opacity:1}}

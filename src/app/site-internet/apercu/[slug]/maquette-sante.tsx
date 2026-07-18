@@ -228,6 +228,37 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
           .mqc .bar .call{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);}
           .mqc .bar .rdv{background:var(--accent);color:var(--cream);}
+
+          /* ══════════════ ORDINATEUR (≥ 860 px) ══════════════ */
+          @media (min-width:860px){
+            body{background:#E9E7E0;}
+            .mqc{max-width:1120px;box-shadow:0 0 70px -24px rgba(0,0,0,.16);background:var(--surface);}
+            .mqc .banner{font-size:13px;padding:12px 20px;}
+            /* HERO : grande bannière */
+            .mqc .hero{height:480px;}
+            .mqc .hero .txt{padding:0 max(48px,calc((100% - 780px)/2)) 48px;}
+            .mqc .hero .k{font-size:11px;letter-spacing:.22em;}
+            .mqc .hero h2{font-size:50px;line-height:1.03;margin:12px 0 10px;}
+            .mqc .hero .sub{font-size:15.5px;}
+            .mqc .hero .meta{font-size:14px;gap:12px;margin-top:15px;}
+            .mqc .hero .acts{max-width:470px;margin-top:20px;gap:12px;}
+            .mqc .hero .acts a{font-size:14px;padding:15px;border-radius:28px;}
+            /* SECTIONS : colonne lisible centrée, fond pleine largeur */
+            .mqc section{padding:60px max(40px,calc((100% - 780px)/2));}
+            .mqc .sec-k{font-size:11px;letter-spacing:.22em;}
+            .mqc .sec-h{font-size:30px;line-height:1.18;}
+            .mqc .sec-p{font-size:16.5px;line-height:1.75;}
+            .mqc .map .mapf{height:230px;}
+            .mqc .close{padding:64px max(40px,calc((100% - 780px)/2)) 110px;}
+            .mqc .close .t{font-size:28px;}
+            .mqc .close .p{font-size:15px;}
+            /* Barre → pilule flottante centrée, élégante */
+            .mqc .bar{max-width:460px;margin:0 auto;bottom:24px;border:1px solid var(--line);border-radius:28px;box-shadow:0 20px 44px -16px rgba(0,0,0,.32);padding:10px;}
+            .mqc .bar a{padding:14px;font-size:13.5px;}
+          }
+          @media (min-width:1180px){
+            .mqc{margin:0 auto;}
+          }
         `,
         }}
       />
