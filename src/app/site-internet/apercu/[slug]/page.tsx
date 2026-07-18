@@ -84,16 +84,18 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   // (et toutes les sections pilotées par la config métier) s'affiche quand même.
   let siteViews = 0;
   let proServicesRaw: unknown = [];
+  let proUseCasesRaw: unknown = [];
   try {
     const { data: extra } = await supabase
       .from("human_vitrine_sites")
-      .select("site_views, services")
+      .select("site_views, services, usecases")
       .eq("id", str(row.id))
       .maybeSingle();
     const ex = (extra as Record<string, unknown> | null) ?? null;
     if (ex) {
       siteViews = typeof ex.site_views === "number" ? ex.site_views : 0;
       proServicesRaw = ex.services;
+      proUseCasesRaw = ex.usecases;
     }
     await supabase.from("human_vitrine_sites").update({ site_views: siteViews + 1 }).eq("id", str(row.id));
   } catch {
@@ -152,6 +154,13 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     }))
     .filter((x) => x.name.length > 0)
     .slice(0, 12);
+  // Motifs RÉELS saisis par le pro (« Pour quoi venir me voir ? »). Override des
+  // motifs proposés par la config métier (côté composant).
+  const proMotifs = (Array.isArray(proUseCasesRaw) ? proUseCasesRaw : [])
+    .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
+    .map((x) => ({ icon: str(x.icon).slice(0, 8) || "🔹", title: str(x.title).slice(0, 60), desc: str(x.desc).slice(0, 120) }))
+    .filter((x) => x.title.length > 0)
+    .slice(0, 8);
   const reviewsTop = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
     .map((r) => (typeof r === "object" && r ? (r as Record<string, unknown>) : {}))
     .map((r) => ({ name: str(r.name), text: str(r.text), stars: typeof r.stars === "number" ? (r.stars as number) : null }))
@@ -217,6 +226,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       reviewsUrl={reviewsUrl}
       bookingHref={bookingHref}
       services={proServices}
+      proMotifs={proMotifs}
       published={Boolean(row.published)}
       telHref={telHref}
       waHref={waHref}

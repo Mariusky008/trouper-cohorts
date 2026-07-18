@@ -15,6 +15,7 @@ import { ProAssistant } from "./pro-assistant";
 import { ProDashboard } from "./pro-dashboard";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
+import { ProMotifs } from "./pro-motifs";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -81,8 +82,11 @@ export default async function EspacePro({
   const mp = resolveMetier(activite);
   const soliciter = mp.def.avis_sollicitation; // A commerce/bien-être uniquement
   const afficherAvis = mp.def.avis_affichage; // A + B ; jamais C/D
-  // Prestations suggérées (exemples métier) pour amorcer « Mes accompagnements ».
-  const serviceSuggestions = resolveMetierContent(activite, mp.profil).demoServices ?? [];
+  // Contenu suggéré (exemples métier) pour amorcer « Mes accompagnements » et
+  // « Pour quoi venir me voir ? ». Le pro reste libre de tout reformuler.
+  const metierContent = resolveMetierContent(activite, mp.profil);
+  const serviceSuggestions = metierContent.demoServices ?? [];
+  const motifSuggestions = metierContent.motifs ?? [];
 
   // Lien d'avis Google : le deep link « écrire un avis » si on a le place_id
   // (récupéré au diagnostic), sinon un repli honnête vers la fiche Maps.
@@ -247,7 +251,18 @@ export default async function EspacePro({
         ] as ProTab[])
       : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
-    { key: "services", label: "Offres", icon: "📋", node: <ProServices slug={slug} token={token} suggestions={serviceSuggestions} /> },
+    {
+      key: "contenu",
+      label: "Contenu",
+      icon: "📝",
+      node: (
+        <div className="content-tab">
+          <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
+          <div style={{ borderTop: "1px solid var(--hair)", margin: "26px 0 0" }} />
+          <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
+        </div>
+      ),
+    },
     { key: "assistant", label: "Assistante", icon: "🧠", node: <ProAssistant slug={slug} token={token} /> },
     { key: "photos", label: "Photos", icon: "🖼️", node: <ProGallery slug={slug} token={token} /> },
   ];

@@ -12,7 +12,7 @@ import { MaquetteAssistant } from "./maquette-demos";
 import { TeaserIntro } from "./teaser-intro";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
-import type { MetierContent, Service } from "@/lib/site-internet/metier-content";
+import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
 
@@ -42,6 +42,7 @@ export type MaquetteSanteProps = {
   reviewsUrl: string; // page des avis Google existants
   bookingHref: string; // page de réservation réelle si dispos configurées, sinon ""
   services: Service[]; // prestations RÉELLES saisies par le pro (jamais de tarif inventé publié)
+  proMotifs: UseCase[]; // motifs saisis par le pro → override des motifs de la config métier
   published: boolean; // true = site en ligne pour de vrai (retire l'habillage démo)
   telHref: string;
   waHref: string; // WhatsApp (profil A seulement, sinon "")
@@ -54,7 +55,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, published, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -63,7 +64,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   // (menu). Pilotées par la config métier : rien à afficher → section omise.
   // Honnêteté tarifs : les vrais tarifs viennent du pro (services) ; en maquette
   // on montre des EXEMPLES de présentation (labellisés), sans euro inventé.
-  const motifs = content.motifs ?? [];
+  const motifs = (Array.isArray(proMotifs) && proMotifs.length ? proMotifs : content.motifs) ?? [];
   const proServices = Array.isArray(services) ? services : [];
   const demoServices = content.demoServices ?? [];
   const serviceList = proServices.length ? proServices : published ? [] : demoServices;
