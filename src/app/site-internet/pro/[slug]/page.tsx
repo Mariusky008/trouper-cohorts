@@ -285,6 +285,20 @@ export default async function EspacePro({
           .pro .rr-date{font-size:11.5px;color:var(--faint);}
           .pro .rr-btn{background:#F1EFEA;border:1px solid var(--hair);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .lockline{font-size:11px;color:var(--faint);margin:9px 0 2px;line-height:1.4;}
+
+          /* ══════════ ORDINATEUR : menu latéral + colonne large et aérée ══════════ */
+          @media (min-width:900px){
+            .pro{padding-left:232px;background:#EDEBE5;}
+            .pro .wrap{max-width:860px;margin:0 auto;min-height:100vh;box-shadow:0 0 60px -30px rgba(0,0,0,.2);}
+            .pro .pad{padding:44px 48px 72px;}
+            .pro .name{font-size:34px;margin-top:16px;}
+            .pro .role{font-size:15px;}
+            .pro .dash .grid{grid-template-columns:repeat(3,1fr);gap:12px;}
+            .pro .dash .t .v{font-size:30px;}
+          }
+          @media (min-width:1280px){
+            .pro .wrap{max-width:940px;}
+          }
           `,
         }}
       />
