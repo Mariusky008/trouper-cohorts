@@ -19,6 +19,7 @@ import { ProMotifs } from "./pro-motifs";
 import { ProReviewAlert } from "./pro-review-alert";
 import { ProBriefing } from "./pro-briefing";
 import { ProTabs, type ProTab } from "./pro-tabs";
+import { ProGroup, type Sub } from "./pro-group";
 import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
@@ -307,30 +308,50 @@ export default async function EspacePro({
     </>
   );
 
+  // ── 4 onglets clairs (au lieu de 8) centrés sur l'assistante ────────────────
+  //  🏠 Accueil = hub de l'assistante (briefing + chiffres + alertes)
+  //  📣 Clients = Demander un avis + Ma liste + Annonce (commerce)
+  //  📅 Agenda  = dispos + rappels + RDV
+  //  🎨 Mon site = Contenu + Photos + Fiche assistante
+  const siteSubs: Sub[] = [
+    {
+      key: "contenu",
+      label: "Contenu",
+      node: (
+        <>
+          <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
+          <div style={{ borderTop: "1px solid var(--hair)", margin: "26px 0 0" }} />
+          <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
+        </>
+      ),
+    },
+    { key: "photos", label: "Photos", node: <ProGallery slug={slug} token={token} /> },
+    { key: "fiche", label: "Fiche assistante", node: <ProAssistant slug={slug} token={token} /> },
+  ];
+
   const proTabs: ProTab[] = [
     { key: "accueil", label: "Accueil", icon: "🏠", node: accueilNode },
     ...(soliciter
       ? ([
-          { key: "avis", label: "Avis", icon: "⭐", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
-          { key: "clients", label: "Clients", icon: "👥", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
-          { key: "relance", label: "Relance", icon: "📣", node: <ProRelance slug={slug} token={token} /> },
+          {
+            key: "clients",
+            label: "Clients",
+            icon: "📣",
+            node: (
+              <ProGroup
+                groupKey="clients"
+                subs={[
+                  { key: "avis", label: "Demander un avis", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
+                  { key: "liste", label: "Ma liste", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
+                  { key: "annonce", label: "Annonce", node: <ProRelance slug={slug} token={token} /> },
+                ]}
+              />
+            ),
+          },
         ] as ProTab[])
       : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
-    {
-      key: "contenu",
-      label: "Contenu",
-      icon: "📝",
-      node: (
-        <div className="content-tab">
-          <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
-          <div style={{ borderTop: "1px solid var(--hair)", margin: "26px 0 0" }} />
-          <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
-        </div>
-      ),
-    },
-    { key: "assistant", label: "Assistante", icon: "🧠", node: <ProAssistant slug={slug} token={token} /> },
-    { key: "photos", label: "Photos", icon: "🖼️", node: <ProGallery slug={slug} token={token} /> },
+    { key: "site", label: "Mon site", icon: "🎨", node: <ProGroup groupKey="site" subs={siteSubs} /> },
   ];
 
   return (

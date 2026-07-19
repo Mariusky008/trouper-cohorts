@@ -15,8 +15,10 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
   // un évènement global — découplé, sans remonter d'état.
   useEffect(() => {
     const go = (e: Event) => {
-      const key = (e as CustomEvent).detail;
-      if (typeof key === "string" && tabs.some((t) => t.key === key)) {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail !== "string") return;
+      const key = detail.split(":")[0]; // « groupe:sous » → on ne garde que le groupe
+      if (tabs.some((t) => t.key === key)) {
         setActive(key);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }

@@ -28,7 +28,7 @@ export function ProBriefing(p: Props) {
     sugs.push({ icon: "⭐", text: `${p.honoredRecent} rendez-vous honorés récemment. On demande leur avis ?`, tab: "agenda" });
   }
   if (p.soliciter) {
-    sugs.push({ icon: "📣", text: "Un créneau à remplir ou une offre à pousser ? Je vous rédige l'annonce.", tab: "relance" });
+    sugs.push({ icon: "📣", text: "Un créneau à remplir ou une offre à pousser ? Je vous rédige l'annonce.", tab: "clients:annonce" });
   }
   // Repli chaleureux si rien de « chaud » aujourd'hui.
   if (sugs.length === 0) {
