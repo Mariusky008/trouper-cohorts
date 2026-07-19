@@ -59,6 +59,12 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { name: "Couleur & mèches", duration: "1 h 30", desc: "Coloration, balayage ou patine." },
         { name: "Chignon & occasions", duration: "1 h", desc: "Mariage, événement, mise en beauté." },
       ],
+      motifs: [
+        { icon: "✂️", title: "Changer de tête", desc: "Nouvelle coupe, nouveau style, on en parle ensemble." },
+        { icon: "🎨", title: "Couleur & entretien", desc: "Coloration, balayage, retouche des racines." },
+        { icon: "💍", title: "Occasion spéciale", desc: "Mariage, événement, photo — une mise en beauté." },
+        { icon: "🧔", title: "Barbe & entretien", desc: "Taille, contour, soin — pour être net." },
+      ],
     },
   },
   {
@@ -79,6 +85,34 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { name: "Épilation", duration: "30 min", desc: "Visage ou corps, à la cire ou au fil." },
         { name: "Beauté des mains", duration: "45 min", desc: "Manucure, pose de vernis semi-permanent." },
         { name: "Beauté des pieds", duration: "45 min", desc: "Soin, gommage, pose." },
+      ],
+      motifs: [
+        { icon: "💅", title: "Ongles cassés", desc: "Réparation, pose, un coup de neuf." },
+        { icon: "🎨", title: "Envie de couleur", desc: "Vernis semi-permanent, nail art, nouvelle teinte." },
+        { icon: "✨", title: "Prendre soin de soi", desc: "Soin du visage, épilation, un vrai moment détente." },
+        { icon: "💍", title: "Événement à venir", desc: "Mariage, fête — être au top le jour J." },
+      ],
+    },
+  },
+  {
+    match: /tatou|tattoo|piercing|perceur/,
+    content: {
+      approcheTitre: "Votre projet, sur la peau",
+      approcheCorps:
+        "On parle de votre idée, on l'affine ensemble, puis on la réalise dans un cadre soigné et respectueux des règles d'hygiène. Sur rendez-vous, pour prendre le temps de bien faire.",
+      consultTitre: null,
+      consultCartes: [],
+      faq: FAQ_COMMERCE,
+      motifs: [
+        { icon: "🖊️", title: "Premier tatouage", desc: "On vous guide de l'idée au rendez-vous, en confiance." },
+        { icon: "🎨", title: "Projet sur-mesure", desc: "Un dessin unique, pensé avec vous." },
+        { icon: "🩹", title: "Retouche / recouvrement", desc: "Reprendre ou couvrir un ancien tatouage." },
+        { icon: "💎", title: "Piercing", desc: "Pose soignée, conseils et suivi." },
+      ],
+      demoServices: [
+        { name: "Rendez-vous conseil", desc: "On parle de votre projet, sans engagement." },
+        { name: "Petit tatouage", desc: "Motif simple, une séance." },
+        { name: "Pièce sur-mesure", desc: "Projet personnalisé, devis après échange." },
       ],
     },
   },
@@ -228,6 +262,12 @@ const FALLBACK_COMMERCE: MetierContent = {
   consultTitre: null,
   consultCartes: [],
   faq: FAQ_COMMERCE,
+  motifs: [
+    { icon: "✨", title: "Une envie précise", desc: "Vous savez ce que vous voulez ? On s'en occupe." },
+    { icon: "💬", title: "Besoin d'un conseil", desc: "On vous guide vers ce qui vous convient." },
+    { icon: "💍", title: "Une occasion spéciale", desc: "Un événement à préparer ? On vous accompagne." },
+    { icon: "🎁", title: "Faire plaisir", desc: "Un cadeau, une attention — on vous aide à choisir." },
+  ],
   demoServices: [
     { name: "Prestation découverte", desc: "Idéale pour une première fois." },
     { name: "Prestation signature", desc: "La plus demandée chez nous." },
