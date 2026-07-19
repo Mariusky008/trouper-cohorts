@@ -20,6 +20,7 @@ import { ProReviewAlert } from "./pro-review-alert";
 import { ProBriefing } from "./pro-briefing";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ProGroup, type Sub } from "./pro-group";
+import { ProAssistantHub } from "./pro-assistant-hub";
 import { ReviewRefresh } from "./review-refresh";
 
 export const dynamic = "force-dynamic";
@@ -421,6 +422,7 @@ export default async function EspacePro({
           <ProTabs tabs={proTabs} />
         </div>
       </div>
+      <ProAssistantHub slug={slug} token={token} nom={nom} />
     </main>
   );
 }
