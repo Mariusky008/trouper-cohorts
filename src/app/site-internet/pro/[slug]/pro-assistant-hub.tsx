@@ -7,7 +7,7 @@
 // que router vers des fonctionnalités réelles (aucune promesse en l'air).
 import { useEffect, useRef, useState } from "react";
 
-type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null };
+type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
 
 const SUGGESTIONS = [
   "Prévenir mes clients d'une promo",
@@ -35,7 +35,12 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [thread, busy]);
 
-  const goto = (key: string) => {
+  const goto = (key: string, prefill?: string | null) => {
+    // Pré-remplissage éventuel (ex. le texte d'annonce déjà rédigé) → l'outil
+    // cible l'applique via l'évènement pro-prefill, avant d'ouvrir l'onglet.
+    if (prefill && key === "clients:annonce") {
+      window.dispatchEvent(new CustomEvent("pro-prefill", { detail: { target: "annonce", text: prefill } }));
+    }
     window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: key }));
     setOpen(false);
   };
@@ -55,7 +60,8 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
       const j = await r.json().catch(() => ({}));
       const reply = typeof j.reply === "string" && j.reply ? j.reply : "Je n'ai pas bien saisi — pouvez-vous reformuler ?";
       const gkey = typeof j.goto === "string" ? j.goto : null;
-      setThread((t) => [...t, { who: "ai", text: reply, goto: gkey, label: typeof j.label === "string" ? j.label : null }]);
+      const pf = typeof j.prefill === "string" && j.prefill ? j.prefill : null;
+      setThread((t) => [...t, { who: "ai", text: reply, goto: gkey, label: typeof j.label === "string" ? j.label : null, prefill: pf }]);
     } catch {
       setThread((t) => [...t, { who: "ai", text: "Je n'arrive pas à vous répondre à l'instant. Réessayez dans un moment." }]);
     } finally {
@@ -89,6 +95,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .b{max-width:86%;padding:11px 14px;border-radius:15px;font-size:13.5px;line-height:1.45;white-space:pre-line;}
           .pro .hubsheet .b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
           .pro .hubsheet .b.me{align-self:flex-end;background:var(--ink);color:#fff;border-top-right-radius:5px;}
+          .pro .hubsheet .draft{align-self:flex-start;max-width:86%;background:#fff;border:1px solid #D9CFF0;border-radius:14px;border-top-left-radius:5px;padding:11px 13px;font-size:13px;line-height:1.5;color:#2A2340;white-space:pre-line;}
           .pro .hubsheet .open{align-self:flex-start;margin-top:-3px;background:#5B3FA6;color:#fff;border:none;border-radius:12px;padding:10px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
           .pro .hubsheet .dots{align-self:flex-start;display:flex;gap:4px;padding:6px 4px;}
           .pro .hubsheet .dots span{width:7px;height:7px;border-radius:50%;background:#B9A6EC;animation:hubdot 1s infinite;}
@@ -131,9 +138,12 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
               {thread.map((m, i) => (
                 <div key={i} style={{ display: "contents" }}>
                   <div className={`b ${m.who}`}>{m.text}</div>
+                  {m.who === "ai" && m.prefill && (
+                    <div className="draft">✍️ {m.prefill}</div>
+                  )}
                   {m.who === "ai" && m.goto && (
-                    <button className="open" onClick={() => goto(m.goto as string)}>
-                      Ouvrir{m.label ? ` « ${m.label} »` : ""} →
+                    <button className="open" onClick={() => goto(m.goto as string, m.prefill)}>
+                      {m.prefill ? "Ouvrir avec ce texte →" : `Ouvrir${m.label ? ` « ${m.label} »` : ""} →`}
                     </button>
                   )}
                 </div>

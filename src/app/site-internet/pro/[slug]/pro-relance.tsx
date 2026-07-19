@@ -97,6 +97,19 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
     };
   }, [slug, token]);
 
+  // Pré-remplissage depuis le bouton central « Mon assistante » : quand elle a
+  // rédigé une annonce, elle ouvre cet outil avec le texte déjà en place.
+  useEffect(() => {
+    const onPrefill = (e: Event) => {
+      const d = (e as CustomEvent).detail;
+      if (d && d.target === "annonce" && typeof d.text === "string" && d.text.trim()) {
+        setMessage(d.text.trim());
+      }
+    };
+    window.addEventListener("pro-prefill", onPrefill as EventListener);
+    return () => window.removeEventListener("pro-prefill", onPrefill as EventListener);
+  }, []);
+
   const msg = message.trim() || DEFAULT_MESSAGE;
   const waHref = `https://wa.me/?text=${encodeURIComponent(msg)}`;
   // Version à coller dans une liste de diffusion (pas de lien de désinscription

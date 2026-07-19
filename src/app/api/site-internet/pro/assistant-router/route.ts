@@ -83,13 +83,18 @@ export async function POST(request: Request) {
   }
 
   const list = actions.map((a) => `- ${a.key} : ${a.desc}`).join("\n");
+  const canAnnounce = actions.some((a) => a.key === "clients:annonce");
   const system =
     `Tu es l'assistante de bord de ${nom}${activite ? `, ${activite}` : ""}. ` +
     `Le professionnel te dit ce qu'il veut faire dans son espace de gestion ; tu l'aides en OUVRANT le bon outil.\n` +
     `Outils disponibles (clé : à quoi ça sert) :\n${list}\n\n` +
-    `Réponds STRICTEMENT en JSON, sans texte autour : {"reply": "...", "goto": "<clé exacte de la liste, ou null>"}\n` +
+    `Réponds STRICTEMENT en JSON, sans texte autour : {"reply": "...", "goto": "<clé exacte ou null>", "prefill": "<texte ou null>"}\n` +
     `- reply : 1 à 2 phrases chaleureuses, en français, vouvoiement. Dis ce que tu ouvres, ou pose UNE question si la demande est ambiguë.\n` +
     `- goto : la clé EXACTE de l'outil le plus adapté, ou null si tu as besoin d'une précision ou si la demande sort de ces outils.\n` +
+    (canAnnounce
+      ? `- prefill : UNIQUEMENT si goto vaut "clients:annonce" ET que le message décrit une offre concrète (promo, créneau libre, événement, nouveauté), rédige ici le message WhatsApp prêt à envoyer aux clients. Sinon null.\n` +
+        `  Règles du prefill : court (2 à 4 phrases), chaleureux, vouvoiement, 1-2 emojis max, finit par un appel à répondre. N'invente AUCUN prix, %, date ou horaire non fourni — si une info manque, laisse un crochet comme [jour/heure]. Pas de nom de client.\n`
+      : `- prefill : toujours null.\n`) +
     `- N'invente jamais d'outil hors de la liste. Si la demande sort de ton périmètre, explique gentiment ce que tu sais faire.`;
 
   try {
@@ -109,16 +114,22 @@ export async function POST(request: Request) {
     const text = s(data?.content?.[0]?.text);
     let reply = "";
     let goto: string | null = null;
+    let prefill: string | null = null;
     try {
       const j = JSON.parse(text.replace(/^```json\s*|\s*```$/g, "").trim());
       reply = s(j.reply);
       const g = s(j.goto);
       if (g && actions.some((a) => a.key === g)) goto = g;
+      // Le pré-remplissage n'a de sens que pour l'annonce (rédaction du message).
+      if (goto === "clients:annonce") {
+        const pf = s(j.prefill).slice(0, 600);
+        if (pf && pf.toLowerCase() !== "null") prefill = pf;
+      }
     } catch {
       reply = text; // le modèle a répondu en clair → on garde le texte, sans navigation
     }
     if (!reply) reply = "Dites-m'en un peu plus : que souhaitez-vous faire ?";
-    return NextResponse.json({ ok: true, reply, goto, label: goto ? labelOf(goto) : null });
+    return NextResponse.json({ ok: true, reply, goto, label: goto ? labelOf(goto) : null, prefill });
   } catch {
     const hit = keywordRoute(message, actions);
     return NextResponse.json({
