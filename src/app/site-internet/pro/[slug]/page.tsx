@@ -16,6 +16,7 @@ import { ProDashboard } from "./pro-dashboard";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
+import { ProReviewAlert } from "./pro-review-alert";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -159,6 +160,30 @@ export default async function EspacePro({
   } catch {
     /* colonne non migrée → 0 */
   }
+
+  // Alerte nouvel avis : compare le compteur Google actuel à ce que le pro a vu.
+  // 1re visite → on ancre le point de départ (aucune fausse alerte). Colonnes
+  // récentes → lecture défensive.
+  let newReviewCount = 0;
+  let ratingDropped = false;
+  try {
+    const { data: rs } = await supabase.from("human_vitrine_sites").select("pro_reviews_seen, pro_rating_seen").eq("id", siteId).maybeSingle();
+    const r = (rs as Record<string, unknown> | null) ?? null;
+    let reviewsSeen = r && typeof r.pro_reviews_seen === "number" ? (r.pro_reviews_seen as number) : null;
+    let ratingSeen = r && typeof r.pro_rating_seen === "number" ? (r.pro_rating_seen as number) : null;
+    if (reviewsSeen == null && reviews != null) {
+      reviewsSeen = reviews;
+      ratingSeen = rating;
+      await supabase.from("human_vitrine_sites").update({ pro_reviews_seen: reviews, pro_rating_seen: rating }).eq("id", siteId);
+    }
+    if (reviews != null && reviewsSeen != null) newReviewCount = Math.max(0, reviews - reviewsSeen);
+    if (rating != null && ratingSeen != null && rating < ratingSeen - 0.01) ratingDropped = true;
+  } catch {
+    /* colonnes non migrées → pas d'alerte */
+  }
+  const reviewsUrl = placeId
+    ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(placeId)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${nom} ${ville}`)}`;
   const monthIso = (() => {
     const d = new Date();
     d.setDate(1);
@@ -187,6 +212,15 @@ export default async function EspacePro({
   // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
   const accueilNode = (
     <>
+      {afficherAvis && (
+        <ProReviewAlert
+          slug={slug}
+          token={token}
+          newCount={newReviewCount}
+          ratingDropped={ratingDropped}
+          reviewsUrl={reviewsUrl}
+        />
+      )}
       <ProDashboard
         views={views}
         rdv={rdvCount}
@@ -229,8 +263,20 @@ export default async function EspacePro({
           )}
         </div>
       )}
+      <div className="gcard afcard" style={{ marginTop: 14 }}>
+        <span className="lab">🖨️ Affiche à imprimer</span>
+        <div className="afsub">
+          Une affiche prête à poser à votre caisse : vos client·es scannent le QR pour{soliciter ? " vous laisser un avis ou" : ""} réserver.
+        </div>
+        <div className="afbtns">
+          {soliciter && (
+            <a className="afbtn" href={`/site-internet/pro/${slug}/affiche?k=${encodeURIComponent(token)}&type=avis`} target="_blank" rel="noreferrer">⭐ Affiche avis</a>
+          )}
+          <a className="afbtn" href={`/site-internet/pro/${slug}/affiche?k=${encodeURIComponent(token)}&type=rdv`} target="_blank" rel="noreferrer">📅 Affiche réservation</a>
+        </div>
+      </div>
       {!soliciter && (
-        <div className="gcard" style={{ marginTop: afficherAvis ? 14 : 6 }}>
+        <div className="gcard" style={{ marginTop: 14 }}>
           <div className="empty">
             Votre espace est volontairement sobre. Votre profession étant encadrée, nous ne sollicitons pas
             d&apos;avis et n&apos;envoyons aucune relance commerciale en votre nom. Votre site et votre accueil
@@ -300,6 +346,10 @@ export default async function EspacePro({
           .pro .rr-date{font-size:11.5px;color:var(--faint);}
           .pro .rr-btn{background:#F1EFEA;border:1px solid var(--hair);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .lockline{font-size:11px;color:var(--faint);margin:9px 0 2px;line-height:1.4;}
+          .pro .afcard .afsub{font-size:12.5px;color:var(--soft);line-height:1.45;margin-top:7px;}
+          .pro .afcard .afbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+          .pro .afcard .afbtn{text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:11px;padding:10px 14px;font-size:13px;font-weight:600;}
+          .pro .afcard .afbtn:hover{border-color:var(--gold);}
 
           /* ══════════ ORDINATEUR : menu latéral + colonne large et aérée ══════════ */
           @media (min-width:900px){
