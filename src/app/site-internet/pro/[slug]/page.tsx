@@ -17,6 +17,7 @@ import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProReviewAlert } from "./pro-review-alert";
+import { ProBriefing } from "./pro-briefing";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -202,16 +203,35 @@ export default async function EspacePro({
       return 0;
     }
   };
-  const [clientsCount, annoncesCount, demandesCount, rdvCount] = await Promise.all([
+  // Bornes de dates (heure murale Paris) pour le briefing : demain / 7 derniers jours.
+  const parisDate = (offsetDays: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  };
+  const tomorrowKey = parisDate(1);
+  const dayAfterKey = parisDate(2);
+  const weekAgoKey = parisDate(-7);
+  const [clientsCount, annoncesCount, demandesCount, rdvCount, rdvTomorrow, honoredRecent] = await Promise.all([
     cnt(supabase.from("human_site_contacts").select("id", { count: "exact", head: true }).eq("site_id", siteId).is("opted_out_at", null)),
     cnt(supabase.from("human_site_relances").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
     cnt(supabase.from("human_site_review_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
     cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", nowKey)),
+    cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", `${tomorrowKey}T00:00`).lt("slot_local", `${dayAfterKey}T00:00`)),
+    cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", `${weekAgoKey}T00:00`).lt("slot_local", nowKey)),
   ]);
 
   // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
   const accueilNode = (
     <>
+      <ProBriefing
+        nom={nom}
+        soliciter={soliciter}
+        views={views}
+        rdvTomorrow={rdvTomorrow}
+        honoredRecent={honoredRecent}
+        clients={clientsCount}
+      />
       {afficherAvis && (
         <ProReviewAlert
           slug={slug}

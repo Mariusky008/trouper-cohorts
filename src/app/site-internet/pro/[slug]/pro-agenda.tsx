@@ -38,6 +38,7 @@ export function ProAgenda({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [past, setPast] = useState<Booking[]>([]);
   const [asked, setAsked] = useState<Record<string, boolean>>({});
+  const [reminded, setReminded] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -88,6 +89,28 @@ export function ProAgenda({
     setAsked((a) => ({ ...a, [b.id]: true }));
     window.location.assign(waHref);
   };
+
+  // Rappel de RDV (version gratuite : ouvre le WhatsApp du client, message prêt —
+  // le pro valide l'envoi). Anti-lapin sans coût ni appli.
+  const sendReminder = (b: Booking) => {
+    const heure = b.slot.slice(11, 16);
+    const greeting = b.prenom ? `Bonjour ${b.prenom},` : "Bonjour,";
+    const message = `${greeting}\nPetit rappel : nous avons rendez-vous demain à ${heure}. Au plaisir de vous voir ! Répondez à ce message si besoin.`;
+    const digits = String(b.tel || "").replace(/\D/g, "");
+    const intl = digits.startsWith("33") ? digits : digits.startsWith("0") ? "33" + digits.slice(1) : digits;
+    const href = intl
+      ? `https://wa.me/${intl}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    setReminded((r) => ({ ...r, [b.id]: true }));
+    window.location.assign(href);
+  };
+
+  // RDV de demain (heure locale Paris) → pour les rappels du jour.
+  const tomorrowKey = (() => {
+    const t = new Date(Date.now() + 24 * 3600 * 1000);
+    return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+  })();
+  const tomorrowRdv = bookings.filter((b) => b.slot.slice(0, 10) === tomorrowKey);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,10 +196,32 @@ export function ProAgenda({
           .pro .agenda .past .sub{font-size:12px;color:var(--faint);line-height:1.4;margin-bottom:11px;}
           .pro .agenda .ask{margin-left:auto;flex:none;border:1px solid var(--gold);background:linear-gradient(180deg,#FBF3E0,#fff);color:#7A5A12;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
           .pro .agenda .ask.done{border-color:var(--hair);background:none;color:var(--faint);font-weight:600;}
+          .pro .agenda .rmd{border:1px solid #CDE3D2;background:linear-gradient(180deg,#EAF5EE,#fff);border-radius:14px;padding:14px;margin-bottom:22px;}
+          .pro .agenda .rmd .h{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:700;color:#1B6B3A;}
+          .pro .agenda .rmd .sub{font-size:12px;color:var(--soft);line-height:1.45;margin:5px 0 11px;}
+          .pro .agenda .rmd .rem{border-color:#B7DCC1;background:#188038;color:#fff;}
+          .pro .agenda .rmd .rem.done{background:#fff;border-color:var(--hair);color:var(--faint);}
           `,
         }}
       />
       <div className="agenda">
+        {tomorrowRdv.length > 0 && (
+          <div className="rmd">
+            <div className="h">🔔 Rappels de demain</div>
+            <div className="sub">Un tap ouvre le WhatsApp du client, message prêt — vous validez l&apos;envoi. Moins de lapins, sans rien installer.</div>
+            {tomorrowRdv.map((b) => (
+              <div className="b" key={b.id}>
+                <div className="info">
+                  <b>{b.label}</b>
+                  <span>{b.prenom}{b.tel ? ` · ${b.tel}` : ""}</span>
+                </div>
+                <button className={`ask rem${reminded[b.id] ? " done" : ""}`} onClick={() => sendReminder(b)}>
+                  {reminded[b.id] ? "✓ Envoyé" : "🔔 Envoyer le rappel"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="a-title">📅 Mes disponibilités</div>
         <div className="a-sub">
           Choisissez vos horaires&nbsp;: vos clients réservent un vrai créneau en ligne, et vous le retrouvez ici.

@@ -4,12 +4,26 @@
 // besoin sur un onglet (accès direct, plus de long scroll). Tous les onglets
 // restent montés (leurs données sont prêtes quand on bascule) ; on n'affiche que
 // l'actif. La barre est profil-aware : elle ne montre que les onglets fournis.
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export type ProTab = { key: string; label: string; icon: string; node: ReactNode };
 
 export function ProTabs({ tabs }: { tabs: ProTab[] }) {
   const [active, setActive] = useState(tabs[0]?.key || "");
+
+  // Le « briefing » (et tout autre bloc) peut demander de basculer d'onglet via
+  // un évènement global — découplé, sans remonter d'état.
+  useEffect(() => {
+    const go = (e: Event) => {
+      const key = (e as CustomEvent).detail;
+      if (typeof key === "string" && tabs.some((t) => t.key === key)) {
+        setActive(key);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("pro-goto-tab", go as EventListener);
+    return () => window.removeEventListener("pro-goto-tab", go as EventListener);
+  }, [tabs]);
 
   return (
     <>

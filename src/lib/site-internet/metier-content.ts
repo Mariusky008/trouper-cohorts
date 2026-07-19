@@ -195,17 +195,32 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
   },
 ];
 
-// Fallback SOIN (profils B/C) : ton attentif, « patients », pas de cartes inventées.
+// Fallback SOIN (profils B/C) : ton attentif. Motifs + prestations GÉNÉRIQUES
+// mais présentables (et éditables par le pro) → tout métier de soin non catalogué
+// affiche quand même les deux sections. Étiquetés « exemples à personnaliser ».
 const FALLBACK_CARE: MetierContent = {
   approcheTitre: "Un accompagnement attentif",
   approcheCorps:
     "Un premier rendez-vous pour faire connaissance et comprendre votre besoin, sans engagement. Vous êtes accompagné(e) dans un cadre attentif et confidentiel, à votre rythme.",
-  consultTitre: null, // pas de cartes inventées pour un métier inconnu (aucun bloc vide)
+  consultTitre: null, // remplacé par les motifs ci-dessous
   consultCartes: [],
   faq: FAQ_SOIN,
+  motifs: [
+    { icon: "👋", title: "Première consultation", desc: "Un premier rendez-vous pour faire connaissance et cerner votre besoin." },
+    { icon: "🌿", title: "Douleurs & tensions", desc: "Gênes du quotidien, corps sous pression." },
+    { icon: "😮‍💨", title: "Stress & fatigue", desc: "Surcharge, sommeil difficile, besoin de souffler." },
+    { icon: "🔄", title: "Suivi & accompagnement", desc: "Un accompagnement dans la durée, à votre rythme." },
+  ],
+  demoServices: [
+    { name: "Première consultation", duration: "1 h", desc: "Faire connaissance et comprendre votre besoin." },
+    { name: "Séance de suivi", duration: "45 min", desc: "Accompagnement personnalisé." },
+    { name: "Bilan complet", duration: "1 h 30", desc: "Un point approfondi et un plan d'accompagnement." },
+  ],
 };
 
-// Fallback COMMERCE (profil A) : ton chaleureux, « clients ».
+// Fallback COMMERCE (profil A) : ton chaleureux. Menu de prestations générique
+// mais présentable (éditable) → tout commerce non catalogué affiche « Mes
+// accompagnements ». Pas de motifs (« pour quoi venir » colle moins au commerce).
 const FALLBACK_COMMERCE: MetierContent = {
   approcheTitre: "Un savoir-faire à votre service",
   approcheCorps:
@@ -213,6 +228,11 @@ const FALLBACK_COMMERCE: MetierContent = {
   consultTitre: null,
   consultCartes: [],
   faq: FAQ_COMMERCE,
+  demoServices: [
+    { name: "Prestation découverte", desc: "Idéale pour une première fois." },
+    { name: "Prestation signature", desc: "La plus demandée chez nous." },
+    { name: "Forfait", desc: "Plusieurs prestations réunies, à tarif avantageux." },
+  ],
 };
 
 const normLoose = (s: string) =>
