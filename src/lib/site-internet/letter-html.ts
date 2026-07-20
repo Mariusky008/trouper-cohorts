@@ -428,9 +428,14 @@ export async function composeLetterHtml(input: {
   const concAvis = conc.filter((c) => c.avis != null).slice().sort((a, b) => (b.avis ?? 0) - (a.avis ?? 0));
   // Concurrents éditables (barres / SERP) : source « Nom | avis », 1 par ligne.
   // L'opérateur peut retirer une ligne hors-sujet ; le nombre d'avis est reparsé.
+  // Défaut éditable : A/B affichent des BARRES (il faut le nb d'avis) → on part
+  // des concurrents notés. C/D affichent une LISTE type Google (noms seulement) →
+  // on part de tous les concurrents, avec l'avis s'il existe. Dans les deux cas
+  // l'opérateur peut corriger/supprimer une ligne fausse.
+  const concDefaultRows = (avisAff ? concAvis : conc).slice(0, 3);
   const la_concurrents_src = ov(
     "la_concurrents_src",
-    concAvis.slice(0, 3).map((c) => `${cleanCompName(c.name)} | ${c.avis}`).join("\n")
+    concDefaultRows.map((c) => (c.avis != null ? `${cleanCompName(c.name)} | ${c.avis}` : cleanCompName(c.name))).join("\n")
   );
   const concForProof = la_concurrents_src
     .split("\n").map((l) => l.trim()).filter(Boolean)
@@ -610,9 +615,16 @@ export async function composeLetterHtml(input: {
     editableFields.push({ key: "r2_title", label: "Raison 2 — titre", value: r2_title, multiline: true });
     editableFields.push({ key: "r2_text", label: "Raison 2 — texte", value: r2_text, multiline: true });
     editableFields.push({ key: "sol_h", label: "Solution — titre", value: sol_h, multiline: true });
-    if (avisAff) {
-      editableFields.push({ key: "la_concurrents_src", label: "Concurrents (barres) — 1 par ligne « Nom | avis ». Supprimez une ligne hors-sujet.", value: la_concurrents_src, multiline: true });
-    }
+    // Concurrents éditables pour TOUS les profils (A/B barres, C/D liste Google).
+    // Souvent l'extraction Google se trompe → l'opérateur doit pouvoir rectifier.
+    editableFields.push({
+      key: "la_concurrents_src",
+      label: avisAff
+        ? "Concurrents (barres) — 1 par ligne « Nom | avis ». Corrigez ou supprimez une ligne fausse."
+        : "Concurrents affichés (liste Google) — 1 par ligne « Nom ». Corrigez ou supprimez une ligne fausse.",
+      value: la_concurrents_src,
+      multiline: true,
+    });
   }
 
   const vars: Record<string, string> = {
