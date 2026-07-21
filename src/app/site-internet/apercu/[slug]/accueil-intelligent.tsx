@@ -12,6 +12,7 @@
 // encart d'urgence permanent (15 / 3114 / 112) pour le profil « psychisme ».
 import { useEffect, useMemo, useRef, useState } from "react";
 import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { VoicePicker } from "./voice-picker";
 
 type Profil = "A" | "B" | "C";
 type FaqItem = { q: string; a: string };
@@ -404,6 +405,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         .acc-head .spk{margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;line-height:1;}
         .acc-head .spk.on{background:rgba(255,255,255,.34);}
         .acc-head .x{margin-left:8px;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px;}
+        .acc-vbar{padding:8px 14px;background:#F6F4EF;border-bottom:1px solid #E7E4DC;}
         .acc-body{flex:1;overflow-y:auto;padding:16px 14px 8px;}
         .acc-row{display:block;}
         .acc-line{display:flex;margin-bottom:9px;}
@@ -466,6 +468,10 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               )}
               <button type="button" className="x" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">×</button>
             </div>
+
+            {ttsOk && speakOn && (
+              <div className="acc-vbar"><VoicePicker /></div>
+            )}
 
             <div className="acc-body" ref={scroller}>
               <div className="acc-row">

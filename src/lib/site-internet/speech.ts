@@ -19,13 +19,52 @@ function cleanForSpeech(text: string): string {
     .trim();
 }
 
-let cachedVoice: SpeechSynthesisVoice | null = null;
-function pickFrenchVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null {
-  if (cachedVoice) return cachedVoice;
+// Voix préférée choisie par l'utilisateur (persistée). Sinon, 1re voix française.
+const VOICE_KEY = "site_tts_voice";
+let preferredURI: string | null = null;
+function initPreferred() {
+  if (preferredURI !== null) return;
+  try {
+    preferredURI = localStorage.getItem(VOICE_KEY) || "";
+  } catch {
+    preferredURI = "";
+  }
+}
+export function setPreferredVoiceURI(uri: string): void {
+  preferredURI = uri || "";
+  try {
+    localStorage.setItem(VOICE_KEY, preferredURI);
+  } catch {
+    /* stockage indisponible → préférence en mémoire seulement */
+  }
+}
+export function getPreferredVoiceURI(): string {
+  initPreferred();
+  return preferredURI || "";
+}
+export function getFrenchVoices(): SpeechSynthesisVoice[] {
+  if (!speechSupported()) return [];
+  try {
+    return window.speechSynthesis.getVoices().filter((v) => /^fr/i.test(v.lang));
+  } catch {
+    return [];
+  }
+}
+// Les voix se chargent parfois de façon asynchrone → permet de se resynchroniser.
+export function onVoicesChanged(cb: () => void): () => void {
+  if (!speechSupported()) return () => {};
+  const synth = window.speechSynthesis;
+  synth.addEventListener("voiceschanged", cb);
+  return () => synth.removeEventListener("voiceschanged", cb);
+}
+function pickVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null {
   const voices = synth.getVoices();
-  const fr = voices.find((v) => /fr[-_]?fr/i.test(v.lang)) || voices.find((v) => /^fr/i.test(v.lang));
-  if (fr) cachedVoice = fr;
-  return cachedVoice;
+  initPreferred();
+  if (preferredURI) {
+    const chosen = voices.find((v) => v.voiceURI === preferredURI);
+    if (chosen) return chosen;
+  }
+  return voices.find((v) => /fr[-_]?fr/i.test(v.lang)) || voices.find((v) => /^fr/i.test(v.lang)) || null;
 }
 
 // queue=true : enchaîne à la suite (messages scriptés de l'accueil). Par défaut,
@@ -41,7 +80,7 @@ export function speak(text: string, queue = false): void {
     u.lang = "fr-FR";
     u.rate = 1;
     u.pitch = 1;
-    const v = pickFrenchVoice(synth);
+    const v = pickVoice(synth);
     if (v) u.voice = v;
     synth.speak(u);
   } catch {

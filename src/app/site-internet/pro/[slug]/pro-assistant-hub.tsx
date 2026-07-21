@@ -7,6 +7,7 @@
 // que router vers des fonctionnalités réelles (aucune promesse en l'air).
 import { useEffect, useRef, useState } from "react";
 import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { VoicePicker } from "../../apercu/[slug]/voice-picker";
 
 type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
 
@@ -178,6 +179,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh .spk{margin-left:auto;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
           .pro .hubsheet .hh .spk.on{background:#E7DEFB;}
           .pro .hubsheet .hh .x{margin-left:6px;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
+          .pro .hubsheet .hubvbar{padding:8px 14px;background:#F6F4EF;border-bottom:1px solid var(--hair);}
           .pro .hubsheet .body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
           .pro .hubsheet .b{max-width:86%;padding:11px 14px;border-radius:15px;font-size:13.5px;line-height:1.45;white-space:pre-line;}
           .pro .hubsheet .b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
@@ -234,6 +236,10 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
               )}
               <button className="x" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">×</button>
             </div>
+
+            {ttsOk && speakOn && (
+              <div className="hubvbar"><VoicePicker /></div>
+            )}
 
             <div className="body" ref={scroller}>
               {thread.map((m, i) => (
