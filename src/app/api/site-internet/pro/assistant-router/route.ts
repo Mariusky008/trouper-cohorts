@@ -52,6 +52,26 @@ export async function POST(request: Request) {
   if (!slug || !token) return NextResponse.json({ error: "slug/token requis" }, { status: 400 });
   if (!message) return NextResponse.json({ error: "Dites-moi ce que vous voulez faire." }, { status: 400 });
 
+  // Historique de la conversation (pour SUIVRE le fil). On construit une liste de
+  // messages alternés user/assistant, démarrant par un user (contrainte API).
+  const rawHistory = Array.isArray(p?.history) ? (p.history as unknown[]) : [];
+  const convo: Array<{ role: "user" | "assistant"; content: string }> = [];
+  const pushMsg = (role: "user" | "assistant", content: string) => {
+    const c = content.trim();
+    if (!c) return;
+    if (convo.length === 0 && role !== "user") return; // doit commencer par un user
+    const last = convo[convo.length - 1];
+    if (last && last.role === role) last.content += "\n" + c;
+    else convo.push({ role, content: c });
+  };
+  for (const h of rawHistory.slice(-8)) {
+    const o = (h && typeof h === "object" ? h : {}) as Record<string, unknown>;
+    const role = s(o.role) === "ai" || s(o.role) === "assistant" ? "assistant" : "user";
+    pushMsg(role, s(o.text).slice(0, 500));
+  }
+  pushMsg("user", message);
+  if (!convo.length || convo[convo.length - 1].role !== "user") convo.push({ role: "user", content: message });
+
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
@@ -106,7 +126,7 @@ export async function POST(request: Request) {
         max_tokens: 220,
         temperature: 0.3,
         system,
-        messages: [{ role: "user", content: message }],
+        messages: convo,
       }),
     });
     if (!res.ok) throw new Error("api");

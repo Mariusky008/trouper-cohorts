@@ -9,6 +9,18 @@ import { useEffect, useRef, useState } from "react";
 
 type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
 
+// Reconnaissance vocale (Web Speech API) — typage minimal pour éviter `any`.
+interface SRResultItem { transcript: string }
+interface SRResult { isFinal: boolean; 0: SRResultItem }
+interface SREvent { resultIndex: number; results: { length: number; [i: number]: SRResult } }
+interface SRInstance { lang: string; interimResults: boolean; continuous: boolean; onresult: (e: SREvent) => void; onerror: () => void; onend: () => void; start(): void; stop(): void }
+type SRCtor = new () => SRInstance;
+const getSR = (): SRCtor | null => {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { SpeechRecognition?: SRCtor; webkitSpeechRecognition?: SRCtor };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+};
+
 const SUGGESTIONS = [
   "Prévenir mes clients d'une promo",
   "Mes rendez-vous de demain",
@@ -21,7 +33,14 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const [thread, setThread] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [listening, setListening] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
+  const recRef = useRef<SRInstance | null>(null);
+
+  useEffect(() => {
+    setVoiceOn(getSR() !== null);
+  }, []);
 
   useEffect(() => {
     if (open && thread.length === 0) {
@@ -49,13 +68,15 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
     const q = text.trim();
     if (!q || busy) return;
     setInput("");
+    // Historique AVANT d'ajouter le nouveau message (pour que l'IA suive le fil).
+    const history = thread.map((m) => ({ role: m.who, text: m.text }));
     setThread((t) => [...t, { who: "me", text: q }]);
     setBusy(true);
     try {
       const r = await fetch("/api/site-internet/pro/assistant-router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, message: q }),
+        body: JSON.stringify({ slug, token, message: q, history }),
       });
       const j = await r.json().catch(() => ({}));
       const reply = typeof j.reply === "string" && j.reply ? j.reply : "Je n'ai pas bien saisi — pouvez-vous reformuler ?";
@@ -66,6 +87,43 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
       setThread((t) => [...t, { who: "ai", text: "Je n'arrive pas à vous répondre à l'instant. Réessayez dans un moment." }]);
     } finally {
       setBusy(false);
+    }
+  };
+
+  // Dictée vocale : on remplit le champ en direct et on envoie à la fin.
+  const toggleMic = () => {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const SR = getSR();
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = "fr-FR";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let finalText = "";
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interim += r[0].transcript;
+      }
+      setInput((finalText + interim).trim());
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => {
+      setListening(false);
+      const t = finalText.trim();
+      if (t) send(t);
+    };
+    recRef.current = rec;
+    setListening(true);
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
     }
   };
 
@@ -107,6 +165,10 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .inp input{flex:1;border:1px solid var(--hair);border-radius:22px;padding:12px 15px;font-size:14px;font-family:inherit;background:#fff;}
           .pro .hubsheet .inp button{border:none;background:#5B3FA6;color:#fff;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;flex:none;}
           .pro .hubsheet .inp button:disabled{opacity:.5;cursor:not-allowed;}
+          .pro .hubsheet .inp .mic{background:#F1EEF9;color:#5B3FA6;font-size:17px;}
+          .pro .hubsheet .inp .mic.on{background:#E5484D;color:#fff;animation:hubmic 1s ease-in-out infinite;}
+          @keyframes hubmic{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.5)}50%{box-shadow:0 0 0 7px rgba(229,72,77,0)}}
+          @media (prefers-reduced-motion:reduce){.pro .hubsheet .inp .mic.on{animation:none}}
           @media (min-width:900px){
             .pro .hubfab{left:auto;right:32px;transform:none;bottom:32px;}
             .pro .hubov{align-items:center;}
@@ -160,11 +222,22 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
             )}
 
             <div className="inp">
+              {voiceOn && (
+                <button
+                  type="button"
+                  className={`mic${listening ? " on" : ""}`}
+                  onClick={toggleMic}
+                  aria-label={listening ? "Arrêter la dictée" : "Parler"}
+                  title={listening ? "J'écoute…" : "Parler à l'assistante"}
+                >
+                  {listening ? "●" : "🎤"}
+                </button>
+              )}
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") send(input); }}
-                placeholder="Ex. préviens mes clients d'une promo"
+                placeholder={listening ? "J'écoute…" : "Ex. préviens mes clients d'une promo"}
                 aria-label="Votre demande"
               />
               <button onClick={() => send(input)} disabled={busy || !input.trim()} aria-label="Envoyer">↑</button>
