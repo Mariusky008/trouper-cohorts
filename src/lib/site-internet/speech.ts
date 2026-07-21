@@ -2,6 +2,19 @@
 // par l'assistante (Espace Pro) et l'accueil de la maquette pour lire les réponses
 // à voix haute. Dégradation propre si le navigateur ne la supporte pas.
 
+// État « en train de parler » — pour piloter les effets visuels (halo, ondes).
+let speakingCount = 0;
+const speakingListeners = new Set<(v: boolean) => void>();
+function emitSpeaking(v: boolean) {
+  speakingListeners.forEach((f) => {
+    try { f(v); } catch { /* best-effort */ }
+  });
+}
+export function onSpeakingChange(cb: (v: boolean) => void): () => void {
+  speakingListeners.add(cb);
+  return () => { speakingListeners.delete(cb); };
+}
+
 export function speechSupported(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -78,11 +91,19 @@ export function speak(text: string, queue = false): void {
     try { synth.resume(); } catch { /* certains navigateurs restent en pause */ }
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = "fr-FR";
-    u.rate = 1;
-    u.pitch = 1;
+    u.rate = 0.96; // un peu plus lent = plus naturel et posé
+    u.pitch = 1.02;
     u.volume = 1;
     const v = pickVoice(synth);
     if (v) u.voice = v;
+    u.onstart = () => { speakingCount++; emitSpeaking(true); };
+    const done = () => {
+      speakingCount = Math.max(0, speakingCount - 1);
+      // Laisse une frame pour enchaîner un éventuel message en file avant d'éteindre.
+      setTimeout(() => { if (!synth.speaking && speakingCount === 0) emitSpeaking(false); }, 60);
+    };
+    u.onend = done;
+    u.onerror = done;
     // iOS avale l'utterance si cancel() est appelé juste avant speak(). On ne
     // coupe donc QUE si une lecture est en cours, et on laisse un court délai
     // avant de lancer la suivante. Le tout premier son (rien en cours) part
@@ -101,6 +122,8 @@ export function speak(text: string, queue = false): void {
 }
 
 export function stopSpeaking(): void {
+  speakingCount = 0;
+  emitSpeaking(false);
   if (!speechSupported()) return;
   try {
     window.speechSynthesis.cancel();

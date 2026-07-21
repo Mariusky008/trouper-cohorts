@@ -6,7 +6,7 @@
 // démo : on lui parle, elle agit — et elle guide si on est perdu. Elle ne fait
 // que router vers des fonctionnalités réelles (aucune promesse en l'air).
 import { useEffect, useRef, useState } from "react";
-import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { speechSupported, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 import { VoicePicker } from "../../apercu/[slug]/voice-picker";
 
 type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
@@ -39,9 +39,12 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const [listening, setListening] = useState(false);
   const [speakOn, setSpeakOn] = useState(false);
   const [ttsOk, setTtsOk] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
   const recRef = useRef<SRInstance | null>(null);
   const spokenRef = useRef(0);
+
+  useEffect(() => onSpeakingChange(setSpeaking), []);
 
   useEffect(() => {
     setVoiceOn(getSR() !== null);
@@ -173,15 +176,37 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           @keyframes hubfade{from{opacity:0}to{opacity:1}}
           .pro .hubsheet{width:100%;max-width:440px;background:var(--paper);border-radius:22px 22px 0 0;max-height:86vh;display:flex;flex-direction:column;animation:hubup .26s cubic-bezier(.2,.8,.2,1);overflow:hidden;}
           @keyframes hubup{from{transform:translateY(30px)}to{transform:translateY(0)}}
-          .pro .hubsheet .hh{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid var(--hair);}
-          .pro .hubsheet .hh .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex:none;}
+          .pro .hubsheet .hh{display:flex;align-items:center;gap:11px;padding:15px 16px;border-bottom:1px solid var(--hair);background:linear-gradient(120deg,#F7F3FF,#FCFBF9 60%);}
+          /* Orbe vivante : dégradé animé + respiration ; halo pulsé quand elle parle */
+          .pro .hubsheet .hh .av{position:relative;width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+            background:conic-gradient(from 0deg,#8A6BE0,#5B3FA6,#B37FE0,#5B3FA6,#8A6BE0);animation:hubspin 7s linear infinite;box-shadow:0 4px 14px -3px rgba(91,63,166,.55);}
+          .pro .hubsheet .hh .av .glyph{width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#5B3FA6;font-size:15px;}
+          .pro .hubsheet .hh .av::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(139,107,224,.5);opacity:0;}
+          .pro .hubsheet .hh .av.talking::after{animation:hubring 1.3s ease-out infinite;}
+          .pro .hubsheet .hh .av.talking{box-shadow:0 0 0 4px rgba(139,107,224,.18),0 6px 20px -2px rgba(91,63,166,.7);}
+          @keyframes hubspin{to{transform:rotate(360deg)}}
+          @keyframes hubring{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+          .pro .hubsheet .hh .whowrap{min-width:0;}
           .pro .hubsheet .hh .nm{font-size:13.5px;font-weight:700;}
           .pro .hubsheet .hh .sub{font-size:11px;color:var(--faint);}
+          /* Égaliseur : montre visuellement que la voix parle */
+          .pro .hubsheet .hh .eq{display:flex;align-items:flex-end;gap:2.5px;height:13px;margin-top:3px;}
+          .pro .hubsheet .hh .eq i{width:2.5px;background:linear-gradient(#8A6BE0,#5B3FA6);border-radius:2px;animation:hubeq .9s ease-in-out infinite;}
+          .pro .hubsheet .hh .eq i:nth-child(1){height:40%;animation-delay:0s}
+          .pro .hubsheet .hh .eq i:nth-child(2){height:90%;animation-delay:.15s}
+          .pro .hubsheet .hh .eq i:nth-child(3){height:60%;animation-delay:.3s}
+          .pro .hubsheet .hh .eq i:nth-child(4){height:100%;animation-delay:.45s}
+          .pro .hubsheet .hh .eq i:nth-child(5){height:50%;animation-delay:.6s}
+          @keyframes hubeq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+          @media (prefers-reduced-motion:reduce){.pro .hubsheet .hh .av,.pro .hubsheet .hh .av.talking::after,.pro .hubsheet .hh .eq i{animation:none}}
           .pro .hubsheet .hh .spk{margin-left:auto;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
           .pro .hubsheet .hh .spk.on{background:#E7DEFB;}
           .pro .hubsheet .hh .x{margin-left:6px;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
           .pro .hubsheet .hubvbar{padding:8px 14px;background:#F6F4EF;border-bottom:1px solid var(--hair);}
           .pro .hubsheet .body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+          .pro .hubsheet .b,.pro .hubsheet .draft,.pro .hubsheet .open{animation:hubmsgin .32s cubic-bezier(.2,.8,.2,1);}
+          @keyframes hubmsgin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+          @media (prefers-reduced-motion:reduce){.pro .hubsheet .b,.pro .hubsheet .draft,.pro .hubsheet .open{animation:none}}
           .pro .hubsheet .b{max-width:86%;padding:11px 14px;border-radius:15px;font-size:13.5px;line-height:1.45;white-space:pre-line;}
           .pro .hubsheet .b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
           .pro .hubsheet .b.me{align-self:flex-end;background:var(--ink);color:#fff;border-top-right-radius:5px;}
@@ -220,10 +245,14 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
         <div className="hubov" onClick={() => { stopSpeaking(); setOpen(false); }}>
           <div className="hubsheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Assistante">
             <div className="hh">
-              <span className="av">✦</span>
-              <span>
+              <span className={`av${speaking ? " talking" : ""}`}><span className="glyph">✦</span></span>
+              <span className="whowrap">
                 <div className="nm">Votre assistante</div>
-                <div className="sub">Dites-moi ce que vous voulez faire</div>
+                {speaking ? (
+                  <div className="eq" aria-hidden="true"><i /><i /><i /><i /><i /></div>
+                ) : (
+                  <div className="sub">Dites-moi ce que vous voulez faire</div>
+                )}
               </span>
               {ttsOk && (
                 <button

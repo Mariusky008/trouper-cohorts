@@ -11,7 +11,7 @@
 // (jamais de symptômes), consentement avant coordonnées, aucune donnée de santé,
 // encart d'urgence permanent (15 / 3114 / 112) pour le profil « psychisme ».
 import { useEffect, useMemo, useRef, useState } from "react";
-import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { speechSupported, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 import { VoicePicker } from "./voice-picker";
 
 type Profil = "A" | "B" | "C";
@@ -78,12 +78,15 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const [notifSent, setNotifSent] = useState<"" | "sending" | "done" | "err">("");
   const [speakOn, setSpeakOn] = useState(false);
   const [ttsOk, setTtsOk] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
   const spokenRef = useRef(0);
 
   useEffect(() => {
     setTtsOk(speechSupported());
   }, []);
+
+  useEffect(() => onSpeakingChange(setSpeaking), []);
 
   // Coupe la voix dès que l'accueil se ferme (quel que soit le chemin).
   useEffect(() => {
@@ -399,7 +402,22 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         @keyframes accUp{from{transform:translateY(100%);}to{transform:none;}}
         @media (prefers-reduced-motion:reduce){.acc-sheet{animation:none;}}
         .acc-head{background:${accent};color:#fff;padding:14px 16px;display:flex;align-items:center;gap:11px;}
-        .acc-head .avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none;}
+        .acc-head .avatar{position:relative;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none;}
+        .acc-head .avatar::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(255,255,255,.55);opacity:0;}
+        .acc-head .avatar.talking::after{animation:accring 1.3s ease-out infinite;}
+        .acc-head .avatar.talking{box-shadow:0 0 0 4px rgba(255,255,255,.18);}
+        @keyframes accring{0%{opacity:.75;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+        .acc-head .h-eq{display:flex;align-items:flex-end;gap:2.5px;height:13px;margin-top:4px;}
+        .acc-head .h-eq i{width:2.5px;background:#fff;border-radius:2px;opacity:.9;animation:acceq .9s ease-in-out infinite;}
+        .acc-head .h-eq i:nth-child(1){height:40%;animation-delay:0s}
+        .acc-head .h-eq i:nth-child(2){height:90%;animation-delay:.15s}
+        .acc-head .h-eq i:nth-child(3){height:60%;animation-delay:.3s}
+        .acc-head .h-eq i:nth-child(4){height:100%;animation-delay:.45s}
+        .acc-head .h-eq i:nth-child(5){height:50%;animation-delay:.6s}
+        @keyframes acceq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+        .acc-msg{animation:accmsgin .3s cubic-bezier(.2,.8,.2,1);}
+        @keyframes accmsgin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        @media (prefers-reduced-motion:reduce){.acc-head .avatar.talking::after,.acc-head .h-eq i,.acc-msg{animation:none}}
         .acc-head .h-nm{font-weight:700;font-size:15px;line-height:1.1;}
         .acc-head .h-sub{font-size:11.5px;opacity:.85;margin-top:2px;}
         .acc-head .spk{margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;line-height:1;}
@@ -454,12 +472,16 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         <div className="acc-ov" onClick={(e) => { if (e.target === e.currentTarget) { stopSpeaking(); setOpen(false); } }}>
           <div className="acc-sheet" role="dialog" aria-label={isReserve ? "Accueil du cabinet" : "Accueil"}>
             <div className="acc-head">
-              <span className="avatar">
+              <span className={`avatar${speaking ? " talking" : ""}`}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.4-4.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
               </span>
               <div>
                 <div className="h-nm">{isReserve ? "Accueil du cabinet" : "Accueil"}</div>
-                <div className="h-sub">Automatique · réponse immédiate</div>
+                {speaking ? (
+                  <div className="h-eq" aria-hidden="true"><i /><i /><i /><i /><i /></div>
+                ) : (
+                  <div className="h-sub">Automatique · réponse immédiate</div>
+                )}
               </div>
               {ttsOk && (
                 <button type="button" className={`spk${speakOn ? " on" : ""}`} onClick={toggleSpeak} aria-label={speakOn ? "Couper la voix" : "Activer la voix"} title={speakOn ? "Voix activée" : "Voix coupée"}>
