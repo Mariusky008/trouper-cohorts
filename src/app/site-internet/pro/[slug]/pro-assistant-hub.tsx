@@ -62,12 +62,13 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   }, [thread, speakOn]);
 
   const toggleSpeak = () => {
-    setSpeakOn((v) => {
-      const next = !v;
-      if (!next) stopSpeaking();
-      spokenRef.current = thread.length; // ne relit pas l'historique en réactivant
-      return next;
-    });
+    const next = !speakOn;
+    setSpeakOn(next);
+    spokenRef.current = thread.length; // ne relit pas l'historique en réactivant
+    // IMPORTANT (iOS/Safari) : on prononce une phrase DANS le geste du tap pour
+    // « débloquer » la synthèse vocale — sinon les réponses (asynchrones) restent muettes.
+    if (next) speak("Voix activée, je vous réponds à voix haute.");
+    else stopSpeaking();
   };
 
   useEffect(() => {

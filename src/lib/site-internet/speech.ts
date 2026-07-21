@@ -75,6 +75,7 @@ export function speak(text: string, queue = false): void {
   if (!clean) return;
   try {
     const synth = window.speechSynthesis;
+    try { synth.resume(); } catch { /* certains navigateurs restent en pause */ }
     if (!queue) synth.cancel(); // coupe une lecture en cours avant d'enchaîner
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = "fr-FR";

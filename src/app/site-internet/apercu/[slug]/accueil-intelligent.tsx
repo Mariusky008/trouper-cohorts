@@ -102,12 +102,12 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   }, [thread, speakOn]);
 
   const toggleSpeak = () => {
-    setSpeakOn((v) => {
-      const next = !v;
-      if (!next) stopSpeaking();
-      spokenRef.current = thread.length;
-      return next;
-    });
+    const next = !speakOn;
+    setSpeakOn(next);
+    spokenRef.current = thread.length;
+    // iOS/Safari : prononcer DANS le geste du tap débloque la synthèse vocale.
+    if (next) speak("Voix activée.");
+    else stopSpeaking();
   };
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient
