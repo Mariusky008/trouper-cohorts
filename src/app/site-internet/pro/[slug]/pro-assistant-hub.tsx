@@ -6,6 +6,7 @@
 // démo : on lui parle, elle agit — et elle guide si on est perdu. Elle ne fait
 // que router vers des fonctionnalités réelles (aucune promesse en l'air).
 import { useEffect, useRef, useState } from "react";
+import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
 
 type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
 
@@ -35,12 +36,38 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
+  const [speakOn, setSpeakOn] = useState(false);
+  const [ttsOk, setTtsOk] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
   const recRef = useRef<SRInstance | null>(null);
+  const spokenRef = useRef(0);
 
   useEffect(() => {
     setVoiceOn(getSR() !== null);
+    setTtsOk(speechSupported());
   }, []);
+
+  useEffect(() => {
+    if (!open) stopSpeaking();
+  }, [open]);
+
+  // Lit à voix haute chaque nouvelle réponse de l'assistante (si la voix est ON).
+  useEffect(() => {
+    if (!speakOn) return;
+    if (thread.length <= spokenRef.current) return;
+    const last = thread[thread.length - 1];
+    spokenRef.current = thread.length;
+    if (last && last.who === "ai") speak(last.text);
+  }, [thread, speakOn]);
+
+  const toggleSpeak = () => {
+    setSpeakOn((v) => {
+      const next = !v;
+      if (!next) stopSpeaking();
+      spokenRef.current = thread.length; // ne relit pas l'historique en réactivant
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (open && thread.length === 0) {
@@ -148,7 +175,9 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex:none;}
           .pro .hubsheet .hh .nm{font-size:13.5px;font-weight:700;}
           .pro .hubsheet .hh .sub{font-size:11px;color:var(--faint);}
-          .pro .hubsheet .hh .x{margin-left:auto;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
+          .pro .hubsheet .hh .spk{margin-left:auto;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
+          .pro .hubsheet .hh .spk.on{background:#E7DEFB;}
+          .pro .hubsheet .hh .x{margin-left:6px;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
           .pro .hubsheet .body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
           .pro .hubsheet .b{max-width:86%;padding:11px 14px;border-radius:15px;font-size:13.5px;line-height:1.45;white-space:pre-line;}
           .pro .hubsheet .b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
@@ -185,7 +214,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
       )}
 
       {open && (
-        <div className="hubov" onClick={() => setOpen(false)}>
+        <div className="hubov" onClick={() => { stopSpeaking(); setOpen(false); }}>
           <div className="hubsheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Assistante">
             <div className="hh">
               <span className="av">✦</span>
@@ -193,7 +222,17 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
                 <div className="nm">Votre assistante</div>
                 <div className="sub">Dites-moi ce que vous voulez faire</div>
               </span>
-              <button className="x" onClick={() => setOpen(false)} aria-label="Fermer">×</button>
+              {ttsOk && (
+                <button
+                  className={`spk${speakOn ? " on" : ""}`}
+                  onClick={toggleSpeak}
+                  aria-label={speakOn ? "Couper la voix" : "Activer la voix"}
+                  title={speakOn ? "Voix activée" : "Voix coupée"}
+                >
+                  {speakOn ? "🔊" : "🔇"}
+                </button>
+              )}
+              <button className="x" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">×</button>
             </div>
 
             <div className="body" ref={scroller}>

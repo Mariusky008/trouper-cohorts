@@ -11,6 +11,7 @@
 // (jamais de symptômes), consentement avant coordonnées, aucune donnée de santé,
 // encart d'urgence permanent (15 / 3114 / 112) pour le profil « psychisme ».
 import { useEffect, useMemo, useRef, useState } from "react";
+import { speechSupported, speak, stopSpeaking } from "@/lib/site-internet/speech";
 
 type Profil = "A" | "B" | "C";
 type FaqItem = { q: string; a: string };
@@ -74,7 +75,39 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const [forceUrgence, setForceUrgence] = useState(false);
   const [notifPhone, setNotifPhone] = useState("");
   const [notifSent, setNotifSent] = useState<"" | "sending" | "done" | "err">("");
+  const [speakOn, setSpeakOn] = useState(false);
+  const [ttsOk, setTtsOk] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
+  const spokenRef = useRef(0);
+
+  useEffect(() => {
+    setTtsOk(speechSupported());
+  }, []);
+
+  // Coupe la voix dès que l'accueil se ferme (quel que soit le chemin).
+  useEffect(() => {
+    if (!open) stopSpeaking();
+  }, [open]);
+
+  // Lecture à voix haute des messages de l'accueil (si la voix est ON) — enchaînés
+  // dans l'ordre (les messages scriptés arrivent l'un après l'autre).
+  useEffect(() => {
+    if (!speakOn) return;
+    for (let i = spokenRef.current; i < thread.length; i++) {
+      const m = thread[i];
+      if (m && m.who === "ai") speak(m.text, true);
+    }
+    spokenRef.current = thread.length;
+  }, [thread, speakOn]);
+
+  const toggleSpeak = () => {
+    setSpeakOn((v) => {
+      const next = !v;
+      if (!next) stopSpeaking();
+      spokenRef.current = thread.length;
+      return next;
+    });
+  };
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient
 
@@ -368,7 +401,9 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
         .acc-head .avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none;}
         .acc-head .h-nm{font-weight:700;font-size:15px;line-height:1.1;}
         .acc-head .h-sub{font-size:11.5px;opacity:.85;margin-top:2px;}
-        .acc-head .x{margin-left:auto;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px;}
+        .acc-head .spk{margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;line-height:1;}
+        .acc-head .spk.on{background:rgba(255,255,255,.34);}
+        .acc-head .x{margin-left:8px;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px;}
         .acc-body{flex:1;overflow-y:auto;padding:16px 14px 8px;}
         .acc-row{display:block;}
         .acc-line{display:flex;margin-bottom:9px;}
@@ -414,7 +449,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
       )}
 
       {open && (
-        <div className="acc-ov" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="acc-ov" onClick={(e) => { if (e.target === e.currentTarget) { stopSpeaking(); setOpen(false); } }}>
           <div className="acc-sheet" role="dialog" aria-label={isReserve ? "Accueil du cabinet" : "Accueil"}>
             <div className="acc-head">
               <span className="avatar">
@@ -424,7 +459,12 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
                 <div className="h-nm">{isReserve ? "Accueil du cabinet" : "Accueil"}</div>
                 <div className="h-sub">Automatique · réponse immédiate</div>
               </div>
-              <button type="button" className="x" onClick={() => setOpen(false)} aria-label="Fermer">×</button>
+              {ttsOk && (
+                <button type="button" className={`spk${speakOn ? " on" : ""}`} onClick={toggleSpeak} aria-label={speakOn ? "Couper la voix" : "Activer la voix"} title={speakOn ? "Voix activée" : "Voix coupée"}>
+                  {speakOn ? "🔊" : "🔇"}
+                </button>
+              )}
+              <button type="button" className="x" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">×</button>
             </div>
 
             <div className="acc-body" ref={scroller}>
