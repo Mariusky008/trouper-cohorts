@@ -76,14 +76,25 @@ export function speak(text: string, queue = false): void {
   try {
     const synth = window.speechSynthesis;
     try { synth.resume(); } catch { /* certains navigateurs restent en pause */ }
-    if (!queue) synth.cancel(); // coupe une lecture en cours avant d'enchaîner
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = "fr-FR";
     u.rate = 1;
     u.pitch = 1;
+    u.volume = 1;
     const v = pickVoice(synth);
     if (v) u.voice = v;
-    synth.speak(u);
+    // iOS avale l'utterance si cancel() est appelé juste avant speak(). On ne
+    // coupe donc QUE si une lecture est en cours, et on laisse un court délai
+    // avant de lancer la suivante. Le tout premier son (rien en cours) part
+    // directement — indispensable pour débloquer la voix dans le geste du tap.
+    if (!queue && synth.speaking) {
+      synth.cancel();
+      setTimeout(() => {
+        try { synth.speak(u); } catch { /* best-effort */ }
+      }, 130);
+    } else {
+      synth.speak(u);
+    }
   } catch {
     /* best-effort */
   }
