@@ -40,11 +40,32 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const [speakOn, setSpeakOn] = useState(false);
   const [ttsOk, setTtsOk] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
   const recRef = useRef<SRInstance | null>(null);
   const spokenRef = useRef(0);
 
   useEffect(() => onSpeakingChange(setSpeaking), []);
+
+  const enterVoiceMode = () => {
+    setOpen(false);
+    setVoiceMode(true);
+    setSpeakOn(true);
+    // On énonce le message d'accueil directement (débloque la voix dans le geste,
+    // iOS) → spokenRef couvre le greeting pour que l'effet ne le relise pas.
+    const willGreet = thread.length === 0;
+    spokenRef.current = willGreet ? 1 : thread.length;
+    if (willGreet) {
+      setThread([{ who: "ai", text: `Bonjour${nom ? `, ${nom}` : ""} 👋 Je vous écoute — dites-moi ce que vous voulez faire.` }]);
+    }
+    speak(`Bonjour${nom ? `, ${nom}` : ""}. Je vous écoute.`);
+  };
+
+  const exitVoiceMode = () => {
+    stopSpeaking();
+    if (listening) recRef.current?.stop();
+    setVoiceMode(false);
+  };
 
   useEffect(() => {
     setVoiceOn(getSR() !== null);
@@ -159,6 +180,12 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
     }
   };
 
+  // Derniers messages + état de l'orbe (pour le mode vocal plein écran).
+  const lastAi = [...thread].reverse().find((m) => m.who === "ai") || null;
+  const lastMe = [...thread].reverse().find((m) => m.who === "me") || null;
+  const orbState = speaking ? "speaking" : listening ? "listening" : busy ? "thinking" : "idle";
+  const orbHint = speaking ? "" : listening ? "Je vous écoute…" : busy ? "Un instant…" : "Touchez le micro et parlez";
+
   return (
     <>
       <style
@@ -199,7 +226,8 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh .eq i:nth-child(5){height:50%;animation-delay:.6s}
           @keyframes hubeq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
           @media (prefers-reduced-motion:reduce){.pro .hubsheet .hh .av,.pro .hubsheet .hh .av.talking::after,.pro .hubsheet .hh .eq i{animation:none}}
-          .pro .hubsheet .hh .spk{margin-left:auto;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
+          .pro .hubsheet .hh .vmode{margin-left:auto;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
+          .pro .hubsheet .hh .spk{margin-left:6px;border:none;background:#F1EEF9;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;}
           .pro .hubsheet .hh .spk.on{background:#E7DEFB;}
           .pro .hubsheet .hh .x{margin-left:6px;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
           .pro .hubsheet .hubvbar{padding:8px 14px;background:#F6F4EF;border-bottom:1px solid var(--hair);}
@@ -231,6 +259,48 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
             .pro .hubov{align-items:center;}
             .pro .hubsheet{border-radius:20px;max-height:80vh;margin:0 16px;}
           }
+
+          /* ═══════════ MODE VOCAL PLEIN ÉCRAN ═══════════ */
+          .pro .vmov{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+            padding:32px 22px calc(28px + env(safe-area-inset-bottom));text-align:center;
+            background:radial-gradient(120% 90% at 50% 18%,#2A2350 0%,#15132B 55%,#0B0A17 100%);color:#fff;animation:hubfade .25s ease;}
+          .pro .vmov .vm-x{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;width:40px;height:40px;border-radius:50%;
+            background:rgba(255,255,255,.12);border:none;color:#fff;font-size:22px;cursor:pointer;}
+          /* Orbe : cœur en dégradé + halos concentriques. Réagit à l'état. */
+          .pro .vmov .vorb{position:relative;width:210px;height:210px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+          .pro .vmov .vorb .vo-core{position:absolute;inset:34px;border-radius:50%;
+            background:radial-gradient(circle at 35% 30%,#C6A8FF,#8A6BE0 45%,#5B3FA6 75%,#3C2A78);
+            box-shadow:0 0 60px -6px rgba(139,107,224,.8),inset 0 0 40px rgba(255,255,255,.25);animation:voBreath 4s ease-in-out infinite;}
+          .pro .vmov .vorb .vo-glyph{position:relative;font-size:30px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.35);}
+          .pro .vmov .vorb .vo-ring{position:absolute;border-radius:50%;border:2px solid rgba(178,150,255,.5);opacity:0;}
+          .pro .vmov .vorb .vo-ring.r1{inset:14px;} .pro .vmov .vorb .vo-ring.r2{inset:0;}
+          /* Idle : douce respiration. */
+          @keyframes voBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+          /* Elle écoute : anneaux qui s'ouvrent. */
+          .pro .vmov .vorb.listening .vo-ring{animation:voRing 1.6s ease-out infinite;}
+          .pro .vmov .vorb.listening .vo-ring.r2{animation-delay:.5s;}
+          .pro .vmov .vorb.listening .vo-core{box-shadow:0 0 70px 0 rgba(120,220,170,.6),inset 0 0 40px rgba(255,255,255,.3);background:radial-gradient(circle at 35% 30%,#A8FFD0,#4FD98A 45%,#2FA36A 78%);}
+          @keyframes voRing{0%{opacity:.7;transform:scale(.7)}100%{opacity:0;transform:scale(1.15)}}
+          /* Elle réfléchit : rotation lumineuse. */
+          .pro .vmov .vorb.thinking .vo-core{animation:voBreath 4s ease-in-out infinite,voSpin 2.4s linear infinite;}
+          @keyframes voSpin{to{transform:rotate(360deg)}}
+          /* Elle parle : pulsations rapides. */
+          .pro .vmov .vorb.speaking .vo-core{animation:voTalk .5s ease-in-out infinite;}
+          @keyframes voTalk{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+          .pro .vmov .vorb.speaking .vo-ring{animation:voRing 1s ease-out infinite;}
+          .pro .vmov .vm-cap{max-width:520px;min-height:70px;}
+          .pro .vmov .vm-me{font-size:13px;color:#B9A6EC;margin-bottom:8px;}
+          .pro .vmov .vm-ai{font-size:18px;line-height:1.45;font-weight:500;white-space:pre-line;}
+          .pro .vmov .vm-open{background:#fff;color:#3C2A78;border:none;border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+          .pro .vmov .vm-hint{font-size:12.5px;color:rgba(255,255,255,.6);}
+          .pro .vmov .vm-mic{width:74px;height:74px;border-radius:50%;border:none;cursor:pointer;font-size:26px;color:#fff;
+            background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 12px 30px -6px rgba(139,107,224,.7);}
+          .pro .vmov .vm-mic.on{background:linear-gradient(135deg,#E5484D,#B3363A);animation:hubmic 1s ease-in-out infinite;}
+          .pro .vmov .vm-mic:disabled{opacity:.55;cursor:not-allowed;}
+          .pro .vmov .vm-foot{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+          @media (prefers-reduced-motion:reduce){
+            .pro .vmov .vorb .vo-core,.pro .vmov .vorb.listening .vo-ring,.pro .vmov .vorb.speaking .vo-core,.pro .vmov .vorb.thinking .vo-core,.pro .vmov .vm-mic.on{animation:none}
+          }
           `,
         }}
       />
@@ -254,6 +324,9 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
                   <div className="sub">Dites-moi ce que vous voulez faire</div>
                 )}
               </span>
+              {voiceOn && ttsOk && (
+                <button className="vmode" onClick={enterVoiceMode} aria-label="Mode vocal" title="Mode vocal plein écran">🎧</button>
+              )}
               {ttsOk && (
                 <button
                   className={`spk${speakOn ? " on" : ""}`}
@@ -318,6 +391,40 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
               <button onClick={() => send(input)} disabled={busy || !input.trim()} aria-label="Envoyer">↑</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {voiceMode && (
+        <div className="vmov" role="dialog" aria-label="Mode vocal">
+          <button className="vm-x" onClick={exitVoiceMode} aria-label="Quitter le mode vocal">×</button>
+          <div className={`vorb ${orbState}`} onClick={toggleMic}>
+            <span className="vo-core" />
+            <span className="vo-ring r1" />
+            <span className="vo-ring r2" />
+            <span className="vo-glyph">✦</span>
+          </div>
+
+          <div className="vm-cap">
+            {lastMe && <div className="vm-me">« {lastMe.text} »</div>}
+            <div className="vm-ai">{lastAi ? lastAi.text : ""}</div>
+          </div>
+
+          {lastAi && lastAi.goto && !speaking && !listening && !busy && (
+            <button className="vm-open" onClick={() => goto(lastAi.goto as string, lastAi.prefill)}>
+              Ouvrir{lastAi.label ? ` « ${lastAi.label} »` : ""} →
+            </button>
+          )}
+
+          <div className="vm-hint">{orbHint}</div>
+          <button
+            className={`vm-mic${listening ? " on" : ""}`}
+            onClick={toggleMic}
+            disabled={busy || speaking}
+            aria-label={listening ? "Arrêter" : "Parler"}
+          >
+            {listening ? "●" : "🎤"}
+          </button>
+          <div className="vm-foot">Mode vocal · parlez naturellement</div>
         </div>
       )}
     </>
