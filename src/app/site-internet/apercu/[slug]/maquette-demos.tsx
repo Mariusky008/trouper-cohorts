@@ -12,6 +12,7 @@
 // avis ni créneau/offre. Le vrai compteur d'avis (#mqd-avis-count) se met à jour à la
 // fin de la démo avis. La bulle n'existe qu'en mode maquette propriétaire.
 import { useEffect, useRef, useState } from "react";
+import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-internet/speech";
 
 export type MaquetteAssistantData = {
   nom: string; // nom du commerce, pour les messages (« chez … »)
@@ -23,7 +24,7 @@ export type MaquetteAssistantData = {
 
 type View = "home" | "avisIn" | "avisPrev" | "creneauIn" | "creneauPrev" | "questionIn";
 
-export function MaquetteAssistant({ accent, data }: { accent: string; data: MaquetteAssistantData }) {
+export function MaquetteAssistant({ accent, data, slug }: { accent: string; data: MaquetteAssistantData; slug: string }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
   const [stageOn, setStageOn] = useState(false);
@@ -32,6 +33,61 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
   const [atBottom, setAtBottom] = useState(false); // masque la pilule au pied de page
   const cardRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<number[]>([]);
+  const introRef = useRef(false); // accueil vocal joué une seule fois
+
+  // Q&A commercial : le pro pose ses questions, l'assistante (Audrey / Jean-Philippe) répond.
+  type QA = { who: "me" | "ai"; text: string };
+  const [qa, setQa] = useState<QA[]>([]);
+  const [qaInput, setQaInput] = useState("");
+  const [qaBusy, setQaBusy] = useState(false);
+  const qaScroll = useRef<HTMLDivElement | null>(null);
+
+  // Ouvre le panneau + accueil vocal (dans le geste → débloque la voix cloud iOS).
+  const handleOpen = () => {
+    setView("home");
+    setStageOn(false);
+    setOpen(true);
+    if (!introRef.current) {
+      introRef.current = true;
+      try { initCloudTts({ slug, scope: "apercu" }); unlockAudio(); } catch { /* best-effort */ }
+      speak(
+        "Bonjour ! Ici, vous confiez une tâche à votre future assistante. " +
+          "Petit point important : tout ce que vous faites ici est une simulation. Rien n'est envoyé à vos clients, ni à personne. " +
+          "Et si vous avez la moindre question, je suis là pour y répondre, comme le feraient Audrey ou Jean-Philippe. " +
+          "Vous pouvez aussi nous appeler au zéro sept, soixante-huit, vingt-trois, trente-trois, quarante-sept."
+      );
+    }
+  };
+  const openRef = useRef(handleOpen);
+  openRef.current = handleOpen;
+
+  const askQa = async () => {
+    const q = qaInput.trim();
+    if (!q || qaBusy) return;
+    setQaInput("");
+    const history = qa.map((m) => ({ role: m.who, text: m.text }));
+    setQa((t) => [...t, { who: "me", text: q }]);
+    setQaBusy(true);
+    try {
+      const r = await fetch("/api/site-internet/apercu/sales-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, message: q, history }),
+      });
+      const j = await r.json().catch(() => ({}));
+      const reply = typeof j.reply === "string" && j.reply ? j.reply : "Appelez-nous au 07 68 23 33 47, on vous répond avec plaisir.";
+      setQa((t) => [...t, { who: "ai", text: reply }]);
+      speak(reply);
+    } catch {
+      setQa((t) => [...t, { who: "ai", text: "Je n'arrive pas à répondre à l'instant — appelez-nous au 07 68 23 33 47 🙂" }]);
+    } finally {
+      setQaBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (qaScroll.current) qaScroll.current.scrollTop = qaScroll.current.scrollHeight;
+  }, [qa, qaBusy]);
 
   const { nom, clientTerm, avisAllowed, slot } = data;
   const term = clientTerm || "client"; // singulier
@@ -65,9 +121,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       const t = e.target as HTMLElement | null;
       if (t?.closest("[data-assistant-open]")) {
         e.preventDefault();
-        setView("home");
-        setStageOn(false);
-        setOpen(true);
+        openRef.current();
       }
     };
     document.addEventListener("click", onDoc);
@@ -326,6 +380,9 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
     // home
     return (
       <>
+        <div className="asx-disc">
+          <b>✨ Ceci est une simulation.</b> Rien n’est envoyé à vos client·es, ni à personne. Essayez librement&nbsp;!
+        </div>
         <div className="asx-say">Pendant que vous êtes avec vos {plural}, je peux m’occuper du reste 🙂<br /><b>Que souhaitez-vous que je fasse&nbsp;?</b></div>
         <div className="asx-tasks">
           {avisAllowed && (
@@ -355,6 +412,29 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
             </div>
           )}
         </div>
+
+        <div className="asx-qa">
+          <div className="asx-qa-h">💬 Une question&nbsp;? Je vous réponds — comme Audrey ou Jean-Philippe</div>
+          {qa.length > 0 && (
+            <div className="asx-qa-thread" ref={qaScroll}>
+              {qa.map((m, i) => (
+                <div key={i} className={`asx-qa-b ${m.who}`}>{m.text}</div>
+              ))}
+              {qaBusy && <div className="asx-qa-b ai asx-qa-typing"><span></span><span></span><span></span></div>}
+            </div>
+          )}
+          <div className="asx-qa-in">
+            <input
+              value={qaInput}
+              onChange={(e) => setQaInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") askQa(); }}
+              placeholder="Ex. c’est un engagement&nbsp;? combien ça coûte&nbsp;?"
+              aria-label="Votre question"
+            />
+            <button onClick={askQa} disabled={qaBusy || !qaInput.trim()} aria-label="Envoyer">➤</button>
+          </div>
+          <a className="asx-qa-call" href="tel:+33768233347">📞 ou appelez-nous&nbsp;: 07 68 23 33 47</a>
+        </div>
       </>
     );
   };
@@ -364,7 +444,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       <style>{styles(accent)}</style>
 
       {!open && !stageOn && !atBottom && (
-        <button className="asx-fab" onClick={() => { setOpen(true); setView("home"); }} aria-label="Côté pro : confier une tâche à mon assistante">
+        <button className="asx-fab" onClick={handleOpen} aria-label="Côté pro : confier une tâche à mon assistante">
           <span className="orb">✦</span>
           <span className="lab"><small>Côté pro · aperçu</small>Confier une tâche</span>
           <span className="chev">›</span>
@@ -374,7 +454,7 @@ export function MaquetteAssistant({ accent, data }: { accent: string; data: Maqu
       {open && !stageOn && (
         <div className="asx-sheet" role="dialog" aria-label="Votre assistante">
           <div className="asx-grip" />
-          <button className="asx-close" onClick={() => setOpen(false)} aria-label="Fermer">✕</button>
+          <button className="asx-close" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">✕</button>
           <div className="asx-ahead">
             <div className="av">✦</div>
             <div><div className="nm">Votre assistante</div><div className="st">intégrée à votre futur site</div></div>
@@ -431,6 +511,24 @@ function styles(accent: string): string {
   .asx-abody{padding:16px 20px 24px;overflow-y:auto;}
   .asx-say{background:${accent}14;border-radius:14px;border-top-left-radius:5px;padding:12px 14px;font-size:13px;line-height:1.45;color:#26382E;margin-bottom:15px;}
   .asx-say b{font-weight:600;}
+  .asx-disc{background:#F3EEFF;border:1px solid #DED0F7;border-radius:12px;padding:10px 13px;font-size:12px;line-height:1.45;color:#4A3A78;margin-bottom:13px;}
+  .asx-disc b{color:#3C2A78;font-weight:700;}
+  /* Q&A commercial */
+  .asx-qa{margin-top:20px;border-top:1px solid #E7E4DC;padding-top:16px;}
+  .asx-qa-h{font-size:12.5px;font-weight:700;color:#2A2340;line-height:1.4;margin-bottom:11px;}
+  .asx-qa-thread{max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:11px;}
+  .asx-qa-b{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-line;}
+  .asx-qa-b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
+  .asx-qa-b.me{align-self:flex-end;background:#5B3FA6;color:#fff;border-top-right-radius:5px;}
+  .asx-qa-typing{display:flex;gap:4px;}
+  .asx-qa-typing span{width:6px;height:6px;border-radius:50%;background:#B9A6EC;animation:asxDot 1s infinite;}
+  .asx-qa-typing span:nth-child(2){animation-delay:.15s}.asx-qa-typing span:nth-child(3){animation-delay:.3s}
+  @keyframes asxDot{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+  .asx-qa-in{display:flex;gap:8px;}
+  .asx-qa-in input{flex:1;min-width:0;border:1px solid #E0DCF0;border-radius:22px;padding:11px 15px;font-size:14px;font-family:inherit;background:#fff;}
+  .asx-qa-in button{flex:none;border:none;background:#5B3FA6;color:#fff;border-radius:50%;width:42px;height:42px;font-size:15px;cursor:pointer;}
+  .asx-qa-in button:disabled{opacity:.5;cursor:not-allowed;}
+  .asx-qa-call{display:block;text-align:center;margin-top:12px;font-size:13px;font-weight:700;color:#5B3FA6;text-decoration:none;}
   .asx-tasks{display:flex;flex-direction:column;gap:9px;}
   .asx-task{display:flex;align-items:center;gap:12px;border:1px solid #E7E4DC;border-radius:13px;padding:12px 12px 12px 14px;background:#fff;transition:.15s;}
   .asx-task:hover{border-color:${accent};background:#FDFBF6;}
