@@ -4,7 +4,7 @@
 // et mémorise le choix (persisté). Utilisé par l'accueil (maquette) et l'Espace
 // Pro. N'affiche rien s'il n'y a qu'une seule voix (aucun choix à faire).
 import { useEffect, useState } from "react";
-import { getFrenchVoices, getPreferredVoiceURI, setPreferredVoiceURI, onVoicesChanged, speak } from "@/lib/site-internet/speech";
+import { getFrenchVoices, getPreferredVoiceURI, setPreferredVoiceURI, onVoicesChanged, speak, cloudTtsActive } from "@/lib/site-internet/speech";
 
 export function VoicePicker({ light = false }: { light?: boolean }) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -20,6 +20,8 @@ export function VoicePicker({ light = false }: { light?: boolean }) {
     return off;
   }, []);
 
+  // Voix cloud premium active (démo) → le choix des voix navigateur n'a plus de sens.
+  if (cloudTtsActive()) return null;
   if (voices.length <= 1) return null;
 
   const onChange = (v: string) => {

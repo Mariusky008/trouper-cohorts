@@ -2,6 +2,121 @@
 // par l'assistante (Espace Pro) et l'accueil de la maquette pour lire les réponses
 // à voix haute. Dégradation propre si le navigateur ne la supporte pas.
 
+// ── Voix cloud premium (ElevenLabs, payante) — DÉMO UNIQUEMENT ────────────────
+// Configurée par les surfaces de démo (maquette non publiée, Espace Pro). Si la
+// clé serveur manque ou qu'un appel échoue → repli silencieux sur la voix du
+// navigateur (gratuite). Les sites publiés n'appellent JAMAIS la voix payante.
+type CloudCfg = { slug: string; scope: "apercu" | "pro"; token?: string };
+let cloudCfg: CloudCfg | null = null;
+let cloudDown = false; // 503 (pas de clé) → on n'insiste pas de la session
+
+export function initCloudTts(cfg: CloudCfg): void {
+  cloudCfg = cfg;
+}
+export function cloudTtsActive(): boolean {
+  return cloudCfg !== null && !cloudDown;
+}
+
+// Élément audio PARTAGÉ : « débloqué » une fois dans le geste du tap (iOS), puis
+// réutilisé pour toutes les lectures cloud (asynchrones) de la session.
+let audioEl: HTMLAudioElement | null = null;
+const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+export function unlockAudio(): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!audioEl) {
+      audioEl = new Audio();
+      audioEl.setAttribute("playsinline", "");
+    }
+    audioEl.src = SILENT_WAV;
+    void audioEl.play().catch(() => {});
+  } catch {
+    /* best-effort */
+  }
+}
+
+let cloudQueue: string[] = [];
+let cloudBusy = false;
+let curResolve: (() => void) | null = null;
+
+function stopCloudPlayback(): void {
+  cloudQueue = [];
+  if (audioEl) {
+    try {
+      audioEl.pause();
+      audioEl.currentTime = 0;
+    } catch {
+      /* best-effort */
+    }
+  }
+  if (curResolve) {
+    const r = curResolve;
+    curResolve = null;
+    r();
+  }
+}
+
+async function playCloud(text: string): Promise<boolean> {
+  if (!cloudCfg || cloudDown) return false;
+  try {
+    const r = await fetch("/api/site-internet/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...cloudCfg, text }),
+    });
+    if (r.status === 503) {
+      cloudDown = true; // pas de clé configurée → voix navigateur pour la session
+      return false;
+    }
+    if (!r.ok) return false;
+    const blob = await r.blob();
+    if (!audioEl) {
+      audioEl = new Audio();
+      audioEl.setAttribute("playsinline", "");
+    }
+    const url = URL.createObjectURL(blob);
+    await new Promise<void>((resolve) => {
+      const el = audioEl as HTMLAudioElement;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        curResolve = null;
+        resolve();
+      };
+      curResolve = finish;
+      el.onplay = () => emitSpeaking(true);
+      el.onended = finish;
+      el.onerror = finish;
+      el.src = url;
+      el.play().catch(finish);
+    });
+    URL.revokeObjectURL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function pumpCloud(): Promise<void> {
+  if (cloudBusy) return;
+  cloudBusy = true;
+  while (cloudQueue.length) {
+    const t = cloudQueue.shift() as string;
+    const ok = await playCloud(t);
+    if (!ok) browserSpeak(t, true); // repli : voix navigateur, en file
+  }
+  cloudBusy = false;
+  setTimeout(() => {
+    try {
+      const synthBusy = speechSupported() && window.speechSynthesis.speaking;
+      if (!cloudQueue.length && !synthBusy && speakingCount === 0) emitSpeaking(false);
+    } catch {
+      emitSpeaking(false);
+    }
+  }, 80);
+}
+
 // État « en train de parler » — pour piloter les effets visuels (halo, ondes).
 let speakingCount = 0;
 const speakingListeners = new Set<(v: boolean) => void>();
@@ -82,7 +197,25 @@ function pickVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null {
 
 // queue=true : enchaîne à la suite (messages scriptés de l'accueil). Par défaut,
 // on coupe la lecture en cours (une nouvelle réponse remplace la précédente).
+// Route vers la voix CLOUD si configurée (démo), sinon la voix du navigateur.
 export function speak(text: string, queue = false): void {
+  if (cloudCfg && !cloudDown) {
+    const clean = cleanForSpeech(text);
+    if (!clean) return;
+    if (!queue) {
+      stopCloudPlayback();
+      if (speechSupported()) {
+        try { window.speechSynthesis.cancel(); } catch { /* best-effort */ }
+      }
+    }
+    cloudQueue.push(clean);
+    void pumpCloud();
+    return;
+  }
+  browserSpeak(text, queue);
+}
+
+function browserSpeak(text: string, queue = false): void {
   if (!speechSupported()) return;
   const clean = cleanForSpeech(text);
   if (!clean) return;
@@ -122,6 +255,7 @@ export function speak(text: string, queue = false): void {
 }
 
 export function stopSpeaking(): void {
+  stopCloudPlayback();
   speakingCount = 0;
   emitSpeaking(false);
   if (!speechSupported()) return;

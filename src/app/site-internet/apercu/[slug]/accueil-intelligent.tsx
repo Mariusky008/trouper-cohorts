@@ -11,7 +11,7 @@
 // (jamais de symptômes), consentement avant coordonnées, aucune donnée de santé,
 // encart d'urgence permanent (15 / 3114 / 112) pour le profil « psychisme ».
 import { useEffect, useMemo, useRef, useState } from "react";
-import { speechSupported, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
+import { speechSupported, speak, stopSpeaking, onSpeakingChange, initCloudTts, unlockAudio } from "@/lib/site-internet/speech";
 import { VoicePicker } from "./voice-picker";
 
 type Profil = "A" | "B" | "C";
@@ -32,6 +32,7 @@ type Props = {
   moteur?: Moteur; // pilote UNIQUEMENT l'ordre + le libellé des portes d'entrée
   busyWord?: string; // « en séance » (soin) / « en intervention » (artisan)
   hideBubble?: boolean; // masque la bulle flottante (quand une barre fixe gère le CTA)
+  cloudTts?: boolean; // voix cloud premium (maquette DÉMO uniquement, jamais publiée)
 };
 
 type Who = "ai" | "me";
@@ -59,7 +60,7 @@ function upcomingSlots(): string[] {
   return out.map((o) => o.label);
 }
 
-export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", moteur = "M3_cabinet", busyWord = "en séance", hideBubble = false }: Props) {
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", moteur = "M3_cabinet", busyWord = "en séance", hideBubble = false, cloudTts = false }: Props) {
   const isReserve = confirmation === "reserve";
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("home");
@@ -109,8 +110,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     setSpeakOn(next);
     spokenRef.current = thread.length;
     // iOS/Safari : prononcer DANS le geste du tap débloque la synthèse vocale.
-    if (next) speak("Voix activée.");
-    else stopSpeaking();
+    if (next) {
+      if (cloudTts) initCloudTts({ slug, scope: "apercu" }); // voix premium (démo)
+      unlockAudio(); // débloque l'audio cloud dans le geste (iOS)
+      speak("Voix activée.");
+    } else {
+      stopSpeaking();
+    }
   };
   const slots = useMemo(() => upcomingSlots(), []);
   const sing = termePublic.replace(/s$/u, ""); // client / patient

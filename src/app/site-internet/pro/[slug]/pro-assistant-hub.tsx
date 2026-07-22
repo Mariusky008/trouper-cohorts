@@ -6,7 +6,7 @@
 // démo : on lui parle, elle agit — et elle guide si on est perdu. Elle ne fait
 // que router vers des fonctionnalités réelles (aucune promesse en l'air).
 import { useEffect, useRef, useState } from "react";
-import { speechSupported, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
+import { speechSupported, speak, stopSpeaking, onSpeakingChange, initCloudTts, unlockAudio } from "@/lib/site-internet/speech";
 import { VoicePicker } from "../../apercu/[slug]/voice-picker";
 
 type Msg = { who: "ai" | "me"; text: string; goto?: string | null; label?: string | null; prefill?: string | null };
@@ -51,6 +51,8 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
     setOpen(false);
     setVoiceMode(true);
     setSpeakOn(true);
+    initCloudTts({ slug, scope: "pro", token }); // voix premium (démo pro)
+    unlockAudio(); // débloque l'audio cloud dans le geste (iOS)
     // On énonce le message d'accueil directement (débloque la voix dans le geste,
     // iOS) → spokenRef couvre le greeting pour que l'effet ne le relise pas.
     const willGreet = thread.length === 0;
@@ -91,8 +93,13 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
     spokenRef.current = thread.length; // ne relit pas l'historique en réactivant
     // IMPORTANT (iOS/Safari) : on prononce une phrase DANS le geste du tap pour
     // « débloquer » la synthèse vocale — sinon les réponses (asynchrones) restent muettes.
-    if (next) speak("Voix activée, je vous réponds à voix haute.");
-    else stopSpeaking();
+    if (next) {
+      initCloudTts({ slug, scope: "pro", token }); // voix premium (démo pro)
+      unlockAudio();
+      speak("Voix activée, je vous réponds à voix haute.");
+    } else {
+      stopSpeaking();
+    }
   };
 
   useEffect(() => {
@@ -114,6 +121,10 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
       window.dispatchEvent(new CustomEvent("pro-prefill", { detail: { target: "annonce", text: prefill } }));
     }
     window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: key }));
+    // On ferme TOUT (chat + mode vocal plein écran), sinon l'overlay masque
+    // l'onglet vers lequel on vient de basculer.
+    stopSpeaking();
+    setVoiceMode(false);
     setOpen(false);
   };
 

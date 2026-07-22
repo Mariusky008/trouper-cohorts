@@ -315,6 +315,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         moteur={moteur}
         busyWord={busyWord}
         hideBubble
+        cloudTts={!published}
       />
 
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
