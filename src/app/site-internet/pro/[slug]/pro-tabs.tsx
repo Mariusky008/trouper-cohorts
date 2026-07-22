@@ -38,33 +38,33 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
           .pro .protab > .contacts,
           .pro .protab > .relance,
           .pro .protab > .agenda{margin-top:0;border-top:none;padding-top:0;}
-          .pro .protabbar{position:fixed;left:0;right:0;bottom:0;max-width:440px;margin:0 auto;z-index:40;
-            display:flex;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-            border-top:1px solid var(--hair);padding-bottom:env(safe-area-inset-bottom);}
+          .pro .protabbar{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;z-index:40;
+            display:flex;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);
+            border-top:1px solid var(--hair);box-shadow:0 -10px 30px -20px rgba(25,26,44,.35);padding-bottom:env(safe-area-inset-bottom);}
           .pro .protabbar button{flex:1;min-width:0;background:none;border:none;cursor:pointer;font-family:inherit;
-            padding:9px 1px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);
-            border-top:2px solid transparent;margin-top:-1px;}
-          .pro .protabbar button .ic{font-size:18px;line-height:1;}
-          .pro .protabbar button .lb{font-size:9.5px;font-weight:600;letter-spacing:.005em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-          .pro .protabbar button.on{color:var(--ink);border-top-color:var(--gold);}
+            padding:8px 1px 7px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);}
+          .pro .protabbar button .ic{font-size:17px;line-height:1;width:44px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:13px;transition:background .15s ease;}
+          .pro .protabbar button .lb{font-size:9.5px;font-weight:700;letter-spacing:.005em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+          .pro .protabbar button.on{color:var(--violet);}
+          .pro .protabbar button.on .ic{background:rgba(109,74,224,.13);}
 
           /* ══════════ ORDINATEUR : la barre du bas devient un menu latéral ══════════ */
           @media (min-width:900px){
             .pro .protabbar{
-              top:0;bottom:auto;left:0;right:auto;width:232px;height:100vh;max-width:none;margin:0;
+              top:0;bottom:auto;left:0;right:auto;width:236px;height:100vh;max-width:none;margin:0;
               flex-direction:column;justify-content:flex-start;align-items:stretch;gap:4px;
-              padding:26px 14px;border-top:none;border-right:1px solid var(--hair);
-              background:var(--paper);
+              padding:26px 14px;border-top:none;border-right:1px solid var(--hair);box-shadow:none;
+              background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
             }
             .pro .protabbar button{
-              flex:none;flex-direction:row;justify-content:flex-start;gap:12px;
-              padding:12px 14px;border-top:none;border-left:3px solid transparent;margin-top:0;
-              border-radius:11px;
+              flex:none;flex-direction:row;justify-content:flex-start;gap:11px;
+              padding:11px 13px;border-radius:13px;
             }
-            .pro .protabbar button .ic{font-size:18px;}
-            .pro .protabbar button .lb{font-size:13.5px;max-width:none;font-weight:600;}
-            .pro .protabbar button:hover{background:#F5F2EA;}
-            .pro .protabbar button.on{border-top-color:transparent;border-left-color:var(--gold);background:#F5F2EA;}
+            .pro .protabbar button .ic{width:26px;height:26px;font-size:18px;border-radius:0;background:none;}
+            .pro .protabbar button .lb{font-size:13.5px;max-width:none;font-weight:700;}
+            .pro .protabbar button:hover{background:#F1EFFB;}
+            .pro .protabbar button.on{background:rgba(109,74,224,.10);}
+            .pro .protabbar button.on .ic{background:none;}
           }
           `,
         }}

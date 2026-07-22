@@ -29,8 +29,9 @@ export function ProGroup({ groupKey, subs }: { groupKey: string; subs: Sub[] }) 
           __html: `
           .pro .progroup .subpills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:2px -20px 4px;padding:0 20px 2px;}
           .pro .progroup .subpills::-webkit-scrollbar{display:none;}
-          .pro .progroup .subpills button{flex:none;border:1px solid var(--hair);background:#fff;color:var(--soft);border-radius:20px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;}
-          .pro .progroup .subpills button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+          .pro .progroup .subpills button{flex:none;border:1px solid var(--hair);background:#fff;color:var(--soft);border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:transform .1s ease;}
+          .pro .progroup .subpills button:active{transform:scale(.96);}
+          .pro .progroup .subpills button.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 16px -8px rgba(109,74,224,.6);}
           /* Neutralise les marges/bordures hautes prévues pour l'empilement seul. */
           .pro .progroup .sub > .action,
           .pro .progroup .sub > .contacts,
