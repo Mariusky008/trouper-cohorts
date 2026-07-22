@@ -45,7 +45,13 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const recRef = useRef<SRInstance | null>(null);
   const spokenRef = useRef(0);
 
+  const [ttsErr, setTtsErr] = useState("");
   useEffect(() => onSpeakingChange(setSpeaking), []);
+  useEffect(() => {
+    const h = (e: Event) => setTtsErr(String((e as CustomEvent).detail || ""));
+    window.addEventListener("tts-error", h as EventListener);
+    return () => window.removeEventListener("tts-error", h as EventListener);
+  }, []);
 
   const enterVoiceMode = () => {
     setOpen(false);
@@ -242,6 +248,8 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh .spk.on{background:#E7DEFB;}
           .pro .hubsheet .hh .x{margin-left:6px;border:none;background:none;font-size:22px;color:var(--faint);cursor:pointer;line-height:1;padding:4px;}
           .pro .hubsheet .hubvbar{padding:8px 14px;background:#F6F4EF;border-bottom:1px solid var(--hair);}
+          .pro .hubsheet .ttserr{padding:9px 14px;background:#FCEEEC;border-bottom:1px solid #E7B4AE;color:#9A362B;font-size:11.5px;line-height:1.4;cursor:pointer;word-break:break-word;}
+          .pro .hubsheet .ttserr span{color:#B4776F;}
           .pro .hubsheet .body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
           .pro .hubsheet .b,.pro .hubsheet .draft,.pro .hubsheet .open{animation:hubmsgin .32s cubic-bezier(.2,.8,.2,1);}
           @keyframes hubmsgin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
@@ -353,6 +361,11 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
 
             {ttsOk && speakOn && (
               <div className="hubvbar"><VoicePicker /></div>
+            )}
+            {ttsErr && (
+              <div className="ttserr" onClick={() => setTtsErr("")}>
+                ⚠️ Voix premium indisponible — {ttsErr} <span>(voix navigateur utilisée · toucher pour masquer)</span>
+              </div>
             )}
 
             <div className="body" ref={scroller}>

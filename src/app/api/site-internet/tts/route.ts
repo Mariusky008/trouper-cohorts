@@ -73,7 +73,15 @@ export async function POST(request: Request) {
         }),
       }
     );
-    if (!r.ok) return NextResponse.json({ error: "Synthèse indisponible." }, { status: 502 });
+    if (!r.ok) {
+      let detail = "";
+      try {
+        detail = (await r.text()).slice(0, 220);
+      } catch {
+        /* corps illisible */
+      }
+      return NextResponse.json({ error: "tts_failed", status: r.status, detail }, { status: 502 });
+    }
     const buf = await r.arrayBuffer();
     return new NextResponse(buf, {
       status: 200,

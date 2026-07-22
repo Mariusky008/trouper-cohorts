@@ -38,6 +38,10 @@ export function unlockAudio(): void {
 let cloudQueue: string[] = [];
 let cloudBusy = false;
 let curResolve: (() => void) | null = null;
+let lastCloudError = "";
+export function getLastCloudError(): string {
+  return lastCloudError;
+}
 
 function stopCloudPlayback(): void {
   cloudQueue = [];
@@ -68,7 +72,18 @@ async function playCloud(text: string): Promise<boolean> {
       cloudDown = true; // pas de clé configurée → voix navigateur pour la session
       return false;
     }
-    if (!r.ok) return false;
+    if (!r.ok) {
+      let detail = "";
+      try {
+        const j = await r.json();
+        detail = String(j.detail || j.error || "").slice(0, 200);
+      } catch {
+        /* corps non JSON */
+      }
+      lastCloudError = `HTTP ${r.status}${detail ? ` · ${detail}` : ""}`;
+      try { window.dispatchEvent(new CustomEvent("tts-error", { detail: lastCloudError })); } catch { /* SSR */ }
+      return false;
+    }
     const blob = await r.blob();
     if (!audioEl) {
       audioEl = new Audio();
