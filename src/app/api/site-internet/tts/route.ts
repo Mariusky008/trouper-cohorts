@@ -39,8 +39,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   }
 
-  const apiKey = s(process.env.ELEVENLABS_API_KEY);
-  if (!apiKey) return NextResponse.json({ error: "Voix cloud non configurée." }, { status: 503 });
+  // Choix du fournisseur : ElevenLabs OU OpenAI (pay-as-you-go). SITE_TTS_PROVIDER
+  // force le choix ; sinon on prend ElevenLabs si sa clé existe, sinon OpenAI.
+  const elevenKey = s(process.env.ELEVENLABS_API_KEY);
+  const openaiKey = s(process.env.OPENAI_API_KEY);
+  const forced = s(process.env.SITE_TTS_PROVIDER).toLowerCase();
+  const useEleven = forced === "elevenlabs" ? Boolean(elevenKey) : forced === "openai" ? false : Boolean(elevenKey);
+  const useOpenai = forced === "openai" ? Boolean(openaiKey) : forced === "elevenlabs" ? false : !elevenKey && Boolean(openaiKey);
+  if (!useEleven && !useOpenai) return NextResponse.json({ error: "Voix cloud non configurée." }, { status: 503 });
 
   // Garde-fous d'accès (la voix payante ne sert QUE la démo).
   const supabase = createAdminClient();
@@ -59,34 +65,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Réservé à la démo." }, { status: 403 });
   }
 
-  const voice = s(process.env.ELEVENLABS_VOICE_ID) || DEFAULT_VOICE;
+  const audioResponse = (buf: ArrayBuffer) =>
+    new NextResponse(buf, { status: 200, headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" } });
+  const upstreamError = async (r: Response) => {
+    let detail = "";
+    try { detail = (await r.text()).slice(0, 220); } catch { /* illisible */ }
+    return NextResponse.json({ error: "tts_failed", status: r.status, detail }, { status: 502 });
+  };
+
   try {
-    const r = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_96`,
-      {
+    if (useEleven) {
+      const voice = s(process.env.ELEVENLABS_VOICE_ID) || DEFAULT_VOICE;
+      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_96`, {
         method: "POST",
-        headers: { "xi-api-key": apiKey, "content-type": "application/json" },
+        headers: { "xi-api-key": elevenKey, "content-type": "application/json" },
         body: JSON.stringify({
           text,
-          model_id: "eleven_flash_v2_5", // rapide + économique, très bon en français
+          model_id: "eleven_flash_v2_5",
           voice_settings: { stability: 0.5, similarity_boost: 0.75 },
         }),
-      }
-    );
-    if (!r.ok) {
-      let detail = "";
-      try {
-        detail = (await r.text()).slice(0, 220);
-      } catch {
-        /* corps illisible */
-      }
-      return NextResponse.json({ error: "tts_failed", status: r.status, detail }, { status: 502 });
+      });
+      if (!r.ok) return upstreamError(r);
+      return audioResponse(await r.arrayBuffer());
     }
-    const buf = await r.arrayBuffer();
-    return new NextResponse(buf, {
-      status: 200,
-      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
+    // OpenAI TTS : payant à l'usage, sans abonnement. Voix chaleureuses (nova…).
+    const voice = s(process.env.OPENAI_TTS_VOICE) || "nova";
+    const r = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ model: "gpt-4o-mini-tts", voice, input: text, response_format: "mp3" }),
     });
+    if (!r.ok) return upstreamError(r);
+    return audioResponse(await r.arrayBuffer());
   } catch {
     return NextResponse.json({ error: "Synthèse indisponible." }, { status: 502 });
   }
