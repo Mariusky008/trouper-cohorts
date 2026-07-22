@@ -42,7 +42,9 @@ export async function POST(request: Request) {
   // Choix du fournisseur : ElevenLabs OU OpenAI (pay-as-you-go). SITE_TTS_PROVIDER
   // force le choix ; sinon on prend ElevenLabs si sa clé existe, sinon OpenAI.
   const elevenKey = s(process.env.ELEVENLABS_API_KEY);
-  const openaiKey = s(process.env.OPENAI_API_KEY);
+  // Clé DÉDIÉE au TTS en priorité (pour utiliser un compte OpenAI distinct/crédité
+  // sans toucher à l'OPENAI_API_KEY déjà utilisée ailleurs dans l'app).
+  const openaiKey = s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY);
   const forced = s(process.env.SITE_TTS_PROVIDER).toLowerCase();
   const useEleven = forced === "elevenlabs" ? Boolean(elevenKey) : forced === "openai" ? false : Boolean(elevenKey);
   const useOpenai = forced === "openai" ? Boolean(openaiKey) : forced === "elevenlabs" ? false : !elevenKey && Boolean(openaiKey);
