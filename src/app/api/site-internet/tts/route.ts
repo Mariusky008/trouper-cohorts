@@ -89,11 +89,15 @@ export async function POST(request: Request) {
       return audioResponse(await r.arrayBuffer());
     }
     // OpenAI TTS : payant à l'usage, sans abonnement. Voix chaleureuses (nova…).
+    // gpt-4o-mini-tts accepte une CONSIGNE DE TON → on demande un accueil premium.
     const voice = s(process.env.OPENAI_TTS_VOICE) || "nova";
+    const instructions =
+      s(process.env.OPENAI_TTS_INSTRUCTIONS) ||
+      "Parle en français avec une voix chaleureuse, posée et souriante, comme un accueil premium et bienveillant. Débit naturel, ni pressé ni monotone, avec des intonations engageantes.";
     const r = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: { Authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: "gpt-4o-mini-tts", voice, input: text, response_format: "mp3" }),
+      body: JSON.stringify({ model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "mp3" }),
     });
     if (!r.ok) return upstreamError(r);
     return audioResponse(await r.arrayBuffer());
