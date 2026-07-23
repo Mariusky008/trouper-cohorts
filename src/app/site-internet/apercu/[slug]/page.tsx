@@ -147,6 +147,9 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const confirmation = mp.entry?.confirmation ?? "reserve";
   const moteur = mp.entry?.moteur ?? "M1_acquisition";
   const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
+  // Restauration : vocabulaire « tables » (sinon « créneaux ») pour la Démo Vivante.
+  const isResto = /restaur|resto|bistrot|brasser|pizz|cr[eê]per|gastronomi|caf[eé]|salon de th[eé]|\bbar\b|\bpub\b|brunch/i.test(activite);
+  const clientWord = (termePublic || "client").replace(/s$/u, "");
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
@@ -254,6 +257,8 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       mapsHref={mapsHref}
       phoneDisplay={phoneDisplay}
       offer={offer}
+      isResto={isResto}
+      clientWord={clientWord}
     />
   );
 }

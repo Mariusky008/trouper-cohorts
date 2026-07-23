@@ -51,13 +51,15 @@ export type MaquetteSanteProps = {
   mapsHref: string;
   phoneDisplay: string;
   offer: { text: string; until: string | null } | null; // « Offre du moment » (bandeau haut de site)
+  isResto: boolean; // vocabulaire « tables » vs « créneaux » (Démo Vivante)
+  clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -340,8 +342,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           villeAff={villeAff}
           note={note}
           reviewsCount={reviewsCount}
-          hasGallery={gallery.length > 0}
           avisAllowed={avisMode === "prominent"}
+          isResto={isResto}
+          clientWord={clientWord}
         />
       )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
