@@ -10,6 +10,7 @@ import { ScrollReveal } from "./scroll-reveal";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
 import { ScanBeacon } from "./scan-beacon";
+import { DemoTour } from "./demo-tour";
 import { TeaserIntro } from "./teaser-intro";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
@@ -322,6 +323,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
       {!published && <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />}
       {!published && <ScanBeacon slug={slug} />}
+      {!published && (
+        <DemoTour
+          slug={slug}
+          nom={nom}
+          metierLabel={metierLabel}
+          villeAff={villeAff}
+          note={note}
+          reviewsCount={reviewsCount}
+          hasGallery={gallery.length > 0}
+        />
+      )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
       <ScrollReveal />
 
@@ -403,7 +415,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {gallery.length > 0 && (
-        <section className="alt">
+        <section className="alt" id="mq-gallery">
           <div className="sec-k">Le lieu</div>
           <div className="sec-h">En images</div>
           <Gallery photos={gallery} nom={nom} />
