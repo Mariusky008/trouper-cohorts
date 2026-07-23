@@ -95,6 +95,29 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
     },
   },
   {
+    match: /restaur|resto|bistrot|brasser|pizz|cr[eê]per|gastronomi|caf[eé]|salon de th[eé]|\bbar\b|\bpub\b|brunch/,
+    content: {
+      approcheTitre: "Bien manger, bien reçu",
+      approcheCorps:
+        "Une cuisine faite avec soin et une ambiance où l'on se sent bien. Réservez votre table — on s'occupe du reste, et on vous accueille comme il se doit.",
+      consultTitre: null,
+      consultCartes: [],
+      faq: FAQ_COMMERCE,
+      motifs: [
+        { icon: "🍽️", title: "Réserver une table", desc: "Midi ou soir — on vous garde une place." },
+        { icon: "🎉", title: "Un événement à fêter", desc: "Anniversaire, groupe, occasion spéciale." },
+        { icon: "☀️", title: "Un moment en terrasse", desc: "Quand il fait beau, la meilleure place." },
+        { icon: "🥂", title: "Un verre, un apéro", desc: "Après le travail, entre amis." },
+      ],
+      demoServices: [
+        { name: "Formule du midi", desc: "Entrée + plat, ou plat + dessert." },
+        { name: "Menu complet", desc: "Entrée, plat et dessert." },
+        { name: "À la carte", desc: "Nos spécialités, selon l'envie du jour." },
+        { name: "Brunch du week-end", desc: "Le samedi et le dimanche." },
+      ],
+    },
+  },
+  {
     match: /tatou|tattoo|piercing|perceur/,
     content: {
       approcheTitre: "Votre projet, sur la peau",

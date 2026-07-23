@@ -215,6 +215,10 @@ export const METIERS: MetierEntry[] = [
   M(["magasin de decoration", "decoration interieur", "deco maison"], "magasin de décoration", "A", "reserve", { secteur: "flux" }),
   M(["bijouterie", "bijoutier", "joaillerie"], "bijouterie", "A", "reserve", { secteur: "flux" }),
   M(["fleuriste", "fleurs"], "fleuriste", "A", "reserve", { secteur: "flux" }),
+  // ── Restauration, cafés & bars (profil A, secteur « flux ») — moteur M1 (remplir) ──
+  M(["restaurant", "resto", "bistrot", "brasserie", "pizzeria", "creperie", "crêperie", "gastronomi"], "restaurant", "A", "reserve", { secteur: "flux" }),
+  M(["cafe", "café", "salon de the", "salon de thé", "coffee", "brunch"], "café / salon de thé", "A", "reserve", { secteur: "flux" }),
+  M(["bar a", "bar à", "pub", "brasserie artisanale", "cave a biere", "wine bar"], "bar", "A", "reserve", { secteur: "flux" }),
   // ── Animaux (profil A) ──
   M(["toiletteur", "toilettage"], "toiletteur", "A", "reserve", { secteur: "flux" }),
   M(["pension canine", "pension pour chien", "pension animal"], "pension canine", "A", "reserve", { secteur: "flux" }),
