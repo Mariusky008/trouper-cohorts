@@ -32,13 +32,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
+  const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
 
-  // Vocabulaire adaptatif.
+  // Vocabulaire adaptatif (pluriel du terme public).
   const clientPl = clientWord ? `${clientWord}s` : "clients";
-  const fillNoun = isResto ? "vos tables" : "vos créneaux";
-  const fillEmpty = isResto ? "des tables vides ce soir" : "des créneaux libres ce soir";
 
   useEffect(() => {
     return () => {
@@ -142,61 +141,74 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
   };
 
   const run = async () => {
-    const steps: Array<{ say: string; action?: () => void }> = [];
+    // Chaque étape = un bénéfice clair (titre + numéro), la VRAIE page réagit.
+    const steps: Array<{ title: string; say: string; enter: () => void }> = [];
 
     // 1 — Accueil
     steps.push({
+      title: "Votre assistante, intégrée à votre site",
       say: `Bonjour ${nom}. Je suis votre assistante. Laissez-moi vous présenter votre nouveau site, en quelques instants.`,
-      action: () => { scrollTo(null); setScene(""); },
+      enter: () => { scrollTo(null); setScene(""); },
     });
 
     // 2 — Je réponds aux questions (renseignements généraux, pas seulement RDV)
     steps.push({
+      title: "Je réponds à vos clients, à toute heure",
       say: `Quand un ${clientWord} vous écrit — une question, un renseignement, même tard le soir — je lui réponds à votre place, avec les bons mots. Regardez.`,
-      action: () => { scrollTo(null); setScene("chat"); },
+      enter: () => { scrollTo(null); setScene("chat"); },
     });
 
     if (avisAllowed) {
       // 3 — Je transforme vos clients satisfaits en ambassadeurs (avis + communauté WhatsApp)
       steps.push({
+        title: "Je transforme vos clients en ambassadeurs",
         say: `Et je fais plus : je transforme vos ${clientPl} satisfait(e)s en ambassadeurs. Au bon moment, je demande un avis Google, et j'invite chacun à rejoindre votre liste WhatsApp — pour vos événements, vos bons plans, les places qui se libèrent. Petit à petit, vous construisez votre propre communauté.`,
-        action: () => setScene("community"),
+        enter: () => setScene("community"),
       });
 
-      // 4 — Je remplis vos périodes creuses en un clic (cadrage honnête multi-canal)
+      // 4 — Je remplis un créneau creux en un clic (cadrage honnête multi-canal)
       steps.push({
-        say: `Et quand une soirée s'annonce calme, je remplis ${fillNoun} en un clic. ${isResto ? "Des tables vides" : "Des créneaux libres"} ce soir ? Vous appuyez sur « Remplir ce soir » : j'envoie un message à vos habitué(e)s sur WhatsApp, je publie l'annonce sur votre site, et je vous prépare le texte et le visuel prêts à poster sur Facebook et Instagram. En moins d'une minute.`,
-        action: () => setScene("fill"),
+        title: "Je remplis vos créneaux creux",
+        say: `Et quand une journée s'annonce calme, je vous aide à remplir le créneau de votre choix, en un clic. Vous appuyez sur « Remplir un créneau » : j'envoie un message à vos habitué(e)s sur WhatsApp, je publie l'annonce sur votre site, et je vous prépare le texte et le visuel prêts à poster sur Facebook et Instagram. En moins d'une minute.`,
+        enter: () => setScene("fill"),
       });
     }
 
-    // 5 — J'ai regardé votre présence en ligne (vraies données)
+    // 5 — J'ai regardé votre présence en ligne (vraies données) + le bénéfice
     steps.push({
-      say: `J'ai aussi regardé votre présence en ligne. Voici ce que j'ai vu.`,
-      action: () => { scrollTo(null); setScene("stats"); },
+      title: "J'ai analysé votre présence en ligne",
+      say: `J'ai aussi regardé votre présence en ligne. Des clients vous cherchent déjà — mais quand vous êtes occupé(e), personne ne leur répond. C'est exactement ce que votre site et moi corrigeons : ces clients deviennent les vôtres.`,
+      enter: () => { scrollTo(null); setScene("stats"); },
     });
 
     // 6 — Récapitulatif : ce que je fais pour vous, chaque jour
     steps.push({
+      title: "Ce que je fais pour vous, chaque jour",
       say: avisAllowed
-        ? `Au fond, voici les trois choses que je fais pour vous, chaque jour : j'accueille vos ${clientPl} à toute heure, je transforme vos ${clientPl} satisfait(e)s en ambassadeurs, et je remplis vos périodes creuses en un clic.`
-        : `Au fond, voici ce que je fais pour vous, chaque jour : j'accueille vos ${clientPl} à toute heure, et je réponds à leur place quand vous êtes indisponible.`,
-      action: () => setScene("recap"),
+        ? `Au fond, trois choses, chaque jour : j'accueille vos ${clientPl} à toute heure, je les transforme en ambassadeurs, et je remplis vos créneaux creux en un clic.`
+        : `Au fond, chaque jour : j'accueille vos ${clientPl} à toute heure, et je réponds à leur place quand vous êtes indisponible.`,
+      enter: () => setScene("recap"),
     });
 
     // 7 — Passation
     steps.push({
+      title: "À vous de jouer",
       say: `Voilà. Le site est prêt, et je suis prête. Maintenant, c'est à vous.`,
-      action: () => setScene(""),
+      enter: () => setScene(""),
     });
 
+    const total = steps.length;
     const est = (s: string) => Math.min(15000, Math.max(2800, s.length * 62));
-    for (const st of steps) {
+    for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
-      st.action?.();
-      setCaption(""); // la légende apparaît quand la voix démarre (awaitSpeech)
+      const st = steps[i];
+      setCaption(""); // légende + scène + titre apparaissent QUAND la voix démarre
       speak(st.say);
-      await awaitSpeech(est(st.say), () => setCaption(st.say));
+      await awaitSpeech(est(st.say), () => {
+        st.enter();
+        setCaption(st.say);
+        setHead({ n: i + 1, total, title: st.title });
+      });
       if (cancelled.current) return;
     }
     if (cancelled.current) return;
@@ -256,9 +268,22 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;color:#DDE1F2;}
           .dtour-bar .pass{flex:none;border:1px solid rgba(255,255,255,.22);background:none;color:#EDF0FA;border-radius:11px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 
+          /* Bandeau haut : numéro d'étape + bénéfice (repère de progression) */
+          .dtour-top{position:fixed;left:0;right:0;top:0;z-index:91;max-width:520px;margin:0 auto;
+            padding:calc(14px + env(safe-area-inset-top)) 18px 13px;color:#EDF0FA;text-align:center;
+            background:linear-gradient(180deg,rgba(12,15,26,.96),rgba(12,15,26,.72) 78%,transparent);
+            font-family:'Inter',system-ui,sans-serif;animation:dtTopIn .45s cubic-bezier(.22,1,.36,1);}
+          @keyframes dtTopIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+          .dtour-top .dt-step{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;font-weight:700;}
+          .dtour-top .dt-title{font-size:16px;font-weight:800;letter-spacing:-.01em;margin-top:3px;line-height:1.2;}
+          .dtour-top .dt-prog{height:3px;border-radius:2px;background:rgba(255,255,255,.14);margin:10px auto 0;max-width:220px;overflow:hidden;}
+          .dtour-top .dt-prog i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#7C6AE8,#5B3FA6);transition:width .5s cubic-bezier(.22,1,.36,1);}
+
           /* Overlay des cartes (chiffres, chat, communauté, remplir, récap) */
-          .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:24px;animation:dtFade .3s ease;pointer-events:none;}
-          .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;}
+          .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:24px;
+            background:rgba(9,11,20,.42);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:dtFade .35s ease;pointer-events:none;}
+          .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;max-height:calc(100dvh - 190px);overflow-y:auto;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;animation:dtCardIn .42s cubic-bezier(.22,1,.36,1);}
+          @keyframes dtCardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -266,13 +291,17 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-card .row .ic{flex:none;font-size:16px;}
           .dtour-card .row.warn{color:#B4453C;}
 
-          /* Récap : 3 grandes lignes numérotées */
-          .dtour-card .recap{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid #EEF0F7;}
+          /* Récap : grandes lignes numérotées, courtes et lisibles */
+          .dtour-card .recap{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid #EEF0F7;}
           .dtour-card .recap:first-of-type{border-top:none;}
-          .dtour-card .recap .n{flex:none;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;
+          .dtour-card .recap .n{flex:none;width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;
             background:linear-gradient(140deg,#7C6AE8,#5B3FA6);color:#fff;box-shadow:0 6px 14px -6px rgba(109,74,224,.6);}
-          .dtour-card .recap .rt{font-size:14px;font-weight:700;color:#141A2E;line-height:1.25;}
-          .dtour-card .recap .rd{font-size:12px;color:#6E7290;line-height:1.4;margin-top:2px;}
+          .dtour-card .recap .rt{font-size:14.5px;font-weight:700;color:#141A2E;line-height:1.3;}
+
+          /* Ligne « bénéfice » (carte présence en ligne) */
+          .dtour-card .benefit{margin-top:14px;padding:12px 13px;border-radius:13px;font-size:13px;line-height:1.45;color:#1B5E2E;
+            background:linear-gradient(180deg,#EDF7E7,#fff);border:1px solid #CFE6C2;font-weight:600;}
+          .dtour-card .benefit b{font-weight:800;}
 
           /* Bloc « Remplir ce soir » */
           .dtour-card .fillbtn{margin:4px 0 12px;width:100%;background:linear-gradient(135deg,#F97316,#EA580C);color:#fff;border-radius:13px;padding:13px;font-size:15px;font-weight:800;text-align:center;box-shadow:0 12px 26px -10px rgba(234,88,12,.7);}
@@ -339,13 +368,21 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
         <>
           <div className="dtour-lock" />
 
+          {head.n > 0 && (
+            <div className="dtour-top" key={head.n}>
+              <div className="dt-step">Étape {head.n} / {head.total}</div>
+              <div className="dt-title">{head.title}</div>
+              <div className="dt-prog"><i style={{ width: `${(head.n / head.total) * 100}%` }} /></div>
+            </div>
+          )}
+
           {scene === "chat" && (
             <div className="dtour-ov">
               <div className="dtour-card dtour-chat">
                 <div className="chh"><span className="dot" /> Votre assistante · en direct</div>
-                <div className="cb them">{chat.q}</div>
-                <div className="cb typing"><span></span><span></span><span></span></div>
-                <div className="cb me">{chat.a}</div>
+                <div className="cb them" style={{ animationDelay: ".2s" }}>{chat.q}</div>
+                <div className="cb typing" style={{ animationDelay: "1.1s" }}><span></span><span></span><span></span></div>
+                <div className="cb me" style={{ animationDelay: "2.3s" }}>{chat.a}</div>
               </div>
             </div>
           )}
@@ -357,9 +394,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                 {note && reviewsCount != null && reviewsCount > 0 && (
                   <div className="revline"><span className="st">★</span> {note} <span className="sub">· {reviewsCount} avis Google réels</span></div>
                 )}
-                <div className="cb me">Vous avez passé un bon moment ? Un avis Google nous aiderait beaucoup 🙏</div>
-                <div className="cb them">Avec plaisir ⭐⭐⭐⭐⭐</div>
-                <div className="cb me me2">Merci ! 💚 Je vous ajoute à notre liste WhatsApp ? Vous serez prévenu(e) des événements, des bons plans et des places qui se libèrent.</div>
+                <div className="cb me" style={{ animationDelay: ".3s" }}>Vous avez passé un bon moment ? Un avis Google nous aiderait beaucoup 🙏</div>
+                <div className="cb them" style={{ animationDelay: "1.7s" }}>Avec plaisir ⭐⭐⭐⭐⭐</div>
+                <div className="cb me" style={{ animationDelay: "3s" }}>Merci ! 💚 Je vous ajoute à notre liste WhatsApp ? Vous serez prévenu(e) des événements, des bons plans et des places qui se libèrent.</div>
               </div>
             </div>
           )}
@@ -367,12 +404,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           {scene === "fill" && (
             <div className="dtour-ov">
               <div className="dtour-card">
-                <h4>Remplir ce soir</h4>
-                <div className="subx">{fillEmpty.charAt(0).toUpperCase() + fillEmpty.slice(1)} ? Un seul geste.</div>
-                <div className="fillbtn">➡️ Remplir ce soir</div>
+                <h4>Remplir un créneau</h4>
+                <div className="subx">Un trou dans votre agenda ? Un seul geste.</div>
+                <div className="fillbtn">➡️ Remplir un créneau</div>
                 <div className="chan"><span className="ic">✅</span><span><b>Message WhatsApp</b> à vos habitué(e)s <b>· envoyé</b></span></div>
                 <div className="chan"><span className="ic">✅</span><span><b>Annonce sur votre site</b> <b>· publiée</b></span></div>
-                <div className="chan"><span className="ic">✍️</span><span><b>Facebook & Instagram</b> · texte + visuel <b>prêts à poster</b></span></div>
+                <div className="chan"><span className="ic">✍️</span><span><b>Facebook &amp; Instagram</b> · texte + visuel <b>prêts à poster</b></span></div>
                 <div className="fillnote">WhatsApp et site : automatiques. Facebook et Instagram : je prépare tout, vous publiez en un tap.</div>
               </div>
             </div>
@@ -389,6 +426,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                     <span>{r.text}</span>
                   </div>
                 ))}
+                <div className="benefit">→ Un site + une assistante qui répond, et ces clients deviennent <b>les vôtres</b>.</div>
               </div>
             </div>
           )}
@@ -398,26 +436,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
               <div className="dtour-card">
                 <h4>Ce que je fais pour vous</h4>
                 <div className="subx">Chaque jour, sans vous déranger.</div>
-                <div className="recap">
-                  <span className="n">🕐</span>
-                  <span><span className="rt">J&apos;accueille vos {clientPl} 24 h/24</span><span className="rd">Même quand vous êtes occupé(e) ou fermé(e).</span></span>
-                </div>
+                <div className="recap"><span className="n">🕐</span><span className="rt">J&apos;accueille vos {clientPl} 24 h/24</span></div>
                 {avisAllowed ? (
                   <>
-                    <div className="recap">
-                      <span className="n">⭐</span>
-                      <span><span className="rt">Je transforme vos {clientPl} satisfait(e)s en ambassadeurs</span><span className="rd">Un avis Google demandé au bon moment, une communauté WhatsApp qui grandit.</span></span>
-                    </div>
-                    <div className="recap">
-                      <span className="n">📣</span>
-                      <span><span className="rt">Je remplis vos périodes creuses en un clic</span><span className="rd">« Remplir ce soir » : WhatsApp, site, et vos réseaux prêts à poster.</span></span>
-                    </div>
+                    <div className="recap"><span className="n">⭐</span><span className="rt">Je les transforme en ambassadeurs</span></div>
+                    <div className="recap"><span className="n">📣</span><span className="rt">Je remplis vos créneaux creux en un clic</span></div>
                   </>
                 ) : (
-                  <div className="recap">
-                    <span className="n">💬</span>
-                    <span><span className="rt">Je réponds et j&apos;oriente à votre place</span><span className="rd">Vos {clientPl} ont toujours une réponse, même en votre absence.</span></span>
-                  </div>
+                  <div className="recap"><span className="n">💬</span><span className="rt">Je réponds à votre place, même absent(e)</span></div>
                 )}
               </div>
             </div>

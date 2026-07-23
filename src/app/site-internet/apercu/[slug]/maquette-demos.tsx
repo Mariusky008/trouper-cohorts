@@ -50,12 +50,9 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     if (!introRef.current) {
       introRef.current = true;
       try { initCloudTts({ slug, scope: "apercu" }); unlockAudio(); } catch { /* best-effort */ }
-      speak(
-        "Bonjour ! Ici, vous confiez une tâche à votre future assistante. " +
-          "Petit point important : tout ce que vous faites ici est une simulation. Rien n'est envoyé à vos clients, ni à personne. " +
-          "Et si vous avez la moindre question, je suis là pour y répondre, comme le feraient Audrey ou Jean-Philippe. " +
-          "Vous pouvez aussi nous appeler au zéro sept, soixante-huit, vingt-trois, trente-trois, quarante-sept."
-      );
+      // Court et sans re-« Bonjour » : la Démo Vivante a déjà accueilli le pro.
+      // On rappelle juste l'essentiel (simulation) puis on l'invite à déléguer.
+      speak("Ici, c'est votre espace. Tout est une simulation — rien n'est envoyé à personne. Dites-moi simplement ce que vous voulez me confier.");
     }
   };
   const openRef = useRef(handleOpen);
