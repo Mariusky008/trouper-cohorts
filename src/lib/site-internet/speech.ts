@@ -244,7 +244,7 @@ function browserSpeak(text: string, queue = false): void {
     try { synth.resume(); } catch { /* certains navigateurs restent en pause */ }
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = "fr-FR";
-    u.rate = 0.96; // un peu plus lent = plus naturel et posé
+    u.rate = 1.08; // débit un peu plus vif (aligné sur la voix cloud, présentation courte)
     u.pitch = 1.02;
     u.volume = 1;
     const v = pickVoice(synth);

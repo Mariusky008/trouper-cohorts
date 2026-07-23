@@ -51,7 +51,13 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
   // Le scroll auto programmatique (scrollIntoView/scrollTo) n'est PAS affecté.
   useEffect(() => {
     if (phase !== "playing" && phase !== "end") return;
-    const prevent = (e: Event) => e.preventDefault();
+    // Bloque le défilement de la PAGE, mais laisse défiler l'intérieur d'une carte
+    // (ex. le récap trop grand pour l'écran) : on n'empêche pas le geste sur .dtour-card.
+    const prevent = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest(".dtour-card")) return;
+      e.preventDefault();
+    };
     document.addEventListener("touchmove", prevent, { passive: false });
     document.addEventListener("wheel", prevent, { passive: false });
     return () => {
@@ -120,14 +126,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
       }; // « Passer » avance immédiatement
     });
 
-  const finish = () => {
-    cancelled.current = true;
-    if (resolveStep.current) resolveStep.current();
-    stopSpeaking();
-    setScene("");
-    setPhase("done");
-  };
-
   const start = () => {
     cancelled.current = false;
     try {
@@ -147,7 +145,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
     // 1 — LE CONSTAT (hook) : j'ai regardé votre présence → il vous manque un site + moi
     steps.push({
       title: "J'ai regardé votre présence en ligne",
-      say: `Bonjour ${nom}. Je suis votre assistante. J'ai d'abord regardé votre présence en ligne. Et il en ressort une chose : il vous manque un site, avec un assistant aussi utile — et aussi sympa — que moi. Pourquoi ? Laissez-moi vous montrer.`,
+      say: `Bonjour ${nom}. Je suis votre assistante. Laissez-vous guider une petite minute — je m'occupe de tout, vous explorerez le site juste après. J'ai d'abord regardé votre présence en ligne. Et il en ressort une chose : il vous manque un site, avec un assistant aussi utile — et aussi sympa — que moi. Pourquoi ? Laissez-moi vous montrer.`,
       enter: () => { scrollTo(null); setScene("stats"); },
     });
 
@@ -162,7 +160,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
       // 3 — Je transforme chaque client en AMBASSADEUR (avis + parrainage)
       steps.push({
         title: "Je transforme vos clients en ambassadeurs",
-        say: `Et ce n'est pas tout : je transforme chacun de vos ${clientPl} satisfait(e)s en ambassadeur. Après une bonne visite, je lui demande, au bon moment, un avis Google. Et je peux même l'inviter à vous recommander — par exemple : s'il parraine un ami, vous lui offrez dix pour cent sur sa prochaine visite. Vos clients deviennent votre meilleure publicité.`,
+        say: `Et ce n'est pas tout : je transforme chacun de vos ${clientPl} satisfait(e)s en ambassadeur. Après une bonne visite, je lui demande un avis Google. Puis je l'invite à rejoindre votre liste de diffusion WhatsApp : il laisse son numéro, et vous pourrez le prévenir de vos bons plans et des places qui se libèrent. Et si vous le souhaitez, vous pouvez même le récompenser quand il vous recommande — par exemple dix pour cent sur sa prochaine visite. À vous de choisir : une remise, un cadeau, une gratuité. Vos clients deviennent votre meilleure publicité.`,
         enter: () => setScene("community"),
       });
 
@@ -270,10 +268,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-top .dt-prog{height:3px;border-radius:2px;background:rgba(255,255,255,.14);margin:10px auto 0;max-width:220px;overflow:hidden;}
           .dtour-top .dt-prog i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#7C6AE8,#5B3FA6);transition:width .5s cubic-bezier(.22,1,.36,1);}
 
-          /* Overlay des cartes (chiffres, chat, communauté, remplir, récap) */
-          .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:24px;
+          /* Overlay des cartes : la carte se centre ENTRE le bandeau haut et la barre
+             de légende du bas (padding réservé) → jamais masquée. */
+          .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:84px 20px 158px;
             background:rgba(9,11,20,.42);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:dtFade .35s ease;pointer-events:none;}
-          .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;max-height:calc(100dvh - 190px);overflow-y:auto;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;animation:dtCardIn .42s cubic-bezier(.22,1,.36,1);}
+          .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;max-height:calc(100dvh - 258px);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;animation:dtCardIn .42s cubic-bezier(.22,1,.36,1);pointer-events:auto;}
           @keyframes dtCardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
@@ -321,7 +320,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-chat .cb.typing span{width:6px;height:6px;border-radius:50%;background:#B9A6EC;animation:dtType 1s infinite;}
           .dtour-chat .cb.typing span:nth-child(2){animation-delay:.15s}.dtour-chat .cb.typing span:nth-child(3){animation-delay:.3s}
           .dtour-chat .cb.me{background:#5B3FA6;color:#fff;border-top-right-radius:5px;margin-left:auto;align-self:flex-end;animation-delay:2.3s;}
-          .dtour-chat .cb.me2{animation-delay:3.4s;}
+          .dtour-chat .cb.note{background:#E7F6EC;color:#1B5E2E;align-self:stretch;max-width:100%;text-align:center;font-weight:700;border-radius:12px;}
+          .dtour-chat .ambnote{opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;margin-top:9px;font-size:11.5px;line-height:1.45;color:#6E7290;background:#F6F5FB;border-radius:11px;padding:10px 12px;}
+          .dtour-chat .ambnote b{color:#141A2E;font-weight:800;}
           @keyframes dtBub{to{opacity:1;transform:none}}
           @keyframes dtType{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
@@ -352,10 +353,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           <div className="dtour-mark"><span>✦</span></div>
           <div className="kick">Démonstration personnalisée</div>
           <div className="t">Bonjour {nom}.<br />Votre nouveau site est prêt.</div>
-          <div className="s">Votre assistante vous le présente à voix haute, en moins d&apos;une minute.</div>
-          <button className="go" onClick={start}>Démarrer la présentation</button>
+          <div className="s">Votre assistante vous le présente à voix haute, en <b>une petite minute</b>. Laissez-vous guider — vous explorerez le site juste après.</div>
+          <button className="go" onClick={start}>Démarrer la présentation (1 min)</button>
           <button className="skip" onClick={() => setPhase("done")}>Voir le site directement</button>
-          <div className="trust">🔒 Vous gardez la main à tout moment · montez le son 🔊</div>
+          <div className="trust">⏱️ ≈ 1 minute · montez le son 🔊</div>
         </div>
       )}
 
@@ -378,7 +379,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                 <div className="cb them" style={{ animationDelay: ".2s" }}>{chat.q}</div>
                 <div className="cb typing" style={{ animationDelay: "1.1s" }}><span></span><span></span><span></span></div>
                 <div className="cb me" style={{ animationDelay: "2.3s" }}>{chat.a}</div>
-                <div className="cb me" style={{ animationDelay: "3.7s" }}>Je peux aussi vous prévenir de nos bons plans sur WhatsApp — je vous ajoute ? 😊</div>
               </div>
             </div>
           )}
@@ -391,8 +391,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                   <div className="revline"><span className="st">★</span> {note} <span className="sub">· {reviewsCount} avis Google réels</span></div>
                 )}
                 <div className="cb me" style={{ animationDelay: ".3s" }}>Vous avez passé un bon moment ? Un avis Google nous aiderait beaucoup 🙏</div>
-                <div className="cb them" style={{ animationDelay: "1.7s" }}>Avec plaisir ⭐⭐⭐⭐⭐</div>
-                <div className="cb me" style={{ animationDelay: "3s" }}>Merci ! 🎁 Et si vous parrainez un ami, je vous offre -10 % sur votre prochaine visite.</div>
+                <div className="cb them" style={{ animationDelay: "1.5s" }}>Avec plaisir ⭐⭐⭐⭐⭐</div>
+                <div className="cb me" style={{ animationDelay: "2.6s" }}>Merci 💚 Je vous préviens de nos bons plans sur WhatsApp ? Laissez-moi juste votre numéro.</div>
+                <div className="cb them" style={{ animationDelay: "3.9s" }}>Oui ! 06 12 34 56 78</div>
+                <div className="cb note" style={{ animationDelay: "5s" }}>✓ Ajouté(e) à votre liste de diffusion WhatsApp 🎉</div>
+                <div className="ambnote" style={{ animationDelay: "6s" }}>🎁 Vous pouvez aussi le récompenser quand il vous recommande — <b>un exemple :</b> -10 % au parrainage. À vous de choisir&nbsp;: remise, cadeau, gratuité…</div>
               </div>
             </div>
           )}
@@ -453,7 +456,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           <div className="dtour-bar">
             <span className="mini" />
             <span className="cap">{caption}</span>
-            <button className="pass" onClick={finish}>Passer ▸</button>
           </div>
         </>
       )}

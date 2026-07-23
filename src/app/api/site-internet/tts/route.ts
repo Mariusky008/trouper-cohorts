@@ -95,11 +95,15 @@ export async function POST(request: Request) {
     const voice = s(process.env.OPENAI_TTS_VOICE) || "nova";
     const instructions =
       s(process.env.OPENAI_TTS_INSTRUCTIONS) ||
-      "Parle en français avec une voix chaleureuse, posée et souriante, comme un accueil premium et bienveillant. Débit naturel, ni pressé ni monotone, avec des intonations engageantes.";
+      "Parle en français avec une voix chaleureuse, souriante et dynamique, comme un accueil premium et bienveillant. Débit vif et vivant, légèrement soutenu (sans se presser), avec des intonations engageantes.";
+    // Débit un peu plus rapide (voix vivante, présentation courte). Réglable via
+    // OPENAI_TTS_SPEED (0.25–4.0). 1.12 = ~12 % plus vif que la normale.
+    const speedRaw = Number(s(process.env.OPENAI_TTS_SPEED));
+    const speed = Number.isFinite(speedRaw) && speedRaw >= 0.5 && speedRaw <= 2 ? speedRaw : 1.12;
     const r = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: { Authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "mp3" }),
+      body: JSON.stringify({ model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "mp3", speed }),
     });
     if (!r.ok) return upstreamError(r);
     return audioResponse(await r.arrayBuffer());

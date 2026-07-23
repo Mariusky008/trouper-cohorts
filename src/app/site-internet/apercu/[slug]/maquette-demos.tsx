@@ -52,7 +52,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       try { initCloudTts({ slug, scope: "apercu" }); unlockAudio(); } catch { /* best-effort */ }
       // Court et sans re-« Bonjour » : la Démo Vivante a déjà accueilli le pro.
       // On rappelle juste l'essentiel (simulation) puis on l'invite à déléguer.
-      speak("Ici, c'est votre espace. Tout est une simulation — rien n'est envoyé à personne. Dites-moi simplement ce que vous voulez me confier.");
+      speak("L'espace « Confier une tâche » est le vôtre. Tout ici est une simulation — rien n'est envoyé à personne. Dites-moi simplement ce que vous voulez me confier.");
     }
   };
   const openRef = useRef(handleOpen);
