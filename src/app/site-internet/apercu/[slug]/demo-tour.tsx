@@ -24,11 +24,12 @@ type Props = {
   avisAllowed: boolean; // commerce (déonto none) : avis + « remplir ce soir » autorisés
   isResto: boolean; // restauration : vocabulaire « tables » plutôt que « créneaux »
   clientWord: string; // terme public au singulier (client / patient…)
+  demoChat?: { q: string; a: string } | null; // conversation d'exemple, propre au métier
 };
 
 type Scene = "" | "chat" | "community" | "fill" | "stats" | "recap";
 
-export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount, avisAllowed, isResto, clientWord }: Props) {
+export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount, avisAllowed, isResto, clientWord, demoChat }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
@@ -215,10 +216,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
   stats.push({ ok: true, text: `Des clients cherchent « ${metierLabel} à ${villeAff} »` });
   stats.push({ ok: false, text: `Aujourd'hui, personne ne répond quand vous êtes occupé(e)` });
 
-  // Conversation de démonstration (renseignement général, adaptée au métier).
-  const chat = isResto
-    ? { q: "Bonjour ! C'est quoi votre plat du moment ?", a: "Bonjour 😊 Ce soir, risotto aux cèpes et tiramisu maison — deux valeurs sûres. Et parking gratuit juste en face pour vous !" }
-    : { q: "Bonjour, je débute — vos cours sont accessibles ?", a: `Bonjour 😊 Bien sûr, tout se fait en douceur, débutant(e)s bienvenu(e)s. Parking gratuit juste devant — au plaisir de vous accueillir !` };
+  // Conversation de démonstration (renseignement typique du métier). Priorité au
+  // contenu propre au métier ; sinon repli par catégorie (resto / commerce / soin)
+  // — jamais un texte « cours de yoga » pour un coiffeur.
+  const chat = demoChat ?? (isResto
+    ? { q: "Bonjour ! Vous avez une table pour ce soir ?", a: "Bonjour 😊 Oui, je vous garde une table ! Et parking gratuit juste en face pour vous 🍽️" }
+    : avisAllowed
+      ? { q: "Bonjour, êtes-vous ouvert samedi ? Et où peut-on se garer ?", a: "Bonjour 😊 Oui, on vous accueille samedi ! Parking gratuit juste à côté. Au plaisir de vous voir 💫" }
+      : { q: "Bonjour, prenez-vous de nouveaux patients ?", a: "Bonjour 🙂 Oui, avec plaisir. Je vous propose un premier rendez-vous pour faire connaissance, sans engagement ?" });
 
   return (
     <>

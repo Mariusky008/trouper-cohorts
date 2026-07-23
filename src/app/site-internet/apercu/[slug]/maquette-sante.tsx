@@ -345,6 +345,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           avisAllowed={avisMode === "prominent"}
           isResto={isResto}
           clientWord={clientWord}
+          demoChat={content.demoChat}
         />
       )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}

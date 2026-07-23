@@ -16,6 +16,10 @@ export type UseCase = { icon: string; title: string; desc: string };
 // présentation (labellisés, tarifs indicatifs à personnaliser). En ligne : ce
 // sont les vraies prestations saisies par le pro (jamais de tarif inventé publié).
 export type Service = { name: string; duration?: string; price?: string; desc?: string };
+// Petite conversation de démonstration (Démo Vivante) — un RENSEIGNEMENT typique du
+// métier (services, horaires, accès…), pour que le pro se reconnaisse. Propre à
+// chaque métier ; à défaut, un repli générique (commerce / soin) est utilisé.
+export type DemoChat = { q: string; a: string };
 export type MetierContent = {
   approcheTitre: string;
   approcheCorps: string;
@@ -24,6 +28,7 @@ export type MetierContent = {
   faq: FaqItem[];
   motifs?: UseCase[]; // vide/absent → section « Pour quoi venir me voir ? » omise
   demoServices?: Service[]; // exemples de menu pour la maquette (jamais publiés tels quels)
+  demoChat?: DemoChat; // conversation d'exemple pour la Démo Vivante
 };
 
 const FAQ_SOIN: FaqItem[] = [
@@ -65,6 +70,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { icon: "💍", title: "Occasion spéciale", desc: "Mariage, événement, photo — une mise en beauté." },
         { icon: "🧔", title: "Barbe & entretien", desc: "Taille, contour, soin — pour être net." },
       ],
+      demoChat: {
+        q: "Bonjour, vous faites les colorations le samedi ?",
+        a: "Bonjour 😊 Oui, coupe et couleur le samedi ! Il me reste quelques créneaux. Et parking gratuit juste à côté 💇",
+      },
     },
   },
   {
@@ -92,6 +101,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { icon: "✨", title: "Prendre soin de soi", desc: "Soin du visage, épilation, un vrai moment détente." },
         { icon: "💍", title: "Événement à venir", desc: "Mariage, fête — être au top le jour J." },
       ],
+      demoChat: {
+        q: "Bonjour, vous proposez le vernis semi-permanent ?",
+        a: "Bonjour 😊 Oui, pose semi-permanente et beauté des mains sur rendez-vous ! Je peux vous trouver un créneau cette semaine 💅",
+      },
     },
   },
   {
@@ -115,6 +128,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { name: "À la carte", desc: "Nos spécialités, selon l'envie du jour." },
         { name: "Brunch du week-end", desc: "Le samedi et le dimanche." },
       ],
+      demoChat: {
+        q: "Bonjour ! C'est quoi votre plat du moment ?",
+        a: "Bonjour 😊 Ce soir, risotto aux cèpes et tiramisu maison — deux valeurs sûres. Et parking gratuit juste en face pour vous !",
+      },
     },
   },
   {
@@ -137,6 +154,38 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { name: "Petit tatouage", desc: "Motif simple, une séance." },
         { name: "Pièce sur-mesure", desc: "Projet personnalisé, devis après échange." },
       ],
+      demoChat: {
+        q: "Bonjour, c'est mon premier tatouage, comment ça se passe ?",
+        a: "Bonjour 😊 On prend le temps d'en parler avant de commencer. Je vous propose un rendez-vous conseil, sans engagement ?",
+      },
+    },
+  },
+  {
+    // Yoga, pilates, danse, fitness, coach sportif — cours & remise en forme.
+    match: /yoga|pilat|\bdanse\b|fitness|musculation|salle de sport|coach sportif|\bgym\b|zumba|cross ?fit|barre au sol/,
+    content: {
+      approcheTitre: "Bouger à votre rythme",
+      approcheCorps:
+        "Des cours pensés pour tous les niveaux, dans une ambiance bienveillante. On avance à votre rythme, sans pression — l'essentiel, c'est que vous vous sentiez bien.",
+      consultTitre: null,
+      consultCartes: [],
+      faq: FAQ_COMMERCE,
+      motifs: [
+        { icon: "🌱", title: "Débuter en douceur", desc: "Jamais pratiqué ? On vous accueille pas à pas." },
+        { icon: "🧘", title: "Souplesse & détente", desc: "Relâcher les tensions, respirer, se recentrer." },
+        { icon: "🔥", title: "Remise en forme", desc: "Reprendre une activité régulière, à votre rythme." },
+        { icon: "👥", title: "Cours collectifs", desc: "L'énergie du groupe, plusieurs créneaux par semaine." },
+      ],
+      demoServices: [
+        { name: "Cours d'essai", desc: "Une première séance pour découvrir." },
+        { name: "Carte 10 séances", desc: "À utiliser quand vous voulez." },
+        { name: "Cours particulier", desc: "Un accompagnement personnalisé." },
+        { name: "Abonnement mensuel", desc: "Accès aux cours collectifs." },
+      ],
+      demoChat: {
+        q: "Bonjour, je débute — vos cours sont accessibles ?",
+        a: "Bonjour 😊 Bien sûr, tout se fait en douceur, débutant(e)s bienvenu(e)s. On a même un cours d'essai. Parking gratuit juste devant !",
+      },
     },
   },
   {
@@ -162,6 +211,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { icon: "🪞", title: "Estime de soi", desc: "Confiance, image de soi, relations." },
         { icon: "🧭", title: "Transition de vie", desc: "Changement, décision, sentiment de blocage." },
       ],
+      demoChat: {
+        q: "Bonjour, prenez-vous de nouveaux patients ?",
+        a: "Bonjour 🙂 Oui, avec plaisir. Je propose un premier rendez-vous pour faire connaissance, sans engagement. Souhaitez-vous que je vous en réserve un ?",
+      },
     },
   },
   {
@@ -181,6 +234,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { q: "Est-ce remboursé ?", a: "Les séances prescrites sont prises en charge par l'Assurance Maladie, avec le complément habituel de votre mutuelle." },
         { q: "Comment se passe la première séance ?", a: "Elle commence par un bilan pour comprendre votre gêne et fixer les objectifs du suivi." },
       ],
+      demoChat: {
+        q: "Bonjour, faut-il une ordonnance pour venir ?",
+        a: "Bonjour 🙂 En général oui, pour la prise en charge. Je peux vous expliquer les démarches et vous proposer un créneau.",
+      },
     },
   },
   {
@@ -221,6 +278,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { icon: "🤰", title: "Nourrissons & grossesse", desc: "Suivi doux et adapté." },
         { icon: "😮‍💨", title: "Stress & tensions", desc: "Le corps sous pression, sommeil, respiration." },
       ],
+      demoChat: {
+        q: "Bonjour, faut-il une ordonnance pour consulter ?",
+        a: "Bonjour 🙂 Non, vous pouvez consulter directement. Je vous trouve un rendez-vous quand vous voulez.",
+      },
     },
   },
   // Thérapeute / praticien·ne bien-être (énergéticien, magnétiseur, sophrologue,
@@ -248,6 +309,10 @@ const CATALOG: Array<{ match: RegExp; content: MetierContent }> = [
         { name: "Bilan holistique", duration: "1 h 30", desc: "Bilan approfondi et plan d'accompagnement." },
         { name: "Suivi", duration: "1 h", desc: "Séance de suivi personnalisée." },
       ],
+      demoChat: {
+        q: "Bonjour, comment se passe une première séance ?",
+        a: "Bonjour 😊 On commence par un temps d'échange pour comprendre votre besoin, en douceur. Je vous réserve un premier rendez-vous ?",
+      },
     },
   },
 ];
@@ -273,6 +338,10 @@ const FALLBACK_CARE: MetierContent = {
     { name: "Séance de suivi", duration: "45 min", desc: "Accompagnement personnalisé." },
     { name: "Bilan complet", duration: "1 h 30", desc: "Un point approfondi et un plan d'accompagnement." },
   ],
+  demoChat: {
+    q: "Bonjour, prenez-vous de nouveaux patients ?",
+    a: "Bonjour 🙂 Oui, avec plaisir. Je vous propose un premier rendez-vous pour faire connaissance, sans engagement ?",
+  },
 };
 
 // Fallback COMMERCE (profil A) : ton chaleureux. Menu de prestations générique
@@ -296,6 +365,10 @@ const FALLBACK_COMMERCE: MetierContent = {
     { name: "Prestation signature", desc: "La plus demandée chez nous." },
     { name: "Forfait", desc: "Plusieurs prestations réunies, à tarif avantageux." },
   ],
+  demoChat: {
+    q: "Bonjour, êtes-vous ouvert samedi ? Et où peut-on se garer ?",
+    a: "Bonjour 😊 Oui, on vous accueille samedi ! Parking gratuit juste à côté. Au plaisir de vous voir 💫",
+  },
 };
 
 const normLoose = (s: string) =>
