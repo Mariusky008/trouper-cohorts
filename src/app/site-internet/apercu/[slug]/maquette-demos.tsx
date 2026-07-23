@@ -154,8 +154,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const doneRef = useRef<string[]>([]);
   const bilanLine: Record<string, string> = {
     avis: "obtenir un nouvel avis Google",
-    question: `répondre à un·e ${term}`,
-    creneau: avisAllowed ? "faire une annonce à tous vos client·es (créneau, promo, événement) pour vendre plus" : "aider à remplir un créneau libéré",
+    question: `répondre à un(e) ${term}`,
+    creneau: avisAllowed ? "faire une annonce à tous vos client(e)s (créneau, promo, événement) pour vendre plus" : "aider à remplir un créneau libéré",
     preparer: "préparer une réservation",
   };
   const bilanHtml = () => {
@@ -220,7 +220,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   // ── ANNONCE : un message → TOUS les clients d'un coup → réponses en cascade ──
   const playCreneau = (msg: string) => {
-    const plur = term === "patient" ? "patients" : "client·es";
+    const plur = term === "patient" ? "patients" : "client(e)s";
     // 1) Le message + la PORTÉE (un envoi touche tout le monde en même temps).
     let dots = "";
     for (let i = 0; i < 18; i++) dots += `<span class="asx-avdot" style="animation-delay:${i * 70}ms"></span>`;
@@ -261,8 +261,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     after(8600, () =>
       showFinal("creneau",
         `<div class="asx-final">Une annonce → <span class="em">vos ${plur} reviennent.</span></div>` +
-          `<div class="asx-starline" style="font-size:12.5px;margin-top:9px;letter-spacing:0;color:#71766C;line-height:1.5">Vos client·es satisfait·es — celles et ceux qui vous laissent un avis ⭐ — deviennent votre <b style="color:#16160F">audience gratuite sur WhatsApp</b>.<br>Plus vous avez d'avis, plus vous touchez de monde en 1 clic — <b style="color:#16160F">sans dépendre de la pub payante</b>.</div>` +
-          tiny("simulation — le nombre dépend de votre liste de client·es")
+          `<div class="asx-starline" style="font-size:12.5px;margin-top:9px;letter-spacing:0;color:#71766C;line-height:1.5">Chaque client(e) qui vous laisse un avis ⭐ rejoint votre <b style="color:#16160F">audience WhatsApp — gratuite</b>.<br>Plus vous avez d'avis, plus vous touchez de monde en 1 clic, <b style="color:#16160F">sans payer de pub</b>.</div>` +
+          tiny("simulation — le nombre dépend de votre liste de client(e)s")
       )
     );
   };
@@ -285,7 +285,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     seq.forEach(([w, t], i) => after(600 + i * 1050, () => { const c = ch(); if (c) c.innerHTML += `<div class="asx-msg ${w}">${t}</div>`; }));
     after(600 + seq.length * 1050 + 500, () => {
       const fin = book
-        ? `<div class="asx-stamp">✓ Réservé — ${esc(slot)}</div><div class="asx-final">Pendant que vous étiez occupé·e,<br><span class="em">un nouveau ${term} a déjà été pris en charge.</span></div>`
+        ? `<div class="asx-stamp">✓ Réservé — ${esc(slot)}</div><div class="asx-final">Pendant que vous étiez occupé(e),<br><span class="em">un nouveau ${term} a déjà été pris en charge.</span></div>`
         : `<div class="asx-final">Votre ${term} a eu sa réponse —<br><span class="em">sans que vous ayez à décrocher.</span></div>`;
       showFinal("question", fin + tiny(`${avisAllowed ? "vous n'avez pas décroché" : "aucune donnée de santé demandée"} · simulation`));
     });
@@ -321,7 +321,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     { label: "🏷️ Une promo", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
     { label: "🎉 Un événement", msg: `Samedi chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
   ];
-  const plural = term === "patient" ? "patients" : "client·es";
+  const plural = term === "patient" ? "patients" : "client(e)s";
 
   const renderBody = () => {
     if (view === "avisIn") {
@@ -360,7 +360,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-say">Voici l’annonce que j’enverrai à <b>tous vos {plural} inscrit·es</b>. Vous validez&nbsp;? <span className="asx-mini2">(vous pourrez la personnaliser)</span></div>
+          <div className="asx-say">Voici l’annonce que j’enverrai à <b>tous vos {plural} inscrit(e)s</b>. Vous validez&nbsp;? <span className="asx-mini2">(vous pourrez la personnaliser)</span></div>
           <div className="asx-prev"><div className="asx-to">📱 Liste WhatsApp · tous vos {plural}</div><div className="asx-wac">{fn}</div></div>
           <button className="asx-send" onClick={() => playCreneau(fn)}>Envoyer à mes {plural} ✦</button>
         </>
@@ -370,7 +370,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
-          <div className="asx-say">Voici comment je réponds à vos {term === "patient" ? "patients" : "client·es"} <b>à votre place</b>, même quand vous êtes occupé·e. Choisissez une question qu’on vous pose souvent&nbsp;:</div>
+          <div className="asx-say">Voici comment je réponds à vos {term === "patient" ? "patients" : "client(e)s"} <b>à votre place</b>, même quand vous êtes occupé(e). Choisissez une question qu’on vous pose souvent&nbsp;:</div>
           <div className="asx-quick">
             {questions.map((q, i) => <button key={q} onClick={() => playQuestion(q, i === 0)}>{q}</button>)}
           </div>
@@ -380,15 +380,12 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     // home
     return (
       <>
-        <div className="asx-disc">
-          <b>✨ Ceci est une simulation.</b> Rien n’est envoyé à vos client·es, ni à personne. Essayez librement&nbsp;!
-        </div>
         <div className="asx-say">Pendant que vous êtes avec vos {plural}, je peux m’occuper du reste 🙂<br /><b>Que souhaitez-vous que je fasse&nbsp;?</b></div>
         <div className="asx-tasks">
           {avisAllowed && (
             <div className="asx-task">
               <span className="ic">⭐</span>
-              <span className="tx"><span className="tt">Demander un avis Google à un {term}</span><span className="ts">après un·e {term} satisfait·e</span></span>
+              <span className="tx"><span className="tt">Demander un avis Google à un {term}</span><span className="ts">après un(e) {term} satisfait(e)</span></span>
               <button className="asx-do" onClick={() => setView("avisIn")}>▶ Lui demander</button>
             </div>
           )}
@@ -414,7 +411,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         </div>
 
         <div className="asx-qa">
-          <div className="asx-qa-h">💬 Une question&nbsp;? Je vous réponds — comme Audrey ou Jean-Philippe</div>
+          <div className="asx-qa-h">💬 Une question&nbsp;? Je vous réponds</div>
           {qa.length > 0 && (
             <div className="asx-qa-thread" ref={qaScroll}>
               {qa.map((m, i) => (
