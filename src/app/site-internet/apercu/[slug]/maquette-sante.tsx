@@ -330,6 +330,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           note={note}
           reviewsCount={reviewsCount}
           hasGallery={gallery.length > 0}
+          avisAllowed={avisMode === "prominent"}
         />
       )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}

@@ -37,6 +37,7 @@ export function unlockAudio(): void {
 
 let cloudQueue: string[] = [];
 let cloudBusy = false;
+let cloudEverWorked = false; // une lecture cloud a réussi → on ne bascule plus sur la voix navigateur
 let curResolve: (() => void) | null = null;
 let lastCloudError = "";
 export function getLastCloudError(): string {
@@ -107,6 +108,7 @@ async function playCloud(text: string): Promise<boolean> {
       el.play().catch(finish);
     });
     URL.revokeObjectURL(url);
+    cloudEverWorked = true;
     return true;
   } catch {
     return false;
@@ -118,8 +120,11 @@ async function pumpCloud(): Promise<void> {
   cloudBusy = true;
   while (cloudQueue.length) {
     const t = cloudQueue.shift() as string;
-    const ok = await playCloud(t);
-    if (!ok) browserSpeak(t, true); // repli : voix navigateur, en file
+    let ok = await playCloud(t);
+    if (!ok) ok = await playCloud(t); // 1 réessai (erreurs réseau transitoires)
+    // Repli voix navigateur UNIQUEMENT si la voix cloud n'a jamais marché — sinon
+    // on préfère sauter cette phrase que basculer d'un coup sur une voix robotique.
+    if (!ok && !cloudEverWorked) browserSpeak(t, true);
   }
   cloudBusy = false;
   setTimeout(() => {
