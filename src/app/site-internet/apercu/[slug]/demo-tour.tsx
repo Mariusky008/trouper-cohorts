@@ -1,12 +1,10 @@
 "use client";
 
 // « La Démo Vivante » — Phase 1. Lancée par un tap (débloque la voix sur iOS),
-// l'assistante (voix OpenAI) parle ET la VRAIE page réagit derrière : elle défile
-// vers les réalisations, vers la prise de rendez-vous, puis affiche les VRAIS
-// chiffres Google du pro (aucun chiffre inventé), et lui passe la main.
-// La cadence suit la FIN RÉELLE de chaque phrase (pas un minuteur), et la page est
-// verrouillée pendant la présentation (on ne peut pas scroller → pas de désync).
-// Non publié uniquement. Entièrement « passable » (bouton Passer).
+// l'assistante (voix OpenAI) parle ET la VRAIE page réagit derrière. La cadence
+// suit la FIN RÉELLE de chaque phrase (pas un minuteur). Le scroll utilisateur est
+// bloqué pendant la présentation (touchmove/wheel) ; le scroll AUTO fonctionne.
+// Design premium sobre. Non publié uniquement. Entièrement « passable ».
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 
@@ -35,8 +33,19 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
     };
   }, []);
 
-  // Le verrouillage du scroll se fait via le voile .dtour-lock (touch-action:none) :
-  // l'utilisateur ne peut pas défiler, mais le scroll AUTO programmatique fonctionne.
+  // Blocage FIABLE du défilement utilisateur pendant la présentation (iOS compris).
+  // Le scroll auto programmatique (scrollIntoView/scrollTo) n'est PAS affecté.
+  useEffect(() => {
+    if (phase !== "playing") return;
+    const prevent = (e: Event) => e.preventDefault();
+    document.addEventListener("touchmove", prevent, { passive: false });
+    document.addEventListener("wheel", prevent, { passive: false });
+    return () => {
+      document.removeEventListener("touchmove", prevent);
+      document.removeEventListener("wheel", prevent);
+    };
+  }, [phase]);
+
   const scrollTo = (sel: string | null) => {
     if (!sel) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -45,32 +54,41 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
     document.getElementById(sel)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  // Attend la FIN réelle de la phrase (la voix a démarré puis s'est arrêtée), avec
-  // repli sur une durée estimée si la voix ne démarre pas (audio bloqué).
+  // Attend la FIN réelle de la phrase (voix démarrée puis arrêtée). Le repli sur une
+  // durée estimée n'est utilisé QUE si la voix ne démarre jamais (audio bloqué) —
+  // il est annulé dès que la voix démarre → elle finit toujours sa phrase.
   const awaitSpeech = (estMs: number) =>
     new Promise<void>((resolve) => {
       if (cancelled.current) return resolve();
       let started = false;
       let done = false;
+      let fallback: number | null = null;
       const finish = () => {
         if (done) return;
         done = true;
         off();
-        clearTimeout(guard);
+        if (fallback) clearTimeout(fallback);
         clearTimeout(hard);
         resolveStep.current = null;
         resolve();
       };
       const off = onSpeakingChange((v) => {
-        if (v) started = true;
-        else if (started) window.setTimeout(finish, 600); // fin de phrase → courte pause
+        if (v) {
+          started = true;
+          if (fallback) {
+            clearTimeout(fallback);
+            fallback = null;
+          }
+        } else if (started) {
+          window.setTimeout(finish, 650); // fin de phrase → courte respiration
+        }
       });
-      // Si la voix n'a pas démarré au bout de 1,6 s → repli sur la durée estimée.
-      const guard = window.setTimeout(() => {
-        if (!started && !done) window.setTimeout(finish, estMs);
-      }, 1600);
-      const hard = window.setTimeout(finish, estMs + 15000); // garde-fou dur
-      resolveStep.current = finish; // permet au bouton « Passer » d'avancer
+      // Repli : la voix n'a pas démarré au bout de 2,8 s → on avance sur l'estimation.
+      fallback = window.setTimeout(() => {
+        if (!started && !done) fallback = window.setTimeout(finish, estMs);
+      }, 2800);
+      const hard = window.setTimeout(finish, estMs + 22000); // garde-fou dur
+      resolveStep.current = finish; // « Passer » avance immédiatement
     });
 
   const finish = () => {
@@ -95,15 +113,15 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
 
   const run = async () => {
     const steps: Array<{ say: string; action?: () => void }> = [
-      { say: `Bonjour ${nom}. Bienvenue sur votre démonstration personnalisée. Je suis votre assistante.`, action: () => scrollTo(null) },
+      { say: `Bonjour ${nom}. Je suis votre assistante. Laissez-moi vous présenter votre nouveau site, en quelques instants.`, action: () => scrollTo(null) },
       { say: `Pendant que vous travaillez, je m'occupe du reste : je réponds à vos clients, je mets en valeur votre travail, et je prends vos rendez-vous.` },
-      ...(hasGallery ? [{ say: `Tenez, regardez : voici votre travail, mis en valeur pour vos futurs clients.`, action: () => scrollTo("mq-gallery") }] : []),
-      { say: `Et quand quelqu'un veut réserver, je m'en occupe à toute heure — même tard le soir, sans vous déranger.`, action: () => scrollTo("rdv") },
+      ...(hasGallery ? [{ say: `Regardez : voici votre travail, mis en valeur pour vos futurs clients.`, action: () => scrollTo("mq-gallery") }] : []),
+      { say: `Et quand quelqu'un veut réserver, je m'en occupe à toute heure, sans vous déranger.`, action: () => scrollTo("rdv") },
       { say: `J'ai aussi regardé votre présence en ligne. Voici ce que j'ai vu.`, action: () => { scrollTo(null); setShowStats(true); } },
-      { say: `Aujourd'hui, personne ne répond à votre place quand vous n'êtes pas disponible. Ça, je peux le corriger — dès maintenant.` },
-      { say: `Voilà, la présentation est terminée. À vous de jouer : le site est à vous, posez-moi une question quand vous voulez.`, action: () => setShowStats(false) },
+      { say: `Aujourd'hui, personne ne répond à votre place quand vous n'êtes pas disponible. C'est exactement ce que je peux corriger pour vous.` },
+      { say: `Voilà, la présentation est terminée. Le site est à vous : explorez-le, ou posez-moi une question quand vous voulez.`, action: () => setShowStats(false) },
     ];
-    const est = (s: string) => Math.min(11000, Math.max(2600, s.length * 60));
+    const est = (s: string) => Math.min(12000, Math.max(2800, s.length * 62));
     for (const st of steps) {
       if (cancelled.current) return;
       st.action?.();
@@ -120,7 +138,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
   const stats: Array<{ ok: boolean; text: string }> = [];
   if (reviewsCount != null && reviewsCount > 0) stats.push({ ok: true, text: `${reviewsCount} avis Google — une vraie base de confiance` });
   if (note) stats.push({ ok: true, text: `Note de ${note} sur 5` });
-  stats.push({ ok: true, text: `Des gens cherchent « ${metierLabel} à ${villeAff} »` });
+  stats.push({ ok: true, text: `Des clients cherchent « ${metierLabel} à ${villeAff} »` });
   stats.push({ ok: false, text: `Aucun site ni assistante pour répondre quand vous êtes occupé(e)` });
 
   return (
@@ -128,55 +146,61 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .dtour-launch{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;
-            padding:32px 24px calc(30px + env(safe-area-inset-bottom));color:#fff;
-            background:radial-gradient(130% 90% at 50% 16%,#2A2350,#15132B 55%,#0B0A17 100%);animation:dtFade .3s ease;}
+          /* ── Écran de lancement : premium sobre (navy, sans-serif, confiance) ── */
+          .dtour-launch{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;
+            padding:36px 26px calc(34px + env(safe-area-inset-bottom));color:#EDF0FA;
+            background:linear-gradient(165deg,#141A2E 0%,#0C1020 60%,#080A14 100%);
+            font-family:'Inter',system-ui,-apple-system,sans-serif;animation:dtFade .35s ease;}
           @keyframes dtFade{from{opacity:0}to{opacity:1}}
-          .dtour-orb{width:120px;height:120px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
-            background:radial-gradient(circle at 35% 30%,#C6A8FF,#8A6BE0 45%,#5B3FA6 78%,#3C2A78);
-            box-shadow:0 0 70px -6px rgba(139,107,224,.85),inset 0 0 34px rgba(255,255,255,.25);animation:dtBreath 4s ease-in-out infinite;}
-          @keyframes dtBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-          @keyframes dtTalk{0%,100%{transform:scale(1)}50%{transform:scale(1.11)}}
-          .dtour-orb .g{font-size:34px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4);}
-          .dtour-launch .t{font-family:Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;max-width:440px;}
-          .dtour-launch .s{font-size:13.5px;color:rgba(255,255,255,.72);max-width:410px;line-height:1.5;}
-          .dtour-launch .go{margin-top:6px;border:none;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);color:#fff;font-size:16px;font-weight:800;
-            padding:16px 30px;border-radius:32px;cursor:pointer;font-family:inherit;box-shadow:0 14px 34px -8px rgba(139,107,224,.75);}
-          .dtour-launch .skip{background:none;border:none;color:rgba(255,255,255,.55);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;}
+          .dtour-mark{width:78px;height:78px;border-radius:22px;display:flex;align-items:center;justify-content:center;position:relative;
+            background:linear-gradient(140deg,#7C6AE8,#5B3FA6);box-shadow:0 16px 40px -10px rgba(109,74,224,.6),inset 0 1px 0 rgba(255,255,255,.25);}
+          .dtour-mark::after{content:"";position:absolute;inset:-6px;border-radius:26px;border:1px solid rgba(124,106,232,.35);}
+          .dtour-mark span{font-size:32px;color:#fff;}
+          .dtour-launch .kick{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8E93B5;font-weight:700;}
+          .dtour-launch .t{font-size:27px;font-weight:800;line-height:1.15;letter-spacing:-.02em;max-width:460px;}
+          .dtour-launch .s{font-size:14.5px;color:#AEB2CC;max-width:400px;line-height:1.55;}
+          .dtour-launch .go{margin-top:10px;border:none;background:#fff;color:#141A2E;font-size:16px;font-weight:800;letter-spacing:-.01em;
+            padding:16px 32px;border-radius:16px;cursor:pointer;font-family:inherit;box-shadow:0 16px 36px -12px rgba(255,255,255,.35);transition:transform .12s ease;}
+          .dtour-launch .go:active{transform:scale(.97);}
+          .dtour-launch .skip{background:none;border:none;color:#7A7F9E;font-size:13.5px;cursor:pointer;font-family:inherit;margin-top:2px;}
+          .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#666B88;display:flex;align-items:center;gap:7px;}
 
-          /* Voile qui capte les touchers → l'utilisateur ne peut pas scroller pendant la présentation. */
           .dtour-lock{position:fixed;inset:0;z-index:88;touch-action:none;background:transparent;}
 
-          /* Barre « en train de parler » — la page reste visible derrière. */
+          /* Barre « en train de parler » — sobre, la page reste visible derrière. */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;
-            background:rgba(20,18,40,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#fff;
-            padding:14px 15px calc(15px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;box-shadow:0 -12px 34px -14px rgba(0,0,0,.6);animation:dtUp .3s ease;}
+            background:rgba(16,20,38,.97);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#EDF0FA;
+            padding:14px 15px calc(16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;
+            border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -14px 36px -16px rgba(0,0,0,.7);animation:dtUp .3s ease;font-family:'Inter',system-ui,sans-serif;}
           @keyframes dtUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-          .dtour-bar .mini{width:34px;height:34px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#C6A8FF,#8A6BE0 55%,#5B3FA6);animation:dtTalk .55s ease-in-out infinite;box-shadow:0 0 16px -2px rgba(139,107,224,.8);}
-          .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;}
-          .dtour-bar .pass{flex:none;border:1px solid rgba(255,255,255,.28);background:none;color:#fff;border-radius:20px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+          .dtour-bar .mini{width:32px;height:32px;border-radius:10px;flex:none;background:linear-gradient(140deg,#7C6AE8,#5B3FA6);animation:dtPulse .6s ease-in-out infinite;}
+          @keyframes dtPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.08);opacity:1}}
+          .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;color:#DDE1F2;}
+          .dtour-bar .pass{flex:none;border:1px solid rgba(255,255,255,.22);background:none;color:#EDF0FA;border-radius:11px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 
           /* Carte des vrais chiffres */
-          .dtour-stats{position:fixed;left:0;right:0;top:0;bottom:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:24px;animation:dtFade .3s ease;pointer-events:none;}
-          .dtour-stats .card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;box-shadow:0 30px 70px -20px rgba(0,0,0,.55);}
-          .dtour-stats .card h4{font-family:Georgia,serif;font-size:18px;font-weight:700;margin-bottom:4px;color:#191A2C;}
-          .dtour-stats .card .subx{font-size:12.5px;color:#6E6E64;margin-bottom:14px;}
-          .dtour-stats .card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#191A2C;padding:8px 0;border-top:1px solid #EFEDF6;}
+          .dtour-stats{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:24px;animation:dtFade .3s ease;pointer-events:none;}
+          .dtour-stats .card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;}
+          .dtour-stats .card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
+          .dtour-stats .card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
+          .dtour-stats .card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
           .dtour-stats .card .row:first-of-type{border-top:none;}
           .dtour-stats .card .row .ic{flex:none;font-size:15px;}
-          .dtour-stats .card .row.warn{color:#9A362B;}
-          @media (prefers-reduced-motion:reduce){.dtour-orb,.dtour-bar .mini{animation:none;}}
+          .dtour-stats .card .row.warn{color:#B4453C;}
+          @media (prefers-reduced-motion:reduce){.dtour-bar .mini{animation:none;}}
           `,
         }}
       />
 
       {phase === "idle" && (
         <div className="dtour-launch">
-          <div className="dtour-orb"><span className="g">✦</span></div>
-          <div className="t">Votre assistante a préparé<br />une démonstration pour {nom}.</div>
-          <div className="s">Elle vous présente votre futur site à voix haute (~30 s). Laissez-vous guider — ensuite, tout sera à vous. Montez le son 🔊</div>
-          <button className="go" onClick={start}>▶ Lancer ma démo</button>
-          <button className="skip" onClick={() => setPhase("done")}>Explorer par moi-même</button>
+          <div className="dtour-mark"><span>✦</span></div>
+          <div className="kick">Démonstration personnalisée</div>
+          <div className="t">Bonjour {nom}.<br />Votre nouveau site est prêt.</div>
+          <div className="s">Votre assistante vous le présente à voix haute, en moins d&apos;une minute.</div>
+          <button className="go" onClick={start}>Démarrer la présentation</button>
+          <button className="skip" onClick={() => setPhase("done")}>Voir le site directement</button>
+          <div className="trust">🔒 Vous gardez la main à tout moment · montez le son 🔊</div>
         </div>
       )}
 
