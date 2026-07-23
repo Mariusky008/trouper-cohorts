@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
+type Offer = { text: string; until: string | null; clicks: number; created_at: string };
 
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
@@ -35,6 +36,63 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [gening, setGening] = useState(false);
   const [aiUsed, setAiUsed] = useState(false);
   const [aiErr, setAiErr] = useState("");
+  // « Offre du moment » : bandeau affiché sur le site du pro + lien traçable.
+  const [offer, setOffer] = useState<Offer | null>(null);
+  const [offerText, setOfferText] = useState("");
+  const [offerDays, setOfferDays] = useState(2);
+  const [offerBusy, setOfferBusy] = useState(false);
+  const [offerErr, setOfferErr] = useState("");
+  const [linkAdded, setLinkAdded] = useState(false);
+
+  const trackLink = typeof window !== "undefined" ? `${window.location.origin}/offre/${slug}` : `/offre/${slug}`;
+
+  const saveOffer = async () => {
+    const t = offerText.trim();
+    if (!t || offerBusy) return;
+    setOfferBusy(true);
+    setOfferErr("");
+    try {
+      const r = await fetch("/api/site-internet/pro/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "set", text: t.slice(0, 140), days: offerDays }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.offer) {
+        setOffer(j.offer);
+      } else {
+        setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
+      }
+    } catch {
+      setOfferErr("Enregistrement impossible. Réessayez.");
+    } finally {
+      setOfferBusy(false);
+    }
+  };
+
+  const clearOffer = async () => {
+    if (offerBusy) return;
+    setOfferBusy(true);
+    setOfferErr("");
+    try {
+      const r = await fetch("/api/site-internet/pro/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "clear" }),
+      });
+      if (r.ok) setOffer(null);
+    } catch {
+      setOfferErr("Retrait impossible. Réessayez.");
+    } finally {
+      setOfferBusy(false);
+    }
+  };
+
+  const addTrackLink = () => {
+    setMessage((m) => (m.includes(trackLink) ? m : `${m.trim()}\n\n👉 Réserver : ${trackLink}`));
+    setLinkAdded(true);
+    window.setTimeout(() => setLinkAdded(false), 2200);
+  };
 
   const generate = async () => {
     const b = brief.trim();
@@ -90,6 +148,18 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
         if (!cancelled && r.ok && Array.isArray(j.contacts)) setContacts(j.contacts as Contact[]);
       } catch {
         /* pas d'audience → seule la diffusion native reste proposée */
+      }
+      // Offre du moment déjà active (bandeau sur le site).
+      try {
+        const r = await fetch("/api/site-internet/pro/offer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug, token, action: "get" }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!cancelled && r.ok && j.offer) setOffer(j.offer as Offer);
+      } catch {
+        /* colonne non migrée → pas d'offre */
       }
     })();
     return () => {
@@ -222,6 +292,25 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance .aud .chip.done{background:#F1EFE7;border-color:var(--hair);color:var(--faint);}
           .pro .relance .aud .chip svg{width:13px;height:13px;}
           .pro .relance .aud .note{font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.4;}
+          /* OFFRE DU MOMENT (bandeau site + lien traçable) */
+          .pro .relance .offer{margin-top:22px;border-top:1px dashed var(--hair);padding-top:18px;}
+          .pro .relance .offer .oh{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--ink);}
+          .pro .relance .offer .os{font-size:12px;color:var(--soft);line-height:1.45;margin-top:4px;}
+          .pro .relance .offer input[type=text]{width:100%;margin-top:11px;border:1px solid var(--hair);border-radius:11px;padding:11px 13px;font-size:13.5px;font-family:inherit;background:#fff;}
+          .pro .relance .offer .row{display:flex;align-items:center;gap:9px;margin-top:10px;}
+          .pro .relance .offer .row label{font-size:12px;color:var(--soft);font-weight:600;}
+          .pro .relance .offer select{border:1px solid var(--hair);border-radius:10px;padding:8px 11px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--ink);}
+          .pro .relance .offer .obtn{margin-top:11px;width:100%;background:var(--grad,#5B3FA6);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .offer .obtn:disabled{opacity:.55;cursor:not-allowed;}
+          .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
+          .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
+          .pro .relance .offer .live .lt{font-size:13.5px;font-weight:700;color:#1B5E2E;line-height:1.4;}
+          .pro .relance .offer .live .lmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--soft);}
+          .pro .relance .offer .live .clicks{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #CFE6C2;border-radius:999px;padding:4px 10px;font-weight:700;color:#1B7A3E;}
+          .pro .relance .offer .live .lact{display:flex;gap:8px;margin-top:11px;}
+          .pro .relance .offer .live .lact button{flex:1;border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--hair);background:#fff;color:var(--ink);}
+          .pro .relance .offer .live .lact button.rm{color:#B4453C;border-color:#EBC9C4;}
+          .pro .relance .offer .addlink{margin-top:9px;width:100%;background:#F1EFE7;border:1px solid var(--hair);color:var(--ink);border-radius:11px;padding:10px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;}
           `,
         }}
       />
@@ -329,6 +418,59 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
             </div>
           </div>
         )}
+
+        <div className="offer">
+          <div className="oh">📢 Afficher aussi sur mon site</div>
+          <div className="os">
+            Votre offre apparaît en bandeau <b>en haut de votre site</b>, avec un lien de réservation.
+            Chaque clic est compté — vous voyez les <b>vrais résultats</b>, rien d&apos;inventé.
+          </div>
+
+          {offer ? (
+            <div className="live">
+              <div className="lt">« {offer.text} »</div>
+              <div className="lmeta">
+                <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
+                {offer.until ? (
+                  <span>· jusqu&apos;au {new Date(offer.until).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
+                ) : (
+                  <span>· sans limite de date</span>
+                )}
+              </div>
+              <div className="lact">
+                <button onClick={() => { setOfferText(offer.text); setOffer(null); }} disabled={offerBusy}>✏️ Modifier</button>
+                <button className="rm" onClick={clearOffer} disabled={offerBusy}>Retirer du site</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={offerText}
+                onChange={(e) => setOfferText(e.target.value)}
+                placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
+                maxLength={140}
+              />
+              <div className="row">
+                <label htmlFor="offer-days">Afficher pendant</label>
+                <select id="offer-days" value={offerDays} onChange={(e) => setOfferDays(Number(e.target.value))}>
+                  <option value={1}>1 jour</option>
+                  <option value={2}>2 jours</option>
+                  <option value={7}>1 semaine</option>
+                  <option value={0}>Sans limite</option>
+                </select>
+              </div>
+              <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
+                {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
+              </button>
+              {offerErr && <div className="oerr">{offerErr}</div>}
+            </>
+          )}
+
+          <button className="addlink" onClick={addTrackLink}>
+            {linkAdded ? "✓ Lien ajouté au message" : "🔗 Ajouter le lien de réservation au message WhatsApp"}
+          </button>
+        </div>
       </div>
     </>
   );

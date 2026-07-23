@@ -50,13 +50,14 @@ export type MaquetteSanteProps = {
   doctolibHref: string; // réservation en ligne existante (profil B), sinon ""
   mapsHref: string;
   phoneDisplay: string;
+  offer: { text: string; until: string | null } | null; // « Offre du moment » (bandeau haut de site)
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -127,6 +128,16 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .banner{display:block;width:100%;border:none;font-family:inherit;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:10px 14px;line-height:1.35;cursor:pointer;}
           .mqc .banner b{font-weight:700;}
           .mqc .banner:hover{filter:brightness(.98);}
+          /* OFFRE DU MOMENT (bandeau haut de site, piloté par le pro) */
+          .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;
+            background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#000));
+            color:#fff;padding:12px 16px;line-height:1.35;}
+          .mqc .offer-band .oi{flex:none;font-size:17px;line-height:1;}
+          .mqc .offer-band .ot{font-size:13px;font-weight:600;flex:1;min-width:0;}
+          .mqc .offer-band .ot b{font-weight:800;}
+          .mqc .offer-band .og{flex:none;background:rgba(255,255,255,.2);border-radius:20px;padding:6px 13px;font-size:12px;font-weight:700;white-space:nowrap;}
+          .mqc .offer-band:hover .og{background:rgba(255,255,255,.32);}
+          @media (min-width:860px){.mqc .offer-band{padding:14px 22px;} .mqc .offer-band .ot{font-size:15px;}}
           /* HERO photo */
           .mqc .hero{position:relative;height:290px;overflow:hidden;}
           .mqc .hero .img{position:absolute;inset:0;background:linear-gradient(160deg,#5E6B5C,#39423A);background-size:cover;background-position:center;}
@@ -340,6 +351,14 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <button type="button" className="banner" data-assistant-open>
           ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
         </button>
+      )}
+
+      {offer && offer.text && (
+        <a className="offer-band" href={`/offre/${slug}`}>
+          <span className="oi">🎉</span>
+          <span className="ot"><b>Offre du moment</b> · {offer.text}</span>
+          <span className="og">Réserver →</span>
+        </a>
       )}
 
       <div className="hero">

@@ -101,6 +101,26 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */
   }
+  // « Offre du moment » : bandeau piloté par le pro (colonne récente → défensif).
+  // Affiché seulement si actif ET non expiré. Null sinon.
+  let offer: { text: string; until: string | null } | null = null;
+  try {
+    const { data: o } = await supabase
+      .from("human_vitrine_sites")
+      .select("current_offer")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    const raw = (o as Record<string, unknown> | null)?.current_offer;
+    if (raw && typeof raw === "object") {
+      const oo = raw as Record<string, unknown>;
+      const text = str(oo.text);
+      const until = typeof oo.until === "string" && oo.until ? oo.until : null;
+      const expired = until ? Date.parse(until) < Date.now() : false;
+      if (text && !expired) offer = { text, until };
+    }
+  } catch {
+    /* colonne non migrée → pas d'offre */
+  }
 
   const nom = str(row.business_name) || "Votre commerce";
   const ville = str(row.city);
@@ -233,6 +253,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       doctolibHref={doctolibHref}
       mapsHref={mapsHref}
       phoneDisplay={phoneDisplay}
+      offer={offer}
     />
   );
 }
