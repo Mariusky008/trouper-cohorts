@@ -11,7 +11,6 @@ import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
 import { ScanBeacon } from "./scan-beacon";
 import { DemoTour } from "./demo-tour";
-import { TeaserIntro } from "./teaser-intro";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -321,7 +320,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       />
 
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
-      {!published && <TeaserIntro nom={nom} termePublic={termePublic} accent={accent} />}
       {!published && <ScanBeacon slug={slug} />}
       {!published && (
         <DemoTour
