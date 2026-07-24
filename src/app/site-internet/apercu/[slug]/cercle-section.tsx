@@ -66,8 +66,9 @@ export function CercleSection({ slug, accent, nom }: { slug: string; accent: str
           .mqc .cercle .noti .tp{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
           .mqc .cercle .noti .nm{font-size:12.5px;font-weight:800;color:#111;}
           .mqc .cercle .noti .tm{font-size:10px;color:#8A8F86;flex:none;}
-          .mqc .cercle .noti .ti{font-size:12.5px;font-weight:700;color:#1B1D1A;margin-top:3px;}
-          .mqc .cercle .noti .ms{font-size:12px;color:#4A4F48;line-height:1.4;margin-top:2px;}
+          .mqc .cercle .noti .ti{display:block;font-size:12.5px;font-weight:700;color:#1B1D1A;margin-top:3px;}
+          .mqc .cercle .noti .ms{display:block;font-size:12px;color:#4A4F48;line-height:1.4;margin-top:2px;}
+          .mqc .cercle .noti .app svg{width:18px;height:18px;}
           .mqc .cercle .dots{display:flex;gap:6px;justify-content:center;margin-top:12px;}
           .mqc .cercle .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);transition:.3s;}
           .mqc .cercle .dots i.on{width:16px;border-radius:3px;background:#fff;}
@@ -96,7 +97,7 @@ export function CercleSection({ slug, accent, nom }: { slug: string; accent: str
 
         <div className="phone" aria-live="polite">
           <div className="noti" key={n}>
-            <span className="app">🟢</span>
+            <span className="app"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg></span>
             <span className="bd">
               <span className="tp"><span className="nm">{nom}</span><span className="tm">maintenant</span></span>
               <span className="ti">{noti.ic} {noti.t}</span>
