@@ -1,29 +1,29 @@
-// Page d'accueil publique de popey.academy — NOUVEAU concept : « un beau site web
-// + une assistante qui travaille pour vous », à destination des commerçants,
-// artisans et professionnels de proximité. But : donner envie et faire contacter
-// Marius (appel / WhatsApp direct). Style clair et lumineux, sans JS client.
-// HONNÊTETÉ (règle absolue du projet) : on vend le MÉCANISME et l'outil, jamais des
-// résultats chiffrés inventés, aucun faux témoignage, aucune statistique fabriquée.
+// Page d'accueil publique de popey.academy — concept « votre site, construit sous
+// vos yeux » : le visiteur entre le nom de son établissement, on récupère ses
+// vraies données Google et on lui construit une maquette en ~1 min qu'il peut
+// tester (Démo Vivante incluse). Immersif, visuel, peu de texte.
+// HONNÊTETÉ (règle absolue) : on montre le mécanisme réel, aucun chiffre inventé,
+// aucun faux témoignage. Le hero interactif s'appuie sur les VRAIES infos Google.
 import type { Metadata } from "next";
+import { HeroGenerator } from "./_home/hero-generator";
 
 export const metadata: Metadata = {
-  title: "Popey — un site web + une assistante qui travaille pour vous",
+  title: "Popey — votre site web, construit sous vos yeux en 1 minute",
   description:
-    "Pour les commerçants, artisans et professionnels : un beau site créé à partir de vos vraies infos, avec une assistante qui accueille vos clients, récolte vos avis et remplit vos créneaux — même quand vous êtes occupé.",
+    "Entrez le nom de votre établissement : Popey construit votre site à partir de vos vraies infos Google, avec une assistante qui accueille vos clients, récolte vos avis et remplit vos créneaux. Testez-le gratuitement.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Popey — un site web + une assistante qui travaille pour vous",
+    title: "Popey — votre site web, construit sous vos yeux en 1 minute",
     description:
-      "Un beau site à votre image et une assistante qui accueille vos clients 24 h/24, récolte vos avis Google et remplit vos créneaux creux.",
+      "Un site créé à partir de vos vraies infos Google + une assistante qui travaille pour vous. Testez-le gratuitement.",
     siteName: "Popey",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey — un site web + une assistante qui travaille pour vous",
-    description:
-      "Un beau site à votre image et une assistante qui accueille vos clients, récolte vos avis et remplit vos créneaux.",
+    title: "Popey — votre site web, construit sous vos yeux",
+    description: "Un site à votre image + une assistante qui travaille pour vous. Testez-le gratuitement.",
   },
 };
 
@@ -31,290 +31,249 @@ const PHONE_DISPLAY = process.env.SITE_LETTER_PHONE || "07 68 23 33 47";
 const WA_DIGITS = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "") || "33768233347";
 const TEL_HREF = `tel:+${WA_DIGITS}`;
 const WA_HREF = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
-  "Bonjour Marius, je voudrais en savoir plus sur le site + l'assistante Popey pour mon activité.",
+  "Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.",
 )}`;
 
 export default function HomePage() {
   const year = new Date().getFullYear();
 
-  const capabilities = [
-    {
-      ic: "🕐",
-      t: "Elle accueille vos clients 24 h/24",
-      d: "Horaires, accès, prestations, où se garer… Elle répond aux questions à votre place, à toute heure — même quand vous êtes en rendez-vous ou fermé.",
-    },
-    {
-      ic: "⭐",
-      t: "Elle transforme vos clients en ambassadeurs",
-      d: "Au bon moment, elle demande un avis Google aux clients satisfaits et les invite à rejoindre votre liste WhatsApp. Votre réputation travaille pour vous.",
-    },
-    {
-      ic: "📣",
-      t: "Elle remplit vos créneaux creux",
-      d: "Un trou dans l'agenda ? En un clic : un message à vos habitués sur WhatsApp et une annonce sur votre site. Vous décidez, elle prépare tout.",
-    },
-    {
-      ic: "🌐",
-      t: "Un vrai site, à votre image",
-      d: "Photos, horaires, avis Google, prise de contact et de rendez-vous. Élégant sur mobile comme sur ordinateur, prêt à convertir vos visiteurs.",
-    },
+  const tiles = [
+    { ic: "💬", t: "Répond à vos clients", s: "24 h/24, à votre place" },
+    { ic: "⭐", t: "Récolte vos avis", s: "vos clients deviennent ambassadeurs" },
+    { ic: "📣", t: "Remplit vos créneaux", s: "en un clic, WhatsApp + site" },
+    { ic: "🌐", t: "Un vrai site", s: "photos, avis, prise de RDV" },
   ];
-
-  const steps = [
-    { n: "1", t: "On crée votre site", d: "À partir de vos vraies infos (photos, avis, horaires Google). Vous le découvrez, vous validez, on ajuste ce que vous voulez." },
-    { n: "2", t: "Votre assistante s'installe", d: "Elle accueille vos clients, répond, récolte les avis et prévient vos habitués. Elle travaille pendant que vous travaillez." },
-    { n: "3", t: "Vous gardez la main", d: "Un espace privé sur votre téléphone pour suivre vos avis, vos rendez-vous et lancer une annonce en quelques secondes." },
-  ];
-
-  const secteurs = [
-    { ic: "🛍️", t: "Commerces & boutiques" },
-    { ic: "🍽️", t: "Restaurants, cafés & bars" },
-    { ic: "💇", t: "Beauté & bien-être" },
-    { ic: "🩺", t: "Santé & professions du soin" },
-    { ic: "🔧", t: "Artisans & indépendants" },
-    { ic: "🧘", t: "Sport, yoga & coaching" },
-  ];
+  const secteurs = ["🛍️ Commerces", "🍽️ Restaurants & cafés", "💇 Beauté & bien-être", "🩺 Santé", "🔧 Artisans", "🧘 Sport & yoga"];
 
   return (
     <main className="pop-home">
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pop-home{--bg:#FBF8F2;--surface:#FFFFFF;--ink:#1B2019;--soft:#5C6357;--faint:#8B9184;--line:#ECE7DC;
-            --accent:#0E9F6E;--accent-d:#0A7E58;--warm:#E8663D;--gold:#E0A63C;--wa:#25D366;
+          .pop-home{--bg:#FBFAF7;--ink:#141613;--soft:#565B52;--faint:#8A8F84;--line:#EAE7DE;--surface:#fff;
+            --a1:#12B981;--a2:#0EA5A5;--a3:#7C5CFC;--warm:#F4703A;--wa:#25D366;
             font-family:var(--font-geist-sans,system-ui),-apple-system,sans-serif;color:var(--ink);background:var(--bg);
             -webkit-font-smoothing:antialiased;overflow-x:hidden;}
           .pop-home *{box-sizing:border-box;}
           .pop-home a{text-decoration:none;color:inherit;}
-          .pop-home .wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
-          .pop-home .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:999px;
-            font-weight:700;font-size:15.5px;padding:15px 26px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;}
-          .pop-home .btn:active{transform:translateY(1px);}
-          .pop-home .btn-wa{background:var(--wa);color:#fff;box-shadow:0 14px 30px -12px rgba(37,211,102,.7);}
-          .pop-home .btn-wa:hover{filter:brightness(1.03);}
-          .pop-home .btn-call{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line);}
-          .pop-home .btn-call:hover{box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent-d);}
-          .pop-home .btn svg{width:19px;height:19px;}
+          .pop-home .wrap{max-width:1080px;margin:0 auto;padding:0 20px;}
 
-          /* Barre du haut */
-          .pop-home .nav{position:sticky;top:0;z-index:30;background:rgba(251,248,242,.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
-          .pop-home .nav .in{display:flex;align-items:center;justify-content:space-between;height:62px;}
-          .pop-home .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:-.02em;}
-          .pop-home .brand .dot{width:26px;height:26px;border-radius:9px;background:linear-gradient(140deg,var(--accent),var(--accent-d));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
-          .pop-home .nav .navcall{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:14px;color:var(--accent-d);}
-          .pop-home .nav .navcall .ph{display:none;}
-          @media(min-width:560px){.pop-home .nav .navcall .ph{display:inline;}}
+          /* Nav */
+          .pop-home .nav{position:sticky;top:0;z-index:30;background:rgba(251,250,247,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+          .pop-home .nav .in{display:flex;align-items:center;justify-content:space-between;height:60px;}
+          .pop-home .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.02em;}
+          .pop-home .brand .dot{width:26px;height:26px;border-radius:9px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;}
+          .pop-home .navcall{font-weight:700;font-size:14px;color:var(--a2);}
 
           /* Hero */
-          .pop-home .hero{position:relative;padding:64px 0 54px;text-align:center;
-            background:radial-gradient(900px 460px at 50% -10%,rgba(14,159,110,.10),transparent 60%),
-                       radial-gradient(700px 360px at 12% 8%,rgba(232,102,61,.07),transparent 55%);}
-          .pop-home .eyebrow{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-d);
-            background:rgba(14,159,110,.10);border-radius:999px;padding:7px 15px;}
-          .pop-home h1{font-size:38px;line-height:1.08;letter-spacing:-.03em;font-weight:800;margin:20px auto 0;max-width:760px;}
-          .pop-home h1 .hl{background:linear-gradient(120deg,var(--accent),var(--warm));-webkit-background-clip:text;background-clip:text;color:transparent;}
-          .pop-home .lead{font-size:17.5px;line-height:1.6;color:var(--soft);max-width:620px;margin:20px auto 0;}
-          .pop-home .cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:30px;}
-          .pop-home .trust{margin-top:18px;font-size:13px;color:var(--faint);line-height:1.5;max-width:520px;margin-left:auto;margin-right:auto;}
-          .pop-home .trust b{color:var(--soft);font-weight:600;}
+          .pop-home .hero{position:relative;padding:52px 0 40px;text-align:center;overflow:hidden;}
+          .pop-home .hero .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;z-index:0;pointer-events:none;}
+          .pop-home .hero .b1{width:440px;height:440px;background:radial-gradient(circle,rgba(18,185,129,.5),transparent 70%);top:-160px;left:-80px;}
+          .pop-home .hero .b2{width:420px;height:420px;background:radial-gradient(circle,rgba(124,92,252,.4),transparent 70%);top:-120px;right:-100px;}
+          .pop-home .hero .b3{width:360px;height:360px;background:radial-gradient(circle,rgba(244,112,58,.28),transparent 70%);bottom:-180px;left:40%;}
+          .pop-home .hero .inner{position:relative;z-index:1;}
+          .pop-home .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a2);background:rgba(18,185,129,.10);border-radius:999px;padding:7px 14px;}
+          .pop-home h1{font-size:36px;line-height:1.05;letter-spacing:-.035em;font-weight:850;margin:18px auto 0;max-width:640px;}
+          .pop-home h1 .hl{background:linear-gradient(115deg,var(--a1),var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent;}
+          .pop-home .sub{font-size:17px;line-height:1.5;color:var(--soft);max-width:500px;margin:16px auto 0;}
 
-          /* Bloc constat */
+          /* Générateur (carte centrale) */
+          .pop-home .gen{max-width:460px;margin:26px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 30px 70px -30px rgba(20,22,19,.4);text-align:left;}
+          .pop-home .gen-row{margin-bottom:10px;}
+          .pop-home .gen-row.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+          .pop-home .gen input{width:100%;height:52px;border:1.5px solid var(--line);border-radius:14px;padding:0 15px;font-size:15.5px;font-family:inherit;background:#FCFCFB;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;}
+          .pop-home .gen input:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 4px rgba(18,185,129,.12);}
+          .pop-home .genbtn{width:100%;height:56px;margin-top:4px;border:none;border-radius:15px;cursor:pointer;font-family:inherit;font-size:16.5px;font-weight:800;color:#fff;
+            background:linear-gradient(120deg,var(--a1),var(--a2));box-shadow:0 16px 34px -12px rgba(18,185,129,.75);transition:transform .12s ease,filter .12s ease;}
+          .pop-home .genbtn:hover{filter:brightness(1.04);}
+          .pop-home .genbtn:active{transform:translateY(1px);}
+          .pop-home .genbtn:disabled{background:#CBD3CC;box-shadow:none;cursor:not-allowed;}
+          .pop-home .genhint{margin-top:11px;font-size:12.5px;color:var(--faint);text-align:center;line-height:1.5;}
+          .pop-home .generr{margin-top:12px;font-size:13px;color:#B4453C;line-height:1.5;text-align:center;}
+          .pop-home .genwa{display:inline-block;margin-top:8px;background:var(--wa);color:#fff;font-weight:700;border-radius:999px;padding:9px 16px;font-size:13px;}
+          .pop-home .alt{margin-top:18px;font-size:13.5px;color:var(--faint);}
+          .pop-home .alt a{font-weight:700;color:var(--a2);}
+
+          /* Overlay de construction */
+          .pop-home .genov{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;
+            background:radial-gradient(700px 500px at 50% 30%,rgba(18,185,129,.16),transparent),rgba(12,14,11,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:pgFade .3s ease;}
+          @keyframes pgFade{from{opacity:0}to{opacity:1}}
+          .pop-home .genov-card{background:#fff;border-radius:24px;padding:32px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 50px 100px -30px rgba(0,0,0,.6);}
+          .pop-home .genov-orb{width:74px;height:74px;border-radius:22px;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;
+            background:linear-gradient(140deg,var(--a1),var(--a3));box-shadow:0 18px 40px -12px rgba(18,185,129,.7);animation:pgPulse 1.5s ease-in-out infinite;}
+          @keyframes pgPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+          .pop-home .genov-title{font-size:18px;font-weight:800;letter-spacing:-.01em;margin:18px 0 4px;}
+          .pop-home .genov-step{font-size:14px;color:var(--soft);min-height:20px;transition:opacity .3s ease;}
+          .pop-home .genov-bar{height:8px;border-radius:999px;background:#EEF0EC;margin:18px 0 10px;overflow:hidden;}
+          .pop-home .genov-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width .6s ease;}
+          .pop-home .genov-sub{font-size:12px;color:var(--faint);line-height:1.5;}
+          @media(prefers-reduced-motion:reduce){.pop-home .genov-orb{animation:none}}
+
+          /* Aperçu produit (mock téléphone) */
+          .pop-home .show{padding:34px 0 8px;}
+          .pop-home .phone{max-width:300px;margin:0 auto;background:#0F1512;border-radius:34px;padding:11px;box-shadow:0 40px 90px -34px rgba(20,22,19,.6);}
+          .pop-home .phone .screen{background:#fff;border-radius:26px;overflow:hidden;}
+          .pop-home .phone .pcap{background:linear-gradient(135deg,#14201B,#0C1512);color:#EBF6F0;padding:14px 15px;display:flex;align-items:center;gap:9px;}
+          .pop-home .phone .pcap .av{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;font-size:15px;}
+          .pop-home .phone .pcap .nm{font-size:13px;font-weight:700;line-height:1.1;}
+          .pop-home .phone .pcap .st{font-size:10.5px;color:#9FE7C9;display:flex;align-items:center;gap:5px;}
+          .pop-home .phone .pcap .st i{width:6px;height:6px;border-radius:50%;background:#3BE38A;}
+          .pop-home .phone .chat{padding:15px 14px 17px;display:flex;flex-direction:column;gap:9px;background:#F7F8F6;}
+          .pop-home .phone .cb{max-width:82%;padding:9px 12px;border-radius:14px;font-size:12.5px;line-height:1.4;}
+          .pop-home .phone .cb.them{background:#EDEFEA;color:#2A2E27;border-top-left-radius:4px;align-self:flex-start;}
+          .pop-home .phone .cb.me{background:linear-gradient(120deg,var(--a1),var(--a2));color:#fff;border-top-right-radius:4px;align-self:flex-end;}
+          .pop-home .show .cap{text-align:center;font-size:15px;color:var(--soft);max-width:420px;margin:22px auto 0;line-height:1.55;}
+          .pop-home .show .cap b{color:var(--ink);}
+
+          /* Tuiles capacités */
+          .pop-home section{padding:46px 0;}
+          .pop-home .sk{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--a2);font-weight:800;text-align:center;}
+          .pop-home .sh{font-size:26px;line-height:1.15;letter-spacing:-.025em;font-weight:850;text-align:center;margin:9px auto 0;max-width:560px;}
+          .pop-home .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;}
+          @media(min-width:720px){.pop-home .tiles{grid-template-columns:repeat(4,1fr);}}
+          .pop-home .tile{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 16px;text-align:center;box-shadow:0 16px 36px -28px rgba(20,22,19,.4);}
+          .pop-home .tile .ic{font-size:30px;}
+          .pop-home .tile .tt{font-size:15px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
+          .pop-home .tile .ts{font-size:12.5px;color:var(--soft);margin-top:4px;line-height:1.4;}
+
+          /* Chips secteurs */
+          .pop-home .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:26px;}
+          .pop-home .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:600;}
+          .pop-home .deonto{margin-top:18px;text-align:center;font-size:12.5px;color:var(--faint);max-width:520px;margin-left:auto;margin-right:auto;line-height:1.5;}
+
+          /* Honnêteté + CTA final */
           .pop-home .band{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
-          .pop-home .constat{padding:52px 0;text-align:center;}
-          .pop-home .constat .q{font-size:23px;line-height:1.4;font-weight:700;max-width:680px;margin:0 auto;letter-spacing:-.01em;}
-          .pop-home .constat .q .muted{color:var(--faint);font-weight:600;}
-          .pop-home .constat .a{margin-top:16px;font-size:16px;color:var(--soft);max-width:560px;margin-left:auto;margin-right:auto;line-height:1.6;}
-          .pop-home .constat .a b{color:var(--accent-d);}
-
-          /* Sections */
-          .pop-home section{padding:60px 0;}
-          .pop-home .sk{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-d);font-weight:800;text-align:center;}
-          .pop-home .sh{font-size:29px;line-height:1.15;letter-spacing:-.02em;font-weight:800;text-align:center;margin:10px auto 0;max-width:640px;}
-          .pop-home .ss{font-size:16px;color:var(--soft);text-align:center;max-width:560px;margin:14px auto 0;line-height:1.6;}
-
-          .pop-home .cards{display:grid;grid-template-columns:1fr;gap:16px;margin-top:36px;}
-          @media(min-width:680px){.pop-home .cards{grid-template-columns:1fr 1fr;}}
-          .pop-home .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 18px 40px -28px rgba(27,32,25,.4);}
-          .pop-home .card .ic{width:48px;height:48px;border-radius:14px;background:linear-gradient(150deg,rgba(14,159,110,.16),rgba(14,159,110,.06));display:flex;align-items:center;justify-content:center;font-size:24px;}
-          .pop-home .card h3{font-size:18.5px;font-weight:800;letter-spacing:-.01em;margin:15px 0 7px;}
-          .pop-home .card p{font-size:14.5px;color:var(--soft);line-height:1.6;}
-
-          /* Étapes */
-          .pop-home .steps{display:grid;grid-template-columns:1fr;gap:16px;margin-top:36px;}
-          @media(min-width:760px){.pop-home .steps{grid-template-columns:repeat(3,1fr);}}
-          .pop-home .step{position:relative;padding:24px;border-radius:20px;background:var(--surface);border:1px solid var(--line);}
-          .pop-home .step .n{width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,var(--accent),var(--accent-d));color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px -10px rgba(14,159,110,.7);}
-          .pop-home .step h3{font-size:17.5px;font-weight:800;margin:14px 0 6px;letter-spacing:-.01em;}
-          .pop-home .step p{font-size:14px;color:var(--soft);line-height:1.6;}
-
-          /* Secteurs */
-          .pop-home .secteurs{display:flex;flex-wrap:wrap;gap:11px;justify-content:center;margin-top:34px;}
-          .pop-home .sec{display:inline-flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:11px 18px;font-size:14.5px;font-weight:600;}
-          .pop-home .sec .i{font-size:17px;}
-          .pop-home .deonto{margin-top:22px;text-align:center;font-size:13px;color:var(--faint);max-width:560px;margin-left:auto;margin-right:auto;line-height:1.55;}
-
-          /* Honnêteté */
-          .pop-home .honest{background:linear-gradient(180deg,#FFFDF8,var(--surface));border:1px solid var(--line);border-radius:24px;padding:36px 26px;text-align:center;max-width:720px;margin:0 auto;}
-          .pop-home .honest .badge{font-size:24px;}
-          .pop-home .honest h3{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:10px 0 10px;}
-          .pop-home .honest p{font-size:16px;color:var(--soft);line-height:1.65;max-width:560px;margin:0 auto;}
+          .pop-home .honest{text-align:center;max-width:640px;margin:0 auto;}
+          .pop-home .honest .b{font-size:26px;}
+          .pop-home .honest h3{font-size:22px;font-weight:850;letter-spacing:-.02em;margin:8px 0 8px;}
+          .pop-home .honest p{font-size:15.5px;color:var(--soft);line-height:1.6;max-width:520px;margin:0 auto;}
           .pop-home .honest p b{color:var(--ink);}
+          .pop-home .final{text-align:center;}
+          .pop-home .final h2{font-size:27px;font-weight:850;letter-spacing:-.02em;max-width:480px;margin:0 auto;line-height:1.15;}
+          .pop-home .final .cta{display:flex;flex-wrap:wrap;gap:11px;justify-content:center;margin-top:22px;}
+          .pop-home .btn{display:inline-flex;align-items:center;gap:9px;border-radius:999px;font-weight:800;font-size:15.5px;padding:15px 24px;cursor:pointer;}
+          .pop-home .btn-wa{background:var(--wa);color:#fff;box-shadow:0 14px 30px -12px rgba(37,211,102,.7);}
+          .pop-home .btn-call{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line);}
+          .pop-home .btn svg{width:19px;height:19px;}
+          .pop-home .final .sig{margin-top:16px;font-size:13.5px;color:var(--faint);}
+          .pop-home .final .sig b{color:var(--ink);}
 
-          /* CTA final */
-          .pop-home .final{text-align:center;padding:64px 0 72px;
-            background:radial-gradient(700px 340px at 50% 120%,rgba(14,159,110,.12),transparent 60%);}
-          .pop-home .final h2{font-size:30px;font-weight:800;letter-spacing:-.02em;max-width:560px;margin:0 auto;line-height:1.15;}
-          .pop-home .final p{font-size:16.5px;color:var(--soft);margin:14px auto 0;max-width:520px;line-height:1.6;}
-          .pop-home .final .sig{margin-top:22px;font-size:14px;color:var(--faint);}
-          .pop-home .final .sig b{color:var(--ink);font-weight:700;}
-
-          /* Footer */
-          .pop-home footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;font-size:13px;color:var(--faint);}
+          .pop-home footer{border-top:1px solid var(--line);padding:24px 0;text-align:center;font-size:12.5px;color:var(--faint);}
 
           @media(min-width:820px){
-            .pop-home .hero{padding:88px 0 68px;}
-            .pop-home h1{font-size:52px;}
-            .pop-home .lead{font-size:19px;}
-            .pop-home .sh{font-size:34px;}
-            .pop-home .constat .q{font-size:27px;}
-            .pop-home .final h2{font-size:38px;}
+            .pop-home .hero{padding:76px 0 52px;}
+            .pop-home h1{font-size:54px;}
+            .pop-home .sub{font-size:19px;}
+            .pop-home .sh{font-size:32px;}
+            .pop-home .final h2{font-size:34px;}
           }
         `,
         }}
       />
 
-      {/* ── Barre ── */}
       <div className="nav">
         <div className="wrap in">
           <div className="brand"><span className="dot">✦</span> Popey</div>
-          <a className="navcall" href={TEL_HREF}>📞 <span className="ph">{PHONE_DISPLAY}</span></a>
+          <a className="navcall" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
         </div>
       </div>
 
-      {/* ── Hero ── */}
+      {/* ── Hero : le générateur en vedette ── */}
       <header className="hero">
-        <div className="wrap">
-          <span className="eyebrow">Pour les commerçants, artisans &amp; pros</span>
-          <h1>Un beau site web. Et une <span className="hl">assistante qui travaille pour vous.</span></h1>
-          <p className="lead">
-            Popey crée votre site à partir de vos vraies infos, et y intègre une assistante qui accueille vos
-            clients, récolte vos avis Google et remplit vos créneaux — même quand vous êtes occupé.
-          </p>
-          <div className="cta">
-            <a className="btn btn-wa" href={WA_HREF} target="_blank" rel="noreferrer">
-              <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
-              Parler à Marius sur WhatsApp
-            </a>
-            <a className="btn btn-call" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
-          </div>
-          <p className="trust">
-            <b>Sans abonnement piégeux.</b> On vous montre votre futur site gratuitement. S&apos;il vous plaît, on le
-            met en ligne — sinon ça s&apos;arrête là, sans frais et sans relance.
-          </p>
+        <span className="blob b1" /><span className="blob b2" /><span className="blob b3" />
+        <div className="wrap inner">
+          <span className="eyebrow">✦ Pour les commerçants, artisans &amp; pros</span>
+          <h1>Votre site web, <span className="hl">construit sous vos yeux.</span></h1>
+          <p className="sub">Entrez le nom de votre établissement. Regardez ce que je crée en 1 minute — puis testez-le.</p>
+          <HeroGenerator />
+          <div className="alt">Vous préférez en parler ? <a href={WA_HREF} target="_blank" rel="noreferrer">Écrire à Marius</a> · {PHONE_DISPLAY}</div>
         </div>
       </header>
 
-      {/* ── Le constat ── */}
-      <div className="band">
-        <div className="wrap constat">
-          <div className="q">
-            Aujourd&apos;hui, un client vous cherche sur Google, tombe sur votre fiche… <span className="muted">et repart.</span>
+      {/* ── Aperçu produit : l'assistante en action ── */}
+      <section className="show">
+        <div className="wrap">
+          <div className="phone">
+            <div className="screen">
+              <div className="pcap">
+                <span className="av">✦</span>
+                <span>
+                  <span className="nm">Votre assistante</span><br />
+                  <span className="st"><i />en ligne · répond pour vous</span>
+                </span>
+              </div>
+              <div className="chat">
+                <div className="cb them">Bonjour, vous avez de la place samedi ?</div>
+                <div className="cb me">Bonjour 😊 Oui, il me reste des créneaux samedi ! Je vous en réserve un ?</div>
+                <div className="cb them">Parfait, merci !</div>
+                <div className="cb me">C&apos;est noté ✨ Et un petit avis Google nous ferait très plaisir 🙏</div>
+              </div>
+            </div>
           </div>
-          <div className="a">
-            Vous étiez en rendez-vous, ou fermé. <b>Personne n&apos;a répondu à sa place.</b> C&apos;est exactement
-            ce que Popey corrige.
-          </div>
+          <div className="cap">Une assistante <b>intégrée à votre site</b> : elle répond, prend les rendez-vous et transforme vos clients en ambassadeurs — <b>pendant que vous travaillez.</b></div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Ce que fait l'assistante ── */}
+      {/* ── Capacités (tuiles courtes) ── */}
       <section>
         <div className="wrap">
-          <div className="sk">Votre assistante</div>
-          <div className="sh">Elle ne dort jamais. Elle travaille pour vous.</div>
-          <div className="ss">Intégrée à votre site, elle s&apos;occupe de ce que vous n&apos;avez pas le temps de faire.</div>
-          <div className="cards">
-            {capabilities.map((c) => (
-              <div className="card" key={c.t}>
-                <div className="ic">{c.ic}</div>
-                <h3>{c.t}</h3>
-                <p>{c.d}</p>
+          <div className="sk">Ce qu&apos;elle fait pour vous</div>
+          <div className="sh">Elle ne dort jamais.</div>
+          <div className="tiles">
+            {tiles.map((t) => (
+              <div className="tile" key={t.t}>
+                <div className="ic">{t.ic}</div>
+                <div className="tt">{t.t}</div>
+                <div className="ts">{t.s}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Comment ça marche ── */}
+      {/* ── Pour qui ── */}
       <div className="band">
         <section>
           <div className="wrap">
-            <div className="sk">Comment ça marche</div>
-            <div className="sh">Trois étapes, et c&apos;est à vous.</div>
-            <div className="steps">
-              {steps.map((s) => (
-                <div className="step" key={s.n}>
-                  <div className="n">{s.n}</div>
-                  <h3>{s.t}</h3>
-                  <p>{s.d}</p>
-                </div>
-              ))}
+            <div className="sk">Pour qui</div>
+            <div className="sh">Pensé pour les pros de proximité.</div>
+            <div className="chips">
+              {secteurs.map((s) => <span className="chip" key={s}>{s}</span>)}
+            </div>
+            <div className="deonto">
+              Professions de santé &amp; du droit&nbsp;: cadre déontologique respecté — pas de sollicitation d&apos;avis, seulement un accueil qui répond pour vous.
             </div>
           </div>
         </section>
       </div>
-
-      {/* ── Pour qui ── */}
-      <section>
-        <div className="wrap">
-          <div className="sk">Pour qui</div>
-          <div className="sh">Pensé pour les pros de proximité.</div>
-          <div className="secteurs">
-            {secteurs.map((s) => (
-              <span className="sec" key={s.t}><span className="i">{s.ic}</span> {s.t}</span>
-            ))}
-          </div>
-          <div className="deonto">
-            Pour les professions de santé et du droit, le cadre déontologique est respecté&nbsp;: pas de
-            sollicitation d&apos;avis ni de relance commerciale — seulement un accueil qui répond pour vous.
-          </div>
-        </div>
-      </section>
 
       {/* ── Honnêteté ── */}
+      <section>
+        <div className="wrap honest">
+          <div className="b">🤝</div>
+          <h3>On vend un outil, pas des promesses.</h3>
+          <p>Pas de chiffres magiques. Un <b>site moderne</b> et une <b>assistante qui travaille vraiment</b>, tous les jours. Vous jugez sur pièces — et vous restez libre à chaque étape.</p>
+        </div>
+      </section>
+
+      {/* ── CTA final ── */}
       <div className="band">
-        <section>
+        <section className="final">
           <div className="wrap">
-            <div className="honest">
-              <div className="badge">🤝</div>
-              <h3>On vend un outil, pas des promesses.</h3>
-              <p>
-                On ne vous garantit pas de chiffres magiques. On vous donne un <b>site moderne</b> et une
-                <b> assistante qui travaille vraiment</b>, tous les jours. Vous jugez sur pièces — et vous restez
-                libre à chaque étape.
-              </p>
+            <h2>Voyez ce que ça donne pour vous.</h2>
+            <div className="cta">
+              <a className="btn btn-wa" href={WA_HREF} target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
+                Écrire à Marius sur WhatsApp
+              </a>
+              <a className="btn btn-call" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
             </div>
+            <div className="sig">Marius · <b>{PHONE_DISPLAY}</b> · Sud-Ouest de la France</div>
           </div>
         </section>
       </div>
 
-      {/* ── CTA final ── */}
-      <section className="final">
-        <div className="wrap">
-          <h2>Envie de voir votre futur site&nbsp;?</h2>
-          <p>Marius vous le montre gratuitement et sans engagement. Un appel, un message — et vous voyez ce que ça donne pour votre activité.</p>
-          <div className="cta">
-            <a className="btn btn-wa" href={WA_HREF} target="_blank" rel="noreferrer">
-              <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
-              Écrire à Marius sur WhatsApp
-            </a>
-            <a className="btn btn-call" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
-          </div>
-          <div className="sig">Marius · <b>{PHONE_DISPLAY}</b></div>
-        </div>
-      </section>
-
-      <footer>Popey · {year} — Sud-Ouest de la France</footer>
+      <footer>Popey · {year}</footer>
     </main>
   );
 }

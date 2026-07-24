@@ -20,6 +20,7 @@ type Row = {
   letter_status: string | null;
   letter_delivered_at: string | null;
   contact_scanned_at: string | null;
+  metadata: Record<string, unknown> | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -40,7 +41,7 @@ export default async function AdminSiteInternetPage() {
   const { data, error } = await supabase
     .from("human_vitrine_sites")
     .select(
-      "id,slug,business_name,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at"
+      "id,slug,business_name,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at,metadata"
     )
     .eq("channel", "letter")
     .order("created_at", { ascending: false })
@@ -153,7 +154,12 @@ export default async function AdminSiteInternetPage() {
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50">
-                      <td className="px-4 py-3 font-semibold text-slate-900">{r.business_name || "—"}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">
+                        {r.business_name || "—"}
+                        {r.metadata && (r.metadata as Record<string, unknown>).self_serve ? (
+                          <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700" title="Créé par le pro depuis la page d'accueil (lead entrant)">🔥 Auto-site</span>
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3 text-slate-700">{r.city || "—"}</td>
                       <td className="px-4 py-3 text-slate-700">{r.activite || "—"}</td>
                       <td className="px-4 py-3">
