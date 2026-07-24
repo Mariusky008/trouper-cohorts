@@ -84,8 +84,11 @@ export function Gallery({ photos, nom }: { photos: string[]; nom: string }) {
           .mql .x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;border:none;font-size:20px;cursor:pointer;z-index:2;}
           .mql .nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;border:none;font-size:27px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;}
           .mql .nav.prev{left:12px;} .mql .nav.next{right:12px;}
-          .mql .cnt{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#fff;font-size:12.5px;letter-spacing:.05em;opacity:.85;z-index:2;}
+          .mql .cnt{position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#fff;font-size:12px;letter-spacing:.05em;opacity:.8;z-index:2;}
           .mql .zhint{position:absolute;top:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:11.5px;letter-spacing:.04em;z-index:2;}
+          .mql .book{position:absolute;bottom:44px;left:0;right:0;display:flex;justify-content:center;z-index:3;padding:0 16px;}
+          .mql .book button{display:inline-flex;align-items:center;gap:8px;border:none;font-family:inherit;cursor:pointer;border-radius:999px;padding:14px 26px;font-size:15px;font-weight:800;color:#111;background:#fff;box-shadow:0 16px 40px -14px rgba(0,0,0,.7);}
+          .mql .book button:active{transform:translateY(1px);}
           @media (prefers-reduced-motion:reduce){.mql,.mqg .it img{animation:none;transition:none;}}
           `,
         }}
@@ -132,6 +135,16 @@ export function Gallery({ photos, nom }: { photos: string[]; nom: string }) {
               <button className="nav next" aria-label="Suivante" onClick={(e) => { e.stopPropagation(); go(1); }}>›</button>
               <div className="cnt">{idx + 1} / {photos.length}</div>
             </>
+          )}
+          {!zoom && (
+            // « Je veux ce résultat » : ferme le plein écran ET ouvre l'assistante
+            // pré-qualifiée sur ce modèle (le clic remonte au listener data-accueil-motif).
+            // Pas de stopPropagation → le listener document reçoit bien le motif.
+            <div className="book">
+              <button type="button" data-accueil-motif={`Je voudrais réserver le même résultat que sur votre réalisation ${idx + 1}`} onClick={() => close()}>
+                ✨ Je veux ce résultat
+              </button>
+            </div>
           )}
         </div>
       )}
