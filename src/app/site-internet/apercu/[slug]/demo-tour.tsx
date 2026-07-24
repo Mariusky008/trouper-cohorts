@@ -28,7 +28,7 @@ type Props = {
   partners?: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
 };
 
-type Scene = "" | "note" | "reso" | "daily";
+type Scene = "" | "note" | "reso" | "daily" | "vision";
 
 export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
@@ -176,12 +176,20 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       enter: () => setScene("daily"),
     });
 
-    // 4 — Au site (pas d'écran de CTA : on entre directement dans le site)
-    steps.push({
-      title: "À vous",
-      say: `Voilà. Le site est à vous — explorez-le.`,
-      enter: () => setScene(""),
-    });
+    // 4 — CLÔTURE : la vision du collectif (commerce), sinon simple passation
+    if (avisAllowed) {
+      steps.push({
+        title: `Le collectif de ${villeAff}`,
+        say: `Une dernière chose. Mon ambition : réunir les cent commerçants de ${villeAff} les mieux notés dans leur métier, pour qu'ils se recommandent leurs clients — automatiquement, grâce à moi. Imaginez votre nom recommandé, encore et encore, chez des partenaires non concurrents, pile au moment où le client a besoin de vous. Être connu, reconnu — et ne jamais être oublié. Et maintenant, le site est à vous.`,
+        enter: () => setScene("vision"),
+      });
+    } else {
+      steps.push({
+        title: "À vous",
+        say: `Voilà. Le site est à vous — explorez-le.`,
+        enter: () => setScene(""),
+      });
+    }
 
     const total = steps.length;
     const est = (s: string) => Math.min(13000, Math.max(2400, s.length * 60));
@@ -305,6 +313,14 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
           .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
           @keyframes dyIn{to{opacity:1;transform:none}}
+          /* Scène « vision » : la clôture émotionnelle du collectif */
+          .dtour-card.viz{background:linear-gradient(160deg,#182034,#0B0F1A);color:#EAF0FA;text-align:center;padding:28px 22px 24px;}
+          .dtour-card .viz-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
+          .dtour-card .viz-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.16;margin-top:11px;}
+          .dtour-card .viz-h em{font-style:normal;color:#7FE6C0;}
+          .dtour-card.viz .rz2-cloud{margin:18px 0 4px;}
+          .dtour-card .viz-sub{font-size:13px;line-height:1.55;color:#B8C4DC;margin-top:16px;}
+          .dtour-card .viz-sub b{color:#fff;}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -455,6 +471,21 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                     <span className="dy-t">{d.t}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {scene === "vision" && (
+            <div className="dtour-ov">
+              <div className="dtour-card viz">
+                <div className="viz-k">🤝 Le collectif de {villeAff}</div>
+                <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
+                <div className="rz2-cloud" aria-hidden="true">
+                  {partnersList.map((p, i) => (
+                    <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
+                  ))}
+                </div>
+                <div className="viz-sub">Mon ambition&nbsp;: réunir les <b>100 commerçants de {villeAff} les mieux notés</b>, pour qu&apos;ils se recommandent leurs clients — automatiquement, grâce à moi.</div>
               </div>
             </div>
           )}
