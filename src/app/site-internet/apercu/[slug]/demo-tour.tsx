@@ -219,13 +219,14 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
-      // Transition INSTANTANÉE : scène + légende + titre s'affichent tout de suite,
-      // la voix enchaîne (plus d'attente que la voix « démarre » avant d'afficher).
-      st.enter();
-      setCaption(st.say);
+      // Le titre d'étape s'affiche tout de suite (repère de progression). La SCÈNE
+      // (et ses animations) démarre PILE quand la voix commence — plus quand la voix
+      // arrive après une animation déjà terminée. onReveal() est appelé au démarrage
+      // réel de la voix (ou en repli si l'audio est bloqué).
       setHead({ n: i + 1, total, title: st.title });
+      setCaption(st.say);
       speak(st.say);
-      await awaitSpeech(est(st.say), () => {});
+      await awaitSpeech(est(st.say), () => st.enter());
       if (cancelled.current) return;
     }
     if (cancelled.current) return;

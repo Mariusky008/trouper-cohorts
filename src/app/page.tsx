@@ -39,6 +39,18 @@ const STEPS = [
   { n: "3", ic: "🚀", t: "Vous testez, puis c'est à vous", d: "Vous l'explorez en live. Il vous plaît ? On le met en ligne." },
 ];
 const SECTEURS = ["🛍️ Commerces", "🍽️ Restaurants & cafés", "💇 Beauté & coiffure", "💅 Ongles & esthétique", "🩺 Santé", "🔧 Artisans", "🧘 Yoga & sport", "🎨 Tatoueurs", "🐾 Animalerie", "☕ Bars & brasseries"];
+// Constellation « collectif » : métiers complémentaires en orbite (exemple générique,
+// non concurrents entre eux). Positions calculées sur une ellipse autour de « Vous ».
+const COLLECTIF_ORBIT = [
+  { ic: "🍽️", t: "Resto" }, { ic: "💇", t: "Coiffeur" }, { ic: "🌸", t: "Fleuriste" },
+  { ic: "📸", t: "Photographe" }, { ic: "🧘", t: "Yoga" }, { ic: "🥗", t: "Nutrition" },
+];
+const COLLECTIF_NODES = COLLECTIF_ORBIT.map((p, i, arr) => {
+  const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
+  const x = Math.round(Math.cos(ang) * 120);
+  const y = Math.round(Math.sin(ang) * 106);
+  return { ...p, x, y, len: Math.round(Math.hypot(x, y)), deg: Math.round((Math.atan2(y, x) * 180) / Math.PI) };
+});
 
 export default function HomePage() {
   const year = new Date().getFullYear();
@@ -231,6 +243,37 @@ export default function HomePage() {
           .pop-home .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:11px 18px;font-size:14px;font-weight:700;box-shadow:0 10px 24px -20px rgba(20,22,15,.5);}
           .pop-home .deonto{margin-top:20px;text-align:center;font-size:12.5px;color:var(--faint);max-width:520px;margin-left:auto;margin-right:auto;line-height:1.5;}
 
+          /* ── LE COLLECTIF ── */
+          .pop-home .coll-band{position:relative;overflow:hidden;border-radius:28px;margin:0 auto;max-width:1080px;padding:44px 24px;color:#EAF0FA;
+            background:radial-gradient(130% 100% at 15% 0%,#1B2748,#111830 45%,#0A0E1A 82%);box-shadow:0 40px 90px -44px rgba(10,14,26,.9);}
+          .pop-home .coll-band::before{content:"";position:absolute;left:50%;top:0;width:420px;height:420px;transform:translate(-50%,-42%);background:radial-gradient(circle,rgba(124,106,232,.3),transparent 62%);pointer-events:none;}
+          .pop-home .coll-in{position:relative;z-index:1;display:grid;grid-template-columns:1fr;gap:26px;align-items:center;}
+          @media(min-width:900px){.pop-home .coll-in{grid-template-columns:1.05fr .95fr;gap:44px;}}
+          .pop-home .coll-k{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#7FE6C0;font-weight:800;}
+          .pop-home .coll-h{font-size:29px;line-height:1.1;letter-spacing:-.03em;font-weight:850;margin:12px 0 0;}
+          .pop-home .coll-h em{font-style:normal;color:#7FE6C0;}
+          .pop-home .coll-p{font-size:15.5px;line-height:1.6;color:#B8C4DC;margin:14px 0 0;max-width:440px;}
+          .pop-home .coll-p b{color:#fff;}
+          .pop-home .coll-steps{margin-top:20px;display:flex;flex-direction:column;gap:10px;}
+          .pop-home .coll-step{display:flex;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;color:#DDE6F2;}
+          .pop-home .coll-step .cn{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(127,230,192,.14);border:1px solid rgba(127,230,192,.3);color:#7FE6C0;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+          .pop-home .coll-step b{color:#fff;}
+          .pop-home .coll-note{margin-top:18px;font-size:12.5px;color:#8296B6;line-height:1.5;max-width:440px;}
+          /* Constellation : vous au centre, les métiers en synergie autour */
+          .pop-home .coll-net{position:relative;width:100%;height:294px;}
+          .pop-home .coll-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:104px;height:104px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+            background:radial-gradient(circle at 50% 32%,#8E7DF2,#5B3FA6 78%);box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 46px -2px rgba(124,106,232,.85),inset 0 2px 0 rgba(255,255,255,.32);animation:collCore 3s ease-in-out infinite;}
+          .pop-home .coll-core b{font-family:Georgia,serif;font-size:19px;font-weight:700;color:#fff;line-height:1;}
+          .pop-home .coll-core i{font-style:normal;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#E5DEFF;font-weight:800;margin-top:2px;}
+          @keyframes collCore{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 40px -6px rgba(124,106,232,.7),inset 0 2px 0 rgba(255,255,255,.32)}50%{box-shadow:0 0 0 1px rgba(255,255,255,.26),0 0 66px 4px rgba(124,106,232,1),inset 0 2px 0 rgba(255,255,255,.32)}}
+          .pop-home .coll-line{position:absolute;left:50%;top:50%;height:2px;transform-origin:0 50%;z-index:1;background:linear-gradient(90deg,rgba(127,230,192,.05),rgba(127,230,192,.4));}
+          .pop-home .coll-pc{position:absolute;left:50%;top:50%;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#28324C;white-space:nowrap;
+            background:linear-gradient(180deg,#F6F3FF,#E7E0FB);border:1px solid rgba(232,224,250,.6);box-shadow:0 12px 24px -10px rgba(0,0,0,.6);animation:collFloat 4s ease-in-out var(--fd,0s) infinite;}
+          @keyframes collFloat{0%,100%{translate:0 0}50%{translate:0 -6px}}
+          .pop-home .coll-flow{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;z-index:2;background:#7FE6C0;box-shadow:0 0 12px 3px rgba(127,230,192,.85);opacity:0;animation:collFlow 2.4s ease-in infinite;}
+          @keyframes collFlow{0%{opacity:0;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(.7)}12%{opacity:1}82%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--sx)*.12),calc(var(--sy)*.12)) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.5)}}
+          @media(prefers-reduced-motion:reduce){.pop-home .coll-core,.pop-home .coll-flow,.pop-home .coll-pc{animation:none}.pop-home .coll-flow{display:none}}
+
           /* ── HONNÊTETÉ + CTA ── */
           .pop-home .honest{text-align:center;max-width:640px;margin:0 auto;}
           .pop-home .honest .b{font-size:30px;}
@@ -293,6 +336,45 @@ export default function HomePage() {
       <section className="demo">
         <div className="wrap">
           <LivingDemo />
+        </div>
+      </section>
+
+      {/* ── LE COLLECTIF ── */}
+      <section>
+        <div className="wrap">
+          <div className="coll-band reveal">
+            <div className="coll-in">
+              <div>
+                <div className="coll-k">🤝 Le collectif de votre ville</div>
+                <h2 className="coll-h">Et si les autres commerces de votre ville vous <em>envoyaient des clients&nbsp;?</em></h2>
+                <p className="coll-p">
+                  Popey rassemble les commerces et artisans <b>les mieux notés</b> de votre ville. Chacun est associé à
+                  <b> une dizaine de métiers complémentaires</b> — jamais des concurrents.
+                </p>
+                <div className="coll-steps">
+                  <div className="coll-step"><span className="cn">1</span><span>Un client réserve chez un partenaire et cherche <b>autre chose</b> à côté.</span></div>
+                  <div className="coll-step"><span className="cn">2</span><span>Mon assistante lui recommande <b>le bon pro du collectif</b> — vous.</span></div>
+                  <div className="coll-step"><span className="cn">3</span><span>Et vous faites pareil. <b>Les meilleurs s&apos;envoient des clients.</b></span></div>
+                </div>
+                <p className="coll-note">
+                  Le collectif se construit commerce par commerce&nbsp;: c&apos;est une ambition qu&apos;on bâtit avec vous. Aucune
+                  donnée partagée sans accord, jamais un concurrent en face.
+                </p>
+              </div>
+              <div className="coll-net" aria-hidden="true">
+                {COLLECTIF_NODES.map((nd) => (
+                  <span key={`l-${nd.t}`} className="coll-line" style={{ width: `${nd.len}px`, transform: `rotate(${nd.deg}deg)` }} />
+                ))}
+                {COLLECTIF_NODES.map((nd, i) => (
+                  <span key={`f-${nd.t}`} className="coll-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${0.4 + i * 0.36}s` }} />
+                ))}
+                {COLLECTIF_NODES.map((nd, i) => (
+                  <span key={`p-${nd.t}`} className="coll-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic} {nd.t}</span>
+                ))}
+                <span className="coll-core"><b>Vous</b><i>votre commerce</i></span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
