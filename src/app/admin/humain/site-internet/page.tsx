@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { SiteAddForm } from "./_components/site-add-form";
 import { SiteDiscover } from "./_components/site-discover";
+import { SiteLink } from "./_components/site-link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -145,6 +146,7 @@ export default async function AdminSiteInternetPage() {
                     <th className="px-4 py-3 font-medium">Var.</th>
                     <th className="px-4 py-3 font-medium">Statut</th>
                     <th className="px-4 py-3 font-medium">Lettre</th>
+                    <th className="px-4 py-3 font-medium">Site web</th>
                     <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -183,6 +185,9 @@ export default async function AdminSiteInternetPage() {
                         >
                           Lettre →
                         </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <SiteLink slug={r.slug} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1">
