@@ -5,6 +5,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { BatchDiscover } from "../_components/batch-discover";
+import { SiteLink } from "../_components/site-link";
 import { resolveMetier, metierFamily, FAMILY_LABEL, type MetierFamily } from "@/lib/site-internet/metier-profiles";
 
 // Pastille « famille » (A commerce / B santé praticité / C santé encadrée / D droit).
@@ -184,6 +185,9 @@ export default async function DecouvertePage() {
                                   >
                                     Lettre →
                                   </Link>
+                                </td>
+                                <td className="py-2 pr-3">
+                                  <SiteLink slug={r.slug} />
                                 </td>
                                 <td className="py-2">
                                   <div className="flex flex-wrap items-center gap-1">
