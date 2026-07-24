@@ -20,14 +20,18 @@ export type DemarchageTarget = {
   offerIsExample: boolean;
 };
 
-type Phase = "hidden" | "slots" | "booking" | "done";
+type Phase = "hidden" | "slots" | "details" | "booking" | "done";
 type Slot = { day: string; time: string };
 
 export function DemarchageBooking({ target, hostNom, accent }: { target: DemarchageTarget; hostNom: string; accent: string }) {
   const [phase, setPhase] = useState<Phase>("hidden");
   const [sel, setSel] = useState<Slot | null>(null);
+  const [prenom, setPrenom] = useState("");
+  const [tel, setTel] = useState("");
   const [ref, setRef] = useState("");
   const timers = useRef<number[]>([]);
+  const telOk = tel.replace(/\D/g, "").length >= 9;
+  const detailsOk = prenom.trim().length >= 2 && telOk;
 
   const days = buildDays();
 
@@ -56,16 +60,18 @@ export function DemarchageBooking({ target, hostNom, accent }: { target: Demarch
   }, []);
 
   const confirm = () => {
-    if (!sel || phase === "booking") return;
+    if (!sel || !detailsOk || phase === "booking") return;
     setRef(`${(target.ville || "DX").slice(0, 2).toUpperCase()}-${1000 + Math.floor(Math.random() * 8999)}`);
     setPhase("booking");
-    after(1500, () => setPhase("done"));
+    after(1600, () => setPhase("done"));
   };
 
   const close = () => {
     clearTimers();
     setPhase("hidden");
     setSel(null);
+    setPrenom("");
+    setTel("");
   };
 
   if (phase === "hidden") return null;
@@ -102,10 +108,32 @@ export function DemarchageBooking({ target, hostNom, accent }: { target: Demarch
               </div>
             ))}
             <div className="dbk-cta">
-              <button type="button" className="dbk-btn" disabled={!sel} onClick={confirm}>
-                {sel ? `Confirmer — ${sel.day} à ${sel.time}` : "Choisissez un créneau"}
+              <button type="button" className="dbk-btn" disabled={!sel} onClick={() => sel && setPhase("details")}>
+                {sel ? `Continuer — ${sel.day} à ${sel.time}` : "Choisissez un créneau"}
               </button>
               <div className="dbk-note">Simulation — aucune réservation réelle n&apos;est enregistrée.</div>
+            </div>
+          </div>
+        )}
+
+        {phase === "details" && (
+          <div className="dbk-pad">
+            <div className="dbk-say">Parfait, <b>{sel?.day} à {sel?.time}</b>. Il me faut juste votre nom et un numéro pour confirmer — rien de plus.</div>
+            <div className="dbk-recap">
+              <span>📅 {sel?.day} · {sel?.time}</span>
+              <button type="button" className="dbk-chg" onClick={() => setPhase("slots")}>modifier</button>
+            </div>
+            <label className="dbk-field">
+              <span>Votre prénom</span>
+              <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Ex. Camille" autoComplete="given-name" />
+            </label>
+            <label className="dbk-field">
+              <span>Votre téléphone</span>
+              <input value={tel} onChange={(e) => setTel(e.target.value)} placeholder="Ex. 06 12 34 56 78" inputMode="tel" autoComplete="tel" />
+            </label>
+            <div className="dbk-cta">
+              <button type="button" className="dbk-btn" disabled={!detailsOk} onClick={confirm}>Confirmer la réservation</button>
+              <div className="dbk-note">🔒 Simulation — vos infos ne sont ni enregistrées ni envoyées.</div>
             </div>
           </div>
         )}
@@ -127,6 +155,10 @@ export function DemarchageBooking({ target, hostNom, accent }: { target: Demarch
                 <div className="dbk-cr">
                   <span>Établissement</span>
                   <b>{hostNom}</b>
+                </div>
+                <div className="dbk-cr">
+                  <span>Au nom de</span>
+                  <b>{prenom.trim() || "—"}</b>
                 </div>
                 <div className="dbk-cr">
                   <span>Créneau</span>
@@ -219,6 +251,13 @@ const CSS = `
 .dbk-btn{width:100%;background:var(--dbk-a);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 14px 30px -12px var(--dbk-a);}
 .dbk-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
 .dbk-note{text-align:center;font-size:10.5px;color:#A6A69C;font-style:italic;margin-top:10px;}
+/* Étape coordonnées */
+.dbk-recap{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #EAE7DE;border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;margin-bottom:14px;}
+.dbk-chg{background:none;border:none;color:var(--dbk-a);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;}
+.dbk-field{display:block;margin-bottom:12px;}
+.dbk-field span{display:block;font-size:11.5px;color:#8A8A80;font-weight:600;margin-bottom:5px;}
+.dbk-field input{width:100%;border:1px solid #E0DCD2;border-radius:12px;padding:13px 14px;font-size:15px;font-family:inherit;background:#fff;color:#16160F;}
+.dbk-field input:focus{outline:none;border-color:var(--dbk-a);box-shadow:0 0 0 3px color-mix(in srgb,var(--dbk-a) 16%,transparent);}
 /* Booking transition */
 .dbk-booking{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:180px;}
 .dbk-spin{width:40px;height:40px;border-radius:50%;border:3px solid color-mix(in srgb,var(--dbk-a) 22%,#eee);border-top-color:var(--dbk-a);animation:dbkSpin .8s linear infinite;}

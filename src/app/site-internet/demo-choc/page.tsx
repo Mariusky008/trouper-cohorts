@@ -46,10 +46,12 @@ export default async function DemoChocPage() {
   }
 
   const ville = target?.ville || "Dax";
+  // Photos réelles (banque libre) superposées à un dégradé de repli : si une image
+  // ne charge pas, on voit le dégradé — jamais d'image cassée.
   const rooms = [
-    { n: "Chambre Source", d: "Lit king, vue jardin, salle d'eau en pierre.", p: "119 €", g: "linear-gradient(150deg,#3A5C58,#20302E)" },
-    { n: "Suite Thermale", d: "Bain balnéo privatif, terrasse, peignoirs.", p: "189 €", g: "linear-gradient(150deg,#5A6B4A,#2C3626)" },
-    { n: "Chambre Cosy", d: "Idéale escapade, petit-déjeuner inclus.", p: "94 €", g: "linear-gradient(150deg,#6B5A46,#33291E)" },
+    { n: "Chambre Source", d: "Lit king, vue jardin, salle d'eau en pierre.", p: "119 €", g: "linear-gradient(150deg,#3A5C58,#20302E)", img: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=70" },
+    { n: "Suite Thermale", d: "Bain balnéo privatif, terrasse, peignoirs.", p: "189 €", g: "linear-gradient(150deg,#5A6B4A,#2C3626)", img: "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=70" },
+    { n: "Chambre Cosy", d: "Idéale escapade, petit-déjeuner inclus.", p: "94 €", g: "linear-gradient(150deg,#6B5A46,#33291E)", img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=70" },
   ];
   const reviews = [
     { t: "Accueil aux petits soins, chambre magnifique et le spa est un vrai bonheur. On reviendra sans hésiter.", n: "Séjour de septembre" },
@@ -70,6 +72,7 @@ export default async function DemoChocPage() {
           <div className="hoc-brand">✦ Hôtel du Collectif</div>
           <span className="hoc-open"><i />Réception 24 h/24</span>
         </div>
+        <div className="hoc-spacer" aria-hidden="true" />
         <div className="hoc-hero-body">
           <div className="hoc-eyebrow">Boutique-hôtel &amp; spa · {ville}</div>
           <h1 className="hoc-h1">Un séjour d&apos;exception,<br />au cœur de {ville}.</h1>
@@ -97,7 +100,7 @@ export default async function DemoChocPage() {
         <div className="hoc-rooms">
           {rooms.map((r) => (
             <div className="hoc-room" key={r.n}>
-              <div className="hoc-room-img" style={{ background: r.g }} aria-hidden="true"><span className="hoc-room-tag">Dès {r.p} / nuit</span></div>
+              <div className="hoc-room-img" style={{ backgroundImage: `url("${r.img}"), ${r.g}` }} aria-hidden="true"><span className="hoc-room-tag">Dès {r.p} / nuit</span></div>
               <div className="hoc-room-b">
                 <div className="hoc-room-n">{r.n}</div>
                 <div className="hoc-room-d">{r.d}</div>
@@ -170,17 +173,16 @@ const CSS = `
 .hoc *{box-sizing:border-box;}
 .hoc .hoc-demo{background:#141210;color:#D8CDB6;font-size:11px;text-align:center;padding:7px 14px;letter-spacing:.04em;}
 /* HERO */
-.hoc .hoc-hero{position:relative;min-height:92vh;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
-.hoc .hoc-bg{position:absolute;inset:0;z-index:0;background:
-  radial-gradient(120% 80% at 18% 8%,rgba(201,162,74,.4),transparent 52%),
-  radial-gradient(110% 90% at 92% 18%,rgba(28,91,99,.6),transparent 58%),
-  linear-gradient(160deg,#25433F 0%,#16211F 56%,#0E1513 100%);}
-.hoc .hoc-bg::after{content:"";position:absolute;inset:0;opacity:.5;background:
-  radial-gradient(2px 2px at 30% 40%,rgba(255,255,255,.4),transparent),
-  radial-gradient(1.5px 1.5px at 70% 55%,rgba(255,255,255,.25),transparent),
-  radial-gradient(1.5px 1.5px at 50% 75%,rgba(255,255,255,.2),transparent);}
-.hoc .hoc-veil{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,14,12,.35),rgba(10,14,12,.1) 34%,rgba(10,14,12,.72) 82%,rgba(10,14,12,.92));}
+.hoc .hoc-hero{position:relative;min-height:560px;display:flex;flex-direction:column;overflow:hidden;}
+.hoc .hoc-bg{position:absolute;inset:0;z-index:0;background-color:#16211F;background-repeat:no-repeat;background-position:center;background-size:cover;
+  background-image:
+    url("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=70"),
+    radial-gradient(120% 80% at 18% 8%,rgba(201,162,74,.45),transparent 52%),
+    radial-gradient(110% 90% at 92% 18%,rgba(28,91,99,.7),transparent 58%),
+    linear-gradient(160deg,#25433F 0%,#16211F 56%,#0E1513 100%);}
+.hoc .hoc-veil{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(9,13,11,.5),rgba(9,13,11,.28) 32%,rgba(9,13,11,.78) 78%,rgba(9,13,11,.95));}
 .hoc .hoc-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:20px 22px 0;}
+.hoc .hoc-spacer{flex:1;min-height:70px;}
 .hoc .hoc-brand{font-family:Georgia,serif;color:#fff;font-size:17px;font-weight:600;letter-spacing:.01em;}
 .hoc .hoc-open{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:rgba(255,255,255,.9);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 11px;}
 .hoc .hoc-open i{width:6px;height:6px;border-radius:50%;background:#5FD98A;box-shadow:0 0 0 3px rgba(95,217,138,.3);}
@@ -216,7 +218,7 @@ const CSS = `
 .hoc .hoc-sh{font-family:Georgia,serif;font-size:23px;font-weight:600;margin-top:7px;line-height:1.15;}
 .hoc .hoc-rooms{display:flex;flex-direction:column;gap:14px;margin-top:18px;}
 .hoc .hoc-room{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 18px 40px -30px rgba(0,0,0,.5);}
-.hoc .hoc-room-img{position:relative;height:130px;}
+.hoc .hoc-room-img{position:relative;height:140px;background-size:cover;background-position:center;background-color:#20302E;}
 .hoc .hoc-room-tag{position:absolute;bottom:10px;left:12px;background:rgba(255,255,255,.92);color:#141210;font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;}
 .hoc .hoc-room-b{padding:14px 15px 15px;}
 .hoc .hoc-room-n{font-family:Georgia,serif;font-size:17px;font-weight:600;}
