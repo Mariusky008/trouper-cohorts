@@ -18,7 +18,7 @@ async function load(slug: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("business_name, city, activite, google_rating, google_reviews, diagnostic, gallery_photos, current_offer, metadata, whatsapp_phone_e164")
+    .select("business_name, city, activite, address, google_rating, google_reviews, diagnostic, gallery_photos, current_offer, metadata, whatsapp_phone_e164, services")
     .eq("slug", slug)
     .maybeSingle();
   const row = data as Record<string, unknown> | null;
@@ -51,6 +51,23 @@ async function load(slug: string) {
     telHref: tel ? `tel:${tel}` : "",
     mapsHref: `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`.trim())}`,
   };
+  // Récap « fun » du site (catalogue autonome) : avis Google réels, prestations du
+  // pro, adresse & horaires — jamais de contenu inventé.
+  const reviews = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
+    .map((r) => (r && typeof r === "object" ? (r as Record<string, unknown>) : {}))
+    .map((r) => ({ text: str(r.text), name: str(r.name), stars: typeof r.stars === "number" ? (r.stars as number) : null }))
+    .filter((r) => r.text.length >= 12 && (r.stars == null || r.stars >= 4))
+    .slice(0, 2);
+  const services = (Array.isArray(row.services) ? row.services : [])
+    .map((s) => (s && typeof s === "object" ? (s as Record<string, unknown>) : {}))
+    .map((s) => ({ name: str(s.name), price: str(s.price) || undefined }))
+    .filter((s) => s.name.length > 0)
+    .slice(0, 5);
+  const horaires = (Array.isArray(diag.horaires) ? diag.horaires : [])
+    .map((h) => (h && typeof h === "object" ? (h as Record<string, unknown>) : {}))
+    .map((h) => ({ jours: str(h.jours), horaires: str(h.horaires) }))
+    .filter((h) => h.jours || h.horaires);
+  const extras = { reviews, services, address: str(row.address), horaires };
   return {
     nom,
     metierLabel: [metier, ville].filter(Boolean).join(" · "),
@@ -58,6 +75,7 @@ async function load(slug: string) {
     videos,
     offer,
     contact,
+    extras,
     note: typeof row.google_rating === "number" ? String(row.google_rating).replace(".", ",") : null,
     reviewsCount: typeof row.google_reviews === "number" ? row.google_reviews : null,
   };
@@ -90,6 +108,7 @@ export default async function CataloguePage({ params }: Params) {
         accent="#00E0A0"
         standalone
         contact={d.contact}
+        extras={d.extras}
       />
     </main>
   );

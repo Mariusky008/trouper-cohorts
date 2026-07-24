@@ -10,10 +10,22 @@
 // aucun chiffre inventé, « J'aime » = compteur local.
 import { useEffect, useRef, useState } from "react";
 
+type Review = { text: string; name: string; stars: number | null };
+type Svc = { name: string; price?: string };
 type Media =
   | { kind: "video"; url: string }
   | { kind: "photo"; url: string }
-  | { kind: "offer"; text: string; until: string | null };
+  | { kind: "offer"; text: string; until: string | null }
+  | { kind: "review"; review: Review }
+  | { kind: "services"; items: Svc[] }
+  | { kind: "access"; address: string; horaires: Array<{ jours?: string; horaires?: string }> };
+
+export type PhotoDeckExtras = {
+  reviews?: Review[];
+  services?: Svc[];
+  address?: string;
+  horaires?: Array<{ jours?: string; horaires?: string }>;
+};
 
 type Props = {
   slug: string;
@@ -27,6 +39,7 @@ type Props = {
   accent: string;
   standalone?: boolean;
   contact?: { reserveHref?: string; telHref?: string; mapsHref?: string }; // catalogue autonome : actions directes
+  extras?: PhotoDeckExtras; // catalogue autonome : cartes récap (avis, prestations, accès)
 };
 
 function ytId(u: string): string | null {
@@ -34,12 +47,21 @@ function ytId(u: string): string | null {
   return m ? m[1] : null;
 }
 
-export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, standalone, contact }: Props) {
+export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, standalone, contact, extras }: Props) {
   const reserveHref = contact?.reserveHref || `/site-internet/apercu/${slug}`;
   const cards: Media[] = [];
   (videos ?? []).slice(0, 6).forEach((url) => cards.push({ kind: "video", url }));
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
   if (offer?.text) cards.splice(Math.min(1, cards.length), 0, { kind: "offer", text: offer.text, until: offer.until ?? null });
+  // Récap « fun » du site — UNIQUEMENT sur le catalogue autonome partagé (dans la
+  // maquette, avis/prestations/accès existent déjà en sections).
+  if (standalone && extras) {
+    (extras.reviews ?? []).slice(0, 2).forEach((review) => cards.push({ kind: "review", review }));
+    const svc = (extras.services ?? []).filter((s) => s.name).slice(0, 5);
+    if (svc.length) cards.push({ kind: "services", items: svc });
+    const hz = (extras.horaires ?? []).filter((h) => h.jours || h.horaires);
+    if ((extras.address && extras.address.trim()) || hz.length) cards.push({ kind: "access", address: (extras.address ?? "").trim(), horaires: hz });
+  }
 
   const [idx, setIdx] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -239,6 +261,42 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
                         </div>
                       </>
                     )}
+                    {c.kind === "review" && (
+                      <div className="pdk-panel pdk-reviewbg">
+                        <div className="pdk-ptag">💬 Avis Google</div>
+                        <div className="pdk-revstars">{"★".repeat(c.review.stars ? Math.max(1, Math.min(5, Math.round(c.review.stars))) : 5)}</div>
+                        <div className="pdk-revq">« {c.review.text.length > 200 ? c.review.text.slice(0, 199).trimEnd() + "…" : c.review.text} »</div>
+                        <div className="pdk-revauth">{c.review.name ? `— ${c.review.name}` : "— Client vérifié"} · Google</div>
+                      </div>
+                    )}
+                    {c.kind === "services" && (
+                      <div className="pdk-panel pdk-svcbg">
+                        <div className="pdk-ptag">📋 Prestations</div>
+                        <div className="pdk-svclist">
+                          {c.items.map((s, k) => (
+                            <div className="pdk-svcrow" key={k}>
+                              <span className="pdk-svcn">{s.name}</span>
+                              {s.price ? <span className="pdk-svcp">{s.price}</span> : null}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="pdk-meta" style={{ marginTop: 12 }}>chez {nom}</div>
+                      </div>
+                    )}
+                    {c.kind === "access" && (
+                      <div className="pdk-panel pdk-accessbg">
+                        <div className="pdk-ptag">📍 Infos &amp; accès</div>
+                        {c.address && <div className="pdk-addr">{c.address}</div>}
+                        {c.horaires.length > 0 && (
+                          <div className="pdk-hours">
+                            {c.horaires.slice(0, 7).map((h, k) => (
+                              <div className="pdk-hrow" key={k}><span>{h.jours || ""}</span><span className="pdk-hh">{h.horaires || ""}</span></div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="pdk-meta" style={{ marginTop: 12 }}>↑ swipez vers le haut pour réserver</div>
+                      </div>
+                    )}
                     {top && (
                       <>
                         <div className="pdk-stamp yes">❤ J&apos;aime</div>
@@ -320,6 +378,25 @@ const CSS = `
 .pdk-cd{position:absolute;top:16px;right:16px;z-index:5;font-weight:700;font-size:12px;color:#fff;background:rgba(11,13,18,.55);border:1px solid rgba(240,96,143,.55);padding:5px 10px;border-radius:999px;display:flex;gap:5px;align-items:center;}
 .pdk-cd span{color:#ffd1de;font-variant-numeric:tabular-nums;}
 .pdk-vtag{position:absolute;top:16px;left:16px;z-index:5;font-weight:700;font-size:11px;color:#fff;background:rgba(11,13,18,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:5px 10px;border-radius:999px;}
+/* Cartes récap (avis / prestations / accès) — catalogue autonome */
+.pdk-panel{position:absolute;inset:0;padding:24px 20px;display:flex;flex-direction:column;justify-content:center;color:#EAF0FA;}
+.pdk-reviewbg{background:radial-gradient(120% 90% at 50% 10%,#243055,#0E1424);}
+.pdk-svcbg{background:radial-gradient(120% 90% at 50% 10%,#14324A,#0B1622);}
+.pdk-accessbg{background:radial-gradient(120% 90% at 50% 10%,#123A2E,#0B1A16);}
+.pdk-ptag{position:absolute;top:18px;left:18px;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9FE7C9;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:5px 11px;border-radius:999px;}
+.pdk-revstars{color:#FFC400;font-size:26px;letter-spacing:3px;text-align:center;}
+.pdk-revq{font-family:Georgia,serif;font-size:19px;font-style:italic;line-height:1.45;text-align:center;margin-top:16px;color:#fff;}
+.pdk-revauth{font-size:12.5px;color:#AEB4C0;text-align:center;margin-top:14px;font-weight:600;}
+.pdk-svclist{display:flex;flex-direction:column;gap:2px;margin-top:8px;}
+.pdk-svcrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.1);}
+.pdk-svcrow:last-child{border-bottom:none;}
+.pdk-svcn{font-family:Georgia,serif;font-size:15.5px;color:#fff;line-height:1.2;}
+.pdk-svcp{flex:none;font-weight:800;font-size:15px;color:#7EF0CE;white-space:nowrap;}
+.pdk-addr{font-size:15px;line-height:1.45;color:#fff;margin-top:6px;text-align:center;}
+.pdk-hours{margin-top:14px;display:flex;flex-direction:column;}
+.pdk-hrow{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#C7D2E6;}
+.pdk-hrow:last-child{border-bottom:none;}
+.pdk-hrow .pdk-hh{color:#fff;font-weight:600;}
 .pdk-snd{position:absolute;top:14px;right:14px;z-index:6;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.6);background:rgba(11,13,18,.45);color:#fff;font-size:15px;cursor:pointer;}
 .pdk-stamp{position:absolute;top:80px;font-weight:800;font-size:20px;letter-spacing:.03em;padding:8px 13px;border-radius:12px;opacity:0;text-transform:uppercase;pointer-events:none;z-index:7;}
 .pdk-stamp.yes{right:18px;color:#00E0A0;border:3px solid #00E0A0;transform:rotate(14deg);}
