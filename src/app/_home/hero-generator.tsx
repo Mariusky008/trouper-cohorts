@@ -38,7 +38,7 @@ export function HeroGenerator() {
     setPct(0);
     // Progression douce vers ~94 % en ~55 s (l'appel Apify couvre l'attente).
     const t1 = window.setInterval(() => setPct((v) => (v < 94 ? v + Math.max(0.4, (94 - v) / 28) : v)), 650);
-    const t2 = window.setInterval(() => setStep((s) => (s < STEPS.length - 1 ? s + 1 : s)), 8000);
+    const t2 = window.setInterval(() => setStep((s) => (s < STEPS.length - 1 ? s + 1 : s)), 6000);
     timers.current.push(t1, t2);
   };
   const stopAnim = () => {
@@ -104,12 +104,34 @@ export function HeroGenerator() {
 
       {building && (
         <div className="genov" role="dialog" aria-label="Construction de votre site">
-          <div className="genov-card">
-            <div className="genov-orb"><span>✦</span></div>
-            <div className="genov-title">Je construis le site de <b>{nom.trim()}</b>…</div>
-            <div className="genov-step">{STEPS[step]}</div>
-            <div className="genov-bar"><i style={{ width: `${Math.min(100, Math.round(pct))}%` }} /></div>
-            <div className="genov-sub">Gardez cet écran ouvert un instant — votre site arrive.</div>
+          <div className="genov-inner">
+            {/* Aperçu qui se « dessine » : les sections du site apparaissent une à une. */}
+            <div className="bp-phone">
+              <div className="bp-bar"><span /><span /><span /><em>{(nom.trim() || "votre-site").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22)}.popey.fr</em></div>
+              <div className="bp-screen">
+                <div className={`bp-hero${step >= 1 ? " lit" : ""}`}>
+                  <div className="bp-sh" />
+                  <div className="bp-htxt">
+                    <div className={`bp-name${step >= 1 ? " on" : ""}`}>{nom.trim() || "Votre établissement"}</div>
+                    <div className={`bp-role${step >= 2 ? " on" : ""}`}>{[activite.trim(), ville.trim()].filter(Boolean).join(" · ") || "Votre activité"}</div>
+                    <div className={`bp-stars${step >= 2 ? " on" : ""}`}>★★★★★ <span>avis Google</span></div>
+                  </div>
+                </div>
+                <div className="bp-body">
+                  <div className={`bp-thumbs${step >= 3 ? " on" : ""}`}><i /><i /><i /></div>
+                  <div className={`bp-chat${step >= 4 ? " on" : ""}`}>
+                    <div className="bp-bub them">Bonjour, vous avez de la place&nbsp;?</div>
+                    <div className="bp-bub me">Bonjour 😊 Oui&nbsp;! Je vous réserve ça&nbsp;?</div>
+                  </div>
+                  <div className={`bp-cta${step >= 5 ? " on" : ""}`}>Prendre rendez-vous</div>
+                </div>
+              </div>
+            </div>
+            <div className="genov-status">
+              <div className="genov-title">Je construis le site de <b>{nom.trim() || "votre établissement"}</b>…</div>
+              <div className="genov-step"><span className="genov-dot" />{STEPS[step]}</div>
+              <div className="genov-bar"><i style={{ width: `${Math.min(100, Math.round(pct))}%` }} /></div>
+            </div>
           </div>
         </div>
       )}
