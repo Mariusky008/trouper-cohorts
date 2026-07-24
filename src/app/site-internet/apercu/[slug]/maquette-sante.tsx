@@ -11,6 +11,7 @@ import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
 import { ScanBeacon } from "./scan-beacon";
 import { DemoTour } from "./demo-tour";
+import { LivingHero } from "./living-hero";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -63,6 +64,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
+  const bookLabel = confirmation === "devis" ? "Demander un devis" : confirmation === "rappel" ? "Être rappelé(e)" : confirmation === "acompte" ? "Réserver ma date" : "Prendre rendez-vous";
 
   // ── Sections « Pour quoi venir me voir ? » (motifs) et « Mes accompagnements »
   // (menu). Pilotées par la config métier : rien à afficher → section omise.
@@ -79,8 +81,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const stars = (n: number | null) => "★".repeat(n != null ? Math.max(1, Math.min(5, Math.round(n))) : 5);
   const showAvis = avisMode !== "none" && note != null && reviewsCount != null && reviewsCount > 0;
   const roleLine = [metierLabel, villeAff].filter(Boolean).join(" · ");
-  const heroPhoto = photos[0] || "";
-  const gallery = photos.slice(heroPhoto ? 1 : 0);
+  const gallery = photos;
   const shortAddr = adresse.replace(/,?\s*France\s*$/i, "").trim();
   const heures = horaires.filter((h) => h.jours || h.horaires).slice(0, 7);
   // Badge « Ouvert maintenant » depuis les vrais horaires (null si incertain).
@@ -365,28 +366,20 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </a>
       )}
 
-      <div className="hero">
-        <div className="img" style={heroPhoto ? { backgroundImage: `url("${heroPhoto}")` } : undefined} />
-        <div className="veil" />
-        <div className="txt">
-          <div className="k">{roleLine}</div>
-          <h2>{nom}</h2>
-          <div className="sub">Sur rendez-vous{shortAddr ? ` · ${shortAddr}` : ""}</div>
-          {(showAvis || openState) && (
-            <div className="meta">
-              {showAvis && (
-                <span className="m-note"><b>★</b> {note}<span className="m-sub"> · {reviewsCount} avis</span></span>
-              )}
-              {showAvis && openState && <span className="m-sep">•</span>}
-              {openState && <span className={`m-open${openState.open ? "" : " off"}`}><i />{openLabel}</span>}
-            </div>
-          )}
-          <div className="acts">
-            <a className="a-call" data-accueil-open>💬 Parler à mon assistante</a>
-            <a className="a-rdv" {...rdvProps}>Prendre rendez-vous</a>
-          </div>
-        </div>
-      </div>
+      <LivingHero
+        nom={nom}
+        roleLine={roleLine}
+        photos={photos}
+        accent={accent}
+        note={note}
+        reviewsCount={reviewsCount}
+        showAvis={showAvis}
+        openLabel={openLabel}
+        openOpen={Boolean(openState?.open)}
+        bookLabel={bookLabel}
+        bookHref={bookingHref}
+        hasGallery={gallery.length > 0}
+      />
 
       <section>
         <div className="sec-k">Mon approche</div>
