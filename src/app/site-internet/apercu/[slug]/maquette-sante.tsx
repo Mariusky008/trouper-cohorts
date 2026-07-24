@@ -13,6 +13,7 @@ import { ScanBeacon } from "./scan-beacon";
 import { DemoTour } from "./demo-tour";
 import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
+import { CollectifSection } from "./collectif-section";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -275,12 +276,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .close .lead{margin-top:16px;}
           .mqc .close .urg{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.45;}
           .mqc .close .urg b{color:var(--ink);}
-          /* LE COLLECTIF (côté client) — accès aux partenaires complémentaires */
-          .mqc .collectif .sec-k{color:var(--accent);}
-          .mqc .col-chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px;}
-          .mqc .col-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:10px 15px;font-size:13px;font-weight:600;color:var(--ink);}
-          .mqc .col-cta{display:inline-flex;align-items:center;gap:9px;margin-top:18px;background:var(--accent);color:var(--cream);border-radius:26px;padding:14px 24px;font-size:14.5px;font-weight:700;text-decoration:none;cursor:pointer;box-shadow:0 14px 30px -14px var(--accent);}
-          .mqc .col-note{font-size:11.5px;color:var(--muted);margin-top:13px;line-height:1.5;}
           /* BARRE FIXE unique */
           .mqc .bar{position:sticky;bottom:0;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:20;}
           .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
@@ -387,7 +382,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         bookLabel={bookLabel}
         bookHref={bookingHref}
         hasGallery={gallery.length > 0}
-        extraChip={avisMode === "prominent" ? { label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif" } : null}
+        extraChips={avisMode === "prominent" ? [
+          { label: "📣 Promos / événements", target: "mq-cercle" },
+          { label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif", gold: true },
+        ] : []}
       />
 
       <section>
@@ -446,26 +444,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {avisMode === "prominent" && (
-        <section className="collectif" id="mq-collectif">
-          <div className="sec-k">🤝 Le collectif de {villeAff}</div>
-          <div className="sec-h">Besoin d&apos;autre chose à {villeAff}&nbsp;?</div>
-          <div className="sec-p">
-            {nom} fait partie du collectif des meilleurs commerçants et artisans de {villeAff}. Vous cherchez un
-            service complémentaire&nbsp;? Demandez à l&apos;assistante — elle vous oriente vers les bons partenaires,
-            <b> les meilleurs de la ville</b>.
-          </div>
-          <div className="col-chips">
-            <span className="col-chip">💇 Beauté</span>
-            <span className="col-chip">📸 Photo</span>
-            <span className="col-chip">🌸 Fleurs</span>
-            <span className="col-chip">🍽️ Restauration</span>
-            <span className="col-chip">🎉 Événements</span>
-          </div>
-          <a className="col-cta" data-accueil-open>🤝 Demander au collectif</a>
-          <div className="col-note">Le collectif se construit commerce par commerce à {villeAff}. Aucune donnée n&apos;est partagée sans votre accord.</div>
-        </section>
-      )}
+      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} />}
 
       {serviceList.length === 0 && content.consultTitre && content.consultCartes.length > 0 && (
         <section>

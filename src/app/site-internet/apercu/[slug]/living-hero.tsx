@@ -21,19 +21,16 @@ type Props = {
   bookLabel: string;
   bookHref: string; // vraie page de réservation, sinon "" (→ ouvre l'assistante)
   hasGallery: boolean;
-  extraChip?: { label: string; target: string } | null; // bouton « waouh » (ex. le collectif) → scroll vers un id
+  extraChips?: Array<{ label: string; target: string; gold?: boolean }>; // boutons secondaires → scroll vers un id
 };
 
-export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, showAvis, openLabel, openOpen, bookLabel, bookHref, hasGallery, extraChip }: Props) {
+export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, showAvis, openLabel, openOpen, bookLabel, bookHref, extraChips }: Props) {
   const imgs = photos.slice(0, 5);
   const [slide, setSlide] = useState(0);
   const [typed, setTyped] = useState("");
   const [ready, setReady] = useState(false);
 
-  const greeting =
-    `Bonjour 👋 Bienvenue chez ${nom}. ` +
-    (hasGallery ? "Envie de voir nos réalisations, réserver un créneau ou poser une question ? " : "Réserver un créneau ou poser une question ? ") +
-    "Je suis là, à toute heure.";
+  const greeting = `Bonjour 👋 Bienvenue chez ${nom}. Je peux réserver pour vous, répondre à vos questions et vous orienter. Je suis là, à toute heure.`;
 
   // Diaporama des vraies photos (fond immersif).
   useEffect(() => {
@@ -59,8 +56,6 @@ export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, 
     return () => clearTimeout(start);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nom]);
-
-  const scrollGallery = () => document.getElementById("mq-gallery")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <section className="lh" style={{ ["--lh-accent" as string]: accent }}>
@@ -108,11 +103,11 @@ export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, 
           .mqc .lh-chip{display:inline-flex;align-items:center;gap:7px;border:none;font-family:inherit;cursor:pointer;border-radius:999px;padding:12px 16px;font-size:13.5px;font-weight:700;text-decoration:none;}
           .mqc .lh-chip.primary{background:#fff;color:#14100E;flex:1;justify-content:center;min-width:150px;box-shadow:0 10px 24px -12px rgba(0,0,0,.6);}
           .mqc .lh-chip.ghost{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28);}
-          .mqc .lh-chip.wow{position:relative;overflow:hidden;flex-basis:100%;justify-content:center;color:#3A2A08;font-weight:800;
-            background:linear-gradient(120deg,#FFE7A6,#F5B942 55%,#E79A2B);box-shadow:0 14px 30px -12px rgba(231,154,43,.75);}
-          .mqc .lh-chip.wow::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:lhSheen 3.2s ease-in-out infinite;}
+          .mqc .lh-chip.gold{position:relative;overflow:hidden;color:#3A2A08;font-weight:800;border:none;
+            background:linear-gradient(120deg,#FFE7A6,#F5B942 55%,#E79A2B);box-shadow:0 12px 26px -12px rgba(231,154,43,.75);}
+          .mqc .lh-chip.gold::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:lhSheen 3.2s ease-in-out infinite;}
           @keyframes lhSheen{0%,55%{left:-60%}100%{left:130%}}
-          @media(prefers-reduced-motion:reduce){.mqc .lh-chip.wow::after{display:none;}}
+          @media(prefers-reduced-motion:reduce){.mqc .lh-chip.gold::after{display:none;}}
           .mqc .lh-chip:active{transform:translateY(1px);}
           .mqc .lh-scroll{position:relative;z-index:2;text-align:center;color:rgba(255,255,255,.7);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;padding:0 0 12px;}
 
@@ -167,18 +162,22 @@ export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, 
           </div>
           <div className="lh-say">{typed}{!ready && <span className="car" />}</div>
           <div className={`lh-chips${ready ? " in" : ""}`}>
-            {extraChip && (
-              <button type="button" className="lh-chip wow" onClick={() => document.getElementById(extraChip.target)?.scrollIntoView({ behavior: "smooth", block: "start" })}>{extraChip.label}</button>
-            )}
-            {hasGallery && (
-              <button type="button" className="lh-chip ghost" onClick={scrollGallery}>✨ Voir nos réalisations</button>
-            )}
             {bookHref ? (
               <a className="lh-chip primary" href={bookHref}>📅 {bookLabel}</a>
             ) : (
               <button type="button" className="lh-chip primary" data-accueil-open>📅 {bookLabel}</button>
             )}
             <button type="button" className="lh-chip ghost" data-accueil-open>💬 Poser une question</button>
+            {(extraChips ?? []).map((c) => (
+              <button
+                key={c.target}
+                type="button"
+                className={`lh-chip ghost${c.gold ? " gold" : ""}`}
+                onClick={() => document.getElementById(c.target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
         </div>
         <div className="lh-scroll">↓ Découvrir</div>

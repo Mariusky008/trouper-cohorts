@@ -46,7 +46,7 @@ export function CercleSection({ slug, accent, nom }: { slug: string; accent: str
   const noti = NOTIS[n];
 
   return (
-    <section className="cercle" style={{ ["--cc" as string]: accent }}>
+    <section className="cercle" id="mq-cercle" style={{ ["--cc" as string]: accent }}>
       <style
         dangerouslySetInnerHTML={{
           __html: `

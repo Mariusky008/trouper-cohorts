@@ -277,6 +277,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           /* Scène « collectif » : le mécanisme (partenaire → besoin → vous) */
           .dtour-card.rz2{text-align:left;}
           .dtour-card .rz2-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:#0E7C5A;background:#E4F7EE;border-radius:999px;padding:5px 12px;}
+          .dtour-card .rz2-partners{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;}
+          .dtour-card .rz2-partners span{font-size:12px;font-weight:700;color:#3A3F4C;background:#F1F0FB;border:1px solid #E6E3F7;border-radius:999px;padding:7px 12px;opacity:0;transform:translateY(8px) scale(.9);animation:dtPop .45s cubic-bezier(.22,1,.36,1) forwards;}
           .dtour-card .rz2-lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9095A0;font-weight:700;margin-top:15px;opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.4;margin-top:8px;opacity:0;transform:translateY(8px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub.them{background:#EEF0F7;color:#2A2E27;border-top-left-radius:5px;}
@@ -414,11 +416,16 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             <div className="dtour-ov">
               <div className="dtour-card rz2">
                 <div className="rz2-tag">🤝 Le collectif de {villeAff}</div>
-                <div className="rz2-lab" style={{ animationDelay: ".2s" }}>Chez un commerce partenaire…</div>
-                <div className="rz2-bub them" style={{ animationDelay: ".5s" }}>Je prépare mon mariage 💍</div>
-                <div className="rz2-bub me" style={{ animationDelay: "1.7s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
-                <div className="rz2-arrow" style={{ animationDelay: "3s" }}>↓ recommandée</div>
-                <div className="rz2-opp" style={{ animationDelay: "3.4s" }}>
+                <div className="rz2-partners">
+                  {["🌸 Fleuriste", "💄 Maquilleuse", "💅 Prothésiste", "📸 Photographe", "💇 Coiffeur"].map((p, i) => (
+                    <span key={p} style={{ animationDelay: `${0.15 + i * 0.13}s` }}>{p}</span>
+                  ))}
+                </div>
+                <div className="rz2-lab" style={{ animationDelay: "1s" }}>Chez un commerce partenaire…</div>
+                <div className="rz2-bub them" style={{ animationDelay: "1.3s" }}>Je prépare mon mariage 💍</div>
+                <div className="rz2-bub me" style={{ animationDelay: "2.5s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
+                <div className="rz2-arrow" style={{ animationDelay: "3.8s" }}>↓ recommandée</div>
+                <div className="rz2-opp" style={{ animationDelay: "4.2s" }}>
                   <span className="rz2-oppk">Pour vous</span>
                   <span className="rz2-oppb">🤝 <b>Nouvelle cliente</b> — elle cherche vos prestations pour un mariage. Proposer un créneau&nbsp;?</span>
                 </div>

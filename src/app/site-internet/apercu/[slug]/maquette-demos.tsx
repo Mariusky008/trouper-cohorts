@@ -398,7 +398,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
             )}
           </div>
         )}
-        <div className="asx-say">Pendant que vous êtes avec vos {plural}, je peux m’occuper du reste 🙂<br /><b>Que souhaitez-vous que je fasse pour vous&nbsp;?</b></div>
+        <div className="asx-say"><b>Que souhaitez-vous que je fasse pour vous&nbsp;?</b></div>
         <div className="asx-tasks">
           {avisAllowed && (
             <div className="asx-task">
