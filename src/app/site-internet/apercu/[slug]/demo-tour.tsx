@@ -109,7 +109,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             fallback = null;
           }
         } else if (started) {
-          window.setTimeout(finish, 650); // fin de phrase → courte respiration
+          window.setTimeout(finish, 240); // fin de phrase → transition rapide
         }
       });
       // Repli : la voix n'a pas démarré au bout de 2,8 s → on révèle le texte et on
@@ -145,20 +145,20 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     // Démo COURTE : présence (1 ligne) → collectif → ce que je fais → au site.
     const steps: Array<{ title: string; say: string; enter: () => void }> = [];
 
-    // 1 — Présence : vos avis (juste une ligne, pas un tableau)
+    // 1 — Présence : vos avis (juste une ligne) → « vous êtes parmi les meilleurs »
     steps.push({
       title: "Vos avis parlent pour vous",
       say: hasReviews
-        ? `Bonjour ${nom}. J'ai regardé votre présence en ligne — et vos avis sont excellents. C'est une vraie base de confiance ; on va la transformer en clients.`
-        : `Bonjour ${nom}. J'ai regardé votre présence en ligne. On va la transformer en clients.`,
+        ? `Bonjour ${nom}. J'ai regardé votre présence en ligne — et vos avis sont excellents. Ça veut dire une chose : vous êtes parmi les meilleurs de ${villeAff}.`
+        : `Bonjour ${nom}. J'ai regardé votre présence en ligne. On va bâtir votre réputation et faire de vous une référence à ${villeAff}.`,
       enter: () => { scrollTo(null); setScene("note"); },
     });
 
-    // 2 — Le collectif (commerce seulement) : les autres vous envoient des clients
+    // 2 — Le collectif : LIEN de cause à effet avec les avis (« parmi les meilleurs »)
     if (avisAllowed) {
       steps.push({
-        title: `Le collectif des commerçants de ${villeAff}`,
-        say: `Vous pouvez aller plus loin en rejoignant le collectif des commerçants et artisans de ${villeAff}. Le bénéfice, tout de suite : les autres commerces vous envoient des clients. Leur assistant repère un besoin, au bon moment, et vous le recommande.`,
+        title: `Le collectif de ${villeAff}`,
+        say: `Et parce que vous êtes parmi les meilleurs, vous pouvez rejoindre le collectif des commerçants de ${villeAff} — ceux qui se recommandent leurs clients. Le principe : quand un client réserve chez un membre, je lui demande s'il a besoin d'autre chose. Si oui, je le recommande à un partenaire. Résultat : les meilleurs de ${villeAff} s'envoient des clients. Et vous en êtes.`,
         enter: () => setScene("reso"),
       });
     }
@@ -274,21 +274,24 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .nt-line{font-size:20px;font-weight:800;color:#141A2E;margin-top:12px;letter-spacing:-.01em;}
           .dtour-card .nt-line b{color:#141A2E;}
           .dtour-card .nt-sub{font-size:13px;color:#6E7290;margin-top:7px;}
-          /* Scène « réseau » (condensée) */
-          .dtour-card .rz-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;color:#0E7C5A;background:#E4F7EE;border-radius:999px;padding:5px 12px;}
-          .dtour-card .rz-opp{margin-top:14px;background:#0E1524;border-radius:15px;padding:14px;color:#EAF0FA;text-align:left;}
-          .dtour-card .rz-oppk{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#0B0F1A;background:#7FE6C0;border-radius:6px;padding:3px 8px;font-weight:800;display:inline-block;}
-          .dtour-card .rz-oppb{font-size:13px;line-height:1.5;color:#C7D2E6;margin-top:10px;}
-          .dtour-card .rz-oppb b{color:#fff;}
-          .dtour-card .rz-oppa{display:flex;gap:8px;margin-top:12px;}
-          .dtour-card .rz-oppa .y{flex:1;text-align:center;background:#7FE6C0;color:#0B2A20;border-radius:9px;padding:9px;font-size:12.5px;font-weight:800;}
-          .dtour-card .rz-oppa .l{background:rgba(255,255,255,.08);color:#9FB0CE;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:600;}
-          .dtour-card .rz-note{font-size:11px;color:#6E7290;margin-top:12px;line-height:1.45;}
-          /* Scène « chaque jour » : liste de bénéfices */
-          .dtour-card .dy{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #EEF0F7;opacity:0;transform:translateY(8px);animation:dtCardIn .45s ease forwards;}
-          .dtour-card .dy:first-of-type{border-top:none;}
-          .dtour-card .dy-ic{width:36px;height:36px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(150deg,rgba(124,92,252,.14),rgba(18,185,129,.1));}
-          .dtour-card .dy-t{font-size:13.5px;font-weight:600;color:#141A2E;line-height:1.35;}
+          /* Scène « collectif » : le mécanisme (partenaire → besoin → vous) */
+          .dtour-card.rz2{text-align:left;}
+          .dtour-card .rz2-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:#0E7C5A;background:#E4F7EE;border-radius:999px;padding:5px 12px;}
+          .dtour-card .rz2-lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9095A0;font-weight:700;margin-top:15px;opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;}
+          .dtour-card .rz2-bub{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.4;margin-top:8px;opacity:0;transform:translateY(8px);animation:dtBub .4s ease forwards;}
+          .dtour-card .rz2-bub.them{background:#EEF0F7;color:#2A2E27;border-top-left-radius:5px;}
+          .dtour-card .rz2-bub.me{background:linear-gradient(120deg,#7C5CFC,#5B3FA6);color:#fff;border-top-right-radius:5px;margin-left:auto;}
+          .dtour-card .rz2-arrow{text-align:center;font-size:11px;font-weight:800;color:#0E9F6E;letter-spacing:.04em;margin-top:13px;opacity:0;animation:dtBub .4s ease forwards;}
+          .dtour-card .rz2-opp{display:block;margin-top:9px;background:linear-gradient(150deg,#12203A,#0B0F1A);border:1px solid rgba(127,230,192,.28);border-radius:15px;padding:14px;opacity:0;transform:translateY(12px) scale(.97);animation:dtPop .55s cubic-bezier(.22,1,.36,1) forwards;box-shadow:0 20px 40px -22px rgba(0,0,0,.6);}
+          .dtour-card .rz2-oppk{display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#0B2A20;background:#7FE6C0;border-radius:6px;padding:3px 8px;font-weight:800;}
+          .dtour-card .rz2-oppb{display:block;font-size:13.5px;line-height:1.45;color:#EAF0FA;margin-top:10px;}
+          .dtour-card .rz2-oppb b{color:#7FE6C0;}
+          @keyframes dtPop{to{opacity:1;transform:none}}
+          /* Scène « chaque jour » : cartes qui apparaissent une à une, modernes */
+          .dtour-card .dy{display:flex;align-items:center;gap:13px;margin-top:10px;padding:13px;border-radius:15px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;box-shadow:0 14px 28px -22px rgba(20,22,15,.55);opacity:0;transform:translateX(-16px) scale(.97);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
+          .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
+          .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
+          @keyframes dyIn{to{opacity:1;transform:none}}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -409,15 +412,16 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
 
           {scene === "reso" && (
             <div className="dtour-ov">
-              <div className="dtour-card">
-                <div className="rz-tag">🤝 Le collectif de {villeAff}</div>
-                <h4 style={{ marginTop: 10 }}>Les autres commerces vous envoient des clients</h4>
-                <div className="rz-opp">
-                  <div className="rz-oppk">Exemple · ce que vous recevez</div>
-                  <div className="rz-oppb"><b>Un salon partenaire</b> a une cliente qui prépare un mariage et cherche vos prestations à {villeAff}. <b>Proposer un créneau&nbsp;?</b></div>
-                  <div className="rz-oppa"><span className="y">✓ Proposer un créneau</span><span className="l">Plus tard</span></div>
+              <div className="dtour-card rz2">
+                <div className="rz2-tag">🤝 Le collectif de {villeAff}</div>
+                <div className="rz2-lab" style={{ animationDelay: ".2s" }}>Chez un commerce partenaire…</div>
+                <div className="rz2-bub them" style={{ animationDelay: ".5s" }}>Je prépare mon mariage 💍</div>
+                <div className="rz2-bub me" style={{ animationDelay: "1.7s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
+                <div className="rz2-arrow" style={{ animationDelay: "3s" }}>↓ recommandée</div>
+                <div className="rz2-opp" style={{ animationDelay: "3.4s" }}>
+                  <span className="rz2-oppk">Pour vous</span>
+                  <span className="rz2-oppb">🤝 <b>Nouvelle cliente</b> — elle cherche vos prestations pour un mariage. Proposer un créneau&nbsp;?</span>
                 </div>
-                <div className="rz-note">Vous choisissez vos partenaires (non concurrents). Rien n&apos;est partagé sans l&apos;accord du client.</div>
               </div>
             </div>
           )}
@@ -428,7 +432,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                 <h4>Chaque jour, pour vous</h4>
                 <div className="subx">Pendant que vous faites votre métier.</div>
                 {daily.map((d, i) => (
-                  <div className="dy" key={i} style={{ animationDelay: `${i * 0.12}s` }}>
+                  <div className="dy" key={i} style={{ animationDelay: `${0.15 + i * 0.4}s` }}>
                     <span className="dy-ic">{d.ic}</span>
                     <span className="dy-t">{d.t}</span>
                   </div>
