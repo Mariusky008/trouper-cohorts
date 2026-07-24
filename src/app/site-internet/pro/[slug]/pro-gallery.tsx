@@ -34,10 +34,16 @@ function compress(file: File): Promise<string> {
 
 export function ProGallery({ slug, token }: { slug: string; token: string }) {
   const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
+  const [vidInput, setVidInput] = useState("");
+  const [vidErr, setVidErr] = useState("");
+  const [vidBusy, setVidBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const catalogueUrl = typeof window !== "undefined" ? `${window.location.origin}/site-internet/apercu/${slug}/catalogue` : `/site-internet/apercu/${slug}/catalogue`;
 
   const call = async (body: Record<string, unknown>) => {
     const r = await fetch("/api/site-internet/pro/gallery", {
@@ -54,6 +60,7 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
       try {
         const { ok, j } = await call({ action: "get" });
         if (!cancelled && ok && Array.isArray(j.photos)) setPhotos(j.photos as string[]);
+        if (!cancelled && ok && Array.isArray(j.videos)) setVideos(j.videos as string[]);
       } catch {
         /* best-effort */
       } finally {
@@ -99,6 +106,38 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
     }
   };
 
+  const addVideo = async () => {
+    const url = vidInput.trim();
+    if (!url || vidBusy) return;
+    setVidBusy(true);
+    setVidErr("");
+    try {
+      const { ok, j } = await call({ action: "add_video", video: url });
+      if (ok && Array.isArray(j.videos)) { setVideos(j.videos as string[]); setVidInput(""); }
+      else setVidErr(typeof j.error === "string" ? j.error : "Lien invalide.");
+    } catch {
+      setVidErr("Ajout impossible.");
+    } finally {
+      setVidBusy(false);
+    }
+  };
+  const removeVideo = async (i: number) => {
+    setVideos((vs) => vs.filter((_, k) => k !== i)); // optimiste
+    try {
+      const { ok, j } = await call({ action: "remove_video", index: i });
+      if (ok && Array.isArray(j.videos)) setVideos(j.videos as string[]);
+    } catch {
+      /* best-effort */
+    }
+  };
+  const shareCatalogue = async () => {
+    try {
+      if (navigator.share) { await navigator.share({ title: "Mon catalogue", url: catalogueUrl }); return; }
+    } catch { /* annulé */ }
+    try { await navigator.clipboard.writeText(catalogueUrl); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch { /* noop */ }
+  };
+  const vidLabel = (u: string) => (/youtu/i.test(u) ? "▶ YouTube" : "▶ Vidéo") + " · " + u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 34) + "…";
+
   return (
     <>
       <style
@@ -115,6 +154,18 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
           .pro .gal .cell img{width:100%;height:100%;object-fit:cover;display:block;}
           .pro .gal .cell .x{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:rgba(12,14,12,.6);color:#fff;border:none;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
           .pro .gal .none{margin-top:14px;font-size:13px;color:var(--faint);line-height:1.45;}
+          .pro .gal .vid-add{display:flex;gap:8px;margin-top:12px;}
+          .pro .gal .vid-add input{flex:1;min-width:0;border:1px solid var(--hair);border-radius:11px;padding:11px 13px;font-size:13.5px;font-family:inherit;background:#fff;}
+          .pro .gal .vid-add button{flex:none;background:var(--ink);color:#fff;border:none;border-radius:11px;padding:0 16px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .gal .vid-add button:disabled{opacity:.5;cursor:not-allowed;}
+          .pro .gal .vlist{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+          .pro .gal .vrow{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);border-radius:11px;padding:10px 12px;font-size:12.5px;background:#fff;}
+          .pro .gal .vrow .vt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3A3A32;font-weight:600;}
+          .pro .gal .vrow .vx{flex:none;background:none;border:none;color:#B23B3B;font-size:15px;cursor:pointer;}
+          .pro .gal .share{margin-top:22px;border-top:1px solid var(--hair);padding-top:20px;}
+          .pro .gal .share-btn{margin-top:12px;width:100%;background:linear-gradient(120deg,#00E0A0,#07B083);color:#06231a;border:none;border-radius:12px;padding:14px;font-size:14.5px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 12px 26px -14px rgba(0,224,160,.8);}
+          .pro .gal .share-link{margin-top:10px;font-size:11.5px;color:var(--faint);word-break:break-all;line-height:1.4;}
+          .pro .gal .share-link a{color:var(--ink);font-weight:600;}
           `,
         }}
       />
@@ -144,6 +195,43 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
             ))}
           </div>
         )}
+
+        <div className="a-title" style={{ marginTop: 24 }}>🎬 Mes vidéos</div>
+        <div className="a-sub">
+          Collez un lien <b>YouTube</b> ou <b>.mp4</b>&nbsp;: vos vidéos apparaissent dans le catalogue à swiper, comme une story.
+        </div>
+        <div className="vid-add">
+          <input
+            value={vidInput}
+            onChange={(e) => setVidInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") addVideo(); }}
+            placeholder="https://youtu.be/… ou https://…/video.mp4"
+            inputMode="url"
+          />
+          <button onClick={addVideo} disabled={vidBusy || !vidInput.trim()}>{vidBusy ? "…" : "＋"}</button>
+        </div>
+        {vidErr && <div className="err">{vidErr}</div>}
+        {videos.length > 0 && (
+          <div className="vlist">
+            {videos.map((u, i) => (
+              <div className="vrow" key={i}>
+                <span className="vt">{vidLabel(u)}</span>
+                <button className="vx" aria-label="Retirer la vidéo" onClick={() => removeVideo(i)}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="share">
+          <div className="a-title">📲 Mon catalogue à partager</div>
+          <div className="a-sub">
+            Un lien à envoyer à vos client·es (WhatsApp, Insta, SMS)&nbsp;: ils swipent vos photos, vidéos et votre offre.
+          </div>
+          <button className="share-btn" onClick={shareCatalogue}>{copied ? "✓ Lien copié" : "📲 Partager mon catalogue"}</button>
+          <div className="share-link">
+            <a href={catalogueUrl} target="_blank" rel="noreferrer">{catalogueUrl.replace(/^https?:\/\//, "")}</a>
+          </div>
+        </div>
       </div>
     </>
   );

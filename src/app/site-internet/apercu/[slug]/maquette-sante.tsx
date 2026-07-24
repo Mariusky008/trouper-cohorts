@@ -63,13 +63,14 @@ export type MaquetteSanteProps = {
   collectifService: string; // « une séance découverte » / « une table » / « un rendez-vous » (toast collectif)
   collectifSource: string; // métier du partenaire d'où vient la réservation (toast collectif)
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
+  galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -457,10 +458,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {gallery.length > 0 && (
+      {(gallery.length > 0 || galleryVideos.length > 0) && (
         <PhotoDeck
           slug={slug}
           photos={gallery}
+          videos={galleryVideos}
           nom={nom}
           metierLabel={roleLine}
           note={note}

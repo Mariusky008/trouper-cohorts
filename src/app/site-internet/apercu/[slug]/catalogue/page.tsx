@@ -18,15 +18,17 @@ async function load(slug: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("business_name, city, activite, google_rating, google_reviews, diagnostic, gallery_photos, current_offer")
+    .select("business_name, city, activite, google_rating, google_reviews, diagnostic, gallery_photos, current_offer, metadata")
     .eq("slug", slug)
     .maybeSingle();
   const row = data as Record<string, unknown> | null;
   if (!row) return null;
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  const meta = (row.metadata && typeof row.metadata === "object" ? row.metadata : {}) as Record<string, unknown>;
   const proPhotos = (Array.isArray(row.gallery_photos) ? row.gallery_photos : []).map(str).filter((u) => /^data:image\//i.test(u)).slice(0, 12);
   const googlePhotos = (Array.isArray(diag.photos) ? diag.photos : []).map(str).filter((u) => /^https?:\/\//i.test(u)).slice(0, 12);
   const photos = proPhotos.length ? proPhotos : googlePhotos;
+  const videos = (Array.isArray(meta.gallery_videos) ? meta.gallery_videos : []).map(str).filter((u) => /^https?:\/\//i.test(u)).slice(0, 6);
   const rawOffer = row.current_offer && typeof row.current_offer === "object" ? (row.current_offer as Record<string, unknown>) : null;
   const offText = rawOffer ? str(rawOffer.text) : "";
   const until = rawOffer && typeof rawOffer.until === "string" ? rawOffer.until : null;
@@ -38,6 +40,7 @@ async function load(slug: string) {
     nom,
     metierLabel: [metier, ville].filter(Boolean).join(" · "),
     photos,
+    videos,
     offer,
     note: typeof row.google_rating === "number" ? String(row.google_rating).replace(".", ",") : null,
     reviewsCount: typeof row.google_reviews === "number" ? row.google_reviews : null,
@@ -56,12 +59,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function CataloguePage({ params }: Params) {
   const { slug } = await params;
   const d = await load(slug).catch(() => null);
-  if (!d || d.photos.length === 0) notFound();
+  if (!d || (d.photos.length === 0 && d.videos.length === 0)) notFound();
   return (
     <main style={{ background: "#0B0D12", minHeight: "100dvh" }}>
       <PhotoDeck
         slug={slug}
         photos={d.photos}
+        videos={d.videos}
         nom={d.nom}
         metierLabel={d.metierLabel}
         note={d.note}

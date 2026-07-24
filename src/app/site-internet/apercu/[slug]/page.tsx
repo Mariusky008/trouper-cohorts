@@ -52,7 +52,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos")
+    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -188,6 +188,12 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     .filter((u) => /^https?:\/\//i.test(u))
     .slice(0, 6);
   const photos = proPhotos.length ? proPhotos : googlePhotos;
+  // Vidéos du pro (YouTube / mp4) pour le catalogue à swiper — stockées dans metadata.
+  const meta = (row.metadata && typeof row.metadata === "object" ? row.metadata : {}) as Record<string, unknown>;
+  const galleryVideos = (Array.isArray(meta.gallery_videos) ? meta.gallery_videos : [])
+    .map((v) => str(v))
+    .filter((u) => /^https?:\/\//i.test(u))
+    .slice(0, 6);
   // Prestations RÉELLES saisies par le pro (« Mes accompagnements »). Bornées et
   // nettoyées. Les exemples de la maquette viennent de la config métier (côté
   // composant) : ici, aucun tarif inventé.
@@ -322,6 +328,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       collectifService={collectifService}
       collectifSource={collectifSource}
       demarchageTarget={demarchageTarget}
+      galleryVideos={galleryVideos}
     />
   );
 }
