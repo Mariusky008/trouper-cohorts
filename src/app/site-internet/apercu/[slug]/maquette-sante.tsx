@@ -13,7 +13,6 @@ import { ScanBeacon } from "./scan-beacon";
 import { DemoTour } from "./demo-tour";
 import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
-import { ReseauSection } from "./reseau-section";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -109,6 +108,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     reviewsCount,
     slot: "samedi 15 h 30",
     avisAllowed: avisMode === "prominent",
+    ville: villeAff,
   };
 
   // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en
@@ -382,8 +382,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         bookHref={bookingHref}
         hasGallery={gallery.length > 0}
       />
-
-      {!published && avisMode === "prominent" && <ReseauSection ville={villeAff} accent={accent} />}
 
       <section>
         <div className="sec-k">Mon approche</div>
