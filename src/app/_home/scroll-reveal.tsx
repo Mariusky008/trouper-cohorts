@@ -21,10 +21,17 @@ export function ScrollReveal() {
           }
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" },
+      // Très permissif : dès qu'un pixel entre, on révèle (jamais de bloc coincé).
+      { threshold: 0.02, rootMargin: "0px 0px -2% 0px" },
     );
     els.forEach((e) => io.observe(e));
-    return () => io.disconnect();
+    // Filet de sécurité : au cas où l'observer ne se déclencherait pas (scroll
+    // programmatique, navigateur exotique), tout devient visible après un délai.
+    const safety = window.setTimeout(() => els.forEach((e) => e.classList.add("reveal-in")), 4500);
+    return () => {
+      io.disconnect();
+      clearTimeout(safety);
+    };
   }, []);
   return null;
 }
