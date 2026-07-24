@@ -18,7 +18,7 @@ async function load(slug: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("business_name, city, activite, google_rating, google_reviews, diagnostic, gallery_photos, current_offer, metadata")
+    .select("business_name, city, activite, google_rating, google_reviews, diagnostic, gallery_photos, current_offer, metadata, whatsapp_phone_e164")
     .eq("slug", slug)
     .maybeSingle();
   const row = data as Record<string, unknown> | null;
@@ -32,16 +32,32 @@ async function load(slug: string) {
   const rawOffer = row.current_offer && typeof row.current_offer === "object" ? (row.current_offer as Record<string, unknown>) : null;
   const offText = rawOffer ? str(rawOffer.text) : "";
   const until = rawOffer && typeof rawOffer.until === "string" ? rawOffer.until : null;
-  const offer = offText && !(until && Date.parse(until) < Date.now()) ? { text: offText } : null;
+  const offer = offText && !(until && Date.parse(until) < Date.now()) ? { text: offText, until } : null;
   const nom = str(row.business_name) || "Ce commerce";
   const ville = capWords(str(row.city));
   const metier = capWords(str(row.activite) || "Commerce");
+  // Actions directes (catalogue autonome) : réserver → le site, appeler → numéro du
+  // commerce (WhatsApp du pro sinon numéro Google), itinéraire → Maps.
+  const cleanTel = (v: string) => {
+    const d = v.replace(/[^\d+]/g, "");
+    if (/^\+\d{8,15}$/.test(d)) return d;
+    const only = d.replace(/\D/g, "");
+    if (only.length < 9) return "";
+    return only.startsWith("0") ? `+33${only.slice(1)}` : only.startsWith("33") ? `+${only}` : `+${only}`;
+  };
+  const tel = cleanTel(str(row.whatsapp_phone_e164)) || cleanTel(str(diag.phone));
+  const contact = {
+    reserveHref: `/site-internet/apercu/${slug}`,
+    telHref: tel ? `tel:${tel}` : "",
+    mapsHref: `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`.trim())}`,
+  };
   return {
     nom,
     metierLabel: [metier, ville].filter(Boolean).join(" · "),
     photos,
     videos,
     offer,
+    contact,
     note: typeof row.google_rating === "number" ? String(row.google_rating).replace(".", ",") : null,
     reviewsCount: typeof row.google_reviews === "number" ? row.google_reviews : null,
   };
@@ -73,6 +89,7 @@ export default async function CataloguePage({ params }: Params) {
         offer={d.offer}
         accent="#00E0A0"
         standalone
+        contact={d.contact}
       />
     </main>
   );

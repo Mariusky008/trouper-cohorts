@@ -26,6 +26,7 @@ type Props = {
   offer?: { text: string; until?: string | null } | null;
   accent: string;
   standalone?: boolean;
+  contact?: { reserveHref?: string; telHref?: string; mapsHref?: string }; // catalogue autonome : actions directes
 };
 
 function ytId(u: string): string | null {
@@ -33,7 +34,8 @@ function ytId(u: string): string | null {
   return m ? m[1] : null;
 }
 
-export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, standalone }: Props) {
+export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, standalone, contact }: Props) {
+  const reserveHref = contact?.reserveHref || `/site-internet/apercu/${slug}`;
   const cards: Media[] = [];
   (videos ?? []).slice(0, 6).forEach((url) => cards.push({ kind: "video", url }));
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
@@ -110,7 +112,7 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
   };
   const reserve = () => {
     setPos(0, 0);
-    if (standalone) { window.location.href = `/site-internet/apercu/${slug}`; return; }
+    if (standalone) { window.location.href = reserveHref; return; }
     reserveRef.current?.click();
   };
 
@@ -263,7 +265,15 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
             <div className="pdk-end-s">Envie de passer&nbsp;? {nom} vous attend.</div>
             <div className="pdk-end-acts">
               {standalone ? (
-                <a className="pdk-btn primary" href={`/site-internet/apercu/${slug}`}>📅 Réserver / en savoir plus</a>
+                <>
+                  <a className="pdk-btn primary" href={reserveHref}>📅 Réserver</a>
+                  {(contact?.telHref || contact?.mapsHref) && (
+                    <div className="pdk-end-row">
+                      {contact?.telHref && <a className="pdk-btn line" href={contact.telHref}>📞 Appeler</a>}
+                      {contact?.mapsHref && <a className="pdk-btn line" href={contact.mapsHref} target="_blank" rel="noreferrer">🧭 Itinéraire</a>}
+                    </div>
+                  )}
+                </>
               ) : (
                 <button type="button" className="pdk-btn primary" data-accueil-open>📅 Réserver maintenant</button>
               )}
@@ -331,8 +341,11 @@ const CSS = `
 .pdk-end-t b{color:#00E0A0;}
 .pdk-end-s{font-size:13px;color:#AEB4C0;margin-top:8px;}
 .pdk-end-acts{display:flex;flex-direction:column;gap:10px;margin-top:20px;max-width:300px;margin-left:auto;margin-right:auto;}
-.pdk-btn{border:none;font-family:inherit;cursor:pointer;border-radius:14px;padding:14px;font-size:14.5px;font-weight:800;text-decoration:none;text-align:center;}
+.pdk-end-row{display:flex;gap:10px;}
+.pdk-end-row .pdk-btn{flex:1;}
+.pdk-btn{border:none;font-family:inherit;cursor:pointer;border-radius:14px;padding:14px;font-size:14.5px;font-weight:800;text-decoration:none;text-align:center;display:block;}
 .pdk-btn.primary{background:linear-gradient(120deg,#00E0A0,#07B083);color:#06231a;box-shadow:0 14px 30px -12px rgba(0,224,160,.7);}
+.pdk-btn.line{background:rgba(255,255,255,.06);border:1px solid rgba(0,224,160,.5);color:#7EF0CE;font-size:13.5px;padding:13px;}
 .pdk-btn.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;}
 .pdk-btn.text{background:none;color:#8A90A0;font-weight:700;font-size:13px;}
 @media(prefers-reduced-motion:reduce){.pdk-card.top{transition:none!important;}}

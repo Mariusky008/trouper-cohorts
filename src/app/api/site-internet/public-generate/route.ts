@@ -122,6 +122,7 @@ export async function POST(request: Request) {
   let reviews: number | null = null;
   let placeId = "";
   let address = "";
+  let phone = "";
   let horaires: Array<{ jours: string; horaires: string }> = [];
   let rawWebsite = "";
   if (biz) {
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
     placeId = String(biz.placeId || "");
     address = String(biz.address || "").trim();
     rawWebsite = String(biz.website || "").trim();
+    phone = String(biz.phone || biz.phoneUnformatted || "").trim();
     const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
     horaires = oh.slice(0, 7).map((h) => ({ jours: String(h.day || "").trim(), horaires: String(h.hours || "").trim() }));
     try {
@@ -179,6 +181,7 @@ export async function POST(request: Request) {
       photos,
       reviews_top: reviewsTop,
       horaires,
+      phone,
       ran_at: new Date().toISOString(),
     },
     letter_status: "draft" as const,
