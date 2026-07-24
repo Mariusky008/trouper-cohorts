@@ -133,10 +133,13 @@ export async function POST(request: Request) {
     const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
     horaires = oh.slice(0, 7).map((h) => ({ jours: String(h.day || "").trim(), horaires: String(h.hours || "").trim() }));
     try {
+      // On cible la fiche par son placeId si on l'a (fiable), sinon repli par nom.
       const media = (
-        await apifyGoogleMaps(apifyToken, [`${businessName} ${city}`], loc, 2, { maxImages: 8, maxReviews: 8, reviewsSort: "newest" })
+        placeId
+          ? await apifyGoogleMaps(apifyToken, [], loc, 1, { maxImages: 12, maxReviews: 10, reviewsSort: "newest", placeIds: [placeId] })
+          : await apifyGoogleMaps(apifyToken, [`${businessName} ${city}`], loc, 2, { maxImages: 12, maxReviews: 10, reviewsSort: "newest" })
       ).items;
-      const it = media.find((x) => matchesBusiness(String(x.title || ""), self)) || media[0];
+      const it = placeId ? media[0] : (media.find((x) => matchesBusiness(String(x.title || ""), self)) || media[0]);
       if (it) {
         const m = extractMedia(it);
         photos = m.photos;

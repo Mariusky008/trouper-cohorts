@@ -203,7 +203,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     if (avisAllowed) {
       steps.push({
         title: `Le collectif de ${villeAff}`,
-        say: `Une dernière chose. Mon ambition : réunir jusqu'à cent commerçants de ${villeAff} parmi les mieux notés, et associer chacun à une dizaine de métiers complémentaires qui se recommandent leurs clients — automatiquement, grâce à moi. Imaginez votre nom recommandé, encore et encore, chez des partenaires non concurrents, pile au moment où le client a besoin de vous. Être connu, reconnu — et ne jamais être oublié. Et maintenant, le site est à vous.`,
+        say: `Une dernière chose. Mon ambition : réunir les meilleurs commerçants de ${villeAff} pour qu'ils se recommandent leurs clients, automatiquement. Votre nom, cité encore et encore, pile au bon moment. Être connu, reconnu — et jamais oublié. Le site est à vous.`,
         enter: () => setScene("vision"),
       });
     } else {

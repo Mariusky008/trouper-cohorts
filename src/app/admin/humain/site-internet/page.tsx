@@ -49,6 +49,7 @@ export default async function AdminSiteInternetPage() {
 
   const rows: Row[] = Array.isArray(data) ? (data as Row[]) : [];
   const hasError = Boolean(error);
+  const demoTarget = rows.find((r) => r.metadata && (r.metadata as Record<string, unknown>).demarchage_target) || null;
   const count = (s: string) => rows.filter((r) => normalize(r.letter_status) === s).length;
 
   const fmtDate = (iso: string | null) =>
@@ -112,6 +113,33 @@ export default async function AdminSiteInternetPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 sm:p-5">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-violet-600">🎯 Démo « choc » de démarchage</p>
+        {demoTarget ? (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-700">
+              Cible active&nbsp;: <b className="text-violet-800">{demoTarget.business_name}</b>
+              {demoTarget.city ? <span className="text-slate-500"> · {demoTarget.city}</span> : null}
+              <span className="mt-0.5 block text-xs text-slate-500">
+                Ouvre le site partenaire, réserve un créneau&nbsp;: à la confirmation, ce commerce est recommandé avec son offre + le lien vers son site.
+              </span>
+            </p>
+            <Link
+              href="/site-internet/demo-choc"
+              target="_blank"
+              className="inline-flex items-center gap-1 rounded-full bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800"
+            >
+              ▶ Lancer la démo
+            </Link>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            Choisis un prospect ci-dessous et clique <b>« 🎯 Cibler »</b>&nbsp;: il deviendra la cible recommandée à la
+            fin d&apos;une réservation sur le site partenaire de démonstration.
+          </p>
+        )}
       </div>
 
       <SiteDiscover />

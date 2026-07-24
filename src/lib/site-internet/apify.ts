@@ -11,26 +11,34 @@ export async function apifyGoogleMaps(
   searchStrings: string[],
   locationQuery: string,
   limit: number,
-  opts?: { maxImages?: number; maxReviews?: number; reviewsSort?: string }
+  opts?: { maxImages?: number; maxReviews?: number; reviewsSort?: string; placeIds?: string[] }
 ): Promise<ApifyResult> {
   try {
+    // Quand on connaît le placeId (fiche déjà identifiée), on cible CE lieu précis
+    // pour ses photos + avis — bien plus fiable qu'une nouvelle recherche par nom
+    // (qui peut tomber sur un homonyme ou ne rien renvoyer).
+    const placeIds = (opts?.placeIds ?? []).filter((p) => typeof p === "string" && p.trim());
+    const body: Record<string, unknown> = {
+      language: "fr",
+      countryCode: "fr",
+      maxImages: opts?.maxImages ?? 0,
+      maxReviews: opts?.maxReviews ?? 0,
+      reviewsSort: opts?.reviewsSort ?? "newest",
+    };
+    if (placeIds.length) {
+      body.placeIds = placeIds;
+      body.maxCrawledPlacesPerSearch = placeIds.length;
+    } else {
+      body.searchStringsArray = searchStrings;
+      body.locationQuery = locationQuery;
+      body.maxCrawledPlacesPerSearch = limit;
+    }
     const res = await fetch(
       `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=180`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          searchStringsArray: searchStrings,
-          locationQuery,
-          maxCrawledPlacesPerSearch: limit,
-          language: "fr",
-          countryCode: "fr",
-          // Par défaut 0 (découverte/diagnostic léger). La maquette demande les
-          // photos + avis réels du commerce (contenus publics du pro).
-          maxImages: opts?.maxImages ?? 0,
-          maxReviews: opts?.maxReviews ?? 0,
-          reviewsSort: opts?.reviewsSort ?? "newest",
-        }),
+        body: JSON.stringify(body),
       }
     );
     const text = await res.text();
