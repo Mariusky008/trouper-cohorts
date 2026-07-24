@@ -273,6 +273,21 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .close .lead{margin-top:16px;}
           .mqc .close .urg{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.45;}
           .mqc .close .urg b{color:var(--ink);}
+          /* COMMUNAUTÉ — le site va chercher des clients (commerce uniquement) */
+          .mqc .community{padding:0;}
+          .mqc .cm-card{position:relative;overflow:hidden;margin:0;padding:34px 22px 30px;color:#fff;text-align:center;
+            background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 66%,#000));}
+          .mqc .cm-card::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at 15% 0%,rgba(255,255,255,.16),transparent),radial-gradient(420px 220px at 100% 100%,rgba(255,255,255,.1),transparent);}
+          .mqc .cm-in{position:relative;z-index:1;max-width:460px;margin:0 auto;}
+          .mqc .cm-ic{width:56px;height:56px;border-radius:17px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:27px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);}
+          .mqc .cm-k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;font-weight:600;margin-top:14px;}
+          .mqc .cm-h{font-family:Georgia,serif;font-size:24px;font-weight:600;line-height:1.15;margin-top:7px;}
+          .mqc .cm-p{font-size:13.5px;line-height:1.6;opacity:.94;margin-top:11px;}
+          .mqc .cm-cta{display:inline-flex;align-items:center;gap:8px;margin-top:18px;background:#fff;color:var(--accent);border-radius:999px;padding:13px 24px;font-size:14.5px;font-weight:700;text-decoration:none;cursor:pointer;box-shadow:0 14px 30px -12px rgba(0,0,0,.4);}
+          .mqc .cm-perks{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 16px;margin-top:18px;font-size:12px;opacity:.92;}
+          .mqc .cm-perks span{display:inline-flex;align-items:center;gap:6px;}
+          .mqc .cm-note{font-size:11px;opacity:.78;margin-top:14px;line-height:1.4;}
+          @media (min-width:860px){.mqc .cm-card{padding:56px 24px;} .mqc .cm-h{font-size:32px;}}
           /* BARRE FIXE unique */
           .mqc .bar{position:sticky;bottom:0;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:20;}
           .mqc .bar a{flex:1;text-align:center;text-decoration:none;border-radius:22px;padding:12px 10px;font-size:12px;font-weight:600;cursor:pointer;line-height:1.15;}
@@ -430,9 +445,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {gallery.length > 0 && (
-        <section className="alt" id="mq-gallery">
-          <div className="sec-k">Le lieu</div>
-          <div className="sec-h">En images</div>
+        <section className="alt gallery-sec" id="mq-gallery">
+          <div className="sec-k">{avisMode === "prominent" ? "Le travail" : "Le lieu"}</div>
+          <div className="sec-h">{avisMode === "prominent" ? "Nos réalisations" : "En images"}</div>
           <Gallery photos={gallery} nom={nom} />
         </section>
       )}
@@ -482,6 +497,29 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           ))}
           <div className="rev-links">
             <a href={reviewsUrl} target="_blank" rel="noreferrer">Voir les avis sur Google →</a>
+          </div>
+        </section>
+      )}
+
+      {avisMode === "prominent" && (
+        <section className="community">
+          <div className="cm-card">
+            <div className="cm-in">
+              <div className="cm-ic">🔔</div>
+              <div className="cm-k">Notre communauté</div>
+              <div className="cm-h">Ne ratez plus une place.</div>
+              <div className="cm-p">
+                Une annulation, un créneau qui se libère, une offre du moment… Laissez-nous votre numéro&nbsp;:
+                on vous prévient <b>en premier</b>, directement sur WhatsApp.
+              </div>
+              <div className="cm-perks">
+                <span>⚡ Places qui se libèrent</span>
+                <span>🎁 Offres du moment</span>
+                <span>✨ Nouveautés</span>
+              </div>
+              <a className="cm-cta" data-accueil-open>🔔 Être prévenu·e en premier</a>
+              <div className="cm-note">Sans spam · vous vous désinscrivez quand vous voulez.</div>
+            </div>
           </div>
         </section>
       )}
