@@ -5,7 +5,7 @@
 // avis, aucun WhatsApp (déontologie), encart urgence en pied. Une seule barre
 // fixe (Appeler + Prendre RDV) ; l'accueil intelligent s'ouvre en surimpression.
 import { LeadForm } from "../../[slug]/lead-form";
-import { Gallery } from "./gallery";
+import { PhotoDeck } from "./photo-deck";
 import { ScrollReveal } from "./scroll-reveal";
 import { AccueilIntelligent } from "./accueil-intelligent";
 import { MaquetteAssistant } from "./maquette-demos";
@@ -458,11 +458,16 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {gallery.length > 0 && (
-        <section className="alt gallery-sec" id="mq-gallery">
-          <div className="sec-k">{avisMode === "prominent" ? "Le travail" : "Le lieu"}</div>
-          <div className="sec-h">{avisMode === "prominent" ? "Nos réalisations" : "En images"}</div>
-          <Gallery photos={gallery} nom={nom} />
-        </section>
+        <PhotoDeck
+          slug={slug}
+          photos={gallery}
+          nom={nom}
+          metierLabel={roleLine}
+          note={note}
+          reviewsCount={reviewsCount}
+          offer={offer}
+          accent={accent}
+        />
       )}
 
       {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} published={published} />}
