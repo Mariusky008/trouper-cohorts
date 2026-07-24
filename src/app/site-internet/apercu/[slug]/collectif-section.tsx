@@ -8,7 +8,7 @@
 // donnée partagée sans accord. Commerce uniquement (déonto).
 import { useState } from "react";
 
-const CATS = [
+const FALLBACK_CATS = [
   { ic: "💄", t: "Maquillage" },
   { ic: "💇", t: "Coiffure" },
   { ic: "📸", t: "Photographe" },
@@ -17,7 +17,8 @@ const CATS = [
   { ic: "🎉", t: "Événementiel" },
 ];
 
-export function CollectifSection({ slug, ville, accent, nom }: { slug: string; ville: string; accent: string; nom: string }) {
+export function CollectifSection({ slug, ville, accent, nom, partners }: { slug: string; ville: string; accent: string; nom: string; partners?: Array<{ ic: string; t: string }> }) {
+  const CATS = partners && partners.length ? partners : FALLBACK_CATS;
   const [sel, setSel] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 

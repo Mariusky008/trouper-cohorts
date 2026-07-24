@@ -25,11 +25,12 @@ type Props = {
   isResto: boolean; // restauration : vocabulaire « tables » plutôt que « créneaux »
   clientWord: string; // terme public au singulier (client / patient…)
   demoChat?: { q: string; a: string } | null; // conversation d'exemple, propre au métier
+  partners?: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
 };
 
 type Scene = "" | "note" | "reso" | "daily";
 
-export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord }: Props) {
+export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
@@ -39,6 +40,9 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
 
   // Vocabulaire adaptatif (pluriel du terme public).
   const clientPl = clientWord ? `${clientWord}s` : "clients";
+  const partnersList = (partners && partners.length ? partners : [
+    { ic: "🌸", t: "Fleuriste" }, { ic: "📸", t: "Photographe" }, { ic: "💇", t: "Coiffeur" }, { ic: "🍽️", t: "Restaurant" }, { ic: "🎉", t: "Événementiel" },
+  ]).slice(0, 6);
 
   useEffect(() => {
     return () => {
@@ -109,7 +113,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             fallback = null;
           }
         } else if (started) {
-          window.setTimeout(finish, 240); // fin de phrase → transition rapide
+          window.setTimeout(finish, 90); // fin de phrase → transition quasi immédiate
         }
       });
       // Repli : la voix n'a pas démarré au bout de 2,8 s → on révèle le texte et on
@@ -184,13 +188,13 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
-      setCaption(""); // légende + scène + titre apparaissent QUAND la voix démarre
+      // Transition INSTANTANÉE : scène + légende + titre s'affichent tout de suite,
+      // la voix enchaîne (plus d'attente que la voix « démarre » avant d'afficher).
+      st.enter();
+      setCaption(st.say);
+      setHead({ n: i + 1, total, title: st.title });
       speak(st.say);
-      await awaitSpeech(est(st.say), () => {
-        st.enter();
-        setCaption(st.say);
-        setHead({ n: i + 1, total, title: st.title });
-      });
+      await awaitSpeech(est(st.say), () => {});
       if (cancelled.current) return;
     }
     if (cancelled.current) return;
@@ -277,8 +281,15 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           /* Scène « collectif » : le mécanisme (partenaire → besoin → vous) */
           .dtour-card.rz2{text-align:left;}
           .dtour-card .rz2-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:#0E7C5A;background:#E4F7EE;border-radius:999px;padding:5px 12px;}
-          .dtour-card .rz2-partners{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;}
-          .dtour-card .rz2-partners span{font-size:12px;font-weight:700;color:#3A3F4C;background:#F1F0FB;border:1px solid #E6E3F7;border-radius:999px;padding:7px 12px;opacity:0;transform:translateY(8px) scale(.9);animation:dtPop .45s cubic-bezier(.22,1,.36,1) forwards;}
+          /* Nuage de partenaires : des pastilles qui apparaissent et flottent */
+          .dtour-card .rz2-cloud{display:flex;flex-wrap:wrap;justify-content:center;gap:7px 8px;margin:13px 0 4px;}
+          .dtour-card .rz2-cloud .pc{font-size:12px;font-weight:700;color:#463F6B;background:linear-gradient(180deg,#F4F1FF,#EDE9FB);border:1px solid #E4DEF7;border-radius:999px;padding:7px 12px;
+            box-shadow:0 8px 18px -12px rgba(91,63,166,.5);opacity:0;animation:pcIn .5s ease forwards, pcFloat 3.6s ease-in-out var(--fd,0s) infinite;}
+          .dtour-card .rz2-cloud .pc:nth-child(2n){transform:rotate(-2deg);}
+          .dtour-card .rz2-cloud .pc:nth-child(3n){transform:rotate(2.5deg);}
+          @keyframes pcIn{to{opacity:1}}
+          @keyframes pcFloat{0%,100%{translate:0 0}50%{translate:0 -6px}}
+          @media (prefers-reduced-motion:reduce){.dtour-card .rz2-cloud .pc{animation:pcIn .3s ease forwards;}}
           .dtour-card .rz2-lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9095A0;font-weight:700;margin-top:15px;opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.4;margin-top:8px;opacity:0;transform:translateY(8px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub.them{background:#EEF0F7;color:#2A2E27;border-top-left-radius:5px;}
@@ -416,16 +427,16 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             <div className="dtour-ov">
               <div className="dtour-card rz2">
                 <div className="rz2-tag">🤝 Le collectif de {villeAff}</div>
-                <div className="rz2-partners">
-                  {["🌸 Fleuriste", "💄 Maquilleuse", "💅 Prothésiste", "📸 Photographe", "💇 Coiffeur"].map((p, i) => (
-                    <span key={p} style={{ animationDelay: `${0.15 + i * 0.13}s` }}>{p}</span>
+                <div className="rz2-cloud" aria-hidden="true">
+                  {partnersList.map((p, i) => (
+                    <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
                   ))}
                 </div>
-                <div className="rz2-lab" style={{ animationDelay: "1s" }}>Chez un commerce partenaire…</div>
-                <div className="rz2-bub them" style={{ animationDelay: "1.3s" }}>Je prépare mon mariage 💍</div>
-                <div className="rz2-bub me" style={{ animationDelay: "2.5s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
-                <div className="rz2-arrow" style={{ animationDelay: "3.8s" }}>↓ recommandée</div>
-                <div className="rz2-opp" style={{ animationDelay: "4.2s" }}>
+                <div className="rz2-lab" style={{ animationDelay: "1.3s" }}>Un client, chez un partenaire…</div>
+                <div className="rz2-bub them" style={{ animationDelay: "1.7s" }}>Je prépare mon mariage 💍</div>
+                <div className="rz2-bub me" style={{ animationDelay: "2.9s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
+                <div className="rz2-arrow" style={{ animationDelay: "4.2s" }}>↓ recommandée</div>
+                <div className="rz2-opp" style={{ animationDelay: "4.6s" }}>
                   <span className="rz2-oppk">Pour vous</span>
                   <span className="rz2-oppb">🤝 <b>Nouvelle cliente</b> — elle cherche vos prestations pour un mariage. Proposer un créneau&nbsp;?</span>
                 </div>

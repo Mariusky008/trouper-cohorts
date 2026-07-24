@@ -56,13 +56,14 @@ export type MaquetteSanteProps = {
   offer: { text: string; until: string | null } | null; // « Offre du moment » (bandeau haut de site)
   isResto: boolean; // vocabulaire « tables » vs « créneaux » (Démo Vivante)
   clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
+  partners: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -350,6 +351,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           isResto={isResto}
           clientWord={clientWord}
           demoChat={content.demoChat}
+          partners={partners}
         />
       )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
@@ -444,7 +446,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} />}
+      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} />}
 
       {serviceList.length === 0 && content.consultTitre && content.consultCartes.length > 0 && (
         <section>

@@ -150,6 +150,16 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   // Restauration : vocabulaire « tables » (sinon « créneaux ») pour la Démo Vivante.
   const isResto = /restaur|resto|bistrot|brasser|pizz|cr[eê]per|gastronomi|caf[eé]|salon de th[eé]|\bbar\b|\bpub\b|brunch/i.test(activite);
   const clientWord = (termePublic || "client").replace(/s$/u, "");
+  // Partenaires complémentaires du « collectif », par famille de métier (pilates →
+  // bien-être/nutrition ; resto → sorties ; beauté → mariage/événement…).
+  const naPart = activite.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const partners = /yoga|pilat|fitness|sport|muscu|coach|danse|gym|barre|zumba|cross ?fit/.test(naPart)
+    ? [{ ic: "🌿", t: "Naturopathe" }, { ic: "🥗", t: "Nutritionniste" }, { ic: "💆", t: "Kiné" }, { ic: "🦶", t: "Ostéo" }, { ic: "🧘", t: "Sophrologue" }]
+    : /restaur|resto|bistrot|brasser|pizz|gastronomi|caf|\bbar\b|\bpub\b|traiteur|crep|brunch/.test(naPart)
+      ? [{ ic: "🍸", t: "Bar à cocktails" }, { ic: "🎶", t: "DJ / musicien" }, { ic: "🚕", t: "Taxi" }, { ic: "🌸", t: "Fleuriste" }, { ic: "🏨", t: "Hôtel" }]
+      : /coiff|barbier|esth|ongle|beaut|maquill|tatou|spa|massage|bronz|\bcil|epil/.test(naPart)
+        ? [{ ic: "💄", t: "Maquilleuse" }, { ic: "💇", t: "Coiffeur" }, { ic: "📸", t: "Photographe" }, { ic: "🌸", t: "Fleuriste" }, { ic: "👰", t: "Robe de mariée" }]
+        : [{ ic: "📸", t: "Photographe" }, { ic: "🌸", t: "Fleuriste" }, { ic: "🍽️", t: "Restaurant" }, { ic: "💇", t: "Coiffeur" }, { ic: "🎉", t: "Événementiel" }];
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
@@ -259,6 +269,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       offer={offer}
       isResto={isResto}
       clientWord={clientWord}
+      partners={partners}
     />
   );
 }
