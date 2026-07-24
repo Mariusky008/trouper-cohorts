@@ -247,6 +247,40 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   }
   const bookingHref = bookingEnabled ? `/site-internet/rdv/${slug}` : "";
 
+  // ── Démo « choc » de démarchage (recommandation croisée) ────────────────────
+  // Une « cible » est désignée dans l'admin (metadata.demarchage_target=true sur UN
+  // prospect). Sur n'importe quel site de démo (non publié), le bouton Réserver
+  // ouvre le planning puis recommande cette cible — sauf si la cible EST ce site.
+  let demarchageTarget: {
+    slug: string; nom: string; ville: string; activite: string; offerText: string; offerIsExample: boolean;
+  } | null = null;
+  if (!row.published) {
+    try {
+      const { data: tgt } = await supabase
+        .from("human_vitrine_sites")
+        .select("slug, business_name, city, activite, current_offer")
+        .eq("metadata->>demarchage_target", "true")
+        .limit(1)
+        .maybeSingle();
+      const t = tgt as Record<string, unknown> | null;
+      const tSlug = str(t?.slug);
+      if (t && tSlug && tSlug !== slug) {
+        const rawOffer = (t.current_offer && typeof t.current_offer === "object" ? (t.current_offer as Record<string, unknown>) : null);
+        const offText = rawOffer ? str(rawOffer.text) : "";
+        demarchageTarget = {
+          slug: tSlug,
+          nom: str(t.business_name) || "notre partenaire",
+          ville: capWords(str(t.city)) || villeAff,
+          activite: str(t.activite) || "ses prestations",
+          offerText: offText || "une offre de bienvenue rien que pour vous",
+          offerIsExample: !offText,
+        };
+      }
+    } catch {
+      /* metadata non exploitable → pas de démo démarchage */
+    }
+  }
+
   return (
     <MaquetteSante
       slug={slug}
@@ -287,6 +321,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       resoExample={resoExample}
       collectifService={collectifService}
       collectifSource={collectifSource}
+      demarchageTarget={demarchageTarget}
     />
   );
 }

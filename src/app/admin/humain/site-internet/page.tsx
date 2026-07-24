@@ -159,6 +159,9 @@ export default async function AdminSiteInternetPage() {
                         {r.metadata && (r.metadata as Record<string, unknown>).self_serve ? (
                           <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700" title="Créé par le pro depuis la page d'accueil (lead entrant)">🔥 Auto-site</span>
                         ) : null}
+                        {r.metadata && (r.metadata as Record<string, unknown>).demarchage_target ? (
+                          <span className="ml-2 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700" title="Cible de la démo « choc » : recommandé·e à la réservation sur les autres sites de démo">🎯 Cible démo</span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-slate-700">{r.city || "—"}</td>
                       <td className="px-4 py-3 text-slate-700">{r.activite || "—"}</td>
@@ -214,6 +217,19 @@ export default async function AdminSiteInternetPage() {
                               </button>
                             </form>
                           ))}
+                          {r.metadata && (r.metadata as Record<string, unknown>).demarchage_target ? (
+                            <form action="/api/admin/humain/site-internet/prospect" method="post">
+                              <input type="hidden" name="id" value={r.id} />
+                              <input type="hidden" name="action" value="demo_target_off" />
+                              <button type="submit" className="rounded border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700 hover:bg-violet-100" title="Retirer la cible de la démo « choc »">🎯 Cible ✓</button>
+                            </form>
+                          ) : (
+                            <form action="/api/admin/humain/site-internet/prospect" method="post">
+                              <input type="hidden" name="id" value={r.id} />
+                              <input type="hidden" name="action" value="demo_target" />
+                              <button type="submit" className="rounded border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-violet-50" title="Cibler ce commerce pour la démo « choc » : il sera recommandé à la réservation sur les autres sites de démo">🎯 Cibler</button>
+                            </form>
+                          )}
                           <form action="/api/admin/humain/site-internet/prospect" method="post">
                             <input type="hidden" name="id" value={r.id} />
                             <input type="hidden" name="action" value="delete" />

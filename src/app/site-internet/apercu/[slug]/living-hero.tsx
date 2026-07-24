@@ -20,11 +20,12 @@ type Props = {
   openOpen: boolean;
   bookLabel: string;
   bookHref: string; // vraie page de réservation, sinon "" (→ ouvre l'assistante)
+  bookDemarchage?: boolean; // démo « choc » : le bouton Réserver ouvre le planning + reco croisée
   hasGallery: boolean;
   extraChips?: Array<{ label: string; target: string; gold?: boolean }>; // boutons secondaires → scroll vers un id
 };
 
-export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, showAvis, openLabel, openOpen, bookLabel, bookHref, extraChips }: Props) {
+export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, showAvis, openLabel, openOpen, bookLabel, bookHref, bookDemarchage, extraChips }: Props) {
   const imgs = photos.slice(0, 5);
   const [slide, setSlide] = useState(0);
   const [typed, setTyped] = useState("");
@@ -164,6 +165,8 @@ export function LivingHero({ nom, roleLine, photos, accent, note, reviewsCount, 
           <div className={`lh-chips${ready ? " in" : ""}`}>
             {bookHref ? (
               <a className="lh-chip primary" href={bookHref}>📅 {bookLabel}</a>
+            ) : bookDemarchage ? (
+              <button type="button" className="lh-chip primary" data-book-demo>📅 {bookLabel}</button>
             ) : (
               <button type="button" className="lh-chip primary" data-accueil-open>📅 {bookLabel}</button>
             )}

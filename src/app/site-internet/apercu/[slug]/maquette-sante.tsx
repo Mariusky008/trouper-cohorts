@@ -15,6 +15,7 @@ import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
 import { CollectifSection } from "./collectif-section";
 import { CollectifToast } from "./collectif-toast";
+import { DemarchageBooking, type DemarchageTarget } from "./demarchage-booking";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -61,16 +62,22 @@ export type MaquetteSanteProps = {
   resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
   collectifService: string; // « une séance découverte » / « une table » / « un rendez-vous » (toast collectif)
   collectifSource: string; // métier du partenaire d'où vient la réservation (toast collectif)
+  demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget,
   } = p;
-  // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
-  const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
+  // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
+  // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
+  // croisée vers le commerce démarché, au lieu de l'accueil.
+  const bookViaDemarchage = !published && !bookingHref && Boolean(demarchageTarget);
+  // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon démo
+  // « choc » (si cible), sinon accueil intelligent.
+  const rdvProps = bookingHref ? { href: bookingHref } : bookViaDemarchage ? { "data-book-demo": true } : { "data-accueil-open": true };
   const bookLabel = confirmation === "devis" ? "Demander un devis" : confirmation === "rappel" ? "Être rappelé(e)" : confirmation === "acompte" ? "Réserver ma date" : "Prendre rendez-vous";
 
   // ── Sections « Pour quoi venir me voir ? » (motifs) et « Mes accompagnements »
@@ -362,6 +369,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       {!published && avisMode === "prominent" && (
         <CollectifToast ville={villeAff} service={collectifService} source={collectifSource} />
       )}
+      {bookViaDemarchage && demarchageTarget && (
+        <DemarchageBooking target={demarchageTarget} hostNom={nom} accent={accent} />
+      )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
       <ScrollReveal />
 
@@ -391,6 +401,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         openOpen={Boolean(openState?.open)}
         bookLabel={bookLabel}
         bookHref={bookingHref}
+        bookDemarchage={bookViaDemarchage}
         hasGallery={gallery.length > 0}
         extraChips={avisMode === "prominent" ? [
           { label: "📣 Promos / événements", target: "mq-cercle" },
