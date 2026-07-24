@@ -14,6 +14,7 @@ import { DemoTour } from "./demo-tour";
 import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
 import { CollectifSection } from "./collectif-section";
+import { CollectifToast } from "./collectif-toast";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
@@ -57,13 +58,16 @@ export type MaquetteSanteProps = {
   isResto: boolean; // vocabulaire « tables » vs « créneaux » (Démo Vivante)
   clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
   partners: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
+  resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
+  collectifService: string; // « une séance découverte » / « une table » / « un rendez-vous » (toast collectif)
+  collectifSource: string; // métier du partenaire d'où vient la réservation (toast collectif)
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource,
   } = p;
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon accueil (démo).
   const rdvProps = bookingHref ? { href: bookingHref } : { "data-accueil-open": true };
@@ -352,7 +356,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           clientWord={clientWord}
           demoChat={content.demoChat}
           partners={partners}
+          resoExample={resoExample}
         />
+      )}
+      {!published && avisMode === "prominent" && (
+        <CollectifToast ville={villeAff} service={collectifService} source={collectifSource} />
       )}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
       <ScrollReveal />

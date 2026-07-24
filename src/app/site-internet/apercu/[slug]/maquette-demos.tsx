@@ -88,11 +88,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   }, [qa, qaBusy]);
 
   const { nom, clientTerm, avisAllowed, slot } = data;
-  const ville = data.ville || "votre ville";
   const term = clientTerm || "client"; // singulier
-  // « Opportunité entrante » du collectif (exemple, démo) — s'affiche à l'ouverture.
-  const [oppDone, setOppDone] = useState(false);
-  const [oppHidden, setOppHidden] = useState(false);
 
   const clearTimers = () => {
     timers.current.forEach((t) => clearTimeout(t));
@@ -382,22 +378,6 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     // home
     return (
       <>
-        {avisAllowed && !oppHidden && (
-          <div className="asx-opp">
-            <div className="asx-opp-h">🤝 Collectif de {ville} — nouvelle opportunité <span className="ex">exemple</span></div>
-            {oppDone ? (
-              <div className="asx-opp-done">✓ Créneau proposé. Le client sera prévenu par le collectif — vous n’avez rien d’autre à faire.</div>
-            ) : (
-              <>
-                <div className="asx-opp-b">Une cliente d’un <b>salon partenaire</b> prépare un mariage et cherche vos prestations. Souhaitez-vous lui proposer un créneau&nbsp;?</div>
-                <div className="asx-opp-a">
-                  <button className="y" onClick={() => setOppDone(true)}>✓ Proposer un créneau</button>
-                  <button className="l" onClick={() => setOppHidden(true)}>Plus tard</button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
         <div className="asx-say"><b>Que souhaitez-vous que je fasse pour vous&nbsp;?</b></div>
         <div className="asx-tasks">
           {avisAllowed && (
@@ -544,15 +524,6 @@ function styles(accent: string): string {
   .asx-qa-in button{flex:none;border:none;background:#5B3FA6;color:#fff;border-radius:50%;width:42px;height:42px;font-size:15px;cursor:pointer;}
   .asx-qa-in button:disabled{opacity:.5;cursor:not-allowed;}
   .asx-qa-call{display:block;text-align:center;margin-top:12px;font-size:13px;font-weight:700;color:#5B3FA6;text-decoration:none;}
-  .asx-opp{background:linear-gradient(150deg,#12203A,#0B0F1A);border:1px solid rgba(127,230,192,.25);border-radius:15px;padding:13px 14px;margin-bottom:14px;color:#EAF0FA;animation:accmsgin .4s ease;}
-  .asx-opp-h{font-size:12px;font-weight:800;color:#BFE9D6;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .asx-opp-h .ex{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#0B0F1A;background:#7FE6C0;border-radius:5px;padding:2px 7px;font-weight:800;}
-  .asx-opp-b{font-size:13px;line-height:1.5;color:#C7D2E6;margin-top:8px;}
-  .asx-opp-b b{color:#fff;}
-  .asx-opp-a{display:flex;gap:8px;margin-top:11px;}
-  .asx-opp-a .y{flex:1;border:none;font-family:inherit;cursor:pointer;background:#7FE6C0;color:#0B2A20;border-radius:9px;padding:10px;font-size:12.5px;font-weight:800;}
-  .asx-opp-a .l{border:none;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#9FB0CE;border-radius:9px;padding:10px 14px;font-size:12.5px;font-weight:600;}
-  .asx-opp-done{font-size:13px;line-height:1.5;color:#BFE9D6;margin-top:8px;}
   .asx-tasks{display:flex;flex-direction:column;gap:9px;}
   .asx-task{display:flex;align-items:center;gap:12px;border:1px solid #E7E4DC;border-radius:13px;padding:12px 12px 12px 14px;background:#fff;transition:.15s;}
   .asx-task:hover{border-color:${accent};background:#FDFBF6;}

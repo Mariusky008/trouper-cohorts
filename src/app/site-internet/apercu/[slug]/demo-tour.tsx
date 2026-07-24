@@ -26,11 +26,12 @@ type Props = {
   clientWord: string; // terme public au singulier (client / patient…)
   demoChat?: { q: string; a: string } | null; // conversation d'exemple, propre au métier
   partners?: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
+  resoExample?: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
 };
 
 type Scene = "" | "note" | "reso" | "daily" | "vision";
 
-export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners }: Props) {
+export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
@@ -43,6 +44,20 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   const partnersList = (partners && partners.length ? partners : [
     { ic: "🌸", t: "Fleuriste" }, { ic: "📸", t: "Photographe" }, { ic: "💇", t: "Coiffeur" }, { ic: "🍽️", t: "Restaurant" }, { ic: "🎉", t: "Événementiel" },
   ]).slice(0, 6);
+  // Recommandation croisée COHÉRENTE avec le métier (pilates → bien-être, pas mariage).
+  const reso = resoExample ?? {
+    partner: "un commerce partenaire",
+    clientMsg: `Je prépare un projet à ${villeAff} 🙂`,
+    recoMsg: `Je connais LE bon partenaire à ${villeAff} 😊`,
+    oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?",
+  };
+  // Constellation de la scène « vision » : vous au centre, les partenaires en
+  // orbite, des recommandations qui affluent vers vous. Positions en cercle.
+  const VIZ_R = 94;
+  const vizNodes = partnersList.slice(0, 5).map((pn, i, arr) => {
+    const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
+    return { ...pn, x: Math.round(Math.cos(ang) * VIZ_R), y: Math.round(Math.sin(ang) * VIZ_R), deg: Math.round((ang * 180) / Math.PI) };
+  });
 
   useEffect(() => {
     return () => {
@@ -51,6 +66,14 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       stopSpeaking();
     };
   }, []);
+
+  // Fin de la démo → on prévient le site (le collectif fait apparaître, ~2-3 s plus
+  // tard, une réservation entrante « en direct » : la preuve vivante du mécanisme).
+  useEffect(() => {
+    if (phase === "done") {
+      try { window.dispatchEvent(new CustomEvent("mqc:demo-done")); } catch { /* best-effort */ }
+    }
+  }, [phase]);
 
   // Blocage FIABLE du défilement utilisateur pendant la présentation (iOS compris).
   // Le scroll auto programmatique (scrollIntoView/scrollTo) n'est PAS affecté.
@@ -313,13 +336,33 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
           .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
           @keyframes dyIn{to{opacity:1;transform:none}}
-          /* Scène « vision » : la clôture émotionnelle du collectif */
-          .dtour-card.viz{background:linear-gradient(160deg,#182034,#0B0F1A);color:#EAF0FA;text-align:center;padding:28px 22px 24px;}
-          .dtour-card .viz-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
-          .dtour-card .viz-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.16;margin-top:11px;}
+          /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
+             VOUS au centre, les partenaires en orbite, les recommandations affluent. */
+          .dtour-card.viz{background:radial-gradient(125% 95% at 50% 4%,#20305A 0%,#111830 42%,#0A0E1A 78%);color:#EAF0FA;text-align:center;padding:24px 20px 24px;overflow:hidden;position:relative;}
+          .dtour-card.viz::before{content:"";position:absolute;left:50%;top:44%;width:280px;height:280px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(124,106,232,.28),transparent 62%);pointer-events:none;animation:vizAura 4s ease-in-out infinite;}
+          @keyframes vizAura{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(.94)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
+          .dtour-card .viz-k{position:relative;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9DB0D6;font-weight:800;}
+          .dtour-card .viz-net{position:relative;width:100%;height:232px;margin:12px 0 4px;}
+          .dtour-card .viz-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+            width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#8E7DF2,#5B3FA6 78%);
+            box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 46px -2px rgba(124,106,232,.85),inset 0 2px 0 rgba(255,255,255,.32);animation:vizCore 3s ease-in-out infinite;}
+          .dtour-card .viz-core b{font-family:Georgia,serif;font-size:15.5px;font-weight:600;color:#fff;line-height:1.12;padding:0 10px;max-width:112px;
+            display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+          .dtour-card .viz-core i{font-style:normal;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#E5DEFF;font-weight:800;}
+          @keyframes vizCore{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 40px -6px rgba(124,106,232,.7),inset 0 2px 0 rgba(255,255,255,.32)}50%{box-shadow:0 0 0 1px rgba(255,255,255,.26),0 0 66px 4px rgba(124,106,232,1),inset 0 2px 0 rgba(255,255,255,.32)}}
+          .dtour-card .viz-line{position:absolute;left:50%;top:50%;height:2px;transform-origin:0 50%;z-index:1;
+            background:linear-gradient(90deg,rgba(127,230,192,.05),rgba(127,230,192,.42));}
+          .dtour-card .viz-pc{position:absolute;left:50%;top:50%;z-index:2;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;
+            background:linear-gradient(180deg,#F6F3FF,#E7E0FB);border:1px solid rgba(232,224,250,.6);box-shadow:0 12px 24px -10px rgba(0,0,0,.75),0 0 0 4px rgba(124,106,232,.12);
+            opacity:0;animation:vizPc .5s ease forwards,pcFloat 3.8s ease-in-out var(--fd,0s) infinite;}
+          @keyframes vizPc{to{opacity:1}}
+          .dtour-card .viz-flow{position:absolute;left:50%;top:50%;width:9px;height:9px;border-radius:50%;z-index:2;
+            background:#7FE6C0;box-shadow:0 0 12px 3px rgba(127,230,192,.85);opacity:0;animation:vizFlow 2s ease-in infinite;}
+          @keyframes vizFlow{0%{opacity:0;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(.7)}12%{opacity:1}82%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--sx)*.12),calc(var(--sy)*.12)) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.5)}}
+          @media (prefers-reduced-motion:reduce){.dtour-card.viz::before,.dtour-card .viz-core,.dtour-card .viz-flow{animation:none;}.dtour-card .viz-flow{display:none;}}
+          .dtour-card .viz-h{position:relative;font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.16;margin-top:6px;}
           .dtour-card .viz-h em{font-style:normal;color:#7FE6C0;}
-          .dtour-card.viz .rz2-cloud{margin:18px 0 4px;}
-          .dtour-card .viz-sub{font-size:13px;line-height:1.55;color:#B8C4DC;margin-top:16px;}
+          .dtour-card .viz-sub{position:relative;font-size:13px;line-height:1.55;color:#B8C4DC;margin-top:15px;}
           .dtour-card .viz-sub b{color:#fff;}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
@@ -448,13 +491,13 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                     <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
                   ))}
                 </div>
-                <div className="rz2-lab" style={{ animationDelay: "1.3s" }}>Un client, chez un partenaire…</div>
-                <div className="rz2-bub them" style={{ animationDelay: "1.7s" }}>Je prépare mon mariage 💍</div>
-                <div className="rz2-bub me" style={{ animationDelay: "2.9s" }}>Vous avez pensé à vos ongles&nbsp;? Je connais la meilleure de {villeAff} 💅</div>
-                <div className="rz2-arrow" style={{ animationDelay: "4.2s" }}>↓ recommandée</div>
+                <div className="rz2-lab" style={{ animationDelay: "1.3s" }}>Un client, chez {reso.partner}…</div>
+                <div className="rz2-bub them" style={{ animationDelay: "1.7s" }}>{reso.clientMsg}</div>
+                <div className="rz2-bub me" style={{ animationDelay: "2.9s" }}>{reso.recoMsg}</div>
+                <div className="rz2-arrow" style={{ animationDelay: "4.2s" }}>↓ recommandé chez vous</div>
                 <div className="rz2-opp" style={{ animationDelay: "4.6s" }}>
                   <span className="rz2-oppk">Pour vous</span>
-                  <span className="rz2-oppb">🤝 <b>Nouvelle cliente</b> — elle cherche vos prestations pour un mariage. Proposer un créneau&nbsp;?</span>
+                  <span className="rz2-oppb">{reso.oppMsg}</span>
                 </div>
               </div>
             </div>
@@ -479,13 +522,20 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             <div className="dtour-ov">
               <div className="dtour-card viz">
                 <div className="viz-k">🤝 Le collectif de {villeAff}</div>
-                <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
-                <div className="rz2-cloud" aria-hidden="true">
-                  {partnersList.map((p, i) => (
-                    <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
+                <div className="viz-net" aria-hidden="true">
+                  {vizNodes.map((nd) => (
+                    <span key={`ln-${nd.t}`} className="viz-line" style={{ width: `${VIZ_R}px`, transform: `rotate(${nd.deg}deg)` }} />
                   ))}
+                  {vizNodes.map((nd, i) => (
+                    <span key={`fl-${nd.t}`} className="viz-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${1 + i * 0.42}s` }} />
+                  ))}
+                  {vizNodes.map((nd, i) => (
+                    <span key={`pc-${nd.t}`} className="viz-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${0.2 + i * 0.13}s`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic}</span>
+                  ))}
+                  <span className="viz-core"><b>{nom}</b><i>vous</i></span>
                 </div>
-                <div className="viz-sub">Mon ambition&nbsp;: réunir les <b>100 commerçants de {villeAff} les mieux notés</b>, pour qu&apos;ils se recommandent leurs clients — automatiquement, grâce à moi.</div>
+                <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
+                <div className="viz-sub">Mon ambition&nbsp;: réunir les <b>commerçants de {villeAff} les mieux notés</b>, pour qu&apos;ils se recommandent leurs clients — automatiquement. Et&nbsp;<b>vous&nbsp;êtes au centre</b>.</div>
               </div>
             </div>
           )}
