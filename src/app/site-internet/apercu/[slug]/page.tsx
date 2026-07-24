@@ -166,12 +166,12 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const famResto = /restaur|resto|bistrot|brasser|pizz|gastronomi|caf|\bbar\b|\bpub\b|traiteur|crep|brunch/.test(naPart);
   const famBeauty = /coiff|barbier|esth|ongle|beaut|maquill|tatou|spa|massage|bronz|\bcil|epil/.test(naPart);
   const resoExample = famSport
-    ? { partner: "un kiné partenaire", clientMsg: "Je veux reprendre le sport, en douceur 🙂", recoMsg: `Le mouvement, c'est la clé — je connais LE studio à ${villeAff} 🧘`, oppMsg: "🤝 Nouvelle cliente — elle veut reprendre le sport en douceur. Proposer un cours d'essai ?" }
+    ? { partner: "un kiné partenaire", clientMsg: "Je veux reprendre le sport, en douceur 🙂", recoMsg: `Le mouvement, c'est la clé — pour ça, ${nom} est LE studio à ${villeAff} 🧘`, oppMsg: "🤝 Nouvelle cliente — elle veut reprendre le sport en douceur. Proposer un cours d'essai ?" }
     : famResto
-      ? { partner: "un hôtel partenaire", clientMsg: `On cherche un bon resto ce soir à ${villeAff} 🍽️`, recoMsg: "J'ai LE bon endroit pour vous, à deux pas 😊", oppMsg: "🤝 Nouveaux clients — ils cherchent où dîner ce soir. Proposer une table ?" }
+      ? { partner: "un hôtel partenaire", clientMsg: `On cherche un bon resto ce soir à ${villeAff} 🍽️`, recoMsg: `J'ai LE bon endroit pour vous : ${nom}, à deux pas 😊`, oppMsg: "🤝 Nouveaux clients — ils cherchent où dîner ce soir. Proposer une table ?" }
       : famBeauty
-        ? { partner: "un salon de coiffure partenaire", clientMsg: "Je prépare mon mariage 💍", recoMsg: `Vous avez pensé à vos ongles ? Je connais la meilleure de ${villeAff} 💅`, oppMsg: "🤝 Nouvelle cliente — elle prépare un mariage et cherche vos prestations. Proposer un créneau ?" }
-        : { partner: "un commerce partenaire", clientMsg: `Je cherche un bon ${metierSing} à ${villeAff}`, recoMsg: "J'ai exactement ce qu'il vous faut, tout près 😊", oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?" };
+        ? { partner: "un salon de coiffure partenaire", clientMsg: "Je prépare mon mariage 💍", recoMsg: `Vous avez pensé à vos ongles ? ${nom}, c'est la meilleure de ${villeAff} 💅`, oppMsg: "🤝 Nouvelle cliente — elle prépare un mariage et cherche vos prestations. Proposer un créneau ?" }
+        : { partner: "un commerce partenaire", clientMsg: `Je cherche un bon ${metierSing} à ${villeAff}`, recoMsg: `J'ai exactement ce qu'il vous faut : ${nom}, tout près 😊`, oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?" };
   const collectifService = famSport ? "une séance découverte" : famResto ? "une table" : "un rendez-vous";
   const collectifSource = partners[0]?.t || "un partenaire";
 

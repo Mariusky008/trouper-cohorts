@@ -25,6 +25,13 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
   const CATS = partners && partners.length ? partners : FALLBACK_CATS;
   const [sel, setSel] = useState<{ ic: string; t: string } | null>(null);
   const [modal, setModal] = useState<{ ic: string; t: string } | null>(null);
+  const [custom, setCustom] = useState("");
+
+  const askCustom = () => {
+    const t = custom.trim();
+    if (!t) return;
+    setSel({ ic: "🔎", t });
+  };
 
   return (
     <section className="collectif" id="mq-collectif" style={{ ["--cx" as string]: accent }}>
@@ -43,6 +50,13 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
           .mqc .cl-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#EAF0FA;border-radius:999px;padding:10px 15px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;}
           .mqc .cl-chip:hover{border-color:rgba(255,255,255,.4);}
           .mqc .cl-chip.on{background:#7FE6C0;color:#0B2A20;border-color:#7FE6C0;font-weight:800;}
+          /* Recherche libre : le visiteur tape le métier qu'il cherche */
+          .mqc .cl-ask{display:flex;gap:8px;margin-top:11px;max-width:360px;margin-left:auto;margin-right:auto;}
+          .mqc .cl-ask input{flex:1;min-width:0;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#EAF0FA;border-radius:999px;padding:11px 16px;font-size:13.5px;font-family:inherit;}
+          .mqc .cl-ask input::placeholder{color:#7E8BAA;}
+          .mqc .cl-ask input:focus{outline:none;border-color:rgba(127,230,192,.6);}
+          .mqc .cl-ask button{flex:none;width:44px;border:none;background:#7FE6C0;color:#0B2A20;border-radius:50%;font-size:16px;cursor:pointer;font-family:inherit;}
+          .mqc .cl-ask button:disabled{opacity:.45;cursor:not-allowed;}
           /* Proposition immédiate (apparition) */
           .mqc .cl-reco{margin-top:18px;text-align:left;background:linear-gradient(155deg,#182240,#0B0F1A);border:1px solid rgba(127,230,192,.3);border-radius:17px;padding:16px 16px 15px;animation:clReco .5s cubic-bezier(.22,1,.36,1);box-shadow:0 24px 50px -20px rgba(0,0,0,.7);}
           @keyframes clReco{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
@@ -87,6 +101,16 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
             {CATS.map((c) => (
               <button key={c.t} type="button" className={`cl-chip${sel?.t === c.t ? " on" : ""}`} onClick={() => setSel(c)}>{c.ic} {c.t}</button>
             ))}
+          </div>
+          <div className="cl-ask">
+            <input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") askCustom(); }}
+              placeholder={`Autre chose ? Ex. plombier, dentiste…`}
+              aria-label="Ce que vous cherchez à cette ville"
+            />
+            <button type="button" onClick={askCustom} disabled={!custom.trim()} aria-label="Chercher">🔎</button>
           </div>
           {sel && (
             <div className="cl-reco" key={sel.t}>
