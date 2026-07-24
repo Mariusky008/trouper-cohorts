@@ -14,22 +14,25 @@ export function CollectifToast({ ville, service, source }: { ville: string; serv
 
   useEffect(() => {
     let showT: number | null = null;
-    let hideT: number | null = null;
     const onDone = () => {
       if (showT) clearTimeout(showT);
-      // ~2,5 s après la démo : la réservation « tombe » sur le site.
-      showT = window.setTimeout(() => {
-        setPhase("in");
-        hideT = window.setTimeout(() => setPhase("out"), 11000);
-      }, 2500);
+      // ~2,5 s après la démo : la réservation « tombe » sur le site. Elle RESTE
+      // affichée jusqu'à ce que le pro la ferme lui-même (bouton ✕).
+      showT = window.setTimeout(() => setPhase("in"), 2500);
     };
     window.addEventListener("mqc:demo-done", onDone);
     return () => {
       window.removeEventListener("mqc:demo-done", onDone);
       if (showT) clearTimeout(showT);
-      if (hideT) clearTimeout(hideT);
     };
   }, []);
+
+  // Fermeture par le pro : on laisse jouer l'animation de sortie puis on démonte.
+  useEffect(() => {
+    if (phase !== "out") return;
+    const t = window.setTimeout(() => setPhase("hidden"), 400);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   if (phase === "hidden") return null;
 

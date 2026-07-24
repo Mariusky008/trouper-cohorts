@@ -185,7 +185,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     if (avisAllowed) {
       steps.push({
         title: `Le collectif de ${villeAff}`,
-        say: `Et parce que vous êtes parmi les meilleurs, vous pouvez rejoindre le collectif des commerçants de ${villeAff} — ceux qui se recommandent leurs clients. Le principe : quand un client réserve chez un membre, je lui demande s'il a besoin d'autre chose. Si oui, je le recommande à un partenaire. Résultat : les meilleurs de ${villeAff} s'envoient des clients. Et vous en êtes.`,
+        say: `Et parce que vous êtes parmi les meilleurs, vous pouvez rejoindre le collectif des commerçants de ${villeAff}. Je vous associe à une dizaine de métiers complémentaires — jamais des concurrents. Le principe : quand un client réserve chez l'un d'eux, je lui demande s'il a besoin d'autre chose. Si oui, c'est vous que je recommande. Et vous faites pareil. Résultat : les meilleurs de ${villeAff} s'envoient des clients, sans effort. Et vous en êtes.`,
         enter: () => setScene("reso"),
       });
     }
@@ -203,7 +203,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     if (avisAllowed) {
       steps.push({
         title: `Le collectif de ${villeAff}`,
-        say: `Une dernière chose. Mon ambition : réunir les cent commerçants de ${villeAff} les mieux notés dans leur métier, pour qu'ils se recommandent leurs clients — automatiquement, grâce à moi. Imaginez votre nom recommandé, encore et encore, chez des partenaires non concurrents, pile au moment où le client a besoin de vous. Être connu, reconnu — et ne jamais être oublié. Et maintenant, le site est à vous.`,
+        say: `Une dernière chose. Mon ambition : réunir jusqu'à cent commerçants de ${villeAff} parmi les mieux notés, et associer chacun à une dizaine de métiers complémentaires qui se recommandent leurs clients — automatiquement, grâce à moi. Imaginez votre nom recommandé, encore et encore, chez des partenaires non concurrents, pile au moment où le client a besoin de vous. Être connu, reconnu — et ne jamais être oublié. Et maintenant, le site est à vous.`,
         enter: () => setScene("vision"),
       });
     } else {
@@ -321,6 +321,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           @keyframes pcIn{to{opacity:1}}
           @keyframes pcFloat{0%,100%{translate:0 0}50%{translate:0 -6px}}
           @media (prefers-reduced-motion:reduce){.dtour-card .rz2-cloud .pc{animation:pcIn .3s ease forwards;}}
+          .dtour-card .rz2-cloudcap{text-align:center;font-size:11px;line-height:1.4;color:#8A8FA0;margin-top:9px;opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;}
+          .dtour-card .rz2-cloudcap b{color:#5B3FA6;font-weight:800;}
           .dtour-card .rz2-lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9095A0;font-weight:700;margin-top:15px;opacity:0;transform:translateY(6px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.4;margin-top:8px;opacity:0;transform:translateY(8px);animation:dtBub .4s ease forwards;}
           .dtour-card .rz2-bub.them{background:#EEF0F7;color:#2A2E27;border-top-left-radius:5px;}
@@ -491,6 +493,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                     <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
                   ))}
                 </div>
+                <div className="rz2-cloudcap" style={{ animationDelay: "1s" }}>Vos <b>métiers en synergie</b> — jusqu&apos;à 10, jamais des concurrents</div>
                 <div className="rz2-lab" style={{ animationDelay: "1.3s" }}>Un client, chez {reso.partner}…</div>
                 <div className="rz2-bub them" style={{ animationDelay: "1.7s" }}>{reso.clientMsg}</div>
                 <div className="rz2-bub me" style={{ animationDelay: "2.9s" }}>{reso.recoMsg}</div>
@@ -535,7 +538,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                   <span className="viz-core"><b>{nom}</b><i>vous</i></span>
                 </div>
                 <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
-                <div className="viz-sub">Mon ambition&nbsp;: réunir les <b>commerçants de {villeAff} les mieux notés</b>, pour qu&apos;ils se recommandent leurs clients — automatiquement. Et&nbsp;<b>vous&nbsp;êtes au centre</b>.</div>
+                <div className="viz-sub">Mon ambition&nbsp;: <b>jusqu&apos;à 100 commerçants de {villeAff}</b> parmi les mieux notés, chacun associé à <b>une dizaine de métiers complémentaires</b> qui se recommandent. Et&nbsp;<b>vous êtes au centre du vôtre</b>.</div>
               </div>
             </div>
           )}

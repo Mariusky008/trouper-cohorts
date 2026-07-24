@@ -454,7 +454,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} />}
+      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} published={published} />}
 
       {serviceList.length === 0 && content.consultTitre && content.consultCartes.length > 0 && (
         <section>
