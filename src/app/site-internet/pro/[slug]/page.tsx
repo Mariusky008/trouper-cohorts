@@ -12,12 +12,11 @@ import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
-import { ProDashboard } from "./pro-dashboard";
+import { ProHome } from "./pro-home";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProReviewAlert } from "./pro-review-alert";
-import { ProBriefing } from "./pro-briefing";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ProGroup, type Sub } from "./pro-group";
 import { ProAssistantHub } from "./pro-assistant-hub";
@@ -214,7 +213,7 @@ export default async function EspacePro({
   const tomorrowKey = parisDate(1);
   const dayAfterKey = parisDate(2);
   const weekAgoKey = parisDate(-7);
-  const [clientsCount, annoncesCount, demandesCount, rdvCount, rdvTomorrow, honoredRecent] = await Promise.all([
+  const [clientsCount, annoncesCount, demandesCount, rdvCount, rdvTomorrow] = await Promise.all([
     cnt(supabase.from("human_site_contacts").select("id", { count: "exact", head: true }).eq("site_id", siteId).is("opted_out_at", null)),
     cnt(supabase.from("human_site_relances").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
     cnt(supabase.from("human_site_review_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
@@ -226,13 +225,17 @@ export default async function EspacePro({
   // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
   const accueilNode = (
     <>
-      <ProBriefing
+      <ProHome
         nom={nom}
         soliciter={soliciter}
+        afficherAvis={afficherAvis}
         views={views}
-        rdvTomorrow={rdvTomorrow}
-        honoredRecent={honoredRecent}
+        rdv={rdvCount}
+        annonces={annoncesCount}
+        demandes={demandesCount}
         clients={clientsCount}
+        avis={delta}
+        rdvTomorrow={rdvTomorrow}
       />
       {afficherAvis && (
         <ProReviewAlert
@@ -243,16 +246,6 @@ export default async function EspacePro({
           reviewsUrl={reviewsUrl}
         />
       )}
-      <ProDashboard
-        views={views}
-        rdv={rdvCount}
-        avis={delta}
-        annonces={annoncesCount}
-        demandes={demandesCount}
-        clients={clientsCount}
-        soliciter={soliciter}
-        afficherAvis={afficherAvis}
-      />
       {afficherAvis && (
         <div className="gcard">
           <div className="top">
@@ -335,10 +328,12 @@ export default async function EspacePro({
     ...(soliciter
       ? ([
           {
-            // Action Flash = cœur commercial → onglet dédié, libellé explicite.
+            // Action Flash = cœur commercial. Atteint depuis les grandes actions
+            // de l'accueil (pas dans la barre du bas, pour désencombrer le menu).
             key: "annonce",
             label: "Annonce",
             icon: "📣",
+            hidden: true,
             node: (
               <>
                 <div className="af-lead">
@@ -354,6 +349,7 @@ export default async function EspacePro({
             key: "clients",
             label: "Clients & avis",
             icon: "👥",
+            hidden: true, // atteint depuis « Demander un avis » / « Ajouter un client » de l'accueil
             node: (
               <ProGroup
                 groupKey="clients"

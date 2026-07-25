@@ -6,7 +6,9 @@
 // l'actif. La barre est profil-aware : elle ne montre que les onglets fournis.
 import { useEffect, useState, type ReactNode } from "react";
 
-export type ProTab = { key: string; label: string; icon: string; node: ReactNode };
+// `hidden` : l'onglet reste monté et navigable (via pro-goto-tab, ex. depuis les
+// grandes actions de l'accueil) mais n'apparaît PAS dans la barre du bas.
+export type ProTab = { key: string; label: string; icon: string; node: ReactNode; hidden?: boolean };
 
 export function ProTabs({ tabs }: { tabs: ProTab[] }) {
   const [active, setActive] = useState(tabs[0]?.key || "");
@@ -77,7 +79,7 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
         ))}
       </div>
       <nav className="protabbar" aria-label="Menu">
-        {tabs.map((t) => (
+        {tabs.filter((t) => !t.hidden).map((t) => (
           <button key={t.key} type="button" className={active === t.key ? "on" : ""} onClick={() => setActive(t.key)} aria-current={active === t.key}>
             <span className="ic">{t.icon}</span>
             <span className="lb">{t.label}</span>
