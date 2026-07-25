@@ -4,7 +4,7 @@
 // HONNÊTETÉ (règle absolue) : mécanisme réel, aucun chiffre/témoignage inventé.
 import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
-import { LivingDemo } from "./_home/living-demo";
+import { CatalogueTeaser } from "./_home/catalogue-teaser";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 const PHONE_DISPLAY = process.env.SITE_LETTER_PHONE || "07 68 23 33 47";
+const EMAIL = process.env.SITE_LETTER_EMAIL || "contact@popey.academy";
 const WA_DIGITS = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "") || "33768233347";
 const TEL_HREF = `tel:+${WA_DIGITS}`;
 const WA_HREF = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
@@ -75,9 +76,32 @@ export default function HomePage() {
           /* Nav */
           .pop-home .nav{position:sticky;top:0;z-index:40;background:rgba(250,250,247,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
           .pop-home .nav .in{display:flex;align-items:center;justify-content:space-between;height:62px;}
-          .pop-home .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:-.02em;}
-          .pop-home .brand .dot{width:28px;height:28px;border-radius:9px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 6px 16px -6px rgba(18,185,129,.7);}
-          .pop-home .navcall{font-weight:700;font-size:14px;color:var(--a2);display:inline-flex;gap:6px;align-items:center;}
+          .pop-home .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);}
+          .pop-home .brand .dot{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;box-shadow:0 8px 18px -6px rgba(18,185,129,.7);}
+          .pop-home .brand-tx{display:flex;flex-direction:column;line-height:1;}
+          .pop-home .brand-tx{font-weight:850;font-size:22px;letter-spacing:-.03em;}
+          .pop-home .brand-sub{font-weight:600;font-size:9.5px;letter-spacing:.02em;color:var(--faint);margin-top:3px;text-transform:none;}
+          .pop-home .navcta{font-weight:800;font-size:13.5px;color:#fff;background:linear-gradient(120deg,var(--a1),var(--a2));padding:9px 16px;border-radius:999px;text-decoration:none;box-shadow:0 10px 22px -10px rgba(18,185,129,.8);}
+          @media(max-width:520px){.pop-home .brand-sub{display:none;}}
+          /* CATALOGUE (teaser) */
+          .pop-home .cat-wrap{display:grid;grid-template-columns:1fr;gap:34px;align-items:center;justify-items:center;text-align:center;}
+          @media(min-width:820px){.pop-home .cat-wrap{grid-template-columns:1.05fr .95fr;text-align:left;justify-items:start;}}
+          .pop-home .cat-p{font-size:16px;line-height:1.6;color:var(--soft);margin-top:14px;max-width:440px;}
+          .pop-home .cat-p b{color:var(--ink);}
+          .pop-home .cat-share{margin-top:18px;display:inline-flex;align-items:center;font-size:13px;font-weight:700;color:var(--a2);background:rgba(14,165,165,.1);border:1px solid rgba(14,165,165,.25);border-radius:999px;padding:9px 15px;}
+          .pop-home .cat-deck{justify-self:center;}
+          /* FOOTER */
+          .pop-home .foot{background:#0F1512;color:#C9D2CB;margin-top:0;}
+          .pop-home .foot-in{display:grid;grid-template-columns:1fr;gap:26px;padding:44px 20px 30px;}
+          @media(min-width:720px){.pop-home .foot-in{grid-template-columns:1.6fr 1fr 1fr;}}
+          .pop-home .foot-logo{display:flex;align-items:center;gap:9px;font-weight:850;font-size:22px;letter-spacing:-.03em;color:#fff;}
+          .pop-home .foot-logo .dot{width:30px;height:30px;border-radius:10px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+          .pop-home .foot-brand p{font-size:13.5px;line-height:1.6;color:#8A968E;margin-top:12px;max-width:320px;}
+          .pop-home .foot-col h4{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#6E7B72;margin-bottom:12px;}
+          .pop-home .foot-col a{display:block;font-size:14px;color:#C9D2CB;text-decoration:none;padding:5px 0;}
+          .pop-home .foot-col a:hover{color:#fff;}
+          .pop-home .foot-sig{display:block;font-size:12px;color:#6E7B72;margin-top:10px;}
+          .pop-home .foot-bar{border-top:1px solid rgba(255,255,255,.08);padding:16px 20px;text-align:center;font-size:12px;color:#6E7B72;}
 
           /* ── HERO ── */
           .pop-home .hero{position:relative;padding:60px 0 46px;text-align:center;overflow:hidden;}
@@ -331,7 +355,6 @@ export default function HomePage() {
           .pop-home .cta-band .sig{margin-top:16px;font-size:13.5px;color:rgba(255,255,255,.82);}
           .pop-home .cta-band .sig b{color:#fff;}
 
-          .pop-home footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;font-size:12.5px;color:var(--faint);}
 
           @media(min-width:820px){
             .pop-home .hero{padding:84px 0 58px;}
@@ -346,13 +369,16 @@ export default function HomePage() {
 
       <div className="nav">
         <div className="wrap in">
-          <div className="brand"><span className="dot">✦</span> Popey</div>
-          <a className="navcall" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
+          <a className="brand" href="#top">
+            <span className="dot">✦</span>
+            <span className="brand-tx">popey<span className="brand-sub">sites &amp; assistante · commerçants</span></span>
+          </a>
+          <a className="navcta" href="#top">✨ Créer mon site</a>
         </div>
       </div>
 
       {/* ── HERO ── */}
-      <header className="hero">
+      <header className="hero" id="top">
         <div className="aurora"><span className="x1" /><span className="x2" /><span className="x3" /></div>
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
@@ -365,16 +391,24 @@ export default function HomePage() {
             <span className="ftag t4">🤖 votre assistante</span>
             <HeroGenerator />
           </div>
-          <div className="alt">Vous préférez en parler ? <a href={WA_HREF} target="_blank" rel="noreferrer">Écrire à Marius</a> · {PHONE_DISPLAY}</div>
+          <div className="alt">✓ Sans inscription · sans engagement · à partir de vos vraies infos Google</div>
         </div>
       </header>
 
-      {/* ── DÉMO VIVANTE (interactive) ── */}
-      <section className="demo">
-        <div className="wrap">
-          <LivingDemo />
-        </div>
-      </section>
+      {/* ── LE CATALOGUE À SWIPER ── */}
+      <div className="band">
+        <section>
+          <div className="wrap cat-wrap">
+            <div className="cat-tx">
+              <div className="sk reveal">📲 Le catalogue</div>
+              <div className="sh reveal">Un catalogue qu&apos;on <span className="hl">swipe</span>, et qui se partage en 1 clic.</div>
+              <p className="cat-p reveal">Vos photos, vos offres, vos avis — dans de belles cartes que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: <b>ils adorent, et ils réservent.</b></p>
+              <div className="cat-share reveal">📲 Partagé en 1 clic · aucune appli à installer</div>
+            </div>
+            <div className="cat-deck reveal"><CatalogueTeaser /></div>
+          </div>
+        </section>
+      </div>
 
       {/* ── ACTION FLASH ── */}
       <div className="band">
@@ -383,9 +417,7 @@ export default function HomePage() {
             <div className="sk reveal" style={{ textAlign: "center" }}>🚀 Action Flash</div>
             <div className="sh reveal">Un créneau creux, un événement, une offre&nbsp;? <span className="hl">En un clic.</span></div>
             <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
-              Vous dites votre objectif. Votre assistante <b>prépare l&apos;offre, l&apos;affiche sur votre site</b>, et — si
-              vous le voulez — la <b>diffuse partout</b>. Elle ne remplit pas à votre place&nbsp;: elle s&apos;occupe de
-              toute la communication, et vous validez avant l&apos;envoi.
+              Vous choisissez, votre assistante fait toute la communication — et vous <b>voyez tout avant que ça parte.</b>
             </p>
             <div className="af-objs reveal">
               {[
@@ -415,21 +447,14 @@ export default function HomePage() {
           <div className="coll-band reveal">
             <div className="coll-in">
               <div>
-                <div className="coll-k">🤝 Le collectif de votre ville</div>
-                <h2 className="coll-h">Et si les autres commerces de votre ville vous <em>envoyaient des clients&nbsp;?</em></h2>
-                <p className="coll-p">
-                  Popey rassemble les commerces et artisans <b>les mieux notés</b> de votre ville. Chacun est associé à
-                  <b> une dizaine de métiers complémentaires</b> — jamais des concurrents.
-                </p>
+                <div className="coll-k">🤝 Le collectif</div>
+                <h2 className="coll-h">Les autres commerces de votre ville vous <em>envoient des clients.</em></h2>
                 <div className="coll-steps">
-                  <div className="coll-step"><span className="cn">1</span><span>Un client réserve chez un partenaire et cherche <b>autre chose</b> à côté.</span></div>
-                  <div className="coll-step"><span className="cn">2</span><span>Mon assistante lui recommande <b>le bon pro du collectif</b> — vous.</span></div>
-                  <div className="coll-step"><span className="cn">3</span><span>Et vous faites pareil. <b>Les meilleurs s&apos;envoient des clients.</b></span></div>
+                  <div className="coll-step"><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
+                  <div className="coll-step"><span className="cn">2</span><span>L&apos;assistante lui recommande <b>le bon pro — vous.</b></span></div>
+                  <div className="coll-step"><span className="cn">3</span><span>Et vous faites pareil. <b>On s&apos;envoie des clients.</b></span></div>
                 </div>
-                <p className="coll-note">
-                  Le collectif se construit commerce par commerce&nbsp;: c&apos;est une ambition qu&apos;on bâtit avec vous. Aucune
-                  donnée partagée sans accord, jamais un concurrent en face.
-                </p>
+                <p className="coll-note">Que des commerces complémentaires, jamais un concurrent. Une ambition qu&apos;on bâtit avec vous.</p>
               </div>
               <div className="coll-net" aria-hidden="true">
                 {COLLECTIF_NODES.map((nd) => (
@@ -533,21 +558,42 @@ export default function HomePage() {
         <div className="wrap">
           <div className="cta-band reveal">
             <div className="in">
-              <h2>Voyez ce que ça donne pour vous.</h2>
+              <h2>Prêt à voir le vôtre&nbsp;?</h2>
               <div className="cta">
-                <a className="btn btn-wa" href={WA_HREF} target="_blank" rel="noreferrer">
-                  <svg viewBox="0 0 24 24" fill="#0B7A55"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
-                  Écrire à Marius sur WhatsApp
-                </a>
-                <a className="btn btn-call" href={TEL_HREF}>📞 {PHONE_DISPLAY}</a>
+                <a className="btn btn-wa" href="#top">✨ Créer mon site — gratuitement</a>
               </div>
-              <div className="sig">Marius · <b>{PHONE_DISPLAY}</b> · Sud-Ouest de la France</div>
+              <div className="sig">Gratuit · en une minute · sans engagement</div>
             </div>
           </div>
         </div>
       </section>
 
-      <footer>Popey · {year}</footer>
+      {/* ── FOOTER ── */}
+      <footer className="foot">
+        <div className="wrap foot-in">
+          <div className="foot-brand">
+            <div className="foot-logo"><span className="dot">✦</span> popey</div>
+            <p>Sites &amp; assistante IA pour les commerçants, artisans et pros de proximité du Sud-Ouest.</p>
+          </div>
+          <div className="foot-col">
+            <h4>Popey</h4>
+            <a href="#top">Créer mon site</a>
+            <a href="/legal#cgu">Conditions d&apos;utilisation</a>
+            <a href="/legal#cgv">Conditions de vente</a>
+            <a href="/legal#remboursement">Remboursement</a>
+            <a href="/legal#confidentialite">Confidentialité</a>
+            <a href="/legal#mentions">Mentions légales</a>
+          </div>
+          <div className="foot-col">
+            <h4>Contact</h4>
+            <a href={WA_HREF} target="_blank" rel="noreferrer">WhatsApp</a>
+            <a href={TEL_HREF}>{PHONE_DISPLAY}</a>
+            <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+            <span className="foot-sig">Marius · Sud-Ouest de la France</span>
+          </div>
+        </div>
+        <div className="foot-bar">Popey · {year} · Tous droits réservés</div>
+      </footer>
     </main>
   );
 }
