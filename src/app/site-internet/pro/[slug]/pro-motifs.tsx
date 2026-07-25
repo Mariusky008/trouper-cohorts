@@ -24,6 +24,8 @@ export function ProMotifs({
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [phrase, setPhrase] = useState("");
+  const [gen, setGen] = useState(false);
 
   const call = async (body: Record<string, unknown>) => {
     const r = await fetch("/api/site-internet/pro/motifs", {
@@ -67,6 +69,27 @@ export function ProMotifs({
     });
   const fillFromSuggestions = () => setRows(suggestions.map(norm));
 
+  // L'assistante propose 4 cartes à partir d'UNE phrase — le pro relit/ajuste,
+  // puis enregistre. On ne remplace jamais sans que le pro voie le résultat.
+  const generate = async () => {
+    const p = phrase.trim();
+    if (!p || gen) return;
+    setGen(true);
+    try {
+      const r = await fetch("/api/site-internet/pro/site-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, phrase: p }),
+      });
+      const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+      if (Array.isArray(j.usecases) && j.usecases.length) setRows((j.usecases as Suggestion[]).map(norm));
+    } catch {
+      /* best-effort */
+    } finally {
+      setGen(false);
+    }
+  };
+
   const save = async () => {
     setBusy(true);
     setSaved(false);
@@ -109,6 +132,14 @@ export function ProMotifs({
           .pro .mtf .savebtn{margin-top:16px;width:100%;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .mtf .savebtn:disabled{opacity:.5;cursor:not-allowed;}
           .pro .mtf .none{font-size:13px;color:var(--faint);line-height:1.45;margin-top:11px;}
+          .pro .mtf .ask{margin-top:13px;border:1px solid rgba(109,74,224,.22);border-radius:15px;padding:14px;background:linear-gradient(160deg,rgba(109,74,224,.08),#fff);}
+          .pro .mtf .ask .ah{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--violet);}
+          .pro .mtf .ask .ah .av{width:26px;height:26px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);}
+          .pro .mtf .ask .aq{font-size:13px;color:var(--ink);margin:10px 0 8px;line-height:1.4;}
+          .pro .mtf .ask textarea{min-height:64px;}
+          .pro .mtf .ask .gen{margin-top:10px;width:100%;border:none;border-radius:11px;padding:12px;font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 12px 26px -14px rgba(91,63,166,.7);}
+          .pro .mtf .ask .gen:disabled{opacity:.55;cursor:not-allowed;}
+          .pro .mtf .ask .anote{font-size:11px;color:var(--faint);margin-top:8px;line-height:1.4;}
           `,
         }}
       />
@@ -120,11 +151,26 @@ export function ProMotifs({
           montre des exemples&nbsp;; dès que vous remplissez, ce sont les vôtres.
         </div>
 
+        {/* Méthode principale : l'assistante prépare, le pro valide. */}
+        <div className="ask">
+          <div className="ah"><span className="av">✦</span>Laissez l&apos;assistante préparer vos cartes</div>
+          <div className="aq">Décrivez en une phrase pourquoi vos client·es viennent vous voir&nbsp;:</div>
+          <textarea
+            value={phrase}
+            onChange={(e) => setPhrase(e.target.value)}
+            placeholder="Ex. On vient chez moi pour le stress, les douleurs de dos, mieux dormir et se remettre au sport en douceur."
+          />
+          <button type="button" className="gen" onClick={generate} disabled={gen || !phrase.trim()}>
+            {gen ? "L'assistante prépare…" : "✨ Générer mes 4 cartes"}
+          </button>
+          <div className="anote">L&apos;assistante s&apos;appuie uniquement sur votre phrase. Vous relisez et ajustez chaque carte avant d&apos;enregistrer.</div>
+        </div>
+
         {loaded && rows.length === 0 && <div className="none">Aucun motif pour l&apos;instant.</div>}
 
         {suggestions.length > 0 && rows.length === 0 && (
           <div className="tip">
-            Partez des motifs proposés pour votre métier, puis reformulez avec vos mots.
+            Ou partez des motifs proposés pour votre métier, puis reformulez avec vos mots.
             <br />
             <button type="button" onClick={fillFromSuggestions}>Partir des exemples</button>
           </div>

@@ -39,17 +39,21 @@ export async function POST(request: Request) {
   if (action === "set") {
     const slotMinutes = Math.max(10, Math.min(120, Math.round(Number(p?.slot_minutes) || 30)));
     await supabase.from("human_vitrine_sites").update({ booking_slot_minutes: slotMinutes }).eq("id", siteId);
-    // On remplace toutes les fenêtres (v1 : une plage par jour).
+    // On remplace toutes les fenêtres. Plusieurs plages par jour autorisées
+    // (ex. 9h-12h + 14h-18h) ; plafond global pour éviter les abus.
     const raw = Array.isArray(p?.windows) ? (p.windows as unknown[]) : [];
     const rows: Array<{ site_id: string; weekday: number; start_min: number; end_min: number }> = [];
-    const seen = new Set<number>();
+    const perDay = new Map<number, number>();
     for (const w of raw) {
+      if (rows.length >= 40) break;
       const o = (w && typeof w === "object" ? w : {}) as Record<string, unknown>;
       const wd = Math.round(Number(o.weekday));
       const start = clampMin(o.start_min);
       const end = clampMin(o.end_min);
-      if (wd < 0 || wd > 6 || seen.has(wd) || end <= start) continue;
-      seen.add(wd);
+      if (wd < 0 || wd > 6 || end <= start) continue;
+      const count = perDay.get(wd) ?? 0;
+      if (count >= 4) continue; // max 4 plages par jour
+      perDay.set(wd, count + 1);
       rows.push({ site_id: siteId, weekday: wd, start_min: start, end_min: end });
     }
     try {

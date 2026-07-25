@@ -358,8 +358,8 @@ export default async function EspacePro({
               <ProGroup
                 groupKey="clients"
                 subs={[
+                  { key: "liste", label: "Ma liste de clients", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
                   { key: "avis", label: "Demander un avis", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
-                  { key: "liste", label: "Ma liste", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
                 ]}
               />
             ),

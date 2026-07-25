@@ -43,9 +43,14 @@ export function generateSlots(
   bufferMin = 120
 ): DaySlots[] {
   const step = Math.max(5, Math.min(240, slotMinutes || 30));
-  const byDay = new Map<number, AvailWindow>();
+  // Plusieurs plages possibles par jour (ex. 9h-12h + 14h-18h) → tableau par jour.
+  const byDay = new Map<number, AvailWindow[]>();
   for (const w of windows) {
-    if (w && Number.isFinite(w.weekday) && w.end_min > w.start_min) byDay.set(w.weekday, w);
+    if (w && Number.isFinite(w.weekday) && w.end_min > w.start_min) {
+      const arr = byDay.get(w.weekday) ?? [];
+      arr.push(w);
+      byDay.set(w.weekday, arr);
+    }
   }
   if (byDay.size === 0) return [];
 
@@ -57,21 +62,27 @@ export function generateSlots(
   for (let i = 0; i < days; i++) {
     const dt = new Date(base + i * 86400000);
     const wd = dt.getUTCDay();
-    const w = byDay.get(wd);
-    if (!w) continue;
+    const dayWins = byDay.get(wd);
+    if (!dayWins || !dayWins.length) continue;
     const Y = dt.getUTCFullYear();
     const M = dt.getUTCMonth() + 1;
     const D = dt.getUTCDate();
     const dateStr = `${Y}-${pad(M)}-${pad(D)}`;
+    const seenKeys = new Set<string>();
     const slots: Array<{ key: string; hhmm: string }> = [];
-    for (let m = w.start_min; m + step <= w.end_min; m += step) {
-      const H = Math.floor(m / 60);
-      const Mi = m % 60;
-      const key = `${dateStr}T${pad(H)}:${pad(Mi)}`;
-      if (key <= cutoff) continue;
-      if (activeSlots.has(key)) continue;
-      slots.push({ key, hhmm: Mi === 0 ? `${H} h` : `${H} h ${pad(Mi)}` });
+    for (const w of dayWins) {
+      for (let m = w.start_min; m + step <= w.end_min; m += step) {
+        const H = Math.floor(m / 60);
+        const Mi = m % 60;
+        const key = `${dateStr}T${pad(H)}:${pad(Mi)}`;
+        if (key <= cutoff) continue;
+        if (activeSlots.has(key)) continue;
+        if (seenKeys.has(key)) continue; // plages qui se chevauchent → pas de doublon
+        seenKeys.add(key);
+        slots.push({ key, hhmm: Mi === 0 ? `${H} h` : `${H} h ${pad(Mi)}` });
+      }
     }
+    slots.sort((a, b) => (a.key < b.key ? -1 : 1));
     if (slots.length) out.push({ date: dateStr, label: `${JOURS[wd]} ${D} ${MOIS[M - 1]}`, slots });
   }
   return out;
