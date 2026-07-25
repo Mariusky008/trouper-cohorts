@@ -8,21 +8,21 @@ import { LivingDemo } from "./_home/living-demo";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
-  title: "Popey — votre site web, construit sous vos yeux en 1 minute",
+  title: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute",
   description:
-    "Entrez le nom de votre établissement : Popey construit votre site à partir de vos vraies infos Google, avec une assistante qui accueille vos clients, récolte vos avis et remplit vos créneaux. Testez-le gratuitement.",
+    "Site gratuit prêt en 1 minute, avec une assistante qui répond à vos clients. En un clic, annoncez un créneau libre, un événement ou une offre : votre communication est préparée et diffusée. Vous ne payez que pour aller plus loin.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Popey — votre site web, construit sous vos yeux en 1 minute",
-    description: "Un site créé à partir de vos vraies infos Google + une assistante qui travaille pour vous. Testez-le gratuitement.",
+    title: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute",
+    description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, annoncez une offre, un événement ou un créneau libre.",
     siteName: "Popey",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey — votre site web, construit sous vos yeux",
-    description: "Un site à votre image + une assistante qui travaille pour vous. Testez-le gratuitement.",
+    title: "Popey — votre site web gratuit, construit sous vos yeux",
+    description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, lancez vos offres.",
   },
 };
 
@@ -274,6 +274,43 @@ export default function HomePage() {
           @keyframes collFlow{0%{opacity:0;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(.7)}12%{opacity:1}82%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--sx)*.12),calc(var(--sy)*.12)) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.5)}}
           @media(prefers-reduced-motion:reduce){.pop-home .coll-core,.pop-home .coll-flow,.pop-home .coll-pc{animation:none}.pop-home .coll-flow{display:none}}
 
+          /* ── ACTION FLASH ── */
+          .pop-home .af-objs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;}
+          @media(min-width:800px){.pop-home .af-objs{grid-template-columns:repeat(4,1fr);}}
+          .pop-home .af-obj{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 14px 34px -26px rgba(20,22,15,.5);}
+          .pop-home .af-obj .i{font-size:26px;}
+          .pop-home .af-obj .t{font-weight:800;font-size:13.5px;margin-top:8px;letter-spacing:-.01em;line-height:1.25;}
+          .pop-home .af-recap{max-width:470px;margin:28px auto 0;background:linear-gradient(160deg,#15211C,#0C1512);border-radius:20px;padding:20px 20px 18px;color:#EBF6F0;box-shadow:0 30px 70px -34px rgba(0,0,0,.7);}
+          .pop-home .af-recap .rh{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:800;color:#fff;margin-bottom:6px;}
+          .pop-home .af-recap .rh .d{width:8px;height:8px;border-radius:50%;background:var(--a1);box-shadow:0 0 0 4px rgba(18,185,129,.18);}
+          .pop-home .af-line{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08);font-size:13.5px;}
+          .pop-home .af-line:first-of-type{border-top:none;}
+          .pop-home .af-line .ic{font-size:17px;width:22px;text-align:center;flex:none;}
+          .pop-home .af-line .tx{flex:1;color:#DDE6E0;}
+          .pop-home .af-line .tx b{color:#fff;}
+          .pop-home .af-line .tag{flex:none;font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;letter-spacing:.02em;}
+          .pop-home .af-line .tag.free{background:rgba(18,185,129,.16);color:#7EE8B0;}
+          .pop-home .af-line .tag.opt{background:rgba(124,92,252,.2);color:#cabdff;}
+          .pop-home .af-rnote{font-size:11.5px;color:#9fb8ad;margin-top:13px;line-height:1.45;text-align:center;}
+          /* ── GRATUIT / OPTIONS ── */
+          .pop-home .gp-cols{display:grid;grid-template-columns:1fr;gap:14px;margin-top:30px;}
+          @media(min-width:760px){.pop-home .gp-cols{grid-template-columns:1fr 1fr;}}
+          .pop-home .gp-card{border-radius:20px;padding:22px;border:1px solid var(--line);background:var(--surface);box-shadow:0 18px 44px -30px rgba(20,22,15,.5);}
+          .pop-home .gp-card.free{border-color:rgba(18,185,129,.35);background:linear-gradient(180deg,rgba(18,185,129,.07),#fff);}
+          .pop-home .gp-card.paid{border-color:rgba(124,92,252,.28);}
+          .pop-home .gp-h{font-weight:850;font-size:17px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+          .pop-home .gp-card.free .gp-h{color:#0B7A55;}
+          .pop-home .gp-card.paid .gp-h{color:#5B3FA6;}
+          .pop-home .gp-sub{font-size:12.5px;color:var(--faint);margin-top:3px;}
+          .pop-home .gp-list{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+          .pop-home .gp-item{display:flex;gap:10px;font-size:14px;line-height:1.4;color:var(--soft);}
+          .pop-home .gp-item .k{flex:none;font-weight:800;}
+          .pop-home .gp-card.free .gp-item .k{color:#12B981;}
+          .pop-home .gp-card.paid .gp-item .k{color:#7C5CFC;}
+          .pop-home .gp-item b{color:var(--ink);font-weight:700;}
+          .pop-home .gp-tag{text-align:center;font-size:16px;font-weight:850;margin-top:24px;color:var(--ink);letter-spacing:-.01em;}
+          .pop-home .gp-tag span{color:var(--a2);}
+
           /* ── HONNÊTETÉ + CTA ── */
           .pop-home .honest{text-align:center;max-width:640px;margin:0 auto;}
           .pop-home .honest .b{font-size:30px;}
@@ -318,9 +355,9 @@ export default function HomePage() {
       <header className="hero">
         <div className="aurora"><span className="x1" /><span className="x2" /><span className="x3" /></div>
         <div className="wrap inner">
-          <span className="eyebrow">✦ Pour les commerçants, artisans &amp; pros</span>
+          <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
           <h1>Votre site web,<br /><span className="hl">construit sous vos yeux.</span></h1>
-          <p className="sub">Entrez le nom de votre établissement. Regardez ce que je crée en 1 minute — puis testez-le.</p>
+          <p className="sub"><b>Gratuit, prêt en une minute.</b> Une assistante répond à vos clients — et en un clic, vous annoncez un créneau libre, un événement ou une offre.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
@@ -338,6 +375,39 @@ export default function HomePage() {
           <LivingDemo />
         </div>
       </section>
+
+      {/* ── ACTION FLASH ── */}
+      <div className="band">
+        <section>
+          <div className="wrap">
+            <div className="sk reveal" style={{ textAlign: "center" }}>🚀 Action Flash</div>
+            <div className="sh reveal">Un créneau creux, un événement, une offre&nbsp;? <span className="hl">En un clic.</span></div>
+            <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
+              Vous dites votre objectif. Votre assistante <b>prépare l&apos;offre, l&apos;affiche sur votre site</b>, et — si
+              vous le voulez — la <b>diffuse partout</b>. Elle ne remplit pas à votre place&nbsp;: elle s&apos;occupe de
+              toute la communication, et vous validez avant l&apos;envoi.
+            </p>
+            <div className="af-objs reveal">
+              {[
+                { i: "📅", t: "Remplir un créneau" },
+                { i: "🎉", t: "Annoncer un événement" },
+                { i: "🏷️", t: "Faire connaître une offre" },
+                { i: "📦", t: "Écouler un produit" },
+              ].map((o) => (
+                <div className="af-obj" key={o.t}><div className="i">{o.i}</div><div className="t">{o.t}</div></div>
+              ))}
+            </div>
+            <div className="af-recap reveal">
+              <div className="rh"><span className="d" /> Voici ce que je prépare — vous validez avant l&apos;envoi</div>
+              <div className="af-line"><span className="ic">🌐</span><span className="tx">Votre site&nbsp;: <b>bandeau « offre du moment »</b></span><span className="tag free">offert</span></div>
+              <div className="af-line"><span className="ic">📲</span><span className="tx">WhatsApp&nbsp;: envoi à vos clients fidèles</span><span className="tag opt">option</span></div>
+              <div className="af-line"><span className="ic">📸</span><span className="tx">Insta &amp; Facebook&nbsp;: post prêt à publier</span><span className="tag opt">option</span></div>
+              <div className="af-line"><span className="ic">🗓️</span><span className="tx">Réservation&nbsp;: lien ajouté à l&apos;offre</span><span className="tag opt">option</span></div>
+              <div className="af-rnote">Vous voyez exactement ce qui part, avant que ça parte. Rien n&apos;est envoyé sans votre accord.</div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* ── LE COLLECTIF ── */}
       <section>
@@ -412,6 +482,37 @@ export default function HomePage() {
           <div className="deonto reveal">
             Professions de santé &amp; du droit&nbsp;: cadre déontologique respecté — pas de sollicitation d&apos;avis, seulement un accueil qui répond pour vous.
           </div>
+        </div>
+      </section>
+
+      {/* ── GRATUIT / OPTIONS ── */}
+      <section>
+        <div className="wrap">
+          <div className="sk reveal" style={{ textAlign: "center" }}>Gratuit, puis à la carte</div>
+          <div className="sh reveal">Le site est offert. Vous ne payez que pour <span className="hl">aller plus loin.</span></div>
+          <div className="gp-cols">
+            <div className="gp-card free reveal">
+              <div className="gp-h">✅ Offert</div>
+              <div className="gp-sub">Tout de suite, sans rien payer.</div>
+              <div className="gp-list">
+                <div className="gp-item"><span className="k">✓</span><span>Un <b>beau site</b>, prêt en une minute</span></div>
+                <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante qui répond</b> à vos clients</span></div>
+                <div className="gp-item"><span className="k">✓</span><span><b>Créer une offre</b> et l&apos;afficher sur votre site</span></div>
+              </div>
+            </div>
+            <div className="gp-card paid reveal" style={{ transitionDelay: "90ms" }}>
+              <div className="gp-h">⚡ Options</div>
+              <div className="gp-sub">Quand vous voulez de la portée.</div>
+              <div className="gp-list">
+                <div className="gp-item"><span className="k">＋</span><span><b>Diffusion WhatsApp</b> à vos clients</span></div>
+                <div className="gp-item"><span className="k">＋</span><span>Posts <b>Insta &amp; Facebook</b> préparés</span></div>
+                <div className="gp-item"><span className="k">＋</span><span>Récolte d&apos;<b>avis Google</b></span></div>
+                <div className="gp-item"><span className="k">＋</span><span>Le <b>collectif</b>&nbsp;: les commerces se recommandent</span></div>
+                <div className="gp-item"><span className="k">＋</span><span><b>Statistiques &amp; réservations</b> en ligne</span></div>
+              </div>
+            </div>
+          </div>
+          <div className="gp-tag reveal">Vous essayez gratuitement. <span>Vous ne payez que si ça vous sert.</span></div>
         </div>
       </section>
 
