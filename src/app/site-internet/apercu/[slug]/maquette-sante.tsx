@@ -469,6 +469,12 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           reviewsCount={reviewsCount}
           offer={offer}
           accent={accent}
+          extras={{
+            reviews: avisMode !== "none" ? reviewsTop.filter((r) => r.text) : [],
+            services: (Array.isArray(services) ? services : []).map((s) => ({ name: s.name, price: s.price })).filter((s) => s.name),
+            address: shortAddr,
+            horaires: heures,
+          }}
         />
       )}
 

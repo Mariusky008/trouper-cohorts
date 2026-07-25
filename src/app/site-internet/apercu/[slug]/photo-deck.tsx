@@ -53,9 +53,9 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
   (videos ?? []).slice(0, 6).forEach((url) => cards.push({ kind: "video", url }));
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
   if (offer?.text) cards.splice(Math.min(1, cards.length), 0, { kind: "offer", text: offer.text, until: offer.until ?? null });
-  // Récap « fun » du site — UNIQUEMENT sur le catalogue autonome partagé (dans la
-  // maquette, avis/prestations/accès existent déjà en sections).
-  if (standalone && extras) {
+  // Récap « fun » du site : cartes avis / prestations / accès (dans le site de démo
+  // ET sur le catalogue autonome partagé).
+  if (extras) {
     (extras.reviews ?? []).slice(0, 2).forEach((review) => cards.push({ kind: "review", review }));
     const svc = (extras.services ?? []).filter((s) => s.name).slice(0, 5);
     if (svc.length) cards.push({ kind: "services", items: svc });
