@@ -253,7 +253,10 @@ export default function HomePage() {
           .pop-home .band{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
           .pop-home .steps{position:relative;display:grid;grid-template-columns:1fr;gap:16px;margin-top:36px;}
           @media(min-width:800px){.pop-home .steps{grid-template-columns:repeat(3,1fr);gap:20px;}}
-          .pop-home .step{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px 22px;box-shadow:0 20px 46px -30px rgba(20,22,15,.4);}
+          .pop-home .step{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px 22px 24px;box-shadow:0 20px 46px -30px rgba(20,22,15,.4);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1),translate .22s ease,box-shadow .22s ease;}
+          .pop-home .step::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;border-radius:20px 20px 0 0;background:linear-gradient(90deg,var(--a1),var(--a3));}
+          .pop-home .step:hover{translate:0 -4px;box-shadow:0 30px 56px -30px rgba(20,22,15,.5);}
+          @media(min-width:800px){.pop-home .step:not(:last-child)::after{content:"→";position:absolute;top:52px;right:-14px;color:var(--a1);font-size:19px;font-weight:900;z-index:2;}}
           .pop-home .step .badge{display:flex;align-items:center;gap:10px;}
           .pop-home .step .n{width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,var(--a1),var(--a3));color:#fff;font-weight:850;font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 24px -10px rgba(18,185,129,.7);}
           .pop-home .step .emj{font-size:24px;}
@@ -265,7 +268,8 @@ export default function HomePage() {
           .pop-home .track{display:inline-flex;gap:11px;padding:4px 0;white-space:nowrap;animation:scrollX 26s linear infinite;}
           .pop-home .marquee:hover .track{animation-play-state:paused;}
           @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-          .pop-home .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:11px 18px;font-size:14px;font-weight:700;box-shadow:0 10px 24px -20px rgba(20,22,15,.5);}
+          .pop-home .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:11px 18px;font-size:14px;font-weight:700;box-shadow:0 10px 24px -20px rgba(20,22,15,.5);transition:translate .2s ease,border-color .2s ease,box-shadow .2s ease;}
+          .pop-home .chip:hover{translate:0 -2px;border-color:rgba(18,185,129,.45);box-shadow:0 14px 28px -18px rgba(18,185,129,.5);}
           .pop-home .deonto{margin-top:20px;text-align:center;font-size:12.5px;color:var(--faint);max-width:520px;margin-left:auto;margin-right:auto;line-height:1.5;}
 
           /* ── LE COLLECTIF ── */
@@ -326,7 +330,9 @@ export default function HomePage() {
           .pop-home .gp-cols{display:grid;grid-template-columns:1fr;gap:14px;margin-top:30px;}
           @media(min-width:760px){.pop-home .gp-cols{grid-template-columns:1fr 1fr;}}
           .pop-home .gp-card{border-radius:20px;padding:22px;border:1px solid var(--line);background:var(--surface);box-shadow:0 18px 44px -30px rgba(20,22,15,.5);}
+          .pop-home .gp-card{position:relative;}
           .pop-home .gp-card.free{border-color:rgba(18,185,129,.35);background:linear-gradient(180deg,rgba(18,185,129,.07),#fff);}
+          .pop-home .gp-card.free::after{content:"0 € · inclus";position:absolute;top:-11px;right:16px;background:linear-gradient(120deg,#12B981,#0EA5A5);color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border-radius:999px;box-shadow:0 10px 22px -12px rgba(18,185,129,.85);}
           .pop-home .gp-card.paid{border-color:rgba(124,92,252,.28);}
           .pop-home .gp-h{font-weight:850;font-size:17px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
           .pop-home .gp-card.free .gp-h{color:#0B7A55;}
@@ -343,7 +349,7 @@ export default function HomePage() {
 
           /* ── HONNÊTETÉ + CTA ── */
           .pop-home .honest{text-align:center;max-width:640px;margin:0 auto;}
-          .pop-home .honest .b{font-size:30px;}
+          .pop-home .honest .b{display:inline-flex;align-items:center;justify-content:center;width:66px;height:66px;border-radius:20px;font-size:30px;background:linear-gradient(140deg,rgba(18,185,129,.16),rgba(124,92,252,.13));border:1px solid var(--line);box-shadow:0 16px 34px -22px rgba(18,185,129,.55);}
           .pop-home .honest h3{font-size:23px;font-weight:850;letter-spacing:-.02em;margin:8px 0 8px;}
           .pop-home .honest p{font-size:15.5px;color:var(--soft);line-height:1.6;max-width:520px;margin:0 auto;}
           .pop-home .honest p b{color:var(--ink);}
