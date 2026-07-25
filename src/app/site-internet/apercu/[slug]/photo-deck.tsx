@@ -192,8 +192,8 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
       <div className="pdk-in">
         {!standalone && (
           <div className="pdk-head">
-            <div className="pdk-k">Le catalogue</div>
-            <h2 className="pdk-h">{nom} en images</h2>
+            <div className="pdk-k">Produits &amp; services</div>
+            <h2 className="pdk-h">Le catalogue de {nom}</h2>
             <p className="pdk-sub">Swipez pour découvrir · ❤️ j&apos;aime · ↑ réserver.</p>
           </div>
         )}

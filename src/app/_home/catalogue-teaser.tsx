@@ -7,14 +7,16 @@
 import { useEffect, useRef, useState } from "react";
 
 type Card =
-  | { kind: "photo"; name: string; meta: string; note: string; grad: string }
+  | { kind: "photo"; name: string; meta: string; note: string; grad: string; img: string }
   | { kind: "offer"; text: string }
   | { kind: "review"; text: string; who: string };
 
+// Photos d'illustration (banque libre) superposées à un dégradé de repli : si une
+// image ne charge pas, on voit le dégradé — jamais de carte cassée.
 const CARDS: Card[] = [
-  { kind: "photo", name: "Votre commerce", meta: "En images", note: "4,9", grad: "linear-gradient(155deg,#3A5C58,#141A2E)" },
+  { kind: "photo", name: "Vos produits", meta: "Vos plus belles pièces", note: "4,9", grad: "linear-gradient(155deg,#3A5C58,#141A2E)", img: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=520&q=70" },
   { kind: "offer", text: "-20 % cette semaine sur votre coup de cœur 🎁" },
-  { kind: "photo", name: "Vos réalisations", meta: "À faire défiler", note: "4,9", grad: "linear-gradient(155deg,#5A6B4A,#1A1E14)" },
+  { kind: "photo", name: "Vos services", meta: "Votre savoir-faire en images", note: "4,9", grad: "linear-gradient(155deg,#5A6B4A,#1A1E14)", img: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=520&q=70" },
   { kind: "review", text: "Le meilleur accueil de la ville, on recommande les yeux fermés !", who: "Client vérifié" },
 ];
 
@@ -50,7 +52,7 @@ export function CatalogueTeaser() {
           if (pos > 2) return null;
           const role = pos === 0 ? `top${leaving ? " leaving" : ""}` : pos === 1 ? "b1" : "b2";
           const cls = `ct-card ${role}${c.kind === "offer" ? " ct-offer" : c.kind === "review" ? " ct-rev" : ""}`;
-          const style = c.kind === "photo" ? { background: c.grad } : undefined;
+          const style = c.kind === "photo" ? { backgroundImage: `url("${c.img}"), ${c.grad}`, backgroundSize: "cover", backgroundPosition: "center" } : undefined;
           return <div className={cls} style={style} key={i}>{inner(c)}</div>;
         })}
       </div>

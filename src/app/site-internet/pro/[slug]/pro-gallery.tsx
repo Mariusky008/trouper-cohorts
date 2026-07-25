@@ -223,9 +223,9 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
         )}
 
         <div className="share">
-          <div className="a-title">📲 Mon catalogue à partager</div>
+          <div className="a-title">📲 Mon catalogue produits &amp; services</div>
           <div className="a-sub">
-            Un lien à envoyer à vos client·es (WhatsApp, Insta, SMS)&nbsp;: ils swipent vos photos, vidéos et votre offre.
+            Un lien à envoyer à vos client·es (WhatsApp, Insta, SMS)&nbsp;: ils font défiler vos produits, vos photos, vos vidéos et votre offre.
           </div>
           <button className="share-btn" onClick={shareCatalogue}>{copied ? "✓ Lien copié" : "📲 Partager mon catalogue"}</button>
           <div className="share-link">

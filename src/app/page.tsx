@@ -301,7 +301,12 @@ export default function HomePage() {
           /* ── ACTION FLASH ── */
           .pop-home .af-objs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;}
           @media(min-width:800px){.pop-home .af-objs{grid-template-columns:repeat(4,1fr);}}
-          .pop-home .af-obj{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 14px 34px -26px rgba(20,22,15,.5);}
+          .pop-home .af-obj{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 14px 34px -26px rgba(20,22,15,.5);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1),translate .2s ease,box-shadow .2s ease,border-color .2s ease;}
+          .pop-home .af-obj:hover{translate:0 -4px;border-color:var(--a1);box-shadow:0 22px 44px -24px rgba(18,185,129,.5);}
+          .pop-home .gp-card{transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1),translate .2s ease,box-shadow .2s ease;}
+          .pop-home .gp-card:hover{translate:0 -3px;box-shadow:0 26px 50px -30px rgba(20,22,15,.55);}
+          .pop-home .cat-share{transition:translate .2s ease;}
+          .pop-home .cat-share:hover{translate:0 -2px;}
           .pop-home .af-obj .i{font-size:26px;}
           .pop-home .af-obj .t{font-weight:800;font-size:13.5px;margin-top:8px;letter-spacing:-.01em;line-height:1.25;}
           .pop-home .af-recap{max-width:470px;margin:28px auto 0;background:linear-gradient(160deg,#15211C,#0C1512);border-radius:20px;padding:20px 20px 18px;color:#EBF6F0;box-shadow:0 30px 70px -34px rgba(0,0,0,.7);}
@@ -400,9 +405,9 @@ export default function HomePage() {
         <section>
           <div className="wrap cat-wrap">
             <div className="cat-tx">
-              <div className="sk reveal">📲 Le catalogue</div>
-              <div className="sh reveal">Un catalogue qu&apos;on <span className="hl">swipe</span>, et qui se partage en 1 clic.</div>
-              <p className="cat-p reveal">Vos photos, vos offres, vos avis — dans de belles cartes que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: <b>ils adorent, et ils réservent.</b></p>
+              <div className="sk reveal">📲 Le catalogue de vos produits &amp; services</div>
+              <div className="sh reveal">Vos produits &amp; services, dans un catalogue qu&apos;on <span className="hl">swipe.</span></div>
+              <p className="cat-p reveal">De belles cartes — vos produits, vos offres, vos avis — que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: <b>ils adorent, et ils réservent.</b></p>
               <div className="cat-share reveal">📲 Partagé en 1 clic · aucune appli à installer</div>
             </div>
             <div className="cat-deck reveal"><CatalogueTeaser /></div>
@@ -419,14 +424,14 @@ export default function HomePage() {
             <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
               Vous choisissez, votre assistante fait toute la communication — et vous <b>voyez tout avant que ça parte.</b>
             </p>
-            <div className="af-objs reveal">
+            <div className="af-objs">
               {[
                 { i: "📅", t: "Remplir un créneau" },
                 { i: "🎉", t: "Annoncer un événement" },
                 { i: "🏷️", t: "Faire connaître une offre" },
                 { i: "📦", t: "Écouler un produit" },
-              ].map((o) => (
-                <div className="af-obj" key={o.t}><div className="i">{o.i}</div><div className="t">{o.t}</div></div>
+              ].map((o, i) => (
+                <div className="af-obj reveal" key={o.t} style={{ transitionDelay: `${i * 90}ms` }}><div className="i">{o.i}</div><div className="t">{o.t}</div></div>
               ))}
             </div>
             <div className="af-recap reveal">
