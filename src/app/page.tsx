@@ -396,7 +396,7 @@ export default function HomePage() {
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
           <h1>Votre site web,<br /><span className="hl">construit sous vos yeux.</span></h1>
-          <p className="sub"><b>Votre première version, créée devant vous en une minute — gratuitement.</b> Une assistante présente votre activité et répond à vos clients ; en un clic, vous annoncez un créneau libre, un événement ou une offre.</p>
+          <p className="sub"><b>Créé devant vous en une minute — gratuitement</b>, à partir de votre fiche Google. Ensuite, votre assistante répond à vos clients et publie vos offres, événements et dispos <b>en un clic.</b></p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
