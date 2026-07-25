@@ -313,16 +313,7 @@ export default async function EspacePro({
             label: "Annonce",
             icon: "📣",
             hidden: true,
-            node: (
-              <>
-                <div className="af-lead">
-                  <div className="af-lead-k">🚀 Action Flash</div>
-                  <h2 className="af-lead-h">Faire une annonce</h2>
-                  <p className="af-lead-p">Un créneau, une offre, un événement, une nouveauté&nbsp;? Votre assistante rédige et diffuse — vous validez avant l&apos;envoi.</p>
-                </div>
-                <ProRelance slug={slug} token={token} />
-              </>
-            ),
+            node: <ProRelance slug={slug} token={token} />,
           },
           {
             key: "clients",

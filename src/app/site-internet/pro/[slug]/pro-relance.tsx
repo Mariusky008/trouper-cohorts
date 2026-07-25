@@ -31,6 +31,7 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [sent, setSent] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
+  const [socialCopied, setSocialCopied] = useState(false);
   // Générateur d'annonce IA : le pro décrit son offre, Claude rédige le message.
   const [brief, setBrief] = useState("");
   const [gening, setGening] = useState(false);
@@ -43,6 +44,11 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
+  // Parcours en 3 étapes : ① quoi annoncer → ② où l'afficher → ③ vérifier & lancer.
+  const [step, setStep] = useState(1);
+  const [chSite, setChSite] = useState(false); // bandeau sur le site (offert)
+  const [chWa, setChWa] = useState(true); // WhatsApp (option) — coché par défaut
+  const [chSocial, setChSocial] = useState(false); // Facebook / Instagram (texte à coller)
 
   const trackLink = typeof window !== "undefined" ? `${window.location.origin}/offre/${slug}` : `/offre/${slug}`;
 
@@ -196,6 +202,26 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
     }
   };
 
+  // Facebook / Instagram : pas d'auto-publication (honnête) — on prépare le texte
+  // à coller. Le pro publie lui-même dans son appli, en un coller.
+  const copySocial = async () => {
+    try {
+      await navigator.clipboard.writeText(msg);
+      setSocialCopied(true);
+      window.setTimeout(() => setSocialCopied(false), 2200);
+    } catch {
+      /* clipboard indisponible → l'aperçu reste sélectionnable */
+    }
+  };
+
+  const anyChannel = chSite || chWa || chSocial;
+  // En arrivant sur l'étape 3, si « site » est coché et le bandeau vide, on part
+  // du message (raccourci à 140 car un bandeau doit rester court).
+  const goStep3 = () => {
+    if (chSite && !offer && !offerText.trim()) setOfferText(msg.slice(0, 140));
+    setStep(3);
+  };
+
   const atCap = remaining !== null && remaining <= 0;
 
   const onSend = async () => {
@@ -311,166 +337,242 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance .offer .live .lact button{flex:1;border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--hair);background:#fff;color:var(--ink);}
           .pro .relance .offer .live .lact button.rm{color:#B4453C;border-color:#EBC9C4;}
           .pro .relance .offer .addlink{margin-top:9px;width:100%;background:#F1EFE7;border:1px solid var(--hair);color:var(--ink);border-radius:11px;padding:10px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;}
+          /* ── Parcours en 3 étapes ── */
+          .pro .relance .rlz-steps{display:flex;align-items:center;gap:6px;margin-top:16px;}
+          .pro .relance .rlz-steps .s{flex:1;display:flex;flex-direction:column;gap:5px;align-items:center;font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.02em;text-align:center;}
+          .pro .relance .rlz-steps .s .n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#EEEFF7;color:var(--faint);font-size:12px;}
+          .pro .relance .rlz-steps .s.on{color:var(--violet);}
+          .pro .relance .rlz-steps .s.on .n{background:var(--grad,#5B3FA6);color:#fff;}
+          .pro .relance .rlz-steps .s.done .n{background:#12A65C;color:#fff;}
+          .pro .relance .rlz-h{font-family:Georgia,serif;font-size:18px;font-weight:700;margin-top:18px;}
+          .pro .relance .rlz-nav{display:flex;gap:9px;margin-top:18px;}
+          .pro .relance .rlz-nav button{flex:1;border-radius:12px;padding:13px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;border:none;}
+          .pro .relance .rlz-nav .back{flex:0 0 auto;background:#F1EFF7;color:var(--soft);border:1px solid var(--hair);padding:13px 18px;}
+          .pro .relance .rlz-nav .next{background:var(--grad,#5B3FA6);color:#fff;box-shadow:0 12px 26px -14px rgba(91,63,166,.7);}
+          .pro .relance .rlz-nav .next:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
+          .pro .relance .chan{display:flex;align-items:center;gap:12px;border:1px solid var(--hair);border-radius:14px;padding:14px;background:#fff;margin-top:10px;cursor:pointer;}
+          .pro .relance .chan.on{border-color:var(--violet);background:linear-gradient(160deg,rgba(109,74,224,.06),#fff);}
+          .pro .relance .chan .ce{width:40px;height:40px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#F1EFFB;}
+          .pro .relance .chan .cb{flex:1;min-width:0;display:flex;flex-direction:column;}
+          .pro .relance .chan .ct{font-size:14px;font-weight:800;}
+          .pro .relance .chan .cs{font-size:11.5px;color:var(--soft);margin-top:2px;}
+          .pro .relance .chan .ck{width:24px;height:24px;flex:none;border-radius:7px;border:2px solid var(--hair);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;}
+          .pro .relance .chan.on .ck{background:var(--violet);border-color:var(--violet);}
+          .pro .relance .chan .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:6px;}
+          .pro .relance .chan .tag.free{background:#E4F7EE;color:#0E7C5A;}
+          .pro .relance .chan .tag.opt{background:#EDE8FF;color:#6B4BC7;}
+          .pro .relance .rlz-block{margin-top:16px;border:1px solid var(--hair);border-radius:14px;padding:15px;background:#fff;}
+          .pro .relance .rlz-block .rbh{font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:7px;}
+          .pro .relance .rlz-block .rbh .tag{font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:6px;margin-left:auto;}
+          .pro .relance .rlz-block .tag.free{background:#E4F7EE;color:#0E7C5A;}
+          .pro .relance .rlz-block .tag.opt{background:#EDE8FF;color:#6B4BC7;}
           `,
         }}
       />
       <div className="relance">
-        <div className="a-title">📣 Prévenir mes clients</div>
-        <div className="a-sub">
-          Un créneau qui se libère, une promo, une nouveauté… <b>Écrivez votre message</b>, puis envoyez-le.
-          Vous choisissez les destinataires dans WhatsApp — rien n&apos;est envoyé sans vous.
+        <div className="a-title">📣 Faire une annonce</div>
+
+        <div className="rlz-steps">
+          <div className={`s${step === 1 ? " on" : step > 1 ? " done" : ""}`}><span className="n">{step > 1 ? "✓" : "1"}</span>Quoi</div>
+          <div className={`s${step === 2 ? " on" : step > 2 ? " done" : ""}`}><span className="n">{step > 2 ? "✓" : "2"}</span>Où</div>
+          <div className={`s${step === 3 ? " on" : ""}`}><span className="n">3</span>Vérifier</div>
         </div>
 
-        <div className="ai">
-          <div className="aih">✨ Écrire mon annonce avec l&apos;IA</div>
-          <div className="ais">Dites en quelques mots ce que vous proposez — l&apos;assistante rédige le message pour vous.</div>
-          <textarea
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
-            rows={2}
-            placeholder="Ex. fraises gariguettes en promo -20% ce week-end"
-          />
-          <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
-            {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
-          </button>
-          {aiErr && <div className="aierr">{aiErr}</div>}
-          {aiUsed && !aiErr && <div className="aiok">✓ Message rédigé ci-dessous — relisez et ajustez avant d&apos;envoyer.</div>}
-        </div>
-
-        <div className="tmpl">
-          {TEMPLATES.map((t) => (
-            <button key={t.label} type="button" onClick={() => setMessage(t.text)}>{t.label}</button>
-          ))}
-        </div>
-
-        <div className="opt">
-          <label htmlFor="pro-msg">Votre message</label>
-          <textarea
-            id="pro-msg"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            placeholder="Écrivez exactement ce que vous proposez…"
-          />
-        </div>
-
-        <button className="rbtn" onClick={onSend} disabled={atCap || busy}>
-          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
-          Prévenir mes clients
-        </button>
-
-        <button className="rcopy" onClick={copyMsg}>{copied ? "✓ Message copié" : "📋 Copier le message (pour une liste de diffusion)"}</button>
-
-        <details className="rguide">
-          <summary>ⓘ Prévenir tous mes clients d&apos;un seul envoi</summary>
-          <div className="rguide-body">
-            <ol>
-              <li>Dans WhatsApp&nbsp;: <b>Nouvelle discussion → Nouvelle diffusion</b>.</li>
-              <li>Cochez vos clients (jusqu&apos;à 256), créez la liste. <b>Une seule fois.</b></li>
-              <li>À chaque place libre&nbsp;: <b>« Copier le message »</b> ci-dessus, collez-le dans votre liste de diffusion, envoyez. Un envoi&nbsp;→&nbsp;tout le monde le reçoit en privé.</li>
-            </ol>
-            <div className="rwarn">
-              ⚠️ Un client ne reçoit votre diffusion <b>que s&apos;il a enregistré votre numéro</b> dans ses contacts.
-              Prenez l&apos;habitude de lui demander&nbsp;: « Enregistrez mon numéro pour être prévenu·e des places qui se
-              libèrent et de mes bons plans. »
+        {step === 1 && (
+          <>
+            <div className="rlz-h">Que voulez-vous annoncer&nbsp;?</div>
+            <div className="ai">
+              <div className="aih">✨ Laisser l&apos;assistante rédiger</div>
+              <div className="ais">Dites en quelques mots ce que vous proposez — l&apos;assistante rédige le message.</div>
+              <textarea
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                rows={2}
+                placeholder="Ex. il reste 2 places pour le cours de samedi 10h"
+              />
+              <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
+                {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
+              </button>
+              {aiErr && <div className="aierr">{aiErr}</div>}
+              {aiUsed && !aiErr && <div className="aiok">✓ Message rédigé ci-dessous — relisez et ajustez.</div>}
             </div>
-            <div className="rtip">
-              Astuce&nbsp;: pour des offres <b>non urgentes</b>, votre <b>Statut WhatsApp</b> (Actu) marche aussi — vous
-              publiez une fois, visible 24&nbsp;h par vos contacts. Pour une place à combler <b>vite</b>, la liste de
-              diffusion est plus efficace (le message arrive droit dans leur conversation).
-            </div>
-          </div>
-        </details>
 
-        {atCap ? (
-          <div className="cap">
-            Vous avez atteint la limite de <b>{cap} relances aujourd&apos;hui</b>. C&apos;est volontaire : trop de
-            messages lassent vos clients et peuvent faire limiter votre numéro WhatsApp. Reprenez demain.
-          </div>
-        ) : (
-          <div className="quota">
-            {remaining !== null ? `Encore ${remaining} relance${remaining > 1 ? "s" : ""} aujourd'hui` : "Diffusion via votre liste WhatsApp"} · aucune appli à installer
-          </div>
-        )}
-
-        {contacts.length > 0 && (
-          <div className="aud">
-            <div className="h">Prévenir mes clients opt-in ({contacts.length})</div>
-            <div className="chips">
-              {contacts.map((c) => (
-                <button
-                  key={c.id}
-                  className={`chip${sent[c.id] ? " done" : ""}`}
-                  onClick={() => notifyContact(c)}
-                >
-                  {sent[c.id] ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="5,12 10,17 19,7" /></svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="#1B7A3E"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
-                  )}
-                  {c.prenom || "Client"}
-                </button>
+            <div className="tmpl">
+              {TEMPLATES.map((t) => (
+                <button key={t.label} type="button" onClick={() => setMessage(t.text)}>{t.label}</button>
               ))}
             </div>
-            <div className="note">
-              Un tap ouvre le WhatsApp du client, message déjà écrit — vous validez l&apos;envoi. Réservé à vos
-              clients qui ont donné leur accord.
+
+            <div className="opt">
+              <label htmlFor="pro-msg">Votre message</label>
+              <textarea
+                id="pro-msg"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                placeholder="Écrivez exactement ce que vous proposez…"
+              />
             </div>
-          </div>
+
+            <div className="rlz-nav">
+              <button className="next" onClick={() => setStep(2)} disabled={!message.trim()}>Suivant →</button>
+            </div>
+          </>
         )}
 
-        <div className="offer">
-          <div className="oh">📢 Afficher aussi sur mon site</div>
-          <div className="os">
-            Votre offre apparaît en bandeau <b>en haut de votre site</b>, avec un lien de réservation.
-            Chaque clic est compté — vous voyez les <b>vrais résultats</b>, rien d&apos;inventé.
-          </div>
-
-          {offer ? (
-            <div className="live">
-              <div className="lt">« {offer.text} »</div>
-              <div className="lmeta">
-                <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
-                {offer.until ? (
-                  <span>· jusqu&apos;au {new Date(offer.until).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
-                ) : (
-                  <span>· sans limite de date</span>
-                )}
-              </div>
-              <div className="lact">
-                <button onClick={() => { setOfferText(offer.text); setOffer(null); }} disabled={offerBusy}>✏️ Modifier</button>
-                <button className="rm" onClick={clearOffer} disabled={offerBusy}>Retirer du site</button>
-              </div>
+        {step === 2 && (
+          <>
+            <div className="rlz-h">Où voulez-vous l&apos;afficher&nbsp;?</div>
+            <div className={`chan${chSite ? " on" : ""}`} onClick={() => setChSite((v) => !v)}>
+              <span className="ce">🌐</span>
+              <span className="cb"><span className="ct">Sur mon site</span><span className="cs">Bandeau « offre du moment » en haut de votre site</span></span>
+              <span className="tag free">offert</span>
+              <span className="ck">{chSite ? "✓" : ""}</span>
             </div>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={offerText}
-                onChange={(e) => setOfferText(e.target.value)}
-                placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
-                maxLength={140}
-              />
-              <div className="row">
-                <label htmlFor="offer-days">Afficher pendant</label>
-                <select id="offer-days" value={offerDays} onChange={(e) => setOfferDays(Number(e.target.value))}>
-                  <option value={1}>1 jour</option>
-                  <option value={2}>2 jours</option>
-                  <option value={7}>1 semaine</option>
-                  <option value={0}>Sans limite</option>
-                </select>
-              </div>
-              <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
-                {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
-              </button>
-              {offerErr && <div className="oerr">{offerErr}</div>}
-            </>
-          )}
+            <div className={`chan${chWa ? " on" : ""}`} onClick={() => setChWa((v) => !v)}>
+              <span className="ce">📲</span>
+              <span className="cb"><span className="ct">WhatsApp</span><span className="cs">Prévenir vos client·es fidèles</span></span>
+              <span className="tag opt">option</span>
+              <span className="ck">{chWa ? "✓" : ""}</span>
+            </div>
+            <div className={`chan${chSocial ? " on" : ""}`} onClick={() => setChSocial((v) => !v)}>
+              <span className="ce">📸</span>
+              <span className="cb"><span className="ct">Facebook / Instagram</span><span className="cs">Texte prêt à coller dans votre appli</span></span>
+              <span className="tag opt">option</span>
+              <span className="ck">{chSocial ? "✓" : ""}</span>
+            </div>
+            <div className="rlz-nav">
+              <button className="back" onClick={() => setStep(1)}>←</button>
+              <button className="next" onClick={goStep3} disabled={!anyChannel}>Suivant →</button>
+            </div>
+          </>
+        )}
 
-          <button className="addlink" onClick={addTrackLink}>
-            {linkAdded ? "✓ Lien ajouté au message" : "🔗 Ajouter le lien de réservation au message WhatsApp"}
-          </button>
-        </div>
+        {step === 3 && (
+          <>
+            <div className="rlz-h">Vérifiez et lancez</div>
+            <div className="rbub">{msg}</div>
+
+            {chSite && (
+              <div className="rlz-block">
+                <div className="rbh">🌐 Sur mon site <span className="tag free">offert</span></div>
+                <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
+                  {offer ? (
+                    <div className="live">
+                      <div className="lt">« {offer.text} »</div>
+                      <div className="lmeta">
+                        <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
+                        {offer.until ? (
+                          <span>· jusqu&apos;au {new Date(offer.until).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
+                        ) : (
+                          <span>· sans limite de date</span>
+                        )}
+                      </div>
+                      <div className="lact">
+                        <button onClick={() => { setOfferText(offer.text); setOffer(null); }} disabled={offerBusy}>✏️ Modifier</button>
+                        <button className="rm" onClick={clearOffer} disabled={offerBusy}>Retirer du site</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={offerText}
+                        onChange={(e) => setOfferText(e.target.value)}
+                        placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
+                        maxLength={140}
+                      />
+                      <div className="row">
+                        <label htmlFor="offer-days">Afficher pendant</label>
+                        <select id="offer-days" value={offerDays} onChange={(e) => setOfferDays(Number(e.target.value))}>
+                          <option value={1}>1 jour</option>
+                          <option value={2}>2 jours</option>
+                          <option value={7}>1 semaine</option>
+                          <option value={0}>Sans limite</option>
+                        </select>
+                      </div>
+                      <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
+                        {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
+                      </button>
+                      {offerErr && <div className="oerr">{offerErr}</div>}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {chWa && (
+              <div className="rlz-block">
+                <div className="rbh">📲 WhatsApp <span className="tag opt">option</span></div>
+                <button className="rbtn" onClick={onSend} disabled={atCap || busy}>
+                  <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
+                  Prévenir mes clients
+                </button>
+                <button className="rcopy" onClick={copyMsg}>{copied ? "✓ Message copié" : "📋 Copier (pour une liste de diffusion)"}</button>
+                {atCap ? (
+                  <div className="cap">
+                    Limite de <b>{cap} relances aujourd&apos;hui</b> atteinte — c&apos;est volontaire (trop de messages lassent vos clients). Reprenez demain.
+                  </div>
+                ) : (
+                  <div className="quota">
+                    {remaining !== null ? `Encore ${remaining} relance${remaining > 1 ? "s" : ""} aujourd'hui` : "Diffusion via votre liste WhatsApp"} · aucune appli à installer
+                  </div>
+                )}
+                {contacts.length > 0 && (
+                  <div className="aud">
+                    <div className="h">Prévenir mes clients opt-in ({contacts.length})</div>
+                    <div className="chips">
+                      {contacts.map((c) => (
+                        <button key={c.id} className={`chip${sent[c.id] ? " done" : ""}`} onClick={() => notifyContact(c)}>
+                          {sent[c.id] ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="5,12 10,17 19,7" /></svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" fill="#1B7A3E"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2z" /></svg>
+                          )}
+                          {c.prenom || "Client"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <details className="rguide">
+                  <summary>ⓘ Prévenir tous mes clients d&apos;un seul envoi</summary>
+                  <div className="rguide-body">
+                    <ol>
+                      <li>Dans WhatsApp&nbsp;: <b>Nouvelle discussion → Nouvelle diffusion</b>.</li>
+                      <li>Cochez vos clients, créez la liste. <b>Une seule fois.</b></li>
+                      <li>Ensuite&nbsp;: <b>« Copier »</b> ci-dessus, collez dans la liste, envoyez.</li>
+                    </ol>
+                    <div className="rwarn">
+                      ⚠️ Un client ne reçoit votre diffusion <b>que s&apos;il a enregistré votre numéro</b>. Demandez-lui&nbsp;: « Enregistrez mon numéro pour être prévenu·e. »
+                    </div>
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {chSocial && (
+              <div className="rlz-block">
+                <div className="rbh">📸 Facebook / Instagram <span className="tag opt">option</span></div>
+                <div className="rtip" style={{ marginTop: 6 }}>Pas de publication automatique&nbsp;: on prépare votre texte, vous le collez dans votre appli en un geste.</div>
+                <button className="rcopy" onClick={copySocial}>{socialCopied ? "✓ Texte copié" : "📋 Copier pour Facebook / Instagram"}</button>
+              </div>
+            )}
+
+            <details className="rguide" style={{ marginTop: 14 }}>
+              <summary>⚙️ Options avancées</summary>
+              <div className="rguide-body">
+                <button className="addlink" onClick={addTrackLink}>
+                  {linkAdded ? "✓ Lien ajouté au message" : "🔗 Ajouter le lien de réservation au message"}
+                </button>
+              </div>
+            </details>
+
+            <div className="rlz-nav">
+              <button className="back" onClick={() => setStep(2)}>← Retour</button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
