@@ -378,7 +378,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       {!published && (
         <button type="button" className="banner" data-assistant-open>
-          ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: confiez une tâche à votre assistante</b> ↓
+          ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: lancez une Action Flash</b> ↓
         </button>
       )}
 

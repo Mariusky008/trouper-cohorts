@@ -357,7 +357,7 @@ export default function HomePage() {
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
           <h1>Votre site web,<br /><span className="hl">construit sous vos yeux.</span></h1>
-          <p className="sub"><b>Gratuit, prêt en une minute.</b> Une assistante répond à vos clients — et en un clic, vous annoncez un créneau libre, un événement ou une offre.</p>
+          <p className="sub"><b>Votre première version, créée devant vous en une minute — gratuitement.</b> Une assistante présente votre activité et répond à vos clients ; en un clic, vous annoncez un créneau libre, un événement ou une offre.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
@@ -495,8 +495,8 @@ export default function HomePage() {
               <div className="gp-h">✅ Offert</div>
               <div className="gp-sub">Tout de suite, sans rien payer.</div>
               <div className="gp-list">
-                <div className="gp-item"><span className="k">✓</span><span>Un <b>beau site</b>, prêt en une minute</span></div>
-                <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante qui répond</b> à vos clients</span></div>
+                <div className="gp-item"><span className="k">✓</span><span>Une <b>première version</b> de votre site, tout de suite</span></div>
+                <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante</b> qui présente votre activité &amp; répond</span></div>
                 <div className="gp-item"><span className="k">✓</span><span><b>Créer une offre</b> et l&apos;afficher sur votre site</span></div>
               </div>
             </div>
@@ -507,12 +507,13 @@ export default function HomePage() {
                 <div className="gp-item"><span className="k">＋</span><span><b>Diffusion WhatsApp</b> à vos clients</span></div>
                 <div className="gp-item"><span className="k">＋</span><span>Posts <b>Insta &amp; Facebook</b> préparés</span></div>
                 <div className="gp-item"><span className="k">＋</span><span>Récolte d&apos;<b>avis Google</b></span></div>
-                <div className="gp-item"><span className="k">＋</span><span>Le <b>collectif</b>&nbsp;: les commerces se recommandent</span></div>
+                <div className="gp-item"><span className="k">＋</span><span><b>Relancer</b> vos anciens clients</span></div>
+                <div className="gp-item"><span className="k">＋</span><span>Être <b>recommandé par le réseau</b> des commerces partenaires</span></div>
                 <div className="gp-item"><span className="k">＋</span><span><b>Statistiques &amp; réservations</b> en ligne</span></div>
               </div>
             </div>
           </div>
-          <div className="gp-tag reveal">Vous essayez gratuitement. <span>Vous ne payez que si ça vous sert.</span></div>
+          <div className="gp-tag reveal">Vous commencez gratuitement, sans engagement. <span>Vous activez seulement les options dont vous avez besoin.</span></div>
         </div>
       </section>
 

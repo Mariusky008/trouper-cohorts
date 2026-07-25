@@ -53,7 +53,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       try { initCloudTts({ slug, scope: "apercu" }); unlockAudio(); } catch { /* best-effort */ }
       // Court et sans re-« Bonjour » : la Démo Vivante a déjà accueilli le pro.
       // On rappelle juste l'essentiel (simulation) puis on l'invite à déléguer.
-      speak("L'espace « Confier une tâche » est le vôtre. Tout ici est une simulation — rien n'est envoyé à personne. Dites-moi simplement ce que vous voulez me confier.");
+      speak("L'Action Flash, c'est le vôtre. Tout ici est une simulation — rien n'est envoyé à personne. Dites-moi simplement ce que vous voulez obtenir.");
     }
   };
   const openRef = useRef(handleOpen);
@@ -313,11 +313,12 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const questions = avisAllowed
     ? ["« Vous auriez de la place cette semaine ? »", "« Comment prendre rendez-vous ? »", "« Vous êtes ouvert ce week-end ? »"]
     : ["« Comment prendre rendez-vous ? »", "« Prenez-vous de nouveaux patients ? »", "« Où êtes-vous situé ? »"];
-  // Ce que le pro peut ANNONCER à tous ses clients d'un coup (le levier de CA).
+  // Action Flash : l'objectif du pro (créneau / événement / offre / déstockage).
   const offres: Array<{ label: string; msg: string }> = [
-    { label: "🕐 Une place se libère", msg: `Une place se libère cet après-midi chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
-    { label: "🏷️ Une promo", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
-    { label: "🎉 Un événement", msg: `Samedi chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
+    { label: "📅 Remplir un créneau", msg: `Une place se libère bientôt chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
+    { label: "🎉 Annoncer un événement", msg: `Bientôt chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
+    { label: "🏷️ Faire connaître une offre", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
+    { label: "📦 Écouler un produit", msg: `Dernières pièces chez ${nom} — une belle occasion à saisir. Ça vous intéresse ? Répondez OUI 🙂` },
   ];
   const plural = term === "patient" ? "patients" : "client(e)s";
 
@@ -349,7 +350,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
-          <div className="asx-say">Que voulez-vous annoncer à vos {plural}&nbsp;? Ils la reçoivent <b>directement sur leur WhatsApp</b> — c’est votre meilleur levier pour <b>remplir vos journées et vendre plus</b>.</div>
+          <div className="asx-say"><b>Quel est votre objectif&nbsp;?</b> Je prépare l’annonce et je vous montre <b>exactement</b> ce que je vais faire — vous validez avant l’envoi.</div>
           <div className="asx-quick asx-quick-col">{offres.map((o) => <button key={o.label} onClick={() => { setFn(o.msg); setView("creneauPrev"); }}>{o.label}</button>)}</div>
         </>
       );
@@ -358,9 +359,16 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-say">Voici l’annonce que j’enverrai à <b>tous vos {plural} inscrit(e)s</b>. Vous validez&nbsp;? <span className="asx-mini2">(vous pourrez la personnaliser)</span></div>
-          <div className="asx-prev"><div className="asx-to">📱 Liste WhatsApp · tous vos {plural}</div><div className="asx-wac">{fn}</div></div>
-          <button className="asx-send" onClick={() => playCreneau(fn)}>Envoyer à mes {plural} ✦</button>
+          <div className="asx-say">Voici votre annonce, et <b>exactement ce que je vais faire</b>. Vous validez avant l’envoi.</div>
+          <div className="asx-prev"><div className="asx-to">✍️ Votre annonce <span className="asx-mini2">(personnalisable)</span></div><div className="asx-wac">{fn}</div></div>
+          <div className="asx-flash">
+            <div className="asx-fl"><span className="i">🌐</span><span className="t">Votre site&nbsp;— bandeau «&nbsp;offre du moment&nbsp;»</span><span className="tag free">offert</span></div>
+            <div className="asx-fl"><span className="i">📲</span><span className="t">WhatsApp&nbsp;— tous vos {plural} fidèles</span><span className="tag opt">option</span></div>
+            <div className="asx-fl"><span className="i">📸</span><span className="t">Insta &amp; Facebook&nbsp;— post prêt à publier</span><span className="tag opt">option</span></div>
+            <div className="asx-fl"><span className="i">🗓️</span><span className="t">Réservation&nbsp;— lien ajouté à l’offre</span><span className="tag opt">option</span></div>
+          </div>
+          <button className="asx-send" onClick={() => playCreneau(fn)}>🚀 Lancer l’action</button>
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>Rien n’est envoyé sans votre validation.</div>
         </>
       );
     }
@@ -378,20 +386,20 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     // home
     return (
       <>
-        <div className="asx-say"><b>Que souhaitez-vous que je fasse pour vous&nbsp;?</b></div>
+        <div className="asx-say"><b>Que voulez-vous obtenir&nbsp;?</b></div>
         <div className="asx-tasks">
+          {avisAllowed && (
+            <div className="asx-task asx-task-hero">
+              <span className="ic">🚀</span>
+              <span className="tx"><span className="tt">Lancer une Action Flash</span><span className="ts">créneau libre · événement · offre · déstockage</span></span>
+              <button className="asx-do" onClick={() => setView("creneauIn")}>▶ Lancer</button>
+            </div>
+          )}
           {avisAllowed && (
             <div className="asx-task">
               <span className="ic">⭐</span>
               <span className="tx"><span className="tt">Demander un avis Google à un {term}</span><span className="ts">après un(e) {term} satisfait(e)</span></span>
               <button className="asx-do" onClick={() => setView("avisIn")}>▶ Lui demander</button>
-            </div>
-          )}
-          {avisAllowed && (
-            <div className="asx-task asx-task-hero">
-              <span className="ic">📣</span>
-              <span className="tx"><span className="tt">Faire une annonce à tous mes {plural}</span><span className="ts">créneau libre, promo, événement — reçu direct sur leur WhatsApp 💸</span></span>
-              <button className="asx-do" onClick={() => setView("creneauIn")}>▶ Voir comment</button>
             </div>
           )}
           <div className="asx-task">
@@ -439,9 +447,9 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       <style>{styles(accent)}</style>
 
       {!open && !stageOn && !atBottom && (
-        <button className="asx-fab" onClick={handleOpen} aria-label="Côté pro : confier une tâche à mon assistante">
-          <span className="orb">✦</span>
-          <span className="lab"><small>Côté pro · aperçu</small>Confier une tâche</span>
+        <button className="asx-fab" onClick={handleOpen} aria-label="Côté pro : lancer une Action Flash">
+          <span className="orb">🚀</span>
+          <span className="lab"><small>Côté pro · aperçu</small>Action Flash</span>
           <span className="chev">›</span>
         </button>
       )}
@@ -549,6 +557,15 @@ function styles(accent: string): string {
   .asx-prev{background:#F4F2EC;border:1px solid #E7E4DC;border-radius:12px;padding:12px 14px;font-size:12.5px;line-height:1.45;color:#3A3A32;}
   .asx-prev .asx-to{font-size:10.5px;color:#71766C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
   .asx-wac{background:#E6F5DC;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.4;color:#1F3A17;}
+  /* Action Flash — récap transparent des canaux (offert / option) */
+  .asx-flash{margin-top:12px;border:1px solid #E7E4DC;border-radius:13px;overflow:hidden;background:#fff;}
+  .asx-fl{display:flex;align-items:center;gap:10px;padding:11px 13px;border-top:1px solid #F1EFE8;font-size:12.5px;}
+  .asx-fl:first-child{border-top:none;}
+  .asx-fl .i{font-size:15px;flex:none;width:20px;text-align:center;}
+  .asx-fl .t{flex:1;color:#3A3A32;line-height:1.3;}
+  .asx-fl .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:.02em;}
+  .asx-fl .tag.free{background:#E4F7EE;color:#0E7C5A;}
+  .asx-fl .tag.opt{background:#F0EBFF;color:#6B4BC7;}
   .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(12,14,11,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(2px);}
   .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;max-height:calc(100dvh - 44px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
   @keyframes asxCardin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
