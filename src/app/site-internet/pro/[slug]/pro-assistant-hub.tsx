@@ -23,11 +23,13 @@ const getSR = (): SRCtor | null => {
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 };
 
+// Exemples de PHRASES naturelles (pas des rubriques) : l'assistante est un
+// raccourci en langage courant, pas une 2ᵉ navigation.
 const SUGGESTIONS = [
-  "Prévenir mes clients d'une promo",
-  "Mes rendez-vous de demain",
-  "Demander un avis à un client",
-  "Modifier mes tarifs",
+  "Préviens mes clientes qu'il reste 2 places jeudi",
+  "Ajoute une prestation à 50 €",
+  "Demande un avis à un client",
+  "Ouvre des créneaux vendredi après-midi",
 ];
 
 export function ProAssistantHub({ slug, token, nom }: { slug: string; token: string; nom: string }) {
@@ -263,6 +265,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .dots span{width:7px;height:7px;border-radius:50%;background:#B9A6EC;animation:hubdot 1s infinite;}
           .pro .hubsheet .dots span:nth-child(2){animation-delay:.15s}.pro .hubsheet .dots span:nth-child(3){animation-delay:.3s}
           @keyframes hubdot{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+          .pro .hubsheet .sug-lead{padding:2px 16px 6px;font-size:11.5px;font-weight:700;color:var(--faint);}
           .pro .hubsheet .sug{display:flex;flex-wrap:wrap;gap:7px;padding:0 16px 8px;}
           .pro .hubsheet .sug button{border:1px solid var(--hair);background:#fff;border-radius:16px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .hubsheet .inp{display:flex;gap:8px;padding:12px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--hair);}
@@ -386,11 +389,14 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
             </div>
 
             {thread.length <= 1 && !busy && (
-              <div className="sug">
-                {SUGGESTIONS.map((sg) => (
-                  <button key={sg} type="button" onClick={() => send(sg)}>{sg}</button>
-                ))}
-              </div>
+              <>
+                <div className="sug-lead">Par exemple, écrivez&nbsp;:</div>
+                <div className="sug">
+                  {SUGGESTIONS.map((sg) => (
+                    <button key={sg} type="button" onClick={() => send(sg)}>« {sg} »</button>
+                  ))}
+                </div>
+              </>
             )}
 
             <div className="inp">
