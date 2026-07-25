@@ -29,7 +29,7 @@ type Props = {
   resoExample?: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "vision";
+type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision";
 
 export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
@@ -169,47 +169,49 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   const hasReviews = reviewsCount != null && reviewsCount > 0;
 
   const run = async () => {
-    // Démo COURTE : présence (1 ligne) → collectif → ce que je fais → au site.
+    // Démo COURTE, alignée sur le positionnement : site GRATUIT → assistante incluse
+    // → Action Flash (créer & faire connaître, vous validez) → clôture gratuit/options.
+    // HONNÊTETÉ : on prépare et on diffuse, on ne « remplit » pas à sa place.
     const steps: Array<{ title: string; say: string; enter: () => void }> = [];
 
-    // 1 — Présence : vos avis (juste une ligne) → « vous êtes parmi les meilleurs »
+    // 1 — Votre site, gratuit (vraies données ; les avis apparaissent en preuve)
     steps.push({
-      title: "Vos avis parlent pour vous",
+      title: "Votre site, gratuit",
       say: hasReviews
-        ? `Bonjour ${nom}. J'ai regardé votre présence en ligne — et vos avis sont excellents. Ça veut dire une chose : vous êtes parmi les meilleurs de ${villeAff}.`
-        : `Bonjour ${nom}. J'ai regardé votre présence en ligne. On va bâtir votre réputation et faire de vous une référence à ${villeAff}.`,
+        ? `Bonjour ${nom}. Voici votre site — gratuit, à vous. Vos vraies photos, vos infos, et vos avis Google sont déjà là. Et franchement, vos avis sont excellents.`
+        : `Bonjour ${nom}. Voici votre site — gratuit, à vous. Vos vraies photos et vos informations Google sont déjà en place.`,
       enter: () => { scrollTo(null); setScene("note"); },
     });
 
-    // 2 — Le collectif : LIEN de cause à effet avec les avis (« parmi les meilleurs »)
-    if (avisAllowed) {
-      steps.push({
-        title: `Le collectif de ${villeAff}`,
-        say: `Et parce que vous êtes parmi les meilleurs, vous pouvez rejoindre le collectif des commerçants de ${villeAff}. Je vous associe à une dizaine de métiers complémentaires — jamais des concurrents. Le principe : quand un client réserve chez l'un d'eux, je lui demande s'il a besoin d'autre chose. Si oui, c'est vous que je recommande. Et vous faites pareil. Résultat : les meilleurs de ${villeAff} s'envoient des clients, sans effort. Et vous en êtes.`,
-        enter: () => setScene("reso"),
-      });
-    }
-
-    // 3 — Ce que je fais chaque jour (bénéfices unifiés, par priorité, concis)
+    // 2 — L'assistante, incluse (ce qu'elle fait gratuitement — sans sur-promesse)
     steps.push({
-      title: "Ce que je fais chaque jour",
+      title: "Votre assistante, incluse",
       say: avisAllowed
-        ? `Et au quotidien, je m'occupe du reste : je vais chercher vos avis Google, jusqu'à cent, deux cents avis, pour faire de vous la référence à ${villeAff}. Je réponds à vos ${clientPl}, à midi comme à minuit. Je remplis vos créneaux vides. Et je lance vos promos et vos événements.`
-        : `Et au quotidien, je réponds à vos ${clientPl}, à midi comme à minuit, et je prépare vos rendez-vous — sans que vous ayez à décrocher.`,
+        ? `Au cœur du site, votre assistante. Elle présente votre activité et répond à vos clients, à midi comme à minuit. Ça, c'est déjà compris.`
+        : `Au cœur du site, votre assistante. Elle présente votre activité, répond à vos ${clientPl} à toute heure et prépare vos rendez-vous — sans que vous ayez à décrocher. C'est déjà compris.`,
       enter: () => setScene("daily"),
     });
 
-    // 4 — CLÔTURE : la vision du collectif (commerce), sinon simple passation
+    // 3 — L'Action Flash (commerce) : le crochet, avec le récap transparent
     if (avisAllowed) {
       steps.push({
-        title: `Le collectif de ${villeAff}`,
-        say: `Une dernière chose. Mon ambition : réunir les meilleurs commerçants de ${villeAff} pour qu'ils se recommandent leurs clients, automatiquement. Votre nom, cité encore et encore, pile au bon moment. Être connu, reconnu — et jamais oublié. Le site est à vous.`,
+        title: "L'Action Flash",
+        say: `Et quand vous avez un créneau creux, un événement ou une offre à faire connaître : en un clic, votre assistante prépare tout, et vous montre exactement ce qu'elle va faire — avant que rien ne parte. À vous de valider.`,
+        enter: () => setScene("flash"),
+      });
+    }
+
+    // 4 — CLÔTURE : gratuit / options + ambition du collectif (commerce), sinon passation
+    if (avisAllowed) {
+      steps.push({
+        title: "À vous",
+        say: `Le site et l'assistante, c'est offert. La diffusion, les avis, le réseau des commerces de ${villeAff} qui se recommandent — quand vous le voudrez. Être connu, reconnu, et jamais oublié. Le site est à vous.`,
         enter: () => setScene("vision"),
       });
     } else {
       steps.push({
         title: "À vous",
-        say: `Voilà. Le site est à vous — explorez-le.`,
+        say: `Le site et l'assistante, c'est offert. Le site est à vous — explorez-le.`,
         enter: () => setScene(""),
       });
     }
@@ -240,10 +242,9 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   const stars = note ? "★".repeat(Math.max(1, Math.min(5, Math.round(Number(note.replace(",", ".")))))) : "★★★★★";
   const daily: Array<{ ic: string; t: string }> = avisAllowed
     ? [
-        { ic: "⭐", t: `Chercher vos avis Google — viser 100, 200 pour devenir la référence à ${villeAff}` },
-        { ic: "💬", t: "Répondre à vos clients — à midi comme à minuit" },
-        { ic: "📅", t: "Remplir vos créneaux vides" },
-        { ic: "📣", t: "Lancer vos promos & événements" },
+        { ic: "💬", t: "Répond à vos clients — à midi comme à minuit" },
+        { ic: "🗂️", t: "Présente vos prestations, vos horaires, vos infos" },
+        { ic: "📅", t: "Prépare vos rendez-vous, sans que vous décrochiez" },
       ]
     : [
         { ic: "💬", t: `Répondre à vos ${clientPl} — à midi comme à minuit` },
@@ -339,6 +340,15 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
           .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
           @keyframes dyIn{to{opacity:1;transform:none}}
+          /* Scène « Action Flash » : le récap transparent des canaux (offert / option) */
+          .dtour-card .fx-badge{display:inline-block;font-weight:800;font-size:11px;color:#06231a;background:#FFC400;padding:5px 11px;border-radius:999px;margin-bottom:10px;}
+          .dtour-card .fx-l{display:flex;align-items:center;gap:11px;margin-top:9px;padding:11px 12px;border-radius:13px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;opacity:0;transform:translateX(-14px);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
+          .dtour-card .fx-i{font-size:18px;flex:none;width:22px;text-align:center;}
+          .dtour-card .fx-t{flex:1;font-size:12.5px;font-weight:600;color:#141A2E;line-height:1.3;}
+          .dtour-card .fx-tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:7px;letter-spacing:.02em;}
+          .dtour-card .fx-tag.free{background:#E4F7EE;color:#0E7C5A;}
+          .dtour-card .fx-tag.opt{background:#EDE8FF;color:#6B4BC7;}
+          .dtour-card .fx-note{text-align:center;font-size:11.5px;color:#6E7290;margin-top:13px;}
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
              VOUS au centre, les partenaires en orbite, les recommandations affluent. */
           .dtour-card.viz{background:radial-gradient(125% 95% at 50% 4%,#20305A 0%,#111830 42%,#0A0E1A 78%);color:#EAF0FA;text-align:center;padding:24px 20px 24px;overflow:hidden;position:relative;}
@@ -477,8 +487,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                 ) : (
                   <>
                     <div className="nt-stars">★★★★★</div>
-                    <div className="nt-line">Vos premiers avis, bientôt</div>
-                    <div className="nt-sub">Je vais aller les chercher pour vous.</div>
+                    <div className="nt-line">Votre site est prêt</div>
+                    <div className="nt-sub">Vos vraies infos Google, déjà en place.</div>
                   </>
                 )}
               </div>
@@ -510,7 +520,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           {scene === "daily" && (
             <div className="dtour-ov">
               <div className="dtour-card">
-                <h4>Chaque jour, pour vous</h4>
+                <h4>Votre assistante, incluse</h4>
                 <div className="subx">Pendant que vous faites votre métier.</div>
                 {daily.map((d, i) => (
                   <div className="dy" key={i} style={{ animationDelay: `${0.15 + i * 0.4}s` }}>
@@ -518,6 +528,29 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                     <span className="dy-t">{d.t}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {scene === "flash" && (
+            <div className="dtour-ov">
+              <div className="dtour-card">
+                <div className="fx-badge">🚀 Action Flash</div>
+                <h4>Un créneau, un événement, une offre&nbsp;?</h4>
+                <div className="subx">En un clic. Vous validez avant l&apos;envoi.</div>
+                {[
+                  { ic: "🌐", t: "Votre site — bandeau « offre du moment »", tag: "offert", free: true },
+                  { ic: "📲", t: "WhatsApp — vos clients fidèles", tag: "option", free: false },
+                  { ic: "📸", t: "Insta & Facebook — post prêt", tag: "option", free: false },
+                  { ic: "🗓️", t: "Réservation — lien ajouté", tag: "option", free: false },
+                ].map((d, i) => (
+                  <div className="fx-l" key={i} style={{ animationDelay: `${0.15 + i * 0.35}s` }}>
+                    <span className="fx-i">{d.ic}</span>
+                    <span className="fx-t">{d.t}</span>
+                    <span className={`fx-tag ${d.free ? "free" : "opt"}`}>{d.tag}</span>
+                  </div>
+                ))}
+                <div className="fx-note">Rien ne part sans votre accord.</div>
               </div>
             </div>
           )}
