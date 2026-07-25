@@ -160,9 +160,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .probar .pb-flash:active,.mqc .probar .pb-keep:active{transform:scale(.96);}
           @media (max-width:430px){.mqc .probar-lab{display:none;} .mqc .probar-btns{justify-content:space-between;} .mqc .probar .pb-flash,.mqc .probar .pb-keep{flex:1;text-align:center;}}
           /* OFFRE DU MOMENT (bandeau haut de site, piloté par le pro) */
-          .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;
+          .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;border:none;font-family:inherit;text-align:left;cursor:pointer;
             background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#000));
             color:#fff;padding:12px 16px;line-height:1.35;}
+          .mqc .offer-band.ex{background:linear-gradient(100deg,#5B3FA6,#141A2E);}
           .mqc .offer-band .oi{flex:none;font-size:17px;line-height:1;}
           .mqc .offer-band .ot{font-size:13px;font-weight:600;flex:1;min-width:0;}
           .mqc .offer-band .ot b{font-weight:800;}
@@ -400,13 +401,19 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </div>
       )}
 
-      {offer && offer.text && (
+      {offer && offer.text ? (
         <a className="offer-band" href={`/offre/${slug}`}>
           <span className="oi">🎉</span>
           <span className="ot"><b>Offre du moment</b> · {offer.text}</span>
           <span className="og">Réserver →</span>
         </a>
-      )}
+      ) : !published && p.flashExample ? (
+        <button type="button" className="offer-band ex" data-assistant-open>
+          <span className="oi">🚀</span>
+          <span className="ot"><b>Exemple d’Action Flash</b> · {p.flashExample}</span>
+          <span className="og">Tester →</span>
+        </button>
+      ) : null}
 
       <LivingHero
         nom={nom}
@@ -486,6 +493,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           note={note}
           reviewsCount={reviewsCount}
           offer={offer}
+          exampleOffer={!published ? p.flashExample : undefined}
           accent={accent}
           extras={{
             reviews: avisMode !== "none" ? reviewsTop.filter((r) => r.text) : [],
@@ -495,8 +503,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           }}
         />
       )}
-
-      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} published={published} />}
 
       {serviceList.length === 0 && content.consultTitre && content.consultCartes.length > 0 && (
         <section>
@@ -548,6 +554,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {avisMode === "prominent" && <CercleSection slug={slug} accent={accent} nom={nom} published={published} />}
+
+      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} published={published} />}
 
       <section id="rdv">
         <div className="sec-k">Rendez-vous</div>

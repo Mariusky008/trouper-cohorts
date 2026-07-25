@@ -15,7 +15,7 @@ type Svc = { name: string; price?: string };
 type Media =
   | { kind: "video"; url: string }
   | { kind: "photo"; url: string }
-  | { kind: "offer"; text: string; until: string | null }
+  | { kind: "offer"; text: string; until: string | null; example?: boolean }
   | { kind: "review"; review: Review }
   | { kind: "services"; items: Svc[] }
   | { kind: "access"; address: string; horaires: Array<{ jours?: string; horaires?: string }> };
@@ -36,6 +36,7 @@ type Props = {
   note: string | null;
   reviewsCount: number | null;
   offer?: { text: string; until?: string | null } | null;
+  exampleOffer?: string; // démo : si pas de vraie offre, on ouvre le catalogue par un exemple d'Action Flash
   accent: string;
   standalone?: boolean;
   contact?: { reserveHref?: string; telHref?: string; mapsHref?: string }; // catalogue autonome : actions directes
@@ -47,12 +48,15 @@ function ytId(u: string): string | null {
   return m ? m[1] : null;
 }
 
-export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, standalone, contact, extras }: Props) {
+export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, exampleOffer, standalone, contact, extras }: Props) {
   const reserveHref = contact?.reserveHref || `/site-internet/apercu/${slug}`;
   const cards: Media[] = [];
   (videos ?? []).slice(0, 6).forEach((url) => cards.push({ kind: "video", url }));
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
-  if (offer?.text) cards.splice(Math.min(1, cards.length), 0, { kind: "offer", text: offer.text, until: offer.until ?? null });
+  // Le catalogue s'OUVRE sur une offre : la vraie « offre du moment » si elle
+  // existe, sinon (démo) un exemple d'Action Flash clairement labellisé.
+  if (offer?.text) cards.unshift({ kind: "offer", text: offer.text, until: offer.until ?? null });
+  else if (exampleOffer) cards.unshift({ kind: "offer", text: exampleOffer, until: null, example: true });
   // Récap « fun » du site : cartes avis / prestations / accès (dans le site de démo
   // ET sur le catalogue autonome partagé).
   if (extras) {
@@ -252,12 +256,12 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
                       <>
                         <div className="pdk-media offerbg" />
                         <div className="pdk-scrim" />
-                        <div className="pdk-offbadge">🎁 Offre du moment</div>
+                        <div className="pdk-offbadge">{c.example ? "🚀 Exemple d’Action Flash" : "🎁 Offre du moment"}</div>
                         {countdown(c.until) && <div className="pdk-cd">⏳ <span>{countdown(c.until)}</span></div>}
                         <div className="pdk-info">
-                          <div className="pdk-name">Rien que pour vous</div>
+                          <div className="pdk-name">{c.example ? "Une annonce, en un clic" : "Rien que pour vous"}</div>
                           <div className="pdk-offtext">{c.text}</div>
-                          <div className="pdk-meta">chez {nom}</div>
+                          <div className="pdk-meta">{c.example ? "Exemple — vous annoncez ce que vous voulez" : `chez ${nom}`}</div>
                         </div>
                       </>
                     )}
