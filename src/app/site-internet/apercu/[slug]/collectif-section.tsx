@@ -43,6 +43,7 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
           .mqc .cl-card::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at 12% 0%,color-mix(in srgb,var(--cx) 60%,transparent),transparent 60%),radial-gradient(420px 240px at 100% 100%,rgba(127,230,192,.14),transparent 60%);pointer-events:none;}
           .mqc .cl-in{position:relative;z-index:1;max-width:460px;margin:0 auto;text-align:center;}
           .mqc .cl-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
+          .mqc .cl-opt{display:inline-block;margin-left:8px;letter-spacing:.04em;text-transform:none;font-size:10px;font-weight:800;color:#6B4BC7;background:#EDE8FF;border-radius:6px;padding:2px 8px;vertical-align:middle;}
           .mqc .cl-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.14;margin-top:8px;}
           .mqc .cl-p{font-size:13.5px;line-height:1.6;color:#B8C4DC;margin-top:11px;}
           .mqc .cl-p b{color:#fff;}
@@ -91,7 +92,7 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
       />
       <div className="cl-card">
         <div className="cl-in">
-          <div className="cl-k">🤝 Le collectif de {ville}</div>
+          <div className="cl-k">🤝 Le collectif de {ville}{!published && <span className="cl-opt">Option Popey</span>}</div>
           <div className="cl-h">Besoin d&apos;autre chose à {ville}&nbsp;?</div>
           <div className="cl-p">
             {nom} fait partie du collectif des <b>meilleurs commerçants et artisans de {ville}</b>. Dites-nous ce que
@@ -126,7 +127,7 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
               </div>
             </div>
           )}
-          <div className="cl-note">Le collectif se construit commerce par commerce à {ville}&nbsp;: dès qu&apos;un partenaire vous est rattaché, il apparaît ici en premier. Aucune donnée n&apos;est partagée sans accord.</div>
+          <div className="cl-note">Le collectif se construit commerce par commerce à {ville}&nbsp;: dès qu&apos;un partenaire vous est rattaché, il apparaît ici en premier. Aucune donnée n&apos;est partagée sans votre accord.</div>
         </div>
       </div>
 

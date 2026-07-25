@@ -411,7 +411,9 @@ const CSS = `
 .pdk-act .c.up{background:rgba(255,255,255,.16);color:#fff;}
 .pdk-act .c.yes{background:rgba(6,35,26,.25);color:#06231a;}
 .pdk-prog{text-align:center;font-size:11.5px;color:#8A90A0;margin-top:13px;letter-spacing:.02em;}
-.pdk-share{display:block;margin:14px auto 0;background:none;border:none;color:#8A90A0;font-family:inherit;font-size:12px;cursor:pointer;text-decoration:underline;}
+.pdk-share{display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;margin:20px auto 0;background:linear-gradient(120deg,#00E0A0,#07B083);border:none;color:#06231a;font-family:inherit;font-size:14.5px;font-weight:800;padding:13px 24px;border-radius:14px;cursor:pointer;box-shadow:0 14px 30px -12px rgba(0,224,160,.75);transition:transform .12s ease,filter .12s ease;}
+.pdk-share:hover{filter:brightness(1.04);}
+.pdk-share:active{transform:scale(.96);}
 .pdk-end{text-align:center;padding:24px 6px;}
 .pdk-end-emo{font-size:44px;}
 .pdk-end-t{font-family:Georgia,serif;font-size:23px;font-weight:600;margin-top:10px;}

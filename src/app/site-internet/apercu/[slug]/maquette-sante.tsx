@@ -148,6 +148,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .banner{display:block;width:100%;border:none;font-family:inherit;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:10px 14px;line-height:1.35;cursor:pointer;}
           .mqc .banner b{font-weight:700;}
           .mqc .banner:hover{filter:brightness(.98);}
+          /* Barre PRO persistante : sépare clairement « côté pro » du site vu par les clients. */
+          .mqc .probar{position:sticky;top:0;z-index:18;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+            background:linear-gradient(135deg,#141A2E,#0C1020);color:#EDF0FA;padding:9px 13px calc(9px + env(safe-area-inset-top));
+            box-shadow:0 10px 26px -14px rgba(0,0,0,.6);}
+          .mqc .probar-lab{font-size:11px;font-weight:800;letter-spacing:.04em;color:#9DA6C8;white-space:nowrap;}
+          .mqc .probar-btns{display:flex;gap:8px;flex:1;min-width:0;justify-content:flex-end;}
+          .mqc .probar .pb-flash,.mqc .probar .pb-keep{font-family:inherit;font-size:12.5px;font-weight:800;border-radius:11px;padding:9px 13px;cursor:pointer;white-space:nowrap;text-decoration:none;line-height:1;border:none;}
+          .mqc .probar .pb-flash{background:rgba(255,255,255,.09);color:#EDF0FA;border:1px solid rgba(255,255,255,.18);}
+          .mqc .probar .pb-keep{background:linear-gradient(135deg,#00E0A0,#07B083);color:#06231a;box-shadow:0 10px 22px -12px rgba(0,224,160,.8);}
+          .mqc .probar .pb-flash:active,.mqc .probar .pb-keep:active{transform:scale(.96);}
+          @media (max-width:430px){.mqc .probar-lab{display:none;} .mqc .probar-btns{justify-content:space-between;} .mqc .probar .pb-flash,.mqc .probar .pb-keep{flex:1;text-align:center;}}
           /* OFFRE DU MOMENT (bandeau haut de site, piloté par le pro) */
           .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;
             background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#000));
@@ -380,9 +391,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       <ScrollReveal />
 
       {!published && (
-        <button type="button" className="banner" data-assistant-open>
-          ✦ Maquette préparée pour {nom} — <b>vous, le pro&nbsp;: lancez une Action Flash</b> ↓
-        </button>
+        <div className="probar">
+          <span className="probar-lab">✦ Côté pro · votre maquette</span>
+          <div className="probar-btns">
+            <button type="button" className="pb-flash" data-assistant-open>🚀 Tester une Action Flash</button>
+            <a className="pb-keep" href="#site-rappel">✨ Garder ce site gratuitement</a>
+          </div>
+        </div>
       )}
 
       {offer && offer.text && (
@@ -532,7 +547,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {avisMode === "prominent" && <CercleSection slug={slug} accent={accent} nom={nom} />}
+      {avisMode === "prominent" && <CercleSection slug={slug} accent={accent} nom={nom} published={published} />}
 
       <section id="rdv">
         <div className="sec-k">Rendez-vous</div>
@@ -583,13 +598,19 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </div>
       ) : (
         <div className="close" id="site-rappel">
-          <div className="t">Ce site peut être le vôtre.</div>
+          <div className="t">Votre site est prêt.</div>
           <div className="p">
-            Il vous plaît ? On le met en ligne sous 72 h — ou on change ce que vous voulez.<br />
+            Il vous plaît ? Réservez-le gratuitement aujourd’hui. On vérifie ensemble vos informations, puis on le met en ligne sous 72 h.<br />
             Sinon, ça s’arrête là — sans frais, sans relance.
             {phoneDisplay ? <><br /><b>Marius · {phoneDisplay}</b></> : null}
           </div>
-          <div className="lead"><LeadForm slug={slug} /></div>
+          <div className="lead">
+            <LeadForm
+              slug={slug}
+              intro="Laissez votre numéro : on réserve votre site et on vous rappelle pour le personnaliser."
+              submitLabel="✨ Garder ce site gratuitement"
+            />
+          </div>
           {showUrgence && (
             <div className="urg"><b>En cas d’urgence</b> : 15 (Samu) · 3114 (prévention du suicide, 24 h/24) · 112</div>
           )}

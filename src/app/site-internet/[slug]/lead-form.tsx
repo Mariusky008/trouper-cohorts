@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function LeadForm({ slug }: { slug: string }) {
+export function LeadForm({ slug, submitLabel = "Être rappelé", intro = "Ou laissez votre numéro, on vous rappelle :" }: { slug: string; submitLabel?: string; intro?: string }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
@@ -44,7 +44,7 @@ export function LeadForm({ slug }: { slug: string }) {
 
   return (
     <div>
-      <p className="mb-3 text-sm font-bold text-slate-800">Ou laissez votre numéro, on vous rappelle :</p>
+      <p className="mb-3 text-sm font-bold text-slate-800">{intro}</p>
       <div className="grid gap-3">
         <input
           value={name}
@@ -65,7 +65,7 @@ export function LeadForm({ slug }: { slug: string }) {
           disabled={!canSubmit}
           className="h-12 rounded-xl bg-sky-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {status === "loading" ? "Envoi…" : "Être rappelé"}
+          {status === "loading" ? "Envoi…" : submitLabel}
         </button>
       </div>
       {error ? <p className="mt-2 text-sm font-semibold text-red-600">{error}</p> : null}

@@ -13,7 +13,7 @@ const NOTIS = [
   { ic: "✨", t: "Nouveauté", m: "On vient d'ajouter une nouvelle prestation — venez la découvrir !" },
 ];
 
-export function CercleSection({ slug, accent, nom }: { slug: string; accent: string; nom: string }) {
+export function CercleSection({ slug, accent, nom, published = false }: { slug: string; accent: string; nom: string; published?: boolean }) {
   const [n, setN] = useState(0);
   const [prenom, setPrenom] = useState("");
   const [tel, setTel] = useState("");
@@ -55,6 +55,7 @@ export function CercleSection({ slug, accent, nom }: { slug: string; accent: str
           .mqc .cercle .glow{position:absolute;inset:auto 0 -30% 0;height:60%;background:radial-gradient(60% 100% at 50% 100%,color-mix(in srgb,var(--cc) 60%,#000),transparent 70%);opacity:.7;pointer-events:none;}
           .mqc .cercle .in{position:relative;z-index:1;max-width:440px;margin:0 auto;}
           .mqc .cercle .k{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:color-mix(in srgb,var(--cc) 30%,#fff);font-weight:700;}
+          .mqc .cercle .k-opt{display:inline-block;margin-left:9px;letter-spacing:.03em;text-transform:none;font-size:10px;font-weight:800;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:6px;padding:2px 8px;vertical-align:middle;}
           .mqc .cercle .h{font-family:Georgia,serif;font-size:27px;font-weight:600;line-height:1.12;margin-top:9px;}
           .mqc .cercle .p{font-size:13.5px;line-height:1.6;opacity:.86;margin-top:11px;}
           /* Aperçu LIVE de la notification WhatsApp reçue */
@@ -91,7 +92,7 @@ export function CercleSection({ slug, accent, nom }: { slug: string; accent: str
       />
       <div className="glow" aria-hidden="true" />
       <div className="in">
-        <div className="k">Le Cercle des habitué·es</div>
+        <div className="k">Le Cercle des habitué·es{!published && <span className="k-opt">Option · diffusion WhatsApp</span>}</div>
         <div className="h">Soyez prévenu·e en premier.</div>
         <div className="p">Une place qui se libère, une offre, une nouveauté… Voici le genre de message que vous recevrez — jamais de spam, juste les bons plans.</div>
 
