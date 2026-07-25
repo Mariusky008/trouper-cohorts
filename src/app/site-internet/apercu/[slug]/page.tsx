@@ -174,6 +174,15 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
         : { partner: "un commerce partenaire", clientMsg: `Je cherche un bon ${metierSing} à ${villeAff}`, recoMsg: `J'ai exactement ce qu'il vous faut : ${nom}, tout près 😊`, oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?" };
   const collectifService = famSport ? "une séance découverte" : famResto ? "une table" : "un rendez-vous";
   const collectifSource = partners[0]?.t || "un partenaire";
+  // Exemple d'Action Flash PROPRE AU MÉTIER : une phrase que le pro écrirait
+  // lui-même (illustration, jamais présentée comme une vraie donnée du commerce).
+  const flashExample = famSport
+    ? "Il reste 4 places pour le cours de demain 18 h."
+    : famResto
+      ? "Ce soir : menu spécial, encore quelques tables."
+      : famBeauty
+        ? "Une annulation : un créneau se libère samedi."
+        : "Nouveauté cette semaine — je veux la faire connaître.";
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
@@ -327,6 +336,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       resoExample={resoExample}
       collectifService={collectifService}
       collectifSource={collectifSource}
+      flashExample={flashExample}
       demarchageTarget={demarchageTarget}
       galleryVideos={galleryVideos}
     />

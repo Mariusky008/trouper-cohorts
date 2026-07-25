@@ -56,9 +56,10 @@ export function CollectifToast({ ville, service, source }: { ville: string; serv
           .clt-av .png{position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:#7FE6C0;border:2px solid #0B0F1A;box-shadow:0 0 0 0 rgba(127,230,192,.7);animation:cltPing 1.6s ease-out infinite;}
           @keyframes cltPing{0%{box-shadow:0 0 0 0 rgba(127,230,192,.55)}70%,100%{box-shadow:0 0 0 7px rgba(127,230,192,0)}}
           .clt-bd{flex:1;min-width:0;}
-          .clt-k{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#7FE6C0;}
-          .clt-k .ex{letter-spacing:.08em;color:#0B2A20;background:#7FE6C0;border-radius:5px;padding:2px 6px;font-size:8.5px;}
+          .clt-ex{display:inline-block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:#3A2A00;background:#FFC400;border-radius:7px;padding:4px 9px;}
+          .clt-k{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#7FE6C0;margin-top:8px;}
           .clt-t{font-size:13.5px;line-height:1.4;color:#EAF0FA;margin-top:6px;}
+          .clt-dis{font-size:10.5px;line-height:1.35;color:#8FA0BE;margin-top:8px;font-style:italic;}
           .clt-t b{color:#fff;font-weight:700;}
           .clt-src{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;color:#9FB0CE;margin-top:8px;
             background:rgba(127,230,192,.08);border:1px solid rgba(127,230,192,.16);border-radius:9px;padding:6px 9px;}
@@ -72,11 +73,13 @@ export function CollectifToast({ ville, service, source }: { ville: string; serv
         <button className="clt-x" onClick={() => setPhase("out")} aria-label="Fermer">✕</button>
         <div className="clt-av">✦<span className="png" /></div>
         <div className="clt-bd">
-          <div className="clt-k">🤝 Réservation entrante · collectif de {ville} <span className="ex">exemple</span></div>
+          <div className="clt-ex">⚠️ Exemple de recommandation partenaire</div>
+          <div className="clt-k">🤝 Réservation entrante · collectif de {ville}</div>
           <div className="clt-t">
             Nouvelle réservation&nbsp;: <b>Mme Duplantier</b> — <b>jeudi 14 h</b>, pour {service}.
           </div>
           <div className="clt-src">↳ Envoyée depuis le site d&apos;un <b>{source}</b> partenaire.</div>
+          <div className="clt-dis">Aucune vraie réservation — juste une illustration du mécanisme.</div>
         </div>
       </div>
     </div>

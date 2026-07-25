@@ -62,6 +62,7 @@ export type MaquetteSanteProps = {
   resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
   collectifService: string; // « une séance découverte » / « une table » / « un rendez-vous » (toast collectif)
   collectifSource: string; // métier du partenaire d'où vient la réservation (toast collectif)
+  flashExample: string; // exemple d'Action Flash propre au métier (phrase que le pro écrirait)
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
 };
@@ -365,6 +366,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           demoChat={content.demoChat}
           partners={partners}
           resoExample={resoExample}
+          flashExample={p.flashExample}
+          keepHref={p.waHref || p.telHref}
         />
       )}
       {!published && avisMode === "prominent" && (
