@@ -5,6 +5,7 @@
 import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
 import { CatalogueTeaser } from "./_home/catalogue-teaser";
+import { ActionFlashDemo } from "./_home/action-flash-demo";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
@@ -424,24 +425,7 @@ export default function HomePage() {
             <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
               Vous choisissez, votre assistante fait toute la communication — et vous <b>voyez tout avant que ça parte.</b>
             </p>
-            <div className="af-objs">
-              {[
-                { i: "📅", t: "Remplir un créneau" },
-                { i: "🎉", t: "Annoncer un événement" },
-                { i: "🏷️", t: "Faire connaître une offre" },
-                { i: "📦", t: "Écouler un produit" },
-              ].map((o, i) => (
-                <div className="af-obj reveal" key={o.t} style={{ transitionDelay: `${i * 90}ms` }}><div className="i">{o.i}</div><div className="t">{o.t}</div></div>
-              ))}
-            </div>
-            <div className="af-recap reveal">
-              <div className="rh"><span className="d" /> Voici ce que je prépare — vous validez avant l&apos;envoi</div>
-              <div className="af-line"><span className="ic">🌐</span><span className="tx">Votre site&nbsp;: <b>bandeau « offre du moment »</b></span><span className="tag free">offert</span></div>
-              <div className="af-line"><span className="ic">📲</span><span className="tx">WhatsApp&nbsp;: envoi à vos clients fidèles</span><span className="tag opt">option</span></div>
-              <div className="af-line"><span className="ic">📸</span><span className="tx">Insta &amp; Facebook&nbsp;: post prêt à publier</span><span className="tag opt">option</span></div>
-              <div className="af-line"><span className="ic">🗓️</span><span className="tx">Réservation&nbsp;: lien ajouté à l&apos;offre</span><span className="tag opt">option</span></div>
-              <div className="af-rnote">Vous voyez exactement ce qui part, avant que ça parte. Rien n&apos;est envoyé sans votre accord.</div>
-            </div>
+            <div className="reveal"><ActionFlashDemo /></div>
           </div>
         </section>
       </div>
@@ -455,9 +439,9 @@ export default function HomePage() {
                 <div className="coll-k">🤝 Le collectif</div>
                 <h2 className="coll-h">Les autres commerces de votre ville vous <em>envoient des clients.</em></h2>
                 <div className="coll-steps">
-                  <div className="coll-step"><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
-                  <div className="coll-step"><span className="cn">2</span><span>L&apos;assistante lui recommande <b>le bon pro — vous.</b></span></div>
-                  <div className="coll-step"><span className="cn">3</span><span>Et vous faites pareil. <b>On s&apos;envoie des clients.</b></span></div>
+                  <div className="coll-step reveal" style={{ transitionDelay: "80ms" }}><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
+                  <div className="coll-step reveal" style={{ transitionDelay: "200ms" }}><span className="cn">2</span><span>L&apos;assistante lui recommande <b>le bon pro — vous.</b></span></div>
+                  <div className="coll-step reveal" style={{ transitionDelay: "320ms" }}><span className="cn">3</span><span>Et vous faites pareil. <b>On s&apos;envoie des clients.</b></span></div>
                 </div>
                 <p className="coll-note">Que des commerces complémentaires, jamais un concurrent. Une ambition qu&apos;on bâtit avec vous.</p>
               </div>
