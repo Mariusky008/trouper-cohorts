@@ -13,7 +13,7 @@ const s = (v: unknown) => String(v ?? "").trim();
 
 type Action = { key: string; label: string; desc: string; soliciter?: boolean };
 const ALL_ACTIONS: Action[] = [
-  { key: "clients:annonce", label: "Annonce", desc: "rédiger et envoyer une annonce, une promo, une offre ou prévenir d'un créneau libre à ses clients sur WhatsApp", soliciter: true },
+  { key: "annonce", label: "Annonce", desc: "rédiger et envoyer une annonce, une promo, une offre ou prévenir d'un créneau libre à ses clients sur WhatsApp", soliciter: true },
   { key: "clients:avis", label: "Demander un avis", desc: "demander un avis Google à un client", soliciter: true },
   { key: "clients:liste", label: "Ma liste de clients", desc: "gérer sa liste de clients (contacts opt-in)", soliciter: true },
   { key: "agenda", label: "Agenda", desc: "voir et gérer les rendez-vous, définir ses disponibilités, envoyer les rappels de RDV de demain, demander l'avis après un RDV honoré" },
@@ -28,7 +28,7 @@ function keywordRoute(msg: string, actions: Action[]): { key: string; label: str
   const m = msg.toLowerCase();
   const has = (...w: string[]) => w.some((x) => m.includes(x));
   const pick = (k: string) => actions.find((a) => a.key === k) || null;
-  if (has("annonce", "promo", "offre", "créneau", "creneau", "place libre", "prévenir", "prevenir", "message", "diffus")) return pick("clients:annonce");
+  if (has("annonce", "promo", "offre", "créneau", "creneau", "place libre", "prévenir", "prevenir", "message", "diffus")) return pick("annonce");
   if (has("avis", "review", "étoile", "etoile", "note google")) return pick("clients:avis");
   if (has("liste", "contact", "client")) return pick("clients:liste");
   if (has("rendez", "rdv", "agenda", "dispo", "réserv", "reserv", "rappel", "planning", "horaire")) return pick("agenda");
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
   }
 
   const list = actions.map((a) => `- ${a.key} : ${a.desc}`).join("\n");
-  const canAnnounce = actions.some((a) => a.key === "clients:annonce");
+  const canAnnounce = actions.some((a) => a.key === "annonce");
   const system =
     `Tu es l'assistante de bord de ${nom}${activite ? `, ${activite}` : ""}. ` +
     `Le professionnel te dit ce qu'il veut faire dans son espace de gestion ; tu l'aides en OUVRANT le bon outil.\n` +
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     `- reply : 1 à 2 phrases chaleureuses, en français, vouvoiement. Dis ce que tu ouvres, ou pose UNE question si la demande est ambiguë.\n` +
     `- goto : la clé EXACTE de l'outil le plus adapté, ou null si tu as besoin d'une précision ou si la demande sort de ces outils.\n` +
     (canAnnounce
-      ? `- prefill : UNIQUEMENT si goto vaut "clients:annonce" ET que le message décrit une offre concrète (promo, créneau libre, événement, nouveauté), rédige ici le message WhatsApp prêt à envoyer aux clients. Sinon null.\n` +
+      ? `- prefill : UNIQUEMENT si goto vaut "annonce" ET que le message décrit une offre concrète (promo, créneau libre, événement, nouveauté), rédige ici le message WhatsApp prêt à envoyer aux clients. Sinon null.\n` +
         `  Règles du prefill : court (2 à 4 phrases), chaleureux, vouvoiement, 1-2 emojis max, finit par un appel à répondre. N'invente AUCUN prix, %, date ou horaire non fourni — si une info manque, laisse un crochet comme [jour/heure]. Pas de nom de client.\n`
       : `- prefill : toujours null.\n`) +
     `- N'invente jamais d'outil hors de la liste. Si la demande sort de ton périmètre, explique gentiment ce que tu sais faire.`;
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       const g = s(j.goto);
       if (g && actions.some((a) => a.key === g)) goto = g;
       // Le pré-remplissage n'a de sens que pour l'annonce (rédaction du message).
-      if (goto === "clients:annonce") {
+      if (goto === "annonce") {
         const pf = s(j.prefill).slice(0, 600);
         if (pf && pf.toLowerCase() !== "null") prefill = pf;
       }

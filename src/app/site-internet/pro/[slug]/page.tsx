@@ -335,16 +335,31 @@ export default async function EspacePro({
     ...(soliciter
       ? ([
           {
-            key: "clients",
-            label: "Clients",
+            // Action Flash = cœur commercial → onglet dédié, libellé explicite.
+            key: "annonce",
+            label: "Annonce",
             icon: "📣",
+            node: (
+              <>
+                <div className="af-lead">
+                  <div className="af-lead-k">🚀 Action Flash</div>
+                  <h2 className="af-lead-h">Faire une annonce</h2>
+                  <p className="af-lead-p">Un créneau, une offre, un événement, une nouveauté&nbsp;? Votre assistante rédige et diffuse — vous validez avant l&apos;envoi.</p>
+                </div>
+                <ProRelance slug={slug} token={token} />
+              </>
+            ),
+          },
+          {
+            key: "clients",
+            label: "Clients & avis",
+            icon: "👥",
             node: (
               <ProGroup
                 groupKey="clients"
                 subs={[
                   { key: "avis", label: "Demander un avis", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
                   { key: "liste", label: "Ma liste", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
-                  { key: "annonce", label: "Annonce", node: <ProRelance slug={slug} token={token} /> },
                 ]}
               />
             ),
@@ -352,7 +367,19 @@ export default async function EspacePro({
         ] as ProTab[])
       : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
-    { key: "site", label: "Mon site", icon: "🎨", node: <ProGroup groupKey="site" subs={siteSubs} /> },
+    {
+      key: "site",
+      label: "Mon site",
+      icon: "🎨",
+      node: (
+        <>
+          <a className="af-seeclient" href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">
+            👁 Voir mon site comme un client <span>↗</span>
+          </a>
+          <ProGroup groupKey="site" subs={siteSubs} />
+        </>
+      ),
+    },
   ];
 
   return (
@@ -399,6 +426,16 @@ export default async function EspacePro({
           .pro .afcard .afbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px;}
           .pro .afcard .afbtn{text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;box-shadow:0 4px 12px -8px rgba(25,26,44,.22);}
           .pro .afcard .afbtn:active{transform:translateY(1px);}
+          /* En-tête de l'onglet « Annonce » (Action Flash) */
+          .pro .af-lead{border:1px solid rgba(109,74,224,.22);border-radius:20px;padding:20px 20px 18px;background:linear-gradient(160deg,rgba(109,74,224,.10),#fff);box-shadow:0 12px 32px -22px rgba(109,74,224,.5);}
+          .pro .af-lead-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--violet);font-weight:800;}
+          .pro .af-lead-h{font-size:23px;font-weight:850;letter-spacing:-.02em;margin:6px 0 6px;}
+          .pro .af-lead-p{font-size:13.5px;color:var(--soft);line-height:1.5;}
+          /* Lien « voir mon site comme un client » (relie l'admin au site public) */
+          .pro .af-seeclient{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:16px;
+            border:1px solid var(--hair);background:var(--paper);color:var(--ink);border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(25,26,44,.35);}
+          .pro .af-seeclient span{color:var(--violet);font-weight:800;}
+          .pro .af-seeclient:active{transform:translateY(1px);}
 
           /* ══════════ ORDINATEUR : menu latéral + colonne large et aérée ══════════ */
           @media (min-width:900px){

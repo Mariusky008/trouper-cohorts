@@ -28,7 +28,7 @@ export function ProBriefing(p: Props) {
     sugs.push({ icon: "⭐", text: `${p.honoredRecent} rendez-vous honorés récemment. On demande leur avis ?`, tab: "agenda" });
   }
   if (p.soliciter) {
-    sugs.push({ icon: "📣", text: "Un créneau à remplir ou une offre à pousser ? Je vous rédige l'annonce.", tab: "clients:annonce" });
+    sugs.push({ icon: "📣", text: "Un créneau à remplir ou une offre à pousser ? Je vous rédige l'annonce.", tab: "annonce" });
   }
   // Repli chaleureux si rien de « chaud » aujourd'hui.
   if (sugs.length === 0) {
@@ -38,8 +38,8 @@ export function ProBriefing(p: Props) {
   const hello = p.nom ? `Bonjour, ${p.nom} 👋` : "Bonjour 👋";
   const stat =
     p.views > 0
-      ? `Votre site a été vu ${new Intl.NumberFormat("fr-FR").format(p.views)} fois. Voici ce que je vous propose aujourd'hui :`
-      : "Voici ce que je vous propose aujourd'hui :";
+      ? `Votre site a été vu ${new Intl.NumberFormat("fr-FR").format(p.views)} fois.`
+      : "Votre poste de pilotage.";
 
   return (
     <>
@@ -52,6 +52,16 @@ export function ProBriefing(p: Props) {
           .pro .brief .who{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;}
           .pro .brief .hi{font-family:Georgia,serif;font-size:18px;font-weight:700;line-height:1.15;margin-top:1px;}
           .pro .brief .st{font-size:13px;color:var(--soft);line-height:1.5;margin:11px 0 4px;}
+          .pro .brief .af-cta{width:100%;display:flex;align-items:center;gap:12px;margin-top:12px;cursor:pointer;font-family:inherit;text-align:left;
+            border:none;border-radius:15px;padding:15px 16px;color:#fff;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 16px 32px -14px rgba(91,63,166,.75);transition:transform .12s ease,filter .12s ease;}
+          .pro .brief .af-cta:hover{filter:brightness(1.04);}
+          .pro .brief .af-cta:active{transform:scale(.98);}
+          .pro .brief .af-cta-em{font-size:22px;flex:none;}
+          .pro .brief .af-cta-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;}
+          .pro .brief .af-cta-tx b{font-size:15.5px;font-weight:850;letter-spacing:-.01em;}
+          .pro .brief .af-cta-tx i{font-style:normal;font-size:12px;color:rgba(255,255,255,.85);margin-top:3px;}
+          .pro .brief .af-cta-go{font-size:19px;flex:none;}
+          .pro .brief .reco-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:800;margin:18px 0 2px;}
           .pro .brief .sug{width:100%;text-align:left;display:flex;align-items:center;gap:11px;border:1px solid var(--hair);background:#fff;border-radius:13px;padding:12px 13px;margin-top:9px;cursor:pointer;font-family:inherit;color:var(--ink);transition:border-color .15s ease,transform .12s ease;}
           .pro .brief .sug:hover{border-color:#B9A6EC;transform:translateY(-1px);}
           .pro .brief .sug .ic{font-size:18px;flex:none;}
@@ -69,6 +79,17 @@ export function ProBriefing(p: Props) {
           </span>
         </div>
         <div className="st">{stat}</div>
+        {p.soliciter && (
+          <button type="button" className="af-cta" onClick={() => goto("annonce")}>
+            <span className="af-cta-em">📣</span>
+            <span className="af-cta-tx">
+              <b>Créer une Action Flash</b>
+              <i>Annoncer un créneau, une offre, un événement…</i>
+            </span>
+            <span className="af-cta-go">🚀</span>
+          </button>
+        )}
+        <div className="reco-k">Votre prochaine action recommandée</div>
         {sugs.map((s, i) => (
           <button key={i} type="button" className="sug" onClick={() => goto(s.tab)}>
             <span className="ic">{s.icon}</span>

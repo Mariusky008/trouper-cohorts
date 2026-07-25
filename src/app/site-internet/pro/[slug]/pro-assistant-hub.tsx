@@ -123,7 +123,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
   const goto = (key: string, prefill?: string | null) => {
     // Pré-remplissage éventuel (ex. le texte d'annonce déjà rédigé) → l'outil
     // cible l'applique via l'évènement pro-prefill, avant d'ouvrir l'onglet.
-    if (prefill && key === "clients:annonce") {
+    if (prefill && key === "annonce") {
       window.dispatchEvent(new CustomEvent("pro-prefill", { detail: { target: "annonce", text: prefill } }));
     }
     window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: key }));

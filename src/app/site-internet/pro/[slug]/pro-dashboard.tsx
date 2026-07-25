@@ -22,9 +22,9 @@ export function ProDashboard(p: Props) {
   const tiles: Tile[] = ([
     { show: true, icon: "👁", value: nf(p.views), label: "vues du site", tone: "sky" },
     { show: true, icon: "📅", value: nf(p.rdv), label: "rendez-vous à venir", tone: "violet", hot: p.rdv > 0 },
-    { show: p.afficherAvis, icon: "⭐", value: p.avis > 0 ? `+${nf(p.avis)}` : "0", label: "avis gagnés", tone: "gold", hot: p.avis > 0 },
+    { show: p.afficherAvis, icon: "⭐", value: p.avis > 0 ? `+${nf(p.avis)}` : "0", label: "nouveaux avis obtenus", tone: "gold", hot: p.avis > 0 },
     { show: p.soliciter, icon: "📣", value: nf(p.annonces), label: "annonces ce mois", tone: "pink" },
-    { show: p.soliciter, icon: "💬", value: nf(p.demandes), label: "demandes d'avis", tone: "amber" },
+    { show: p.soliciter, icon: "💬", value: nf(p.demandes), label: "demandes d'avis envoyées", tone: "amber" },
     { show: p.soliciter, icon: "👥", value: nf(p.clients), label: "clients enregistrés", tone: "green" },
   ] as Tile[]).filter((t) => t.show);
 
