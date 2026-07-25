@@ -7,10 +7,10 @@
 import { useEffect, useRef, useState } from "react";
 
 const OBJ = [
-  { i: "📅", t: "Remplir un créneau" },
-  { i: "🎉", t: "Annoncer un événement" },
-  { i: "🏷️", t: "Faire connaître une offre" },
-  { i: "📦", t: "Écouler un produit" },
+  { i: "📅", t: "Un créneau à annoncer" },
+  { i: "🎉", t: "Un événement à venir" },
+  { i: "🏷️", t: "Une offre à faire connaître" },
+  { i: "📦", t: "Un produit à mettre en avant" },
 ];
 const CHAN = [
   { i: "🌐", t: "Site — bandeau « offre du moment »", tag: "offert", free: true },
@@ -53,7 +53,7 @@ export function ActionFlashDemo() {
         <span className="afd-av">✦<i /></span>
         <span className="afd-hd"><b>Votre assistante</b><span>en ligne · un seul clic</span></span>
       </div>
-      <div className="afd-say">Que voulez-vous obtenir&nbsp;?</div>
+      <div className="afd-say">Qu&apos;avez-vous à annoncer&nbsp;?</div>
       <div className="afd-objs">
         {OBJ.map((o, i) => (
           <div key={o.t} className={`afd-obj${i === obj ? " on" : ""}${i === obj && phase === "tap" ? " tap" : ""}`}>

@@ -38,7 +38,7 @@ const WA_HREF = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
 const STEPS = [
   { n: "1", ic: "🔎", t: "On lit votre fiche Google", d: "Vos vraies photos, vos avis, vos horaires. Rien à saisir." },
   { n: "2", ic: "✨", t: "On construit votre site", d: "Beau, rapide, à votre image — avec l'assistante intégrée." },
-  { n: "3", ic: "🚀", t: "Vous testez, puis c'est à vous", d: "Vous l'explorez en live. Il vous plaît ? On le met en ligne." },
+  { n: "3", ic: "🚀", t: "Vous découvrez en direct", d: "Vous l'explorez en live. Il vous plaît ? Vous le gardez, gratuitement." },
 ];
 const SECTEURS = ["🛍️ Commerces", "🍽️ Restaurants & cafés", "💇 Beauté & coiffure", "💅 Ongles & esthétique", "🩺 Santé", "🔧 Artisans", "🧘 Yoga & sport", "🎨 Tatoueurs", "🐾 Animalerie", "☕ Bars & brasseries"];
 // Constellation « collectif » : métiers complémentaires en orbite (exemple générique,
@@ -346,6 +346,7 @@ export default function HomePage() {
           .pop-home .gp-item b{color:var(--ink);font-weight:700;}
           .pop-home .gp-tag{text-align:center;font-size:16px;font-weight:850;margin-top:24px;color:var(--ink);letter-spacing:-.01em;}
           .pop-home .gp-tag span{color:var(--a2);}
+          .pop-home .gp-fine{text-align:center;font-size:12.5px;color:var(--faint);margin-top:10px;max-width:460px;margin-left:auto;margin-right:auto;line-height:1.5;}
 
           /* ── HONNÊTETÉ + CTA ── */
           .pop-home .honest{text-align:center;max-width:640px;margin:0 auto;}
@@ -407,64 +408,30 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ── LE CATALOGUE À SWIPER ── */}
-      <div className="band">
-        <section>
-          <div className="wrap cat-wrap">
-            <div className="cat-tx">
-              <div className="sk reveal">📲 Le catalogue de vos produits &amp; services</div>
-              <div className="sh reveal">Vos produits &amp; services, dans un catalogue qu&apos;on <span className="hl">swipe.</span></div>
-              <p className="cat-p reveal">De belles cartes — vos produits, vos offres, vos avis — que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: <b>ils adorent, et ils réservent.</b></p>
-              <div className="cat-share reveal">📲 Partagé en 1 clic · aucune appli à installer</div>
-            </div>
-            <div className="cat-deck reveal"><CatalogueTeaser /></div>
-          </div>
-        </section>
-      </div>
-
-      {/* ── ACTION FLASH ── */}
+      {/* ── ACTION FLASH (le héros) ── */}
       <div className="band">
         <section>
           <div className="wrap">
             <div className="sk reveal" style={{ textAlign: "center" }}>🚀 Action Flash</div>
-            <div className="sh reveal">Un créneau creux, un événement, une offre&nbsp;? <span className="hl">En un clic.</span></div>
+            <div className="sh reveal">Une offre, un événement, une dispo&nbsp;? <span className="hl">Annoncez-le en un clic.</span></div>
             <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
-              Vous choisissez, votre assistante fait toute la communication — et vous <b>voyez tout avant que ça parte.</b>
+              Votre assistante prépare tout&nbsp;: sur votre site (offert), et sur vos autres canaux si vous le voulez. Vous <b>voyez tout avant que ça parte.</b>
             </p>
             <div className="reveal"><ActionFlashDemo /></div>
           </div>
         </section>
       </div>
 
-      {/* ── LE COLLECTIF ── */}
+      {/* ── LE CATALOGUE À SWIPER (le résultat, côté client) ── */}
       <section>
-        <div className="wrap">
-          <div className="coll-band reveal">
-            <div className="coll-in">
-              <div>
-                <div className="coll-k">🤝 Le collectif</div>
-                <h2 className="coll-h">Les autres commerces de votre ville vous <em>envoient des clients.</em></h2>
-                <div className="coll-steps">
-                  <div className="coll-step reveal" style={{ transitionDelay: "80ms" }}><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
-                  <div className="coll-step reveal" style={{ transitionDelay: "200ms" }}><span className="cn">2</span><span>L&apos;assistante lui recommande <b>le bon pro — vous.</b></span></div>
-                  <div className="coll-step reveal" style={{ transitionDelay: "320ms" }}><span className="cn">3</span><span>Et vous faites pareil. <b>On s&apos;envoie des clients.</b></span></div>
-                </div>
-                <p className="coll-note">Que des commerces complémentaires, jamais un concurrent. Une ambition qu&apos;on bâtit avec vous.</p>
-              </div>
-              <div className="coll-net" aria-hidden="true">
-                {COLLECTIF_NODES.map((nd) => (
-                  <span key={`l-${nd.t}`} className="coll-line" style={{ width: `${nd.len}px`, transform: `rotate(${nd.deg}deg)` }} />
-                ))}
-                {COLLECTIF_NODES.map((nd, i) => (
-                  <span key={`f-${nd.t}`} className="coll-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${0.4 + i * 0.36}s` }} />
-                ))}
-                {COLLECTIF_NODES.map((nd, i) => (
-                  <span key={`p-${nd.t}`} className="coll-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic} {nd.t}</span>
-                ))}
-                <span className="coll-core"><b>Vous</b><i>votre commerce</i></span>
-              </div>
-            </div>
+        <div className="wrap cat-wrap">
+          <div className="cat-tx">
+            <div className="sk reveal">📲 Le résultat, côté client</div>
+            <div className="sh reveal">Voici à quoi ressemblent vos <span className="hl">produits &amp; annonces.</span></div>
+            <p className="cat-p reveal">De belles cartes — vos produits, vos offres, vos avis — que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: vos clients <b>découvrent, partagent et peuvent réserver.</b></p>
+            <div className="cat-share reveal">📲 Partagé en 1 clic · aucune appli à installer</div>
           </div>
+          <div className="cat-deck reveal"><CatalogueTeaser /></div>
         </div>
       </section>
 
@@ -482,6 +449,9 @@ export default function HomePage() {
                   <p>{s.d}</p>
                 </div>
               ))}
+            </div>
+            <div className="reveal" style={{ textAlign: "center", marginTop: 32 }}>
+              <a className="btn btn-wa" href="#top">✨ Créer ma première version</a>
             </div>
           </div>
         </section>
@@ -506,34 +476,69 @@ export default function HomePage() {
       </section>
 
       {/* ── GRATUIT / OPTIONS ── */}
-      <section>
-        <div className="wrap">
-          <div className="sk reveal" style={{ textAlign: "center" }}>Gratuit, puis à la carte</div>
-          <div className="sh reveal">Le site est offert. Vous ne payez que pour <span className="hl">aller plus loin.</span></div>
-          <div className="gp-cols">
-            <div className="gp-card free reveal">
-              <div className="gp-h">✅ Offert</div>
-              <div className="gp-sub">Tout de suite, sans rien payer.</div>
-              <div className="gp-list">
-                <div className="gp-item"><span className="k">✓</span><span>Une <b>première version</b> de votre site, tout de suite</span></div>
-                <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante</b> qui présente votre activité &amp; répond</span></div>
-                <div className="gp-item"><span className="k">✓</span><span><b>Créer une offre</b> et l&apos;afficher sur votre site</span></div>
+      <div className="band">
+        <section>
+          <div className="wrap">
+            <div className="sk reveal" style={{ textAlign: "center" }}>Gratuit, puis à la carte</div>
+            <div className="sh reveal">Le site est offert. Vous ne payez que pour <span className="hl">aller plus loin.</span></div>
+            <div className="gp-cols">
+              <div className="gp-card free reveal">
+                <div className="gp-h">✅ Offert</div>
+                <div className="gp-sub">Tout de suite, sans rien payer.</div>
+                <div className="gp-list">
+                  <div className="gp-item"><span className="k">✓</span><span>Une <b>première version</b> de votre site, tout de suite</span></div>
+                  <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante</b> qui présente votre activité &amp; répond</span></div>
+                  <div className="gp-item"><span className="k">✓</span><span><b>Créer une offre</b> et l&apos;afficher sur votre site</span></div>
+                </div>
+              </div>
+              <div className="gp-card paid reveal" style={{ transitionDelay: "90ms" }}>
+                <div className="gp-h">⚡ Options</div>
+                <div className="gp-sub">Quand vous voulez de la portée.</div>
+                <div className="gp-list">
+                  <div className="gp-item"><span className="k">＋</span><span><b>Diffusion WhatsApp</b> à vos clients</span></div>
+                  <div className="gp-item"><span className="k">＋</span><span>Posts <b>Insta &amp; Facebook</b> préparés</span></div>
+                  <div className="gp-item"><span className="k">＋</span><span>Récolte d&apos;<b>avis Google</b></span></div>
+                  <div className="gp-item"><span className="k">＋</span><span><b>Relancer</b> vos anciens clients</span></div>
+                  <div className="gp-item"><span className="k">＋</span><span>Être <b>recommandé par le réseau</b> des commerces partenaires</span></div>
+                  <div className="gp-item"><span className="k">＋</span><span><b>Statistiques &amp; réservations</b> en ligne</span></div>
+                </div>
               </div>
             </div>
-            <div className="gp-card paid reveal" style={{ transitionDelay: "90ms" }}>
-              <div className="gp-h">⚡ Options</div>
-              <div className="gp-sub">Quand vous voulez de la portée.</div>
-              <div className="gp-list">
-                <div className="gp-item"><span className="k">＋</span><span><b>Diffusion WhatsApp</b> à vos clients</span></div>
-                <div className="gp-item"><span className="k">＋</span><span>Posts <b>Insta &amp; Facebook</b> préparés</span></div>
-                <div className="gp-item"><span className="k">＋</span><span>Récolte d&apos;<b>avis Google</b></span></div>
-                <div className="gp-item"><span className="k">＋</span><span><b>Relancer</b> vos anciens clients</span></div>
-                <div className="gp-item"><span className="k">＋</span><span>Être <b>recommandé par le réseau</b> des commerces partenaires</span></div>
-                <div className="gp-item"><span className="k">＋</span><span><b>Statistiques &amp; réservations</b> en ligne</span></div>
+            <div className="gp-tag reveal">Vous commencez gratuitement, sans engagement. <span>Vous activez seulement les options dont vous avez besoin.</span></div>
+            <div className="gp-fine reveal">Chaque option vous est présentée avec son prix avant activation — activable et désactivable à tout moment.</div>
+          </div>
+        </section>
+      </div>
+
+      {/* ── LE COLLECTIF (fonctionnalité avancée) ── */}
+      <section>
+        <div className="wrap">
+          <div className="coll-band reveal">
+            <div className="coll-in">
+              <div>
+                <div className="coll-k">🤝 Le réseau · option</div>
+                <h2 className="coll-h">Soyez <em>recommandé</em> par les commerces partenaires de votre ville.</h2>
+                <div className="coll-steps">
+                  <div className="coll-step reveal" style={{ transitionDelay: "80ms" }}><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
+                  <div className="coll-step reveal" style={{ transitionDelay: "200ms" }}><span className="cn">2</span><span>S&apos;il cherche un service comme le vôtre, son assistante <b>peut vous présenter.</b></span></div>
+                  <div className="coll-step reveal" style={{ transitionDelay: "320ms" }}><span className="cn">3</span><span>Et vous faites pareil pour eux. <b>Un coup de pouce mutuel.</b></span></div>
+                </div>
+                <p className="coll-note">Que des commerces complémentaires, jamais un concurrent. Un réseau qu&apos;on bâtit avec vous, ville par ville.</p>
+              </div>
+              <div className="coll-net" aria-hidden="true">
+                {COLLECTIF_NODES.map((nd) => (
+                  <span key={`l-${nd.t}`} className="coll-line" style={{ width: `${nd.len}px`, transform: `rotate(${nd.deg}deg)` }} />
+                ))}
+                {COLLECTIF_NODES.map((nd, i) => (
+                  <span key={`f-${nd.t}`} className="coll-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${0.4 + i * 0.36}s` }} />
+                ))}
+                {COLLECTIF_NODES.map((nd, i) => (
+                  <span key={`p-${nd.t}`} className="coll-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic} {nd.t}</span>
+                ))}
+                <span className="coll-core"><b>Vous</b><i>votre commerce</i></span>
               </div>
             </div>
           </div>
-          <div className="gp-tag reveal">Vous commencez gratuitement, sans engagement. <span>Vous activez seulement les options dont vous avez besoin.</span></div>
         </div>
       </section>
 
