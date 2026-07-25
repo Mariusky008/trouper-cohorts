@@ -18,6 +18,14 @@ const toMin = (t: string) => {
   return h * 60 + m;
 };
 const toTime = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+// Créneaux d'horaires en 24 h (menus déroulants) — garantit le format 24 h quelle
+// que soit la langue du téléphone (le champ natif « time » afficherait AM/PM en anglais).
+const TIMES: string[] = (() => {
+  const out: string[] = [];
+  for (let m = 6 * 60; m <= 22 * 60; m += 15) out.push(toTime(m));
+  return out;
+})();
+const timeOpts = (cur: string) => (TIMES.includes(cur) ? TIMES : [cur, ...TIMES].sort());
 
 const freshDay = (): DayState => ({ open: false, windows: [{ start: "09:00", end: "18:00" }] });
 const DEFAULT: Record<number, DayState> = Object.fromEntries(ORDER.map((wd) => [wd, freshDay()]));
@@ -142,6 +150,16 @@ export function ProAgenda({
     setDayState((s) => (s[wd].windows.length >= 4 ? s : { ...s, [wd]: { ...s[wd], open: true, windows: [...s[wd].windows, { start: "14:00", end: "18:00" }] } }));
   const removeWin = (wd: number, idx: number) =>
     setDayState((s) => ({ ...s, [wd]: { ...s[wd], windows: s[wd].windows.length <= 1 ? s[wd].windows : s[wd].windows.filter((_, i) => i !== idx) } }));
+  // Recopie les plages du 1er jour ouvert sur tous les autres jours ouverts.
+  const copyToAll = () =>
+    setDayState((s) => {
+      const first = ORDER.find((wd) => s[wd].open);
+      if (first == null) return s;
+      const src = s[first].windows;
+      const next = { ...s };
+      for (const wd of ORDER) if (next[wd].open) next[wd] = { ...next[wd], windows: src.map((w) => ({ ...w })) };
+      return next;
+    });
 
   const save = async () => {
     setBusy(true);
@@ -195,7 +213,11 @@ export function ProAgenda({
           .pro .agenda .day .wins{display:flex;flex-direction:column;gap:7px;padding-left:26px;}
           .pro .agenda .day .times{display:flex;align-items:center;gap:6px;}
           .pro .agenda .day input[type=time]{border:1px solid var(--hair);border-radius:8px;padding:6px 7px;font-size:13px;font-family:inherit;background:#fff;}
+          .pro .agenda .day .times select{border:1px solid var(--hair);border-radius:8px;padding:7px 9px;font-size:14px;font-family:inherit;background:#fff;font-variant-numeric:tabular-nums;}
           .pro .agenda .day .rmwin{border:none;background:none;color:#B23B3B;font-size:15px;cursor:pointer;font-family:inherit;padding:2px 4px;}
+          .pro .agenda .copyall{margin-top:12px;width:100%;border:1px solid var(--hair);background:#F1EFFB;color:var(--violet);border-radius:12px;padding:11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .agenda .copyall:active{transform:translateY(1px);}
+          .pro .agenda .seeresa{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:11px;text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(25,26,44,.35);}
           .pro .agenda .day.off .nm{color:var(--faint);}
           .pro .agenda .savebtn{margin-top:14px;width:100%;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .agenda .savebtn:disabled{opacity:.5;cursor:not-allowed;}
@@ -239,11 +261,8 @@ export function ProAgenda({
             ))}
           </div>
         )}
-        <div className="a-title">📅 Mes disponibilités</div>
-        <div className="a-sub">
-          Choisissez vos horaires&nbsp;: vos clients réservent un vrai créneau en ligne, et vous le retrouvez ici.
-          Vous coupez le midi&nbsp;? Ajoutez une deuxième plage (ex. 9h-12h puis 14h-18h).
-        </div>
+        <div className="a-title">🕐 Quand peut-on réserver chez vous&nbsp;?</div>
+        <div className="a-sub">Indiquez simplement vos jours et vos horaires.</div>
 
         <div className="slot">
           Durée d&apos;un rendez-vous&nbsp;:
@@ -270,9 +289,13 @@ export function ProAgenda({
                   <div className="wins">
                     {d.windows.map((w, i) => (
                       <div className="times" key={i}>
-                        <input type="time" value={w.start} onChange={(e) => setWin(wd, i, { start: e.target.value })} />
+                        <select value={w.start} onChange={(e) => setWin(wd, i, { start: e.target.value })} aria-label="Heure de début">
+                          {timeOpts(w.start).map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
                         <span>→</span>
-                        <input type="time" value={w.end} onChange={(e) => setWin(wd, i, { end: e.target.value })} />
+                        <select value={w.end} onChange={(e) => setWin(wd, i, { end: e.target.value })} aria-label="Heure de fin">
+                          {timeOpts(w.end).map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
                         {d.windows.length > 1 && (
                           <button type="button" className="rmwin" onClick={() => removeWin(wd, i)} aria-label="Retirer cette plage">✕</button>
                         )}
@@ -285,13 +308,15 @@ export function ProAgenda({
           })}
         </div>
 
+        {anyOpen && (
+          <button type="button" className="copyall" onClick={copyToAll}>📋 Copier ces horaires à tous les jours ouverts</button>
+        )}
+
         <button className="savebtn" onClick={save} disabled={busy}>
           {busy ? "Enregistrement…" : saved ? "✓ Enregistré" : "Enregistrer mes disponibilités"}
         </button>
         {anyOpen && (
-          <div className="link">
-            Votre page de réservation&nbsp;: <b>/site-internet/rdv/{slug}</b> — c&apos;est elle qu&apos;ouvre le bouton « Prendre rendez-vous » de votre site.
-          </div>
+          <a className="seeresa" href={`/site-internet/rdv/${slug}`} target="_blank" rel="noreferrer">👁 Voir ma page de réservation</a>
         )}
 
         <div className="rdv">

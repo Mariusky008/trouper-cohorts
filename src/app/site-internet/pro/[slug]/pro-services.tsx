@@ -122,11 +122,8 @@ export function ProServices({
         }}
       />
       <div className="svc">
-        <div className="a-title">📋 Mes accompagnements</div>
-        <div className="a-sub">
-          Vos prestations avec durée et tarif : c&apos;est le « menu » que vos client·es voient avant de réserver.
-          Tant que c&apos;est vide, votre site montre des exemples ; dès que vous remplissez, ce sont vos vraies offres.
-        </div>
+        <div className="a-title">📋 Vos prestations</div>
+        <div className="a-sub">Ce que vos client·es peuvent choisir et réserver.</div>
 
         {loaded && rows.length === 0 && (
           <div className="none">Aucune prestation pour l&apos;instant.</div>

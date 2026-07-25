@@ -18,7 +18,7 @@ import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProReviewAlert } from "./pro-review-alert";
 import { ProTabs, type ProTab } from "./pro-tabs";
-import { ProGroup, type Sub } from "./pro-group";
+import { ProGroup } from "./pro-group";
 import { ProAssistantHub } from "./pro-assistant-hub";
 import { ReviewRefresh } from "./review-refresh";
 
@@ -302,27 +302,6 @@ export default async function EspacePro({
     </>
   );
 
-  // ── 4 onglets clairs (au lieu de 8) centrés sur l'assistante ────────────────
-  //  🏠 Accueil = hub de l'assistante (briefing + chiffres + alertes)
-  //  📣 Clients = Demander un avis + Ma liste + Annonce (commerce)
-  //  📅 Agenda  = dispos + rappels + RDV
-  //  🎨 Mon site = Contenu + Photos + Fiche assistante
-  const siteSubs: Sub[] = [
-    {
-      key: "contenu",
-      label: "Contenu",
-      node: (
-        <>
-          <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
-          <div style={{ borderTop: "1px solid var(--hair)", margin: "26px 0 0" }} />
-          <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
-        </>
-      ),
-    },
-    { key: "photos", label: "Photos", node: <ProGallery slug={slug} token={token} /> },
-    { key: "fiche", label: "Fiche assistante", node: <ProAssistant slug={slug} token={token} /> },
-  ];
-
   const proTabs: ProTab[] = [
     { key: "accueil", label: "Accueil", icon: "🏠", node: accueilNode },
     ...(soliciter
@@ -364,16 +343,23 @@ export default async function EspacePro({
       : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
     {
+      // « Mon site » sur UNE page (blocs empilés) plutôt que des sous-onglets.
       key: "site",
       label: "Mon site",
       icon: "🎨",
       node: (
-        <>
+        <div className="sitepage">
           <a className="af-seeclient" href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">
             👁 Voir mon site comme un client <span>↗</span>
           </a>
-          <ProGroup groupKey="site" subs={siteSubs} />
-        </>
+          <div className="siteblock">
+            <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
+            <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
+            <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
+          </div>
+          <div className="siteblock"><ProGallery slug={slug} token={token} /></div>
+          <div className="siteblock"><ProAssistant slug={slug} token={token} /></div>
+        </div>
       ),
     },
   ];
@@ -432,6 +418,9 @@ export default async function EspacePro({
             border:1px solid var(--hair);background:var(--paper);color:var(--ink);border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(25,26,44,.35);}
           .pro .af-seeclient span{color:var(--violet);font-weight:800;}
           .pro .af-seeclient:active{transform:translateY(1px);}
+          /* « Mon site » sur une page : chaque domaine dans un bloc-carte distinct */
+          .pro .sitepage{display:flex;flex-direction:column;gap:16px;}
+          .pro .siteblock{border:1px solid var(--hair);border-radius:18px;padding:18px 17px;background:var(--paper);box-shadow:0 12px 32px -24px rgba(25,26,44,.3);}
 
           /* ══════════ ORDINATEUR : menu latéral + colonne large et aérée ══════════ */
           @media (min-width:900px){

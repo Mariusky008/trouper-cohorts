@@ -145,11 +145,7 @@ export function ProMotifs({
       />
       <div className="mtf">
         <div className="a-title">🧭 Pour quoi venir me voir&nbsp;?</div>
-        <div className="a-sub">
-          Les situations pour lesquelles vos client·es viennent (stress, douleurs, sommeil…). Sur votre site,
-          chaque motif est cliquable&nbsp;: l&apos;accueil répond et prépare le rendez-vous. Vide&nbsp;: votre site
-          montre des exemples&nbsp;; dès que vous remplissez, ce sont les vôtres.
-        </div>
+        <div className="a-sub">Les raisons pour lesquelles vos client·es viennent vous voir. Cliquables sur votre site.</div>
 
         {/* Méthode principale : l'assistante prépare, le pro valide. */}
         <div className="ask">
