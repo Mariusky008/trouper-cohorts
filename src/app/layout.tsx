@@ -23,19 +23,22 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.popey.academy"),
-  title: "Popey — le club des bons plans de ta ville",
-  description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
+  title: {
+    default: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
+    template: "%s · Popey",
+  },
+  description: "Popey crée gratuitement le site de votre commerce à partir de votre fiche Google, avec une assistante qui présente votre activité et répond à vos clients. En un clic, annoncez vos offres, événements et disponibilités.",
   openGraph: {
-    title: "Popey — le club des bons plans de ta ville",
-    description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
+    title: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
+    description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
     siteName: "Popey",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey — le club des bons plans de ta ville",
-    description: "Les offres, gratuités et privilèges des meilleurs commerçants près de chez toi, à swiper. Deviens leur habitué·e et sois prévenu·e en premier de leurs coups de feu.",
+    title: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
+    description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
   },
   manifest: "/manifest.json",
   appleWebApp: {

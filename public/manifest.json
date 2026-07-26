@@ -1,11 +1,11 @@
 {
-  "name": "Popey Academy",
+  "name": "Popey — votre site web + assistante",
   "short_name": "Popey",
-  "description": "Cohortes de 14 jours pour devenir ultra visible localement.",
-  "start_url": "/mon-reseau-local/dashboard",
+  "description": "Un site web gratuit pour votre commerce, créé à partir de votre fiche Google, avec une assistante qui répond à vos clients.",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#E2D9BC",
-  "theme_color": "#B20B13",
+  "background_color": "#F7F5EF",
+  "theme_color": "#12B981",
   "icons": [
     {
       "src": "/icon.svg",
@@ -15,5 +15,5 @@
     }
   ],
   "orientation": "portrait",
-  "categories": ["productivity", "business", "social"]
+  "categories": ["business", "productivity"]
 }

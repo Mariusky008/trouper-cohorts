@@ -9,7 +9,7 @@ import { ActionFlashDemo } from "./_home/action-flash-demo";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
-  title: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute",
+  title: { absolute: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute" },
   description:
     "Site gratuit prêt en 1 minute, avec une assistante qui répond à vos clients. En un clic, annoncez un créneau libre, un événement ou une offre : votre communication est préparée et diffusée. Vous ne payez que pour aller plus loin.",
   alternates: { canonical: "/" },

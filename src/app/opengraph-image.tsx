@@ -2,8 +2,8 @@ import { popeyOgImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og/popey-og";
 
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
-export const alt = "Popey — le club des bons plans de ta ville";
+export const alt = "Popey — votre site web gratuit + une assistante IA pour votre commerce";
 
 export default function Image() {
-  return popeyOgImage("Les meilleurs commerces de ta ville, à swiper.");
+  return popeyOgImage("Votre site web gratuit, construit sous vos yeux.");
 }
