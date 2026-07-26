@@ -44,6 +44,8 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
           .mqc .cl-in{position:relative;z-index:1;max-width:460px;margin:0 auto;text-align:center;}
           .mqc .cl-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
           .mqc .cl-opt{display:inline-block;margin-left:8px;letter-spacing:.04em;text-transform:none;font-size:10px;font-weight:800;color:#6B4BC7;background:#EDE8FF;border-radius:6px;padding:2px 8px;vertical-align:middle;}
+          .mqc .cl-demo{margin-top:14px;width:100%;border:1px solid rgba(127,230,192,.4);background:rgba(127,230,192,.08);color:#0B7A55;border-radius:12px;padding:12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .mqc .cl-demo:active{transform:translateY(1px);}
           .mqc .cl-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.14;margin-top:8px;}
           .mqc .cl-p{font-size:13.5px;line-height:1.6;color:#B8C4DC;margin-top:11px;}
           .mqc .cl-p b{color:#fff;}
@@ -128,6 +130,15 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
             </div>
           )}
           <div className="cl-note">Le collectif se construit commerce par commerce à {ville}&nbsp;: dès qu&apos;un partenaire vous est rattaché, il apparaît ici en premier. Aucune donnée n&apos;est partagée sans votre accord.</div>
+          {!published && (
+            <button
+              type="button"
+              className="cl-demo"
+              onClick={() => { try { window.dispatchEvent(new CustomEvent("mqc:collectif-demo")); } catch { /* noop */ } }}
+            >
+              👀 Voir un exemple de recommandation entrante
+            </button>
+          )}
         </div>
       </div>
 

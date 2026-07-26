@@ -1,10 +1,9 @@
 "use client";
 
-// « Réservation entrante » du collectif — la preuve VIVANTE du mécanisme. ~2,5 s
-// après la fin de la Démo Vivante (événement `mqc:demo-done`), une notification
-// glisse sur le site : un client d'un commerce partenaire vient de réserver chez
-// vous, envoyé par l'assistante. Elle rend concret « les autres commerces vous
-// envoient des clients ».
+// « Réservation entrante » du collectif — la preuve du mécanisme, montrée UNIQUEMENT
+// À LA DEMANDE (le pro clique « Voir un exemple » dans la section Collectif →
+// événement `mqc:collectif-demo`). On ne l'affiche PLUS automatiquement à l'arrivée :
+// à ce moment, la seule idée à faire passer est « votre site est prêt ».
 // HONNÊTETÉ (règle absolue) : c'est un EXEMPLE (badge visible), pas une vraie
 // réservation. Nom illustratif. Commerce uniquement (déonto), maquette non publiée.
 import { useEffect, useState } from "react";
@@ -13,18 +12,11 @@ export function CollectifToast({ ville, service, source }: { ville: string; serv
   const [phase, setPhase] = useState<"hidden" | "in" | "out">("hidden");
 
   useEffect(() => {
-    let showT: number | null = null;
-    const onDone = () => {
-      if (showT) clearTimeout(showT);
-      // ~2,5 s après la démo : la réservation « tombe » sur le site. Elle RESTE
-      // affichée jusqu'à ce que le pro la ferme lui-même (bouton ✕).
-      showT = window.setTimeout(() => setPhase("in"), 2500);
-    };
-    window.addEventListener("mqc:demo-done", onDone);
-    return () => {
-      window.removeEventListener("mqc:demo-done", onDone);
-      if (showT) clearTimeout(showT);
-    };
+    // Déclenchée seulement quand le pro demande à voir un exemple (bouton dans la
+    // section Collectif). Reste affichée jusqu'à ce qu'il la ferme (✕).
+    const onShow = () => setPhase("in");
+    window.addEventListener("mqc:collectif-demo", onShow);
+    return () => window.removeEventListener("mqc:collectif-demo", onShow);
   }, []);
 
   // Fermeture par le pro : on laisse jouer l'animation de sortie puis on démonte.

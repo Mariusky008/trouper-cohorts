@@ -31,6 +31,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const [stageOn, setStageOn] = useState(false);
   const [fn, setFn] = useState("");
   const [ph, setPh] = useState("");
+  // Canaux d'une Action Flash : le site est TOUJOURS inclus (gratuit) ; les options
+  // (WhatsApp / réseaux / réservation) sont décochées par défaut — aucune ambiguïté.
+  const [optWa, setOptWa] = useState(false);
+  const [optSocial, setOptSocial] = useState(false);
+  const [optResa, setOptResa] = useState(false);
   const [atBottom, setAtBottom] = useState(false); // masque la pilule au pied de page
   const cardRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<number[]>([]);
@@ -216,23 +221,39 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     );
   };
 
-  // ── ANNONCE : un message → TOUS les clients d'un coup → réponses en cascade ──
-  const playCreneau = (msg: string) => {
+  // ── ANNONCE : d'abord l'affichage GRATUIT sur le site ; l'option WhatsApp n'est
+  // simulée QUE si le pro l'a cochée, et on ne prétend JAMAIS avoir envoyé pour de vrai.
+  const playCreneau = (msg: string, withWa: boolean) => {
     const plur = term === "patient" ? "patients" : "client(e)s";
-    // 1) Le message + la PORTÉE (un envoi touche tout le monde en même temps).
+
+    if (!withWa) {
+      // Action GRATUITE : l'annonce s'affiche sur le site. Aucun envoi simulé.
+      openStage(
+        `<div class="asx-ctx">Votre annonce s'affiche en haut de votre site…</div>` +
+          `<div class="asx-prev" style="text-align:left"><div class="asx-to">🌐 Bandeau « offre du moment »</div>${esc(msg)}</div>`
+      );
+      after(1600, () =>
+        showFinal("creneau",
+          `<div class="asx-final">Votre annonce est <span class="em">visible sur votre site.</span></div>` +
+            `<div class="asx-optcard"><b>Vous voulez toucher aussi vos ${plur} habituel(le)s&nbsp;?</b><br>Avec l'<b>option WhatsApp</b>, cette annonce pourrait être envoyée à vos contacts autorisés.</div>` +
+            tiny("simulation — l'affichage sur votre site est gratuit")
+        )
+      );
+      return;
+    }
+
+    // Option WhatsApp SIMULÉE (payante) — aperçu de portée, sans envoi réel.
     let dots = "";
     for (let i = 0; i < 18; i++) dots += `<span class="asx-avdot" style="animation-delay:${i * 70}ms"></span>`;
     openStage(
-      `<div class="asx-ctx" id="asx-ctx">Un seul envoi part sur le <b>WhatsApp de vos ${plur} fidèles</b> — celles et ceux qui vous suivent et vous laissent un avis ⭐</div>` +
+      `<div class="asx-ctx" id="asx-ctx"><b>Option WhatsApp</b> — avec cette option, un seul envoi partirait à vos <b>${plur} fidèles autorisé(e)s</b>. Aperçu&nbsp;:</div>` +
         `<div class="asx-chat"><div class="asx-msg wa">${esc(msg)}</div></div>` +
-        `<div id="asx-reach" style="margin-top:14px"></div>` +
-        `<div id="asx-rep" style="margin-top:10px"></div>`
+        `<div id="asx-reach" style="margin-top:14px"></div>`
     );
     after(650, () => {
       const r = document.getElementById("asx-reach");
-      if (r) r.innerHTML = `<div class="asx-reachbig"><span id="asx-rc">0</span></div><div class="asx-reachlb">${plur} le reçoivent sur WhatsApp</div><div class="asx-avrow">${dots}</div>`;
+      if (r) r.innerHTML = `<div class="asx-reachbig"><span id="asx-rc">0</span></div><div class="asx-reachlb">${plur} pourraient le recevoir</div><div class="asx-avrow">${dots}</div>`;
     });
-    // Compteur qui grimpe (illustratif) → l'effet « ça touche du monde ».
     const rc = (n: number) => {
       const c = document.getElementById("asx-rc");
       if (c) c.textContent = String(n);
@@ -243,24 +264,13 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     after(2050, () => rc(46));
     after(2650, () => {
       const c = document.getElementById("asx-ctx");
-      if (c) c.innerHTML = `✓ <b>Distribué sur WhatsApp — gratuitement.</b> Sans payer de pub Facebook ni Instagram.`;
+      if (c) c.innerHTML = `✓ <b>Simulation de l'option WhatsApp</b> — rien n'a réellement été envoyé. La portée dépend de votre liste de contacts.`;
     });
-    // 2) Les réponses arrivent, espacées pour être lues.
-    const reply = (who: string) => {
-      const a = document.getElementById("asx-rep");
-      a?.querySelector(".asx-dots")?.remove();
-      if (a) a.innerHTML += `<div class="asx-msg c" style="opacity:1;transform:none;margin-top:6px">${who}</div><div class="asx-dots" style="margin-top:8px"><span>•</span><span>•</span><span>•</span></div>`;
-    };
-    after(3500, () => reply("Julie — OUI, je réserve ❤️"));
-    after(5000, () => reply("Marc — j'en profite, à samedi 🙌"));
-    after(6500, () => reply("Léa — parfait, je viens ✨"));
-    after(7200, () => document.getElementById("asx-rep")?.querySelector(".asx-dots")?.remove());
-    // 3) Écran de valeur — laissé assez tard pour lire la cascade.
-    after(8600, () =>
+    after(4200, () =>
       showFinal("creneau",
-        `<div class="asx-final">Une annonce → <span class="em">vos ${plur} reviennent.</span></div>` +
-          `<div class="asx-starline" style="font-size:12.5px;margin-top:9px;letter-spacing:0;color:#71766C;line-height:1.5">Chaque client(e) qui vous laisse un avis ⭐ rejoint votre <b style="color:#16160F">audience WhatsApp — gratuite</b>.<br>Plus vous avez d'avis, plus vous touchez de monde en 1 clic, <b style="color:#16160F">sans payer de pub</b>.</div>` +
-          tiny("simulation — le nombre dépend de votre liste de client(e)s")
+        `<div class="asx-final">Votre annonce est <span class="em">prête.</span></div>` +
+          `<div class="asx-starline" style="font-size:12.5px;margin-top:9px;letter-spacing:0;color:#71766C;line-height:1.5">Affichage sur votre site&nbsp;: <b style="color:#16160F">gratuit</b>. Diffusion WhatsApp&nbsp;: <b style="color:#16160F">option</b>, à activer quand vous en avez besoin.</div>` +
+          tiny("simulation — aucune diffusion réelle")
       )
     );
   };
@@ -356,19 +366,35 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       );
     }
     if (view === "creneauPrev") {
+      const anyOpt = optWa || optSocial || optResa;
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-say">Voici votre annonce, et <b>exactement ce que je vais faire</b>. Vous validez avant l’envoi.</div>
+          <div className="asx-say">Voici votre annonce. Elle s’affiche <b>gratuitement sur votre site</b>. Ajoutez des options si vous voulez toucher plus de monde.</div>
           <div className="asx-prev"><div className="asx-to">✍️ Votre annonce <span className="asx-mini2">(personnalisable)</span></div><div className="asx-wac">{fn}</div></div>
+
+          <div className="asx-glab">Inclus gratuitement</div>
           <div className="asx-flash">
-            <div className="asx-fl"><span className="i">🌐</span><span className="t">Votre site&nbsp;— bandeau «&nbsp;offre du moment&nbsp;»</span><span className="tag free">offert</span></div>
-            <div className="asx-fl"><span className="i">📲</span><span className="t">WhatsApp&nbsp;— tous vos {plural} fidèles</span><span className="tag opt">option</span></div>
-            <div className="asx-fl"><span className="i">📸</span><span className="t">Insta &amp; Facebook&nbsp;— post prêt à publier</span><span className="tag opt">option</span></div>
-            <div className="asx-fl"><span className="i">🗓️</span><span className="t">Réservation&nbsp;— lien ajouté à l’offre</span><span className="tag opt">option</span></div>
+            <div className="asx-fl on"><span className="i">🌐</span><span className="t">Afficher l’annonce sur votre site</span><span className="asx-lock">✓ inclus</span></div>
           </div>
-          <button className="asx-send" onClick={() => playCreneau(fn)}>🚀 Lancer l’action</button>
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>Rien n’est envoyé sans votre validation.</div>
+
+          <div className="asx-glab">Options — pour toucher davantage de {plural}</div>
+          <div className="asx-flash">
+            <button type="button" className={`asx-fl optbtn${optWa ? " sel" : ""}`} onClick={() => setOptWa((v) => !v)}>
+              <span className="i">📲</span><span className="t">Prévenir mes contacts WhatsApp</span><span className="asx-ck">{optWa ? "✓" : ""}</span>
+            </button>
+            <button type="button" className={`asx-fl optbtn${optSocial ? " sel" : ""}`} onClick={() => setOptSocial((v) => !v)}>
+              <span className="i">📸</span><span className="t">Préparer une publication Facebook &amp; Instagram</span><span className="asx-ck">{optSocial ? "✓" : ""}</span>
+            </button>
+            <button type="button" className={`asx-fl optbtn${optResa ? " sel" : ""}`} onClick={() => setOptResa((v) => !v)}>
+              <span className="i">🗓️</span><span className="t">Ajouter un lien de réservation</span><span className="asx-ck">{optResa ? "✓" : ""}</span>
+            </button>
+          </div>
+
+          <button className="asx-send" onClick={() => playCreneau(fn, optWa)}>
+            {anyOpt ? "Continuer avec les options sélectionnées →" : "Afficher gratuitement sur mon site"}
+          </button>
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>Les options sont payantes et ne partent qu’après votre validation.</div>
         </>
       );
     }
@@ -566,6 +592,15 @@ function styles(accent: string): string {
   .asx-fl .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:.02em;}
   .asx-fl .tag.free{background:#E4F7EE;color:#0E7C5A;}
   .asx-fl .tag.opt{background:#F0EBFF;color:#6B4BC7;}
+  .asx-glab{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9A968A;margin:16px 0 0;}
+  .asx-fl.on{background:#F3FBF6;}
+  .asx-fl .asx-lock{flex:none;font-size:10px;font-weight:800;color:#0E7C5A;background:#E4F7EE;border-radius:6px;padding:3px 8px;}
+  .asx-fl.optbtn{width:100%;background:#fff;border:none;border-top:1px solid #F1EFE8;font-family:inherit;cursor:pointer;text-align:left;}
+  .asx-fl.optbtn:first-child{border-top:none;}
+  .asx-fl.optbtn.sel{background:linear-gradient(120deg,#F5F3FF,#fff);}
+  .asx-fl .asx-ck{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #E0DAF0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;background:#fff;}
+  .asx-fl.optbtn.sel .asx-ck{background:#6B4BC7;border-color:#6B4BC7;}
+  .asx-optcard{margin-top:14px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #E4DEF7;border-radius:14px;padding:14px 15px;font-size:13px;line-height:1.5;color:#3A3A32;text-align:left;}
   .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(12,14,11,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(2px);}
   .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;max-height:calc(100dvh - 44px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
   @keyframes asxCardin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}

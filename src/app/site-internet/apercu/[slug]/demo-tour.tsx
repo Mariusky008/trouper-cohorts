@@ -31,7 +31,7 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision";
+type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu";
 
 export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
@@ -201,20 +201,15 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       });
     }
 
-    // 4 — CLÔTURE : gratuit / options + ambition du collectif (commerce), sinon passation
-    if (avisAllowed) {
-      steps.push({
-        title: "À vous",
-        say: `Le site et l'assistante sont offerts. Plus tard, si vous le voulez, vous activerez la diffusion WhatsApp, les réseaux sociaux, la collecte automatique de nouveaux avis, ou le réseau des commerces de ${villeAff} qui se recommandent. Pour l'instant, découvrez votre site : il est prêt.`,
-        enter: () => setScene("vision"),
-      });
-    } else {
-      steps.push({
-        title: "À vous",
-        say: `Le site et l'assistante sont offerts. Plus tard, si vous le voulez, vous irez plus loin. Pour l'instant, découvrez votre site : il est prêt.`,
-        enter: () => setScene(""),
-      });
-    }
+    // 4 — CLÔTURE : une seule idée = « votre site est prêt, il est à vous ». On ne
+    // rouvre PAS trois produits (options, collectif) au moment de conclure.
+    steps.push({
+      title: "À vous",
+      say: avisAllowed
+        ? `Votre site et votre assistante sont prêts, et vous pouvez les garder gratuitement. Plus tard, vous pourrez activer des options pour faire connaître vos offres à davantage de clients. Pour l'instant, découvrez votre site : il est à vous.`
+        : `Votre site et votre assistante sont prêts, et vous pouvez les garder gratuitement. Plus tard, si vous le voulez, vous pourrez aller plus loin. Pour l'instant, découvrez votre site : il est à vous.`,
+      enter: () => setScene("conclu"),
+    });
 
     const total = steps.length;
     const est = (s: string) => Math.min(13000, Math.max(2400, s.length * 60));
@@ -390,6 +385,14 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .viz-h em{font-style:normal;color:#7FE6C0;}
           .dtour-card .viz-sub{position:relative;font-size:13px;line-height:1.55;color:#B8C4DC;margin-top:15px;}
           .dtour-card .viz-sub b{color:#fff;}
+          /* Carte de CONCLUSION : ferme la boucle (une seule idée : le site est prêt). */
+          .dtour-card.dtour-conclu{text-align:center;padding:26px 22px 24px;}
+          .dtour-card .cc-badge{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.02em;color:#0B7A55;background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:6px 14px;}
+          .dtour-card .cc-h{font-family:Georgia,serif;font-size:23px;font-weight:700;color:#141A2E;margin-top:14px;line-height:1.15;}
+          .dtour-card .cc-list{display:flex;flex-direction:column;gap:9px;margin-top:18px;text-align:left;}
+          .dtour-card .cc-i{display:flex;align-items:center;gap:11px;font-size:14.5px;font-weight:700;color:#141A2E;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;border-radius:13px;padding:12px 14px;}
+          .dtour-card .cc-i .e{width:30px;height:30px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#fff;border:1px solid #ECE9FB;}
+          .dtour-card .cc-note{font-size:11.5px;color:#8A8FA0;margin-top:16px;line-height:1.45;}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -594,6 +597,21 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                 </div>
                 <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
                 <div className="viz-sub">Mon ambition&nbsp;: <b>jusqu&apos;à 100 commerçants de {villeAff}</b> parmi les mieux notés, chacun associé à <b>une dizaine de métiers complémentaires</b> qui se recommandent. Et&nbsp;<b>vous êtes au centre du vôtre</b>.</div>
+              </div>
+            </div>
+          )}
+
+          {scene === "conclu" && (
+            <div className="dtour-ov">
+              <div className="dtour-card dtour-conclu">
+                <div className="cc-badge">✓ Votre site est prêt</div>
+                <div className="cc-h">{nom}</div>
+                <div className="cc-list">
+                  <div className="cc-i"><span className="e">🎁</span>Site offert</div>
+                  <div className="cc-i"><span className="e">✦</span>Assistante incluse</div>
+                  <div className="cc-i"><span className="e">🔓</span>Sans engagement</div>
+                </div>
+                <div className="cc-note">Des options pourront être activées plus tard, selon vos besoins.</div>
               </div>
             </div>
           )}
