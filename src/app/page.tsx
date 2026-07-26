@@ -573,7 +573,7 @@ export default function HomePage() {
         <div className="wrap foot-in">
           <div className="foot-brand">
             <div className="foot-logo"><span className="dot">✦</span> popey</div>
-            <p>Sites &amp; assistante IA pour les commerçants, artisans et pros de proximité du Sud-Ouest.</p>
+            <p>Sites &amp; assistante IA pour les commerçants, artisans et pros de proximité, partout en France.</p>
           </div>
           <div className="foot-col">
             <h4>Popey</h4>
@@ -589,7 +589,7 @@ export default function HomePage() {
             <a href={WA_HREF} target="_blank" rel="noreferrer">WhatsApp</a>
             <a href={TEL_HREF}>{PHONE_DISPLAY}</a>
             <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
-            <span className="foot-sig">Marius · Sud-Ouest de la France</span>
+            <span className="foot-sig">Marius · France</span>
           </div>
         </div>
         <div className="foot-bar">Popey · {year} · Tous droits réservés</div>
