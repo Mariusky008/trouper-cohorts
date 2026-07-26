@@ -54,63 +54,31 @@ const config: NextConfig = {
     ];
   },
   async redirects() {
+    // Anciens produits (réseau local, cohortes, dashboard/audit, club, privilège…) :
+    // on redirige tout vers l'accueil pour aligner le domaine sur le concept actuel
+    // (site + assistante pour commerçants). Temporaire (307) → réversible.
+    const toHome = (source: string) => ({ source, destination: "/", permanent: false });
+    const OLD = [
+      "dashboard", "mon-reseau-local", "popey-human", "privilege", "cohorts-demo",
+      "programme-commando", "quiz-statut-business", "marketplace", "entrepreneur",
+      "alliance", "cm-dashboard", "radar-elite-preview", "side-project", "personnel",
+    ];
     return [
-      {
-        source: '/emploi',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/mon-reseau-local/connexion',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/connexion',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/login',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/popey-business-test',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-business-v3',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-human-test',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-human-test-v2',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-human-test-v3',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-human-test-v6',
-        destination: '/popey-human',
-        permanent: true,
-      },
-      {
-        source: '/popey-human-test-v4',
-        destination: '/popey-human',
-        permanent: true,
-      }
-    ]
+      // chaque ancien produit : la racine ET ses sous-pages
+      ...OLD.flatMap((s) => [toHome(`/${s}`), toHome(`/${s}/:path*`)]),
+      toHome("/inscription/spheres"),
+      toHome("/popey-human-test"),
+      toHome("/popey-human-test-v2"),
+      toHome("/popey-human-test-v3"),
+      toHome("/popey-human-test-v4"),
+      toHome("/popey-human-test-v6"),
+      toHome("/popey-business-test"),
+      toHome("/popey-business-v3"),
+      // anciens alias déjà en place
+      toHome("/emploi"),
+      toHome("/connexion"),
+      toHome("/login"),
+    ];
   },
 };
 
