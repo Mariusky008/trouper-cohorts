@@ -35,6 +35,9 @@ type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "a
 
 export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
+  // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
+  // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
+  const [mstep, setMstep] = useState(0);
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
@@ -72,6 +75,20 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       } catch { /* best-effort */ }
     };
   }, []);
+
+  // Déroulé du bonus : chaque étape entre à l'écran, une par une.
+  useEffect(() => {
+    if (phase !== "more") return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion:reduce)").matches;
+    // Tout passe par des timers (y compris l'état initial) : pas de setState
+    // synchrone dans l'effet, donc pas de rendu en cascade.
+    const ts = reduce
+      ? [window.setTimeout(() => setMstep(7), 0)]
+      : [window.setTimeout(() => setMstep(0), 0)].concat(
+          [320, 760, 1240, 1860, 2520, 3260, 4100].map((ms, i) => window.setTimeout(() => setMstep(i + 1), ms)),
+        );
+    return () => ts.forEach(clearTimeout);
+  }, [phase]);
 
   // Fin de la démo → on prévient le site (le collectif fait apparaître, ~2-3 s plus
   // tard, une réservation entrante « en direct » : la preuve vivante du mécanisme).
@@ -504,6 +521,49 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-end .more-note{width:100%;max-width:400px;text-align:left;font-size:11.5px;line-height:1.5;color:#8E93B5;margin-top:14px;
             background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;}
           .dtour-end .more-note b{color:#C9CFE6;}
+          /* Entrées en scène (le bonus se joue étape par étape) */
+          .dtour-end .more-sec,.dtour-end .more-l{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s cubic-bezier(.22,1,.36,1);}
+          .dtour-end .more-sec.in,.dtour-end .more-l.in{opacity:1;transform:none;}
+
+          /* ── La scène : votre carte qui glisse sur le site d'un partenaire ── */
+          .dtour-end .mp-frame{width:100%;max-width:400px;margin-top:10px;border-radius:15px;overflow:hidden;background:#fff;text-align:left;
+            box-shadow:0 26px 54px -22px rgba(0,0,0,.85);opacity:0;transform:translateY(16px) scale(.96);
+            transition:opacity .5s ease,transform .55s cubic-bezier(.22,1,.36,1);}
+          .dtour-end .mp-frame.in{opacity:1;transform:none;}
+          .dtour-end .mp-bar{display:flex;align-items:center;gap:5px;padding:8px 11px;background:#EDEFF5;border-bottom:1px solid #DFE3EC;}
+          .dtour-end .mp-bar .d{width:7px;height:7px;border-radius:50%;background:#C6CBD8;}
+          .dtour-end .mp-lb{flex:1;margin-left:6px;font-size:10px;font-weight:700;color:#8A90A0;}
+          .dtour-end .mp-ex{flex:none;font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#3A2A00;background:#FFC400;border-radius:5px;padding:2px 6px;}
+          .dtour-end .mp-body{padding:13px 12px 12px;min-height:118px;}
+          .dtour-end .mp-k{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9095A0;
+            opacity:0;transform:translateX(-10px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,1,.36,1);}
+          .dtour-end .mp-k.in{opacity:1;transform:none;}
+          /* la carte GLISSE dans la section */
+          .dtour-end .mp-card{position:relative;display:flex;align-items:center;gap:10px;margin-top:9px;border:1px solid #E6E8EF;border-radius:12px;
+            padding:11px 12px;background:linear-gradient(120deg,#F7FBF9,#fff);
+            opacity:0;transform:translateX(58px) scale(.95);transition:opacity .55s ease,transform .6s cubic-bezier(.22,1,.36,1);}
+          .dtour-end .mp-card.in{opacity:1;transform:none;box-shadow:0 12px 26px -16px rgba(0,224,160,.7);}
+          .dtour-end .mp-cl{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+          .dtour-end .mp-cl b{font-family:Georgia,serif;font-size:14.5px;font-weight:700;color:#141A2E;line-height:1.15;}
+          .dtour-end .mp-cl i{font-style:normal;font-size:11.5px;font-weight:700;color:#0B7A55;line-height:1.35;}
+          .dtour-end .mp-go{flex:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;color:#06231a;
+            background:linear-gradient(120deg,#00E0A0,#07B083);transition:transform .18s ease;}
+          .dtour-end .mp-go.tap{animation:mpTap .5s ease;}
+          @keyframes mpTap{0%,100%{transform:scale(1)}45%{transform:scale(.9)}}
+          .dtour-end .mp-cur{position:absolute;right:6px;bottom:-4px;font-size:19px;animation:mpCur .5s cubic-bezier(.22,1,.36,1);}
+          @keyframes mpCur{from{opacity:0;transform:translate(10px,10px)}to{opacity:1;transform:none}}
+          .dtour-end .mp-by{font-size:10.5px;color:#8A90A0;margin-top:9px;opacity:0;transition:opacity .5s ease .2s;}
+          .dtour-end .mp-by.in{opacity:1;}
+          .dtour-end .mp-by b{color:#5B3FA6;font-weight:800;}
+          .dtour-end .mp-res{width:100%;max-width:400px;text-align:left;font-size:12.5px;line-height:1.5;color:#7FE6C0;margin-top:12px;
+            background:rgba(127,230,192,.1);border:1px solid rgba(127,230,192,.28);border-radius:12px;padding:11px 13px;
+            opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1);}
+          .dtour-end .mp-res.in{opacity:1;transform:none;}
+          .dtour-end .mp-res b{color:#fff;}
+          @media (prefers-reduced-motion:reduce){
+            .dtour-end .more-sec,.dtour-end .more-l,.dtour-end .mp-frame,.dtour-end .mp-k,.dtour-end .mp-card,.dtour-end .mp-by,.dtour-end .mp-res{opacity:1;transform:none;transition:none;}
+            .dtour-end .mp-go.tap,.dtour-end .mp-cur{animation:none;}
+          }
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -766,12 +826,38 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           <div className="more-k">Aller plus loin</div>
           <div className="et sm">Toucher plus de monde,<br />quand vous en aurez besoin.</div>
 
-          <div className="more-sec">Votre propre audience</div>
-          <div className="more-l"><span className="e">📲</span><span className="x"><b>Vos clients</b>Prévenir vos contacts WhatsApp.</span><span className="tg opt">option</span></div>
-          <div className="more-l"><span className="e">📸</span><span className="x"><b>Vos réseaux</b>Une publication Facebook &amp; Instagram préparée.</span><span className="tg opt">option</span></div>
+          <div className={`more-sec${mstep >= 1 ? " in" : ""}`}>Votre propre audience</div>
+          <div className={`more-l${mstep >= 1 ? " in" : ""}`}><span className="e">📲</span><span className="x"><b>Vos clients</b>Prévenir vos contacts WhatsApp.</span><span className="tg opt">option</span></div>
+          <div className={`more-l${mstep >= 2 ? " in" : ""}`}><span className="e">📸</span><span className="x"><b>Vos réseaux</b>Une publication Facebook &amp; Instagram préparée.</span><span className="tg opt">option</span></div>
 
-          <div className="more-sec">Au-delà de votre audience</div>
-          <div className="more-l"><span className="e">🤝</span><span className="x"><b>Les commerces partenaires</b>Votre annonce pourra être affichée sur le site de commerces complémentaires — un institut, un hôtel, un professionnel du bien-être… et vous ferez pareil pour eux.</span><span className="tg soon">à venir</span></div>
+          <div className={`more-sec${mstep >= 3 ? " in" : ""}`}>Au-delà de votre audience</div>
+
+          {/* La scène : le site d'un partenaire s'ouvre, la section entre, votre
+              carte y glisse, un visiteur la touche. Cadrée « exemple » (le réseau
+              n'existe pas encore) — on montre le mécanisme, pas un fait. */}
+          <div className={`mp-frame${mstep >= 3 ? " in" : ""}`}>
+            <div className="mp-bar">
+              <span className="d" /><span className="d" /><span className="d" />
+              <span className="mp-lb">site d&apos;un commerce partenaire</span>
+              <span className="mp-ex">exemple</span>
+            </div>
+            <div className="mp-body">
+              <div className={`mp-k${mstep >= 4 ? " in" : ""}`}>À découvrir près de chez vous</div>
+              <div className={`mp-card${mstep >= 5 ? " in" : ""}`}>
+                <span className="mp-cl">
+                  <b>{nom}</b>
+                  <i>{flashExample || "Votre offre du moment s'affiche ici."}</i>
+                </span>
+                <span className={`mp-go${mstep >= 6 ? " tap" : ""}`}>Découvrir</span>
+                {mstep >= 6 && <span className="mp-cur" aria-hidden="true">👆</span>}
+              </div>
+              <div className={`mp-by${mstep >= 5 ? " in" : ""}`}>Recommandé par <b>Le Collectif de {villeAff}</b></div>
+            </div>
+          </div>
+
+          <div className={`mp-res${mstep >= 7 ? " in" : ""}`}>
+            ✓ Un visiteur de ce partenaire <b>découvre votre commerce</b> — sans que vous ayez fait de publicité.
+          </div>
 
           <div className="more-note">
             Ce réseau <b>se construit ville par ville</b> : il n&apos;existe pas encore autour de vous.
