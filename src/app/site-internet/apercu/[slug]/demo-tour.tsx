@@ -98,6 +98,15 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     }
   }, [phase]);
 
+  // Marque le site « en présentation » → masque les boutons destinés aux clients.
+  useEffect(() => {
+    const on = phase === "playing";
+    const main = document.querySelector("main.mqc");
+    if (!main) return;
+    main.classList.toggle("mqc-demoing", on);
+    return () => main.classList.remove("mqc-demoing");
+  }, [phase]);
+
   // Blocage FIABLE du défilement utilisateur pendant la présentation (iOS compris).
   // Le scroll auto programmatique (scrollIntoView/scrollTo) n'est PAS affecté.
   useEffect(() => {
@@ -203,11 +212,47 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     if (!blocks.length) return;
     built.current = blocks;
     blocks.forEach((el) => el.classList.add("mqc-bhide"));
-    window.setTimeout(unbuild, 25000); // garde-fou absolu
-    for (const b of blocks) {
+    window.setTimeout(unbuild, 30000); // garde-fou absolu
+    // Rythme calé sur la voix : chaque bloc prend son temps, et LA CAMÉRA SUIT
+    // (on défile jusqu'au bloc qui vient d'apparaître) — c'est ce qui donne la
+    // sensation que le site se construit devant soi.
+    for (let i = 0; i < blocks.length; i++) {
       if (cancelled.current) { unbuild(); return; }
+      const b = blocks[i];
       b.classList.add("mqc-bshow");
-      await new Promise((r) => setTimeout(r, 240));
+      if (i > 0) { try { b.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { /* noop */ } }
+      await new Promise((r) => setTimeout(r, 900));
+    }
+    if (cancelled.current) { unbuild(); return; }
+    // On remonte en haut : le pro voit son site entier, terminé.
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { /* noop */ }
+  };
+
+  // Petit carillon à l'apparition de l'assistante (deux notes qui montent).
+  // Synthétisé — aucun fichier à charger. L'audio est déjà débloqué par le tap
+  // de lancement, et l'échec est silencieux (jamais bloquant).
+  const chime = () => {
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext });
+      const Ctor = AC.AudioContext || AC.webkitAudioContext;
+      if (!Ctor) return;
+      const ctx = new Ctor();
+      const now = ctx.currentTime;
+      [[660, 0], [990, 0.13]].forEach(([f, t]) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, now + t);
+        g.gain.exponentialRampToValueAtTime(0.16, now + t + 0.035);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.55);
+        o.connect(g).connect(ctx.destination);
+        o.start(now + t);
+        o.stop(now + t + 0.6);
+      });
+      window.setTimeout(() => { try { ctx.close(); } catch { /* noop */ } }, 1400);
+    } catch {
+      /* pas de son → la démo continue normalement */
     }
   };
 
@@ -257,7 +302,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     steps.push({
       title: "Il est vivant",
       say: `Mais votre site ne fait pas qu'informer. Il travaille aussi pour vous.`,
-      enter: () => setScene("alive"),
+      enter: () => { chime(); setScene("alive"); },
     });
 
     // 3 — CE QU'ELLE FAIT : trois choses, pas plus.
@@ -356,6 +401,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#666B88;display:flex;align-items:center;gap:7px;}
 
           .dtour-lock{position:fixed;inset:0;z-index:88;touch-action:none;background:transparent;}
+          /* Pendant la présentation, on masque tout ce qui s'adresse aux CLIENTS
+             (barre « Parler à mon assistante / Prendre rendez-vous », pilule de
+             l'assistante, barre côté pro) : le commerçant regarde, il n'agit pas. */
+          .mqc-demoing .bar,.mqc-demoing .probar,.mqc-demoing .asx-pill{display:none!important;}
 
           /* Barre « en train de parler » — sobre, la page reste visible derrière. */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;
@@ -477,19 +526,38 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .offer-band.dtour-pop{animation:dtPop2 2.6s ease;}
           @keyframes dtPop2{0%,100%{box-shadow:none}16%,72%{box-shadow:0 0 0 4px rgba(127,230,192,.5),0 0 34px 8px rgba(127,230,192,.4)}}
 
-          /* ── Scène « elle sort du site » ── */
-          .dtour-alive{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;}
-          .dtour-alive .al-av{position:relative;z-index:2;width:104px;height:104px;border-radius:32px;display:flex;align-items:center;justify-content:center;font-size:46px;color:#fff;
-            background:linear-gradient(140deg,#8E7DF2,#5B3FA6);box-shadow:0 0 60px -4px rgba(124,106,232,.95),inset 0 2px 0 rgba(255,255,255,.3);
-            animation:alPop .7s cubic-bezier(.34,1.56,.64,1);}
-          @keyframes alPop{0%{opacity:0;transform:scale(.3)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
-          .dtour-alive .al-ring{position:absolute;top:52px;left:50%;width:104px;height:104px;margin-left:-52px;margin-top:-52px;border-radius:50%;
-            border:2px solid rgba(124,106,232,.5);animation:alRing 2.2s ease-out infinite;}
-          .dtour-alive .al-ring.r2{animation-delay:1.1s;}
-          @keyframes alRing{0%{opacity:.75;transform:scale(.8)}100%{opacity:0;transform:scale(2.4)}}
-          .dtour-alive .al-t{position:relative;z-index:2;margin-top:20px;font-family:Georgia,serif;font-size:24px;font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);}
-          .dtour-alive .al-s{position:relative;z-index:2;margin-top:6px;font-size:13px;color:#C9CFE6;letter-spacing:.02em;}
-          @media (prefers-reduced-motion:reduce){.dtour-alive .al-av,.dtour-alive .al-ring{animation:none;}.dtour-alive .al-ring{display:none;}}
+          /* ── Scène « elle sort du site » : l'écran s'assombrit, un flash, des
+                particules, trois anneaux — on ne peut pas la rater. ── */
+          .dtour-ov.alive-ov{background:rgba(6,8,16,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+          .al-flash{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 46%,rgba(180,168,255,.85),rgba(124,106,232,.25) 32%,transparent 62%);
+            opacity:0;animation:alFlash .85s ease-out;}
+          @keyframes alFlash{0%{opacity:0;transform:scale(.5)}22%{opacity:1}100%{opacity:0;transform:scale(1.5)}}
+          .dtour-alive{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;z-index:2;}
+          .dtour-alive .al-halo{position:absolute;top:60px;left:50%;width:300px;height:300px;margin-left:-150px;margin-top:-150px;border-radius:50%;
+            background:radial-gradient(circle,rgba(124,106,232,.55),transparent 62%);animation:alHalo 2.6s ease-in-out infinite;}
+          @keyframes alHalo{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
+          .dtour-alive .al-av{position:relative;z-index:3;width:120px;height:120px;border-radius:36px;display:flex;align-items:center;justify-content:center;font-size:54px;color:#fff;
+            background:linear-gradient(140deg,#A594FF,#5B3FA6);box-shadow:0 0 90px 6px rgba(124,106,232,1),inset 0 2px 0 rgba(255,255,255,.4);
+            animation:alPop .8s cubic-bezier(.34,1.56,.64,1),alBreathe 3s ease-in-out .8s infinite;}
+          @keyframes alPop{0%{opacity:0;transform:scale(.2) rotate(-25deg)}55%{opacity:1;transform:scale(1.14) rotate(4deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+          @keyframes alBreathe{0%,100%{box-shadow:0 0 78px 2px rgba(124,106,232,.9),inset 0 2px 0 rgba(255,255,255,.4)}50%{box-shadow:0 0 110px 12px rgba(124,106,232,1),inset 0 2px 0 rgba(255,255,255,.4)}}
+          .dtour-alive .al-ring{position:absolute;top:60px;left:50%;width:120px;height:120px;margin-left:-60px;margin-top:-60px;border-radius:50%;
+            border:2px solid rgba(165,148,255,.65);animation:alRing 2.4s ease-out infinite;}
+          .dtour-alive .al-ring.r2{animation-delay:.8s;}
+          .dtour-alive .al-ring.r3{animation-delay:1.6s;}
+          @keyframes alRing{0%{opacity:.85;transform:scale(.85)}100%{opacity:0;transform:scale(2.9)}}
+          /* particules qui jaillissent au moment de l'apparition */
+          .dtour-alive .al-p{position:absolute;top:60px;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#CFC4FF;
+            box-shadow:0 0 10px 2px rgba(165,148,255,.9);opacity:0;animation:alP .9s cubic-bezier(.22,1,.36,1) forwards;}
+          @keyframes alP{0%{opacity:0;transform:rotate(var(--a)) translateX(0) scale(.4)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(122px) scale(1)}}
+          .dtour-alive .al-t{position:relative;z-index:3;margin-top:26px;font-family:Georgia,serif;font-size:27px;font-weight:700;color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.75);
+            opacity:0;animation:dtBub .55s ease .5s forwards;}
+          .dtour-alive .al-s{position:relative;z-index:3;margin-top:7px;font-size:13.5px;color:#CFC4FF;letter-spacing:.04em;opacity:0;animation:dtBub .55s ease .72s forwards;}
+          @media (prefers-reduced-motion:reduce){
+            .al-flash,.dtour-alive .al-p,.dtour-alive .al-ring{display:none;}
+            .dtour-alive .al-av,.dtour-alive .al-halo{animation:none;}
+            .dtour-alive .al-t,.dtour-alive .al-s{opacity:1;animation:none;}
+          }
 
           /* Action Flash : le bandeau qui apparaît dans la carte */
           .dtour-card .fx-band{display:flex;flex-direction:column;gap:5px;margin-top:13px;border-radius:12px;padding:12px 14px;text-align:left;
@@ -726,9 +794,14 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
 
           {/* Elle « sort » du site : l'assistante prend vie au centre de l'écran. */}
           {scene === "alive" && (
-            <div className="dtour-ov">
+            <div className="dtour-ov alive-ov">
+              <span className="al-flash" aria-hidden="true" />
               <div className="dtour-alive">
-                <span className="al-ring" /><span className="al-ring r2" />
+                <span className="al-halo" aria-hidden="true" />
+                <span className="al-ring" /><span className="al-ring r2" /><span className="al-ring r3" />
+                {[...Array(8)].map((_, i) => (
+                  <span key={i} className="al-p" aria-hidden="true" style={{ ["--a" as string]: `${i * 45}deg`, animationDelay: `${0.28 + i * 0.045}s` }} />
+                ))}
                 <span className="al-av">✦</span>
                 <div className="al-t">Votre assistante</div>
                 <div className="al-s">elle vit dans votre site</div>

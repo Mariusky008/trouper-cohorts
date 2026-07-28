@@ -50,7 +50,8 @@ export function CercleSection({ slug, accent, nom, published = false }: { slug: 
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .mqc .cercle{position:relative;overflow:hidden;padding:40px 20px 44px;color:#fff;text-align:center;
+          /* Carte distincte (cf. le Collectif juste en dessous) : de l'air autour. */
+          .mqc .cercle{position:relative;overflow:hidden;margin:14px;border-radius:24px;padding:38px 20px 40px;color:#fff;text-align:center;
             background:radial-gradient(120% 90% at 50% -10%,color-mix(in srgb,var(--cc) 78%,#000),#0B0D0B 78%);}
           .mqc .cercle .glow{position:absolute;inset:auto 0 -30% 0;height:60%;background:radial-gradient(60% 100% at 50% 100%,color-mix(in srgb,var(--cc) 60%,#000),transparent 70%);opacity:.7;pointer-events:none;}
           .mqc .cercle .in{position:relative;z-index:1;max-width:440px;margin:0 auto;}
@@ -86,7 +87,7 @@ export function CercleSection({ slug, accent, nom, published = false }: { slug: 
           .mqc .cercle .done .dh{font-size:18px;font-weight:800;margin-top:8px;}
           .mqc .cercle .done .dp{font-size:13px;opacity:.86;margin-top:6px;line-height:1.5;}
           @media (prefers-reduced-motion:reduce){.mqc .cercle .noti{animation:none;}}
-          @media (min-width:860px){.mqc .cercle{padding:64px 24px;} .mqc .cercle .h{font-size:34px;}}
+          @media (min-width:860px){.mqc .cercle{margin:22px 20px;padding:60px 24px;} .mqc .cercle .h{font-size:34px;}}
           `,
         }}
       />

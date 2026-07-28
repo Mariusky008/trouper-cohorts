@@ -38,8 +38,13 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .mqc .collectif{padding:0;}
-          .mqc .cl-card{position:relative;overflow:hidden;padding:34px 22px 30px;background:linear-gradient(160deg,#141A2E,#0B0F1A);color:#EAF0FA;}
+          /* Carte distincte (et non un aplat collé au bloc précédent) : de l'air
+             autour, des angles arrondis — deux sections sombres qui se suivent ne
+             doivent pas se lire comme un seul pavé. */
+          .mqc .collectif{padding:14px;}
+          .mqc .cl-card{position:relative;overflow:hidden;padding:32px 20px 28px;border-radius:24px;
+            background:linear-gradient(160deg,#141A2E,#0B0F1A);color:#EAF0FA;box-shadow:0 24px 50px -28px rgba(11,15,26,.9);}
+          @media (min-width:860px){.mqc .collectif{padding:22px 20px;}}
           .mqc .cl-card::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at 12% 0%,color-mix(in srgb,var(--cx) 60%,transparent),transparent 60%),radial-gradient(420px 240px at 100% 100%,rgba(127,230,192,.14),transparent 60%);pointer-events:none;}
           .mqc .cl-in{position:relative;z-index:1;max-width:460px;margin:0 auto;text-align:center;}
           .mqc .cl-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
