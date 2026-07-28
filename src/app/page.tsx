@@ -1,11 +1,12 @@
-// Page d'accueil publique de popey.academy — concept « votre site, construit sous
-// vos yeux ». Immersif, animé, interactif : hero générateur (vraies infos Google),
-// démo vivante de l'assistante, apparition au défilement, secteurs en défilé.
+// Page d'accueil publique de popey.academy — volontairement MINIMALE : elle n'a
+// qu'un seul job, faire créer le site (hero + formulaire), puis une bande « après
+// votre clic » et le pied de page. Tout l'argumentaire (Action Flash, catalogue,
+// options, collectif) est montré BIEN mieux par la démo personnalisée, avec les
+// vraies photos et les vrais avis du commerce. Les composants des anciennes
+// sections restent dans _home/ : réintégrer une section = 1 import + 1 bloc.
 // HONNÊTETÉ (règle absolue) : mécanisme réel, aucun chiffre/témoignage inventé.
 import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
-import { CatalogueTeaser } from "./_home/catalogue-teaser";
-import { ActionFlashDemo } from "./_home/action-flash-demo";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
@@ -34,25 +35,6 @@ const TEL_HREF = `tel:+${WA_DIGITS}`;
 const WA_HREF = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
   "Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.",
 )}`;
-
-const STEPS = [
-  { n: "1", ic: "🔎", t: "On lit votre fiche Google", d: "Vos vraies photos, vos avis, vos horaires. Rien à saisir." },
-  { n: "2", ic: "✨", t: "On construit votre site", d: "Beau, rapide, à votre image — avec l'assistante intégrée." },
-  { n: "3", ic: "🚀", t: "Vous découvrez en direct", d: "Vous l'explorez en live. Il vous plaît ? Vous le gardez, gratuitement." },
-];
-const SECTEURS = ["🛍️ Commerces", "🍽️ Restaurants & cafés", "💇 Beauté & coiffure", "💅 Ongles & esthétique", "🩺 Santé", "🔧 Artisans", "🧘 Yoga & sport", "🎨 Tatoueurs", "🐾 Animalerie", "☕ Bars & brasseries"];
-// Constellation « collectif » : métiers complémentaires en orbite (exemple générique,
-// non concurrents entre eux). Positions calculées sur une ellipse autour de « Vous ».
-const COLLECTIF_ORBIT = [
-  { ic: "🍽️", t: "Resto" }, { ic: "💇", t: "Coiffeur" }, { ic: "🌸", t: "Fleuriste" },
-  { ic: "📸", t: "Photographe" }, { ic: "🧘", t: "Yoga" }, { ic: "🥗", t: "Nutrition" },
-];
-const COLLECTIF_NODES = COLLECTIF_ORBIT.map((p, i, arr) => {
-  const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
-  const x = Math.round(Math.cos(ang) * 120);
-  const y = Math.round(Math.sin(ang) * 106);
-  return { ...p, x, y, len: Math.round(Math.hypot(x, y)), deg: Math.round((Math.atan2(y, x) * 180) / Math.PI) };
-});
 
 export default function HomePage() {
   const year = new Date().getFullYear();
@@ -116,7 +98,24 @@ export default function HomePage() {
           .pop-home .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a2);background:rgba(255,255,255,.75);box-shadow:0 2px 10px -4px rgba(20,22,15,.2),inset 0 0 0 1px rgba(18,185,129,.18);border-radius:999px;padding:8px 15px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
           .pop-home h1{font-size:38px;line-height:1.03;letter-spacing:-.04em;font-weight:850;margin:20px auto 0;max-width:680px;}
           .pop-home h1 .hl{background:linear-gradient(115deg,var(--a1) 10%,var(--a2) 45%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent;}
-          .pop-home .sub{font-size:17px;line-height:1.5;color:var(--soft);max-width:500px;margin:16px auto 0;}
+          /* La phrase « pourquoi Popey existe » — juste sous le titre. */
+          .pop-home .why{font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:18px auto 0;font-weight:600;letter-spacing:-.01em;position:relative;z-index:2;}
+          .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+          .pop-home .sub{font-size:16px;line-height:1.5;color:var(--soft);max-width:500px;margin:12px auto 0;}
+          /* ── Bande « après votre clic » : la seule section de la page ── */
+          .pop-home .after{padding:44px 0 46px;border-top:1px solid var(--line);background:var(--surface);}
+          .pop-home .after-k{text-align:center;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+          .pop-home .after-steps{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:20px;}
+          .pop-home .after-s{display:flex;align-items:center;gap:12px;font-size:15px;color:var(--soft);line-height:1.35;width:100%;max-width:330px;}
+          .pop-home .after-s .e{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--bg);border:1px solid var(--line);}
+          .pop-home .after-s .t b{color:var(--ink);font-weight:800;}
+          /* rotate (propriété) et non transform : .reveal-in{transform:none} l'écraserait. */
+          .pop-home .after-ar{color:var(--a1);font-weight:900;font-size:17px;rotate:90deg;}
+          @media(min-width:860px){
+            .pop-home .after-steps{flex-direction:row;justify-content:center;gap:18px;}
+            .pop-home .after-ar{rotate:none;}
+            .pop-home .after-s{max-width:270px;}
+          }
 
           /* Générateur (verre) + tags flottants */
           .pop-home .genzone{position:relative;max-width:520px;margin:28px auto 0;}
@@ -396,7 +395,8 @@ export default function HomePage() {
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
           <h1>Votre site web,<br /><span className="hl">construit sous vos yeux.</span></h1>
-          <p className="sub"><b>Créé devant vous en une minute — gratuitement</b>, à partir de votre fiche Google. Ensuite, votre assistante répond à vos clients et publie vos offres, événements et dispos <b>en un clic.</b></p>
+          <p className="why">Vos avis Google, vos photos et vos horaires deviennent enfin <b>un vrai site web.</b></p>
+          <p className="sub">Créé devant vous en une minute, gratuitement — avec une assistante qui répond à vos clients.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
@@ -404,166 +404,22 @@ export default function HomePage() {
             <span className="ftag t4">🤖 votre assistante</span>
             <HeroGenerator />
           </div>
-          <div className="alt">✓ Sans inscription · sans engagement · à partir de vos vraies infos Google</div>
+          <div className="alt">✓ Aucune inscription · ✓ 60 secondes · ✓ vos vraies données Google</div>
         </div>
       </header>
 
-      {/* ── ACTION FLASH (le héros) ── */}
-      <div className="band">
-        <section>
-          <div className="wrap">
-            <div className="sk reveal" style={{ textAlign: "center" }}>🚀 Action Flash</div>
-            <div className="sh reveal">Une offre, un événement, une dispo&nbsp;? <span className="hl">Annoncez-le en un clic.</span></div>
-            <p className="sub reveal" style={{ margin: "14px auto 0", textAlign: "center" }}>
-              Votre assistante prépare tout&nbsp;: sur votre site (offert), et sur vos autres canaux si vous le voulez. Vous <b>voyez tout avant que ça parte.</b>
-            </p>
-            <div className="reveal"><ActionFlashDemo /></div>
-          </div>
-        </section>
-      </div>
-
-      {/* ── LE CATALOGUE À SWIPER (le résultat, côté client) ── */}
-      <section>
-        <div className="wrap cat-wrap">
-          <div className="cat-tx">
-            <div className="sk reveal">📲 Le résultat, côté client</div>
-            <div className="sh reveal">Voici à quoi ressemblent vos <span className="hl">produits &amp; annonces.</span></div>
-            <p className="cat-p reveal">De belles cartes — vos produits, vos offres, vos avis — que vos clients font défiler du doigt. Vous l&apos;envoyez par SMS, WhatsApp ou Insta&nbsp;: vos clients <b>découvrent, partagent et peuvent réserver.</b></p>
-            <div className="cat-share reveal">📲 Partagé en 1 clic · aucune appli à installer</div>
-          </div>
-          <div className="cat-deck reveal"><CatalogueTeaser /></div>
-        </div>
-      </section>
-
-      {/* ── COMMENT ÇA MARCHE ── */}
-      <div className="band">
-        <section>
-          <div className="wrap">
-            <div className="sk reveal" style={{ textAlign: "center" }}>Comment ça marche</div>
-            <div className="sh reveal">Trois étapes, et c&apos;est à vous.</div>
-            <div className="steps">
-              {STEPS.map((s, i) => (
-                <div className="step reveal" key={s.n} style={{ transitionDelay: `${i * 110}ms` }}>
-                  <div className="badge"><span className="n">{s.n}</span><span className="emj">{s.ic}</span></div>
-                  <h3>{s.t}</h3>
-                  <p>{s.d}</p>
-                </div>
-              ))}
-            </div>
-            <div className="reveal" style={{ textAlign: "center", marginTop: 32 }}>
-              <a className="btn btn-wa" href="#top">✨ Créer ma première version</a>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* ── SECTEURS (défilé) ── */}
-      <section>
+      {/* ── APRÈS VOTRE CLIC : la bande unique (3 étapes) ── */}
+      {/* Volontairement minimaliste : la démo personnalisée montre le produit
+          BIEN mieux qu'une page de vente. L'accueil ne fait que lancer. */}
+      <section className="after">
         <div className="wrap">
-          <div className="sk reveal" style={{ textAlign: "center" }}>Pour qui</div>
-          <div className="sh reveal">Pensé pour les pros de proximité.</div>
-        </div>
-        <div className="marquee reveal" style={{ marginTop: 30 }}>
-          <div className="track">
-            {[...SECTEURS, ...SECTEURS].map((s, i) => <span className="chip" key={i}>{s}</span>)}
-          </div>
-        </div>
-        <div className="wrap">
-          <div className="deonto reveal">
-            Professions de santé &amp; du droit&nbsp;: cadre déontologique respecté — pas de sollicitation d&apos;avis, seulement un accueil qui répond pour vous.
-          </div>
-        </div>
-      </section>
-
-      {/* ── GRATUIT / OPTIONS ── */}
-      <div className="band">
-        <section>
-          <div className="wrap">
-            <div className="sk reveal" style={{ textAlign: "center" }}>Gratuit, puis à la carte</div>
-            <div className="sh reveal">Le site est offert. Vous ne payez que pour <span className="hl">aller plus loin.</span></div>
-            <div className="gp-cols">
-              <div className="gp-card free reveal">
-                <div className="gp-h">✅ Offert</div>
-                <div className="gp-sub">Tout de suite, sans rien payer.</div>
-                <div className="gp-list">
-                  <div className="gp-item"><span className="k">✓</span><span>Une <b>première version</b> de votre site, tout de suite</span></div>
-                  <div className="gp-item"><span className="k">✓</span><span>Une <b>assistante</b> qui présente votre activité &amp; répond</span></div>
-                  <div className="gp-item"><span className="k">✓</span><span><b>Créer une offre</b> et l&apos;afficher sur votre site</span></div>
-                </div>
-              </div>
-              <div className="gp-card paid reveal" style={{ transitionDelay: "90ms" }}>
-                <div className="gp-h">⚡ Options</div>
-                <div className="gp-sub">Quand vous voulez de la portée.</div>
-                <div className="gp-list">
-                  <div className="gp-item"><span className="k">＋</span><span><b>Diffusion WhatsApp</b> à vos clients</span></div>
-                  <div className="gp-item"><span className="k">＋</span><span>Posts <b>Insta &amp; Facebook</b> préparés</span></div>
-                  <div className="gp-item"><span className="k">＋</span><span>Récolte d&apos;<b>avis Google</b></span></div>
-                  <div className="gp-item"><span className="k">＋</span><span><b>Relancer</b> vos anciens clients</span></div>
-                  <div className="gp-item"><span className="k">＋</span><span>Être <b>recommandé par le réseau</b> des commerces partenaires</span></div>
-                  <div className="gp-item"><span className="k">＋</span><span><b>Statistiques &amp; réservations</b> en ligne</span></div>
-                </div>
-              </div>
-            </div>
-            <div className="gp-tag reveal">Vous commencez gratuitement, sans engagement. <span>Vous activez seulement les options dont vous avez besoin.</span></div>
-            <div className="gp-fine reveal">Chaque option vous est présentée avec son prix avant activation — activable et désactivable à tout moment.</div>
-          </div>
-        </section>
-      </div>
-
-      {/* ── LE COLLECTIF (fonctionnalité avancée) ── */}
-      <section>
-        <div className="wrap">
-          <div className="coll-band reveal">
-            <div className="coll-in">
-              <div>
-                <div className="coll-k">🤝 Le réseau · option</div>
-                <h2 className="coll-h">Soyez <em>recommandé</em> par les commerces partenaires de votre ville.</h2>
-                <div className="coll-steps">
-                  <div className="coll-step reveal" style={{ transitionDelay: "80ms" }}><span className="cn">1</span><span>Un client réserve chez un <b>partenaire</b> voisin.</span></div>
-                  <div className="coll-step reveal" style={{ transitionDelay: "200ms" }}><span className="cn">2</span><span>S&apos;il cherche un service comme le vôtre, son assistante <b>peut vous présenter.</b></span></div>
-                  <div className="coll-step reveal" style={{ transitionDelay: "320ms" }}><span className="cn">3</span><span>Et vous faites pareil pour eux. <b>Un coup de pouce mutuel.</b></span></div>
-                </div>
-                <p className="coll-note">Que des commerces complémentaires, jamais un concurrent. Un réseau qu&apos;on bâtit avec vous, ville par ville.</p>
-              </div>
-              <div className="coll-net" aria-hidden="true">
-                {COLLECTIF_NODES.map((nd) => (
-                  <span key={`l-${nd.t}`} className="coll-line" style={{ width: `${nd.len}px`, transform: `rotate(${nd.deg}deg)` }} />
-                ))}
-                {COLLECTIF_NODES.map((nd, i) => (
-                  <span key={`f-${nd.t}`} className="coll-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${0.4 + i * 0.36}s` }} />
-                ))}
-                {COLLECTIF_NODES.map((nd, i) => (
-                  <span key={`p-${nd.t}`} className="coll-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic} {nd.t}</span>
-                ))}
-                <span className="coll-core"><b>Vous</b><i>votre commerce</i></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HONNÊTETÉ ── */}
-      <div className="band">
-        <section>
-          <div className="wrap honest reveal">
-            <div className="b">🤝</div>
-            <h3>On vend un outil, pas des promesses.</h3>
-            <p>Pas de chiffres magiques. Un <b>site moderne</b> et une <b>assistante qui travaille vraiment</b>, tous les jours. Vous jugez sur pièces — et vous restez libre à chaque étape.</p>
-          </div>
-        </section>
-      </div>
-
-      {/* ── CTA final ── */}
-      <section>
-        <div className="wrap">
-          <div className="cta-band reveal">
-            <div className="in">
-              <h2>Prêt à voir le vôtre&nbsp;?</h2>
-              <div className="cta">
-                <a className="btn btn-wa" href="#top">✨ Créer mon site — gratuitement</a>
-              </div>
-              <div className="sig">Gratuit · en une minute · sans engagement</div>
-            </div>
+          <div className="after-k reveal">Après votre clic</div>
+          <div className="after-steps">
+            <div className="after-s reveal"><span className="e">🔎</span><span className="t">Nous lisons votre <b>fiche Google</b></span></div>
+            <span className="after-ar reveal" aria-hidden="true">→</span>
+            <div className="after-s reveal" style={{ transitionDelay: "110ms" }}><span className="e">✨</span><span className="t">Nous créons <b>votre site</b></span></div>
+            <span className="after-ar reveal" aria-hidden="true" style={{ transitionDelay: "160ms" }}>→</span>
+            <div className="after-s reveal" style={{ transitionDelay: "220ms" }}><span className="e">🎬</span><span className="t">Vous découvrez votre <b>démonstration personnalisée</b></span></div>
           </div>
         </div>
       </section>
@@ -573,7 +429,12 @@ export default function HomePage() {
         <div className="wrap foot-in">
           <div className="foot-brand">
             <div className="foot-logo"><span className="dot">✦</span> popey</div>
-            <p>Sites &amp; assistante IA pour les commerçants, artisans et pros de proximité, partout en France.</p>
+            <p>
+              Popey crée gratuitement le site web de votre commerce à partir de votre fiche Google&nbsp;:
+              vos photos, vos avis, vos horaires et votre activité, réunis dans un vrai site moderne,
+              avec une assistante qui répond à vos clients. Pour les commerçants, artisans, restaurateurs
+              et pros de proximité, partout en France.
+            </p>
           </div>
           <div className="foot-col">
             <h4>Popey</h4>
