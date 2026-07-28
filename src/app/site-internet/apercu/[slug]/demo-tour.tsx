@@ -401,10 +401,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#666B88;display:flex;align-items:center;gap:7px;}
 
           .dtour-lock{position:fixed;inset:0;z-index:88;touch-action:none;background:transparent;}
-          /* Pendant la présentation, on masque tout ce qui s'adresse aux CLIENTS
-             (barre « Parler à mon assistante / Prendre rendez-vous », pilule de
-             l'assistante, barre côté pro) : le commerçant regarde, il n'agit pas. */
-          .mqc-demoing .bar,.mqc-demoing .probar,.mqc-demoing .asx-pill{display:none!important;}
+          /* Pendant la présentation, on masque aussi la barre « côté pro » : le
+             commerçant regarde, il n'agit pas. (Les boutons clients, eux, ne sont
+             affichés que sur le site activé — voir maquette-sante.) */
+          .mqc-demoing .probar{display:none!important;}
 
           /* Barre « en train de parler » — sobre, la page reste visible derrière. */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;

@@ -635,10 +635,15 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </div>
       )}
 
-      <div className="bar">
-        <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
-        <a className="rdv" {...rdvProps}>Prendre rendez-vous</a>
-      </div>
+      {/* Barre d'actions CLIENTS : uniquement sur le site ACTIVÉ. En découverte,
+          le commerçant explore sa maquette — ces boutons ne s'adressent pas à lui
+          (il a sa barre « côté pro » en haut). */}
+      {published && (
+        <div className="bar">
+          <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
+          <a className="rdv" {...rdvProps}>Prendre rendez-vous</a>
+        </div>
+      )}
     </main>
   );
 }
