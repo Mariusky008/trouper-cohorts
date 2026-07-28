@@ -21,7 +21,7 @@ const FALLBACK_CATS = [
   { ic: "🎉", t: "Événementiel" },
 ];
 
-export function CollectifSection({ ville, accent, nom, partners, published }: { slug: string; ville: string; accent: string; nom: string; partners?: Array<{ ic: string; t: string }>; published: boolean }) {
+export function CollectifSection({ ville, accent, nom, partners, published, offerText }: { slug: string; ville: string; accent: string; nom: string; partners?: Array<{ ic: string; t: string }>; published: boolean; offerText?: string }) {
   const CATS = partners && partners.length ? partners : FALLBACK_CATS;
   const [sel, setSel] = useState<{ ic: string; t: string } | null>(null);
   const [modal, setModal] = useState<{ ic: string; t: string } | null>(null);
@@ -44,8 +44,26 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
           .mqc .cl-in{position:relative;z-index:1;max-width:460px;margin:0 auto;text-align:center;}
           .mqc .cl-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8FA3C8;font-weight:800;}
           .mqc .cl-opt{display:inline-block;margin-left:8px;letter-spacing:.04em;text-transform:none;font-size:10px;font-weight:800;color:#6B4BC7;background:#EDE8FF;border-radius:6px;padding:2px 8px;vertical-align:middle;}
-          .mqc .cl-demo{margin-top:14px;width:100%;border:1px solid rgba(127,230,192,.4);background:rgba(127,230,192,.08);color:#0B7A55;border-radius:12px;padding:12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
-          .mqc .cl-demo:active{transform:translateY(1px);}
+          /* ── Projection : « votre commerce, sur le site d'un partenaire » ──
+             Montrée d'emblée (c'est LE mécanisme à comprendre), mais cadrée comme
+             un exemple : mini-fenêtre + badge, jamais présentée comme du direct. */
+          .mqc .cl-proj{margin-top:18px;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 26px 54px -22px rgba(0,0,0,.75);text-align:left;}
+          .mqc .cl-projbar{display:flex;align-items:center;gap:5px;padding:9px 12px;background:#EDEFF5;border-bottom:1px solid #DFE3EC;}
+          .mqc .cl-projbar .d{width:8px;height:8px;border-radius:50%;background:#C6CBD8;}
+          .mqc .cl-projlb{flex:1;margin-left:7px;font-size:10.5px;font-weight:700;color:#8A90A0;letter-spacing:.02em;}
+          .mqc .cl-projex{flex:none;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
+          .mqc .cl-projbody{padding:15px 14px 14px;}
+          .mqc .cl-projk{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9095A0;}
+          .mqc .cl-reco-card{display:flex;align-items:center;gap:12px;margin-top:10px;border:1px solid #E6E8EF;border-radius:13px;padding:12px 13px;background:linear-gradient(120deg,#F7FBF9,#fff);}
+          .mqc .cl-rc-l{flex:1;min-width:0;}
+          .mqc .cl-rc-n{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#141A2E;line-height:1.15;}
+          .mqc .cl-rc-o{font-size:12.5px;color:#0B7A55;font-weight:700;margin-top:4px;line-height:1.35;}
+          .mqc .cl-rc-go{flex:none;border:none;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;color:#06231a;background:linear-gradient(120deg,#00E0A0,#07B083);box-shadow:0 10px 22px -12px rgba(0,224,160,.85);}
+          .mqc .cl-rc-go:active{transform:scale(.96);}
+          .mqc .cl-projby{font-size:11px;color:#8A90A0;margin-top:11px;}
+          .mqc .cl-projby b{color:#5B3FA6;font-weight:800;}
+          .mqc .cl-projtip{font-size:11.5px;color:#9FB0CE;margin-top:11px;}
+          .mqc .cl-sep{margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7E8CA8;}
           .mqc .cl-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.14;margin-top:8px;}
           .mqc .cl-p{font-size:13.5px;line-height:1.6;color:#B8C4DC;margin-top:11px;}
           .mqc .cl-p b{color:#fff;}
@@ -95,11 +113,48 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
       <div className="cl-card">
         <div className="cl-in">
           <div className="cl-k">🤝 Le collectif de {ville}{!published && <span className="cl-opt">Option Popey</span>}</div>
-          <div className="cl-h">Besoin d&apos;autre chose à {ville}&nbsp;?</div>
-          <div className="cl-p">
-            {nom} fait partie du collectif des <b>meilleurs commerçants et artisans de {ville}</b>. Dites-nous ce que
-            vous cherchez — on vous oriente vers le bon partenaire, tout de suite.
-          </div>
+
+          {!published ? (
+            <>
+              {/* AU PRO : on MONTRE d'emblée le mécanisme — son propre commerce, tel
+                  qu'il apparaîtrait sur le site d'un partenaire. Cadré comme une
+                  projection (le réseau n'existe pas encore), jamais comme du live. */}
+              <div className="cl-h">Votre commerce, <em>recommandé chez des partenaires.</em></div>
+              <div className="cl-p">Les commerces Popey se recommandent entre eux.</div>
+
+              <div className="cl-proj">
+                <div className="cl-projbar"><span className="d" /><span className="d" /><span className="d" />
+                  <span className="cl-projlb">site d&apos;un commerce partenaire</span>
+                  <span className="cl-projex">exemple</span>
+                </div>
+                <div className="cl-projbody">
+                  <div className="cl-projk">À découvrir près de chez vous</div>
+                  <div className="cl-reco-card">
+                    <div className="cl-rc-l">
+                      <div className="cl-rc-n">{nom}</div>
+                      {offerText ? <div className="cl-rc-o">{offerText}</div> : <div className="cl-rc-o">Votre offre du moment s&apos;affiche ici.</div>}
+                    </div>
+                    <button
+                      type="button"
+                      className="cl-rc-go"
+                      onClick={() => { try { window.dispatchEvent(new CustomEvent("mqc:collectif-demo")); } catch { /* noop */ } }}
+                    >
+                      Découvrir
+                    </button>
+                  </div>
+                  <div className="cl-projby">Recommandé par <b>Le Collectif de {ville}</b></div>
+                </div>
+              </div>
+              <div className="cl-projtip">👆 Touchez «&nbsp;Découvrir&nbsp;» pour voir ce qui vous arrive ensuite.</div>
+            </>
+          ) : (
+            <>
+              <div className="cl-h">Besoin d&apos;autre chose à {ville}&nbsp;?</div>
+              <div className="cl-p">Découvrez des professionnels locaux recommandés par {nom}.</div>
+            </>
+          )}
+
+          {!published && <div className="cl-sep">Et pour vos client·es</div>}
           <div className="cl-chips">
             {CATS.map((c) => (
               <button key={c.t} type="button" className={`cl-chip${sel?.t === c.t ? " on" : ""}`} onClick={() => setSel(c)}>{c.ic} {c.t}</button>
@@ -129,16 +184,11 @@ export function CollectifSection({ ville, accent, nom, partners, published }: { 
               </div>
             </div>
           )}
-          <div className="cl-note">Le collectif se construit commerce par commerce à {ville}&nbsp;: dès qu&apos;un partenaire vous est rattaché, il apparaît ici en premier. Aucune donnée n&apos;est partagée sans votre accord.</div>
-          {!published && (
-            <button
-              type="button"
-              className="cl-demo"
-              onClick={() => { try { window.dispatchEvent(new CustomEvent("mqc:collectif-demo")); } catch { /* noop */ } }}
-            >
-              👀 Voir un exemple de recommandation entrante
-            </button>
-          )}
+          <div className="cl-note">
+            {published
+              ? "Des commerces complémentaires, jamais un concurrent. Aucune donnée n'est partagée sans accord."
+              : `Ce réseau se construit ville par ville — il n'existe pas encore autour de vous. Que des commerces complémentaires, jamais un concurrent : seule votre annonce circule, jamais vos données client.`}
+          </div>
         </div>
       </div>
 

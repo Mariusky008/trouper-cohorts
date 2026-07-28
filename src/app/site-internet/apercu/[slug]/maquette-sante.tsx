@@ -555,7 +555,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       {avisMode === "prominent" && <CercleSection slug={slug} accent={accent} nom={nom} published={published} />}
 
-      {avisMode === "prominent" && <CollectifSection slug={slug} ville={villeAff} accent={accent} nom={nom} partners={partners} published={published} />}
+      {avisMode === "prominent" && (
+        <CollectifSection
+          slug={slug}
+          ville={villeAff}
+          accent={accent}
+          nom={nom}
+          partners={partners}
+          published={published}
+          offerText={offer?.text || (!published ? p.flashExample : undefined)}
+        />
+      )}
 
       <section id="rdv">
         <div className="sec-k">Rendez-vous</div>
