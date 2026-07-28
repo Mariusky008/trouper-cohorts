@@ -31,10 +31,10 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu";
+type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "alive";
 
 export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
-  const [phase, setPhase] = useState<"idle" | "playing" | "end" | "done">("idle");
+  const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
@@ -66,6 +66,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       cancelled.current = true;
       if (resolveStep.current) resolveStep.current();
       stopSpeaking();
+      // Filet de sécurité au démontage : on ne laisse jamais un bloc masqué.
+      try {
+        document.querySelectorAll(".mqc-bhide,.mqc-bshow").forEach((el) => el.classList.remove("mqc-bhide", "mqc-bshow"));
+      } catch { /* best-effort */ }
     };
   }, []);
 
@@ -156,6 +160,52 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       }; // « Passer » avance immédiatement
     });
 
+  // ── « Construit sous vos yeux » ────────────────────────────────────────────
+  // Pendant l'étape 1, les blocs du site apparaissent un à un : le commerçant voit
+  // son site NAÎTRE (au lieu de le trouver déjà fait). On ne touche QUE les blocs
+  // de contenu (section/header/footer) — jamais l'overlay de la démo.
+  // SÉCURITÉ : on ne masque que ce qu'on a nous-même marqué, et on démasque à la
+  // fin, à l'annulation, au démontage ET via un garde-fou temporel. Le site ne
+  // peut donc jamais rester invisible, même si la démo casse.
+  const built = useRef<HTMLElement[]>([]);
+  const unbuild = () => {
+    built.current.forEach((el) => el.classList.remove("mqc-bhide", "mqc-bshow"));
+    built.current = [];
+  };
+  const buildSite = async () => {
+    let blocks: HTMLElement[] = [];
+    try {
+      const main = document.querySelector<HTMLElement>("main.mqc");
+      if (!main) return;
+      blocks = Array.from(main.children).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement && /^(SECTION|HEADER|FOOTER)$/.test(el.tagName),
+      );
+    } catch {
+      return;
+    }
+    if (!blocks.length) return;
+    built.current = blocks;
+    blocks.forEach((el) => el.classList.add("mqc-bhide"));
+    window.setTimeout(unbuild, 25000); // garde-fou absolu
+    for (const b of blocks) {
+      if (cancelled.current) { unbuild(); return; }
+      b.classList.add("mqc-bshow");
+      await new Promise((r) => setTimeout(r, 240));
+    }
+  };
+
+  // Étape 4 : le bandeau d'annonce du site s'illumine (« c'est le site qui se met à jour »).
+  const popBand = () => {
+    try {
+      const band = document.querySelector<HTMLElement>(".offer-band");
+      if (!band) return;
+      band.classList.add("dtour-pop");
+      window.setTimeout(() => band.classList.remove("dtour-pop"), 2800);
+    } catch {
+      /* best-effort */
+    }
+  };
+
   const start = () => {
     cancelled.current = false;
     try {
@@ -176,39 +226,46 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     // HONNÊTETÉ : on prépare et on diffuse, on ne « remplit » pas à sa place.
     const steps: Array<{ title: string; say: string; enter: () => void }> = [];
 
-    // 1 — Votre site (vraies données ; les avis apparaissent en preuve)
+    // 1 — VOICI VOTRE SITE : il se construit sous ses yeux. Aucune carte ne vient
+    //     masquer l'écran — on veut qu'il VOIE son site apparaître.
     steps.push({
-      title: "Votre site",
+      title: "Voici votre site",
       say: hasReviews
-        ? `Bonjour ${nom}. Voici votre nouveau site : vos vraies photos, vos horaires et vos excellents avis Google sont déjà intégrés. Il est prêt, et vous pouvez le garder gratuitement.`
-        : `Bonjour ${nom}. Voici votre nouveau site : vos vraies photos et vos informations Google sont déjà intégrées. Il est prêt, et vous pouvez le garder gratuitement.`,
-      enter: () => { scrollTo(null); setScene("note"); },
+        ? `Bonjour. Voici votre nouveau site : nous l'avons construit à partir de votre fiche Google. Vos photos, vos prestations, vos avis. Et vous pouvez déjà le garder gratuitement.`
+        : `Bonjour. Voici votre nouveau site : nous l'avons construit à partir de votre fiche Google. Vos photos, vos informations, vos horaires. Et vous pouvez déjà le garder gratuitement.`,
+      enter: () => { scrollTo(null); setScene(""); void buildSite(); },
     });
 
-    // 2 — L'assistante, incluse (ce qu'elle fait gratuitement — sans sur-promesse)
+    // 2 — IL EST VIVANT : l'assistante « sort » du site (une seule idée, 5 s).
     steps.push({
-      title: "Votre assistante, incluse",
-      say: `Au cœur du site, votre assistante : elle présente votre activité, répond à vos ${clientPl} et prépare vos rendez-vous, même quand vous n'êtes pas disponible. Et tout cela est inclus gratuitement.`,
+      title: "Il est vivant",
+      say: `Mais votre site ne fait pas qu'informer. Il travaille aussi pour vous.`,
+      enter: () => setScene("alive"),
+    });
+
+    // 3 — CE QU'ELLE FAIT : trois choses, pas plus.
+    steps.push({
+      title: "Ce qu'elle fait",
+      say: avisAllowed
+        ? `Elle répond à vos ${clientPl}, prépare vos rendez-vous, et vous aide à obtenir davantage d'avis Google.`
+        : `Elle répond à vos ${clientPl} et prépare vos rendez-vous, même quand vous n'êtes pas disponible.`,
       enter: () => setScene("daily"),
     });
 
-    // 3 — L'Action Flash (commerce) : le crochet, avec l'exemple métier + récap transparent
+    // 4 — L'ACTION FLASH : on dit une phrase → l'annonce s'affiche SUR LE SITE.
     if (avisAllowed) {
       steps.push({
         title: "L'Action Flash",
-        say: `Un créneau à annoncer, un événement, une offre ? Vous lui confiez simplement la tâche : elle prépare tout, et vous montre chaque action avant qu'aucun message ne soit envoyé. C'est vous qui validez.`,
-        enter: () => setScene("flash"),
+        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, un événement — dites-le simplement. Votre annonce s'affiche aussitôt sur votre site.`,
+        enter: () => { setScene("flash"); window.setTimeout(popBand, 2600); },
       });
     }
 
-    // 4 — CLÔTURE : une seule idée = « votre site est prêt, il est à vous ». On ne
-    // rouvre PAS trois produits (options, collectif) au moment de conclure.
+    // 5 — CLÔTURE : une seule idée, et elle finit sur le GRATUIT.
     steps.push({
       title: "À vous",
-      say: avisAllowed
-        ? `Votre site et votre assistante sont prêts, et vous pouvez les garder gratuitement. Plus tard, vous pourrez activer des options pour faire connaître vos offres à davantage de clients. Pour l'instant, découvrez votre site : il est à vous.`
-        : `Votre site et votre assistante sont prêts, et vous pouvez les garder gratuitement. Plus tard, si vous le voulez, vous pourrez aller plus loin. Pour l'instant, découvrez votre site : il est à vous.`,
-      enter: () => setScene("conclu"),
+      say: `Votre site est prêt. Il ne vous demande rien, mais il fait tout pour vous. Gardez-le gratuitement dès aujourd'hui.`,
+      enter: () => { unbuild(); setScene("conclu"); },
     });
 
     const total = steps.length;
@@ -233,13 +290,15 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     setPhase("end");
   };
 
-  // Garde le site / explore : on quitte l'écran de fin vers le site.
+  // Garde le site / explore : on quitte l'écran de fin vers le site. On démasque
+  // systématiquement (ceinture + bretelles : le site doit toujours être visible).
   const keep = () => {
     stopSpeaking();
+    unbuild();
     if (keepHref) { try { window.location.href = keepHref; return; } catch { /* noop */ } }
     setPhase("done");
   };
-  const explore = () => { stopSpeaking(); setPhase("done"); };
+  const explore = () => { stopSpeaking(); unbuild(); setPhase("done"); };
 
   if (phase === "done") return null;
 
@@ -393,6 +452,58 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .cc-i{display:flex;align-items:center;gap:11px;font-size:14.5px;font-weight:700;color:#141A2E;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;border-radius:13px;padding:12px 14px;}
           .dtour-card .cc-i .e{width:30px;height:30px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#fff;border:1px solid #ECE9FB;}
           .dtour-card .cc-note{font-size:11.5px;color:#8A8FA0;margin-top:16px;line-height:1.45;}
+
+          /* ── « Construit sous vos yeux » : apparition des blocs du site ── */
+          .mqc-bhide{opacity:0;transform:translateY(22px);}
+          .mqc-bshow{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1);}
+          /* Étape 4 : le bandeau d'annonce s'illumine sur le vrai site */
+          .offer-band.dtour-pop{animation:dtPop2 2.6s ease;}
+          @keyframes dtPop2{0%,100%{box-shadow:none}16%,72%{box-shadow:0 0 0 4px rgba(127,230,192,.5),0 0 34px 8px rgba(127,230,192,.4)}}
+
+          /* ── Scène « elle sort du site » ── */
+          .dtour-alive{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;}
+          .dtour-alive .al-av{position:relative;z-index:2;width:104px;height:104px;border-radius:32px;display:flex;align-items:center;justify-content:center;font-size:46px;color:#fff;
+            background:linear-gradient(140deg,#8E7DF2,#5B3FA6);box-shadow:0 0 60px -4px rgba(124,106,232,.95),inset 0 2px 0 rgba(255,255,255,.3);
+            animation:alPop .7s cubic-bezier(.34,1.56,.64,1);}
+          @keyframes alPop{0%{opacity:0;transform:scale(.3)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
+          .dtour-alive .al-ring{position:absolute;top:52px;left:50%;width:104px;height:104px;margin-left:-52px;margin-top:-52px;border-radius:50%;
+            border:2px solid rgba(124,106,232,.5);animation:alRing 2.2s ease-out infinite;}
+          .dtour-alive .al-ring.r2{animation-delay:1.1s;}
+          @keyframes alRing{0%{opacity:.75;transform:scale(.8)}100%{opacity:0;transform:scale(2.4)}}
+          .dtour-alive .al-t{position:relative;z-index:2;margin-top:20px;font-family:Georgia,serif;font-size:24px;font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);}
+          .dtour-alive .al-s{position:relative;z-index:2;margin-top:6px;font-size:13px;color:#C9CFE6;letter-spacing:.02em;}
+          @media (prefers-reduced-motion:reduce){.dtour-alive .al-av,.dtour-alive .al-ring{animation:none;}.dtour-alive .al-ring{display:none;}}
+
+          /* Action Flash : le bandeau qui apparaît dans la carte */
+          .dtour-card .fx-band{display:flex;flex-direction:column;gap:5px;margin-top:13px;border-radius:12px;padding:12px 14px;text-align:left;
+            background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;box-shadow:0 14px 30px -16px rgba(11,42,32,.85);
+            opacity:0;transform:translateY(-12px);animation:dtBub .5s cubic-bezier(.22,1,.36,1) 1.1s forwards;}
+          .dtour-card .fx-bk{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7FE6C0;}
+          .dtour-card .fx-bt{font-size:13.5px;line-height:1.4;font-weight:600;}
+          .dtour-card .fx-live{margin-top:12px;font-size:12.5px;font-weight:700;color:#0B7A55;opacity:0;animation:dtBub .4s ease 2.1s forwards;}
+
+          /* Écran de fin : les 3 preuves */
+          .dtour-end .end-list{display:flex;flex-direction:column;gap:8px;width:100%;max-width:330px;margin-top:4px;}
+          .dtour-end .end-i{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:#EDF0FA;
+            background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;text-align:left;}
+          .dtour-end .end-ter{background:none;border:none;color:#9DA6C8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px;}
+          .dtour-end .end-ter:hover{color:#EDF0FA;}
+          .dtour-end .et.sm{font-size:21px;}
+
+          /* Bonus « aller plus loin » (à la demande) */
+          .dtour-end .more-k{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;}
+          .dtour-end .more-sec{width:100%;max-width:400px;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7A7F9E;margin-top:14px;}
+          .dtour-end .more-l{display:flex;align-items:flex-start;gap:11px;width:100%;max-width:400px;text-align:left;margin-top:8px;
+            background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);border-radius:13px;padding:12px 13px;}
+          .dtour-end .more-l .e{font-size:19px;flex:none;}
+          .dtour-end .more-l .x{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:#B6BDD4;display:flex;flex-direction:column;gap:3px;}
+          .dtour-end .more-l .x b{font-size:13.5px;color:#fff;font-weight:800;}
+          .dtour-end .more-l .tg{flex:none;font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;}
+          .dtour-end .more-l .tg.opt{background:rgba(124,92,252,.25);color:#cabdff;}
+          .dtour-end .more-l .tg.soon{background:rgba(240,180,41,.2);color:#F0B429;}
+          .dtour-end .more-note{width:100%;max-width:400px;text-align:left;font-size:11.5px;line-height:1.5;color:#8E93B5;margin-top:14px;
+            background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;}
+          .dtour-end .more-note b{color:#C9CFE6;}
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
           .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
@@ -475,12 +586,12 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       {phase === "idle" && (
         <div className="dtour-launch">
           <div className="dtour-mark"><span>✦</span></div>
-          <div className="kick">Démonstration personnalisée</div>
-          <div className="t">Bonjour {nom}.<br />Votre nouveau site est prêt.</div>
-          <div className="s">Votre assistante vous le présente à voix haute, en <b>moins d&apos;une minute</b>. Laissez-vous guider — vous explorerez le site juste après.</div>
-          <button className="go" onClick={start}>Démarrer la présentation (≈ 45 s)</button>
+          <div className="kick">✨ Votre site est prêt</div>
+          <div className="t">{nom}</div>
+          <div className="s">Votre assistante <b>Léa</b> vous le présente à voix haute, en moins d&apos;une minute.</div>
+          <button className="go" onClick={start}>Découvrir mon site</button>
           <button className="skip" onClick={() => setPhase("done")}>Voir le site directement</button>
-          <div className="trust">⏱️ ≈ 45 secondes · montez le son 🔊</div>
+          <div className="trust">⏱️ ≈ 50 secondes · montez le son 🔊</div>
         </div>
       )}
 
@@ -553,6 +664,19 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             </div>
           )}
 
+          {/* Elle « sort » du site : l'assistante prend vie au centre de l'écran. */}
+          {scene === "alive" && (
+            <div className="dtour-ov">
+              <div className="dtour-alive">
+                <span className="al-ring" /><span className="al-ring r2" />
+                <span className="al-av">✦</span>
+                <div className="al-t">Votre assistante</div>
+                <div className="al-s">elle vit dans votre site</div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Flash : une phrase → l'annonce → elle s'affiche sur le site. */}
           {scene === "flash" && (
             <div className="dtour-ov">
               <div className="dtour-card">
@@ -561,20 +685,12 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                   <span className="fx-youk">Vous, en une phrase</span>
                   «&nbsp;{flashExample || "Une offre cette semaine à faire connaître."}&nbsp;»
                 </div>
-                <div className="fx-assist"><span className="fx-av">✦</span>Je m&apos;en occupe. Voici ce que je prépare&nbsp;:</div>
-                {[
-                  { ic: "🌐", t: "Votre site — bandeau « offre du moment »", tag: "offert", free: true },
-                  { ic: "📲", t: "WhatsApp — vos clients fidèles", tag: "option", free: false },
-                  { ic: "📸", t: "Insta & Facebook — post prêt", tag: "option", free: false },
-                  { ic: "🗓️", t: "Réservation — lien ajouté", tag: "option", free: false },
-                ].map((d, i) => (
-                  <div className="fx-l" key={i} style={{ animationDelay: `${0.15 + i * 0.35}s` }}>
-                    <span className="fx-i">{d.ic}</span>
-                    <span className="fx-t">{d.t}</span>
-                    <span className={`fx-tag ${d.free ? "free" : "opt"}`}>{d.tag}</span>
-                  </div>
-                ))}
-                <div className="fx-note">Rien ne part sans votre accord.</div>
+                <div className="fx-assist"><span className="fx-av">✦</span>Je rédige votre annonce…</div>
+                <div className="fx-band">
+                  <span className="fx-bk">🎉 Offre du moment</span>
+                  <span className="fx-bt">{flashExample || "Une offre cette semaine à faire connaître."}</span>
+                </div>
+                <div className="fx-live">✓ Affichée sur votre site — <b>gratuitement</b></div>
               </div>
             </div>
           )}
@@ -627,10 +743,43 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
         <div className="dtour-end">
           <div className="dtour-mark sm"><span>✦</span></div>
           <div className="et">Votre site est prêt, {nom}.</div>
-          <div className="es">Vous pouvez le garder gratuitement — et commencer quand vous voulez.</div>
+          <div className="es">Il ne vous demande rien, mais il fait tout pour vous.</div>
+          <div className="end-list">
+            <div className="end-i"><span>🎁</span>Site offert</div>
+            <div className="end-i"><span>✦</span>Assistante incluse</div>
+            <div className="end-i"><span>🔓</span>Sans engagement</div>
+          </div>
+          <div className="end-cta">
+            <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
+            <button className="end-sec" onClick={explore}>Explorer le site</button>
+            {avisAllowed && (
+              <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* BONUS (à la demande) : aller plus loin. Rien n'est promis comme existant :
+          le réseau et les partenaires sont annoncés comme une ambition en cours. */}
+      {phase === "more" && (
+        <div className="dtour-end">
+          <div className="more-k">Aller plus loin</div>
+          <div className="et sm">Toucher plus de monde,<br />quand vous en aurez besoin.</div>
+
+          <div className="more-sec">Votre propre audience</div>
+          <div className="more-l"><span className="e">📲</span><span className="x"><b>Vos clients</b>Prévenir vos contacts WhatsApp.</span><span className="tg opt">option</span></div>
+          <div className="more-l"><span className="e">📸</span><span className="x"><b>Vos réseaux</b>Une publication Facebook &amp; Instagram préparée.</span><span className="tg opt">option</span></div>
+
+          <div className="more-sec">Au-delà de votre audience</div>
+          <div className="more-l"><span className="e">🤝</span><span className="x"><b>Les commerces partenaires</b>Votre annonce pourra être affichée sur le site de commerces complémentaires — un institut, un hôtel, un professionnel du bien-être… et vous ferez pareil pour eux.</span><span className="tg soon">à venir</span></div>
+
+          <div className="more-note">
+            Ce réseau <b>se construit ville par ville</b> : il n&apos;existe pas encore autour de vous.
+            Aucune donnée client n&apos;est partagée — seulement votre annonce, et seulement avec votre accord.
+          </div>
           <div className="end-cta">
             <button className="end-go" onClick={keep}>✓ Garder mon site gratuitement</button>
-            <button className="end-sec" onClick={explore}>Explorer le site d&apos;abord</button>
+            <button className="end-sec" onClick={() => setPhase("end")}>← Retour</button>
           </div>
         </div>
       )}
