@@ -99,6 +99,48 @@ export const PROFILES: Record<Profil, ProfileDef> = {
   },
 };
 
+// ── « Suivre ce commerce » : la promesse faite au visiteur ────────────────────
+// Personne ne « donne son numéro » : on active un service précis. Une promesse
+// vague (« inscrivez-vous à notre liste ») ne vaut rien ; la promesse doit dire
+// ce qu'on recevra, dans les mots du métier. `topics` = ce que la personne
+// choisit de recevoir, pour ne pas tout envoyer à tout le monde.
+export type FollowTopic = { id: string; label: string };
+export type FollowCopy = { promesse: string; topics: FollowTopic[] };
+
+const T = (id: string, label: string): FollowTopic => ({ id, label });
+
+export function followCopy(secteur: Secteur, isResto = false): FollowCopy {
+  if (isResto) {
+    return {
+      promesse: "Être prévenu·e des prochains menus, événements et tables disponibles.",
+      topics: [T("dispo", "Tables disponibles"), T("menu", "Menus du moment"), T("event", "Événements"), T("offre", "Offres spéciales")],
+    };
+  }
+  if (secteur === "urgence") {
+    return {
+      promesse: "Être prévenu·e des prochaines disponibilités et des interventions possibles près de chez vous.",
+      topics: [T("dispo", "Disponibilités"), T("conseil", "Conseils & nouveautés"), T("offre", "Offres spéciales")],
+    };
+  }
+  if (secteur === "emotion") {
+    return {
+      promesse: "Être prévenu·e des prochaines dates disponibles et des nouveautés.",
+      topics: [T("dispo", "Dates disponibles"), T("nouveau", "Nouveautés"), T("event", "Événements"), T("offre", "Offres spéciales")],
+    };
+  }
+  if (secteur === "soin") {
+    return {
+      promesse: "Être prévenu·e lorsqu'une place se libère, et des prochains rendez-vous proposés.",
+      topics: [T("dispo", "Places qui se libèrent"), T("event", "Ateliers & événements"), T("offre", "Offres spéciales")],
+    };
+  }
+  // « flux » : salons, instituts, commerces — le cas le plus courant.
+  return {
+    promesse: "Être prévenu·e lorsqu'une place se libère, et des offres du moment.",
+    topics: [T("dispo", "Places qui se libèrent"), T("offre", "Offres spéciales"), T("nouveau", "Nouveautés"), T("event", "Événements")],
+  };
+}
+
 // Libellé de la pastille de confirmation de l'accueil (carte « Demain » + démo).
 export type Confirmation = "reserve" | "rappel" | "devis" | "acompte";
 // Cadre déontologique (au-delà du profil) : sobriété du ton / affichage.

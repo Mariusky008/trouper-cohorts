@@ -146,6 +146,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   const showUrgence = mp.entry?.encartUrgence ?? false; // encart urgence (psychisme), découplé
   const confirmation = mp.entry?.confirmation ?? "reserve";
   const moteur = mp.entry?.moteur ?? "M1_acquisition";
+  const secteur = mp.entry?.secteur ?? "flux"; // vocabulaire du « Suivre ce commerce »
   const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
   // Restauration : vocabulaire « tables » (sinon « créneaux ») pour la Démo Vivante.
   const isResto = /restaur|resto|bistrot|brasser|pizz|cr[eê]per|gastronomi|caf[eé]|salon de th[eé]|\bbar\b|\bpub\b|brunch/i.test(activite);
@@ -312,6 +313,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       termePublic={termePublic}
       confirmation={confirmation}
       moteur={moteur}
+      secteur={secteur}
       busyWord={busyWord}
       content={resolveMetierContent(activite, profil)}
       avisMode={avisMode}

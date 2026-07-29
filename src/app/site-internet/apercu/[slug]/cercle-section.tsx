@@ -1,11 +1,19 @@
 "use client";
 
-// « Le Cercle » — le moteur d'acquisition rendu TANGIBLE et spectaculaire côté
-// client. Au lieu d'un simple bloc « inscrivez-vous », on MONTRE en direct la
-// notification WhatsApp qu'on recevra (elle s'anime, cycle sur plusieurs exemples),
-// puis un opt-in inline (prénom + numéro) qui capte vraiment le contact — plus
-// besoin d'ouvrir le chat au mauvais endroit. Réservé au commerce (déonto).
+// « Suivre ce commerce » — la seule façon, pour un commerçant, de savoir QUI
+// regarde son site. Sur sa fiche Google il est vu, mais les visiteurs repartent
+// anonymes. Ici le visiteur peut activer un service précis : être prévenu quand
+// une place se libère, d'une offre, d'un événement.
+//
+// Principes tenus :
+//  • on MONTRE d'abord le message qu'on recevra (donner une raison, pas capter) ;
+//  • le consentement est explicite, la case n'est JAMAIS pré-cochée, et la phrase
+//    acceptée nomme le commerce et l'usage — elle est archivée comme preuve ;
+//  • les centres d'intérêt sont demandés APRÈS l'inscription, et restent facultatifs
+//    (les demander avant ferait chuter la conversion au pire moment) ;
+//  • réservé au commerce (déonto) : l'API refuse la santé encadrée et le droit.
 import { useEffect, useRef, useState } from "react";
+import type { FollowTopic } from "@/lib/site-internet/metier-profiles";
 
 const NOTIS = [
   { ic: "⚡", t: "Une place vient de se libérer", m: "Demain 14 h 30 — envie d'en profiter ? Répondez OUI 💫" },
@@ -13,40 +21,87 @@ const NOTIS = [
   { ic: "✨", t: "Nouveauté", m: "On vient d'ajouter une nouvelle prestation — venez la découvrir !" },
 ];
 
-export function CercleSection({ slug, accent, nom, published = false }: { slug: string; accent: string; nom: string; published?: boolean }) {
+type Props = {
+  slug: string;
+  accent: string;
+  nom: string;
+  published?: boolean;
+  promesse: string;
+  topics: FollowTopic[];
+};
+
+export function CercleSection({ slug, accent, nom, published = false, promesse, topics }: Props) {
   const [n, setN] = useState(0);
   const [prenom, setPrenom] = useState("");
   const [tel, setTel] = useState("");
-  const [state, setState] = useState<"" | "sending" | "done">("");
+  const [consent, setConsent] = useState(false); // JAMAIS pré-coché
+  const [state, setState] = useState<"" | "sending" | "topics" | "done">("");
+  const [err, setErr] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
   const seen = useRef(false);
 
-  // Cycle des notifications (pause tant que la section n'est pas vue = perf).
+  // La phrase exactement acceptée : elle nomme le commerce et l'usage du numéro,
+  // et part telle quelle en base (un consentement doit pouvoir se prouver).
+  const consentText = `J'accepte que ${nom} me prévienne par WhatsApp de ses disponibilités, offres et événements. Je peux me désinscrire à tout moment.`;
+
+  // Cycle des notifications (l'aperçu de ce qu'on recevra vraiment).
   useEffect(() => {
     const t = window.setInterval(() => setN((v) => (v + 1) % NOTIS.length), 3400);
     return () => clearInterval(t);
   }, []);
 
+  const ready = Boolean(prenom.trim()) && tel.replace(/\D/g, "").length >= 9 && consent;
+
   const join = async () => {
-    if (!prenom.trim() || tel.replace(/\D/g, "").length < 8 || state === "sending") return;
+    if (!ready || state === "sending") return;
+    setErr("");
     setState("sending");
     try {
-      await fetch("/api/site-internet/apercu/book-demo", {
+      const r = await fetch("/api/site-internet/site/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, prenom: prenom.trim(), tel: tel.trim(), pourQui: "Le Cercle · alertes", premiere: "", slot: "" }),
+        body: JSON.stringify({ slug, prenom: prenom.trim(), phone: tel.trim(), consent: true, consentText }),
+        keepalive: true,
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setErr(typeof j.error === "string" ? j.error : "L'inscription n'a pas pu aboutir.");
+        setState("");
+        return;
+      }
+    } catch {
+      setErr("Connexion impossible — réessayez dans un instant.");
+      setState("");
+      return;
+    }
+    seen.current = true;
+    // Mémorisé localement pour ne plus jamais relancer cette personne (cf. FollowNudge).
+    try { window.localStorage.setItem(`popey-follow-${slug}`, "1"); } catch { /* mode privé */ }
+    // Les centres d'intérêt : après coup, et sautables.
+    setState(topics.length > 1 ? "topics" : "done");
+  };
+
+  const toggle = (id: string) => setPicked((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
+
+  const saveTopics = async () => {
+    setState("done");
+    if (!picked.length) return;
+    try {
+      await fetch("/api/site-internet/site/follow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, prenom: prenom.trim(), phone: tel.trim(), consent: true, consentText, topics: picked }),
         keepalive: true,
       });
     } catch {
-      /* la confirmation s'affiche quand même (démo) */
+      /* l'inscription est déjà faite : les préférences sont un bonus */
     }
-    seen.current = true;
-    setState("done");
   };
 
   const noti = NOTIS[n];
 
   return (
-    <section className="cercle" id="mq-cercle" style={{ ["--cc" as string]: accent }}>
+    <section className="cercle" id="mq-suivre" style={{ ["--cc" as string]: accent }}>
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -77,11 +132,26 @@ export function CercleSection({ slug, accent, nom, published = false }: { slug: 
           /* Opt-in inline */
           .mqc .cercle .join{margin-top:24px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:16px;}
           .mqc .cercle .join .row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-          .mqc .cercle .join input{height:48px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.9);border-radius:12px;padding:0 13px;font-size:15px;font-family:inherit;color:#1B1D1A;width:100%;}
+          .mqc .cercle .join input[type=text],.mqc .cercle .join input[type=tel]{height:48px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.9);border-radius:12px;padding:0 13px;font-size:15px;font-family:inherit;color:#1B1D1A;width:100%;}
           .mqc .cercle .join input:focus{outline:none;border-color:#fff;}
-          .mqc .cercle .join .go{margin-top:10px;width:100%;height:52px;border:none;border-radius:13px;background:#fff;color:#111;font-size:15.5px;font-weight:800;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
-          .mqc .cercle .join .go:disabled{opacity:.55;cursor:not-allowed;}
+          /* Consentement : case décochée, phrase explicite qui nomme le commerce */
+          .mqc .cercle .cons{display:flex;gap:10px;align-items:flex-start;margin-top:13px;text-align:left;cursor:pointer;}
+          .mqc .cercle .cons input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:#25D366;cursor:pointer;}
+          .mqc .cercle .cons span{font-size:11.5px;line-height:1.45;opacity:.9;}
+          .mqc .cercle .join .go{margin-top:13px;width:100%;height:52px;border:none;border-radius:13px;background:#fff;color:#111;font-size:15.5px;font-weight:800;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+          .mqc .cercle .join .go:disabled{opacity:.5;cursor:not-allowed;}
           .mqc .cercle .join .note{font-size:11px;opacity:.72;margin-top:11px;line-height:1.45;}
+          .mqc .cercle .err{margin-top:10px;font-size:12px;line-height:1.45;color:#FFD9D2;background:rgba(255,90,60,.16);border:1px solid rgba(255,140,110,.35);border-radius:11px;padding:9px 11px;text-align:left;}
+          /* Étape facultative : ce que la personne veut recevoir */
+          .mqc .cercle .tops{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:20px 17px;margin-top:24px;animation:ccIn .4s ease;}
+          .mqc .cercle .tops .th{font-size:17px;font-weight:800;}
+          .mqc .cercle .tops .ts{font-size:12.5px;opacity:.82;margin-top:6px;line-height:1.5;}
+          .mqc .cercle .tops .tg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:15px;}
+          .mqc .cercle .tops .tg button{font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;border-radius:999px;padding:10px 15px;
+            background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.28);}
+          .mqc .cercle .tops .tg button.on{background:#fff;color:#111;border-color:#fff;}
+          .mqc .cercle .tops .tgo{margin-top:16px;width:100%;height:50px;border:none;border-radius:13px;background:#fff;color:#111;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;}
+          .mqc .cercle .tops .tsk{margin-top:9px;width:100%;background:none;border:none;color:rgba(255,255,255,.75);font-size:12.5px;font-family:inherit;cursor:pointer;text-decoration:underline;padding:5px;}
           .mqc .cercle .done{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:22px 18px;margin-top:24px;animation:ccIn .4s ease;}
           .mqc .cercle .done .em{font-size:34px;}
           .mqc .cercle .done .dh{font-size:18px;font-weight:800;margin-top:8px;}
@@ -93,9 +163,9 @@ export function CercleSection({ slug, accent, nom, published = false }: { slug: 
       />
       <div className="glow" aria-hidden="true" />
       <div className="in">
-        <div className="k">Le Cercle des habitué·es{!published && <span className="k-opt">Option · diffusion WhatsApp</span>}</div>
-        <div className="h">Soyez prévenu·e en premier.</div>
-        <div className="p">Une place qui se libère, une offre, une nouveauté… Voici le genre de message que vous recevrez — jamais de spam, juste les bons plans.</div>
+        <div className="k">Rester en contact{!published && <span className="k-opt">Vos futurs abonnés</span>}</div>
+        <div className="h">Suivre {nom}.</div>
+        <div className="p">{promesse} Voici le genre de message que vous recevrez — jamais de spam.</div>
 
         <div className="phone" aria-live="polite">
           <div className="noti" key={n}>
@@ -112,19 +182,39 @@ export function CercleSection({ slug, accent, nom, published = false }: { slug: 
         {state === "done" ? (
           <div className="done">
             <div className="em">🎉</div>
-            <div className="dh">Vous êtes dans le Cercle{prenom.trim() ? `, ${prenom.trim()}` : ""} !</div>
-            <div className="dp">Vous serez prévenu·e en premier des places qui se libèrent et des offres. À très vite.</div>
+            <div className="dh">Vous suivez maintenant {nom}{prenom.trim() ? `, ${prenom.trim()}` : ""} !</div>
+            <div className="dp">Vous serez prévenu·e de ses prochaines disponibilités et actualités. Un mot suffit pour vous désinscrire.</div>
+          </div>
+        ) : state === "topics" ? (
+          <div className="tops">
+            <div className="th">Que souhaitez-vous recevoir&nbsp;?</div>
+            <div className="ts">Facultatif — cela évite de vous envoyer ce qui ne vous intéresse pas.</div>
+            <div className="tg">
+              {topics.map((t) => (
+                <button key={t.id} type="button" className={picked.includes(t.id) ? "on" : ""} onClick={() => toggle(t.id)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <button className="tgo" onClick={saveTopics}>{picked.length ? "Valider mes préférences" : "Tout recevoir"}</button>
+            <button type="button" className="tsk" onClick={() => setState("done")}>Passer cette étape</button>
           </div>
         ) : (
           <div className="join">
             <div className="row">
-              <input placeholder="Votre prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} aria-label="Votre prénom" />
-              <input placeholder="Votre numéro" inputMode="tel" value={tel} onChange={(e) => setTel(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") join(); }} aria-label="Votre numéro" />
+              <input type="text" placeholder="Votre prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} aria-label="Votre prénom" />
+              <input type="tel" placeholder="Votre numéro" inputMode="tel" value={tel} onChange={(e) => setTel(e.target.value)} aria-label="Votre numéro" />
             </div>
-            <button className="go" onClick={join} disabled={!prenom.trim() || tel.replace(/\D/g, "").length < 8 || state === "sending"}>
-              {state === "sending" ? "Un instant…" : "🔔 Rejoindre le Cercle"}
+            <label className="cons">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+              <span>{consentText}</span>
+            </label>
+            <button className="go" onClick={join} disabled={!ready || state === "sending"}>
+              {/* Libellé fixe : « Suivre {nom} » passait à la ligne dès que le nom était long. */}
+              {state === "sending" ? "Un instant…" : "🔔 Suivre ce commerce"}
             </button>
-            <div className="note">Gratuit · sans engagement · vous vous désinscrivez d&apos;un mot quand vous voulez.</div>
+            {err && <div className="err">{err}</div>}
+            <div className="note">Gratuit · sans engagement · votre numéro sert uniquement à ces messages, et n&apos;est jamais revendu.</div>
           </div>
         )}
       </div>

@@ -17,6 +17,20 @@ type Contact = {
   last_contacted_at: string | null;
   created_at: string;
   unsub_token: string;
+  /** 'site' = la personne s'est abonnée elle-même depuis le site public. */
+  source?: string | null;
+  /** Ce qu'elle accepte de recevoir (vide/absent = tout). */
+  topics?: string[] | null;
+};
+
+// Libellés des centres d'intérêt choisis à l'inscription (cf. followCopy).
+const TOPIC_LABEL: Record<string, string> = {
+  dispo: "dispos",
+  offre: "offres",
+  nouveau: "nouveautés",
+  event: "événements",
+  menu: "menus",
+  conseil: "conseils",
 };
 
 // Parse une liste collée : un client par ligne (« Julie, 06 12 34 56 78 »,
@@ -188,6 +202,9 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
           .pro .contacts .c .nm{min-width:0;}
           .pro .contacts .c .nm b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
           .pro .contacts .c .nm span{font-size:11.5px;color:var(--faint);}
+          /* Distinguer d'un coup d'œil qui s'est abonné depuis le site public */
+          .pro .contacts .c .nm .from{display:inline-block;margin-left:7px;font-style:normal;font-size:9.5px;font-weight:800;
+            letter-spacing:.03em;color:#1B7A3E;background:#E4F7EE;border-radius:5px;padding:2px 6px;vertical-align:1px;}
           .pro .contacts .c .ask{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:6px;background:#EAF4E4;border:1px solid #CFE6C2;color:#1B7A3E;border-radius:10px;padding:8px 11px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
           .pro .contacts .c .ask svg{width:14px;height:14px;}
           .pro .contacts .c .rm{flex:none;border:none;background:none;color:var(--faint);font-size:15px;cursor:pointer;padding:4px;}
@@ -271,8 +288,11 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
               <div className="c" key={c.id}>
                 <span className="av">{(c.prenom || "?").slice(0, 1).toUpperCase()}</span>
                 <div className="nm">
-                  <b>{c.prenom || "Client"}</b>
-                  <span>{maskPhone(c.phone_e164)}</span>
+                  <b>{c.prenom || "Client"}{c.source === "site" && <em className="from">s&apos;est abonné·e</em>}</b>
+                  <span>
+                    {maskPhone(c.phone_e164)}
+                    {c.topics && c.topics.length > 0 && ` · ${c.topics.map((t) => TOPIC_LABEL[t] || t).join(", ")}`}
+                  </span>
                 </div>
                 <button className="ask" onClick={() => askReview(c)}>
                   <svg viewBox="0 0 24 24" fill="#1B7A3E"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.5 1.6 6.7L12 17l-6.2 3.6 1.6-6.7L2.2 8.9l6.9-.6z" /></svg>

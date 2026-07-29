@@ -16,8 +16,11 @@ import { CercleSection } from "./cercle-section";
 import { CollectifSection } from "./collectif-section";
 import { CollectifToast } from "./collectif-toast";
 import { DemarchageBooking, type DemarchageTarget } from "./demarchage-booking";
+import { FollowBar } from "./follow-bar";
+import { FollowNudge } from "./follow-nudge";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
-import type { Confirmation, Moteur, Profil } from "@/lib/site-internet/metier-profiles";
+import { followCopy } from "@/lib/site-internet/metier-profiles";
+import type { Confirmation, Moteur, Profil, Secteur } from "@/lib/site-internet/metier-profiles";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
@@ -37,6 +40,7 @@ export type MaquetteSanteProps = {
   termePublic: string;
   confirmation: Confirmation;
   moteur: Moteur;
+  secteur: Secteur; // vocabulaire du « Suivre ce commerce » (places, menus, dates…)
   busyWord: string;
   content: MetierContent;
   // Avis : "prominent" (A), "doux" (B), "none" (C). Rien ne s'affiche sans vrais avis.
@@ -70,7 +74,7 @@ export type MaquetteSanteProps = {
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
-    showUrgence, termePublic, confirmation, moteur, busyWord, content,
+    showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
     avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
@@ -81,6 +85,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   // « choc » (si cible), sinon accueil intelligent.
   const rdvProps = bookingHref ? { href: bookingHref } : bookViaDemarchage ? { "data-book-demo": true } : { "data-accueil-open": true };
   const bookLabel = confirmation === "devis" ? "Demander un devis" : confirmation === "rappel" ? "Être rappelé(e)" : confirmation === "acompte" ? "Réserver ma date" : "Prendre rendez-vous";
+  // « Suivre ce commerce » : promesse et centres d'intérêt dans les mots du métier.
+  // Réservé au commerce (déonto) — l'API refuse la santé encadrée et le droit.
+  const canFollow = avisMode === "prominent";
+  const follow = followCopy(secteur, isResto);
 
   // ── Sections « Pour quoi venir me voir ? » (motifs) et « Mes accompagnements »
   // (menu). Pilotées par la config métier : rien à afficher → section omise.
@@ -388,6 +396,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       {bookViaDemarchage && demarchageTarget && (
         <DemarchageBooking target={demarchageTarget} hostNom={nom} accent={accent} />
       )}
+      {/* Proposée seulement après un vrai signe d'intérêt, une fois, refus mémorisé. */}
+      {canFollow && <FollowNudge slug={slug} nom={nom} promesse={follow.promesse} accent={accent} />}
       {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
       <ScrollReveal />
 
@@ -400,6 +410,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           </div>
         </div>
       )}
+
+      {/* En-tête visiteur : le nom + « Suivre » restent accessibles pendant toute la
+          visite. En mode maquette, elle se place sous la barre « côté pro ». */}
+      {canFollow && <FollowBar slug={slug} nom={nom} accent={accent} topOffset={published ? 0 : 50} />}
 
       {offer && offer.text ? (
         <a className="offer-band" href={`/offre/${slug}`}>
@@ -429,8 +443,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         bookHref={bookingHref}
         bookDemarchage={bookViaDemarchage}
         hasGallery={gallery.length > 0}
-        extraChips={avisMode === "prominent" ? [
-          { label: "📣 Promos / événements", target: "mq-cercle" },
+        extraChips={canFollow ? [
+          { label: "🔔 Suivre ce commerce", target: "mq-suivre" },
           { label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif", gold: true },
         ] : []}
       />
@@ -553,7 +567,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </section>
       )}
 
-      {avisMode === "prominent" && <CercleSection slug={slug} accent={accent} nom={nom} published={published} />}
+      {canFollow && (
+        <CercleSection slug={slug} accent={accent} nom={nom} published={published} promesse={follow.promesse} topics={follow.topics} />
+      )}
 
       {avisMode === "prominent" && (
         <CollectifSection

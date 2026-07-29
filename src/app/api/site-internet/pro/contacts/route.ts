@@ -21,6 +21,10 @@ type Contact = {
   last_contacted_at: string | null;
   created_at: string;
   unsub_token: string;
+  /** 'pro' = saisi par le commerçant · 'site' = la personne s'est abonnée elle-même. */
+  source: string | null;
+  /** Ce que la personne accepte de recevoir (null = tout). */
+  topics: string[] | null;
 };
 
 export async function POST(request: Request) {
@@ -175,17 +179,28 @@ export async function POST(request: Request) {
 
   // Liste courante (après mutation éventuelle).
   let contacts: Contact[] = [];
-  try {
-    const { data } = await supabase
+  // `topics` n'existe qu'après la migration « follow » : on retente sans cette
+  // colonne plutôt que de renvoyer une liste vide au commerçant.
+  const listWith = async (cols: string) => {
+    const { data, error } = await supabase
       .from("human_site_contacts")
-      .select("id, prenom, phone_e164, last_contacted_at, created_at, unsub_token")
+      .select(cols)
       .eq("site_id", siteId)
       .is("opted_out_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
-    if (Array.isArray(data)) contacts = data as Contact[];
+    if (error) throw new Error(error.message);
+    return Array.isArray(data) ? (data as unknown as Contact[]) : [];
+  };
+  const BASE = "id, prenom, phone_e164, last_contacted_at, created_at, unsub_token, source";
+  try {
+    contacts = await listWith(`${BASE}, topics`);
   } catch {
-    /* table pas encore migrée → liste vide, la page reste fonctionnelle */
+    try {
+      contacts = await listWith(BASE);
+    } catch {
+      /* table pas encore migrée → liste vide, la page reste fonctionnelle */
+    }
   }
 
   return NextResponse.json({ ok: true, contacts, summary }, { status: 200 });
