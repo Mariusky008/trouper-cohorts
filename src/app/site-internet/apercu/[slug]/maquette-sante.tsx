@@ -14,6 +14,7 @@ import { DemoTour } from "./demo-tour";
 import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
 import { CollectifSection } from "./collectif-section";
+import { CollectifLive } from "./collectif-live";
 import { CollectifToast } from "./collectif-toast";
 import { DemarchageBooking, type DemarchageTarget } from "./demarchage-booking";
 import { FollowBar } from "./follow-bar";
@@ -21,6 +22,7 @@ import { FollowNudge } from "./follow-nudge";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import { followCopy } from "@/lib/site-internet/metier-profiles";
 import type { Confirmation, Moteur, Profil, Secteur } from "@/lib/site-internet/metier-profiles";
+import type { PartnerOffer } from "@/lib/site-internet/collectif";
 import type { MetierContent, Service, UseCase } from "@/lib/site-internet/metier-content";
 
 export type ReviewSnippet = { name: string; text: string; stars: number | null };
@@ -71,13 +73,14 @@ export type MaquetteSanteProps = {
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
   approche: { titre: string; corps: string } | null; // texte « Mon approche » validé par le pro
   proFaq: Array<{ q: string; a: string }>; // FAQ saisie par le pro → override de la config métier
+  partnerOffers: PartnerOffer[]; // annonces RÉELLES des commerces partenaires de la ville
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche, proFaq,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -588,10 +591,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <CercleSection slug={slug} accent={accent} nom={nom} published={published} promesse={follow.promesse} topics={follow.topics} />
       )}
 
-      {/* Le Collectif ne s'affiche PAS sur un site en ligne tant que le réseau
-          n'existe pas : le bouton « m'emmener chez ce partenaire » ne mène nulle
-          part, et son explication s'adresse au commerçant, pas à ses client·es.
-          Il reste dans la maquette, où il est explicitement cadré « exemple ». */}
+      {/* Site EN LIGNE : le vrai Collectif, avec les annonces réelles des commerces
+          partenaires de la ville. Aucun partenaire actif → aucune section. */}
+      {published && canFollow && <CollectifLive ville={villeAff} offers={partnerOffers} accent={accent} />}
+
+      {/* En maquette : la démonstration du mécanisme, cadrée « exemple ». */}
       {canFollow && !published && (
         <CollectifSection
           slug={slug}

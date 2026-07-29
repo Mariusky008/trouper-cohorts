@@ -18,6 +18,7 @@ import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProApproche } from "./pro-approche";
 import { ProFaq } from "./pro-faq";
+import { ProCollectif } from "./pro-collectif";
 import { ProRequests } from "./pro-requests";
 import { ProReviewAlert } from "./pro-review-alert";
 import { ProTabs, type ProTab } from "./pro-tabs";
@@ -391,6 +392,12 @@ export default async function EspacePro({
             <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />
             <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
             <ProFaq slug={slug} token={token} suggestions={metierContent.faq} />
+            {soliciter && (
+              <>
+                <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
+                <ProCollectif slug={slug} token={token} />
+              </>
+            )}
           </div>
           <div className="siteblock"><ProGallery slug={slug} token={token} /></div>
           <div className="siteblock"><ProAssistant slug={slug} token={token} /></div>

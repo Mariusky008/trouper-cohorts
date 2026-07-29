@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
+import { partnerOffers as loadPartnerOffers, type PartnerOffer } from "@/lib/site-internet/collectif";
 import { MaquetteSante } from "./maquette-sante";
 
 export const dynamic = "force-dynamic";
@@ -162,6 +163,30 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     }
   } catch {
     /* colonne non migrée → on garde la proposition du métier */
+  }
+
+  // Le Collectif : les annonces en cours des commerces partenaires de la ville.
+  // Chargé uniquement pour un site EN LIGNE — la maquette montre la démonstration.
+  let livePartners: PartnerOffer[] = [];
+  if (row.published) {
+    let collectifActif = true;
+    try {
+      const { data: c } = await supabase
+        .from("human_vitrine_sites")
+        .select("collectif_actif")
+        .eq("id", str(row.id))
+        .maybeSingle();
+      const cr = (c as Record<string, unknown> | null) ?? null;
+      if (cr && cr.collectif_actif === false) collectifActif = false;
+    } catch {
+      /* colonne non migrée → participation par défaut */
+    }
+    livePartners = await loadPartnerOffers(supabase, {
+      siteId: str(row.id),
+      ville: str(row.city),
+      activite: str(row.activite) || "Commerce",
+      collectifActif,
+    });
   }
 
   const nom = str(row.business_name) || "Votre commerce";
@@ -385,6 +410,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       galleryVideos={galleryVideos}
       approche={approche}
       proFaq={proFaq}
+      partnerOffers={livePartners}
     />
   );
 }

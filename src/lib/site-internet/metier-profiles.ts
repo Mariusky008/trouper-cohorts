@@ -297,6 +297,32 @@ export const METIERS: MetierEntry[] = [
   M(["carrossier", "carrosserie"], "carrossier", "A", "devis", { moteur: "M2_temps", secteur: "urgence" }),
   M(["controle technique"], "contrôle technique", "A", "rappel", { secteur: "flux" }),
   M(["lavage automobile", "lavage auto", "station de lavage"], "lavage automobile premium", "A", "reserve", { secteur: "flux" }),
+  // ── Professions médicales & pharmaceutiques (profil C — publicité interdite) ──
+  // Elles tombaient dans le repli « commerce » : un cabinet dentaire aurait pu
+  // solliciter des avis et relancer ses patients. Le filet ci-dessous (RÉGLEMENTÉ)
+  // rattrape les libellés non listés, mais mieux vaut les nommer explicitement.
+  M(["chirurgien dentiste", "chirurgien-dentiste", "dentiste", "dentaire", "orthodontist", "stomatolog"], "chirurgien-dentiste", "C", "reserve", { deontologie: "sante" }),
+  M(["medecin", "docteur en medecine", "cabinet medical", "generaliste"], "médecin", "C", "reserve", { deontologie: "sante" }),
+  M(["pediatre"], "pédiatre", "C", "reserve", { deontologie: "sante" }),
+  M(["dermatolog"], "dermatologue", "C", "reserve", { deontologie: "sante" }),
+  M(["ophtalmolog"], "ophtalmologue", "C", "reserve", { deontologie: "sante" }),
+  M(["cardiolog"], "cardiologue", "C", "reserve", { deontologie: "sante" }),
+  M(["gynecolog"], "gynécologue", "C", "reserve", { deontologie: "sante" }),
+  M(["rhumatolog"], "rhumatologue", "C", "reserve", { deontologie: "sante" }),
+  M(["radiolog", "imagerie medicale"], "radiologue", "C", "reserve", { deontologie: "sante" }),
+  M(["chirurgien"], "chirurgien", "C", "reserve", { deontologie: "sante" }),
+  M(["psychiatre"], "psychiatre", "C", "reserve", { encartUrgence: true, deontologie: "sante" }),
+  M(["sage femme", "sage-femme", "maieuticien"], "sage-femme", "C", "reserve", { article: "une", deontologie: "sante" }),
+  M(["infirmier", "infirmiere", "cabinet infirmier", "soins a domicile"], "infirmier", "C", "reserve", { deontologie: "sante" }),
+  M(["pharmaci"], "pharmacien", "C", "rappel", { deontologie: "sante" }),
+  M(["laboratoire d analyses", "laboratoire de biologie", "analyses medicales", "biologiste medical"], "laboratoire d'analyses", "C", "rappel", { deontologie: "sante" }),
+  M(["veterinaire"], "vétérinaire", "C", "reserve", { terme: "clients", deontologie: "sante" }),
+  // Santé praticité (profil B) : appareillage et dispositifs, publicité encadrée
+  // mais moins stricte — les avis restent affichables, jamais sollicités.
+  M(["audioprothesist", "audition", "correction auditive"], "audioprothésiste", "B", "reserve", { deontologie: "sante" }),
+  M(["opticien", "optique", "lunetterie"], "opticien", "B", "reserve", { terme: "clients", deontologie: "sante" }),
+  M(["orthopedi", "orthese", "prothesist"], "orthopédiste-orthésiste", "B", "reserve", { deontologie: "sante" }),
+  M(["ambulanc", "transport sanitaire"], "ambulancier", "B", "rappel", { terme: "clients", deontologie: "sante" }),
   // ── Droit & chiffre (profil C — déontologie publicité stricte, pas d'avis) ──
   M(["avocat"], "avocat", "C", "rappel", { terme: "clients", deontologie: "droit" }),
   M(["notaire"], "notaire", "C", "rappel", { terme: "clients", deontologie: "droit" }),
@@ -349,6 +375,14 @@ export const DEFAULT_PROFIL: Profil = "A";
 const norm = (s: string) =>
   String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
+// FILET DE SÉCURITÉ. Le repli par défaut est « A » (commerce), le profil le PLUS
+// permissif : c'est le bon choix pour un libellé inconnu — la plupart sont des
+// commerces — mais c'est le mauvais sens pour un garde-fou déontologique. Un
+// libellé non catalogué qui sent la profession réglementée doit basculer en C,
+// même si personne n'a pensé à l'ajouter à METIERS.
+const REGLEMENTE =
+  /(medecin|medical|docteur|dentiste|dentaire|orthodont|stomatolog|pediatr|dermatolog|ophtalmolog|ophtalmo|cardiolog|gynecolog|rhumatolog|radiolog|neurolog|urolog|endocrinolog|gastro|oncolog|anesthesi|chirurg|psychiatr|psycholog|kinesither|orthophon|orthoptis|podolog|pedicure|sage.?femme|infirmi|pharmaci|biologiste|analyses medicales|veterinair|osteopath|audioprothes|opticien|orthopedi|prothesist|ambulanc|clinique|cabinet de sante|centre de sante|laboratoire)|(avocat|notaire|huissier|commissaire de justice|expert.?comptable|greffier|mandataire judiciaire|administrateur judiciaire)/;
+
 export function resolveMetier(activite: string): {
   entry: MetierEntry | null;
   profil: Profil;
@@ -356,6 +390,8 @@ export function resolveMetier(activite: string): {
 } {
   const a = norm(activite);
   const entry = METIERS.find((m) => m.match.some((k) => a.includes(k))) ?? null;
-  const profil = entry?.profil ?? DEFAULT_PROFIL;
+  // Sans correspondance, on retombe sur A — sauf si le libellé désigne une
+  // profession réglementée : dans ce cas, le plus sobre l'emporte.
+  const profil = entry?.profil ?? (REGLEMENTE.test(a) ? "C" : DEFAULT_PROFIL);
   return { entry, profil, def: PROFILES[profil] };
 }
