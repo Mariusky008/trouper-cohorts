@@ -533,7 +533,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
       {!open && !stageOn && !atBottom && (
         <button className="asx-fab" onClick={handleOpen} aria-label="Côté pro : lancer une Action Flash">
-          <span className="orb">🚀</span>
+          <span className="orb">✦</span>
           <span className="lab"><small>Côté pro · aperçu</small>Action Flash</span>
           <span className="chev">›</span>
         </button>
@@ -581,11 +581,13 @@ function styles(accent: string): string {
   .asx-fab{position:fixed;left:0;right:0;margin:0 auto;bottom:82px;z-index:55;width:max-content;max-width:calc(100% - 28px);
     display:flex;align-items:center;gap:11px;cursor:pointer;border:none;font-family:inherit;height:60px;
     background:linear-gradient(135deg,#20201A,#0D0D09);color:#FBFAF7;border-radius:32px;padding:9px 20px 9px 10px;
-    box-shadow:0 14px 36px -10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(184,134,47,.4);animation:asxBreathe 7s ease-in-out infinite;}
-  .asx-fab .orb{width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#E4B850,#9A7526);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex:none;box-shadow:0 5px 14px -3px rgba(184,134,47,.75);}
+    box-shadow:0 14px 36px -10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(124,106,232,.45);animation:asxBreathe 7s ease-in-out infinite;}
+  /* L'orbe reprend EXACTEMENT l'identité de l'assistante montrée dans la démo
+     (✦ sur dégradé violet) : l'icône qui descend du centre se pose ici. */
+  .asx-fab .orb{width:42px;height:42px;border-radius:50%;background:linear-gradient(140deg,#A594FF,#5B3FA6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex:none;box-shadow:0 5px 16px -3px rgba(91,63,166,.85);}
   .asx-fab .lab{font-size:14.5px;font-weight:700;white-space:nowrap;line-height:1.08;text-align:left;}
-  .asx-fab .lab small{display:block;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#E4B850;font-weight:700;margin-bottom:1px;}
-  .asx-fab .chev{font-size:22px;color:#D8B056;font-weight:700;margin-left:1px;line-height:1;}
+  .asx-fab .lab small{display:block;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A594FF;font-weight:700;margin-bottom:1px;}
+  .asx-fab .chev{font-size:22px;color:#A594FF;font-weight:700;margin-left:1px;line-height:1;}
   @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
   @media (prefers-reduced-motion:reduce){.asx-fab{animation:none;}}
   .asx-sheet{position:fixed;left:0;right:0;bottom:0;z-index:56;max-width:520px;margin:0 auto;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -18px 50px -12px rgba(0,0,0,.4);max-height:88vh;display:flex;flex-direction:column;animation:asxUp .38s cubic-bezier(.22,1,.36,1);}

@@ -38,6 +38,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
+  // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
+  const [fly, setFly] = useState(false);
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
@@ -311,14 +313,23 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
       say: avisAllowed
         ? `Elle répond à vos ${clientPl}, prépare vos rendez-vous, et vous aide à obtenir davantage d'avis Google.`
         : `Elle répond à vos ${clientPl} et prépare vos rendez-vous, même quand vous n'êtes pas disponible.`,
-      enter: () => setScene("daily"),
+      // L'icône quitte le centre et rejoint son emplacement : le bouton « Action
+      // Flash » en bas. Le pro voit OÙ elle habite — il la retrouvera ensuite.
+      enter: () => {
+        setFly(true);
+        window.setTimeout(() => setFly(false), 1000);
+        setScene("daily");
+      },
     });
 
     // 4 — L'ACTION FLASH : on dit une phrase → l'annonce s'affiche SUR LE SITE.
     if (avisAllowed) {
       steps.push({
         title: "L'Action Flash",
-        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, un événement — dites-le simplement. Votre annonce s'affiche aussitôt sur votre site.`,
+        // On signale l'existence des options ICI (là où c'est logique), pour que
+        // le pro ne tombe pas dessus par surprise en ouvrant l'Action Flash. La
+        // conclusion, elle, reste entièrement sur le gratuit.
+        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, un événement — dites-le simplement. Votre annonce s'affiche aussitôt sur votre site, gratuitement. Et si un jour vous voulez toucher plus de monde, elle peut aussi préparer une campagne : c'est en option, vous choisissez.`,
         enter: () => { setScene("flash"); window.setTimeout(popBand, 2600); },
       });
     }
@@ -566,6 +577,21 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .fx-bk{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7FE6C0;}
           .dtour-card .fx-bt{font-size:13.5px;line-height:1.4;font-weight:600;}
           .dtour-card .fx-live{margin-top:12px;font-size:12.5px;font-weight:700;color:#0B7A55;opacity:0;animation:dtBub .4s ease 2.1s forwards;}
+          .dtour-card .fx-opt{margin-top:8px;font-size:11.5px;line-height:1.45;color:#6E7290;opacity:0;animation:dtBub .4s ease 2.5s forwards;}
+          .dtour-card .fx-opt b{color:#5B3FA6;font-weight:800;}
+
+          /* ── L'icône rejoint son emplacement (le bouton « Action Flash ») ── */
+          .al-fly{position:fixed;left:50%;top:46%;z-index:93;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:54px;pointer-events:none;
+            background:linear-gradient(140deg,#A594FF,#5B3FA6);box-shadow:0 0 70px 4px rgba(124,106,232,.95);
+            animation:alFly 1s cubic-bezier(.55,0,.25,1) forwards;}
+          @keyframes alFly{
+            0%{opacity:1;top:46%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;font-size:54px;}
+            78%{opacity:1;}
+            100%{opacity:0;top:calc(100% - 103px);width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;font-size:20px;
+              box-shadow:0 5px 16px -3px rgba(91,63,166,.85);}
+          }
+          @media (prefers-reduced-motion:reduce){.al-fly{display:none;}}
 
           /* Écran de fin : les 3 preuves */
           .dtour-end .end-list{display:flex;flex-direction:column;gap:8px;width:100%;max-width:330px;margin-top:4px;}
@@ -792,6 +818,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
             </div>
           )}
 
+          {/* Elle rejoint sa place : l'icône descend du centre vers le bouton
+              « Action Flash », et s'y pose. */}
+          {fly && <span className="al-fly" aria-hidden="true">✦</span>}
+
           {/* Elle « sort » du site : l'assistante prend vie au centre de l'écran. */}
           {scene === "alive" && (
             <div className="dtour-ov alive-ov">
@@ -824,6 +854,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                   <span className="fx-bt">{flashExample || "Une offre cette semaine à faire connaître."}</span>
                 </div>
                 <div className="fx-live">✓ Affichée sur votre site — <b>gratuitement</b></div>
+                <div className="fx-opt">Pour toucher plus de monde&nbsp;: une campagne WhatsApp &amp; réseaux, <b>en option</b>.</div>
               </div>
             </div>
           )}
