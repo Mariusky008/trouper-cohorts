@@ -283,6 +283,12 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
           .pro .relance .ai .aibtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .ai .aierr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .ai .aiok{margin-top:8px;font-size:11.5px;color:#5B3FA6;line-height:1.4;}
+          /* Trois angles proposés : on choisit, on ne regénère pas à l'aveugle. */
+          .pro .relance .ai .vars{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
+          .pro .relance .ai .vars .vk{font-size:11.5px;font-weight:700;color:var(--soft);margin-right:2px;}
+          .pro .relance .ai .vars button{border:1px solid var(--hair);background:#fff;color:var(--soft);border-radius:999px;
+            padding:7px 13px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .ai .vars button.on{background:var(--ink);border-color:var(--ink);color:#fff;}
           .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
           @keyframes aispin{to{transform:rotate(360deg)}}
           @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}

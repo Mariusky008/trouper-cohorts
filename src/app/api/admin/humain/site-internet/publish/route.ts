@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row, error: readErr } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, published, custom_domain")
+    .select("id, pro_token, published, custom_domain, business_name, whatsapp_phone_e164, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -71,6 +71,25 @@ export async function POST(request: Request) {
   const published = "published" in patch ? Boolean(patch.published) : Boolean(site.published);
   const customDomain = "custom_domain" in patch ? (patch.custom_domain as string | null) : (s(site.custom_domain) || null);
   const publicUrl = customDomain ? `https://${customDomain}` : `${appUrl}/site-internet/apercu/${slug}`;
+
+  // « On vous prévient dès qu'il est publié » : l'Espace Pro le promet, on le tient.
+  // Uniquement au PASSAGE en ligne (pas à chaque enregistrement), et best-effort.
+  if (patch.published === true && !site.published) {
+    try {
+      const { proPhoneFrom } = await import("@/lib/site-internet/pro-phone");
+      const { sendSms, isSmsConfigured } = await import("@/lib/site-internet/accueil-sms");
+      const proPhone = proPhoneFrom(site);
+      if (proPhone && isSmsConfigured()) {
+        await sendSms(
+          proPhone,
+          `${s(site.business_name) || "Votre site"} est en ligne ! Voir : ${publicUrl}` +
+            ` — votre espace : ${appUrl}/p/${token} [Popey]`
+        );
+      }
+    } catch {
+      /* best-effort : la publication ne doit jamais échouer à cause d'un SMS */
+    }
+  }
 
   return NextResponse.json({
     ok: true,

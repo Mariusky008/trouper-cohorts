@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { sendSms } from "@/lib/site-internet/accueil-sms";
+import { toE164 } from "@/lib/site-internet/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export async function POST(
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, metadata, contact_lead_at, business_name, city")
+    .select("id, metadata, contact_lead_at, business_name, city, whatsapp_phone_e164")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -60,6 +61,15 @@ export async function POST(
   };
   // Ne réécrit pas la date du 1er contact.
   if (!row.contact_lead_at) patch.contact_lead_at = now;
+  // C'est le numéro du COMMERÇANT, donné pour qu'on le rappelle au sujet de son
+  // site. On le range là où le produit sait le retrouver (notifications de
+  // demandes, mise en ligne) — sans jamais écraser un numéro déjà connu.
+  // La colonne n'accepte QUE les mobiles français (contrainte SQL) : sans ce test,
+  // un numéro fixe ferait échouer l'enregistrement du lead tout entier.
+  if (!String(row.whatsapp_phone_e164 || "").trim()) {
+    const e164 = toE164(phoneRaw);
+    if (/^\+33[67]\d{8}$/.test(e164)) patch.whatsapp_phone_e164 = e164;
+  }
 
   const { error } = await supabase.from("human_vitrine_sites").update(patch).eq("id", String(row.id));
   if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });

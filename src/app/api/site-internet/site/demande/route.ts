@@ -8,6 +8,7 @@
 // établissement, comme l'inscription « Suivre ce commerce ».
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, published, whatsapp_phone_e164")
+    .select("id, business_name, published, whatsapp_phone_e164, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
 
   const siteId = s(site.id);
   const business = s(site.business_name);
-  const proPhone = s(site.whatsapp_phone_e164, 40);
+  const proPhone = proPhoneFrom(site);
 
   // Plafond horaire par établissement : au-delà, c'est du bruit.
   try {

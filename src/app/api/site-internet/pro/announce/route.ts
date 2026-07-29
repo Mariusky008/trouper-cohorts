@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, business_name, city, activite")
+    .select("id, pro_token, business_name, city, activite, services")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -40,6 +40,17 @@ export async function POST(request: Request) {
   const ville = str(site.city);
   const activite = str(site.activite);
 
+  // CONTEXTE : sans lui, le modèle écrivait à l'aveugle et sortait du générique.
+  // Ses vraies prestations lui permettent de nommer ce qu'il vend ; la date du
+  // jour lui permet de comprendre « jeudi » ou « ce week-end » sans se tromper.
+  const prestations = (Array.isArray(site.services) ? site.services : [])
+    .map((x) => str((x as Record<string, unknown>)?.name))
+    .filter(Boolean)
+    .slice(0, 8);
+  const aujourdhui = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris",
+  }).format(new Date());
+
   const apiKey = str(process.env.ANTHROPIC_API_KEY);
   if (!apiKey) {
     // Repli honnête : on renvoie le brief tel quel, légèrement mis en forme.
@@ -47,38 +58,86 @@ export async function POST(request: Request) {
   }
 
   const system =
-    `Tu écris un court message WhatsApp pour ${nom}` +
+    `Tu écris des messages WhatsApp pour ${nom}` +
     (activite ? `, ${activite}` : "") +
     (ville ? ` à ${ville}` : "") +
     `, à envoyer à ses client·es fidèles.\n` +
-    `Le pro te donne une idée en vrac ; transforme-la en UN message WhatsApp prêt à envoyer.\n` +
+    `Nous sommes ${aujourdhui}.\n` +
+    (prestations.length ? `Ce que ce commerce propose : ${prestations.join(", ")}.\n` : "") +
+    `Le pro te donne une idée en vrac. Rends-lui TROIS messages prêts à envoyer, avec des angles différents :\n` +
+    `1. DIRECT — l'info d'abord, en une phrase, puis l'invitation.\n` +
+    `2. CHALEUREUX — on s'adresse à quelqu'un qu'on connaît, ton du commerce de quartier.\n` +
+    `3. COURT — deux lignes maximum, pour qui lit son téléphone entre deux portes.\n` +
     `RÈGLES ABSOLUES :\n` +
     `- Appuie-toi UNIQUEMENT sur ce que le pro écrit. N'invente AUCUN prix, pourcentage, date, horaire ni détail non fourni. ` +
     `Si une info utile manque (heure, jour…), laisse un court crochet comme [jour/heure] à compléter plutôt que d'inventer.\n` +
-    `- Ton chaleureux, direct et local. Vouvoiement par défaut.\n` +
-    `- Court : 2 à 4 phrases. 1 emoji, 2 maximum. Aucun blabla, aucune formule pompeuse.\n` +
-    `- Pas de nom de client (le message est diffusé à plusieurs personnes).\n` +
+    `- Le pro écrit vite et mal : corrige ses fautes, complète ses abréviations, mais ne change JAMAIS ce qu'il annonce.\n` +
+    `- Ton chaleureux, direct et local. Vouvoiement par défaut. Aucune formule pompeuse, aucun jargon marketing ` +
+    `(« profitez de notre offre exceptionnelle », « ne manquez pas », « incroyable »).\n` +
+    `- 1 emoji, 2 maximum, jamais en début de message.\n` +
+    `- Pas de nom de client (le message part à plusieurs personnes).\n` +
     `- Termine par un appel simple à répondre (ex. « Répondez-moi pour réserver »).\n` +
-    `- Réponds UNIQUEMENT le message final, sans guillemets, sans titre, sans commentaire.`;
+    `- Réponds UNIQUEMENT un objet JSON : {"variantes":["…","…","…"]}. Aucun texte autour.`;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 260,
-        temperature: 0.7,
+        // La qualité de ce texte EST le produit : le pro le juge en 2 secondes.
+        // On prend le modèle qui écrit le mieux, l'appel reste court et rare.
+        model: "claude-sonnet-5",
+        max_tokens: 900,
+        temperature: 0.8,
         system,
-        messages: [{ role: "user", content: brief }],
+        messages: [
+          { role: "user", content: brief },
+          // Amorce : force une sortie JSON exploitable sans préambule.
+          { role: "assistant", content: '{"variantes":[' },
+        ],
       }),
     });
-    if (!res.ok) return NextResponse.json({ ok: true, text: `Bonjour ! ${brief}\n\nRépondez-moi pour en profiter 🙂`, fallback: true });
+    if (!res.ok) return NextResponse.json(secours(brief, nom), { status: 200 });
     const data = await res.json();
-    const text = str(data?.content?.[0]?.text);
-    if (!text) return NextResponse.json({ ok: true, text: `Bonjour ! ${brief}\n\nRépondez-moi pour en profiter 🙂`, fallback: true });
-    return NextResponse.json({ ok: true, text });
+    // On a amorcé la réponse avec `{"variantes":[` : il faut le recoller.
+    const raw = str(data?.content?.[0]?.text);
+    const variantes = parseVariantes(raw);
+    if (!variantes.length) return NextResponse.json(secours(brief, nom), { status: 200 });
+    return NextResponse.json({ ok: true, text: variantes[0], variantes });
   } catch {
-    return NextResponse.json({ ok: true, text: `Bonjour ! ${brief}\n\nRépondez-moi pour en profiter 🙂`, fallback: true });
+    return NextResponse.json(secours(brief, nom), { status: 200 });
   }
+}
+
+// Repli quand le modèle est indisponible : on met en forme ce que le pro a écrit,
+// sans rien inventer, et on le SIGNALE (`fallback`) pour ne pas faire passer ça
+// pour de la rédaction assistée.
+function secours(brief: string, nom: string) {
+  const t = brief.trim().replace(/\s+/g, " ");
+  const phrase = /[.!?]$/.test(t) ? t : `${t}.`;
+  return {
+    ok: true,
+    text: `Bonjour ! ${phrase}\n\nRépondez-moi pour en profiter — à très vite chez ${nom} 🙂`,
+    fallback: true,
+  };
+}
+
+// Le modèle répond `…"], …}` (on a amorcé l'ouverture). On recolle, et à défaut
+// on récupère les chaînes une par une : mieux vaut deux variantes que zéro.
+function parseVariantes(raw: string): string[] {
+  const clean = (v: unknown) => String(v ?? "").trim();
+  const body = raw.trim().startsWith("{") ? raw.trim() : `{"variantes":[${raw}`;
+  try {
+    const j = JSON.parse(body.slice(0, body.lastIndexOf("}") + 1 || undefined));
+    const arr = Array.isArray(j?.variantes) ? j.variantes : [];
+    const out = arr.map(clean).filter(Boolean).slice(0, 3);
+    if (out.length) return out;
+  } catch {
+    /* JSON tronqué → extraction ligne à ligne ci-dessous */
+  }
+  const found = body.match(/"((?:[^"\\]|\\.)*)"/g) ?? [];
+  return found
+    .map((s) => clean(s.slice(1, -1).replace(/\\n/g, "\n").replace(/\\"/g, '"')))
+    .filter((s) => s.length > 20 && s !== "variantes")
+    .slice(0, 3);
 }

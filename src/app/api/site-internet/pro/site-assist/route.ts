@@ -67,7 +67,9 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        // Texte que le pro publie sur SON site et juge en un coup d'œil : on prend
+        // le modèle qui écrit le mieux (appel court, rare, non bloquant).
+        model: "claude-sonnet-5",
         max_tokens: 500,
         temperature: 0.4,
         system,
