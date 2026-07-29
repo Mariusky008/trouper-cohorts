@@ -39,6 +39,21 @@ const ICO = {
   product: "M3.5 7.5 12 3l8.5 4.5M3.5 7.5V16L12 21m-8.5-13.5L12 12m0 9 8.5-5V7.5M12 21v-9m8.5-4.5L12 12",
 } as const;
 
+// Progression : trois temps de SAISIE seulement. Les écrans de résultat
+// (« c'est publié », « options prêtes ») sont volontairement hors compteur —
+// un résultat n'est pas une étape, et le chemin Pro en compte plusieurs.
+const STEP_LABELS = ["Je choisis", "Je décris", "Je vérifie"] as const;
+const Steps = ({ n }: { n: 1 | 2 | 3 }) => (
+  <div className="asx-steps">
+    <span className="asx-segs" aria-hidden="true">
+      {STEP_LABELS.map((_, i) => (
+        <span key={i} className={i < n ? "on" : ""} />
+      ))}
+    </span>
+    <span className="asx-steplb">{STEP_LABELS[n - 1]}</span>
+  </div>
+);
+
 export function MaquetteAssistant({ accent, data, slug }: { accent: string; data: MaquetteAssistantData; slug: string }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
@@ -270,31 +285,58 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     `<button class="asx-rtn" data-tooptions>Découvrir comment toucher plus de monde</button>` +
     tiny("Aucune diffusion extérieure n'a été effectuée.");
 
+  // Écran Pro : on n'affiche QUE les canaux réellement cochés, sans jamais avancer
+  // de nombre de contacts inventé, et le bouton demande une activation — il ne
+  // simule pas un paiement qui n'existe pas.
   const proFinal = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
-    const plur = term === "patient" ? "patients" : "client(e)s";
-    const line = (ic: string, t: string, s: string, free: boolean) =>
+    const line = (ic: string, t: string, s: string) =>
       `<div class="asx-cline"><span class="ci">${ic}</span><span class="cb"><span class="ct">${t}</span><span class="cs">${s}</span></span>` +
-      `<span class="cbadge ${free ? "free" : "pro"}">${free ? "Inclus" : "Option Pro"}</span></div>`;
+      `<span class="cbadge pro">Option Pro</span></div>`;
     return (
-      `<div class="asx-pro-k">✨ Aperçu des options Pro</div>` +
-      `<div class="asx-done-h">Votre mini-campagne est prête.</div>` +
-      `<div class="asx-done-s">Votre assistante a adapté l'annonce pour plusieurs canaux. Vérifiez tout avant de décider de l'activer.</div>` +
+      `<div class="asx-pro-k">✨ Options Pro</div>` +
+      `<div class="asx-done-h">Vos options Pro sont prêtes.</div>` +
+      `<div class="asx-done-s">Votre assistante a adapté votre annonce pour chaque canal que vous avez choisi. Vérifiez tout — vous décidez ensuite.</div>` +
       `<div class="asx-clines">` +
-        line("🌐", "Votre site", "L'annonce sera affichée immédiatement.", true) +
-        (wa ? line("📱", "WhatsApp", "Message préparé pour vos contacts autorisés.", false) : "") +
-        (social ? line("📸", "Facebook &amp; Instagram", "Publication prête à être vérifiée.", false) : "") +
-        (resa ? line("📅", "Réservation", "Lien direct ajouté à l'annonce.", false) : "") +
+        (wa ? line("📱", "WhatsApp", `Message préparé pour vos ${plural} qui ont accepté d'être prévenu·es.`) : "") +
+        (social ? line("📸", "Facebook &amp; Instagram", "Publication préparée, à relire avant toute diffusion.") : "") +
+        (resa ? line("📅", "Lien de réservation", "Ajouté à l'annonce, pour réserver en un clic.") : "") +
       `</div>` +
-      (wa
-        ? `<div class="asx-reachbox"><div class="asx-reachnum">jusqu'à <b>46</b></div>` +
-          `<div class="asx-reachtx">contacts autorisés <b>pourraient</b> être prévenus en un seul envoi, avec l'option WhatsApp.</div></div>`
-        : "") +
+      `<div class="asx-glab" style="text-align:left">Votre annonce, telle qu'elle s'affichera</div>` +
       bandHtml(msg) +
-      `<div class="asx-simnote">Simulation basée sur une liste de démonstration. <b>Aucun message n'a été envoyé.</b></div>` +
       `<div class="asx-pricebox">Options Pro&nbsp;: <b>29 €/mois</b><span>sans engagement · résiliable à tout moment</span></div>` +
-      `<button class="asx-cta2 pro" data-procont>Continuer vers l'activation</button>` +
-      `<button class="asx-link" data-return>Continuer gratuitement avec mon site</button>` +
-      tiny(`Vous validerez une dernière fois avant toute activation. (${plur})`)
+      `<div class="asx-nono">Aucun message ne sera envoyé et aucun paiement ne sera effectué aujourd'hui.</div>` +
+      `<button class="asx-cta2 pro" data-proask>Demander l'activation Pro</button>` +
+      `<button class="asx-link" data-freeonly>Continuer gratuitement</button>`
+    );
+  };
+
+  // « Demander l'activation Pro » : on enregistre une INTENTION (best-effort), et
+  // surtout le pro ne perd pas le bénéfice gratuit — son annonce est publiée.
+  const askPro = () => {
+    const opts = [optWa && "WhatsApp", optSocial && "Facebook & Instagram", optResa && "Lien de réservation"]
+      .filter(Boolean)
+      .join(", ");
+    try {
+      void fetch("/api/site-internet/apercu/pro-interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, options: opts, annonce: fn }),
+        keepalive: true,
+      }).catch(() => { /* best-effort : la confirmation s'affiche quand même */ });
+    } catch {
+      /* best-effort */
+    }
+    setCard(
+      `<div class="asx-done-k">✅ Action terminée</div>` +
+        `<div class="asx-done-h">Votre annonce est en ligne sur votre site 🎉</div>` +
+        bandHtml(fn) +
+        `<div class="asx-pronote"><b>Votre demande Pro est enregistrée.</b>` +
+          `Nous vous présenterons les conditions définitives avant toute activation ou facturation.` +
+          (opts ? `<span>Options demandées&nbsp;: ${esc(opts)}</span>` : "") +
+        `</div>` +
+        `<button class="asx-cta2" data-seeoffer>Voir mon annonce</button>` +
+        `<button class="asx-link" data-return>Revenir à mon assistante</button>` +
+        tiny("Aucun message n'a été envoyé, aucun paiement n'a été effectué.")
     );
   };
 
@@ -310,31 +352,6 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     openStage(`<div class="asx-ctx">Votre assistante adapte l'annonce pour chaque canal…</div><div class="asx-dots" style="margin-top:14px"><span>•</span><span>•</span><span>•</span></div>`);
     after(1500, () => setCard(proFinal(msg, wa, social, resa)));
     if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
-  };
-
-  // Écran final « puissance » (après « Continuer vers l'activation »).
-  // Écran final : on lève la contradiction « prête partout » vs diffusion
-  // limitée au site. On dit exactement ce qui est inclus et ce qui est en option,
-  // et le bouton PUBLIE (il ne laisse plus croire qu'on peut « perdre » son site).
-  const proReveal = () => {
-    const line = (ic: string, t: string, free: boolean) =>
-      `<div class="asx-rl"><span class="i">${ic}</span><span class="t">${t}</span>` +
-      `<span class="tag ${free ? "free" : "pro"}">${free ? "inclus" : "Option Pro"}</span></div>`;
-    setCard(
-      `<div class="asx-done-h">Votre annonce est prête.</div>` +
-        `<div class="asx-done-s">Publiez-la maintenant gratuitement sur votre site.</div>` +
-        `<div class="asx-rlist">` +
-          line("🌐", "Votre site", true) +
-          line("🤝", "Sites des commerces partenaires<sup>*</sup>", true) +
-          line("📱", "WhatsApp", false) +
-          line("📸", "Facebook", false) +
-          line("📸", "Instagram", false) +
-        `</div>` +
-        `<div class="asx-aster">* Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous.</div>` +
-        `<div class="asx-pricebox">Options Pro&nbsp;: <b>29 €/mois</b><span>sans engagement · résiliable à tout moment</span></div>` +
-        `<button class="asx-cta2" data-publish>Publier gratuitement sur mon site</button>` +
-        `<button class="asx-link" data-return>Revenir à mon assistante</button>`
-    );
   };
 
   // Publication (gratuite) : le moment de satisfaction qui manquait.
@@ -416,8 +433,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     const t = e.target as HTMLElement;
     if (t.closest("[data-cta]")) goBuy();
     else if (t.closest("[data-seeoffer]")) seeOffer();
-    else if (t.closest("[data-procont]")) proReveal();
-    else if (t.closest("[data-publish]")) publishFree();
+    else if (t.closest("[data-proask]")) askPro();
+    else if (t.closest("[data-freeonly],[data-publish]")) publishFree();
     else if (t.closest("[data-tooptions]")) {
       // « Découvrir comment toucher plus de monde » → retour à l'écran des options,
       // en rappelant que l'annonce est DÉJÀ en ligne gratuitement.
@@ -433,12 +450,13 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     ? ["« Vous auriez de la place cette semaine ? »", "« Comment prendre rendez-vous ? »", "« Vous êtes ouvert ce week-end ? »"]
     : ["« Comment prendre rendez-vous ? »", "« Prenez-vous de nouveaux patients ? »", "« Où êtes-vous situé ? »"];
   // Action Flash : l'objectif du pro (créneau / événement / offre / déstockage).
-  // `hint` = l'exemple que le pro voit dans le champ « que voulez-vous annoncer ? ».
-  const offres: Array<{ label: string; ico: string; hint: string; msg: string }> = [
-    { label: "Annoncer une disponibilité", ico: ICO.slot, hint: "Ex. il me reste 4 places jeudi à 18 h.", msg: `Une place se libère bientôt chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
-    { label: "Promouvoir un événement", ico: ICO.event, hint: "Ex. portes ouvertes samedi de 10 h à 17 h.", msg: `Bientôt chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
-    { label: "Partager une offre spéciale", ico: ICO.offer, hint: "Ex. -20 % sur les abonnements cette semaine.", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
-    { label: "Mettre un produit en avant", ico: ICO.product, hint: "Ex. nouveaux tapis en boutique, série limitée.", msg: `Dernières pièces chez ${nom} — une belle occasion à saisir. Ça vous intéresse ? Répondez OUI 🙂` },
+  // `ex` = l'exemple montré DANS UN BLOC À PART (jamais dans le champ, sinon on
+  // le prend pour du texte déjà saisi) ; `msg` = l'annonce si le pro le reprend.
+  const offres: Array<{ label: string; ico: string; ex: string; msg: string }> = [
+    { label: "Annoncer une disponibilité", ico: ICO.slot, ex: "Il me reste 4 places jeudi à 18 h.", msg: `Une place se libère bientôt chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
+    { label: "Annoncer un événement", ico: ICO.event, ex: "Portes ouvertes samedi de 10 h à 17 h.", msg: `Bientôt chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
+    { label: "Partager une offre spéciale", ico: ICO.offer, ex: "-20 % sur les abonnements cette semaine.", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
+    { label: "Mettre un produit en avant", ico: ICO.product, ex: "Nouveaux tapis en boutique, série limitée.", msg: `Dernières pièces chez ${nom} — une belle occasion à saisir. Ça vous intéresse ? Répondez OUI 🙂` },
   ];
   const plural = term === "patient" ? "patients" : "client(e)s";
 
@@ -470,7 +488,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
-          <div className="asx-step">Étape 1 sur 3</div>
+          <Steps n={1} />
           <div className="asx-say"><b>Que voulez-vous annoncer&nbsp;?</b> Je prépare tout et je vous montre <b>exactement</b> ce que je vais faire — vous validez avant l’envoi.</div>
           <div className="asx-objs">
             {offres.map((o, i) => (
@@ -494,31 +512,41 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     //    annonce préfabriquée). Il peut écrire, ou valider l'exemple proposé.
     if (view === "creneauSay") {
       const o = offres[obj] ?? offres[0];
-      const write = () => {
+      // `mine` = le pro a écrit sa phrase ; sinon il reprend l'exemple affiché.
+      const write = (mine: boolean) => {
         setWriting(true);
         window.setTimeout(() => {
           setWriting(false);
-          setFn(said.trim() ? `${said.trim()} — chez ${nom}. Répondez OUI, je vous réserve ça 🙂` : o.msg);
+          setFn(mine ? `${said.trim()} — chez ${nom}. Répondez OUI, je vous réserve ça 🙂` : o.msg);
           setView("creneauPrev");
         }, 1100);
       };
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-step">Étape 2 sur 3</div>
+          <Steps n={2} />
           <div className="asx-say"><b>Dites-moi en une phrase.</b> Je rédige l’annonce pour vous.</div>
+          {/* L'exemple est HORS du champ : dans le champ, il serait pris pour du
+              texte déjà saisi (c'est ce qui bloquait les pros au test). */}
+          <div className="asx-ex">
+            <span className="asx-exk">Exemple</span>
+            {o.ex}
+          </div>
           <textarea
             className="asx-said"
             value={said}
             onChange={(e) => setSaid(e.target.value)}
             rows={3}
-            placeholder={o.hint}
+            placeholder="Écrivez votre annonce ici…"
             aria-label="Ce que vous voulez annoncer"
           />
-          <button className={`asx-send${said.trim() ? "" : " pulse"}`} onClick={write} disabled={writing}>
-            {writing ? "Je rédige…" : said.trim() ? "✍️ Rédiger mon annonce" : "✍️ Utiliser l’exemple ci-dessus"}
+          <button className={`asx-send${said.trim() ? " pulse" : ""}`} onClick={() => write(true)} disabled={writing || !said.trim()}>
+            {writing ? "Je rédige…" : "✍️ Rédiger mon annonce"}
           </button>
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>Vous pourrez la modifier juste après.</div>
+          <button type="button" className="asx-link" onClick={() => write(false)} disabled={writing}>
+            Utiliser l’exemple ci-dessus
+          </button>
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 4 }}>Vous pourrez la modifier juste après.</div>
         </>
       );
     }
@@ -527,17 +555,18 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauSay")}>‹ Retour</button>
-          <div className="asx-step">Étape 3 sur 3</div>
+          <Steps n={3} />
           <div className="asx-say"><b>Vérifiez, puis publiez.</b></div>
 
           <div className="asx-prev">
-            <div className="asx-to">
-              ✍️ Votre annonce
-              <button type="button" className="asx-edit" onClick={() => setEditing((v) => !v)}>{editing ? "✓ Terminé" : "Modifier l’annonce"}</button>
-            </div>
+            <div className="asx-to">✍️ Votre annonce</div>
             {editing
               ? <textarea className="asx-said sm" value={fn} onChange={(e) => setFn(e.target.value)} rows={3} aria-label="Votre annonce" />
               : <div className="asx-wac">{fn}</div>}
+            {/* Sous le texte, jamais collé au titre : on modifie ce qu'on vient de lire. */}
+            <div className="asx-editrow">
+              <button type="button" className="asx-edit" onClick={() => setEditing((v) => !v)}>{editing ? "✓ Terminé" : "✏️ Modifier"}</button>
+            </div>
           </div>
 
           <div className="asx-glab">Inclus gratuitement</div>
@@ -550,21 +579,40 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           <div className="asx-glab">Options Pro — pour toucher davantage de {plural}</div>
           <div className="asx-flash">
             <button type="button" className={`asx-fl optbtn${optWa ? " sel" : ""}`} onClick={() => setOptWa((v) => !v)}>
-              <span className="i">📱</span><span className="t">Prévenir mes contacts WhatsApp <b>(jusqu’à 146)</b></span><span className="asx-ck">{optWa ? "✓" : ""}</span>
+              <span className="i">📱</span>
+              <span className="t">Prévenir mes contacts WhatsApp
+                {optWa && <em>Seuls vos {plural} ayant accepté d’être prévenu·es recevraient le message.</em>}
+              </span>
+              <span className="asx-ck">{optWa ? "✓" : ""}</span>
             </button>
             <button type="button" className={`asx-fl optbtn${optSocial ? " sel" : ""}`} onClick={() => setOptSocial((v) => !v)}>
-              <span className="i">📸</span><span className="t">Publications Facebook &amp; Instagram préparées</span><span className="asx-ck">{optSocial ? "✓" : ""}</span>
+              <span className="i">📸</span>
+              <span className="t">Publications Facebook &amp; Instagram préparées
+                {optSocial && <em>Vous relisez chaque publication avant qu’elle ne parte.</em>}
+              </span>
+              <span className="asx-ck">{optSocial ? "✓" : ""}</span>
             </button>
             <button type="button" className={`asx-fl optbtn${optResa ? " sel" : ""}`} onClick={() => setOptResa((v) => !v)}>
-              <span className="i">🗓️</span><span className="t">Lien de réservation ajouté</span><span className="asx-ck">{optResa ? "✓" : ""}</span>
+              <span className="i">🗓️</span>
+              <span className="t">Lien de réservation ajouté
+                {optResa && <em>Vos {plural} réservent en un clic depuis l’annonce.</em>}
+              </span>
+              <span className="asx-ck">{optResa ? "✓" : ""}</span>
             </button>
           </div>
           {anyOpt && <div className="asx-price">Options Pro&nbsp;: <b>29 €/mois</b> · sans engagement · résiliable à tout moment</div>}
 
+          {/* Le bouton dit EXACTEMENT ce que le pro a choisi — et le gratuit reste
+              toujours accessible en un clic, jamais enterré. */}
           <button className="asx-send" onClick={() => playCreneau(fn, optWa, optSocial, optResa)}>
-            {anyOpt ? "Prévisualiser mes publications" : "Publier gratuitement sur mon site"}
+            {anyOpt ? "Continuer avec les options Pro" : "Publier gratuitement sur mon site"}
           </button>
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>
+          {anyOpt && (
+            <button type="button" className="asx-link" onClick={() => playCreneau(fn, false, false, false)}>
+              Publier seulement sur mon site
+            </button>
+          )}
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: anyOpt ? 4 : 9 }}>
             {anyOpt ? "Rien ne sera envoyé ni facturé sans votre validation." : "Aucune option payante ne sera activée."}
           </div>
         </>
@@ -779,11 +827,32 @@ function styles(accent: string): string {
   .asx-fl.optbtn{width:100%;background:#fff;border:none;border-top:1px solid #F1EFE8;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-fl.optbtn:first-child{border-top:none;}
   .asx-fl.optbtn.sel{background:linear-gradient(120deg,#F5F3FF,#fff);}
-  .asx-fl .asx-ck{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #E0DAF0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;background:#fff;}
+  /* Case décochée VRAIMENT vide : bordure grise neutre, fond légèrement creusé.
+     En violet clair, elle se lisait comme une option déjà activée. */
+  .asx-fl .asx-ck{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #D8D4CA;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;background:#F4F2EC;}
   .asx-fl.optbtn.sel .asx-ck{background:#6B4BC7;border-color:#6B4BC7;}
+  /* La conséquence du choix s'affiche APRÈS le clic, jamais comme promesse chiffrée */
+  .asx-fl .t em{display:block;font-style:normal;font-size:11px;line-height:1.4;color:#6B4BC7;margin-top:3px;}
   .asx-optcard{margin-top:14px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #E4DEF7;border-radius:14px;padding:14px 15px;font-size:13px;line-height:1.5;color:#3A3A32;text-align:left;}
-  /* ── Parcours Action Flash : je choisis → je dis → je vérifie → c'est publié ── */
-  .asx-step{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A63D9;margin-bottom:8px;}
+  /* ── Parcours Action Flash : je choisis → je décris → je vérifie → c'est publié ──
+     Trois segments libellés plutôt qu'un « étape N sur 3 » : le chemin Pro compte
+     plusieurs écrans de résultat après la saisie, un dénominateur mentirait. */
+  .asx-steps{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .asx-segs{display:flex;gap:4px;flex:none;}
+  .asx-segs span{width:22px;height:4px;border-radius:2px;background:#E8E4DA;transition:background .3s ease;}
+  .asx-segs span.on{background:#8A63D9;}
+  .asx-steplb{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A63D9;}
+  /* L'exemple, clairement HORS du champ de saisie */
+  .asx-ex{margin-top:14px;border:1px dashed #D9CFF0;background:#FAF8FF;border-radius:12px;padding:11px 13px;
+    font-size:13.5px;line-height:1.45;color:#4A4A40;text-align:left;font-style:italic;}
+  .asx-exk{display:block;font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A63D9;margin-bottom:4px;}
+  .asx-ex+.asx-said{margin-top:9px;}
+  .asx-editrow{display:flex;justify-content:flex-end;margin-top:8px;}
+  .asx-nono{margin-top:11px;font-size:11.5px;line-height:1.45;color:#71766C;text-align:center;}
+  .asx-pronote{margin-top:15px;display:flex;flex-direction:column;gap:5px;text-align:left;border:1px solid #E0D8F5;
+    background:linear-gradient(120deg,#F7F3FF,#fff);border-radius:13px;padding:13px 14px;font-size:12.5px;line-height:1.5;color:#4A4A40;}
+  .asx-pronote b{font-size:13.5px;color:#5B3FA6;font-weight:850;}
+  .asx-pronote span{font-size:11.5px;color:#71766C;}
   .asx-objs{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
   .asx-obj{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;font-family:inherit;
     border:1px solid #E7E4DC;background:#fff;border-radius:14px;padding:14px 13px;transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease;}
@@ -799,8 +868,8 @@ function styles(accent: string): string {
     background:#fff;resize:vertical;line-height:1.5;color:#16160F;box-sizing:border-box;}
   .asx-said.sm{font-size:13.5px;margin-top:8px;}
   .asx-said:focus{outline:none;border-color:#8A63D9;box-shadow:0 0 0 3px rgba(138,99,217,.15);}
-  /* le bouton « pulse » tant que le pro n'a rien écrit : on comprend qu'il faut cliquer */
-  .asx-send.pulse{animation:asxPulse 1.9s ease-in-out infinite;}
+  /* Une respiration courte quand le bouton devient actif — pas une insistance en boucle */
+  .asx-send.pulse{animation:asxPulse 1.9s ease-in-out 3;}
   @keyframes asxPulse{0%,100%{box-shadow:0 12px 26px -14px rgba(91,63,166,.7)}50%{box-shadow:0 12px 26px -14px rgba(91,63,166,.7),0 0 0 7px rgba(138,99,217,.16)}}
   @media (prefers-reduced-motion:reduce){.asx-send.pulse{animation:none;}}
   .asx-edit{margin-left:auto;border:none;background:none;color:#5B3FA6;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;}
@@ -812,15 +881,9 @@ function styles(accent: string): string {
   .asx-pricebox span{font-size:11.5px;color:#71766C;}
   .asx-link{margin-top:11px;width:100%;background:none;border:none;color:#71766C;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:underline;padding:6px;}
   .asx-link:hover{color:#3A3A32;}
-  .asx-rlist{display:flex;flex-direction:column;gap:7px;margin-top:15px;text-align:left;}
-  .asx-rl{display:flex;align-items:center;gap:11px;border:1px solid #E7E4DC;border-radius:12px;padding:11px 12px;background:#fff;}
-  .asx-rl .i{font-size:17px;flex:none;width:20px;text-align:center;}
-  .asx-rl .t{flex:1;font-size:13.5px;font-weight:700;color:#16160F;}
-  .asx-rl .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:6px;}
-  .asx-rl .tag.free{background:#E4F7EE;color:#0E7C5A;}
-  .asx-rl .tag.pro{background:#F0EBFF;color:#6B4BC7;}
+  .asx-link:disabled{opacity:.5;cursor:not-allowed;}
   .asx-aster{margin-top:9px;font-size:11px;line-height:1.45;color:#8A8577;text-align:left;}
-  .asx-fl sup,.asx-rl sup,.asx-proof sup{font-size:9px;color:#0E7C5A;font-weight:800;}
+  .asx-fl sup,.asx-proof sup{font-size:9px;color:#0E7C5A;font-weight:800;}
   .asx-task{width:100%;border:none;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-task .asx-go{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;margin-left:auto;}
   /* ── Pop-up « c'est fait » (gratuit) et « campagne prête » (options Pro) ── */
@@ -849,11 +912,6 @@ function styles(accent: string): string {
   .asx-cline .cbadge{flex:none;font-size:9.5px;font-weight:800;padding:4px 8px;border-radius:6px;}
   .asx-cline .cbadge.free{background:#E4F7EE;color:#0E7C5A;}
   .asx-cline .cbadge.pro{background:#F0EBFF;color:#6B4BC7;}
-  .asx-reachbox{margin-top:14px;border:1px solid #E0D8F5;background:linear-gradient(160deg,#F7F3FF,#fff);border-radius:14px;padding:14px;text-align:center;}
-  .asx-reachnum{font-size:26px;font-weight:850;color:#5B3FA6;letter-spacing:-.02em;}
-  .asx-reachnum b{font-size:32px;}
-  .asx-reachtx{font-size:12.5px;color:#5F6358;line-height:1.5;margin-top:5px;}
-  .asx-simnote{margin-top:12px;font-size:11.5px;line-height:1.45;color:#6B5418;background:#FBF3E4;border:1px solid #EBD9AE;border-radius:11px;padding:10px 12px;}
   .asx-chans{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:16px;}
   .asx-chip{font-size:12px;font-weight:700;color:#463F6B;background:linear-gradient(180deg,#F4F1FF,#EDE9FB);border:1px solid #E4DEF7;border-radius:999px;padding:8px 13px;}
   .asx-chip.free{color:#0E7C5A;background:#E4F7EE;border-color:#BFE9D4;}
