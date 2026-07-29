@@ -612,6 +612,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-end .more-l .tg{flex:none;font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;}
           .dtour-end .more-l .tg.opt{background:rgba(124,92,252,.25);color:#cabdff;}
           .dtour-end .more-l .tg.soon{background:rgba(240,180,41,.2);color:#F0B429;}
+          .dtour-end .more-l .tg.free{background:rgba(18,185,129,.22);color:#7FE6C0;}
+          .dtour-end .more-l .x sup{font-size:9px;color:#7FE6C0;font-weight:800;}
           .dtour-end .more-note{width:100%;max-width:400px;text-align:left;font-size:11.5px;line-height:1.5;color:#8E93B5;margin-top:14px;
             background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;}
           .dtour-end .more-note b{color:#C9CFE6;}
@@ -853,7 +855,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                   <span className="fx-bk">🎉 Offre du moment</span>
                   <span className="fx-bt">{flashExample || "Une offre cette semaine à faire connaître."}</span>
                 </div>
-                <div className="fx-live">✓ Affichée sur votre site — <b>gratuitement</b></div>
+                <div className="fx-live">✓ Affichée sur votre site et chez les commerces partenaires — <b>gratuitement</b></div>
                 <div className="fx-opt">Pour toucher plus de monde&nbsp;: une campagne WhatsApp &amp; réseaux, <b>en option</b>.</div>
               </div>
             </div>
@@ -923,8 +925,9 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
         </div>
       )}
 
-      {/* BONUS (à la demande) : aller plus loin. Rien n'est promis comme existant :
-          le réseau et les partenaires sont annoncés comme une ambition en cours. */}
+      {/* BONUS (à la demande) : aller plus loin. WhatsApp / réseaux sociaux sont
+          des options payantes ; la diffusion chez les commerces partenaires est
+          incluse, avec un astérisque sur le déploiement ville par ville. */}
       {phase === "more" && (
         <div className="dtour-end">
           <div className="more-k">Aller plus loin</div>
@@ -934,11 +937,12 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           <div className={`more-l${mstep >= 1 ? " in" : ""}`}><span className="e">📲</span><span className="x"><b>Vos clients</b>Prévenir vos contacts WhatsApp.</span><span className="tg opt">option</span></div>
           <div className={`more-l${mstep >= 2 ? " in" : ""}`}><span className="e">📸</span><span className="x"><b>Vos réseaux</b>Une publication Facebook &amp; Instagram préparée.</span><span className="tg opt">option</span></div>
 
-          <div className={`more-sec${mstep >= 3 ? " in" : ""}`}>Au-delà de votre audience</div>
+          <div className={`more-sec${mstep >= 3 ? " in" : ""}`}>Au-delà de votre audience — <b style={{ color: "#7FE6C0" }}>inclus</b></div>
+          <div className={`more-l${mstep >= 3 ? " in" : ""}`}><span className="e">🤝</span><span className="x"><b>Les commerces partenaires</b>Votre annonce s&apos;affiche aussi sur leurs sites.<sup>*</sup></span><span className="tg free">inclus</span></div>
 
           {/* La scène : le site d'un partenaire s'ouvre, la section entre, votre
-              carte y glisse, un visiteur la touche. Cadrée « exemple » (le réseau
-              n'existe pas encore) — on montre le mécanisme, pas un fait. */}
+              carte y glisse, un visiteur la touche. Cadrée « exemple » : c'est une
+              simulation du mécanisme, pas une capture d'un partenaire réel. */}
           <div className={`mp-frame${mstep >= 3 ? " in" : ""}`}>
             <div className="mp-bar">
               <span className="d" /><span className="d" /><span className="d" />
@@ -964,8 +968,9 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           </div>
 
           <div className="more-note">
-            Ce réseau <b>se construit ville par ville</b> : il n&apos;existe pas encore autour de vous.
-            Aucune donnée client n&apos;est partagée — seulement votre annonce, et seulement avec votre accord.
+            * Le réseau <b>se déploie ville par ville</b> : votre annonce y apparaît dès qu&apos;un commerce
+            partenaire est actif près de chez vous. Que des commerces complémentaires, jamais un concurrent —
+            et aucune donnée client n&apos;est partagée, seulement votre annonce.
           </div>
           <div className="end-cta">
             <button className="end-go" onClick={keep}>✓ Garder mon site gratuitement</button>

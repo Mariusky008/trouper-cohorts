@@ -261,10 +261,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     `<div class="asx-done-s">Elle est maintenant visible en haut de votre site, par toutes les personnes qui le consultent.</div>` +
     bandHtml(msg) +
     `<div class="asx-proofs">` +
-      `<div class="asx-proof"><span>🌐</span>Visible tout de suite</div>` +
-      `<div class="asx-proof"><span>🎁</span>100 % gratuit</div>` +
-      `<div class="asx-proof"><span>✏️</span>Modifiable quand vous voulez</div>` +
+      `<div class="asx-proof"><span>🌐</span>Visible tout de suite sur votre site</div>` +
+      `<div class="asx-proof"><span>🤝</span>Et sur les sites des commerces partenaires<sup>*</sup></div>` +
+      `<div class="asx-proof"><span>🎁</span>100 % gratuit · modifiable quand vous voulez</div>` +
     `</div>` +
+    `<div class="asx-aster">* Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous.</div>` +
     `<button class="asx-cta2" data-seeoffer>Voir mon annonce sur le site</button>` +
     `<button class="asx-rtn" data-tooptions>Découvrir comment toucher plus de monde</button>` +
     tiny("Aucune diffusion extérieure n'a été effectuée.");
@@ -324,10 +325,12 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         `<div class="asx-done-s">Publiez-la maintenant gratuitement sur votre site.</div>` +
         `<div class="asx-rlist">` +
           line("🌐", "Votre site", true) +
+          line("🤝", "Sites des commerces partenaires<sup>*</sup>", true) +
           line("📱", "WhatsApp", false) +
           line("📸", "Facebook", false) +
           line("📸", "Instagram", false) +
         `</div>` +
+        `<div class="asx-aster">* Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous.</div>` +
         `<div class="asx-pricebox">Options Pro&nbsp;: <b>29 €/mois</b><span>sans engagement · résiliable à tout moment</span></div>` +
         `<button class="asx-cta2" data-publish>Publier gratuitement sur mon site</button>` +
         `<button class="asx-link" data-return>Revenir à mon assistante</button>`
@@ -540,7 +543,9 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           <div className="asx-glab">Inclus gratuitement</div>
           <div className="asx-flash">
             <div className="asx-fl on"><span className="i">🌐</span><span className="t">Publiée sur votre site</span><span className="asx-lock">✓ inclus</span></div>
+            <div className="asx-fl on"><span className="i">🤝</span><span className="t">Diffusée sur les sites des <b>commerces partenaires</b> de votre ville<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
           </div>
+          <div className="asx-aster">* Le réseau se déploie ville par ville&nbsp;: votre annonce y apparaît dès qu&apos;un commerce partenaire est actif près de chez vous.</div>
 
           <div className="asx-glab">Options Pro — pour toucher davantage de {plural}</div>
           <div className="asx-flash">
@@ -814,6 +819,8 @@ function styles(accent: string): string {
   .asx-rl .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:6px;}
   .asx-rl .tag.free{background:#E4F7EE;color:#0E7C5A;}
   .asx-rl .tag.pro{background:#F0EBFF;color:#6B4BC7;}
+  .asx-aster{margin-top:9px;font-size:11px;line-height:1.45;color:#8A8577;text-align:left;}
+  .asx-fl sup,.asx-rl sup,.asx-proof sup{font-size:9px;color:#0E7C5A;font-weight:800;}
   .asx-task{width:100%;border:none;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-task .asx-go{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;margin-left:auto;}
   /* ── Pop-up « c'est fait » (gratuit) et « campagne prête » (options Pro) ── */

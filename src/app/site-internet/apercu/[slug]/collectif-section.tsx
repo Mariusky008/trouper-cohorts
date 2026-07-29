@@ -117,13 +117,13 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
       />
       <div className="cl-card">
         <div className="cl-in">
-          <div className="cl-k">🤝 Le collectif de {ville}{!published && <span className="cl-opt">Option Popey</span>}</div>
+          <div className="cl-k">🤝 Le collectif de {ville}{!published && <span className="cl-opt">Inclus · gratuit</span>}</div>
 
           {!published ? (
             <>
               {/* AU PRO : on MONTRE d'emblée le mécanisme — son propre commerce, tel
-                  qu'il apparaîtrait sur le site d'un partenaire. Cadré comme une
-                  projection (le réseau n'existe pas encore), jamais comme du live. */}
+                  qu'il apparaîtrait sur le site d'un partenaire. Cadré « exemple »
+                  (c'est une simulation du rendu), jamais comme du live. */}
               <div className="cl-h">Votre commerce, <em>recommandé chez des partenaires.</em></div>
               <div className="cl-p">Les commerces Popey se recommandent entre eux.</div>
 
@@ -192,7 +192,7 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
           <div className="cl-note">
             {published
               ? "Des commerces complémentaires, jamais un concurrent. Aucune donnée n'est partagée sans accord."
-              : `Ce réseau se construit ville par ville — il n'existe pas encore autour de vous. Que des commerces complémentaires, jamais un concurrent : seule votre annonce circule, jamais vos données client.`}
+              : `Inclus dans votre site. Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous. Que des commerces complémentaires, jamais un concurrent — seule votre annonce circule, jamais vos données client.`}
           </div>
         </div>
       </div>
