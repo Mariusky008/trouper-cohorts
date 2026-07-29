@@ -15,7 +15,7 @@ type Svc = { name: string; price?: string };
 type Media =
   | { kind: "video"; url: string }
   | { kind: "photo"; url: string }
-  | { kind: "offer"; text: string; until: string | null; example?: boolean }
+  | { kind: "offer"; text: string; until: string | null; example?: boolean; img?: string }
   | { kind: "review"; review: Review }
   | { kind: "services"; items: Svc[] }
   | { kind: "access"; address: string; horaires: Array<{ jours?: string; horaires?: string }> };
@@ -55,8 +55,12 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
   // Le catalogue s'OUVRE sur une offre : la vraie « offre du moment » si elle
   // existe, sinon (démo) un exemple d'Action Flash clairement labellisé.
-  if (offer?.text) cards.unshift({ kind: "offer", text: offer.text, until: offer.until ?? null });
-  else if (exampleOffer) cards.unshift({ kind: "offer", text: exampleOffer, until: null, example: true });
+  // La carte d'offre s'illustre avec une VRAIE photo du commerce (jamais une
+  // banque d'images) : on prend la 2ᵉ si possible, pour ne pas répéter celle qui
+  // suit. Sans photo, le dégradé sert de repli — jamais de carte vide.
+  const offerImg = photos[1] || photos[0] || "";
+  if (offer?.text) cards.unshift({ kind: "offer", text: offer.text, until: offer.until ?? null, img: offerImg });
+  else if (exampleOffer) cards.unshift({ kind: "offer", text: exampleOffer, until: null, example: true, img: offerImg });
   // Récap « fun » du site : cartes avis / prestations / accès (dans le site de démo
   // ET sur le catalogue autonome partagé).
   if (extras) {
@@ -254,7 +258,10 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
                     )}
                     {c.kind === "offer" && (
                       <>
-                        <div className="pdk-media offerbg" />
+                        <div
+                          className="pdk-media offerbg"
+                          style={c.img ? { backgroundImage: `linear-gradient(165deg,rgba(6,35,26,.55),rgba(6,35,26,.9)), url("${c.img}")` } : undefined}
+                        />
                         <div className="pdk-scrim" />
                         <div className="pdk-offbadge">{c.example ? "🚀 Exemple d’Action Flash" : "🎁 Offre du moment"}</div>
                         {countdown(c.until) && <div className="pdk-cd">⏳ <span>{countdown(c.until)}</span></div>}
@@ -368,7 +375,10 @@ const CSS = `
 .pdk-card.behind{transform:scale(.93) translateY(16px);filter:brightness(.72);z-index:2;}
 .pdk-card.behind2{transform:scale(.86) translateY(32px);filter:brightness(.5);z-index:1;}
 .pdk-media{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#222838;}
-.pdk-media.offerbg{background:linear-gradient(155deg,#0E5C46,#0B2A20);}
+/* background-IMAGE (et non le raccourci « background », qui réinitialiserait le
+   background-size:cover hérité de .pdk-media et afficherait la photo à sa taille
+   naturelle). Le dégradé reste le repli quand le commerce n'a aucune photo. */
+.pdk-media.offerbg{background-image:linear-gradient(155deg,#0E5C46,#0B2A20);}
 .pdk-videobg{background:linear-gradient(155deg,#26263A,#12121C);display:flex;align-items:center;justify-content:center;}
 .pdk-playbig{font-size:52px;color:rgba(255,255,255,.7);}
 .pdk-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;background:#000;pointer-events:none;}
