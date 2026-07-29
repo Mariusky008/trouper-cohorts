@@ -17,6 +17,7 @@ type Props = {
   clients: number;
   avis: number; // +N nouveaux avis
   rdvTomorrow: number;
+  demandesNew: number; // demandes du site en ligne qui attendent un rappel
 };
 
 const goto = (key: string) => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: key }));
@@ -28,8 +29,12 @@ export function ProHome(p: Props) {
   // Les grandes actions — adaptées au métier (commerce = tout ; santé/droit = sobre).
   type Act = { icon: string; label: string; go: () => void; hot?: boolean };
   const acts: Act[] = [];
+  // Une demande non rappelée est un client qui attend : elle passe avant tout.
+  if (p.demandesNew > 0) {
+    acts.push({ icon: "📥", label: `Rappeler (${nf(p.demandesNew)})`, go: () => goto("demandes"), hot: true });
+  }
   if (p.soliciter) {
-    acts.push({ icon: "📣", label: "Faire une annonce", go: () => goto("annonce"), hot: true });
+    acts.push({ icon: "📣", label: "Faire une annonce", go: () => goto("annonce"), hot: p.demandesNew === 0 });
     acts.push({ icon: "⭐", label: "Demander un avis", go: () => goto("clients:avis") });
     acts.push({ icon: "👤", label: "Ajouter un client", go: () => goto("clients:liste") });
   }
@@ -53,6 +58,7 @@ export function ProHome(p: Props) {
 
   // À traiter / à préparer.
   const todos: string[] = [];
+  if (p.demandesNew > 0) todos.push(`${nf(p.demandesNew)} personne${p.demandesNew > 1 ? "s" : ""} attend${p.demandesNew > 1 ? "ent" : ""} votre rappel`);
   if (p.rdvTomorrow > 0) todos.push(`${nf(p.rdvTomorrow)} rendez-vous demain — pensez aux rappels`);
 
   return (

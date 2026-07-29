@@ -16,6 +16,8 @@ import { ProHome } from "./pro-home";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
+import { ProApproche } from "./pro-approche";
+import { ProRequests } from "./pro-requests";
 import { ProReviewAlert } from "./pro-review-alert";
 import { ProTabs, type ProTab } from "./pro-tabs";
 import { ProGroup } from "./pro-group";
@@ -213,13 +215,15 @@ export default async function EspacePro({
   const tomorrowKey = parisDate(1);
   const dayAfterKey = parisDate(2);
   const weekAgoKey = parisDate(-7);
-  const [clientsCount, annoncesCount, demandesCount, rdvCount, rdvTomorrow] = await Promise.all([
+  const [clientsCount, annoncesCount, demandesCount, rdvCount, rdvTomorrow, , demandesNew] = await Promise.all([
     cnt(supabase.from("human_site_contacts").select("id", { count: "exact", head: true }).eq("site_id", siteId).is("opted_out_at", null)),
     cnt(supabase.from("human_site_relances").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
     cnt(supabase.from("human_site_review_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).gte("created_at", monthIso)),
     cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", nowKey)),
     cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", `${tomorrowKey}T00:00`).lt("slot_local", `${dayAfterKey}T00:00`)),
     cnt(supabase.from("human_site_bookings").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "confirmed").gte("slot_local", `${weekAgoKey}T00:00`).lt("slot_local", nowKey)),
+    // Demandes du site en ligne qui attendent encore un rappel.
+    cnt(supabase.from("human_site_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "new")),
   ]);
 
   // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
@@ -236,6 +240,7 @@ export default async function EspacePro({
         clients={clientsCount}
         avis={delta}
         rdvTomorrow={rdvTomorrow}
+        demandesNew={demandesNew}
       />
       {afficherAvis && (
         <ProReviewAlert
@@ -332,6 +337,15 @@ export default async function EspacePro({
           },
         ] as ProTab[])
       : []),
+    {
+      // Demandes reçues du site en ligne. Caché du menu : on y arrive depuis
+      // l'accueil, qui affiche le nombre restant à traiter.
+      key: "demandes",
+      label: "Demandes reçues",
+      icon: "📥",
+      hidden: true,
+      node: <ProRequests slug={slug} token={token} />,
+    },
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
     {
       // « Mon site » sur UNE page (blocs empilés) plutôt que des sous-onglets.
@@ -344,6 +358,13 @@ export default async function EspacePro({
             👁 Voir mon site comme un client <span>↗</span>
           </a>
           <div className="siteblock">
+            <ProApproche
+              slug={slug}
+              token={token}
+              suggestionTitre={metierContent.approcheTitre}
+              suggestionCorps={metierContent.approcheCorps}
+            />
+            <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
             <ProMotifs slug={slug} token={token} suggestions={motifSuggestions} />
             <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
             <ProServices slug={slug} token={token} suggestions={serviceSuggestions} />

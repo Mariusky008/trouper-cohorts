@@ -69,13 +69,14 @@ export type MaquetteSanteProps = {
   flashExample: string; // exemple d'Action Flash propre au métier (phrase que le pro écrirait)
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
+  approche: { titre: string; corps: string } | null; // texte « Mon approche » validé par le pro
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -212,6 +213,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc section{padding:24px 20px;}
           .mqc .alt{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
           .mqc .sec-k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px;}
+          /* Marque un texte encore PROPOSÉ, que le pro n'a pas validé (maquette). */
+          .mqc .sec-k .sec-ex{display:inline-block;margin-left:9px;letter-spacing:.04em;text-transform:none;font-size:10px;font-weight:800;
+            color:#8A6A12;background:#FFF7E9;border:1px solid #F6E4BD;border-radius:6px;padding:2px 8px;vertical-align:1px;}
           .mqc .sec-h{font-family:Georgia,serif;font-weight:600;font-size:20px;margin-bottom:9px;line-height:1.2;}
           .mqc .sec-p{font-size:13.5px;color:var(--muted);line-height:1.6;}
           .mqc .proposed{font-size:10.5px;color:var(--muted);font-style:italic;margin-top:10px;opacity:.85;}
@@ -452,11 +456,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         ] : []}
       />
 
-      <section>
-        <div className="sec-k">Mon approche</div>
-        <div className="sec-h">{content.approcheTitre}</div>
-        <div className="sec-p">{content.approcheCorps}</div>
-      </section>
+      {/* « Mon approche » parle À LA PREMIÈRE PERSONNE au nom du commerçant. Sur un
+          site en ligne, on n'affiche que ce qu'il a validé dans son Espace Pro ;
+          sinon la section disparaît. En maquette, le gabarit métier reste visible
+          comme proposition — c'est justement ce qu'on lui donne à relire. */}
+      {(approche || !published) && (
+        <section>
+          <div className="sec-k">Mon approche{!approche && !published && <span className="sec-ex">proposition</span>}</div>
+          <div className="sec-h">{approche ? approche.titre : content.approcheTitre}</div>
+          <div className="sec-p">{approche ? approche.corps : content.approcheCorps}</div>
+        </section>
+      )}
 
       {motifs.length > 0 && (
         <section className="alt">

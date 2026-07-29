@@ -68,6 +68,7 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
   const [thread, setThread] = useState<Msg[]>([]);
   const [pourQui, setPourQui] = useState("");
   const [premiere, setPremiere] = useState("");
+  const [dispo, setDispo] = useState(""); // moment souhaité (« Le soir », « Le week-end »…)
   const [prenom, setPrenom] = useState("");
   const [tel, setTel] = useState("");
   const [consent, setConsent] = useState(false);
@@ -234,7 +235,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
 
   const chooseDispo = (v: string) => {
     push([{ who: "me", text: v }]);
-    push([{ who: "ai", text: isReserve ? "Il me faut juste un prénom et un numéro pour confirmer le rendez-vous — rien de plus." : "Il me faut juste un prénom et un numéro pour transmettre votre demande — rien de plus." }]);
+    setDispo(v); // le moment souhaité, transmis tel quel au commerçant
+    // Sur un site en ligne, rien n'est « confirmé » ici : on transmet.
+    const ask =
+      isReserve && !published
+        ? "Il me faut juste un prénom et un numéro pour confirmer le rendez-vous — rien de plus."
+        : "Il me faut juste un prénom et un numéro pour transmettre votre demande — rien de plus.";
+    push([{ who: "ai", text: ask }]);
     setStep("coord");
   };
 
@@ -249,17 +256,23 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
       setStep("slots");
       return;
     }
-    // rappel / devis / acompte : pas de créneau à choisir, on enregistre la demande.
+    // Pas de créneau à choisir : on enregistre la demande. Sur un site EN LIGNE
+    // elle part chez le commerçant (sa table + un SMS) ; sur une maquette, elle
+    // reste une réservation de démonstration.
     setBooking(true);
     try {
-      await fetch("/api/site-internet/apercu/book-demo", {
+      await fetch(published ? "/api/site-internet/site/demande" : "/api/site-internet/apercu/book-demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, prenom, tel, pourQui, premiere, slot: "" }),
+        body: JSON.stringify(
+          published
+            ? { slug, prenom, tel, kind: isReserve ? "rdv" : confirmation, souhait: dispo, pourQui, premiere }
+            : { slug, prenom, tel, pourQui, premiere, slot: "" }
+        ),
         keepalive: true,
       });
     } catch {
-      /* la confirmation s'affiche quand même (démo) */
+      /* la confirmation s'affiche quand même */
     }
     setBooking(false);
     const msg =

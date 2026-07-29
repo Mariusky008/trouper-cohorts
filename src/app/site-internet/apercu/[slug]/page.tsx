@@ -122,6 +122,25 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     /* colonne non migrée → pas d'offre */
   }
 
+  // « Mon approche » : le texte que le pro a VALIDÉ (colonne récente → défensif).
+  // Null = jamais validé → la section n'apparaît pas sur le site en ligne.
+  let approche: { titre: string; corps: string } | null = null;
+  try {
+    const { data: a } = await supabase
+      .from("human_vitrine_sites")
+      .select("approche")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    const raw = (a as Record<string, unknown> | null)?.approche;
+    if (raw && typeof raw === "object") {
+      const ao = raw as Record<string, unknown>;
+      const corps = str(ao.corps).trim();
+      if (corps) approche = { titre: str(ao.titre).trim() || "Mon approche", corps };
+    }
+  } catch {
+    /* colonne non migrée → aucune approche validée */
+  }
+
   const nom = str(row.business_name) || "Votre commerce";
   const ville = str(row.city);
   const activite = str(row.activite) || "Commerce";
@@ -341,6 +360,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       flashExample={flashExample}
       demarchageTarget={demarchageTarget}
       galleryVideos={galleryVideos}
+      approche={approche}
     />
   );
 }
