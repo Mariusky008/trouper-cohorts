@@ -155,6 +155,24 @@ export default async function EspacePro({
 
   // ── Tableau de bord : chiffres réels agrégés (best-effort). ──────────────────
   const siteId = str(row.id);
+  // Statut de mise en ligne : le commerçant ne savait pas si son site était
+  // vraiment public, ni à quelle adresse. La publication est une action de notre
+  // côté — raison de plus pour la lui afficher. Colonnes récentes → défensif.
+  let sitePublished = false;
+  let siteUrl = `/site-internet/apercu/${slug}`;
+  try {
+    const { data: pub } = await supabase
+      .from("human_vitrine_sites")
+      .select("published, custom_domain")
+      .eq("id", siteId)
+      .maybeSingle();
+    const pr = (pub as Record<string, unknown> | null) ?? null;
+    sitePublished = Boolean(pr?.published);
+    const dom = str(pr?.custom_domain).trim();
+    if (sitePublished && dom) siteUrl = `https://${dom}`;
+  } catch {
+    /* colonnes non migrées → on reste sur l'aperçu */
+  }
   // Vues : colonne récente → lecture séparée et défensive (page complète même si
   // la migration site_views n'a pas encore été appliquée).
   let views = 0;
@@ -242,6 +260,8 @@ export default async function EspacePro({
         avis={delta}
         rdvTomorrow={rdvTomorrow}
         demandesNew={demandesNew}
+        sitePublished={sitePublished}
+        siteUrl={siteUrl}
       />
       {afficherAvis && (
         <ProReviewAlert

@@ -18,6 +18,8 @@ type Props = {
   avis: number; // +N nouveaux avis
   rdvTomorrow: number;
   demandesNew: number; // demandes du site en ligne qui attendent un rappel
+  sitePublished: boolean; // le site est-il vraiment public ?
+  siteUrl: string; // son adresse réelle (domaine perso si configuré)
 };
 
 const goto = (key: string) => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: key }));
@@ -90,11 +92,35 @@ export function ProHome(p: Props) {
           .pro .home .todo{margin-top:13px;display:flex;flex-direction:column;gap:7px;}
           .pro .home .todo .ti{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;background:#FFF7E9;border:1px solid #F6E4BD;border-radius:11px;padding:10px 12px;color:#6B4E12;}
           .pro .home .todo .ok{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--soft);background:#F1F8F3;border:1px solid #D6EBDD;border-radius:11px;padding:10px 12px;font-weight:600;}
+          /* Statut de mise en ligne : la première chose qu'un commerçant veut savoir. */
+          .pro .home .live{display:flex;align-items:center;gap:11px;margin-top:14px;border-radius:14px;padding:12px 13px;}
+          .pro .home .live.on{background:#F1F8F3;border:1px solid #D6EBDD;}
+          .pro .home .live.off{background:#FFF7E9;border:1px solid #F6E4BD;}
+          .pro .home .live .lb{min-width:0;flex:1;}
+          .pro .home .live .lb b{display:block;font-size:13.5px;font-weight:800;}
+          .pro .home .live.on .lb b{color:#1B7A3E;}
+          .pro .home .live.off .lb b{color:#8A6A12;}
+          .pro .home .live .lb span{display:block;font-size:11.5px;color:var(--soft);margin-top:2px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          .pro .home .live a{flex:none;text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);
+            border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:700;}
           `,
         }}
       />
       <div className="home">
         <div className="hi">Bonjour{p.nom ? `, ${p.nom}` : ""} 👋</div>
+
+        <div className={`live ${p.sitePublished ? "on" : "off"}`}>
+          <span aria-hidden="true">{p.sitePublished ? "🌐" : "⏳"}</span>
+          <span className="lb">
+            <b>{p.sitePublished ? "Votre site est en ligne" : "Votre site n'est pas encore en ligne"}</b>
+            <span>{p.sitePublished ? p.siteUrl.replace(/^https?:\/\//, "") : "On vous prévient dès qu'il est publié."}</span>
+          </span>
+          <a href={p.siteUrl} target="_blank" rel="noreferrer">
+            {p.sitePublished ? "Voir" : "Aperçu"}
+          </a>
+        </div>
+
         <div className="q">Que voulez-vous faire&nbsp;?</div>
 
         <div className="acts">
