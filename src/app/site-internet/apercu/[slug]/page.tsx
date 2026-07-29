@@ -141,6 +141,29 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     /* colonne non migrée → aucune approche validée */
   }
 
+  // FAQ « Avant de venir » : les réponses du pro si elles existent, sinon la
+  // proposition du métier. Colonne récente → lecture défensive, comme ci-dessus.
+  let proFaq: Array<{ q: string; a: string }> = [];
+  try {
+    const { data: f } = await supabase
+      .from("human_vitrine_sites")
+      .select("faq")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    const raw = (f as Record<string, unknown> | null)?.faq;
+    if (Array.isArray(raw)) {
+      proFaq = raw
+        .map((x) => {
+          const o = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+          return { q: str(o.q).trim(), a: str(o.a).trim() };
+        })
+        .filter((x) => x.q && x.a)
+        .slice(0, 6);
+    }
+  } catch {
+    /* colonne non migrée → on garde la proposition du métier */
+  }
+
   const nom = str(row.business_name) || "Votre commerce";
   const ville = str(row.city);
   const activite = str(row.activite) || "Commerce";
@@ -361,6 +384,7 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       demarchageTarget={demarchageTarget}
       galleryVideos={galleryVideos}
       approche={approche}
+      proFaq={proFaq}
     />
   );
 }

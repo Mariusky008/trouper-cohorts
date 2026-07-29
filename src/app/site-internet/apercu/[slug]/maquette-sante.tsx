@@ -70,13 +70,14 @@ export type MaquetteSanteProps = {
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
   approche: { titre: string; corps: string } | null; // texte « Mon approche » validé par le pro
+  proFaq: Array<{ q: string; a: string }>; // FAQ saisie par le pro → override de la config métier
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche, proFaq,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -89,6 +90,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   // « Suivre ce commerce » : promesse et centres d'intérêt dans les mots du métier.
   // Réservé au commerce (déonto) — l'API refuse la santé encadrée et le droit.
   const canFollow = avisMode === "prominent";
+  // FAQ : les réponses du pro l'emportent sur la proposition du métier — sur le
+  // site ET dans l'assistante, qui répond avec la même liste.
+  const faqList = (Array.isArray(proFaq) && proFaq.length ? proFaq : content.faq) ?? [];
   const follow = followCopy(secteur, isResto);
 
   // ── Sections « Pour quoi venir me voir ? » (motifs) et « Mes accompagnements »
@@ -365,7 +369,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         praticien={nom}
         termePublic={termePublic}
         accent={accent}
-        faq={content.faq}
+        faq={faqList}
         showUrgence={showUrgence}
         confirmation={confirmation}
         moteur={moteur}
@@ -630,7 +634,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       <section className="alt faq">
         <div className="sec-k">Questions fréquentes</div>
         <div className="sec-h">Avant de venir</div>
-        {content.faq.map((f, i) => (
+        {faqList.map((f, i) => (
           <details key={i}><summary>{f.q}</summary><p>{f.a}</p></details>
         ))}
       </section>

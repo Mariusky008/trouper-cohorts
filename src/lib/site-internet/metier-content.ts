@@ -33,7 +33,10 @@ export type MetierContent = {
 
 const FAQ_SOIN: FaqItem[] = [
   { q: "Combien coûte une séance ?", a: "Le tarif vous est indiqué avant le rendez-vous. Vous pouvez le demander sans engagement, via l'accueil ou par téléphone." },
-  { q: "Est-ce remboursé ?", a: "Selon votre situation et votre mutuelle, une prise en charge peut être possible. Les modalités vous sont précisées à la prise de contact." },
+  // Ne JAMAIS laisser espérer un remboursement : la plupart de ces pratiques ne
+  // sont pas prises en charge par l'Assurance maladie, et seules certaines
+  // mutuelles participent. On renvoie la personne à SA mutuelle, sans rien promettre.
+  { q: "Est-ce pris en charge ?", a: "Ces séances ne sont pas remboursées par l'Assurance maladie. Certaines mutuelles participent : le plus sûr est de leur poser la question, facture à l'appui." },
   { q: "Comment se passe le premier rendez-vous ?", a: "Il sert surtout à faire connaissance et à comprendre votre besoin, dans un cadre bienveillant et confidentiel, sans engagement pour la suite." },
 ];
 
