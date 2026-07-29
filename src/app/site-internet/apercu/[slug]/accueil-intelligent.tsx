@@ -33,6 +33,7 @@ type Props = {
   busyWord?: string; // « en séance » (soin) / « en intervention » (artisan)
   hideBubble?: boolean; // masque la bulle flottante (quand une barre fixe gère le CTA)
   cloudTts?: boolean; // voix cloud premium (maquette DÉMO uniquement, jamais publiée)
+  published?: boolean; // site en ligne : plus aucun dispositif de démonstration
 };
 
 type Who = "ai" | "me";
@@ -60,7 +61,7 @@ function upcomingSlots(): string[] {
   return out.map((o) => o.label);
 }
 
-export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", moteur = "M3_cabinet", busyWord = "en séance", hideBubble = false, cloudTts = false }: Props) {
+export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, showUrgence, confirmation = "reserve", moteur = "M3_cabinet", busyWord = "en séance", hideBubble = false, cloudTts = false, published = false }: Props) {
   const isReserve = confirmation === "reserve";
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("home");
@@ -239,7 +240,11 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
 
   const submitCoord = async () => {
     push([{ who: "me", text: `${prenom} · ${tel}` }]);
-    if (isReserve) {
+    // `upcomingSlots()` fabrique trois horaires plausibles : c'est une illustration,
+    // pas l'agenda du pro. Sur le site EN LIGNE on ne les propose donc jamais — la
+    // vraie réservation passe par la page de créneaux quand elle est configurée.
+    // Ici, on transmet une demande, et on le dit exactement comme ça.
+    if (isReserve && !published) {
       push([{ who: "ai", text: "Merci. Voici les prochains créneaux disponibles :" }]);
       setStep("slots");
       return;
@@ -258,11 +263,13 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     }
     setBooking(false);
     const msg =
-      confirmation === "rappel"
-        ? `C'est noté. ${praticien} vous rappelle au plus vite.`
-        : confirmation === "devis"
-          ? `Votre demande de devis est transmise à ${praticien}. Il revient vers vous rapidement.`
-          : `Votre demande est enregistrée. ${praticien} vous recontacte pour l'acompte et le rendez-vous.`;
+      isReserve
+        ? `Votre demande de rendez-vous est transmise à ${praticien}. Il·elle vous recontacte pour confirmer l'horaire.`
+        : confirmation === "rappel"
+          ? `C'est noté. ${praticien} vous rappelle au plus vite.`
+          : confirmation === "devis"
+            ? `Votre demande de devis est transmise à ${praticien}. Il revient vers vous rapidement.`
+            : `Votre demande est enregistrée. ${praticien} vous recontacte pour l'acompte et le rendez-vous.`;
     const extra = sing === "patient" ? [{ who: "ai" as const, text: "Aucune donnée de santé ne vous a été demandée." }] : [];
     push([{ who: "ai", text: msg }, ...extra]);
     setStep("confirm");
@@ -284,6 +291,8 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
     }
     setBooking(false);
     push([
+      // Étape atteignable en maquette uniquement (cf. submitCoord) : le rappel SMS
+      // fait partie de la démonstration, il n'est pas promis sur un site en ligne.
       { who: "ai", text: `C'est réservé : ${s}. Un rappel par SMS vous sera envoyé la veille.` },
       ...(sing === "patient" ? [{ who: "ai" as const, text: "Aucune donnée de santé ne vous a été demandée." }] : []),
     ]);
@@ -514,9 +523,21 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
                   </div>
                 )}
               </div>
+              {/* Le récapitulatif « pendant ce temps, le pro était en séance » raconte
+                  la démo AU COMMERÇANT. Sur le site en ligne, on s'adresse au client
+                  et on lui confirme simplement ce qui a été transmis. */}
               {step === "confirm" && (
                 <div className="acc-reveal">
-                  Pendant ce temps, <b>{proNoun}</b> était {busyWord}. À la pause, il retrouve : <b>{isReserve ? "nouveau rendez-vous" : "nouvelle demande"}</b>{pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Rien n’a été raté, sans jamais décrocher.
+                  {published ? (
+                    <>
+                      C’est transmis à <b>{proNoun}</b> : <b>{isReserve ? "votre demande de rendez-vous" : "votre demande"}</b>
+                      {pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Vous serez recontacté·e au numéro que vous avez laissé.
+                    </>
+                  ) : (
+                    <>
+                      Pendant ce temps, <b>{proNoun}</b> était {busyWord}. À la pause, il retrouve : <b>{isReserve ? "nouveau rendez-vous" : "nouvelle demande"}</b>{pourQui ? ` · ${pourQui}` : ""}{slot ? ` · ${slot}` : ""}. Rien n’a été raté, sans jamais décrocher.
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -540,7 +561,11 @@ export function AccueilIntelligent({ slug, praticien, termePublic, accent, faq, 
               {step === "slots" && (slots.map((s) => chip(s, () => chooseSlot(s), s)))}
               {step === "confirm" && (
                 <div style={{ width: "100%" }}>
-                  {notifSent === "done" ? (
+                  {/* « Recevez la notif comme si vous étiez le praticien » est un
+                      dispositif de DÉMONSTRATION destiné au commerçant. Sur le site
+                      en ligne, la personne en face est un vrai client : on ne lui
+                      propose pas de se mettre à la place du professionnel. */}
+                  {published ? null : notifSent === "done" ? (
                     <div className="acc-buzz-done">📲 Envoyé — regardez votre téléphone. C’est exactement ce que {proNoun} reçoit, {busyWord}, sans décrocher.</div>
                   ) : (
                     <>

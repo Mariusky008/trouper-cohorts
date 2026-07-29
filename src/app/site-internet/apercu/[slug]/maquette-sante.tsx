@@ -368,6 +368,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         busyWord={busyWord}
         hideBubble
         cloudTts={!published}
+        published={published}
       />
 
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
@@ -445,7 +446,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         hasGallery={gallery.length > 0}
         extraChips={canFollow ? [
           { label: "🔔 Suivre ce commerce", target: "mq-suivre" },
-          { label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif", gold: true },
+          // Le collectif n'existe que dans la maquette : pas de raccourci vers une
+          // section absente du site en ligne.
+          ...(published ? [] : [{ label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif", gold: true }]),
         ] : []}
       />
 
@@ -571,7 +574,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <CercleSection slug={slug} accent={accent} nom={nom} published={published} promesse={follow.promesse} topics={follow.topics} />
       )}
 
-      {avisMode === "prominent" && (
+      {/* Le Collectif ne s'affiche PAS sur un site en ligne tant que le réseau
+          n'existe pas : le bouton « m'emmener chez ce partenaire » ne mène nulle
+          part, et son explication s'adresse au commerçant, pas à ses client·es.
+          Il reste dans la maquette, où il est explicitement cadré « exemple ». */}
+      {canFollow && !published && (
         <CollectifSection
           slug={slug}
           ville={villeAff}
@@ -579,7 +586,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           nom={nom}
           partners={partners}
           published={published}
-          offerText={offer?.text || (!published ? p.flashExample : undefined)}
+          offerText={offer?.text || p.flashExample}
         />
       )}
 

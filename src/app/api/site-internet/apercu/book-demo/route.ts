@@ -29,16 +29,20 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   let business = "";
   let ville = "";
+  let published = false;
+  let proPhone = "";
   try {
     const { data: site } = await supabase
       .from("human_vitrine_sites")
-      .select("business_name, city")
+      .select("business_name, city, published, whatsapp_phone_e164")
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
     const row = (site as Record<string, unknown> | null) ?? null;
     business = s(row?.business_name);
     ville = s(row?.city);
+    published = Boolean(row?.published);
+    proPhone = s(row?.whatsapp_phone_e164);
   } catch {
     /* best-effort */
   }
@@ -57,6 +61,26 @@ export async function POST(request: Request) {
     });
   } catch {
     /* table pas encore migrée → best-effort */
+  }
+
+  // SITE EN LIGNE : la demande vient d'un VRAI client. Elle doit arriver au
+  // commerçant — le prévenir par SMS est le seul canal qui le touche vraiment
+  // quand il travaille. Sur une maquette (non publiée), on ne l'importune pas.
+  if (published && proPhone) {
+    try {
+      const { sendSms, isSmsConfigured } = await import("@/lib/site-internet/accueil-sms");
+      if (isSmsConfigured()) {
+        await sendSms(
+          proPhone,
+          `${business || "Votre site"} — nouvelle demande : ${prenom} (${tel})` +
+            (slot ? ` · souhait : ${slot}` : "") +
+            (pourQui ? ` · ${pourQui}` : "") +
+            `. Rappelez-le·la pour confirmer. [Popey]`
+        );
+      }
+    } catch {
+      /* best-effort : la confirmation client s'affiche quoi qu'il arrive */
+    }
   }
 
   // Notification vendeur (email best-effort). On réutilise la config Resend

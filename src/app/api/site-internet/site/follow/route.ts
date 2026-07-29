@@ -19,6 +19,38 @@ export const dynamic = "force-dynamic";
 const s = (v: unknown) => String(v ?? "").trim();
 const migrationMissing = (msg: string) => /does not exist|schema cache|Could not find/i.test(msg);
 
+// ── Durcissement (route publique, sans jeton) ────────────────────────────────
+// Trois filets complémentaires, du moins au plus coûteux :
+//  1. pot de miel — un champ invisible que seuls les robots remplissent ;
+//  2. limite par IP, en mémoire — bloque le martèlement depuis une même source
+//     (par instance : imparfait en serverless, mais gratuit et immédiat) ;
+//  3. plafond horaire par établissement, en base — le vrai garde-fou : même
+//     réparti sur mille IP, un commerce ne gagne pas 200 abonnés en une heure.
+const IP_MAX = 5;
+const IP_WINDOW_MS = 10 * 60 * 1000;
+const SITE_MAX_PER_HOUR = 40;
+const ipHits = new Map<string, number[]>();
+
+function ipThrottled(ip: string): boolean {
+  if (!ip) return false;
+  const now = Date.now();
+  const hits = (ipHits.get(ip) ?? []).filter((t) => now - t < IP_WINDOW_MS);
+  // Ménage : la table ne doit pas grandir indéfiniment sur une instance longue.
+  if (ipHits.size > 5000) ipHits.clear();
+  if (hits.length >= IP_MAX) {
+    ipHits.set(ip, hits);
+    return true;
+  }
+  hits.push(now);
+  ipHits.set(ip, hits);
+  return false;
+}
+
+function clientIp(request: Request): string {
+  const fwd = request.headers.get("x-forwarded-for") || "";
+  return (fwd.split(",")[0] || request.headers.get("x-real-ip") || "").trim();
+}
+
 export async function POST(request: Request) {
   let p: Record<string, unknown> | null = null;
   try {
@@ -29,6 +61,14 @@ export async function POST(request: Request) {
 
   const slug = s(p?.slug);
   if (!slug) return NextResponse.json({ error: "slug requis" }, { status: 400 });
+
+  // Pot de miel : champ invisible côté visiteur. Rempli = robot. On répond « ok »
+  // pour ne pas lui apprendre qu'il a été repéré, mais on n'enregistre rien.
+  if (s(p?.website)) return NextResponse.json({ ok: true });
+
+  if (ipThrottled(clientIp(request))) {
+    return NextResponse.json({ error: "Trop de tentatives. Réessayez dans quelques minutes." }, { status: 429 });
+  }
 
   // Consentement : sans lui, on n'enregistre rien. Jamais de case pré-cochée côté client.
   if (p?.consent !== true) {
@@ -67,6 +107,23 @@ export async function POST(request: Request) {
 
   const siteId = s(site.id);
 
+  // Plafond horaire par établissement : un commerce ne gagne pas 40 abonnés en
+  // une heure. Au-delà, c'est du bruit — on refuse sans rien enregistrer.
+  try {
+    const since = new Date(Date.now() - 3600_000).toISOString();
+    const { count } = await supabase
+      .from("human_site_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("site_id", siteId)
+      .eq("source", "site")
+      .gte("created_at", since);
+    if (typeof count === "number" && count >= SITE_MAX_PER_HOUR) {
+      return NextResponse.json({ error: "Trop d'inscriptions en peu de temps. Réessayez plus tard." }, { status: 429 });
+    }
+  } catch {
+    /* table non migrée → le plafond ne s'applique pas, les autres filets restent */
+  }
+
   // Respect des désinscriptions : un numéro retiré ne se réinscrit pas en douce.
   try {
     const { data: existing } = await supabase
@@ -85,21 +142,39 @@ export async function POST(request: Request) {
     /* table non migrée → best-effort */
   }
 
-  const { error } = await supabase.from("human_site_contacts").upsert(
-    {
-      site_id: siteId,
-      prenom,
-      phone_e164: phone,
-      consent: true,
-      source: "site",
-      topics: topics.length ? topics : null,
-      consent_text: consentText,
-      consent_at: new Date().toISOString(),
-    },
-    { onConflict: "site_id,phone_e164" }
-  );
-  if (error && !migrationMissing(error.message)) {
-    return NextResponse.json({ error: "L'inscription n'a pas pu être enregistrée." }, { status: 500 });
+  // Les colonnes `topics` / `consent_text` / `consent_at` n'existent qu'après la
+  // migration « follow ». Si elle n'est pas passée, on RÉESSAYE sans elles : mieux
+  // vaut un abonné enregistré sans sa preuve de consentement qu'un abonné perdu
+  // pendant qu'on lui affiche « c'est fait ».
+  const base = { site_id: siteId, prenom, phone_e164: phone, consent: true, source: "site" };
+  const full = {
+    ...base,
+    topics: topics.length ? topics : null,
+    consent_text: consentText,
+    consent_at: new Date().toISOString(),
+  };
+  const save = async (row: Record<string, unknown>) => {
+    const { error } = await supabase.from("human_site_contacts").upsert(row, { onConflict: "site_id,phone_e164" });
+    if (error) throw new Error(error.message);
+  };
+  try {
+    await save(full);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (!migrationMissing(msg)) {
+      return NextResponse.json({ error: "L'inscription n'a pas pu être enregistrée." }, { status: 500 });
+    }
+    try {
+      await save(base);
+    } catch (e2) {
+      const m2 = e2 instanceof Error ? e2.message : "";
+      // Table absente : on ne peut rien faire, mais on le DIT au lieu de laisser
+      // croire à la personne qu'elle est abonnée.
+      return NextResponse.json(
+        { error: migrationMissing(m2) ? "Le service d'abonnement n'est pas encore actif ici." : "L'inscription n'a pas pu être enregistrée." },
+        { status: 503 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

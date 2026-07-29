@@ -38,6 +38,7 @@ export function CercleSection({ slug, accent, nom, published = false, promesse, 
   const [state, setState] = useState<"" | "sending" | "topics" | "done">("");
   const [err, setErr] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
+  const [hp, setHp] = useState(""); // pot de miel anti-robot
   const seen = useRef(false);
 
   // La phrase exactement acceptée : elle nomme le commerce et l'usage du numéro,
@@ -60,7 +61,7 @@ export function CercleSection({ slug, accent, nom, published = false, promesse, 
       const r = await fetch("/api/site-internet/site/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, prenom: prenom.trim(), phone: tel.trim(), consent: true, consentText }),
+        body: JSON.stringify({ slug, prenom: prenom.trim(), phone: tel.trim(), consent: true, consentText, website: hp }),
         keepalive: true,
       });
       const j = await r.json().catch(() => ({}));
@@ -205,6 +206,17 @@ export function CercleSection({ slug, accent, nom, published = false, promesse, 
               <input type="text" placeholder="Votre prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} aria-label="Votre prénom" />
               <input type="tel" placeholder="Votre numéro" inputMode="tel" value={tel} onChange={(e) => setTel(e.target.value)} aria-label="Votre numéro" />
             </div>
+            {/* Pot de miel : invisible pour une personne, rempli par les robots. */}
+            <input
+              type="text"
+              name="website"
+              value={hp}
+              onChange={(e) => setHp(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+            />
             <label className="cons">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>{consentText}</span>
