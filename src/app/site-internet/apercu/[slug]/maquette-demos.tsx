@@ -375,25 +375,58 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   // « Voir mon annonce sur le site » : on ferme l'assistante et on emmène le pro
   // au vrai bandeau, avec un halo + une bulle « voici ce que verront vos visiteurs ».
+  // « Voir mon annonce sur le site » — le moment de vérité de l'Action Flash.
+  //
+  // Ça ne marchait pas : on fermait le panneau, on faisait défiler jusqu'au
+  // bandeau… qui affichait toujours « Exemple d'Action Flash » et le texte
+  // générique du métier. Le commerçant venait de lire « votre annonce est en
+  // ligne », et ne la voyait nulle part. La maquette ne publie rien pour de vrai :
+  // c'est donc ICI que l'annonce doit apparaître, à l'écran, dans le bandeau.
   const seeOffer = () => {
     clearTimers();
     setStageOn(false);
     setOpen(false);
     setView("home");
+    const msg = fn.trim();
     requestAnimationFrame(() => {
-      const band = document.querySelector<HTMLElement>(".offer-band");
+      let band = document.querySelector<HTMLElement>(".offer-band");
+      const main = document.querySelector<HTMLElement>("main.mqc");
+      // Pas de bandeau sur cette maquette (aucun exemple métier) : on le crée,
+      // sinon il n'y aurait toujours rien à voir.
+      if (!band && msg && main) {
+        band = document.createElement("div");
+        band.className = "offer-band";
+        const probar = main.querySelector(".probar");
+        main.insertBefore(band, probar ? probar.nextSibling : main.firstChild);
+      }
+      if (band && msg) {
+        // Le bandeau cesse d'être un exemple : il porte SON annonce, telle qu'il
+        // vient de l'écrire, et ne rouvre plus l'assistante.
+        band.classList.remove("ex");
+        band.removeAttribute("data-assistant-open");
+        band.innerHTML =
+          `<span class="oi">🎉</span>` +
+          `<span class="ot"><b>Offre du moment</b> · ${esc(msg)}</span>` +
+          `<span class="og">Réserver →</span>`;
+      }
       if (band) {
         band.scrollIntoView({ behavior: "smooth", block: "center" });
-        band.classList.add("asx-glow");
-        window.setTimeout(() => band.classList.remove("asx-glow"), 2600);
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
-      const tip = document.createElement("div");
-      tip.className = "asx-tip";
-      tip.textContent = "Voici ce que verront vos visiteurs.";
-      document.body.appendChild(tip);
-      window.setTimeout(() => tip.remove(), 3200);
+      // La bulle n'apparaît qu'une fois le défilement arrivé : sinon elle s'affiche
+      // en bas d'écran pendant que la page voyage encore, et c'est tout ce qu'on voit.
+      window.setTimeout(() => {
+        if (band) {
+          band.classList.add("asx-glow");
+          window.setTimeout(() => band.classList.remove("asx-glow"), 2600);
+        }
+        const tip = document.createElement("div");
+        tip.className = "asx-tip";
+        tip.textContent = "Voici ce que verront vos visiteurs, en haut de votre site.";
+        document.body.appendChild(tip);
+        window.setTimeout(() => tip.remove(), 4200);
+      }, 700);
     });
   };
 
