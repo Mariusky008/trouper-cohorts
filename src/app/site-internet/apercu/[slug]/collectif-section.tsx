@@ -11,6 +11,7 @@
 // (« ce que vous gagnez ») n'est montrée qu'en mode maquette (au pro), jamais à un
 // vrai visiteur. Commerce uniquement (déonto).
 import { useState } from "react";
+import { useDemoOffer } from "./demo-offer";
 
 const FALLBACK_CATS = [
   { ic: "💄", t: "Maquillage" },
@@ -26,6 +27,8 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
   const [sel, setSel] = useState<{ ic: string; t: string } | null>(null);
   const [modal, setModal] = useState<{ ic: string; t: string } | null>(null);
   const [custom, setCustom] = useState("");
+  // L'annonce de l'Action Flash : c'est ELLE qu'un partenaire relaierait.
+  const live = useDemoOffer(offerText);
 
   const askCustom = () => {
     const t = custom.trim();
@@ -137,7 +140,7 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
                   <div className="cl-reco-card">
                     <div className="cl-rc-l">
                       <div className="cl-rc-n">{nom}</div>
-                      {offerText ? <div className="cl-rc-o">{offerText}</div> : <div className="cl-rc-o">Votre offre du moment s&apos;affiche ici.</div>}
+                      {live ? <div className="cl-rc-o">{live}</div> : <div className="cl-rc-o">Votre offre du moment s&apos;affiche ici.</div>}
                     </div>
                     <button
                       type="button"

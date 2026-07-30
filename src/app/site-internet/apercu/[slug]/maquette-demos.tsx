@@ -13,6 +13,7 @@
 // fin de la démo avis. La bulle n'existe qu'en mode maquette propriétaire.
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { publishDemoOffer } from "./demo-offer";
 
 export type MaquetteAssistantData = {
   nom: string; // nom du commerce, pour les messages (« chez … »)
@@ -332,6 +333,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     } catch {
       /* best-effort */
     }
+    publishDemoOffer(fn); // l'annonce gratuite est publiée quoi qu'il arrive
     setCard(
       `<div class="asx-done-k">✅ Action terminée</div>` +
         `<div class="asx-done-h">Votre annonce est en ligne sur votre site 🎉</div>` +
@@ -349,6 +351,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const playCreneau = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
     if (!wa && !social && !resa) {
       // GRATUIT — on montre l'annonce qui apparaît, puis UNE pop-up « c'est fait ».
+      publishDemoOffer(msg); // le site entier se met à jour derrière la pop-up
       openStage(`<div class="asx-ctx">Votre annonce s'affiche en haut de votre site…</div><div class="asx-bandwrap">${bandHtml(msg)}</div>`);
       after(1400, () => setCard(freeFinal(msg)));
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
@@ -362,6 +365,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   // Publication (gratuite) : le moment de satisfaction qui manquait.
   const publishFree = () => {
+    publishDemoOffer(fn);
     setCard(
       `<div class="asx-done-k">✅ Action terminée</div>` +
         `<div class="asx-done-h">Votre annonce est en ligne 🎉</div>` +
@@ -376,46 +380,21 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   // « Voir mon annonce sur le site » : on ferme l'assistante et on emmène le pro
   // au vrai bandeau, avec un halo + une bulle « voici ce que verront vos visiteurs ».
   // « Voir mon annonce sur le site » — le moment de vérité de l'Action Flash.
-  //
-  // Ça ne marchait pas : on fermait le panneau, on faisait défiler jusqu'au
-  // bandeau… qui affichait toujours « Exemple d'Action Flash » et le texte
-  // générique du métier. Le commerçant venait de lire « votre annonce est en
-  // ligne », et ne la voyait nulle part. La maquette ne publie rien pour de vrai :
-  // c'est donc ICI que l'annonce doit apparaître, à l'écran, dans le bandeau.
+  // Le bandeau, le catalogue, l'aperçu de notification et le collectif écoutent
+  // tous le même canal (demo-offer) : l'annonce y est déjà. Ici on se contente
+  // d'emmener le commerçant la voir.
   const seeOffer = () => {
     clearTimers();
     setStageOn(false);
     setOpen(false);
     setView("home");
-    const msg = fn.trim();
+    publishDemoOffer(fn); // filet : si la publication n'a pas eu lieu, elle a lieu ici
     requestAnimationFrame(() => {
-      let band = document.querySelector<HTMLElement>(".offer-band");
-      const main = document.querySelector<HTMLElement>("main.mqc");
-      // Pas de bandeau sur cette maquette (aucun exemple métier) : on le crée,
-      // sinon il n'y aurait toujours rien à voir.
-      if (!band && msg && main) {
-        band = document.createElement("div");
-        band.className = "offer-band";
-        const probar = main.querySelector(".probar");
-        main.insertBefore(band, probar ? probar.nextSibling : main.firstChild);
-      }
-      if (band && msg) {
-        // Le bandeau cesse d'être un exemple : il porte SON annonce, telle qu'il
-        // vient de l'écrire, et ne rouvre plus l'assistante.
-        band.classList.remove("ex");
-        band.removeAttribute("data-assistant-open");
-        band.innerHTML =
-          `<span class="oi">🎉</span>` +
-          `<span class="ot"><b>Offre du moment</b> · ${esc(msg)}</span>` +
-          `<span class="og">Réserver →</span>`;
-      }
-      if (band) {
-        band.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-      // La bulle n'apparaît qu'une fois le défilement arrivé : sinon elle s'affiche
-      // en bas d'écran pendant que la page voyage encore, et c'est tout ce qu'on voit.
+      const band = document.querySelector<HTMLElement>(".offer-band");
+      if (band) band.scrollIntoView({ behavior: "smooth", block: "center" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      // La bulle attend la fin du défilement : sinon elle s'affiche en bas d'écran
+      // pendant que la page voyage encore, et c'est tout ce qu'on voit.
       window.setTimeout(() => {
         if (band) {
           band.classList.add("asx-glow");
@@ -423,7 +402,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         }
         const tip = document.createElement("div");
         tip.className = "asx-tip";
-        tip.textContent = "Voici ce que verront vos visiteurs, en haut de votre site.";
+        tip.textContent = "Votre annonce est en haut de votre site — et dans tout le reste.";
         document.body.appendChild(tip);
         window.setTimeout(() => tip.remove(), 4200);
       }, 700);

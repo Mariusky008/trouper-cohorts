@@ -18,6 +18,7 @@ import { CollectifLive } from "./collectif-live";
 import { CollectifToast } from "./collectif-toast";
 import { DemarchageBooking, type DemarchageTarget } from "./demarchage-booking";
 import { FollowBar } from "./follow-bar";
+import { OfferBand } from "./offer-band";
 import { FollowNudge } from "./follow-nudge";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import { followCopy } from "@/lib/site-internet/metier-profiles";
@@ -427,19 +428,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           visite. En mode maquette, elle se place sous la barre « côté pro ». */}
       {canFollow && <FollowBar slug={slug} nom={nom} accent={accent} topOffset={published ? 0 : 50} />}
 
-      {offer && offer.text ? (
-        <a className="offer-band" href={`/offre/${slug}`}>
-          <span className="oi">🎉</span>
-          <span className="ot"><b>Offre du moment</b> · {offer.text}</span>
-          <span className="og">Réserver →</span>
-        </a>
-      ) : !published && p.flashExample ? (
-        <button type="button" className="offer-band ex" data-assistant-open>
-          <span className="oi">🚀</span>
-          <span className="ot"><b>Exemple d’Action Flash</b> · {p.flashExample}</span>
-          <span className="og">Tester →</span>
-        </button>
-      ) : null}
+      {/* Le bandeau écoute l'Action Flash : dès que le commerçant écrit son
+          annonce dans la maquette, elle s'affiche ici — c'est la promesse même
+          de la démo (« elle s'affiche en haut de votre site »). */}
+      <OfferBand slug={slug} realOffer={offer?.text || ""} example={published ? "" : p.flashExample} />
 
       <LivingHero
         nom={nom}

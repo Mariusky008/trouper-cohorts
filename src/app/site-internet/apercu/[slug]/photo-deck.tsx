@@ -9,6 +9,7 @@
 // HONNÊTETÉ : photos, vidéos, note & offre réelles (saisies par le pro / Google) ;
 // aucun chiffre inventé, « J'aime » = compteur local.
 import { useEffect, useRef, useState } from "react";
+import { useDemoOffer } from "./demo-offer";
 
 type Review = { text: string; name: string; stars: number | null };
 type Svc = { name: string; price?: string };
@@ -50,6 +51,10 @@ function ytId(u: string): string | null {
 
 export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, reviewsCount, offer, exampleOffer, standalone, contact, extras }: Props) {
   const reserveHref = contact?.reserveHref || `/site-internet/apercu/${slug}`;
+  // L'annonce écrite dans l'Action Flash prend la place de l'exemple du métier :
+  // c'est ce que la démo promet (« elle s'affiche partout sur votre site »).
+  const mine = useDemoOffer("");
+  const liveOffer = mine || exampleOffer;
   const cards: Media[] = [];
   (videos ?? []).slice(0, 6).forEach((url) => cards.push({ kind: "video", url }));
   photos.slice(0, 12).forEach((url) => cards.push({ kind: "photo", url }));
@@ -60,7 +65,7 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
   // suit. Sans photo, le dégradé sert de repli — jamais de carte vide.
   const offerImg = photos[1] || photos[0] || "";
   if (offer?.text) cards.unshift({ kind: "offer", text: offer.text, until: offer.until ?? null, img: offerImg });
-  else if (exampleOffer) cards.unshift({ kind: "offer", text: exampleOffer, until: null, example: true, img: offerImg });
+  else if (liveOffer) cards.unshift({ kind: "offer", text: liveOffer, until: null, example: !mine, img: offerImg });
   // Récap « fun » du site : cartes avis / prestations / accès (dans le site de démo
   // ET sur le catalogue autonome partagé).
   if (extras) {

@@ -14,6 +14,7 @@
 //  • réservé au commerce (déonto) : l'API refuse la santé encadrée et le droit.
 import { useEffect, useRef, useState } from "react";
 import type { FollowTopic } from "@/lib/site-internet/metier-profiles";
+import { useDemoOffer } from "./demo-offer";
 
 const NOTIS = [
   { ic: "⚡", t: "Une place vient de se libérer", m: "Demain 14 h 30 — envie d'en profiter ? Répondez OUI 💫" },
@@ -99,7 +100,12 @@ export function CercleSection({ slug, accent, nom, published = false, promesse, 
     }
   };
 
-  const noti = NOTIS[n];
+  // Dès que le commerçant a écrit une annonce, l'aperçu montre CE message-là :
+  // c'est exactement ce que ses abonnés recevraient. Sinon, les exemples tournent.
+  const mine = useDemoOffer("");
+  const noti = mine
+    ? { ic: "🎉", t: "Offre du moment", m: mine }
+    : NOTIS[n];
 
   return (
     <section className="cercle" id="mq-suivre" style={{ ["--cc" as string]: accent }}>
@@ -177,7 +183,7 @@ export function CercleSection({ slug, accent, nom, published = false, promesse, 
               <span className="ms">{noti.m}</span>
             </span>
           </div>
-          <div className="dots" aria-hidden="true">{NOTIS.map((_, i) => <i key={i} className={i === n ? "on" : ""} />)}</div>
+          {!mine && <div className="dots" aria-hidden="true">{NOTIS.map((_, i) => <i key={i} className={i === n ? "on" : ""} />)}</div>}
         </div>
 
         {state === "done" ? (
