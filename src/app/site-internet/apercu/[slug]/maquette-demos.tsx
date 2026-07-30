@@ -58,7 +58,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
   const [stageOn, setStageOn] = useState(false);
-  const [fn, setFn] = useState("");
+  const [fn, setFn] = useState(""); // texte de l'annonce (Action Flash)
+  const [cli, setCli] = useState(""); // prénom du·de la client à remercier (parcours avis)
   const [ph, setPh] = useState("");
   // Canaux d'une Action Flash : le site est TOUJOURS inclus (gratuit) ; les options
   // (WhatsApp / réseaux / réservation) sont décochées par défaut — aucune ambiguïté.
@@ -133,7 +134,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     timers.current = [];
   };
   const after = (ms: number, fn2: () => void) => timers.current.push(window.setTimeout(fn2, ms));
+  // Garde-fou anti-« clic traversant » : le temps qu'une carte s'affiche, un tap
+  // encore en vol ne doit pas déclencher son bouton principal.
+  const cardAt = useRef(0);
   const setCard = (html: string) => {
+    cardAt.current = Date.now();
     if (cardRef.current) cardRef.current.innerHTML = html;
   };
   const openStage = (html: string) => {
@@ -145,6 +150,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     setStageOn(false);
     setView("home");
     setFn("");
+    setCli("");
     setPh("");
     // On repart d'un parcours propre (sinon l'état d'édition ou les options
     // cochées se retrouveraient dans l'annonce suivante).
@@ -232,7 +238,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   // ── AVIS : message envoyé → l'avis Google apparaît → compteur n → n+1 ─────────
   const playAvis = () => {
-    const who = fn.trim() || `votre ${term}`;
+    const who = cli.trim() || `votre ${term}`;
     openStage(
       `<div class="asx-ctx">Message envoyé à ${esc(who)}…</div>` +
         `<div class="asx-chat"><div class="asx-msg wa">Bonjour ${esc(who)}, merci pour votre visite chez ${esc(nom)} ! Si vous avez 30 s, votre avis Google nous aiderait beaucoup 🙏</div></div>` +
@@ -430,6 +436,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   };
 
   const onStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // La carte vient d'apparaître : ce clic appartient au geste précédent.
+    if (Date.now() - cardAt.current < 650) return;
     const t = e.target as HTMLElement;
     if (t.closest("[data-cta]")) goBuy();
     else if (t.closest("[data-seeoffer]")) seeOffer();
@@ -462,19 +470,19 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   const renderBody = () => {
     if (view === "avisIn") {
-      const ready = fn.trim() && ph.trim();
+      const ready = cli.trim() && ph.trim();
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
           <div className="asx-say">Bien sûr. Indiquez-moi le·la {term} à remercier — je lui écrirai pour l’inviter à laisser un avis.</div>
-          <div className="asx-field"><label>Prénom du·de la {term}</label><input value={fn} onChange={(e) => setFn(e.target.value)} placeholder="Ex. Julie" /></div>
+          <div className="asx-field"><label>Prénom du·de la {term}</label><input value={cli} onChange={(e) => setCli(e.target.value)} placeholder="Ex. Julie" /></div>
           <div className="asx-field"><label>Son numéro WhatsApp</label><input value={ph} onChange={(e) => setPh(e.target.value)} placeholder="Ex. 06 12 34 56 78" inputMode="tel" /></div>
           <button className="asx-send" disabled={!ready} onClick={() => setView("avisPrev")}>Préparer le message</button>
         </>
       );
     }
     if (view === "avisPrev") {
-      const who = fn.trim() || `votre ${term}`;
+      const who = cli.trim() || `votre ${term}`;
       return (
         <>
           <button className="asx-back" onClick={() => setView("avisIn")}>‹ Retour</button>

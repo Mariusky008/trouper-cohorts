@@ -33,6 +33,7 @@ export function FollowNudge({ slug, nom, promesse, accent }: { slug: string; nom
       if (document.querySelector("main.mqc-demoing")) return;
       done = true;
       try { window.sessionStorage.setItem(SEEN_KEY(slug), "1"); } catch { /* mode privé */ }
+      document.body.classList.add("popey-nudge");
       setShow(true);
     };
 
@@ -54,11 +55,13 @@ export function FollowNudge({ slug, nom, promesse, accent }: { slug: string; nom
       done = true;
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("click", onClick);
+      document.body.classList.remove("popey-nudge");
     };
   }, [slug]);
 
   const close = () => {
     setGone(true);
+    document.body.classList.remove("popey-nudge"); // le bouton pro revient
     window.setTimeout(() => setShow(false), 260);
   };
   const go = () => {
@@ -73,7 +76,7 @@ export function FollowNudge({ slug, nom, promesse, accent }: { slug: string; nom
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .fnudge{position:fixed;left:12px;right:12px;bottom:14px;z-index:26;max-width:440px;margin:0 auto;
+          .fnudge{position:fixed;left:12px;right:12px;bottom:14px;z-index:60;max-width:440px;margin:0 auto;
             background:#12140F;border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:16px 16px 14px;color:#fff;
             box-shadow:0 26px 60px -22px rgba(0,0,0,.85);animation:fnIn .45s cubic-bezier(.22,1,.36,1);}
           .fnudge.out{animation:fnOut .25s ease forwards;}
@@ -89,6 +92,9 @@ export function FollowNudge({ slug, nom, promesse, accent }: { slug: string; nom
           .fnudge .fn-go{flex:1;height:46px;border:none;border-radius:12px;background:#fff;color:#111;font-size:14.5px;font-weight:800;font-family:inherit;cursor:pointer;}
           .fnudge .fn-no{height:46px;padding:0 15px;border:1px solid rgba(255,255,255,.2);background:none;color:#C4C9BC;
             border-radius:12px;font-size:13.5px;font-family:inherit;cursor:pointer;}
+          /* Le bouton PRO « Action Flash » vit au-dessus (z-index 55) : il s'efface
+             tant qu'on interroge le visiteur, sinon il recouvre la question. */
+          body.popey-nudge .asx-fab{display:none!important;}
           @media (prefers-reduced-motion:reduce){.fnudge,.fnudge.out{animation:none;}}
           `,
         }}
