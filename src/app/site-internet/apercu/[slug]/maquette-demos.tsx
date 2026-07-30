@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { publishDemoOffer } from "./demo-offer";
+import { campagneFallback, type Campagne } from "@/lib/site-internet/campagne";
 
 export type MaquetteAssistantData = {
   nom: string; // nom du commerce, pour les messages (« chez … »)
@@ -22,6 +23,8 @@ export type MaquetteAssistantData = {
   slot: string; // créneau illustratif, ex. « samedi 15 h 30 »
   avisAllowed: boolean; // déonto none (A/B) → avis + créneau ; sinon (C/D) sobre
   ville?: string; // ville, pour le « collectif de … »
+  metier?: string; // libellé métier, pour les hashtags de la publication Instagram
+  photo?: string; // une VRAIE photo du commerce, pour le visuel Instagram
 };
 
 // Parcours Action Flash en 4 temps : je choisis → je dis → je vérifie → c'est publié.
@@ -295,20 +298,108 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   // Écran Pro : on n'affiche QUE les canaux réellement cochés, sans jamais avancer
   // de nombre de contacts inventé, et le bouton demande une activation — il ne
   // simule pas un paiement qui n'existe pas.
-  const proFinal = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
-    const line = (ic: string, t: string, s: string) =>
-      `<div class="asx-cline"><span class="ci">${ic}</span><span class="cb"><span class="ct">${t}</span><span class="cs">${s}</span></span>` +
-      `<span class="cbadge pro">Option Pro</span></div>`;
+  // Un son court, deux notes montantes. Web Audio : aucun fichier à charger, et
+  // l'échec est silencieux (navigateur sans autorisation audio).
+  const chime = () => {
+    try {
+      const AC = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
+      const Ctor = AC.AudioContext || AC.webkitAudioContext;
+      if (!Ctor) return;
+      const ctx = new Ctor();
+      const now = ctx.currentTime;
+      [660, 990].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.frequency.value = f;
+        o.type = "sine";
+        g.gain.setValueAtTime(0, now + i * 0.11);
+        g.gain.linearRampToValueAtTime(0.075, now + i * 0.11 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.11 + 0.3);
+        o.connect(g).connect(ctx.destination);
+        o.start(now + i * 0.11);
+        o.stop(now + i * 0.11 + 0.32);
+      });
+    } catch {
+      /* pas de son : l'animation se suffit */
+    }
+  };
+
+  // Les canaux retenus, dans l'ordre où ils apparaissent à l'écran.
+  const canaux = (wa: boolean, social: boolean, resa: boolean) =>
+    [
+      wa && { id: "wa", ic: "📱", nom: "WhatsApp", etapes: ["Message raccourci", "Ton adapté", "Invitation à répondre"] },
+      social && { id: "ig", ic: "📸", nom: "Instagram", etapes: ["Visuel choisi", "Légende écrite", "Hashtags ajoutés"] },
+      social && { id: "fb", ic: "👍", nom: "Facebook", etapes: ["Texte développé", "Lien de réservation"] },
+      resa && !social && { id: "fb", ic: "📅", nom: "Réservation", etapes: ["Lien ajouté à l'annonce"] },
+    ].filter(Boolean) as Array<{ id: string; ic: string; nom: string; etapes: string[] }>;
+
+  // L'ATELIER — la phrase du pro se dédouble et se métamorphose. On montre le
+  // TRAVAIL, jamais un envoi : aucune coche de livraison, aucun destinataire.
+  const atelierHtml = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
+    const list = canaux(wa, social, resa);
+    const cards = list
+      .map(
+        (c, i) =>
+          `<div class="atl-c atl-${c.id}" style="--d:${0.55 + i * 0.22}s">` +
+            `<div class="atl-h"><span class="atl-ic">${c.ic}</span>${c.nom}</div>` +
+            (c.id === "ig" && data.photo
+              ? `<div class="atl-img" style="background-image:url(&quot;${esc(data.photo)}&quot;)"></div>`
+              : "") +
+            `<div class="atl-t" data-ch="${c.id}">${esc(msg)}</div>` +
+            `<div class="atl-steps">` +
+              c.etapes.map((e, k) => `<span class="atl-s" style="--sd:${1.5 + i * 0.2 + k * 0.28}s">${esc(e)}</span>`).join("") +
+            `</div>` +
+          `</div>`
+      )
+      .join("");
+    return (
+      `<div class="atl">` +
+        `<div class="atl-orb">✦</div>` +
+        `<div class="atl-say">Je prépare votre campagne.</div>` +
+        `<div class="atl-src">«&nbsp;${esc(msg)}&nbsp;»</div>` +
+        `<div class="atl-cards">${cards}</div>` +
+      `</div>`
+    );
+  };
+
+  // Les textes réels arrivent (IA ou repli) : ils remplacent la phrase source dans
+  // chaque carte, ce qui rend la MÉTAMORPHOSE visible à l'écran.
+  const fillAtelier = (c: Campagne, wa: boolean, social: boolean, resa: boolean) => {
+    const map: Record<string, string> = { wa: c.wa, ig: c.insta, fb: c.fb };
+    canaux(wa, social, resa).forEach((ch) => {
+      const el = document.querySelector<HTMLElement>(`.atl-t[data-ch="${ch.id}"]`);
+      const txt = map[ch.id];
+      if (!el || !txt) return;
+      el.classList.add("swap");
+      window.setTimeout(() => {
+        el.textContent = txt;
+        el.classList.remove("swap");
+      }, 180);
+    });
+  };
+
+  // Écran final : les TROIS publications, telles qu'elles sont, côte à côte. Ce
+  // qui vend l'option, c'est de voir trois objets différents nés d'une phrase.
+  const proFinal = (msg: string, wa: boolean, social: boolean, resa: boolean, c: Campagne) => {
+    const post = (ic: string, nom: string, texte: string, img?: string) =>
+      `<div class="asx-post">` +
+        `<div class="asx-post-h"><span>${ic}</span>${nom}</div>` +
+        (img ? `<div class="asx-post-img" style="background-image:url(&quot;${esc(img)}&quot;)"></div>` : "") +
+        `<div class="asx-post-t">${esc(texte)}</div>` +
+      `</div>`;
+    const n = [wa, social, social, resa && !social].filter(Boolean).length;
     return (
       `<div class="asx-pro-k">✨ Options Pro</div>` +
-      `<div class="asx-done-h">Vos options Pro sont prêtes.</div>` +
-      `<div class="asx-done-s">Votre assistante a adapté votre annonce pour chaque canal que vous avez choisi. Vérifiez tout — vous décidez ensuite.</div>` +
-      `<div class="asx-clines">` +
-        (wa ? line("📱", "WhatsApp", `Message préparé pour vos ${plural} qui ont accepté d'être prévenu·es.`) : "") +
-        (social ? line("📸", "Facebook &amp; Instagram", "Publication préparée, à relire avant toute diffusion.") : "") +
-        (resa ? line("📅", "Lien de réservation", "Ajouté à l'annonce, pour réserver en un clic.") : "") +
+      `<div class="asx-done-h">Votre campagne est prête.</div>` +
+      `<div class="asx-done-s"><b>${n} publications prêtes. Vous n'avez écrit qu'une phrase.</b><br>` +
+        `Rien n'est parti&nbsp;: vous relisez, vous validez, et c'est vous qui choisissez le moment.</div>` +
+      `<div class="asx-posts">` +
+        (wa ? post("📱", "WhatsApp", c.wa) : "") +
+        (social ? post("📸", "Instagram", c.insta, data.photo) : "") +
+        (social ? post("👍", "Facebook", c.fb) : "") +
+        (resa && !social ? post("📅", "Réservation", c.fb) : "") +
       `</div>` +
-      `<div class="asx-glab" style="text-align:left">Votre annonce, telle qu'elle s'affichera</div>` +
+      `<div class="asx-glab" style="text-align:left">Et sur votre site, déjà en ligne</div>` +
       bandHtml(msg) +
       `<div class="asx-pricebox">Options Pro&nbsp;: <b>29 €/mois</b><span>sans engagement · résiliable à tout moment</span></div>` +
       `<div class="asx-nono">Aucun message ne sera envoyé et aucun paiement ne sera effectué aujourd'hui.</div>` +
@@ -357,9 +448,28 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
-    // OPTIONS — on prépare, puis UNE pop-up « campagne prête » (rien n'est parti).
-    openStage(`<div class="asx-ctx">Votre assistante adapte l'annonce pour chaque canal…</div><div class="asx-dots" style="margin-top:14px"><span>•</span><span>•</span><span>•</span></div>`);
-    after(1500, () => setCard(proFinal(msg, wa, social, resa)));
+    // OPTIONS — « l'atelier » : sa phrase se dédouble et se métamorphose en trois
+    // publications, chacune habillée pour son canal. Ce n'est PAS un envoi : c'est
+    // une fabrication montrée. Le mot « envoyé » n'apparaît nulle part.
+    openStage(atelierHtml(msg, wa, social, resa));
+    chime();
+    // La génération part tout de suite ; l'animation (≈4,5 s) la couvre. Le repli
+    // déterministe est déjà prêt : l'écran n'attend jamais le réseau.
+    const secours = campagneFallback(msg, nom, data.metier || "", data.ville || "");
+    let camp: Campagne = secours;
+    void fetch("/api/site-internet/apercu/campagne", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, annonce: msg }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j && typeof j.wa === "string") camp = { wa: j.wa, insta: j.insta, fb: j.fb };
+      })
+      .catch(() => { /* le repli reste en place */ });
+    // Les textes réels remplissent les cartes dès qu'ils arrivent (ou le repli).
+    after(2600, () => fillAtelier(camp, wa, social, resa));
+    after(4600, () => { chime(); setCard(proFinal(msg, wa, social, resa, camp)); });
     if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
   };
 
@@ -906,6 +1016,58 @@ function styles(accent: string): string {
   .asx-fl sup,.asx-proof sup{font-size:9px;color:#0E7C5A;font-weight:800;}
   .asx-task{width:100%;border:none;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-task .asx-go{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;margin-left:auto;}
+  /* ── L'ATELIER : la phrase du pro se dédouble et se métamorphose ────────────
+     On montre une FABRICATION, pas un envoi. Aucune coche de livraison, aucun
+     destinataire : ce qui impressionne, c'est de voir trois objets naître d'une
+     seule ligne. Tout est en keyframes CSS — aucune boucle JS à surveiller. */
+  .atl{text-align:center;}
+  .atl-orb{width:54px;height:54px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:25px;color:#fff;background:linear-gradient(140deg,#A594FF,#5B3FA6);
+    box-shadow:0 12px 30px -8px rgba(91,63,166,.9);animation:atlPulse 1.6s ease-in-out infinite;}
+  @keyframes atlPulse{0%,100%{transform:scale(1);box-shadow:0 12px 30px -8px rgba(91,63,166,.9)}
+    50%{transform:scale(1.08);box-shadow:0 14px 38px -6px rgba(165,148,255,.95)}}
+  .atl-say{font-size:15px;font-weight:800;color:#16160F;margin-top:12px;}
+  /* La phrase SOURCE : elle reste visible, puis s'efface quand les cartes sortent —
+     le pro voit d'où viennent les trois publications. */
+  .atl-src{font-size:12.5px;line-height:1.45;color:#71766C;font-style:italic;margin-top:7px;
+    animation:atlSrc 1.4s ease forwards;}
+  @keyframes atlSrc{0%{opacity:1;transform:none}70%{opacity:1}100%{opacity:.35;transform:scale(.97)}}
+  .atl-cards{display:flex;flex-direction:column;gap:9px;margin-top:16px;text-align:left;}
+  .atl-c{border:1px solid #E7E4DC;border-radius:14px;background:#fff;padding:11px 12px;
+    opacity:0;transform:translateY(16px) scale(.96);
+    animation:atlIn .5s cubic-bezier(.22,1,.36,1) var(--d) forwards;
+    box-shadow:0 12px 28px -18px rgba(0,0,0,.45);}
+  @keyframes atlIn{to{opacity:1;transform:none}}
+  .atl-h{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;color:#71766C;}
+  .atl-ic{font-size:14px;}
+  /* Chaque canal garde sa couleur : la différence doit sauter aux yeux. */
+  .atl-wa .atl-t{background:#E6F5DC;color:#1F3A17;}
+  .atl-ig .atl-t{background:#FDF2F8;color:#5B2340;}
+  .atl-fb .atl-t{background:#EFF4FF;color:#1B2E52;}
+  .atl-t{margin-top:7px;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.42;
+    white-space:pre-line;transition:opacity .18s ease;}
+  .atl-t.swap{opacity:0;}
+  .atl-img{margin-top:7px;height:74px;border-radius:10px;background-size:cover;background-position:center;
+    background-image:linear-gradient(150deg,#3A2A3E,#1A1420);}
+  .atl-steps{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+  .atl-s{font-size:10px;font-weight:700;color:#0E7C5A;background:#E4F7EE;border-radius:5px;padding:3px 7px;
+    opacity:0;animation:atlStep .35s ease var(--sd) forwards;}
+  .atl-s::before{content:"✓ ";}
+  @keyframes atlStep{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .atl-orb,.atl-src{animation:none;}
+    .atl-c,.atl-s{animation:none;opacity:1;transform:none;}
+  }
+  /* Les trois publications, sur l'écran final */
+  .asx-posts{display:flex;flex-direction:column;gap:10px;margin-top:15px;text-align:left;}
+  .asx-post{border:1px solid #E7E4DC;border-radius:14px;background:#fff;padding:11px 12px;
+    box-shadow:0 12px 28px -20px rgba(0,0,0,.4);}
+  .asx-post-h{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;color:#71766C;}
+  .asx-post-img{margin-top:7px;height:96px;border-radius:10px;background-size:cover;background-position:center;
+    background-image:linear-gradient(150deg,#3A2A3E,#1A1420);}
+  .asx-post-t{margin-top:7px;font-size:12.5px;line-height:1.45;color:#3A3A32;white-space:pre-line;}
   /* ── Pop-up « c'est fait » (gratuit) et « campagne prête » (options Pro) ── */
   .asx-done-k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#0B7A55;background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:5px 12px;}
   .asx-pro-k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#6B4BC7;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;}

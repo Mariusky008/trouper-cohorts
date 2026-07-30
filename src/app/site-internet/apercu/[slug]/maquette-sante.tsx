@@ -141,6 +141,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     slot: "samedi 15 h 30",
     avisAllowed: avisMode === "prominent",
     ville: villeAff,
+    metier: metierLabel,
+    // Une VRAIE photo du commerce pour le visuel Instagram de la campagne.
+    photo: photos[0] || "",
   };
 
   // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en
