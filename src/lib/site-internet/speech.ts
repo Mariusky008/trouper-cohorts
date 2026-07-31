@@ -91,6 +91,11 @@ async function playCloud(text: string): Promise<boolean> {
       audioEl.setAttribute("playsinline", "");
     }
     const url = URL.createObjectURL(blob);
+    // BUG corrigé : `play()` refusé (politique de lecture automatique) appelait
+    // `finish` et l'on comptait ça comme une lecture RÉUSSIE. Résultat : silence
+    // total, et `cloudEverWorked` passait à true — ce qui interdisait ensuite le
+    // repli sur la voix du navigateur. On distingue maintenant joué / bloqué.
+    let played = false;
     await new Promise<void>((resolve) => {
       const el = audioEl as HTMLAudioElement;
       let done = false;
@@ -101,16 +106,21 @@ async function playCloud(text: string): Promise<boolean> {
         resolve();
       };
       curResolve = finish;
-      el.onplay = () => emitSpeaking(true);
+      el.onplay = () => { played = true; emitSpeaking(true); };
       el.onended = finish;
       el.onerror = finish;
       el.src = url;
-      el.play().catch(finish);
+      el.play().catch((e) => {
+        lastCloudError = `lecture bloquée · ${String((e as Error)?.name || e).slice(0, 80)}`;
+        finish();
+      });
     });
     URL.revokeObjectURL(url);
+    if (!played) return false; // bloqué : on laisse la voix navigateur prendre le relais
     cloudEverWorked = true;
     return true;
-  } catch {
+  } catch (e) {
+    lastCloudError = `réseau · ${String((e as Error)?.message || e).slice(0, 120)}`;
     return false;
   }
 }
@@ -124,7 +134,17 @@ async function pumpCloud(): Promise<void> {
     if (!ok) ok = await playCloud(t); // 1 réessai (erreurs réseau transitoires)
     // Repli voix navigateur UNIQUEMENT si la voix cloud n'a jamais marché — sinon
     // on préfère sauter cette phrase que basculer d'un coup sur une voix robotique.
-    if (!ok && !cloudEverWorked) browserSpeak(t, true);
+    if (!ok && !cloudEverWorked) {
+      // On BASCULE sur la voix du navigateur : le pro entendra une voix robotique.
+      // Une seule ligne de console, pour pouvoir diagnostiquer à distance (la
+      // cause varie d'une machine à l'autre : réseau, proxy, autorisation audio).
+      try {
+        console.warn(`[Popey] voix premium indisponible → voix du navigateur. Raison : ${lastCloudError || "inconnue"}`);
+      } catch {
+        /* best-effort */
+      }
+      browserSpeak(t, true);
+    }
   }
   cloudBusy = false;
   setTimeout(() => {

@@ -38,6 +38,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
+  const [fxStep, setFxStep] = useState(0); // 0 = préparation · 1 = résultat
+  // La phrase que le pro « dirait » — la même aux deux temps, pour que la
+  // transformation soit lisible : on ne change que l'habillage, pas le fait.
+  const flashPhrase = flashExample || "Une nouveauté cette semaine.";
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [fly, setFly] = useState(false);
   const [caption, setCaption] = useState("");
@@ -326,11 +330,18 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     if (avisAllowed) {
       steps.push({
         title: "L'Action Flash",
-        // On signale l'existence des options ICI (là où c'est logique), pour que
-        // le pro ne tombe pas dessus par surprise en ouvrant l'Action Flash. La
-        // conclusion, elle, reste entièrement sur le gratuit.
-        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, un événement — dites-le simplement. Votre annonce s'affiche aussitôt sur votre site, gratuitement. Et si un jour vous voulez toucher plus de monde, elle peut aussi préparer une campagne : c'est en option, vous choisissez.`,
-        enter: () => { setScene("flash"); window.setTimeout(popBand, 2600); },
+        // UNE seule idée : je dis ce qui se passe, c'est transformé en annonce et
+        // diffusé. Pas un mot sur l'option payante — elle a son propre écran à la
+        // fin. Charger cet instant, c'est tuer l'effet.
+        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement.`,
+        enter: () => {
+          setScene("flash");
+          setFxStep(0);
+          // La préparation est COURTE et disparaît : elle ne doit pas rester à
+          // l'écran à côté du résultat.
+          window.setTimeout(() => setFxStep(1), 1300);
+          window.setTimeout(popBand, 2200);
+        },
       });
     }
 
@@ -481,18 +492,26 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
           @keyframes dyIn{to{opacity:1;transform:none}}
           /* Scène « Action Flash » : le récap transparent des canaux (offert / option) */
-          .dtour-card .fx-badge{display:inline-block;font-weight:800;font-size:11px;color:#06231a;background:#FFC400;padding:5px 11px;border-radius:999px;margin-bottom:10px;}
-          .dtour-card .fx-you{position:relative;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #E6DFF9;border-radius:14px;padding:12px 13px 11px;font-family:Georgia,serif;font-size:15px;font-style:italic;color:#141A2E;line-height:1.4;}
-          .dtour-card .fx-youk{display:block;font-family:'Inter',system-ui,sans-serif;font-style:normal;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8A63D9;font-weight:800;margin-bottom:6px;}
-          .dtour-card .fx-assist{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;color:#5B3FA6;margin:13px 0 4px;}
-          .dtour-card .fx-assist .fx-av{width:24px;height:24px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:linear-gradient(140deg,#7C6AE8,#5B3FA6);}
-          .dtour-card .fx-l{display:flex;align-items:center;gap:11px;margin-top:9px;padding:11px 12px;border-radius:13px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;opacity:0;transform:translateX(-14px);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
-          .dtour-card .fx-i{font-size:18px;flex:none;width:22px;text-align:center;}
-          .dtour-card .fx-t{flex:1;font-size:12.5px;font-weight:600;color:#141A2E;line-height:1.3;}
-          .dtour-card .fx-tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:7px;letter-spacing:.02em;}
-          .dtour-card .fx-tag.free{background:#E4F7EE;color:#0E7C5A;}
-          .dtour-card .fx-tag.opt{background:#EDE8FF;color:#6B4BC7;}
-          .dtour-card .fx-note{text-align:center;font-size:11.5px;color:#6E7290;margin-top:13px;}
+          /* ── Action Flash : deux temps, six lignes en tout ─────────────────── */
+          .dtour-card .fx-said{font-size:16px;line-height:1.5;color:#5F6358;font-style:italic;}
+          .dtour-card .fx-prep{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:18px;
+            font-size:13.5px;font-weight:700;color:#71766C;}
+          .dtour-card .fx-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+            font-size:15px;color:#fff;background:linear-gradient(140deg,#A594FF,#5B3FA6);animation:fxPulse 1.1s ease-in-out infinite;}
+          @keyframes fxPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+          .dtour-card .fx-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+            color:#0B7A55;background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:6px 13px;}
+          .dtour-card .fx-out{margin-top:15px;border-radius:16px;padding:16px 17px;text-align:left;
+            background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;font-size:16.5px;line-height:1.45;font-weight:600;
+            box-shadow:0 18px 40px -18px rgba(11,42,32,.9);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
+          @keyframes fxIn{from{opacity:0;transform:translateY(-12px) scale(.97)}to{opacity:1;transform:none}}
+          .dtour-card .fx-out em{display:block;font-style:normal;font-size:13.5px;font-weight:500;color:#9FE8CB;margin-top:7px;}
+          .dtour-card .fx-sp{animation:fxSp 1.5s ease-in-out infinite;display:inline-block;}
+          @keyframes fxSp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+          .dtour-card .fx-checks{display:flex;flex-direction:column;gap:7px;margin-top:15px;}
+          .dtour-card .fx-checks span{font-size:13.5px;font-weight:700;color:#0B7A55;}
+          @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-sp,.dtour-card .fx-out{animation:none;}}
+
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
              VOUS au centre, les partenaires en orbite, les recommandations affluent. */
           .dtour-card.viz{background:radial-gradient(125% 95% at 50% 4%,#20305A 0%,#111830 42%,#0A0E1A 78%);color:#EAF0FA;text-align:center;padding:24px 20px 24px;overflow:hidden;position:relative;}
@@ -571,14 +590,8 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           }
 
           /* Action Flash : le bandeau qui apparaît dans la carte */
-          .dtour-card .fx-band{display:flex;flex-direction:column;gap:5px;margin-top:13px;border-radius:12px;padding:12px 14px;text-align:left;
             background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;box-shadow:0 14px 30px -16px rgba(11,42,32,.85);
             opacity:0;transform:translateY(-12px);animation:dtBub .5s cubic-bezier(.22,1,.36,1) 1.1s forwards;}
-          .dtour-card .fx-bk{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7FE6C0;}
-          .dtour-card .fx-bt{font-size:13.5px;line-height:1.4;font-weight:600;}
-          .dtour-card .fx-live{margin-top:12px;font-size:12.5px;font-weight:700;color:#0B7A55;opacity:0;animation:dtBub .4s ease 2.1s forwards;}
-          .dtour-card .fx-opt{margin-top:8px;font-size:11.5px;line-height:1.45;color:#6E7290;opacity:0;animation:dtBub .4s ease 2.5s forwards;}
-          .dtour-card .fx-opt b{color:#5B3FA6;font-weight:800;}
 
           /* ── L'icône rejoint son emplacement (le bouton « Action Flash ») ── */
           .al-fly{position:fixed;left:50%;top:46%;z-index:93;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;
@@ -842,21 +855,30 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           )}
 
           {/* Action Flash : une phrase → l'annonce → elle s'affiche sur le site. */}
+          {/* ACTION FLASH — deux temps, rien de plus. Ce que le pro doit retenir :
+              « je dis ce qui se passe, c'est transformé en annonce et diffusé ».
+              Tout le reste (canaux, options, libellés) dilue cette phrase. */}
           {scene === "flash" && (
             <div className="dtour-ov">
               <div className="dtour-card">
-                <div className="fx-badge">🚀 Action Flash</div>
-                <div className="fx-you">
-                  <span className="fx-youk">Vous, en une phrase</span>
-                  «&nbsp;{flashExample || "Une offre cette semaine à faire connaître."}&nbsp;»
-                </div>
-                <div className="fx-assist"><span className="fx-av">✦</span>Je rédige votre annonce…</div>
-                <div className="fx-band">
-                  <span className="fx-bk">🎉 Offre du moment</span>
-                  <span className="fx-bt">{flashExample || "Une offre cette semaine à faire connaître."}</span>
-                </div>
-                <div className="fx-live">✓ Affichée sur votre site et chez les commerces partenaires — <b>gratuitement</b></div>
-                <div className="fx-opt">Pour toucher plus de monde&nbsp;: une campagne WhatsApp &amp; réseaux, <b>en option</b>.</div>
+                {fxStep === 0 ? (
+                  <>
+                    <div className="fx-said">«&nbsp;{flashPhrase}&nbsp;»</div>
+                    <div className="fx-prep"><span className="fx-av">✦</span>Votre annonce s&apos;écrit…</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="fx-badge ok">✓ Votre annonce est en ligne</div>
+                    <div className="fx-out">
+                      {flashPhrase} <span className="fx-sp">✨</span>
+                      <em>Ça vous intéresse&nbsp;? Écrivez-moi.</em>
+                    </div>
+                    <div className="fx-checks">
+                      <span>✓ Publiée sur votre site</span>
+                      <span>✓ Visible dans le réseau local</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
