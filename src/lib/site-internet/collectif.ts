@@ -14,6 +14,8 @@ export type PartnerOffer = {
   metier: string;
   texte: string;
   photo: string | null;
+  /** Horodatage de publication — sert au tri par fraîcheur. */
+  publieLe: string | null;
 };
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -23,16 +25,17 @@ const norm = (s: string) =>
 
 type SiteRow = Record<string, unknown>;
 
-/** Annonce en cours d'un site, ou "" si aucune (ou expirée). */
-function offerText(row: SiteRow): string {
+/** Annonce en cours d'un site : son texte et sa date de publication. */
+function offerOf(row: SiteRow): { text: string; at: string | null } | null {
   const raw = row.current_offer;
-  if (!raw || typeof raw !== "object") return "";
+  if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const text = str(o.text).trim();
-  if (!text) return "";
+  if (!text) return null;
   const until = typeof o.until === "string" && o.until ? o.until : null;
-  if (until && Date.parse(until) < Date.now()) return "";
-  return text;
+  if (until && Date.parse(until) < Date.now()) return null;
+  const at = typeof o.created_at === "string" && o.created_at ? o.created_at : null;
+  return { text, at };
 }
 
 /**
@@ -109,17 +112,106 @@ export async function partnerOffers(
     const act = str(r.activite);
     if (!peutParticiper(act)) continue;
     if (!sontComplementaires(activite, act)) continue;
-    const texte = offerText(r);
-    if (!texte) continue;
+    const off = offerOf(r);
+    if (!off) continue;
     const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
     out.push({
       slug: str(r.slug),
       nom: str(r.business_name) || "Un commerce voisin",
       metier: resolveMetier(act).entry?.label ?? act,
-      texte,
+      texte: off.text,
       photo: str(photos[0]) || null,
+      publieLe: off.at,
     });
-    if (out.length >= (opts.max ?? 4)) break;
   }
-  return out;
+
+  // TRI PAR FRAÎCHEUR. Sans lui, les places étaient attribuées dans l'ordre
+  // arbitraire de la base : deux commerçants passaient toujours, deux jamais,
+  // sans raison ni moyen de le vérifier.
+  //
+  // La fraîcheur est le bon critère parce que le produit sert le PÉRISSABLE :
+  // une annonce d'il y a une heure doit passer devant une annonce de mardi.
+  // C'est aussi auto-régulant — publier souvent rend plus visible.
+  out.sort((a, b) => {
+    const ta = a.publieLe ? Date.parse(a.publieLe) : 0;
+    const tb = b.publieLe ? Date.parse(b.publieLe) : 0;
+    return tb - ta;
+  });
+  return out.slice(0, opts.max ?? 4);
+}
+
+/**
+ * TOUTES les annonces en cours d'une ville, de la plus fraîche à la plus ancienne.
+ *
+ * Le bloc affiché chez un commerçant n'en montre que quelques-unes : c'est un
+ * aperçu, pas le réseau. Cette fonction alimente la page qui montre l'ensemble —
+ * sans plafond arbitraire, donc sans commerçant invisible.
+ *
+ * Contrairement à `partnerOffers`, il n'y a pas de règle de complémentarité ici :
+ * la page est le catalogue de la ville, pas la vitrine d'un commerce. Un coiffeur
+ * y voisine un autre coiffeur, et c'est normal — le visiteur choisit.
+ */
+export async function cityOffers(
+  supabase: Supabase,
+  ville: string,
+  max = 60
+): Promise<PartnerOffer[]> {
+  if (!ville.trim()) return [];
+  const query = (cols: string) =>
+    supabase
+      .from("human_vitrine_sites")
+      .select(cols)
+      .eq("channel", "letter")
+      .eq("city", ville)
+      .eq("published", true)
+      .limit(200);
+  const BASE = "slug, business_name, activite, current_offer, gallery_photos";
+
+  let rows: SiteRow[] = [];
+  try {
+    const { data, error } = await query(`${BASE}, collectif_actif`);
+    if (error) throw new Error(error.message);
+    if (Array.isArray(data)) rows = data as SiteRow[];
+  } catch {
+    try {
+      const { data } = await query(BASE);
+      if (Array.isArray(data)) rows = data as SiteRow[];
+    } catch {
+      return [];
+    }
+  }
+
+  const out: PartnerOffer[] = [];
+  for (const r of rows) {
+    if (r.collectif_actif === false) continue;
+    const act = str(r.activite);
+    if (!peutParticiper(act)) continue; // déonto : commerce uniquement
+    const off = offerOf(r);
+    if (!off) continue;
+    const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
+    out.push({
+      slug: str(r.slug),
+      nom: str(r.business_name) || "Un commerce",
+      metier: resolveMetier(act).entry?.label ?? act,
+      texte: off.text,
+      photo: str(photos[0]) || null,
+      publieLe: off.at,
+    });
+  }
+  out.sort((a, b) => (b.publieLe ? Date.parse(b.publieLe) : 0) - (a.publieLe ? Date.parse(a.publieLe) : 0));
+  return out.slice(0, max);
+}
+
+/** « il y a 2 h », « hier », « le 12/03 » — la fraîcheur EST l'information. */
+export function ilYA(iso: string | null): string {
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const min = Math.floor((Date.now() - t) / 60000);
+  if (min < 2) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `il y a ${h} h`;
+  if (h < 48) return "hier";
+  return new Date(t).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }

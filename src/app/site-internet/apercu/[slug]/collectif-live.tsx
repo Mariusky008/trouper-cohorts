@@ -4,9 +4,14 @@
 // la même ville. Zéro partenaire = zéro section : on ne laisse pas un cadre vide
 // promettre un réseau. Rien n'est cliquable vers un annuaire : chaque carte mène
 // au site du commerce partenaire, et à rien d'autre.
-import type { PartnerOffer } from "@/lib/site-internet/collectif";
+import { ilYA, type PartnerOffer } from "@/lib/site-internet/collectif";
+import { slugify } from "@/lib/popey-marketplace";
 
 export function CollectifLive({ ville, offers, accent }: { ville: string; offers: PartnerOffer[]; accent: string }) {
+  // Le bloc est un APERÇU (3 annonces) : le catalogue entier vit sur sa propre page.
+  // Un fil sans fin sur le site d'un tiers, c'est une porte de sortie.
+  const apercu = offers.slice(0, 3);
+  const villeUrl = `/ville/${slugify(ville)}`;
   if (!offers.length) return null;
 
   return (
@@ -31,20 +36,24 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
             color:color-mix(in srgb,var(--cv) 34%,#fff);font-weight:700;margin-top:2px;}
           .mqc .clive .cv-o{display:block;font-size:12.5px;line-height:1.4;color:#D6DAD1;margin-top:5px;}
           .mqc .clive .cv-go{flex:none;font-size:19px;color:rgba(255,255,255,.45);font-weight:700;}
+          .mqc .clive .cv-w{display:block;font-size:10.5px;color:#8B9086;margin-top:5px;}
+          .mqc .clive .cv-all{display:block;margin-top:14px;text-align:center;text-decoration:none;
+            font-size:13.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.09);
+            border:1px solid rgba(255,255,255,.2);border-radius:13px;padding:13px;}
           .mqc .clive .cv-note{font-size:11px;line-height:1.5;color:#8B9086;margin-top:15px;}
           @media (min-width:860px){.mqc .clive{margin:22px 20px;padding:44px 24px;} .mqc .clive .cv-h{font-size:30px;}
             .mqc .clive .cv-list{display:grid;grid-template-columns:1fr 1fr;}}
           `,
         }}
       />
-      <div className="cv-k">🤝 Le collectif de {ville}</div>
-      <div className="cv-h">À découvrir près de chez vous.</div>
+      <div className="cv-k">🤝 Le collectif</div>
+      <div className="cv-h">Aujourd&apos;hui à {ville}.</div>
       <div className="cv-p">
-        Des commerces de {ville} que nous connaissons, et ce qu&apos;ils proposent en ce moment.
+        Ce que d&apos;autres commerçants de {ville} proposent en ce moment.
       </div>
 
       <div className="cv-list">
-        {offers.map((o) => (
+        {apercu.map((o) => (
           <a className="cv-c" key={o.slug} href={`/site-internet/apercu/${o.slug}`}>
             <span
               className="cv-im"
@@ -55,11 +64,16 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
               <span className="cv-n">{o.nom}</span>
               <span className="cv-m">{o.metier}</span>
               <span className="cv-o">{o.texte}</span>
+              {ilYA(o.publieLe) && <span className="cv-w">{ilYA(o.publieLe)}</span>}
             </span>
             <span className="cv-go" aria-hidden="true">›</span>
           </a>
         ))}
       </div>
+
+      <a className="cv-all" href={villeUrl}>
+        Voir tout ce qui se passe à {ville} →
+      </a>
 
       <div className="cv-note">
         Que des commerces complémentaires, jamais un concurrent. Seules leurs annonces sont partagées —
