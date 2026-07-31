@@ -15,7 +15,6 @@ import { LivingHero } from "./living-hero";
 import { CercleSection } from "./cercle-section";
 import { CollectifSection } from "./collectif-section";
 import { CollectifLive } from "./collectif-live";
-import { CollectifToast } from "./collectif-toast";
 import { DemarchageBooking, type DemarchageTarget } from "./demarchage-booking";
 import { FollowBar } from "./follow-bar";
 import { OfferBand } from "./offer-band";
@@ -67,21 +66,20 @@ export type MaquetteSanteProps = {
   clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
   partners: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
   resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
-  collectifService: string; // « une séance découverte » / « une table » / « un rendez-vous » (toast collectif)
-  collectifSource: string; // métier du partenaire d'où vient la réservation (toast collectif)
   flashExample: string; // exemple d'Action Flash propre au métier (phrase que le pro écrirait)
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
   approche: { titre: string; corps: string } | null; // texte « Mon approche » validé par le pro
   proFaq: Array<{ q: string; a: string }>; // FAQ saisie par le pro → override de la config métier
   partnerOffers: PartnerOffer[]; // annonces RÉELLES des commerces partenaires de la ville
+  collectifActif: boolean; // le pro participe-t-il au catalogue de sa ville ?
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, collectifService, collectifSource, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -406,9 +404,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           keepHref={p.waHref || p.telHref}
         />
       )}
-      {!published && avisMode === "prominent" && (
-        <CollectifToast ville={villeAff} service={collectifService} source={collectifSource} />
-      )}
       {bookViaDemarchage && demarchageTarget && (
         <DemarchageBooking target={demarchageTarget} hostNom={nom} accent={accent} />
       )}
@@ -452,9 +447,17 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         hasGallery={gallery.length > 0}
         extraChips={canFollow ? [
           { label: "🔔 Suivre ce commerce", target: "mq-suivre" },
-          // Le collectif n'existe que dans la maquette : pas de raccourci vers une
-          // section absente du site en ligne.
-          ...(published ? [] : [{ label: `🤝 Le collectif de ${villeAff}`, target: "mq-collectif", gold: true }]),
+          // Le bloc « Aujourd'hui à … » existe dans les deux cas (maquette et site
+          // en ligne) : le raccourci aussi, avec le libellé de ce qu'on y trouve.
+          // Jamais de raccourci vers une ancre absente : le bloc en ligne suppose
+          // une ville et une participation au catalogue.
+          ...(!published || (villeAff && collectifActif)
+            ? [{
+                label: published ? `📍 Aujourd'hui à ${villeAff}` : `🤝 Le catalogue de ${villeAff}`,
+                target: "mq-collectif",
+                gold: true,
+              }]
+            : []),
         ] : []}
       />
 
@@ -586,9 +589,12 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <CercleSection slug={slug} accent={accent} nom={nom} published={published} promesse={follow.promesse} topics={follow.topics} />
       )}
 
-      {/* Site EN LIGNE : le vrai Collectif, avec les annonces réelles des commerces
-          partenaires de la ville. Aucun partenaire actif → aucune section. */}
-      {published && canFollow && <CollectifLive ville={villeAff} offers={partnerOffers} accent={accent} />}
+      {/* Site EN LIGNE : la fenêtre sur le catalogue de la ville, avec les annonces
+          réelles des commerces voisins. Le bloc existe même sans voisin (sinon le
+          catalogue n'a aucune porte d'entrée) — mais jamais si le pro s'en est retiré. */}
+      {published && canFollow && collectifActif && (
+        <CollectifLive ville={villeAff} offers={partnerOffers} accent={accent} />
+      )}
 
       {/* En maquette : la démonstration du mécanisme, cadrée « exemple ». */}
       {canFollow && !published && (

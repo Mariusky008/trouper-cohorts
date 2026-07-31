@@ -168,8 +168,10 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
   // Le Collectif : les annonces en cours des commerces partenaires de la ville.
   // Chargé uniquement pour un site EN LIGNE — la maquette montre la démonstration.
   let livePartners: PartnerOffer[] = [];
+  // Participation au catalogue : pilote AUSSI l'affichage du bloc. Un commerçant
+  // qui s'est retiré ne doit pas garder une fenêtre sur le catalogue de sa ville.
+  let collectifActif = true;
   if (row.published) {
-    let collectifActif = true;
     try {
       const { data: c } = await supabase
         .from("human_vitrine_sites")
@@ -240,8 +242,6 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       : famBeauty
         ? { partner: "un salon de coiffure partenaire", clientMsg: "Je prépare mon mariage 💍", recoMsg: `Vous avez pensé à vos ongles ? ${nom}, c'est la meilleure de ${villeAff} 💅`, oppMsg: "🤝 Nouvelle cliente — elle prépare un mariage et cherche vos prestations. Proposer un créneau ?" }
         : { partner: "un commerce partenaire", clientMsg: `Je cherche un bon ${metierSing} à ${villeAff}`, recoMsg: `J'ai exactement ce qu'il vous faut : ${nom}, tout près 😊`, oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?" };
-  const collectifService = famSport ? "une séance découverte" : famResto ? "une table" : "un rendez-vous";
-  const collectifSource = partners[0]?.t || "un partenaire";
   // Exemple d'Action Flash PROPRE AU MÉTIER : une phrase que le pro écrirait
   // lui-même (illustration, jamais présentée comme une vraie donnée du commerce).
   const flashExample = famSport
@@ -403,14 +403,13 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       clientWord={clientWord}
       partners={partners}
       resoExample={resoExample}
-      collectifService={collectifService}
-      collectifSource={collectifSource}
       flashExample={flashExample}
       demarchageTarget={demarchageTarget}
       galleryVideos={galleryVideos}
       approche={approche}
       proFaq={proFaq}
       partnerOffers={livePartners}
+      collectifActif={collectifActif}
     />
   );
 }

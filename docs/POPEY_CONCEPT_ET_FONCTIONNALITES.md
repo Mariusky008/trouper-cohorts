@@ -240,20 +240,36 @@ touche peu de monde.
 
 ---
 
-## 9. Le réseau de commerces partenaires (« Le Collectif »)
+## 9. Le catalogue de la ville (« Le Collectif »)
 
-**Intention produit :** l'annonce d'un commerçant s'affiche aussi sur les sites des
-commerces partenaires de sa ville — jamais un concurrent, toujours un complémentaire.
-Présenté comme une fonctionnalité incluse et gratuite, avec un astérisque
-(« le réseau se déploie ville par ville »).
+**Intention produit :** les annonces du jour de tous les commerçants d'une ville
+sont rassemblées sur **une seule page** (`/ville/{ville}`), triée de la plus fraîche
+à la plus ancienne. Chaque site de commerçant en montre une **fenêtre** — un aperçu
+de trois annonces et un lien vers la page complète. Inclus et gratuit.
 
-**État réel :** le mécanisme n'existe pas. Aucune diffusion croisée n'est
-implémentée. La section a été **retirée des sites en ligne** et n'apparaît que dans
-la maquette de démonstration, explicitement cadrée « exemple ».
+Le choix du catalogue plutôt que d'une diffusion croisée « votre annonce sur cinq
+sites partenaires » est structurant : la diffusion croisée suppose cinq commerces
+appariés et actifs avant de produire le moindre effet, alors que le catalogue existe
+dès le deuxième commerçant.
 
-C'est le pari le plus fort du modèle — l'effet réseau local — et celui qui est le
-moins avancé. Un business plan doit le traiter comme une hypothèse à valider, avec
-son propre jalon de développement.
+**État réel :** implémenté, côté serveur (`src/lib/site-internet/collectif.ts`).
+
+- `cityOffers()` alimente la page ville : toutes les annonces en cours, triées par
+  fraîcheur, sans plafond arbitraire.
+- `partnerOffers()` alimente la fenêtre sur le site d'un commerçant : mêmes règles,
+  plus une **règle de complémentarité** (jamais deux commerces du même métier), et
+  limitée à quatre.
+- **Déontologie** appliquée dans les deux cas : les professions réglementées (santé
+  encadrée, droit) n'entrent jamais dans le catalogue.
+- **Retrait possible** : `collectif_actif = false` retire le commerce du catalogue
+  *et* la fenêtre de son site (qui ne partage pas ne reçoit pas).
+- Ce qui circule : nom, métier, texte de l'annonce, lien vers le site. Aucune donnée
+  de client, jamais.
+
+**Ce qui reste à valider :** la demande côté habitants. La page existe et se remplit
+toute seule, mais rien ne l'amène encore devant un visiteur qui ne serait pas déjà
+sur le site d'un commerçant. C'est l'objet de l'abonnement ville (§ suivant), non
+construit à ce jour.
 
 ---
 
@@ -309,7 +325,8 @@ l'automatisation ou à l'embauche.
 ### ❌ Non construit
 - **Facturation et abonnement** (le 29 € n'est encaissable par aucun mécanisme)
 - **Options Pro** : diffusion WhatsApp de masse, publication réseaux sociaux
-- **Réseau de commerces partenaires** (diffusion croisée)
+- **Abonnement ville** : aucun mécanisme d'envoi (le catalogue existe, mais rien ne
+  l'apporte à un habitant qui n'est pas déjà sur le site d'un commerçant)
 - Statistiques d'usage détaillées pour le commerçant
 - Application mobile
 
@@ -334,9 +351,10 @@ hypothèse à assumer comme telle.
 3. **Ce qu'on finance en priorité.** Trois candidats qui ne se valent pas :
    - la **facturation** (débloquer le revenu, mais sur des options non construites) ;
    - les **options Pro** (rendre le 29 € légitime) ;
-   - le **réseau partenaire** (le pari différenciant, le plus incertain).
+   - l'**abonnement ville** (le pari différenciant : rendre le catalogue utile aux
+     habitants, donc les commerçants trouvables par des gens qui ne les connaissent pas).
 
-4. **Le modèle de déploiement géographique.** Le réseau partenaire n'a de sens que
+4. **Le modèle de déploiement géographique.** Le catalogue de ville n'a de sens que
    par densité locale. Vaut-il mieux 500 commerçants dans une ville, ou 500 répartis
    en France ? Le produit est prêt pour les deux ; le modèle économique n'implique
    pas la même chose.

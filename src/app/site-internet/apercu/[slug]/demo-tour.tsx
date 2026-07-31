@@ -333,7 +333,17 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
         // UNE seule idée : je dis ce qui se passe, c'est transformé en annonce et
         // diffusé. Pas un mot sur l'option payante — elle a son propre écran à la
         // fin. Charger cet instant, c'est tuer l'effet.
-        say: `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement.`,
+        //
+        // La deuxième phrase est le VRAI argument : l'annonce ne reste pas sur son
+        // site (que personne ne visite spontanément), elle entre dans le catalogue
+        // de la ville. On dit ce que le produit FAIT aujourd'hui — la page existe et
+        // l'annonce y apparaît — jamais qu'elle est « envoyée chaque jour à des
+        // inscrits » : il n'y a pas encore d'envoi.
+        say:
+          `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — ` +
+          `dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement. ` +
+          `Et elle entre dans le catalogue de ${villeAff || "votre ville"} : la page où l'on voit ce qui se passe ` +
+          `aujourd'hui chez les commerçants d'ici. Des gens qui ne vous connaissent pas encore peuvent vous y découvrir.`,
         enter: () => {
           setScene("flash");
           setFxStep(0);
@@ -353,7 +363,10 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     });
 
     const total = steps.length;
-    const est = (s: string) => Math.min(13000, Math.max(2400, s.length * 60));
+    // Durée de repli, utilisée UNIQUEMENT si l'audio est bloqué : c'est alors le
+    // temps de LECTURE de la légende. Le plafond suit la plus longue réplique —
+    // sinon la phrase la plus dense défile avant d'avoir pu être lue.
+    const est = (s: string) => Math.min(17000, Math.max(2400, s.length * 60));
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
@@ -875,7 +888,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                     </div>
                     <div className="fx-checks">
                       <span>✓ Publiée sur votre site</span>
-                      <span>✓ Visible dans le réseau local</span>
+                      <span>✓ Dans le catalogue de {villeAff || "votre ville"}</span>
                     </div>
                   </>
                 )}

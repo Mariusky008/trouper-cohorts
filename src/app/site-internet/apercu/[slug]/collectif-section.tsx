@@ -22,8 +22,14 @@ const FALLBACK_CATS = [
   { ic: "🎉", t: "Événementiel" },
 ];
 
+/** Slug de ville pour /ville/… — même règle que `slugify`, sans tirer tout le module. */
+const citySlug = (v: string) =>
+  v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 export function CollectifSection({ ville, accent, nom, partners, published, offerText }: { slug: string; ville: string; accent: string; nom: string; partners?: Array<{ ic: string; t: string }>; published: boolean; offerText?: string }) {
   const CATS = partners && partners.length ? partners : FALLBACK_CATS;
+  const villeSlug = citySlug(ville);
+  const villeUrl = villeSlug ? `/ville/${villeSlug}` : "";
   const [sel, setSel] = useState<{ ic: string; t: string } | null>(null);
   const [modal, setModal] = useState<{ ic: string; t: string } | null>(null);
   const [custom, setCustom] = useState("");
@@ -66,11 +72,13 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
           .mqc .cl-rc-l{flex:1;min-width:0;}
           .mqc .cl-rc-n{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#141A2E;line-height:1.15;}
           .mqc .cl-rc-o{font-size:12.5px;color:#0B7A55;font-weight:700;margin-top:4px;line-height:1.35;}
-          .mqc .cl-rc-go{flex:none;border:none;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;color:#06231a;background:linear-gradient(120deg,#00E0A0,#07B083);box-shadow:0 10px 22px -12px rgba(0,224,160,.85);}
-          .mqc .cl-rc-go:active{transform:scale(.96);}
-          .mqc .cl-projby{font-size:11px;color:#8A90A0;margin-top:11px;}
-          .mqc .cl-projby b{color:#5B3FA6;font-weight:800;}
-          .mqc .cl-projtip{font-size:11.5px;color:#9FB0CE;margin-top:11px;}
+          /* Ancienneté : dans un catalogue trié par fraîcheur, c'est l'information. */
+          .mqc .cl-rc-w{flex:none;align-self:flex-start;font-size:10.5px;font-weight:700;color:#8A90A0;white-space:nowrap;}
+          .mqc .cl-projmore{font-size:11.5px;line-height:1.5;color:#8A90A0;margin-top:11px;padding-top:11px;border-top:1px dashed #E6E8EF;}
+          .mqc .cl-projgo{display:block;margin-top:13px;text-align:center;text-decoration:none;font-size:13.5px;font-weight:800;
+            color:#0B2A20;background:#7FE6C0;border-radius:13px;padding:13px;box-shadow:0 14px 28px -14px rgba(127,230,192,.7);}
+          .mqc .cl-projgo:active{transform:translateY(1px);}
+          .mqc .cl-projtip{font-size:11.5px;line-height:1.5;color:#9FB0CE;margin-top:11px;}
           .mqc .cl-sep{margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7E8CA8;}
           .mqc .cl-h{font-family:Georgia,serif;font-size:25px;font-weight:600;line-height:1.14;margin-top:8px;}
           .mqc .cl-p{font-size:13.5px;line-height:1.6;color:#B8C4DC;margin-top:11px;}
@@ -120,40 +128,49 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
       />
       <div className="cl-card">
         <div className="cl-in">
-          <div className="cl-k">🤝 Le collectif de {ville}{!published && <span className="cl-opt">Inclus · gratuit</span>}</div>
+          <div className="cl-k">🤝 Le collectif{!published && <span className="cl-opt">Inclus · gratuit</span>}</div>
 
           {!published ? (
             <>
-              {/* AU PRO : on MONTRE d'emblée le mécanisme — son propre commerce, tel
-                  qu'il apparaîtrait sur le site d'un partenaire. Cadré « exemple »
-                  (c'est une simulation du rendu), jamais comme du live. */}
-              <div className="cl-h">Votre commerce, <em>recommandé chez des partenaires.</em></div>
-              <div className="cl-p">Les commerces Popey se recommandent entre eux.</div>
+              {/* AU PRO : le mécanisme RÉEL. Son annonce n'est pas recopiée sur cinq
+                  sites de partenaires — elle entre dans UN catalogue, celui de la
+                  ville, dont chaque site du réseau montre une fenêtre. C'est ce qui
+                  rend le produit utile dès le deuxième commerçant, au lieu d'attendre
+                  cinq appariements. Cadré « exemple » : c'est le rendu simulé avec sa
+                  propre annonce, jamais du direct. */}
+              <div className="cl-h">Votre annonce, dans <em>le catalogue de {ville}.</em></div>
+              <div className="cl-p">
+                Une seule page rassemble les annonces du jour des commerçants de {ville}.
+                <b> Chaque site du réseau en montre une fenêtre</b> — le vôtre comme les autres.
+              </div>
 
               <div className="cl-proj">
                 <div className="cl-projbar"><span className="d" /><span className="d" /><span className="d" />
-                  <span className="cl-projlb">site d&apos;un commerce partenaire</span>
+                  <span className="cl-projlb">le catalogue</span>
                   <span className="cl-projex">exemple</span>
                 </div>
                 <div className="cl-projbody">
-                  <div className="cl-projk">À découvrir près de chez vous</div>
+                  <div className="cl-projk">Aujourd&apos;hui à {ville}</div>
                   <div className="cl-reco-card">
                     <div className="cl-rc-l">
                       <div className="cl-rc-n">{nom}</div>
-                      {live ? <div className="cl-rc-o">{live}</div> : <div className="cl-rc-o">Votre offre du moment s&apos;affiche ici.</div>}
+                      {live ? <div className="cl-rc-o">{live}</div> : <div className="cl-rc-o">Votre annonce du moment s&apos;affiche ici.</div>}
                     </div>
-                    <button
-                      type="button"
-                      className="cl-rc-go"
-                      onClick={() => { try { window.dispatchEvent(new CustomEvent("mqc:collectif-demo")); } catch { /* noop */ } }}
-                    >
-                      Découvrir
-                    </button>
+                    <span className="cl-rc-w">à l&apos;instant</span>
                   </div>
-                  <div className="cl-projby">Recommandé par <b>Le Collectif de {ville}</b></div>
+                  {/* Pas de faux commerce nommé : une ligne qui dit ce qui vient
+                      après, sans inventer de voisins. */}
+                  <div className="cl-projmore">
+                    + celles des autres commerçants, de la plus récente à la plus ancienne.
+                  </div>
                 </div>
               </div>
-              <div className="cl-projtip">👆 Touchez «&nbsp;Découvrir&nbsp;» pour voir ce qui vous arrive ensuite.</div>
+              {/* Sans ville identifiée, la page n'existe pas : pas de lien mort. */}
+              {villeUrl && <a className="cl-projgo" href={villeUrl}>Voir le catalogue de {ville} →</a>}
+              <div className="cl-projtip">
+                Une annonce publiée à 9 h passe devant celle d&apos;hier. C&apos;est ce qui vous rend
+                trouvable par des gens qui ne vous connaissent pas encore.
+              </div>
             </>
           ) : (
             <>
@@ -195,7 +212,7 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
           <div className="cl-note">
             {published
               ? "Des commerces complémentaires, jamais un concurrent. Aucune donnée n'est partagée sans accord."
-              : `Inclus dans votre site. Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous. Que des commerces complémentaires, jamais un concurrent — seule votre annonce circule, jamais vos données client.`}
+              : `Inclus dans votre site. Le catalogue se construit commerce par commerce : votre annonce y entre dès sa publication, et vous y voyez celles des autres. Sur votre site, la fenêtre ne montre que des commerces complémentaires, jamais un concurrent — seule votre annonce circule, jamais vos données client.`}
           </div>
         </div>
       </div>

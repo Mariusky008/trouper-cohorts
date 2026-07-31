@@ -1,9 +1,16 @@
 // Le Collectif — la version RÉELLE, sur un site en ligne.
 //
-// Ne s'affiche que s'il y a de vraies annonces de vrais commerces partenaires de
-// la même ville. Zéro partenaire = zéro section : on ne laisse pas un cadre vide
-// promettre un réseau. Rien n'est cliquable vers un annuaire : chaque carte mène
-// au site du commerce partenaire, et à rien d'autre.
+// C'est la FENÊTRE sur le catalogue de la ville : un aperçu de ce que proposent
+// les autres commerçants aujourd'hui, et un lien vers la page qui les rassemble.
+//
+// Le bloc s'affiche même quand il n'y a encore aucune annonce voisine — sinon la
+// page /ville n'a aucune porte d'entrée et le catalogue reste invisible tant qu'un
+// deuxième commerce n'a pas publié. Dans ce cas il ne montre AUCUNE carte et ne
+// promet rien : il dit ce qu'est le catalogue, et le lien mène à la page qui,
+// elle, annonce honnêtement qu'elle est vide.
+//
+// Rien n'est cliquable vers un annuaire : chaque carte mène au site du commerce,
+// et à rien d'autre.
 import { ilYA, type PartnerOffer } from "@/lib/site-internet/collectif";
 import { slugify } from "@/lib/popey-marketplace";
 
@@ -11,8 +18,10 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
   // Le bloc est un APERÇU (3 annonces) : le catalogue entier vit sur sa propre page.
   // Un fil sans fin sur le site d'un tiers, c'est une porte de sortie.
   const apercu = offers.slice(0, 3);
-  const villeUrl = `/ville/${slugify(ville)}`;
-  if (!offers.length) return null;
+  const villeSlug = slugify(ville);
+  const villeUrl = `/ville/${villeSlug}`;
+  // Sans ville, pas de page de destination : on n'affiche pas un lien mort.
+  if (!villeSlug) return null;
 
   return (
     <section className="clive" id="mq-collectif" style={{ ["--cv" as string]: accent }}>
@@ -49,9 +58,12 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
       <div className="cv-k">🤝 Le collectif</div>
       <div className="cv-h">Aujourd&apos;hui à {ville}.</div>
       <div className="cv-p">
-        Ce que d&apos;autres commerçants de {ville} proposent en ce moment.
+        {apercu.length
+          ? `Ce que d'autres commerçants de ${ville} proposent en ce moment.`
+          : `Le catalogue rassemble les annonces du jour des commerçants de ${ville}. Il se construit commerce par commerce.`}
       </div>
 
+      {apercu.length > 0 && (
       <div className="cv-list">
         {apercu.map((o) => (
           <a className="cv-c" key={o.slug} href={`/site-internet/apercu/${o.slug}`}>
@@ -70,9 +82,10 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
           </a>
         ))}
       </div>
+      )}
 
       <a className="cv-all" href={villeUrl}>
-        Voir tout ce qui se passe à {ville} →
+        {apercu.length ? `Voir tout ce qui se passe à ${ville} →` : `Voir le catalogue de ${ville} →`}
       </a>
 
       <div className="cv-note">
