@@ -64,7 +64,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const resolveStep = useRef<(() => void) | null>(null);
   // La carte du catalogue de démo « part » avant d'être remplacée : c'est ce qui
   // fait lire un glissement plutôt qu'un changement d'image.
-  const [catFly, setCatFly] = useState(false);
+  const [catFly, setCatFly] = useState<"" | "oui" | "non">("");
+  // Tampon montré pendant le geste automatique : « gardé » puis « passer ».
+  const [catStamp, setCatStamp] = useState<"" | "oui" | "non">("");
 
   // Vocabulaire adaptatif (pluriel du terme public).
   const clientPl = clientWord ? `${clientWord}s` : "clients";
@@ -77,11 +79,29 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // autres sont des ILLUSTRATIONS : jamais un faux commerce nommé — un métier
   // complémentaire de sa ville, et une annonce générique. Le panneau porte un
   // badge « exemple » en permanence, il ne peut pas être pris pour du direct.
-  const AUTRES = [
-    "Deux places viennent de se libérer.",
-    "Une nouveauté à découvrir cette semaine.",
-    "Ouvert exceptionnellement ce week-end.",
-  ];
+  // Une annonce d'exemple PAR MÉTIER. Une phrase générique (« deux places se
+  // libèrent ») n'a aucun sens chez un fleuriste : ce qu'on montre doit être ce
+  // que CE métier annoncerait vraiment, sinon l'exemple dessert la démonstration.
+  const ANNONCE_METIER: Record<string, string> = {
+    Fleuriste: "Bouquets du jour à moitié prix jusqu'à 19 h.",
+    Photographe: "Une séance portrait se libère samedi matin.",
+    Restaurant: "Deux tables se libèrent ce soir à 20 h.",
+    Coiffeur: "Brushing offert pour toute couleur cette semaine.",
+    Maquilleuse: "Un créneau libre samedi matin, maquillage mariage.",
+    "Robe de mariée": "La nouvelle collection est arrivée en boutique.",
+    Événementiel: "Un samedi de septembre encore libre.",
+    "Bar à cocktails": "Happy hour prolongée jusqu'à 20 h ce jeudi.",
+    "DJ / musicien": "Deux dates encore libres en septembre.",
+    Taxi: "Disponible ce soir jusqu'à minuit.",
+    Hôtel: "Deux chambres se libèrent ce week-end.",
+    Naturopathe: "Deux créneaux libres jeudi après-midi.",
+    Nutritionniste: "Premier bilan à tarif réduit cette semaine.",
+    Kiné: "Une place s'est libérée demain matin.",
+    Ostéo: "Créneau libre vendredi à 17 h.",
+    Sophrologue: "Séance découverte à tarif réduit ce mois-ci.",
+  };
+  const annonceDe = (t: string) => ANNONCE_METIER[t] || "Une nouveauté cette semaine.";
+
   const catalogueCards = [
     {
       nom,
@@ -99,7 +119,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     ...partnersList.slice(0, 2).map((pn, i) => ({
       nom: pn.t,
       metier: pn.t,
-      texte: AUTRES[i % AUTRES.length],
+      texte: annonceDe(pn.t),
       quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
       vous: false,
       photo: "",
@@ -395,7 +415,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           setScene("flash");
           setFxStep(0);
           setCatSlide(0);
-          setCatFly(false);
+          setCatFly("");
+          setCatStamp("");
           // La préparation est COURTE et disparaît : elle ne doit pas rester à
           // l'écran à côté du résultat.
           window.setTimeout(() => setFxStep(1), 1300);
@@ -405,16 +426,25 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           // calculé sur la longueur de la première moitié de la réplique — si le
           // texte change, la bascule suit toute seule.
           window.setTimeout(() => setFxStep(2), catalogueAt);
-          // Deux glissements automatiques : le commerçant voit que ça se parcourt
-          // sans qu'on ait à le lui écrire. La carte PART (fly) avant que la
-          // suivante entre — sans ça, on lit un changement d'image, pas un geste.
-          for (const [n, quand] of [[1, 1900], [2, 3900]] as Array<[number, number]>) {
-            window.setTimeout(() => setCatFly(true), quand - 380);
+          // Deux glissements automatiques, l'un « gardé », l'autre « passé » : le
+          // commerçant voit les DEUX effets sans qu'on ait à les lui écrire.
+          //
+          // Les repères sont calés sur `catalogueAt` — l'instant où le panneau
+          // apparaît. Sans ce décalage, les glissements se jouaient sept secondes
+          // avant que l'écran ne soit visible : on tombait sur la dernière carte,
+          // immobile. C'est le défaut que vous avez vu.
+          const geste = (n: number, quand: number, sens: "oui" | "non") => {
+            // Le tampon apparaît d'abord, carte immobile : l'intention se lit.
+            window.setTimeout(() => setCatStamp(sens), catalogueAt + quand - 780);
+            window.setTimeout(() => setCatFly(sens), catalogueAt + quand - 400);
             window.setTimeout(() => {
-              setCatFly(false);
+              setCatFly("");
+              setCatStamp("");
               setCatSlide(n);
-            }, quand);
-          }
+            }, catalogueAt + quand);
+          };
+          geste(1, 2100, "oui");
+          geste(2, 4300, "non");
         },
       });
     }
@@ -615,11 +645,28 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           /* L'entrée vient de la DROITE et l'envol part vers la GAUCHE : c'est ce
              couple qui fait lire un glissement plutôt qu'un changement d'image. */
           @keyframes fcIn{from{opacity:0;transform:translateX(150px) rotate(9deg)}to{opacity:1;transform:none}}
-          .dtour-card .fc-card.fly{animation:fcOut .38s cubic-bezier(.4,0,1,1) forwards;}
-          @keyframes fcOut{to{opacity:0;transform:translateX(-200px) rotate(-12deg)}}
+          /* L'envol suit le geste montré : à droite quand on garde, à gauche quand
+             on passe. Un envol toujours du même côté ne dirait rien du choix. */
+          .dtour-card .fc-card.fly-oui{animation:fcOutR .4s cubic-bezier(.4,0,1,1) forwards;}
+          .dtour-card .fc-card.fly-non{animation:fcOutL .4s cubic-bezier(.4,0,1,1) forwards;}
+          @keyframes fcOutR{to{opacity:0;transform:translateX(210px) rotate(13deg)}}
+          @keyframes fcOutL{to{opacity:0;transform:translateX(-210px) rotate(-13deg)}}
+          /* Tampon : ancré du côté OPPOSÉ à l'envol, sinon il quitte l'écran au
+             moment précis où il doit se lire. */
+          .dtour-card .fc-stamp{position:absolute;top:52px;z-index:7;font-family:Georgia,serif;font-weight:800;
+            font-size:20px;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:10px;
+            animation:stIn .18s ease;}
+          @keyframes stIn{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:none}}
+          .dtour-card .fc-stamp.oui{left:14px;color:#00E0A0;border:3px solid #00E0A0;transform:rotate(-13deg);}
+          .dtour-card .fc-stamp.non{right:14px;color:#F0608F;border:3px solid #F0608F;transform:rotate(13deg);}
           .dtour-card .fc-media{position:absolute;inset:0;background-size:cover;background-position:center;}
+          /* Sans photo, le cadre ne doit pas être un rectangle mort : un dégradé
+             coloré et l'emoji du métier, en grand. */
+          .dtour-card .fc-media.vide{background:
+            radial-gradient(90% 70% at 30% 20%,rgba(0,224,160,.22),transparent 60%),
+            linear-gradient(160deg,#2E3A55,#141A2E);}
           .dtour-card .fc-ill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-            font-size:66px;line-height:1;opacity:.5;}
+            font-size:76px;line-height:1;opacity:.62;font-family:Georgia,serif;font-weight:800;color:rgba(255,255,255,.22);}
           .dtour-card .fc-scrim{position:absolute;inset:0;z-index:2;
             background:linear-gradient(180deg,rgba(11,13,18,.05) 34%,rgba(11,13,18,.6) 60%,rgba(11,13,18,.97) 100%);}
           .dtour-card .fc-you{position:absolute;top:11px;right:11px;z-index:6;border-radius:999px;padding:3px 9px;
@@ -1036,9 +1083,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                         {catSlide + 2 < catalogueCards.length && <div className="fc-ghost g2" aria-hidden="true" />}
                         {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
                         {catalogueCards[catSlide] && (
-                          <div className={`fc-card${catFly ? " fly" : ""}`} key={catSlide}>
+                          <div className={`fc-card${catFly ? ` fly-${catFly}` : ""}`} key={catSlide}>
                             <div
-                              className="fc-media"
+                              className={`fc-media${catalogueCards[catSlide].photo ? "" : " vide"}`}
                               style={
                                 catalogueCards[catSlide].photo
                                   ? { backgroundImage: `url("${catalogueCards[catSlide].photo}")` }
@@ -1052,6 +1099,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                               )}
                             </div>
                             <div className="fc-scrim" />
+                            {catStamp && (
+                              <span className={`fc-stamp ${catStamp}`} aria-hidden="true">
+                                {catStamp === "oui" ? "Gardé" : "Passer"}
+                              </span>
+                            )}
                             {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
                             <div className="fc-info">
                               <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
