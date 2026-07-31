@@ -68,8 +68,9 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
       avis: o.avis ?? null,
       texte: o.texte,
       quand: ilYA(o.publieLe),
+      jusqua: o.jusqua ?? null,
     })),
-    ...autres.map((m) => ({ ...m, texte: "", quand: "" })),
+    ...autres.map((m) => ({ ...m, texte: "", quand: "", jusqua: null })),
   ];
 
   return (

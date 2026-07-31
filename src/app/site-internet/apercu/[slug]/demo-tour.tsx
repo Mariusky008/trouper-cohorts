@@ -587,38 +587,36 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-card .fc-h{font-family:Georgia,serif;font-size:18px;font-weight:600;line-height:1.15;}
           .dtour-card .fc-ex{flex:none;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
             color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
-          /* La carte du catalogue, à l'échelle de l'écran de démo : mêmes codes que
-             la vraie (crème, média en haut, annonce encadrée d'or). */
-          .dtour-card .fc-stack{position:relative;height:214px;margin-top:12px;}
-          .dtour-card .fc-ghost{position:absolute;inset:0;border-radius:16px;background:rgba(255,255,255,.05);
-            border:1px solid rgba(255,255,255,.09);transform-origin:bottom center;}
-          .dtour-card .fc-ghost.g2{transform:scale(.93) translateY(9px);}
-          .dtour-card .fc-ghost.g1{transform:scale(.965) translateY(4px);background:rgba(255,255,255,.08);}
-          .dtour-card .fc-card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:#F6F3EC;
-            box-shadow:0 18px 40px -16px rgba(0,0,0,.75);animation:fcIn .42s cubic-bezier(.22,1,.36,1);}
-          @keyframes fcIn{from{opacity:0;transform:translateX(52px) rotate(4deg) scale(.96)}to{opacity:1;transform:none}}
+          /* La carte du catalogue, à l'échelle de l'écran de démo : EXACTEMENT les
+             codes du vrai catalogue (photo pleine, voile, infos posées en bas). */
+          .dtour-card .fc-stack{position:relative;height:236px;margin-top:12px;}
+          .dtour-card .fc-ghost{position:absolute;inset:0;border-radius:18px;overflow:hidden;
+            background:linear-gradient(160deg,#243049,#0F1524);}
+          .dtour-card .fc-ghost.g2{transform:scale(.84) translateY(22px);filter:brightness(.5);}
+          .dtour-card .fc-ghost.g1{transform:scale(.92) translateY(11px);filter:brightness(.7);}
+          .dtour-card .fc-card{position:absolute;inset:0;border-radius:18px;overflow:hidden;
+            background:linear-gradient(160deg,#243049,#0F1524);box-shadow:0 20px 46px -16px rgba(0,0,0,.8);
+            animation:fcIn .42s cubic-bezier(.22,1,.36,1);}
+          @keyframes fcIn{from{opacity:0;transform:translateX(46px) rotate(4deg) scale(.96)}to{opacity:1;transform:none}}
           /* L'envol : même geste que dans le vrai catalogue, en plus court. */
           .dtour-card .fc-card.fly{animation:fcOut .3s cubic-bezier(.4,0,1,1) forwards;}
-          @keyframes fcOut{to{opacity:0;transform:translateX(-160px) rotate(-8deg)}}
-          .dtour-card .fc-media{position:relative;height:38%;background:linear-gradient(150deg,#2C3A5E,#141A2E);}
-          .dtour-card .fc-tagm{position:absolute;top:9px;left:9px;z-index:2;border-radius:999px;padding:3px 9px;
-            font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#07100C;background:#00C896;}
-          .dtour-card .fc-you{position:absolute;top:9px;right:9px;z-index:2;border-radius:999px;padding:3px 9px;
-            font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#3A2A00;background:#C8A84B;}
+          @keyframes fcOut{to{opacity:0;transform:translateX(150px) rotate(9deg)}}
+          .dtour-card .fc-scrim{position:absolute;inset:0;z-index:2;
+            background:linear-gradient(180deg,rgba(11,13,18,.05) 34%,rgba(11,13,18,.6) 60%,rgba(11,13,18,.97) 100%);}
           .dtour-card .fc-mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-            font-family:Georgia,serif;font-size:40px;font-weight:900;color:rgba(255,255,255,.16);}
-          .dtour-card .fc-body{height:62%;padding:10px 12px;display:flex;flex-direction:column;}
-          .dtour-card .fc-nm{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#12141A;line-height:1.15;}
-          .dtour-card .fc-offer{margin-top:7px;border-radius:9px;padding:7px 9px;
-            background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1px solid rgba(200,168,75,.34);}
-          .dtour-card .fc-ok{font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#A8842A;}
-          .dtour-card .fc-ot{font-size:11.5px;line-height:1.35;color:#12141A;margin-top:3px;}
-          /* La fraîcheur EST l'information du catalogue : elle doit se lire. */
-          .dtour-card .fc-w{font-size:10.5px;font-weight:600;color:#6B7280;margin-top:auto;}
-          /* Les fantômes débordent sous la pile : les pastilles doivent les dégager. */
-          .dtour-card .fc-dots{display:flex;justify-content:center;gap:5px;margin-top:20px;}
+            font-family:Georgia,serif;font-size:64px;font-weight:800;color:rgba(255,255,255,.1);}
+          .dtour-card .fc-you{position:absolute;top:11px;right:11px;z-index:6;border-radius:999px;padding:3px 9px;
+            font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#06231A;background:#00E0A0;}
+          .dtour-card .fc-info{position:absolute;left:13px;right:13px;bottom:12px;z-index:6;text-align:left;}
+          .dtour-card .fc-nm{font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;line-height:1.05;}
+          .dtour-card .fc-meta{font-size:11px;color:#CFD2D6;margin-top:4px;}
+          .dtour-card .fc-ok{font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+            color:#00E0A0;margin-top:8px;}
+          .dtour-card .fc-ot{font-size:12.5px;line-height:1.35;color:#E9EBED;font-weight:600;margin-top:3px;}
+          .dtour-card .fc-w{font-size:10px;color:#8A9099;margin-top:4px;}
+          .dtour-card .fc-dots{display:flex;justify-content:center;gap:5px;margin-top:16px;}
           .dtour-card .fc-dots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .25s ease;}
-          .dtour-card .fc-dots i.on{width:15px;border-radius:3px;background:#00C896;}
+          .dtour-card .fc-dots i.on{width:15px;border-radius:3px;background:#00E0A0;}
           .dtour-card .fc-dots i.done{background:rgba(255,255,255,.4);}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat,.dtour-card .fc-card{animation:none;}}
 
@@ -1004,19 +1002,18 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                       {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
                       {catalogueCards[catSlide] && (
                         <div className={`fc-card${catFly ? " fly" : ""}`} key={catSlide}>
-                          <div className="fc-media">
-                            <span className="fc-tagm">{catalogueCards[catSlide].metier}</span>
-                            {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
-                            <span className="fc-mono" aria-hidden="true">
-                              {catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="fc-body">
+                          <div className="fc-scrim" />
+                          <span className="fc-mono" aria-hidden="true">
+                            {catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
+                          </span>
+                          {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
+                          <div className="fc-info">
                             <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
-                            <div className="fc-offer">
-                              <div className="fc-ok">✦ En ce moment</div>
-                              <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
+                            <div className="fc-meta">
+                              📍 {catalogueCards[catSlide].metier} · {villeAff || "votre ville"}
                             </div>
+                            <div className="fc-ok">✦ En ce moment</div>
+                            <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
                             <div className="fc-w">{catalogueCards[catSlide].quand}</div>
                           </div>
                         </div>

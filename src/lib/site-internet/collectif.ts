@@ -21,6 +21,8 @@ export type PartnerOffer = {
   /** Réputation Google réelle. Absente hors catalogue de ville (non demandée). */
   note?: number | null;
   avis?: number | null;
+  /** Fin de validité de l'annonce, si le pro en a fixé une. */
+  jusqua?: string | null;
 };
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -31,7 +33,7 @@ const norm = (s: string) =>
 type SiteRow = Record<string, unknown>;
 
 /** Annonce en cours d'un site : son texte et sa date de publication. */
-function offerOf(row: SiteRow): { text: string; at: string | null } | null {
+function offerOf(row: SiteRow): { text: string; at: string | null; until: string | null } | null {
   const raw = row.current_offer;
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -40,7 +42,7 @@ function offerOf(row: SiteRow): { text: string; at: string | null } | null {
   const until = typeof o.until === "string" && o.until ? o.until : null;
   if (until && Date.parse(until) < Date.now()) return null;
   const at = typeof o.created_at === "string" && o.created_at ? o.created_at : null;
-  return { text, at };
+  return { text, at, until };
 }
 
 /**
@@ -234,6 +236,7 @@ export async function cityDirectory(
         publieLe: off.at,
         note: typeof r.google_rating === "number" ? r.google_rating : null,
         avis: typeof r.google_reviews === "number" ? r.google_reviews : null,
+        jusqua: off.until,
       });
     } else {
       autres.push({
