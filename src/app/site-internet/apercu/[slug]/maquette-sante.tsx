@@ -604,6 +604,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           ville={villeAff}
           accent={accent}
           nom={nom}
+          metier={metierLabel}
+          photo={photos[0] || ""}
           partners={partners}
           published={published}
           offerText={offer?.text || p.flashExample}

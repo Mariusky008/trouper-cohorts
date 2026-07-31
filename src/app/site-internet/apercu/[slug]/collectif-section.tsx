@@ -26,7 +26,7 @@ const FALLBACK_CATS = [
 const citySlug = (v: string) =>
   v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-export function CollectifSection({ ville, accent, nom, partners, published, offerText }: { slug: string; ville: string; accent: string; nom: string; partners?: Array<{ ic: string; t: string }>; published: boolean; offerText?: string }) {
+export function CollectifSection({ ville, accent, nom, metier, photo, partners, published, offerText }: { slug: string; ville: string; accent: string; nom: string; metier?: string; photo?: string; partners?: Array<{ ic: string; t: string }>; published: boolean; offerText?: string }) {
   const CATS = partners && partners.length ? partners : FALLBACK_CATS;
   const villeSlug = citySlug(ville);
   const villeUrl = villeSlug ? `/ville/${villeSlug}` : "";
@@ -61,22 +61,49 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
           /* ── Projection : « votre commerce, sur le site d'un partenaire » ──
              Montrée d'emblée (c'est LE mécanisme à comprendre), mais cadrée comme
              un exemple : mini-fenêtre + badge, jamais présentée comme du direct. */
-          .mqc .cl-proj{margin-top:18px;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 26px 54px -22px rgba(0,0,0,.75);text-align:left;}
-          .mqc .cl-projbar{display:flex;align-items:center;gap:5px;padding:9px 12px;background:#EDEFF5;border-bottom:1px solid #DFE3EC;}
-          .mqc .cl-projbar .d{width:8px;height:8px;border-radius:50%;background:#C6CBD8;}
-          .mqc .cl-projlb{flex:1;margin-left:7px;font-size:10.5px;font-weight:700;color:#8A90A0;letter-spacing:.02em;}
-          .mqc .cl-projex{flex:none;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
-          .mqc .cl-projbody{padding:15px 14px 14px;}
-          .mqc .cl-projk{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9095A0;}
-          .mqc .cl-reco-card{display:flex;align-items:center;gap:12px;margin-top:10px;border:1px solid #E6E8EF;border-radius:13px;padding:12px 13px;background:linear-gradient(120deg,#F7FBF9,#fff);}
-          .mqc .cl-rc-l{flex:1;min-width:0;}
-          .mqc .cl-rc-n{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#141A2E;line-height:1.15;}
-          .mqc .cl-rc-o{font-size:12.5px;color:#0B7A55;font-weight:700;margin-top:4px;line-height:1.35;}
-          /* Ancienneté : dans un catalogue trié par fraîcheur, c'est l'information. */
-          .mqc .cl-rc-w{flex:none;align-self:flex-start;font-size:10.5px;font-weight:700;color:#8A90A0;white-space:nowrap;}
-          .mqc .cl-projmore{font-size:11.5px;line-height:1.5;color:#8A90A0;margin-top:11px;padding-top:11px;border-top:1px dashed #E6E8EF;}
+          /* La fenêtre reproduit l'écran du catalogue : cadre sombre, carte pleine
+             photo, pastilles, barre d'actions. Elle est cadrée « exemple ». */
+          .mqc .cl-proj{margin-top:18px;border-radius:18px;overflow:hidden;text-align:left;
+            background:radial-gradient(120% 70% at 50% 0%,#141A20 0%,#0B0D12 60%,#08090D 100%);
+            box-shadow:0 26px 54px -22px rgba(0,0,0,.85);}
+          .mqc .cl-projbar{display:flex;align-items:center;gap:8px;padding:11px 12px 6px;}
+          .mqc .cl-projlogo{font-family:Georgia,serif;font-size:16px;font-weight:800;color:#fff;line-height:1;}
+          .mqc .cl-projlogo em{font-style:normal;color:#00E0A0;}
+          .mqc .cl-projcity{margin-left:auto;font-size:10.5px;font-weight:600;color:#fff;border-radius:999px;
+            padding:5px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);}
+          .mqc .cl-projex{flex:none;font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+            color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
+          .mqc .cl-projbody{padding:8px 12px 14px;}
+          .mqc .cl-kcard{position:relative;height:230px;border-radius:18px;overflow:hidden;
+            background:radial-gradient(90% 70% at 30% 20%,rgba(0,224,160,.2),transparent 60%),
+              linear-gradient(160deg,#2E3A55,#141A2E);box-shadow:0 18px 40px -16px rgba(0,0,0,.8);}
+          .mqc .cl-cmedia{position:absolute;inset:0;background-size:cover;background-position:center;}
+          .mqc .cl-cmono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-family:Georgia,serif;font-size:76px;font-weight:800;color:rgba(255,255,255,.2);}
+          .mqc .cl-cscrim{position:absolute;inset:0;z-index:2;
+            background:linear-gradient(180deg,rgba(11,13,18,.05) 34%,rgba(11,13,18,.6) 60%,rgba(11,13,18,.97) 100%);}
+          .mqc .cl-cyou{position:absolute;top:11px;right:11px;z-index:6;border-radius:999px;padding:3px 9px;
+            font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#06231A;background:#00E0A0;}
+          .mqc .cl-cinfo{position:absolute;left:13px;right:13px;bottom:12px;z-index:6;}
+          .mqc .cl-cnm{font-family:Georgia,serif;font-size:19px;font-weight:700;color:#fff;line-height:1.05;}
+          .mqc .cl-cmeta{font-size:11px;color:#CFD2D6;margin-top:4px;}
+          .mqc .cl-cok{font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#00E0A0;margin-top:8px;}
+          .mqc .cl-cot{font-size:12.5px;line-height:1.35;color:#E9EBED;font-weight:600;margin-top:3px;}
+          .mqc .cl-cw{font-size:10px;color:#8A9099;margin-top:4px;}
+          .mqc .cl-cdots{display:flex;justify-content:center;gap:5px;margin-top:14px;}
+          .mqc .cl-cdots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);}
+          .mqc .cl-cdots i.on{width:15px;border-radius:3px;background:#00E0A0;}
+          .mqc .cl-cbar{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:12px;}
+          .mqc .cl-cact{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8.5px;
+            font-weight:600;color:#5C6168;}
+          .mqc .cl-cact i{font-style:normal;width:38px;height:38px;border-radius:50%;display:flex;
+            align-items:center;justify-content:center;font-size:16px;color:#fff;
+            border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);}
+          .mqc .cl-cact.want i{width:48px;height:48px;font-size:19px;border:none;color:#06231A;
+            background:linear-gradient(90deg,#00E0A0,#07B083);box-shadow:0 8px 20px rgba(0,224,160,.35);}
           .mqc .cl-projgo{display:block;margin-top:13px;text-align:center;text-decoration:none;font-size:13.5px;font-weight:800;
-            color:#0B2A20;background:#7FE6C0;border-radius:13px;padding:13px;box-shadow:0 14px 28px -14px rgba(127,230,192,.7);}
+            color:#06231A;background:linear-gradient(90deg,#00E0A0,#07B083);border-radius:13px;padding:13px;
+            box-shadow:0 12px 26px -14px rgba(0,224,160,.75);}
           .mqc .cl-projgo:active{transform:translateY(1px);}
           .mqc .cl-projtip{font-size:11.5px;line-height:1.5;color:#9FB0CE;margin-top:11px;}
           .mqc .cl-sep{margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7E8CA8;}
@@ -144,32 +171,47 @@ export function CollectifSection({ ville, accent, nom, partners, published, offe
                 <b> Chaque site du réseau en montre une fenêtre</b> — le vôtre comme les autres.
               </div>
 
+              {/* La fenêtre montre le catalogue TEL QU'IL EST : une carte pleine
+                  photo qu'on parcourt, avec sa propre annonce dessus. Montrer un
+                  rendu qui n'existe plus ne prépare à rien. */}
               <div className="cl-proj">
-                <div className="cl-projbar"><span className="d" /><span className="d" /><span className="d" />
-                  <span className="cl-projlb">le catalogue</span>
+                <div className="cl-projbar">
+                  <span className="cl-projlogo">Pop<em>ey</em></span>
+                  <span className="cl-projcity">📍 {ville}</span>
                   <span className="cl-projex">exemple</span>
                 </div>
                 <div className="cl-projbody">
-                  <div className="cl-projk">Aujourd&apos;hui à {ville}</div>
-                  <div className="cl-reco-card">
-                    <div className="cl-rc-l">
-                      <div className="cl-rc-n">{nom}</div>
-                      {live ? <div className="cl-rc-o">{live}</div> : <div className="cl-rc-o">Votre annonce du moment s&apos;affiche ici.</div>}
+                  <div className="cl-kcard">
+                    <div className="cl-cmedia" style={photo ? { backgroundImage: `url("${photo}")` } : undefined}>
+                      {!photo && <span className="cl-cmono" aria-hidden="true">{nom.trim().slice(0, 1).toUpperCase()}</span>}
                     </div>
-                    <span className="cl-rc-w">à l&apos;instant</span>
+                    <div className="cl-cscrim" />
+                    <span className="cl-cyou">vous</span>
+                    <div className="cl-cinfo">
+                      <div className="cl-cnm">{nom}</div>
+                      <div className="cl-cmeta">📍 {metier || "Commerce"} · {ville}</div>
+                      <div className="cl-cok">✦ En ce moment</div>
+                      <div className="cl-cot">{live || "Votre annonce du moment s'affiche ici."}</div>
+                      <div className="cl-cw">à l&apos;instant</div>
+                    </div>
                   </div>
-                  {/* Pas de faux commerce nommé : une ligne qui dit ce qui vient
-                      après, sans inventer de voisins. */}
-                  <div className="cl-projmore">
-                    + celles des autres commerçants, de la plus récente à la plus ancienne.
+                  <div className="cl-cdots" aria-hidden="true">
+                    <i className="on" />
+                    <i />
+                    <i />
+                  </div>
+                  <div className="cl-cbar" aria-hidden="true">
+                    <span className="cl-cact"><i>✕</i>Passer</span>
+                    <span className="cl-cact want"><i>♥</i>Garder</span>
+                    <span className="cl-cact"><i>↑</i>Le site</span>
                   </div>
                 </div>
               </div>
               {/* Sans ville identifiée, la page n'existe pas : pas de lien mort. */}
               {villeUrl && <a className="cl-projgo" href={villeUrl}>Voir le catalogue de {ville} →</a>}
               <div className="cl-projtip">
-                Une annonce publiée à 9 h passe devant celle d&apos;hier. C&apos;est ce qui vous rend
-                trouvable par des gens qui ne vous connaissent pas encore.
+                On y parcourt les commerces un par un. Une annonce publiée à 9 h passe devant celle
+                d&apos;hier — c&apos;est ce qui vous rend trouvable par des gens qui ne vous connaissent pas encore.
               </div>
             </>
           ) : (

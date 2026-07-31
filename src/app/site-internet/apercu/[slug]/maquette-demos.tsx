@@ -61,6 +61,8 @@ const Steps = ({ n }: { n: 1 | 2 | 3 }) => (
 export function MaquetteAssistant({ accent, data, slug }: { accent: string; data: MaquetteAssistantData; slug: string }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
+  // Le catalogue est celui d'UNE ville : on la nomme partout où on en parle.
+  const villeNom = data.ville || "votre ville";
   const [stageOn, setStageOn] = useState(false);
   const [fn, setFn] = useState(""); // texte de l'annonce (Action Flash)
   const [cli, setCli] = useState(""); // prénom du·de la client à remercier (parcours avis)
@@ -287,10 +289,10 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     bandHtml(msg) +
     `<div class="asx-proofs">` +
       `<div class="asx-proof"><span>🌐</span>Visible tout de suite sur votre site</div>` +
-      `<div class="asx-proof"><span>🤝</span>Et sur les sites des commerces partenaires<sup>*</sup></div>` +
+      `<div class="asx-proof"><span>📍</span>Dans le catalogue de ${villeNom}, à parcourir<sup>*</sup></div>` +
       `<div class="asx-proof"><span>🎁</span>100 % gratuit · modifiable quand vous voulez</div>` +
     `</div>` +
-    `<div class="asx-aster">* Le réseau se déploie ville par ville : votre annonce y apparaît dès qu'un commerce partenaire est actif près de chez vous.</div>` +
+    `<div class="asx-aster">* Le catalogue de ${villeNom} rassemble les annonces du jour des commerçants d'ici — chaque site du réseau en montre une fenêtre.</div>` +
     `<button class="asx-cta2" data-seeoffer>Voir mon annonce sur le site</button>` +
     `<button class="asx-rtn" data-tooptions>Découvrir comment toucher plus de monde</button>` +
     tiny("Aucune diffusion extérieure n'a été effectuée.");
@@ -702,9 +704,9 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           <div className="asx-glab">Inclus gratuitement</div>
           <div className="asx-flash">
             <div className="asx-fl on"><span className="i">🌐</span><span className="t">Publiée sur votre site</span><span className="asx-lock">✓ inclus</span></div>
-            <div className="asx-fl on"><span className="i">🤝</span><span className="t">Diffusée sur les sites des <b>commerces partenaires</b> de votre ville<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
+            <div className="asx-fl on"><span className="i">📍</span><span className="t">Dans le <b>catalogue de {villeNom}</b>, que chaque site du réseau affiche<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
           </div>
-          <div className="asx-aster">* Le réseau se déploie ville par ville&nbsp;: votre annonce y apparaît dès qu&apos;un commerce partenaire est actif près de chez vous.</div>
+          <div className="asx-aster">* Le catalogue de {villeNom} rassemble les annonces du jour des commerçants d&apos;ici. Votre annonce y entre dès sa publication, et se parcourt carte après carte.</div>
 
           <div className="asx-glab">Options Pro — pour toucher davantage de {plural}</div>
           <div className="asx-flash">
