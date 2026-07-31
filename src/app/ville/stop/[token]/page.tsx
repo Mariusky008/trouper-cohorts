@@ -46,10 +46,10 @@ export default async function StopVille({ params }: { params: Promise<{ token: s
         dangerouslySetInnerHTML={{
           __html: `
           .vstop{min-height:100vh;background:#0E1014;color:#fff;display:flex;align-items:center;justify-content:center;
-            padding:28px 18px;font-family:'Inter',system-ui,sans-serif;}
+            padding:28px 18px;font-family:var(--fb),system-ui,sans-serif;}
           .vstop .bx{max-width:420px;width:100%;text-align:center;}
           .vstop .ic{font-size:44px;line-height:1;}
-          .vstop h1{font-family:Georgia,serif;font-size:26px;font-weight:600;line-height:1.15;margin:14px 0 0;}
+          .vstop h1{font-family:var(--fd),Georgia,serif;font-size:26px;font-weight:600;line-height:1.15;margin:14px 0 0;}
           .vstop p{font-size:14px;line-height:1.65;color:#A8AEBC;margin:13px 0 0;}
           `,
         }}

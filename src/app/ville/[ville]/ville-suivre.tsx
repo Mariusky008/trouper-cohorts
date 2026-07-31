@@ -46,10 +46,10 @@ export function VilleSuivre({ ville, villeSlug }: { ville: string; villeSlug: st
         dangerouslySetInnerHTML={{
           __html: `
           .vil .vsub{margin-top:34px;border-radius:20px;padding:22px 18px;
-            background:linear-gradient(155deg,rgba(127,230,192,.12),rgba(255,255,255,.03));
-            border:1px solid rgba(127,230,192,.22);}
-          .vil .vsub .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:#7FE6C0;}
-          .vil .vsub h2{font-family:Georgia,serif;font-size:22px;font-weight:600;line-height:1.15;margin:8px 0 0;}
+            background:linear-gradient(155deg,rgba(0,200,150,.12),rgba(255,255,255,.03));
+            border:1px solid rgba(0,200,150,.22);}
+          .vil .vsub .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:#00C896;}
+          .vil .vsub h2{font-family:var(--fd),Georgia,serif;font-size:22px;font-weight:600;line-height:1.15;margin:8px 0 0;}
           .vil .vsub .p{font-size:13.5px;line-height:1.6;color:#A8AEBC;margin-top:9px;}
           .vil .vsub .p b{color:#fff;}
           .vil .vsub .row{display:flex;gap:8px;margin-top:15px;}
@@ -57,13 +57,13 @@ export function VilleSuivre({ ville, villeSlug }: { ville: string; villeSlug: st
             background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:13px 15px;font-size:15px;
             font-family:inherit;}
           .vil .vsub input[type=email]::placeholder{color:#6F7684;}
-          .vil .vsub input[type=email]:focus{outline:none;border-color:rgba(127,230,192,.65);}
-          .vil .vsub .go{flex:none;border:none;background:#7FE6C0;color:#0B2A20;border-radius:12px;padding:13px 18px;
+          .vil .vsub input[type=email]:focus{outline:none;border-color:rgba(0,200,150,.65);}
+          .vil .vsub .go{flex:none;border:none;background:#00C896;color:#07100C;border-radius:12px;padding:13px 18px;
             font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;}
           .vil .vsub .go:disabled{opacity:.4;cursor:not-allowed;}
           .vil .vsub .cs{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:12.5px;line-height:1.5;
             color:#A8AEBC;cursor:pointer;}
-          .vil .vsub .cs input{margin-top:2px;width:17px;height:17px;flex:none;accent-color:#7FE6C0;}
+          .vil .vsub .cs input{margin-top:2px;width:17px;height:17px;flex:none;accent-color:#00C896;}
           .vil .vsub .err{margin-top:10px;font-size:12.5px;line-height:1.5;color:#FFC9C9;}
           .vil .vsub .ok{font-size:14px;line-height:1.6;color:#D6F5E7;}
           .vil .vsub .ok b{color:#fff;}

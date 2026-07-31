@@ -254,6 +254,50 @@ export async function cityDirectory(
   return { ville, offers, autres };
 }
 
+/** Une ville où au moins un commerce est en ligne. */
+export type VilleEntry = { nom: string; slug: string; commerces: number; annonces: number };
+
+/**
+ * Les villes réellement couvertes, pour le sélecteur.
+ *
+ * On ne liste que ce qui existe : une ville sans commerce publié n'apparaît pas.
+ * Proposer une ville vide dans un menu, c'est promettre une page qu'on sait vide.
+ */
+export async function cityList(supabase: Supabase): Promise<VilleEntry[]> {
+  const BASE = "city, activite, current_offer";
+  const query = (cols: string) =>
+    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("published", true).limit(500);
+
+  let rows: SiteRow[] = [];
+  try {
+    const { data, error } = await query(`${BASE}, collectif_actif`);
+    if (error) throw new Error(error.message);
+    if (Array.isArray(data)) rows = data as SiteRow[];
+  } catch {
+    try {
+      const { data } = await query(BASE);
+      if (Array.isArray(data)) rows = data as SiteRow[];
+    } catch {
+      return [];
+    }
+  }
+
+  const par = new Map<string, VilleEntry>();
+  for (const r of rows) {
+    if (r.collectif_actif === false) continue;
+    if (!peutParticiper(str(r.activite))) continue; // déonto : commerce uniquement
+    const nom = str(r.city).trim();
+    if (!nom) continue;
+    const slug = villeSlug(nom);
+    const e = par.get(slug) ?? { nom, slug, commerces: 0, annonces: 0 };
+    e.commerces += 1;
+    if (offerOf(r)) e.annonces += 1;
+    par.set(slug, e);
+  }
+  // Les villes les plus vivantes d'abord : ce qui bouge aujourd'hui, puis la taille.
+  return [...par.values()].sort((a, b) => b.annonces - a.annonces || b.commerces - a.commerces || a.nom.localeCompare(b.nom, "fr"));
+}
+
 /**
  * Compte un AFFICHAGE pour chaque annonce rendue — page catalogue ou fenêtre sur
  * le site d'un confrère. C'est le seul chiffre qui prouve au commerçant que le

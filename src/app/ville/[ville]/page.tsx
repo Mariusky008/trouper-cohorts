@@ -15,9 +15,10 @@
 // démarché n'a jamais accepté d'apparaître où que ce soit.
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cityDirectory, ilYA, noteCatalogueViews } from "@/lib/site-internet/collectif";
+import { cityDirectory, cityList, ilYA, noteCatalogueViews } from "@/lib/site-internet/collectif";
 import { VilleSuivre } from "./ville-suivre";
-import { VilleDecouverte, type Fiche } from "./ville-decouverte";
+import { VilleBarre } from "./ville-barre";
+import type { Fiche } from "./ville-decouverte";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,13 +34,23 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   const affiche = afficheVille(nom, ville);
   const title = `Aujourd'hui à ${affiche}`;
   const description = `Ce que proposent les commerçants de ${affiche} en ce moment : places qui se libèrent, offres du jour, nouveautés.`;
-  return { title, description, openGraph: { title, description, type: "website" } };
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    // Manifeste PAR VILLE : l'icône ajoutée à l'écran d'accueil rouvre CETTE ville.
+    manifest: `/ville/${ville}/manifest.webmanifest`,
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: affiche },
+  };
 }
 
 export default async function VillePage({ params }: { params: Promise<{ ville: string }> }) {
   const { ville } = await params;
   const supabase = createAdminClient();
-  const { ville: nomVille, offers, autres } = await cityDirectory(supabase, ville);
+  const [{ ville: nomVille, offers, autres }, villes] = await Promise.all([
+    cityDirectory(supabase, ville),
+    cityList(supabase),
+  ]);
   const affiche = afficheVille(nomVille, ville);
   // Une fiche n'est pas une annonce : on ne compte que les annonces, pour que le
   // chiffre montré au commerçant garde exactement le sens qu'on lui donne.
@@ -66,16 +77,17 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .vil{min-height:100vh;background:#0E1014;color:#fff;font-family:'Inter',system-ui,sans-serif;
-            padding:34px 18px 60px;}
+          /* Fond du catalogue Privilège : un dégradé, pas un aplat. */
+          .vil{min-height:100vh;color:#fff;font-family:var(--fb),system-ui,sans-serif;padding:34px 18px 60px;
+            background:linear-gradient(165deg,#0E1318 0%,#0A0C10 55%,#0D1209 100%);}
           .vil *{box-sizing:border-box;}
           .vil .in{max-width:660px;margin:0 auto;}
-          .vil .k{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;color:#7FE6C0;}
-          .vil h1{font-family:Georgia,serif;font-size:34px;font-weight:600;line-height:1.1;margin:9px 0 0;}
+          .vil .k{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;color:#00C896;}
+          .vil h1{font-family:var(--fd),Georgia,serif;font-size:34px;font-weight:600;line-height:1.1;margin:9px 0 0;}
           .vil .sub{font-size:14px;line-height:1.6;color:#A8AEBC;margin-top:11px;}
           .vil .sec{margin-top:30px;}
           .vil .sec-k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#7B8291;}
-          .vil .sec-h{font-family:Georgia,serif;font-size:21px;font-weight:600;margin-top:6px;}
+          .vil .sec-h{font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:600;margin-top:6px;}
           .vil .sec-p{font-size:12.5px;line-height:1.55;color:#7B8291;margin-top:6px;}
           .vil .list{display:flex;flex-direction:column;gap:11px;margin-top:16px;}
           .vil .c{display:flex;align-items:flex-start;gap:13px;text-decoration:none;color:inherit;
@@ -85,7 +97,7 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
             background-image:linear-gradient(150deg,#2C3A2E,#151A15);}
           .vil .b{flex:1;min-width:0;}
           .vil .n{display:block;font-size:15px;font-weight:800;}
-          .vil .m{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#7FE6C0;font-weight:700;margin-top:2px;}
+          .vil .m{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#00C896;font-weight:700;margin-top:2px;}
           .vil .t{display:block;font-size:13.5px;line-height:1.45;color:#D6DAE2;margin-top:6px;}
           .vil .w{display:block;font-size:11px;color:#7B8291;margin-top:6px;}
           .vil .go{flex:none;font-size:20px;color:rgba(255,255,255,.4);font-weight:700;align-self:center;}
@@ -168,7 +180,9 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
           </section>
         )}
 
-        {fiches.length > 0 && <VilleDecouverte ville={affiche} fiches={fiches} />}
+        {fiches.length > 0 && (
+          <VilleBarre ville={affiche} villeSlug={ville} villes={villes} fiches={fiches} />
+        )}
 
         {/* L'inscription n'a de sens que si la ville existe : sinon on collecterait
             des adresses pour un catalogue qui ne se remplira jamais. */}

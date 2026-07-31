@@ -1,19 +1,20 @@
 "use client";
 
-// « Découvrir les commerces de {ville} » — le mode plein écran, une fiche à la fois.
+// « Découvrir les commerces de {ville} » — le mode plein écran, une carte à la fois.
 //
-// Pourquoi ici et pas sur les annonces : une annonce est périssable, on la LIT et
-// on y va — un paquet de cartes ferait perdre du temps. Les commerces, eux, sont
-// un stock à parcourir : c'est exactement ce que le geste sert.
+// La forme reprend le catalogue Privilège, qui était abouti : carte CRÈME (média
+// en haut, corps clair en bas), pile à deux fantômes, tampons pendant le geste,
+// pastilles de progression, filtres par métier, quatre actions rondes légendées.
+// Polices Fraunces / Instrument Sans, couleurs encre / crème / or / turquoise.
 //
-// Le geste est réel : la carte suit le doigt, penche, et part si on la lâche
-// assez loin. Boutons et flèches du clavier font la même chose, pour qui n'a pas
-// d'écran tactile ou n'aime pas deviner.
-//
-// HONNÊTETÉ : aucun « like », aucun compteur d'intérêt, aucun match. On ne
-// fabrique pas d'engagement qui n'existe pas — la seule action utile est d'aller
-// voir le commerce. Les notes affichées sont les vraies notes Google.
-import { useCallback, useEffect, useRef, useState } from "react";
+// Ce qui change par rapport à Privilège, et pourquoi :
+//   • « J'aime » devient « Garder ». Un favori est stocké SUR L'APPAREIL : il ne
+//     promet aucune notification et ne part sur aucun serveur — on ne collecte
+//     rien sans consentement, et on ne fabrique pas un engagement qui n'existe pas.
+//   • Aucun compteur d'intérêt inventé. Les seuls chiffres affichés sont réels :
+//     commerces en ligne et annonces en cours.
+//   • Le gros bouton central mène au commerce — c'est la seule action utile.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type Fiche = {
   slug: string;
@@ -29,53 +30,115 @@ export type Fiche = {
 };
 
 /** Au-delà de ce déplacement horizontal, la carte part au relâchement. */
-const SEUIL = 90;
+const SEUIL = 95;
+/** Le tampon apparaît bien avant : l'intention doit se lire pendant le geste. */
+const SEUIL_TAMPON = 34;
+const CLE_FAVORIS = "popey-ville-favoris";
 
-export function VilleDecouverte({ ville, fiches }: { ville: string; fiches: Fiche[] }) {
+const lireFavoris = (): string[] => {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_FAVORIS) || "[]");
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+export function VilleDecouverte({
+  ville,
+  fiches,
+  onVilles,
+}: {
+  ville: string;
+  fiches: Fiche[];
+  /** Ouvre le sélecteur de ville (rendu par la page). */
+  onVilles?: () => void;
+}) {
   const [ouvert, setOuvert] = useState(false);
   const [i, setI] = useState(0);
-  // Déplacement en cours du doigt, et sens de sortie une fois lâchée.
   const [dx, setDx] = useState(0);
   const [sortie, setSortie] = useState<0 | 1 | -1>(0);
-  // Doigt posé : la carte suit sans transition. Relâché : elle glisse (retour ou envol).
   const [glisse, setGlisse] = useState(false);
+  const [filtre, setFiltre] = useState("");
+  const [favoris, setFavoris] = useState<string[]>([]);
+  const [voirFavoris, setVoirFavoris] = useState(false);
+  const [toast, setToast] = useState("");
   const depart = useRef<number | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
-  const total = fiches.length;
+  const metiers = useMemo(() => {
+    const vus = new Map<string, number>();
+    for (const x of fiches) vus.set(x.metier, (vus.get(x.metier) ?? 0) + 1);
+    return [...vus.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
+      .map(([m]) => m);
+  }, [fiches]);
+
+  const liste = useMemo(() => (filtre ? fiches.filter((x) => x.metier === filtre) : fiches), [fiches, filtre]);
+  const annonces = useMemo(() => fiches.filter((x) => x.texte).length, [fiches]);
+  const total = liste.length;
   const fini = i >= total;
+  const f = liste[i];
 
-  /**
-   * `pas` = +1 pour avancer, -1 pour revenir. Le sens de l'envol suit le geste :
-   * on pousse la carte vers la gauche pour passer à la suivante, vers la droite
-   * pour revenir — comme le doigt.
-   */
-  const avance = useCallback(
-    (pas: 1 | -1) => {
-      if (depart.current !== null) return;
-      setSortie(pas === 1 ? -1 : 1);
-      window.setTimeout(() => {
-        setSortie(0);
-        setDx(0);
-        setI((n) => Math.max(0, n + pas));
-      }, 260);
+  const montre = useCallback((m: string) => {
+    setToast(m);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(""), 1900);
+  }, []);
+
+  /** `pas` = +1 pour avancer, -1 pour revenir. L'envol suit le sens du geste. */
+  const avance = useCallback((pas: 1 | -1) => {
+    if (depart.current !== null) return;
+    setSortie(pas === 1 ? -1 : 1);
+    window.setTimeout(() => {
+      setSortie(0);
+      setDx(0);
+      setI((n) => Math.max(0, n + pas));
+    }, 260);
+  }, []);
+
+  const garder = useCallback(
+    (x: Fiche) => {
+      setFavoris((prev) => {
+        const suite = prev.includes(x.slug) ? prev : [...prev, x.slug];
+        try {
+          localStorage.setItem(CLE_FAVORIS, JSON.stringify(suite));
+        } catch {
+          /* stockage refusé (navigation privée) → le favori vit le temps de la visite */
+        }
+        return suite;
+      });
+      montre(`♥ ${x.nom} gardé`);
+      avance(1);
     },
-    []
+    [avance, montre]
   );
 
-  // Clavier : flèches pour avancer, Échap pour sortir. Le mode plein écran doit
-  // se piloter sans souris.
+  const retirer = (slug: string) => {
+    setFavoris((prev) => {
+      const suite = prev.filter((s) => s !== slug);
+      try {
+        localStorage.setItem(CLE_FAVORIS, JSON.stringify(suite));
+      } catch {
+        /* idem */
+      }
+      return suite;
+    });
+  };
+
   useEffect(() => {
     if (!ouvert) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOuvert(false);
-      else if (e.key === "ArrowRight") avance(1);
+      if (e.key === "Escape") {
+        if (voirFavoris) setVoirFavoris(false);
+        else setOuvert(false);
+      } else if (e.key === "ArrowRight") avance(1);
       else if (e.key === "ArrowLeft") avance(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ouvert, avance]);
+  }, [ouvert, voirFavoris, avance]);
 
-  // Le fond ne doit pas défiler pendant qu'on parcourt les cartes.
   useEffect(() => {
     if (!ouvert) return;
     const avant = document.body.style.overflow;
@@ -99,25 +162,30 @@ export function VilleDecouverte({ ville, fiches }: { ville: string; fiches: Fich
     const d = dx;
     depart.current = null;
     setGlisse(false);
-    // Vers la gauche : la suivante. Vers la droite : la précédente.
-    if (Math.abs(d) > SEUIL) avance(d < 0 ? 1 : -1);
-    else setDx(0); // pas assez loin : la carte revient à sa place
+    if (d > SEUIL && f) garder(f); // vers la droite : on garde
+    else if (d < -SEUIL) avance(1); // vers la gauche : on passe
+    else setDx(0);
   };
 
   const ouvre = () => {
+    // Les favoris vivent sur l'appareil : on les lit à l'ouverture, jamais au
+    // rendu serveur — sinon l'hydratation diverge.
+    setFavoris(lireFavoris());
     setI(0);
     setDx(0);
     setSortie(0);
     setGlisse(false);
+    setFiltre("");
     setOuvert(true);
   };
 
-  if (!total) return null;
+  if (!fiches.length) return null;
 
-  const f = fiches[i];
-  // Position de la carte : le doigt pendant le geste, un envol après.
-  const dep = sortie ? sortie * 520 : dx;
-  const rot = dep / 26;
+  const dep = sortie ? sortie * 560 : dx;
+  const rot = dep / 24;
+  const tampon = dx > SEUIL_TAMPON ? "oui" : dx < -SEUIL_TAMPON ? "non" : "";
+  const forceTampon = Math.min(1, (Math.abs(dx) - SEUIL_TAMPON) / (SEUIL - SEUIL_TAMPON));
+  const favorisFiches = fiches.filter((x) => favoris.includes(x.slug));
 
   return (
     <>
@@ -125,170 +193,412 @@ export function VilleDecouverte({ ville, fiches }: { ville: string; fiches: Fich
         dangerouslySetInnerHTML={{
           __html: `
           .vil .vdec-open{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:16px;
-            border:none;border-radius:15px;padding:15px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;
-            color:#0B2A20;background:linear-gradient(120deg,#7FE6C0,#4FD2A6);
-            box-shadow:0 16px 34px -18px rgba(127,230,192,.85);}
+            border:none;border-radius:15px;padding:15px;font-family:var(--fb),system-ui,sans-serif;font-size:14.5px;
+            font-weight:700;cursor:pointer;color:#07100C;background:linear-gradient(120deg,#00C896,#00A878);
+            box-shadow:0 16px 34px -18px rgba(0,200,150,.9);}
           .vil .vdec-open:active{transform:translateY(1px);}
 
-          .vdec{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;
-            background:radial-gradient(120% 80% at 50% 0%,#1A2033 0%,#0B0F1A 60%,#070A11 100%);
-            color:#EAF0FA;font-family:'Inter',system-ui,sans-serif;padding:calc(14px + env(safe-area-inset-top)) 16px
-            calc(18px + env(safe-area-inset-bottom));animation:vdecIn .3s ease;}
+          /* ══ Mode découverte — la forme du catalogue Privilège ════════════════ */
+          .vdec{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;
+            background:rgba(6,8,11,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+            font-family:var(--fb),system-ui,sans-serif;animation:vdecIn .28s ease;}
           .vdec *{box-sizing:border-box;}
           @keyframes vdecIn{from{opacity:0}to{opacity:1}}
-          .vdec .hd{display:flex;align-items:center;gap:12px;}
-          .vdec .hd .t{flex:1;min-width:0;font-size:13px;font-weight:800;letter-spacing:.02em;}
-          .vdec .hd .t span{display:block;font-size:11px;font-weight:600;color:#7B8291;margin-top:2px;}
-          .vdec .x{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);
-            background:rgba(255,255,255,.06);color:#EAF0FA;font-size:17px;cursor:pointer;font-family:inherit;}
-          .vdec .bar{height:4px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:12px;overflow:hidden;}
-          .vdec .bar i{display:block;height:100%;background:#7FE6C0;border-radius:999px;transition:width .3s ease;}
+          .vdec .app{position:relative;width:100%;max-width:430px;height:100dvh;display:flex;flex-direction:column;
+            overflow:hidden;background:linear-gradient(160deg,#0E1318 0%,#0A0C10 50%,#0D1209 100%);
+            box-shadow:0 0 80px rgba(0,0,0,.5);}
 
-          .vdec .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:14px 0;}
-          /* La carte suivante reste visible dessous : on comprend qu'il y en a d'autres. */
-          .vdec .ghost{position:absolute;width:100%;max-width:400px;height:100%;max-height:520px;border-radius:24px;
-            background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);transform:scale(.94) translateY(14px);}
-          .vdec .card{position:relative;width:100%;max-width:400px;height:100%;max-height:520px;border-radius:24px;
-            overflow:hidden;background:linear-gradient(160deg,#243049,#0F1524);border:1px solid rgba(255,255,255,.14);
-            box-shadow:0 40px 80px -30px rgba(0,0,0,.85);cursor:grab;touch-action:pan-y;user-select:none;}
+          .vdec .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;
+            padding:calc(14px + env(safe-area-inset-top)) 18px 10px;}
+          .vdec .logo{font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:900;color:#fff;line-height:1;}
+          .vdec .logo em{font-style:normal;color:#00C896;}
+          .vdec .month{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.04em;margin-top:3px;}
+          .vdec .hd-r{display:flex;align-items:center;gap:7px;}
+          .vdec .pill-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;
+            color:rgba(255,255,255,.72);padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+            font-family:inherit;white-space:nowrap;}
+          .vdec .pill-btn b{margin-left:6px;background:#00C896;color:#07100C;border-radius:999px;padding:1px 6px;
+            font-size:10px;font-weight:800;}
+          .vdec .close{width:34px;height:34px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.16);
+            background:rgba(255,255,255,.08);color:#fff;font-size:15px;cursor:pointer;font-family:inherit;}
+
+          /* Chiffres RÉELS uniquement : ce qu'il y a dans la ville, maintenant. */
+          .vdec .live{margin:2px 18px 10px;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;
+            background:rgba(0,200,150,.09);border:1px solid rgba(0,200,150,.22);font-size:12px;color:#BFE9DA;
+            line-height:1.4;}
+          .vdec .live b{color:#fff;font-weight:700;}
+
+          .vdec .filters{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 18px 10px;}
+          .vdec .filters::-webkit-scrollbar{display:none;}
+          .vdec .fpill{flex:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);
+            color:rgba(255,255,255,.66);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;
+            cursor:pointer;font-family:inherit;white-space:nowrap;}
+          .vdec .fpill.on{background:#00C896;border-color:#00C896;color:#07100C;font-weight:700;}
+
+          .vdec .dots{display:flex;justify-content:center;align-items:center;gap:4px;padding:0 18px 8px;flex-wrap:wrap;}
+          .vdec .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.18);transition:all .25s ease;}
+          .vdec .dot.on{width:18px;border-radius:3px;background:#00C896;}
+          .vdec .dot.done{background:rgba(255,255,255,.36);}
+
+          .vdec .stackw{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 16px;}
+          .vdec .stack{position:relative;width:100%;max-width:420px;height:100%;max-height:540px;}
+          .vdec .ghost{position:absolute;inset:0;border-radius:26px;background:rgba(255,255,255,.04);
+            border:1px solid rgba(255,255,255,.06);transform-origin:bottom center;pointer-events:none;}
+          .vdec .ghost.g2{transform:scale(.94) translateY(10px);z-index:1;}
+          .vdec .ghost.g1{transform:scale(.97) translateY(5px);z-index:2;background:rgba(255,255,255,.06);}
+
+          .vdec .card{position:absolute;inset:0;border-radius:26px;overflow:hidden;background:#F6F3EC;
+            box-shadow:0 32px 80px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.2);cursor:grab;touch-action:pan-y;
+            user-select:none;z-index:10;will-change:transform;}
+          .vdec .card:active{cursor:grabbing;}
           .vdec .card.go{transition:transform .26s cubic-bezier(.4,0,1,1),opacity .26s ease;opacity:0;}
           .vdec .card.back{transition:transform .3s cubic-bezier(.22,1,.36,1);}
-          /* La photo est superposée à un dégradé : si elle ne charge pas, la carte
-             reste présentable au lieu de devenir un rectangle vide. */
-          .vdec .ph{position:absolute;inset:0;background-size:cover;background-position:center;}
-          .vdec .ph::after{content:"";position:absolute;inset:0;
-            background:linear-gradient(180deg,rgba(8,11,18,.15) 0%,rgba(8,11,18,.55) 52%,rgba(8,11,18,.96) 100%);}
-          /* Sans photo Google, les trois quarts de la carte restaient un aplat vide.
-             On y met l'initiale du commerce : rien d'inventé, et la carte tient. */
-          .vdec .mono{position:absolute;left:0;right:0;top:0;height:62%;display:flex;align-items:center;
-            justify-content:center;font-family:Georgia,serif;font-size:150px;line-height:1;font-weight:600;
-            color:rgba(255,255,255,.09);user-select:none;}
-          .vdec .bd{position:absolute;left:0;right:0;bottom:0;padding:20px 18px 18px;}
-          .vdec .mt{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;
-            color:#0B2A20;background:#7FE6C0;border-radius:6px;padding:4px 9px;}
-          .vdec .nm{font-family:Georgia,serif;font-size:27px;font-weight:600;line-height:1.12;margin-top:11px;color:#fff;}
-          .vdec .rt{font-size:13px;color:#C6CCD8;margin-top:7px;}
-          .vdec .rt b{color:#F0B429;}
-          .vdec .an{margin-top:13px;border-radius:14px;padding:12px 13px;background:rgba(127,230,192,.13);
-            border:1px solid rgba(127,230,192,.32);}
-          .vdec .an-k{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#7FE6C0;}
-          .vdec .an-t{font-size:14px;line-height:1.45;color:#EAF0FA;margin-top:6px;}
-          .vdec .an-w{font-size:10.5px;color:#8B93A6;margin-top:6px;}
-          .vdec .cta{display:block;text-align:center;text-decoration:none;margin-top:14px;border-radius:13px;padding:13px;
-            font-size:14px;font-weight:800;color:#0B2A20;background:#7FE6C0;}
+
+          /* Tampon pendant le geste : l'intention se lit avant le relâchement. */
+          .vdec .stamp{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;
+            pointer-events:none;transition:opacity .1s;}
+          .vdec .stamp i{font-style:normal;font-family:var(--fd),Georgia,serif;font-size:38px;font-weight:900;color:#fff;
+            border:5px solid #fff;border-radius:12px;padding:6px 18px;letter-spacing:2px;}
+          .vdec .stamp.oui{background:linear-gradient(135deg,rgba(0,196,140,.9),rgba(0,196,140,.6));}
+          .vdec .stamp.oui i{transform:rotate(-14deg);}
+          .vdec .stamp.non{background:linear-gradient(135deg,rgba(239,68,68,.88),rgba(239,68,68,.6));}
+          .vdec .stamp.non i{transform:rotate(14deg);}
+
+          .vdec .media{height:38%;position:relative;background-size:cover;background-position:center;}
+          .vdec .media::after{content:"";position:absolute;inset:0;
+            background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.5) 100%);}
+          .vdec .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-family:var(--fd),Georgia,serif;font-size:82px;line-height:1;font-weight:900;color:rgba(255,255,255,.14);}
+          .vdec .tagm{position:absolute;top:13px;left:13px;z-index:2;border-radius:999px;padding:5px 11px;
+            font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#07100C;background:#00C896;}
+          .vdec .tagn{position:absolute;top:13px;right:13px;z-index:2;border-radius:999px;padding:5px 10px;
+            font-size:11px;font-weight:700;color:#3A2A00;background:#C8A84B;}
+
+          .vdec .body{height:62%;padding:14px 15px 13px;display:flex;flex-direction:column;}
+          .vdec .nm{font-family:var(--fd),Georgia,serif;font-size:24px;font-weight:700;line-height:1.1;color:#12141A;}
+          .vdec .meta{font-size:12px;color:#6B7280;margin-top:5px;}
+          .vdec .offer{margin-top:11px;border-radius:12px;padding:10px 12px;
+            background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1.5px solid rgba(200,168,75,.3);}
+          .vdec .offer-k{font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#A8842A;}
+          .vdec .offer-t{font-family:var(--fd),Georgia,serif;font-size:15px;font-weight:700;color:#12141A;
+            margin-top:5px;line-height:1.35;}
+          .vdec .offer-w{font-size:10.5px;color:#8A8F98;margin-top:5px;}
+          .vdec .rien{margin-top:11px;border-radius:12px;padding:10px 12px;background:rgba(15,23,42,.04);
+            border:1px solid rgba(15,23,42,.08);font-size:12.5px;line-height:1.45;color:#5A5D68;}
+          .vdec .cta{display:block;margin-top:auto;text-align:center;text-decoration:none;border-radius:13px;
+            padding:13px;font-size:14.5px;font-weight:700;color:#07100C;background:#00C896;
+            box-shadow:0 8px 22px -10px rgba(0,200,150,.75);}
           .vdec .cta:active{transform:translateY(1px);}
 
-          .vdec .ft{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:6px;}
-          .vdec .ft button{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.18);
-            background:rgba(255,255,255,.07);color:#EAF0FA;font-size:21px;cursor:pointer;font-family:inherit;}
-          .vdec .ft button:active{transform:scale(.93);}
-          .vdec .ft button:disabled{opacity:.3;cursor:not-allowed;}
-          .vdec .hint{text-align:center;font-size:11.5px;color:#6F7684;margin-top:9px;}
+          /* flex-end : le gros bouton est plus haut que les autres — sans ça, les
+             quatre légendes se retrouvent à des hauteurs différentes. */
+          .vdec .acts{display:flex;align-items:flex-end;justify-content:center;gap:15px;
+            padding:14px 18px calc(18px + env(safe-area-inset-bottom));}
+          .vdec .aw{display:flex;flex-direction:column;align-items:center;gap:5px;}
+          .vdec .act{display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;
+            cursor:pointer;transition:transform .15s ease;font-size:20px;font-family:inherit;text-decoration:none;
+            box-shadow:0 4px 16px rgba(0,0,0,.25);}
+          .vdec .act:active{transform:scale(.92);}
+          .vdec .act:disabled{opacity:.3;cursor:not-allowed;}
+          .vdec .act.back2,.vdec .act.skip{width:52px;height:52px;background:rgba(255,255,255,.1);
+            border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.74);}
+          .vdec .act.keep{width:52px;height:52px;background:rgba(200,168,75,.16);
+            border:1.5px solid rgba(200,168,75,.55);color:#E4C66E;}
+          .vdec .act.gogo{width:70px;height:70px;background:#00C896;color:#07100C;font-size:25px;font-weight:800;
+            box-shadow:0 8px 28px rgba(0,200,150,.4);}
+          .vdec .alab{font-size:10px;font-weight:600;color:rgba(255,255,255,.32);letter-spacing:.04em;}
 
-          .vdec .end{text-align:center;max-width:340px;}
-          .vdec .end .e{font-size:42px;}
-          .vdec .end h3{font-family:Georgia,serif;font-size:24px;font-weight:600;margin-top:12px;}
-          .vdec .end p{font-size:13.5px;line-height:1.6;color:#A8AEBC;margin-top:10px;}
-          .vdec .end .again{margin-top:18px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);
-            color:#fff;border-radius:13px;padding:13px 20px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
-          @media (prefers-reduced-motion:reduce){.vdec,.vdec .card{animation:none;transition:none;}}
+          .vdec .empty{margin:auto;text-align:center;max-width:320px;padding:20px;}
+          .vdec .empty .e{font-size:40px;}
+          .vdec .empty h3{font-family:var(--fd),Georgia,serif;font-size:23px;font-weight:700;color:#fff;margin-top:12px;}
+          .vdec .empty p{font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.55);margin-top:10px;}
+          .vdec .empty button{margin-top:18px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);
+            color:#fff;border-radius:13px;padding:12px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;}
+
+          /* Favoris — feuille glissante, comme les panneaux de Privilège. */
+          .vdec .favs{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;
+            background:rgba(0,0,0,.6);}
+          .vdec .favs-p{width:100%;max-height:80%;display:flex;flex-direction:column;background:#11131C;
+            border:1px solid rgba(255,255,255,.08);border-radius:26px 26px 0 0;animation:favUp .28s ease;overflow:hidden;}
+          @keyframes favUp{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+          .vdec .favs-h{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 12px;}
+          .vdec .favs-t{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:700;color:#fff;}
+          .vdec .favs-l{overflow-y:auto;padding:0 18px calc(20px + env(safe-area-inset-bottom));display:flex;
+            flex-direction:column;gap:9px;}
+          .vdec .fav{display:flex;align-items:center;gap:11px;border:1px solid rgba(255,255,255,.1);
+            border-radius:14px;padding:10px;background:rgba(255,255,255,.04);}
+          .vdec .fav .im{width:44px;height:44px;flex:none;border-radius:11px;background-size:cover;
+            background-position:center;background-image:linear-gradient(150deg,#2C3A5E,#141A2E);}
+          .vdec .fav .fb{flex:1;min-width:0;}
+          .vdec .fav .fn{display:block;font-size:13.5px;font-weight:700;color:#fff;white-space:nowrap;
+            overflow:hidden;text-overflow:ellipsis;}
+          .vdec .fav .fm{display:block;font-size:10.5px;color:#00C896;font-weight:600;text-transform:uppercase;
+            letter-spacing:.05em;margin-top:2px;}
+          .vdec .fav a{flex:none;text-decoration:none;background:#00C896;color:#07100C;border-radius:10px;
+            padding:8px 12px;font-size:12.5px;font-weight:700;}
+          .vdec .fav .rm{flex:none;border:none;background:none;color:rgba(255,255,255,.35);font-size:15px;
+            cursor:pointer;font-family:inherit;padding:4px;}
+          .vdec .favs-vide{font-size:13px;line-height:1.6;color:rgba(255,255,255,.5);padding:6px 0 18px;}
+          .vdec .favs-vide b{color:#fff;font-weight:700;}
+
+          .vdec .toast{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:30;
+            background:rgba(17,19,28,.96);border:1px solid rgba(0,200,150,.35);color:#fff;border-radius:999px;
+            padding:10px 18px;font-size:13px;font-weight:600;white-space:nowrap;animation:tIn .24s ease;
+            box-shadow:0 14px 34px -14px rgba(0,0,0,.9);}
+          @keyframes tIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+          @media (prefers-reduced-motion:reduce){.vdec,.vdec .card,.vdec .favs-p,.vdec .toast{animation:none;transition:none;}}
           `,
         }}
       />
 
       <button type="button" className="vdec-open" onClick={ouvre}>
-        🔎 Découvrir les {total} commerce{total > 1 ? "s" : ""} de {ville}
+        🔎 Découvrir les {fiches.length} commerce{fiches.length > 1 ? "s" : ""} de {ville}
       </button>
 
       {ouvert && (
         <div className="vdec" role="dialog" aria-modal="true" aria-label={`Découvrir les commerces de ${ville}`}>
-          <div className="hd">
-            <div className="t">
-              Les commerces de {ville}
-              <span>{fini ? `${total} sur ${total}` : `${i + 1} sur ${total}`}</span>
-            </div>
-            <button type="button" className="x" onClick={() => setOuvert(false)} aria-label="Fermer">
-              ✕
-            </button>
-          </div>
-          <div className="bar">
-            <i style={{ width: `${Math.round((Math.min(i + (fini ? 0 : 1), total) / total) * 100)}%` }} />
-          </div>
-
-          <div className="stage">
-            {fini ? (
-              <div className="end">
-                <div className="e">👋</div>
-                <h3>Vous les avez tous vus.</h3>
-                <p>
-                  {total} commerce{total > 1 ? "s" : ""} à {ville}. Le catalogue s&apos;agrandit à mesure que
-                  d&apos;autres mettent leur site en ligne.
-                </p>
-                <button type="button" className="again" onClick={() => setI(0)}>
-                  Recommencer
+          <div className="app">
+            <div className="hd">
+              <div>
+                <div className="logo">
+                  Pop<em>ey</em>
+                </div>
+                <div className="month">Aujourd&apos;hui à {ville}</div>
+              </div>
+              <div className="hd-r">
+                {onVilles && (
+                  <button type="button" className="pill-btn" onClick={onVilles} aria-label="Changer de ville">
+                    📍
+                  </button>
+                )}
+                <button type="button" className="pill-btn" onClick={() => setVoirFavoris(true)} aria-label="Mes favoris">
+                  ♥<b>{favoris.length}</b>
+                </button>
+                <button type="button" className="close" onClick={() => setOuvert(false)} aria-label="Fermer">
+                  ✕
                 </button>
               </div>
-            ) : (
-              <>
-                {i + 1 < total && <div className="ghost" aria-hidden="true" />}
-                <div
-                  className={`card${sortie ? " go" : glisse ? "" : " back"}`}
-                  style={{ transform: `translateX(${dep}px) rotate(${rot}deg)` }}
-                  onPointerDown={onDown}
-                  onPointerMove={onMove}
-                  onPointerUp={onUp}
-                  onPointerCancel={onUp}
+            </div>
+
+            <div className="live">
+              <span aria-hidden="true">🔥</span>
+              <span>
+                <b>{fiches.length}</b> commerce{fiches.length > 1 ? "s" : ""} en ligne à {ville}
+                {annonces > 0 && (
+                  <>
+                    {" · "}
+                    <b>{annonces}</b> annonce{annonces > 1 ? "s" : ""} en cours
+                  </>
+                )}
+              </span>
+            </div>
+
+            {metiers.length > 1 && (
+              <div className="filters">
+                <button
+                  type="button"
+                  className={`fpill${filtre === "" ? " on" : ""}`}
+                  onClick={() => {
+                    setFiltre("");
+                    setI(0);
+                  }}
                 >
-                  <div
-                    className="ph"
-                    style={{
-                      backgroundImage: f.photo
-                        ? `url("${f.photo}")`
-                        : "linear-gradient(150deg,#2C3A5E,#141A2E)",
+                  Tous
+                </button>
+                {metiers.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`fpill${filtre === m ? " on" : ""}`}
+                    onClick={() => {
+                      setFiltre(m);
+                      setI(0);
                     }}
-                  />
-                  {!f.photo && (
-                    <div className="mono" aria-hidden="true">
-                      {f.nom.trim().slice(0, 1).toUpperCase()}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {total > 0 && !fini && (
+              <div className="dots" aria-hidden="true">
+                {liste.slice(0, 24).map((x, n) => (
+                  <i key={x.slug} className={`dot${n === i ? " on" : n < i ? " done" : ""}`} />
+                ))}
+              </div>
+            )}
+
+            <div className="stackw">
+              {total === 0 ? (
+                <div className="empty">
+                  <div className="e">🔎</div>
+                  <h3>Personne ici pour l&apos;instant.</h3>
+                  <p>Ce métier n&apos;est pas encore représenté à {ville}.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltre("");
+                      setI(0);
+                    }}
+                  >
+                    Voir tous les commerces
+                  </button>
+                </div>
+              ) : fini ? (
+                <div className="empty">
+                  <div className="e">👋</div>
+                  <h3>Vous les avez tous vus.</h3>
+                  <p>
+                    Le catalogue s&apos;agrandit à mesure que d&apos;autres commerçants de {ville} mettent leur site
+                    en ligne.
+                  </p>
+                  <button type="button" onClick={() => setI(0)}>
+                    Recommencer
+                  </button>
+                </div>
+              ) : (
+                <div className="stack">
+                  {i + 2 < total && <div className="ghost g2" aria-hidden="true" />}
+                  {i + 1 < total && <div className="ghost g1" aria-hidden="true" />}
+                  <div
+                    className={`card${sortie ? " go" : glisse ? "" : " back"}`}
+                    style={{ transform: `translateX(${dep}px) rotate(${rot}deg)` }}
+                    onPointerDown={onDown}
+                    onPointerMove={onMove}
+                    onPointerUp={onUp}
+                    onPointerCancel={onUp}
+                  >
+                    {tampon && (
+                      <div className={`stamp ${tampon}`} style={{ opacity: forceTampon }} aria-hidden="true">
+                        <i>{tampon === "oui" ? "GARDÉ" : "PLUS TARD"}</i>
+                      </div>
+                    )}
+                    <div
+                      className="media"
+                      style={{
+                        backgroundImage: f.photo ? `url("${f.photo}")` : "linear-gradient(150deg,#2C3A5E,#141A2E)",
+                      }}
+                    >
+                      <span className="tagm">{f.metier}</span>
+                      {f.note != null && f.avis != null && f.avis > 0 && (
+                        <span className="tagn">★ {f.note.toFixed(1).replace(".", ",")}</span>
+                      )}
+                      {!f.photo && (
+                        <span className="mono" aria-hidden="true">
+                          {f.nom.trim().slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="bd">
-                    <span className="mt">{f.metier}</span>
-                    <div className="nm">{f.nom}</div>
-                    {f.note != null && f.avis != null && f.avis > 0 && (
-                      <div className="rt">
-                        <b>★</b> {f.note.toFixed(1).replace(".", ",")} · {f.avis} avis Google
+                    <div className="body">
+                      <div className="nm">{f.nom}</div>
+                      <div className="meta">
+                        {ville}
+                        {f.avis != null && f.avis > 0 ? ` · ${f.avis} avis Google` : ""}
                       </div>
-                    )}
-                    {f.texte && (
-                      <div className="an">
-                        <div className="an-k">✦ En ce moment</div>
-                        <div className="an-t">{f.texte}</div>
-                        {f.quand && <div className="an-w">{f.quand}</div>}
-                      </div>
-                    )}
-                    <a className="cta" href={`/site-internet/apercu/${f.slug}?via=catalogue`}>
-                      Voir {f.nom.length > 22 ? "ce commerce" : f.nom} →
-                    </a>
+                      {f.texte ? (
+                        <div className="offer">
+                          <div className="offer-k">✦ En ce moment</div>
+                          <div className="offer-t">{f.texte}</div>
+                          {f.quand && <div className="offer-w">{f.quand}</div>}
+                        </div>
+                      ) : (
+                        <div className="rien">Pas d&apos;annonce en ce moment — son site vous dit tout le reste.</div>
+                      )}
+                      <a className="cta" href={`/site-internet/apercu/${f.slug}?via=catalogue`}>
+                        Voir ce commerce →
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </>
+              )}
+            </div>
+
+            {!fini && total > 0 && (
+              <div className="acts">
+                <div className="aw">
+                  <button
+                    type="button"
+                    className="act back2"
+                    onClick={() => avance(-1)}
+                    disabled={i === 0}
+                    aria-label="Revenir au commerce précédent"
+                  >
+                    ↩
+                  </button>
+                  <span className="alab">Revenir</span>
+                </div>
+                <div className="aw">
+                  <button type="button" className="act skip" onClick={() => avance(1)} aria-label="Passer">
+                    ✕
+                  </button>
+                  <span className="alab">Passer</span>
+                </div>
+                <div className="aw">
+                  <a
+                    className="act gogo"
+                    href={`/site-internet/apercu/${f.slug}?via=catalogue`}
+                    aria-label={`Voir ${f.nom}`}
+                  >
+                    →
+                  </a>
+                  <span className="alab">Y aller</span>
+                </div>
+                <div className="aw">
+                  <button type="button" className="act keep" onClick={() => garder(f)} aria-label="Garder ce commerce">
+                    ♥
+                  </button>
+                  <span className="alab">Garder</span>
+                </div>
+              </div>
+            )}
+
+            {toast && <div className="toast">{toast}</div>}
+
+            {voirFavoris && (
+              <div className="favs" onClick={() => setVoirFavoris(false)}>
+                <div className="favs-p" onClick={(e) => e.stopPropagation()}>
+                  <div className="favs-h">
+                    <span className="favs-t">♥ Mes favoris</span>
+                    <button type="button" className="close" onClick={() => setVoirFavoris(false)} aria-label="Fermer">
+                      ✕
+                    </button>
+                  </div>
+                  <div className="favs-l">
+                    {favorisFiches.length === 0 ? (
+                      <div className="favs-vide">
+                        Rien de gardé pour l&apos;instant. Faites glisser une carte vers la droite, ou touchez ♥.
+                        Vos favoris restent <b>sur cet appareil</b> — rien n&apos;est envoyé nulle part.
+                      </div>
+                    ) : (
+                      favorisFiches.map((x) => (
+                        <div className="fav" key={x.slug}>
+                          <span
+                            className="im"
+                            aria-hidden="true"
+                            style={x.photo ? { backgroundImage: `url("${x.photo}")` } : undefined}
+                          />
+                          <span className="fb">
+                            <span className="fn">{x.nom}</span>
+                            <span className="fm">{x.metier}</span>
+                          </span>
+                          <a href={`/site-internet/apercu/${x.slug}?via=catalogue`}>Voir</a>
+                          <button
+                            type="button"
+                            className="rm"
+                            onClick={() => retirer(x.slug)}
+                            aria-label={`Retirer ${x.nom} des favoris`}
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-
-          {!fini && (
-            <>
-              <div className="ft">
-                <button type="button" onClick={() => avance(-1)} disabled={i === 0} aria-label="Commerce précédent">
-                  ‹
-                </button>
-                <button type="button" onClick={() => avance(1)} aria-label="Commerce suivant">
-                  ›
-                </button>
-              </div>
-              <div className="hint">Faites glisser la carte, ou utilisez les flèches.</div>
-            </>
-          )}
         </div>
       )}
     </>

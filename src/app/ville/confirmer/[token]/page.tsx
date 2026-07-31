@@ -50,13 +50,13 @@ export default async function ConfirmerVille({ params }: { params: Promise<{ tok
         dangerouslySetInnerHTML={{
           __html: `
           .vconf{min-height:100vh;background:#0E1014;color:#fff;display:flex;align-items:center;justify-content:center;
-            padding:28px 18px;font-family:'Inter',system-ui,sans-serif;}
+            padding:28px 18px;font-family:var(--fb),system-ui,sans-serif;}
           .vconf .bx{max-width:440px;width:100%;text-align:center;}
           .vconf .ic{font-size:46px;line-height:1;}
-          .vconf h1{font-family:Georgia,serif;font-size:28px;font-weight:600;line-height:1.15;margin:14px 0 0;}
+          .vconf h1{font-family:var(--fd),Georgia,serif;font-size:28px;font-weight:600;line-height:1.15;margin:14px 0 0;}
           .vconf p{font-size:14px;line-height:1.65;color:#A8AEBC;margin:13px 0 0;}
           .vconf p b{color:#fff;}
-          .vconf .go{display:block;margin-top:22px;text-decoration:none;background:#7FE6C0;color:#0B2A20;
+          .vconf .go{display:block;margin-top:22px;text-decoration:none;background:#00C896;color:#07100C;
             border-radius:14px;padding:14px;font-size:15px;font-weight:800;}
           .vconf .stop{display:inline-block;margin-top:16px;font-size:12px;color:#6F7684;}
           `,
