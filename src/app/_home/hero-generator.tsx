@@ -13,7 +13,7 @@ const STEPS = [
   "Je cherche votre établissement sur Google…",
   "Je récupère vos photos et vos avis…",
   "Je choisis vos couleurs et vos textes…",
-  "J'installe votre assistante…",
+  "J'installe votre assistante IA…",
   "Je construis votre site…",
   "Presque prêt…",
 ];
@@ -91,7 +91,6 @@ export function HeroGenerator() {
         <button className="genbtn" onClick={submit} disabled={!ready}>
           ✨ Construire mon site — gratuitement
         </button>
-        <div className="genhint">⏱️ En 1 minute, à partir de vos vraies infos Google. Sans inscription, sans engagement.</div>
         {err && (
           <div className="generr">
             {err}

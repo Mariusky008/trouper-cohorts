@@ -103,6 +103,25 @@ export default function HomePage() {
           .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
           .pop-home .sub{font-size:16px;line-height:1.5;color:var(--soft);max-width:500px;margin:12px auto 0;}
           /* ── Bande « après votre clic » : la seule section de la page ── */
+          /* « Une fois créée » : le seul bloc explicatif de la page. Il vient APRÈS
+             le formulaire — on montre d'abord, on explique ensuite. */
+          .pop-home .works{padding:52px 0 46px;border-top:1px solid var(--line);}
+          .pop-home .works-k{text-align:center;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+          .pop-home .works-h{text-align:center;font-size:27px;font-weight:850;letter-spacing:-.02em;line-height:1.14;margin:10px auto 0;max-width:460px;}
+          .pop-home .works-p{text-align:center;font-size:16px;line-height:1.55;color:var(--soft);max-width:480px;margin:12px auto 0;}
+          .pop-home .works-box{max-width:520px;margin:26px auto 0;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:22px 20px;}
+          .pop-home .works-q{font-size:17px;font-weight:850;letter-spacing:-.01em;line-height:1.3;}
+          .pop-home .works-a{font-size:15px;line-height:1.5;color:var(--soft);margin-top:9px;}
+          .pop-home .works-l{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+          .pop-home .works-l li{display:flex;align-items:flex-start;gap:11px;font-size:15px;line-height:1.45;color:var(--soft);}
+          .pop-home .works-l li b{color:var(--ink);font-weight:800;}
+          .pop-home .works-l .t{flex:1;min-width:0;}
+          .pop-home .works-l .e{width:32px;height:32px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--bg);border:1px solid var(--line);}
+          .pop-home .works-say{margin-top:18px;border-left:3px solid var(--a1);border-radius:0 12px 12px 0;background:var(--bg);padding:13px 15px;font-size:15.5px;line-height:1.45;font-style:italic;color:var(--ink);}
+          .pop-home .works-fine{font-size:13.5px;line-height:1.55;color:var(--faint);margin-top:13px;}
+          .pop-home .works-end{text-align:center;font-size:18px;line-height:1.5;color:var(--soft);margin:26px auto 0;max-width:420px;}
+          .pop-home .works-end b{color:var(--ink);font-weight:850;}
+          @media(min-width:820px){.pop-home .works-h{font-size:32px;} .pop-home .works-box{padding:26px 24px;}}
           .pop-home .after{padding:44px 0 46px;border-top:1px solid var(--line);background:var(--surface);}
           .pop-home .after-k{text-align:center;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
           .pop-home .after-steps{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:20px;}
@@ -394,19 +413,69 @@ export default function HomePage() {
         <div className="aurora"><span className="x1" /><span className="x2" /><span className="x3" /></div>
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
-          <h1>Votre site web,<br /><span className="hl">construit sous vos yeux.</span></h1>
-          <p className="why">Vos avis Google, vos photos et vos horaires deviennent enfin <b>un vrai site web.</b></p>
-          <p className="sub">Créé devant vous en une minute, gratuitement — avec une assistante qui répond à vos clients.</p>
+          <h1>Dans 1 minute,<br /><span className="hl">votre site sera prêt.</span></h1>
+          <p className="why">Il répondra à vos clients et fera connaître vos nouveautés <b>dans votre ville.</b></p>
+          <p className="sub">Construit devant vous à partir de vos vraies informations Google. Gratuitement.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
             <span className="ftag t3">🕐 vos horaires</span>
-            <span className="ftag t4">🤖 votre assistante</span>
+            <span className="ftag t4">🤖 assistante IA incluse</span>
             <HeroGenerator />
           </div>
-          <div className="alt">✓ Aucune inscription · ✓ 60 secondes · ✓ vos vraies données Google</div>
+          <div className="alt">✓ Gratuit · ✓ 60 secondes · ✓ Sans inscription</div>
         </div>
       </header>
+
+      {/* ── CE QU'ELLE FAIT ENSUITE ──
+          Placé SOUS le formulaire, et non « après l'animation » : l'animation se
+          termine par une redirection vers la maquette personnalisée, il n'y a
+          donc pas d'« après » sur cette page. Ce bloc s'adresse à qui hésite
+          avant de cliquer. */}
+      <section className="works">
+        <div className="wrap">
+          <div className="works-k reveal">Une fois créée</div>
+          <h2 className="works-h reveal">Votre plateforme travaille pour vous.</h2>
+          <p className="works-p reveal">
+            Elle répond aux questions de vos clients, prend les rendez-vous, et vous aide à recueillir
+            de nouveaux avis Google.
+          </p>
+
+          <div className="works-box reveal">
+            <div className="works-q">Et quand vous avez une offre, un événement ou un créneau libre&nbsp;?</div>
+            <p className="works-a">
+              Dites-le simplement à votre assistante. Elle écrit l&apos;annonce et la publie&nbsp;:
+            </p>
+            {/* Le texte est dans UN span : sans lui, chaque fragment devient un
+                élément flex à part et le passage en gras part en colonne. */}
+            <ul className="works-l">
+              <li>
+                <span className="e">🌐</span>
+                <span className="t">en haut de <b>votre plateforme</b></span>
+              </li>
+              {/* UN SEUL point pour le catalogue : la fenêtre chez les autres
+                  commerçants montre ce même catalogue. Deux puces feraient
+                  paraître un mécanisme unique deux fois plus gros qu'il n'est. */}
+              <li>
+                <span className="e">📍</span>
+                <span className="t">
+                  dans <b>le catalogue de votre ville</b> — que chaque commerce du réseau affiche aussi chez lui
+                </span>
+              </li>
+            </ul>
+            <div className="works-say">« Il me reste 1 place demain à 8 h, quelqu&apos;un la prend&nbsp;? »</div>
+            <p className="works-fine">
+              Une phrase suffit. Aucun post à créer, aucune technique à maîtriser. Et les habitants qui
+              suivent le catalogue de votre ville la reçoivent par e-mail.
+            </p>
+          </div>
+
+          <div className="works-end reveal">
+            Vous vous occupez de votre commerce.<br />
+            <b>On s&apos;occupe de vous faire connaître.</b>
+          </div>
+        </div>
+      </section>
 
       {/* ── APRÈS VOTRE CLIC : la bande unique (3 étapes) ── */}
       {/* Volontairement minimaliste : la démo personnalisée montre le produit
