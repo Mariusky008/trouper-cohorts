@@ -66,7 +66,7 @@ export function CollectifLive({ ville, offers, accent }: { ville: string; offers
       {apercu.length > 0 && (
       <div className="cv-list">
         {apercu.map((o) => (
-          <a className="cv-c" key={o.slug} href={`/site-internet/apercu/${o.slug}`}>
+          <a className="cv-c" key={o.slug} href={`/site-internet/apercu/${o.slug}?via=catalogue`}>
             <span
               className="cv-im"
               aria-hidden="true"

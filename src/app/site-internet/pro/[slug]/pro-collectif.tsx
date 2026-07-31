@@ -84,8 +84,8 @@ export function ProCollectif({ slug, token }: { slug: string; token: string }) {
       <div className="pcol">
         <div className="a-title">🤝 Le collectif</div>
         <div className="a-sub">
-          Vos annonces s&apos;affichent sur les sites des commerces partenaires de votre ville, et les leurs sur le vôtre.
-          Jamais un concurrent — seulement des métiers complémentaires.
+          Vos annonces entrent dans le <b>catalogue de votre ville</b>, et votre site en montre une fenêtre.
+          Dans cette fenêtre&nbsp;: jamais un concurrent, seulement des métiers complémentaires.
         </div>
 
         <div className="box">
@@ -93,8 +93,8 @@ export function ProCollectif({ slug, token }: { slug: string; token: string }) {
             <b>{actif ? "Vous participez" : "Vous ne participez pas"}</b>
             <span>
               {actif
-                ? "Vos annonces circulent, et vous affichez celles des autres."
-                : "Vos annonces ne circulent pas, et vous n'affichez pas celles des autres."}
+                ? "Vos annonces entrent dans le catalogue, et vous en affichez une fenêtre."
+                : "Vos annonces n'entrent pas dans le catalogue, et votre site n'en montre pas."}
             </span>
           </span>
           <button
@@ -112,8 +112,8 @@ export function ProCollectif({ slug, token }: { slug: string; token: string }) {
         {loaded && (
           <div className={`state ${voisins > 0 ? "plein" : "vide"}`}>
             {voisins > 0
-              ? `${voisins} autre${voisins > 1 ? "s" : ""} commerce${voisins > 1 ? "s sont" : " est"} déjà en ligne${ville ? ` à ${ville}` : ""}. Vos annonces peuvent y apparaître dès aujourd'hui.`
-              : `Aucun autre commerce n'est encore en ligne${ville ? ` à ${ville}` : ""}. Le réseau se construit ville par ville : la section n'apparaîtra sur votre site que lorsqu'un partenaire y sera actif.`}
+              ? `${voisins} autre${voisins > 1 ? "s" : ""} commerce${voisins > 1 ? "s sont" : " est"} déjà en ligne${ville ? ` à ${ville}` : ""}. Leur site montre le catalogue, donc votre annonce peut y apparaître dès aujourd'hui.`
+              : `Aucun autre commerce n'est encore en ligne${ville ? ` à ${ville}` : ""}. Le catalogue existe déjà et votre annonce y entre — vous y êtes seul·e pour l'instant.`}
           </div>
         )}
 

@@ -9,6 +9,7 @@
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
 import { useEffect, useState } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
+import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
 type Offer = { text: string; until: string | null; clicks: number; created_at: string };
@@ -23,7 +24,19 @@ const TEMPLATES: Array<{ label: string; text: string }> = [
   { label: "✨ Nouveauté", text: "Bonjour ! Petite nouveauté chez nous : [à compléter]. Passez la découvrir 😊" },
 ];
 
-export function ProRelance({ slug, token }: { slug: string; token: string }) {
+export function ProRelance({
+  slug,
+  token,
+  nom,
+  metier,
+  ville,
+}: {
+  slug: string;
+  token: string;
+  nom: string;
+  metier: string;
+  ville: string;
+}) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [cap, setCap] = useState(3);
@@ -31,7 +44,6 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [sent, setSent] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
-  const [socialCopied, setSocialCopied] = useState(false);
   // Générateur d'annonce IA : le pro décrit son offre, Claude rédige le message.
   const [brief, setBrief] = useState("");
   const [gening, setGening] = useState(false);
@@ -199,18 +211,6 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
       window.setTimeout(() => setCopied(false), 2200);
     } catch {
       /* clipboard indisponible → l'aperçu reste sélectionnable à la main */
-    }
-  };
-
-  // Facebook / Instagram : pas d'auto-publication (honnête) — on prépare le texte
-  // à coller. Le pro publie lui-même dans son appli, en un coller.
-  const copySocial = async () => {
-    try {
-      await navigator.clipboard.writeText(msg);
-      setSocialCopied(true);
-      window.setTimeout(() => setSocialCopied(false), 2200);
-    } catch {
-      /* clipboard indisponible → l'aperçu reste sélectionnable */
     }
   };
 
@@ -443,7 +443,7 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
             </div>
             <div className={`chan${chSocial ? " on" : ""}`} onClick={() => setChSocial((v) => !v)}>
               <span className="ce">📸</span>
-              <span className="cb"><span className="ct">Facebook / Instagram</span><span className="cs">Texte prêt à coller dans votre appli</span></span>
+              <span className="cb"><span className="ct">Facebook / Instagram</span><span className="cs">Visuel prêt à publier + légende</span></span>
               <span className="tag opt">option</span>
               <span className="ck">{chSocial ? "✓" : ""}</span>
             </div>
@@ -550,8 +550,17 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
                       <li>Ensuite&nbsp;: <b>« Copier »</b> ci-dessus, collez dans la liste, envoyez.</li>
                     </ol>
                     <div className="rwarn">
-                      ⚠️ Un client ne reçoit votre diffusion <b>que s&apos;il a enregistré votre numéro</b>. Demandez-lui&nbsp;: « Enregistrez mon numéro pour être prévenu·e. »
+                      ⚠️ Un client ne reçoit votre diffusion <b>que s&apos;il a enregistré votre numéro</b> — et écrire à
+                      quelqu&apos;un qui ne vous a jamais parlé est le meilleur moyen d&apos;être signalé, puis bloqué
+                      par WhatsApp.
                     </div>
+                    <button
+                      type="button"
+                      className="addlink"
+                      onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "clients:diffusion" }))}
+                    >
+                      📢 Constituer ma liste sans risque →
+                    </button>
                   </div>
                 </details>
               </div>
@@ -560,8 +569,12 @@ export function ProRelance({ slug, token }: { slug: string; token: string }) {
             {chSocial && (
               <div className="rlz-block">
                 <div className="rbh">📸 Facebook / Instagram <span className="tag opt">option</span></div>
-                <div className="rtip" style={{ marginTop: 6 }}>Pas de publication automatique&nbsp;: on prépare votre texte, vous le collez dans votre appli en un geste.</div>
-                <button className="rcopy" onClick={copySocial}>{socialCopied ? "✓ Texte copié" : "📋 Copier pour Facebook / Instagram"}</button>
+                {/* Un texte seul ne se publie pas sur Instagram : on fabrique
+                    l'image, sinon la promesse « publiez partout » ne tient pas. */}
+                <div className="rtip" style={{ marginTop: 6 }}>
+                  Votre visuel est prêt. Choisissez un style, puis partagez-le directement dans votre appli.
+                </div>
+                <AnnonceVisuel slug={slug} annonce={msg} nom={nom} metier={metier} ville={ville} />
               </div>
             )}
 

@@ -5,7 +5,10 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
-import { PrintBar } from "./print-button";
+import { PrintBar, type AfficheKind } from "./print-button";
+import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
+import { toWaDigits } from "@/lib/site-internet/phone";
+import { followCopy, resolveMetier } from "@/lib/site-internet/metier-profiles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,7 +44,7 @@ export default async function AffichePro({
   const { slug } = await params;
   const { k, type } = await searchParams;
   const token = str(k).trim();
-  const kind: "avis" | "rdv" = type === "rdv" ? "rdv" : "avis";
+  const kind: AfficheKind = type === "rdv" ? "rdv" : type === "whatsapp" ? "whatsapp" : "avis";
 
   const notFound = (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", padding: 24, textAlign: "center" }}>
@@ -56,7 +59,7 @@ export default async function AffichePro({
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token")
+    .select("business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token, whatsapp_phone_e164, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -76,8 +79,20 @@ export default async function AffichePro({
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${nom} ${ville}`)}`;
   const siteUrl = `${base}/site-internet/apercu/${encodeURIComponent(slug)}`;
 
+  // Affiche WhatsApp : le QR ouvre une conversation où c'est LE CLIENT qui écrit
+  // le premier. C'est le seul moyen propre de constituer une liste de diffusion —
+  // il enregistre le numéro, la conversation existe, et le commerçant ne risque
+  // aucun signalement pour message non sollicité.
+  const waDigits = toWaDigits(proPhoneFrom(row));
+  const secteur = resolveMetier(str(row.activite)).entry?.secteur ?? "flux";
+  const promesse = followCopy(secteur).promesse.replace(/^Être prévenu·e /, "");
+  const waTexte = `Bonjour ! Je souhaite être prévenu·e ${promesse}`;
+  const waLink = waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(waTexte)}` : "";
+  // Sans numéro, l'affiche WhatsApp n'a pas d'objet : on retombe sur le site.
+  const waUsable = kind === "whatsapp" && Boolean(waLink);
+
   const accent = "#14140F";
-  const target = kind === "avis" ? reviewLink : siteUrl;
+  const target = kind === "avis" ? reviewLink : waUsable ? waLink : siteUrl;
   const svg = await qrSvg(target, accent);
 
   const copy =
@@ -88,15 +103,33 @@ export default async function AffichePro({
           p: "Laissez-nous un avis Google — 30 secondes, ça nous aide énormément.",
           cta: "Scannez pour laisser votre avis",
         }
-      : {
-          k: "Réservez en ligne",
-          h: "Prenez rendez-vous en 30 secondes",
-          p: "À toute heure, sans appeler. Scannez et choisissez votre créneau.",
-          cta: "Scannez pour réserver",
-        };
+      : kind === "whatsapp"
+        ? waUsable
+          ? {
+              k: "Restons en contact",
+              h: "Soyez prévenu·e avant tout le monde",
+              p: `Scannez : WhatsApp s'ouvre, envoyez le message tout prêt, et je vous préviens ${promesse.replace(/\.$/, "")}. Répondez STOP quand vous voulez.`,
+              cta: "Scannez et envoyez le message",
+            }
+          : {
+              k: "Restons en contact",
+              h: "Affiche indisponible",
+              p: "Nous n'avons pas encore votre numéro WhatsApp — sans lui, ce QR n'ouvrirait aucune conversation. Envoyez-le nous et l'affiche est prête.",
+              cta: "",
+            }
+        : {
+            k: "Réservez en ligne",
+            h: "Prenez rendez-vous en 30 secondes",
+            p: "À toute heure, sans appeler. Scannez et choisissez votre créneau.",
+            cta: "Scannez pour réserver",
+          };
 
-  const avisHref = `?k=${encodeURIComponent(token)}&type=avis`;
-  const rdvHref = `?k=${encodeURIComponent(token)}&type=rdv`;
+  const href = (t: string) => `?k=${encodeURIComponent(token)}&type=${t}`;
+  const tabs: Array<{ kind: AfficheKind; label: string; href: string }> = [
+    { kind: "avis", label: "⭐ Avis", href: href("avis") },
+    { kind: "rdv", label: "📅 Réservation", href: href("rdv") },
+    { kind: "whatsapp", label: "💬 WhatsApp", href: href("whatsapp") },
+  ];
 
   return (
     <main className="affwrap">
@@ -138,7 +171,7 @@ export default async function AffichePro({
           `,
         }}
       />
-      <PrintBar avisHref={avisHref} rdvHref={rdvHref} current={kind} />
+      <PrintBar tabs={tabs} current={kind} />
 
       <div className="aff">
         <div className="k">{copy.k}</div>
@@ -155,12 +188,18 @@ export default async function AffichePro({
         <div className="h">{copy.h}</div>
         <div className="p">{copy.p}</div>
 
-        <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
-        <div className="cta">↑ {copy.cta}</div>
+        {svg && copy.cta ? (
+          <>
+            <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
+            <div className="cta">↑ {copy.cta}</div>
+          </>
+        ) : null}
 
-        <div className="foot">
-          Ouvrez l&apos;appareil photo de votre téléphone et visez le code — pas d&apos;application à installer.
-        </div>
+        {copy.cta ? (
+          <div className="foot">
+            Ouvrez l&apos;appareil photo de votre téléphone et visez le code — pas d&apos;application à installer.
+          </div>
+        ) : null}
       </div>
     </main>
   );

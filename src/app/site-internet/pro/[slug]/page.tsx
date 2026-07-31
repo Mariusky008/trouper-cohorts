@@ -7,6 +7,10 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
+import { peutParticiper } from "@/lib/site-internet/collectif";
+import { followCopy } from "@/lib/site-internet/metier-profiles";
+import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
+import { slugify } from "@/lib/popey-marketplace";
 import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
 import { ProRelance } from "./pro-relance";
@@ -19,6 +23,8 @@ import { ProMotifs } from "./pro-motifs";
 import { ProApproche } from "./pro-approche";
 import { ProFaq } from "./pro-faq";
 import { ProCollectif } from "./pro-collectif";
+import { ProCatalogue } from "./pro-catalogue";
+import { ProDiffusion } from "./pro-diffusion";
 import { ProRequests } from "./pro-requests";
 import { ProReviewAlert } from "./pro-review-alert";
 import { ProTabs, type ProTab } from "./pro-tabs";
@@ -66,7 +72,7 @@ export default async function EspacePro({
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token")
+    .select("id, business_name, city, activite, google_rating, google_reviews, google_place_id, pro_token, whatsapp_phone_e164, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -92,6 +98,12 @@ export default async function EspacePro({
   // Contenu suggéré (exemples métier) pour amorcer « Mes accompagnements » et
   // « Pour quoi venir me voir ? ». Le pro reste libre de tout reformuler.
   const metierContent = resolveMetierContent(activite, mp.profil);
+  // Promesse d'abonnement dans les mots du métier — reprise telle quelle dans le
+  // message de présentation WhatsApp, pour que le client reconnaisse ce à quoi il
+  // a dit oui. Et le numéro du commerçant, sans lequel l'affiche WhatsApp n'a pas
+  // d'objet (le QR n'ouvrirait aucune conversation).
+  const followPromesse = followCopy(mp.entry?.secteur ?? "flux").promesse;
+  const hasWaNumber = Boolean(proPhoneFrom(row));
   const serviceSuggestions = metierContent.demoServices ?? [];
   const motifSuggestions = metierContent.motifs ?? [];
 
@@ -185,6 +197,50 @@ export default async function EspacePro({
     /* colonne non migrée → 0 */
   }
 
+  // ── Le catalogue de la ville : ce qu'il rapporte réellement. ────────────────
+  // Colonnes récentes → lecture séparée (la page reste complète sans migration).
+  let catViews = 0;
+  let catClicks = 0;
+  let catActif = true;
+  let catHasOffer = false;
+  let catVoisins = 0;
+  try {
+    const { data: cat } = await supabase
+      .from("human_vitrine_sites")
+      .select("catalogue_views, catalogue_clicks, current_offer, collectif_actif")
+      .eq("id", siteId)
+      .maybeSingle();
+    const cr = (cat as Record<string, unknown> | null) ?? null;
+    if (cr) {
+      if (typeof cr.catalogue_views === "number") catViews = cr.catalogue_views;
+      if (typeof cr.catalogue_clicks === "number") catClicks = cr.catalogue_clicks;
+      if (cr.collectif_actif === false) catActif = false;
+      const off = (cr.current_offer && typeof cr.current_offer === "object" ? cr.current_offer : null) as Record<string, unknown> | null;
+      const until = off && typeof off.until === "string" ? off.until : null;
+      catHasOffer = Boolean(off && str(off.text).trim() && (!until || Date.parse(until) >= Date.now()));
+    }
+  } catch {
+    /* migration catalogue non appliquée → carte avec des zéros, jamais d'erreur */
+  }
+  // Voisins réellement en ligne : on ne promet pas un réseau, on le compte.
+  if (ville && soliciter) {
+    try {
+      const { data: vs } = await supabase
+        .from("human_vitrine_sites")
+        .select("id, activite")
+        .eq("channel", "letter")
+        .eq("city", ville)
+        .eq("published", true)
+        .neq("id", siteId)
+        .limit(200);
+      const rows = Array.isArray(vs) ? (vs as Array<Record<string, unknown>>) : [];
+      catVoisins = rows.filter((r) => peutParticiper(str(r.activite))).length;
+    } catch {
+      /* best-effort → 0 voisin affiché */
+    }
+  }
+  const villeUrl = ville ? `/ville/${slugify(ville)}` : "";
+
   // Alerte nouvel avis : compare le compteur Google actuel à ce que le pro a vu.
   // 1re visite → on ancre le point de départ (aucune fausse alerte). Colonnes
   // récentes → lecture défensive.
@@ -264,6 +320,17 @@ export default async function EspacePro({
         sitePublished={sitePublished}
         siteUrl={siteUrl}
       />
+      {soliciter && villeUrl && (
+        <ProCatalogue
+          ville={ville}
+          villeUrl={villeUrl}
+          views={catViews}
+          clicks={catClicks}
+          hasOffer={catHasOffer}
+          actif={catActif}
+          voisins={catVoisins}
+        />
+      )}
       {afficherAvis && (
         <ProReviewAlert
           slug={slug}
@@ -340,7 +407,7 @@ export default async function EspacePro({
             label: "Annonce",
             icon: "📣",
             hidden: true,
-            node: <ProRelance slug={slug} token={token} />,
+            node: <ProRelance slug={slug} token={token} nom={nom} metier={mp.entry?.label ?? activite} ville={ville} />,
           },
           {
             key: "clients",
@@ -352,6 +419,19 @@ export default async function EspacePro({
                 groupKey="clients"
                 subs={[
                   { key: "liste", label: "Ma liste de clients", node: <ProContacts slug={slug} token={token} reviewLink={reviewLink} /> },
+                  {
+                    key: "diffusion",
+                    label: "Liste de diffusion",
+                    node: (
+                      <ProDiffusion
+                        slug={slug}
+                        token={token}
+                        nom={nom}
+                        promesse={followPromesse}
+                        hasWa={hasWaNumber}
+                      />
+                    ),
+                  },
                   { key: "avis", label: "Demander un avis", node: <ProActions slug={slug} token={token} reviewLink={reviewLink} initialHistory={history} /> },
                 ]}
               />

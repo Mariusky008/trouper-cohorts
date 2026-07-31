@@ -25,6 +25,8 @@ type Contact = {
   source: string | null;
   /** Ce que la personne accepte de recevoir (null = tout). */
   topics: string[] | null;
+  /** Quand le commerçant s'est présenté en 1:1 (préalable à toute diffusion). */
+  wa_intro_at?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -165,6 +167,31 @@ export async function POST(request: Request) {
     if (id) {
       await supabase.from("human_site_contacts").delete().eq("site_id", siteId).eq("id", id);
     }
+  } else if (action === "intro") {
+    // Message de PRÉSENTATION envoyé en 1:1. C'est ce geste qui fait enregistrer
+    // le numéro du commerçant par le client — condition pour qu'une diffusion
+    // WhatsApp lui parvienne un jour, et meilleure protection contre un
+    // signalement (donc contre un bannissement).
+    const id = s(p?.id);
+    if (id) {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from("human_site_contacts")
+        .update({ wa_intro_at: now, last_contacted_at: now })
+        .eq("site_id", siteId)
+        .eq("id", id);
+      // Colonne non migrée : on retombe sur le seul horodatage qui existe, plutôt
+      // que de laisser croire au commerçant que rien n'a été enregistré.
+      if (error && migrationMissing(error.message)) {
+        await supabase
+          .from("human_site_contacts")
+          .update({ last_contacted_at: now })
+          .eq("site_id", siteId)
+          .eq("id", id);
+      } else if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
   } else if (action === "touch") {
     // Journalise qu'un envoi WhatsApp a été ouvert pour ce contact (best-effort).
     const id = s(p?.id);
@@ -193,13 +220,19 @@ export async function POST(request: Request) {
     return Array.isArray(data) ? (data as unknown as Contact[]) : [];
   };
   const BASE = "id, prenom, phone_e164, last_contacted_at, created_at, unsub_token, source";
+  // On dégrade colonne par colonne : chaque migration manquante retire une
+  // information, jamais la liste entière.
   try {
-    contacts = await listWith(`${BASE}, topics`);
+    contacts = await listWith(`${BASE}, topics, wa_intro_at`);
   } catch {
     try {
-      contacts = await listWith(BASE);
+      contacts = await listWith(`${BASE}, topics`);
     } catch {
-      /* table pas encore migrée → liste vide, la page reste fonctionnelle */
+      try {
+        contacts = await listWith(BASE);
+      } catch {
+        /* table pas encore migrée → liste vide, la page reste fonctionnelle */
+      }
     }
   }
 

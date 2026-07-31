@@ -9,6 +9,8 @@
 import { resolveMetier } from "./metier-profiles";
 
 export type PartnerOffer = {
+  /** Identifiant du site — sert à compter les affichages dans le catalogue. */
+  id: string;
   slug: string;
   nom: string;
   metier: string;
@@ -88,7 +90,7 @@ export async function partnerOffers(
       .eq("published", true)
       .neq("id", siteId)
       .limit(40);
-  const BASE = "slug, business_name, activite, current_offer, gallery_photos";
+  const BASE = "id, slug, business_name, activite, current_offer, gallery_photos";
 
   let rows: SiteRow[] = [];
   try {
@@ -116,6 +118,7 @@ export async function partnerOffers(
     if (!off) continue;
     const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
     out.push({
+      id: str(r.id),
       slug: str(r.slug),
       nom: str(r.business_name) || "Un commerce voisin",
       metier: resolveMetier(act).entry?.label ?? act,
@@ -165,7 +168,7 @@ export async function cityOffers(
       .eq("city", ville)
       .eq("published", true)
       .limit(200);
-  const BASE = "slug, business_name, activite, current_offer, gallery_photos";
+  const BASE = "id, slug, business_name, activite, current_offer, gallery_photos";
 
   let rows: SiteRow[] = [];
   try {
@@ -190,6 +193,7 @@ export async function cityOffers(
     if (!off) continue;
     const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
     out.push({
+      id: str(r.id),
       slug: str(r.slug),
       nom: str(r.business_name) || "Un commerce",
       metier: resolveMetier(act).entry?.label ?? act,
@@ -200,6 +204,31 @@ export async function cityOffers(
   }
   out.sort((a, b) => (b.publieLe ? Date.parse(b.publieLe) : 0) - (a.publieLe ? Date.parse(a.publieLe) : 0));
   return out.slice(0, max);
+}
+
+/**
+ * Compte un AFFICHAGE pour chaque annonce rendue — page catalogue ou fenêtre sur
+ * le site d'un confrère. C'est le seul chiffre qui prouve au commerçant que le
+ * catalogue travaille pour lui.
+ *
+ * Volontairement « best-effort » et non bloquant : un compteur ne doit jamais
+ * empêcher une page de s'afficher. Si la migration n'est pas passée, la fonction
+ * RPC n'existe pas et on ne compte rien — sans casser quoi que ce soit.
+ *
+ * Ce n'est pas une lecture, c'est une exposition : l'Espace Pro doit l'écrire
+ * « affiché N fois », jamais « vu par N personnes ».
+ */
+export async function noteCatalogueViews(
+  supabase: { rpc?: (fn: string, args: Record<string, unknown>) => PromiseLike<unknown> },
+  offers: PartnerOffer[]
+): Promise<void> {
+  const ids = offers.map((o) => o.id).filter(Boolean);
+  if (!ids.length || typeof supabase.rpc !== "function") return;
+  try {
+    await supabase.rpc("increment_catalogue_views", { ids });
+  } catch {
+    /* fonction absente (migration non appliquée) → on n'affiche simplement rien */
+  }
 }
 
 /** « il y a 2 h », « hier », « le 12/03 » — la fraîcheur EST l'information. */

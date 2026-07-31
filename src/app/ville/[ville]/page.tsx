@@ -9,7 +9,7 @@
 // et le dit. On ne remplit jamais avec des exemples.
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cityOffers, ilYA } from "@/lib/site-internet/collectif";
+import { cityOffers, ilYA, noteCatalogueViews } from "@/lib/site-internet/collectif";
 import { slugify } from "@/lib/popey-marketplace";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +51,11 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
   const { ville } = await params;
   const nomVille = await resolveVille(ville);
   const affiche = capWords(nomVille) || "cette ville";
-  const offers = nomVille ? await cityOffers(createAdminClient(), nomVille) : [];
+  const supabase = createAdminClient();
+  const offers = nomVille ? await cityOffers(supabase, nomVille) : [];
+  // Chaque annonce rendue ici est une exposition de plus pour son commerce :
+  // c'est ce chiffre que l'Espace Pro lui montre. Non bloquant.
+  await noteCatalogueViews(supabase, offers);
 
   return (
     <main className="vil">
@@ -99,7 +103,7 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
         ) : (
           <div className="list">
             {offers.map((o) => (
-              <a className="c" key={o.slug} href={`/site-internet/apercu/${o.slug}`}>
+              <a className="c" key={o.slug} href={`/site-internet/apercu/${o.slug}?via=catalogue`}>
                 <span className="im" aria-hidden="true" style={o.photo ? { backgroundImage: `url("${o.photo}")` } : undefined} />
                 <span className="b">
                   <span className="n">{o.nom}</span>

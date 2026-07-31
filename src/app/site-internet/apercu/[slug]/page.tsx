@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
-import { partnerOffers as loadPartnerOffers, type PartnerOffer } from "@/lib/site-internet/collectif";
+import { partnerOffers as loadPartnerOffers, noteCatalogueViews, type PartnerOffer } from "@/lib/site-internet/collectif";
 import { MaquetteSante } from "./maquette-sante";
 
 export const dynamic = "force-dynamic";
@@ -48,8 +48,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function ApercuMaquette({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ApercuMaquette({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ via?: string }>;
+}) {
   const { slug } = await params;
+  const { via } = await searchParams;
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
@@ -101,6 +108,24 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
     await supabase.from("human_vitrine_sites").update({ site_views: siteViews + 1 }).eq("id", str(row.id));
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */
+  }
+  // Visiteur venu du catalogue de la ville (?via=catalogue) : c'est LE chiffre
+  // qui prouve au commerçant que le collectif lui amène du monde. Lecture puis
+  // écriture séparée, pour ne rien casser tant que la migration n'est pas passée.
+  if (str(via) === "catalogue") {
+    try {
+      const { data: cc } = await supabase
+        .from("human_vitrine_sites")
+        .select("catalogue_clicks")
+        .eq("id", str(row.id))
+        .maybeSingle();
+      const prev = typeof (cc as Record<string, unknown> | null)?.catalogue_clicks === "number"
+        ? ((cc as Record<string, unknown>).catalogue_clicks as number)
+        : 0;
+      await supabase.from("human_vitrine_sites").update({ catalogue_clicks: prev + 1 }).eq("id", str(row.id));
+    } catch {
+      /* colonne non migrée → pas de comptage */
+    }
   }
   // « Offre du moment » : bandeau piloté par le pro (colonne récente → défensif).
   // Affiché seulement si actif ET non expiré. Null sinon.
@@ -189,6 +214,9 @@ export default async function ApercuMaquette({ params }: { params: Promise<{ slu
       activite: str(row.activite) || "Commerce",
       collectifActif,
     });
+    // La fenêtre de ce site est une vitrine du catalogue : ce qui s'y affiche
+    // compte comme exposition pour les commerces concernés.
+    await noteCatalogueViews(supabase, livePartners);
   }
 
   const nom = str(row.business_name) || "Votre commerce";

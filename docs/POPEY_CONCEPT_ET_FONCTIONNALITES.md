@@ -324,7 +324,12 @@ l'automatisation ou à l'embauche.
 
 ### ❌ Non construit
 - **Facturation et abonnement** (le 29 € n'est encaissable par aucun mécanisme)
-- **Options Pro** : diffusion WhatsApp de masse, publication réseaux sociaux
+- **Publication automatique sur Facebook / Instagram** : impossible sans compte Meta
+  connecté. L'Espace Pro fabrique le visuel 1080×1080 et les légendes, et ouvre la
+  feuille de partage du téléphone — la publication reste un geste du commerçant.
+- **Envoi WhatsApp de masse depuis nos serveurs** : volontairement non construit.
+  L'envoi part du numéro du commerçant (liste de diffusion native), avec un
+  parcours de constitution de liste et des garde-fous anti-bannissement.
 - **Abonnement ville** : aucun mécanisme d'envoi (le catalogue existe, mais rien ne
   l'apporte à un habitant qui n'est pas déjà sur le site d'un commerçant)
 - Statistiques d'usage détaillées pour le commerçant
