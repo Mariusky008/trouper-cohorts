@@ -392,6 +392,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           nom={nom}
           metierLabel={metierLabel}
           villeAff={villeAff}
+          photos={photos}
           note={note}
           reviewsCount={reviewsCount}
           avisAllowed={avisMode === "prominent"}

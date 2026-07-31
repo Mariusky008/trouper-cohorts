@@ -19,6 +19,7 @@ type Props = {
   nom: string;
   metierLabel: string;
   villeAff: string;
+  photos?: string[]; // photos Google du pro — la carte du catalogue est pleine photo
   note: string | null;
   reviewsCount: number | null;
   avisAllowed: boolean; // commerce (déonto none) : avis + « remplir ce soir » autorisés
@@ -33,7 +34,7 @@ type Props = {
 
 type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "alive";
 
-export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
+export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
@@ -82,15 +83,27 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
     "Ouvert exceptionnellement ce week-end.",
   ];
   const catalogueCards = [
-    { nom, metier: metierLabel || "Commerce", texte: flashPhrase, quand: "à l'instant", vous: true },
-    // Le libellé du métier tient lieu de nom : pas d'article à accorder, et
-    // surtout aucun commerce inventé auquel le pro pourrait croire.
+    {
+      nom,
+      metier: metierLabel || "Commerce",
+      texte: flashPhrase,
+      quand: "à l'instant",
+      vous: true,
+      // Sa VRAIE photo Google : la carte du catalogue est pleine photo, et la
+      // sienne est la seule dont nous ayons une image légitime.
+      photo: (photos && photos[0]) || "",
+      ic: "",
+    },
+    // Les autres : libellé de métier et emoji, jamais un commerce inventé ni une
+    // photo qui ne leur appartient pas. Le panneau porte « exemple » en permanence.
     ...partnersList.slice(0, 2).map((pn, i) => ({
       nom: pn.t,
       metier: pn.t,
       texte: AUTRES[i % AUTRES.length],
       quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
       vous: false,
+      photo: "",
+      ic: pn.ic,
     })),
   ];
   // Recommandation croisée COHÉRENTE avec le métier (pilates → bien-être, pas mariage).
@@ -395,8 +408,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           // Deux glissements automatiques : le commerçant voit que ça se parcourt
           // sans qu'on ait à le lui écrire. La carte PART (fly) avant que la
           // suivante entre — sans ça, on lit un changement d'image, pas un geste.
-          for (const [n, quand] of [[1, 1500], [2, 3100]] as Array<[number, number]>) {
-            window.setTimeout(() => setCatFly(true), quand - 300);
+          for (const [n, quand] of [[1, 1900], [2, 3900]] as Array<[number, number]>) {
+            window.setTimeout(() => setCatFly(true), quand - 380);
             window.setTimeout(() => {
               setCatFly(false);
               setCatSlide(n);
@@ -576,48 +589,65 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
           .dtour-card .fx-checks span{font-size:13.5px;font-weight:700;color:#0B7A55;}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-sp,.dtour-card .fx-out{animation:none;}}
 
-          /* ── 3ᵉ temps : le catalogue de la ville, qui défile ────────────────
-             La carte est BLANCHE : les couleurs sont donc sombres. Le panneau
-             lui-même est sombre pour se distinguer nettement du temps précédent
-             — on change de lieu, ça doit se voir. */
-          .dtour-card .fx-cat{margin-top:2px;border-radius:18px;padding:15px 14px 14px;text-align:left;
-            background:linear-gradient(160deg,#151A2C,#0B0F1A);color:#EAF0FA;
-            box-shadow:0 22px 46px -22px rgba(11,15,26,.9);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
-          .dtour-card .fc-top{display:flex;align-items:center;justify-content:space-between;gap:9px;}
-          .dtour-card .fc-h{font-family:Georgia,serif;font-size:18px;font-weight:600;line-height:1.15;}
-          .dtour-card .fc-ex{flex:none;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+          /* ── 3ᵉ temps : une RÉPLIQUE de l'écran catalogue ───────────────────
+             Mêmes codes que /ville : entête, carte pleine photo avec voile,
+             pastilles, barre de trois actions. Le cadre est sombre parce que le
+             catalogue l'est — on change de lieu, ça doit se voir. */
+          .dtour-card .fx-cat{margin-top:2px;border-radius:20px;padding:12px 12px 14px;text-align:left;
+            background:radial-gradient(120% 70% at 50% 0%,#141A20 0%,#0B0D12 60%,#08090D 100%);color:#EAEEF5;
+            box-shadow:0 22px 46px -22px rgba(0,0,0,.95);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
+          .dtour-card .fc-top{display:flex;align-items:center;gap:8px;}
+          .dtour-card .fc-logo{font-family:Georgia,serif;font-size:16px;font-weight:800;color:#fff;line-height:1;}
+          .dtour-card .fc-logo em{font-style:normal;color:#00E0A0;}
+          .dtour-card .fc-city{margin-left:auto;font-size:10.5px;font-weight:600;color:#fff;border-radius:999px;
+            padding:5px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);}
+          .dtour-card .fc-ex{flex:none;font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
             color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
-          /* La carte du catalogue, à l'échelle de l'écran de démo : EXACTEMENT les
-             codes du vrai catalogue (photo pleine, voile, infos posées en bas). */
-          .dtour-card .fc-stack{position:relative;height:236px;margin-top:12px;}
+
+          .dtour-card .fc-stack{position:relative;height:250px;margin-top:11px;}
           .dtour-card .fc-ghost{position:absolute;inset:0;border-radius:18px;overflow:hidden;
             background:linear-gradient(160deg,#243049,#0F1524);}
-          .dtour-card .fc-ghost.g2{transform:scale(.84) translateY(22px);filter:brightness(.5);}
-          .dtour-card .fc-ghost.g1{transform:scale(.92) translateY(11px);filter:brightness(.7);}
+          .dtour-card .fc-ghost.g2{transform:scale(.84) translateY(24px);filter:brightness(.5);}
+          .dtour-card .fc-ghost.g1{transform:scale(.92) translateY(12px);filter:brightness(.7);}
           .dtour-card .fc-card{position:absolute;inset:0;border-radius:18px;overflow:hidden;
-            background:linear-gradient(160deg,#243049,#0F1524);box-shadow:0 20px 46px -16px rgba(0,0,0,.8);
-            animation:fcIn .42s cubic-bezier(.22,1,.36,1);}
-          @keyframes fcIn{from{opacity:0;transform:translateX(46px) rotate(4deg) scale(.96)}to{opacity:1;transform:none}}
-          /* L'envol : même geste que dans le vrai catalogue, en plus court. */
-          .dtour-card .fc-card.fly{animation:fcOut .3s cubic-bezier(.4,0,1,1) forwards;}
-          @keyframes fcOut{to{opacity:0;transform:translateX(150px) rotate(9deg)}}
+            background:linear-gradient(160deg,#243049,#0F1524);box-shadow:0 20px 46px -16px rgba(0,0,0,.85);
+            animation:fcIn .5s cubic-bezier(.22,1,.36,1);}
+          /* L'entrée vient de la DROITE et l'envol part vers la GAUCHE : c'est ce
+             couple qui fait lire un glissement plutôt qu'un changement d'image. */
+          @keyframes fcIn{from{opacity:0;transform:translateX(150px) rotate(9deg)}to{opacity:1;transform:none}}
+          .dtour-card .fc-card.fly{animation:fcOut .38s cubic-bezier(.4,0,1,1) forwards;}
+          @keyframes fcOut{to{opacity:0;transform:translateX(-200px) rotate(-12deg)}}
+          .dtour-card .fc-media{position:absolute;inset:0;background-size:cover;background-position:center;}
+          .dtour-card .fc-ill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-size:66px;line-height:1;opacity:.5;}
           .dtour-card .fc-scrim{position:absolute;inset:0;z-index:2;
             background:linear-gradient(180deg,rgba(11,13,18,.05) 34%,rgba(11,13,18,.6) 60%,rgba(11,13,18,.97) 100%);}
-          .dtour-card .fc-mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-            font-family:Georgia,serif;font-size:64px;font-weight:800;color:rgba(255,255,255,.1);}
           .dtour-card .fc-you{position:absolute;top:11px;right:11px;z-index:6;border-radius:999px;padding:3px 9px;
             font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#06231A;background:#00E0A0;}
-          .dtour-card .fc-info{position:absolute;left:13px;right:13px;bottom:12px;z-index:6;text-align:left;}
-          .dtour-card .fc-nm{font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;line-height:1.05;}
+          .dtour-card .fc-info{position:absolute;left:13px;right:13px;bottom:12px;z-index:6;}
+          .dtour-card .fc-nm{font-family:Georgia,serif;font-size:19px;font-weight:700;color:#fff;line-height:1.05;}
           .dtour-card .fc-meta{font-size:11px;color:#CFD2D6;margin-top:4px;}
           .dtour-card .fc-ok{font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
             color:#00E0A0;margin-top:8px;}
           .dtour-card .fc-ot{font-size:12.5px;line-height:1.35;color:#E9EBED;font-weight:600;margin-top:3px;}
           .dtour-card .fc-w{font-size:10px;color:#8A9099;margin-top:4px;}
-          .dtour-card .fc-dots{display:flex;justify-content:center;gap:5px;margin-top:16px;}
+
+          .dtour-card .fc-dots{display:flex;justify-content:center;gap:5px;margin-top:18px;}
           .dtour-card .fc-dots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .25s ease;}
           .dtour-card .fc-dots i.on{width:15px;border-radius:3px;background:#00E0A0;}
           .dtour-card .fc-dots i.done{background:rgba(255,255,255,.4);}
+          /* La barre d'actions du catalogue, à l'échelle : elle fait comprendre
+             qu'on est dans un endroit où l'on choisit, pas devant une image. */
+          .dtour-card .fc-bar{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:12px;}
+          .dtour-card .fc-act{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8.5px;
+            font-weight:600;color:#5C6168;}
+          .dtour-card .fc-act i{font-style:normal;width:38px;height:38px;border-radius:50%;display:flex;
+            align-items:center;justify-content:center;font-size:16px;color:#fff;
+            border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);}
+          .dtour-card .fc-act.want i{width:48px;height:48px;font-size:19px;border:none;color:#06231A;
+            background:linear-gradient(90deg,#00E0A0,#07B083);box-shadow:0 8px 20px rgba(0,224,160,.35);}
+          /* La légende est NOTRE phrase, pas celle du catalogue : elle vit dehors. */
+          .dtour-card .fc-cap{font-size:12px;line-height:1.5;color:#71766C;margin-top:12px;text-align:left;}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat,.dtour-card .fc-card{animation:none;}}
 
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
@@ -991,43 +1021,65 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount,
                 {/* 3ᵉ temps : « et voilà où elle vit ». Le catalogue défile tout
                     seul deux fois — le geste se comprend sans être expliqué, et
                     le commerçant voit sa carte en tête, la plus fraîche. */}
+                {/* Le 3ᵉ temps : une RÉPLIQUE de l'écran catalogue — même entête,
+                    même carte pleine photo, mêmes trois actions. La légende est
+                    posée SOUS le cadre : elle nous appartient, pas au catalogue. */}
                 {fxStep === 2 && (
-                  <div className="fx-cat">
-                    <div className="fc-top">
-                      <span className="fc-h">Aujourd&apos;hui à {villeAff || "votre ville"}</span>
-                      <span className="fc-ex">exemple</span>
-                    </div>
-                    <div className="fc-stack">
-                      {catSlide + 2 < catalogueCards.length && <div className="fc-ghost g2" aria-hidden="true" />}
-                      {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
-                      {catalogueCards[catSlide] && (
-                        <div className={`fc-card${catFly ? " fly" : ""}`} key={catSlide}>
-                          <div className="fc-scrim" />
-                          <span className="fc-mono" aria-hidden="true">
-                            {catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
-                          </span>
-                          {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
-                          <div className="fc-info">
-                            <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
-                            <div className="fc-meta">
-                              📍 {catalogueCards[catSlide].metier} · {villeAff || "votre ville"}
+                  <>
+                    <div className="fx-cat">
+                      <div className="fc-top">
+                        <span className="fc-logo">Pop<em>ey</em></span>
+                        <span className="fc-city">📍 {villeAff || "votre ville"}</span>
+                        <span className="fc-ex">exemple</span>
+                      </div>
+                      <div className="fc-stack">
+                        {catSlide + 2 < catalogueCards.length && <div className="fc-ghost g2" aria-hidden="true" />}
+                        {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
+                        {catalogueCards[catSlide] && (
+                          <div className={`fc-card${catFly ? " fly" : ""}`} key={catSlide}>
+                            <div
+                              className="fc-media"
+                              style={
+                                catalogueCards[catSlide].photo
+                                  ? { backgroundImage: `url("${catalogueCards[catSlide].photo}")` }
+                                  : undefined
+                              }
+                            >
+                              {!catalogueCards[catSlide].photo && (
+                                <span className="fc-ill" aria-hidden="true">
+                                  {catalogueCards[catSlide].ic || catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
+                                </span>
+                              )}
                             </div>
-                            <div className="fc-ok">✦ En ce moment</div>
-                            <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
-                            <div className="fc-w">{catalogueCards[catSlide].quand}</div>
+                            <div className="fc-scrim" />
+                            {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
+                            <div className="fc-info">
+                              <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
+                              <div className="fc-meta">
+                                📍 {catalogueCards[catSlide].metier} · {villeAff || "votre ville"}
+                              </div>
+                              <div className="fc-ok">✦ En ce moment</div>
+                              <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
+                              <div className="fc-w">{catalogueCards[catSlide].quand}</div>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="fc-dots" aria-hidden="true">
-                      {catalogueCards.map((c, i) => (
-                        <i className={i === catSlide ? "on" : i < catSlide ? "done" : ""} key={`d-${c.nom}-${i}`} />
-                      ))}
+                        )}
+                      </div>
+                      <div className="fc-dots" aria-hidden="true">
+                        {catalogueCards.map((c, i) => (
+                          <i className={i === catSlide ? "on" : i < catSlide ? "done" : ""} key={`d-${c.nom}-${i}`} />
+                        ))}
+                      </div>
+                      <div className="fc-bar" aria-hidden="true">
+                        <span className="fc-act"><i>✕</i>Passer</span>
+                        <span className="fc-act want"><i>♥</i>Garder</span>
+                        <span className="fc-act"><i>↑</i>Le site</span>
+                      </div>
                     </div>
                     <div className="fc-cap">
                       Votre annonce entre ici — et des gens qui ne vous connaissent pas encore vous y trouvent.
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
