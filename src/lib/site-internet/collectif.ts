@@ -18,6 +18,9 @@ export type PartnerOffer = {
   photo: string | null;
   /** Horodatage de publication — sert au tri par fraîcheur. */
   publieLe: string | null;
+  /** Réputation Google réelle. Absente hors catalogue de ville (non demandée). */
+  note?: number | null;
+  avis?: number | null;
 };
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -229,6 +232,8 @@ export async function cityDirectory(
         texte: off.text,
         photo: str(photos[0]) || null,
         publieLe: off.at,
+        note: typeof r.google_rating === "number" ? r.google_rating : null,
+        avis: typeof r.google_reviews === "number" ? r.google_reviews : null,
       });
     } else {
       autres.push({

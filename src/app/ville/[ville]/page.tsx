@@ -17,6 +17,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cityDirectory, ilYA, noteCatalogueViews } from "@/lib/site-internet/collectif";
 import { VilleSuivre } from "./ville-suivre";
+import { VilleDecouverte, type Fiche } from "./ville-decouverte";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -43,6 +44,22 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
   // Une fiche n'est pas une annonce : on ne compte que les annonces, pour que le
   // chiffre montré au commerçant garde exactement le sens qu'on lui donne.
   await noteCatalogueViews(supabase, offers);
+
+  // Le mode découverte parcourt TOUT le monde — annonce ou pas. Les commerces qui
+  // ont publié passent devant : ils ont quelque chose à dire aujourd'hui.
+  const fiches: Fiche[] = [
+    ...offers.map((o) => ({
+      slug: o.slug,
+      nom: o.nom,
+      metier: o.metier,
+      photo: o.photo,
+      note: o.note ?? null,
+      avis: o.avis ?? null,
+      texte: o.texte,
+      quand: ilYA(o.publieLe),
+    })),
+    ...autres.map((m) => ({ ...m, texte: "", quand: "" })),
+  ];
 
   return (
     <main className="vil">
@@ -150,6 +167,8 @@ export default async function VillePage({ params }: { params: Promise<{ ville: s
             </div>
           </section>
         )}
+
+        {fiches.length > 0 && <VilleDecouverte ville={affiche} fiches={fiches} />}
 
         {/* L'inscription n'a de sens que si la ville existe : sinon on collecterait
             des adresses pour un catalogue qui ne se remplira jamais. */}

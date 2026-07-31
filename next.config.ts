@@ -66,6 +66,9 @@ const config: NextConfig = {
     return [
       // chaque ancien produit : la racine ET ses sous-pages
       ...OLD.flatMap((s) => [toHome(`/${s}`), toHome(`/${s}/:path*`)]),
+      // L'app cliente v3 (/m/<ville>) est retirée. Une icône restée sur un écran
+      // d'accueil doit atterrir sur le catalogue actuel, pas sur une erreur.
+      { source: "/m/:ville", destination: "/ville/:ville", permanent: false },
       toHome("/inscription/spheres"),
       toHome("/popey-human-test"),
       toHome("/popey-human-test-v2"),
