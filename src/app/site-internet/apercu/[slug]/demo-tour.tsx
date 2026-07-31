@@ -11,7 +11,7 @@
 // annonce sur le site = réels et automatiques ; Facebook/Instagram = texte + visuel
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type UIEvent } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 
 type Props = {
@@ -38,10 +38,22 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
-  const [fxStep, setFxStep] = useState(0); // 0 = préparation · 1 = résultat
+  const [fxStep, setFxStep] = useState(0); // 0 = préparation · 1 = résultat · 2 = le catalogue
+  const [catSlide, setCatSlide] = useState(0); // carte visible du catalogue d'exemple
   // La phrase que le pro « dirait » — la même aux deux temps, pour que la
   // transformation soit lisible : on ne change que l'habillage, pas le fait.
   const flashPhrase = flashExample || "Une nouveauté cette semaine.";
+  // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
+  // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
+  const FLASH_SAY_A =
+    `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — ` +
+    `dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement. `;
+  const FLASH_SAY_B =
+    `Et elle entre dans le catalogue de ${villeAff || "votre ville"} : la page où l'on voit ce qui se passe ` +
+    `aujourd'hui chez les commerçants d'ici. Des gens qui ne vous connaissent pas encore peuvent vous y découvrir.`;
+  // ~60 ms par caractère : le même débit que l'estimation de repli plus bas. Borné,
+  // pour qu'une réplique retouchée ne fasse jamais arriver l'écran trop tôt ni trop tard.
+  const catalogueAt = Math.min(12000, Math.max(3500, Math.round(FLASH_SAY_A.length * 60)));
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [fly, setFly] = useState(false);
   const [caption, setCaption] = useState("");
@@ -49,12 +61,55 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
+  const catViewRef = useRef<HTMLDivElement | null>(null);
+
+  // Le défilement automatique agit sur la vraie position de défilement : le pas
+  // vaut exactement une carte, quelle que soit la largeur de l'écran.
+  useEffect(() => {
+    const view = catViewRef.current;
+    const card = view?.children[0]?.children[catSlide] as HTMLElement | undefined;
+    if (!view || !card) return;
+    view.scrollTo({ left: card.offsetLeft - (view.children[0] as HTMLElement).offsetLeft, behavior: "smooth" });
+  }, [catSlide, fxStep]);
+
+  // Si le commerçant fait glisser lui-même, les pastilles suivent son doigt.
+  const onCatScroll = (e: UIEvent<HTMLDivElement>) => {
+    const view = e.currentTarget;
+    const first = view.children[0]?.children[0] as HTMLElement | undefined;
+    if (!first) return;
+    const pas = first.offsetWidth + 10; // largeur de carte + écart
+    setCatSlide(Math.max(0, Math.round(view.scrollLeft / pas)));
+  };
 
   // Vocabulaire adaptatif (pluriel du terme public).
   const clientPl = clientWord ? `${clientWord}s` : "clients";
   const partnersList = (partners && partners.length ? partners : [
     { ic: "🌸", t: "Fleuriste" }, { ic: "📸", t: "Photographe" }, { ic: "💇", t: "Coiffeur" }, { ic: "🍽️", t: "Restaurant" }, { ic: "🎉", t: "Événementiel" },
   ]).slice(0, 6);
+
+  // Le catalogue d'exemple montré au 3ᵉ temps de l'Action Flash.
+  // Sa carte à lui est RÉELLE (son nom, l'annonce qu'il vient de « dire »). Les
+  // autres sont des ILLUSTRATIONS : jamais un faux commerce nommé — un métier
+  // complémentaire de sa ville, et une annonce générique. Le panneau porte un
+  // badge « exemple » en permanence, il ne peut pas être pris pour du direct.
+  const AUTRES = [
+    "Deux places viennent de se libérer.",
+    "Une nouveauté à découvrir cette semaine.",
+    "Ouvert exceptionnellement ce week-end.",
+  ];
+  const catalogueCards = [
+    { ic: "✨", nom, metier: villeAff, texte: flashPhrase, quand: "à l'instant", vous: true },
+    // Le libellé du métier tient lieu de nom : pas d'article à accorder, et
+    // surtout aucun commerce inventé auquel le pro pourrait croire.
+    ...partnersList.slice(0, 3).map((pn, i) => ({
+      ic: pn.ic,
+      nom: pn.t,
+      metier: villeAff,
+      texte: AUTRES[i % AUTRES.length],
+      quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
+      vous: false,
+    })),
+  ];
   // Recommandation croisée COHÉRENTE avec le métier (pilates → bien-être, pas mariage).
   const reso = resoExample ?? {
     partner: "un commerce partenaire",
@@ -339,18 +394,24 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
         // de la ville. On dit ce que le produit FAIT aujourd'hui — la page existe et
         // l'annonce y apparaît — jamais qu'elle est « envoyée chaque jour à des
         // inscrits » : il n'y a pas encore d'envoi.
-        say:
-          `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — ` +
-          `dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement. ` +
-          `Et elle entre dans le catalogue de ${villeAff || "votre ville"} : la page où l'on voit ce qui se passe ` +
-          `aujourd'hui chez les commerçants d'ici. Des gens qui ne vous connaissent pas encore peuvent vous y découvrir.`,
+        say: FLASH_SAY_A + FLASH_SAY_B,
         enter: () => {
           setScene("flash");
           setFxStep(0);
+          setCatSlide(0);
           // La préparation est COURTE et disparaît : elle ne doit pas rester à
           // l'écran à côté du résultat.
           window.setTimeout(() => setFxStep(1), 1300);
           window.setTimeout(popBand, 2200);
+          // TROISIÈME temps, calé sur la phrase qui parle du catalogue : l'écran
+          // bascule de « c'est publié » à « voilà où ça vit ». Le repère est
+          // calculé sur la longueur de la première moitié de la réplique — si le
+          // texte change, la bascule suit toute seule.
+          window.setTimeout(() => setFxStep(2), catalogueAt);
+          // Deux glissements automatiques : on montre que ça se parcourt, sans
+          // demander au commerçant de deviner qu'il peut swiper.
+          window.setTimeout(() => setCatSlide(1), catalogueAt + 1400);
+          window.setTimeout(() => setCatSlide(2), catalogueAt + 2900);
         },
       });
     }
@@ -524,6 +585,58 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .fx-checks{display:flex;flex-direction:column;gap:7px;margin-top:15px;}
           .dtour-card .fx-checks span{font-size:13.5px;font-weight:700;color:#0B7A55;}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-sp,.dtour-card .fx-out{animation:none;}}
+
+          /* ── 3ᵉ temps : le catalogue de la ville, qui défile ────────────────
+             La carte est BLANCHE : les couleurs sont donc sombres. Le panneau
+             lui-même est sombre pour se distinguer nettement du temps précédent
+             — on change de lieu, ça doit se voir. */
+          .dtour-card .fx-cat{margin-top:2px;border-radius:18px;padding:15px 14px 14px;text-align:left;
+            background:linear-gradient(160deg,#151A2C,#0B0F1A);color:#EAF0FA;
+            box-shadow:0 22px 46px -22px rgba(11,15,26,.9);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
+          .dtour-card .fc-top{display:flex;align-items:center;justify-content:space-between;gap:9px;}
+          .dtour-card .fc-h{font-family:Georgia,serif;font-size:18px;font-weight:600;line-height:1.15;}
+          .dtour-card .fc-ex{flex:none;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+            color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
+          /* VRAI défilement, pas une bande translatée : le pas est exact quelle que
+             soit la largeur de l'écran, et le commerçant peut faire glisser lui-même
+             au doigt. Le point d'accroche cale chaque carte au bord. */
+          .dtour-card .fc-view{margin-top:12px;border-radius:14px;overflow-x:auto;overflow-y:hidden;
+            scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+          .dtour-card .fc-view::-webkit-scrollbar{display:none;}
+          .dtour-card .fc-strip{display:flex;gap:10px;}
+          /* min-width:0 est indispensable : sans lui, le « min-width:auto » par défaut
+             d'un élément flex force la carte à la largeur du nom (en nowrap), et
+             elle déborde de sa fenêtre au lieu de tenir dedans. Le débord de 38 px
+             laisse voir la carte suivante — c'est ce qui fait comprendre le geste. */
+          /* box-sizing explicite : sans lui, la base de 100%-38px s'applique au
+             CONTENU et le padding s'ajoute par-dessus — le débord de la carte
+             suivante tombait à 12 px au lieu de 38, et le geste ne se voyait plus. */
+          .dtour-card .fc-c{box-sizing:border-box;flex:0 0 calc(100% - 38px);min-width:0;scroll-snap-align:start;
+            display:flex;align-items:flex-start;gap:11px;padding:12px;
+            background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;
+            opacity:.45;transition:opacity .45s ease;}
+          .dtour-card .fc-c.on{opacity:1;}
+          .dtour-card .fc-c.me{background:linear-gradient(120deg,rgba(127,230,192,.16),rgba(255,255,255,.05));
+            border-color:rgba(127,230,192,.45);}
+          .dtour-card .fc-ic{width:40px;height:40px;flex:none;border-radius:12px;display:flex;align-items:center;
+            justify-content:center;font-size:19px;background:rgba(255,255,255,.09);}
+          .dtour-card .fc-b{min-width:0;flex:1;}
+          /* Le nom se tronque, le badge NON : sans cette séparation, l'ellipse
+             mangeait « vous » — c'est-à-dire l'information la plus importante. */
+          .dtour-card .fc-n{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:800;color:#fff;}
+          .dtour-card .fc-nt{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          .dtour-card .fc-you{flex:none;font-style:normal;font-size:9px;font-weight:800;
+            letter-spacing:.1em;text-transform:uppercase;color:#0B2A20;background:#7FE6C0;border-radius:5px;padding:2px 6px;}
+          .dtour-card .fc-m{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+            color:#7FE6C0;font-weight:700;margin-top:2px;}
+          .dtour-card .fc-t{display:block;font-size:12.5px;line-height:1.4;color:#D6DAE2;margin-top:6px;}
+          .dtour-card .fc-w{display:block;font-size:10.5px;color:#8B93A6;margin-top:5px;}
+          .dtour-card .fc-dots{display:flex;justify-content:center;gap:6px;margin-top:11px;}
+          .dtour-card .fc-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);
+            transition:background .3s ease,width .3s ease;}
+          .dtour-card .fc-dots i.on{width:18px;border-radius:999px;background:#7FE6C0;}
+          .dtour-card .fc-cap{font-size:12px;line-height:1.5;color:#9FB0CE;margin-top:11px;}
+          @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat{animation:none;}.dtour-card .fc-strip{transition:none;}}
 
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
              VOUS au centre, les partenaires en orbite, les recommandations affluent. */
@@ -874,12 +987,13 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           {scene === "flash" && (
             <div className="dtour-ov">
               <div className="dtour-card">
-                {fxStep === 0 ? (
+                {fxStep === 0 && (
                   <>
                     <div className="fx-said">«&nbsp;{flashPhrase}&nbsp;»</div>
                     <div className="fx-prep"><span className="fx-av">✦</span>Votre annonce s&apos;écrit…</div>
                   </>
-                ) : (
+                )}
+                {fxStep === 1 && (
                   <>
                     <div className="fx-badge ok">✓ Votre annonce est en ligne</div>
                     <div className="fx-out">
@@ -891,6 +1005,43 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                       <span>✓ Dans le catalogue de {villeAff || "votre ville"}</span>
                     </div>
                   </>
+                )}
+                {/* 3ᵉ temps : « et voilà où elle vit ». Le catalogue défile tout
+                    seul deux fois — le geste se comprend sans être expliqué, et
+                    le commerçant voit sa carte en tête, la plus fraîche. */}
+                {fxStep === 2 && (
+                  <div className="fx-cat">
+                    <div className="fc-top">
+                      <span className="fc-h">Aujourd&apos;hui à {villeAff || "votre ville"}</span>
+                      <span className="fc-ex">exemple</span>
+                    </div>
+                    <div className="fc-view" ref={catViewRef} onScroll={onCatScroll}>
+                      <div className="fc-strip">
+                        {catalogueCards.map((c, i) => (
+                          <div className={`fc-c${c.vous ? " me" : ""}${i === catSlide ? " on" : ""}`} key={`${c.nom}-${i}`}>
+                            <span className="fc-ic" aria-hidden="true">{c.ic}</span>
+                            <span className="fc-b">
+                              <span className="fc-n">
+                                <span className="fc-nt">{c.nom}</span>
+                                {c.vous && <em className="fc-you">vous</em>}
+                              </span>
+                              <span className="fc-m">{c.metier}</span>
+                              <span className="fc-t">{c.texte}</span>
+                              <span className="fc-w">{c.quand}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="fc-dots" aria-hidden="true">
+                      {catalogueCards.map((c, i) => (
+                        <i className={i === catSlide ? "on" : ""} key={`d-${i}`} />
+                      ))}
+                    </div>
+                    <div className="fc-cap">
+                      Votre annonce entre ici — et des gens qui ne vous connaissent pas encore vous y trouvent.
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
