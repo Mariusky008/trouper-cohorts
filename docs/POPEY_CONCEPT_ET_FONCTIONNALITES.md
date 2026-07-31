@@ -266,10 +266,22 @@ dès le deuxième commerçant.
 - Ce qui circule : nom, métier, texte de l'annonce, lien vers le site. Aucune donnée
   de client, jamais.
 
-**Ce qui reste à valider :** la demande côté habitants. La page existe et se remplit
-toute seule, mais rien ne l'amène encore devant un visiteur qui ne serait pas déjà
-sur le site d'un commerçant. C'est l'objet de l'abonnement ville (§ suivant), non
-construit à ce jour.
+La page a deux étages : les annonces du moment (triées par fraîcheur) puis les
+fiches des commerces qui n'ont rien annoncé. Sans le second, la page restait vide
+tant que personne n'avait publié — et une page vide ne ramène personne.
+
+**L'abonnement ville** (construit) : un habitant laisse son e-mail sur la page de sa
+ville et reçoit les annonces. Double opt-in — rien ne part avant le clic de
+confirmation — et deux règles écrites dans le code, pas dans la promesse :
+**un e-mail par jour au maximum**, et **jamais d'e-mail vide** (s'il n'y a rien de
+publié depuis le dernier envoi, le digest ne part pas). Lien de désinscription dans
+chaque message, valable sans connexion. Cron quotidien à 9 h UTC.
+
+E-mail et non SMS, pour une raison de coût autant que de confort : un SMS coûte
+~0,06 € pièce, soit ~600 €/mois à 300 abonnés quotidiens, avant le moindre revenu.
+
+**Ce qui reste à valider :** la demande côté habitants. Le mécanisme existe ; rien
+ne prouve encore que des gens s'inscrivent, ni qu'ils ouvrent.
 
 ---
 
@@ -330,8 +342,6 @@ l'automatisation ou à l'embauche.
 - **Envoi WhatsApp de masse depuis nos serveurs** : volontairement non construit.
   L'envoi part du numéro du commerçant (liste de diffusion native), avec un
   parcours de constitution de liste et des garde-fous anti-bannissement.
-- **Abonnement ville** : aucun mécanisme d'envoi (le catalogue existe, mais rien ne
-  l'apporte à un habitant qui n'est pas déjà sur le site d'un commerçant)
 - Statistiques d'usage détaillées pour le commerçant
 - Application mobile
 
@@ -356,8 +366,8 @@ hypothèse à assumer comme telle.
 3. **Ce qu'on finance en priorité.** Trois candidats qui ne se valent pas :
    - la **facturation** (débloquer le revenu, mais sur des options non construites) ;
    - les **options Pro** (rendre le 29 € légitime) ;
-   - l'**abonnement ville** (le pari différenciant : rendre le catalogue utile aux
-     habitants, donc les commerçants trouvables par des gens qui ne les connaissent pas).
+   - l'**acquisition d'abonnés au catalogue** (le pari différenciant : le mécanisme
+     d'envoi existe, il reste à faire venir les habitants).
 
 4. **Le modèle de déploiement géographique.** Le catalogue de ville n'a de sens que
    par densité locale. Vaut-il mieux 500 commerçants dans une ville, ou 500 répartis

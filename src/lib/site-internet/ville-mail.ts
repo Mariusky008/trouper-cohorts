@@ -1,0 +1,183 @@
+// L'e-mail de l'abonnement ville : confirmation, puis digest.
+//
+// Isolé du reste pour une raison simple : c'est le seul endroit du produit qui
+// écrit à des gens qui ne sont pas clients d'un commerce précis. Les règles y
+// sont donc plus strictes qu'ailleurs — un lien de retrait dans CHAQUE envoi,
+// aucune annonce reformulée, aucun chiffre ajouté.
+//
+// Rendu en HTML inliné : les clients mail ne chargent ni feuille de style ni
+// police externe.
+import { Resend } from "resend";
+import type { PartnerOffer } from "./collectif";
+
+// Instanciation paresseuse : `new Resend` lève si la clé manque, et ce module est
+// importé par des routes qui doivent répondre même sans e-mail configuré.
+let _resend: Resend | null = null;
+const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""));
+
+export const MAIL_FROM = "Popey <contact@popey.academy>";
+
+/** Un envoi par jour au maximum. */
+export const JOUR_MS = 24 * 60 * 60 * 1000;
+/** Premier envoi : on remonte d'une semaine, sinon le tout premier e-mail serait vide. */
+export const PREMIER_ENVOI_MS = 7 * JOUR_MS;
+/** Au-delà, l'e-mail devient une liste : on renvoie vers la page. */
+export const MAX_PAR_ENVOI = 8;
+
+/**
+ * Que faut-il envoyer à cet abonné, maintenant ? `null` = rien.
+ *
+ * Deux règles, ici et pas dans la promesse marketing :
+ *   • pas plus d'un envoi par 24 h ;
+ *   • JAMAIS d'e-mail vide — s'il n'y a rien de publié depuis le dernier envoi,
+ *     on ne part pas. Un abonné qui reçoit un e-mail vide se désinscrit, et il a
+ *     raison de le faire.
+ *
+ * « Du neuf » se mesure sur la date de publication RÉELLE : une annonce déjà
+ * envoyée hier et toujours en cours ne redéclenche pas un envoi.
+ */
+export function digestAEnvoyer(
+  offers: PartnerOffer[],
+  lastSentAt: string | null,
+  now = Date.now()
+): PartnerOffer[] | null {
+  if (!offers.length) return null;
+  const dernier = lastSentAt ? Date.parse(lastSentAt) : NaN;
+  if (Number.isFinite(dernier) && now - dernier < JOUR_MS) return null;
+  const depuis = Number.isFinite(dernier) ? dernier : now - PREMIER_ENVOI_MS;
+  const neuf = offers.filter((o) => {
+    const t = o.publieLe ? Date.parse(o.publieLe) : NaN;
+    return Number.isFinite(t) && t > depuis;
+  });
+  return neuf.length ? neuf.slice(0, MAX_PAR_ENVOI) : null;
+}
+
+/** La phrase EXACTE que l'abonné accepte. Stockée telle quelle comme preuve. */
+export const consentPhrase = (ville: string) =>
+  `J'accepte de recevoir par e-mail les annonces des commerçants de ${ville}. ` +
+  `Un e-mail par jour au maximum, uniquement s'il y a du nouveau. Je peux me désinscrire à tout moment.`;
+
+export function siteBase(): string {
+  return String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
+}
+
+/** Échappement HTML : ces textes viennent des commerçants, ils ne sont pas de confiance. */
+const esc = (s: string) =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const SHELL = (corps: string, pied: string) => `
+<div style="background:#0E1014;padding:28px 16px;font-family:'Helvetica Neue',Arial,sans-serif">
+  <div style="max-width:520px;margin:0 auto;background:#15181F;border-radius:20px;padding:26px 22px;color:#EAEEF5">
+    ${corps}
+  </div>
+  <div style="max-width:520px;margin:14px auto 0;font-size:11px;line-height:1.6;color:#6F7684;text-align:center">
+    ${pied}
+  </div>
+</div>`;
+
+/** Envoi de confirmation (double opt-in). Rien ne part avant ce clic. */
+export async function sendConfirmation(email: string, ville: string, token: string): Promise<boolean> {
+  const url = `${siteBase()}/ville/confirmer/${encodeURIComponent(token)}`;
+  const html = SHELL(
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7FE6C0;font-weight:700">Le collectif</div>
+     <div style="font-family:Georgia,serif;font-size:25px;line-height:1.15;margin-top:10px;color:#fff">
+       Encore un clic, et c'est bon.
+     </div>
+     <p style="font-size:14px;line-height:1.6;color:#A8AEBC;margin:14px 0 0">
+       Vous avez demandé à recevoir ce qui se passe chez les commerçants de <b style="color:#fff">${esc(ville)}</b>.
+       Confirmez, et vous recevrez les annonces du jour — <b style="color:#fff">un e-mail par jour au maximum</b>,
+       et seulement s'il y a du nouveau.
+     </p>
+     <a href="${url}" style="display:block;margin-top:20px;text-align:center;text-decoration:none;background:#7FE6C0;
+        color:#0B2A20;border-radius:13px;padding:14px;font-size:15px;font-weight:700">
+       Confirmer mon inscription
+     </a>
+     <p style="font-size:12px;line-height:1.55;color:#6F7684;margin:16px 0 0">
+       Ce n'était pas vous&nbsp;? Ignorez cet e-mail, rien ne sera envoyé.
+     </p>`,
+    `Vous recevez ce message parce qu'une inscription a été demandée avec cette adresse.`
+  );
+  try {
+    await getResend().emails.send({
+      from: MAIL_FROM,
+      to: email,
+      subject: `Confirmez votre inscription — ${ville}`,
+      html,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Le digest du jour. `offers` est déjà filtré : rien de vide n'arrive ici. */
+export async function sendDigest(
+  email: string,
+  ville: string,
+  offers: PartnerOffer[],
+  unsubToken: string
+): Promise<boolean> {
+  const base = siteBase();
+  const stop = `${base}/ville/stop/${encodeURIComponent(unsubToken)}`;
+  const villeUrl = `${base}/ville/${encodeURIComponent(villeSlug(ville))}`;
+
+  const cartes = offers
+    .map(
+      (o) => `
+      <a href="${base}/site-internet/apercu/${encodeURIComponent(o.slug)}?via=digest"
+         style="display:block;text-decoration:none;color:inherit;background:rgba(255,255,255,.055);
+                border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:14px;margin-top:10px">
+        <div style="font-size:15px;font-weight:700;color:#fff">${esc(o.nom)}</div>
+        <div style="font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#7FE6C0;font-weight:700;margin-top:3px">
+          ${esc(o.metier)}
+        </div>
+        <div style="font-size:14px;line-height:1.5;color:#D6DAE2;margin-top:8px">${esc(o.texte)}</div>
+      </a>`
+    )
+    .join("");
+
+  const n = offers.length;
+  const html = SHELL(
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7FE6C0;font-weight:700">Le collectif</div>
+     <div style="font-family:Georgia,serif;font-size:25px;line-height:1.15;margin-top:10px;color:#fff">
+       Aujourd'hui à ${esc(ville)}.
+     </div>
+     <p style="font-size:13.5px;line-height:1.6;color:#A8AEBC;margin:12px 0 0">
+       ${n === 1 ? "Une nouvelle annonce" : `${n} nouvelles annonces`} depuis votre dernier e-mail.
+     </p>
+     ${cartes}
+     <a href="${villeUrl}" style="display:block;margin-top:16px;text-align:center;text-decoration:none;
+        background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:13px;
+        padding:13px;font-size:14px;font-weight:700">
+       Voir tout ce qui se passe à ${esc(ville)}
+     </a>`,
+    `Vous recevez ce message parce que vous vous êtes inscrit·e aux annonces de ${esc(ville)}.<br>
+     <a href="${stop}" style="color:#8B93A6">Se désinscrire</a> — un clic, sans justification.`
+  );
+
+  try {
+    await getResend().emails.send({
+      from: MAIL_FROM,
+      to: email,
+      subject: `${ville} — ${n === 1 ? "une annonce du jour" : `${n} annonces du jour`}`,
+      html,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Slug de ville — même règle que partout ailleurs. */
+export function villeSlug(v: string): string {
+  return String(v || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

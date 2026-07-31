@@ -143,32 +143,42 @@ export async function partnerOffers(
   return out.slice(0, opts.max ?? 4);
 }
 
+/** Un commerce de la ville, SANS annonce en cours : sa fiche, rien de plus. */
+export type CityMerchant = {
+  slug: string;
+  nom: string;
+  metier: string;
+  photo: string | null;
+  note: number | null;
+  avis: number | null;
+};
+
+/** Slug d'URL d'une ville — même règle que `slugify`, dupliquée pour rester autonome. */
+const villeSlug = (v: string) =>
+  v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 /**
- * TOUTES les annonces en cours d'une ville, de la plus fraîche à la plus ancienne.
+ * Le catalogue complet d'une ville : les annonces du moment ET les commerces qui
+ * n'en ont pas.
  *
- * Le bloc affiché chez un commerçant n'en montre que quelques-unes : c'est un
- * aperçu, pas le réseau. Cette fonction alimente la page qui montre l'ensemble —
- * sans plafond arbitraire, donc sans commerçant invisible.
+ * Pourquoi les deux : une page vide ne donne envie de revenir à personne. Les
+ * fiches font que le catalogue existe dès le premier commerce, et qu'un habitant
+ * y trouve toujours quelque chose. Les annonces passent devant — elles sont
+ * datées, elles ont une raison d'être vues aujourd'hui.
  *
- * Contrairement à `partnerOffers`, il n'y a pas de règle de complémentarité ici :
- * la page est le catalogue de la ville, pas la vitrine d'un commerce. Un coiffeur
- * y voisine un autre coiffeur, et c'est normal — le visiteur choisit.
+ * On ne liste QUE les sites publiés : les commerces simplement démarchés n'ont
+ * jamais accepté d'apparaître où que ce soit.
  */
-export async function cityOffers(
+export async function cityDirectory(
   supabase: Supabase,
-  ville: string,
-  max = 60
-): Promise<PartnerOffer[]> {
-  if (!ville.trim()) return [];
+  slug: string
+): Promise<{ ville: string; offers: PartnerOffer[]; autres: CityMerchant[] }> {
+  const vide = { ville: "", offers: [] as PartnerOffer[], autres: [] as CityMerchant[] };
+  if (!slug.trim()) return vide;
+
+  const BASE = "id, slug, business_name, city, activite, current_offer, gallery_photos, google_rating, google_reviews";
   const query = (cols: string) =>
-    supabase
-      .from("human_vitrine_sites")
-      .select(cols)
-      .eq("channel", "letter")
-      .eq("city", ville)
-      .eq("published", true)
-      .limit(200);
-  const BASE = "id, slug, business_name, activite, current_offer, gallery_photos";
+    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("published", true).limit(500);
 
   let rows: SiteRow[] = [];
   try {
@@ -180,30 +190,63 @@ export async function cityOffers(
       const { data } = await query(BASE);
       if (Array.isArray(data)) rows = data as SiteRow[];
     } catch {
-      return [];
+      return vide;
     }
   }
 
-  const out: PartnerOffer[] = [];
+  // Le nom de la ville stocké n'est pas toujours nu (« Dax, France », « 40100 Dax ») :
+  // une correspondance stricte laissait la page sans nom de ville du tout.
+  const colle = (s: string) => s === slug || s.startsWith(`${slug}-`) || s.endsWith(`-${slug}`);
+  let ville = "";
   for (const r of rows) {
+    const c = str(r.city).trim();
+    if (!c) continue;
+    const cs = villeSlug(c);
+    if (cs === slug) {
+      ville = c;
+      break;
+    }
+    if (!ville && colle(cs)) ville = c;
+  }
+  if (!ville) return vide;
+
+  const offers: PartnerOffer[] = [];
+  const autres: CityMerchant[] = [];
+  for (const r of rows) {
+    if (str(r.city).trim() !== ville) continue;
     if (r.collectif_actif === false) continue;
     const act = str(r.activite);
     if (!peutParticiper(act)) continue; // déonto : commerce uniquement
-    const off = offerOf(r);
-    if (!off) continue;
     const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
-    out.push({
-      id: str(r.id),
-      slug: str(r.slug),
-      nom: str(r.business_name) || "Un commerce",
-      metier: resolveMetier(act).entry?.label ?? act,
-      texte: off.text,
-      photo: str(photos[0]) || null,
-      publieLe: off.at,
-    });
+    const metier = resolveMetier(act).entry?.label ?? act;
+    const off = offerOf(r);
+    if (off) {
+      offers.push({
+        id: str(r.id),
+        slug: str(r.slug),
+        nom: str(r.business_name) || "Un commerce",
+        metier,
+        texte: off.text,
+        photo: str(photos[0]) || null,
+        publieLe: off.at,
+      });
+    } else {
+      autres.push({
+        slug: str(r.slug),
+        nom: str(r.business_name) || "Un commerce",
+        metier,
+        photo: str(photos[0]) || null,
+        note: typeof r.google_rating === "number" ? r.google_rating : null,
+        avis: typeof r.google_reviews === "number" ? r.google_reviews : null,
+      });
+    }
   }
-  out.sort((a, b) => (b.publieLe ? Date.parse(b.publieLe) : 0) - (a.publieLe ? Date.parse(a.publieLe) : 0));
-  return out.slice(0, max);
+
+  offers.sort((a, b) => (b.publieLe ? Date.parse(b.publieLe) : 0) - (a.publieLe ? Date.parse(a.publieLe) : 0));
+  // Sans annonce, l'ordre ne peut pas être « le plus frais » : on prend la
+  // réputation réelle, et le nom pour départager. Jamais un ordre arbitraire.
+  autres.sort((a, b) => (b.note ?? 0) - (a.note ?? 0) || a.nom.localeCompare(b.nom, "fr"));
+  return { ville, offers, autres };
 }
 
 /**
