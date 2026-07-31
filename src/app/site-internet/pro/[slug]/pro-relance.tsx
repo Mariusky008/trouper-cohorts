@@ -273,16 +273,16 @@ export function ProRelance({
         dangerouslySetInnerHTML={{
           __html: `
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
-          .pro .relance .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .relance .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .relance .ai{margin-top:16px;border:1px solid #D9CFF0;background:linear-gradient(180deg,#F6F2FF,#fff);border-radius:14px;padding:14px;}
-          .pro .relance .ai .aih{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#5B3FA6;}
+          .pro .relance .ai .aih{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#00926E;}
           .pro .relance .ai .ais{font-size:12px;color:var(--soft);line-height:1.45;margin-top:4px;}
           .pro .relance .ai textarea{width:100%;margin-top:10px;border:1px solid #D9CFF0;border-radius:11px;padding:11px 13px;font-size:13.5px;font-family:inherit;background:#fff;resize:vertical;line-height:1.45;}
-          .pro .relance .ai .aibtn{margin-top:10px;width:100%;background:#5B3FA6;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+          .pro .relance .ai .aibtn{margin-top:10px;width:100%;background:#00926E;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
           .pro .relance .ai .aibtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .ai .aierr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
-          .pro .relance .ai .aiok{margin-top:8px;font-size:11.5px;color:#5B3FA6;line-height:1.4;}
+          .pro .relance .ai .aiok{margin-top:8px;font-size:11.5px;color:#00926E;line-height:1.4;}
           /* Trois angles proposés : on choisit, on ne regénère pas à l'aveugle. */
           .pro .relance .ai .vars{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
           .pro .relance .ai .vars .vk{font-size:11.5px;font-weight:700;color:var(--soft);margin-right:2px;}
@@ -332,7 +332,7 @@ export function ProRelance({
           .pro .relance .offer .row{display:flex;align-items:center;gap:9px;margin-top:10px;}
           .pro .relance .offer .row label{font-size:12px;color:var(--soft);font-weight:600;}
           .pro .relance .offer select{border:1px solid var(--hair);border-radius:10px;padding:8px 11px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--ink);}
-          .pro .relance .offer .obtn{margin-top:11px;width:100%;background:var(--grad,#5B3FA6);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .offer .obtn{margin-top:11px;width:100%;background:var(--grad,#00926E);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .relance .offer .obtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
@@ -346,19 +346,19 @@ export function ProRelance({
           /* ── Parcours en 3 étapes ── */
           .pro .relance .rlz-steps{display:flex;align-items:center;gap:6px;margin-top:16px;}
           .pro .relance .rlz-steps .s{flex:1;display:flex;flex-direction:column;gap:5px;align-items:center;font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.02em;text-align:center;}
-          .pro .relance .rlz-steps .s .n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#EEEFF7;color:var(--faint);font-size:12px;}
+          .pro .relance .rlz-steps .s .n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#EBE7DD;color:var(--faint);font-size:12px;}
           .pro .relance .rlz-steps .s.on{color:var(--violet);}
-          .pro .relance .rlz-steps .s.on .n{background:var(--grad,#5B3FA6);color:#fff;}
+          .pro .relance .rlz-steps .s.on .n{background:var(--grad,#00926E);color:#fff;}
           .pro .relance .rlz-steps .s.done .n{background:#12A65C;color:#fff;}
-          .pro .relance .rlz-h{font-family:Georgia,serif;font-size:18px;font-weight:700;margin-top:18px;}
+          .pro .relance .rlz-h{font-family:var(--fd),Georgia,serif;font-size:18px;font-weight:700;margin-top:18px;}
           .pro .relance .rlz-nav{display:flex;gap:9px;margin-top:18px;}
           .pro .relance .rlz-nav button{flex:1;border-radius:12px;padding:13px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;border:none;}
           .pro .relance .rlz-nav .back{flex:0 0 auto;background:#F1EFF7;color:var(--soft);border:1px solid var(--hair);padding:13px 18px;}
-          .pro .relance .rlz-nav .next{background:var(--grad,#5B3FA6);color:#fff;box-shadow:0 12px 26px -14px rgba(91,63,166,.7);}
+          .pro .relance .rlz-nav .next{background:var(--grad,#00926E);color:#fff;box-shadow:0 12px 26px -14px rgba(0,146,110,.7);}
           .pro .relance .rlz-nav .next:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
           .pro .relance .chan{display:flex;align-items:center;gap:12px;border:1px solid var(--hair);border-radius:14px;padding:14px;background:#fff;margin-top:10px;cursor:pointer;}
-          .pro .relance .chan.on{border-color:var(--violet);background:linear-gradient(160deg,rgba(109,74,224,.06),#fff);}
-          .pro .relance .chan .ce{width:40px;height:40px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#F1EFFB;}
+          .pro .relance .chan.on{border-color:var(--violet);background:linear-gradient(160deg,rgba(0,200,150,.06),#fff);}
+          .pro .relance .chan .ce{width:40px;height:40px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#E6F7F1;}
           .pro .relance .chan .cb{flex:1;min-width:0;display:flex;flex-direction:column;}
           .pro .relance .chan .ct{font-size:14px;font-weight:800;}
           .pro .relance .chan .cs{font-size:11.5px;color:var(--soft);margin-top:2px;}

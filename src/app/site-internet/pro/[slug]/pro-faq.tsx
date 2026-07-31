@@ -83,7 +83,7 @@ export function ProFaq({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro .pfaq .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .pfaq .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .pfaq .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .pfaq .warn{margin-top:11px;display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.45;
             color:#6B4E12;background:#FFF7E9;border:1px solid #F6E4BD;border-radius:11px;padding:10px 12px;}

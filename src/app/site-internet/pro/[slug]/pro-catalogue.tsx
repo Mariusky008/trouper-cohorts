@@ -37,8 +37,8 @@ export function ProCatalogue({ ville, villeUrl, views, clicks, hasOffer, actif, 
           .pro .pcat .top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
           .pro .pcat .pin{font-size:11px;color:var(--faint);font-weight:700;}
           .pro .pcat .duo{display:grid;grid-template-columns:1.15fr 1fr;gap:11px;margin-top:13px;}
-          .pro .pcat .cell{border-radius:14px;padding:13px 12px;background:#F7F7FC;}
-          .pro .pcat .cell.hero{background:linear-gradient(135deg,rgba(109,74,224,.12),rgba(59,130,246,.08));}
+          .pro .pcat .cell{border-radius:14px;padding:13px 12px;background:#F7F5EF;}
+          .pro .pcat .cell.hero{background:linear-gradient(135deg,rgba(0,200,150,.12),rgba(59,130,246,.08));}
           .pro .pcat .cell .cv{font-size:30px;font-weight:850;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
           .pro .pcat .cell.hero .cv{color:var(--violet);}
           .pro .pcat .cell .cl{font-size:11.5px;color:var(--soft);line-height:1.35;margin-top:5px;font-weight:600;}
@@ -48,7 +48,7 @@ export function ProCatalogue({ ville, villeUrl, views, clicks, hasOffer, actif, 
             color:#8A6A12;background:#FFF7E9;border:1px solid #F6E4BD;}
           .pro .pcat .see{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:13px;text-decoration:none;
             border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;
-            box-shadow:0 6px 18px -14px rgba(25,26,44,.4);}
+            box-shadow:0 6px 18px -14px rgba(18,20,26,.4);}
           .pro .pcat .see:active{transform:translateY(1px);}
           `,
         }}

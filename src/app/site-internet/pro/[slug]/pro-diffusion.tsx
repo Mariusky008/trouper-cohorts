@@ -122,11 +122,11 @@ export function ProDiffusion({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro .pdif .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .pdif .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .pdif .a-sub{font-size:13px;color:var(--soft);margin-top:5px;line-height:1.5;}
           .pro .pdif .a-sub b{color:var(--ink);font-weight:700;}
           .pro .pdif .step{margin-top:14px;border:1px solid var(--hair);border-radius:16px;background:#fff;
-            padding:15px 15px 14px;box-shadow:0 10px 26px -22px rgba(25,26,44,.4);}
+            padding:15px 15px 14px;box-shadow:0 10px 26px -22px rgba(18,20,26,.4);}
           .pro .pdif .step .sn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
             background:var(--violet);color:#fff;font-size:12px;font-weight:800;margin-right:8px;vertical-align:1px;}
           .pro .pdif .step.ok .sn{background:#12A65C;}
@@ -143,7 +143,7 @@ export function ProDiffusion({
           .pro .pdif ol{margin:10px 0 0;padding-left:19px;font-size:13px;line-height:1.75;color:var(--soft);}
           .pro .pdif ol b{color:var(--ink);font-weight:700;}
           .pro .pdif .prog{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--soft);}
-          .pro .pdif .prog .bar{flex:1;height:7px;border-radius:999px;background:#EEEFF7;overflow:hidden;}
+          .pro .pdif .prog .bar{flex:1;height:7px;border-radius:999px;background:#EBE7DD;overflow:hidden;}
           .pro .pdif .prog .bar i{display:block;height:100%;background:var(--grad);border-radius:999px;}
           .pro .pdif .who{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
           .pro .pdif .wrow{display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:12px;padding:8px 8px 8px 12px;}

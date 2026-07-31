@@ -60,7 +60,7 @@ export function ProCollectif({ slug, token }: { slug: string; token: string }) {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro .pcol .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .pcol .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .pcol .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .pcol .box{margin-top:15px;border:1px solid var(--hair);border-radius:14px;background:#fff;padding:14px;
             display:flex;align-items:center;gap:12px;}

@@ -42,13 +42,13 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
           .pro .protab > .agenda{margin-top:0;border-top:none;padding-top:0;}
           .pro .protabbar{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;z-index:40;
             display:flex;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);
-            border-top:1px solid var(--hair);box-shadow:0 -10px 30px -20px rgba(25,26,44,.35);padding-bottom:env(safe-area-inset-bottom);}
+            border-top:1px solid var(--hair);box-shadow:0 -10px 30px -20px rgba(18,20,26,.35);padding-bottom:env(safe-area-inset-bottom);}
           .pro .protabbar button{flex:1;min-width:0;background:none;border:none;cursor:pointer;font-family:inherit;
             padding:8px 1px 7px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);}
           .pro .protabbar button .ic{font-size:17px;line-height:1;width:44px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:13px;transition:background .15s ease;}
           .pro .protabbar button .lb{font-size:9.5px;font-weight:700;letter-spacing:.005em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
           .pro .protabbar button.on{color:var(--violet);}
-          .pro .protabbar button.on .ic{background:rgba(109,74,224,.13);}
+          .pro .protabbar button.on .ic{background:rgba(0,200,150,.13);}
 
           /* ══════════ ORDINATEUR : la barre du bas devient un menu latéral ══════════ */
           @media (min-width:900px){
@@ -64,8 +64,8 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
             }
             .pro .protabbar button .ic{width:26px;height:26px;font-size:18px;border-radius:0;background:none;}
             .pro .protabbar button .lb{font-size:13.5px;max-width:none;font-weight:700;}
-            .pro .protabbar button:hover{background:#F1EFFB;}
-            .pro .protabbar button.on{background:rgba(109,74,224,.10);}
+            .pro .protabbar button:hover{background:#E6F7F1;}
+            .pro .protabbar button.on{background:rgba(0,200,150,.10);}
             .pro .protabbar button.on .ic{background:none;}
           }
           `,

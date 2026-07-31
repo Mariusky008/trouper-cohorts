@@ -73,7 +73,7 @@ export function ProAssistant({ slug, token }: { slug: string; token: string }) {
         dangerouslySetInnerHTML={{
           __html: `
           .pro .kb{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
-          .pro .kb .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .kb .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .kb .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .kb .fld{margin-top:16px;}
           .pro .kb .fld label{display:block;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:5px;}

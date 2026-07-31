@@ -183,7 +183,7 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
         dangerouslySetInnerHTML={{
           __html: `
           .pro .contacts{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
-          .pro .contacts .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .contacts .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .contacts .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .contacts .add{margin-top:16px;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:14px;}
           .pro .contacts .add .r2{display:flex;gap:9px;}

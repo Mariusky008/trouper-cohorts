@@ -200,7 +200,7 @@ export function ProAgenda({
         dangerouslySetInnerHTML={{
           __html: `
           .pro .agenda{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
-          .pro .agenda .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .agenda .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .agenda .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .agenda .slot{margin-top:16px;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--soft);}
           .pro .agenda .slot select{border:1px solid var(--hair);border-radius:9px;padding:7px 9px;font-size:13px;font-family:inherit;background:#fff;}
@@ -209,15 +209,15 @@ export function ProAgenda({
           .pro .agenda .day .dhead{display:flex;align-items:center;gap:9px;}
           .pro .agenda .day .nm{font-size:13px;font-weight:600;}
           .pro .agenda .day input[type=checkbox]{width:17px;height:17px;accent-color:#188038;flex:none;}
-          .pro .agenda .day .addwin{margin-left:auto;border:1px solid var(--hair);background:#F1EFFB;color:var(--violet);border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .agenda .day .addwin{margin-left:auto;border:1px solid var(--hair);background:#E6F7F1;color:var(--violet);border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .agenda .day .wins{display:flex;flex-direction:column;gap:7px;padding-left:26px;}
           .pro .agenda .day .times{display:flex;align-items:center;gap:6px;}
           .pro .agenda .day input[type=time]{border:1px solid var(--hair);border-radius:8px;padding:6px 7px;font-size:13px;font-family:inherit;background:#fff;}
           .pro .agenda .day .times select{border:1px solid var(--hair);border-radius:8px;padding:7px 9px;font-size:14px;font-family:inherit;background:#fff;font-variant-numeric:tabular-nums;}
           .pro .agenda .day .rmwin{border:none;background:none;color:#B23B3B;font-size:15px;cursor:pointer;font-family:inherit;padding:2px 4px;}
-          .pro .agenda .copyall{margin-top:12px;width:100%;border:1px solid var(--hair);background:#F1EFFB;color:var(--violet);border-radius:12px;padding:11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .agenda .copyall{margin-top:12px;width:100%;border:1px solid var(--hair);background:#E6F7F1;color:var(--violet);border-radius:12px;padding:11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .agenda .copyall:active{transform:translateY(1px);}
-          .pro .agenda .seeresa{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:11px;text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(25,26,44,.35);}
+          .pro .agenda .seeresa{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:11px;text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(18,20,26,.35);}
           .pro .agenda .day.off .nm{color:var(--faint);}
           .pro .agenda .savebtn{margin-top:14px;width:100%;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .agenda .savebtn:disabled{opacity:.5;cursor:not-allowed;}

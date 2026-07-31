@@ -104,7 +104,7 @@ export function ProRequests({ slug, token }: { slug: string; token: string }) {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro .reqs .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .reqs .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .reqs .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .reqs .list{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
           .pro .reqs .rq{display:flex;align-items:center;gap:9px;border:1px solid var(--hair);border-radius:12px;padding:11px 12px;background:#fff;}
@@ -112,7 +112,7 @@ export function ProRequests({ slug, token }: { slug: string; token: string }) {
           .pro .reqs .rq-b{min-width:0;flex:1;}
           .pro .reqs .rq-b b{display:block;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
           .pro .reqs .rq-b .kd{display:inline-block;margin-left:7px;font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.03em;
-            color:#5B3FA6;background:#F0EBFF;border-radius:5px;padding:2px 6px;vertical-align:1px;}
+            color:#00926E;background:#F0EBFF;border-radius:5px;padding:2px 6px;vertical-align:1px;}
           .pro .reqs .rq-b span{display:block;font-size:11.5px;color:var(--faint);margin-top:2px;line-height:1.35;}
           .pro .reqs .rq-call{flex:none;text-decoration:none;background:#EAF4E4;border:1px solid #CFE6C2;color:#1B7A3E;border-radius:10px;
             padding:8px 11px;font-size:12.5px;font-weight:700;}

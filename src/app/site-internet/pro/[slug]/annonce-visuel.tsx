@@ -126,12 +126,12 @@ export function AnnonceVisuel({
             padding:9px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .avis-gen .styles button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
           .pro .avis-gen .prev{display:block;width:100%;max-width:300px;margin:0 auto;border-radius:16px;
-            box-shadow:0 18px 44px -24px rgba(25,26,44,.7);}
+            box-shadow:0 18px 44px -24px rgba(18,20,26,.7);}
           .pro .avis-gen .acts{display:flex;flex-direction:column;gap:8px;margin-top:13px;}
           .pro .avis-gen .acts button{border:none;border-radius:12px;padding:13px;font-size:13.5px;font-weight:800;
             font-family:inherit;cursor:pointer;}
-          .pro .avis-gen .acts .primary{background:linear-gradient(135deg,#8A6BE0,#5B3FA6);color:#fff;
-            box-shadow:0 14px 30px -16px rgba(91,63,166,.8);}
+          .pro .avis-gen .acts .primary{background:linear-gradient(135deg,#00C896,#00926E);color:#fff;
+            box-shadow:0 14px 30px -16px rgba(0,146,110,.8);}
           .pro .avis-gen .acts .ghost{background:#fff;color:var(--ink);border:1px solid var(--hair);}
           .pro .avis-gen .acts button:active{transform:translateY(1px);}
           .pro .avis-gen .err{margin-top:9px;font-size:12px;line-height:1.5;color:#8A6A12;background:#FFF7E9;
@@ -140,7 +140,7 @@ export function AnnonceVisuel({
           .pro .avis-gen .leg{border:1px solid var(--hair);border-radius:13px;background:#fff;padding:12px;}
           .pro .avis-gen .leg .lh{display:flex;align-items:center;justify-content:space-between;gap:9px;}
           .pro .avis-gen .leg .ln{font-size:12px;font-weight:800;letter-spacing:.03em;}
-          .pro .avis-gen .leg .lc{border:1px solid var(--hair);background:#F7F7FC;color:var(--violet);border-radius:9px;
+          .pro .avis-gen .leg .lc{border:1px solid var(--hair);background:#F7F5EF;color:var(--violet);border-radius:9px;
             padding:6px 10px;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;}
           .pro .avis-gen .leg .lt{margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--soft);white-space:pre-wrap;}
           .pro .avis-gen .how{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--faint);}

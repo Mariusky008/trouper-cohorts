@@ -91,7 +91,7 @@ export function ProApproche({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro .appr .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .appr .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .appr .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .appr .state{display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:12px;font-weight:700;
             border-radius:9px;padding:7px 11px;}

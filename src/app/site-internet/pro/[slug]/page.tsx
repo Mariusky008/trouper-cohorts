@@ -491,25 +491,30 @@ export default async function EspacePro({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          .pro{--paper:#FFFFFF;--ink:#191A2C;--soft:#5A5E78;--faint:#9DA0B8;--hair:#ECEDF6;--gold:#F0B429;
-            --violet:#6D4AE0;--violet2:#8A6BE0;--grad:linear-gradient(135deg,#8A6BE0,#5B3FA6);
+          /* Identité commune au catalogue : encre, crème, or, turquoise.
+             « --violet » garde son nom (il est utilisé partout) mais porte
+             désormais le turquoise — renommer 40 occurrences pour la même
+             valeur n'aurait rien apporté. « --gold » reste l'or des étoiles
+             Google, qui n'est pas notre or de marque. */
+          .pro{--paper:#FFFFFF;--ink:#12141A;--soft:#5A5E68;--faint:#9AA0AC;--hair:#E8E4DA;--gold:#F0B429;
+            --or:#C8A84B;--violet:#00926E;--violet2:#00C896;--grad:linear-gradient(135deg,#00C896,#00926E);
             --green:#12A65C;--sky:#3B82F6;--pink:#EC4899;--amber:#F59E0B;
-            font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);
+            font-family:var(--fb),system-ui,-apple-system,sans-serif;color:var(--ink);
             background:
-              radial-gradient(1100px 480px at 100% -8%,rgba(109,74,224,.10),transparent 60%),
-              radial-gradient(820px 420px at -12% 4%,rgba(59,130,246,.07),transparent 55%),
-              #F4F5FC;
+              radial-gradient(1100px 480px at 100% -8%,rgba(0,200,150,.11),transparent 60%),
+              radial-gradient(820px 420px at -12% 4%,rgba(200,168,75,.10),transparent 55%),
+              #F6F3EC;
             min-height:100vh;-webkit-font-smoothing:antialiased;}
           .pro *{box-sizing:border-box;}
           .pro .wrap{max-width:460px;margin:0 auto;min-height:100vh;}
           .pro .pad{padding:22px 18px 104px;}
-          .pro .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);font-weight:700;background:rgba(109,74,224,.09);border:none;border-radius:999px;padding:6px 12px;}
+          .pro .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);font-weight:700;background:rgba(0,200,150,.09);border:none;border-radius:999px;padding:6px 12px;}
           .pro .eyebrow svg{width:11px;height:11px;stroke:var(--violet);}
           .pro .name{font-weight:800;font-size:28px;line-height:1.08;margin:13px 0 3px;letter-spacing:-.03em;}
           .pro .role{font-size:13.5px;color:var(--soft);font-weight:500;}
           .pro .lockline{font-size:11px;color:var(--faint);margin:8px 0 2px;line-height:1.4;}
           /* Cartes modernes : blanches, arrondies, ombre douce */
-          .pro .gcard{margin-top:16px;border:1px solid var(--hair);border-radius:20px;padding:17px 18px;background:var(--paper);box-shadow:0 12px 32px -20px rgba(25,26,44,.28);}
+          .pro .gcard{margin-top:16px;border:1px solid var(--hair);border-radius:20px;padding:17px 18px;background:var(--paper);box-shadow:0 12px 32px -20px rgba(18,20,26,.28);}
           .pro .gcard .top{display:flex;align-items:center;justify-content:space-between;}
           .pro .gcard .lab{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);font-weight:700;}
           .pro .gcard .g{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--faint);font-weight:600;}
@@ -520,29 +525,29 @@ export default async function EspacePro({
           .pro .gcard .rate{font-size:13px;color:var(--soft);}
           .pro .gcard .delta{margin-left:auto;align-self:flex-start;font-size:12px;font-weight:800;color:#0E9E63;background:#E4F7EE;border-radius:999px;padding:5px 11px;white-space:nowrap;}
           .pro .gcard .empty{font-size:13px;color:var(--soft);line-height:1.5;}
-          .pro .bar{height:9px;border-radius:999px;background:#EEEFF7;margin-top:15px;overflow:hidden;}
-          .pro .bar i{display:block;height:100%;background:var(--grad);border-radius:999px;box-shadow:0 0 12px -2px rgba(109,74,224,.5);}
+          .pro .bar{height:9px;border-radius:999px;background:#EBE7DD;margin-top:15px;overflow:hidden;}
+          .pro .bar i{display:block;height:100%;background:var(--grad);border-radius:999px;box-shadow:0 0 12px -2px rgba(0,200,150,.5);}
           .pro .goal{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:7px;font-weight:600;}
           .pro .rr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);}
           .pro .rr-date{font-size:11.5px;color:var(--faint);}
-          .pro .rr-btn{background:#F1EFFB;border:1px solid var(--hair);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:700;color:var(--violet);cursor:pointer;font-family:inherit;}
+          .pro .rr-btn{background:#E6F7F1;border:1px solid var(--hair);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:700;color:var(--violet);cursor:pointer;font-family:inherit;}
           .pro .afcard .afsub{font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:7px;}
           .pro .afcard .afbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px;}
-          .pro .afcard .afbtn{text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;box-shadow:0 4px 12px -8px rgba(25,26,44,.22);}
+          .pro .afcard .afbtn{text-decoration:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;box-shadow:0 4px 12px -8px rgba(18,20,26,.22);}
           .pro .afcard .afbtn:active{transform:translateY(1px);}
           /* En-tête de l'onglet « Annonce » (Action Flash) */
-          .pro .af-lead{border:1px solid rgba(109,74,224,.22);border-radius:20px;padding:20px 20px 18px;background:linear-gradient(160deg,rgba(109,74,224,.10),#fff);box-shadow:0 12px 32px -22px rgba(109,74,224,.5);}
+          .pro .af-lead{border:1px solid rgba(0,200,150,.22);border-radius:20px;padding:20px 20px 18px;background:linear-gradient(160deg,rgba(0,200,150,.10),#fff);box-shadow:0 12px 32px -22px rgba(0,200,150,.5);}
           .pro .af-lead-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--violet);font-weight:800;}
           .pro .af-lead-h{font-size:23px;font-weight:850;letter-spacing:-.02em;margin:6px 0 6px;}
           .pro .af-lead-p{font-size:13.5px;color:var(--soft);line-height:1.5;}
           /* Lien « voir mon site comme un client » (relie l'admin au site public) */
           .pro .af-seeclient{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:16px;
-            border:1px solid var(--hair);background:var(--paper);color:var(--ink);border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(25,26,44,.35);}
+            border:1px solid var(--hair);background:var(--paper);color:var(--ink);border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px -16px rgba(18,20,26,.35);}
           .pro .af-seeclient span{color:var(--violet);font-weight:800;}
           .pro .af-seeclient:active{transform:translateY(1px);}
           /* « Mon site » sur une page : chaque domaine dans un bloc-carte distinct */
           .pro .sitepage{display:flex;flex-direction:column;gap:16px;}
-          .pro .siteblock{border:1px solid var(--hair);border-radius:18px;padding:18px 17px;background:var(--paper);box-shadow:0 12px 32px -24px rgba(25,26,44,.3);}
+          .pro .siteblock{border:1px solid var(--hair);border-radius:18px;padding:18px 17px;background:var(--paper);box-shadow:0 12px 32px -24px rgba(18,20,26,.3);}
 
           /* ══════════ ORDINATEUR : menu latéral + colonne large et aérée ══════════ */
           @media (min-width:900px){

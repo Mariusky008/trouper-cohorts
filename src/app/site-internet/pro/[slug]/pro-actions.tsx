@@ -66,7 +66,7 @@ export function ProActions({
         dangerouslySetInnerHTML={{
           __html: `
           .pro .action{margin-top:26px;}
-          .pro .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .opt{margin-top:15px;}
           .pro .opt label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);}

@@ -212,10 +212,10 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           __html: `
           .pro .hubfab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom));z-index:45;
             display:inline-flex;align-items:center;gap:9px;border:none;cursor:pointer;font-family:inherit;
-            background:linear-gradient(135deg,#8A6BE0,#5B3FA6);color:#fff;font-size:14.5px;font-weight:700;
-            padding:14px 22px;border-radius:30px;box-shadow:0 12px 30px -8px rgba(91,63,166,.7);animation:hubpulse 3s ease-in-out infinite;}
+            background:linear-gradient(135deg,#00C896,#00926E);color:#fff;font-size:14.5px;font-weight:700;
+            padding:14px 22px;border-radius:30px;box-shadow:0 12px 30px -8px rgba(0,146,110,.7);animation:hubpulse 3s ease-in-out infinite;}
           .pro .hubfab .sp{font-size:17px;}
-          @keyframes hubpulse{0%,100%{box-shadow:0 12px 30px -8px rgba(91,63,166,.7)}50%{box-shadow:0 12px 40px -6px rgba(91,63,166,.95)}}
+          @keyframes hubpulse{0%,100%{box-shadow:0 12px 30px -8px rgba(0,146,110,.7)}50%{box-shadow:0 12px 40px -6px rgba(0,146,110,.95)}}
           @media (prefers-reduced-motion:reduce){.pro .hubfab{animation:none}}
 
           .pro .hubov{position:fixed;inset:0;z-index:60;background:rgba(20,20,15,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:flex;align-items:flex-end;justify-content:center;animation:hubfade .2s ease;}
@@ -225,11 +225,11 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh{display:flex;align-items:center;gap:11px;padding:15px 16px;border-bottom:1px solid var(--hair);background:linear-gradient(120deg,#F7F3FF,#FCFBF9 60%);}
           /* Orbe vivante : dégradé animé + respiration ; halo pulsé quand elle parle */
           .pro .hubsheet .hh .av{position:relative;width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
-            background:conic-gradient(from 0deg,#8A6BE0,#5B3FA6,#B37FE0,#5B3FA6,#8A6BE0);animation:hubspin 7s linear infinite;box-shadow:0 4px 14px -3px rgba(91,63,166,.55);}
-          .pro .hubsheet .hh .av .glyph{width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#5B3FA6;font-size:15px;}
+            background:conic-gradient(from 0deg,#00C896,#00926E,#B37FE0,#00926E,#00C896);animation:hubspin 7s linear infinite;box-shadow:0 4px 14px -3px rgba(0,146,110,.55);}
+          .pro .hubsheet .hh .av .glyph{width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#00926E;font-size:15px;}
           .pro .hubsheet .hh .av::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(139,107,224,.5);opacity:0;}
           .pro .hubsheet .hh .av.talking::after{animation:hubring 1.3s ease-out infinite;}
-          .pro .hubsheet .hh .av.talking{box-shadow:0 0 0 4px rgba(139,107,224,.18),0 6px 20px -2px rgba(91,63,166,.7);}
+          .pro .hubsheet .hh .av.talking{box-shadow:0 0 0 4px rgba(139,107,224,.18),0 6px 20px -2px rgba(0,146,110,.7);}
           @keyframes hubspin{to{transform:rotate(360deg)}}
           @keyframes hubring{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
           .pro .hubsheet .hh .whowrap{min-width:0;}
@@ -237,7 +237,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .hh .sub{font-size:11px;color:var(--faint);}
           /* Égaliseur : montre visuellement que la voix parle */
           .pro .hubsheet .hh .eq{display:flex;align-items:flex-end;gap:2.5px;height:13px;margin-top:3px;}
-          .pro .hubsheet .hh .eq i{width:2.5px;background:linear-gradient(#8A6BE0,#5B3FA6);border-radius:2px;animation:hubeq .9s ease-in-out infinite;}
+          .pro .hubsheet .hh .eq i{width:2.5px;background:linear-gradient(#00C896,#00926E);border-radius:2px;animation:hubeq .9s ease-in-out infinite;}
           .pro .hubsheet .hh .eq i:nth-child(1){height:40%;animation-delay:0s}
           .pro .hubsheet .hh .eq i:nth-child(2){height:90%;animation-delay:.15s}
           .pro .hubsheet .hh .eq i:nth-child(3){height:60%;animation-delay:.3s}
@@ -260,7 +260,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .b.ai{align-self:flex-start;background:#F1EEF9;color:#2A2340;border-top-left-radius:5px;}
           .pro .hubsheet .b.me{align-self:flex-end;background:var(--ink);color:#fff;border-top-right-radius:5px;}
           .pro .hubsheet .draft{align-self:flex-start;max-width:86%;background:#fff;border:1px solid #D9CFF0;border-radius:14px;border-top-left-radius:5px;padding:11px 13px;font-size:13px;line-height:1.5;color:#2A2340;white-space:pre-line;}
-          .pro .hubsheet .open{align-self:flex-start;margin-top:-3px;background:#5B3FA6;color:#fff;border:none;border-radius:12px;padding:10px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+          .pro .hubsheet .open{align-self:flex-start;margin-top:-3px;background:#00926E;color:#fff;border:none;border-radius:12px;padding:10px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
           .pro .hubsheet .dots{align-self:flex-start;display:flex;gap:4px;padding:6px 4px;}
           .pro .hubsheet .dots span{width:7px;height:7px;border-radius:50%;background:#B9A6EC;animation:hubdot 1s infinite;}
           .pro .hubsheet .dots span:nth-child(2){animation-delay:.15s}.pro .hubsheet .dots span:nth-child(3){animation-delay:.3s}
@@ -270,9 +270,9 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .hubsheet .sug button{border:1px solid var(--hair);background:#fff;border-radius:16px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
           .pro .hubsheet .inp{display:flex;gap:8px;padding:12px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--hair);}
           .pro .hubsheet .inp input{flex:1;border:1px solid var(--hair);border-radius:22px;padding:12px 15px;font-size:14px;font-family:inherit;background:#fff;}
-          .pro .hubsheet .inp button{border:none;background:#5B3FA6;color:#fff;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;flex:none;}
+          .pro .hubsheet .inp button{border:none;background:#00926E;color:#fff;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;flex:none;}
           .pro .hubsheet .inp button:disabled{opacity:.5;cursor:not-allowed;}
-          .pro .hubsheet .inp .mic{background:#F1EEF9;color:#5B3FA6;font-size:17px;}
+          .pro .hubsheet .inp .mic{background:#F1EEF9;color:#00926E;font-size:17px;}
           .pro .hubsheet .inp .mic.on{background:#E5484D;color:#fff;animation:hubmic 1s ease-in-out infinite;}
           @keyframes hubmic{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.5)}50%{box-shadow:0 0 0 7px rgba(229,72,77,0)}}
           @media (prefers-reduced-motion:reduce){.pro .hubsheet .inp .mic.on{animation:none}}
@@ -291,7 +291,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           /* Orbe : cœur en dégradé + halos concentriques. Réagit à l'état. */
           .pro .vmov .vorb{position:relative;width:210px;height:210px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
           .pro .vmov .vorb .vo-core{position:absolute;inset:34px;border-radius:50%;
-            background:radial-gradient(circle at 35% 30%,#C6A8FF,#8A6BE0 45%,#5B3FA6 75%,#3C2A78);
+            background:radial-gradient(circle at 35% 30%,#C6A8FF,#00C896 45%,#00926E 75%,#3C2A78);
             box-shadow:0 0 60px -6px rgba(139,107,224,.8),inset 0 0 40px rgba(255,255,255,.25);animation:voBreath 4s ease-in-out infinite;}
           .pro .vmov .vorb .vo-glyph{position:relative;font-size:30px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.35);}
           .pro .vmov .vorb .vo-ring{position:absolute;border-radius:50%;border:2px solid rgba(178,150,255,.5);opacity:0;}
@@ -316,7 +316,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
           .pro .vmov .vm-open{background:#fff;color:#3C2A78;border:none;border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
           .pro .vmov .vm-hint{font-size:12.5px;color:rgba(255,255,255,.6);}
           .pro .vmov .vm-mic{width:74px;height:74px;border-radius:50%;border:none;cursor:pointer;font-size:26px;color:#fff;
-            background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 12px 30px -6px rgba(139,107,224,.7);}
+            background:linear-gradient(135deg,#00C896,#00926E);box-shadow:0 12px 30px -6px rgba(139,107,224,.7);}
           .pro .vmov .vm-mic.on{background:linear-gradient(135deg,#E5484D,#B3363A);animation:hubmic 1s ease-in-out infinite;}
           .pro .vmov .vm-mic:disabled{opacity:.55;cursor:not-allowed;}
           .pro .vmov .vm-foot{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);}

@@ -11,7 +11,7 @@
 // annonce sur le site = réels et automatiques ; Facebook/Instagram = texte + visuel
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
-import { useEffect, useRef, useState, type UIEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 
 type Props = {
@@ -33,7 +33,7 @@ type Props = {
 
 type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "alive";
 
-export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
+export function DemoTour({ slug, nom, metierLabel, villeAff, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
@@ -61,25 +61,9 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
-  const catViewRef = useRef<HTMLDivElement | null>(null);
-
-  // Le défilement automatique agit sur la vraie position de défilement : le pas
-  // vaut exactement une carte, quelle que soit la largeur de l'écran.
-  useEffect(() => {
-    const view = catViewRef.current;
-    const card = view?.children[0]?.children[catSlide] as HTMLElement | undefined;
-    if (!view || !card) return;
-    view.scrollTo({ left: card.offsetLeft - (view.children[0] as HTMLElement).offsetLeft, behavior: "smooth" });
-  }, [catSlide, fxStep]);
-
-  // Si le commerçant fait glisser lui-même, les pastilles suivent son doigt.
-  const onCatScroll = (e: UIEvent<HTMLDivElement>) => {
-    const view = e.currentTarget;
-    const first = view.children[0]?.children[0] as HTMLElement | undefined;
-    if (!first) return;
-    const pas = first.offsetWidth + 10; // largeur de carte + écart
-    setCatSlide(Math.max(0, Math.round(view.scrollLeft / pas)));
-  };
+  // La carte du catalogue de démo « part » avant d'être remplacée : c'est ce qui
+  // fait lire un glissement plutôt qu'un changement d'image.
+  const [catFly, setCatFly] = useState(false);
 
   // Vocabulaire adaptatif (pluriel du terme public).
   const clientPl = clientWord ? `${clientWord}s` : "clients";
@@ -98,13 +82,12 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
     "Ouvert exceptionnellement ce week-end.",
   ];
   const catalogueCards = [
-    { ic: "✨", nom, metier: villeAff, texte: flashPhrase, quand: "à l'instant", vous: true },
+    { nom, metier: metierLabel || "Commerce", texte: flashPhrase, quand: "à l'instant", vous: true },
     // Le libellé du métier tient lieu de nom : pas d'article à accorder, et
     // surtout aucun commerce inventé auquel le pro pourrait croire.
-    ...partnersList.slice(0, 3).map((pn, i) => ({
-      ic: pn.ic,
+    ...partnersList.slice(0, 2).map((pn, i) => ({
       nom: pn.t,
-      metier: villeAff,
+      metier: pn.t,
       texte: AUTRES[i % AUTRES.length],
       quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
       vous: false,
@@ -399,6 +382,7 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           setScene("flash");
           setFxStep(0);
           setCatSlide(0);
+          setCatFly(false);
           // La préparation est COURTE et disparaît : elle ne doit pas rester à
           // l'écran à côté du résultat.
           window.setTimeout(() => setFxStep(1), 1300);
@@ -408,10 +392,16 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           // calculé sur la longueur de la première moitié de la réplique — si le
           // texte change, la bascule suit toute seule.
           window.setTimeout(() => setFxStep(2), catalogueAt);
-          // Deux glissements automatiques : on montre que ça se parcourt, sans
-          // demander au commerçant de deviner qu'il peut swiper.
-          window.setTimeout(() => setCatSlide(1), catalogueAt + 1400);
-          window.setTimeout(() => setCatSlide(2), catalogueAt + 2900);
+          // Deux glissements automatiques : le commerçant voit que ça se parcourt
+          // sans qu'on ait à le lui écrire. La carte PART (fly) avant que la
+          // suivante entre — sans ça, on lit un changement d'image, pas un geste.
+          for (const [n, quand] of [[1, 1500], [2, 3100]] as Array<[number, number]>) {
+            window.setTimeout(() => setCatFly(true), quand - 300);
+            window.setTimeout(() => {
+              setCatFly(false);
+              setCatSlide(n);
+            }, quand);
+          }
         },
       });
     }
@@ -597,46 +587,40 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
           .dtour-card .fc-h{font-family:Georgia,serif;font-size:18px;font-weight:600;line-height:1.15;}
           .dtour-card .fc-ex{flex:none;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
             color:#3A2A00;background:#FFC400;border-radius:5px;padding:3px 7px;}
-          /* VRAI défilement, pas une bande translatée : le pas est exact quelle que
-             soit la largeur de l'écran, et le commerçant peut faire glisser lui-même
-             au doigt. Le point d'accroche cale chaque carte au bord. */
-          .dtour-card .fc-view{margin-top:12px;border-radius:14px;overflow-x:auto;overflow-y:hidden;
-            scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
-          .dtour-card .fc-view::-webkit-scrollbar{display:none;}
-          .dtour-card .fc-strip{display:flex;gap:10px;}
-          /* min-width:0 est indispensable : sans lui, le « min-width:auto » par défaut
-             d'un élément flex force la carte à la largeur du nom (en nowrap), et
-             elle déborde de sa fenêtre au lieu de tenir dedans. Le débord de 38 px
-             laisse voir la carte suivante — c'est ce qui fait comprendre le geste. */
-          /* box-sizing explicite : sans lui, la base de 100%-38px s'applique au
-             CONTENU et le padding s'ajoute par-dessus — le débord de la carte
-             suivante tombait à 12 px au lieu de 38, et le geste ne se voyait plus. */
-          .dtour-card .fc-c{box-sizing:border-box;flex:0 0 calc(100% - 38px);min-width:0;scroll-snap-align:start;
-            display:flex;align-items:flex-start;gap:11px;padding:12px;
-            background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;
-            opacity:.45;transition:opacity .45s ease;}
-          .dtour-card .fc-c.on{opacity:1;}
-          .dtour-card .fc-c.me{background:linear-gradient(120deg,rgba(127,230,192,.16),rgba(255,255,255,.05));
-            border-color:rgba(127,230,192,.45);}
-          .dtour-card .fc-ic{width:40px;height:40px;flex:none;border-radius:12px;display:flex;align-items:center;
-            justify-content:center;font-size:19px;background:rgba(255,255,255,.09);}
-          .dtour-card .fc-b{min-width:0;flex:1;}
-          /* Le nom se tronque, le badge NON : sans cette séparation, l'ellipse
-             mangeait « vous » — c'est-à-dire l'information la plus importante. */
-          .dtour-card .fc-n{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:800;color:#fff;}
-          .dtour-card .fc-nt{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-          .dtour-card .fc-you{flex:none;font-style:normal;font-size:9px;font-weight:800;
-            letter-spacing:.1em;text-transform:uppercase;color:#0B2A20;background:#7FE6C0;border-radius:5px;padding:2px 6px;}
-          .dtour-card .fc-m{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
-            color:#7FE6C0;font-weight:700;margin-top:2px;}
-          .dtour-card .fc-t{display:block;font-size:12.5px;line-height:1.4;color:#D6DAE2;margin-top:6px;}
-          .dtour-card .fc-w{display:block;font-size:10.5px;color:#8B93A6;margin-top:5px;}
-          .dtour-card .fc-dots{display:flex;justify-content:center;gap:6px;margin-top:11px;}
-          .dtour-card .fc-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);
-            transition:background .3s ease,width .3s ease;}
-          .dtour-card .fc-dots i.on{width:18px;border-radius:999px;background:#7FE6C0;}
-          .dtour-card .fc-cap{font-size:12px;line-height:1.5;color:#9FB0CE;margin-top:11px;}
-          @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat{animation:none;}.dtour-card .fc-strip{transition:none;}}
+          /* La carte du catalogue, à l'échelle de l'écran de démo : mêmes codes que
+             la vraie (crème, média en haut, annonce encadrée d'or). */
+          .dtour-card .fc-stack{position:relative;height:214px;margin-top:12px;}
+          .dtour-card .fc-ghost{position:absolute;inset:0;border-radius:16px;background:rgba(255,255,255,.05);
+            border:1px solid rgba(255,255,255,.09);transform-origin:bottom center;}
+          .dtour-card .fc-ghost.g2{transform:scale(.93) translateY(9px);}
+          .dtour-card .fc-ghost.g1{transform:scale(.965) translateY(4px);background:rgba(255,255,255,.08);}
+          .dtour-card .fc-card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:#F6F3EC;
+            box-shadow:0 18px 40px -16px rgba(0,0,0,.75);animation:fcIn .42s cubic-bezier(.22,1,.36,1);}
+          @keyframes fcIn{from{opacity:0;transform:translateX(52px) rotate(4deg) scale(.96)}to{opacity:1;transform:none}}
+          /* L'envol : même geste que dans le vrai catalogue, en plus court. */
+          .dtour-card .fc-card.fly{animation:fcOut .3s cubic-bezier(.4,0,1,1) forwards;}
+          @keyframes fcOut{to{opacity:0;transform:translateX(-160px) rotate(-8deg)}}
+          .dtour-card .fc-media{position:relative;height:38%;background:linear-gradient(150deg,#2C3A5E,#141A2E);}
+          .dtour-card .fc-tagm{position:absolute;top:9px;left:9px;z-index:2;border-radius:999px;padding:3px 9px;
+            font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#07100C;background:#00C896;}
+          .dtour-card .fc-you{position:absolute;top:9px;right:9px;z-index:2;border-radius:999px;padding:3px 9px;
+            font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#3A2A00;background:#C8A84B;}
+          .dtour-card .fc-mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-family:Georgia,serif;font-size:40px;font-weight:900;color:rgba(255,255,255,.16);}
+          .dtour-card .fc-body{height:62%;padding:10px 12px;display:flex;flex-direction:column;}
+          .dtour-card .fc-nm{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#12141A;line-height:1.15;}
+          .dtour-card .fc-offer{margin-top:7px;border-radius:9px;padding:7px 9px;
+            background:linear-gradient(135deg,#FDFAF2,#FDF5DC);border:1px solid rgba(200,168,75,.34);}
+          .dtour-card .fc-ok{font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#A8842A;}
+          .dtour-card .fc-ot{font-size:11.5px;line-height:1.35;color:#12141A;margin-top:3px;}
+          /* La fraîcheur EST l'information du catalogue : elle doit se lire. */
+          .dtour-card .fc-w{font-size:10.5px;font-weight:600;color:#6B7280;margin-top:auto;}
+          /* Les fantômes débordent sous la pile : les pastilles doivent les dégager. */
+          .dtour-card .fc-dots{display:flex;justify-content:center;gap:5px;margin-top:20px;}
+          .dtour-card .fc-dots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .25s ease;}
+          .dtour-card .fc-dots i.on{width:15px;border-radius:3px;background:#00C896;}
+          .dtour-card .fc-dots i.done{background:rgba(255,255,255,.4);}
+          @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat,.dtour-card .fc-card{animation:none;}}
 
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
              VOUS au centre, les partenaires en orbite, les recommandations affluent. */
@@ -1015,27 +999,32 @@ export function DemoTour({ slug, nom, villeAff, note, reviewsCount, avisAllowed,
                       <span className="fc-h">Aujourd&apos;hui à {villeAff || "votre ville"}</span>
                       <span className="fc-ex">exemple</span>
                     </div>
-                    <div className="fc-view" ref={catViewRef} onScroll={onCatScroll}>
-                      <div className="fc-strip">
-                        {catalogueCards.map((c, i) => (
-                          <div className={`fc-c${c.vous ? " me" : ""}${i === catSlide ? " on" : ""}`} key={`${c.nom}-${i}`}>
-                            <span className="fc-ic" aria-hidden="true">{c.ic}</span>
-                            <span className="fc-b">
-                              <span className="fc-n">
-                                <span className="fc-nt">{c.nom}</span>
-                                {c.vous && <em className="fc-you">vous</em>}
-                              </span>
-                              <span className="fc-m">{c.metier}</span>
-                              <span className="fc-t">{c.texte}</span>
-                              <span className="fc-w">{c.quand}</span>
+                    <div className="fc-stack">
+                      {catSlide + 2 < catalogueCards.length && <div className="fc-ghost g2" aria-hidden="true" />}
+                      {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
+                      {catalogueCards[catSlide] && (
+                        <div className={`fc-card${catFly ? " fly" : ""}`} key={catSlide}>
+                          <div className="fc-media">
+                            <span className="fc-tagm">{catalogueCards[catSlide].metier}</span>
+                            {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
+                            <span className="fc-mono" aria-hidden="true">
+                              {catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
                             </span>
                           </div>
-                        ))}
-                      </div>
+                          <div className="fc-body">
+                            <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
+                            <div className="fc-offer">
+                              <div className="fc-ok">✦ En ce moment</div>
+                              <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
+                            </div>
+                            <div className="fc-w">{catalogueCards[catSlide].quand}</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="fc-dots" aria-hidden="true">
                       {catalogueCards.map((c, i) => (
-                        <i className={i === catSlide ? "on" : ""} key={`d-${i}`} />
+                        <i className={i === catSlide ? "on" : i < catSlide ? "done" : ""} key={`d-${c.nom}-${i}`} />
                       ))}
                     </div>
                     <div className="fc-cap">

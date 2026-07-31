@@ -144,7 +144,7 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
         dangerouslySetInnerHTML={{
           __html: `
           .pro .gal{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
-          .pro .gal .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .gal .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .gal .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .gal .add{margin-top:15px;width:100%;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .gal .add:disabled{opacity:.5;cursor:not-allowed;}

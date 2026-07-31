@@ -99,7 +99,7 @@ export function ProServices({
         dangerouslySetInnerHTML={{
           __html: `
           .pro .svc{margin-top:6px;}
-          .pro .svc .a-title{font-family:Georgia,serif;font-weight:700;font-size:19px;}
+          .pro .svc .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .svc .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
           .pro .svc .row{border:1px solid var(--hair);border-radius:13px;padding:12px;background:#fff;margin-top:11px;}
           .pro .svc .row .l1{display:flex;gap:8px;}
