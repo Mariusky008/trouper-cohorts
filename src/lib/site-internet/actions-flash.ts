@@ -38,7 +38,15 @@ export type Intention = {
   titre: string;
   sous: string;
   champs: Champ[];
-  /** Le brief factuel envoyé à l'assistante — uniquement ce que le pro a saisi. */
+  /**
+   * L'annonce construite — uniquement à partir de ce que le pro a saisi.
+   *
+   * Elle sert deux fois : de brief factuel à l'assistante (espace pro, qui la
+   * réécrit), et telle quelle dans la démonstration. Elle doit donc s'adresser
+   * AUX CLIENTS, pas à l'assistante : « Ça vous intéresse ? Je vous le
+   * réserve. » et non « Les client·es peuvent me répondre pour le réserver »,
+   * qui se lit comme une consigne et non comme une annonce.
+   */
   brief: (v: Record<string, string>) => string;
   /** Moment où l'annonce doit disparaître d'elle-même (null = pas d'échéance connue). */
   fin: (v: Record<string, string>, now: Date) => Date | null;
@@ -223,8 +231,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
         { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
       brief: (x) =>
-        `Un ${v.place} s'est libéré ${libelleJour(x.jour, new Date())} à ${heureLisible(x.heure)}` +
-        `${x.quoi ? ` pour ${x.quoi}` : ""}. Les client·es peuvent me répondre pour le réserver.`,
+        `Un ${v.place} vient de se libérer ${libelleJour(x.jour, new Date())} à ${heureLisible(x.heure)}` +
+        `${x.quoi ? ` pour ${x.quoi}` : ""}. Ça vous intéresse ? Je vous le réserve.`,
       fin: (x, now) => moment(now, x.heure, x.jour),
       demo: (now) => ({ jour: jourISO(dansNJours(now, 1)), heure: "16:00", quoi: "" }),
       cta: "Réserver ce créneau",
@@ -256,7 +264,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "de", label: "À partir de quelle heure ?", type: "heure", requis: true },
       { cle: "a", label: "Jusqu'à quelle heure ?", type: "heure", requis: true },
     ],
-    brief: (x) => `Aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} : ${x.quoi}. J'invite les gens à passer ${v.lieu}.`,
+    brief: (x) => `Aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} : ${x.quoi}. Passez ${v.lieu}, on vous attend.`,
     fin: (x, now) => moment(now, x.a),
     demo: () => ({ quoi: "le café offert", de: "10:00", a: "12:00" }),
     cta: "Je passe",
@@ -318,7 +326,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     titre: "Montrer ce que vous venez de faire ?",
     sous: "Votre travail d'aujourd'hui vaut mieux qu'un slogan.",
     champs: [{ cle: "quoi", label: "Qu'avez-vous réalisé ?", type: "texte", exemple: "une pose sur ongles courts", requis: true }],
-    brief: (x) => `Je viens de terminer : ${x.quoi}. Je le montre à mes client·es.`,
+    brief: (x) => `Je viens de terminer : ${x.quoi}. Envie du même résultat ? Écrivez-moi.`,
     fin: (_x, now) => dansNJours(now, 7),
     demo: () => ({ quoi: "une pièce dont je suis fier·e" }),
     cta: "Prendre rendez-vous",

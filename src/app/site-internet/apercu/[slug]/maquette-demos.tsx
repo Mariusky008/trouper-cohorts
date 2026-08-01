@@ -84,8 +84,14 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const qaScroll = useRef<HTMLDivElement | null>(null);
 
   // Ouvre le panneau + accueil vocal (dans le geste → débloque la voix cloud iOS).
-  const handleOpen = () => {
-    setView("home");
+  //
+  // `depart` : le bouton « Créer une annonce d'essai » promet UNE chose. Le faire
+  // atterrir sur le menu général (annonce / avis Google / répondre aux questions)
+  // ajoutait un choix qu'il venait précisément de faire. Il va donc droit à
+  // « Que voulez-vous obtenir aujourd'hui ? ». Le menu reste le point d'entrée
+  // quand le pro ouvre l'assistante de lui-même, depuis les CTA du site.
+  const handleOpen = (depart: View = "home") => {
+    setView(depart === "creneauIn" && !data.avisAllowed ? "home" : depart);
     setStageOn(false);
     setOpen(true);
     if (!introRef.current) {
@@ -274,8 +280,13 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   //  • GRATUIT  → « c'est fait » : l'annonce apparaît, on montre le résultat.
   //  • OPTIONS  → « c'est prêt » : la mini-campagne est préparée, RIEN n'est envoyé.
   // Règle absolue : jamais « ont été prévenus », toujours « pourraient être prévenus ».
+  // Le bandeau montré dans l'assistante doit être le bandeau du site, à
+  // l'identique : même structure (icône · texte · pastille) et même dégradé
+  // d'accent. En vert sombre, il donnait à voir un objet qui n'existe nulle part
+  // sur la page — la révélation montrait alors autre chose que la réalité.
   const bandHtml = (msg: string, cta = "") =>
-    `<div class="asx-band"><span class="asx-band-k">🎉 Offre du moment</span><span class="asx-band-t">${esc(msg)}</span>` +
+    `<div class="asx-band"><span class="asx-band-i">🎉</span>` +
+    `<span class="asx-band-t"><b>Offre du moment</b> · ${esc(msg)}</span>` +
     (cta ? `<span class="asx-band-cta">${esc(cta)} →</span>` : "") +
     `</div>`;
 
@@ -285,33 +296,38 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
    * La démo n'en montrait que le texte, alors que le catalogue est visuel et que
    * l'espace pro fait de la photo une étape à part entière. Le commerçant ne
    * pouvait pas comprendre ce qu'il allait vraiment obtenir.
+   *
+   * Pas de bouton d'action ici, contrairement au bandeau : la carte du catalogue
+   * (ville-decouverte.tsx) se glisse — passer, garder, ouvrir le site — et n'a
+   * aucune pastille de réservation. En dessiner une montrerait un objet qui
+   * n'existe pas. Le bouton, le visiteur le trouve sur le site, dans le bandeau.
    */
-  const carteCatalogue = (msg: string, cta = "") =>
+  const carteCatalogue = (msg: string) =>
     `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
       `<span class="asx-kveil"></span>` +
       `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
       `<span class="asx-kbody">` +
         `<span class="asx-knom">${esc(nom)}</span>` +
-        `<span class="asx-ktxt">${esc(msg)}</span>` +
-        (cta ? `<span class="asx-kcta">${esc(cta)} →</span>` : "") +
+        `<span class="asx-kmeta">📍 ${esc(data.metier || "Commerce")} · ${esc(villeNom)}</span>` +
+        `<span class="asx-koffer"><span class="asx-kk">✦ En ce moment</span>${esc(msg)}</span>` +
       `</span>` +
     `</div>`;
 
-  const freeFinal = (msg: string) =>
+  /**
+   * L'écran final, volontairement COURT.
+   *
+   * Il rejouait le bandeau, la carte, trois preuves et un astérisque — soit le
+   * récapitulatif des deux écrans que le commerçant venait de regarder. Après
+   * une révélation, répéter ce qu'on vient de montrer éteint l'effet au lieu de
+   * le conclure. Ici : une phrase, une ligne de contexte, une décision.
+   */
+  const freeFinal = () =>
     `<div class="asx-done-k">✅ Annonce créée</div>` +
-    `<div class="asx-done-h">Une seule action.<br>Deux façons de vous faire découvrir.</div>` +
-    `<div class="asx-done-s">Voici où elle paraîtra&nbsp;: en haut de votre site, et sur une carte dans le catalogue de ${villeNom}. <b>Rien n\u2019a été publié pour de vrai</b> — c\u2019est votre démonstration.</div>` +
-    bandHtml(msg) +
-    carteCatalogue(msg) +
-    `<div class="asx-proofs">` +
-      `<div class="asx-proof"><span>🌐</span>Visible tout de suite sur votre site</div>` +
-      `<div class="asx-proof"><span>📍</span>Dans le catalogue de ${villeNom}, à parcourir<sup>*</sup></div>` +
-      `<div class="asx-proof"><span>🎁</span>100 % gratuit · modifiable quand vous voulez</div>` +
-    `</div>` +
-    `<div class="asx-aster">* Le catalogue de ${villeNom} rassemble les annonces du jour des commerçants d'ici — chaque site du réseau en montre une fenêtre.</div>` +
-    `<button class="asx-cta2" data-seeoffer>Voir mon annonce sur le site</button>` +
-    `<button class="asx-rtn" data-tooptions>Découvrir comment toucher plus de monde</button>` +
-    tiny("Aucune diffusion extérieure n'a été effectuée.");
+    `<div class="asx-done-h">Une phrase.<br>Toute la ville peut la découvrir.</div>` +
+    `<div class="asx-done-s">Votre annonce est prête sur votre site et dans le réseau local de ${villeNom}.</div>` +
+    `<button class="asx-cta2" data-cta>Garder mon site gratuitement</button>` +
+    `<button class="asx-link" data-tooptions>Découvrir les options pour toucher plus de monde</button>` +
+    tiny("Démonstration — rien n'a été publié ni envoyé.");
 
   // Écran Pro : on n'affiche QUE les canaux réellement cochés, sans jamais avancer
   // de nombre de contacts inventé, et le bouton demande une activation — il ne
@@ -479,26 +495,32 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           .join("") +
         `</div>`;
       openStage(coches(0));
-      etapes.forEach((_, i) => after(320 + i * 420, () => setCard(coches(i + 1))));
+      // Les coches sont le TRAJET, pas la destination : elles défilent vite (moins
+      // d'une seconde en tout) pour amener aux deux révélations, qui elles ont le
+      // temps de se regarder. Quatre coches à 420 ms faisaient patienter avant le
+      // seul moment qui compte.
+      const pasCoche = 230;
+      const finCoches = 180 + etapes.length * pasCoche;
+      etapes.forEach((_, i) => after(180 + i * pasCoche, () => setCard(coches(i + 1))));
       const cta = intention?.cta ?? "";
       // ① Sur son site. ② Dans le catalogue. Deux écrans, deux endroits : montrer
       // seulement le bandeau laissait croire à un simple encart sur son site.
-      after(340 + etapes.length * 420, () =>
+      after(finCoches + 380, () =>
         setCard(
           `<div class="asx-rev">1/2 — Sur votre site</div>` +
           `<div class="asx-ctx">Le bandeau apparaît en haut de votre page.</div>` +
           `<div class="asx-bandwrap">${bandHtml(msg, cta)}</div>`,
         ),
       );
-      after(2500 + etapes.length * 420, () =>
+      after(finCoches + 2900, () =>
         setCard(
           `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
           `<div class="asx-ctx">La même annonce, sur une carte que les habitants parcourent.</div>` +
-          carteCatalogue(msg, cta) +
+          carteCatalogue(msg) +
           `<div class="asx-aster" style="text-align:left">Ce catalogue est aussi affiché sur les sites des commerces partenaires de ${villeNom}.</div>`,
         ),
       );
-      after(4900 + etapes.length * 420, () => setCard(freeFinal(msg)));
+      after(finCoches + 6100, () => { chime(); setCard(freeFinal()); });
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
@@ -564,11 +586,14 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           band.classList.add("asx-glow");
           window.setTimeout(() => band.classList.remove("asx-glow"), 2600);
         }
+        // « et dans tout le reste » ne désignait rien : on nomme les deux
+        // endroits, ni plus ni moins. La bulle passe en haut d'écran — en bas
+        // elle recouvrait le bouton flottant et sa mention.
         const tip = document.createElement("div");
         tip.className = "asx-tip";
-        tip.textContent = "Votre annonce est en haut de votre site — et dans tout le reste.";
+        tip.textContent = `Votre annonce apparaît maintenant sur votre site et dans le catalogue de ${villeNom}.`;
         document.body.appendChild(tip);
-        window.setTimeout(() => tip.remove(), 4200);
+        window.setTimeout(() => tip.remove(), 4600);
       }, 700);
     });
   };
@@ -850,8 +875,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
           <div className="asx-glab">Inclus gratuitement</div>
           <div className="asx-flash">
-            <div className="asx-fl on"><span className="i">🌐</span><span className="t">Publiée sur votre site</span><span className="asx-lock">✓ inclus</span></div>
-            <div className="asx-fl on"><span className="i">📍</span><span className="t">Dans le <b>catalogue de {villeNom}</b>, que chaque site du réseau affiche<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
+            {/* Au futur : à cet écran rien n'est encore publié, et écrire
+                « Publiée sur votre site » sous un texte qu'on n'a pas validé,
+                c'est annoncer un fait qui n'a pas eu lieu. */}
+            <div className="asx-fl on"><span className="i">🌐</span><span className="t">Sera visible sur votre site</span><span className="asx-lock">✓ inclus</span></div>
+            <div className="asx-fl on"><span className="i">📍</span><span className="t">Et dans le <b>catalogue de {villeNom}</b>, que chaque site du réseau affiche<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
           </div>
           <div className="asx-aster">* Le catalogue de {villeNom} rassemble les annonces du jour des commerçants d&apos;ici. Votre annonce y entre dès sa publication, et se parcourt carte après carte.</div>
 
@@ -954,7 +982,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           que c'est une fonction pour eux. « Action Flash » n'aidait pas : c'est
           un nom de code qu'il ne retrouvera nulle part. */}
       {!open && !stageOn && !atBottom && (
-        <button className="asx-fab" onClick={handleOpen} aria-label="Réservé au commerçant : créer une annonce d'essai">
+        <button className="asx-fab" onClick={() => handleOpen("creneauIn")} aria-label="Réservé au commerçant : créer une annonce d'essai">
           <span className="orb">✦</span>
           <span className="lab"><small>🔒 Réservé au commerçant</small>Créer une annonce d’essai</span>
           <span className="chev">›</span>
@@ -1137,9 +1165,10 @@ function styles(accent: string): string {
   /* Les deux temps de la révélation : sur le site, puis dans le catalogue. */
   .asx-rev{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
     color:#5B3FA6;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;margin-bottom:10px;}
-  .asx-band-cta,.asx-kcta{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;border-radius:9px;padding:7px 12px;}
-  .asx-band-cta{color:#06231A;background:#00E0A0;align-self:flex-start;}
-  .asx-kcta{color:#06231A;background:#00E0A0;width:max-content;}
+  /* La pastille du bandeau reprend celle du vrai site (.offer-band .og) :
+     translucide sur l'accent, jamais un vert qui n'existe pas sur la page. */
+  .asx-band-cta{flex:none;background:rgba(255,255,255,.2);border-radius:20px;padding:6px 13px;
+    font-size:12px;font-weight:700;white-space:nowrap;}
   /* La séquence « voici ce que je viens de faire », coche après coche. */
   .asx-cq{font-size:15px;line-height:1.5;color:#5F6358;text-align:center;}
   .asx-cq b{display:block;margin-top:3px;font-size:19px;color:#16160F;font-family:Georgia,serif;font-weight:700;}
@@ -1182,7 +1211,7 @@ function styles(accent: string): string {
   .asx-link:hover{color:#3A3A32;}
   .asx-link:disabled{opacity:.5;cursor:not-allowed;}
   .asx-aster{margin-top:9px;font-size:11px;line-height:1.45;color:#8A8577;text-align:left;}
-  .asx-fl sup,.asx-proof sup{font-size:9px;color:#0E7C5A;font-weight:800;}
+  .asx-fl sup{font-size:9px;color:#0E7C5A;font-weight:800;}
   .asx-task{width:100%;border:none;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-task .asx-go{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;margin-left:auto;}
   /* ── L'ATELIER : la phrase du pro se dédouble et se métamorphose ────────────
@@ -1250,17 +1279,26 @@ function styles(accent: string): string {
   .asx-ktop{position:absolute;top:10px;left:10px;}
   .asx-kmet{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#06231A;
     background:#00E0A0;border-radius:6px;padding:4px 8px;}
-  .asx-kbody{position:absolute;left:13px;right:13px;bottom:12px;display:flex;flex-direction:column;gap:4px;text-align:left;}
+  .asx-kbody{position:absolute;left:13px;right:13px;bottom:12px;display:flex;flex-direction:column;text-align:left;}
   .asx-knom{font-family:Georgia,serif;font-size:17px;font-weight:700;color:#fff;line-height:1.15;}
-  .asx-ktxt{font-size:12.5px;line-height:1.4;color:#DDE3EC;}
-  .asx-band{display:flex;flex-direction:column;gap:5px;margin-top:15px;text-align:left;border-radius:13px;padding:13px 15px;
-    background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;box-shadow:0 14px 30px -16px rgba(11,42,32,.8);animation:asxBandIn .5s cubic-bezier(.22,1,.36,1);}
+  /* Mêmes blocs que la vraie carte (.vdec .meta / .offer-k / .offer-t). */
+  .asx-kmeta{font-size:11.5px;color:#CFD2D6;margin-top:5px;}
+  .asx-koffer{margin-top:9px;font-size:12.5px;font-weight:600;line-height:1.35;color:#E9EBED;}
+  .asx-kk{display:block;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#00E0A0;margin-bottom:4px;}
+  /* Copie conforme de .mqc .offer-band (maquette-sante.tsx) : même dégradé
+     d'accent, même icône, même pastille translucide. Ce qu'on montre dans
+     l'assistante doit être ce que le pro retrouve en haut de sa page. */
+  .asx-band{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin-top:15px;text-align:left;border-radius:13px;padding:12px 15px;
+    background:linear-gradient(100deg,${accent},color-mix(in srgb,${accent} 72%,#000));
+    color:#fff;line-height:1.35;box-shadow:0 14px 30px -16px rgba(0,0,0,.55);animation:asxBandIn .5s cubic-bezier(.22,1,.36,1);}
   @keyframes asxBandIn{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
-  .asx-band-k{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7FE6C0;}
-  .asx-band-t{font-size:14px;line-height:1.45;font-weight:600;}
+  .asx-band-i{flex:none;font-size:17px;line-height:1;}
+  /* Seule différence avec le site : la carte de l'assistante fait 300 px, pas la
+     largeur d'un écran. Sous ~330 px la pastille passe à la ligne au lieu de
+     réduire le texte à un mot par ligne. */
+  .asx-band-t{flex:1 1 150px;min-width:150px;font-size:13px;font-weight:600;}
+  .asx-band-t b{font-weight:800;}
   .asx-bandwrap{margin-top:16px;}
-  .asx-proofs{display:flex;flex-direction:column;gap:7px;margin-top:14px;text-align:left;}
-  .asx-proof{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#25381C;background:#F1F8F3;border:1px solid #D6EBDD;border-radius:11px;padding:10px 12px;}
   .asx-cta2{margin-top:16px;width:100%;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
     color:#06231a;background:linear-gradient(135deg,#00E0A0,#07B083);box-shadow:0 14px 30px -12px rgba(0,224,160,.75);}
   .asx-cta2.pro{color:#fff;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 14px 30px -12px rgba(91,63,166,.75);}
@@ -1282,10 +1320,11 @@ function styles(accent: string): string {
   /* Halo sur le vrai bandeau du site + bulle « voici ce que verront vos visiteurs » */
   .offer-band.asx-glow{animation:asxGlow 2.4s ease;}
   @keyframes asxGlow{0%,100%{box-shadow:none}18%,70%{box-shadow:0 0 0 4px rgba(0,224,160,.45),0 0 34px 6px rgba(0,224,160,.35)}}
-  .asx-tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(26px + env(safe-area-inset-bottom));z-index:95;
-    background:rgba(16,20,38,.97);color:#fff;font-family:'Inter',system-ui,sans-serif;font-size:13.5px;font-weight:700;
+  .asx-tip{position:fixed;left:50%;transform:translateX(-50%);top:calc(16px + env(safe-area-inset-top));z-index:95;
+    max-width:min(430px,calc(100% - 28px));text-align:center;
+    background:rgba(16,20,38,.97);color:#fff;font-family:'Inter',system-ui,sans-serif;font-size:13.5px;font-weight:700;line-height:1.4;
     padding:12px 18px;border-radius:14px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);animation:asxTip .35s ease;}
-  @keyframes asxTip{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translateX(-50%)}}
+  @keyframes asxTip{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translateX(-50%)}}
   @media (prefers-reduced-motion:reduce){.asx-band,.offer-band.asx-glow,.asx-tip{animation:none;}}
   .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(12,14,11,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(2px);}
   .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;max-height:calc(100dvh - 44px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
