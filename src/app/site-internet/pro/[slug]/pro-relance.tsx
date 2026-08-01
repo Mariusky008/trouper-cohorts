@@ -223,7 +223,10 @@ export function ProRelance({
       canvas.height = VISUEL_SIZE;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("canvas");
-      drawVisuel(ctx, VISUEL_STYLES[0], { annonce: msg, nom, metier, ville });
+      // Le TITRE, pas le message WhatsApp entier : la formule d'adresse et la
+      // signature n'ont rien à faire sur une image, et les faire tenir écrasait
+      // le texte utile jusqu'à l'illisible.
+      drawVisuel(ctx, VISUEL_STYLES[0], { annonce: resumeBandeau(msg, 120), nom, metier, ville });
       const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
       const r = await fetch("/api/site-internet/pro/gallery", {
         method: "POST",
@@ -644,8 +647,11 @@ export function ProRelance({
             font-size:12.5px;font-weight:800;color:var(--ink);}
           .pro .relance .phot .ph-h button{border:1px solid var(--hair);background:#fff;color:var(--violet);
             border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;}
-          .pro .relance .phot .ph-g{display:block;width:100%;height:150px;object-fit:cover;border-radius:12px;
-            margin-top:10px;background:linear-gradient(150deg,#2C3A5E,#141A2E);}
+          /* L'aperçu reprend le CADRAGE de la carte du catalogue (portrait) : sur
+             une bande large, le pro voyait une image qui n'était pas celle que
+             ses client·es verraient, et découvrait le recadrage après coup. */
+          .pro .relance .phot .ph-g{display:block;width:auto;height:230px;aspect-ratio:4/5;object-fit:cover;
+            border-radius:12px;margin:10px auto 0;background:linear-gradient(150deg,#2C3A5E,#141A2E);}
           .pro .relance .phot .ph-s{font-size:11.5px;color:var(--soft);line-height:1.45;margin-top:9px;}
           .pro .relance .phot .ph-l{display:flex;gap:8px;overflow-x:auto;margin-top:11px;padding-bottom:3px;}
           .pro .relance .phot .ph-l button{flex:none;width:64px;height:64px;padding:0;border-radius:11px;overflow:hidden;

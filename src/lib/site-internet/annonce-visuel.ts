@@ -46,10 +46,23 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[
 
 export type VisuelData = { annonce: string; nom: string; metier: string; ville: string };
 
+/**
+ * Le carré est RECADRÉ partout où il paraît : en portrait sur la carte du
+ * catalogue, en bandeau large chez un commerce voisin, carré seulement sur
+ * Instagram. Une composition collée aux bords perd donc son texte — c'est ce
+ * qui arrivait : le haut et le bas disparaissaient.
+ *
+ * D'où une composition CENTRÉE, tenue dans une zone sûre : le texte au milieu
+ * exact (le seul endroit que tous les recadrages conservent), et rien de
+ * collé aux bords.
+ */
+const MARGE = 132; // 12 % de chaque côté : survit au recadrage portrait
+const LIGNES_MAX = 6;
+
 /** Dessine le visuel complet. Idempotent : on peut rappeler à chaque changement. */
 export function drawVisuel(ctx: CanvasRenderingContext2D, style: VisuelStyle, d: VisuelData): void {
   const S = VISUEL_SIZE;
-  const pad = 96;
+  const large = S - MARGE * 2;
 
   ctx.clearRect(0, 0, S, S);
   const g = ctx.createLinearGradient(0, 0, S, S);
@@ -59,46 +72,56 @@ export function drawVisuel(ctx: CanvasRenderingContext2D, style: VisuelStyle, d:
   ctx.fillRect(0, 0, S, S);
 
   // Halo discret : évite l'aplat mort sans rien encombrer.
-  const halo = ctx.createRadialGradient(S * 0.18, S * 0.08, 0, S * 0.18, S * 0.08, S * 0.75);
-  halo.addColorStop(0, style.key === "creme" ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.10)");
+  const halo = ctx.createRadialGradient(S * 0.5, S * 0.36, 0, S * 0.5, S * 0.36, S * 0.72);
+  halo.addColorStop(0, style.key === "creme" ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.12)");
   halo.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, S, S);
 
-  // Bandeau du haut : métier et ville, en petites capitales.
-  ctx.textBaseline = "top";
-  ctx.fillStyle = style.soft;
-  ctx.font = "700 30px Inter, system-ui, sans-serif";
-  const chapeau = [d.metier, d.ville].filter(Boolean).join(" · ").toUpperCase();
-  if (chapeau) ctx.fillText(chapeau, pad, pad);
+  ctx.textAlign = "center";
+  const milieu = S / 2;
 
   // L'annonce : c'est elle qu'on doit lire à bout de bras. On réduit le corps
-  // jusqu'à ce que le texte tienne en 7 lignes — plutôt que de le couper.
-  ctx.fillStyle = style.ink;
-  let size = 76;
+  // jusqu'à ce que le texte tienne — on ne le coupe JAMAIS, parce qu'une
+  // annonce tronquée dit autre chose que ce que le commerçant a écrit.
+  const texte = d.annonce.trim().replace(/\s+/g, " ");
+  let size = 78;
   let lines: string[] = [];
-  for (; size >= 40; size -= 4) {
+  for (; size >= 26; size -= 3) {
     ctx.font = `600 ${size}px Georgia, 'Times New Roman', serif`;
-    lines = wrap(ctx, d.annonce.trim(), S - pad * 2);
-    if (lines.length <= 7) break;
+    lines = wrap(ctx, texte, large);
+    if (lines.length <= LIGNES_MAX) break;
   }
-  const lh = size * 1.28;
-  // Bloc de texte centré verticalement entre le chapeau et la signature.
-  const haut = pad + 120;
-  const bas = S - pad - 130;
-  let y = Math.max(haut, haut + (bas - haut - lines.length * lh) / 2);
-  for (const l of lines.slice(0, 7)) {
-    ctx.fillText(l, pad, y);
+  const lh = size * 1.3;
+
+  // Le bloc complet (chapeau + texte + nom) est centré sur le milieu exact.
+  const chapeau = [d.metier, d.ville].filter(Boolean).join(" · ").toUpperCase();
+  const hChapeau = chapeau ? 68 : 0;
+  const hNom = d.nom ? 82 : 0;
+  const hTotal = hChapeau + lines.length * lh + hNom;
+  let y = milieu - hTotal / 2;
+
+  ctx.textBaseline = "top";
+  if (chapeau) {
+    ctx.fillStyle = style.soft;
+    ctx.font = "700 29px Inter, system-ui, sans-serif";
+    ctx.fillText(chapeau, milieu, y);
+    y += hChapeau;
+  }
+
+  ctx.fillStyle = style.ink;
+  ctx.font = `600 ${size}px Georgia, 'Times New Roman', serif`;
+  for (const l of lines) {
+    ctx.fillText(l, milieu, y);
     y += lh;
   }
 
-  // Signature en bas : le nom du commerce, puis le rappel du site.
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = style.ink;
-  ctx.font = "800 44px Inter, system-ui, sans-serif";
-  ctx.fillText(d.nom, pad, S - pad - 52);
+  if (d.nom) {
+    y += 24;
+    ctx.fillStyle = style.soft;
+    ctx.font = "800 38px Inter, system-ui, sans-serif";
+    ctx.fillText(d.nom, milieu, y);
+  }
 
-  ctx.fillStyle = style.soft;
-  ctx.font = "600 28px Inter, system-ui, sans-serif";
-  ctx.fillText("Toutes les infos et réservations sur notre site", pad, S - pad);
+  ctx.textAlign = "left";
 }
