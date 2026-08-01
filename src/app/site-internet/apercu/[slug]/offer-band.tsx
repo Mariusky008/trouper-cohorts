@@ -47,7 +47,8 @@ export function OfferBand({
   return (
     <button type="button" className="offer-band ex" data-assistant-open>
       <span className="oi">🚀</span>
-      <span className="ot"><b>Exemple d’Action Flash</b> · {example}</span>
+      {/* Même mot que dans l'espace pro : « annonce », pas « Action Flash ». */}
+      <span className="ot"><b>Exemple d’annonce</b> · {example}</span>
       <span className="og">Tester →</span>
     </button>
   );

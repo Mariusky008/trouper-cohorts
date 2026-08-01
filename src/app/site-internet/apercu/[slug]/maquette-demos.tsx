@@ -282,11 +282,29 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const bandHtml = (msg: string) =>
     `<div class="asx-band"><span class="asx-band-k">🎉 Offre du moment</span><span class="asx-band-t">${esc(msg)}</span></div>`;
 
+  /**
+   * La carte telle qu'elle paraît dans le catalogue de la ville — avec SA photo.
+   *
+   * La démo n'en montrait que le texte, alors que le catalogue est visuel et que
+   * l'espace pro fait de la photo une étape à part entière. Le commerçant ne
+   * pouvait pas comprendre ce qu'il allait vraiment obtenir.
+   */
+  const carteCatalogue = (msg: string) =>
+    `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
+      `<span class="asx-kveil"></span>` +
+      `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
+      `<span class="asx-kbody">` +
+        `<span class="asx-knom">${esc(nom)}</span>` +
+        `<span class="asx-ktxt">${esc(msg)}</span>` +
+      `</span>` +
+    `</div>`;
+
   const freeFinal = (msg: string) =>
-    `<div class="asx-done-k">✅ Action terminée</div>` +
+    `<div class="asx-done-k">✅ Annonce créée</div>` +
     `<div class="asx-done-h">Votre annonce est en ligne 🎉</div>` +
-    `<div class="asx-done-s">Elle est maintenant visible en haut de votre site, par toutes les personnes qui le consultent.</div>` +
+    `<div class="asx-done-s">En haut de votre site, et sur une carte dans le catalogue de ${villeNom}&nbsp;:</div>` +
     bandHtml(msg) +
+    carteCatalogue(msg) +
     `<div class="asx-proofs">` +
       `<div class="asx-proof"><span>🌐</span>Visible tout de suite sur votre site</div>` +
       `<div class="asx-proof"><span>📍</span>Dans le catalogue de ${villeNom}, à parcourir<sup>*</sup></div>` +
@@ -1075,6 +1093,17 @@ function styles(accent: string): string {
   .asx-pro-k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#6B4BC7;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;}
   .asx-done-h{font-family:Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;color:#16160F;margin-top:13px;}
   .asx-done-s{font-size:13.5px;line-height:1.55;color:#5F6358;margin-top:9px;}
+  /* La carte du catalogue, à la maille de /ville : pleine photo, voile, texte en bas. */
+  .asx-kcard{position:relative;display:block;height:210px;margin-top:11px;border-radius:16px;overflow:hidden;
+    background-size:cover;background-position:center;background-color:#141A2E;
+    background-image:linear-gradient(150deg,#2C3A5E,#141A2E);}
+  .asx-kveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.05),rgba(8,9,13,.78) 58%,rgba(8,9,13,.96));}
+  .asx-ktop{position:absolute;top:10px;left:10px;}
+  .asx-kmet{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#06231A;
+    background:#00E0A0;border-radius:6px;padding:4px 8px;}
+  .asx-kbody{position:absolute;left:13px;right:13px;bottom:12px;display:flex;flex-direction:column;gap:4px;text-align:left;}
+  .asx-knom{font-family:Georgia,serif;font-size:17px;font-weight:700;color:#fff;line-height:1.15;}
+  .asx-ktxt{font-size:12.5px;line-height:1.4;color:#DDE3EC;}
   .asx-band{display:flex;flex-direction:column;gap:5px;margin-top:15px;text-align:left;border-radius:13px;padding:13px 15px;
     background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;box-shadow:0 14px 30px -16px rgba(11,42,32,.8);animation:asxBandIn .5s cubic-bezier(.22,1,.36,1);}
   @keyframes asxBandIn{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}

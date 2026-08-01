@@ -176,7 +176,16 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .probar .pb-flash{background:rgba(255,255,255,.09);color:#EDF0FA;border:1px solid rgba(255,255,255,.18);}
           .mqc .probar .pb-keep{background:linear-gradient(135deg,#00E0A0,#07B083);color:#06231a;box-shadow:0 10px 22px -12px rgba(0,224,160,.8);}
           .mqc .probar .pb-flash:active,.mqc .probar .pb-keep:active{transform:scale(.96);}
-          @media (max-width:430px){.mqc .probar-lab{display:none;} .mqc .probar-btns{justify-content:space-between;} .mqc .probar .pb-flash,.mqc .probar .pb-keep{flex:1;text-align:center;}}
+          /* « white-space:nowrap » + « flex:1 » ne rétrécit PAS : la largeur
+             minimale d'un élément flex est celle de son contenu. Les deux
+             libellés totalisaient 464 px et poussaient la page hors de l'écran. */
+          @media (max-width:430px){
+            .mqc .probar-lab{display:none;}
+            .mqc .probar-btns{justify-content:space-between;}
+            .mqc .probar .pb-flash,.mqc .probar .pb-keep{flex:1;min-width:0;text-align:center;padding:9px 8px;
+              overflow:hidden;text-overflow:ellipsis;}
+            .mqc .probar .lg{display:none;}
+          }
           /* OFFRE DU MOMENT (bandeau haut de site, piloté par le pro) */
           .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;border:none;font-family:inherit;text-align:left;cursor:pointer;
             background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#000));
@@ -417,8 +426,15 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <div className="probar">
           <span className="probar-lab">✦ Côté pro · votre maquette</span>
           <div className="probar-btns">
-            <button type="button" className="pb-flash" data-assistant-open>🚀 Tester une Action Flash</button>
-            <a className="pb-keep" href="#site-rappel">✨ Garder ce site gratuitement</a>
+            {/* Même mot que dans l'espace pro (« Faire une annonce ») : « Action
+                Flash » est un nom de code interne, que le commerçant ne
+                retrouvera nulle part une fois chez lui. */}
+            <button type="button" className="pb-flash" data-assistant-open>
+              <span className="lg">🚀 </span>Tester une annonce
+            </button>
+            <a className="pb-keep" href="#site-rappel">
+              ✨ Garder ce site<span className="lg"> gratuitement</span>
+            </a>
           </div>
         </div>
       )}
