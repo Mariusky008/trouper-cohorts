@@ -163,6 +163,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
             font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);
             max-width:520px;margin:0 auto;scroll-behavior:smooth;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;}
           .mqc *{box-sizing:border-box;}
+          /* La maquette EST la page. Sans ça, tout ce qui dépasse sa hauteur —
+             le rebond de fin de défilement sur iPhone, la marge sous le dernier
+             bloc — laissait voir le beige du site (#E2D9BC), qui n'a rien à
+             faire ici : on croyait à une zone vide oubliée. */
+          html:has(.mqc),body:has(.mqc){background:#F6F4EF;}
           .mqc .banner{display:block;width:100%;border:none;font-family:inherit;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;text-align:center;padding:10px 14px;line-height:1.35;cursor:pointer;}
           .mqc .banner b{font-weight:700;}
           .mqc .banner:hover{filter:brightness(.98);}
@@ -176,15 +181,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           .mqc .probar .pb-flash{background:rgba(255,255,255,.09);color:#EDF0FA;border:1px solid rgba(255,255,255,.18);}
           .mqc .probar .pb-keep{background:linear-gradient(135deg,#00E0A0,#07B083);color:#06231a;box-shadow:0 10px 22px -12px rgba(0,224,160,.8);}
           .mqc .probar .pb-flash:active,.mqc .probar .pb-keep:active{transform:scale(.96);}
-          /* « white-space:nowrap » + « flex:1 » ne rétrécit PAS : la largeur
-             minimale d'un élément flex est celle de son contenu. Les deux
-             libellés totalisaient 464 px et poussaient la page hors de l'écran. */
           @media (max-width:430px){
             .mqc .probar-lab{display:none;}
-            .mqc .probar-btns{justify-content:space-between;}
-            .mqc .probar .pb-flash,.mqc .probar .pb-keep{flex:1;min-width:0;text-align:center;padding:9px 8px;
-              overflow:hidden;text-overflow:ellipsis;}
-            .mqc .probar .lg{display:none;}
+            .mqc .probar-btns{justify-content:flex-end;}
+            .mqc .probar .pb-keep{min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis;}
           }
           /* OFFRE DU MOMENT (bandeau haut de site, piloté par le pro) */
           .mqc .offer-band{display:flex;align-items:center;gap:11px;width:100%;text-decoration:none;border:none;font-family:inherit;text-align:left;cursor:pointer;
@@ -426,15 +426,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         <div className="probar">
           <span className="probar-lab">✦ Côté pro · votre maquette</span>
           <div className="probar-btns">
-            {/* Même mot que dans l'espace pro (« Faire une annonce ») : « Action
-                Flash » est un nom de code interne, que le commerçant ne
-                retrouvera nulle part une fois chez lui. */}
-            <button type="button" className="pb-flash" data-assistant-open>
-              <span className="lg">🚀 </span>Tester une annonce
-            </button>
-            <a className="pb-keep" href="#site-rappel">
-              ✨ Garder ce site<span className="lg"> gratuitement</span>
-            </a>
+            {/* Une seule porte ici. Le bouton d'essai vit SUR la plateforme,
+                posé là où le commerçant le retrouvera — deux entrées pour la
+                même chose obligeaient à choisir sans savoir qu'elles menaient
+                au même endroit, et faisaient déborder la barre sur mobile. */}
+            <a className="pb-keep" href="#site-rappel">✨ Garder ce site gratuitement</a>
           </div>
         </div>
       )}

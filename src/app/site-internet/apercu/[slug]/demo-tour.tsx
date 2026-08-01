@@ -533,7 +533,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           /* Pendant la présentation, on masque aussi la barre « côté pro » : le
              commerçant regarde, il n'agit pas. (Les boutons clients, eux, ne sont
              affichés que sur le site activé — voir maquette-sante.) */
-          .mqc-demoing .probar{display:none!important;}
+          /* Pendant la visite guidée, le site ne doit porter QU'UN message : celui
+             de l'étape. La barre « côté pro » était déjà masquée ; le bandeau
+             d'exemple ne l'était pas, et se superposait au titre de l'étape. */
+          .mqc-demoing .probar,.mqc-demoing .offer-band{display:none!important;}
 
           /* Barre « en train de parler » — sobre, la page reste visible derrière. */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;

@@ -843,14 +843,19 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     <>
       <style>{styles(accent)}</style>
 
+      {/* Ce bouton est posé sur un site que le commerçant croit voir « comme un
+          client ». Sans le dire, il pense que ses client·es le verront aussi, ou
+          que c'est une fonction pour eux. « Action Flash » n'aidait pas : c'est
+          un nom de code qu'il ne retrouvera nulle part. */}
       {!open && !stageOn && !atBottom && (
-        <button className="asx-fab" onClick={handleOpen} aria-label="Côté pro : lancer une Action Flash">
+        <button className="asx-fab" onClick={handleOpen} aria-label="Réservé au commerçant : créer une annonce d'essai">
           <span className="orb">✦</span>
-          {/* « Côté pro · aperçu » laissait croire « c'est payant » → certains
-              n'osaient même pas cliquer. On promet la rapidité, pas le tarif. */}
-          <span className="lab"><small>Action Flash</small>Créer une annonce en 30 s</span>
+          <span className="lab"><small>🔒 Réservé au commerçant</small>Créer une annonce d’essai</span>
           <span className="chev">›</span>
         </button>
+      )}
+      {!open && !stageOn && !atBottom && (
+        <span className="asx-fabnote">Vos client·es ne voient pas ce bouton.</span>
       )}
 
       {open && !stageOn && (
@@ -902,6 +907,8 @@ function styles(accent: string): string {
   .asx-fab .lab{font-size:14.5px;font-weight:700;white-space:nowrap;line-height:1.08;text-align:left;}
   .asx-fab .lab small{display:block;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A594FF;font-weight:700;margin-bottom:1px;}
   .asx-fab .chev{font-size:22px;color:#A594FF;font-weight:700;margin-left:1px;line-height:1;}
+  .asx-fabnote{position:fixed;left:0;right:0;bottom:66px;z-index:55;text-align:center;pointer-events:none;
+    font-size:10.5px;font-weight:600;color:#6E6A5C;}
   @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
   @media (prefers-reduced-motion:reduce){.asx-fab{animation:none;}}
   .asx-sheet{position:fixed;left:0;right:0;bottom:0;z-index:56;max-width:520px;margin:0 auto;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -18px 50px -12px rgba(0,0,0,.4);max-height:88vh;display:flex;flex-direction:column;animation:asxUp .38s cubic-bezier(.22,1,.36,1);}
