@@ -407,7 +407,19 @@ export default async function EspacePro({
             label: "Annonce",
             icon: "📣",
             hidden: true,
-            node: <ProRelance slug={slug} token={token} nom={nom} metier={mp.entry?.label ?? activite} ville={ville} />,
+            node: (
+              <ProRelance
+                slug={slug}
+                token={token}
+                nom={nom}
+                metier={mp.entry?.label ?? activite}
+                ville={ville}
+                // Pilotent le vocabulaire des Actions Flash : « créneau » chez un
+                // coiffeur, « table » au restaurant, « arrivage » en boutique.
+                confirmation={mp.entry?.confirmation ?? "reserve"}
+                secteur={mp.entry?.secteur ?? "flux"}
+              />
+            ),
           },
           {
             key: "clients",

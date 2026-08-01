@@ -7,8 +7,17 @@
 // ferait bannir. Un plafond quotidien (serveur) protège contre la sur-sollicitation.
 // Si le pro a constitué une audience opt-in (« Mes clients »), on la propose ici
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
+import {
+  intentionsPour,
+  joursProches,
+  manquants,
+  recommandees,
+  type Champ,
+  type Intention,
+} from "@/lib/site-internet/actions-flash";
+import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
@@ -17,12 +26,26 @@ type Offer = { text: string; until: string | null; clicks: number; created_at: s
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
 
-// Modèles rapides pour pré-remplir (le pro édite ensuite librement).
-const TEMPLATES: Array<{ label: string; text: string }> = [
-  { label: "🕐 Créneau libre", text: "Bonjour, une place se libère [jour/heure]. Envie d'en profiter ? Répondez-moi, je vous la réserve." },
-  { label: "🏷️ Promo", text: "Bonjour ! Cette semaine : [produit/prestation] à -[XX]%. Ça vous tente ? Répondez-moi 🙂" },
-  { label: "✨ Nouveauté", text: "Bonjour ! Petite nouveauté chez nous : [à compléter]. Passez la découvrir 😊" },
-];
+// Faits d'environnement : lus après hydratation pour que le rendu serveur et le
+// premier rendu client concordent (l'ordre des propositions dépend de l'heure).
+const jamais = () => () => {};
+
+// Les trois angles rédigés par l'assistante, dans l'ordre où elle les renvoie
+// (cf. api/site-internet/pro/announce).
+const TONS = ["Direct", "Chaleureux", "Court"];
+
+/** « aujourd'hui 18 h » / « demain 9 h 30 » / « mardi 5 août » — jamais une heure sèche. */
+function echeanceLisible(d: Date): string {
+  const nuit = new Date(d);
+  nuit.setHours(0, 0, 0, 0);
+  const auj = new Date();
+  auj.setHours(0, 0, 0, 0);
+  const ecart = Math.round((nuit.getTime() - auj.getTime()) / 86400000);
+  const hh = `${d.getHours()} h${d.getMinutes() ? ` ${String(d.getMinutes()).padStart(2, "0")}` : ""}`;
+  if (ecart === 0) return `aujourd'hui ${hh}`;
+  if (ecart === 1) return `demain ${hh}`;
+  return `${d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} ${hh}`;
+}
 
 export function ProRelance({
   slug,
@@ -30,12 +53,16 @@ export function ProRelance({
   nom,
   metier,
   ville,
+  confirmation,
+  secteur,
 }: {
   slug: string;
   token: string;
   nom: string;
   metier: string;
   ville: string;
+  confirmation: Confirmation;
+  secteur: Secteur;
 }) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -49,10 +76,22 @@ export function ProRelance({
   const [gening, setGening] = useState(false);
   const [aiUsed, setAiUsed] = useState(false);
   const [aiErr, setAiErr] = useState("");
+  // Les trois angles proposés par l'assistante — on les MONTRE (ils sont déjà
+  // rédigés et facturés) plutôt que de faire régénérer à l'aveugle.
+  const [variantes, setVariantes] = useState<string[]>([]);
+  const [variante, setVariante] = useState(0);
+  // Action Flash choisie + réponses aux questions. `libre` = le pro préfère dicter.
+  const [intention, setIntention] = useState<Intention | null>(null);
+  const [reponses, setReponses] = useState<Record<string, string>>({});
+  const [voirTout, setVoirTout] = useState(false);
+  const [libre, setLibre] = useState(false);
+  const [trous, setTrous] = useState<string[]>([]);
+  // Échéance déduite des réponses : l'offre « 16 h → 18 h » s'arrête à 18 h.
+  const [echeance, setEcheance] = useState<Date | null>(null);
   // « Offre du moment » : bandeau affiché sur le site du pro + lien traçable.
   const [offer, setOffer] = useState<Offer | null>(null);
   const [offerText, setOfferText] = useState("");
-  const [offerDays, setOfferDays] = useState(2);
+  const [duree, setDuree] = useState("2j");
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
@@ -64,16 +103,38 @@ export function ProRelance({
 
   const trackLink = typeof window !== "undefined" ? `${window.location.origin}/offre/${slug}` : `/offre/${slug}`;
 
+  // Le moment de retrait, calculé sur l'horloge du commerçant (le serveur ne
+  // connaît pas son fuseau) et validé côté serveur.
+  const finChoisie = (): Date | null => {
+    if (duree === "auto") return echeance;
+    if (duree === "0") return null;
+    const d = new Date();
+    if (duree === "2h") {
+      d.setHours(d.getHours() + 2);
+      return d;
+    }
+    if (duree === "soir") {
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+    // Parenthèses obligatoires : `getDate() + NaN || 1` vaudrait 1, et l'offre
+    // se retirerait le 1er du mois.
+    const n = Number(duree.replace("j", "")) || 1;
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+
   const saveOffer = async () => {
     const t = offerText.trim();
     if (!t || offerBusy) return;
     setOfferBusy(true);
     setOfferErr("");
     try {
+      const fin = finChoisie();
       const r = await fetch("/api/site-internet/pro/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, action: "set", text: t.slice(0, 140), days: offerDays }),
+        body: JSON.stringify({ slug, token, action: "set", text: t.slice(0, 140), until: fin ? fin.toISOString() : null }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.offer) {
@@ -112,29 +173,120 @@ export function ProRelance({
     window.setTimeout(() => setLinkAdded(false), 2200);
   };
 
-  const generate = async () => {
-    const b = brief.trim();
-    if (!b || gening) return;
+  // Les Actions Flash du métier. L'ordre dépend de l'heure : on ne le calcule
+  // qu'une fois monté, sinon le rendu serveur et le rendu client divergeraient.
+  const monte = useSyncExternalStore(jamais, () => true, () => false);
+  const toutes = useMemo(() => intentionsPour(metier, confirmation, secteur), [metier, confirmation, secteur]);
+  const podium = useMemo(
+    () => (monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3)),
+    [monte, toutes],
+  );
+  const jours = useMemo(() => (monte ? joursProches(new Date()) : []), [monte]);
+
+  const rediger = async (texte: string) => {
+    if (!texte || gening) return;
     setGening(true);
     setAiErr("");
     try {
       const r = await fetch("/api/site-internet/pro/announce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, brief: b.slice(0, 400) }),
+        body: JSON.stringify({ slug, token, brief: texte.slice(0, 400) }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && typeof j.text === "string" && j.text.trim()) {
-        setMessage(j.text.trim());
+        const v = Array.isArray(j.variantes) ? (j.variantes as unknown[]).map((x) => String(x).trim()).filter(Boolean) : [];
+        setVariantes(v);
+        setVariante(0);
+        setMessage((v[0] || j.text).trim());
         setAiUsed(true);
       } else {
-        setAiErr(typeof j.error === "string" ? j.error : "Impossible de générer le message. Réessayez.");
+        setAiErr(typeof j.error === "string" ? j.error : "Impossible de rédiger le message. Réessayez.");
       }
     } catch {
-      setAiErr("Impossible de générer le message. Réessayez.");
+      setAiErr("Impossible de rédiger le message. Réessayez.");
     } finally {
       setGening(false);
     }
+  };
+
+  const generate = () => rediger(brief.trim());
+
+  /**
+   * Le garde-fou : tant qu'une information qui engage le commerce manque, on ne
+   * rédige rien. Mieux vaut une question de plus qu'une annonce à trous — ou,
+   * pire, une annonce que le commerçant n'a pas vraiment validée.
+   */
+  const redigerDepuisAction = async () => {
+    if (!intention) return;
+    const vides = manquants(intention, reponses);
+    if (vides.length) {
+      setTrous(vides.map((c) => c.cle));
+      return;
+    }
+    setTrous([]);
+    setEcheance(intention.fin(reponses, new Date()));
+    setDuree("auto");
+    await rediger(intention.brief(reponses));
+  };
+
+  const choisirAction = (it: Intention) => {
+    setIntention(it);
+    setReponses({});
+    setTrous([]);
+    setAiUsed(false);
+    setVariantes([]);
+    setEcheance(null);
+    setDuree("2j"); // sinon « auto » survivrait à une échéance devenue nulle
+    setAiErr("");
+    setMessage(""); // surtout pas le message par défaut : il parlerait d'autre chose
+  };
+
+  const retourChoix = () => {
+    setIntention(null);
+    setLibre(false);
+    setTrous([]);
+  };
+
+  /**
+   * Le champ correspondant à une question. Les types natifs (`time`, `number`)
+   * plutôt qu'un texte libre : sur un téléphone, ils ouvrent le bon clavier et
+   * suppriment l'ambiguïté d'une heure écrite « 18h », « 18 h » ou « 6 h du soir ».
+   * Aucun `defaultValue` : un chiffre pré-rempli serait un chiffre suggéré.
+   */
+  const champ = (c: Champ) => {
+    const v = reponses[c.cle] ?? "";
+    const set = (x: string) => {
+      setReponses((r) => ({ ...r, [c.cle]: x }));
+      setTrous((t) => t.filter((k) => k !== c.cle));
+    };
+    const id = `af-${c.cle}`;
+    if (c.type === "heure") return <input id={id} type="time" value={v} onChange={(e) => set(e.target.value)} />;
+    if (c.type === "jour")
+      return (
+        <select id={id} value={v} onChange={(e) => set(e.target.value)}>
+          <option value="">{c.requis ? "Choisir un jour…" : "— non précisé —"}</option>
+          {jours.map((d) => (
+            <option key={d.valeur} value={d.valeur}>{d.label}</option>
+          ))}
+        </select>
+      );
+    if (c.type === "nombre")
+      return (
+        <input id={id} type="number" min={1} inputMode="numeric" value={v}
+          onChange={(e) => set(e.target.value)} placeholder={c.exemple} />
+      );
+    if (c.type === "pourcent")
+      return (
+        <span className="afpc">
+          <input id={id} type="number" min={1} max={90} inputMode="numeric" value={v} onChange={(e) => set(e.target.value)} />
+          <i>%</i>
+        </span>
+      );
+    return (
+      <input id={id} type="text" value={v} onChange={(e) => set(e.target.value)}
+        placeholder={c.exemple ? `Ex. ${c.exemple}` : ""} maxLength={90} />
+    );
   };
 
   // Quota restant du jour (lecture au montage — best-effort).
@@ -279,16 +431,54 @@ export function ProRelance({
           .pro .relance .ai .aih{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#00926E;}
           .pro .relance .ai .ais{font-size:12px;color:var(--soft);line-height:1.45;margin-top:4px;}
           .pro .relance .ai textarea{width:100%;margin-top:10px;border:1px solid #D9CFF0;border-radius:11px;padding:11px 13px;font-size:13.5px;font-family:inherit;background:#fff;resize:vertical;line-height:1.45;}
-          .pro .relance .ai .aibtn{margin-top:10px;width:100%;background:#00926E;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
-          .pro .relance .ai .aibtn:disabled{opacity:.55;cursor:not-allowed;}
+          /* Le bouton de rédaction sert DANS l'encart assistante et DANS le
+             parcours Action Flash : son style ne peut pas vivre sous « .ai ». */
+          .pro .relance .aibtn{margin-top:16px;width:100%;background:#00926E;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+          .pro .relance .ai .aibtn{margin-top:10px;padding:12px;font-size:13.5px;}
+          .pro .relance .aibtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .ai .aierr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .ai .aiok{margin-top:8px;font-size:11.5px;color:#00926E;line-height:1.4;}
           /* Trois angles proposés : on choisit, on ne regénère pas à l'aveugle. */
-          .pro .relance .ai .vars{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
-          .pro .relance .ai .vars .vk{font-size:11.5px;font-weight:700;color:var(--soft);margin-right:2px;}
-          .pro .relance .ai .vars button{border:1px solid var(--hair);background:#fff;color:var(--soft);border-radius:999px;
-            padding:7px 13px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
-          .pro .relance .ai .vars button.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+          .pro .relance .vars{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:14px;}
+          .pro .relance .vars .vk{font-size:11.5px;font-weight:700;color:var(--soft);margin-right:2px;}
+          .pro .relance .vars button{border:1px solid var(--hair);background:#fff;color:var(--soft);border-radius:999px;
+            padding:11px 15px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .vars button.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+          /* ── Actions Flash : le choix, puis les questions ── */
+          .pro .relance .rlz-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:5px;}
+          .pro .relance .afl{display:flex;flex-direction:column;gap:9px;margin-top:15px;}
+          .pro .relance .af{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+            border:1px solid var(--hair);border-radius:15px;padding:14px;background:#fff;font-family:inherit;}
+          .pro .relance .af:hover{border-color:var(--violet);}
+          .pro .relance .af:active{transform:translateY(1px);}
+          .pro .relance .af .afe{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;
+            justify-content:center;font-size:21px;background:#E6F7F1;}
+          .pro .relance .af .afb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+          .pro .relance .af .aft{font-size:14.5px;font-weight:800;color:var(--ink);line-height:1.3;}
+          .pro .relance .af .afs{font-size:11.5px;color:var(--soft);line-height:1.4;}
+          .pro .relance .af .afg{flex:none;font-size:20px;font-weight:700;color:var(--faint);}
+          .pro .relance .afmore{margin-top:11px;width:100%;background:#F1EFE7;border:1px solid var(--hair);color:var(--soft);
+            border-radius:12px;padding:13px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .aflibre{margin-top:9px;width:100%;background:none;border:1px dashed var(--hair);color:var(--soft);
+            border-radius:12px;padding:13px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;}
+          /* Retour en arrière : discret, mais assez haut pour un pouce. */
+          .pro .relance .afback{margin-top:10px;background:none;border:none;padding:10px 2px;color:var(--soft);
+            font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;}
+          .pro .relance .afq{display:flex;flex-direction:column;gap:13px;margin-top:16px;}
+          .pro .relance .afr{display:flex;flex-direction:column;gap:6px;}
+          .pro .relance .afr label{font-size:12.5px;font-weight:700;color:var(--ink);}
+          .pro .relance .afr label i{font-style:normal;font-weight:500;color:var(--faint);}
+          .pro .relance .afr input,.pro .relance .afr select{width:100%;border:1px solid var(--hair);border-radius:11px;
+            padding:12px 13px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
+          .pro .relance .afr.trou input,.pro .relance .afr.trou select{border-color:#D98B82;background:#FDF6F5;}
+          .pro .relance .afr .afpc{display:flex;align-items:center;gap:8px;}
+          .pro .relance .afr .afpc input{flex:1;min-width:0;}
+          .pro .relance .afr .afpc i{font-style:normal;font-size:15px;font-weight:800;color:var(--soft);}
+          .pro .relance .aftrou{margin-top:12px;background:#FDF6F5;border:1px solid #EBC9C4;border-radius:11px;
+            padding:10px 12px;font-size:12px;color:#8A3F36;line-height:1.45;}
+          .pro .relance .afech{margin-top:11px;background:#E6F7F1;border:1px solid #BFE8D9;border-radius:11px;
+            padding:10px 12px;font-size:12.5px;color:#0E6B52;line-height:1.45;}
+          .pro .relance .afech b{color:#08432F;}
           .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
           @keyframes aispin{to{transform:rotate(360deg)}}
           @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}
@@ -386,43 +576,125 @@ export function ProRelance({
 
         {step === 1 && (
           <>
-            <div className="rlz-h">Que voulez-vous annoncer&nbsp;?</div>
-            <div className="ai">
-              <div className="aih">✨ Laisser l&apos;assistante rédiger</div>
-              <div className="ais">Dites en quelques mots ce que vous proposez — l&apos;assistante rédige le message.</div>
-              <textarea
-                value={brief}
-                onChange={(e) => setBrief(e.target.value)}
-                rows={2}
-                placeholder="Ex. il reste 2 places pour le cours de samedi 10h"
-              />
-              <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
-                {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
-              </button>
-              {aiErr && <div className="aierr">{aiErr}</div>}
-              {aiUsed && !aiErr && <div className="aiok">✓ Message rédigé ci-dessous — relisez et ajustez.</div>}
-            </div>
+            {/* ① Le choix. Trois propositions, pas dix : la valeur promise ici est
+                de ne PAS avoir à chercher quoi publier. */}
+            {!intention && !libre && (
+              <>
+                <div className="rlz-h">Que voulez-vous obtenir aujourd&apos;hui&nbsp;?</div>
+                <div className="rlz-s">Choisissez, l&apos;assistante rédige. Vous relisez avant que ça parte.</div>
+                <div className="afl">
+                  {(voirTout ? toutes : podium).map((it) => (
+                    <button key={it.cle} type="button" className="af" onClick={() => choisirAction(it)}>
+                      <span className="afe">{it.emoji}</span>
+                      <span className="afb">
+                        <span className="aft">{it.titre}</span>
+                        <span className="afs">{it.sous}</span>
+                      </span>
+                      <span className="afg" aria-hidden="true">›</span>
+                    </button>
+                  ))}
+                </div>
+                {!voirTout && toutes.length > podium.length && (
+                  <button type="button" className="afmore" onClick={() => setVoirTout(true)}>
+                    Une autre idée&nbsp;({toutes.length - podium.length}) →
+                  </button>
+                )}
+                <button type="button" className="aflibre" onClick={() => setLibre(true)}>
+                  🎙️ Ou dites votre annonce à l&apos;assistante
+                </button>
+              </>
+            )}
 
-            <div className="tmpl">
-              {TEMPLATES.map((t) => (
-                <button key={t.label} type="button" onClick={() => setMessage(t.text)}>{t.label}</button>
-              ))}
-            </div>
+            {/* ② Les questions. Chaque information qui engage le commerce est
+                saisie ici — jamais devinée, jamais pré-remplie. */}
+            {intention && (
+              <>
+                <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
+                <div className="rlz-h">{intention.emoji} {intention.titre}</div>
+                <div className="rlz-s">{intention.sous}</div>
+                <div className="afq">
+                  {intention.champs.map((c) => (
+                    <div className={`afr${trous.includes(c.cle) ? " trou" : ""}`} key={c.cle}>
+                      <label htmlFor={`af-${c.cle}`}>
+                        {c.label}
+                        {!c.requis && <i> · facultatif</i>}
+                      </label>
+                      {champ(c)}
+                    </div>
+                  ))}
+                </div>
+                {trous.length > 0 && (
+                  <div className="aftrou">
+                    Il manque une information. Elle part à vos client·es en votre nom — on ne l&apos;invente pas à votre place.
+                  </div>
+                )}
+                <button className="aibtn" onClick={redigerDepuisAction} disabled={gening}>
+                  {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Réécrire" : "✨ Rédiger mon annonce"}
+                </button>
+                {aiErr && <div className="aierr">{aiErr}</div>}
+                {echeance && aiUsed && (
+                  <div className="afech">⏳ Se retire tout seul <b>{echeanceLisible(echeance)}</b> — vous n&apos;avez rien à faire.</div>
+                )}
+              </>
+            )}
 
-            <div className="opt">
-              <label htmlFor="pro-msg">Votre message</label>
-              <textarea
-                id="pro-msg"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={4}
-                placeholder="Écrivez exactement ce que vous proposez…"
-              />
-            </div>
+            {/* ③ Le mode libre : celui qui sait déjà quoi dire n'est pas ralenti. */}
+            {libre && (
+              <>
+                <button type="button" className="afback" onClick={retourChoix}>← Voir les idées prêtes</button>
+                <div className="rlz-h">Dites-le en quelques mots</div>
+                <div className="ai">
+                  <div className="aih">✨ L&apos;assistante met en forme</div>
+                  <div className="ais">
+                    Elle corrige et met en forme, mais n&apos;ajoute rien&nbsp;: ni prix, ni horaire, ni détail que vous n&apos;avez pas écrit.
+                  </div>
+                  <textarea
+                    value={brief}
+                    onChange={(e) => setBrief(e.target.value)}
+                    rows={2}
+                    placeholder="Ex. il reste 2 places pour le cours de samedi 10h"
+                  />
+                  <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
+                    {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
+                  </button>
+                  {aiErr && <div className="aierr">{aiErr}</div>}
+                </div>
+              </>
+            )}
 
-            <div className="rlz-nav">
-              <button className="next" onClick={() => setStep(2)} disabled={!message.trim()}>Suivant →</button>
-            </div>
+            {/* ④ Le résultat, relu et modifiable. */}
+            {(aiUsed || libre || aiErr) && (
+              <>
+                {variantes.length > 1 && (
+                  <div className="vars">
+                    <span className="vk">Ton&nbsp;:</span>
+                    {TONS.slice(0, variantes.length).map((lab, k) => (
+                      <button
+                        key={lab}
+                        type="button"
+                        className={k === variante ? "on" : ""}
+                        onClick={() => { setVariante(k); setMessage(variantes[k]); }}
+                      >
+                        {lab}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="opt">
+                  <label htmlFor="pro-msg">Votre message</label>
+                  <textarea
+                    id="pro-msg"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={4}
+                    placeholder="Écrivez exactement ce que vous proposez…"
+                  />
+                </div>
+                <div className="rlz-nav">
+                  <button className="next" onClick={() => setStep(2)} disabled={!message.trim()}>Suivant →</button>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -469,7 +741,7 @@ export function ProRelance({
                       <div className="lmeta">
                         <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
                         {offer.until ? (
-                          <span>· jusqu&apos;au {new Date(offer.until).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
+                          <span>· se retire {echeanceLisible(new Date(offer.until))}</span>
                         ) : (
                           <span>· sans limite de date</span>
                         )}
@@ -488,14 +760,25 @@ export function ProRelance({
                         placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
                         maxLength={140}
                       />
+                      {/* Une offre de deux heures doit s'arrêter au bout de deux
+                          heures. Sans ça, le commerçant devrait revenir la
+                          retirer à la main — et ne le ferait pas. */}
                       <div className="row">
-                        <label htmlFor="offer-days">Afficher pendant</label>
-                        <select id="offer-days" value={offerDays} onChange={(e) => setOfferDays(Number(e.target.value))}>
-                          <option value={1}>1 jour</option>
-                          <option value={2}>2 jours</option>
-                          <option value={7}>1 semaine</option>
-                          <option value={0}>Sans limite</option>
+                        <label htmlFor="offer-until">Se retire</label>
+                        <select id="offer-until" value={duree} onChange={(e) => setDuree(e.target.value)}>
+                          {echeance && <option value="auto">à {echeanceLisible(echeance)}</option>}
+                          <option value="2h">dans 2 heures</option>
+                          <option value="soir">ce soir</option>
+                          <option value="1j">demain</option>
+                          <option value="2j">dans 2 jours</option>
+                          <option value="7j">dans 1 semaine</option>
+                          <option value="0">jamais</option>
                         </select>
+                      </div>
+                      <div className="rtip" style={{ marginTop: 8 }}>
+                        {duree === "0"
+                          ? "Elle restera affichée jusqu'à ce que vous la retiriez vous-même."
+                          : "Elle disparaît toute seule de votre site et du catalogue — vous n'avez rien à faire."}
                       </div>
                       <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
                         {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}

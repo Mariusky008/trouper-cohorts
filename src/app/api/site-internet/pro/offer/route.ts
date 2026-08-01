@@ -7,7 +7,12 @@
 //   { text: string, until: string|null (ISO), clicks: number, created_at: string }
 //   null = aucune offre active.
 //
-// Actions (POST, jeton pro privé requis) : get | set {text, days} | clear.
+// Actions (POST, jeton pro privé requis) : get | set {text, until|days} | clear.
+//
+// `until` (ISO) prime sur `days` : une offre « de 16 h à 18 h » doit disparaître
+// à 18 h, pas au bout d'une journée entière. C'est la seule façon d'annoncer
+// honnêtement quelque chose qui ne dure que deux heures — sans elle, le
+// commerçant devrait revenir la retirer à la main, et ne le ferait pas.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -28,6 +33,29 @@ function readOffer(v: unknown): Offer | null {
     clicks: typeof o.clicks === "number" ? o.clicks : 0,
     created_at: typeof o.created_at === "string" && o.created_at ? o.created_at : new Date().toISOString(),
   };
+}
+
+const MAX_MS = 30 * 24 * 3600 * 1000; // au-delà, ce n'est plus « l'offre du moment »
+
+/**
+ * L'échéance de l'annonce, en ISO. Le client sait seul à quelle heure locale son
+ * offre s'arrête ; on ne recalcule donc pas ici, on VALIDE : une date passée ou
+ * aberrante devient « sans limite » plutôt qu'une offre morte à la naissance.
+ */
+function echeance(p: Record<string, unknown> | null): string | null {
+  const brut = str(p?.until);
+  if (brut) {
+    const t = Date.parse(brut);
+    if (!Number.isNaN(t) && t > Date.now()) return new Date(Math.min(t, Date.now() + MAX_MS)).toISOString();
+    return null;
+  }
+  const days = typeof p?.days === "number" ? p.days : Number(str(p?.days)) || 0;
+  if (days > 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + Math.min(30, Math.round(days)));
+    return d.toISOString();
+  }
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -78,13 +106,7 @@ export async function POST(request: Request) {
   if (action === "set") {
     const text = str(p?.text).slice(0, 140);
     if (!text) return NextResponse.json({ error: "Écrivez le texte de l'offre." }, { status: 400 });
-    const days = typeof p?.days === "number" ? p.days : Number(str(p?.days)) || 0;
-    let until: string | null = null;
-    if (days > 0) {
-      const d = new Date();
-      d.setDate(d.getDate() + Math.min(30, Math.round(days)));
-      until = d.toISOString();
-    }
+    const until = echeance(p);
     const offer: Offer = { text, until, clicks: 0, created_at: new Date().toISOString() };
     try {
       await supabase.from("human_vitrine_sites").update({ current_offer: offer }).eq("id", id);
