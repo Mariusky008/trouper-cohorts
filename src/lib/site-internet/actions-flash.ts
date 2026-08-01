@@ -36,6 +36,15 @@ export type Intention = {
   emoji: string;
   /** Toujours interrogatif : le commerçant confirme, il ne se voit pas imposer un fait. */
   titre: string;
+  /**
+   * Le même objectif, à l'impératif — pour l'écran de choix.
+   *
+   * « Un créneau s'est libéré ? » est la bonne formulation quand on demande au
+   * commerçant de confirmer un fait (espace pro, écran de saisie). Sur un menu
+   * de départ, une liste de questions transforme le geste en questionnaire :
+   * il ne répond pas, il déclenche. D'où « Remplir un créneau ».
+   */
+  action: string;
   sous: string;
   champs: Champ[];
   /**
@@ -223,6 +232,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     liste.push({
       cle: "creneau",
       emoji: "🕐",
+      action: `Remplir un ${v.place}`,
       titre: `Un ${v.place} s'est libéré ?`,
       sous: "Prévenez ceux qui attendaient une place.",
       champs: [
@@ -241,6 +251,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     liste.push({
       cle: "dispo",
       emoji: "📅",
+      action: "Annoncer mes disponibilités",
       titre: `Vos derniers ${v.places} de la semaine ?`,
       sous: "Dites ce qu'il vous reste, sans promettre plus.",
       champs: [
@@ -257,6 +268,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "venir",
     emoji: "☕",
+    action: "Faire venir du monde",
     titre: "Faire venir du monde aujourd'hui ?",
     sous: "Une raison simple de pousser la porte.",
     champs: [
@@ -273,6 +285,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "offre",
     emoji: "⚡",
+    action: "Lancer une offre flash",
     titre: "Une offre sur quelques heures ?",
     sous: "Elle disparaît toute seule à l'heure que vous fixez.",
     champs: [
@@ -290,6 +303,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "nouveaute",
     emoji: "✨",
+    action: "Montrer une nouveauté",
     titre: "Une nouveauté à montrer ?",
     sous: "Ce qui vient d'arriver et que personne ne sait encore.",
     champs: [
@@ -307,6 +321,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     liste.push({
       cle: "arrivage",
       emoji: "🧺",
+      action: "Annoncer l'arrivage du jour",
       titre: "Un arrivage du jour à faire connaître ?",
       sous: "Ce qui est frais ce matin et parti ce soir.",
       champs: [
@@ -323,6 +338,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "realisation",
     emoji: "📸",
+    action: "Montrer mon travail",
     titre: "Montrer ce que vous venez de faire ?",
     sous: "Votre travail d'aujourd'hui vaut mieux qu'un slogan.",
     champs: [{ cle: "quoi", label: "Qu'avez-vous réalisé ?", type: "texte", exemple: "une pose sur ongles courts", requis: true }],
@@ -335,6 +351,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "evenement",
     emoji: "🎉",
+    action: "Annoncer un événement",
     titre: "Un événement à annoncer ?",
     sous: "Une date que les gens doivent noter.",
     champs: [
@@ -351,6 +368,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "fideles",
     emoji: "💚",
+    action: "Gâter mes habitués",
     titre: "Un geste pour vos habitués ?",
     sous: "Ceux qui reviennent méritent de l'apprendre en premier.",
     champs: [
@@ -367,6 +385,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   liste.push({
     cle: "horaires",
     emoji: "🕰️",
+    action: "Signaler un changement d'horaires",
     titre: "Un changement d'horaires ?",
     sous: "Éviter à quelqu'un de trouver porte close.",
     champs: [

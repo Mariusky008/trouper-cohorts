@@ -34,21 +34,6 @@ export type MaquetteAssistantData = {
 // Parcours Action Flash en 4 temps : je choisis → je dis → je vérifie → c'est publié.
 type View = "home" | "avisIn" | "avisPrev" | "creneauIn" | "creneauSay" | "creneauPrev" | "questionIn";
 
-// Progression : trois temps de SAISIE seulement. Les écrans de résultat
-// (« c'est publié », « options prêtes ») sont volontairement hors compteur —
-// un résultat n'est pas une étape, et le chemin Pro en compte plusieurs.
-const STEP_LABELS = ["Je choisis", "Je décris", "Je vérifie"] as const;
-const Steps = ({ n }: { n: 1 | 2 | 3 }) => (
-  <div className="asx-steps">
-    <span className="asx-segs" aria-hidden="true">
-      {STEP_LABELS.map((_, i) => (
-        <span key={i} className={i < n ? "on" : ""} />
-      ))}
-    </span>
-    <span className="asx-steplb">{STEP_LABELS[n - 1]}</span>
-  </div>
-);
-
 export function MaquetteAssistant({ accent, data, slug }: { accent: string; data: MaquetteAssistantData; slug: string }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
@@ -144,13 +129,21 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   // Garde-fou anti-« clic traversant » : le temps qu'une carte s'affiche, un tap
   // encore en vol ne doit pas déclencher son bouton principal.
   const cardAt = useRef(0);
-  const setCard = (html: string) => {
+  /**
+   * `mode` : « bare » retire le cadre blanc et laisse le contenu occuper la
+   * scène entière. Un résultat qu'on montre au commerçant — son bandeau, sa
+   * carte — n'a pas à tenir dans une vignette de 300 px posée au milieu d'un
+   * grand fond sombre ; c'est lui qui doit remplir l'écran.
+   */
+  const setCard = (html: string, mode: "" | "bare" = "") => {
     cardAt.current = Date.now();
-    if (cardRef.current) cardRef.current.innerHTML = html;
+    if (!cardRef.current) return;
+    cardRef.current.className = mode ? `asx-card ${mode}` : "asx-card";
+    cardRef.current.innerHTML = html;
   };
-  const openStage = (html: string) => {
+  const openStage = (html: string, mode: "" | "bare" = "") => {
     setStageOn(true);
-    requestAnimationFrame(() => setCard(html));
+    requestAnimationFrame(() => setCard(html, mode));
   };
   const backHome = () => {
     clearTimers();
@@ -314,19 +307,77 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     `</div>`;
 
   /**
-   * L'écran final, volontairement COURT.
+   * LA TRANSFORMATION — ~1,5 s, sans un seul clic.
    *
-   * Il rejouait le bandeau, la carte, trois preuves et un astérisque — soit le
-   * récapitulatif des deux écrans que le commerçant venait de regarder. Après
-   * une révélation, répéter ce qu'on vient de montrer éteint l'effet au lieu de
-   * le conclure. Ici : une phrase, une ligne de contexte, une décision.
+   * C'était une liste de quatre cases vertes qui se cochaient : exact, lisible,
+   * et parfaitement administratif. On ne ressent pas « mon commerce s'est mis à
+   * communiquer » en lisant un bordereau. Ici l'assistante pulse, une carte se
+   * fabrique, la photo vient s'y poser, la carte se dédouble, et les deux copies
+   * partent vers leurs deux destinations. Le plaisir vient du mouvement, pas
+   * d'une accumulation de pictogrammes.
+   */
+  const transformation = () =>
+    `<div class="asx-mg">` +
+      `<div class="asx-mg-t">Vous avez cliqué une fois.<b>Votre assistante fait le reste.</b></div>` +
+      `<div class="asx-mg-sc">` +
+        `<span class="asx-mg-orb">✦</span>` +
+        `<span class="asx-mg-card">` +
+          `<span class="asx-mg-ph"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}></span>` +
+          `<span class="asx-mg-lb">Annonce rédigée</span>` +
+        `</span>` +
+        `<span class="asx-mg-cl l"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}></span>` +
+        `<span class="asx-mg-cl r"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}></span>` +
+        `<span class="asx-mg-d l"><b>🌐</b>Votre site</span>` +
+        `<span class="asx-mg-d r"><b>📍</b>${esc(villeNom)}</span>` +
+      `</div>` +
+    `</div>`;
+
+  /**
+   * 1/2 — le bandeau, à la largeur du téléphone, qui descend en haut de la page.
+   *
+   * Il tenait dans une carte blanche de 300 px au milieu d'un fond sombre : on
+   * regardait une vignette, pas son site. Ici il n'y a plus de cadre, le bandeau
+   * fait toute la largeur, et une esquisse de page apparaît dessous pour qu'on
+   * voie d'où il descend.
+   */
+  const revSite = (msg: string, cta: string) =>
+    `<div class="asx-rev">1/2 — Sur votre site</div>` +
+    `<div class="asx-revs">Votre annonce prend la première place.</div>` +
+    `<div class="asx-page">` +
+      `<div class="asx-page-band">${bandHtml(msg, cta)}</div>` +
+      `<div class="asx-page-fx" aria-hidden="true"><i></i><i></i><i></i></div>` +
+    `</div>`;
+
+  /** 2/2 — la carte du catalogue, presque plein écran, qui se laisse glisser. */
+  const revCatalogue = (msg: string) =>
+    `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
+    `<div class="asx-swipe">${carteCatalogue(msg)}</div>` +
+    `<div class="asx-revs bas">Visible aussi chez les commerces partenaires.</div>`;
+
+  /**
+   * LA RÉCOMPENSE — trois lignes, deux vitrines reliées, une décision.
+   *
+   * « De nouveaux clients PEUVENT vous découvrir » : on vend l'endroit où
+   * l'annonce paraît, jamais un résultat que personne n'a mesuré.
    */
   const freeFinal = () =>
-    `<div class="asx-done-k">✅ Annonce créée</div>` +
-    `<div class="asx-done-h">Une phrase.<br>Toute la ville peut la découvrir.</div>` +
-    `<div class="asx-done-s">Votre annonce est prête sur votre site et dans le réseau local de ${villeNom}.</div>` +
+    `<div class="asx-fete" aria-hidden="true">` +
+      Array.from({ length: 12 }, (_, i) => {
+        const x = 8 + (i * 7.6) % 84;
+        const d = (i % 5) * 0.09;
+        const c = i % 3 === 0 ? accent : i % 3 === 1 ? "#00E0A0" : "#8A6BE0";
+        return `<i style="left:${x}%;background:${c};animation-delay:${d}s"></i>`;
+      }).join("") +
+    `</div>` +
+    `<div class="asx-win">1 clic.<br>2 vitrines.</div>` +
+    `<div class="asx-wins">De nouveaux clients peuvent vous découvrir.</div>` +
+    `<div class="asx-dests big">` +
+      `<span class="asx-dest"><b>🌐</b>Votre site</span>` +
+      `<span class="asx-dlink"></span>` +
+      `<span class="asx-dest"><b>📍</b>Catalogue de ${villeNom}</span>` +
+    `</div>` +
     `<button class="asx-cta2" data-cta>Garder mon site gratuitement</button>` +
-    `<button class="asx-link" data-tooptions>Découvrir les options pour toucher plus de monde</button>` +
+    `<button class="asx-link sm" data-tooptions>Découvrir les options pour toucher plus de monde</button>` +
     tiny("Démonstration — rien n'a été publié ni envoyé.");
 
   // Écran Pro : on n'affiche QUE les canaux réellement cochés, sans jamais avancer
@@ -475,52 +526,16 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   const playCreneau = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
     if (!wa && !social && !resa) {
-      // GRATUIT — d'abord ce que l'assistante VIENT DE FAIRE, coche après coche.
-      // Raconter le résultat avant de le montrer tuait la surprise : ici on
-      // montre le travail, puis l'annonce apparaît pour de vrai sur le site.
+      // GRATUIT — quatre écrans, une idée chacun : la transformation, le site,
+      // le catalogue, la récompense. Aucun clic entre les quatre.
       // Le bouton du bandeau dépend de CE QUI est annoncé (« Je passe », « Je
       // réserve »…) : c'est lui qui ouvrira l'assistante avec l'annonce en contexte.
       publishDemoOffer(msg, intention?.cta ?? ""); // le site se met à jour derrière la pop-up
-      const etapes = [
-        "Texte rédigé",
-        "Photo sélectionnée",
-        "Ajoutée en haut de votre site",
-        `Carte créée dans le catalogue de ${villeNom}`,
-      ];
-      const coches = (n: number) =>
-        `<div class="asx-cq">Vous avez cliqué une fois.<b>Votre assistante fait le reste.</b></div>` +
-        `<div class="asx-cl">` +
-        etapes
-          .map((e, i) => `<div class="asx-ci${i < n ? " on" : ""}"><span>${i < n ? "✓" : ""}</span>${e}</div>`)
-          .join("") +
-        `</div>`;
-      openStage(coches(0));
-      // Les coches sont le TRAJET, pas la destination : elles défilent vite (moins
-      // d'une seconde en tout) pour amener aux deux révélations, qui elles ont le
-      // temps de se regarder. Quatre coches à 420 ms faisaient patienter avant le
-      // seul moment qui compte.
-      const pasCoche = 230;
-      const finCoches = 180 + etapes.length * pasCoche;
-      etapes.forEach((_, i) => after(180 + i * pasCoche, () => setCard(coches(i + 1))));
       const cta = intention?.cta ?? "";
-      // ① Sur son site. ② Dans le catalogue. Deux écrans, deux endroits : montrer
-      // seulement le bandeau laissait croire à un simple encart sur son site.
-      after(finCoches + 380, () =>
-        setCard(
-          `<div class="asx-rev">1/2 — Sur votre site</div>` +
-          `<div class="asx-ctx">Le bandeau apparaît en haut de votre page.</div>` +
-          `<div class="asx-bandwrap">${bandHtml(msg, cta)}</div>`,
-        ),
-      );
-      after(finCoches + 2900, () =>
-        setCard(
-          `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
-          `<div class="asx-ctx">La même annonce, sur une carte que les habitants parcourent.</div>` +
-          carteCatalogue(msg) +
-          `<div class="asx-aster" style="text-align:left">Ce catalogue est aussi affiché sur les sites des commerces partenaires de ${villeNom}.</div>`,
-        ),
-      );
-      after(finCoches + 6100, () => { chime(); setCard(freeFinal()); });
+      openStage(transformation(), "bare");
+      after(1850, () => setCard(revSite(msg, cta), "bare"));
+      after(4750, () => setCard(revCatalogue(msg), "bare"));
+      after(7950, () => { chime(); setCard(freeFinal()); });
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
@@ -672,6 +687,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   // L'ordre des suggestions dépend de l'heure : on ne le calcule qu'une fois
   // monté, sinon le rendu serveur et le rendu client divergeraient.
   const monte = useSyncExternalStore(() => () => {}, () => true, () => false);
+  // Les écrans du parcours d'annonce — ceux qui passent en plein écran.
+  const flashView = view === "creneauIn" || view === "creneauSay" || view === "creneauPrev";
   const toutes = intentionsPour(data.metier || "", data.confirmation ?? "reserve", data.secteur ?? "flux");
   const podium = monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3);
   const jours = monte ? joursProches(new Date()) : [];
@@ -702,41 +719,49 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       );
     }
     if (view === "creneauIn") {
+      const liste = voirTout ? toutes : podium;
+      const reste = toutes.length - podium.length;
       return (
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
-          <Steps n={1} />
-          <div className="asx-say"><b>Que voulez-vous obtenir aujourd’hui&nbsp;?</b> Choisissez, je m’occupe du reste — vous validez avant que ça parte.</div>
-          <div className="asx-objs">
-            {(voirTout ? toutes : podium).map((it, i) => (
-              <button
-                key={it.cle}
-                type="button"
-                className={`asx-obj${i === 0 && !voirTout ? " reco" : ""}`}
-                onClick={() => {
-                  // La démo INJECTE les réponses au lieu de les demander : le
-                  // prospect découvre le résultat, il n'apprend pas à s'en servir.
-                  const rep = it.demo(new Date());
-                  setIntention(it);
-                  setReponses(rep);
-                  setLibre(false);
-                  setFn(it.brief(rep).replace(/\s+/g, " ").trim());
-                  setView("creneauPrev");
-                }}
-              >
-                <span className="oi" aria-hidden="true">{it.emoji}</span>
-                <span className="ot">{it.titre}</span>
-                <span className="oc">›</span>
-              </button>
-            ))}
+          {/* Un grand titre, trois cartes, deux liens. La bulle d'explication
+              (« Choisissez, je m'occupe du reste — vous validez avant que ça
+              parte ») disait au commerçant ce qu'il allait comprendre en
+              cliquant : trois lignes de plus à lire avant le premier geste. */}
+          <div className="asx-h1">Que voulez-vous faire aujourd’hui&nbsp;?</div>
+          <div className="asx-acts">
+            {liste.map((it, i) => {
+              const vedette = i === 0 && !voirTout;
+              return (
+                <button
+                  key={it.cle}
+                  type="button"
+                  className={`asx-act${vedette ? " reco" : ""}`}
+                  onClick={() => {
+                    // La démo INJECTE les réponses au lieu de les demander : le
+                    // prospect découvre le résultat, il n'apprend pas à s'en servir.
+                    const rep = it.demo(new Date());
+                    setIntention(it);
+                    setReponses(rep);
+                    setLibre(false);
+                    setFn(it.brief(rep).replace(/\s+/g, " ").trim());
+                    setView("creneauPrev");
+                  }}
+                >
+                  {vedette && <span className="ab">Recommandé</span>}
+                  <span className="ai" aria-hidden="true">{it.emoji}</span>
+                  <span className="at">{it.action}</span>
+                </button>
+              );
+            })}
           </div>
-          {!voirTout && toutes.length > podium.length && (
-            <button type="button" className="asx-link" onClick={() => setVoirTout(true)}>
-              Voir {toutes.length - podium.length} autres idées adaptées à mon activité
+          {!voirTout && reste > 0 && (
+            <button type="button" className="asx-link sm" onClick={() => setVoirTout(true)}>
+              Voir {reste} autres idées
             </button>
           )}
-          <button type="button" className="asx-link" onClick={() => { setIntention(null); setLibre(true); setSaid(""); setView("creneauSay"); }}>
-            🎙️ Ou dites directement votre annonce
+          <button type="button" className="asx-link sm" onClick={() => { setIntention(null); setLibre(true); setSaid(""); setView("creneauSay"); }}>
+            🎙️ Dire simplement mon annonce
           </button>
         </>
       );
@@ -794,7 +819,6 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         return (
           <>
             <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-            <Steps n={2} />
             <div className="asx-say"><b>Dites-moi en une phrase.</b> Je rédige l’annonce pour vous.</div>
             <div className="asx-ex">
               <span className="asx-exk">Exemple</span>
@@ -832,7 +856,6 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <Steps n={2} />
           <div className="asx-say">{it.emoji} <b>{it.titre}</b><br />{it.sous}</div>
           <div className="asx-qs">
             {it.champs.map((c) => (
@@ -856,49 +879,50 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       );
     }
     if (view === "creneauPrev") {
+      // TROIS zones, pas dix : ce que c'est · l'annonce · où elle va + l'action.
+      // Cet écran portait la progression, une explication, l'encadré d'annonce,
+      // « Modifier », « Inclus gratuitement », deux destinations à coches, la
+      // définition du catalogue, un second « Modifier les détails », le bouton
+      // et un avertissement. Tout avait le même poids, donc rien n'en avait.
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <Steps n={3} />
-          <div className="asx-say"><b>Voilà ce que votre assistante a préparé.</b> Vous n’avez rien eu à écrire.</div>
+          <div className="asx-kick">✨ Prête en un clic</div>
+          <div className="asx-h1">Votre assistante<br />a tout préparé.</div>
 
-          <div className="asx-prev">
-            <div className="asx-to">✍️ Votre annonce</div>
-            {editing
-              ? <textarea className="asx-said sm" value={fn} onChange={(e) => setFn(e.target.value)} rows={3} aria-label="Votre annonce" />
-              : <div className="asx-wac">{fn}</div>}
-            {/* Sous le texte, jamais collé au titre : on modifie ce qu'on vient de lire. */}
-            <div className="asx-editrow">
-              <button type="button" className="asx-edit" onClick={() => setEditing((v) => !v)}>{editing ? "✓ Terminé" : "✏️ Modifier"}</button>
-            </div>
+          {/* L'annonce sur la photo du commerce : c'est l'objet spectaculaire de
+              l'écran, pas un champ de formulaire encadré de gris. */}
+          <div
+            className={`asx-hero${data.photo ? " ph" : ""}`}
+            style={data.photo ? { backgroundImage: `url("${data.photo}")` } : undefined}
+          >
+            <span className="asx-hero-v" />
+            {editing ? (
+              <textarea
+                className="asx-hero-ed"
+                value={fn}
+                onChange={(e) => setFn(e.target.value)}
+                rows={4}
+                aria-label="Votre annonce"
+              />
+            ) : (
+              <span className="asx-hero-t">{fn}</span>
+            )}
           </div>
 
-          <div className="asx-glab">Inclus gratuitement</div>
-          <div className="asx-flash">
-            {/* Au futur : à cet écran rien n'est encore publié, et écrire
-                « Publiée sur votre site » sous un texte qu'on n'a pas validé,
-                c'est annoncer un fait qui n'a pas eu lieu. */}
-            <div className="asx-fl on"><span className="i">🌐</span><span className="t">Sera visible sur votre site</span><span className="asx-lock">✓ inclus</span></div>
-            <div className="asx-fl on"><span className="i">📍</span><span className="t">Et dans le <b>catalogue de {villeNom}</b>, que chaque site du réseau affiche<sup>*</sup></span><span className="asx-lock">✓ inclus</span></div>
+          <div className="asx-dests">
+            <span className="asx-dest"><b>🌐</b>Votre site</span>
+            <span className="asx-dlink" aria-hidden="true" />
+            <span className="asx-dest"><b>📍</b>Catalogue de {villeNom}</span>
           </div>
-          <div className="asx-aster">* Le catalogue de {villeNom} rassemble les annonces du jour des commerçants d&apos;ici. Votre annonce y entre dès sa publication, et se parcourt carte après carte.</div>
 
-          {/* Les Options Pro ne sont plus ICI. Trois cases à cocher et un tarif
-              avant même d'avoir vu le résultat, c'était demander une décision
-              commerciale à quelqu'un qui n'a encore rien vu fonctionner. Elles
-              vivent maintenant APRÈS l'écran de résultat, derrière « Découvrir
-              comment toucher plus de monde ». */}
-          <div className="asx-modif">
-            <button type="button" className="asx-link" onClick={() => setView("creneauSay")}>
-              ✏️ Modifier les détails
-            </button>
-          </div>
-          <button className="asx-send pulse" onClick={() => playCreneau(fn, false, false, false)}>
-            ✨ Voir mon annonce en situation
+          <button className="asx-send big pulse" onClick={() => playCreneau(fn, false, false, false)}>
+            Voir le résultat ✨
           </button>
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>
-            Démonstration uniquement — rien ne sera publié ni envoyé.
-          </div>
+          <button type="button" className="asx-link sm" onClick={() => setEditing((v) => !v)}>
+            {editing ? "✓ Terminé" : "Modifier"}
+          </button>
+          <div className="asx-tiny2">Démonstration — rien ne sera publié ni envoyé.</div>
         </>
       );
     }
@@ -992,14 +1016,21 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         <span className="asx-fabnote">Vos client·es ne voient pas ce bouton.</span>
       )}
 
+      {/* Le parcours d'annonce prend TOUT l'écran, et le site passe derrière un
+          voile épais. En demi-feuille, le pro gardait sous les yeux sa barre pro,
+          son bandeau et son menu : trois choses qui rivalisaient avec le seul
+          geste qu'on lui demande. Les autres tâches gardent la demi-feuille. */}
+      {open && !stageOn && <div className="asx-scrim" onClick={() => { stopSpeaking(); setOpen(false); }} />}
       {open && !stageOn && (
-        <div className="asx-sheet" role="dialog" aria-label="Votre assistante">
-          <div className="asx-grip" />
+        <div className={`asx-sheet${flashView ? " full" : ""}`} role="dialog" aria-label="Votre assistante">
+          {!flashView && <div className="asx-grip" />}
           <button className="asx-close" onClick={() => { stopSpeaking(); setOpen(false); }} aria-label="Fermer">✕</button>
-          <div className="asx-ahead">
-            <div className="av">✦</div>
-            <div><div className="nm">Votre assistante</div><div className="st">intégrée à votre futur site</div></div>
-          </div>
+          {!flashView && (
+            <div className="asx-ahead">
+              <div className="av">✦</div>
+              <div><div className="nm">Votre assistante</div><div className="st">intégrée à votre futur site</div></div>
+            </div>
+          )}
           <div className="asx-abody">{renderBody()}</div>
         </div>
       )}
@@ -1052,7 +1083,24 @@ function styles(accent: string): string {
     font-size:10.5px;font-weight:600;color:#6E6A5C;}
   @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
   @media (prefers-reduced-motion:reduce){.asx-fab{animation:none;}}
+  /* Le voile : le site doit disparaître derrière, pas rester lisible à côté. */
+  .asx-scrim{position:fixed;inset:0;z-index:55;background:rgba(10,11,9,.72);backdrop-filter:blur(3px);
+    animation:asxVoile .3s ease;}
+  @keyframes asxVoile{from{opacity:0}to{opacity:1}}
   .asx-sheet{position:fixed;left:0;right:0;bottom:0;z-index:56;max-width:520px;margin:0 auto;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -18px 50px -12px rgba(0,0,0,.4);max-height:88vh;display:flex;flex-direction:column;animation:asxUp .38s cubic-bezier(.22,1,.36,1);}
+  /* Le parcours d'annonce prend l'écran entier : plus de barre pro, plus de
+     bandeau, plus de menu visibles pour disputer l'attention au seul geste. */
+  .asx-sheet.full{top:0;max-height:none;border-radius:0;}
+  .asx-sheet.full .asx-abody{flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:26px 22px calc(26px + env(safe-area-inset-bottom));}
+  /* Un contenu plus haut que l'écran (le formulaire détaillé) se ferait rogner
+     PAR LE HAUT avec un simple « center » : le début devient inatteignable. */
+  @supports (justify-content:safe center){
+    .asx-sheet.full .asx-abody{justify-content:safe center;}
+  }
+  @media (min-height:760px){.asx-sheet.full .asx-abody{padding-top:40px;padding-bottom:40px;}}
+  .asx-sheet.full .asx-back{position:absolute;top:calc(14px + env(safe-area-inset-top));left:18px;margin:0;font-size:13px;z-index:3;}
+  .asx-sheet.full .asx-close{top:calc(13px + env(safe-area-inset-top));}
   @keyframes asxUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
   .asx-grip{width:38px;height:4px;border-radius:2px;background:#DBD8CF;margin:10px auto 4px;}
   .asx-close{position:absolute;top:12px;right:16px;color:#B7B3A8;font-size:17px;cursor:pointer;background:none;border:none;z-index:3;}
@@ -1110,42 +1158,14 @@ function styles(accent: string): string {
   .asx-prev{background:#F4F2EC;border:1px solid #E7E4DC;border-radius:12px;padding:12px 14px;font-size:12.5px;line-height:1.45;color:#3A3A32;}
   .asx-prev .asx-to{display:flex;align-items:center;gap:10px;font-size:10.5px;color:#71766C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
   .asx-wac{background:#E6F5DC;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.4;color:#1F3A17;}
-  /* Action Flash — récap transparent des canaux (offert / option) */
-  .asx-flash{margin-top:12px;border:1px solid #E7E4DC;border-radius:13px;overflow:hidden;background:#fff;}
-  .asx-fl{display:flex;align-items:center;gap:10px;padding:11px 13px;border-top:1px solid #F1EFE8;font-size:12.5px;}
-  .asx-fl:first-child{border-top:none;}
-  .asx-fl .i{font-size:15px;flex:none;width:20px;text-align:center;}
-  .asx-fl .t{flex:1;color:#3A3A32;line-height:1.3;}
-  .asx-fl .tag{flex:none;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:.02em;}
-  .asx-fl .tag.free{background:#E4F7EE;color:#0E7C5A;}
-  .asx-fl .tag.opt{background:#F0EBFF;color:#6B4BC7;}
   .asx-glab{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9A968A;margin:16px 0 0;}
-  .asx-fl.on{background:#F3FBF6;}
-  .asx-fl .asx-lock{flex:none;font-size:10px;font-weight:800;color:#0E7C5A;background:#E4F7EE;border-radius:6px;padding:3px 8px;}
-  .asx-fl.optbtn{width:100%;background:#fff;border:none;border-top:1px solid #F1EFE8;font-family:inherit;cursor:pointer;text-align:left;}
-  .asx-fl.optbtn:first-child{border-top:none;}
-  .asx-fl.optbtn.sel{background:linear-gradient(120deg,#F5F3FF,#fff);}
-  /* Case décochée VRAIMENT vide : bordure grise neutre, fond légèrement creusé.
-     En violet clair, elle se lisait comme une option déjà activée. */
-  .asx-fl .asx-ck{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #D8D4CA;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;background:#F4F2EC;}
-  .asx-fl.optbtn.sel .asx-ck{background:#6B4BC7;border-color:#6B4BC7;}
   /* La conséquence du choix s'affiche APRÈS le clic, jamais comme promesse chiffrée */
-  .asx-fl .t em{display:block;font-style:normal;font-size:11px;line-height:1.4;color:#6B4BC7;margin-top:3px;}
   .asx-optcard{margin-top:14px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #E4DEF7;border-radius:14px;padding:14px 15px;font-size:13px;line-height:1.5;color:#3A3A32;text-align:left;}
-  /* ── Parcours Action Flash : je choisis → je décris → je vérifie → c'est publié ──
-     Trois segments libellés plutôt qu'un « étape N sur 3 » : le chemin Pro compte
-     plusieurs écrans de résultat après la saisie, un dénominateur mentirait. */
-  .asx-steps{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-  .asx-segs{display:flex;gap:4px;flex:none;}
-  .asx-segs span{width:22px;height:4px;border-radius:2px;background:#E8E4DA;transition:background .3s ease;}
-  .asx-segs span.on{background:#8A63D9;}
-  .asx-steplb{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A63D9;}
   /* L'exemple, clairement HORS du champ de saisie */
   .asx-ex{margin-top:14px;border:1px dashed #D9CFF0;background:#FAF8FF;border-radius:12px;padding:11px 13px;
     font-size:13.5px;line-height:1.45;color:#4A4A40;text-align:left;font-style:italic;}
   .asx-exk{display:block;font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A63D9;margin-bottom:4px;}
   .asx-ex+.asx-said{margin-top:9px;}
-  .asx-editrow{display:flex;justify-content:flex-end;margin-top:8px;}
   .asx-nono{margin-top:11px;font-size:11.5px;line-height:1.45;color:#71766C;text-align:center;}
   .asx-pronote{margin-top:15px;display:flex;flex-direction:column;gap:5px;text-align:left;border:1px solid #E0D8F5;
     background:linear-gradient(120deg,#F7F3FF,#fff);border-radius:13px;padding:13px 14px;font-size:12.5px;line-height:1.5;color:#4A4A40;}
@@ -1169,29 +1189,123 @@ function styles(accent: string): string {
      translucide sur l'accent, jamais un vert qui n'existe pas sur la page. */
   .asx-band-cta{flex:none;background:rgba(255,255,255,.2);border-radius:20px;padding:6px 13px;
     font-size:12px;font-weight:700;white-space:nowrap;}
-  /* La séquence « voici ce que je viens de faire », coche après coche. */
-  .asx-cq{font-size:15px;line-height:1.5;color:#5F6358;text-align:center;}
-  .asx-cq b{display:block;margin-top:3px;font-size:19px;color:#16160F;font-family:Georgia,serif;font-weight:700;}
-  .asx-cl{display:flex;flex-direction:column;gap:8px;margin-top:18px;text-align:left;}
-  .asx-ci{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:#B4B0A5;
-    border:1px solid #EDEAE2;border-radius:12px;padding:11px 13px;background:#fff;
-    opacity:.5;transform:translateY(4px);transition:opacity .28s ease,transform .28s ease,color .28s ease,border-color .28s ease;}
-  .asx-ci.on{opacity:1;transform:none;color:#16160F;border-color:#BFE9D4;}
-  .asx-ci span{width:20px;height:20px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-size:12px;font-weight:800;color:#fff;background:#E4E1D9;}
-  .asx-ci.on span{background:#0B7A55;}
-  @media (prefers-reduced-motion:reduce){.asx-ci{transition:none;}}
-  .asx-objs{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
-  .asx-obj{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;font-family:inherit;
-    border:1px solid #E7E4DC;background:#fff;border-radius:14px;padding:14px 13px;transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease;}
-  .asx-obj:hover{border-color:#C9BCF2;box-shadow:0 12px 26px -18px rgba(91,63,166,.5);}
-  .asx-obj:active{transform:scale(.99);}
-  .asx-obj.reco{border-color:#C9BCF2;background:linear-gradient(120deg,#F8F5FF,#fff);}
-  .asx-obj .oi{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#5B3FA6;background:#F1ECFF;}
-  .asx-obj .oi svg{width:20px;height:20px;}
-  .asx-obj .ot{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#16160F;line-height:1.25;}
-  .asx-obj .obadge{flex:none;font-size:9px;font-weight:800;letter-spacing:.03em;color:#5B3FA6;background:#EDE8FF;border-radius:6px;padding:3px 7px;}
-  .asx-obj .oc{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;}
+  /* ── ÉCRAN 1 : le choix. Un grand titre, trois cartes, deux liens. ── */
+  .asx-h1{font-family:Georgia,serif;font-size:27px;line-height:1.15;font-weight:700;color:#16160F;margin:2px 0 20px;}
+  .asx-kick{display:inline-block;align-self:flex-start;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#5B3FA6;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;margin-bottom:12px;}
+  .asx-acts{display:flex;flex-direction:column;gap:11px;}
+  .asx-act{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+    border:1px solid #E7E4DC;background:#fff;border-radius:18px;padding:18px 17px;
+    transition:transform .12s ease,box-shadow .18s ease,border-color .18s ease;}
+  .asx-act:hover{border-color:#C9BCF2;box-shadow:0 16px 32px -22px rgba(91,63,166,.6);}
+  .asx-act:active{transform:scale(.985);}
+  .asx-act .ai{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    font-size:23px;background:#F1ECFF;}
+  .asx-act .at{flex:1;min-width:0;font-size:17px;font-weight:800;color:#16160F;line-height:1.2;}
+  /* La carte recommandée porte la couleur : sur trois cartes identiques, aucune
+     n'est un point de départ. Celle du haut en est un. */
+  .asx-act.reco{border:none;padding:24px 18px 20px;color:#fff;
+    background:linear-gradient(140deg,#8A6BE0,#5B3FA6);box-shadow:0 20px 40px -20px rgba(91,63,166,.85);}
+  .asx-act.reco .ai{background:rgba(255,255,255,.18);}
+  .asx-act.reco .at{color:#fff;font-size:20px;}
+  .asx-act .ab{position:absolute;top:9px;right:12px;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:#3A2A6B;background:#FFD84D;border-radius:999px;padding:4px 9px;}
+  .asx-link.sm{margin-top:8px;font-size:12.5px;font-weight:600;text-decoration:none;}
+  .asx-link.sm:hover{text-decoration:underline;}
+
+  /* ── ÉCRAN 2 : l'annonce, sur la photo du commerce. ── */
+  .asx-hero{position:relative;display:flex;align-items:flex-end;min-height:196px;border-radius:20px;overflow:hidden;
+    padding:20px 18px;background:linear-gradient(150deg,#2C3A5E,#141A2E);background-size:cover;background-position:center;
+    box-shadow:0 22px 44px -24px rgba(0,0,0,.7);}
+  .asx-hero-v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.25),rgba(8,9,13,.86));}
+  .asx-hero-t{position:relative;font-family:Georgia,serif;font-size:20px;line-height:1.32;font-weight:700;color:#fff;text-align:left;}
+  .asx-hero-ed{position:relative;width:100%;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:15px;
+    line-height:1.45;color:#16160F;background:rgba(255,255,255,.96);resize:vertical;box-sizing:border-box;}
+  .asx-hero-ed:focus{outline:2px solid #8A63D9;}
+  /* Les deux vitrines, reliées : une seule annonce, deux endroits. */
+  .asx-dests{display:flex;align-items:center;justify-content:center;gap:0;margin-top:16px;}
+  .asx-dest{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#3A3A32;
+    background:#F4F2EC;border:1px solid #E7E4DC;border-radius:999px;padding:9px 14px;white-space:nowrap;}
+  .asx-dest b{font-size:15px;font-weight:400;line-height:1;}
+  .asx-dlink{flex:none;width:22px;height:2px;background:linear-gradient(90deg,#E7E4DC,#C9BCF2,#E7E4DC);}
+  .asx-dests.big{margin-top:20px;}
+  .asx-dests.big .asx-dest{font-size:13px;padding:11px 15px;}
+  .asx-send.big{margin-top:20px;padding:17px;font-size:16px;border-radius:16px;}
+  .asx-tiny2{margin-top:10px;text-align:center;font-size:10.5px;color:#A6A69C;}
+
+  /* ── ÉCRAN 3 : la transformation (~1,5 s). ── */
+  .asx-mg{text-align:center;}
+  .asx-mg-t{font-size:14px;line-height:1.5;color:#CFCBBF;}
+  .asx-mg-t b{display:block;margin-top:4px;font-family:Georgia,serif;font-size:23px;font-weight:700;color:#fff;}
+  .asx-mg-sc{position:relative;height:292px;margin-top:20px;}
+  .asx-mg-orb{position:absolute;top:0;left:50%;width:44px;height:44px;margin-left:-22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
+    background:linear-gradient(140deg,#A594FF,#5B3FA6);box-shadow:0 0 0 0 rgba(165,148,255,.55);
+    animation:mgOrb .9s ease-out 2,mgFade .3s ease 1.05s forwards;}
+  @keyframes mgOrb{0%{box-shadow:0 0 0 0 rgba(165,148,255,.55)}70%,100%{box-shadow:0 0 0 22px rgba(165,148,255,0)}}
+  @keyframes mgFade{to{opacity:0;transform:scale(.7)}}
+  .asx-mg-card,.asx-mg-cl{position:absolute;top:66px;left:50%;width:164px;height:112px;margin-left:-82px;
+    border-radius:14px;overflow:hidden;background:#1B1F2C;box-shadow:0 16px 34px -18px rgba(0,0,0,.9);}
+  .asx-mg-card{display:flex;flex-direction:column;opacity:0;animation:mgIn .32s cubic-bezier(.22,1,.36,1) .3s forwards,mgOut .22s ease .95s forwards;}
+  @keyframes mgIn{from{opacity:0;transform:scale(.7) translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes mgOut{to{opacity:0}}
+  .asx-mg-ph{flex:1;background-size:cover;background-position:center;background-image:linear-gradient(150deg,#3A4A6E,#1B2338);
+    opacity:0;animation:mgPh .34s ease .62s forwards;}
+  @keyframes mgPh{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:none}}
+  .asx-mg-lb{flex:none;font-size:11px;font-weight:800;letter-spacing:.05em;color:#06231A;background:#00E0A0;padding:7px 10px;}
+  /* Les deux copies : elles naissent exactement là où était la carte, et partent. */
+  /* Les copies portent la même photo et le même liseré vert que la carte : sans
+     cela on voit deux rectangles partir, pas SON annonce qui se dédouble. */
+  .asx-mg-cl{opacity:0;background-size:cover;background-position:center;
+    background-image:linear-gradient(150deg,#3A4A6E,#1B2338);border-bottom:10px solid #00E0A0;}
+  .asx-mg-cl.l{animation:mgL .62s cubic-bezier(.3,.8,.3,1) .95s forwards;}
+  .asx-mg-cl.r{animation:mgR .62s cubic-bezier(.3,.8,.3,1) .95s forwards;}
+  @keyframes mgL{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(-72px,92px) scale(.44) rotate(-7deg)}}
+  @keyframes mgR{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(72px,92px) scale(.44) rotate(7deg)}}
+  .asx-mg-d{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;gap:5px;width:104px;
+    font-size:11.5px;font-weight:800;color:#8C8878;opacity:.45;
+    animation:mgD .34s ease 1.35s forwards;}
+  .asx-mg-d b{font-size:20px;font-weight:400;line-height:1;}
+  .asx-mg-d.l{left:50%;margin-left:-124px;}
+  .asx-mg-d.r{left:50%;margin-left:20px;}
+  @keyframes mgD{to{opacity:1;color:#fff;transform:translateY(-3px)}}
+  @media (prefers-reduced-motion:reduce){
+    .asx-mg-orb,.asx-mg-card,.asx-mg-ph,.asx-mg-cl,.asx-mg-d{animation:none;opacity:1;}
+    .asx-mg-cl{display:none;}
+  }
+
+  /* ── ÉCRAN 4 : le bandeau, pleine largeur, en haut d'une page esquissée. ── */
+  .asx-revs{font-size:14px;line-height:1.45;color:#CFCBBF;margin-bottom:16px;}
+  .asx-revs.bas{margin:14px 0 0;font-size:12.5px;color:#A5A193;}
+  .asx-page{border-radius:16px 16px 20px 20px;overflow:hidden;background:#FBFAF7;
+    box-shadow:0 26px 50px -24px rgba(0,0,0,.85);animation:asxDrop .5s cubic-bezier(.22,1,.36,1);}
+  @keyframes asxDrop{from{opacity:0;transform:translateY(-26px)}to{opacity:1;transform:none}}
+  .asx-page-band .asx-band{margin:0;border-radius:0;box-shadow:none;padding:16px 18px;}
+  .asx-page-band .asx-band-t{font-size:15px;}
+  .asx-page-fx{padding:16px 18px 20px;display:flex;flex-direction:column;gap:9px;}
+  .asx-page-fx i{display:block;height:11px;border-radius:6px;background:#E7E4DC;}
+  .asx-page-fx i:nth-child(1){width:62%;height:15px;}
+  .asx-page-fx i:nth-child(2){width:100%;}
+  .asx-page-fx i:nth-child(3){width:78%;}
+
+  /* ── ÉCRAN 5 : la carte du catalogue, presque plein écran, qui se glisse. ── */
+  /* Presque plein écran : la carte du catalogue EST l'écran, pas une vignette. */
+  .asx-swipe{animation:asxSwipe 2.6s ease-in-out .5s;}
+  .asx-swipe .asx-kcard{height:min(56vh,430px);margin-top:0;}
+  .asx-swipe .asx-knom{font-size:22px;}
+  .asx-swipe .asx-koffer{font-size:14.5px;}
+  @keyframes asxSwipe{0%,55%,100%{transform:none}68%{transform:translateX(-16px) rotate(-2.4deg)}82%{transform:translateX(7px) rotate(1deg)}}
+  @media (prefers-reduced-motion:reduce){.asx-page,.asx-swipe{animation:none;}}
+
+  /* ── ÉCRAN 6 : la récompense. ── */
+  .asx-win{font-family:Georgia,serif;font-size:36px;line-height:1.08;font-weight:700;color:#16160F;}
+  .asx-wins{margin-top:11px;font-size:14.5px;line-height:1.5;color:#5F6358;}
+  .asx-fete{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:20px;}
+  .asx-fete i{position:absolute;top:-12px;width:7px;height:11px;border-radius:2px;opacity:0;
+    animation:asxFete 1.5s cubic-bezier(.3,.7,.5,1) forwards;}
+  @keyframes asxFete{0%{opacity:0;transform:translateY(0) rotate(0)}12%{opacity:1}100%{opacity:0;transform:translateY(230px) rotate(300deg)}}
+  @media (prefers-reduced-motion:reduce){.asx-fete{display:none;}}
+
   .asx-said{width:100%;margin-top:14px;border:1px solid #D9CFF0;border-radius:13px;padding:13px 14px;font-size:14.5px;font-family:inherit;
     background:#fff;resize:vertical;line-height:1.5;color:#16160F;box-sizing:border-box;}
   .asx-said.sm{font-size:13.5px;margin-top:8px;}
@@ -1210,8 +1324,6 @@ function styles(accent: string): string {
   .asx-link{margin-top:11px;width:100%;background:none;border:none;color:#71766C;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:underline;padding:6px;}
   .asx-link:hover{color:#3A3A32;}
   .asx-link:disabled{opacity:.5;cursor:not-allowed;}
-  .asx-aster{margin-top:9px;font-size:11px;line-height:1.45;color:#8A8577;text-align:left;}
-  .asx-fl sup{font-size:9px;color:#0E7C5A;font-weight:800;}
   .asx-task{width:100%;border:none;font-family:inherit;cursor:pointer;text-align:left;}
   .asx-task .asx-go{flex:none;font-size:20px;color:#B9A6EC;font-weight:700;margin-left:auto;}
   /* ── L'ATELIER : la phrase du pro se dédouble et se métamorphose ────────────
@@ -1298,7 +1410,6 @@ function styles(accent: string): string {
      réduire le texte à un mot par ligne. */
   .asx-band-t{flex:1 1 150px;min-width:150px;font-size:13px;font-weight:600;}
   .asx-band-t b{font-weight:800;}
-  .asx-bandwrap{margin-top:16px;}
   .asx-cta2{margin-top:16px;width:100%;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
     color:#06231a;background:linear-gradient(135deg,#00E0A0,#07B083);box-shadow:0 14px 30px -12px rgba(0,224,160,.75);}
   .asx-cta2.pro{color:#fff;background:linear-gradient(135deg,#8A6BE0,#5B3FA6);box-shadow:0 14px 30px -12px rgba(91,63,166,.75);}
@@ -1326,8 +1437,11 @@ function styles(accent: string): string {
     padding:12px 18px;border-radius:14px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);animation:asxTip .35s ease;}
   @keyframes asxTip{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translateX(-50%)}}
   @media (prefers-reduced-motion:reduce){.asx-band,.offer-band.asx-glow,.asx-tip{animation:none;}}
-  .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(12,14,11,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(2px);}
-  .asx-card{background:#fff;border-radius:20px;padding:22px 20px;width:100%;max-width:300px;max-height:calc(100dvh - 44px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
+  .asx-stage{position:fixed;inset:0;z-index:60;max-width:520px;margin:0 auto;background:rgba(10,11,9,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;backdrop-filter:blur(3px);}
+  .asx-card{background:#fff;border-radius:20px;padding:24px 20px;width:100%;max-width:340px;max-height:calc(100dvh - 40px);text-align:center;position:relative;overflow-y:auto;overflow-x:hidden;animation:asxCardin .35s;}
+  /* « bare » : le résultat EST l'écran. Pas de vignette blanche autour de ce
+     que le commerçant est venu voir. */
+  .asx-card.bare{background:none;box-shadow:none;padding:0;max-width:none;overflow:visible;}
   @keyframes asxCardin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
   .asx-ctx{font-size:11.5px;color:#71766C;margin-bottom:14px;line-height:1.4;}
   .asx-big{font-family:Georgia,serif;font-size:54px;font-weight:600;line-height:1;color:${accent};display:inline-block;}
