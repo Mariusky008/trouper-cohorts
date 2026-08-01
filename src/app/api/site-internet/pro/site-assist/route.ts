@@ -69,14 +69,43 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         // Texte que le pro publie sur SON site et juge en un coup d'œil : on prend
         // le modèle qui écrit le mieux (appel court, rare, non bloquant).
+        // Ce modèle refuse (400) `temperature`/`top_p`/`top_k` : le ton se règle
+        // dans la consigne. La forme est garantie par le schéma de sortie.
         model: "claude-sonnet-5",
         max_tokens: 500,
-        temperature: 0.4,
         system,
         messages: [{ role: "user", content: phrase }],
+        output_config: {
+          format: {
+            type: "json_schema",
+            schema: {
+              type: "object",
+              properties: {
+                usecases: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      icon: { type: "string" },
+                      title: { type: "string" },
+                      desc: { type: "string" },
+                    },
+                    required: ["icon", "title", "desc"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["usecases"],
+              additionalProperties: false,
+            },
+          },
+        },
       }),
     });
-    if (!res.ok) throw new Error("api");
+    if (!res.ok) {
+      console.error(`[site-assist] appel Anthropic refusé : HTTP ${res.status}`);
+      throw new Error("api");
+    }
     const data = await res.json();
     const text = s(data?.content?.[0]?.text);
     const parsed = JSON.parse(text.replace(/^```json\s*|\s*```$/g, "").trim());

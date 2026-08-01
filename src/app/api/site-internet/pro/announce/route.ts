@@ -9,6 +9,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
+// Ce modèle REFUSE (400) `temperature`/`top_p`/`top_k` et l'amorce de réponse
+// par un tour « assistant ». La forme de sortie passe donc par `output_config`,
+// et le ton se règle dans la consigne, plus par un réglage d'échantillonnage.
+const MODELE = "claude-sonnet-5";
+
 const str = (v: unknown) => String(v ?? "").trim();
 
 export async function POST(request: Request) {
@@ -86,35 +91,64 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         // La qualité de ce texte EST le produit : le pro le juge en 2 secondes.
         // On prend le modèle qui écrit le mieux, l'appel reste court et rare.
-        model: "claude-sonnet-5",
+        model: MODELE,
         max_tokens: 900,
-        temperature: 0.8,
         system,
-        messages: [
-          { role: "user", content: brief },
-          // Amorce : force une sortie JSON exploitable sans préambule.
-          { role: "assistant", content: '{"variantes":[' },
-        ],
+        messages: [{ role: "user", content: brief }],
+        // La forme est GARANTIE par le schéma. Avant, on amorçait la réponse avec
+        // un début de JSON — une amorce d'assistant, que ce modèle refuse.
+        output_config: {
+          format: {
+            type: "json_schema",
+            schema: {
+              type: "object",
+              properties: { variantes: { type: "array", items: { type: "string" } } },
+              required: ["variantes"],
+              additionalProperties: false,
+            },
+          },
+        },
       }),
     });
-    if (!res.ok) return NextResponse.json(secours(brief, nom), { status: 200 });
+    if (!res.ok) return NextResponse.json(secours(brief, nom, await pourquoi(res)), { status: 200 });
     const data = await res.json();
-    // On a amorcé la réponse avec `{"variantes":[` : il faut le recoller.
-    const raw = str(data?.content?.[0]?.text);
-    const variantes = parseVariantes(raw);
-    if (!variantes.length) return NextResponse.json(secours(brief, nom), { status: 200 });
+    // Le modèle peut décliner une demande : ce n'est pas une erreur HTTP.
+    if (str(data?.stop_reason) === "refusal") return NextResponse.json(secours(brief, nom, "refus"), { status: 200 });
+    const variantes = parseVariantes(str(data?.content?.[0]?.text));
+    if (!variantes.length) return NextResponse.json(secours(brief, nom, "réponse illisible"), { status: 200 });
     return NextResponse.json({ ok: true, text: variantes[0], variantes });
-  } catch {
-    return NextResponse.json(secours(brief, nom), { status: 200 });
+  } catch (e) {
+    return NextResponse.json(secours(brief, nom, (e as Error)?.message || "réseau"), { status: 200 });
   }
+}
+
+/**
+ * Pourquoi l'appel a échoué — journalisé, jamais renvoyé au commerçant.
+ *
+ * Sans ça, une requête invalide (paramètre retiré du modèle, schéma refusé)
+ * était indiscernable d'une panne réseau : le repli s'activait en silence et
+ * l'assistante paraissait fonctionner alors qu'elle n'était jamais appelée.
+ */
+async function pourquoi(res: Response): Promise<string> {
+  let detail = "";
+  try {
+    const j = await res.json();
+    detail = str(j?.error?.message) || str(j?.error?.type);
+  } catch {
+    /* corps illisible → le statut suffit */
+  }
+  const raison = `HTTP ${res.status}${detail ? ` — ${detail}` : ""}`;
+  console.error(`[announce] appel Anthropic refusé : ${raison}`);
+  return raison;
 }
 
 // Repli quand le modèle est indisponible : on met en forme ce que le pro a écrit,
 // sans rien inventer, et on le SIGNALE (`fallback`) pour ne pas faire passer ça
 // pour de la rédaction assistée.
-function secours(brief: string, nom: string) {
+function secours(brief: string, nom: string, raison = "") {
   const t = brief.trim().replace(/\s+/g, " ");
   const phrase = /[.!?]$/.test(t) ? t : `${t}.`;
+  if (raison) console.error(`[announce] repli de secours (${raison})`);
   return {
     ok: true,
     text: `Bonjour ! ${phrase}\n\nRépondez-moi pour en profiter — à très vite chez ${nom} 🙂`,

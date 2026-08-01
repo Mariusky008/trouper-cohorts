@@ -99,25 +99,36 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
+        // Ce modèle refuse (400) `temperature` et l'amorce par un tour
+        // « assistant » : la sortie JSON est garantie par le schéma.
         model: "claude-sonnet-5",
         max_tokens: 700,
-        temperature: 0.7,
         system,
-        messages: [
-          { role: "user", content: annonce },
-          { role: "assistant", content: "{" }, // amorce : sortie JSON sans préambule
-        ],
+        messages: [{ role: "user", content: annonce }],
+        output_config: {
+          format: {
+            type: "json_schema",
+            schema: {
+              type: "object",
+              properties: { wa: { type: "string" }, insta: { type: "string" }, fb: { type: "string" } },
+              required: ["wa", "insta", "fb"],
+              additionalProperties: false,
+            },
+          },
+        },
       }),
       signal: ctrl.signal,
     });
     clearTimeout(timer);
-    if (!res.ok) return NextResponse.json({ ok: true, ...secours, fallback: true });
+    if (!res.ok) {
+      console.error(`[campagne] appel Anthropic refusé : HTTP ${res.status}`);
+      return NextResponse.json({ ok: true, ...secours, fallback: true });
+    }
     const data = await res.json();
-    const raw = s(data?.content?.[0]?.text);
-    const body = raw.trim().startsWith("{") ? raw : `{${raw}`;
+    if (s(data?.stop_reason) === "refusal") return NextResponse.json({ ok: true, ...secours, fallback: true });
     let parsed: unknown = null;
     try {
-      parsed = JSON.parse(body.slice(0, body.lastIndexOf("}") + 1 || undefined));
+      parsed = JSON.parse(s(data?.content?.[0]?.text));
     } catch {
       parsed = null;
     }
