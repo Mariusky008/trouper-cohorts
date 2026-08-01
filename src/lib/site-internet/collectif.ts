@@ -32,8 +32,8 @@ const norm = (s: string) =>
 
 type SiteRow = Record<string, unknown>;
 
-/** Annonce en cours d'un site : son texte et sa date de publication. */
-function offerOf(row: SiteRow): { text: string; at: string | null; until: string | null } | null {
+/** Annonce en cours d'un site : son texte, sa date, son échéance, sa photo. */
+function offerOf(row: SiteRow): { text: string; at: string | null; until: string | null; photo: string | null } | null {
   const raw = row.current_offer;
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -42,7 +42,10 @@ function offerOf(row: SiteRow): { text: string; at: string | null; until: string
   const until = typeof o.until === "string" && o.until ? o.until : null;
   if (until && Date.parse(until) < Date.now()) return null;
   const at = typeof o.created_at === "string" && o.created_at ? o.created_at : null;
-  return { text, at, until };
+  // Photo choisie POUR CETTE ANNONCE. Absente sur les annonces publiées avant
+  // que le choix existe → on retombe sur la première photo du commerce.
+  const photo = str(o.photo).trim() || null;
+  return { text, at, until, photo };
 }
 
 /**
@@ -128,7 +131,7 @@ export async function partnerOffers(
       nom: str(r.business_name) || "Un commerce voisin",
       metier: resolveMetier(act).entry?.label ?? act,
       texte: off.text,
-      photo: str(photos[0]) || null,
+      photo: off.photo || str(photos[0]) || null,
       publieLe: off.at,
     });
   }
@@ -232,7 +235,9 @@ export async function cityDirectory(
         nom: str(r.business_name) || "Un commerce",
         metier,
         texte: off.text,
-        photo: str(photos[0]) || null,
+        // L'annonce porte sa propre image : un arrivage de fraises ne s'illustre
+        // pas avec la devanture. À défaut de choix, la première photo du commerce.
+        photo: off.photo || str(photos[0]) || null,
         publieLe: off.at,
         note: typeof r.google_rating === "number" ? r.google_rating : null,
         avis: typeof r.google_reviews === "number" ? r.google_reviews : null,

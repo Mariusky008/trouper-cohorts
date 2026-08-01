@@ -36,7 +36,7 @@ type Props = {
   metierLabel: string;
   note: string | null;
   reviewsCount: number | null;
-  offer?: { text: string; until?: string | null } | null;
+  offer?: { text: string; until?: string | null; photo?: string | null } | null;
   exampleOffer?: string; // démo : si pas de vraie offre, on ouvre le catalogue par un exemple d'Action Flash
   accent: string;
   standalone?: boolean;
@@ -61,9 +61,11 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
   // Le catalogue s'OUVRE sur une offre : la vraie « offre du moment » si elle
   // existe, sinon (démo) un exemple d'Action Flash clairement labellisé.
   // La carte d'offre s'illustre avec une VRAIE photo du commerce (jamais une
-  // banque d'images) : on prend la 2ᵉ si possible, pour ne pas répéter celle qui
-  // suit. Sans photo, le dégradé sert de repli — jamais de carte vide.
-  const offerImg = photos[1] || photos[0] || "";
+  // banque d'images). Si le pro a choisi une photo pour CETTE annonce, c'est
+  // elle — sinon la même annonce n'aurait pas la même image ici et dans le
+  // catalogue de la ville. À défaut, la 2ᵉ photo, pour ne pas répéter celle qui
+  // suit ; et sans photo du tout, le dégradé sert de repli.
+  const offerImg = offer?.photo || photos[1] || photos[0] || "";
   if (offer?.text) cards.unshift({ kind: "offer", text: offer.text, until: offer.until ?? null, img: offerImg });
   else if (liveOffer) cards.unshift({ kind: "offer", text: liveOffer, until: null, example: !mine, img: offerImg });
   // Récap « fun » du site : cartes avis / prestations / accès (dans le site de démo

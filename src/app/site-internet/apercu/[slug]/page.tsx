@@ -129,7 +129,7 @@ export default async function ApercuMaquette({
   }
   // « Offre du moment » : bandeau piloté par le pro (colonne récente → défensif).
   // Affiché seulement si actif ET non expiré. Null sinon.
-  let offer: { text: string; until: string | null } | null = null;
+  let offer: { text: string; until: string | null; photo: string | null } | null = null;
   try {
     const { data: o } = await supabase
       .from("human_vitrine_sites")
@@ -141,8 +141,15 @@ export default async function ApercuMaquette({
       const oo = raw as Record<string, unknown>;
       const text = str(oo.text);
       const until = typeof oo.until === "string" && oo.until ? oo.until : null;
+      // Composant serveur async : ce code s'exécute une fois par requête, jamais
+      // au re-rendu — lire l'horloge y est stable. La règle « purity » vise les
+      // composants client, elle ne sait pas distinguer les deux.
+      // eslint-disable-next-line react-hooks/purity
       const expired = until ? Date.parse(until) < Date.now() : false;
-      if (text && !expired) offer = { text, until };
+      // La photo choisie par le pro pour CETTE annonce (absente sur les annonces
+      // antérieures au choix → le deck retombe sur les photos du commerce).
+      const photo = str(oo.photo) || null;
+      if (text && !expired) offer = { text, until, photo };
     }
   } catch {
     /* colonne non migrée → pas d'offre */

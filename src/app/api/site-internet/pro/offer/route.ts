@@ -4,10 +4,14 @@
 // clic est compté → le pro voit des RÉSULTATS RÉELS (jamais un chiffre inventé).
 //
 // Objet stocké dans human_vitrine_sites.current_offer (jsonb) :
-//   { text: string, until: string|null (ISO), clicks: number, created_at: string }
+//   { text, until (ISO|null), photo (string|null), clicks, created_at }
 //   null = aucune offre active.
 //
-// Actions (POST, jeton pro privé requis) : get | set {text, until|days} | clear.
+// Actions (POST, jeton pro privé requis) : get | set {text, until|days, photo} | clear.
+//
+// `photo` est l'image qui illustre CETTE annonce dans le catalogue de la ville.
+// Elle est vérifiée contre la galerie du commerce : sans ce contrôle, un jeton
+// pro égaré permettrait d'afficher n'importe quelle image sur une page publique.
 //
 // `until` (ISO) prime sur `days` : une offre « de 16 h à 18 h » doit disparaître
 // à 18 h, pas au bout d'une journée entière. C'est la seule façon d'annoncer
@@ -20,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 const str = (v: unknown) => String(v ?? "").trim();
 
-type Offer = { text: string; until: string | null; clicks: number; created_at: string };
+type Offer = { text: string; until: string | null; photo: string | null; clicks: number; created_at: string };
 
 function readOffer(v: unknown): Offer | null {
   if (!v || typeof v !== "object") return null;
@@ -30,6 +34,7 @@ function readOffer(v: unknown): Offer | null {
   return {
     text,
     until: typeof o.until === "string" && o.until ? o.until : null,
+    photo: typeof o.photo === "string" && o.photo ? o.photo : null,
     clicks: typeof o.clicks === "number" ? o.clicks : 0,
     created_at: typeof o.created_at === "string" && o.created_at ? o.created_at : new Date().toISOString(),
   };
@@ -73,7 +78,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token")
+    .select("id, pro_token, gallery_photos")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -82,6 +87,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
   const id = str(site.id);
+  const galerie = (Array.isArray(site.gallery_photos) ? site.gallery_photos : [])
+    .map((x) => str(x))
+    .filter(Boolean);
 
   // Lecture défensive : colonne récente (migration peut ne pas être appliquée).
   const current = async (): Promise<Offer | null> => {
@@ -107,7 +115,11 @@ export async function POST(request: Request) {
     const text = str(p?.text).slice(0, 140);
     if (!text) return NextResponse.json({ error: "Écrivez le texte de l'offre." }, { status: 400 });
     const until = echeance(p);
-    const offer: Offer = { text, until, clicks: 0, created_at: new Date().toISOString() };
+    // On n'accepte que ce qui est DÉJÀ dans sa galerie : le champ est un choix
+    // parmi ses photos, pas une adresse d'image libre à publier sur le catalogue.
+    const voulue = str(p?.photo);
+    const photo = voulue && galerie.includes(voulue) ? voulue : null;
+    const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
     try {
       await supabase.from("human_vitrine_sites").update({ current_offer: offer }).eq("id", id);
     } catch {
@@ -116,6 +128,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, offer });
   }
 
-  // get
-  return NextResponse.json({ ok: true, offer: await current() });
+  // get — la galerie voyage avec l'offre : le sélecteur de photo n'a pas besoin
+  // d'un second aller-retour pour s'afficher.
+  return NextResponse.json({ ok: true, offer: await current(), photos: galerie });
 }

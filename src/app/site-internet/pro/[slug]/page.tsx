@@ -217,7 +217,12 @@ export default async function EspacePro({
       if (cr.collectif_actif === false) catActif = false;
       const off = (cr.current_offer && typeof cr.current_offer === "object" ? cr.current_offer : null) as Record<string, unknown> | null;
       const until = off && typeof off.until === "string" ? off.until : null;
-      catHasOffer = Boolean(off && str(off.text).trim() && (!until || Date.parse(until) >= Date.now()));
+      // Composant serveur async : ce code s'exécute une fois par requête, jamais
+      // au re-rendu — lire l'horloge y est stable. La règle « purity » vise les
+      // composants client, elle ne sait pas distinguer les deux.
+      // eslint-disable-next-line react-hooks/purity
+      const maintenant = Date.now();
+      catHasOffer = Boolean(off && str(off.text).trim() && (!until || Date.parse(until) >= maintenant));
     }
   } catch {
     /* migration catalogue non appliquée → carte avec des zéros, jamais d'erreur */

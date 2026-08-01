@@ -21,7 +21,7 @@ import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles"
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
-type Offer = { text: string; until: string | null; clicks: number; created_at: string };
+type Offer = { text: string; until: string | null; photo?: string | null; clicks: number; created_at: string };
 
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
@@ -92,6 +92,11 @@ export function ProRelance({
   const [offer, setOffer] = useState<Offer | null>(null);
   const [offerText, setOfferText] = useState("");
   const [duree, setDuree] = useState("2j");
+  // La photo qui illustrera l'annonce dans le catalogue. Pré-choisie, MONTRÉE,
+  // remplaçable en un geste — jamais publiée en silence.
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [touchePhoto, setTouchePhoto] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
@@ -134,7 +139,14 @@ export function ProRelance({
       const r = await fetch("/api/site-internet/pro/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, action: "set", text: t.slice(0, 140), until: fin ? fin.toISOString() : null }),
+        body: JSON.stringify({
+          slug,
+          token,
+          action: "set",
+          text: t.slice(0, 140),
+          until: fin ? fin.toISOString() : null,
+          photo,
+        }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.offer) {
@@ -327,7 +339,13 @@ export function ProRelance({
           body: JSON.stringify({ slug, token, action: "get" }),
         });
         const j = await r.json().catch(() => ({}));
-        if (!cancelled && r.ok && j.offer) setOffer(j.offer as Offer);
+        if (cancelled || !r.ok) return;
+        if (j.offer) setOffer(j.offer as Offer);
+        const g = Array.isArray(j.photos) ? (j.photos as unknown[]).map(String).filter(Boolean) : [];
+        setPhotos(g);
+        // Pré-choix : la photo déjà associée à l'annonce en cours, sinon la
+        // première du commerce. Le pro n'a rien à faire s'il est d'accord.
+        setPhoto((prev) => prev ?? (j.offer?.photo as string | undefined) ?? g[0] ?? null);
       } catch {
         /* colonne non migrée → pas d'offre */
       }
@@ -479,6 +497,23 @@ export function ProRelance({
           .pro .relance .afech{margin-top:11px;background:#E6F7F1;border:1px solid #BFE8D9;border-radius:11px;
             padding:10px 12px;font-size:12.5px;color:#0E6B52;line-height:1.45;}
           .pro .relance .afech b{color:#08432F;}
+          /* ── La photo de l'annonce ── */
+          .pro .relance .phot{margin-top:14px;border:1px solid var(--hair);border-radius:14px;background:#FBFAF7;padding:13px;}
+          .pro .relance .phot .ph-h{display:flex;align-items:center;justify-content:space-between;gap:9px;
+            font-size:12.5px;font-weight:800;color:var(--ink);}
+          .pro .relance .phot .ph-h button{border:1px solid var(--hair);background:#fff;color:var(--violet);
+            border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;}
+          .pro .relance .phot .ph-g{display:block;width:100%;height:150px;object-fit:cover;border-radius:12px;
+            margin-top:10px;background:linear-gradient(150deg,#2C3A5E,#141A2E);}
+          .pro .relance .phot .ph-s{font-size:11.5px;color:var(--soft);line-height:1.45;margin-top:9px;}
+          .pro .relance .phot .ph-l{display:flex;gap:8px;overflow-x:auto;margin-top:11px;padding-bottom:3px;}
+          .pro .relance .phot .ph-l button{flex:none;width:64px;height:64px;padding:0;border-radius:11px;overflow:hidden;
+            border:2px solid transparent;background:#EBE7DD;cursor:pointer;}
+          .pro .relance .phot .ph-l button.on{border-color:var(--violet);}
+          .pro .relance .phot .ph-l img{width:100%;height:100%;object-fit:cover;display:block;}
+          .pro .relance .phot .ph-add{margin-top:11px;width:100%;background:#fff;border:1px dashed var(--hair);
+            color:var(--soft);border-radius:11px;padding:11px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .phot.vide{background:#FFF9EC;border-color:#EBD9AE;}
           .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
           @keyframes aispin{to{transform:rotate(360deg)}}
           @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}
@@ -526,6 +561,7 @@ export function ProRelance({
           .pro .relance .offer .obtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
+          .pro .relance .offer .live .lp{display:block;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-bottom:10px;}
           .pro .relance .offer .live .lt{font-size:13.5px;font-weight:700;color:#1B5E2E;line-height:1.4;}
           .pro .relance .offer .live .lmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--soft);}
           .pro .relance .offer .live .clicks{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #CFE6C2;border-radius:999px;padding:4px 10px;font-weight:700;color:#1B7A3E;}
@@ -737,6 +773,10 @@ export function ProRelance({
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
                   {offer ? (
                     <div className="live">
+                      {offer.photo && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="lp" src={offer.photo} alt="" />
+                      )}
                       <div className="lt">« {offer.text} »</div>
                       <div className="lmeta">
                         <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
@@ -780,6 +820,68 @@ export function ProRelance({
                           ? "Elle restera affichée jusqu'à ce que vous la retiriez vous-même."
                           : "Elle disparaît toute seule de votre site et du catalogue — vous n'avez rien à faire."}
                       </div>
+
+                      {/* La photo n'est pas un détail : dans le catalogue, c'est
+                          elle qu'on voit avant le texte. On la montre donc AVANT
+                          publication, plutôt que d'en choisir une en silence. */}
+                      {photos.length > 0 && photo && (
+                        <div className="phot">
+                          <div className="ph-h">
+                            La photo de cette annonce
+                            {photos.length > 1 && <button type="button" onClick={() => setTouchePhoto((v) => !v)}>
+                              {touchePhoto ? "Fermer" : "Changer"}
+                            </button>}
+                          </div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img className="ph-g" src={photo} alt="" />
+                          <div className="ph-s">
+                            C&apos;est elle qui illustrera votre annonce dans le catalogue de {ville}.
+                          </div>
+                          {touchePhoto && (
+                            <div className="ph-l">
+                              {photos.map((u) => (
+                                <button
+                                  key={u}
+                                  type="button"
+                                  className={u === photo ? "on" : ""}
+                                  onClick={() => { setPhoto(u); setTouchePhoto(false); }}
+                                  aria-label="Choisir cette photo"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={u} alt="" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            className="ph-add"
+                            onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "site" }))}
+                          >
+                            📷 Ajouter une photo à ma galerie →
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Sans photo, la carte du catalogue est un aplat de
+                          couleur. On le DIT, au lieu de laisser la découverte
+                          se faire sur la page publique. */}
+                      {photos.length === 0 && (
+                        <div className="phot vide">
+                          <div className="ph-h">Aucune photo</div>
+                          <div className="ph-s">
+                            Votre annonce paraîtra dans le catalogue de {ville} sans image, sur un fond de couleur.
+                            Une photo de votre commerce change beaucoup ce qu&apos;on en voit.
+                          </div>
+                          <button
+                            type="button"
+                            className="ph-add"
+                            onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "site" }))}
+                          >
+                            📷 Ajouter une photo →
+                          </button>
+                        </div>
+                      )}
                       <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
                         {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
                       </button>
