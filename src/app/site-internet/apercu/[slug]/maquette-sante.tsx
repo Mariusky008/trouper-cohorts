@@ -142,6 +142,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     metier: metierLabel,
     // Une VRAIE photo du commerce pour le visuel Instagram de la campagne.
     photo: photos[0] || "",
+    // Pilotent les MÊMES suggestions que l'espace pro : la démo ne raconte plus
+    // ce que le produit fait, elle fait tourner le produit.
+    confirmation,
+    secteur,
   };
 
   // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en

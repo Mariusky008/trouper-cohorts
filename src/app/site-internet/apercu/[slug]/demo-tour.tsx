@@ -537,6 +537,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
              de l'étape. La barre « côté pro » était déjà masquée ; le bandeau
              d'exemple ne l'était pas, et se superposait au titre de l'étape. */
           .mqc-demoing .probar,.mqc-demoing .offer-band{display:none!important;}
+          /* Le bouton du commerçant n'existe qu'À LA FIN de la présentation :
+             montré dès le premier écran, il n'était qu'une couche de plus à
+             déchiffrer. Il arrive quand il y a quelque chose à en faire. */
+          .mqc-demoing .asx-fab,.mqc-demoing .asx-fabnote{display:none!important;}
 
           /* Barre « en train de parler » — sobre, la page reste visible derrière. */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;

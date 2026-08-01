@@ -11,10 +11,12 @@
 // en santé/droit (avisAllowed=false) → seulement « répondre » et « préparer », jamais
 // avis ni créneau/offre. Le vrai compteur d'avis (#mqd-avis-count) se met à jour à la
 // fin de la démo avis. La bulle n'existe qu'en mode maquette propriétaire.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { publishDemoOffer } from "./demo-offer";
 import { campagneFallback, type Campagne } from "@/lib/site-internet/campagne";
+import { intentionsPour, joursProches, manquants, recommandees, type Champ, type Intention } from "@/lib/site-internet/actions-flash";
+import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 
 export type MaquetteAssistantData = {
   nom: string; // nom du commerce, pour les messages (« chez … »)
@@ -25,23 +27,12 @@ export type MaquetteAssistantData = {
   ville?: string; // ville, pour le « collectif de … »
   metier?: string; // libellé métier, pour les hashtags de la publication Instagram
   photo?: string; // une VRAIE photo du commerce, pour le visuel Instagram
+  confirmation?: Confirmation; // vocabulaire des suggestions (créneau / table / commande)
+  secteur?: Secteur;
 };
 
 // Parcours Action Flash en 4 temps : je choisis → je dis → je vérifie → c'est publié.
 type View = "home" | "avisIn" | "avisPrev" | "creneauIn" | "creneauSay" | "creneauPrev" | "questionIn";
-
-// Icônes homogènes (traits fins) — plus sobres que des emojis dépareillés.
-const Ico = ({ d }: { d: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d={d} />
-  </svg>
-);
-const ICO = {
-  slot: "M8 2v3M16 2v3M3.5 9h17M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7A1.5 1.5 0 0 1 5 5.5Z",
-  event: "M12 3l2.1 4.5 4.9.6-3.6 3.4.9 4.9-4.3-2.4-4.3 2.4.9-4.9L5 8.1l4.9-.6L12 3Z",
-  offer: "M20.5 12.3 12.8 20a1.6 1.6 0 0 1-2.3 0l-7-7A1.6 1.6 0 0 1 3 11.8V5a2 2 0 0 1 2-2h6.8c.4 0 .8.2 1.1.5l7.6 7.6a1.6 1.6 0 0 1 0 2.2ZM7.5 7.5h.01",
-  product: "M3.5 7.5 12 3l8.5 4.5M3.5 7.5V16L12 21m-8.5-13.5L12 12m0 9 8.5-5V7.5M12 21v-9m8.5-4.5L12 12",
-} as const;
 
 // Progression : trois temps de SAISIE seulement. Les écrans de résultat
 // (« c'est publié », « options prêtes ») sont volontairement hors compteur —
@@ -72,7 +63,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const [optWa, setOptWa] = useState(false);
   const [optSocial, setOptSocial] = useState(false);
   const [optResa, setOptResa] = useState(false);
-  const [obj, setObj] = useState(0); // objectif choisi (étape 1)
+  // L'intention choisie et ses réponses — MÊME modèle que l'espace pro.
+  const [intention, setIntention] = useState<Intention | null>(null);
+  const [reponses, setReponses] = useState<Record<string, string>>({});
+  const [voirTout, setVoirTout] = useState(false);
+  const [libre, setLibre] = useState(false);
   const [said, setSaid] = useState(""); // ce que le pro veut annoncer (étape 2)
   const [writing, setWriting] = useState(false);
   const [editing, setEditing] = useState(false); // « Modifier l'annonce »
@@ -301,8 +296,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   const freeFinal = (msg: string) =>
     `<div class="asx-done-k">✅ Annonce créée</div>` +
-    `<div class="asx-done-h">Votre annonce est en ligne 🎉</div>` +
-    `<div class="asx-done-s">En haut de votre site, et sur une carte dans le catalogue de ${villeNom}&nbsp;:</div>` +
+    `<div class="asx-done-h">Votre annonce est prête 🎉</div>` +
+    `<div class="asx-done-s">Voici où elle paraîtra&nbsp;: en haut de votre site, et sur une carte dans le catalogue de ${villeNom}. <b>Rien n\u2019a été publié pour de vrai</b> — c\u2019est votre démonstration.</div>` +
     bandHtml(msg) +
     carteCatalogue(msg) +
     `<div class="asx-proofs">` +
@@ -498,7 +493,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     publishDemoOffer(fn);
     setCard(
       `<div class="asx-done-k">✅ Action terminée</div>` +
-        `<div class="asx-done-h">Votre annonce est en ligne 🎉</div>` +
+        `<div class="asx-done-h">Votre annonce est prête 🎉</div>` +
         `<div class="asx-done-s">Elle est visible en haut de votre site, par toutes les personnes qui le consultent.</div>` +
         bandHtml(fn) +
         `<button class="asx-cta2" data-seeoffer>Voir mon annonce sur le site</button>` +
@@ -602,12 +597,18 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   // Action Flash : l'objectif du pro (créneau / événement / offre / déstockage).
   // `ex` = l'exemple montré DANS UN BLOC À PART (jamais dans le champ, sinon on
   // le prend pour du texte déjà saisi) ; `msg` = l'annonce si le pro le reprend.
-  const offres: Array<{ label: string; ico: string; ex: string; msg: string }> = [
-    { label: "Annoncer une disponibilité", ico: ICO.slot, ex: "Il me reste 4 places jeudi à 18 h.", msg: `Une place se libère bientôt chez ${nom}. Envie d'en profiter ? Répondez OUI, je vous la réserve 🙂` },
-    { label: "Annoncer un événement", ico: ICO.event, ex: "Portes ouvertes samedi de 10 h à 17 h.", msg: `Bientôt chez ${nom} : un moment spécial rien que pour vous. Vous venez ? Répondez OUI 🙂` },
-    { label: "Partager une offre spéciale", ico: ICO.offer, ex: "-20 % sur les abonnements cette semaine.", msg: `Cette semaine chez ${nom} : -20 % sur notre coup de cœur. Répondez OUI pour réserver le vôtre ✨` },
-    { label: "Mettre un produit en avant", ico: ICO.product, ex: "Nouveaux tapis en boutique, série limitée.", msg: `Dernières pièces chez ${nom} — une belle occasion à saisir. Ça vous intéresse ? Répondez OUI 🙂` },
-  ];
+  // Les MÊMES suggestions que l'espace pro, tirées du même moteur : la démo ne
+  // raconte plus ce que le produit fera, elle fait tourner le produit. Quatre
+  // catégories génériques identiques pour tous laissaient croire à un
+  // reformulateur de texte ; ici un tatoueur et une boulangère ne voient pas
+  // les mêmes propositions.
+  // L'ordre des suggestions dépend de l'heure : on ne le calcule qu'une fois
+  // monté, sinon le rendu serveur et le rendu client divergeraient.
+  const monte = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const toutes = intentionsPour(data.metier || "", data.confirmation ?? "reserve", data.secteur ?? "flux");
+  const podium = monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3);
+  const jours = monte ? joursProches(new Date()) : [];
+
   const plural = term === "patient" ? "patients" : "client(e)s";
 
   const renderBody = () => {
@@ -639,64 +640,143 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
           <Steps n={1} />
-          <div className="asx-say"><b>Que voulez-vous annoncer&nbsp;?</b> Je prépare tout et je vous montre <b>exactement</b> ce que je vais faire — vous validez avant l’envoi.</div>
+          <div className="asx-say"><b>Que voulez-vous obtenir aujourd’hui&nbsp;?</b> Choisissez, je m’occupe du reste — vous validez avant que ça parte.</div>
           <div className="asx-objs">
-            {offres.map((o, i) => (
+            {(voirTout ? toutes : podium).map((it, i) => (
               <button
-                key={o.label}
+                key={it.cle}
                 type="button"
-                className={`asx-obj${i === 0 ? " reco" : ""}`}
-                onClick={() => { setObj(i); setSaid(""); setFn(""); setView("creneauSay"); }}
+                className={`asx-obj${i === 0 && !voirTout ? " reco" : ""}`}
+                onClick={() => { setIntention(it); setReponses({}); setLibre(false); setView("creneauSay"); }}
               >
-                <span className="oi"><Ico d={o.ico} /></span>
-                <span className="ot">{o.label}</span>
-                {i === 0 && <span className="obadge">le plus courant</span>}
+                <span className="oi" aria-hidden="true">{it.emoji}</span>
+                <span className="ot">{it.titre}</span>
                 <span className="oc">›</span>
               </button>
             ))}
           </div>
+          {!voirTout && toutes.length > podium.length && (
+            <button type="button" className="asx-link" onClick={() => setVoirTout(true)}>
+              Voir {toutes.length - podium.length} autres idées adaptées à mon activité
+            </button>
+          )}
+          <button type="button" className="asx-link" onClick={() => { setIntention(null); setLibre(true); setSaid(""); setView("creneauSay"); }}>
+            🎙️ Ou dites directement votre annonce
+          </button>
         </>
       );
     }
-    // ── ÉTAPE 2 : le pro DIT ce qu'il veut annoncer (c'est SON annonce, pas une
-    //    annonce préfabriquée). Il peut écrire, ou valider l'exemple proposé.
+    // ── ÉTAPE 2 : les informations qui manquent, puis l'annonce construite.
     if (view === "creneauSay") {
-      const o = offres[obj] ?? offres[0];
-      // `mine` = le pro a écrit sa phrase ; sinon il reprend l'exemple affiché.
-      const write = (mine: boolean) => {
+      // Le champ correspondant à une question — mêmes types que l'espace pro.
+      const champ = (c: Champ) => {
+        const v = reponses[c.cle] ?? "";
+        const set = (x: string) => setReponses((r) => ({ ...r, [c.cle]: x }));
+        if (c.type === "heure") {
+          const [hh = "", mm = ""] = v ? v.split(":") : [];
+          const poser = (h: string, m: string) => set(h ? `${h}:${m || "00"}` : "");
+          return (
+            <span className="asx-hm">
+              <select value={hh} onChange={(e) => poser(e.target.value, mm)} aria-label="Heure">
+                <option value="">— h</option>
+                {Array.from({ length: 18 }, (_, k) => k + 6).map((h) => (
+                  <option key={h} value={String(h).padStart(2, "0")}>{h > 12 ? `${h} h  ·  ${h - 12} h de l’après-midi` : `${h} h`}</option>
+                ))}
+              </select>
+              <select value={mm} onChange={(e) => poser(hh, e.target.value)} disabled={!hh} aria-label="Minutes">
+                {["00", "15", "30", "45"].map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </span>
+          );
+        }
+        if (c.type === "jour")
+          return (
+            <select value={v} onChange={(e) => set(e.target.value)}>
+              <option value="">{c.requis ? "Choisir un jour…" : "— non précisé —"}</option>
+              {jours.map((d2) => <option key={d2.valeur} value={d2.valeur}>{d2.label}</option>)}
+            </select>
+          );
+        if (c.type === "nombre" || c.type === "pourcent")
+          return <input type="number" min={1} inputMode="numeric" value={v} onChange={(e) => set(e.target.value)} placeholder={c.exemple} />;
+        return <input type="text" value={v} onChange={(e) => set(e.target.value)} placeholder={c.exemple ? `Ex. ${c.exemple}` : ""} maxLength={90} />;
+      };
+
+      // L'annonce est CONSTRUITE à partir des réponses, pas reformulée depuis une
+      // phrase libre : impossible d'obtenir une annonce à partir d'un mot au hasard.
+      const creer = (texte: string) => {
         setWriting(true);
         window.setTimeout(() => {
           setWriting(false);
-          setFn(mine ? `${said.trim()} — chez ${nom}. Répondez OUI, je vous réserve ça 🙂` : o.msg);
+          setFn(texte);
           setView("creneauPrev");
-        }, 1100);
+        }, 900);
       };
+
+      if (libre) {
+        // Garde-fou : sans verbe ni chiffre ni mot connu, ce n'est pas une annonce.
+        const t = said.trim();
+        const exploitable = t.length >= 12 && /\s/.test(t) && /[aeiouyàâéèêëîïôöùûü]/i.test(t);
+        return (
+          <>
+            <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
+            <Steps n={2} />
+            <div className="asx-say"><b>Dites-moi en une phrase.</b> Je rédige l’annonce pour vous.</div>
+            <div className="asx-ex">
+              <span className="asx-exk">Exemple</span>
+              Un créneau vient de se libérer samedi à 16 h.
+            </div>
+            <textarea
+              className="asx-said"
+              value={said}
+              onChange={(e) => setSaid(e.target.value)}
+              rows={3}
+              placeholder="Écrivez votre annonce ici…"
+              aria-label="Ce que vous voulez annoncer"
+            />
+            {t.length > 0 && !exploitable && (
+              <div className="asx-warn">
+                Je n’ai pas bien compris. Dites-moi par exemple&nbsp;: «&nbsp;Un créneau vient de se libérer samedi à 16 h.&nbsp;»
+              </div>
+            )}
+            <button
+              className={`asx-send${exploitable ? " pulse" : ""}`}
+              onClick={() => creer(`${t} — chez ${nom}. Répondez-moi, je vous réserve ça 🙂`)}
+              disabled={writing || !exploitable}
+            >
+              {writing ? "Je rédige…" : "✨ Créer mon annonce"}
+            </button>
+            <button type="button" className="asx-link" onClick={() => { setLibre(false); setView("creneauIn"); }}>
+              Voir plutôt les idées adaptées à mon métier
+            </button>
+          </>
+        );
+      }
+
+      const it = intention ?? podium[0];
+      const vides = manquants(it, reponses);
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
           <Steps n={2} />
-          <div className="asx-say"><b>Dites-moi en une phrase.</b> Je rédige l’annonce pour vous.</div>
-          {/* L'exemple est HORS du champ : dans le champ, il serait pris pour du
-              texte déjà saisi (c'est ce qui bloquait les pros au test). */}
-          <div className="asx-ex">
-            <span className="asx-exk">Exemple</span>
-            {o.ex}
+          <div className="asx-say">{it.emoji} <b>{it.titre}</b><br />{it.sous}</div>
+          <div className="asx-qs">
+            {it.champs.map((c) => (
+              <div className="asx-q" key={c.cle}>
+                <label>{c.label}{!c.requis && <i> · facultatif</i>}</label>
+                {champ(c)}
+              </div>
+            ))}
           </div>
-          <textarea
-            className="asx-said"
-            value={said}
-            onChange={(e) => setSaid(e.target.value)}
-            rows={3}
-            placeholder="Écrivez votre annonce ici…"
-            aria-label="Ce que vous voulez annoncer"
-          />
-          <button className={`asx-send${said.trim() ? " pulse" : ""}`} onClick={() => write(true)} disabled={writing || !said.trim()}>
-            {writing ? "Je rédige…" : "✍️ Rédiger mon annonce"}
+          <button
+            className={`asx-send${vides.length === 0 ? " pulse" : ""}`}
+            onClick={() => creer(it.brief(reponses).replace(/\s+/g, " ").trim())}
+            disabled={writing || vides.length > 0}
+          >
+            {writing ? "Je rédige…" : "✨ Créer mon annonce"}
           </button>
-          <button type="button" className="asx-link" onClick={() => write(false)} disabled={writing}>
-            Utiliser l’exemple ci-dessus
-          </button>
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 4 }}>Vous pourrez la modifier juste après.</div>
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 4 }}>
+            {vides.length > 0 ? "Complétez les champs ci-dessus." : "Vous pourrez la modifier juste après."}
+          </div>
         </>
       );
     }
@@ -897,7 +977,7 @@ function styles(accent: string): string {
   return `
   /* Le bouton STAR : une vraie pilule premium, centrée au-dessus de la barre.
      « Respiration » discrète toutes les ~7 s pour attirer le regard sans agiter. */
-  .asx-fab{position:fixed;left:0;right:0;margin:0 auto;bottom:82px;z-index:55;width:max-content;max-width:calc(100% - 28px);
+  .asx-fab{position:fixed;left:0;right:0;margin:0 auto;bottom:82px;z-index:55;width:max-content;max-width:calc(100% - 28px);overflow:hidden;
     display:flex;align-items:center;gap:11px;cursor:pointer;border:none;font-family:inherit;height:60px;
     background:linear-gradient(135deg,#20201A,#0D0D09);color:#FBFAF7;border-radius:32px;padding:9px 20px 9px 10px;
     box-shadow:0 14px 36px -10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(124,106,232,.45);animation:asxBreathe 7s ease-in-out infinite;}
@@ -907,6 +987,13 @@ function styles(accent: string): string {
   .asx-fab .lab{font-size:14.5px;font-weight:700;white-space:nowrap;line-height:1.08;text-align:left;}
   .asx-fab .lab small{display:block;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A594FF;font-weight:700;margin-bottom:1px;}
   .asx-fab .chev{font-size:22px;color:#A594FF;font-weight:700;margin-left:1px;line-height:1;}
+  /* Un éclat traverse le bouton à son apparition : après une présentation, il
+     faut dire OÙ regarder, pas seulement rendre l'élément présent. */
+  .asx-fab::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:55%;pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+    animation:asxEclat 2.6s ease-in-out 3;}
+  @keyframes asxEclat{0%{left:-60%}55%,100%{left:130%}}
+  @media (prefers-reduced-motion:reduce){.asx-fab::after{animation:none;}}
   .asx-fabnote{position:fixed;left:0;right:0;bottom:66px;z-index:55;text-align:center;pointer-events:none;
     font-size:10.5px;font-weight:600;color:#6E6A5C;}
   @keyframes asxBreathe{0%,80%,100%{transform:scale(1)}88%{transform:scale(1.045)}}
@@ -1010,13 +1097,24 @@ function styles(accent: string): string {
     background:linear-gradient(120deg,#F7F3FF,#fff);border-radius:13px;padding:13px 14px;font-size:12.5px;line-height:1.5;color:#4A4A40;}
   .asx-pronote b{font-size:13.5px;color:#5B3FA6;font-weight:850;}
   .asx-pronote span{font-size:11.5px;color:#71766C;}
+  /* Les questions de l'objectif choisi — même maille que l'espace pro. */
+  .asx-qs{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  .asx-q{display:flex;flex-direction:column;gap:6px;text-align:left;}
+  .asx-q label{font-size:12.5px;font-weight:700;color:#16160F;}
+  .asx-q label i{font-style:normal;font-weight:500;color:#9A9689;}
+  .asx-q input,.asx-q select{width:100%;border:1px solid #E7E4DC;border-radius:11px;padding:12px 13px;
+    font-size:14px;font-family:inherit;background:#fff;color:#16160F;}
+  .asx-hm{display:flex;gap:8px;}
+  .asx-hm select{flex:1;min-width:0;}
+  .asx-warn{margin-top:10px;background:#FDF6F5;border:1px solid #EBC9C4;border-radius:11px;padding:10px 12px;
+    font-size:12px;line-height:1.45;color:#8A3F36;text-align:left;}
   .asx-objs{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
   .asx-obj{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;font-family:inherit;
     border:1px solid #E7E4DC;background:#fff;border-radius:14px;padding:14px 13px;transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease;}
   .asx-obj:hover{border-color:#C9BCF2;box-shadow:0 12px 26px -18px rgba(91,63,166,.5);}
   .asx-obj:active{transform:scale(.99);}
   .asx-obj.reco{border-color:#C9BCF2;background:linear-gradient(120deg,#F8F5FF,#fff);}
-  .asx-obj .oi{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#5B3FA6;background:#F1ECFF;}
+  .asx-obj .oi{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#5B3FA6;background:#F1ECFF;}
   .asx-obj .oi svg{width:20px;height:20px;}
   .asx-obj .ot{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#16160F;line-height:1.25;}
   .asx-obj .obadge{flex:none;font-size:9px;font-weight:800;letter-spacing:.03em;color:#5B3FA6;background:#EDE8FF;border-radius:6px;padding:3px 7px;}
