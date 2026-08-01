@@ -34,6 +34,14 @@ const SUGGESTIONS = [
 
 export function ProAssistantHub({ slug, token, nom }: { slug: string; token: string; nom: string }) {
   const [open, setOpen] = useState(false);
+  // Pendant la rédaction d'une annonce, le bouton flottant recouvre le
+  // formulaire et double l'option « dites votre annonce à l'assistante ».
+  const [efface, setEfface] = useState(false);
+  useEffect(() => {
+    const onFlux = (e: Event) => setEfface(Boolean((e as CustomEvent).detail));
+    window.addEventListener("pro-parcours", onFlux as EventListener);
+    return () => window.removeEventListener("pro-parcours", onFlux as EventListener);
+  }, []);
   const [thread, setThread] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -327,7 +335,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
         }}
       />
 
-      {!open && (
+      {!open && !efface && (
         <button type="button" className="hubfab" onClick={() => setOpen(true)} aria-label="Parler à mon assistante">
           <span className="sp">✦</span> Mon assistante
         </button>

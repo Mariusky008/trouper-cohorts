@@ -424,6 +424,10 @@ export default async function EspacePro({
                 confirmation={mp.entry?.confirmation ?? "reserve"}
                 secteur={mp.entry?.secteur ?? "flux"}
                 collectifActif={catActif}
+                // Le catalogue n'accepte que les sites PUBLIÉS : tant que le
+                // sien ne l'est pas, son annonce n'est visible nulle part.
+                sitePublie={sitePublished}
+                voisins={catVoisins}
               />
             ),
           },

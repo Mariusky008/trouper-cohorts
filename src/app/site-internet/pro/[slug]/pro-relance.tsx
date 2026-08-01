@@ -36,9 +36,26 @@ const jamais = () => () => {};
 // (cf. api/site-internet/pro/announce).
 const TONS = ["Direct", "Chaleureux", "Court"];
 
-// Heures en 24 h et minutes par quart : un commerce n'ouvre pas à 11 h 11.
-const HEURES = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+// Heures en 24 h, groupées par moment de la journée. Une liste plate de 0 à 23
+// laisse choisir « 4 h » en pensant à seize heures — et l'annonce part avec la
+// mauvaise heure sans que rien ne le signale.
+const MOMENTS: Array<{ titre: string; de: number; a: number }> = [
+  { titre: "Matin", de: 6, a: 11 },
+  { titre: "Après-midi", de: 12, a: 17 },
+  { titre: "Soir", de: 18, a: 23 },
+  { titre: "Nuit", de: 0, a: 5 },
+];
 const MINUTES = ["00", "15", "30", "45"];
+
+/** « 16 h » — et le rappel familier pour qui pense encore en douze heures. */
+const libelleHeure = (h: number) => (h > 12 ? `${h} h  ·  ${h - 12} h de l'après-midi` : `${h} h`);
+
+/**
+ * L'assistante laisse un [crochet] quand une information lui manque — c'est
+ * volontaire, elle n'invente pas. Mais un crochet publié tel quel part chez les
+ * client·es. On refuse donc la publication tant qu'il en reste un.
+ */
+const crochets = (t: string): string[] => (t.match(/\[[^\]]{1,40}\]/g) ?? []).slice(0, 4);
 
 /**
  * Le bandeau du site n'est pas le message WhatsApp — c'est un titre.
@@ -84,6 +101,8 @@ export function ProRelance({
   confirmation,
   secteur,
   collectifActif,
+  sitePublie,
+  voisins,
 }: {
   slug: string;
   token: string;
@@ -94,6 +113,10 @@ export function ProRelance({
   secteur: Secteur;
   /** Le pro participe au catalogue de sa ville (il peut s'en retirer). */
   collectifActif: boolean;
+  /** Son site est en ligne. Sinon RIEN de ce qu'il publie n'est visible. */
+  sitePublie: boolean;
+  /** Commerces de sa ville déjà en ligne — donc susceptibles de la relayer. */
+  voisins: number;
 }) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -136,6 +159,8 @@ export function ProRelance({
   const fichierRef = useRef<HTMLInputElement | null>(null);
   /** La nouvelle annonce doit remplacer celle qui est déjà en ligne. */
   const [remplace, setRemplace] = useState(false);
+  /** L'annonce vient d'être publiée dans cette session : on le confirme franchement. */
+  const [publiee, setPubliee] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
@@ -277,6 +302,7 @@ export function ProRelance({
         // Publiée : on repasse sur la carte « en ligne », qui porte les liens
         // pour aller voir le résultat aux deux endroits.
         setRemplace(false);
+        setPubliee(true);
       } else {
         setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
       }
@@ -314,6 +340,14 @@ export function ProRelance({
   // Les Actions Flash du métier. L'ordre dépend de l'heure : on ne le calcule
   // qu'une fois monté, sinon le rendu serveur et le rendu client divergeraient.
   const monte = useSyncExternalStore(jamais, () => true, () => false);
+
+  // Le bouton flottant de l'assistante recouvre ce formulaire : on l'efface
+  // pendant les trois étapes, il revient dès qu'on en sort.
+  useEffect(() => {
+    const dire = (actif: boolean) => window.dispatchEvent(new CustomEvent("pro-parcours", { detail: actif }));
+    dire(true);
+    return () => dire(false);
+  }, []);
   const toutes = useMemo(() => intentionsPour(metier, confirmation, secteur), [metier, confirmation, secteur]);
   const podium = useMemo(
     () => (monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3)),
@@ -416,8 +450,12 @@ export function ProRelance({
         <span className="afhm">
           <select id={id} value={hh} onChange={(e) => poser(e.target.value, mm)} aria-label="Heure">
             <option value="">— h</option>
-            {HEURES.map((h) => (
-              <option key={h} value={h}>{Number(h)} h</option>
+            {MOMENTS.map((m) => (
+              <optgroup key={m.titre} label={m.titre}>
+                {Array.from({ length: m.a - m.de + 1 }, (_, k) => m.de + k).map((h) => (
+                  <option key={h} value={String(h).padStart(2, "0")}>{libelleHeure(h)}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <select value={mm} onChange={(e) => poser(hh, e.target.value)} disabled={!hh} aria-label="Minutes">
@@ -559,6 +597,7 @@ export function ProRelance({
     if (chSite && resume) {
       setOfferText(resume);
       setRemplace(!offer || offer.text.trim() !== resume.trim());
+      setPubliee(false);
     }
     setStep(3);
   };
@@ -757,6 +796,11 @@ export function ProRelance({
           .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
           /* Même cadrage que l'aperçu : une bande large coupait le visuel en deux. */
+          .pro .relance .offer .live .lok{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:12px;
+            border-radius:11px;background:#fff;border:1px solid #BFE3C8;font-size:13px;line-height:1.5;color:#1B5E2E;}
+          .pro .relance .offer .live .lok b{font-size:14.5px;}
+          .pro .relance .offer .live .lok span{color:var(--soft);font-size:12px;}
+          .pro .relance .ofdest.attente{background:#FFF9EC;border-color:#EBD9AE;}
           .pro .relance .offer .live .lp{display:block;width:auto;height:190px;aspect-ratio:4/5;object-fit:cover;
             border-radius:10px;margin:0 auto 10px;}
           .pro .relance .offer .live .lt{font-size:13.5px;font-weight:700;color:#1B5E2E;line-height:1.4;}
@@ -804,7 +848,8 @@ export function ProRelance({
         <div className="rlz-steps">
           <div className={`s${step === 1 ? " on" : step > 1 ? " done" : ""}`}><span className="n">{step > 1 ? "✓" : "1"}</span>Quoi</div>
           <div className={`s${step === 2 ? " on" : step > 2 ? " done" : ""}`}><span className="n">{step > 2 ? "✓" : "2"}</span>Où</div>
-          <div className={`s${step === 3 ? " on" : ""}`}><span className="n">3</span>Vérifier</div>
+          {/* « Vérifier » sous-vendait la dernière étape : c'est là qu'on publie. */}
+          <div className={`s${step === 3 ? " on" : ""}`}><span className="n">3</span>Publier</div>
         </div>
 
         {step === 1 && (
@@ -930,8 +975,29 @@ export function ProRelance({
                     placeholder="Écrivez exactement ce que vous proposez…"
                   />
                 </div>
+                {/* Un [crochet] est la façon honnête pour l'assistante de dire
+                    « il me manque cette information ». Publié tel quel, il part
+                    chez les client·es : on bloque tant qu'il en reste un. */}
+                {crochets(message).length > 0 && (
+                  <div className="aftrou" style={{ marginTop: 12 }}>
+                    Il reste {crochets(message).length > 1 ? "des passages" : "un passage"} à compléter&nbsp;:{" "}
+                    {crochets(message).map((c) => (
+                      <b key={c}>{c} </b>
+                    ))}
+                    <span className="afdet">
+                      L&apos;assistante ne devine pas ces informations. Remplacez-{crochets(message).length > 1 ? "les" : "le"} dans le
+                      message ci-dessus.
+                    </span>
+                  </div>
+                )}
                 <div className="rlz-nav">
-                  <button className="next" onClick={() => setStep(2)} disabled={!message.trim()}>Suivant →</button>
+                  <button
+                    className="next"
+                    onClick={() => setStep(2)}
+                    disabled={!message.trim() || crochets(message).length > 0}
+                  >
+                    Suivant →
+                  </button>
                 </div>
               </>
             )}
@@ -987,6 +1053,20 @@ export function ProRelance({
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
                   {offer && !remplace ? (
                     <div className="live">
+                      {/* Confirmation franche : sans elle, l'écran d'après la
+                          publication ressemblait à celui d'avant, et on ne
+                          savait pas si quelque chose s'était passé. */}
+                      {publiee && (
+                        <div className="lok">
+                          🎉 <b>Votre annonce est publiée.</b>
+                          <span>
+                            {sitePublie
+                              ? `Elle est en ligne sur votre site${collectifActif ? ` et dans le catalogue de ${ville}` : ""}.`
+                              : "Elle apparaîtra dès que votre site sera en ligne."}
+                            {offer.until ? ` Elle se retire ${echeanceLisible(new Date(offer.until))}.` : ""}
+                          </span>
+                        </div>
+                      )}
                       {offer.photo && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img className="lp" src={offer.photo} alt="" />
@@ -1011,7 +1091,11 @@ export function ProRelance({
                       </div>
                       <div className="lact">
                         <button onClick={() => { setOfferText(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
-                        <button className="rm" onClick={clearOffer} disabled={offerBusy}>Retirer du site</button>
+                        {/* « Retirer du site » laissait croire qu'elle restait
+                            dans le catalogue. Elle part des deux d'un coup. */}
+                        <button className="rm" onClick={clearOffer} disabled={offerBusy}>
+                          {collectifActif ? "Retirer partout" : "Retirer du site"}
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -1055,23 +1139,50 @@ export function ProRelance({
                       {/* Le catalogue de la ville n'était nommé nulle part dans le
                           parcours : le pro publiait sans savoir que son annonce y
                           entrait. C'est pourtant la moitié de ce qu'on lui promet. */}
-                      <div className="ofdest">
-                        <span className="od">
-                          <b>🌐 En haut de votre site</b>
-                          <i>Un bandeau, visible par tous vos visiteurs.</i>
-                        </span>
-                        {collectifActif ? (
-                          <span className="od">
-                            <b>📍 Dans le catalogue de {ville}</b>
-                            <i>Une carte parmi les annonces du jour des commerçants de la ville.</i>
-                          </span>
-                        ) : (
+                      {/* Le catalogue n'accepte que les sites en ligne. Publier
+                          avant, c'est écrire dans le vide — on le dit, plutôt que
+                          de laisser croire à une diffusion qui n'aura pas lieu. */}
+                      {!sitePublie ? (
+                        <div className="ofdest attente">
                           <span className="od off">
-                            <b>📍 Pas dans le catalogue de {ville}</b>
-                            <i>Vous vous en êtes retiré·e. Réactivable depuis « Mon site ».</i>
+                            <b>⏳ Votre site n&apos;est pas encore en ligne</b>
+                            <i>
+                              Votre annonce est enregistrée, mais elle ne sera visible nulle part — ni sur votre site,
+                              ni dans le catalogue de {ville} — tant que votre site n&apos;est pas publié. Elle
+                              apparaîtra d&apos;elle-même à ce moment-là, si elle n&apos;a pas expiré d&apos;ici là.
+                            </i>
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <div className="ofdest">
+                          <span className="od">
+                            <b>🌐 En haut de votre site</b>
+                            <i>Un bandeau, visible par tous vos visiteurs.</i>
+                          </span>
+                          {collectifActif ? (
+                            <span className="od">
+                              <b>📍 Dans le catalogue de {ville}</b>
+                              <i>Une carte parmi les annonces du jour des commerçants de la ville.</i>
+                            </span>
+                          ) : (
+                            <span className="od off">
+                              <b>📍 Pas dans le catalogue de {ville}</b>
+                              <i>Vous vous en êtes retiré·e. Réactivable depuis « Mon site ».</i>
+                            </span>
+                          )}
+                          {/* Le troisième relais n'est annoncé que s'il existe :
+                              sans voisin en ligne, ce serait promettre un réseau vide. */}
+                          {collectifActif && voisins > 0 && (
+                            <span className="od">
+                              <b>🤝 Chez les commerces voisins</b>
+                              <i>
+                                {voisins} commerce{voisins > 1 ? "s" : ""} de {ville} affiche
+                                {voisins > 1 ? "nt" : ""} le catalogue sur leur site — jamais un concurrent direct.
+                              </i>
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* La photo n'est pas un détail : dans le catalogue, c'est
                           elle qu'on voit avant le texte. On la montre donc AVANT
