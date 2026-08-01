@@ -32,6 +32,27 @@ const norm = (s: string) =>
 
 type SiteRow = Record<string, unknown>;
 
+/**
+ * Les photos d'un commerce, dans l'ordre où son site les utilise : celles qu'il
+ * a téléversées d'abord, sinon celles de sa fiche Google.
+ *
+ * Les deux ne sont pas au même endroit — `gallery_photos` pour les siennes,
+ * `diagnostic.photos` pour Google. Le catalogue ne lisait que la première, si
+ * bien qu'un commerce dont le site est plein de photos y paraissait sur un
+ * aplat de couleur.
+ */
+export function photosDe(row: SiteRow): string[] {
+  const propres = (Array.isArray(row.gallery_photos) ? row.gallery_photos : [])
+    .map((p) => str(p))
+    .filter((u) => /^data:image\//i.test(u));
+  if (propres.length) return propres.slice(0, 10);
+  const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  return (Array.isArray(diag.photos) ? diag.photos : [])
+    .map((p) => str(p))
+    .filter((u) => /^https?:\/\//i.test(u))
+    .slice(0, 6);
+}
+
 /** Annonce en cours d'un site : son texte, sa date, son échéance, sa photo. */
 function offerOf(row: SiteRow): { text: string; at: string | null; until: string | null; photo: string | null } | null {
   const raw = row.current_offer;
@@ -98,7 +119,7 @@ export async function partnerOffers(
       .eq("published", true)
       .neq("id", siteId)
       .limit(40);
-  const BASE = "id, slug, business_name, activite, current_offer, gallery_photos";
+  const BASE = "id, slug, business_name, activite, current_offer, gallery_photos, diagnostic";
 
   let rows: SiteRow[] = [];
   try {
@@ -124,7 +145,7 @@ export async function partnerOffers(
     if (!sontComplementaires(activite, act)) continue;
     const off = offerOf(r);
     if (!off) continue;
-    const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
+    const photos = photosDe(r);
     out.push({
       id: str(r.id),
       slug: str(r.slug),
@@ -187,7 +208,7 @@ export async function cityDirectory(
   const vide = { ville: "", offers: [] as PartnerOffer[], autres: [] as CityMerchant[] };
   if (!slug.trim()) return vide;
 
-  const BASE = "id, slug, business_name, city, activite, current_offer, gallery_photos, google_rating, google_reviews";
+  const BASE = "id, slug, business_name, city, activite, current_offer, gallery_photos, diagnostic, google_rating, google_reviews";
   const query = (cols: string) =>
     supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("published", true).limit(500);
 
@@ -228,7 +249,7 @@ export async function cityDirectory(
     if (r.collectif_actif === false) continue;
     const act = str(r.activite);
     if (!peutParticiper(act)) continue; // déonto : commerce uniquement
-    const photos = Array.isArray(r.gallery_photos) ? r.gallery_photos : [];
+    const photos = photosDe(r);
     const metier = resolveMetier(act).entry?.label ?? act;
     const off = offerOf(r);
     if (off) {

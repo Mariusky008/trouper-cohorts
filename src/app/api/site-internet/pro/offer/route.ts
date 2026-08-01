@@ -19,6 +19,7 @@
 // commerçant devrait revenir la retirer à la main, et ne le ferait pas.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { photosDe } from "@/lib/site-internet/collectif";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, gallery_photos")
+    .select("id, pro_token, gallery_photos, diagnostic")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -87,9 +88,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
   const id = str(site.id);
-  const galerie = (Array.isArray(site.gallery_photos) ? site.gallery_photos : [])
-    .map((x) => str(x))
-    .filter(Boolean);
+  // Mêmes photos que son site : les siennes si elles existent, sinon Google.
+  // On ne lisait que `gallery_photos` — un commerce dont le site est plein de
+  // photos Google se voyait annoncer « aucune photo ».
+  const galerie = photosDe(site);
 
   // Lecture défensive : colonne récente (migration peut ne pas être appliquée).
   const current = async (): Promise<Offer | null> => {

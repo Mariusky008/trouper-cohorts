@@ -36,6 +36,10 @@ const jamais = () => () => {};
 // (cf. api/site-internet/pro/announce).
 const TONS = ["Direct", "Chaleureux", "Court"];
 
+// Heures en 24 h et minutes par quart : un commerce n'ouvre pas à 11 h 11.
+const HEURES = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+
 /**
  * Le bandeau du site n'est pas le message WhatsApp — c'est un titre.
  *
@@ -109,6 +113,7 @@ export function ProRelance({
   const [variante, setVariante] = useState(0);
   /** L'assistante n'a pas répondu : le texte est une mise en forme brute du brief. */
   const [brut, setBrut] = useState(false);
+  const [brutRaison, setBrutRaison] = useState("");
   // Action Flash choisie + réponses aux questions. `libre` = le pro préfère dicter.
   const [intention, setIntention] = useState<Intention | null>(null);
   const [reponses, setReponses] = useState<Record<string, string>>({});
@@ -337,6 +342,7 @@ export function ProRelance({
         // en forme brute de ce que le pro a saisi. Le laisser croire qu'elle a
         // rédigé serait un mensonge sur le produit — et il relirait moins bien.
         setBrut(Boolean(j.fallback));
+        setBrutRaison(typeof j.raison === "string" ? j.raison : "");
       } else {
         setAiErr(typeof j.error === "string" ? j.error : "Impossible de rédiger le message. Réessayez.");
       }
@@ -400,7 +406,28 @@ export function ProRelance({
       setTrous((t) => t.filter((k) => k !== c.cle));
     };
     const id = `af-${c.cle}`;
-    if (c.type === "heure") return <input id={id} type="time" value={v} onChange={(e) => set(e.target.value)} />;
+    if (c.type === "heure") {
+      // PAS d'`<input type="time">` : son format suit la langue du NAVIGATEUR,
+      // pas celle du site. Un commerçant français dont le navigateur est en
+      // anglais y lisait « 02:14 PM ». Deux menus, toujours en 24 h.
+      const [hh = "", mm = ""] = v ? v.split(":") : [];
+      const poser = (h: string, m: string) => set(h ? `${h}:${m || "00"}` : "");
+      return (
+        <span className="afhm">
+          <select id={id} value={hh} onChange={(e) => poser(e.target.value, mm)} aria-label="Heure">
+            <option value="">— h</option>
+            {HEURES.map((h) => (
+              <option key={h} value={h}>{Number(h)} h</option>
+            ))}
+          </select>
+          <select value={mm} onChange={(e) => poser(hh, e.target.value)} disabled={!hh} aria-label="Minutes">
+            {MINUTES.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </span>
+      );
+    }
     if (c.type === "jour")
       return (
         <select id={id} value={v} onChange={(e) => set(e.target.value)}>
@@ -633,11 +660,15 @@ export function ProRelance({
           .pro .relance .afr input,.pro .relance .afr select{width:100%;border:1px solid var(--hair);border-radius:11px;
             padding:12px 13px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
           .pro .relance .afr.trou input,.pro .relance .afr.trou select{border-color:#D98B82;background:#FDF6F5;}
+          .pro .relance .afr .afhm{display:flex;align-items:center;gap:8px;}
+          .pro .relance .afr .afhm select{flex:1;min-width:0;}
           .pro .relance .afr .afpc{display:flex;align-items:center;gap:8px;}
           .pro .relance .afr .afpc input{flex:1;min-width:0;}
           .pro .relance .afr .afpc i{font-style:normal;font-size:15px;font-weight:800;color:var(--soft);}
           .pro .relance .aftrou{margin-top:12px;background:#FDF6F5;border:1px solid #EBC9C4;border-radius:11px;
             padding:10px 12px;font-size:12px;color:#8A3F36;line-height:1.45;}
+          .pro .relance .aftrou .afdet{display:block;margin-top:7px;font-size:10.5px;color:#A87C74;
+            font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word;}
           .pro .relance .afech{margin-top:11px;background:#E6F7F1;border:1px solid #BFE8D9;border-radius:11px;
             padding:10px 12px;font-size:12.5px;color:#0E6B52;line-height:1.45;}
           .pro .relance .afech b{color:#08432F;}
@@ -884,6 +915,7 @@ export function ProRelance({
                   <div className="aftrou" style={{ marginTop: 14 }}>
                     L&apos;assistante n&apos;a pas pu rédiger à l&apos;instant. Ce texte reprend simplement ce que vous
                     avez saisi — <b>relisez-le avant de l&apos;envoyer</b>, ou réessayez dans un moment.
+                    {brutRaison && <span className="afdet">Détail technique&nbsp;: {brutRaison}</span>}
                   </div>
                 )}
                 <div className="opt">

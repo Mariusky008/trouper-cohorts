@@ -151,6 +151,10 @@ function secours(brief: string, nom: string, raison = "") {
   if (raison) console.error(`[announce] repli de secours (${raison})`);
   return {
     ok: true,
+    // La cause voyage jusqu'à l'écran : un repli muet a laissé ce défaut
+    // invisible pendant des semaines. Mieux vaut une ligne technique lisible
+    // qu'un « réessayez plus tard » qui n'apprend rien à personne.
+    raison,
     text: `Bonjour ! ${phrase}\n\nRépondez-moi pour en profiter — à très vite chez ${nom} 🙂`,
     fallback: true,
   };
