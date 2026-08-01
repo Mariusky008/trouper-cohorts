@@ -9,6 +9,7 @@
 // ou s'il répond trop tard : l'animation ne doit jamais rester bloquée.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { aEteCoupee, aRefuse, texteDuModele } from "@/lib/site-internet/reponse-modele";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { campagneFallback, campagneFromModel } from "@/lib/site-internet/campagne";
 
@@ -102,10 +103,12 @@ export async function POST(request: Request) {
         // Ce modèle refuse (400) `temperature` et l'amorce par un tour
         // « assistant » : la sortie JSON est garantie par le schéma.
         model: "claude-sonnet-5",
-        max_tokens: 700,
+        // La réflexion est active par défaut et compte dans ce plafond.
+        max_tokens: 2500,
         system,
         messages: [{ role: "user", content: annonce }],
         output_config: {
+          effort: "low",
           format: {
             type: "json_schema",
             schema: {
@@ -125,10 +128,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, ...secours, fallback: true });
     }
     const data = await res.json();
-    if (s(data?.stop_reason) === "refusal") return NextResponse.json({ ok: true, ...secours, fallback: true });
+    if (aRefuse(data) || aEteCoupee(data)) return NextResponse.json({ ok: true, ...secours, fallback: true });
     let parsed: unknown = null;
     try {
-      parsed = JSON.parse(s(data?.content?.[0]?.text));
+      parsed = JSON.parse(texteDuModele(data));
     } catch {
       parsed = null;
     }

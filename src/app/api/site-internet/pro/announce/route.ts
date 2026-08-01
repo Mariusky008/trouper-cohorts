@@ -6,6 +6,7 @@
 // compléter plutôt que d'inventer. Sans ANTHROPIC_API_KEY : dégradation propre.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { aEteCoupee, aRefuse, texteDuModele } from "@/lib/site-internet/reponse-modele";
 
 export const dynamic = "force-dynamic";
 
@@ -92,12 +93,18 @@ export async function POST(request: Request) {
         // La qualité de ce texte EST le produit : le pro le juge en 2 secondes.
         // On prend le modèle qui écrit le mieux, l'appel reste court et rare.
         model: MODELE,
-        max_tokens: 900,
+        // La réflexion est active par défaut et compte dans ce plafond : 900
+        // suffisaient pour trois messages, plus pour la réflexion qui les
+        // précède. Trop juste, la réponse est coupée avant d'exister.
+        max_tokens: 3000,
         system,
         messages: [{ role: "user", content: brief }],
         // La forme est GARANTIE par le schéma. Avant, on amorçait la réponse avec
         // un début de JSON — une amorce d'assistant, que ce modèle refuse.
         output_config: {
+          // Trois messages courts : inutile de réfléchir longtemps, et le pro
+          // attend devant son écran.
+          effort: "low",
           format: {
             type: "json_schema",
             schema: {
@@ -113,8 +120,9 @@ export async function POST(request: Request) {
     if (!res.ok) return NextResponse.json(secours(brief, nom, await pourquoi(res)), { status: 200 });
     const data = await res.json();
     // Le modèle peut décliner une demande : ce n'est pas une erreur HTTP.
-    if (str(data?.stop_reason) === "refusal") return NextResponse.json(secours(brief, nom, "refus"), { status: 200 });
-    const variantes = parseVariantes(str(data?.content?.[0]?.text));
+    if (aRefuse(data)) return NextResponse.json(secours(brief, nom, "refus du modèle"), { status: 200 });
+    if (aEteCoupee(data)) return NextResponse.json(secours(brief, nom, "réponse coupée (max_tokens)"), { status: 200 });
+    const variantes = parseVariantes(texteDuModele(data));
     if (!variantes.length) return NextResponse.json(secours(brief, nom, "réponse illisible"), { status: 200 });
     return NextResponse.json({ ok: true, text: variantes[0], variantes });
   } catch (e) {

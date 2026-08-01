@@ -6,6 +6,7 @@
 // avis, aucune promesse inventés.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { aEteCoupee, aRefuse, texteDuModele } from "@/lib/site-internet/reponse-modele";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,10 +73,12 @@ export async function POST(req: Request) {
         // Ce modèle refuse (400) `temperature`/`top_p`/`top_k` : le ton se règle
         // dans la consigne. La forme est garantie par le schéma de sortie.
         model: "claude-sonnet-5",
-        max_tokens: 500,
+        // La réflexion est active par défaut et compte dans ce plafond.
+        max_tokens: 2500,
         system,
         messages: [{ role: "user", content: phrase }],
         output_config: {
+          effort: "low",
           format: {
             type: "json_schema",
             schema: {
@@ -107,7 +110,8 @@ export async function POST(req: Request) {
       throw new Error("api");
     }
     const data = await res.json();
-    const text = s(data?.content?.[0]?.text);
+    if (aRefuse(data) || aEteCoupee(data)) throw new Error("modele");
+    const text = texteDuModele(data);
     const parsed = JSON.parse(text.replace(/^```json\s*|\s*```$/g, "").trim());
     const arr = Array.isArray(parsed?.usecases) ? parsed.usecases : [];
     const usecases = arr

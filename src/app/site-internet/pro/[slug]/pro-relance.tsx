@@ -756,7 +756,9 @@ export function ProRelance({
           .pro .relance .offer .obtn:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
-          .pro .relance .offer .live .lp{display:block;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-bottom:10px;}
+          /* Même cadrage que l'aperçu : une bande large coupait le visuel en deux. */
+          .pro .relance .offer .live .lp{display:block;width:auto;height:190px;aspect-ratio:4/5;object-fit:cover;
+            border-radius:10px;margin:0 auto 10px;}
           .pro .relance .offer .live .lt{font-size:13.5px;font-weight:700;color:#1B5E2E;line-height:1.4;}
           .pro .relance .offer .live .lmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--soft);}
           .pro .relance .offer .live .clicks{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #CFE6C2;border-radius:999px;padding:4px 10px;font-weight:700;color:#1B7A3E;}
