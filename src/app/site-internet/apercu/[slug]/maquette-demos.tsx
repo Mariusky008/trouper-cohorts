@@ -456,10 +456,29 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   const playCreneau = (msg: string, wa: boolean, social: boolean, resa: boolean) => {
     if (!wa && !social && !resa) {
-      // GRATUIT — on montre l'annonce qui apparaît, puis UNE pop-up « c'est fait ».
+      // GRATUIT — d'abord ce que l'assistante VIENT DE FAIRE, coche après coche.
+      // Raconter le résultat avant de le montrer tuait la surprise : ici on
+      // montre le travail, puis l'annonce apparaît pour de vrai sur le site.
       publishDemoOffer(msg); // le site entier se met à jour derrière la pop-up
-      openStage(`<div class="asx-ctx">Votre annonce s'affiche en haut de votre site…</div><div class="asx-bandwrap">${bandHtml(msg)}</div>`);
-      after(1400, () => setCard(freeFinal(msg)));
+      const etapes = [
+        "Texte rédigé",
+        "Photo sélectionnée",
+        "Ajoutée en haut de votre site",
+        `Carte créée dans le catalogue de ${villeNom}`,
+      ];
+      const coches = (n: number) =>
+        `<div class="asx-cq">Vous avez cliqué une fois.<b>Votre assistante fait le reste.</b></div>` +
+        `<div class="asx-cl">` +
+        etapes
+          .map((e, i) => `<div class="asx-ci${i < n ? " on" : ""}"><span>${i < n ? "✓" : ""}</span>${e}</div>`)
+          .join("") +
+        `</div>`;
+      openStage(coches(0));
+      etapes.forEach((_, i) => after(320 + i * 420, () => setCard(coches(i + 1))));
+      after(340 + etapes.length * 420, () =>
+        setCard(`<div class="asx-ctx">Votre annonce s'affiche en haut de votre site…</div><div class="asx-bandwrap">${bandHtml(msg)}</div>`),
+      );
+      after(1500 + etapes.length * 420, () => setCard(freeFinal(msg)));
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
@@ -581,12 +600,15 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     else if (t.closest("[data-proask]")) askPro();
     else if (t.closest("[data-freeonly],[data-publish]")) publishFree();
     else if (t.closest("[data-tooptions]")) {
-      // « Découvrir comment toucher plus de monde » → retour à l'écran des options,
-      // en rappelant que l'annonce est DÉJÀ en ligne gratuitement.
+      // « Découvrir comment toucher plus de monde » : c'est ICI que les Options
+      // Pro se découvrent, une fois le résultat gratuit vu. Plus un écran de
+      // cases à cocher — une vitrine des trois canaux, tous montrés.
       clearTimers();
       setStageOn(false);
-      setView("creneauPrev");
-      setOpen(true);
+      setOptWa(true);
+      setOptSocial(true);
+      setOptResa(true);
+      playCreneau(fn, true, true, true);
     } else if (t.closest("[data-return],[data-continue]")) backHome();
   };
 
@@ -609,7 +631,6 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const podium = monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3);
   const jours = monte ? joursProches(new Date()) : [];
 
-  const plural = term === "patient" ? "patients" : "client(e)s";
 
   const renderBody = () => {
     if (view === "avisIn") {
@@ -647,7 +668,16 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
                 key={it.cle}
                 type="button"
                 className={`asx-obj${i === 0 && !voirTout ? " reco" : ""}`}
-                onClick={() => { setIntention(it); setReponses({}); setLibre(false); setView("creneauSay"); }}
+                onClick={() => {
+                  // La démo INJECTE les réponses au lieu de les demander : le
+                  // prospect découvre le résultat, il n'apprend pas à s'en servir.
+                  const rep = it.demo(new Date());
+                  setIntention(it);
+                  setReponses(rep);
+                  setLibre(false);
+                  setFn(it.brief(rep).replace(/\s+/g, " ").trim());
+                  setView("creneauPrev");
+                }}
               >
                 <span className="oi" aria-hidden="true">{it.emoji}</span>
                 <span className="ot">{it.titre}</span>
@@ -781,12 +811,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       );
     }
     if (view === "creneauPrev") {
-      const anyOpt = optWa || optSocial || optResa;
       return (
         <>
-          <button className="asx-back" onClick={() => setView("creneauSay")}>‹ Retour</button>
+          <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
           <Steps n={3} />
-          <div className="asx-say"><b>Vérifiez, puis publiez.</b></div>
+          <div className="asx-say"><b>Voilà ce que votre assistante a préparé.</b> Vous n’avez rien eu à écrire.</div>
 
           <div className="asx-prev">
             <div className="asx-to">✍️ Votre annonce</div>
@@ -806,44 +835,21 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           </div>
           <div className="asx-aster">* Le catalogue de {villeNom} rassemble les annonces du jour des commerçants d&apos;ici. Votre annonce y entre dès sa publication, et se parcourt carte après carte.</div>
 
-          <div className="asx-glab">Options Pro — pour toucher davantage de {plural}</div>
-          <div className="asx-flash">
-            <button type="button" className={`asx-fl optbtn${optWa ? " sel" : ""}`} onClick={() => setOptWa((v) => !v)}>
-              <span className="i">📱</span>
-              <span className="t">Prévenir mes contacts WhatsApp
-                {optWa && <em>Seuls vos {plural} ayant accepté d’être prévenu·es recevraient le message.</em>}
-              </span>
-              <span className="asx-ck">{optWa ? "✓" : ""}</span>
-            </button>
-            <button type="button" className={`asx-fl optbtn${optSocial ? " sel" : ""}`} onClick={() => setOptSocial((v) => !v)}>
-              <span className="i">📸</span>
-              <span className="t">Publications Facebook &amp; Instagram préparées
-                {optSocial && <em>Vous relisez chaque publication avant qu’elle ne parte.</em>}
-              </span>
-              <span className="asx-ck">{optSocial ? "✓" : ""}</span>
-            </button>
-            <button type="button" className={`asx-fl optbtn${optResa ? " sel" : ""}`} onClick={() => setOptResa((v) => !v)}>
-              <span className="i">🗓️</span>
-              <span className="t">Lien de réservation ajouté
-                {optResa && <em>Vos {plural} réservent en un clic depuis l’annonce.</em>}
-              </span>
-              <span className="asx-ck">{optResa ? "✓" : ""}</span>
+          {/* Les Options Pro ne sont plus ICI. Trois cases à cocher et un tarif
+              avant même d'avoir vu le résultat, c'était demander une décision
+              commerciale à quelqu'un qui n'a encore rien vu fonctionner. Elles
+              vivent maintenant APRÈS l'écran de résultat, derrière « Découvrir
+              comment toucher plus de monde ». */}
+          <div className="asx-modif">
+            <button type="button" className="asx-link" onClick={() => setView("creneauSay")}>
+              ✏️ Modifier les détails
             </button>
           </div>
-          {anyOpt && <div className="asx-price">Options Pro&nbsp;: <b>29 €/mois</b> · sans engagement · résiliable à tout moment</div>}
-
-          {/* Le bouton dit EXACTEMENT ce que le pro a choisi — et le gratuit reste
-              toujours accessible en un clic, jamais enterré. */}
-          <button className="asx-send" onClick={() => playCreneau(fn, optWa, optSocial, optResa)}>
-            {anyOpt ? "Continuer avec les options Pro" : "Publier gratuitement sur mon site"}
+          <button className="asx-send pulse" onClick={() => playCreneau(fn, false, false, false)}>
+            ✨ Voir mon annonce en situation
           </button>
-          {anyOpt && (
-            <button type="button" className="asx-link" onClick={() => playCreneau(fn, false, false, false)}>
-              Publier seulement sur mon site
-            </button>
-          )}
-          <div className="asx-mini2" style={{ textAlign: "center", marginTop: anyOpt ? 4 : 9 }}>
-            {anyOpt ? "Rien ne sera envoyé ni facturé sans votre validation." : "Aucune option payante ne sera activée."}
+          <div className="asx-mini2" style={{ textAlign: "center", marginTop: 9 }}>
+            Démonstration uniquement — rien ne sera publié ni envoyé.
           </div>
         </>
       );
@@ -1108,6 +1114,18 @@ function styles(accent: string): string {
   .asx-hm select{flex:1;min-width:0;}
   .asx-warn{margin-top:10px;background:#FDF6F5;border:1px solid #EBC9C4;border-radius:11px;padding:10px 12px;
     font-size:12px;line-height:1.45;color:#8A3F36;text-align:left;}
+  /* La séquence « voici ce que je viens de faire », coche après coche. */
+  .asx-cq{font-size:15px;line-height:1.5;color:#5F6358;text-align:center;}
+  .asx-cq b{display:block;margin-top:3px;font-size:19px;color:#16160F;font-family:Georgia,serif;font-weight:700;}
+  .asx-cl{display:flex;flex-direction:column;gap:8px;margin-top:18px;text-align:left;}
+  .asx-ci{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:#B4B0A5;
+    border:1px solid #EDEAE2;border-radius:12px;padding:11px 13px;background:#fff;
+    opacity:.5;transform:translateY(4px);transition:opacity .28s ease,transform .28s ease,color .28s ease,border-color .28s ease;}
+  .asx-ci.on{opacity:1;transform:none;color:#16160F;border-color:#BFE9D4;}
+  .asx-ci span{width:20px;height:20px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;color:#fff;background:#E4E1D9;}
+  .asx-ci.on span{background:#0B7A55;}
+  @media (prefers-reduced-motion:reduce){.asx-ci{transition:none;}}
   .asx-objs{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
   .asx-obj{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;font-family:inherit;
     border:1px solid #E7E4DC;background:#fff;border-radius:14px;padding:14px 13px;transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease;}
