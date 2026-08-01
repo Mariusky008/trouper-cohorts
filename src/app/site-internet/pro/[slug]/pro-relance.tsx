@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { compresserImage } from "@/lib/site-internet/image-client";
+import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
 import {
   intentionsPour,
   joursProches,
@@ -78,6 +79,7 @@ export function ProRelance({
   ville,
   confirmation,
   secteur,
+  collectifActif,
 }: {
   slug: string;
   token: string;
@@ -86,6 +88,8 @@ export function ProRelance({
   ville: string;
   confirmation: Confirmation;
   secteur: Secteur;
+  /** Le pro participe au catalogue de sa ville (il peut s'en retirer). */
+  collectifActif: boolean;
 }) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -125,6 +129,8 @@ export function ProRelance({
   const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
   const fichierRef = useRef<HTMLInputElement | null>(null);
+  /** La nouvelle annonce doit remplacer celle qui est déjà en ligne. */
+  const [remplace, setRemplace] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
@@ -198,6 +204,46 @@ export function ProRelance({
     }
   };
 
+  /**
+   * Faute de photo, un visuel dessiné à partir de SON texte.
+   *
+   * On ne propose pas d'image « qui va avec l'annonce » : nous n'avons pas de
+   * photo de son commerce à inventer, et une banque d'images ferait passer le
+   * salon de quelqu'un d'autre pour le sien. Ce qu'on peut fabriquer
+   * honnêtement, c'est une carte portant ses mots, son nom et sa ville. Elle
+   * rejoint sa galerie comme une image ordinaire — il peut la retirer.
+   */
+  const creerVisuel = async () => {
+    if (envoiPhoto || !msg.trim()) return;
+    setEnvoiPhoto(true);
+    setPhotoErr("");
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = VISUEL_SIZE;
+      canvas.height = VISUEL_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("canvas");
+      drawVisuel(ctx, VISUEL_STYLES[0], { annonce: msg, nom, metier, ville });
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      const r = await fetch("/api/site-internet/pro/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "add", photo: dataUrl }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.photos)) {
+        setPhotos((j.photos as unknown[]).map(String).filter(Boolean));
+        setPhoto(dataUrl);
+      } else {
+        setPhotoErr(typeof j.error === "string" ? j.error : "Création impossible.");
+      }
+    } catch {
+      setPhotoErr("Création impossible.");
+    } finally {
+      setEnvoiPhoto(false);
+    }
+  };
+
   const saveOffer = async () => {
     const t = offerText.trim();
     if (!t || offerBusy) return;
@@ -220,6 +266,9 @@ export function ProRelance({
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.offer) {
         setOffer(j.offer);
+        // Publiée : on repasse sur la carte « en ligne », qui porte les liens
+        // pour aller voir le résultat aux deux endroits.
+        setRemplace(false);
       } else {
         setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
       }
@@ -460,10 +509,27 @@ export function ProRelance({
   };
 
   const anyChannel = chSite || chWa || chSocial;
-  // En arrivant sur l'étape 3, si « site » est coché et le bandeau vide, on part
-  // du message (raccourci à 140 car un bandeau doit rester court).
+  const villeSlug = ville
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  /**
+   * À l'étape 3, le bandeau part de l'annonce QU'ON VIENT D'ÉCRIRE.
+   *
+   * Avant, si une annonce était déjà en ligne, l'étape 3 n'affichait qu'elle, et
+   * le seul bouton disponible (« Modifier ») repartait de l'ANCIEN texte. On
+   * pouvait donc traverser tout le parcours sans que la nouvelle annonce
+   * atteigne jamais le site ni le catalogue.
+   */
   const goStep3 = () => {
-    if (chSite && !offer && !offerText.trim()) setOfferText(resumeBandeau(msg));
+    const resume = resumeBandeau(msg);
+    if (chSite && resume) {
+      setOfferText(resume);
+      setRemplace(!offer || offer.text.trim() !== resume.trim());
+    }
     setStep(3);
   };
 
@@ -591,6 +657,21 @@ export function ProRelance({
           .pro .relance .phot.vide{background:#FFF9EC;border-color:#EBD9AE;}
           .pro .relance .phot .ph-add:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .phot .ph-err{margin-top:8px;font-size:11.5px;color:#B4453C;line-height:1.4;}
+          .pro .relance .phot .ph-add + .ph-add{margin-top:7px;}
+          /* Les deux destinations, nommées. */
+          .pro .relance .ofl{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+            color:var(--faint);margin-bottom:6px;}
+          .pro .relance .ofdest{display:flex;flex-direction:column;gap:9px;margin-top:13px;padding:12px;
+            border-radius:12px;background:#F1F8F5;border:1px solid #CFE6DB;}
+          .pro .relance .ofdest .od{display:flex;flex-direction:column;gap:2px;}
+          .pro .relance .ofdest .od b{font-size:12.5px;font-weight:800;color:#0E5C44;}
+          .pro .relance .ofdest .od i{font-style:normal;font-size:11.5px;line-height:1.45;color:var(--soft);}
+          .pro .relance .ofdest .od.off b{color:#8A6A12;}
+          /* Voir le résultat, pour de vrai. */
+          .pro .relance .offer .live .lvoir{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;}
+          .pro .relance .offer .live .lvoir a{flex:1;min-width:140px;text-align:center;text-decoration:none;
+            border:1px solid #CFE6C2;background:#fff;color:#1B7A3E;border-radius:10px;padding:9px;
+            font-size:12px;font-weight:700;}
           .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
           @keyframes aispin{to{transform:rotate(360deg)}}
           @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}
@@ -822,7 +903,14 @@ export function ProRelance({
             <div className="rlz-h">Où voulez-vous l&apos;afficher&nbsp;?</div>
             <div className={`chan${chSite ? " on" : ""}`} onClick={() => setChSite((v) => !v)}>
               <span className="ce">🌐</span>
-              <span className="cb"><span className="ct">Sur mon site</span><span className="cs">Bandeau « offre du moment » en haut de votre site</span></span>
+              <span className="cb">
+                <span className="ct">{collectifActif ? `Mon site + le catalogue de ${ville}` : "Sur mon site"}</span>
+                <span className="cs">
+                  {collectifActif
+                    ? "Un bandeau en haut de votre site, et une carte dans les annonces du jour de la ville"
+                    : "Bandeau « offre du moment » en haut de votre site"}
+                </span>
+              </span>
               <span className="tag free">offert</span>
               <span className="ck">{chSite ? "✓" : ""}</span>
             </div>
@@ -852,9 +940,12 @@ export function ProRelance({
 
             {chSite && (
               <div className="rlz-block">
-                <div className="rbh">🌐 Sur mon site <span className="tag free">offert</span></div>
+                <div className="rbh">
+                  🌐 {collectifActif ? `Mon site et le catalogue de ${ville}` : "Sur mon site"}{" "}
+                  <span className="tag free">offert</span>
+                </div>
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
-                  {offer ? (
+                  {offer && !remplace ? (
                     <div className="live">
                       {offer.photo && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -869,14 +960,31 @@ export function ProRelance({
                           <span>· sans limite de date</span>
                         )}
                       </div>
+                      {/* Voir le résultat pour de vrai, aux deux endroits où il
+                          paraît. Sans ces liens, le pro publie sans jamais
+                          savoir à quoi ça ressemble. */}
+                      <div className="lvoir">
+                        <a href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">👁 Voir sur mon site ↗</a>
+                        {collectifActif && villeSlug && (
+                          <a href={`/ville/${villeSlug}`} target="_blank" rel="noreferrer">📍 Voir dans le catalogue ↗</a>
+                        )}
+                      </div>
                       <div className="lact">
-                        <button onClick={() => { setOfferText(offer.text); setOffer(null); }} disabled={offerBusy}>✏️ Modifier</button>
+                        <button onClick={() => { setOfferText(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
                         <button className="rm" onClick={clearOffer} disabled={offerBusy}>Retirer du site</button>
                       </div>
                     </div>
                   ) : (
                     <>
+                      {offer && (
+                        <div className="rtip" style={{ margin: "0 0 10px" }}>
+                          Ceci remplacera l&apos;annonce actuellement en ligne&nbsp;: «&nbsp;{offer.text.slice(0, 60)}
+                          {offer.text.length > 60 ? "…" : ""}&nbsp;».
+                        </div>
+                      )}
+                      <label className="ofl" htmlFor="offer-text">Le titre affiché sur votre site et dans le catalogue</label>
                       <input
+                        id="offer-text"
                         type="text"
                         value={offerText}
                         onChange={(e) => setOfferText(e.target.value)}
@@ -902,6 +1010,27 @@ export function ProRelance({
                         {duree === "0"
                           ? "Elle restera affichée jusqu'à ce que vous la retiriez vous-même."
                           : "Elle disparaît toute seule de votre site et du catalogue — vous n'avez rien à faire."}
+                      </div>
+
+                      {/* Le catalogue de la ville n'était nommé nulle part dans le
+                          parcours : le pro publiait sans savoir que son annonce y
+                          entrait. C'est pourtant la moitié de ce qu'on lui promet. */}
+                      <div className="ofdest">
+                        <span className="od">
+                          <b>🌐 En haut de votre site</b>
+                          <i>Un bandeau, visible par tous vos visiteurs.</i>
+                        </span>
+                        {collectifActif ? (
+                          <span className="od">
+                            <b>📍 Dans le catalogue de {ville}</b>
+                            <i>Une carte parmi les annonces du jour des commerçants de la ville.</i>
+                          </span>
+                        ) : (
+                          <span className="od off">
+                            <b>📍 Pas dans le catalogue de {ville}</b>
+                            <i>Vous vous en êtes retiré·e. Réactivable depuis « Mon site ».</i>
+                          </span>
+                        )}
                       </div>
 
                       {/* La photo n'est pas un détail : dans le catalogue, c'est
@@ -950,12 +1079,22 @@ export function ProRelance({
                         <div className="phot vide">
                           <div className="ph-h">Aucune photo</div>
                           <div className="ph-s">
-                            Votre annonce paraîtra dans le catalogue de {ville} sans image, sur un fond de couleur.
-                            Une photo de votre commerce change beaucoup ce qu&apos;on en voit.
+                            Votre annonce paraîtra dans le catalogue de {ville} sur un fond de couleur.
+                            Une photo de votre travail change beaucoup ce qu&apos;on en voit.
                           </div>
                           <button type="button" className="ph-add" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
-                            {envoiPhoto ? "Ajout…" : "📷 Prendre une photo maintenant"}
+                            {envoiPhoto ? "…" : "📷 Prendre une photo maintenant"}
                           </button>
+                          {/* On ne va pas chercher une image « qui correspond » :
+                              une photo de banque ferait passer le salon d'un autre
+                              pour le sien. On fabrique une carte avec SES mots. */}
+                          <button type="button" className="ph-add" onClick={creerVisuel} disabled={envoiPhoto || !msg.trim()}>
+                            {envoiPhoto ? "…" : "🎨 Ou créer un visuel avec mon texte"}
+                          </button>
+                          <div className="ph-s" style={{ marginTop: 8 }}>
+                            Nous ne proposons pas de photo toute faite&nbsp;: une image trouvée ailleurs montrerait
+                            le travail de quelqu&apos;un d&apos;autre.
+                          </div>
                           {photoErr && <div className="ph-err">{photoErr}</div>}
                         </div>
                       )}
@@ -973,7 +1112,13 @@ export function ProRelance({
                         onChange={(e) => ajouterPhoto(e.target.files)}
                       />
                       <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
-                        {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
+                        {offerBusy
+                          ? "Publication…"
+                          : offer
+                            ? "Remplacer mon annonce"
+                            : collectifActif
+                              ? `Publier sur mon site et dans le catalogue`
+                              : "Afficher sur mon site"}
                       </button>
                       {offerErr && <div className="oerr">{offerErr}</div>}
                     </>

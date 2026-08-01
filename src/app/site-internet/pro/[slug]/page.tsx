@@ -423,6 +423,7 @@ export default async function EspacePro({
                 // coiffeur, « table » au restaurant, « arrivage » en boutique.
                 confirmation={mp.entry?.confirmation ?? "reserve"}
                 secteur={mp.entry?.secteur ?? "flux"}
+                collectifActif={catActif}
               />
             ),
           },
