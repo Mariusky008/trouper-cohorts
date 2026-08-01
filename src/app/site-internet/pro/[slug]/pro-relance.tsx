@@ -7,8 +7,9 @@
 // ferait bannir. Un plafond quotidien (serveur) protège contre la sur-sollicitation.
 // Si le pro a constitué une audience opt-in (« Mes clients »), on la propose ici
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toWaDigits } from "@/lib/site-internet/phone";
+import { compresserImage } from "@/lib/site-internet/image-client";
 import {
   intentionsPour,
   joursProches,
@@ -33,6 +34,28 @@ const jamais = () => () => {};
 // Les trois angles rédigés par l'assistante, dans l'ordre où elle les renvoie
 // (cf. api/site-internet/pro/announce).
 const TONS = ["Direct", "Chaleureux", "Court"];
+
+/**
+ * Le bandeau du site n'est pas le message WhatsApp — c'est un titre.
+ *
+ * On partait d'un `slice(0, 140)` brut : il collait le message et sa formule de
+ * politesse en une seule ligne, puis coupait au milieu d'un mot
+ * (« …Répondez-moi po »). On garde donc le premier paragraphe (l'information),
+ * on jette la formule d'adresse, et si c'est encore trop long on coupe à la
+ * dernière phrase — à défaut au dernier mot.
+ */
+function resumeBandeau(msg: string, max = 140): string {
+  // Le premier paragraphe porte l'information ; le second est l'invitation à répondre.
+  const premier = msg.split(/\n\s*\n/)[0].replace(/\s+/g, " ").trim();
+  const sansBonjour = premier.replace(/^(bonjour|coucou|hello|salut)\s*[!,.]?\s*/i, "");
+  const t = sansBonjour || premier;
+  if (t.length <= max) return t;
+  const coupe = t.slice(0, max);
+  const phrase = Math.max(coupe.lastIndexOf(". "), coupe.lastIndexOf("! "), coupe.lastIndexOf("? "));
+  if (phrase > max * 0.5) return coupe.slice(0, phrase + 1).trim();
+  const mot = coupe.lastIndexOf(" ");
+  return `${(mot > 0 ? coupe.slice(0, mot) : coupe).trim()}…`;
+}
 
 /** « aujourd'hui 18 h » / « demain 9 h 30 » / « mardi 5 août » — jamais une heure sèche. */
 function echeanceLisible(d: Date): string {
@@ -80,6 +103,8 @@ export function ProRelance({
   // rédigés et facturés) plutôt que de faire régénérer à l'aveugle.
   const [variantes, setVariantes] = useState<string[]>([]);
   const [variante, setVariante] = useState(0);
+  /** L'assistante n'a pas répondu : le texte est une mise en forme brute du brief. */
+  const [brut, setBrut] = useState(false);
   // Action Flash choisie + réponses aux questions. `libre` = le pro préfère dicter.
   const [intention, setIntention] = useState<Intention | null>(null);
   const [reponses, setReponses] = useState<Record<string, string>>({});
@@ -97,6 +122,9 @@ export function ProRelance({
   const [photos, setPhotos] = useState<string[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const [touchePhoto, setTouchePhoto] = useState(false);
+  const [envoiPhoto, setEnvoiPhoto] = useState(false);
+  const [photoErr, setPhotoErr] = useState("");
+  const fichierRef = useRef<HTMLInputElement | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
@@ -127,6 +155,47 @@ export function ProRelance({
     const n = Number(duree.replace("j", "")) || 1;
     d.setDate(d.getDate() + n);
     return d;
+  };
+
+  /**
+   * Ajouter une photo SANS quitter l'annonce.
+   *
+   * Le bouton renvoyait vers l'onglet « Mon site » : le commerçant atterrissait
+   * en haut d'une page très longue, la galerie quinze écrans plus bas, et son
+   * annonce en cours nulle part en vue. On prend donc la photo ici, on l'ajoute
+   * à sa galerie, et on la choisit dans la foulée.
+   */
+  const ajouterPhoto = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file || envoiPhoto) return;
+    if (!/^image\//.test(file.type)) {
+      setPhotoErr("Ce fichier n'est pas une image.");
+      return;
+    }
+    setEnvoiPhoto(true);
+    setPhotoErr("");
+    try {
+      const dataUrl = await compresserImage(file);
+      const r = await fetch("/api/site-internet/pro/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "add", photo: dataUrl }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.photos)) {
+        const g = (j.photos as unknown[]).map(String).filter(Boolean);
+        setPhotos(g);
+        setPhoto(dataUrl); // celle qu'il vient d'ajouter : c'est celle qu'il veut
+        setTouchePhoto(false);
+      } else {
+        setPhotoErr(typeof j.error === "string" ? j.error : "Ajout impossible.");
+      }
+    } catch {
+      setPhotoErr("Impossible de traiter cette image.");
+    } finally {
+      setEnvoiPhoto(false);
+      if (fichierRef.current) fichierRef.current.value = "";
+    }
   };
 
   const saveOffer = async () => {
@@ -212,6 +281,10 @@ export function ProRelance({
         setVariante(0);
         setMessage((v[0] || j.text).trim());
         setAiUsed(true);
+        // L'assistante peut être indisponible : la route renvoie alors une mise
+        // en forme brute de ce que le pro a saisi. Le laisser croire qu'elle a
+        // rédigé serait un mensonge sur le produit — et il relirait moins bien.
+        setBrut(Boolean(j.fallback));
       } else {
         setAiErr(typeof j.error === "string" ? j.error : "Impossible de rédiger le message. Réessayez.");
       }
@@ -239,7 +312,9 @@ export function ProRelance({
     setTrous([]);
     setEcheance(intention.fin(reponses, new Date()));
     setDuree("auto");
-    await rediger(intention.brief(reponses));
+    // Un champ facultatif laissé vide laisse un trou dans le gabarit : on le
+    // referme avant l'envoi plutôt que de faire lire « libéré  à 11 h » au modèle.
+    await rediger(intention.brief(reponses).replace(/\s+/g, " ").trim());
   };
 
   const choisirAction = (it: Intention) => {
@@ -388,7 +463,7 @@ export function ProRelance({
   // En arrivant sur l'étape 3, si « site » est coché et le bandeau vide, on part
   // du message (raccourci à 140 car un bandeau doit rester court).
   const goStep3 = () => {
-    if (chSite && !offer && !offerText.trim()) setOfferText(msg.slice(0, 140));
+    if (chSite && !offer && !offerText.trim()) setOfferText(resumeBandeau(msg));
     setStep(3);
   };
 
@@ -514,6 +589,8 @@ export function ProRelance({
           .pro .relance .phot .ph-add{margin-top:11px;width:100%;background:#fff;border:1px dashed var(--hair);
             color:var(--soft);border-radius:11px;padding:11px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .relance .phot.vide{background:#FFF9EC;border-color:#EBD9AE;}
+          .pro .relance .phot .ph-add:disabled{opacity:.55;cursor:not-allowed;}
+          .pro .relance .phot .ph-err{margin-top:8px;font-size:11.5px;color:#B4453C;line-height:1.4;}
           .pro .relance .ai .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite;}
           @keyframes aispin{to{transform:rotate(360deg)}}
           @media (prefers-reduced-motion:reduce){.pro .relance .ai .spin{animation:none}}
@@ -716,6 +793,12 @@ export function ProRelance({
                     ))}
                   </div>
                 )}
+                {brut && (
+                  <div className="aftrou" style={{ marginTop: 14 }}>
+                    L&apos;assistante n&apos;a pas pu rédiger à l&apos;instant. Ce texte reprend simplement ce que vous
+                    avez saisi — <b>relisez-le avant de l&apos;envoyer</b>, ou réessayez dans un moment.
+                  </div>
+                )}
                 <div className="opt">
                   <label htmlFor="pro-msg">Votre message</label>
                   <textarea
@@ -853,13 +936,10 @@ export function ProRelance({
                               ))}
                             </div>
                           )}
-                          <button
-                            type="button"
-                            className="ph-add"
-                            onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "site" }))}
-                          >
-                            📷 Ajouter une photo à ma galerie →
+                          <button type="button" className="ph-add" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
+                            {envoiPhoto ? "Ajout…" : "📷 Prendre ou choisir une autre photo"}
                           </button>
+                          {photoErr && <div className="ph-err">{photoErr}</div>}
                         </div>
                       )}
 
@@ -873,15 +953,25 @@ export function ProRelance({
                             Votre annonce paraîtra dans le catalogue de {ville} sans image, sur un fond de couleur.
                             Une photo de votre commerce change beaucoup ce qu&apos;on en voit.
                           </div>
-                          <button
-                            type="button"
-                            className="ph-add"
-                            onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "site" }))}
-                          >
-                            📷 Ajouter une photo →
+                          <button type="button" className="ph-add" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
+                            {envoiPhoto ? "Ajout…" : "📷 Prendre une photo maintenant"}
                           </button>
+                          {photoErr && <div className="ph-err">{photoErr}</div>}
                         </div>
                       )}
+
+                      {/* Hors des deux blocs : un seul champ, jamais démonté au
+                          milieu d'un envoi. Sans `capture` : sur téléphone le
+                          système propose appareil photo OU pellicule, alors que
+                          `capture` imposerait l'appareil et interdirait de
+                          reprendre une photo déjà faite. */}
+                      <input
+                        ref={fichierRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => ajouterPhoto(e.target.files)}
+                      />
                       <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
                         {offerBusy ? "Enregistrement…" : "Afficher sur mon site"}
                       </button>

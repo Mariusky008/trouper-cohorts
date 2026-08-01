@@ -82,6 +82,19 @@ function decoupeJour(iso: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * « 11:11 » → « 11 h 11 », « 18:00 » → « 18 h ».
+ *
+ * Le champ `<input type="time">` rend toujours `HH:MM`. Passé tel quel dans le
+ * brief, le commerçant recevait une annonce qui disait « à 11:11 » — une notation
+ * d'horloge d'ordinateur, que personne n'écrit dans un message à ses clients.
+ */
+export function heureLisible(hhmm: string): string {
+  const t = decoupeHeure(hhmm);
+  if (!t) return String(hhmm ?? "").trim();
+  return `${t.h} h${t.mn ? ` ${String(t.mn).padStart(2, "0")}` : ""}`;
+}
+
 function decoupeHeure(hhmm: string): { h: number; mn: number } | null {
   const m = /^(\d{1,2})[:h](\d{2})$/.exec(hhmm.trim());
   if (!m) return null;
@@ -192,7 +205,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
         { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
       brief: (x) =>
-        `Un ${v.place} s'est libéré ${libelleJour(x.jour, new Date())} à ${x.heure}` +
+        `Un ${v.place} s'est libéré ${libelleJour(x.jour, new Date())} à ${heureLisible(x.heure)}` +
         `${x.quoi ? ` pour ${x.quoi}` : ""}. Les client·es peuvent me répondre pour le réserver.`,
       fin: (x, now) => moment(now, x.heure, x.jour),
     });
@@ -221,7 +234,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "de", label: "À partir de quelle heure ?", type: "heure", requis: true },
       { cle: "a", label: "Jusqu'à quelle heure ?", type: "heure", requis: true },
     ],
-    brief: (x) => `Aujourd'hui de ${x.de} à ${x.a} : ${x.quoi}. J'invite les gens à passer ${v.lieu}.`,
+    brief: (x) => `Aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} : ${x.quoi}. J'invite les gens à passer ${v.lieu}.`,
     fin: (x, now) => moment(now, x.a),
   });
 
@@ -236,7 +249,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "de", label: "De quelle heure ?", type: "heure", requis: true },
       { cle: "a", label: "À quelle heure ?", type: "heure", requis: true },
     ],
-    brief: (x) => `Offre de -${x.combien} % sur ${x.quoi}, aujourd'hui de ${x.de} à ${x.a} uniquement.`,
+    brief: (x) => `Offre de -${x.combien} % sur ${x.quoi}, aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} uniquement.`,
     fin: (x, now) => moment(now, x.a),
   });
 
@@ -289,7 +302,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
       { cle: "heure", label: "À quelle heure ?", type: "heure", requis: false },
     ],
-    brief: (x) => `J'organise ${x.quoi} ${j(x, new Date())}${x.heure ? ` à partir de ${x.heure}` : ""}, ${v.lieu}.`,
+    brief: (x) => `J'organise ${x.quoi} ${j(x, new Date())}${x.heure ? ` à partir de ${heureLisible(x.heure)}` : ""}, ${v.lieu}.`,
     fin: (x, now) => finDeJour(now, x.jour),
   });
 

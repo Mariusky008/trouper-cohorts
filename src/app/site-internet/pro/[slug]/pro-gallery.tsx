@@ -4,33 +4,7 @@
 // navigateur les compresse (max ~1200 px, JPEG) avant l'envoi, pour rester léger.
 // Si des photos sont présentes, elles remplacent les photos Google sur la maquette.
 import { useEffect, useRef, useState } from "react";
-
-// Compresse un fichier image → data URI JPEG (max 1200 px de large).
-function compress(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const maxW = 1200;
-      const scale = Math.min(1, maxW / (img.width || maxW));
-      const w = Math.max(1, Math.round((img.width || maxW) * scale));
-      const h = Math.max(1, Math.round((img.height || maxW) * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("canvas"));
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", 0.72));
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("image"));
-    };
-    img.src = url;
-  });
-}
+import { compresserImage } from "@/lib/site-internet/image-client";
 
 export function ProGallery({ slug, token }: { slug: string; token: string }) {
   const [photos, setPhotos] = useState<string[]>([]);
@@ -80,7 +54,7 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
     try {
       for (const file of Array.from(files).slice(0, 10)) {
         if (!/^image\//.test(file.type)) continue;
-        const dataUrl = await compress(file);
+        const dataUrl = await compresserImage(file);
         const { ok, j } = await call({ action: "add", photo: dataUrl });
         if (ok && Array.isArray(j.photos)) setPhotos(j.photos as string[]);
         else {
