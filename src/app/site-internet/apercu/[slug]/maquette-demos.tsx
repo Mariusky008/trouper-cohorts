@@ -274,8 +274,10 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   //  • GRATUIT  → « c'est fait » : l'annonce apparaît, on montre le résultat.
   //  • OPTIONS  → « c'est prêt » : la mini-campagne est préparée, RIEN n'est envoyé.
   // Règle absolue : jamais « ont été prévenus », toujours « pourraient être prévenus ».
-  const bandHtml = (msg: string) =>
-    `<div class="asx-band"><span class="asx-band-k">🎉 Offre du moment</span><span class="asx-band-t">${esc(msg)}</span></div>`;
+  const bandHtml = (msg: string, cta = "") =>
+    `<div class="asx-band"><span class="asx-band-k">🎉 Offre du moment</span><span class="asx-band-t">${esc(msg)}</span>` +
+    (cta ? `<span class="asx-band-cta">${esc(cta)} →</span>` : "") +
+    `</div>`;
 
   /**
    * La carte telle qu'elle paraît dans le catalogue de la ville — avec SA photo.
@@ -284,19 +286,20 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
    * l'espace pro fait de la photo une étape à part entière. Le commerçant ne
    * pouvait pas comprendre ce qu'il allait vraiment obtenir.
    */
-  const carteCatalogue = (msg: string) =>
+  const carteCatalogue = (msg: string, cta = "") =>
     `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
       `<span class="asx-kveil"></span>` +
       `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
       `<span class="asx-kbody">` +
         `<span class="asx-knom">${esc(nom)}</span>` +
         `<span class="asx-ktxt">${esc(msg)}</span>` +
+        (cta ? `<span class="asx-kcta">${esc(cta)} →</span>` : "") +
       `</span>` +
     `</div>`;
 
   const freeFinal = (msg: string) =>
     `<div class="asx-done-k">✅ Annonce créée</div>` +
-    `<div class="asx-done-h">Votre annonce est prête 🎉</div>` +
+    `<div class="asx-done-h">Une seule action.<br>Deux façons de vous faire découvrir.</div>` +
     `<div class="asx-done-s">Voici où elle paraîtra&nbsp;: en haut de votre site, et sur une carte dans le catalogue de ${villeNom}. <b>Rien n\u2019a été publié pour de vrai</b> — c\u2019est votre démonstration.</div>` +
     bandHtml(msg) +
     carteCatalogue(msg) +
@@ -439,7 +442,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     } catch {
       /* best-effort */
     }
-    publishDemoOffer(fn); // l'annonce gratuite est publiée quoi qu'il arrive
+    publishDemoOffer(fn, intention?.cta ?? ""); // l'annonce gratuite est publiée quoi qu'il arrive
     setCard(
       `<div class="asx-done-k">✅ Action terminée</div>` +
         `<div class="asx-done-h">Votre annonce est en ligne sur votre site 🎉</div>` +
@@ -459,7 +462,9 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       // GRATUIT — d'abord ce que l'assistante VIENT DE FAIRE, coche après coche.
       // Raconter le résultat avant de le montrer tuait la surprise : ici on
       // montre le travail, puis l'annonce apparaît pour de vrai sur le site.
-      publishDemoOffer(msg); // le site entier se met à jour derrière la pop-up
+      // Le bouton du bandeau dépend de CE QUI est annoncé (« Je passe », « Je
+      // réserve »…) : c'est lui qui ouvrira l'assistante avec l'annonce en contexte.
+      publishDemoOffer(msg, intention?.cta ?? ""); // le site se met à jour derrière la pop-up
       const etapes = [
         "Texte rédigé",
         "Photo sélectionnée",
@@ -475,10 +480,25 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         `</div>`;
       openStage(coches(0));
       etapes.forEach((_, i) => after(320 + i * 420, () => setCard(coches(i + 1))));
+      const cta = intention?.cta ?? "";
+      // ① Sur son site. ② Dans le catalogue. Deux écrans, deux endroits : montrer
+      // seulement le bandeau laissait croire à un simple encart sur son site.
       after(340 + etapes.length * 420, () =>
-        setCard(`<div class="asx-ctx">Votre annonce s'affiche en haut de votre site…</div><div class="asx-bandwrap">${bandHtml(msg)}</div>`),
+        setCard(
+          `<div class="asx-rev">1/2 — Sur votre site</div>` +
+          `<div class="asx-ctx">Le bandeau apparaît en haut de votre page.</div>` +
+          `<div class="asx-bandwrap">${bandHtml(msg, cta)}</div>`,
+        ),
       );
-      after(1500 + etapes.length * 420, () => setCard(freeFinal(msg)));
+      after(2500 + etapes.length * 420, () =>
+        setCard(
+          `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
+          `<div class="asx-ctx">La même annonce, sur une carte que les habitants parcourent.</div>` +
+          carteCatalogue(msg, cta) +
+          `<div class="asx-aster" style="text-align:left">Ce catalogue est aussi affiché sur les sites des commerces partenaires de ${villeNom}.</div>`,
+        ),
+      );
+      after(4900 + etapes.length * 420, () => setCard(freeFinal(msg)));
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
@@ -509,7 +529,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   // Publication (gratuite) : le moment de satisfaction qui manquait.
   const publishFree = () => {
-    publishDemoOffer(fn);
+    publishDemoOffer(fn, intention?.cta ?? "");
     setCard(
       `<div class="asx-done-k">✅ Action terminée</div>` +
         `<div class="asx-done-h">Votre annonce est prête 🎉</div>` +
@@ -532,7 +552,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     setStageOn(false);
     setOpen(false);
     setView("home");
-    publishDemoOffer(fn); // filet : si la publication n'a pas eu lieu, elle a lieu ici
+    publishDemoOffer(fn, intention?.cta ?? ""); // filet : si la publication n'a pas eu lieu, elle a lieu ici
     requestAnimationFrame(() => {
       const band = document.querySelector<HTMLElement>(".offer-band");
       if (band) band.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1114,6 +1134,12 @@ function styles(accent: string): string {
   .asx-hm select{flex:1;min-width:0;}
   .asx-warn{margin-top:10px;background:#FDF6F5;border:1px solid #EBC9C4;border-radius:11px;padding:10px 12px;
     font-size:12px;line-height:1.45;color:#8A3F36;text-align:left;}
+  /* Les deux temps de la révélation : sur le site, puis dans le catalogue. */
+  .asx-rev{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:#5B3FA6;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;margin-bottom:10px;}
+  .asx-band-cta,.asx-kcta{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;border-radius:9px;padding:7px 12px;}
+  .asx-band-cta{color:#06231A;background:#00E0A0;align-self:flex-start;}
+  .asx-kcta{color:#06231A;background:#00E0A0;width:max-content;}
   /* La séquence « voici ce que je viens de faire », coche après coche. */
   .asx-cq{font-size:15px;line-height:1.5;color:#5F6358;text-align:center;}
   .asx-cq b{display:block;margin-top:3px;font-size:19px;color:#16160F;font-family:Georgia,serif;font-weight:700;}

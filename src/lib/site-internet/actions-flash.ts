@@ -51,6 +51,15 @@ export type Intention = {
    * finale ; seule la provenance des réponses change.
    */
   demo: (now: Date) => Record<string, string>;
+  /**
+   * Le bouton proposé au CLIENT sous l'annonce.
+   *
+   * Il n'ouvre pas un système de réservation extérieur — il ouvre l'assistante,
+   * avec l'annonce déjà en contexte : elle demande le prénom et le numéro, et
+   * transmet la demande. La destination est donc interne, et le commerçant la
+   * retrouvera réellement chez lui.
+   */
+  cta: string;
 };
 
 /* ─────────────────────────── Dates et horaires ─────────────────────────── */
@@ -218,6 +227,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
         `${x.quoi ? ` pour ${x.quoi}` : ""}. Les client·es peuvent me répondre pour le réserver.`,
       fin: (x, now) => moment(now, x.heure, x.jour),
       demo: (now) => ({ jour: jourISO(dansNJours(now, 1)), heure: "16:00", quoi: "" }),
+      cta: "Réserver ce créneau",
     });
 
     liste.push({
@@ -232,6 +242,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       brief: (x) => `Il me reste ${x.combien} ${v.places} disponibles ${x.quand}.`,
       fin: (_x, now) => dansNJours(now, 3),
       demo: () => ({ combien: "3", quand: "cette semaine" }),
+      cta: "Réserver un créneau",
     });
   }
 
@@ -248,6 +259,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     brief: (x) => `Aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} : ${x.quoi}. J'invite les gens à passer ${v.lieu}.`,
     fin: (x, now) => moment(now, x.a),
     demo: () => ({ quoi: "le café offert", de: "10:00", a: "12:00" }),
+    cta: "Je passe",
   });
 
   liste.push({
@@ -264,6 +276,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     brief: (x) => `Offre de -${x.combien} % sur ${x.quoi}, aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} uniquement.`,
     fin: (x, now) => moment(now, x.a),
     demo: () => ({ quoi: "toutes les prestations", combien: "20", de: "16:00", a: "18:00" }),
+    cta: "J'en profite",
   });
 
   liste.push({
@@ -279,6 +292,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       `Nouveauté ${v.lieu} : ${x.quoi}.` + (x.des ? ` Disponible à partir de ${libelleJour(x.des, new Date())}.` : ""),
     fin: (_x, now) => dansNJours(now, 7),
     demo: () => ({ quoi: "notre nouvelle collection", des: "" }),
+    cta: "En savoir plus",
   });
 
   if (v.boutique) {
@@ -294,6 +308,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       brief: (x) => `Arrivage du jour : ${x.quoi}${x.combien ? ` (${x.combien})` : ""}, disponible ${v.lieu}.`,
       fin: (_x, now) => finDeJour(now),
       demo: () => ({ quoi: "un arrivage tout frais de ce matin", combien: "" }),
+      cta: "Je réserve",
     });
   }
 
@@ -306,6 +321,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     brief: (x) => `Je viens de terminer : ${x.quoi}. Je le montre à mes client·es.`,
     fin: (_x, now) => dansNJours(now, 7),
     demo: () => ({ quoi: "une pièce dont je suis fier·e" }),
+    cta: "Prendre rendez-vous",
   });
 
   liste.push({
@@ -321,6 +337,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     brief: (x) => `J'organise ${x.quoi} ${j(x, new Date())}${x.heure ? ` à partir de ${heureLisible(x.heure)}` : ""}, ${v.lieu}.`,
     fin: (x, now) => finDeJour(now, x.jour),
     demo: (now) => ({ quoi: "une journée portes ouvertes", jour: jourISO(dansNJours(now, 3)), heure: "10:00" }),
+    cta: "Je participe",
   });
 
   liste.push({
@@ -336,6 +353,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       `Pour mes client·es fidèles : ${x.quoi}` + (x.jusqua ? `, jusqu'à ${libelleJour(x.jusqua, new Date())}` : "") + ".",
     fin: (x, now) => (x.jusqua ? finDeJour(now, x.jusqua) : dansNJours(now, 7)),
     demo: () => ({ quoi: "une petite attention à la prochaine visite", jusqua: "" }),
+    cta: "J'en profite",
   });
 
   liste.push({
@@ -350,6 +368,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     brief: (x) => `Changement d'horaires : ${x.quoi}${x.jusqua ? `, jusqu'à ${libelleJour(x.jusqua, new Date())}` : ""}.`,
     fin: (x, now) => (x.jusqua ? finDeJour(now, x.jusqua) : dansNJours(now, 7)),
     demo: () => ({ quoi: "ouverture exceptionnelle ce dimanche matin", jusqua: "" }),
+    cta: "Poser une question",
   });
 
   return liste;

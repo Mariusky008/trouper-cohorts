@@ -14,6 +14,9 @@ import { useSyncExternalStore } from "react";
 
 const EVT = "mqc:demo-offer";
 const KEY = "popey-demo-offer";
+// Le bouton proposé au client sous l'annonce — il dépend de ce qui est annoncé
+// (« Réserver ce créneau » n'a pas de sens sous une nouveauté).
+const KEY_CTA = "popey-demo-offer-cta";
 
 /** L'annonce en cours dans cette session de démo, ou "" si aucune. */
 export function currentDemoOffer(): string {
@@ -24,12 +27,22 @@ export function currentDemoOffer(): string {
   }
 }
 
+/** Le libellé du bouton client associé à l'annonce en cours. */
+export function currentDemoCta(): string {
+  try {
+    return window.sessionStorage.getItem(KEY_CTA) || "";
+  } catch {
+    return "";
+  }
+}
+
 /** Appelé quand le commerçant publie son annonce dans la maquette. */
-export function publishDemoOffer(text: string): void {
+export function publishDemoOffer(text: string, cta = ""): void {
   const t = String(text || "").trim();
   if (!t) return;
   try {
     window.sessionStorage.setItem(KEY, t);
+    window.sessionStorage.setItem(KEY_CTA, String(cta || "").trim());
   } catch {
     /* mode privé : l'évènement suffit pour la visite en cours */
   }

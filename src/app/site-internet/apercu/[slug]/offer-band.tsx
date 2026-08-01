@@ -7,7 +7,7 @@
 //   2. l'annonce qu'il vient d'écrire dans la maquette → elle s'affiche ici, tout
 //      de suite (c'est exactement ce que la démo lui promet) ;
 //   3. sinon, l'exemple du métier, clairement étiqueté comme tel.
-import { useDemoOffer } from "./demo-offer";
+import { currentDemoCta, useDemoOffer } from "./demo-offer";
 
 export function OfferBand({
   slug,
@@ -34,12 +34,16 @@ export function OfferBand({
 
   // Ce qu'il vient d'écrire dans la maquette : plus un exemple, SON annonce.
   if (demo) {
+    // Le bouton dépend de CE QUI est annoncé, et il ouvre l'assistante avec
+    // l'annonce en contexte — pas un système de réservation extérieur qui
+    // n'existe pas. C'est une destination que le pro retrouvera chez lui.
+    const cta = currentDemoCta() || "Réserver";
     return (
-      <div className="offer-band">
+      <button type="button" className="offer-band" data-accueil-motif={`À propos de votre annonce : ${demo}`}>
         <span className="oi">🎉</span>
         <span className="ot"><b>Offre du moment</b> · {demo}</span>
-        <span className="og">Réserver →</span>
-      </div>
+        <span className="og">{cta} →</span>
+      </button>
     );
   }
 
