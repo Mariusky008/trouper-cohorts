@@ -594,7 +594,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           réelles des commerces voisins. Le bloc existe même sans voisin (sinon le
           catalogue n'a aucune porte d'entrée) — mais jamais si le pro s'en est retiré. */}
       {published && canFollow && collectifActif && (
-        <CollectifLive ville={villeAff} offers={partnerOffers} accent={accent} />
+        <CollectifLive ville={villeAff} nom={nom} offers={partnerOffers} accent={accent} />
       )}
 
       {/* En maquette : la démonstration du mécanisme, cadrée « exemple ». */}

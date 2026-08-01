@@ -19,6 +19,7 @@
 //   • Le compte à rebours n'apparaît QUE si le pro a fixé une échéance à son
 //     annonce. Inventer une urgence est exactement ce qu'on ne fait pas.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { echeanceCourte } from "@/lib/site-internet/echeance";
 
 export type Fiche = {
   slug: string;
@@ -49,20 +50,6 @@ const lireFavoris = (): string[] => {
     return [];
   }
 };
-
-/** « jusqu'à 19 h », « jusqu'à demain », « jusqu'au 3 août » — jamais inventé. */
-function echeance(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t) || t < Date.now()) return "";
-  const h = Math.round((t - Date.now()) / 3600000);
-  if (h <= 24) {
-    const d = new Date(t);
-    return `jusqu'à ${d.getHours()} h${d.getMinutes() ? String(d.getMinutes()).padStart(2, "0") : ""}`;
-  }
-  if (h <= 48) return "jusqu'à demain";
-  return `jusqu'au ${new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
-}
 
 export function VilleDecouverte({
   ville,
@@ -218,7 +205,7 @@ export function VilleDecouverte({
   const force = Math.min(1, (Math.max(Math.abs(d.x), -d.y) - SEUIL_TAMPON) / (SEUIL - SEUIL_TAMPON));
   const favorisFiches = fiches.filter((x) => favoris.includes(x.slug));
   const pile = [liste[i + 2], liste[i + 1], f].filter(Boolean);
-  const jusqua = f ? echeance(f.jusqua) : "";
+  const jusqua = f ? echeanceCourte(f.jusqua) : "";
 
   return (
     <>

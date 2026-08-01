@@ -133,6 +133,9 @@ export async function partnerOffers(
       texte: off.text,
       photo: off.photo || str(photos[0]) || null,
       publieLe: off.at,
+      // Sans l'échéance, une offre « jusqu'à 18 h » s'affichait sans fin sur le
+      // site d'un voisin : le visiteur y arrivait à 19 h en croyant qu'elle court.
+      jusqua: off.until,
     });
   }
 
