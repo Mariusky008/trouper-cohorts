@@ -54,16 +54,24 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
   // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
   // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
-  const FLASH_SAY_A =
-    `Il se passe quelque chose chez vous ? Dites-le simplement : votre assistante en fait une annonce. `;
-  const FLASH_SAY_B =
-    `Et elle entre dans le catalogue de ${villeAff || "votre ville"} : la page où l'on voit ce qui se passe ` +
-    `aujourd'hui chez les commerçants d'ici. Des gens qui ne vous connaissent pas encore peuvent vous y découvrir.`;
-  // ~60 ms par caractère : le même débit que l'estimation de repli plus bas. Borné,
-  // pour qu'une réplique retouchée ne fasse jamais arriver l'écran trop tôt ni trop tard.
-  // La chorégraphie dure 5,5 s ; le catalogue arrive juste après, jamais avant.
-  // Quatre secondes seraient trop rapides pour quelqu'un qui découvre le concept.
-  const catalogueAt = Math.min(12000, Math.max(5800, Math.round(FLASH_SAY_A.length * 60)));
+  // La réplique de l'étape « Votre actualité se fait connaître ». Elle couvre les
+  // quatre temps ; la LÉGENDE, elle, change à chaque temps (voir FX_LEG) — une
+  // seule phrase affichée du début à la fin annonçait le catalogue trois écrans
+  // avant qu'on le montre, et se lisait comme un pavé identique partout.
+  const FLASH_SAY =
+    `Il se passe quelque chose chez vous ? Dites-le simplement : votre assistante en fait une annonce. ` +
+    `Votre annonce apparaît en haut de votre site, là où vos visiteurs la verront en premier. ` +
+    `Et elle entre dans le catalogue de ${villeAff || "votre ville"}, où des habitants qui ne vous connaissent pas encore peuvent la découvrir.`;
+  // Les quatre temps, en millisecondes depuis le début de l'étape.
+  const FX_B = 2500; // votre assistante rédige
+  const FX_C = 6000; // 1/2 — sur votre site
+  const FX_D = 9000; // 2/2 — dans le catalogue
+  const FX_LEG = [
+    "Une phrase suffit.",
+    "Votre assistante rédige et choisit la photo.",
+    "Voici où elle apparaîtra. Rien n'est publié pendant la démonstration.",
+    `Votre annonce rejoint le catalogue de ${villeAff || "votre ville"}, aussi visible chez les commerces partenaires.`,
+  ];
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [fly, setFly] = useState(false);
   const [caption, setCaption] = useState("");
@@ -119,7 +127,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const catalogueCards = [
     // Les autres : libellé de métier et emoji, jamais un commerce inventé ni une
     // photo qui ne leur appartient pas. Le panneau porte « exemple » en permanence.
-    ...partnersList.slice(0, 2).map((pn, i) => ({
+    ...partnersList.slice(0, 1).map((pn, i) => ({
       nom: pn.t,
       metier: pn.t,
       texte: annonceDe(pn.t),
@@ -161,6 +169,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       // Filet de sécurité au démontage : on ne laisse jamais un bloc masqué.
       try {
         document.querySelectorAll(".mqc-bhide,.mqc-bshow").forEach((el) => el.classList.remove("mqc-bhide", "mqc-bshow"));
+        document.querySelector("main.mqc")?.classList.remove("mqc-bande");
       } catch { /* best-effort */ }
     };
   }, []);
@@ -193,7 +202,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     const main = document.querySelector("main.mqc");
     if (!main) return;
     main.classList.toggle("mqc-demoing", on);
-    return () => main.classList.remove("mqc-demoing");
+    return () => main.classList.remove("mqc-demoing", "mqc-bande");
   }, [phase]);
 
   // Blocage FIABLE du défilement utilisateur pendant la présentation (iOS compris).
@@ -346,6 +355,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   };
 
   // Étape 4 : le bandeau d'annonce du site s'illumine (« c'est le site qui se met à jour »).
+  /** Démasque (ou remasque) le bandeau du site : caché pendant toute la visite,
+   *  il doit reparaître au moment précis où l'annonce vient s'y poser. */
+  const bande = (on: boolean) => {
+    try { document.querySelector("main.mqc")?.classList.toggle("mqc-bande", on); } catch { /* best-effort */ }
+  };
+
   const popBand = () => {
     try {
       const band = document.querySelector<HTMLElement>(".offer-band");
@@ -402,12 +417,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
     // 3 — CE QU'ELLE FAIT : trois choses, pas plus.
     steps.push({
-      title: "Pendant que vous travaillez",
+      title: "Votre assistante",
       // « Présente vos prestations, vos horaires » était le rôle du SITE, pas le
       // sien : une tâche qui ne lui appartient pas affaiblit les deux autres.
-      say: avisAllowed
-        ? `Elle répond aux visiteurs, vous transmet les personnes intéressées, et fait connaître ce qui se passe aujourd'hui chez vous.`
-        : `Elle répond aux visiteurs et vous transmet les personnes intéressées, même quand vous n'êtes pas disponible.`,
+      say: `Votre site continue de travailler, même lorsque vous êtes occupé.`,
       // L'icône quitte le centre et rejoint son emplacement : le bouton « Action
       // Flash » en bas. Le pro voit OÙ elle habite — il la retrouvera ensuite.
       enter: () => {
@@ -420,52 +433,50 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // 4 — L'ACTION FLASH : on dit une phrase → l'annonce s'affiche SUR LE SITE.
     if (avisAllowed) {
       steps.push({
-        title: "Une phrase, une annonce",
-        // UNE seule idée : je dis ce qui se passe, c'est transformé en annonce et
-        // diffusé. Pas un mot sur l'option payante — elle a son propre écran à la
-        // fin. Charger cet instant, c'est tuer l'effet.
-        //
-        // La deuxième phrase est le VRAI argument : l'annonce ne reste pas sur son
-        // site (que personne ne visite spontanément), elle entre dans le catalogue
-        // de la ville. On dit ce que le produit FAIT aujourd'hui — la page existe et
-        // l'annonce y apparaît — jamais qu'elle est « envoyée chaque jour à des
-        // inscrits » : il n'y a pas encore d'envoi.
-        say: FLASH_SAY_A + FLASH_SAY_B,
+        // « Une phrase, une annonce » ne tient plus dès qu'on parle de diffusion :
+        // l'étape va jusqu'au catalogue de la ville.
+        title: "Votre actualité se fait connaître",
+        say: FLASH_SAY,
         enter: () => {
           setScene("flash");
           setFxStep(0);
+          setCaption(FX_LEG[0]);
           setCatSlide(0);
           setCatFly("");
           setCatStamp("");
-          // LA TRANSFORMATION, en un seul mouvement de 5,5 s. Elle tenait en
-          // 0,5 s : la cause passait avant qu'on l'ait lue, et le résultat
-          // tombait sans qu'on ait vu le travail. C'est pourtant l'instant qui
-          // porte tout le produit.
-          //   0 → 1,5 s : sa phrase apparaît ;
-          //   1,5 → 3,5 s : l'assistante pulse et l'annonce s'écrit ;
-          //   3,5 → 5,5 s : l'annonce finie glisse en haut du site, et s'y tient.
-          window.setTimeout(() => setFxStep(1), 1500);
-          window.setTimeout(() => setFxStep(2), 3500);
-          window.setTimeout(popBand, 3900);
-          // Puis seulement, la deuxième surprise : le catalogue de la ville.
-          window.setTimeout(() => setFxStep(3), catalogueAt);
-          // Un habitant parcourt le catalogue : il passe deux annonces, s'arrête
-          // sur la sienne, et la garde. Dans l'autre sens — le tampon « Gardé »
-          // sur SA carte, badge « vous » à côté — on lisait que le commerçant
-          // gardait sa propre annonce.
-          const geste = (n: number, quand: number, sens: "oui" | "non") => {
-            window.setTimeout(() => setCatStamp(sens), catalogueAt + quand - 780);
-            window.setTimeout(() => setCatFly(sens), catalogueAt + quand - 400);
-            window.setTimeout(() => {
-              setCatFly("");
-              setCatStamp("");
-              setCatSlide(n);
-            }, catalogueAt + quand);
-          };
-          geste(1, 1500, "non");
-          geste(2, 3200, "non");
-          // Sur la sienne, le tampon reste : c'est le geste qu'on veut lui montrer.
-          window.setTimeout(() => setCatStamp("oui"), catalogueAt + 4600);
+          bande(false);
+          // QUATRE temps, 13 s en tout. La transformation tenait en 0,5 s : la
+          // cause passait avant qu'on l'ait lue, et la destination n'était
+          // jamais montrée — seulement écrite.
+          //   A · 0 → 2,5 s   il dit une phrase ;
+          //   B · 2,5 → 6 s   votre assistante rédige, l'annonce s'écrit ;
+          //   C · 6 → 9 s     l'annonce se pose dans le VRAI bandeau du site ;
+          //   D · 9 → 13 s    un habitant la découvre dans le catalogue.
+          window.setTimeout(() => { setFxStep(1); setCaption(FX_LEG[1]); }, FX_B);
+          // C — on quitte la fenêtre blanche. Le site réapparaît, on remonte en
+          // haut, le bandeau se démasque et s'illumine : le commerçant voit son
+          // annonce se poser à SA place, pas une carte qui dit « en haut de
+          // votre site ».
+          window.setTimeout(() => {
+            setFxStep(2);
+            setCaption(FX_LEG[2]);
+            scrollTo(null);
+            bande(true);
+          }, FX_C);
+          window.setTimeout(popBand, FX_C + 700);
+          window.setTimeout(() => {
+            setFxStep(3);
+            setCaption(FX_LEG[3]);
+            bande(false);
+          }, FX_D);
+          // Un habitant parcourt le catalogue : il passe une annonce, tombe sur
+          // la sienne, et la garde. Sa carte était en tête, tamponnée « Gardé »
+          // à côté d'un badge « vous » : on lisait qu'il gardait sa propre
+          // annonce, et la découverte — le seul point de la scène — disparaissait.
+          window.setTimeout(() => setCatStamp("non"), FX_D + 1150);
+          window.setTimeout(() => setCatFly("non"), FX_D + 1550);
+          window.setTimeout(() => { setCatFly(""); setCatStamp(""); setCatSlide(1); }, FX_D + 1950);
+          window.setTimeout(() => setCatStamp("oui"), FX_D + 3150);
         },
       });
     }
@@ -521,18 +532,19 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   };
 
   const stars = note ? "★".repeat(Math.max(1, Math.min(5, Math.round(Number(note.replace(",", ".")))))) : "★★★★★";
-  // Trois actions qui sont VRAIMENT les siennes. « Présente vos prestations,
-  // vos horaires » décrivait le site, pas l'assistante : une tâche empruntée
-  // affaiblit les deux qui lui appartiennent pour de bon.
-  const daily: Array<{ ic: string; t: string; s: string }> = avisAllowed
+  // Trois actions, trois lignes. Le titre apparaissait deux fois, chaque action
+  // portait un libellé PLUS une liste d'exemples, et un paragraphe reprenait le
+  // tout en bas : quatre couches de lecture pour trois idées. Les exemples
+  // (« horaires, tarifs, devis… ») trouveront leur place dans une conversation.
+  const daily: Array<{ ic: string; t: string }> = avisAllowed
     ? [
-        { ic: "💬", t: `Répond immédiatement aux questions de vos ${clientPl}`, s: "Horaires, tarifs, produits, prestations, disponibilités…" },
-        { ic: "👋", t: "Recueille leurs demandes et vous les transmet", s: "Une question, un produit recherché, une réservation ou un devis." },
-        { ic: "📣", t: "Transforme une phrase en annonce locale", s: `Et la diffuse sur votre site et dans le réseau de ${villeAff || "votre ville"}.` },
+        { ic: "💬", t: "Répond à vos visiteurs" },
+        { ic: "👋", t: "Recueille et vous transmet leurs demandes" },
+        { ic: "✨", t: "Prépare vos annonces" },
       ]
     : [
-        { ic: "💬", t: `Répond immédiatement aux questions de vos ${clientPl}`, s: "Horaires, accès, informations pratiques…" },
-        { ic: "👋", t: "Recueille leurs demandes et vous les transmet", s: "Une question, une prise de rendez-vous." },
+        { ic: "💬", t: "Répond à vos visiteurs" },
+        { ic: "👋", t: "Recueille et vous transmet leurs demandes" },
       ];
 
   return (
@@ -567,6 +579,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
              de l'étape. La barre « côté pro » était déjà masquée ; le bandeau
              d'exemple ne l'était pas, et se superposait au titre de l'étape. */
           .mqc-demoing .probar,.mqc-demoing .offer-band{display:none!important;}
+          /* …sauf au temps « 1/2 — sur votre site », où l'annonce vient s'y poser. */
+          .mqc-demoing.mqc-bande .offer-band{display:flex!important;}
           /* Le bouton du commerçant n'existe qu'À LA FIN de la présentation :
              montré dès le premier écran, il n'était qu'une couche de plus à
              déchiffrer. Il arrive quand il y a quelque chose à en faire. */
@@ -630,11 +644,28 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .rz2-oppb{display:block;font-size:13.5px;line-height:1.45;color:#EAF0FA;margin-top:10px;}
           .dtour-card .rz2-oppb b{color:#7FE6C0;}
           @keyframes dtPop{to{opacity:1;transform:none}}
+          /* ── « Votre actualité se fait connaître », temps C : pas de carte ──
+             Le site reste entièrement visible ; on ne pose qu'un badge et un
+             titre par-dessus, le temps que l'annonce se pose dans le bandeau. */
+          /* Le badge et le titre se posent EN BAS : en haut ils recouvraient
+             exactement le bandeau qu'on veut faire regarder. */
+          .dtour-ov.clair{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+            align-items:flex-end;padding:20px 20px 176px;}
+          /* Le titre porte son propre fond : posé à même la page, il devenait
+             illisible dès qu'il tombait sur une zone claire du site. */
+          .fx-sur{display:flex;flex-direction:column;align-items:center;gap:11px;text-align:center;pointer-events:none;
+            background:rgba(9,11,20,.82);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+            border-radius:20px;padding:18px 20px;box-shadow:0 26px 60px -20px rgba(0,0,0,.8);}
+          .fx-etq{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+            color:#5B3FA6;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:6px 14px;
+            box-shadow:0 10px 26px -12px rgba(0,0,0,.7);}
+          .fx-etq.sombre{margin-bottom:10px;box-shadow:none;}
+          .fx-surh{font-family:Georgia,serif;font-size:21px;line-height:1.25;font-weight:700;color:#fff;max-width:290px;}
+
           /* Scène « chaque jour » : cartes qui apparaissent une à une, modernes */
-          .dtour-card .dy{display:flex;align-items:center;gap:13px;margin-top:10px;padding:13px;border-radius:15px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;box-shadow:0 14px 28px -22px rgba(20,22,15,.55);opacity:0;transform:translateX(-16px) scale(.97);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
+          .dtour-card .dy{display:flex;align-items:center;gap:13px;margin-top:11px;padding:16px 14px;border-radius:15px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;box-shadow:0 14px 28px -22px rgba(20,22,15,.55);opacity:0;transform:translateX(-16px) scale(.97);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
-          .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
-          .dtour-card .dy-t i{display:block;margin-top:3px;font-style:normal;font-size:11.5px;font-weight:500;color:#6E7290;line-height:1.35;}
+          .dtour-card .dy-t{font-size:15px;font-weight:700;color:#141A2E;line-height:1.3;}
           @keyframes dyIn{to{opacity:1;transform:none}}
           /* Scène « Action Flash » : le récap transparent des canaux (offert / option) */
           /* ── Action Flash : deux temps, six lignes en tout ─────────────────── */
@@ -743,7 +774,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .fc-act.want i{width:48px;height:48px;font-size:19px;border:none;color:#06231A;
             background:linear-gradient(90deg,#00E0A0,#07B083);box-shadow:0 8px 20px rgba(0,224,160,.35);}
           /* La légende est NOTRE phrase, pas celle du catalogue : elle vit dehors. */
-          .dtour-card .fc-cap{font-size:12px;line-height:1.5;color:#71766C;margin-top:12px;text-align:left;}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat,.dtour-card .fc-card{animation:none;}}
 
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
@@ -1080,7 +1110,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                 {daily.map((d, i) => (
                   <div className="dy" key={i} style={{ animationDelay: `${0.15 + i * 0.4}s` }}>
                     <span className="dy-ic">{d.ic}</span>
-                    <span className="dy-t">{d.t}<i>{d.s}</i></span>
+                    <span className="dy-t">{d.t}</span>
                   </div>
                 ))}
               </div>
@@ -1111,36 +1141,35 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             </div>
           )}
 
-          {/* Action Flash : une phrase → l'annonce → elle s'affiche sur le site. */}
-          {/* ACTION FLASH — deux temps, rien de plus. Ce que le pro doit retenir :
-              « je dis ce qui se passe, c'est transformé en annonce et diffusé ».
-              Tout le reste (canaux, options, libellés) dilue cette phrase. */}
+          {/* VOTRE ACTUALITÉ SE FAIT CONNAÎTRE — quatre temps.
+              A · il dit · B · votre assistante rédige · C · l'annonce se pose
+              dans le vrai bandeau du site · D · un habitant la découvre. */}
           {scene === "flash" && (
-            <div className="dtour-ov">
+            <div className={`dtour-ov${fxStep === 2 ? " clair" : ""}`}>
+              {/* C se joue SANS carte : la fenêtre blanche cachait justement ce
+                  qu'on veut montrer — son site, avec l'annonce dedans. */}
+              {fxStep === 2 ? (
+                <div className="fx-sur">
+                  <span className="fx-etq">1/2 — Sur votre site</span>
+                  <span className="fx-surh">Vos visiteurs la verront en premier.</span>
+                </div>
+              ) : (
               <div className="dtour-card">
-                {/* 1er temps — il DIT. */}
+                {/* A — il DIT. */}
                 {fxStep === 0 && (
                   <>
-                    <div className="fx-h">Vous dites simplement ce qui se passe.</div>
+                    <div className="fx-h">Vous dites ce qui se passe.</div>
                     <div className="fx-said"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
                   </>
                 )}
-                {/* 2ᵉ temps — elle RÉDIGE. Sa phrase reste à l'écran : c'est ce
-                    qui rend la transformation lisible. */}
+                {/* B — VOTRE ASSISTANTE rédige. Sa phrase reste à l'écran,
+                    estompée : c'est ce qui rend la transformation lisible. */}
                 {fxStep === 1 && (
                   <>
-                    <div className="fx-h">Votre assistante en fait une annonce.</div>
+                    <div className="fx-h">Votre assistante prépare l’annonce.</div>
                     <div className="fx-said petit"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
-                    <div className="fx-prep"><span className="fx-av">✦</span>Elle rédige et choisit la bonne photo…</div>
+                    <div className="fx-prep"><span className="fx-av">✦</span>Votre assistante rédige et choisit la photo…</div>
                     <div className="fx-out ecrit">{flashPhrase}</div>
-                  </>
-                )}
-                {/* 3ᵉ temps — l'annonce est PRÊTE, et elle glisse en haut du site. */}
-                {fxStep === 2 && (
-                  <>
-                    <div className="fx-h">Elle est déjà prête pour vos futurs clients.</div>
-                    <div className="fx-out fini">{flashPhrase}</div>
-                    <div className="fx-checks"><span>✓ En haut de votre site</span></div>
                   </>
                 )}
                 {/* 3ᵉ temps : « et voilà où elle vit ». Le catalogue défile tout
@@ -1151,7 +1180,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                     posée SOUS le cadre : elle nous appartient, pas au catalogue. */}
                 {fxStep === 3 && (
                   <>
-                    <div className="fx-revh">Et maintenant, quelqu’un qui ne vous connaît pas peut vous découvrir.</div>
+                    <div className="fx-etq sombre">2/2 — Dans le catalogue de {villeAff || "votre ville"}</div>
+                    <div className="fx-revh">Des habitants qui ne vous connaissent pas encore pourront la découvrir.</div>
                     <div className="fx-cat">
                       <div className="fc-top">
                         <span className="fc-logo">Pop<em>ey</em></span>
@@ -1206,12 +1236,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                         <span className="fc-act"><i>↑</i>Le site</span>
                       </div>
                     </div>
-                    <div className="fc-cap">
-                      Votre annonce rejoint le catalogue de {villeAff || "votre ville"}, également visible chez les commerces partenaires.
-                    </div>
                   </>
                 )}
               </div>
+              )}
             </div>
           )}
 
