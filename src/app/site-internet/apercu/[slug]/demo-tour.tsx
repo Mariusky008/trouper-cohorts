@@ -440,9 +440,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       // Aucune offre ici : « vous pouvez déjà le garder gratuitement » vendait
       // avant que le commerçant ait vu quoi que ce soit travailler. La gratuité
       // est la RÉCOMPENSE de la fin, pas la première phrase.
+      // Elle se présente et parle à la première personne dès la première phrase.
+      // « construit à partir de… », au passif, la faisait attendre trois écrans
+      // avant d'exister.
       say: hasReviews
-        ? `Bonjour. Voici votre nouveau site, construit à partir de votre fiche Google : vos photos, vos prestations, vos horaires et vos avis.`
-        : `Bonjour. Voici votre nouveau site, construit à partir de votre fiche Google : vos photos, vos prestations, vos horaires et vos informations.`,
+        ? `Bonjour, je suis Léa, votre assistante. Voici votre nouveau site : je l'ai préparé à partir de votre fiche Google — vos photos, vos prestations, vos horaires et vos avis.`
+        : `Bonjour, je suis Léa, votre assistante. Voici votre nouveau site : je l'ai préparé à partir de votre fiche Google — vos photos, vos prestations, vos horaires et vos informations.`,
       enter: () => { scrollTo(null); setScene(""); void buildSite(); },
     });
 
@@ -451,8 +454,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     affirmation ; une question posée à 22 h 47 et une demande transmise,
     //     c'est une preuve.
     steps.push({
-      title: "Il répond",
-      say: `Lorsque vous travaillez, ou que vous êtes fermé, votre site continue de répondre — et il vous transmet les personnes intéressées.`,
+      // C'est ELLE qui parle, pendant toute la présentation : « votre site
+      // continue de répondre » la faisait disparaître derrière un outil, juste
+      // au moment où l'on montre ce qu'elle fait à la place du commerçant.
+      title: "Je réponds pour vous",
+      say: `Lorsque vous travaillez, ou que vous êtes fermé, je continue de répondre à votre place — et je vous transmets les personnes intéressées.`,
       enter: () => { chime(); setScene("alive"); },
     });
 
@@ -464,7 +470,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     pas ». Et c'est le moment de revoir l'assistante : le visuel est fort,
     //     et il coupe la série d'écrans-cartes.
     steps.push({
-      title: "Elle vous fait connaître",
+      title: "Je vous fais connaître",
       // La légende du bas EST la voix : les deux formulations proposées (la
       // rupture « assistante ordinaire » et la chute « visibilité locale ») sont
       // donc réunies en une seule phrase, courte.
@@ -552,7 +558,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // La phrase de conclusion se dit PAR-DESSUS lui — plus besoin d'un écran
     // dédié qui répéterait ce qu'il affiche déjà.
     setPhase("end");
-    speak(`Votre site répond, et vos annonces circulent. Gardez-le gratuitement dès aujourd'hui.`);
+    speak(`Je réponds à vos visiteurs, et vos annonces circulent dans toute la ville. Gardez votre site gratuitement dès aujourd'hui.`);
   };
 
   // Garde le site / explore : on quitte l'écran de fin vers le site. On démasque
