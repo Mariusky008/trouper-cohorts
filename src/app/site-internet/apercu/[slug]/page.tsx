@@ -277,15 +277,45 @@ export default async function ApercuMaquette({
       : famBeauty
         ? { partner: "un salon de coiffure partenaire", clientMsg: "Je prépare mon mariage 💍", recoMsg: `Vous avez pensé à vos ongles ? ${nom}, c'est la meilleure de ${villeAff} 💅`, oppMsg: "🤝 Nouvelle cliente — elle prépare un mariage et cherche vos prestations. Proposer un créneau ?" }
         : { partner: "un commerce partenaire", clientMsg: `Je cherche un bon ${metierSing} à ${villeAff}`, recoMsg: `J'ai exactement ce qu'il vous faut : ${nom}, tout près 😊`, oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?" };
-  // Exemple d'Action Flash PROPRE AU MÉTIER : une phrase que le pro écrirait
-  // lui-même (illustration, jamais présentée comme une vraie donnée du commerce).
-  const flashExample = famSport
-    ? "Il reste 4 places pour le cours de demain 18 h."
-    : famResto
-      ? "Ce soir : menu spécial, encore quelques tables."
-      : famBeauty
-        ? "Une annulation : un créneau se libère samedi."
-        : "Nouveauté cette semaine — je veux la faire connaître.";
+  // L'exemple d'Action Flash de la Démo Vivante, PROPRE AU MÉTIER — en deux
+  // morceaux, parce que la démonstration montre une TRANSFORMATION :
+  //   `flashDit`     = la phrase que le commerçant dirait, telle quelle ;
+  //   `flashExample` = l'annonce que l'assistante en écrit.
+  //
+  // Un créneau qui se libère est un cas trop étroit pour porter toute la
+  // promesse, et une remise donnerait l'image d'une plateforme de réductions.
+  // Le message universel est « il se passe quelque chose chez vous, dites-le » —
+  // donc à chaque métier son « quelque chose », le sien.
+  // Illustration assumée : jamais présentée comme une donnée réelle du commerce.
+  const famTatou = /tatou|piercing/.test(naPart);
+  const famBoulange = /boulanger|patiss|viennoiser|chocolat|glacier/.test(naPart);
+  const famArtisan = /artisan|menuis|ebenist|plomb|electric|macon|couvreur|peintre|serrur|carrel|vitrier|paysagiste/.test(naPart);
+  const famBoutique = /boutique|magasin|pret-a-porter|pret a porter|vetement|bijou|decoration|concept|friperie|fleurist|librairie|epicerie|caviste|primeur/.test(naPart);
+  const flash = famTatou
+    ? { dit: "Je viens de créer un nouveau motif.", annonce: `Nouveau motif disponible chez ${nom} ✨ Envie de le découvrir ou de l'adapter à votre projet ? Écrivez-moi.` }
+    : famBoulange
+      ? { dit: "La nouvelle fournée vient de sortir.", annonce: `La nouvelle fournée vient de sortir chez ${nom} 🥖 Passez tant qu'elle est chaude.` }
+      : famResto
+        ? { dit: "Aujourd'hui, le chef propose un nouveau plat.", annonce: `Nouveau plat à la carte aujourd'hui chez ${nom} 🍽️ Envie d'y goûter ? Écrivez-moi, je vous garde une table.` }
+        : famBeauty
+          ? { dit: "Un créneau vient de se libérer demain.", annonce: `Un créneau vient de se libérer demain chez ${nom} ✨ Je vous le réserve ?` }
+          : famArtisan
+            ? { dit: "Je viens de terminer une nouvelle réalisation.", annonce: `Nouvelle réalisation terminée chez ${nom} 🛠️ Envie du même résultat ? Écrivez-moi.` }
+            : famBoutique
+              ? { dit: "Nous venons de recevoir une nouvelle collection.", annonce: `Nouvelle collection arrivée chez ${nom} ✨ Venez la découvrir, je vous dis tout.` }
+              : famSport
+                ? { dit: "Il reste des places au cours de demain.", annonce: `Il reste des places au cours de demain chez ${nom} 🧘 Je vous en garde une ?` }
+                : { dit: "J'ai une nouveauté à faire connaître aujourd'hui.", annonce: `Nouveauté cette semaine chez ${nom} ✨ Envie d'en savoir plus ? Écrivez-moi.` };
+  const flashExample = flash.annonce;
+
+  // La question qu'on pose vraiment à ce métier, et ce que l'assistante en fait :
+  // elle répond sur ce qu'elle sait, puis TRANSMET la demande. Elle n'invente pas
+  // une disponibilité — il n'y a pas d'agenda branché derrière.
+  const tourChat = famResto
+    ? { q: "Bonsoir, avez-vous une table pour samedi soir ?", a: `Bonsoir 😊 Je note votre demande pour samedi soir et je la transmets à ${nom} — vous aurez une réponse rapidement.` }
+    : famBoutique || famBoulange
+      ? { q: "Bonsoir, êtes-vous ouverts demain matin ?", a: `Bonsoir 😊 Voici les horaires de ${nom}, et je transmets votre message pour qu'on vous réponde dès l'ouverture.` }
+      : { q: `Bonsoir, avez-vous un créneau samedi ?`, a: `Bonsoir 😊 Je note votre demande pour samedi et je la transmets à ${nom} — vous aurez une réponse rapidement.` };
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
@@ -439,6 +469,8 @@ export default async function ApercuMaquette({
       partners={partners}
       resoExample={resoExample}
       flashExample={flashExample}
+      flashDit={flash.dit}
+      tourChat={tourChat}
       demarchageTarget={demarchageTarget}
       galleryVideos={galleryVideos}
       approche={approche}

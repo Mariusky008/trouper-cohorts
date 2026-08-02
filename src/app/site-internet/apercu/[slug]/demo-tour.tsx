@@ -28,33 +28,42 @@ type Props = {
   demoChat?: { q: string; a: string } | null; // conversation d'exemple, propre au métier
   partners?: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
   resoExample?: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
-  flashExample?: string; // exemple d'Action Flash propre au métier (phrase que le pro écrirait)
+  flashExample?: string; // l'ANNONCE que l'assistante écrit — le résultat de la transformation
+  flashDit?: string; // la phrase que le commerçant DIT — le point de départ
+  tourChat?: { q: string; a: string }; // la conversation jouée à l'étape « votre site répond »
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
 type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "alive";
 
-export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, keepHref }: Props) {
+export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, clientWord, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
-  const [fxStep, setFxStep] = useState(0); // 0 = préparation · 1 = résultat · 2 = le catalogue
+  // La transformation se joue en QUATRE temps continus, plus l'écran du catalogue :
+  //   0 = il dit · 1 = elle rédige · 2 = l'annonce est prête · 3 = le catalogue.
+  const [fxStep, setFxStep] = useState(0);
   const [catSlide, setCatSlide] = useState(0); // carte visible du catalogue d'exemple
   // La phrase que le pro « dirait » — la même aux deux temps, pour que la
   // transformation soit lisible : on ne change que l'habillage, pas le fait.
   const flashPhrase = flashExample || "Une nouveauté cette semaine.";
+  // Ce que le commerçant DIT — l'autre bout de la transformation. Sans lui, on
+  // ne voyait qu'un résultat, jamais la cause : « je dis, elle en fait une
+  // annonce » est pourtant tout le produit.
+  const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
   // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
   // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
   const FLASH_SAY_A =
-    `Et quand il se passe quelque chose — une place qui se libère, une offre, une nouveauté — ` +
-    `dites-le simplement. Votre annonce est écrite et mise en ligne aussitôt, gratuitement. `;
+    `Il se passe quelque chose chez vous ? Dites-le simplement : votre assistante en fait une annonce. `;
   const FLASH_SAY_B =
     `Et elle entre dans le catalogue de ${villeAff || "votre ville"} : la page où l'on voit ce qui se passe ` +
     `aujourd'hui chez les commerçants d'ici. Des gens qui ne vous connaissent pas encore peuvent vous y découvrir.`;
   // ~60 ms par caractère : le même débit que l'estimation de repli plus bas. Borné,
   // pour qu'une réplique retouchée ne fasse jamais arriver l'écran trop tôt ni trop tard.
-  const catalogueAt = Math.min(12000, Math.max(3500, Math.round(FLASH_SAY_A.length * 60)));
+  // La chorégraphie dure 5,5 s ; le catalogue arrive juste après, jamais avant.
+  // Quatre secondes seraient trop rapides pour quelqu'un qui découvre le concept.
+  const catalogueAt = Math.min(12000, Math.max(5800, Math.round(FLASH_SAY_A.length * 60)));
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [fly, setFly] = useState(false);
   const [caption, setCaption] = useState("");
@@ -102,18 +111,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   };
   const annonceDe = (t: string) => ANNONCE_METIER[t] || "Une nouveauté cette semaine.";
 
+  // L'ORDRE compte : un habitant qui parcourt le catalogue tombe sur d'autres
+  // annonces AVANT la sienne. En la mettant en tête, on montrait le commerçant
+  // en train de garder sa propre annonce — d'où le badge « vous » et le tampon
+  // « Gardé » sur sa carte, qui rendaient la scène incompréhensible. Sa carte
+  // arrive donc en dernier, et c'est celle-là que le visiteur garde.
   const catalogueCards = [
-    {
-      nom,
-      metier: metierLabel || "Commerce",
-      texte: flashPhrase,
-      quand: "à l'instant",
-      vous: true,
-      // Sa VRAIE photo Google : la carte du catalogue est pleine photo, et la
-      // sienne est la seule dont nous ayons une image légitime.
-      photo: (photos && photos[0]) || "",
-      ic: "",
-    },
     // Les autres : libellé de métier et emoji, jamais un commerce inventé ni une
     // photo qui ne leur appartient pas. Le panneau porte « exemple » en permanence.
     ...partnersList.slice(0, 2).map((pn, i) => ({
@@ -121,10 +124,19 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       metier: pn.t,
       texte: annonceDe(pn.t),
       quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
-      vous: false,
       photo: "",
       ic: pn.ic,
     })),
+    {
+      nom,
+      metier: metierLabel || "Commerce",
+      texte: flashPhrase,
+      quand: "à l'instant",
+      // Sa VRAIE photo Google : la carte du catalogue est pleine photo, et la
+      // sienne est la seule dont nous ayons une image légitime.
+      photo: (photos && photos[0]) || "",
+      ic: "",
+    },
   ];
   // Recommandation croisée COHÉRENTE avec le métier (pilates → bien-être, pas mariage).
   const reso = resoExample ?? {
@@ -369,25 +381,33 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     masquer l'écran — on veut qu'il VOIE son site apparaître.
     steps.push({
       title: "Voici votre site",
+      // Aucune offre ici : « vous pouvez déjà le garder gratuitement » vendait
+      // avant que le commerçant ait vu quoi que ce soit travailler. La gratuité
+      // est la RÉCOMPENSE de la fin, pas la première phrase.
       say: hasReviews
-        ? `Bonjour. Voici votre nouveau site : nous l'avons construit à partir de votre fiche Google. Vos photos, vos prestations, vos avis. Et vous pouvez déjà le garder gratuitement.`
-        : `Bonjour. Voici votre nouveau site : nous l'avons construit à partir de votre fiche Google. Vos photos, vos informations, vos horaires. Et vous pouvez déjà le garder gratuitement.`,
+        ? `Bonjour. Voici votre nouveau site, construit à partir de votre fiche Google : vos photos, vos prestations, vos horaires et vos avis.`
+        : `Bonjour. Voici votre nouveau site, construit à partir de votre fiche Google : vos photos, vos prestations, vos horaires et vos informations.`,
       enter: () => { scrollTo(null); setScene(""); void buildSite(); },
     });
 
-    // 2 — IL EST VIVANT : l'assistante « sort » du site (une seule idée, 5 s).
+    // 2 — IL RÉPOND : on ne DIT plus que le site est vivant, on le MONTRE. Une
+    //     orbe qui pulse au-dessus de « elle vit dans votre site » n'est qu'une
+    //     affirmation ; une question posée à 22 h 47 et une demande transmise,
+    //     c'est une preuve.
     steps.push({
-      title: "Il est vivant",
-      say: `Mais votre site ne fait pas qu'informer. Il travaille aussi pour vous.`,
+      title: "Il répond",
+      say: `Même lorsque vous travaillez, ou que vous êtes fermé, votre site continue de répondre — et il vous transmet les personnes intéressées.`,
       enter: () => { chime(); setScene("alive"); },
     });
 
     // 3 — CE QU'ELLE FAIT : trois choses, pas plus.
     steps.push({
-      title: "Ce qu'elle fait",
+      title: "Pendant que vous travaillez",
+      // « Présente vos prestations, vos horaires » était le rôle du SITE, pas le
+      // sien : une tâche qui ne lui appartient pas affaiblit les deux autres.
       say: avisAllowed
-        ? `Elle répond à vos ${clientPl}, prépare vos rendez-vous, et vous aide à obtenir davantage d'avis Google.`
-        : `Elle répond à vos ${clientPl} et prépare vos rendez-vous, même quand vous n'êtes pas disponible.`,
+        ? `Elle répond aux visiteurs, vous transmet les personnes intéressées, et fait connaître ce qui se passe aujourd'hui chez vous.`
+        : `Elle répond aux visiteurs et vous transmet les personnes intéressées, même quand vous n'êtes pas disponible.`,
       // L'icône quitte le centre et rejoint son emplacement : le bouton « Action
       // Flash » en bas. Le pro voit OÙ elle habite — il la retrouvera ensuite.
       enter: () => {
@@ -400,7 +420,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // 4 — L'ACTION FLASH : on dit une phrase → l'annonce s'affiche SUR LE SITE.
     if (avisAllowed) {
       steps.push({
-        title: "L'Action Flash",
+        title: "Une phrase, une annonce",
         // UNE seule idée : je dis ce qui se passe, c'est transformé en annonce et
         // diffusé. Pas un mot sur l'option payante — elle a son propre écran à la
         // fin. Charger cet instant, c'est tuer l'effet.
@@ -417,24 +437,23 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           setCatSlide(0);
           setCatFly("");
           setCatStamp("");
-          // La préparation est COURTE et disparaît : elle ne doit pas rester à
-          // l'écran à côté du résultat.
-          window.setTimeout(() => setFxStep(1), 1300);
-          window.setTimeout(popBand, 2200);
-          // TROISIÈME temps, calé sur la phrase qui parle du catalogue : l'écran
-          // bascule de « c'est publié » à « voilà où ça vit ». Le repère est
-          // calculé sur la longueur de la première moitié de la réplique — si le
-          // texte change, la bascule suit toute seule.
-          window.setTimeout(() => setFxStep(2), catalogueAt);
-          // Deux glissements automatiques, l'un « gardé », l'autre « passé » : le
-          // commerçant voit les DEUX effets sans qu'on ait à les lui écrire.
-          //
-          // Les repères sont calés sur `catalogueAt` — l'instant où le panneau
-          // apparaît. Sans ce décalage, les glissements se jouaient sept secondes
-          // avant que l'écran ne soit visible : on tombait sur la dernière carte,
-          // immobile. C'est le défaut que vous avez vu.
+          // LA TRANSFORMATION, en un seul mouvement de 5,5 s. Elle tenait en
+          // 0,5 s : la cause passait avant qu'on l'ait lue, et le résultat
+          // tombait sans qu'on ait vu le travail. C'est pourtant l'instant qui
+          // porte tout le produit.
+          //   0 → 1,5 s : sa phrase apparaît ;
+          //   1,5 → 3,5 s : l'assistante pulse et l'annonce s'écrit ;
+          //   3,5 → 5,5 s : l'annonce finie glisse en haut du site, et s'y tient.
+          window.setTimeout(() => setFxStep(1), 1500);
+          window.setTimeout(() => setFxStep(2), 3500);
+          window.setTimeout(popBand, 3900);
+          // Puis seulement, la deuxième surprise : le catalogue de la ville.
+          window.setTimeout(() => setFxStep(3), catalogueAt);
+          // Un habitant parcourt le catalogue : il passe deux annonces, s'arrête
+          // sur la sienne, et la garde. Dans l'autre sens — le tampon « Gardé »
+          // sur SA carte, badge « vous » à côté — on lisait que le commerçant
+          // gardait sa propre annonce.
           const geste = (n: number, quand: number, sens: "oui" | "non") => {
-            // Le tampon apparaît d'abord, carte immobile : l'intention se lit.
             window.setTimeout(() => setCatStamp(sens), catalogueAt + quand - 780);
             window.setTimeout(() => setCatFly(sens), catalogueAt + quand - 400);
             window.setTimeout(() => {
@@ -443,18 +462,18 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
               setCatSlide(n);
             }, catalogueAt + quand);
           };
-          geste(1, 2100, "oui");
-          geste(2, 4300, "non");
+          geste(1, 1500, "non");
+          geste(2, 3200, "non");
+          // Sur la sienne, le tampon reste : c'est le geste qu'on veut lui montrer.
+          window.setTimeout(() => setCatStamp("oui"), catalogueAt + 4600);
         },
       });
     }
 
-    // 5 — CLÔTURE : une seule idée, et elle finit sur le GRATUIT.
-    steps.push({
-      title: "À vous",
-      say: `Votre site est prêt. Il ne vous demande rien, mais il fait tout pour vous. Gardez-le gratuitement dès aujourd'hui.`,
-      enter: () => { unbuild(); setScene("conclu"); },
-    });
+    // Plus d'étape de clôture : elle affichait un récapitulatif sans aucun
+    // bouton, puis l'écran final répétait exactement la même conclusion — la
+    // démonstration se terminait deux fois. On passe du catalogue à l'écran
+    // final, qui est le seul à porter les actions.
 
     const total = steps.length;
     // Durée de repli, utilisée UNIQUEMENT si l'audio est bloqué : c'est alors le
@@ -478,7 +497,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     setScene("");
     stopSpeaking();
     // Écran de clôture : on transforme l'émotion en action claire (garder le site).
+    // La phrase de conclusion se dit PAR-DESSUS lui — plus besoin d'un écran
+    // dédié qui répéterait ce qu'il affiche déjà.
     setPhase("end");
+    speak(`Votre site répond, et vos annonces circulent. Gardez-le gratuitement dès aujourd'hui.`);
   };
 
   // Garde le site / explore : on quitte l'écran de fin vers le site. On démasque
@@ -493,16 +515,24 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
   if (phase === "done") return null;
 
+  const chat = tourChat ?? {
+    q: "Bonsoir, avez-vous un créneau samedi ?",
+    a: `Bonsoir 😊 Je note votre demande pour samedi et je la transmets à ${nom} — vous aurez une réponse rapidement.`,
+  };
+
   const stars = note ? "★".repeat(Math.max(1, Math.min(5, Math.round(Number(note.replace(",", ".")))))) : "★★★★★";
-  const daily: Array<{ ic: string; t: string }> = avisAllowed
+  // Trois actions qui sont VRAIMENT les siennes. « Présente vos prestations,
+  // vos horaires » décrivait le site, pas l'assistante : une tâche empruntée
+  // affaiblit les deux qui lui appartiennent pour de bon.
+  const daily: Array<{ ic: string; t: string; s: string }> = avisAllowed
     ? [
-        { ic: "💬", t: "Répond à vos clients — à midi comme à minuit" },
-        { ic: "🗂️", t: "Présente vos prestations, vos horaires, vos infos" },
-        { ic: "📅", t: "Prépare vos rendez-vous, sans que vous décrochiez" },
+        { ic: "💬", t: `Répond immédiatement aux questions de vos ${clientPl}`, s: "Horaires, tarifs, produits, prestations, disponibilités…" },
+        { ic: "👋", t: "Recueille leurs demandes et vous les transmet", s: "Une question, un produit recherché, une réservation ou un devis." },
+        { ic: "📣", t: "Transforme une phrase en annonce locale", s: `Et la diffuse sur votre site et dans le réseau de ${villeAff || "votre ville"}.` },
       ]
     : [
-        { ic: "💬", t: `Répondre à vos ${clientPl} — à midi comme à minuit` },
-        { ic: "📅", t: "Préparer vos rendez-vous, sans décrocher" },
+        { ic: "💬", t: `Répond immédiatement aux questions de vos ${clientPl}`, s: "Horaires, accès, informations pratiques…" },
+        { ic: "👋", t: "Recueille leurs demandes et vous les transmet", s: "Une question, une prise de rendez-vous." },
       ];
 
   return (
@@ -604,27 +634,41 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .dy{display:flex;align-items:center;gap:13px;margin-top:10px;padding:13px;border-radius:15px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;box-shadow:0 14px 28px -22px rgba(20,22,15,.55);opacity:0;transform:translateX(-16px) scale(.97);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
           .dtour-card .dy-t{font-size:13.5px;font-weight:700;color:#141A2E;line-height:1.35;}
+          .dtour-card .dy-t i{display:block;margin-top:3px;font-style:normal;font-size:11.5px;font-weight:500;color:#6E7290;line-height:1.35;}
           @keyframes dyIn{to{opacity:1;transform:none}}
           /* Scène « Action Flash » : le récap transparent des canaux (offert / option) */
           /* ── Action Flash : deux temps, six lignes en tout ─────────────────── */
-          .dtour-card .fx-said{font-size:16px;line-height:1.5;color:#5F6358;font-style:italic;}
+          /* Le titre change à chaque temps : c'est lui qui raconte l'histoire. */
+          .dtour-card .fx-h{font-family:Georgia,serif;font-size:19px;line-height:1.25;font-weight:700;color:#141A2E;margin-bottom:14px;}
+          .dtour-card .fx-revh{font-family:Georgia,serif;font-size:18px;line-height:1.3;font-weight:700;color:#141A2E;margin-bottom:13px;}
+          /* Sa phrase : une bulle de voix, pas une citation grise. */
+          .dtour-card .fx-said{display:flex;align-items:flex-start;gap:10px;text-align:left;font-size:16px;line-height:1.5;
+            color:#2C3350;font-style:italic;background:#F4F1FF;border:1px solid #E4DEF7;border-radius:15px;
+            border-bottom-left-radius:5px;padding:14px 15px;animation:fxIn .45s cubic-bezier(.22,1,.36,1);}
+          .dtour-card .fx-said.petit{font-size:13.5px;padding:11px 13px;opacity:.72;}
+          .dtour-card .fx-mic{flex:none;font-style:normal;font-size:16px;line-height:1.35;}
           .dtour-card .fx-prep{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:18px;
             font-size:13.5px;font-weight:700;color:#71766C;}
           .dtour-card .fx-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
             font-size:15px;color:#fff;background:linear-gradient(140deg,#A594FF,#5B3FA6);animation:fxPulse 1.1s ease-in-out infinite;}
           @keyframes fxPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-          .dtour-card .fx-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
-            color:#0B7A55;background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:6px 13px;}
           .dtour-card .fx-out{margin-top:15px;border-radius:16px;padding:16px 17px;text-align:left;
             background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;font-size:16.5px;line-height:1.45;font-weight:600;
             box-shadow:0 18px 40px -18px rgba(11,42,32,.9);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
           @keyframes fxIn{from{opacity:0;transform:translateY(-12px) scale(.97)}to{opacity:1;transform:none}}
           .dtour-card .fx-out em{display:block;font-style:normal;font-size:13.5px;font-weight:500;color:#9FE8CB;margin-top:7px;}
-          .dtour-card .fx-sp{animation:fxSp 1.5s ease-in-out infinite;display:inline-block;}
-          @keyframes fxSp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+          /* L'annonce en train de s'écrire : le liseré clignote, puis se fige. */
+          .dtour-card .fx-out.ecrit{position:relative;overflow:hidden;}
+          .dtour-card .fx-out.ecrit::after{content:"";position:absolute;inset:0;
+            background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
+            animation:fxEcrit 1.5s ease-in-out infinite;}
+          @keyframes fxEcrit{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+          .dtour-card .fx-out.fini{animation:fxMonte .55s cubic-bezier(.22,1,.36,1);}
+          @keyframes fxMonte{from{opacity:0;transform:translateY(26px) scale(.96)}to{opacity:1;transform:none}}
+          @media (prefers-reduced-motion:reduce){.dtour-card .fx-out.ecrit::after,.dtour-card .fx-out.fini{animation:none;}}
           .dtour-card .fx-checks{display:flex;flex-direction:column;gap:7px;margin-top:15px;}
           .dtour-card .fx-checks span{font-size:13.5px;font-weight:700;color:#0B7A55;}
-          @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-sp,.dtour-card .fx-out{animation:none;}}
+          @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-out{animation:none;}}
 
           /* ── 3ᵉ temps : une RÉPLIQUE de l'écran catalogue ───────────────────
              Mêmes codes que /ville : entête, carte pleine photo avec voile,
@@ -676,8 +720,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             font-size:76px;line-height:1;opacity:.62;font-family:Georgia,serif;font-weight:800;color:rgba(255,255,255,.22);}
           .dtour-card .fc-scrim{position:absolute;inset:0;z-index:2;
             background:linear-gradient(180deg,rgba(11,13,18,.05) 34%,rgba(11,13,18,.6) 60%,rgba(11,13,18,.97) 100%);}
-          .dtour-card .fc-you{position:absolute;top:11px;right:11px;z-index:6;border-radius:999px;padding:3px 9px;
-            font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#06231A;background:#00E0A0;}
           .dtour-card .fc-info{position:absolute;left:13px;right:13px;bottom:12px;z-index:6;}
           .dtour-card .fc-nm{font-family:Georgia,serif;font-size:19px;font-weight:700;color:#fff;line-height:1.05;}
           .dtour-card .fc-meta{font-size:11px;color:#CFD2D6;margin-top:4px;}
@@ -798,6 +840,27 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           }
           @media (prefers-reduced-motion:reduce){.al-fly{display:none;}}
 
+          /* ── « Il répond » : la conversation, à l'heure où il est fermé ──── */
+          .dtour-card .lv-k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+            color:#5B3FA6;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;margin-bottom:15px;}
+          .dtour-card .lv-line{display:flex;flex-direction:column;gap:5px;text-align:left;margin-bottom:11px;
+            opacity:0;animation:dtPop .45s cubic-bezier(.22,1,.36,1) forwards;}
+          .dtour-card .lv-line.c{animation-delay:.15s;}
+          .dtour-card .lv-line.a{animation-delay:1.05s;}
+          .dtour-card .lv-who{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.06em;
+            text-transform:uppercase;color:#8E93B5;}
+          .dtour-card .lv-who i{display:flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
+            font-style:normal;font-size:9px;color:#fff;background:linear-gradient(140deg,#A594FF,#5B3FA6);}
+          .dtour-card .lv-b{font-size:14.5px;line-height:1.45;border-radius:15px;padding:12px 14px;}
+          .dtour-card .lv-line.c .lv-b{color:#2C3350;background:#F1EFE8;border-bottom-left-radius:5px;}
+          .dtour-card .lv-line.a .lv-b{color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);border-bottom-right-radius:5px;}
+          .dtour-card .lv-ok{margin-top:14px;font-size:13.5px;font-weight:800;color:#0B7A55;background:#E4F7EE;
+            border:1px solid #BFE9D4;border-radius:12px;padding:11px 13px;
+            opacity:0;animation:dtPop .45s cubic-bezier(.22,1,.36,1) 2.1s forwards;}
+          @media (prefers-reduced-motion:reduce){
+            .dtour-card .lv-line,.dtour-card .lv-ok{opacity:1;animation:none;}
+          }
+
           /* Écran de fin : les 3 preuves */
           .dtour-end .end-list{display:flex;flex-direction:column;gap:8px;width:100%;max-width:330px;margin-top:4px;}
           .dtour-end .end-i{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:#EDF0FA;
@@ -805,6 +868,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-end .end-ter{background:none;border:none;color:#9DA6C8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px;}
           .dtour-end .end-ter:hover{color:#EDF0FA;}
           .dtour-end .et.sm{font-size:21px;}
+          .dtour-end .end-fine{margin-top:10px;font-size:11.5px;color:#8E93B5;}
 
           /* Bonus « aller plus loin » (à la demande) */
           .dtour-end .more-k{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;}
@@ -866,7 +930,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             .dtour-end .mp-go.tap,.dtour-end .mp-cur{animation:none;}
           }
           .dtour-card h4{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px;color:#141A2E;}
-          .dtour-card .subx{font-size:12.5px;color:#6E7290;margin-bottom:14px;}
           .dtour-card .row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.4;color:#141A2E;padding:9px 0;border-top:1px solid #EEF0F7;font-weight:500;}
           .dtour-card .row:first-of-type{border-top:none;}
           .dtour-card .row .ic{flex:none;font-size:16px;}
@@ -1013,12 +1076,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           {scene === "daily" && (
             <div className="dtour-ov">
               <div className="dtour-card">
-                <h4>Votre assistante, incluse</h4>
-                <div className="subx">Pendant que vous faites votre métier.</div>
+                <h4>Pendant que vous travaillez…</h4>
                 {daily.map((d, i) => (
                   <div className="dy" key={i} style={{ animationDelay: `${0.15 + i * 0.4}s` }}>
                     <span className="dy-ic">{d.ic}</span>
-                    <span className="dy-t">{d.t}</span>
+                    <span className="dy-t">{d.t}<i>{d.s}</i></span>
                   </div>
                 ))}
               </div>
@@ -1029,19 +1091,22 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
               « Action Flash », et s'y pose. */}
           {fly && <span className="al-fly" aria-hidden="true">✦</span>}
 
-          {/* Elle « sort » du site : l'assistante prend vie au centre de l'écran. */}
+          {/* Il RÉPOND. On montre la conversation au lieu d'affirmer qu'elle
+              « vit dans votre site » : une question à 22 h 47, une réponse, et
+              la demande transmise. La preuve remplace la promesse. */}
           {scene === "alive" && (
-            <div className="dtour-ov alive-ov">
-              <span className="al-flash" aria-hidden="true" />
-              <div className="dtour-alive">
-                <span className="al-halo" aria-hidden="true" />
-                <span className="al-ring" /><span className="al-ring r2" /><span className="al-ring r3" />
-                {[...Array(8)].map((_, i) => (
-                  <span key={i} className="al-p" aria-hidden="true" style={{ ["--a" as string]: `${i * 45}deg`, animationDelay: `${0.28 + i * 0.045}s` }} />
-                ))}
-                <span className="al-av">✦</span>
-                <div className="al-t">Votre assistante</div>
-                <div className="al-s">elle vit dans votre site</div>
+            <div className="dtour-ov">
+              <div className="dtour-card">
+                <div className="lv-k">🌙 22 h 47 — vous êtes fermé</div>
+                <div className="lv-line c">
+                  <span className="lv-who">Un visiteur</span>
+                  <span className="lv-b">{chat.q}</span>
+                </div>
+                <div className="lv-line a">
+                  <span className="lv-who"><i>✦</i>Votre assistante</span>
+                  <span className="lv-b">{chat.a}</span>
+                </div>
+                <div className="lv-ok">✓ Demande transmise à {nom}</div>
               </div>
             </div>
           )}
@@ -1053,23 +1118,29 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           {scene === "flash" && (
             <div className="dtour-ov">
               <div className="dtour-card">
+                {/* 1er temps — il DIT. */}
                 {fxStep === 0 && (
                   <>
-                    <div className="fx-said">«&nbsp;{flashPhrase}&nbsp;»</div>
-                    <div className="fx-prep"><span className="fx-av">✦</span>Votre annonce s&apos;écrit…</div>
+                    <div className="fx-h">Vous dites simplement ce qui se passe.</div>
+                    <div className="fx-said"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
                   </>
                 )}
+                {/* 2ᵉ temps — elle RÉDIGE. Sa phrase reste à l'écran : c'est ce
+                    qui rend la transformation lisible. */}
                 {fxStep === 1 && (
                   <>
-                    <div className="fx-badge ok">✓ Votre annonce est en ligne</div>
-                    <div className="fx-out">
-                      {flashPhrase} <span className="fx-sp">✨</span>
-                      <em>Ça vous intéresse&nbsp;? Écrivez-moi.</em>
-                    </div>
-                    <div className="fx-checks">
-                      <span>✓ Publiée sur votre site</span>
-                      <span>✓ Dans le catalogue de {villeAff || "votre ville"}</span>
-                    </div>
+                    <div className="fx-h">Votre assistante en fait une annonce.</div>
+                    <div className="fx-said petit"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
+                    <div className="fx-prep"><span className="fx-av">✦</span>Elle rédige et choisit la bonne photo…</div>
+                    <div className="fx-out ecrit">{flashPhrase}</div>
+                  </>
+                )}
+                {/* 3ᵉ temps — l'annonce est PRÊTE, et elle glisse en haut du site. */}
+                {fxStep === 2 && (
+                  <>
+                    <div className="fx-h">Elle est déjà prête pour vos futurs clients.</div>
+                    <div className="fx-out fini">{flashPhrase}</div>
+                    <div className="fx-checks"><span>✓ En haut de votre site</span></div>
                   </>
                 )}
                 {/* 3ᵉ temps : « et voilà où elle vit ». Le catalogue défile tout
@@ -1078,12 +1149,13 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                 {/* Le 3ᵉ temps : une RÉPLIQUE de l'écran catalogue — même entête,
                     même carte pleine photo, mêmes trois actions. La légende est
                     posée SOUS le cadre : elle nous appartient, pas au catalogue. */}
-                {fxStep === 2 && (
+                {fxStep === 3 && (
                   <>
+                    <div className="fx-revh">Et maintenant, quelqu’un qui ne vous connaît pas peut vous découvrir.</div>
                     <div className="fx-cat">
                       <div className="fc-top">
                         <span className="fc-logo">Pop<em>ey</em></span>
-                        <span className="fc-city">📍 {villeAff || "votre ville"}</span>
+                        <span className="fc-city">👤 Vue habitant · {villeAff || "votre ville"}</span>
                         <span className="fc-ex">exemple</span>
                       </div>
                       <div className="fc-stack">
@@ -1111,7 +1183,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                                 {catStamp === "oui" ? "Gardé" : "Passer"}
                               </span>
                             )}
-                            {catalogueCards[catSlide].vous && <span className="fc-you">vous</span>}
                             <div className="fc-info">
                               <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
                               <div className="fc-meta">
@@ -1136,7 +1207,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                       </div>
                     </div>
                     <div className="fc-cap">
-                      Votre annonce entre ici — et des gens qui ne vous connaissent pas encore vous y trouvent.
+                      Votre annonce rejoint le catalogue de {villeAff || "votre ville"}, également visible chez les commerces partenaires.
                     </div>
                   </>
                 )}
@@ -1191,20 +1262,24 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       {phase === "end" && (
         <div className="dtour-end">
           <div className="dtour-mark sm"><span>✦</span></div>
-          <div className="et">Votre site est prêt, {nom}.</div>
-          <div className="es">Il ne vous demande rien, mais il fait tout pour vous.</div>
+          {/* Le bénéfice, pas l'offre. « Sans engagement » occupait l'une des
+              trois grandes cases alors que ce n'est pas un bénéfice produit :
+              il redescend en mention sous les boutons. */}
+          <div className="et">Votre site répond.<br />Vos annonces circulent.</div>
+          <div className="es">Des habitants qui ne vous connaissent pas encore peuvent vous découvrir et contacter votre assistante.</div>
           <div className="end-list">
-            <div className="end-i"><span>🎁</span>Site offert</div>
-            <div className="end-i"><span>✦</span>Assistante incluse</div>
-            <div className="end-i"><span>🔓</span>Sans engagement</div>
+            <div className="end-i"><span>🎁</span>Votre site est offert</div>
+            <div className="end-i"><span>✨</span>Votre assistante répond aux {clientPl}</div>
+            <div className="end-i"><span>📍</span>Vos annonces rejoignent le réseau local de {villeAff || "votre ville"}</div>
           </div>
           <div className="end-cta">
             <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
-            <button className="end-sec" onClick={explore}>Explorer le site</button>
+            <button className="end-sec" onClick={explore}>Explorer mon site</button>
             {avisAllowed && (
               <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
             )}
           </div>
+          <div className="end-fine">Sans engagement · options activables plus tard</div>
         </div>
       )}
 

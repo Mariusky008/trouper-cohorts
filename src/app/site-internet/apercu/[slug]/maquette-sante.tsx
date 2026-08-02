@@ -66,7 +66,9 @@ export type MaquetteSanteProps = {
   clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
   partners: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
   resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
-  flashExample: string; // exemple d'Action Flash propre au métier (phrase que le pro écrirait)
+  flashExample: string; // l'ANNONCE que l'assistante écrit dans la Démo Vivante
+  flashDit: string; // la phrase que le commerçant DIT — l'autre bout de la transformation
+  tourChat: { q: string; a: string }; // la conversation jouée à l'étape « il répond »
   demarchageTarget: DemarchageTarget | null; // démo « choc » : le commerce démarché à recommander à la réservation
   galleryVideos: string[]; // vidéos du pro (YouTube / mp4) pour le catalogue à swiper
   approche: { titre: string; corps: string } | null; // texte « Mon approche » validé par le pro
@@ -415,6 +417,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           partners={partners}
           resoExample={resoExample}
           flashExample={p.flashExample}
+          flashDit={p.flashDit}
+          tourChat={p.tourChat}
           keepHref={p.waHref || p.telHref}
         />
       )}
