@@ -13,6 +13,7 @@
 // Non publié uniquement. Entièrement « passable ».
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
+import { MARQUE } from "@/lib/marque";
 
 type Props = {
   slug: string;
@@ -53,24 +54,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
   // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
   // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
-  // La réplique de l'étape « Votre actualité se fait connaître ». Elle couvre les
-  // quatre temps ; la LÉGENDE, elle, change à chaque temps (voir FX_LEG) — une
-  // seule phrase affichée du début à la fin annonçait le catalogue trois écrans
-  // avant qu'on le montre, et se lisait comme un pavé identique partout.
-  // La réplique de l'étape « Votre actualité se fait connaître » — trois temps.
-  // La LÉGENDE change à chaque temps (FX_LEG) : une seule phrase du début à la
-  // fin annonçait le catalogue deux écrans avant qu'on le montre.
-  const FLASH_SAY =
-    `Dites-moi simplement ce qui se passe chez vous : une phrase suffit. ` +
-    `Je la transforme en annonce, j'écris le message et je choisis la photo. ` +
-    `Et votre annonce rejoint le catalogue de ${villeAff || "votre ville"}, où des habitants qui ne vous connaissent pas encore peuvent vous découvrir.`;
+  // Les temps de l'étape « Une phrase suffit », en millisecondes.
+  //
+  // La LÉGENDE ne change plus en cours d'étape : elle est, mot pour mot, ce que
+  // la voix est en train de dire. Une légende par temps donnait des sous-titres
+  // qui ne correspondaient plus à la phrase entendue — c'est plus troublant
+  // qu'un paragraphe un peu long.
   const FX_B = 3000; // votre assistante rédige
   const FX_C = 8000; // le catalogue de la ville
-  const FX_LEG = [
-    "Une phrase suffit. Votre assistante s'occupe du reste.",
-    "Votre assistante rédige le message et choisit la photo.",
-    `Votre annonce est diffusée dans le catalogue local, où de nouveaux clients peuvent vous découvrir pour la première fois.`,
-  ];
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
   const [scene, setScene] = useState<Scene>("");
@@ -98,6 +89,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     if (!el) return;
     const inner = el.firstElementChild as HTMLElement | null;
     if (!inner) return;
+    // Mesuré puis mis à l'échelle AVANT d'être montré : sinon le catalogue
+    // paraît une fraction de seconde à sa taille naturelle, puis rétrécit d'un
+    // coup — ce clignotement se lit comme un écran de plus qui ne sert à rien.
     let raf = 0;
     const ajuste = () => {
       const carte = el.closest<HTMLElement>(".dtour-card");
@@ -108,7 +102,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       const k = Math.min(1, dispo / naturel);
       inner.style.transform = k < 1 ? `scale(${k})` : "";
       el.style.height = `${Math.ceil(naturel * k)}px`;
+      el.classList.add("pret");
     };
+    ajuste();
     raf = window.requestAnimationFrame(ajuste);
     window.addEventListener("resize", ajuste);
     return () => {
@@ -422,7 +418,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     c'est une preuve.
     steps.push({
       title: "Il répond",
-      say: `Même lorsque vous travaillez, ou que vous êtes fermé, votre site continue de répondre — et il vous transmet les personnes intéressées.`,
+      say: `Lorsque vous travaillez, ou que vous êtes fermé, votre site continue de répondre — et il vous transmet les personnes intéressées.`,
       enter: () => { chime(); setScene("alive"); },
     });
 
@@ -435,8 +431,26 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     et il coupe la série d'écrans-cartes.
     steps.push({
       title: "Elle vous fait connaître",
-      say: `Votre assistante transforme l'actualité de votre commerce en visibilité locale.`,
+      // La légende du bas EST la voix : les deux formulations proposées (la
+      // rupture « assistante ordinaire » et la chute « visibilité locale ») sont
+      // donc réunies en une seule phrase, courte.
+      say: `Ce qui fait toute la différence avec une assistante ordinaire : je transforme votre actualité en visibilité locale.`,
       enter: () => { chime(); setScene("daily"); },
+    });
+
+    // 4 — LE MOTEUR. Sans cette étape, le commerçant croit qu'on lui offre un
+    //     site avec une assistante dessus. Le vrai produit est ailleurs : un
+    //     catalogue de ville, affiché par TOUS les commerces partenaires, donc
+    //     autant de points de diffusion. C'est ce qui fait qu'une annonce peut
+    //     circuler sans publicité — et ça ne se devine pas.
+    steps.push({
+      title: `Le moteur de ${MARQUE}`,
+      say:
+        `Au-delà de ce site, maintenant prêt pour vous, le véritable moteur de ${MARQUE}, c'est le catalogue de votre ville : ` +
+        `il présente chaque jour votre activité et diffuse vos annonces. Tous les commerces partenaires l'affichent sur leur propre site — ` +
+        `chaque partenaire devient un nouveau point de diffusion. Grâce à ce réseau, votre actualité peut être découverte dans toute la ville, ` +
+        `sans publicité et presque sans effort.`,
+      enter: () => { chime(); setScene("reseau"); },
     });
 
     // 4 — L'ACTION FLASH : on dit une phrase → l'annonce s'affiche SUR LE SITE.
@@ -444,12 +458,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       steps.push({
         // « Une phrase, une annonce » ne tient plus dès qu'on parle de diffusion :
         // l'étape va jusqu'au catalogue de la ville.
-        title: "Votre actualité se fait connaître",
+        title: "Une phrase suffit",
         say: FLASH_SAY,
         enter: () => {
           setScene("flash");
           setFxStep(0);
-          setCaption(FX_LEG[0]);
           setCatSlide(0);
           setCatFly("");
           setCatStamp("");
@@ -460,8 +473,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           //   A · 0 → 3 s    il dit une phrase ;
           //   B · 3 → 8 s    votre assistante rédige (≥ 1,5 s d'annonce finie) ;
           //   C · 8 s → fin  un habitant la découvre dans le catalogue.
-          window.setTimeout(() => { setFxStep(1); setCaption(FX_LEG[1]); }, FX_B);
-          window.setTimeout(() => { setFxStep(2); setCaption(FX_LEG[2]); }, FX_C);
+          window.setTimeout(() => setFxStep(1), FX_B);
+          window.setTimeout(() => setFxStep(2), FX_C);
           // Un habitant parcourt le catalogue : il passe une annonce, tombe sur
           // la sienne, et la garde. Sa carte était en tête, tamponnée « Gardé »
           // à côté d'un badge « vous » : on lisait qu'il gardait sa propre
@@ -528,7 +541,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const BULLES = [
     { ic: "🕐", t: "Créneau libre" },
     { ic: "✨", t: "Nouveauté" },
-    { ic: "⚡", t: "Offre" },
+    { ic: "⚡", t: "Offre flash" },
     { ic: "🎉", t: "Événement" },
   ];
 
@@ -628,6 +641,61 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .rz2-oppb{display:block;font-size:13.5px;line-height:1.45;color:#EAF0FA;margin-top:10px;}
           .dtour-card .rz2-oppb b{color:#7FE6C0;}
           @keyframes dtPop{to{opacity:1;transform:none}}
+          /* ── LE MOTEUR : le catalogue au centre, le réseau autour ──────────
+             Volontairement dépouillé : un noyau, des liens qui se tracent, des
+             impulsions qui partent vers chaque site partenaire, une phrase. */
+          .dtour-net{display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:auto;z-index:2;}
+          .net-sc{position:relative;width:264px;height:264px;}
+          .net-sc::before{content:"";position:absolute;left:50%;top:50%;width:250px;height:250px;margin:-125px 0 0 -125px;
+            border-radius:50%;background:radial-gradient(circle,rgba(124,106,232,.34),transparent 66%);
+            animation:netResp 3.4s ease-in-out infinite;}
+          @keyframes netResp{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.09);opacity:1}}
+          .net-line{position:absolute;left:50%;top:50%;height:1.5px;transform-origin:0 50%;z-index:1;
+            background:linear-gradient(90deg,rgba(207,196,255,.75),rgba(207,196,255,.06));
+            opacity:0;animation:netLn .5s ease forwards;}
+          .net-sc .net-line:nth-of-type(1){animation-delay:.35s}
+          .net-sc .net-line:nth-of-type(2){animation-delay:.5s}
+          .net-sc .net-line:nth-of-type(3){animation-delay:.65s}
+          .net-sc .net-line:nth-of-type(4){animation-delay:.8s}
+          .net-sc .net-line:nth-of-type(5){animation-delay:.95s}
+          @keyframes netLn{to{opacity:1}}
+          /* L'impulsion part du CENTRE et rejoint le partenaire : c'est le sens
+             de la diffusion. Dans l'autre sens on montrerait une audience qui
+             remonte vers lui, ce qui n'est pas ce qui se passe. */
+          .net-flow{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;z-index:2;
+            background:#CFC4FF;box-shadow:0 0 12px 3px rgba(207,196,255,.75);opacity:0;
+            animation:netFlow 1.5s ease-in-out infinite;}
+          @keyframes netFlow{
+            0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}
+            14%{opacity:1}
+            80%{opacity:1;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(1)}
+            100%{opacity:0;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(.6)}
+          }
+          .net-site{position:absolute;left:50%;top:50%;z-index:3;width:46px;height:46px;border-radius:14px;
+            display:flex;align-items:center;justify-content:center;font-size:21px;
+            background:rgba(255,255,255,.1);border:1px solid rgba(207,196,255,.42);
+            -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+            box-shadow:0 12px 26px -12px rgba(0,0,0,.8);opacity:.25;animation:netSite .55s ease forwards;}
+          @keyframes netSite{to{opacity:1;box-shadow:0 12px 26px -12px rgba(0,0,0,.8),0 0 0 4px rgba(124,106,232,.22)}}
+          .net-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+            width:104px;height:104px;border-radius:32px;text-align:center;
+            background:linear-gradient(140deg,#8C7BFF,#5B3FA6);box-shadow:0 20px 44px -12px rgba(91,63,166,.95);
+            /* Sa propre respiration : « netResp » écrasait le translate de
+               centrage, et le noyau partait en bas à droite, par-dessus un
+               partenaire. */
+            animation:netCore 3.4s ease-in-out infinite;}
+          @keyframes netCore{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
+          .net-core b{font-size:22px;line-height:1;}
+          .net-core i{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.05em;color:#F0ECFF;line-height:1.25;}
+          .net-h{margin-top:26px;max-width:320px;font-family:Georgia,serif;font-size:23px;line-height:1.25;font-weight:700;
+            color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.75);opacity:0;animation:dtBub .6s ease 1.9s forwards;}
+          @media (prefers-reduced-motion:reduce){
+            .net-sc::before,.net-core{animation:none;}
+            .net-flow{display:none;}
+            .net-line,.net-site,.net-h{opacity:1;animation:none;}
+          }
+
           /* Scène « chaque jour » : cartes qui apparaissent une à une, modernes */
           .dtour-card .dy{display:flex;align-items:center;gap:13px;margin-top:11px;padding:16px 14px;border-radius:15px;background:linear-gradient(120deg,#F5F3FF,#fff);border:1px solid #ECE9FB;box-shadow:0 14px 28px -22px rgba(20,22,15,.55);opacity:0;transform:translateX(-16px) scale(.97);animation:dyIn .5s cubic-bezier(.22,1,.36,1) forwards;}
           .dtour-card .dy-ic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;background:linear-gradient(140deg,#7C5CFC,#5B3FA6);box-shadow:0 10px 20px -8px rgba(124,92,252,.7);}
@@ -642,7 +710,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           /* Le catalogue tient dans la hauteur restante, réduit s'il le faut —
              jamais rogné : sans ses trois boutons, le geste ne se lit pas. */
           .dtour-card.cat{display:flex;flex-direction:column;overflow:hidden;}
-          .dtour-card .fx-fit{overflow:hidden;}
+          .dtour-card .fx-fit{overflow:hidden;opacity:0;transition:opacity .2s ease;}
+          .dtour-card .fx-fit.pret{opacity:1;}
           .dtour-card .fx-fit > *{transform-origin:top center;}
           .dtour-card .fx-aussi{flex:none;align-self:center;margin-top:11px;font-size:11.5px;font-weight:800;color:#0B7A55;
             background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:7px 13px;}
@@ -1143,6 +1212,39 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           {/* VOTRE ACTUALITÉ SE FAIT CONNAÎTRE — quatre temps.
               A · il dit · B · votre assistante rédige · C · l'annonce se pose
               dans le vrai bandeau du site · D · un habitant la découvre. */}
+          {/* LE MOTEUR — le catalogue au centre, les sites partenaires autour,
+              et l'annonce qui part vers chacun. Une seule phrase à l'écran : la
+              narration est dite, pas écrite. */}
+          {scene === "reseau" && (
+            <div className="dtour-ov alive-ov">
+              <div className="dtour-net">
+                <div className="net-sc" aria-hidden="true">
+                  {vizNodes.map((nd) => (
+                    <span key={`nl-${nd.t}`} className="net-line" style={{ width: `${VIZ_R}px`, transform: `rotate(${nd.deg}deg)` }} />
+                  ))}
+                  {vizNodes.map((nd, i) => (
+                    <span
+                      key={`nf-${nd.t}`}
+                      className="net-flow"
+                      style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${1.1 + i * 0.26}s` }}
+                    />
+                  ))}
+                  {vizNodes.map((nd, i) => (
+                    <span
+                      key={`ns-${nd.t}`}
+                      className="net-site"
+                      style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${1.5 + i * 0.26}s` }}
+                    >
+                      {nd.ic}
+                    </span>
+                  ))}
+                  <span className="net-core"><b>📍</b><i>Catalogue<br />de {villeAff || "votre ville"}</i></span>
+                </div>
+                <div className="net-h">Votre actualité,<br />relayée par tout le réseau local.</div>
+              </div>
+            </div>
+          )}
+
           {scene === "flash" && (
             <div className="dtour-ov">
               <div className={`dtour-card${fxStep === 2 ? " cat" : ""}`}>
