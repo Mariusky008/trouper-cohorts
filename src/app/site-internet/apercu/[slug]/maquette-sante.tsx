@@ -63,7 +63,6 @@ export type MaquetteSanteProps = {
   phoneDisplay: string;
   offer: { text: string; until: string | null } | null; // « Offre du moment » (bandeau haut de site)
   isResto: boolean; // vocabulaire « tables » vs « créneaux » (Démo Vivante)
-  clientWord: string; // terme public au singulier (client / patient…) pour la Démo Vivante
   partners: Array<{ ic: string; t: string }>; // partenaires complémentaires du collectif (par métier)
   resoExample: { partner: string; clientMsg: string; recoMsg: string; oppMsg: string }; // recommandation croisée cohérente avec le métier
   flashExample: string; // l'ANNONCE que l'assistante écrit dans la Démo Vivante
@@ -81,7 +80,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, clientWord, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
@@ -412,7 +411,6 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           reviewsCount={reviewsCount}
           avisAllowed={avisMode === "prominent"}
           isResto={isResto}
-          clientWord={clientWord}
           demoChat={content.demoChat}
           partners={partners}
           resoExample={resoExample}

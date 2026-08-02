@@ -254,7 +254,6 @@ export default async function ApercuMaquette({
   const busyWord = confirmation === "reserve" ? "en séance" : "en intervention";
   // Restauration : vocabulaire « tables » (sinon « créneaux ») pour la Démo Vivante.
   const isResto = /restaur|resto|bistrot|brasser|pizz|cr[eê]per|gastronomi|caf[eé]|salon de th[eé]|\bbar\b|\bpub\b|brunch/i.test(activite);
-  const clientWord = (termePublic || "client").replace(/s$/u, "");
   // Partenaires complémentaires du « collectif », par famille de métier (pilates →
   // bien-être/nutrition ; resto → sorties ; beauté → mariage/événement…).
   const naPart = activite.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -465,7 +464,6 @@ export default async function ApercuMaquette({
       phoneDisplay={phoneDisplay}
       offer={offer}
       isResto={isResto}
-      clientWord={clientWord}
       partners={partners}
       resoExample={resoExample}
       flashExample={flashExample}
