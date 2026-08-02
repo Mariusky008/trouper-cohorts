@@ -34,7 +34,7 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "flash" | "vision" | "conclu" | "alive";
+type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "vision" | "conclu" | "alive";
 
 export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
@@ -54,6 +54,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
   // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
   // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
+  // La réplique de l'étape « Une phrase suffit ». Elle vend la promesse, pas
+  // l'outil : le commerçant travaille, son assistante transforme ce qui se passe
+  // chez lui en visibilité locale.
+  const FLASH_SAY =
+    `Par exemple, lorsqu'il se passe quelque chose chez vous, dites-le-moi simplement. Une phrase suffit. ` +
+    `J'en fais une annonce, je rédige le message et je choisis la photo. ` +
+    `Puis je la diffuse dans le catalogue de ${villeAff || "votre ville"}, où des habitants peuvent vous découvrir.`;
+
   // Les temps de l'étape « Une phrase suffit », en millisecondes.
   //
   // La LÉGENDE ne change plus en cours d'étape : elle est, mot pour mot, ce que
@@ -388,7 +396,15 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       /* best-effort */
     }
     setPhase("playing");
-    void run();
+    // Filet : si une étape lève (une variable renommée, une réplique manquante),
+    // la présentation s'arrêtait sur une barre vide et le commerçant restait
+    // bloqué. Elle va désormais droit à l'écran de fin, qui porte les boutons.
+    void run().catch(() => {
+      if (cancelled.current) return;
+      setScene("");
+      stopSpeaking();
+      setPhase("end");
+    });
   };
 
   const hasReviews = reviewsCount != null && reviewsCount > 0;
