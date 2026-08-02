@@ -189,6 +189,24 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   };
   // Constellation de la scène « vision » : vous au centre, les partenaires en
   // orbite, des recommandations qui affluent vers vous. Positions en cercle.
+  /**
+   * LE MOTEUR — quatre sites partenaires en croix, quatre habitants dans les
+   * diagonales. Quatre et non cinq : à cette taille (le réseau est agrandi de
+   * ~35 %), cinq fenêtres se chevauchaient sur un téléphone de 360 px.
+   */
+  const RESEAU_R = 116;
+  const reseauSites = partnersList.slice(0, 4).map((pn, i, arr) => {
+    const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
+    return { ...pn, x: Math.round(Math.cos(ang) * RESEAU_R), y: Math.round(Math.sin(ang) * RESEAU_R), deg: Math.round((ang * 180) / Math.PI) };
+  });
+  // Les habitants se placent ENTRE les fenêtres : ils ne les recouvrent pas, et
+  // le regard comprend qu'ils sont autour du réseau, pas dedans.
+  const habitants = [-45, 45, 135, 225].map((d) => ({
+    d,
+    x: Math.round(Math.cos((d * Math.PI) / 180) * 148),
+    y: Math.round(Math.sin((d * Math.PI) / 180) * 148),
+  }));
+
   const VIZ_R = 94;
   const vizNodes = partnersList.slice(0, 5).map((pn, i, arr) => {
     const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
@@ -461,11 +479,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     //     circuler sans publicité — et ça ne se devine pas.
     steps.push({
       title: `Le moteur de ${MARQUE}`,
+      // Elle commence par la phrase qui explique le mécanisme — c'est la
+      // première chose qu'on lit en bas — puis développe tranquillement.
       say:
-        `Au-delà de ce site, maintenant prêt pour vous, le véritable moteur de ${MARQUE}, c'est le catalogue de votre ville : ` +
-        `il présente chaque jour votre activité et diffuse vos annonces. Tous les commerces partenaires l'affichent sur leur propre site — ` +
-        `chaque partenaire devient un nouveau point de diffusion. Grâce à ce réseau, votre actualité peut être découverte dans toute la ville, ` +
-        `sans publicité et presque sans effort.`,
+        `Chaque commerce partenaire affiche le catalogue sur son site, et devient un nouveau point de diffusion. ` +
+        `Le véritable moteur de ${MARQUE}, c'est ce catalogue de votre ville : il présente chaque jour votre activité et diffuse vos annonces. ` +
+        `Votre actualité peut ainsi être découverte dans toute la ville, sans publicité et presque sans effort.`,
       enter: () => { chime(); setScene("reseau"); },
     });
 
@@ -657,59 +676,81 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .rz2-oppb{display:block;font-size:13.5px;line-height:1.45;color:#EAF0FA;margin-top:10px;}
           .dtour-card .rz2-oppb b{color:#7FE6C0;}
           @keyframes dtPop{to{opacity:1;transform:none}}
-          /* ── LE MOTEUR : le catalogue au centre, le réseau autour ──────────
-             Volontairement dépouillé : un noyau, des liens qui se tracent, des
-             impulsions qui partent vers chaque site partenaire, une phrase. */
+          /* ── LE MOTEUR : un catalogue, des vitrines dans la ville ──────────
+             Quatre temps : le catalogue seul, les sites qui s'allument, la copie
+             qui part vers chacun, les habitants qui arrivent autour. */
           .dtour-net{display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:auto;z-index:2;}
-          .net-sc{position:relative;width:264px;height:264px;}
-          .net-sc::before{content:"";position:absolute;left:50%;top:50%;width:250px;height:250px;margin:-125px 0 0 -125px;
-            border-radius:50%;background:radial-gradient(circle,rgba(124,106,232,.34),transparent 66%);
+          .net-sc{position:relative;width:320px;height:320px;flex:none;}
+          .net-sc::before{content:"";position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;
+            border-radius:50%;background:radial-gradient(circle,rgba(124,106,232,.3),transparent 66%);
             animation:netResp 3.4s ease-in-out infinite;}
-          @keyframes netResp{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.09);opacity:1}}
+          @keyframes netResp{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
           .net-line{position:absolute;left:50%;top:50%;height:1.5px;transform-origin:0 50%;z-index:1;
-            background:linear-gradient(90deg,rgba(207,196,255,.75),rgba(207,196,255,.06));
+            background:linear-gradient(90deg,rgba(207,196,255,.7),rgba(207,196,255,.08));
             opacity:0;animation:netLn .5s ease forwards;}
-          .net-sc .net-line:nth-of-type(1){animation-delay:.35s}
-          .net-sc .net-line:nth-of-type(2){animation-delay:.5s}
-          .net-sc .net-line:nth-of-type(3){animation-delay:.65s}
-          .net-sc .net-line:nth-of-type(4){animation-delay:.8s}
-          .net-sc .net-line:nth-of-type(5){animation-delay:.95s}
+          .net-sc .net-line:nth-of-type(1){animation-delay:1s}
+          .net-sc .net-line:nth-of-type(2){animation-delay:1.15s}
+          .net-sc .net-line:nth-of-type(3){animation-delay:1.3s}
+          .net-sc .net-line:nth-of-type(4){animation-delay:1.45s}
           @keyframes netLn{to{opacity:1}}
-          /* L'impulsion part du CENTRE et rejoint le partenaire : c'est le sens
-             de la diffusion. Dans l'autre sens on montrerait une audience qui
-             remonte vers lui, ce qui n'est pas ce qui se passe. */
-          .net-flow{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;z-index:2;
-            background:#CFC4FF;box-shadow:0 0 12px 3px rgba(207,196,255,.75);opacity:0;
-            animation:netFlow 1.5s ease-in-out infinite;}
-          @keyframes netFlow{
-            0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}
-            14%{opacity:1}
-            80%{opacity:1;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(1)}
-            100%{opacity:0;transform:translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(.6)}
-          }
-          .net-site{position:absolute;left:50%;top:50%;z-index:3;width:46px;height:46px;border-radius:14px;
-            display:flex;align-items:center;justify-content:center;font-size:21px;
-            background:rgba(255,255,255,.1);border:1px solid rgba(207,196,255,.42);
-            -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
-            box-shadow:0 12px 26px -12px rgba(0,0,0,.8);opacity:.25;animation:netSite .55s ease forwards;}
-          @keyframes netSite{to{opacity:1;box-shadow:0 12px 26px -12px rgba(0,0,0,.8),0 0 0 4px rgba(124,106,232,.22)}}
-          .net-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;
+          /* ① Le catalogue, seul d'abord. */
+          .net-core{position:absolute;left:50%;top:50%;z-index:5;
             display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-            width:104px;height:104px;border-radius:32px;text-align:center;
-            background:linear-gradient(140deg,#8C7BFF,#5B3FA6);box-shadow:0 20px 44px -12px rgba(91,63,166,.95);
-            /* Sa propre respiration : « netResp » écrasait le translate de
-               centrage, et le noyau partait en bas à droite, par-dessus un
-               partenaire. */
-            animation:netCore 3.4s ease-in-out infinite;}
+            width:108px;height:108px;border-radius:32px;text-align:center;
+            background:linear-gradient(140deg,#8C7BFF,#5B3FA6);box-shadow:0 22px 48px -12px rgba(91,63,166,.95);
+            animation:netCoreIn .55s cubic-bezier(.22,1,.36,1) both,netCore 3.4s ease-in-out 1s infinite;}
+          @keyframes netCoreIn{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
           @keyframes netCore{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
-          .net-core b{font-size:22px;line-height:1;}
-          .net-core i{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.05em;color:#F0ECFF;line-height:1.25;}
-          .net-h{margin-top:26px;max-width:320px;font-family:Georgia,serif;font-size:23px;line-height:1.25;font-weight:700;
-            color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.75);opacity:0;animation:dtBub .6s ease 1.9s forwards;}
+          .net-core b{font-size:23px;line-height:1;}
+          .net-core i{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.04em;color:#F0ECFF;line-height:1.25;}
+          /* ② Les sites partenaires : de petites fenêtres, pas des pictogrammes.
+             Un emoji en orbite se lisait « une catégorie alimente le catalogue »
+             — exactement l'inverse du mécanisme. */
+          .net-site{position:absolute;left:50%;top:50%;z-index:3;width:94px;border-radius:11px;overflow:hidden;
+            display:flex;flex-direction:column;text-align:left;
+            background:rgba(255,255,255,.94);box-shadow:0 14px 30px -12px rgba(0,0,0,.85);
+            opacity:0;animation:netSite .5s cubic-bezier(.22,1,.36,1) forwards;}
+          @keyframes netSite{from{opacity:0;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px))) scale(.75)}to{opacity:1}}
+          .net-site .ns-bar{display:flex;gap:3px;padding:5px 7px;background:#E9E6DE;}
+          .net-site .ns-bar i{width:4px;height:4px;border-radius:50%;background:#B9B4A8;}
+          .net-site .ns-nom{padding:6px 8px 5px;font-size:9.5px;font-weight:800;color:#16160F;line-height:1.15;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          /* ③ …et le catalogue qui s'y affiche, une fois la copie arrivée. */
+          .net-site .ns-cat{margin:0 6px 6px;border-radius:6px;padding:4px 6px;font-size:8.5px;font-weight:800;
+            letter-spacing:.02em;color:#3A2A6B;background:linear-gradient(100deg,#C9BCF2,#EDE8FF);
+            opacity:0;animation:netCat .45s ease forwards;}
+          @keyframes netCat{to{opacity:1}}
+          /* La copie du catalogue en voyage : une petite carte, pas un point —
+             on doit reconnaître ce qui se déplace. */
+          .net-copie{position:absolute;left:50%;top:50%;z-index:4;width:26px;height:26px;margin:-13px 0 0 -13px;
+            border-radius:8px;background:linear-gradient(140deg,#A594FF,#6B4BC7);
+            box-shadow:0 0 16px 4px rgba(165,148,255,.6);opacity:0;
+            animation:netCopie 1.9s cubic-bezier(.4,0,.3,1) infinite;}
+          /* Elle s'arrête AU BORD de la fenêtre : arrivée au centre, elle
+             recouvrait précisément le « 📍 Catalogue » qu'elle vient d'y poser. */
+          @keyframes netCopie{
+            0%{opacity:0;transform:translate(0,0) scale(.4)}
+            12%{opacity:1;transform:translate(0,0) scale(1)}
+            62%{opacity:1;transform:translate(calc(var(--sx) * .62),calc(var(--sy) * .62)) scale(.7)}
+            78%,100%{opacity:0;transform:translate(calc(var(--sx) * .7),calc(var(--sy) * .7)) scale(.45)}
+          }
+          /* ④ Les habitants, autour du réseau : on voit QUI découvre l'annonce. */
+          .net-hab{position:absolute;left:50%;top:50%;z-index:2;font-size:20px;line-height:1;
+            filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));
+            opacity:0;animation:netHab .5s cubic-bezier(.22,1,.36,1) forwards;}
+          @keyframes netHab{to{opacity:.92}}
+          .net-h{margin-top:22px;max-width:330px;font-family:Georgia,serif;font-size:23px;line-height:1.22;font-weight:700;
+            color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.75);opacity:0;animation:dtBub .6s ease .5s forwards;}
+          .net-s{margin-top:10px;max-width:310px;font-size:13.5px;line-height:1.45;color:#CFC4FF;
+            opacity:0;animation:dtBub .6s ease 1.1s forwards;}
+          @media (max-height:760px){
+            .net-sc{transform:scale(.86);margin:-22px 0;}
+            .net-h{font-size:21px;margin-top:16px;}
+          }
           @media (prefers-reduced-motion:reduce){
-            .net-sc::before,.net-core{animation:none;}
-            .net-flow{display:none;}
-            .net-line,.net-site,.net-h{opacity:1;animation:none;}
+            .net-sc::before,.net-core{animation:none;opacity:1;transform:translate(-50%,-50%);}
+            .net-copie{display:none;}
+            .net-line,.net-site,.net-hab,.net-h,.net-s,.net-site .ns-cat{opacity:1;animation:none;}
           }
 
           /* Scène « chaque jour » : cartes qui apparaissent une à une, modernes */
@@ -1228,35 +1269,50 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           {/* VOTRE ACTUALITÉ SE FAIT CONNAÎTRE — quatre temps.
               A · il dit · B · votre assistante rédige · C · l'annonce se pose
               dans le vrai bandeau du site · D · un habitant la découvre. */}
-          {/* LE MOTEUR — le catalogue au centre, les sites partenaires autour,
-              et l'annonce qui part vers chacun. Une seule phrase à l'écran : la
-              narration est dite, pas écrite. */}
+          {/* LE MOTEUR — un catalogue au centre, des vitrines dans la ville.
+              Des emojis en orbite se lisaient comme « des catégories alimentent
+              le catalogue » : l'inverse de ce qui se passe. Ce sont maintenant
+              de petites fenêtres de sites, le catalogue s'y duplique, et des
+              habitants apparaissent autour — on voit QUI découvre l'annonce. */}
           {scene === "reseau" && (
             <div className="dtour-ov alive-ov">
               <div className="dtour-net">
                 <div className="net-sc" aria-hidden="true">
-                  {vizNodes.map((nd) => (
-                    <span key={`nl-${nd.t}`} className="net-line" style={{ width: `${VIZ_R}px`, transform: `rotate(${nd.deg}deg)` }} />
+                  {reseauSites.map((nd) => (
+                    <span key={`nl-${nd.t}`} className="net-line" style={{ width: `${RESEAU_R}px`, transform: `rotate(${nd.deg}deg)` }} />
                   ))}
-                  {vizNodes.map((nd, i) => (
+                  {/* La copie du catalogue part du centre et rejoint chaque site. */}
+                  {reseauSites.map((nd, i) => (
                     <span
                       key={`nf-${nd.t}`}
-                      className="net-flow"
-                      style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${1.1 + i * 0.26}s` }}
+                      className="net-copie"
+                      style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${2.6 + i * 0.22}s` }}
                     />
                   ))}
-                  {vizNodes.map((nd, i) => (
+                  {reseauSites.map((nd, i) => (
                     <span
                       key={`ns-${nd.t}`}
                       className="net-site"
-                      style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${1.5 + i * 0.26}s` }}
+                      style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${1.3 + i * 0.18}s` }}
                     >
-                      {nd.ic}
+                      <span className="ns-bar"><i /><i /><i /></span>
+                      <span className="ns-nom">{nd.t}</span>
+                      <span className="ns-cat" style={{ animationDelay: `${3.7 + i * 0.22}s` }}>📍 Catalogue</span>
+                    </span>
+                  ))}
+                  {habitants.map((h, i) => (
+                    <span
+                      key={`nh-${h.d}`}
+                      className="net-hab"
+                      style={{ transform: `translate(calc(-50% + ${h.x}px), calc(-50% + ${h.y}px))`, animationDelay: `${5.4 + i * 0.2}s` }}
+                    >
+                      👤
                     </span>
                   ))}
                   <span className="net-core"><b>📍</b><i>Catalogue<br />de {villeAff || "votre ville"}</i></span>
                 </div>
-                <div className="net-h">Votre actualité,<br />relayée par tout le réseau local.</div>
+                <div className="net-h">Un catalogue.<br />Des dizaines de vitrines dans la ville.</div>
+                <div className="net-s">Votre actualité circule sur tout le réseau local.</div>
               </div>
             </div>
           )}
