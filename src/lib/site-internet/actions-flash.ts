@@ -52,9 +52,13 @@ export type Intention = {
    *
    * Elle sert deux fois : de brief factuel à l'assistante (espace pro, qui la
    * réécrit), et telle quelle dans la démonstration. Elle doit donc s'adresser
-   * AUX CLIENTS, pas à l'assistante : « Ça vous intéresse ? Je vous le
-   * réserve. » et non « Les client·es peuvent me répondre pour le réserver »,
-   * qui se lit comme une consigne et non comme une annonce.
+   * AUX CLIENTS, pas à l'assistante : « Je vous le réserve ? » et non « Les
+   * client·es peuvent me répondre pour le réserver », qui se lit comme une
+   * consigne et non comme une annonce.
+   *
+   * Et COURTE : elle doit tenir dans un bandeau à côté d'un bouton, sur un
+   * téléphone. Une phrase de plus et le texte se compresse en une colonne de
+   * trois mots de large.
    */
   brief: (v: Record<string, string>) => string;
   /** Moment où l'annonce doit disparaître d'elle-même (null = pas d'échéance connue). */
@@ -68,6 +72,22 @@ export type Intention = {
    * finale ; seule la provenance des réponses change.
    */
   demo: (now: Date) => Record<string, string>;
+  /**
+   * Le scénario injecté, dit en clair SUR la carte de choix.
+   *
+   * Sans lui, l'écran suivant annonce « demain à 16 h » et le commerçant croit
+   * que l'assistante a deviné son planning — ce qu'elle ne fait pas et ne fera
+   * jamais. En vrai usage elle POSE la question ; ici on affiche d'avance le
+   * scénario de démonstration, pour que le clic sélectionne un exemple assumé.
+   */
+  exempleDemo: string;
+  /**
+   * Ce que l'annonce peut faire pour le commerce, une fois diffusée.
+   *
+   * Toujours au conditionnel : on décrit l'endroit où l'annonce paraît et ce
+   * qu'un habitant peut en faire, jamais un résultat que personne n'a mesuré.
+   */
+  promesse: string;
   /**
    * Le bouton proposé au CLIENT sous l'annonce.
    *
@@ -231,6 +251,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (v.surRdv) {
     liste.push({
       cle: "creneau",
+      exempleDemo: "demain à 16 h",
+      promesse: `Votre ${v.place} peut maintenant trouver son prochain client.`,
       emoji: "🕐",
       action: `Remplir un ${v.place}`,
       titre: `Un ${v.place} s'est libéré ?`,
@@ -242,14 +264,16 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       ],
       brief: (x) =>
         `Un ${v.place} vient de se libérer ${libelleJour(x.jour, new Date())} à ${heureLisible(x.heure)}` +
-        `${x.quoi ? ` pour ${x.quoi}` : ""}. Ça vous intéresse ? Je vous le réserve.`,
+        `${x.quoi ? ` pour ${x.quoi}` : ""}. Je vous le réserve ?`,
       fin: (x, now) => moment(now, x.heure, x.jour),
       demo: (now) => ({ jour: jourISO(dansNJours(now, 1)), heure: "16:00", quoi: "" }),
-      cta: "Réserver ce créneau",
+      cta: "Réserver",
     });
 
     liste.push({
       cle: "dispo",
+      exempleDemo: `3 ${v.places} cette semaine`,
+      promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
       emoji: "📅",
       action: "Annoncer mes disponibilités",
       titre: `Vos derniers ${v.places} de la semaine ?`,
@@ -267,6 +291,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "venir",
+    exempleDemo: "le café offert, de 10 h à 12 h",
+    promesse: "Votre invitation peut maintenant faire venir du monde.",
     emoji: "☕",
     action: "Faire venir du monde",
     titre: "Faire venir du monde aujourd'hui ?",
@@ -284,6 +310,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "offre",
+    exempleDemo: "-20 % de 16 h à 18 h",
+    promesse: "Votre offre peut maintenant trouver preneur.",
     emoji: "⚡",
     action: "Lancer une offre flash",
     titre: "Une offre sur quelques heures ?",
@@ -302,6 +330,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "nouveaute",
+    exempleDemo: "une nouvelle collection",
+    promesse: "Votre nouveauté peut maintenant se faire connaître.",
     emoji: "✨",
     action: "Montrer une nouveauté",
     titre: "Une nouveauté à montrer ?",
@@ -320,6 +350,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (v.boutique) {
     liste.push({
       cle: "arrivage",
+      exempleDemo: "un arrivage tout frais de ce matin",
+      promesse: "Votre arrivage peut maintenant trouver preneur.",
       emoji: "🧺",
       action: "Annoncer l'arrivage du jour",
       titre: "Un arrivage du jour à faire connaître ?",
@@ -337,6 +369,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "realisation",
+    exempleDemo: "une pièce dont vous êtes fier·e",
+    promesse: "Votre travail peut maintenant trouver son prochain client.",
     emoji: "📸",
     action: "Montrer mon travail",
     titre: "Montrer ce que vous venez de faire ?",
@@ -350,6 +384,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "evenement",
+    exempleDemo: "une journée portes ouvertes, dans trois jours",
+    promesse: "Votre événement peut maintenant trouver son public.",
     emoji: "🎉",
     action: "Annoncer un événement",
     titre: "Un événement à annoncer ?",
@@ -367,6 +403,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "fideles",
+    exempleDemo: "une attention à la prochaine visite",
+    promesse: "Votre geste peut maintenant atteindre vos habitués.",
     emoji: "💚",
     action: "Gâter mes habitués",
     titre: "Un geste pour vos habitués ?",
@@ -384,6 +422,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
 
   liste.push({
     cle: "horaires",
+    exempleDemo: "ouverture exceptionnelle ce dimanche matin",
+    promesse: "Votre changement d'horaires peut maintenant éviter une porte close.",
     emoji: "🕰️",
     action: "Signaler un changement d'horaires",
     titre: "Un changement d'horaires ?",

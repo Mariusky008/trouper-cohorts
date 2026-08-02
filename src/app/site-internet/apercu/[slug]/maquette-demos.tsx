@@ -16,6 +16,8 @@ import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-inter
 import { publishDemoOffer } from "./demo-offer";
 import { campagneFallback, type Campagne } from "@/lib/site-internet/campagne";
 import { intentionsPour, joursProches, manquants, recommandees, type Champ, type Intention } from "@/lib/site-internet/actions-flash";
+import { echeanceCourte } from "@/lib/site-internet/echeance";
+import { MARQUE } from "@/lib/marque";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 
 export type MaquetteAssistantData = {
@@ -126,6 +128,37 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     timers.current = [];
   };
   const after = (ms: number, fn2: () => void) => timers.current.push(window.setTimeout(fn2, ms));
+
+  /**
+   * La séquence des révélations, et le droit de la presser du doigt.
+   *
+   * Chaque écran a son temps de lecture, mais quelqu'un qui a compris ne doit
+   * pas attendre : un tap n'importe où fait passer à la suite. Sans bouton
+   * « Suivant », qui rajouterait un élément à lire sur des écrans qu'on vient
+   * justement d'épurer.
+   */
+  const suite = useRef<Array<[number, () => void]>>([]);
+  const curseur = useRef(0);
+  const relancer = (depuis: number) => {
+    clearTimers();
+    const base = suite.current[depuis]?.[0] ?? 0;
+    for (let i = depuis; i < suite.current.length; i++) {
+      const k = i;
+      after(suite.current[k][0] - base, () => {
+        curseur.current = k + 1;
+        suite.current[k][1]();
+      });
+    }
+  };
+  const planifier = (liste: Array<[number, () => void]>) => {
+    suite.current = liste;
+    curseur.current = 0;
+    if (liste.length) relancer(0);
+    else clearTimers();
+  };
+  const avancer = () => {
+    if (curseur.current < suite.current.length) relancer(curseur.current);
+  };
   // Garde-fou anti-« clic traversant » : le temps qu'une carte s'affiche, un tap
   // encore en vol ne doit pas déclencher son bouton principal.
   const cardAt = useRef(0);
@@ -295,16 +328,36 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
    * aucune pastille de réservation. En dessiner une montrerait un objet qui
    * n'existe pas. Le bouton, le visiteur le trouve sur le site, dans le bandeau.
    */
-  const carteCatalogue = (msg: string) =>
-    `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
-      `<span class="asx-kveil"></span>` +
-      `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
-      `<span class="asx-kbody">` +
-        `<span class="asx-knom">${esc(nom)}</span>` +
-        `<span class="asx-kmeta">📍 ${esc(data.metier || "Commerce")} · ${esc(villeNom)}</span>` +
-        `<span class="asx-koffer"><span class="asx-kk">✦ En ce moment</span>${esc(msg)}</span>` +
-      `</span>` +
-    `</div>`;
+  const carteCatalogue = (msg: string) => {
+    const jusqua = echeanceDemo();
+    const avis = n0 > 0
+      ? `<span class="asx-krate">⭐ ${n0} avis</span>`
+      : `<span class="asx-krate neuf">✨ Nouveau sur ${esc(MARQUE)}</span>`;
+    return (
+      `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
+        `<span class="asx-kveil"></span>` +
+        `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
+        (jusqua ? `<span class="asx-kcd">⏳ ${esc(jusqua)}</span>` : "") +
+        `<span class="asx-kbody">` +
+          `<span class="asx-knom">${esc(nom)}</span>` +
+          `<span class="asx-kmeta">📍 ${esc(data.metier || "Commerce")} · ${esc(villeNom)}</span>` +
+          avis +
+          `<span class="asx-koffer"><span class="asx-kk">✦ En ce moment</span>${esc(msg)}</span>` +
+        `</span>` +
+      `</div>`
+    );
+  };
+
+  /** L'échéance du scénario de démonstration, telle que le catalogue l'affiche. */
+  const echeanceDemo = (): string => {
+    if (!intention) return "";
+    try {
+      const f = intention.fin(reponses, new Date());
+      return f ? echeanceCourte(f.toISOString()) : "";
+    } catch {
+      return "";
+    }
+  };
 
   /**
    * LA TRANSFORMATION — ~1,5 s, sans un seul clic.
@@ -333,52 +386,80 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     `</div>`;
 
   /**
-   * 1/2 — le bandeau, à la largeur du téléphone, qui descend en haut de la page.
+   * 1/2 — le bandeau qui descend en haut de SON site, pas d'une maquette.
    *
-   * Il tenait dans une carte blanche de 300 px au milieu d'un fond sombre : on
-   * regardait une vignette, pas son site. Ici il n'y a plus de cadre, le bandeau
-   * fait toute la largeur, et une esquisse de page apparaît dessous pour qu'on
-   * voie d'où il descend.
+   * Trois barres grises sous un bandeau, ça ressemble à un gabarit d'agence :
+   * le commerçant ne reconnaît rien et l'écran pèse moins que celui du
+   * catalogue. Ici on montre une miniature de son site — sa photo, son nom, son
+   * métier, ses deux boutons — et le bandeau glisse par-dessus.
    */
   const revSite = (msg: string, cta: string) =>
     `<div class="asx-rev">1/2 — Sur votre site</div>` +
     `<div class="asx-revs">Votre annonce prend la première place.</div>` +
     `<div class="asx-page">` +
       `<div class="asx-page-band">${bandHtml(msg, cta)}</div>` +
-      `<div class="asx-page-fx" aria-hidden="true"><i></i><i></i><i></i></div>` +
+      `<div class="asx-mini"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
+        `<span class="asx-mini-v"></span>` +
+        `<span class="asx-mini-nom">${esc(nom)}</span>` +
+        `<span class="asx-mini-met">${esc(data.metier || "Commerce")} · ${esc(villeNom)}</span>` +
+      `</div>` +
+      `<div class="asx-mini-bar"><span class="b1">📞 Appeler</span><span class="b2">💬 Mon assistante</span></div>` +
     `</div>`;
 
   /** 2/2 — la carte du catalogue, presque plein écran, qui se laisse glisser. */
   const revCatalogue = (msg: string) =>
     `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
     `<div class="asx-swipe">${carteCatalogue(msg)}</div>` +
+    // La barre de gestes du vrai catalogue (ville-decouverte.tsx) : sans elle,
+    // on montre une belle carte mais pas l'objet que les habitants manipulent.
+    `<div class="asx-kbar">` +
+      `<span class="asx-kact"><i>✕</i>Passer</span>` +
+      `<span class="asx-kact want"><i>♥</i>Garder</span>` +
+      `<span class="asx-kact"><i>↑</i>Le site</span>` +
+    `</div>` +
     `<div class="asx-revs bas">Visible aussi chez les commerces partenaires.</div>`;
 
   /**
-   * LA RÉCOMPENSE — trois lignes, deux vitrines reliées, une décision.
+   * LA RÉCOMPENSE — le bénéfice, pas le mécanisme.
    *
-   * « De nouveaux clients PEUVENT vous découvrir » : on vend l'endroit où
-   * l'annonce paraît, jamais un résultat que personne n'a mesuré.
+   * « 1 clic. 2 vitrines. » décrivait la mécanique. Ce qu'un commerçant veut
+   * savoir, c'est qu'un habitant qui ne le connaît pas encore peut tomber sur
+   * son annonce et pousser sa porte. D'où la promesse de l'intention choisie,
+   * les trois endroits où l'annonce se découvre, et le trajet du client.
+   *
+   * Trois points et non deux : le catalogue de la ville est une page, et le
+   * même catalogue s'affiche à l'intérieur des sites du réseau. Ce sont bien
+   * deux surfaces distinctes — c'est ce qui fait l'effet de réseau.
+   *
+   * Tout est au conditionnel («&nbsp;peut&nbsp;»), et l'échéance annoncée est
+   * celle que le moteur calcule vraiment.
    */
-  const freeFinal = () =>
-    `<div class="asx-fete" aria-hidden="true">` +
-      Array.from({ length: 12 }, (_, i) => {
-        const x = 8 + (i * 7.6) % 84;
-        const d = (i % 5) * 0.09;
-        const c = i % 3 === 0 ? accent : i % 3 === 1 ? "#00E0A0" : "#8A6BE0";
-        return `<i style="left:${x}%;background:${c};animation-delay:${d}s"></i>`;
-      }).join("") +
-    `</div>` +
-    `<div class="asx-win">1 clic.<br>2 vitrines.</div>` +
-    `<div class="asx-wins">De nouveaux clients peuvent vous découvrir.</div>` +
-    `<div class="asx-dests big">` +
-      `<span class="asx-dest"><b>🌐</b>Votre site</span>` +
-      `<span class="asx-dlink"></span>` +
-      `<span class="asx-dest"><b>📍</b>Catalogue de ${villeNom}</span>` +
-    `</div>` +
-    `<button class="asx-cta2" data-cta>Garder mon site gratuitement</button>` +
-    `<button class="asx-link sm" data-tooptions>Découvrir les options pour toucher plus de monde</button>` +
-    tiny("Démonstration — rien n'a été publié ni envoyé.");
+  const freeFinal = () => {
+    const jusqua = echeanceDemo();
+    const point = (ic: string, t: string) => `<div class="asx-pt"><span>${ic}</span>${t}</div>`;
+    return (
+      `<div class="asx-fete" aria-hidden="true">` +
+        Array.from({ length: 12 }, (_, i) => {
+          const x = 8 + (i * 7.6) % 84;
+          const d = (i % 5) * 0.09;
+          const c = i % 3 === 0 ? accent : i % 3 === 1 ? "#00E0A0" : "#8A6BE0";
+          return `<i style="left:${x}%;background:${c};animation-delay:${d}s"></i>`;
+        }).join("") +
+      `</div>` +
+      `<div class="asx-win">${esc(intention?.promesse ?? "Votre annonce peut maintenant trouver son prochain client.")}</div>` +
+      `<div class="asx-wins">Elle peut être découverte tout de suite par des habitants qui ne vous connaissent pas encore.</div>` +
+      `<div class="asx-pts">` +
+        point("🌐", "Sur votre site") +
+        point("📍", `Dans le catalogue de ${esc(villeNom)}`) +
+        point("🤝", "Sur les sites des commerces partenaires") +
+      `</div>` +
+      `<div class="asx-flow">👀 Il la voit<i>→</i>💬 il clique<i>→</i>✨ l’assistante prend sa demande</div>` +
+      (jusqua ? `<div class="asx-auto">⏳ En ligne tout de suite, retirée toute seule ${esc(jusqua)} — sans que vous y pensiez.</div>` : "") +
+      `<button class="asx-cta2" data-cta>Garder mon site gratuitement</button>` +
+      `<button class="asx-link sm" data-tooptions>Découvrir les options pour toucher plus de monde</button>` +
+      tiny("Démonstration — rien n'a été publié ni envoyé.")
+    );
+  };
 
   // Écran Pro : on n'affiche QUE les canaux réellement cochés, sans jamais avancer
   // de nombre de contacts inventé, et le bouton demande une activation — il ne
@@ -533,15 +614,20 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       publishDemoOffer(msg, intention?.cta ?? ""); // le site se met à jour derrière la pop-up
       const cta = intention?.cta ?? "";
       openStage(transformation(), "bare");
-      after(1850, () => setCard(revSite(msg, cta), "bare"));
-      after(4750, () => setCard(revCatalogue(msg), "bare"));
-      after(7950, () => { chime(); setCard(freeFinal()); });
+      // 2,2 s : l'animation finit à ~1,7 s et son dernier état tient une demi-
+      // seconde. Puis 3 s sur le site, 4 s dans le catalogue — le temps de lire.
+      planifier([
+        [2200, () => setCard(revSite(msg, cta), "bare")],
+        [5200, () => setCard(revCatalogue(msg), "bare")],
+        [9200, () => { chime(); setCard(freeFinal()); }],
+      ]);
       if (!doneRef.current.includes("creneau")) doneRef.current.push("creneau");
       return;
     }
     // OPTIONS — « l'atelier » : sa phrase se dédouble et se métamorphose en trois
     // publications, chacune habillée pour son canal. Ce n'est PAS un envoi : c'est
     // une fabrication montrée. Le mot « envoyé » n'apparaît nulle part.
+    planifier([]); // le chemin Pro a sa propre minuterie : pas de tap-pour-avancer
     openStage(atelierHtml(msg, wa, social, resa));
     chime();
     // La génération part tout de suite ; l'animation (≈4,5 s) la couvre. Le repli
@@ -670,6 +756,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       setOptResa(true);
       playCreneau(fn, true, true, true);
     } else if (t.closest("[data-return],[data-continue]")) backHome();
+    else avancer();
   };
 
   // ── Rendu du corps du panneau (React) ────────────────────────────────────────
@@ -750,7 +837,12 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
                 >
                   {vedette && <span className="ab">Recommandé</span>}
                   <span className="ai" aria-hidden="true">{it.emoji}</span>
-                  <span className="at">{it.action}</span>
+                  {/* L'exemple est annoncé ICI, avant le clic. Sinon l'écran
+                      suivant sort « demain à 16 h » et le commerçant croit que
+                      l'assistante a deviné son planning — elle ne le fait pas,
+                      et le parcours perd sa crédibilité au moment précis où il
+                      devrait l'installer. */}
+                  <span className="at">{it.action}<i>Exemple&nbsp;: {it.exempleDemo}</i></span>
                 </button>
               );
             })}
@@ -888,7 +980,15 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
           <div className="asx-kick">✨ Prête en un clic</div>
-          <div className="asx-h1">Votre assistante<br />a tout préparé.</div>
+          <div className="asx-h1">Votre annonce<br />est déjà prête.</div>
+          {/* D'où sortent le jour et l'heure : d'un scénario de démonstration
+              choisi au clic précédent, pas d'une devinette de l'assistante. En
+              vrai usage, elle POSE la question. */}
+          {intention && (
+            <div className="asx-prov">
+              Vous avez choisi «&nbsp;{intention.action}&nbsp;».<i>Pour cette démonstration&nbsp;: {intention.exempleDemo}.</i>
+            </div>
+          )}
 
           {/* L'annonce sur la photo du commerce : c'est l'objet spectaculaire de
               l'écran, pas un champ de formulaire encadré de gris. */}
@@ -917,7 +1017,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           </div>
 
           <button className="asx-send big pulse" onClick={() => playCreneau(fn, false, false, false)}>
-            Voir le résultat ✨
+            Voir où elle sera diffusée ✨
           </button>
           <button type="button" className="asx-link sm" onClick={() => setEditing((v) => !v)}>
             {editing ? "✓ Terminé" : "Modifier"}
@@ -1091,14 +1191,13 @@ function styles(accent: string): string {
   /* Le parcours d'annonce prend l'écran entier : plus de barre pro, plus de
      bandeau, plus de menu visibles pour disputer l'attention au seul geste. */
   .asx-sheet.full{top:0;max-height:none;border-radius:0;}
-  .asx-sheet.full .asx-abody{flex:1;display:flex;flex-direction:column;justify-content:center;
-    padding:26px 22px calc(26px + env(safe-area-inset-bottom));}
-  /* Un contenu plus haut que l'écran (le formulaire détaillé) se ferait rogner
-     PAR LE HAUT avec un simple « center » : le début devient inatteignable. */
-  @supports (justify-content:safe center){
-    .asx-sheet.full .asx-abody{justify-content:safe center;}
-  }
-  @media (min-height:760px){.asx-sheet.full .asx-abody{padding-top:40px;padding-bottom:40px;}}
+  /* ANCRÉ EN HAUT, pas centré. Un centrage strict laissait ~145 px de vide entre
+     « Retour » et le titre : l'écran avait l'air inachevé, et l'œil devait
+     traverser le vide avant de lire quoi que ce soit. Le rembourrage haut est
+     borné pour garder de la respiration sur grand écran sans jamais comprimer
+     le contenu — et rien ne peut plus se faire rogner par le haut. */
+  .asx-sheet.full .asx-abody{flex:1;display:flex;flex-direction:column;
+    padding:clamp(46px,9vh,104px) 22px calc(28px + env(safe-area-inset-bottom));}
   .asx-sheet.full .asx-back{position:absolute;top:calc(14px + env(safe-area-inset-top));left:18px;margin:0;font-size:13px;z-index:3;}
   .asx-sheet.full .asx-close{top:calc(13px + env(safe-area-inset-top));}
   @keyframes asxUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -1202,9 +1301,11 @@ function styles(accent: string): string {
   .asx-act .ai{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;
     font-size:23px;background:#F1ECFF;}
   .asx-act .at{flex:1;min-width:0;font-size:17px;font-weight:800;color:#16160F;line-height:1.2;}
+  .asx-act .at i{display:block;margin-top:5px;font-style:normal;font-size:12px;font-weight:600;color:#8A8577;line-height:1.3;}
+  .asx-act.reco .at i{color:#DCD2FF;}
   /* La carte recommandée porte la couleur : sur trois cartes identiques, aucune
      n'est un point de départ. Celle du haut en est un. */
-  .asx-act.reco{border:none;padding:24px 18px 20px;color:#fff;
+  .asx-act.reco{border:none;padding:40px 18px 20px;color:#fff;
     background:linear-gradient(140deg,#8A6BE0,#5B3FA6);box-shadow:0 20px 40px -20px rgba(91,63,166,.85);}
   .asx-act.reco .ai{background:rgba(255,255,255,.18);}
   .asx-act.reco .at{color:#fff;font-size:20px;}
@@ -1214,9 +1315,13 @@ function styles(accent: string): string {
   .asx-link.sm:hover{text-decoration:underline;}
 
   /* ── ÉCRAN 2 : l'annonce, sur la photo du commerce. ── */
+  /* D'où viennent le jour et l'heure : dit avant l'annonce, en petit. */
+  .asx-prov{margin-bottom:13px;font-size:12.5px;line-height:1.45;font-weight:700;color:#5F6358;}
+  .asx-prov i{display:block;font-style:normal;font-weight:500;color:#8A8577;}
   .asx-hero{position:relative;display:flex;align-items:flex-end;min-height:196px;border-radius:20px;overflow:hidden;
     padding:20px 18px;background:linear-gradient(150deg,#2C3A5E,#141A2E);background-size:cover;background-position:center;
     box-shadow:0 22px 44px -24px rgba(0,0,0,.7);}
+  @media (max-height:700px){.asx-hero{min-height:150px;padding:16px;}.asx-hero-t{font-size:18px;}}
   .asx-hero-v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.25),rgba(8,9,13,.86));}
   .asx-hero-t{position:relative;font-family:Georgia,serif;font-size:20px;line-height:1.32;font-weight:700;color:#fff;text-align:left;}
   .asx-hero-ed{position:relative;width:100%;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:15px;
@@ -1237,19 +1342,22 @@ function styles(accent: string): string {
   .asx-mg{text-align:center;}
   .asx-mg-t{font-size:14px;line-height:1.5;color:#CFCBBF;}
   .asx-mg-t b{display:block;margin-top:4px;font-family:Georgia,serif;font-size:23px;font-weight:700;color:#fff;}
-  .asx-mg-sc{position:relative;height:292px;margin-top:20px;}
+  .asx-mg-sc{position:relative;height:248px;margin-top:18px;}
   .asx-mg-orb{position:absolute;top:0;left:50%;width:44px;height:44px;margin-left:-22px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
     background:linear-gradient(140deg,#A594FF,#5B3FA6);box-shadow:0 0 0 0 rgba(165,148,255,.55);
     animation:mgOrb .9s ease-out 2,mgFade .3s ease 1.05s forwards;}
   @keyframes mgOrb{0%{box-shadow:0 0 0 0 rgba(165,148,255,.55)}70%,100%{box-shadow:0 0 0 22px rgba(165,148,255,0)}}
   @keyframes mgFade{to{opacity:0;transform:scale(.7)}}
-  .asx-mg-card,.asx-mg-cl{position:absolute;top:66px;left:50%;width:164px;height:112px;margin-left:-82px;
-    border-radius:14px;overflow:hidden;background:#1B1F2C;box-shadow:0 16px 34px -18px rgba(0,0,0,.9);}
+  /* Les cartes doivent SE VOIR sur un fond à 90 % d'opacité : liseré clair,
+     halo violet puis vert, et pas d'ombre noire qui les enfonce dans le décor. */
+  .asx-mg-card,.asx-mg-cl{position:absolute;top:52px;left:50%;width:164px;height:112px;margin-left:-82px;
+    border-radius:14px;overflow:hidden;background:#28304A;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.5),0 12px 34px -6px rgba(165,148,255,.55);}
   .asx-mg-card{display:flex;flex-direction:column;opacity:0;animation:mgIn .32s cubic-bezier(.22,1,.36,1) .3s forwards,mgOut .22s ease .95s forwards;}
   @keyframes mgIn{from{opacity:0;transform:scale(.7) translateY(10px)}to{opacity:1;transform:none}}
   @keyframes mgOut{to{opacity:0}}
-  .asx-mg-ph{flex:1;background-size:cover;background-position:center;background-image:linear-gradient(150deg,#3A4A6E,#1B2338);
+  .asx-mg-ph{flex:1;background-size:cover;background-position:center;background-image:linear-gradient(150deg,#5B6E9E,#2A3450);
     opacity:0;animation:mgPh .34s ease .62s forwards;}
   @keyframes mgPh{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:none}}
   .asx-mg-lb{flex:none;font-size:11px;font-weight:800;letter-spacing:.05em;color:#06231A;background:#00E0A0;padding:7px 10px;}
@@ -1257,18 +1365,23 @@ function styles(accent: string): string {
   /* Les copies portent la même photo et le même liseré vert que la carte : sans
      cela on voit deux rectangles partir, pas SON annonce qui se dédouble. */
   .asx-mg-cl{opacity:0;background-size:cover;background-position:center;
-    background-image:linear-gradient(150deg,#3A4A6E,#1B2338);border-bottom:10px solid #00E0A0;}
+    background-image:linear-gradient(150deg,#5B6E9E,#2A3450);border-bottom:10px solid #00E0A0;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.55),0 10px 30px -4px rgba(0,224,160,.6);}
   .asx-mg-cl.l{animation:mgL .62s cubic-bezier(.3,.8,.3,1) .95s forwards;}
   .asx-mg-cl.r{animation:mgR .62s cubic-bezier(.3,.8,.3,1) .95s forwards;}
-  @keyframes mgL{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(-72px,92px) scale(.44) rotate(-7deg)}}
-  @keyframes mgR{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(72px,92px) scale(.44) rotate(7deg)}}
+  @keyframes mgL{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(-72px,66px) scale(.44) rotate(-7deg)}}
+  @keyframes mgR{0%{opacity:1;transform:none}100%{opacity:1;transform:translate(72px,66px) scale(.44) rotate(7deg)}}
   .asx-mg-d{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;gap:5px;width:104px;
-    font-size:11.5px;font-weight:800;color:#8C8878;opacity:.45;
+    font-size:12.5px;font-weight:800;color:#EDEAE2;opacity:.55;
     animation:mgD .34s ease 1.35s forwards;}
   .asx-mg-d b{font-size:20px;font-weight:400;line-height:1;}
   .asx-mg-d.l{left:50%;margin-left:-124px;}
   .asx-mg-d.r{left:50%;margin-left:20px;}
   @keyframes mgD{to{opacity:1;color:#fff;transform:translateY(-3px)}}
+  /* Le halo qui s'allume sous la destination au moment où la copie s'y pose. */
+  .asx-mg-d::before{content:"";position:absolute;top:-6px;left:50%;width:74px;height:74px;margin-left:-37px;border-radius:50%;
+    background:radial-gradient(circle,rgba(0,224,160,.42),transparent 68%);opacity:0;animation:mgHalo .5s ease 1.3s forwards;}
+  @keyframes mgHalo{to{opacity:1}}
   @media (prefers-reduced-motion:reduce){
     .asx-mg-orb,.asx-mg-card,.asx-mg-ph,.asx-mg-cl,.asx-mg-d{animation:none;opacity:1;}
     .asx-mg-cl{display:none;}
@@ -1282,11 +1395,17 @@ function styles(accent: string): string {
   @keyframes asxDrop{from{opacity:0;transform:translateY(-26px)}to{opacity:1;transform:none}}
   .asx-page-band .asx-band{margin:0;border-radius:0;box-shadow:none;padding:16px 18px;}
   .asx-page-band .asx-band-t{font-size:15px;}
-  .asx-page-fx{padding:16px 18px 20px;display:flex;flex-direction:column;gap:9px;}
-  .asx-page-fx i{display:block;height:11px;border-radius:6px;background:#E7E4DC;}
-  .asx-page-fx i:nth-child(1){width:62%;height:15px;}
-  .asx-page-fx i:nth-child(2){width:100%;}
-  .asx-page-fx i:nth-child(3){width:78%;}
+  /* La miniature du vrai site : sa photo, son nom, son métier, ses deux boutons.
+     Trois barres grises donnaient un gabarit d'agence — rien à reconnaître. */
+  .asx-mini{position:relative;display:block;height:150px;background-size:cover;background-position:center;
+    background-image:linear-gradient(150deg,#4A3A2E,#1A1410);}
+  .asx-mini-v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.12),rgba(8,9,13,.72));}
+  .asx-mini-nom{position:absolute;left:18px;bottom:34px;font-family:Georgia,serif;font-size:24px;font-weight:700;color:#fff;line-height:1.1;}
+  .asx-mini-met{position:absolute;left:18px;bottom:16px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:#E3DFD4;}
+  .asx-mini-bar{display:flex;gap:9px;padding:13px 16px 16px;background:#FBFAF7;}
+  .asx-mini-bar span{flex:1;text-align:center;border-radius:11px;padding:11px 6px;font-size:12.5px;font-weight:700;}
+  .asx-mini-bar .b1{color:${accent};background:${accent}1F;box-shadow:inset 0 0 0 1px ${accent};}
+  .asx-mini-bar .b2{color:#FBFAF7;background:${accent};}
 
   /* ── ÉCRAN 5 : la carte du catalogue, presque plein écran, qui se glisse. ── */
   /* Presque plein écran : la carte du catalogue EST l'écran, pas une vignette. */
@@ -1298,8 +1417,25 @@ function styles(accent: string): string {
   @media (prefers-reduced-motion:reduce){.asx-page,.asx-swipe{animation:none;}}
 
   /* ── ÉCRAN 6 : la récompense. ── */
-  .asx-win{font-family:Georgia,serif;font-size:36px;line-height:1.08;font-weight:700;color:#16160F;}
-  .asx-wins{margin-top:11px;font-size:14.5px;line-height:1.5;color:#5F6358;}
+  .asx-win{font-family:Georgia,serif;font-size:26px;line-height:1.18;font-weight:700;color:#16160F;}
+  @media (max-height:700px){.asx-win{font-size:23px;}}
+  .asx-wins{margin-top:11px;font-size:14px;line-height:1.5;color:#5F6358;}
+  .asx-pts{display:flex;flex-direction:column;gap:7px;margin-top:16px;text-align:left;}
+  .asx-pt{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#25381C;
+    background:#F1F8F3;border:1px solid #D6EBDD;border-radius:11px;padding:10px 12px;}
+  .asx-pt span{font-size:15px;line-height:1;flex:none;}
+  /* Ce que fait le client, en trois temps : il voit, il clique, elle répond. */
+  .asx-flow{margin-top:13px;font-size:12px;line-height:1.7;font-weight:700;color:#463F6B;
+    background:#F4F1FF;border:1px solid #E4DEF7;border-radius:12px;padding:10px 12px;}
+  .asx-flow i{font-style:normal;color:#B9A6EC;padding:0 3px;}
+  @media (max-height:700px){
+    .asx-wins{font-size:13px;margin-top:8px;}
+    .asx-pts{gap:6px;margin-top:12px;}
+    .asx-pt{padding:8px 11px;font-size:12.5px;}
+    .asx-flow{margin-top:10px;line-height:1.6;}
+  }
+  .asx-auto{margin-top:13px;font-size:11.5px;line-height:1.45;color:#5F6358;background:#F7F5EF;
+    border:1px solid #E7E4DC;border-radius:11px;padding:9px 11px;}
   .asx-fete{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:20px;}
   .asx-fete i{position:absolute;top:-12px;width:7px;height:11px;border-radius:2px;opacity:0;
     animation:asxFete 1.5s cubic-bezier(.3,.7,.5,1) forwards;}
@@ -1395,6 +1531,17 @@ function styles(accent: string): string {
   .asx-knom{font-family:Georgia,serif;font-size:17px;font-weight:700;color:#fff;line-height:1.15;}
   /* Mêmes blocs que la vraie carte (.vdec .meta / .offer-k / .offer-t). */
   .asx-kmeta{font-size:11.5px;color:#CFD2D6;margin-top:5px;}
+  .asx-kcd{position:absolute;top:10px;right:10px;font-size:10.5px;font-weight:800;color:#0B0D14;
+    background:rgba(255,255,255,.92);border-radius:999px;padding:5px 10px;}
+  .asx-krate{align-self:flex-start;margin-top:7px;font-size:11.5px;font-weight:700;color:#FFD84D;
+    background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.35);border-radius:999px;padding:4px 10px;}
+  .asx-krate.neuf{color:#00E0A0;background:rgba(0,224,160,.1);border-color:rgba(0,224,160,.35);}
+  /* La barre de gestes du catalogue : passer · garder · le site. */
+  .asx-kbar{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:14px;}
+  .asx-kact{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#B4B0A5;}
+  .asx-kact i{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
+    font-style:normal;font-size:18px;color:#EDEAE2;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);}
+  .asx-kact.want i{color:#06231A;background:#00E0A0;border-color:#00E0A0;}
   .asx-koffer{margin-top:9px;font-size:12.5px;font-weight:600;line-height:1.35;color:#E9EBED;}
   .asx-kk{display:block;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#00E0A0;margin-bottom:4px;}
   /* Copie conforme de .mqc .offer-band (maquette-sante.tsx) : même dégradé
@@ -1408,7 +1555,7 @@ function styles(accent: string): string {
   /* Seule différence avec le site : la carte de l'assistante fait 300 px, pas la
      largeur d'un écran. Sous ~330 px la pastille passe à la ligne au lieu de
      réduire le texte à un mot par ligne. */
-  .asx-band-t{flex:1 1 150px;min-width:150px;font-size:13px;font-weight:600;}
+  .asx-band-t{flex:1 1 190px;min-width:190px;font-size:13px;font-weight:600;}
   .asx-band-t b{font-weight:800;}
   .asx-cta2{margin-top:16px;width:100%;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
     color:#06231a;background:linear-gradient(135deg,#00E0A0,#07B083);box-shadow:0 14px 30px -12px rgba(0,224,160,.75);}
