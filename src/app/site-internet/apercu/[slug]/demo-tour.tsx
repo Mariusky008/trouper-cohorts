@@ -34,7 +34,7 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "vision" | "conclu" | "alive";
+type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "vision" | "conclu" | "alive" | "final";
 
 export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
@@ -131,6 +131,17 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
+  /**
+   * L'assistante à l'écran avant qu'elle ne parle.
+   *
+   * Entre le tap et le premier mot, il peut s'écouler une à deux secondes : le
+   * commerçant voyait son site immobile, essayait de faire défiler (c'est
+   * bloqué pendant la visite) et croyait que rien ne marchait. Elle apparaît
+   * donc tout de suite au centre, puis rejoint sa place en bas à gauche au
+   * moment exact où sa voix démarre.
+   */
+  const [orbe, setOrbe] = useState<"" | "attente" | "vol">("");
+  const [vol, setVol] = useState({ x: 0, y: 0 });
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
@@ -467,6 +478,33 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     }
   };
 
+  /** Elle quitte le centre et va se poser sur son emplacement de la barre. */
+  // La barre de légende fait deux à cinq lignes selon la phrase : l'écran de
+  // décision doit lui réserver SA hauteur, pas une valeur fixe.
+  useEffect(() => {
+    if (scene !== "final") return;
+    const maj = () => {
+      const b = document.querySelector<HTMLElement>(".dtour-bar");
+      if (b) document.documentElement.style.setProperty("--dtbar", `${b.offsetHeight + 14}px`);
+    };
+    const t = window.setTimeout(maj, 30);
+    window.addEventListener("resize", maj);
+    return () => { window.clearTimeout(t); window.removeEventListener("resize", maj); };
+  }, [scene, caption]);
+
+  const envol = () => {
+    try {
+      const el = document.querySelector<HTMLElement>(".dtour-bar .mini");
+      if (!el) { setOrbe(""); return; }
+      const r = el.getBoundingClientRect();
+      setVol({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) });
+      setOrbe("vol");
+      window.setTimeout(() => setOrbe(""), 1000);
+    } catch {
+      setOrbe("");
+    }
+  };
+
   const start = () => {
     cancelled.current = false;
     try {
@@ -476,6 +514,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       /* best-effort */
     }
     setPhase("playing");
+    setOrbe("attente");
     // Filet : si une étape lève (une variable renommée, une réplique manquante),
     // la présentation s'arrêtait sur une barre vide et le commerçant restait
     // bloqué. Elle va désormais droit à l'écran de fin, qui porte les boutons.
@@ -502,7 +541,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         `Bonjour, je suis Léa, votre assistante. Voici votre nouveau site : je l'ai préparé à partir de votre fiche Google — ` +
         `vos photos, vos prestations, vos horaires${hasReviews ? " et vos avis" : " et vos informations"}. ` +
         `Et vous pourrez le modifier quand vous le souhaitez.`,
-      enter: () => { scrollTo(null); setScene(""); void buildSite(); },
+      enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
     // 2 — JE RÉPONDS : la conversation, calée sur sa phrase. Elle décrit sa
@@ -561,7 +600,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     steps.push({
       title: "À vous",
       say: SAY_FIN,
-      enter: () => { scrollTo(null); setScene(""); },
+      enter: () => { setScene("final"); },
     });
 
     const total = steps.length;
@@ -594,12 +633,43 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // Garde le site / explore : on quitte l'écran de fin vers le site. On démasque
   // systématiquement (ceinture + bretelles : le site doit toujours être visible).
   const keep = () => {
+    cancelled.current = true;
     stopSpeaking();
     unbuild();
     if (keepHref) { try { window.location.href = keepHref; return; } catch { /* noop */ } }
     setPhase("done");
   };
-  const explore = () => { stopSpeaking(); unbuild(); setPhase("done"); };
+  const explore = () => { cancelled.current = true; stopSpeaking(); unbuild(); setPhase("done"); };
+
+  /**
+   * L'écran de décision. Il s'affiche DEUX fois de suite, à l'identique : une
+   * fois pendant que l'assistante prononce sa dernière phrase (`enScene`), une
+   * fois quand elle a fini. Le commerçant ne voit donc pas de bascule — l'écran
+   * était déjà là quand elle a nommé le bouton.
+   */
+  const ecranFinal = (enScene: boolean) => (
+    <div className={`dtour-end${enScene ? " enscene" : ""}`}>
+            <div className="dtour-mark sm"><span>✦</span></div>
+            {/* Le bénéfice, pas l'offre. « Sans engagement » occupait l'une des
+                trois grandes cases alors que ce n'est pas un bénéfice produit :
+                il redescend en mention sous les boutons. */}
+            <div className="et">Votre site répond.<br />Vos annonces circulent.</div>
+            <div className="es">Des habitants qui ne vous connaissent pas encore peuvent vous découvrir et contacter votre assistante.</div>
+            <div className="end-list">
+              <div className="end-i"><span>🎁</span>Site offert</div>
+              <div className="end-i"><span>✨</span>Assistante IA incluse</div>
+              <div className="end-i"><span>📍</span>Relié au catalogue de {villeAff || "votre ville"}</div>
+            </div>
+            <div className="end-cta">
+              <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
+              <button className="end-sec" onClick={explore}>Explorer mon site</button>
+              {avisAllowed && !enScene && (
+                <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
+              )}
+            </div>
+            {!enScene && <div className="end-fine">Sans engagement · options activables plus tard</div>}
+          </div>
+  );
 
   if (phase === "done") return null;
 
@@ -957,6 +1027,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
           /* ── Scène « elle sort du site » : l'écran s'assombrit, un flash, des
                 particules, trois anneaux — on ne peut pas la rater. ── */
+          /* L'accueil : elle seule, sans texte — le voile est plus léger, on
+             doit encore voir le site derrière. */
+          .dtour-ov.org-ov{background:rgba(6,8,16,.55);animation:dtFade .3s ease;}
           .dtour-ov.alive-ov{background:rgba(6,8,16,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
           .al-flash{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 46%,rgba(180,168,255,.85),rgba(124,106,232,.25) 32%,transparent 62%);
             opacity:0;animation:alFlash .85s ease-out;}
@@ -1016,11 +1089,13 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             display:flex;align-items:center;justify-content:center;color:#fff;font-size:54px;pointer-events:none;
             background:linear-gradient(140deg,#A594FF,#5B3FA6);box-shadow:0 0 70px 4px rgba(124,106,232,.95);
             animation:alFly 1s cubic-bezier(.55,0,.25,1) forwards;}
+          /* La cible est MESURÉE à l'envol (--fx/--fy) : l'emplacement de la
+             barre bouge avec la longueur de la légende et la barre système. */
           @keyframes alFly{
-            0%{opacity:1;top:46%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;font-size:54px;}
-            78%{opacity:1;}
-            100%{opacity:0;top:calc(100% - 103px);width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;font-size:20px;
-              box-shadow:0 5px 16px -3px rgba(91,63,166,.85);}
+            0%{opacity:1;left:50%;top:46%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;font-size:54px;}
+            76%{opacity:1;}
+            100%{opacity:0;left:var(--fx,50%);top:var(--fy,calc(100% - 103px));width:34px;height:34px;
+              margin:-17px 0 0 -17px;border-radius:11px;font-size:16px;box-shadow:0 5px 16px -3px rgba(91,63,166,.85);}
           }
           @media (prefers-reduced-motion:reduce){.al-fly{display:none;}}
 
@@ -1163,6 +1238,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           @keyframes dtType{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
           /* Écran de passation (fin) — les grandes suggestions */
+          /* Pendant l'étape 6, l'écran laisse la place à la barre de légende :
+             elle doit rester lisible sous lui, et cliquable au-dessus. */
+          .dtour-end.enscene{z-index:88;padding-bottom:var(--dtbar,140px);}
+          @media (max-height:720px){.dtour-end.enscene{gap:9px;}.dtour-end.enscene .es{font-size:12.5px;}}
           .dtour-end{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
             padding:34px 24px calc(32px + env(safe-area-inset-bottom));color:#EDF0FA;font-family:'Inter',system-ui,sans-serif;
             background:linear-gradient(165deg,#141A2E 0%,#0C1020 60%,#080A14 100%);animation:dtFade .3s ease;}
@@ -1204,6 +1283,26 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       {phase === "playing" && (
         <>
           <div className="dtour-lock" />
+
+          {/* Elle est là dès la première seconde, avant même de parler. */}
+          {orbe === "attente" && (
+            <div className="dtour-ov alive-ov org-ov">
+              <div className="dtour-alive">
+                <span className="al-halo" aria-hidden="true" />
+                <span className="al-ring" /><span className="al-ring r2" /><span className="al-ring r3" />
+                <span className="al-av">✦</span>
+              </div>
+            </div>
+          )}
+          {orbe === "vol" && (
+            <span
+              className="al-fly"
+              aria-hidden="true"
+              style={{ ["--fx" as string]: `${vol.x}px`, ["--fy" as string]: `${vol.y}px` }}
+            >
+              ✦
+            </span>
+          )}
 
           {head.n > 0 && (
             <div className="dtour-top" key={head.n}>
@@ -1273,8 +1372,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                     <i>{b2.ic}</i>{b2.t}
                   </span>
                 ))}
-                <div className="al-t">Je ne fais pas que répondre aux visiteurs.</div>
-                <div className="al-s">Dites-moi ce qui se passe chez vous.<br />Je vous aide à le faire connaître dans la ville.</div>
+                <div className="al-t">Je ne fais pas que répondre.</div>
+                <div className="al-s">Dites-moi ce qui se passe chez vous.</div>
               </div>
             </div>
           )}
@@ -1480,6 +1579,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             </div>
           )}
 
+          {scene === "final" && ecranFinal(true)}
+
           <div className="dtour-bar">
             <span className="mini" />
             <span className="cap">{caption}</span>
@@ -1487,29 +1588,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         </>
       )}
 
-      {phase === "end" && (
-        <div className="dtour-end">
-          <div className="dtour-mark sm"><span>✦</span></div>
-          {/* Le bénéfice, pas l'offre. « Sans engagement » occupait l'une des
-              trois grandes cases alors que ce n'est pas un bénéfice produit :
-              il redescend en mention sous les boutons. */}
-          <div className="et">Votre site répond.<br />Vos annonces circulent.</div>
-          <div className="es">Des habitants qui ne vous connaissent pas encore peuvent vous découvrir et contacter votre assistante.</div>
-          <div className="end-list">
-            <div className="end-i"><span>🎁</span>Site offert</div>
-            <div className="end-i"><span>✨</span>Assistante IA incluse</div>
-            <div className="end-i"><span>📍</span>Relié au catalogue de {villeAff || "votre ville"}</div>
-          </div>
-          <div className="end-cta">
-            <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
-            <button className="end-sec" onClick={explore}>Explorer mon site</button>
-            {avisAllowed && (
-              <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
-            )}
-          </div>
-          <div className="end-fine">Sans engagement · options activables plus tard</div>
-        </div>
-      )}
+      {phase === "end" && ecranFinal(false)}
 
       {/* BONUS (à la demande) : aller plus loin. WhatsApp / réseaux sociaux sont
           des options payantes ; la diffusion chez les commerces partenaires est
