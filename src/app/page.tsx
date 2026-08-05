@@ -84,6 +84,9 @@ export default function HomePage() {
           .pop-home .foot-col a{display:block;font-size:14px;color:#C9D2CB;text-decoration:none;padding:5px 0;}
           .pop-home .foot-col a:hover{color:#fff;}
           .pop-home .foot-sig{display:block;font-size:12px;color:#6E7B72;margin-top:10px;}
+          /* Le pied de page est sombre : var(--ink) y serait invisible. */
+          .pop-home .foot-vision{text-align:center;font-size:14.5px;line-height:1.5;font-weight:700;color:#E9EFEA;
+            padding:24px 20px 2px;max-width:520px;margin:0 auto;}
           .pop-home .foot-bar{border-top:1px solid rgba(255,255,255,.08);padding:16px 20px;text-align:center;font-size:12px;color:#6E7B72;}
 
           /* ── HERO ── */
@@ -102,7 +105,6 @@ export default function HomePage() {
           .pop-home .why{font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:18px auto 0;font-weight:600;letter-spacing:-.01em;position:relative;z-index:2;}
           .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
           .pop-home .sub{font-size:16px;line-height:1.5;color:var(--soft);max-width:500px;margin:12px auto 0;}
-          /* ── Bande « après votre clic » : la seule section de la page ── */
           /* « Une fois créée » : le seul bloc explicatif de la page. Il vient APRÈS
              le formulaire — on montre d'abord, on explique ensuite. */
           .pop-home .works{padding:52px 0 46px;border-top:1px solid var(--line);}
@@ -111,30 +113,12 @@ export default function HomePage() {
           .pop-home .works-p{text-align:center;font-size:16px;line-height:1.55;color:var(--soft);max-width:480px;margin:12px auto 0;}
           .pop-home .works-box{max-width:520px;margin:26px auto 0;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:22px 20px;}
           .pop-home .works-q{font-size:17px;font-weight:850;letter-spacing:-.01em;line-height:1.3;}
-          .pop-home .works-a{font-size:15px;line-height:1.5;color:var(--soft);margin-top:9px;}
-          .pop-home .works-l{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
-          .pop-home .works-l li{display:flex;align-items:flex-start;gap:11px;font-size:15px;line-height:1.45;color:var(--soft);}
-          .pop-home .works-l li b{color:var(--ink);font-weight:800;}
-          .pop-home .works-l .t{flex:1;min-width:0;}
-          .pop-home .works-l .e{width:32px;height:32px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--bg);border:1px solid var(--line);}
-          .pop-home .works-say{margin-top:18px;border-left:3px solid var(--a1);border-radius:0 12px 12px 0;background:var(--bg);padding:13px 15px;font-size:15.5px;line-height:1.45;font-style:italic;color:var(--ink);}
-          .pop-home .works-fine{font-size:13.5px;line-height:1.55;color:var(--faint);margin-top:13px;}
+          .pop-home .works-a{font-size:15px;line-height:1.5;color:var(--soft);margin-top:14px;}
+          .pop-home .works-a b{color:var(--ink);font-weight:800;}
+          .pop-home .works-say{margin-top:14px;border-left:3px solid var(--a1);border-radius:0 12px 12px 0;background:var(--bg);padding:13px 15px;font-size:15.5px;line-height:1.45;font-style:italic;color:var(--ink);}
           .pop-home .works-end{text-align:center;font-size:18px;line-height:1.5;color:var(--soft);margin:26px auto 0;max-width:420px;}
           .pop-home .works-end b{color:var(--ink);font-weight:850;}
           @media(min-width:820px){.pop-home .works-h{font-size:32px;} .pop-home .works-box{padding:26px 24px;}}
-          .pop-home .after{padding:44px 0 46px;border-top:1px solid var(--line);background:var(--surface);}
-          .pop-home .after-k{text-align:center;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
-          .pop-home .after-steps{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:20px;}
-          .pop-home .after-s{display:flex;align-items:center;gap:12px;font-size:15px;color:var(--soft);line-height:1.35;width:100%;max-width:330px;}
-          .pop-home .after-s .e{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--bg);border:1px solid var(--line);}
-          .pop-home .after-s .t b{color:var(--ink);font-weight:800;}
-          /* rotate (propriété) et non transform : .reveal-in{transform:none} l'écraserait. */
-          .pop-home .after-ar{color:var(--a1);font-weight:900;font-size:17px;rotate:90deg;}
-          @media(min-width:860px){
-            .pop-home .after-steps{flex-direction:row;justify-content:center;gap:18px;}
-            .pop-home .after-ar{rotate:none;}
-            .pop-home .after-s{max-width:270px;}
-          }
 
           /* Générateur (verre) + tags flottants */
           .pop-home .genzone{position:relative;max-width:520px;margin:28px auto 0;}
@@ -414,7 +398,11 @@ export default function HomePage() {
         <div className="wrap inner">
           <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
           <h1>Dans 1 minute,<br /><span className="hl">votre site sera prêt.</span></h1>
-          <p className="why">Il répondra à vos clients et fera connaître vos nouveautés <b>dans votre ville.</b></p>
+          {/* « Pas seulement à vos abonnés » fait le travail de « réseau social
+              du commerce local » — la formule qui parle à un investisseur mais
+              qui, pour un commerçant, évoque exactement ce dont il est fatigué :
+              un compte de plus à alimenter le soir. */}
+          <p className="why">Il répond à vos clients et fait découvrir vos nouveautés <b>aux habitants de votre ville</b> — pas seulement à vos abonnés.</p>
           <p className="sub">Construit devant vous à partir de vos vraies informations Google. Gratuitement.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
@@ -432,63 +420,33 @@ export default function HomePage() {
           termine par une redirection vers la maquette personnalisée, il n'y a
           donc pas d'« après » sur cette page. Ce bloc s'adresse à qui hésite
           avant de cliquer. */}
+      {/* ── CE QU'IL FAIT ENSUITE ──
+          Une seule idée : une phrase suffit, et elle sort du cercle de ses
+          propres clients. Le bloc portait huit zones de lecture (titre, chapô,
+          question, paragraphe, deux puces, citation, mention) pour dire ça.
+          Et trois mots pour le même objet — « site », « plateforme »,
+          « sites & assistante » — sur un seul écran. */}
       <section className="works">
         <div className="wrap">
-          <div className="works-k reveal">Une fois créée</div>
-          <h2 className="works-h reveal">Votre plateforme travaille pour vous.</h2>
+          <div className="works-k reveal">Une fois créé</div>
+          <h2 className="works-h reveal">Votre site travaille pour vous.</h2>
           <p className="works-p reveal">
-            Elle répond aux questions de vos clients, prend les rendez-vous, et vous aide à recueillir
+            Il répond aux questions de vos clients, prend les rendez-vous, et vous aide à recueillir
             de nouveaux avis Google.
           </p>
 
           <div className="works-box reveal">
-            <div className="works-q">Et quand vous avez une offre, un événement ou un créneau libre&nbsp;?</div>
+            <div className="works-q">Et quand il se passe quelque chose chez vous, vous le dites en une phrase&nbsp;:</div>
+            <div className="works-say">« Il me reste 1 place demain à 8 h, quelqu&apos;un la prend&nbsp;?&nbsp;»</div>
             <p className="works-a">
-              Dites-le simplement à votre assistante. Elle écrit l&apos;annonce et la publie&nbsp;:
-            </p>
-            {/* Le texte est dans UN span : sans lui, chaque fragment devient un
-                élément flex à part et le passage en gras part en colonne. */}
-            <ul className="works-l">
-              <li>
-                <span className="e">🌐</span>
-                <span className="t">en haut de <b>votre plateforme</b></span>
-              </li>
-              {/* UN SEUL point pour le catalogue : la fenêtre chez les autres
-                  commerçants montre ce même catalogue. Deux puces feraient
-                  paraître un mécanisme unique deux fois plus gros qu'il n'est. */}
-              <li>
-                <span className="e">📍</span>
-                <span className="t">
-                  dans <b>le catalogue de votre ville</b> — que chaque commerce du réseau affiche aussi chez lui
-                </span>
-              </li>
-            </ul>
-            <div className="works-say">« Il me reste 1 place demain à 8 h, quelqu&apos;un la prend&nbsp;? »</div>
-            <p className="works-fine">
-              Une phrase suffit. Aucun post à créer, aucune technique à maîtriser. Et les habitants qui
-              suivent le catalogue de votre ville la reçoivent par e-mail.
+              Votre assistante en fait une annonce, choisit la photo, et la publie&nbsp;: sur votre site,
+              et dans <b>le catalogue de votre ville</b> — que chaque commerce du réseau affiche aussi chez lui.
             </p>
           </div>
 
           <div className="works-end reveal">
             Vous vous occupez de votre commerce.<br />
             <b>On s&apos;occupe de vous faire connaître.</b>
-          </div>
-        </div>
-      </section>
-
-      {/* ── APRÈS VOTRE CLIC : la bande unique (3 étapes) ── */}
-      {/* Volontairement minimaliste : la démo personnalisée montre le produit
-          BIEN mieux qu'une page de vente. L'accueil ne fait que lancer. */}
-      <section className="after">
-        <div className="wrap">
-          <div className="after-k reveal">Après votre clic</div>
-          <div className="after-steps">
-            <div className="after-s reveal"><span className="e">🔎</span><span className="t">Nous lisons votre <b>fiche Google</b></span></div>
-            <span className="after-ar reveal" aria-hidden="true">→</span>
-            <div className="after-s reveal" style={{ transitionDelay: "110ms" }}><span className="e">✨</span><span className="t">Nous créons <b>votre site</b></span></div>
-            <span className="after-ar reveal" aria-hidden="true" style={{ transitionDelay: "160ms" }}>→</span>
-            <div className="after-s reveal" style={{ transitionDelay: "220ms" }}><span className="e">🎬</span><span className="t">Vous découvrez votre <b>démonstration personnalisée</b></span></div>
           </div>
         </div>
       </section>
@@ -522,6 +480,11 @@ export default function HomePage() {
             <span className="foot-sig">Marius · France</span>
           </div>
         </div>
+        {/* L'ambition, au futur et en bas de page. « Le premier réseau social du
+            commerce local » au présent, en haut, décrirait quelque chose qui
+            n'existe pas encore — et parlerait à un investisseur, pas au
+            commerçant venu voir son site. */}
+        <div className="foot-vision">Nous construisons le premier réseau du commerce local. Ville après ville.</div>
         <div className="foot-bar">Popey · {year} · Tous droits réservés</div>
       </footer>
     </main>
