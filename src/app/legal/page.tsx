@@ -2,9 +2,10 @@
 // Contenu minimal & honnête : à compléter par l'éditeur. Ne pas inventer de
 // clauses juridiques.
 import type { Metadata } from "next";
+import { MARQUE } from "@/lib/marque";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Popey — Informations légales", robots: { index: false } };
+export const metadata: Metadata = { title: `${MARQUE} — Informations légales`, robots: { index: false } };
 
 const PHONE = process.env.SITE_LETTER_PHONE || "07 68 23 33 47";
 const EMAIL = process.env.SITE_LETTER_EMAIL || "contact@popey.academy";
@@ -14,7 +15,7 @@ const SECTIONS: Array<{ id: string; t: string; body: string[] }> = [
     id: "mentions",
     t: "Mentions légales",
     body: [
-      "Éditeur : Popey — service d'accompagnement web pour commerçants, artisans et professionnels de proximité (Sud-Ouest de la France).",
+      `Éditeur : ${MARQUE} — service d'accompagnement web pour commerçants, artisans et professionnels de proximité (Sud-Ouest de la France).`,
       `Contact : ${PHONE} · ${EMAIL}`,
       "Hébergement : Vercel Inc. Les coordonnées complètes de l'éditeur (raison sociale, SIRET, adresse) sont communiquées sur simple demande et seront ajoutées ici.",
     ],
@@ -30,7 +31,7 @@ export default function LegalPage() {
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", fontFamily: "'Inter',system-ui,sans-serif", color: "#1C201C", lineHeight: 1.6 }}>
       <Link href="/" style={{ color: "#0EA5A5", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>← Retour à l&apos;accueil</Link>
       <h1 style={{ fontSize: 30, fontWeight: 850, letterSpacing: "-.02em", margin: "18px 0 6px" }}>Informations légales</h1>
-      <p style={{ color: "#71766C", fontSize: 14 }}>Popey · {EMAIL} · {PHONE}</p>
+      <p style={{ color: "#71766C", fontSize: 14 }}>{MARQUE} · {EMAIL} · {PHONE}</p>
       <nav style={{ display: "flex", flexWrap: "wrap", gap: 10, margin: "20px 0 30px" }}>
         {SECTIONS.map((s) => (
           <a key={s.id} href={`#${s.id}`} style={{ fontSize: 13, fontWeight: 700, color: "#0B7A55", background: "#EAF7F1", borderRadius: 999, padding: "7px 13px", textDecoration: "none" }}>{s.t}</a>

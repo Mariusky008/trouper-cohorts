@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { estNotreHote } from "@/lib/site-url";
 
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -81,7 +82,7 @@ export default async function proxy(request: NextRequest) {
   // (racine seule) pour ne rien changer aux autres chemins/hôtes.
   const isKnownPopeyHost =
     !vitrineHost ||
-    vitrineHost.includes("popey.academy") ||
+    estNotreHote(vitrineHost) ||
     vitrineHost.endsWith(".vercel.app") ||
     /(^|\.)popey\.link$/i.test(vitrineHost) ||
     vitrineHost === "localhost" ||

@@ -1,3 +1,6 @@
+import { MARQUE } from "@/lib/marque";
+import { SITE_HOST } from "@/lib/site-url";
+
 export default function MentionsPage() {
   return (
     <article className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-li:text-slate-600">
@@ -7,7 +10,7 @@ export default function MentionsPage() {
       
       <h2>1. Éditeur du Site</h2>
       <p>
-        Le présent site, accessible à l’URL <strong>www.popey.academy</strong> (ci-après le « Site »), est édité par :
+        Le présent site, accessible à l’URL <strong>{SITE_HOST}</strong> (ci-après le « Site »), est édité par :
       </p>
       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 not-prose">
         <h3 className="font-bold text-slate-900 mb-2">Ibrelisle</h3>
@@ -44,7 +47,7 @@ export default function MentionsPage() {
         Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques.
       </p>
       <p>
-        Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments du Site, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable de Popey Academy.
+        Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments du Site, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable de {MARQUE}.
         Toute exploitation non autorisée du site ou de l’un quelconque des éléments qu’il contient sera considérée comme constitutive d’une contrefaçon et poursuivie conformément aux dispositions des articles L.335-2 et suivants du Code de Propriété Intellectuelle.
       </p>
 

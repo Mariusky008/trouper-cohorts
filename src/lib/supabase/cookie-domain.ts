@@ -15,16 +15,12 @@
 // poser un cookie dessus reviendrait à le partager avec tous les projets
 // hébergés là. Un domaine inconnu renvoie donc `undefined`, ce qui laisse le
 // navigateur poser le cookie sur l'hôte exact : le comportement sûr.
-const DOMAINES = ["popey.academy", "clikme.fr"] as const;
-
-const echappe = (d: string) => d.replace(/[.]/g, "\\.");
+import { NOS_DOMAINES } from "../site-url";
 
 /** `.popey.academy` · `.clikme.fr` · `undefined` si l'hôte n'est pas des nôtres. */
 export function cookieDomainForHost(host: string | null | undefined): string | undefined {
   const hostname = String(host || "").split(":")[0].toLowerCase();
   if (!hostname) return undefined;
-  for (const d of DOMAINES) {
-    if (new RegExp(`(^|\\.)${echappe(d)}$`).test(hostname)) return `.${d}`;
-  }
-  return undefined;
+  const d = NOS_DOMAINES.find((x) => hostname === x || hostname.endsWith(`.${x}`));
+  return d ? `.${d}` : undefined;
 }

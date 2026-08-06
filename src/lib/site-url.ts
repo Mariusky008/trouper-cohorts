@@ -12,3 +12,24 @@ export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.
 
 /** L'hôte seul, pour l'affichage (pied d'image de partage, lettres…). */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "").replace(/^www\./, "");
+
+/**
+ * Les domaines qui NOUS appartiennent.
+ *
+ * Sert à deux endroits qui, s'ils divergent, cassent le site de façons très
+ * différentes et également pénibles à diagnostiquer :
+ *   · le domaine des cookies de session (sinon : déconnexions aléatoires) ;
+ *   · le routage du proxy (sinon : tout hôte inconnu est pris pour le domaine
+ *     personnalisé d'un commerçant, et la racine affiche « Site en préparation »).
+ *
+ * C'est exactement ce qui est arrivé à clikme.fr : le DNS marchait, Vercel
+ * servait, et le proxy renvoyait le résolveur de domaines de commerçants.
+ */
+export const NOS_DOMAINES = ["popey.academy", "clikme.fr"] as const;
+
+/** `true` si l'hôte est l'un des nôtres (sous-domaines compris). */
+export function estNotreHote(host: string | null | undefined): boolean {
+  const h = String(host || "").split(":")[0].toLowerCase();
+  if (!h) return false;
+  return NOS_DOMAINES.some((d) => h === d || h.endsWith(`.${d}`));
+}
