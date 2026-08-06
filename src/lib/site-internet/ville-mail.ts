@@ -8,6 +8,7 @@
 // Rendu en HTML inliné : les clients mail ne chargent ni feuille de style ni
 // police externe.
 import { Resend } from "resend";
+import { SITE_URL } from "@/lib/site-url";
 import type { PartnerOffer } from "./collectif";
 
 // Instanciation paresseuse : `new Resend` lève si la clé manque, et ce module est
@@ -58,7 +59,7 @@ export const consentPhrase = (ville: string) =>
   `Un e-mail par jour au maximum, uniquement s'il y a du nouveau. Je peux me désinscrire à tout moment.`;
 
 export function siteBase(): string {
-  return String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
+  return SITE_URL;
 }
 
 /** Échappement HTML : ces textes viennent des commerçants, ils ne sont pas de confiance. */

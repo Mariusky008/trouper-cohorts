@@ -3,6 +3,7 @@
 // Le QR est généré côté serveur (SVG net, imprimable). Rien n'est inventé : nom,
 // note et avis viennent des vraies données Google.
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
 import { PrintBar, type AfficheKind } from "./print-button";
@@ -73,7 +74,7 @@ export default async function AffichePro({
   const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
   const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
 
-  const base = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
+  const base = SITE_URL;
   const reviewLink = placeId
     ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${nom} ${ville}`)}`;

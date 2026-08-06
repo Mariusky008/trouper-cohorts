@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { SITE_HOST } from "@/lib/site-url";
 
 // Vignette d'aperçu de lien (Open Graph) Popey — marque CLIENT. Générée dynamiquement (PNG)
 // pour le partage WhatsApp/SMS. 1200×630 = format recommandé. Partagée par les routes
@@ -48,7 +49,7 @@ export function popeyOgImage(subtitle: string): ImageResponse {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", marginTop: 56, fontSize: 30, color: "#7a8a9a" }}>popey.academy</div>
+        <div style={{ display: "flex", marginTop: 56, fontSize: 30, color: "#7a8a9a" }}>{SITE_HOST}</div>
       </div>
     ),
     { ...OG_SIZE },

@@ -1,13 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '../env'
-
-function cookieDomainForHost(host: string) {
-  const hostname = String(host || "").split(":")[0].toLowerCase();
-  // Share auth cookies between `popey.academy` and `www.popey.academy`.
-  if (/(^|\.)popey\.academy$/.test(hostname)) return ".popey.academy";
-  return undefined;
-}
+import { cookieDomainForHost } from './cookie-domain'
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({

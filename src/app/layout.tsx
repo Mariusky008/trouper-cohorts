@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { RecoveryRedirectGuard } from "@/components/auth/recovery-redirect-guard";
@@ -22,7 +23,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.popey.academy"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
     template: "%s · Popey",

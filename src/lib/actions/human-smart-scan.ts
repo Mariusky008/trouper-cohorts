@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { SITE_URL } from "@/lib/site-url";
 import { OpenAI } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -4092,7 +4093,7 @@ export async function createAllianceInvite(input: {
   const ensuredProspectRow = prospectRow;
 
   const token = `alliance_${crypto.randomUUID().replace(/-/g, "")}`;
-  const appBaseUrl = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
+  const appBaseUrl = SITE_URL;
   const onboardingLink = `${appBaseUrl}/popey-human/alliance-invite/${token}`;
   const nowIso = new Date().toISOString();
   const channel = input.channel || "whatsapp";

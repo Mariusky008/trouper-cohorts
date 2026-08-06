@@ -1,12 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { env } from '../env'
-
-function cookieDomainForHost(hostname: string) {
-  const host = String(hostname || "").split(":")[0].toLowerCase();
-  // Share auth cookies between `popey.academy` and `www.popey.academy`.
-  if (/(^|\.)popey\.academy$/.test(host)) return ".popey.academy";
-  return undefined;
-}
+import { cookieDomainForHost } from './cookie-domain'
 
 export function createClient() {
   const domain = typeof window !== "undefined" ? cookieDomainForHost(window.location.hostname) : undefined;

@@ -2,13 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { env } from "../env";
-
-function cookieDomainForHost(host: string) {
-  const hostname = String(host || "").split(":")[0].toLowerCase();
-  // Share auth cookies between `popey.academy` and `www.popey.academy`.
-  if (/(^|\.)popey\.academy$/.test(hostname)) return ".popey.academy";
-  return undefined;
-}
+import { cookieDomainForHost } from "./cookie-domain";
 
 function readJwtSubject(accessToken: string) {
   const payloadPart = String(accessToken || "").split(".")[1] || "";
