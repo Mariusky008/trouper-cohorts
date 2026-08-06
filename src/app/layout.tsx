@@ -49,9 +49,12 @@ export const metadata: Metadata = {
     title: MARQUE,
   },
   icons: {
-    icon: "/icon.svg",
+    // Le SVG est en tracés purs (pas de <text>) : il s'affiche partout à
+    // l'identique. Le PNG sert aux plateformes qui refusent le SVG — iOS
+    // notamment, pour l'icône « ajouter à l'écran d'accueil ».
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }],
     shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    apple: "/apple-touch-icon.png",
   },
 };
 

@@ -1,29 +1,8 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg_gradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#B20B13" /> <!-- Popey Red -->
-      <stop offset="1" stop-color="#7A0000" /> <!-- Darker Red -->
-    </linearGradient>
-    <filter id="shadow" x="100" y="100" width="312" height="312" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.25"/>
-    </filter>
-  </defs>
-  
-  <!-- Background: Squircle (iOS style) -->
-  <rect x="0" y="0" width="512" height="512" fill="url(#bg_gradient)"/>
-  
-  <!-- Anchor Icon -->
-  <g filter="url(#shadow)">
-    <!-- Main Shank -->
-    <path d="M256 120V340" stroke="#E2D9BC" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-    
-    <!-- Bottom Hook (Slightly more open/modern) -->
-    <path d="M140 280C140 280 140 380 256 380C372 380 372 280 372 280" stroke="#E2D9BC" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-    
-    <!-- Top Ring (Hollow) -->
-    <circle cx="256" cy="90" r="35" stroke="#E2D9BC" stroke-width="30" />
-    
-    <!-- Cross Bar (Simplified/Modern) -->
-    <path d="M190 170H322" stroke="#E2D9BC" stroke-width="40" stroke-linecap="round"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12B37A"/><stop offset="1" stop-color="#0A6B48"/></linearGradient></defs>
+  <rect width="512" height="512" rx="114" fill="url(#g)"/>
+  <g transform="translate(188,138) scale(3.25)">
+    <rect x="0" y="0" width="6.8" height="38" fill="#FFF"/>
+    <path d="M10.8 22 L10.8 5 L25 19 L18.5 19.5 Z" fill="#FFF" opacity=".88"/>
+    <path d="M10.8 22 L16 22 L26.5 37 L21 39.5 Z" fill="#FFF" opacity=".88"/>
+  </g></svg>

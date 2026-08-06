@@ -4,6 +4,7 @@
 // options, collectif) est montré BIEN mieux par la démo personnalisée, avec les
 // vraies photos et les vrais avis du commerce. Les composants des anciennes
 // sections restent dans _home/ : réintégrer une section = 1 import + 1 bloc.
+import Image from "next/image";
 import { MARQUE } from "@/lib/marque";
 // HONNÊTETÉ (règle absolue) : mécanisme réel, aucun chiffre/témoignage inventé.
 import type { Metadata } from "next";
@@ -60,11 +61,9 @@ export default function HomePage() {
           /* Nav */
           .pop-home .nav{position:sticky;top:0;z-index:40;background:rgba(250,250,247,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
           .pop-home .nav .in{display:flex;align-items:center;justify-content:space-between;height:62px;}
-          .pop-home .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);}
-          .pop-home .brand .dot{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;box-shadow:0 8px 18px -6px rgba(18,185,129,.7);}
-          .pop-home .brand-tx{display:flex;flex-direction:column;line-height:1;}
-          .pop-home .brand-tx{font-weight:850;font-size:22px;letter-spacing:-.03em;}
-          .pop-home .brand-sub{font-weight:600;font-size:9.5px;letter-spacing:.02em;color:var(--faint);margin-top:3px;text-transform:none;}
+          .pop-home .brand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-decoration:none;color:var(--ink);}
+          .pop-home .brand-img{display:block;height:26px;width:auto;}
+          .pop-home .brand-sub{font-weight:600;font-size:9.5px;letter-spacing:.02em;color:var(--faint);text-transform:none;}
           .pop-home .navcta{font-weight:800;font-size:13.5px;color:#fff;background:linear-gradient(120deg,var(--a1),var(--a2));padding:9px 16px;border-radius:999px;text-decoration:none;box-shadow:0 10px 22px -10px rgba(18,185,129,.8);}
           @media(max-width:520px){.pop-home .brand-sub{display:none;}}
           /* CATALOGUE (teaser) */
@@ -78,8 +77,7 @@ export default function HomePage() {
           .pop-home .foot{background:#0F1512;color:#C9D2CB;margin-top:0;}
           .pop-home .foot-in{display:grid;grid-template-columns:1fr;gap:26px;padding:44px 20px 30px;}
           @media(min-width:720px){.pop-home .foot-in{grid-template-columns:1.6fr 1fr 1fr;}}
-          .pop-home .foot-logo{display:flex;align-items:center;gap:9px;font-weight:850;font-size:22px;letter-spacing:-.03em;color:#fff;}
-          .pop-home .foot-logo .dot{width:30px;height:30px;border-radius:10px;background:linear-gradient(140deg,var(--a1),var(--a3));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+          .pop-home .foot-logo{display:block;height:30px;width:auto;}
           .pop-home .foot-brand p{font-size:13.5px;line-height:1.6;color:#8A968E;margin-top:12px;max-width:320px;}
           .pop-home .foot-col h4{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#6E7B72;margin-bottom:12px;}
           .pop-home .foot-col a{display:block;font-size:14px;color:#C9D2CB;text-decoration:none;padding:5px 0;}
@@ -385,9 +383,13 @@ export default function HomePage() {
 
       <div className="nav">
         <div className="wrap in">
-          <a className="brand" href="#top">
-            <span className="dot">✦</span>
-            <span className="brand-tx">{MARQUE.toLowerCase()}<span className="brand-sub">sites &amp; assistante · commerçants</span></span>
+          {/* Le mot est DANS l'image : le logo horizontal porte déjà « clikme ».
+              PNG et non SVG — les SVG de la charte composent le mot avec la
+              police Outfit, qui s'afficherait dans une autre police chez un
+              visiteur qui ne l'a pas. */}
+          <a className="brand" href="#top" aria-label={MARQUE}>
+            <Image className="brand-img" src="/clikme-logo.png" alt={MARQUE} width={112} height={45} priority />
+            <span className="brand-sub">sites &amp; assistante · commerçants</span>
           </a>
           <a className="navcta" href="#top">✨ Créer mon site</a>
         </div>
@@ -456,7 +458,7 @@ export default function HomePage() {
       <footer className="foot">
         <div className="wrap foot-in">
           <div className="foot-brand">
-            <div className="foot-logo"><span className="dot">✦</span> {MARQUE.toLowerCase()}</div>
+            <Image className="foot-logo" src="/clikme-logo-blanc.png" alt={MARQUE} width={124} height={50} />
             <p>
               {MARQUE} crée gratuitement le site web de votre commerce à partir de votre fiche Google&nbsp;:
               vos photos, vos avis, vos horaires et votre activité, réunis dans un vrai site moderne,

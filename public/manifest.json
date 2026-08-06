@@ -1,19 +1,34 @@
 {
-  "name": "Popey — votre site web + assistante",
-  "short_name": "Popey",
+  "name": "Clikme — votre site web + assistante",
+  "short_name": "Clikme",
   "description": "Un site web gratuit pour votre commerce, créé à partir de votre fiche Google, avec une assistante qui répond à vos clients.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F7F5EF",
-  "theme_color": "#12B981",
+  "theme_color": "#0F8F5F",
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "360x360",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "orientation": "portrait",
-  "categories": ["business", "productivity"]
+  "categories": [
+    "business",
+    "productivity"
+  ]
 }
