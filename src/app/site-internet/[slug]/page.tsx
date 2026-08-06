@@ -2,6 +2,7 @@
 // Décision D2 : contact direct (appel / WhatsApp / rappel), pas de démo de site.
 // On enregistre le scan (contact_scanned_at) au premier affichage.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MARQUE } from "@/lib/marque";
 import { LeadForm } from "./lead-form";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export default async function SiteInternetLanding({
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
       <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">Popey · Site internet</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">{MARQUE} · Site internet</p>
         <h1 className="mt-2 text-3xl font-black leading-tight text-slate-950">{accroche}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-slate-600">
           Bonjour, merci d&apos;avoir scanné la lettre remise pour <strong>{nom}</strong>.
@@ -93,7 +94,7 @@ export default async function SiteInternetLanding({
       </div>
 
       <p className="mt-6 text-center text-xs text-slate-400">
-        Popey · {String(row.city || "")}
+        {MARQUE} · {String(row.city || "")}
       </p>
     </main>
   );

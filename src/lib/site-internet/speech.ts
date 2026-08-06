@@ -139,7 +139,7 @@ async function pumpCloud(): Promise<void> {
       // Une seule ligne de console, pour pouvoir diagnostiquer à distance (la
       // cause varie d'une machine à l'autre : réseau, proxy, autorisation audio).
       try {
-        console.warn(`[Popey] voix premium indisponible → voix du navigateur. Raison : ${lastCloudError || "inconnue"}`);
+        console.warn(`[voix] premium indisponible → voix du navigateur. Raison : ${lastCloudError || "inconnue"}`);
       } catch {
         /* best-effort */
       }

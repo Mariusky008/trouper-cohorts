@@ -1,5 +1,5 @@
 // DÉMO « CHOC » de démarchage — page HÔTE prête à dégainer sur le terrain.
-// Un VRAI site premium (comme ceux que construit Popey), avec l'assistante IA en
+// Un VRAI site premium (comme ceux que construit le produit), avec l'assistante IA en
 // vedette : Marius l'ouvre devant le prospect, réserve une chambre, et à la
 // confirmation l'assistante recommande le commerce démarché (la « cible » de
 // l'admin) avec son offre + le lien vers son site. Un seul lien, effet garanti.
@@ -7,6 +7,7 @@
 // HONNÊTETÉ : hôtel de DÉMONSTRATION (badge visible), pas un vrai établissement ;
 // avis illustratifs (labellisés). La cible se règle dans l'admin (« 🎯 Cibler »).
 import Link from "next/link";
+import { MARQUE } from "@/lib/marque";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DemarchageBooking, type DemarchageTarget } from "../apercu/[slug]/demarchage-booking";
 
@@ -62,7 +63,7 @@ export default async function DemoChocPage() {
     <main className="hoc">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="hoc-demo">✦ Démonstration Popey · exemple de site partenaire</div>
+      <div className="hoc-demo">✦ Démonstration {MARQUE} · exemple de site partenaire</div>
 
       {/* ── HERO immersif + assistante IA ── */}
       <header className="hoc-hero">
@@ -154,7 +155,7 @@ export default async function DemoChocPage() {
         </section>
       )}
 
-      <footer className="hoc-foot">Hôtel du Collectif · démonstration Popey</footer>
+      <footer className="hoc-foot">Hôtel du Collectif · démonstration {MARQUE}</footer>
 
       {/* Barre fixe */}
       <div className="hoc-bar">

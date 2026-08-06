@@ -7,7 +7,7 @@
 //
 // Ne couvre pas : les identifiants techniques (slugs, clés de stockage, noms de
 // tables), qui ne se renomment pas sans migration et que personne ne lit.
-export const MARQUE = "Popey";
+export const MARQUE = "Clikme";
 
 /** Le nom au fil du texte, quand il est précédé d'un article : « le catalogue {MARQUE} ». */
 export const MARQUE_LONG = `${MARQUE}`;

@@ -8,6 +8,7 @@
 // Rendu en HTML inliné : les clients mail ne chargent ni feuille de style ni
 // police externe.
 import { Resend } from "resend";
+import { MARQUE } from "@/lib/marque";
 import { SITE_URL } from "@/lib/site-url";
 import type { PartnerOffer } from "./collectif";
 
@@ -16,7 +17,11 @@ import type { PartnerOffer } from "./collectif";
 let _resend: Resend | null = null;
 const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""));
 
-export const MAIL_FROM = "Popey <contact@popey.academy>";
+// Le NOM affiché suit la marque ; l'ADRESSE reste sur popey.academy tant que
+// clikme.fr n'est pas vérifié chez Resend (DKIM + SPF). Envoyer depuis un
+// domaine non vérifié, c'est la boîte à spam assurée — et un e-mail de ville
+// qui n'arrive pas ne se rattrape pas.
+export const MAIL_FROM = `${MARQUE} <contact@popey.academy>`;
 
 /** Un envoi par jour au maximum. */
 export const JOUR_MS = 24 * 60 * 60 * 1000;

@@ -1,29 +1,30 @@
-// Page d'accueil publique de popey.academy — volontairement MINIMALE : elle n'a
+// Page d'accueil publique — volontairement MINIMALE : elle n'a
 // qu'un seul job, faire créer le site (hero + formulaire), puis une bande « après
 // votre clic » et le pied de page. Tout l'argumentaire (Action Flash, catalogue,
 // options, collectif) est montré BIEN mieux par la démo personnalisée, avec les
 // vraies photos et les vrais avis du commerce. Les composants des anciennes
 // sections restent dans _home/ : réintégrer une section = 1 import + 1 bloc.
+import { MARQUE } from "@/lib/marque";
 // HONNÊTETÉ (règle absolue) : mécanisme réel, aucun chiffre/témoignage inventé.
 import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 export const metadata: Metadata = {
-  title: { absolute: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute" },
+  title: { absolute: `${MARQUE} — votre site web gratuit, construit sous vos yeux en 1 minute` },
   description:
     "Site gratuit prêt en 1 minute, avec une assistante qui répond à vos clients. En un clic, annoncez un créneau libre, un événement ou une offre : votre communication est préparée et diffusée. Vous ne payez que pour aller plus loin.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Popey — votre site web gratuit, construit sous vos yeux en 1 minute",
+    title: `${MARQUE} — votre site web gratuit, construit sous vos yeux en 1 minute`,
     description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, annoncez une offre, un événement ou un créneau libre.",
-    siteName: "Popey",
+    siteName: MARQUE,
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey — votre site web gratuit, construit sous vos yeux",
+    title: `${MARQUE} — votre site web gratuit, construit sous vos yeux`,
     description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, lancez vos offres.",
   },
 };
@@ -33,7 +34,7 @@ const EMAIL = process.env.SITE_LETTER_EMAIL || "contact@popey.academy";
 const WA_DIGITS = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "") || "33768233347";
 const TEL_HREF = `tel:+${WA_DIGITS}`;
 const WA_HREF = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
-  "Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.",
+  `Bonjour Marius, je voudrais voir ce que ${MARQUE} construirait pour mon activité.`,
 )}`;
 
 export default function HomePage() {
@@ -101,7 +102,7 @@ export default function HomePage() {
           .pop-home .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a2);background:rgba(255,255,255,.75);box-shadow:0 2px 10px -4px rgba(20,22,15,.2),inset 0 0 0 1px rgba(18,185,129,.18);border-radius:999px;padding:8px 15px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
           .pop-home h1{font-size:38px;line-height:1.03;letter-spacing:-.04em;font-weight:850;margin:20px auto 0;max-width:680px;}
           .pop-home h1 .hl{background:linear-gradient(115deg,var(--a1) 10%,var(--a2) 45%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent;}
-          /* La phrase « pourquoi Popey existe » — juste sous le titre. */
+          /* La phrase « pourquoi le produit existe » — juste sous le titre. */
           .pop-home .why{font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:18px auto 0;font-weight:600;letter-spacing:-.01em;position:relative;z-index:2;}
           .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
           .pop-home .sub{font-size:16px;line-height:1.5;color:var(--soft);max-width:500px;margin:12px auto 0;}
@@ -386,7 +387,7 @@ export default function HomePage() {
         <div className="wrap in">
           <a className="brand" href="#top">
             <span className="dot">✦</span>
-            <span className="brand-tx">popey<span className="brand-sub">sites &amp; assistante · commerçants</span></span>
+            <span className="brand-tx">{MARQUE.toLowerCase()}<span className="brand-sub">sites &amp; assistante · commerçants</span></span>
           </a>
           <a className="navcta" href="#top">✨ Créer mon site</a>
         </div>
@@ -455,16 +456,16 @@ export default function HomePage() {
       <footer className="foot">
         <div className="wrap foot-in">
           <div className="foot-brand">
-            <div className="foot-logo"><span className="dot">✦</span> popey</div>
+            <div className="foot-logo"><span className="dot">✦</span> {MARQUE.toLowerCase()}</div>
             <p>
-              Popey crée gratuitement le site web de votre commerce à partir de votre fiche Google&nbsp;:
+              {MARQUE} crée gratuitement le site web de votre commerce à partir de votre fiche Google&nbsp;:
               vos photos, vos avis, vos horaires et votre activité, réunis dans un vrai site moderne,
               avec une assistante qui répond à vos clients. Pour les commerçants, artisans, restaurateurs
               et pros de proximité, partout en France.
             </p>
           </div>
           <div className="foot-col">
-            <h4>Popey</h4>
+            <h4>{MARQUE}</h4>
             <a href="#top">Créer mon site</a>
             <a href="/legal#cgu">Conditions d&apos;utilisation</a>
             <a href="/legal#cgv">Conditions de vente</a>
@@ -485,7 +486,7 @@ export default function HomePage() {
             n'existe pas encore — et parlerait à un investisseur, pas au
             commerçant venu voir son site. */}
         <div className="foot-vision">Nous construisons le premier réseau du commerce local. Ville après ville.</div>
-        <div className="foot-bar">Popey · {year} · Tous droits réservés</div>
+        <div className="foot-bar">{MARQUE} · {year} · Tous droits réservés</div>
       </footer>
     </main>
   );

@@ -19,6 +19,7 @@
 //   • Le compte à rebours n'apparaît QUE si le pro a fixé une échéance à son
 //     annonce. Inventer une urgence est exactement ce qu'on ne fait pas.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MARQUE } from "@/lib/marque";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 
 export type Fiche = {
@@ -479,7 +480,7 @@ export function VilleDecouverte({
                             ⭐ {x.note.toFixed(1).replace(".", ",")} · {x.avis} avis
                           </div>
                         ) : (
-                          <div className="rate neuf">✨ Nouveau sur Popey</div>
+                          <div className="rate neuf">✨ Nouveau sur {MARQUE}</div>
                         )}
                         {x.texte ? (
                           <div className="offer">

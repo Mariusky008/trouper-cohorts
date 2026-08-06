@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/site-url";
+import { MARQUE } from "@/lib/marque";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { RecoveryRedirectGuard } from "@/components/auth/recovery-redirect-guard";
@@ -25,27 +26,27 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
-    template: "%s · Popey",
+    default: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
+    template: `%s · ${MARQUE}`,
   },
-  description: "Popey crée gratuitement le site de votre commerce à partir de votre fiche Google, avec une assistante qui présente votre activité et répond à vos clients. En un clic, annoncez vos offres, événements et disponibilités.",
+  description: `${MARQUE} crée gratuitement le site de votre commerce à partir de votre fiche Google, avec une assistante qui présente votre activité et répond à vos clients. En un clic, annoncez vos offres, événements et disponibilités.`,
   openGraph: {
-    title: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
+    title: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
     description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
-    siteName: "Popey",
+    siteName: MARQUE,
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Popey — votre site web gratuit + une assistante qui répond à vos clients",
+    title: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
     description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Popey",
+    title: MARQUE,
   },
   icons: {
     icon: "/icon.svg",
