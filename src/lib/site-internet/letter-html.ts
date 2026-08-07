@@ -129,7 +129,40 @@ export function nomDeVille(raw: string): string {
 // volontairement distincte du profil déontologique (A/B/C/D) : « boulangerie » et
 // « fleuriste » sont tous deux du commerce libre, mais on n'annonce pas une
 // fournée comme on annonce un arrivage.
-export type FamilleAnnonce = "rdv" | "alimentaire" | "boutique" | "artisan" | "defaut";
+//
+// Le découpage est fin — vingt-trois familles plutôt que quatre grands sacs —
+// parce que ces trois phrases sont le seul endroit de la lettre où le commerçant
+// se reconnaît. « Fournée de pain aux céréales » sur la lettre d'un fleuriste,
+// et il comprend qu'il a reçu un prospectus. Le coût est de trois phrases par
+// famille ; le bénéfice est la seule chose qui distingue cette lettre d'un
+// publipostage.
+export type FamilleAnnonce =
+  | "boulangerie"
+  | "boucherie"
+  | "primeur"
+  | "restaurant"
+  | "cafe"
+  | "caviste"
+  | "gourmand"
+  | "traiteur"
+  | "coiffure"
+  | "beaute"
+  | "bienetre"
+  | "sport"
+  | "animaux"
+  | "photo"
+  | "evenementiel"
+  | "mode"
+  | "fleuriste"
+  | "deco"
+  | "bijouterie"
+  | "librairie"
+  | "auto"
+  | "pressing"
+  | "batiment"
+  | "jardin"
+  | "service"
+  | "defaut";
 
 // Les trois catégories sont TOUJOURS les mêmes, dans cet ordre. Les nommer dans
 // le type plutôt que de les aligner dans un tableau rend structurellement
@@ -145,26 +178,139 @@ export type TrioExemples = {
 };
 
 export const EXEMPLES: Record<FamilleAnnonce, TrioExemples> = {
-  rdv: {
-    disponibilite: "Il me reste deux créneaux à 16 h et 17 h.",
-    produit: "Nouvelle prestation disponible dès aujourd'hui.",
-    evenement: "Portes ouvertes samedi, de 10 h à 17 h.",
-  },
-  alimentaire: {
-    disponibilite: "Encore huit couverts ce soir.",
+  // ── Bouche ────────────────────────────────────────────────────────────────
+  boulangerie: {
+    disponibilite: "Je prends encore des commandes de galettes pour dimanche.",
     produit: "Fournée de pain aux céréales à 16 h 30.",
-    evenement: "Dégustation à la boutique samedi à 18 h.",
+    evenement: "Atelier pain avec les enfants samedi matin.",
   },
-  boutique: {
+  boucherie: {
+    disponibilite: "J'accepte encore des commandes de côte de bœuf pour samedi.",
+    produit: "L'agneau de lait est arrivé ce matin.",
+    evenement: "Dégustation de charcuterie samedi à 11 h.",
+  },
+  primeur: {
+    disponibilite: "Il me reste quelques paniers de saison pour ce soir.",
+    produit: "Premières fraises de la saison, arrivées ce matin.",
+    evenement: "Marché de producteurs devant la boutique samedi.",
+  },
+  restaurant: {
+    disponibilite: "Encore huit couverts ce soir.",
+    produit: "Le plat du jour : magret, sauce aux figues.",
+    evenement: "Soirée moules-frites vendredi à partir de 19 h.",
+  },
+  cafe: {
+    disponibilite: "Encore de la place en terrasse cet après-midi.",
+    produit: "Nouveau café d'Éthiopie à la carte depuis ce matin.",
+    evenement: "Concert acoustique jeudi soir à 21 h.",
+  },
+  caviste: {
+    disponibilite: "Je peux encore préparer des coffrets pour samedi.",
+    produit: "Le nouveau millésime du domaine vient d'arriver.",
+    evenement: "Dégustation avec le vigneron vendredi à 18 h.",
+  },
+  gourmand: {
+    disponibilite: "Je prends encore des commandes de ballotins pour dimanche.",
+    produit: "Nouveau parfum de la semaine : pistache-griotte.",
+    evenement: "Atelier chocolat samedi après-midi.",
+  },
+  traiteur: {
+    disponibilite: "Je suis encore disponible pour le week-end du 12.",
+    produit: "Nouvelle carte de buffets froids à découvrir.",
+    evenement: "Portes ouvertes dégustation samedi, de 10 h à 17 h.",
+  },
+
+  // ── Rendez-vous ───────────────────────────────────────────────────────────
+  coiffure: {
+    disponibilite: "Il me reste deux créneaux à 16 h et 17 h.",
+    produit: "Nouvelle gamme de soins sans sulfate disponible.",
+    evenement: "Journée relooking samedi, de 10 h à 17 h.",
+  },
+  beaute: {
+    disponibilite: "Une place s'est libérée demain à 14 h.",
+    produit: "Nouveau soin du visage à découvrir dès aujourd'hui.",
+    evenement: "Après-midi découverte jeudi, de 14 h à 18 h.",
+  },
+  bienetre: {
+    disponibilite: "Deux créneaux se sont libérés jeudi après-midi.",
+    produit: "Nouvelle séance de relaxation sonore disponible.",
+    evenement: "Atelier respiration samedi matin.",
+  },
+  sport: {
+    disponibilite: "Il reste trois places au cours de 18 h 30.",
+    produit: "Nouveau cours de pilates au planning dès lundi.",
+    evenement: "Cours d'essai gratuit samedi à 10 h.",
+  },
+  animaux: {
+    disponibilite: "J'ai deux rendez-vous de libre vendredi.",
+    produit: "Nouveau forfait toilettage pour les petits gabarits.",
+    evenement: "Journée conseils sur le pelage samedi matin.",
+  },
+  photo: {
+    disponibilite: "Je suis encore libre le samedi 14.",
+    produit: "Nouvelles séances portrait en extérieur disponibles.",
+    evenement: "Séances photo de Noël les 6 et 7 décembre.",
+  },
+  evenementiel: {
+    disponibilite: "Il me reste des dates en juin.",
+    produit: "La nouvelle collection est arrivée en showroom.",
+    evenement: "Journée essayages sur rendez-vous samedi.",
+  },
+
+  // ── Boutiques ─────────────────────────────────────────────────────────────
+  mode: {
     disponibilite: "Retouches possibles cette semaine.",
-    produit: "Arrivage de lavande fraîche ce matin.",
+    produit: "La nouvelle collection est en boutique ce matin.",
     evenement: "Vente privée jeudi soir, de 18 h à 21 h.",
   },
-  artisan: {
-    disponibilite: "Deux places de libre cet après-midi.",
-    produit: "Nouveau service disponible dès lundi.",
-    evenement: "Atelier découverte samedi matin.",
+  fleuriste: {
+    disponibilite: "Je peux encore livrer des bouquets cet après-midi.",
+    produit: "Arrivage de lavande fraîche ce matin.",
+    evenement: "Atelier composition florale samedi à 15 h.",
   },
+  deco: {
+    disponibilite: "Le fauteuil en vitrine est encore disponible.",
+    produit: "Nouvelle série de vases artisanaux en boutique.",
+    evenement: "Portes ouvertes samedi, de 10 h à 18 h.",
+  },
+  bijouterie: {
+    disponibilite: "Je peux encore prendre des mises à taille cette semaine.",
+    produit: "Nouvelle collection de bagues en argent en vitrine.",
+    evenement: "Journée expertise de vos bijoux jeudi.",
+  },
+  librairie: {
+    disponibilite: "Je peux commander un titre pour demain.",
+    produit: "Le nouveau roman de la rentrée est arrivé.",
+    evenement: "Dédicace de l'auteur samedi à 16 h.",
+  },
+
+  // ── Artisans & services ───────────────────────────────────────────────────
+  auto: {
+    disponibilite: "Deux places de libre cet après-midi.",
+    produit: "Forfait révision hiver disponible dès lundi.",
+    evenement: "Journée contrôle gratuit des freins samedi.",
+  },
+  pressing: {
+    disponibilite: "Dépôt possible aujourd'hui, retrait demain midi.",
+    produit: "Nouveau service de retouches sur cuir.",
+    evenement: "Collecte de vêtements samedi toute la journée.",
+  },
+  batiment: {
+    disponibilite: "J'ai une intervention de libre demain matin.",
+    produit: "Nouveau service d'entretien annuel disponible.",
+    evenement: "Je passe faire des devis dans le quartier jeudi.",
+  },
+  jardin: {
+    disponibilite: "Il me reste une matinée libre cette semaine.",
+    produit: "Contrat d'entretien de printemps disponible.",
+    evenement: "Conseils taille au dépôt samedi matin.",
+  },
+  service: {
+    disponibilite: "J'ai un créneau de libre demain après-midi.",
+    produit: "Nouvelle prestation disponible dès aujourd'hui.",
+    evenement: "Permanence sans rendez-vous samedi matin.",
+  },
+
   defaut: {
     disponibilite: "Il me reste deux créneaux à 16 h et 17 h.",
     produit: "Fournée de pain aux céréales à 16 h 30.",
@@ -188,26 +334,52 @@ export function verifierExemples(): string[] {
   if (ko.length) console.error("[lettre] trio d'exemples invalide (doublon) :", ko.join(", "));
 }
 
-// Ordre de test volontaire : les familles les plus spécifiques d'abord. « salon
-// de thé » doit tomber dans « alimentaire » et non dans « rdv » à cause du mot
-// « salon », « caviste » dans « alimentaire » et non dans « boutique ».
+// L'ORDRE EST LA LOGIQUE. Le premier motif qui accroche gagne, donc le plus
+// spécifique passe en premier : « brasserie artisanale » est un bar et doit
+// être vu avant « brasserie » (restaurant) ; « salon de thé » doit être vu
+// avant « salon » (coiffure) ; « esthétique automobile » avant « esthétique ».
+// Déplacer une ligne, c'est changer le résultat — d'où les commentaires.
 const FAMILLE_MATCH: Array<[FamilleAnnonce, RegExp]> = [
-  [
-    "alimentaire",
-    /boulanger|patisser|viennoiser|boucher|charcut|traiteur|poissonner|primeur|fruits et legumes|fromager|cremerie|epicerie|caviste|cave a (vin|biere)|chocolat|confiseur|glacier|torrefact|restaurant|resto|bistro|brasserie|pizzeria|creperie|gastronomi|cafe|coffee|salon de the|brunch|bar a|snack|kebab|sushi|burger|food.?truck|biere|vin|miel|marche/,
-  ],
-  [
-    "boutique",
-    /fleurist|fleurs|jardinerie|decoration|deco maison|ameublement|bijouter|bijoutier|joailler|horloger|mode|pret.a.porter|vetement|friperie|chaussure|maroquiner|sac a main|librairie|papeterie|presse|jouet|puericulture|cadeau|concept.?store|mercerie|parfumerie|brocante|antiquaire|galerie d art|magasin|boutique|linge|literie|luminaire|vaisselle|arts de la table/,
-  ],
-  [
-    "artisan",
-    /garag|carross|controle technique|lavage auto|mecanic|pneu|pare.?brise|auto.?ecole|taxi|vtc|demenag|pressing|blanchisser|cordonner|couturier|retouche|plombier|plomberie|electricien|electricite|serrurier|menuisier|menuiserie|peintre|couvreur|toiture|chauffagiste|climatis|ramoneur|macon|carreleur|platrier|batiment|renovation|paysagiste|pisciniste|jardinier|elagage|informatique|reparation|depannage|imprimerie|enseigne|serigraphie|cle minute|vitrier|antenniste|piscine/,
-  ],
-  [
-    "rdv",
-    /coiffeur|coiffure|coiffeuse|barbier|barber|esthetic|institut de beaute|onglerie|ongulaire|manucure|epilation|maquilleu|make.?up|spa|hammam|balneo|massage|bien.?etre|bronzage|tatoueur|tatouage|tattoo|sophrolog|hypno|naturopath|reflexolog|energetic|coach|yoga|pilates|danse|salle de sport|fitness|musculation|toiletteur|toilettage|pension canine|educateur canin|photograph|studio photo|wedding|mariage|osteo|dietetic|nutrition|acupunct|conseiller en gestion|patrimoine/,
-  ],
+  // Pièges d'abord : ces libellés contiennent un mot qui appartient à une autre
+  // famille et seraient mal classés s'ils passaient après.
+  ["auto", /esthetique automobile|centre esthetique auto|detailing auto|lavage auto|station de lavage/],
+  ["caviste", /brasserie artisanale|micro.?brasserie|cave a biere|taproom/],
+  ["cafe", /salon de the|coffee|cafeteria/],
+
+  // ── Bouche ────────────────────────────────────────────────────────────────
+  ["boulangerie", /boulanger|patisser|viennoiser|biscuiter|\bpain\b/],
+  ["boucherie", /boucher|charcut|triperie|rotisser|volailler/],
+  ["primeur", /primeur|fruits et legumes|fromager|cremerie|epicerie|poissonner|\bmaree\b|producteur|\bmiel\b|\bferme\b/],
+  ["traiteur", /traiteur/],
+  ["caviste", /caviste|cave a vin|oenolog|spiritueux|\bvins\b/],
+  ["gourmand", /chocolat|confiseur|glacier|torrefact|\bthe\b|salon de glace/],
+  ["restaurant", /restaurant|\bresto\b|bistro|brasserie|pizzeria|creperie|gastronomi|kebab|sushi|burger|snack|food.?truck|cantine|\bgrill\b/],
+  ["cafe", /\bcafe|\bbar\b|bar a |\bpub\b|brunch/],
+
+  // ── Rendez-vous ───────────────────────────────────────────────────────────
+  ["coiffure", /coiffeur|coiffure|coiffeuse|barbier|barber/],
+  ["beaute", /esthetic|institut de beaute|onglerie|ongulaire|manucure|epilation|maquilleu|make.?up|bronzage|parfumerie|tatoueur|tatouage|tattoo/],
+  // « sport » AVANT « bienetre » : les deux revendiquent le mot « coach », et
+  // « coach sportif » n'annonce pas les mêmes choses qu'un coach de vie.
+  ["sport", /salle de sport|fitness|musculation|yoga|pilates|\bdanse\b|coach sportif|crossfit|escalade|arts martiaux|\bboxe\b|natation|tennis|equitation/],
+  ["bienetre", /\bspa\b|hammam|balneo|massage|bien.?etre|sophrolog|hypno|naturopath|reflexolog|energetic|relaxolog|meditation|nutrition|dietet|therapeut|\bcoach\b/],
+  ["animaux", /toiletteur|toilettage|pension canine|pension pour|educateur canin|education canine|animalerie|garde d animaux/],
+  ["photo", /photograph|studio photo|videast/],
+  ["evenementiel", /wedding|organisateur de mariage|robe de mariee|robes de mariee|location de salle|decoration evenement/],
+
+  // ── Boutiques ─────────────────────────────────────────────────────────────
+  ["fleuriste", /fleurist|\bfleurs\b|jardinerie|horticult/],
+  ["bijouterie", /bijouter|bijoutier|joailler|horloger|\bmontres?\b/],
+  ["librairie", /librairie|papeterie|\bpresse\b|jouet|jeux|puericulture|disquaire|bande dessinee/],
+  ["mode", /pret.a.porter|vetement|habillement|friperie|chaussure|maroquiner|sac a main|lingerie|\bmode\b|costume|chapelier|bijoux fantaisie/],
+  ["deco", /decoration|deco maison|ameublement|luminaire|literie|vaisselle|arts de la table|linge de maison|brocante|antiquaire|galerie d art|cadeau|concept.?store|encadr/],
+
+  // ── Artisans & services ───────────────────────────────────────────────────
+  ["auto", /garag|carross|controle technique|mecanic|\bpneu|pare.?brise|concession|\bmotos?\b|\bvelos?\b|\bcycles?\b/],
+  ["pressing", /pressing|blanchisser|laverie|repassage|cordonner|retouche|couturier|couture|mercerie/],
+  ["batiment", /plombier|plomberie|electricien|electricite|serrurier|menuisier|menuiserie|peintre|couvreur|toiture|chauffagiste|climatis|ramoneur|macon|carreleur|platrier|batiment|renovation|vitrier|isolation|charpent|terrassement|antenniste|cle minute/],
+  ["jardin", /paysagiste|jardinier|elagage|espaces verts|pisciniste|piscine|arboricult/],
+  ["service", /auto.?ecole|\btaxi\b|\bvtc\b|demenag|informatique|imprimerie|serigraphie|enseigne|immobilier|assurance|\bbanque\b|reparation|depannage|conseiller en gestion|patrimoine|agence de/],
 ];
 
 export function familleAnnonce(activite: string, label: string): FamilleAnnonce {
@@ -219,15 +391,28 @@ export function familleAnnonce(activite: string, label: string): FamilleAnnonce 
 }
 
 // ── Sous-titre : ce qui est DÉJÀ dans son espace ────────────────────────────
-// Les quatre formulations mentionnent toutes les horaires : c'est le seul
-// élément commun aux quatre lignes de la table. Sans horaires sur la fiche,
-// aucune n'est vraie — d'où l'exclusion pour données insuffisantes plus bas,
-// plutôt qu'une cinquième formulation bricolée.
-export function phraseContenu(photos: boolean, avis: boolean): string {
-  if (photos && avis) return "Vos photos, vos avis et vos horaires";
-  if (photos) return "Vos photos, vos horaires et vos prestations";
-  if (avis) return "Vos avis, vos horaires et vos prestations";
-  return "Vos horaires, votre adresse et vos prestations";
+//
+// Le sous-titre n'énumère que des éléments VÉRIFIÉS sur la fiche. Les quatre
+// formulations de référence nomment toutes les horaires — or la découverte en
+// lot n'en récupère pas (le chemin « prérempli » du diagnostic écrit une liste
+// vide). Exiger les horaires rendait donc toutes les lettres inimprimables.
+//
+// D'où deux jeux de formulations : celui de référence quand les horaires sont
+// connus, et un jeu sans horaires sinon. Les éléments de repli sont ceux qu'on
+// ne peut pas se tromper en affirmant — l'adresse figure sur la lettre, et les
+// prestations comme la présentation sont générées par l'espace lui-même à
+// partir du métier.
+export function phraseContenu(photos: boolean, avis: boolean, horaires: boolean): string {
+  if (horaires) {
+    if (photos && avis) return "Vos photos, vos avis et vos horaires";
+    if (photos) return "Vos photos, vos horaires et vos prestations";
+    if (avis) return "Vos avis, vos horaires et vos prestations";
+    return "Vos horaires, votre adresse et vos prestations";
+  }
+  if (photos && avis) return "Vos photos, vos avis et votre adresse";
+  if (photos) return "Vos photos, votre adresse et vos prestations";
+  if (avis) return "Vos avis, votre adresse et vos prestations";
+  return "Votre adresse, vos prestations et votre présentation";
 }
 
 export type EditableField = { key: string; label: string; value: string; multiline?: boolean };
@@ -306,10 +491,13 @@ export async function composeLetterHtml(input: {
   const aHoraires = nbHoraires > 0;
 
   // ══ DONNÉES INSUFFISANTES ═════════════════════════════════════════════════
+  // Deux manques seulement, et ce sont les deux qui rendent la lettre fausse ou
+  // indistribuable : sans nom, le bandeau ment ; sans adresse, personne ne sait
+  // à quelle porte la remettre. Le reste du sous-titre s'adapte (cf.
+  // phraseContenu) plutôt que d'écarter le prospect.
   const manques: string[] = [];
   if (nom.length < 2) manques.push("nom exploitable");
   if (!adresse) manques.push("adresse");
-  if (!aHoraires) manques.push("horaires (le sous-titre les affirme dans les quatre cas)");
   if (manques.length) {
     return {
       html: "",
@@ -318,10 +506,17 @@ export async function composeLetterHtml(input: {
     };
   }
 
-  const trio = EXEMPLES[familleAnnonce(activite, mp.entry?.label || "")];
-  const exemples = [trio.disponibilite, trio.produit, trio.evenement]
-    .map((p) => `«&nbsp;${esc(p)}&nbsp;»`)
-    .join("<br>");
+  // Les trois exemples sont ce que le commerçant lit en premier dans le cadre :
+  // c'est là qu'il se reconnaît, ou qu'il comprend qu'il a reçu un prospectus.
+  // La famille les choisit, mais l'opérateur peut les réécrire — la catégorie
+  // de chacun reste nommée dans le libellé du champ pour que les trois continuent
+  // de couvrir trois usages différents.
+  const famille = familleAnnonce(activite, mp.entry?.label || "");
+  const trio = EXEMPLES[famille];
+  const ex1 = ov("exemple_1", trio.disponibilite);
+  const ex2 = ov("exemple_2", trio.produit);
+  const ex3 = ov("exemple_3", trio.evenement);
+  const exemples = [ex1, ex2, ex3].map((p) => `«&nbsp;${esc(p)}&nbsp;»`).join("<br>");
 
   // Le paragraphe suit la même règle que le sous-titre : on ne promet pas une
   // galerie à qui n'a pas de photo.
@@ -338,7 +533,7 @@ export async function composeLetterHtml(input: {
     metier: esc(metier),
     adresse: esc(adresse),
     ville: esc(ville),
-    phrase_contenu: `${esc(phraseContenu(aPhotos, aAvis))} <u>y sont déjà</u>.`,
+    phrase_contenu: `${esc(phraseContenu(aPhotos, aAvis, aHoraires))} <u>y sont déjà</u>.`,
     para_contenu: paraContenu,
     exemples,
     qr,
@@ -349,6 +544,9 @@ export async function composeLetterHtml(input: {
     { key: "display_name", label: "Nom affiché (bandeau)", value: nom },
     { key: "display_metier", label: "Métier affiché", value: metier },
     { key: "display_adresse", label: "Adresse affichée (rue + numéro)", value: adresse },
+    { key: "exemple_1", label: `Exemple 1 — une disponibilité (famille : ${famille})`, value: ex1, multiline: true },
+    { key: "exemple_2", label: "Exemple 2 — un produit du jour", value: ex2, multiline: true },
+    { key: "exemple_3", label: "Exemple 3 — un événement à une date", value: ex3, multiline: true },
   ];
 
   return { html: injectVars(readTpl("lettre.html"), vars), exclusion: null, editableFields };
