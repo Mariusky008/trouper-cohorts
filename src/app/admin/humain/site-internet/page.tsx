@@ -71,8 +71,9 @@ export default async function AdminSiteInternetPage() {
         <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">100% Humain</p>
         <h1 className="mt-1 text-2xl font-black sm:text-3xl">Site internet</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
-          Prospection par lettre remise en main propre : on propose aux commerçants de refaire (ou créer) leur site.
-          Chaque prospect génère une lettre N&amp;B personnalisée à imprimer.
+          Prospection par lettre remise en main propre : l&apos;espace du commerçant est déjà prêt, gratuitement, et
+          ses annonces paraissent dans le fil de sa ville. Chaque prospect génère une lettre A4 N&amp;B, recto seul,
+          à imprimer. Les professions réglementées (santé, droit) en sont exclues d&apos;office.
         </p>
         <div className="mt-3 flex flex-wrap gap-4">
           <Link href="/admin/humain/site-internet/decouverte" className="inline-flex items-center gap-1 rounded-full bg-sky-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-sky-800">

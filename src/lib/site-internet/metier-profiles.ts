@@ -395,3 +395,22 @@ export function resolveMetier(activite: string): {
   const profil = entry?.profil ?? (REGLEMENTE.test(a) ? "C" : DEFAULT_PROFIL);
   return { entry, profil, def: PROFILES[profil] };
 }
+
+// Déontologie d'un libellé d'activité, FILET COMPRIS.
+//
+// `resolveMetier().entry` est `null` pour tout libellé non catalogué : lire
+// `entry?.deontologie ?? "none"` renvoie donc « aucune contrainte » pour un
+// « Cabinet d'avocats Machin & associés » que personne n'a pensé à ajouter.
+// C'est le mauvais sens pour un garde-fou. Ici, quand l'entrée manque, on
+// interroge le même filet « profession réglementée » que resolveMetier, et on
+// distingue le droit de la santé pour que le journal de campagne dise vrai.
+const REGLEMENTE_DROIT =
+  /(avocat|notaire|huissier|commissaire de justice|expert.?comptable|greffier|mandataire judiciaire|administrateur judiciaire)/;
+
+export function deontologieOf(activite: string): Deontologie {
+  const { entry } = resolveMetier(activite);
+  if (entry) return entry.deontologie;
+  const a = norm(activite);
+  if (REGLEMENTE_DROIT.test(a)) return "droit";
+  return REGLEMENTE.test(a) ? "sante" : "none";
+}

@@ -1,5 +1,9 @@
-// Écran de validation : l'admin ajuste ce que le diagnostic a proposé
-// (variante, 3 constats, synthèse, prix) puis valide avant impression.
+// Écran de validation : l'admin corrige ce que la fiche Google a mal rendu (nom,
+// métier, adresse) puis valide — ou écarte le prospect — avant impression.
+//
+// Il n'y a plus de module de diagnostic à choisir, plus de prix, plus de capture
+// du site actuel ni de volume de recherches : la lettre n'a qu'un gabarit et le
+// produit est gratuit.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
@@ -35,32 +39,6 @@ export async function POST(request: Request) {
 
   const patch: Record<string, unknown> = {};
 
-  // Module choisi à la main (corrige le routing auto).
-  const MODULES = ["SANS_SITE", "MOBILE_CASSE", "FUITE_APPEL", "NON_SECURISE", "DECLASSE_GOOGLE", "VETUSTE", "SANS_RESA", "EXCLU"];
-  const typeRaw = String(payload?.type_diagnostic || "").trim().toUpperCase();
-  if (MODULES.includes(typeRaw)) {
-    patch.type_diagnostic = typeRaw;
-    patch.variant = typeRaw === "SANS_SITE" ? "A" : "B";
-  }
-
-  if (payload?.prix != null) {
-    const prix = parseInt(String(payload.prix), 10);
-    if (Number.isFinite(prix) && prix >= 0) patch.prix = prix;
-  }
-
-  // Capture manuelle du site actuel (data URI image, compressée côté client).
-  // Chaîne vide = on efface (retour au schéma neutre par défaut).
-  if (payload?.site_shot !== undefined) {
-    const shot = String(payload.site_shot || "").trim();
-    if (shot === "") {
-      patch.site_shot_manual = null;
-    } else if (/^data:image\/(png|jpe?g|webp);base64,/i.test(shot) && shot.length <= 900_000) {
-      patch.site_shot_manual = shot;
-    } else {
-      return NextResponse.json({ error: "Capture invalide (image trop lourde ou format non supporté)." }, { status: 400 });
-    }
-  }
-
   // Corrections de texte (overrides). reset_overrides = tout remettre par défaut.
   if (payload?.reset_overrides === true) {
     patch.letter_overrides = null;
@@ -79,14 +57,8 @@ export async function POST(request: Request) {
     patch.letter_overrides = Object.keys(clean).length ? clean : null;
   }
 
-  // Volume de recherches Google/mois (chiffre réel saisi). 0/vide = masqué (null).
-  if (payload?.search_volume !== undefined) {
-    const n = parseInt(String(payload.search_volume).replace(/\D/g, ""), 10);
-    patch.search_volume = Number.isFinite(n) && n > 0 ? n : null;
-  }
-
   if (payload?.validate === true) patch.letter_status = "validated";
-  else if (typeRaw === "EXCLU") patch.letter_status = "excluded";
+  else if (payload?.skip === true) patch.letter_status = "skipped";
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Rien à mettre à jour." }, { status: 400 });
@@ -98,11 +70,11 @@ export async function POST(request: Request) {
 
   let { error } = await doUpdate(patch);
 
-  // Résilience : si une colonne récente n'est pas encore migrée (letter_overrides,
-  // search_volume, site_shot_manual), on la retire et on réessaie pour ne pas
-  // bloquer le reste de la sauvegarde. On signale ce qui a été ignoré.
+  // Résilience : si une colonne récente n'est pas encore migrée (letter_overrides),
+  // on la retire et on réessaie pour ne pas bloquer le reste de la sauvegarde.
+  // On signale ce qui a été ignoré.
   const skipped: string[] = [];
-  const OPTIONAL = ["letter_overrides", "search_volume", "site_shot_manual"];
+  const OPTIONAL = ["letter_overrides"];
   while (error && /column .* does not exist|schema cache|Could not find the '(\w+)' column/i.test(error.message)) {
     const missing = OPTIONAL.find((c) => c in patch && error!.message.includes(c));
     if (!missing) break;

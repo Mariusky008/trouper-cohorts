@@ -1,0 +1,92 @@
+<div class="sheet" data-slug="{{slug}}"><div class="frame">
+
+  <div class="ck-band {{band_mod}}">
+    <div>
+      <div class="l">Préparé pour</div>
+      <div class="n {{nom_taille}}">{{nom_commerce}}</div>
+      <div class="m">{{metier}} · {{adresse}}</div>
+    </div>
+    <div class="right">
+      <svg width="116" height="35" viewBox="0 0 218 88" fill="currentColor" aria-label="Clikme">
+        <text x="0" y="72" font-family="Outfit, sans-serif" font-size="72" font-weight="700" letter-spacing="-2">cli</text>
+        <g transform="translate(77.6,19.9) scale(1.366)">
+          <rect x="0" y="0" width="6.8" height="38"/>
+          <path d="M10.8 22 L10.8 5 L25 19 L18.5 19.5 Z"/>
+          <path d="M10.8 22 L16 22 L26.5 37 L21 39.5 Z"/>
+        </g>
+        <text x="115.8" y="72" font-family="Outfit, sans-serif" font-size="72" font-weight="700" letter-spacing="-2">me</text>
+      </svg>
+      <div class="kick">Le réseau des commerces de {{ville}}</div>
+    </div>
+  </div>
+
+  <div class="ck-body">
+
+    <div class="ck-hero">
+      <h2>Votre espace est déjà prêt.</h2>
+      <div class="sub2">{{phrase_contenu}}</div>
+      <p>{{para_contenu}}</p>
+    </div>
+
+    <div class="ck-free">
+      <span class="z">0 €</span>
+      <span class="t">C'est gratuit, et ça le reste.
+        <span>Pas de période d'essai, pas d'abonnement, pas de carte bancaire à donner.</span>
+      </span>
+    </div>
+
+    <div class="ck-demo">
+      <span class="tab">Mais le véritable changement est ici</span>
+      <div class="lead">Pour la première fois, <b>tous les commerces d'une ville communiquent au même endroit, en temps réel.</b></div>
+      <div class="ck-step">
+        <span class="n">1</span>
+        <span class="c">Une disponibilité, un produit du jour, un événement — <b>vous l'écrivez comme vous le diriez</b> :
+          <span class="ck-quote">{{exemples}}</span>
+        </span>
+      </div>
+      <div class="ck-step">
+        <span class="n">2</span>
+        <span class="c">Votre assistante en fait une <b>annonce attractive</b> et la publie dans <b>Le Direct de {{ville}}</b> — le fil que les habitants consultent chaque jour.</span>
+      </div>
+      <div class="ck-step">
+        <span class="n">3</span>
+        <span class="c">En quelques secondes, <b>les habitants de {{ville}} peuvent la découvrir</b>.</span>
+      </div>
+      <div class="foot">
+        <div class="big">Vingt secondes suffisent, quand vous avez quelque chose à dire.</div>
+        <div class="small">Sans publicité. Sans compétence technique. Sans y passer vos soirées.</div>
+      </div>
+    </div>
+
+    <div class="ck-punch">Ce que les grandes enseignes font avec une équipe marketing<br>est enfin à la portée de votre commerce.</div>
+
+    <div class="ck-seal">
+      <svg width="86" height="86" viewBox="0 0 120 120" fill="#0D0D09">
+        <circle cx="60" cy="60" r="55" fill="none" stroke="#0D0D09" stroke-width="1.1"/>
+        <circle cx="60" cy="60" r="49" fill="none" stroke="#0D0D09" stroke-width="2.6"/>
+        <g transform="translate(46,41) scale(0.98)">
+          <rect x="0" y="0" width="6.8" height="38"/>
+          <path d="M10.8 22 L10.8 5 L25 19 L18.5 19.5 Z"/>
+          <path d="M10.8 22 L16 22 L26.5 37 L21 39.5 Z"/>
+        </g>
+        <path id="ck-arc-{{slug}}" d="M60,60 m-38,0 a38,38 0 1,1 76,0" fill="none"/>
+        <!-- Interlettrage calé sur la longueur de l'arc : à 2.6 la mention
+             débordait des deux extrémités du chemin, et un textPath ne dessine
+             rien au-delà — le sceau affichait « RÉPARÉ POUR VOU ». -->
+        <text font-family="Inter, sans-serif" font-size="8" font-weight="700" letter-spacing="1.6">
+          <textPath href="#ck-arc-{{slug}}" startOffset="50%" text-anchor="middle">PRÉPARÉ POUR VOUS</textPath>
+        </text>
+      </svg>
+    </div>
+
+    <div class="ck-cta">
+      <div class="ck-qrbox">{{qr}}</div>
+      <div>
+        <div class="a">Scannez pour récupérer votre espace.</div>
+        <div class="b">Découvrez-le en 30 secondes.<br>Il est déjà prêt : activez-le gratuitement lorsque vous le souhaitez.</div>
+        <div class="c">Gratuit · sans carte bancaire · rien à installer</div>
+      </div>
+    </div>
+
+  </div>
+</div></div>

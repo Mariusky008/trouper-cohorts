@@ -1,0 +1,122 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Outfit:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LETTRE CLIKME — A4, RECTO SEUL, NOIR ET BLANC.
+     Le contraste remplace la couleur : aplat noir, filets épais, grande serif.
+     Aucun gris décoratif — le gris ne sert qu'à hiérarchiser le texte courant.
+
+     Deux classes portent des noms « historiques » (.sheet et .frame) parce que
+     deux outils de l'admin s'y accrochent : FitLetter (garde-fou « ça tient sur
+     une page ») et le bouton PNG. Les renommer casserait les deux sans rien
+     apporter.
+     ═════════════════════════════════════════════════════════════════════════ */
+  .si-root{
+    --ink:#0D0D09; --body:#33332C; --soft:#6B6B63; --faint:#9A9A92;
+    --rule:#BFBCB3; --rule2:#E0DDD5; --paper:#FCFBF7;
+  }
+  .si-root *{box-sizing:border-box;margin:0;padding:0;}
+
+  .si-root .sheet{
+    width:210mm; height:297mm; background:var(--paper); margin:0 auto 12mm;
+    position:relative; overflow:hidden; color:var(--body);
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    box-shadow:0 16px 44px -18px rgba(0,0,0,.35);
+  }
+  .si-root .frame{height:100%;width:100%;display:flex;flex-direction:column;}
+
+  /* ── Bandeau de tête ───────────────────────────────────────────────────────
+     Seul aplat plein de la page. Sur papier épais, un laser peut le rendre
+     irrégulier → la variante .filet (drapeau --no-solid-header) garde exactement
+     la même hauteur mais remplace l'aplat par un double filet. */
+  .ck-band{
+    background:var(--ink); color:#fff; padding:12mm 16mm 11mm; flex:none;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12mm;
+  }
+  .ck-band .l{font-size:7.5px;letter-spacing:.26em;text-transform:uppercase;color:#8E8B82;font-weight:700;}
+  .ck-band .n{font-family:'Fraunces',Georgia,serif;font-size:27px;font-weight:600;color:#fff;margin-top:2.5mm;line-height:1.08;}
+  .ck-band .m{font-size:10.5px;color:#B0ADA4;margin-top:2mm;}
+  .ck-band .right{text-align:right;flex:none;padding-top:1mm;}
+  .ck-band .kick{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#8E8B82;font-weight:700;margin-top:3.5mm;}
+  /* Nom très long : on descend d'un cran plutôt que de laisser filer sur 3 lignes. */
+  .ck-band .n.long{font-size:22px;}
+  .ck-band .n.xlong{font-size:18px;}
+
+  .ck-band.filet{
+    background:none; color:var(--ink);
+    border-top:4pt double var(--ink); border-bottom:4pt double var(--ink);
+    /* Hauteur totale calée sur celle de l'aplat (23 mm de marges internes) pour
+       que la variante ne fasse pas déborder la page d'un millimètre. */
+    padding:8mm 16mm 8mm; margin-top:6mm;
+  }
+  .ck-band.filet .l,.ck-band.filet .kick{color:var(--soft);}
+  .ck-band.filet .n{color:var(--ink);}
+  .ck-band.filet .m{color:var(--body);}
+
+  .ck-body{flex:1;padding:10mm 16mm 10mm;display:flex;flex-direction:column;position:relative;}
+
+  /* ── Titre ─────────────────────────────────────────────────────────────── */
+  .ck-hero h2{font-family:'Fraunces',Georgia,serif;font-size:38px;font-weight:600;color:var(--ink);line-height:1.08;letter-spacing:-.6px;}
+  .ck-hero .sub2{font-family:'Fraunces',Georgia,serif;font-size:24px;font-weight:500;color:var(--ink);line-height:1.3;margin-top:3.5mm;letter-spacing:-.2px;}
+  /* Un SEUL soulignement dans toute la page : c'est lui qui remplace la couleur
+     d'accent. En ajouter un deuxième le neutralise. */
+  .ck-hero .sub2 u{text-decoration:none;border-bottom:2.6px solid var(--ink);padding-bottom:1px;}
+  .ck-hero p{font-size:12.4px;line-height:1.62;color:var(--body);margin-top:5mm;max-width:134mm;}
+  .ck-hero p b{color:var(--ink);font-weight:600;}
+
+  /* ── Bandeau gratuité ──────────────────────────────────────────────────── */
+  .ck-free{margin-top:6mm;border-top:1.4pt solid var(--ink);border-bottom:1.4pt solid var(--ink);padding:4mm 0;display:flex;align-items:baseline;gap:5mm;}
+  .ck-free .z{font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1;flex:none;letter-spacing:-1px;}
+  .ck-free .t{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.42;}
+  .ck-free .t span{display:block;font-size:10.8px;color:var(--body);font-weight:400;margin-top:1.2mm;}
+
+  /* ── Cadre de démonstration ────────────────────────────────────────────── */
+  .ck-demo{margin-top:6mm;border:1.2pt solid var(--ink);padding:5.5mm 6.5mm 5mm;position:relative;}
+  .ck-demo .tab{position:absolute;top:-2.6mm;left:6mm;background:var(--ink);color:#fff;font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;padding:1.4mm 3mm;}
+  .ck-demo .lead{font-size:11.4px;color:var(--ink);font-weight:600;line-height:1.5;padding-bottom:3mm;border-bottom:0.5pt solid var(--rule);}
+  .ck-step{display:flex;gap:5mm;align-items:flex-start;padding:3mm 0;}
+  .ck-step + .ck-step{border-top:0.5pt solid var(--rule2);}
+  .ck-step .n{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:600;color:var(--ink);width:7mm;flex:none;line-height:1.15;}
+  .ck-step .c{font-size:11px;line-height:1.5;color:var(--body);}
+  .ck-step .c b{color:var(--ink);font-weight:600;}
+  .ck-quote{font-family:'Fraunces',Georgia,serif;font-size:14.5px;font-style:italic;color:var(--ink);line-height:1.5;margin-top:1.6mm;display:block;}
+  .ck-demo .foot{margin-top:3mm;padding-top:2.8mm;border-top:0.5pt solid var(--rule);}
+  .ck-demo .foot .big{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.25;}
+  .ck-demo .foot .small{font-size:10.6px;color:var(--body);margin-top:1.4mm;}
+
+  /* ── Conclusion ────────────────────────────────────────────────────────── */
+  .ck-punch{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:4mm;padding-left:5mm;border-left:2.4pt solid var(--ink);}
+
+  /* ── Pied : QR + sceau ─────────────────────────────────────────────────── */
+  .ck-cta{margin-top:auto;padding-top:6mm;border-top:1.4pt solid var(--ink);display:flex;align-items:center;gap:7mm;}
+  /* Boîte 40 mm, motif utile 36 mm (2 mm de retrait de chaque côté) : au-delà de
+     30 mm le code se scanne sans effort, même de biais et même mal éclairé. */
+  .ck-qrbox{width:40mm;height:40mm;flex:none;border:0.5pt solid var(--rule);padding:2mm;position:relative;background:#fff;}
+  .ck-qrbox::before,.ck-qrbox::after{content:"";position:absolute;width:4mm;height:4mm;border:1.2pt solid var(--ink);}
+  .ck-qrbox::before{top:-0.6pt;left:-0.6pt;border-right:none;border-bottom:none;}
+  .ck-qrbox::after{bottom:-0.6pt;right:-0.6pt;border-left:none;border-top:none;}
+  .ck-qrbox svg{display:block;width:100%;height:100%;}
+  /* Le sceau est en position absolue dans le coin ; sans cette borne, une ligne
+     un peu longue passerait dessous. On borne la colonne plutôt que de déplacer
+     le sceau : c'est le texte qui varie d'un prospect à l'autre, pas lui. */
+  .ck-cta > div:last-child{max-width:104mm;}
+  .ck-cta .a{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .ck-cta .b{font-size:11px;color:var(--body);margin-top:2.6mm;line-height:1.55;}
+  .ck-cta .c{font-size:9.5px;color:var(--ink);font-weight:700;margin-top:3mm;letter-spacing:.1em;text-transform:uppercase;}
+  .ck-seal{position:absolute;right:15mm;bottom:26mm;transform:rotate(-9deg);}
+
+  @media print{
+    @page{size:A4;margin:0;}
+    html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
+    /* Le chrome de l'admin (nav + padding du main) décalerait la feuille et la
+       ferait déborder sur une 2e page. */
+    body header{display:none !important;}
+    body main{padding:0 !important;margin:0 !important;max-width:none !important;}
+    .no-print{display:none !important;}
+    #letter-root{padding:0 !important;}
+    .si-root, .si-root .sheet, .si-root .sheet *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+    .si-root .sheet{box-shadow:none;margin:0;page-break-after:always;}
+    .si-root .sheet:last-child{page-break-after:auto;}
+  }
+</style>

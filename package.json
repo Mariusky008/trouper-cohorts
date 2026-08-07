@@ -16,7 +16,8 @@
     "e2e:human-scout-flow": "node scripts/e2e-human-scout-flow.mjs",
     "e2e:human-suite": "node scripts/e2e-human-suite.mjs",
     "e2e:human-ci": "node scripts/e2e-human-suite.mjs --json",
-    "e2e:privilege-favorites": "node scripts/e2e-privilege-tinder-favorites.mjs"
+    "e2e:privilege-favorites": "node scripts/e2e-privilege-tinder-favorites.mjs",
+    "lettres:pdf": "node scripts/lettres-pdf.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.27",

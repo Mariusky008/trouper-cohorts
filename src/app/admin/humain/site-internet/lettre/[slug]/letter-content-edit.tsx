@@ -1,8 +1,9 @@
 "use client";
 
-// Panneau d'édition des textes de la lettre (corrections par prospect).
-// Chaque champ affiche la valeur actuelle (défaut ou déjà corrigée). On envoie
-// les valeurs non vides comme overrides ; « Réinitialiser » efface tout.
+// Panneau de correction de la lettre (nom, métier, adresse) : ce que la fiche
+// Google rend mal — « Cabinet X - coiffeur à Dax », une adresse avec le pays,
+// un libellé de catégorie illisible. Chaque champ affiche la valeur actuelle
+// (défaut ou déjà corrigée) ; « Réinitialiser » efface tout.
 import { useState } from "react";
 
 type Field = { key: string; label: string; value: string; multiline?: boolean };
@@ -31,17 +32,11 @@ export function LetterContentEdit({ slug, fields }: { slug: string; fields: Fiel
     setBusy(true);
     try {
       const overrides: Record<string, string> = {};
-      const extra: Record<string, unknown> = {};
       for (const f of fields) {
         const v = (vals[f.key] || "").trim();
-        // search_volume est une donnée (colonne), pas un texte override.
-        if (f.key === "search_volume") {
-          extra.search_volume = v ? parseInt(v.replace(/\D/g, ""), 10) || 0 : 0;
-          continue;
-        }
         if (v) overrides[f.key] = v;
       }
-      await post({ overrides, ...extra });
+      await post({ overrides });
       location.reload();
     } catch (e) {
       alert("Enregistrement impossible : " + String(e));
