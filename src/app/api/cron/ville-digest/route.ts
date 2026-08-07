@@ -1,25 +1,27 @@
-// Le digest quotidien d'une ville — « ce qui se passe aujourd'hui chez vos
-// commerçants ».
+// Le résumé quotidien d'une ville — « ce qui se passe aujourd'hui ».
 //
 // DEUX RÈGLES, et elles sont dans le code, pas dans la promesse marketing :
-//   • un envoi par jour AU MAXIMUM (last_sent_at) ;
+//   • un envoi par jour AU MAXIMUM ;
 //   • JAMAIS d'e-mail vide — s'il n'y a rien de neuf depuis le dernier envoi,
 //     on ne part pas. Un abonné qui reçoit un e-mail vide se désinscrit, et il a
 //     raison.
 //
-// « Du neuf » se mesure sur la date de publication RÉELLE de l'annonce, pas sur
-// sa présence : une annonce déjà envoyée hier et toujours en cours ne redéclenche
-// pas un envoi.
+// Elles vivent dans `composerResume`, fonction pure et testée. Ce cron ne fait
+// que lire, appliquer et noter : une règle d'envoi écrite au milieu d'une boucle
+// ne se teste pas, et c'est le genre de code qu'on n'ose plus toucher ensuite.
 //
-// Premier envoi (aucun last_sent_at) : on prend les annonces des 7 derniers jours,
-// pour que la personne qui vient de confirmer reçoive quelque chose d'utile plutôt
-// qu'un premier e-mail vide.
+// LE CANAL « COMMERCES SUIVIS » PASSE PAR ICI, pas par un envoi séparé. Une
+// annonce d'un commerce suivi est déjà dans le fil de la ville : un troisième
+// e-mail quotidien n'ajouterait aucune information, il dépenserait une attention
+// qui est un budget fixe. Le suivi change la composition et l'ordre du résumé,
+// jamais sa fréquence.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { type PartnerOffer } from "@/lib/site-internet/collectif";
-import { digestAEnvoyer, sendDigest } from "@/lib/site-internet/ville-mail";
-import { filDeVille } from "@/lib/direct/publications";
+import { sendDigest } from "@/lib/site-internet/ville-mail";
+import { filDeVille, type Publication } from "@/lib/direct/publications";
+import { composerResume } from "@/lib/direct/resume";
 import { configVille } from "@/lib/direct/ville";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +35,22 @@ type Abonne = {
   email: string;
   unsub_token: string;
   last_sent_at: string | null;
+  recoit_resume: boolean;
+  recoit_suivis: boolean;
 };
+
+/** Les publications voyagent en `PartnerOffer` : le gabarit d'e-mail est
+ *  éprouvé, c'est la source qui avait changé, pas le rendu. */
+const enOffre = (p: Publication): PartnerOffer => ({
+  id: p.id,
+  slug: p.auteurSlug,
+  nom: p.auteurNom,
+  metier: p.auteurMetier,
+  texte: p.texte,
+  photo: p.photo,
+  publieLe: p.publieLe,
+  jusqua: p.expireLe,
+});
 
 export async function GET(request: Request) {
   if (!isCronAuthorized(request)) {
@@ -47,14 +64,14 @@ export async function GET(request: Request) {
   try {
     const { data, error } = await supabase
       .from("human_habitants")
-      .select("id, ville_slug, email, unsub_token, last_sent_at")
+      .select("id, ville_slug, email, unsub_token, last_sent_at, recoit_resume, recoit_suivis")
+      // `recoit_resume` OU `recoit_suivis` : quelqu'un peut avoir coupé le
+      // résumé général tout en voulant les nouvelles de SES commerces. Filtrer
+      // sur le seul résumé le priverait du canal qu'il a gardé exprès.
+      .or("recoit_resume.eq.true,recoit_suivis.eq.true")
       .not("confirmed_at", "is", null)
       .not("email", "is", null)
       .is("unsubscribed_at", null)
-      // Le canal, pas seulement l'abonnement : quelqu'un peut rester abonné au
-      // Direct tout en ayant coupé le résumé du jour. Sans ce filtre, la bascule
-      // de l'onglet Moi ne servirait à rien.
-      .eq("recoit_resume", true)
       .limit(5000);
     if (error) throw new Error(error.message);
     abonnes = (Array.isArray(data) ? data : []) as Abonne[];
@@ -66,60 +83,72 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Lecture des abonnés impossible." }, { status: 500 });
   }
 
-  // LA MÊME SOURCE QUE L'APPLICATION. Le digest lisait `current_offer` pendant
-  // que Le Direct lit `human_publications` : l'e-mail du matin et l'application
-  // racontaient deux villes différentes. Le fil fait foi — sa fenêtre, ses
-  // expirations, ses familles.
-  //
-  // Les publications sont converties en `PartnerOffer` plutôt que de réécrire le
-  // gabarit : `digestAEnvoyer` et `sendDigest` sont des fonctions éprouvées, et
-  // c'est la source qui était fausse, pas le rendu.
-  const parVille = new Map<string, PartnerOffer[]>();
+  if (!abonnes.length) return NextResponse.json({ ok: true, abonnes: 0, envoyes: 0 });
+
+  // Le fil d'une ville se lit UNE fois, quel que soit le nombre d'abonnés.
+  const parVille = new Map<string, Publication[]>();
   const nomVille = new Map<string, string>();
   for (const a of abonnes) {
     if (parVille.has(a.ville_slug)) continue;
-    const cfg = await configVille(supabase, a.ville_slug);
-    const publications = await filDeVille(supabase, a.ville_slug, { fenetreLarge: true });
-    parVille.set(
-      a.ville_slug,
-      publications.map((p) => ({
-        id: p.id,
-        slug: p.auteurSlug,
-        nom: p.auteurNom,
-        metier: p.auteurMetier,
-        texte: p.texte,
-        photo: p.photo,
-        publieLe: p.publieLe,
-        jusqua: p.expireLe,
-      }))
-    );
-    nomVille.set(a.ville_slug, cfg.nom);
+    parVille.set(a.ville_slug, await filDeVille(supabase, a.ville_slug, { fenetreLarge: true }));
+    nomVille.set(a.ville_slug, (await configVille(supabase, a.ville_slug)).nom);
+  }
+
+  // Les commerces suivis, en UNE requête pour tout le monde : un aller-retour
+  // par abonné multiplierait la durée du cron par le nombre d'abonnés.
+  const suivisPar = new Map<string, Set<string>>();
+  try {
+    const { data } = await supabase
+      .from("human_suivis")
+      .select("habitant_id, site_id")
+      .in("habitant_id", abonnes.map((a) => a.id));
+    for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
+      const h = str(r.habitant_id);
+      if (!suivisPar.has(h)) suivisPar.set(h, new Set());
+      suivisPar.get(h)!.add(str(r.site_id));
+    }
+  } catch {
+    /* table absente → personne ne suit personne, le résumé reste complet */
   }
 
   let envoyes = 0;
   let sautes = 0;
   for (const a of abonnes) {
     const ville = nomVille.get(a.ville_slug) || "";
-    const offers = parVille.get(a.ville_slug) ?? [];
-    if (!ville || offers.length === 0) {
+    const publications = parVille.get(a.ville_slug) ?? [];
+    if (!ville || !publications.length) {
       sautes++;
       continue;
     }
 
-    // Rythme et « rien de neuf » : la décision est une fonction pure, testable.
-    const neuf = digestAEnvoyer(offers, a.last_sent_at, now);
-    if (!neuf) {
+    const resume = composerResume(
+      publications,
+      {
+        recoitResume: a.recoit_resume !== false,
+        recoitSuivis: a.recoit_suivis !== false,
+        suivis: suivisPar.get(a.id) ?? new Set(),
+        lastSentAt: a.last_sent_at,
+      },
+      now
+    );
+    if (!resume) {
       sautes++;
       continue;
     }
 
-    const ok = await sendDigest(a.email, ville, neuf, a.unsub_token);
+    const ok = await sendDigest(
+      a.email,
+      ville,
+      resume.deLaVille.map(enOffre),
+      str(a.unsub_token),
+      resume.desSuivis.map(enOffre)
+    );
     if (!ok) {
       sautes++;
       continue;
     }
     // `last_sent_at` n'avance QUE sur un envoi réussi : un échec Resend ne doit
-    // pas faire sauter le digest du lendemain.
+    // pas faire sauter le résumé du lendemain.
     await supabase
       .from("human_habitants")
       .update({ last_sent_at: new Date().toISOString() })

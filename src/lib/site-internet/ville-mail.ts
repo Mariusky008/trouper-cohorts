@@ -24,40 +24,13 @@ const getResend = () => (_resend ??= new Resend(process.env.RESEND_API_KEY || ""
 // qui n'arrive pas ne se rattrape pas.
 export const MAIL_FROM = `${MARQUE} <contact@popey.academy>`;
 
-/** Un envoi par jour au maximum. */
-export const JOUR_MS = 24 * 60 * 60 * 1000;
-/** Premier envoi : on remonte d'une semaine, sinon le tout premier e-mail serait vide. */
-export const PREMIER_ENVOI_MS = 7 * JOUR_MS;
-/** Au-delà, l'e-mail devient une liste : on renvoie vers la page. */
-export const MAX_PAR_ENVOI = 8;
+// La règle « quoi envoyer, et quand » vit désormais dans
+// `src/lib/direct/resume.ts` (`composerResume`) : elle doit décider en même
+// temps du rythme, du contenu ET de la place des commerces suivis, ce qu'une
+// fonction ne connaissant que des offres ne pouvait pas faire. Garder ici une
+// seconde version de la même règle reviendrait à laisser deux vérités sur le
+// sujet le plus sensible du produit — celui qui écrit aux gens.
 
-/**
- * Que faut-il envoyer à cet abonné, maintenant ? `null` = rien.
- *
- * Deux règles, ici et pas dans la promesse marketing :
- *   • pas plus d'un envoi par 24 h ;
- *   • JAMAIS d'e-mail vide — s'il n'y a rien de publié depuis le dernier envoi,
- *     on ne part pas. Un abonné qui reçoit un e-mail vide se désinscrit, et il a
- *     raison de le faire.
- *
- * « Du neuf » se mesure sur la date de publication RÉELLE : une annonce déjà
- * envoyée hier et toujours en cours ne redéclenche pas un envoi.
- */
-export function digestAEnvoyer(
-  offers: PartnerOffer[],
-  lastSentAt: string | null,
-  now = Date.now()
-): PartnerOffer[] | null {
-  if (!offers.length) return null;
-  const dernier = lastSentAt ? Date.parse(lastSentAt) : NaN;
-  if (Number.isFinite(dernier) && now - dernier < JOUR_MS) return null;
-  const depuis = Number.isFinite(dernier) ? dernier : now - PREMIER_ENVOI_MS;
-  const neuf = offers.filter((o) => {
-    const t = o.publieLe ? Date.parse(o.publieLe) : NaN;
-    return Number.isFinite(t) && t > depuis;
-  });
-  return neuf.length ? neuf.slice(0, MAX_PAR_ENVOI) : null;
-}
 
 /** La phrase EXACTE que l'abonné accepte. Stockée telle quelle comme preuve. */
 export const consentPhrase = (ville: string) =>
@@ -126,58 +99,82 @@ export async function sendDigest(
   email: string,
   ville: string,
   offers: PartnerOffer[],
-  unsubToken: string
+  unsubToken: string,
+  /**
+   * Les annonces de SES commerces, affichées en tête sous leur propre titre.
+   *
+   * C'est ici que vit le canal « les commerces que je suis » : il ne déclenche
+   * pas un envoi de plus, il change la composition de celui-ci. Un troisième
+   * e-mail quotidien n'ajouterait aucune information — les mêmes annonces sont
+   * déjà dans le fil — il ne ferait que dépenser une attention qui est un budget
+   * fixe.
+   */
+  suivies: PartnerOffer[] = []
 ): Promise<boolean> {
+  if (!offers.length && !suivies.length) return false;
   const base = siteBase();
   const stop = `${base}/ville/stop/${encodeURIComponent(unsubToken)}`;
   const villeUrl = `${base}/ville/${encodeURIComponent(villeSlug(ville))}`;
 
-  const cartes = offers
-    .map(
-      (o) => `
-      <a href="${base}/site-internet/apercu/${encodeURIComponent(o.slug)}?via=digest"
-         style="display:block;text-decoration:none;color:inherit;background:rgba(255,255,255,.055);
-                border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:14px;margin-top:10px">
+  const carte = (o: PartnerOffer, vedette: boolean) => `
+      <a href="${base}/site-internet/apercu/${encodeURIComponent(o.slug)}?via=digest&pub=${encodeURIComponent(o.id)}"
+         style="display:block;text-decoration:none;color:inherit;
+                background:rgba(255,255,255,${vedette ? ".085" : ".055"});
+                border:1px solid rgba(${vedette ? "127,230,192,.35" : "255,255,255,.12"});
+                border-radius:15px;padding:14px;margin-top:10px">
         <div style="font-size:15px;font-weight:700;color:#fff">${esc(o.nom)}</div>
         <div style="font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#7FE6C0;font-weight:700;margin-top:3px">
           ${esc(o.metier)}
         </div>
         <div style="font-size:14px;line-height:1.5;color:#D6DAE2;margin-top:8px">${esc(o.texte)}</div>
-      </a>`
-    )
-    .join("");
+        ${o.jusqua ? `<div style="font-size:11px;font-weight:700;color:#FF9E86;margin-top:7px">${esc(echeanceCourte(o.jusqua))}</div>` : ""}
+      </a>`;
 
-  const n = offers.length;
+  const titreSection = (t: string) => `
+      <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7FE6C0;
+                  font-weight:700;margin-top:22px">${esc(t)}</div>`;
+
+  const n = offers.length + suivies.length;
+  // Le titre parle de CE QUI SE PASSE, pas du produit. Quelqu'un qui lit
+  // « 5 nouvelles à Dax » sait s'il ouvre ; « Votre digest » ne dit rien.
+  const titre = suivies.length
+    ? suivies.length === 1
+      ? "Un de vos commerces a publié"
+      : `${suivies.length} de vos commerces ont publié`
+    : n > 1
+      ? `${n} nouvelles à ${ville}`
+      : `Du nouveau à ${ville}`;
+
   const html = SHELL(
-    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7FE6C0;font-weight:700">Le collectif</div>
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7FE6C0;font-weight:700">Le Direct</div>
      <div style="font-family:Georgia,serif;font-size:25px;line-height:1.15;margin-top:10px;color:#fff">
-       Aujourd'hui à ${esc(ville)}.
+       ${esc(titre)}.
      </div>
-     <p style="font-size:13.5px;line-height:1.6;color:#A8AEBC;margin:12px 0 0">
-       ${n === 1 ? "Une nouvelle annonce" : `${n} nouvelles annonces`} depuis votre dernier e-mail.
-     </p>
-     ${cartes}
-     <a href="${villeUrl}" style="display:block;margin-top:16px;text-align:center;text-decoration:none;
-        background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:13px;
-        padding:13px;font-size:14px;font-weight:700">
-       Voir tout ce qui se passe à ${esc(ville)}
+     ${suivies.length ? titreSection("Vos commerces") + suivies.map((o) => carte(o, true)).join("") : ""}
+     ${offers.length ? (suivies.length ? titreSection(`Ailleurs à ${ville}`) : "") + offers.map((o) => carte(o, false)).join("") : ""}
+     <a href="${villeUrl}"
+        style="display:block;margin-top:18px;background:#3FD79A;color:#08140E;border-radius:22px;
+               padding:13px;text-align:center;font-size:14px;font-weight:700;text-decoration:none">
+       Ouvrir Le Direct de ${esc(ville)}
      </a>`,
-    `Vous recevez ce message parce que vous vous êtes inscrit·e aux annonces de ${esc(ville)}.<br>
-     <a href="${stop}" style="color:#8B93A6">Se désinscrire</a> — un clic, sans justification.`
+    `Un message par jour au maximum, et seulement s'il y a du nouveau.
+     <a href="${villeUrl}/moi" style="color:#8FA79A">Régler ce que je reçois</a> ·
+     <a href="${stop}" style="color:#8FA79A">Ne plus rien recevoir</a>`
   );
 
   try {
-    await getResend().emails.send({
+    const { error } = await getResend().emails.send({
       from: MAIL_FROM,
       to: email,
-      subject: `${ville} — ${n === 1 ? "une annonce du jour" : `${n} annonces du jour`}`,
+      subject: `${titre}${suivies.length ? ` — ${ville}` : ""}`,
       html,
     });
-    return true;
+    return !error;
   } catch {
     return false;
   }
 }
+
 
 /** Slug de ville — même règle que partout ailleurs. */
 export function villeSlug(v: string): string {
