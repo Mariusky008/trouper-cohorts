@@ -29,10 +29,25 @@ const norm = (v: unknown) =>
 const cap = (s: string) => s.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 
 const CORE = "id,slug,business_name,city,activite,address,google_rating,google_reviews,diagnostic,letter_status";
-const OPT = ",letter_overrides";
+// `published` est dans la partie OPTIONNELLE, pas dans le socle : si la colonne
+// manquait, la mettre dans CORE ferait échouer les deux requêtes et la page
+// entière. Ici, le repli se contente de ne plus filtrer les clients — c'est
+// exactement le comportement d'avant, donc une dégradation et non une panne.
+const OPT = ",letter_overrides,published";
 
 // On n'imprime pas les lettres écartées (décision déjà prise par l'opérateur).
 const SKIP_STATUS = new Set(["skipped", "excluded"]);
+
+/**
+ * Ni celles des commerçants DÉJÀ CLIENTS : leur envoyer une lettre qui propose
+ * de refaire leur site alors qu'ils viennent de le payer est le courrier le plus
+ * embarrassant qu'on puisse produire.
+ *
+ * C'est ce que `letter_status = "client"` cherchait à obtenir. La conversion est
+ * lue là où elle est réellement écrite — `published` — plutôt qu'en détournant
+ * le statut de la lettre.
+ */
+const dejaClient = (r: Record<string, unknown>) => r.published === true;
 
 export default async function LettresVillePage({
   params,
@@ -78,7 +93,7 @@ export default async function LettresVillePage({
       const rc = norm(r.city);
       return rc === nv || rc.includes(nv) || nv.includes(rc);
     })
-    .filter((r) => !SKIP_STATUS.has(str(r.letter_status)))
+    .filter((r) => !SKIP_STATUS.has(str(r.letter_status)) && !dejaClient(r as Record<string, unknown>))
     .sort((a, b) => {
       const av = norm(a.activite).localeCompare(norm(b.activite), "fr");
       return av !== 0 ? av : norm(a.business_name).localeCompare(norm(b.business_name), "fr");

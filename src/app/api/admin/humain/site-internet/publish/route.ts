@@ -51,7 +51,20 @@ export async function POST(request: Request) {
   if (typeof p?.published === "boolean") {
     patch.published = p.published;
     patch.published_at = p.published ? new Date().toISOString() : null;
-    if (p.published) patch.letter_status = "client";
+    // On n'écrit PAS `letter_status = "client"`. Trois raisons, et la première
+    // suffisait : « client » n'est pas une valeur autorisée par la contrainte
+    // `human_vitrine_sites_letter_status_check`, donc l'UPDATE échouait EN
+    // ENTIER — `published` n'était jamais écrit et le site restait en démo.
+    //
+    // Les deux autres disent pourquoi la bonne correction n'était pas d'élargir
+    // la contrainte :
+    //   · `letter_status` suit le cycle de la LETTRE (brouillon → imprimée →
+    //     remise → contact reçu). « Devenu client » est un autre axe, déjà porté
+    //     par `published` et `published_at`. L'écraser perdrait l'information de
+    //     jusqu'où la lettre est allée ;
+    //   · les compteurs de l'entonnoir additionnent imprimées + remises +
+    //     contacts. Un commerçant converti en sortirait, et le tableau de bord
+    //     montrerait une prospection qui se vide à mesure qu'elle réussit.
   }
   if ("custom_domain" in (p || {})) patch.custom_domain = normDomain(p?.custom_domain);
 
