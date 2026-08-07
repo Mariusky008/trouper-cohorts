@@ -13,6 +13,7 @@
 // fin de la démo avis. La bulle n'existe qu'en mode maquette propriétaire.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { libelleHeure } from "@/lib/site-internet/heures";
 import { publishDemoOffer } from "./demo-offer";
 import { campagneFallback, type Campagne } from "@/lib/site-internet/campagne";
 import { intentionsPour, joursProches, manquants, recommandees, type Champ, type Intention } from "@/lib/site-internet/actions-flash";
@@ -872,7 +873,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
               <select value={hh} onChange={(e) => poser(e.target.value, mm)} aria-label="Heure">
                 <option value="">— h</option>
                 {Array.from({ length: 18 }, (_, k) => k + 6).map((h) => (
-                  <option key={h} value={String(h).padStart(2, "0")}>{h > 12 ? `${h} h  ·  ${h - 12} h de l’après-midi` : `${h} h`}</option>
+                  <option key={h} value={String(h).padStart(2, "0")}>{libelleHeure(h)}</option>
                 ))}
               </select>
               <select value={mm} onChange={(e) => poser(hh, e.target.value)} disabled={!hh} aria-label="Minutes">

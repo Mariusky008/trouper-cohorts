@@ -8,6 +8,7 @@
 // Si le pro a constitué une audience opt-in (« Mes clients »), on la propose ici
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { MOMENTS, MINUTES, libelleHeure } from "@/lib/site-internet/heures";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { compresserImage } from "@/lib/site-internet/image-client";
 import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
@@ -36,19 +37,9 @@ const jamais = () => () => {};
 // (cf. api/site-internet/pro/announce).
 const TONS = ["Direct", "Chaleureux", "Court"];
 
-// Heures en 24 h, groupées par moment de la journée. Une liste plate de 0 à 23
-// laisse choisir « 4 h » en pensant à seize heures — et l'annonce part avec la
-// mauvaise heure sans que rien ne le signale.
-const MOMENTS: Array<{ titre: string; de: number; a: number }> = [
-  { titre: "Matin", de: 6, a: 11 },
-  { titre: "Après-midi", de: 12, a: 17 },
-  { titre: "Soir", de: 18, a: 23 },
-  { titre: "Nuit", de: 0, a: 5 },
-];
-const MINUTES = ["00", "15", "30", "45"];
-
-/** « 16 h » — et le rappel familier pour qui pense encore en douze heures. */
-const libelleHeure = (h: number) => (h > 12 ? `${h} h  ·  ${h - 12} h de l'après-midi` : `${h} h`);
+// Les heures (groupes, minutes, libellés) viennent de `lib/site-internet/heures` :
+// la maquette de démonstration affiche la même liste, et une correction faite
+// d'un seul côté se serait remarquée le jour où un prospect compare les deux.
 
 /**
  * L'assistante laisse un [crochet] quand une information lui manque — c'est
