@@ -97,7 +97,7 @@ export function SelectionSwipe({
       if (!carte) return;
       if (g === "garder" || g === "reserver") void garder(carte.id);
       if (g === "boutique" && carte.auteurSlug) {
-        router.push(`/site-internet/${carte.auteurSlug}`);
+        router.push(`/site-internet/apercu/${carte.auteurSlug}?via=direct`);
         return;
       }
       setDrag(null);

@@ -218,7 +218,7 @@ export default async function MesCommercesPage({
                       )}
                     </div>
                   </div>
-                  <Link href={`/site-internet/${str(f.slug)}`} className="go" aria-label={`Ouvrir ${nom}`} prefetch={false}>›</Link>
+                  <Link href={`/site-internet/apercu/${str(f.slug)}?via=direct`} className="go" aria-label={`Ouvrir ${nom}`} prefetch={false}>›</Link>
                 </div>
               );
             })}

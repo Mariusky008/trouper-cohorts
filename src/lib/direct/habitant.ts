@@ -119,6 +119,68 @@ export async function assurerHabitant(supabase: Supabase, villeSlug: string): Pr
   }
 }
 
+/**
+ * Replie l'habitant `source` dans `cible`, puis supprime `source`.
+ *
+ * Le cas : quelqu'un garde deux offres sans rien donner (ligne d'appareil), puis
+ * s'abonne avec une adresse déjà connue dans cette ville (ligne d'e-mail). Deux
+ * lignes décrivent alors la même personne. Sans ce repli, ses deux gardées
+ * disparaissent au moment précis où elle nous fait confiance — c'est le pire
+ * moment possible pour perdre quelque chose.
+ *
+ * Les gardées et les suivis sont déplacés en `upsert` : la personne peut avoir
+ * gardé la même offre des deux côtés, et un conflit de clé ne doit pas faire
+ * échouer une inscription.
+ */
+export async function fusionner(supabase: Supabase, sourceId: string, cibleId: string): Promise<void> {
+  if (!sourceId || !cibleId || sourceId === cibleId) return;
+  try {
+    const { data: g } = await supabase.from("human_gardees").select("publication_id").eq("habitant_id", sourceId);
+    const gardees = ((Array.isArray(g) ? g : []) as Array<Record<string, unknown>>).map((r) => str(r.publication_id)).filter(Boolean);
+    if (gardees.length) {
+      await supabase
+        .from("human_gardees")
+        .upsert(gardees.map((publication_id) => ({ habitant_id: cibleId, publication_id })), {
+          onConflict: "habitant_id,publication_id",
+          ignoreDuplicates: true,
+        });
+    }
+
+    const { data: s } = await supabase.from("human_suivis").select("site_id, visites, created_at").eq("habitant_id", sourceId);
+    const suivisSource = ((Array.isArray(s) ? s : []) as Array<Record<string, unknown>>).map((r) => ({
+      habitant_id: cibleId,
+      site_id: str(r.site_id),
+      visites: typeof r.visites === "number" ? r.visites : 0,
+      created_at: str(r.created_at) || new Date().toISOString(),
+    }));
+    if (suivisSource.length) {
+      // `ignoreDuplicates` : si la cible suit déjà ce commerce, son compteur de
+      // visites est le sien et fait foi. Additionner les deux gonflerait une
+      // relation qui n'a pas eu lieu — et les cœurs doivent rester adossés à des
+      // visites réelles.
+      await supabase.from("human_suivis").upsert(suivisSource, { onConflict: "habitant_id,site_id", ignoreDuplicates: true });
+    }
+
+    await supabase.from("human_habitants").delete().eq("id", sourceId);
+  } catch {
+    // Le repli a échoué : on ne supprime rien. Mieux vaut deux lignes qu'une
+    // personne qui perd ses gardées.
+  }
+}
+
+/** Pose le cookie d'appareil sur la réponse courante. */
+export async function poserCookie(deviceToken: string): Promise<void> {
+  if (!deviceToken) return;
+  const jar = await cookies();
+  jar.set(COOKIE_HABITANT, deviceToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: UN_AN,
+  });
+}
+
 /** Les identifiants des publications gardées. Set : l'écran teste l'appartenance
  *  une fois par carte. */
 export async function gardees(supabase: Supabase, habitantId: string): Promise<Set<string>> {

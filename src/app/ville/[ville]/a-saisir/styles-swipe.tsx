@@ -61,7 +61,7 @@ export function StylesSwipe() {
 .asx-boutons .g{width:57px;height:57px;background:linear-gradient(150deg,#4FE0A0,#2E9E74);border:none;color:#08140E;
   font-size:22px;box-shadow:0 8px 19px -6px rgba(79,224,160,.65);}
 .asx-leg{display:flex;justify-content:center;gap:14px;margin-top:7px;}
-/* `nowrap` : « La boutique » passait à la ligne dans sa boîte de 46 px, et une
+/* nowrap : « La boutique » passait à la ligne dans sa boîte de 46 px, et une
    légende sur deux lignes déséquilibre les trois boutons qu'elle décrit. */
 .asx-leg span{width:46px;text-align:center;font-size:8.5px;color:#7C9186;font-weight:600;white-space:nowrap;}
 .asx-leg .mid{width:57px;color:#3FD79A;font-weight:700;}

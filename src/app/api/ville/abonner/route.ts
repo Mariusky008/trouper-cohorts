@@ -1,16 +1,23 @@
-// Inscription aux annonces d'une ville.
+// Inscription au Direct d'une ville.
 //
 // DOUBLE OPT-IN : cette route n'inscrit personne — elle enregistre une demande
-// et envoie un lien de confirmation. Tant qu'il n'est pas cliqué, aucun digest
-// ne part. C'est ce qui rend l'adresse défendable, et ce qui évite d'écrire à
+// et envoie un lien de confirmation. Tant qu'il n'est pas cliqué, aucun envoi ne
+// part. C'est ce qui rend l'adresse défendable, et ce qui évite d'écrire à
 // quelqu'un dont un tiers aurait saisi l'adresse.
 //
 // On répond la MÊME chose dans tous les cas de figure : sans ça, la route dirait
 // à n'importe qui si une adresse est déjà inscrite dans une ville donnée.
+//
+// L'IDENTITÉ EST PROGRESSIVE. Une personne qui a déjà gardé des offres possède
+// une ligne d'appareil, sans adresse. Donner son adresse doit se POSER sur cette
+// ligne, pas en créer une seconde : ses gardées et ses commerces suivis sont
+// déjà là, et les perdre au moment où elle nous fait confiance serait le pire
+// moment possible.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cityDirectory } from "@/lib/site-internet/collectif";
 import { consentPhrase, sendConfirmation, villeSlug } from "@/lib/site-internet/ville-mail";
+import { habitantCourant, fusionner, poserCookie } from "@/lib/direct/habitant";
 
 export const dynamic = "force-dynamic";
 
@@ -65,50 +72,73 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
 
   // La ville doit EXISTER (au moins un commerce publié) : sinon on collecterait
-  // des adresses pour un catalogue qui ne se remplira jamais.
+  // des adresses pour un fil qui ne se remplira jamais.
   const { ville } = await cityDirectory(supabase, slug);
-  if (!ville) return NextResponse.json({ error: "Aucun commerce n'est encore en ligne dans cette ville." }, { status: 404 });
+  if (!ville) {
+    return NextResponse.json({ error: "Aucun commerce n'est encore en ligne dans cette ville." }, { status: 404 });
+  }
+
+  const consentement = { consent_text: consentPhrase(ville), consent_at: new Date().toISOString() };
 
   try {
-    // Déjà inscrit·e ? On ne réécrit ni le consentement ni les jetons : on renvoie
-    // simplement la confirmation si elle n'a jamais été validée.
+    const surAppareil = await habitantCourant(supabase);
+
     const { data: ex } = await supabase
-      .from("human_ville_abonnes")
-      .select("id, confirm_token, confirmed_at, unsubscribed_at")
+      .from("human_habitants")
+      .select("id, device_token, confirm_token, confirmed_at, unsubscribed_at")
       .eq("ville_slug", slug)
       .eq("email", email)
       .maybeSingle();
-    const row = (ex as Record<string, unknown> | null) ?? null;
+    const parEmail = (ex as Record<string, unknown> | null) ?? null;
 
-    if (row) {
+    if (parEmail) {
+      const idEmail = s(parEmail.id);
+      // Cette adresse est déjà connue ici. Si l'appareil portait une AUTRE ligne,
+      // on la replie dans celle-ci : c'est la même personne, et ses gardées
+      // doivent suivre.
+      if (surAppareil && surAppareil.id !== idEmail) {
+        await fusionner(supabase, surAppareil.id, idEmail);
+      }
+      await poserCookie(s(parEmail.device_token));
+
       // Un retrait passé se respecte : se réinscrire demande un geste explicite,
       // et ce geste, c'est de recliquer le lien de confirmation.
-      if (row.unsubscribed_at) {
+      if (parEmail.unsubscribed_at) {
         await supabase
-          .from("human_ville_abonnes")
-          .update({ unsubscribed_at: null, confirmed_at: null, consent_text: consentPhrase(ville), consent_at: new Date().toISOString() })
-          .eq("id", s(row.id));
+          .from("human_habitants")
+          .update({ unsubscribed_at: null, confirmed_at: null, recoit_resume: true, ...consentement })
+          .eq("id", idEmail);
       }
-      if (!row.confirmed_at || row.unsubscribed_at) {
-        await sendConfirmation(email, ville, s(row.confirm_token));
+      if (!parEmail.confirmed_at || parEmail.unsubscribed_at) {
+        await sendConfirmation(email, ville, s(parEmail.confirm_token));
       }
       return OK;
     }
 
+    // Adresse inconnue. Si l'appareil a déjà une ligne, l'adresse s'y POSE.
+    if (surAppareil) {
+      const { data: maj, error } = await supabase
+        .from("human_habitants")
+        .update({ email, ville, ville_slug: slug, recoit_resume: true, ...consentement })
+        .eq("id", surAppareil.id)
+        .select("confirm_token")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      const token = s((maj as Record<string, unknown> | null)?.confirm_token);
+      if (token) await sendConfirmation(email, ville, token);
+      return OK;
+    }
+
     const { data: ins, error } = await supabase
-      .from("human_ville_abonnes")
-      .insert({
-        ville,
-        ville_slug: slug,
-        email,
-        consent_text: consentPhrase(ville),
-        consent_at: new Date().toISOString(),
-      })
-      .select("confirm_token")
+      .from("human_habitants")
+      .insert({ ville, ville_slug: slug, email, recoit_resume: true, ...consentement })
+      .select("device_token, confirm_token")
       .maybeSingle();
     if (error) throw new Error(error.message);
 
-    const token = s((ins as Record<string, unknown> | null)?.confirm_token);
+    const row = (ins as Record<string, unknown> | null) ?? null;
+    await poserCookie(s(row?.device_token));
+    const token = s(row?.confirm_token);
     if (token) await sendConfirmation(email, ville, token);
     return OK;
   } catch (e) {

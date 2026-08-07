@@ -21,15 +21,25 @@ export default async function StopVille({ params }: { params: Promise<{ token: s
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
-      .from("human_ville_abonnes")
+      .from("human_habitants")
       .select("id, ville")
       .eq("unsub_token", str(token))
       .maybeSingle();
     const row = (data as Record<string, unknown> | null) ?? null;
     if (row) {
       const { error } = await supabase
-        .from("human_ville_abonnes")
-        .update({ unsubscribed_at: new Date().toISOString() })
+        .from("human_habitants")
+        // Tous les canaux, pas seulement la date : l'habitant a désormais
+        // quatre canaux indépendants, et « je me désabonne » veut dire les
+        // quatre. Ne marquer que la date laisserait les alertes actives pour le
+        // jour où on les branchera.
+        .update({
+          unsubscribed_at: new Date().toISOString(),
+          recoit_resume: false,
+          recoit_alertes: false,
+          recoit_suivis: false,
+          recoit_ville_infos: false,
+        })
         .eq("id", str(row.id));
       if (!error) {
         ville = str(row.ville);

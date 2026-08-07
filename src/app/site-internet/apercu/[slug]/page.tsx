@@ -6,6 +6,10 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
+import { SuivreBouton } from "./suivre-bouton";
+import { BarreDirect } from "./barre-direct";
+import { habitantCourant } from "@/lib/direct/habitant";
+import { villeSlug as slugDeVille } from "@/lib/direct/ville";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
 import { partnerOffers as loadPartnerOffers, noteCatalogueViews, type PartnerOffer } from "@/lib/site-internet/collectif";
 import { MaquetteSante } from "./maquette-sante";
@@ -109,10 +113,15 @@ export default async function ApercuMaquette({
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */
   }
-  // Visiteur venu du catalogue de la ville (?via=catalogue) : c'est LE chiffre
-  // qui prouve au commerçant que le collectif lui amène du monde. Lecture puis
-  // écriture séparée, pour ne rien casser tant que la migration n'est pas passée.
-  if (str(via) === "catalogue") {
+  // Visiteur venu du collectif : c'est LE chiffre qui prouve au commerçant que
+  // les autres lui amènent du monde. Lecture puis écriture séparée, pour ne rien
+  // casser tant que la migration n'est pas passée.
+  //
+  // `direct` compte dans le MÊME compteur que `catalogue` : Le Direct remplace
+  // le catalogue, et ouvrir un second compteur ferait tomber à zéro le chiffre
+  // que le commerçant regarde — il conclurait que le collectif ne lui apporte
+  // plus rien, au moment précis où il lui apporte davantage.
+  if (str(via) === "catalogue" || str(via) === "direct" || str(via) === "digest") {
     try {
       const { data: cc } = await supabase
         .from("human_vitrine_sites")
@@ -428,7 +437,40 @@ export default async function ApercuMaquette({
     }
   }
 
+  // BARRE DU DIRECT. Uniquement pour un visiteur venu de l'application : sur la
+  // page trouvée par une recherche Google, « suivre » ne veut rien dire pour
+  // quelqu'un qui ignore ce qu'est Le Direct.
+  //
+  // Elle porte aussi le retour au fil. Sans elle, l'habitant qui ouvre une
+  // boutique depuis Le Direct atterrit dans un site complet sans aucun chemin de
+  // retour — il doit fermer l'onglet, et il ne revient pas.
+  const venuDuDirect = str(via) === "direct";
+  let dejaSuivi = false;
+  const villeDuSite = slugDeVille(str(row.city));
+  if (venuDuDirect) {
+    try {
+      const h = await habitantCourant(supabase);
+      if (h) {
+        const { data: sv } = await supabase
+          .from("human_suivis")
+          .select("site_id")
+          .eq("habitant_id", h.id)
+          .eq("site_id", str(row.id))
+          .maybeSingle();
+        dejaSuivi = Boolean(sv);
+      }
+    } catch {
+      /* tables non migrées → bouton « Suivre » non allumé, jamais d'erreur */
+    }
+  }
+
   return (
+    <>
+    {venuDuDirect && (
+      <BarreDirect ville={villeDuSite}>
+        <SuivreBouton siteId={str(row.id)} ville={villeDuSite} suiviInitial={dejaSuivi} />
+      </BarreDirect>
+    )}
     <MaquetteSante
       slug={slug}
       profil={profil}
@@ -476,5 +518,6 @@ export default async function ApercuMaquette({
       partnerOffers={livePartners}
       collectifActif={collectifActif}
     />
+    </>
   );
 }

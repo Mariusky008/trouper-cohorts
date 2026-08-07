@@ -61,7 +61,11 @@ export function Carte({
     }
   };
 
-  const fiche = p.auteurSlug ? `/site-internet/${p.auteurSlug}` : null;
+  // `apercu` est la boutique publique du commerce. `/site-internet/${slug}` sans
+  // `apercu` est la landing de PROSPECTION (cible du QR de la lettre) : y envoyer
+  // un habitant lui proposerait de faire refaire son site.
+  // `via=direct` : même convention d'attribution que le lien du résumé quotidien.
+  const fiche = p.auteurSlug ? `/site-internet/apercu/${p.auteurSlug}?via=direct` : null;
 
   return (
     <article className="post">

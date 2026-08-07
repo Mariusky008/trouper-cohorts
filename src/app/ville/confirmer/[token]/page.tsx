@@ -23,7 +23,7 @@ export default async function ConfirmerVille({ params }: { params: Promise<{ tok
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
-      .from("human_ville_abonnes")
+      .from("human_habitants")
       .select("id, ville, unsub_token, confirmed_at")
       .eq("confirm_token", str(token))
       .maybeSingle();
@@ -35,7 +35,7 @@ export default async function ConfirmerVille({ params }: { params: Promise<{ tok
       // Idempotent : recliquer le lien ne redémarre pas le compteur d'envoi.
       if (!row.confirmed_at) {
         await supabase
-          .from("human_ville_abonnes")
+          .from("human_habitants")
           .update({ confirmed_at: new Date().toISOString(), unsubscribed_at: null })
           .eq("id", str(row.id));
       }
