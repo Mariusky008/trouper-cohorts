@@ -17,12 +17,13 @@
 // à 18 h, pas au bout d'une journée entière. C'est la seule façon d'annoncer
 // honnêtement quelque chose qui ne dure que deux heures — sans elle, le
 // commerçant devrait revenir la retirer à la main, et ne le ferait pas.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
 import { publier, retirerToutesDe } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
+import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 
 export const dynamic = "force-dynamic";
 
@@ -162,14 +163,30 @@ export async function POST(request: Request) {
 
     const ville = str(site.city);
     if (ville) {
+      const slugVille = villeSlug(ville);
       await publier(supabase, {
         ville,
-        villeSlug: villeSlug(ville),
+        villeSlug: slugVille,
         famille: familleDuTexte(text),
         texte: text,
         photo,
         expireLe: until,
         site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
+      });
+
+      // L'ALERTE PART ICI, pas dans un cron. Une place qui se libère à 16 h et
+      // annoncée à 17 h n'est plus une place qui se libère. `after()` : le
+      // travail s'exécute une fois la réponse envoyée — le commerçant n'attend
+      // pas que les e-mails partent, et ne voit aucune différence.
+      //
+      // `alerteAEnvoyer` reste seul juge : publier « nouveau menu » ne déclenche
+      // rien, seule une place libre ou une échéance proche compte.
+      after(async () => {
+        try {
+          await envoyerAlertes(supabase, slugVille);
+        } catch {
+          /* le filet quotidien rattrapera */
+        }
       });
     }
 

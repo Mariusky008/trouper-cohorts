@@ -8,10 +8,11 @@
 // offre commerciale. Une collectivité qui pourrait publier sous la famille
 // « offre » se retrouverait, sans le vouloir, à concurrencer ses commerçants
 // dans leur propre fil.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publier } from "@/lib/direct/publications";
 import { villeSlug } from "@/lib/direct/ville";
+import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +112,17 @@ export async function POST(request: Request) {
   } catch {
     /* le fil affichera le repli « Ma ville » — l'information reste publiée */
   }
+
+  // Même déclenchement que pour un commerçant : une information municipale qui
+  // expire dans l'heure (une rue fermée, un marché annulé) mérite la même
+  // immédiateté. `alerteAEnvoyer` reste seul juge.
+  after(async () => {
+    try {
+      await envoyerAlertes(supabase, slug);
+    } catch {
+      /* le filet quotidien rattrapera */
+    }
+  });
 
   return NextResponse.json({ ok: true, id: res.id });
 }

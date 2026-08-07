@@ -54,7 +54,7 @@
     },
     {
       "path": "/api/cron/direct-alertes",
-      "schedule": "5 * * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
