@@ -10,6 +10,7 @@
 import { Resend } from "resend";
 import { MARQUE } from "@/lib/marque";
 import { SITE_URL } from "@/lib/site-url";
+import { echeanceCourte } from "./echeance";
 import type { PartnerOffer } from "./collectif";
 
 // Instanciation paresseuse : `new Resend` lève si la clé manque, et ce module est
@@ -186,4 +187,74 @@ export function villeSlug(v: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * L'alerte de dernière minute.
+ *
+ * Volontairement PLUS COURTE que le résumé : elle interrompt, donc elle doit se
+ * lire en une seconde. Pas de photo, pas de mise en scène — l'urgence, le
+ * commerce, et un lien.
+ *
+ * L'objet dit CE QUI SE PASSE, pas « vous avez une alerte ». Quelqu'un qui voit
+ * « 2 places viennent de se libérer à Dax » sait déjà s'il ouvre ; « Alerte
+ * Clikme » ne dit rien et se fait couper à la deuxième occurrence.
+ */
+export async function sendAlerte(
+  email: string,
+  ville: string,
+  offers: PartnerOffer[],
+  unsubToken: string
+): Promise<boolean> {
+  if (!offers.length) return false;
+  const base = siteBase();
+  const stop = `${base}/ville/stop/${encodeURIComponent(unsubToken)}`;
+  const reglages = `${base}/ville/${encodeURIComponent(villeSlug(ville))}/moi`;
+
+  const lignes = offers
+    .map(
+      (o) => `
+      <a href="${base}/site-internet/apercu/${encodeURIComponent(o.slug)}?via=alerte"
+         style="display:block;text-decoration:none;color:inherit;background:rgba(255,255,255,.055);
+                border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px;margin-top:9px">
+        <div style="font-size:15px;font-weight:700;color:#fff">${esc(o.nom)}</div>
+        <div style="font-size:14px;line-height:1.5;color:#D6DAE2;margin-top:6px">${esc(o.texte)}</div>
+        ${
+          o.jusqua
+            ? `<div style="font-size:11px;font-weight:700;color:#FF9E86;margin-top:7px">${esc(echeanceCourte(o.jusqua))}</div>`
+            : ""
+        }
+      </a>`
+    )
+    .join("");
+
+  const n = offers.length;
+  const titre = n > 1 ? `${n} choses à saisir maintenant` : "À saisir maintenant";
+  const html = SHELL(
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#FF9E86;font-weight:700">Dernière minute</div>
+     <div style="font-family:Georgia,serif;font-size:24px;line-height:1.15;margin-top:10px;color:#fff">
+       ${esc(titre)} à ${esc(ville)}.
+     </div>
+     ${lignes}
+     <a href="${base}/ville/${encodeURIComponent(villeSlug(ville))}/a-saisir"
+        style="display:block;margin-top:16px;background:#3FD79A;color:#08140E;border-radius:22px;
+               padding:13px;text-align:center;font-size:14px;font-weight:700;text-decoration:none">
+       Tout voir dans Le Direct
+     </a>`,
+    `Vous recevez ces alertes parce que vous les avez activées.
+     <a href="${reglages}" style="color:#8FA79A">Régler la fréquence</a> ·
+     <a href="${stop}" style="color:#8FA79A">Ne plus rien recevoir</a>`
+  );
+
+  try {
+    const { error } = await getResend().emails.send({
+      from: MAIL_FROM,
+      to: email,
+      subject: `${titre} à ${ville}`,
+      html,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
 }

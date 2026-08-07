@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/direct-geocoder",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/direct-alertes",
+      "schedule": "5 * * * *"
     }
   ]
 }

@@ -79,7 +79,10 @@ export function Carte({
   // `apercu` est la landing de PROSPECTION (cible du QR de la lettre) : y envoyer
   // un habitant lui proposerait de faire refaire son site.
   // `via=direct` : même convention d'attribution que le lien du résumé quotidien.
-  const fiche = p.auteurSlug ? `/site-internet/apercu/${p.auteurSlug}?via=direct` : null;
+  // `pub` transporte l'annonce qui a mené au clic : c'est ce qui permet de dire
+  // au commerçant QUELLE offre a fonctionné, pas seulement qu'on est venu du
+  // Direct. Compté à l'arrivée, donc sans aller-retour supplémentaire.
+  const fiche = p.auteurSlug ? `/site-internet/apercu/${p.auteurSlug}?via=direct&pub=${p.id}` : null;
 
   return (
     <article className="post">

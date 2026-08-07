@@ -9,6 +9,7 @@ import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { SuivreBouton } from "./suivre-bouton";
 import { BarreDirect } from "./barre-direct";
 import { habitantCourant } from "@/lib/direct/habitant";
+import { noterClic } from "@/lib/direct/publications";
 import { villeSlug as slugDeVille } from "@/lib/direct/ville";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
 import { partnerOffers as loadPartnerOffers, noteCatalogueViews, type PartnerOffer } from "@/lib/site-internet/collectif";
@@ -57,10 +58,10 @@ export default async function ApercuMaquette({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ via?: string }>;
+  searchParams: Promise<{ via?: string; pub?: string }>;
 }) {
   const { slug } = await params;
-  const { via } = await searchParams;
+  const { via, pub } = await searchParams;
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
@@ -445,6 +446,9 @@ export default async function ApercuMaquette({
   // boutique depuis Le Direct atterrit dans un site complet sans aucun chemin de
   // retour — il doit fermer l'onglet, et il ne revient pas.
   const venuDuDirect = str(via) === "direct";
+  // Quelle ANNONCE a mené ici. Le commerçant saura laquelle de ses publications
+  // a fonctionné, pas seulement qu'on est venu du Direct.
+  if (venuDuDirect && str(pub)) void noterClic(supabase, str(pub));
   let dejaSuivi = false;
   const villeDuSite = slugDeVille(str(row.city));
   if (venuDuDirect) {

@@ -10,7 +10,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { filDeVille, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
+import { filDeVille, noterAffichages, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
@@ -98,6 +98,11 @@ export default async function LeDirectPage({
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
   }));
+
+  // Après avoir décidé ce qui s'affiche, pas avant : on ne compte que ce qui est
+  // réellement passé sous les yeux, filtre compris. Sans `await` bloquant le
+  // rendu — un compteur légèrement bas vaut mieux qu'une page qui attend.
+  void noterAffichages(supabase, visibles);
 
   const maj = publications.length ? ilYA(publications[0].publieLe) : "";
 

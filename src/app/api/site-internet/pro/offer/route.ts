@@ -20,7 +20,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
-import { publier } from "@/lib/direct/publications";
+import { publier, retirerToutesDe } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 
@@ -116,6 +116,10 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ error: "Enregistrement impossible (colonne non migrée)." }, { status: 500 });
     }
+    // Le bandeau ET le fil. Retirer son offre de son site tout en la laissant
+    // dans Le Direct enverrait des gens vers une offre qu'il vient d'annuler —
+    // c'est la pire promesse qu'on puisse faire à sa place.
+    await retirerToutesDe(supabase, id);
     return NextResponse.json({ ok: true, offer: null });
   }
 
@@ -145,6 +149,17 @@ export async function POST(request: Request) {
     // remplit pas un formulaire à catégories. Un échec de publication ne fait pas
     // échouer l'enregistrement — son bandeau est déjà en ligne, et lui refuser sa
     // propre offre parce que le fil est indisponible serait absurde.
+    // UNE SEULE OFFRE VIVANTE À LA FOIS, parce que c'est ce que son écran lui
+    // promet : il voit « votre offre en cours », au singulier, et un bouton pour
+    // la remplacer. Sans ce retrait, enregistrer cinq fois dans la semaine
+    // laisserait cinq cartes de lui dans le fil, disant cinq choses
+    // différentes — et il n'aurait aucun moyen de s'en apercevoir.
+    //
+    // La table sait porter plusieurs publications par commerce ; c'est l'écran
+    // qui n'en propose qu'une. Le jour où il en proposera plusieurs, c'est cette
+    // ligne qui saute, pas le modèle.
+    await retirerToutesDe(supabase, id);
+
     const ville = str(site.city);
     if (ville) {
       await publier(supabase, {

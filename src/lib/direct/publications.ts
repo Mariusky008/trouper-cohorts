@@ -12,7 +12,10 @@ const str = (v: unknown) => (v == null ? "" : String(v));
 // Le client Supabase est typé de façon lâche : ce module est appelé aussi bien
 // depuis une page que depuis une route, et n'a rien à savoir de la génération
 // de types.
-type Supabase = { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+type Supabase = {
+  from: (t: string) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  rpc?: (fn: string, args: Record<string, unknown>) => PromiseLike<unknown>;
+};
 
 /** Les quatre familles. L'ordre est celui des filtres à l'écran. */
 export const FAMILLES = ["place", "offre", "evenement", "ville"] as const;
@@ -226,6 +229,26 @@ export async function publier(
   }
 }
 
+/**
+ * Retire TOUTES les publications vivantes d'un commerce.
+ *
+ * Appelée quand il remplace ou annule son offre : son écran lui promet une seule
+ * offre en cours, le fil doit dire la même chose. On marque, on ne supprime pas
+ * — les gardées des habitants pointent dessus.
+ */
+export async function retirerToutesDe(supabase: Supabase, siteId: string): Promise<void> {
+  if (!siteId) return;
+  try {
+    await supabase
+      .from("human_publications")
+      .update({ retire_le: new Date().toISOString() })
+      .eq("site_id", siteId)
+      .is("retire_le", null);
+  } catch {
+    /* table absente → rien à retirer */
+  }
+}
+
 /** Retrait par l'auteur. On marque plutôt que de supprimer : les gardées des
  *  habitants pointent dessus, et une disparition doit pouvoir s'expliquer. */
 export async function retirer(supabase: Supabase, id: string, siteId: string): Promise<boolean> {
@@ -239,5 +262,36 @@ export async function retirer(supabase: Supabase, id: string, siteId: string): P
     return !error;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Note qu'un lot de publications a été affiché.
+ *
+ * Appelée après le rendu du fil, jamais pendant : si le comptage échoue, la page
+ * est déjà partie. Un commerçant préfère un compteur légèrement bas à une page
+ * qui ne s'affiche pas.
+ *
+ * Le chiffre compte des AFFICHAGES, pas des personnes : dédupliquer demanderait
+ * d'identifier chaque lecteur, donc de poser une ligne pour quelqu'un qui ne
+ * fait que lire — ce que Le Direct s'interdit.
+ */
+export async function noterAffichages(supabase: Supabase, publications: Publication[]): Promise<void> {
+  const ids = publications.map((p) => p.id).filter(Boolean);
+  if (!ids.length || typeof supabase.rpc !== "function") return;
+  try {
+    await supabase.rpc("increment_publication_views", { ids });
+  } catch {
+    /* fonction absente (migration non appliquée) → on ne compte simplement pas */
+  }
+}
+
+/** Note qu'une publication a mené quelqu'un chez le commerçant. */
+export async function noterClic(supabase: Supabase, id: string): Promise<void> {
+  if (!id || typeof supabase.rpc !== "function") return;
+  try {
+    await supabase.rpc("increment_publication_click", { pid: id });
+  } catch {
+    /* idem */
   }
 }

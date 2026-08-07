@@ -15,7 +15,7 @@
 // et honnête. La personnalisation s'ajoutera sans changer cet écran.
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { filDeVille } from "@/lib/direct/publications";
+import { filDeVille, noterAffichages } from "@/lib/direct/publications";
 import { calculerPouls, selection, repereSpatial } from "@/lib/direct/degradation";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees, suivis } from "@/lib/direct/habitant";
@@ -53,6 +53,9 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     suivis: new Set(mesSuivis.map((s) => s.siteId)),
     categories: habitant?.categories.length ? new Set(habitant.categories) : undefined,
   });
+
+  // Seules les huit retenues comptent, pas tout le fil relu pour les choisir.
+  void noterAffichages(supabase, choisies);
 
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
   const cartes: CarteVue[] = choisies.map((p) => ({
