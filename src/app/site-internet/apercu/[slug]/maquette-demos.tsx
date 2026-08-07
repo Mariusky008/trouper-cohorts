@@ -324,7 +324,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
    * pouvait pas comprendre ce qu'il allait vraiment obtenir.
    *
    * Pas de bouton d'action ici, contrairement au bandeau : la carte du catalogue
-   * (ville-decouverte.tsx) se glisse — passer, garder, ouvrir le site — et n'a
+   * (l'onglet « À saisir » du Direct) se glisse — passer, garder, ouvrir le site — et n'a
    * aucune pastille de réservation. En dessiner une montrerait un objet qui
    * n'existe pas. Le bouton, le visiteur le trouve sur le site, dans le bandeau.
    */
@@ -410,7 +410,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   const revCatalogue = (msg: string) =>
     `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
     `<div class="asx-swipe">${carteCatalogue(msg)}</div>` +
-    // La barre de gestes du vrai catalogue (ville-decouverte.tsx) : sans elle,
+    // La barre de gestes du vrai swipe (a-saisir/selection-swipe.tsx) : sans elle,
     // on montre une belle carte mais pas l'objet que les habitants manipulent.
     `<div class="asx-kbar">` +
       `<span class="asx-kact"><i>✕</i>Passer</span>` +

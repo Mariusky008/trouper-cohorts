@@ -1,199 +1,178 @@
-// « Aujourd'hui à {ville} » — le catalogue commun des commerçants d'une ville.
+// ÉCRAN 1 — LE DIRECT.
 //
-// Deux étages, et l'ordre compte :
-//   1. Les annonces du moment, de la plus fraîche à la plus ancienne. C'est la
-//      raison de revenir : ce qui est vrai aujourd'hui et plus demain.
-//   2. Les commerces de la ville qui n'ont rien annoncé. C'est la raison de ne
-//      pas repartir : même sans annonce, on découvre qui est là.
+// Tout ce qui se passe dans la ville : le pouls, puis le fil chronologique. Ce
+// n'est pas un catalogue, c'est le pouls de la ville en temps réel — le mot
+// « catalogue » n'apparaît nulle part à l'écran, et aucune notion d'édition, de
+// numéro ni de mois n'existe.
 //
-// Sans le second étage, la page restait vide tant que personne n'avait publié —
-// et une page vide ne ramène personne. Avec, le catalogue existe dès le premier
-// commerce en ligne, et une annonce publiée passe mécaniquement devant.
-//
-// Honnêteté : la page affiche ce qui existe. Aucune annonce inventée pour
-// remplir, et seuls les sites PUBLIÉS y figurent — un commerce simplement
-// démarché n'a jamais accepté d'apparaître où que ce soit.
+// Une publication expirée ne figure pas dans le fil. C'est la traduction directe
+// du positionnement : mieux vaut un fil court et vrai qu'un fil rempli d'hier.
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cityDirectory, cityList, ilYA, noteCatalogueViews } from "@/lib/site-internet/collectif";
-import { VilleSuivre } from "./ville-suivre";
-import { VilleBarre } from "./ville-barre";
-import type { Fiche } from "./ville-decouverte";
+import { filDeVille, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
+import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
+import { configVille } from "@/lib/direct/ville";
+import { habitantCourant, gardees } from "@/lib/direct/habitant";
+import { ilYA } from "@/lib/site-internet/collectif";
+import { echeanceCourte } from "@/lib/site-internet/echeance";
+import { Carte, type CarteVue } from "./_ui/carte";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const capWords = (s: string) => s.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_m, p, c) => p + c.toUpperCase());
-
-/** Nom affichable même sans commerce trouvé : le slug d'URL vaut mieux que « cette ville ». */
-const afficheVille = (ville: string, slug: string) => capWords(ville || slug.replace(/-/g, " ")) || "cette ville";
-
 export async function generateMetadata({ params }: { params: Promise<{ ville: string }> }): Promise<Metadata> {
   const { ville } = await params;
-  const { ville: nom } = await cityDirectory(createAdminClient(), ville);
-  const affiche = afficheVille(nom, ville);
-  const title = `Aujourd'hui à ${affiche}`;
-  const description = `Ce que proposent les commerçants de ${affiche} en ce moment : places qui se libèrent, offres du jour, nouveautés.`;
+  const cfg = await configVille(createAdminClient(), ville);
+  const title = `Le Direct de ${cfg.nom}`;
+  const description = `Tout ce qui se passe à ${cfg.nom} en ce moment : places qui se libèrent, offres du jour, événements.`;
   return {
     title,
     description,
     openGraph: { title, description, type: "website" },
-    // Manifeste PAR VILLE : l'icône ajoutée à l'écran d'accueil rouvre CETTE ville.
     manifest: `/ville/${ville}/manifest.webmanifest`,
-    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: affiche },
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: `Direct ${cfg.nom}` },
   };
 }
 
-export default async function VillePage({ params }: { params: Promise<{ ville: string }> }) {
-  const { ville } = await params;
-  const supabase = createAdminClient();
-  const [{ ville: nomVille, offers, autres }, villes] = await Promise.all([
-    cityDirectory(supabase, ville),
-    cityList(supabase),
-  ]);
-  const affiche = afficheVille(nomVille, ville);
-  // Une fiche n'est pas une annonce : on ne compte que les annonces, pour que le
-  // chiffre montré au commerçant garde exactement le sens qu'on lui donne.
-  await noteCatalogueViews(supabase, offers);
+const FILTRES: Array<{ cle: string; label: string }> = [
+  { cle: "", label: "Tout" },
+  { cle: "pres", label: "Près de moi" },
+  { cle: "offre", label: FAMILLE_LABEL.offre + "s" },
+  { cle: "place", label: "Places" },
+  { cle: "ville", label: FAMILLE_LABEL.ville },
+];
 
-  // Le mode découverte parcourt TOUT le monde — annonce ou pas. Les commerces qui
-  // ont publié passent devant : ils ont quelque chose à dire aujourd'hui.
-  const fiches: Fiche[] = [
-    ...offers.map((o) => ({
-      slug: o.slug,
-      nom: o.nom,
-      metier: o.metier,
-      photo: o.photo,
-      note: o.note ?? null,
-      avis: o.avis ?? null,
-      texte: o.texte,
-      quand: ilYA(o.publieLe),
-      jusqua: o.jusqua ?? null,
-    })),
-    ...autres.map((m) => ({ ...m, texte: "", quand: "", jusqua: null })),
-  ];
+export default async function LeDirectPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ville: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { ville } = await params;
+  const sp = await searchParams;
+  const filtre = String(Array.isArray(sp.f) ? sp.f[0] : sp.f || "");
+
+  const supabase = createAdminClient();
+  const [cfg, habitant] = await Promise.all([configVille(supabase, ville), habitantCourant(supabase)]);
+
+  // Deux lectures plutôt qu'une : la première décide si la ville a le volume qui
+  // rend un fil du jour intéressant, la seconde applique la fenêtre qui en
+  // découle. On ne peut pas connaître la fenêtre avant d'avoir compté, et
+  // compter sur la mauvaise fenêtre fausserait le seuil.
+  const duJour = await filDeVille(supabase, cfg.slug);
+  const poulsInitial = calculerPouls(duJour, { seuil: cfg.seuilCompteur, ville: cfg.nom });
+  const publications = poulsInitial.fenetreLarge
+    ? await filDeVille(supabase, cfg.slug, { fenetreLarge: true })
+    : duJour;
+  const pouls = calculerPouls(publications, { seuil: cfg.seuilCompteur, ville: cfg.nom });
+
+  const mesGardees = habitant ? await gardees(supabase, habitant.id) : new Set<string>();
+
+  const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
+  let visibles = publications;
+  if (filtre === "pres") {
+    // Sans position, « près de moi » ne peut pas trier par distance. On tombe
+    // sur le secteur déclaré dans l'onglet Moi — et si rien n'est déclaré, on
+    // n'invente pas un tri : on montre tout, l'onglet Moi propose de le régler.
+    const q = habitant?.quartier;
+    if (q) visibles = publications.filter((p) => p.quartier === q);
+  } else if (estFamille(filtre)) {
+    visibles = publications.filter((p) => p.famille === (filtre as Famille));
+  }
+
+  const cartes: CarteVue[] = visibles.map((p) => ({
+    id: p.id,
+    famille: p.famille,
+    texte: p.texte,
+    photo: p.photo,
+    lien: p.lien,
+    auteurNom: p.auteurNom,
+    auteurMetier: p.auteurMetier,
+    auteurSlug: p.auteurSlug,
+    repere: repereSpatial(p, ctx),
+    fraicheur: ilYA(p.publieLe),
+    echeance: echeanceCourte(p.expireLe),
+  }));
+
+  const maj = publications.length ? ilYA(publications[0].publieLe) : "";
 
   return (
-    <main className="vil">
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          /* Fond du catalogue Privilège : un dégradé, pas un aplat. */
-          .vil{min-height:100vh;color:#fff;font-family:var(--fb),system-ui,sans-serif;padding:34px 18px 60px;
-            background:linear-gradient(165deg,#0E1318 0%,#0A0C10 55%,#0D1209 100%);}
-          .vil *{box-sizing:border-box;}
-          .vil .in{max-width:660px;margin:0 auto;}
-          .vil .k{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;color:#00C896;}
-          .vil h1{font-family:var(--fd),Georgia,serif;font-size:34px;font-weight:600;line-height:1.1;margin:9px 0 0;}
-          .vil .sub{font-size:14px;line-height:1.6;color:#A8AEBC;margin-top:11px;}
-          .vil .sec{margin-top:30px;}
-          .vil .sec-k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#7B8291;}
-          .vil .sec-h{font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:600;margin-top:6px;}
-          .vil .sec-p{font-size:12.5px;line-height:1.55;color:#7B8291;margin-top:6px;}
-          .vil .list{display:flex;flex-direction:column;gap:11px;margin-top:16px;}
-          .vil .c{display:flex;align-items:flex-start;gap:13px;text-decoration:none;color:inherit;
-            background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:17px;padding:14px;}
-          .vil .c:active{transform:scale(.995);}
-          .vil .im{width:58px;height:58px;flex:none;border-radius:14px;background-size:cover;background-position:center;
-            background-image:linear-gradient(150deg,#2C3A2E,#151A15);}
-          .vil .b{flex:1;min-width:0;}
-          .vil .n{display:block;font-size:15px;font-weight:800;}
-          .vil .m{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#00C896;font-weight:700;margin-top:2px;}
-          .vil .t{display:block;font-size:13.5px;line-height:1.45;color:#D6DAE2;margin-top:6px;}
-          .vil .w{display:block;font-size:11px;color:#7B8291;margin-top:6px;}
-          .vil .go{flex:none;font-size:20px;color:rgba(255,255,255,.4);font-weight:700;align-self:center;}
-          /* Fiches sans annonce : plus sobres, pour que les annonces gardent la vedette. */
-          .vil .grid{display:grid;grid-template-columns:1fr;gap:9px;margin-top:16px;}
-          @media (min-width:560px){.vil .grid{grid-template-columns:1fr 1fr;}}
-          .vil .f{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;
-            background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:11px;}
-          .vil .f:active{transform:scale(.995);}
-          .vil .f .im{width:46px;height:46px;border-radius:12px;}
-          .vil .f .n{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-          .vil .f .m{font-size:10px;}
-          .vil .rt{display:block;font-size:11.5px;color:#B9BDB2;margin-top:4px;}
-          .vil .rt s{text-decoration:none;color:#F0B429;}
-          .vil .none{margin-top:18px;border:1px dashed rgba(255,255,255,.2);border-radius:17px;padding:20px 18px;
-            font-size:13.5px;line-height:1.6;color:#A8AEBC;}
-          .vil .foot{margin-top:30px;font-size:11.5px;line-height:1.6;color:#6F7684;}
-          @media (min-width:760px){.vil{padding:60px 24px 80px;} .vil h1{font-size:44px;}}
-          `,
-        }}
-      />
-      <div className="in">
-        <div className="k">🤝 Le collectif</div>
-        <h1>Aujourd&apos;hui à {affiche}.</h1>
-        <p className="sub">
-          Ce que les commerçants de {affiche} proposent en ce moment — places qui se libèrent, offres du jour,
-          nouveautés. Rien d&apos;autre que ce qu&apos;ils ont annoncé eux-mêmes.
-        </p>
+    <>
+      <header className="fhead">
+        <div className="live"><span className="dot" aria-hidden="true" />En direct</div>
+        <h1>Le Direct de {cfg.nom}</h1>
+        <div className="upd">
+          Tout ce qui se passe à {cfg.nom}
+          {maj ? ` · mis à jour ${maj}` : ""}
+        </div>
+      </header>
 
-        {/* ── Étage 1 : les annonces du moment ─────────────────────────────── */}
-        <section className="sec">
-          <div className="sec-k">Les annonces du moment</div>
-          {offers.length === 0 ? (
-            <div className="none">
-              Aucune annonce en cours à {affiche} pour l&apos;instant. Dès qu&apos;un commerce en publie une, elle
-              apparaît ici, en tête.
-            </div>
-          ) : (
-            <div className="list">
-              {offers.map((o) => (
-                <a className="c" key={o.slug} href={`/site-internet/apercu/${o.slug}?via=catalogue`}>
-                  <span className="im" aria-hidden="true" style={o.photo ? { backgroundImage: `url("${o.photo}")` } : undefined} />
-                  <span className="b">
-                    <span className="n">{o.nom}</span>
-                    <span className="m">{o.metier}</span>
-                    <span className="t">{o.texte}</span>
-                    {ilYA(o.publieLe) && <span className="w">{ilYA(o.publieLe)}</span>}
-                  </span>
-                  <span className="go" aria-hidden="true">›</span>
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
+      <section className="pulse" aria-label="Le pouls de la ville">
+        <div className="n">{pouls.phrase}</div>
+        <div className="sub">{pouls.sous}</div>
 
-        {/* ── Étage 2 : les commerces d'ici, annonce ou pas ─────────────────── */}
-        {autres.length > 0 && (
-          <section className="sec">
-            <div className="sec-k">Les commerces de {affiche}</div>
-            <div className="sec-h">
-              {autres.length} commerce{autres.length > 1 ? "s" : ""} à découvrir
-            </div>
-            <div className="sec-p">Ils n&apos;ont rien annoncé aujourd&apos;hui — leur site vous dit tout le reste.</div>
-            <div className="grid">
-              {autres.map((m) => (
-                <a className="f" key={m.slug} href={`/site-internet/apercu/${m.slug}?via=catalogue`}>
-                  <span className="im" aria-hidden="true" style={m.photo ? { backgroundImage: `url("${m.photo}")` } : undefined} />
-                  <span className="b">
-                    <span className="n">{m.nom}</span>
-                    <span className="m">{m.metier}</span>
-                    {m.note != null && m.avis != null && m.avis > 0 && (
-                      <span className="rt">
-                        <s>★</s> {m.note.toFixed(1).replace(".", ",")} · {m.avis} avis
-                      </span>
-                    )}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </section>
+        {/* Un sous-compteur à zéro se lit comme « il n'y a rien » : on n'affiche
+            que ceux qui portent une information. */}
+        {(pouls.pres > 0 || pouls.bientot > 0 || pouls.places > 0) && (
+          <div className="rows">
+            {pouls.pres > 0 && <div className="r"><b>{pouls.pres}</b><span>près de vous</span></div>}
+            {pouls.bientot > 0 && <div className="r"><b>{pouls.bientot}</b><span>finissent bientôt</span></div>}
+            {pouls.places > 0 && <div className="r"><b>{pouls.places}</b><span>places libres</span></div>}
+          </div>
         )}
 
-        {fiches.length > 0 && (
-          <VilleBarre ville={affiche} villeSlug={ville} villes={villes} fiches={fiches} />
+        {/* LE PONT entre les deux premiers onglets, et le seul. Si l'habitant ne
+            perçoit pas la différence entre Le Direct et À saisir, l'architecture
+            a échoué — ce bouton est ce qui la rend évidente. */}
+        {publications.length > 0 && (
+          <Link href={`/ville/${ville}/a-saisir`} className="cta">
+            Voir ce qui vaut le coup maintenant →
+          </Link>
         )}
+      </section>
 
-        {/* L'inscription n'a de sens que si la ville existe : sinon on collecterait
-            des adresses pour un catalogue qui ne se remplira jamais. */}
-        {nomVille && <VilleSuivre ville={affiche} villeSlug={ville} />}
+      <nav className="chips" aria-label="Filtrer le fil">
+        {FILTRES.map((f) => (
+          <Link
+            key={f.cle || "tout"}
+            href={f.cle ? `/ville/${ville}?f=${f.cle}` : `/ville/${ville}`}
+            className={`chip${filtre === f.cle ? " on" : ""}`}
+            scroll={false}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </nav>
 
-        <p className="foot">
-          Chaque annonce est publiée par le commerce lui-même. Seule l&apos;annonce circule — aucune donnée de
-          client n&apos;est partagée, jamais.
-        </p>
-      </div>
-    </main>
+      {cartes.length > 0 ? (
+        <>
+          <div className="sect">
+            <div className="st">Le fil</div>
+            <div className="ss">
+              du plus récent au plus ancien
+              {pouls.fenetreLarge ? " · les sept derniers jours" : ""}
+            </div>
+          </div>
+          <div className="feed">
+            {cartes.map((c) => (
+              <Carte key={c.id} p={c} gardee={mesGardees.has(c.id)} ville={ville} />
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="vide">
+          <h3>{cfg.active ? "Rien de neuf pour l'instant" : `${cfg.nom} n'est pas encore couverte`}</h3>
+          <p>
+            {cfg.active
+              ? filtre
+                ? "Aucune publication ne correspond à ce filtre en ce moment. Le fil ne garde que ce qui est encore vrai — revenez tout à l'heure."
+                : "Le fil ne garde que ce qui est encore vrai aujourd'hui. Les commerçants publient au fil de la journée : revenez tout à l'heure."
+              : "Aucun commerce n'a encore rejoint Le Direct ici. C'est en train de se construire, ville par ville."}
+          </p>
+        </div>
+      )}
+    </>
   );
 }

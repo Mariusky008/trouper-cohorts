@@ -20,6 +20,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
+import { publier } from "@/lib/direct/publications";
+import { familleDuTexte } from "@/lib/direct/famille-texte";
+import { villeSlug } from "@/lib/direct/ville";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +82,10 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, gallery_photos, diagnostic")
+    // `city`, `slug`, `business_name` et `activite` servent au pont vers Le
+    // Direct : la publication porte son auteur, dénormalisé au moment où elle
+    // est écrite.
+    .select("id, slug, business_name, city, activite, pro_token, gallery_photos, diagnostic")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -127,6 +133,31 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ error: "Enregistrement impossible (colonne non migrée)." }, { status: 500 });
     }
+
+    // LE PONT VERS LE DIRECT. `current_offer` reste le bandeau du site du
+    // commerçant — un objet, remplacé à chaque fois. Le fil de la ville, lui, a
+    // besoin d'une publication par annonce : un identifiant stable, une famille,
+    // sa propre échéance. Écrire aux deux endroits ici, plutôt que de faire lire
+    // `current_offer` au fil, est ce qui permet à un commerce d'avoir plusieurs
+    // choses vivantes à dire en même temps.
+    //
+    // La famille est déduite du texte : le commerçant écrit une phrase, il ne
+    // remplit pas un formulaire à catégories. Un échec de publication ne fait pas
+    // échouer l'enregistrement — son bandeau est déjà en ligne, et lui refuser sa
+    // propre offre parce que le fil est indisponible serait absurde.
+    const ville = str(site.city);
+    if (ville) {
+      await publier(supabase, {
+        ville,
+        villeSlug: villeSlug(ville),
+        famille: familleDuTexte(text),
+        texte: text,
+        photo,
+        expireLe: until,
+        site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
+      });
+    }
+
     return NextResponse.json({ ok: true, offer });
   }
 
