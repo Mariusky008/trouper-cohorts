@@ -67,11 +67,22 @@ CREATE TABLE IF NOT EXISTS public.human_publications (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- La lecture du fil : une ville, ce qui n'est ni retiré ni expiré, du plus récent
--- au plus ancien. C'est la requête de l'écran d'accueil — elle doit être servie
--- par l'index, pas par un balayage.
+-- La lecture du fil : une ville, ce qui n'est pas retiré, du plus récent au plus
+-- ancien. C'est la requête de l'écran d'accueil — elle doit être servie par
+-- l'index, tri compris.
+--
+-- INDEX PARTIEL, et c'est le point : `retire_le IS NULL` est dans TOUTES les
+-- lectures du fil, jamais en variable. Le mettre en colonne d'index (plutôt
+-- qu'en condition) intercalerait une colonne non contrainte par égalité entre
+-- `ville_slug` et `publie_le`, et Postgres devrait alors trier le résultat au
+-- lieu de parcourir l'index dans l'ordre. Vérifié au plan d'exécution : en
+-- partiel, le tri disparaît.
+--
+-- `expire_le` n'y figure pas : l'expiration se juge en applicatif (la fenêtre
+-- dépend du volume de la ville), pas en SQL.
 CREATE INDEX IF NOT EXISTS human_publications_fil_idx
-  ON public.human_publications (ville_slug, retire_le, expire_le, publie_le DESC);
+  ON public.human_publications (ville_slug, publie_le DESC)
+  WHERE retire_le IS NULL;
 
 CREATE INDEX IF NOT EXISTS human_publications_site_idx
   ON public.human_publications (site_id, publie_le DESC);
