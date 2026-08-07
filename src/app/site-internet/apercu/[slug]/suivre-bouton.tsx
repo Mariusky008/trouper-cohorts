@@ -1,6 +1,16 @@
 "use client";
 
-// « Suivre ce commerce » — le seul geste social du Direct.
+// « Suivre dans Le Direct » — le seul geste social de l'application.
+//
+// LE LIBELLÉ NOMME L'APPLICATION, et ce n'est pas cosmétique. La page du
+// commerçant porte DÉJÀ son propre « 🔔 Suivre ce commerce », qui inscrit le
+// visiteur sur SA liste de diffusion WhatsApp. Deux boutons au libellé
+// identique sur le même écran, promettant deux choses différentes, ne laissent
+// aucun moyen de choisir — et celui qui clique ne sait pas ce qu'il vient
+// d'accepter.
+//
+// Les deux existent parce que les promesses diffèrent : là, c'est le commerçant
+// qui écrit ; ici, c'est Le Direct qui prévient. Le libellé doit dire lequel.
 //
 // Suivre veut dire « préviens-moi quand il publie », rien de plus : ni
 // commentaire, ni note publique, ni nombre d'abonnés affiché. C'est ce qui le
@@ -79,7 +89,7 @@ export function SuivreBouton({
       }}
     >
       <span aria-hidden="true">{suivi ? "♥" : "♡"}</span>
-      {suivi ? "Vous suivez ce commerce" : "Suivre ce commerce"}
+      {suivi ? "Suivi dans Le Direct" : "Suivre dans Le Direct"}
     </button>
   );
 }

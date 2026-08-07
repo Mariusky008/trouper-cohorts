@@ -91,13 +91,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
     avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif, visiteurPublic = false,
   } = p;
+  // « On montre au commerçant SA maquette » — la seule chose que `!published`
+  // voulait dire partout ici. Un visiteur venu du public n'est jamais dans ce
+  // cas, même si le site n'est pas encore publié.
+  const modeDemo = !published && !visiteurPublic;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
   // croisée vers le commerce démarché, au lieu de l'accueil.
-  // L'habillage de démarchage ne se montre qu'au commerçant. Publié ou non,
-  // un visiteur venu du fil doit voir une boutique, pas une offre commerciale
-  // qui ne le concerne pas.
-  const modeDemo = !published && !visiteurPublic;
   const bookViaDemarchage = modeDemo && !bookingHref && Boolean(demarchageTarget);
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon démo
   // « choc » (si cible), sinon accueil intelligent.
@@ -118,8 +118,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   const motifs = (Array.isArray(proMotifs) && proMotifs.length ? proMotifs : content.motifs) ?? [];
   const proServices = Array.isArray(services) ? services : [];
   const demoServices = content.demoServices ?? [];
-  const serviceList = proServices.length ? proServices : published ? [] : demoServices;
-  const servicesAreExamples = !proServices.length && !published && demoServices.length > 0;
+  const serviceList = proServices.length ? proServices : modeDemo ? demoServices : [];
+  const servicesAreExamples = !proServices.length && modeDemo && demoServices.length > 0;
   // CTA d'une prestation : vraie page de réservation si dispo, sinon l'accueil
   // pré-qualifié sur cette prestation (effet « réservation sur la bonne offre »).
   const svcCta = (name: string) => (bookingHref ? { href: bookingHref } : { "data-accueil-motif": `Je voudrais réserver : ${name}` });
@@ -407,7 +407,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         moteur={moteur}
         busyWord={busyWord}
         hideBubble
-        cloudTts={!published}
+        cloudTts={modeDemo}
         published={published}
       />
 
@@ -441,10 +441,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
       {/* Proposée seulement après un vrai signe d'intérêt, une fois, refus mémorisé. */}
       {canFollow && <FollowNudge slug={slug} nom={nom} promesse={follow.promesse} accent={accent} />}
-      {!published && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
+      {modeDemo && <MaquetteAssistant accent={accent} data={assistantData} slug={slug} />}
       <ScrollReveal />
 
-      {!published && (
+      {modeDemo && (
         <div className="probar">
           <span className="probar-lab">✦ Côté pro · votre maquette</span>
           <div className="probar-btns">
@@ -459,7 +459,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
 
       {/* En-tête visiteur : le nom + « Suivre » restent accessibles pendant toute la
           visite. En mode maquette, elle se place sous la barre « côté pro ». */}
-      {canFollow && <FollowBar slug={slug} nom={nom} accent={accent} topOffset={published ? 0 : 50} />}
+      {canFollow && <FollowBar slug={slug} nom={nom} accent={accent} topOffset={modeDemo ? 50 : 0} />}
 
       {/* Le bandeau écoute l'Action Flash : dès que le commerçant écrit son
           annonce dans la maquette, elle s'affiche ici — c'est la promesse même
@@ -486,7 +486,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           // en ligne) : le raccourci aussi, avec le libellé de ce qu'on y trouve.
           // Jamais de raccourci vers une ancre absente : le bloc en ligne suppose
           // une ville et une participation au catalogue.
-          ...(!published || (villeAff && collectifActif)
+          ...(modeDemo || (villeAff && collectifActif)
             ? [{
                 label: published ? `📍 Aujourd'hui à ${villeAff}` : `🤝 Le catalogue de ${villeAff}`,
                 target: "mq-collectif",
@@ -500,9 +500,9 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           site en ligne, on n'affiche que ce qu'il a validé dans son Espace Pro ;
           sinon la section disparaît. En maquette, le gabarit métier reste visible
           comme proposition — c'est justement ce qu'on lui donne à relire. */}
-      {(approche || !published) && (
+      {(approche || modeDemo) && (
         <section>
-          <div className="sec-k">Mon approche{!approche && !published && <span className="sec-ex">proposition</span>}</div>
+          <div className="sec-k">Mon approche{!approche && modeDemo && <span className="sec-ex">proposition</span>}</div>
           <div className="sec-h">{approche ? approche.titre : content.approcheTitre}</div>
           <div className="sec-p">{approche ? approche.corps : content.approcheCorps}</div>
         </section>
@@ -560,7 +560,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           note={note}
           reviewsCount={reviewsCount}
           offer={offer}
-          exampleOffer={!published ? p.flashExample : undefined}
+          exampleOffer={modeDemo ? p.flashExample : undefined}
           accent={accent}
           extras={{
             reviews: avisMode !== "none" ? reviewsTop.filter((r) => r.text) : [],
@@ -632,7 +632,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {/* En maquette : la démonstration du mécanisme, cadrée « exemple ». */}
-      {canFollow && !published && (
+      {canFollow && modeDemo && (
         <CollectifSection
           slug={slug}
           ville={villeAff}
