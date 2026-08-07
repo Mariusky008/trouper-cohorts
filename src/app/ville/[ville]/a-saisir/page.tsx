@@ -65,6 +65,8 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     auteurMetier: p.auteurMetier,
     auteurSlug: p.auteurSlug,
     repere: repereSpatial(p, ctx),
+    lat: p.lat,
+    lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
   }));

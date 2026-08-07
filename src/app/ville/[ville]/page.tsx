@@ -17,6 +17,7 @@ import { habitantCourant, gardees } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { Carte, type CarteVue } from "./_ui/carte";
+import { BoutonPosition } from "./_ui/bouton-position";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -92,6 +93,8 @@ export default async function LeDirectPage({
     auteurMetier: p.auteurMetier,
     auteurSlug: p.auteurSlug,
     repere: repereSpatial(p, ctx),
+    lat: p.lat,
+    lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
   }));
@@ -144,6 +147,7 @@ export default async function LeDirectPage({
             {f.label}
           </Link>
         ))}
+        <BoutonPosition />
       </nav>
 
       {cartes.length > 0 ? (

@@ -13,6 +13,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { FAMILLE_LABEL, type Famille } from "@/lib/direct/publications";
+import { usePosition } from "@/lib/direct/position";
+import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
 
 export type CarteVue = {
   id: string;
@@ -26,6 +28,11 @@ export type CarteVue = {
   /** Déjà formatés côté serveur : le fuseau du serveur fait foi, et un rendu
    *  client divergent provoquerait une erreur d'hydratation à chaque carte. */
   repere: string;
+  /** Position du commerce, quand on l'a. Sert à remplacer le repère de repli par
+   *  une distance réelle SI la personne a accordé la sienne. Le serveur rend
+   *  toujours le repli : sans permission, l'écran est identique. */
+  lat: number | null;
+  lng: number | null;
   fraicheur: string;
   echeance: string;
 };
@@ -44,6 +51,13 @@ export function Carte({
 }) {
   const [on, setOn] = useState(gardee);
   const [, demarrer] = useTransition();
+  const moi = usePosition();
+
+  // La distance ne remplace le repli que si les deux positions existent.
+  const repere =
+    moi && p.lat != null && p.lng != null
+      ? distanceCourte(metresEntre(moi.lat, moi.lng, p.lat, p.lng))
+      : p.repere;
 
   const basculer = async () => {
     const vise = !on;
@@ -70,8 +84,8 @@ export function Carte({
   return (
     <article className="post">
       <div className="meta">
-        {p.repere ? <span className="dist">{p.repere}</span> : null}
-        {p.repere && p.fraicheur ? <span className="sep">·</span> : null}
+        {repere ? <span className="dist">{repere}</span> : null}
+        {repere && p.fraicheur ? <span className="sep">·</span> : null}
         {p.fraicheur ? <span className="fresh">{p.fraicheur}</span> : null}
         {p.echeance ? <span className="sep">·</span> : null}
         {p.echeance ? <span className="left">{p.echeance}</span> : null}
