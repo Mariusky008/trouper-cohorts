@@ -4,16 +4,29 @@
 //
 // Aucun compte n'est obligatoire pour consulter Le Direct : cet écran s'affiche
 // même sans identité, et propose alors de recevoir le résumé plutôt que de
-// bloquer. La désinscription est immédiate, sans confirmation ni écran de
-// rétention.
+// bloquer. La désinscription est immédiate, sans confirmation ni rétention ; la
+// seule confirmation de l'écran porte sur la suppression des données, parce
+// qu'elle est la seule chose irréversible.
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { configVille } from "@/lib/direct/ville";
+import { configVille, villeSlug } from "@/lib/direct/ville";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { ReglagesCanaux, SeDesabonner } from "./reglages";
+import { consentPhrase } from "@/lib/site-internet/ville-mail";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import {
+  ReglagesCanaux,
+  PanneauCategories,
+  PanneauSecteur,
+  PanneauHoraires,
+  PanneauAdresse,
+  PanneauDonnees,
+  SeDesabonner,
+} from "./reglages";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+const str = (v: unknown) => (v == null ? "" : String(v));
 
 export async function generateMetadata({ params }: { params: Promise<{ ville: string }> }): Promise<Metadata> {
   const { ville } = await params;
@@ -21,13 +34,41 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   return { title: `Moi — Le Direct de ${cfg.nom}`, robots: { index: false } };
 }
 
-/** « jusqu'à 2 km » · « jusqu'à 800 m ». */
-const rayonLisible = (m: number) => (m >= 1000 ? `jusqu'à ${(m / 1000).toFixed(m % 1000 ? 1 : 0).replace(".", ",")} km` : `jusqu'à ${m} m`);
+/**
+ * Les catégories proposées sont celles qui EXISTENT dans cette ville.
+ *
+ * Une liste de métiers en dur proposerait « Fleuriste » à une ville qui n'en a
+ * pas : la personne le coche, ne reçoit rien, et en conclut que l'application ne
+ * marche pas. Mieux vaut une liste courte et vraie.
+ */
+async function categoriesDeLaVille(
+  supabase: ReturnType<typeof createAdminClient>,
+  slug: string
+): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from("human_vitrine_sites")
+      .select("city, activite")
+      .eq("channel", "letter")
+      .eq("published", true)
+      .limit(500);
+    const vus = new Set<string>();
+    for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
+      if (villeSlug(str(r.city)) !== slug) continue;
+      const label = resolveMetier(str(r.activite)).entry?.label;
+      if (label) vus.add(label);
+    }
+    return Array.from(vus).sort((a, b) => a.localeCompare(b, "fr"));
+  } catch {
+    return [];
+  }
+}
 
 export default async function MoiPage({ params }: { params: Promise<{ ville: string }> }) {
   const { ville } = await params;
   const supabase = createAdminClient();
   const [cfg, habitant] = await Promise.all([configVille(supabase, ville), habitantCourant(supabase)]);
+  const categories = await categoriesDeLaVille(supabase, cfg.slug);
 
   const prenom = habitant?.prenom || "";
   const initiale = (prenom || cfg.nom).charAt(0).toUpperCase();
@@ -61,55 +102,23 @@ export default async function MoiPage({ params }: { params: Promise<{ ville: str
       />
 
       <div className="grp">Ce qui m&apos;intéresse</div>
-      <div className="row">
-        <span className="ic" aria-hidden="true">◈</span>
-        <div>
-          <div className="t">Mes catégories</div>
-          <div className="s">{habitant?.categories.length ? habitant.categories.join(" · ") : "Toutes pour l'instant"}</div>
-        </div>
-        <span className="go" aria-hidden="true">›</span>
-      </div>
-      <div className="row">
-        <span className="ic" aria-hidden="true">⌖</span>
-        <div>
-          <div className="t">Mon secteur</div>
-          <div className="s">
-            {habitant?.quartier ? `${habitant.quartier} · ` : `${cfg.nom} · `}
-            {rayonLisible(habitant?.rayonM ?? 2000)}
-          </div>
-        </div>
-        <span className="go" aria-hidden="true">›</span>
-      </div>
-      <div className="row">
-        <span className="ic" aria-hidden="true">◷</span>
-        <div>
-          <div className="t">Mes horaires</div>
-          <div className="s">
-            Ne pas déranger avant {habitant?.silenceAvant ?? 9} h et après {habitant?.silenceApres ?? 20} h
-          </div>
-        </div>
-        <span className="go" aria-hidden="true">›</span>
-      </div>
+      <PanneauCategories disponibles={categories} initial={habitant?.categories ?? []} />
+      <PanneauSecteur
+        quartiers={cfg.quartiers}
+        quartierInitial={habitant?.quartier ?? ""}
+        rayonInitial={habitant?.rayonM ?? 2000}
+        ville={cfg.nom}
+      />
+      <PanneauHoraires avantInitial={habitant?.silenceAvant ?? 9} apresInitial={habitant?.silenceApres ?? 20} />
 
       <div className="grp">Mon compte</div>
-      <div className="row">
-        <span className="ic" aria-hidden="true">✉</span>
-        <div>
-          <div className="t">Mon adresse</div>
-          <div className="s">
-            {emailMasque || "Aucune — vous pouvez tout consulter sans en donner"}
-          </div>
-        </div>
-        <span className="go" aria-hidden="true">›</span>
-      </div>
-      <div className="row">
-        <span className="ic" aria-hidden="true">⛉</span>
-        <div>
-          <div className="t">Mes données</div>
-          <div className="s">Voir, exporter ou tout supprimer</div>
-        </div>
-        <span className="go" aria-hidden="true">›</span>
-      </div>
+      <PanneauAdresse
+        emailMasque={emailMasque}
+        ville={ville}
+        villeNom={cfg.nom}
+        phraseConsentement={consentPhrase(cfg.nom)}
+      />
+      <PanneauDonnees />
       {habitant ? <SeDesabonner ville={ville} /> : null}
 
       <div style={{ height: 20 }} />

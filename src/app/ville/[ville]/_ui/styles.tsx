@@ -128,6 +128,34 @@ export function StylesDirect() {
 .dir .tog.off{background:var(--line2);} .dir .tog.off::after{right:auto;left:2px;}
 .dir .grp{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:16px 16px 7px;}
 
+/* Panneau déplié sous une ligne de réglage. Fond légèrement en retrait : il doit
+   se lire comme appartenant à la ligne au-dessus, pas comme une nouvelle
+   section. */
+.dir .panneau{background:#FAFCFB;border-bottom:1px solid var(--line);padding:13px 16px 15px;}
+.dir .panneau .aide{font-size:11px;color:var(--soft);line-height:1.55;margin:0 0 11px;}
+.dir .panneau .etiq{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:0 0 7px;display:block;}
+.dir .puces{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px;}
+.dir .puce{font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:16px;border:1px solid var(--line2);
+  background:#fff;color:var(--soft);cursor:pointer;font-family:inherit;}
+.dir .puce.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.dir .panneau input[type=email]{width:100%;padding:11px 13px;border:1px solid var(--line2);border-radius:11px;
+  font-size:15px;font-family:inherit;color:var(--ink);background:#fff;}
+.dir .panneau select{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:10px;
+  font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+.dir .panneau .duo{display:flex;gap:10px;}
+.dir .panneau .duo label{flex:1;}
+.dir .panneau .accord{display:flex;gap:9px;align-items:flex-start;margin:11px 0;font-size:10.5px;
+  color:var(--soft);line-height:1.5;cursor:pointer;}
+.dir .panneau .accord input{margin-top:2px;flex:none;width:16px;height:16px;accent-color:var(--g);}
+.dir .panneau .valider{width:100%;padding:12px;border-radius:22px;border:none;background:var(--g);color:#fff;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.dir .panneau .valider:disabled{background:var(--line2);color:var(--faint);cursor:default;}
+.dir .panneau .valider.danger{background:var(--red);}
+.dir .panneau .lien{display:block;width:100%;background:none;border:none;padding:10px 0 0;font-size:11.5px;
+  font-weight:600;color:var(--soft);cursor:pointer;font-family:inherit;text-align:center;}
+.dir .panneau .lien.danger{color:var(--red);}
+.dir .alerte{font-size:11px;color:var(--red);font-weight:600;padding:9px 16px;background:#FBE9E4;}
+
 @media (prefers-reduced-motion:reduce){.dir *{animation:none!important;transition:none!important;}}
 `,
       }}
