@@ -78,7 +78,10 @@ export default async function AffichePro({
   const reviewLink = placeId
     ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${nom} ${ville}`)}`;
-  const siteUrl = `${base}/site-internet/apercu/${encodeURIComponent(slug)}`;
+  // `via=affiche` : ce QR est collé dans la boutique et scanné par les CLIENTS.
+  // Sans ce marqueur, ils tomberaient sur l'écran de démarchage adressé au
+  // commerçant, devant lui, dans son propre commerce.
+  const siteUrl = `${base}/site-internet/apercu/${encodeURIComponent(slug)}?via=affiche`;
 
   // Affiche WhatsApp : le QR ouvre une conversation où c'est LE CLIENT qui écrit
   // le premier. C'est le seul moyen propre de constituer une liste de diffusion —

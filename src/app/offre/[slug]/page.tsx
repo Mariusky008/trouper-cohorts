@@ -14,7 +14,11 @@ export default async function OfferRedirect({ params }: { params: Promise<{ slug
   const { slug } = await params;
   // Destination par défaut : la maquette du site. On tente d'abord la vraie page
   // de réservation si le pro a configuré des créneaux.
-  let dest = `/site-internet/apercu/${slug}`;
+  // `via=offre` : c'est un CLIENT du commerçant qui clique, pas le commerçant.
+  // Sans ce marqueur, il verrait l'habillage de démarchage — « Votre site est
+  // prêt », l'assistante qui le lui présente — sur le lien que son commerçant
+  // vient de lui envoyer.
+  let dest = `/site-internet/apercu/${slug}?via=offre`;
 
   try {
     const supabase = createAdminClient();

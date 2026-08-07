@@ -74,18 +74,31 @@ export type MaquetteSanteProps = {
   proFaq: Array<{ q: string; a: string }>; // FAQ saisie par le pro → override de la config métier
   partnerOffers: PartnerOffer[]; // annonces RÉELLES des commerces partenaires de la ville
   collectifActif: boolean; // le pro participe-t-il au catalogue de sa ville ?
+  /**
+   * Vrai quand le visiteur arrive du PUBLIC — Le Direct, un résumé, une alerte.
+   *
+   * Tout l'habillage de démonstration s'adresse au COMMERÇANT : « Votre site est
+   * prêt », « Découvrir mon site », l'assistante qui le lui présente. Un habitant
+   * qui touche « La boutique » dans le fil et tombe là-dessus ne comprend pas où
+   * il est, et le commerçant a l'air de vendre son propre site à ses clients.
+   */
+  visiteurPublic?: boolean;
 };
 
 export function MaquetteSante(p: MaquetteSanteProps) {
   const {
     slug, nom, metierLabel, villeAff, adresse, horaires, photos, accent, accentSoft,
     showUrgence, termePublic, confirmation, moteur, secteur, busyWord, content,
-    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif,
+    avisMode, note, reviewsCount, reviewsTop, reviewLink, reviewsUrl, bookingHref, services, proMotifs, published, doctolibHref, mapsHref, phoneDisplay, offer, isResto, partners, resoExample, demarchageTarget, galleryVideos, approche, proFaq, partnerOffers, collectifActif, visiteurPublic = false,
   } = p;
   // Démo « choc » de démarchage : quand une cible est configurée (admin) et qu'on
   // est en mode maquette, le bouton Réserver ouvre le planning + la recommandation
   // croisée vers le commerce démarché, au lieu de l'accueil.
-  const bookViaDemarchage = !published && !bookingHref && Boolean(demarchageTarget);
+  // L'habillage de démarchage ne se montre qu'au commerçant. Publié ou non,
+  // un visiteur venu du fil doit voir une boutique, pas une offre commerciale
+  // qui ne le concerne pas.
+  const modeDemo = !published && !visiteurPublic;
+  const bookViaDemarchage = modeDemo && !bookingHref && Boolean(demarchageTarget);
   // « Prendre rendez-vous » : vraie page de réservation si configurée, sinon démo
   // « choc » (si cible), sinon accueil intelligent.
   const rdvProps = bookingHref ? { href: bookingHref } : bookViaDemarchage ? { "data-book-demo": true } : { "data-accueil-open": true };
@@ -399,8 +412,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       />
 
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
-      {!published && <ScanBeacon slug={slug} />}
-      {!published && (
+      {/* Le beacon prévient « QR scanné ». Le déclencher pour un habitant venu du
+          fil ferait croire que le commerçant a ouvert sa lettre — un signal de
+          prospection faux vaut moins que pas de signal. */}
+      {modeDemo && <ScanBeacon slug={slug} />}
+      {modeDemo && (
         <DemoTour
           slug={slug}
           nom={nom}

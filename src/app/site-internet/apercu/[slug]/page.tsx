@@ -15,6 +15,21 @@ import { bookingPlatformName } from "@/lib/site-internet/directories";
 import { partnerOffers as loadPartnerOffers, noteCatalogueViews, type PartnerOffer } from "@/lib/site-internet/collectif";
 import { MaquetteSante } from "./maquette-sante";
 
+// DEUX LISTES, parce que ce sont deux questions différentes.
+//
+// « Est-ce un client ou le commerçant ? » décide si l'on montre l'habillage de
+// démarchage. Toute origine publique doit voir la boutique : Le Direct, le
+// résumé, une alerte, mais aussi le lien traçable qu'il envoie lui-même sur
+// WhatsApp et le QR de l'affiche collée dans sa boutique.
+const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche"]);
+
+// « Le collectif lui a-t-il amené quelqu'un ? » est autre chose, et c'est LE
+// chiffre qu'il regarde pour juger ce que les autres lui apportent. Un client
+// qui scanne l'affiche de sa propre vitrine ou clique son propre message
+// WhatsApp vient de SON audience, pas du collectif. Les compter ici gonflerait
+// exactement le nombre censé prouver quelque chose.
+const VIA_COLLECTIF = new Set(["direct", "catalogue", "digest", "alerte"]);
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -122,7 +137,7 @@ export default async function ApercuMaquette({
   // le catalogue, et ouvrir un second compteur ferait tomber à zéro le chiffre
   // que le commerçant regarde — il conclurait que le collectif ne lui apporte
   // plus rien, au moment précis où il lui apporte davantage.
-  if (str(via) === "catalogue" || str(via) === "direct" || str(via) === "digest") {
+  if (VIA_COLLECTIF.has(str(via))) {
     try {
       const { data: cc } = await supabase
         .from("human_vitrine_sites")
@@ -445,6 +460,7 @@ export default async function ApercuMaquette({
   // Elle porte aussi le retour au fil. Sans elle, l'habitant qui ouvre une
   // boutique depuis Le Direct atterrit dans un site complet sans aucun chemin de
   // retour — il doit fermer l'onglet, et il ne revient pas.
+  const visiteurPublic = VIA_PUBLIC.has(str(via));
   const venuDuDirect = str(via) === "direct";
   // Quelle ANNONCE a mené ici. Le commerçant saura laquelle de ses publications
   // a fonctionné, pas seulement qu'on est venu du Direct.
@@ -521,6 +537,7 @@ export default async function ApercuMaquette({
       proFaq={proFaq}
       partnerOffers={livePartners}
       collectifActif={collectifActif}
+      visiteurPublic={visiteurPublic}
     />
     </>
   );
