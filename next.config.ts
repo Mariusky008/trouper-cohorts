@@ -9,6 +9,12 @@ const config: NextConfig = {
   // file-tracing de Next ne détecte pas automatiquement.
   outputFileTracingIncludes: {
     "/admin/rejoindre/lettre/[slug]": ["./src/templates/**"],
+    // Les DEUX lettres du parcours commerçant lisent leurs gabarits par un
+    // chemin construit à l'exécution (type de diagnostic, recto/verso) : le
+    // traçage de Next ne peut pas les deviner, et sans cette ligne le fichier
+    // manque en production alors qu'il est là en local.
+    "/admin/humain/site-internet/lettre/[slug]": ["./src/templates/**"],
+    "/admin/humain/site-internet/lettres/[ville]": ["./src/templates/**"],
   },
   typescript: {
     ignoreBuildErrors: true,
