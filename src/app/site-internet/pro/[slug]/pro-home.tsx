@@ -41,8 +41,18 @@ export function ProHome(p: Props) {
     acts.push({ icon: "⭐", label: "Demander un avis", go: () => goto("clients:avis") });
     acts.push({ icon: "👤", label: "Ajouter un client", go: () => goto("clients:liste") });
   }
+  // « Mes annonces en cours » : ce qu'un commerçant vient vérifier le plus
+  // souvent — ce qui tourne à son nom en ce moment. Il n'y avait aucun accès :
+  // il publiait, et l'annonce lui échappait.
+  if (p.soliciter) {
+    acts.push({ icon: "📋", label: "Mes annonces en cours", go: () => goto("annonces") });
+  }
+  // Les horaires restent, mais après. Ils ne servaient à rien tant que le site
+  // public affichait ceux de Google ; depuis qu'il affiche les siens, les
+  // modifier a un effet visible sur ce que ses client·es lisent.
   acts.push({ icon: "🕐", label: "Modifier mes horaires", go: () => goto("agenda") });
-    // `clients:liste` — groupe puis sous-onglet. `goto("contacts")` visait un
+
+  // `clients:liste` — groupe puis sous-onglet. `goto("contacts")` visait un
   // onglet qui n'existe pas : le clic ne faisait rien, en silence.
   if (p.clientsNew > 0) {
     acts.unshift({

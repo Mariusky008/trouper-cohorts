@@ -1086,6 +1086,17 @@ export function ProRelance({
                       </div>
                       <div className="lact">
                         <button onClick={() => { setOfferText(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
+                        {/* EN AJOUTER UNE AUTRE. L'écran ne proposait que
+                            « modifier » ou « retirer » : un boulanger ne pouvait
+                            pas annoncer sa fournée du matin ET ses invendus du
+                            soir. On peut en avoir trois vivantes — le champ se
+                            vide, on écrit la suivante, la précédente reste. */}
+                        <button
+                          onClick={() => { setOfferText(""); setPhoto(null); setVideo(null); setRemplace(true); setPubliee(false); }}
+                          disabled={offerBusy}
+                        >
+                          ➕ En publier une autre
+                        </button>
                         {/* « Retirer du site » laissait croire qu'elle restait
                             dans le catalogue. Elle part des deux d'un coup. */}
                         <button className="rm" onClick={clearOffer} disabled={offerBusy}>
@@ -1282,13 +1293,14 @@ export function ProRelance({
                         onChange={(e) => ajouterPhoto(e.target.files)}
                       />
                       <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
+                        {/* Plus de « Remplacer » : depuis qu'un commerce peut
+                            avoir trois annonces vivantes, ce mot annonçait une
+                            perte qui n'a plus lieu. On publie, c'est tout. */}
                         {offerBusy
                           ? "Publication…"
-                          : offer
-                            ? "Remplacer mon annonce"
-                            : collectifActif
-                              ? `Publier sur mon site et dans le catalogue`
-                              : "Afficher sur mon site"}
+                          : collectifActif
+                            ? "Publier sur mon site et dans le fil de ma ville"
+                            : "Afficher sur mon site"}
                       </button>
                       {offerErr && <div className="oerr">{offerErr}</div>}
                     </>
