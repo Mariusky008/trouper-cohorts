@@ -51,3 +51,14 @@ next-env.d.ts
 # Claude Code local
 .claude/settings.local.json
 .claude/
+
+# Générés au build par next-sitemap (postbuild) — des SORTIES, pas des sources.
+#
+# Les versionner posait trois problèmes : le dépôt affichait l'ancien domaine
+# alors que la configuration suit `NEXT_PUBLIC_SITE_URL` ; chaque build salissait
+# le diff ; et si le postbuild venait à échouer, un robots.txt périmé annonçant
+# le mauvais hôte serait servi en silence — le pire cas, parce qu'un fichier
+# absent se remarque, un fichier faux non.
+/public/robots.txt
+/public/sitemap.xml
+/public/sitemap-*.xml
