@@ -51,7 +51,11 @@ async function categoriesDeLaVille(
       .select("city, activite")
       .eq("channel", "letter")
       .eq("published", true)
-      .limit(500);
+      // Filtré en SQL : lire 500 fiches puis chercher la ville dedans marchait
+      // tant qu'on en avait moins de 500. Au-delà, une ville bien fournie se
+      // retrouvait sans aucune catégorie à proposer.
+      .ilike("city", `%${slug.replace(/-/g, " ")}%`)
+      .limit(200);
     const vus = new Set<string>();
     for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
       if (villeSlug(str(r.city)) !== slug) continue;

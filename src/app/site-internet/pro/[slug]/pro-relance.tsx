@@ -8,7 +8,7 @@
 // Si le pro a constitué une audience opt-in (« Mes clients »), on la propose ici
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { MOMENTS, MINUTES, libelleHeure } from "@/lib/site-internet/heures";
+import { SaisieHeure, lireHeure, STYLES_SAISIE_HEURE } from "./saisie-heure";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { compresserImage } from "@/lib/site-internet/image-client";
 import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
@@ -157,8 +157,12 @@ export function ProRelance({
   const [linkAdded, setLinkAdded] = useState(false);
   // Parcours en 3 étapes : ① quoi annoncer → ② où l'afficher → ③ vérifier & lancer.
   const [step, setStep] = useState(1);
-  const [chSite, setChSite] = useState(false); // bandeau sur le site (offert)
-  const [chWa, setChWa] = useState(true); // WhatsApp (option) — coché par défaut
+  // Le canal OFFERT est coché d'avance, les options ne le sont pas. Proposer
+  // WhatsApp par défaut faisait accepter une option sans l'avoir choisie, et
+  // laissait décoché le seul canal qui ne coûte rien — celui qui alimente son
+  // site ET le fil de la ville.
+  const [chSite, setChSite] = useState(true); // bandeau sur le site + fil (offert)
+  const [chWa, setChWa] = useState(false); // WhatsApp (option)
   const [chSocial, setChSocial] = useState(false); // Facebook / Instagram (texte à coller)
 
   const trackLink = typeof window !== "undefined" ? `${window.location.origin}/offre/${slug}` : `/offre/${slug}`;
@@ -434,26 +438,20 @@ export function ProRelance({
     if (c.type === "heure") {
       // PAS d'`<input type="time">` : son format suit la langue du NAVIGATEUR,
       // pas celle du site. Un commerçant français dont le navigateur est en
-      // anglais y lisait « 02:14 PM ». Deux menus, toujours en 24 h.
-      const [hh = "", mm = ""] = v ? v.split(":") : [];
-      const poser = (h: string, m: string) => set(h ? `${h}:${m || "00"}` : "");
+      // anglais y lisait « 02:14 PM ».
+      //
+      // Deux menus de vingt-quatre lignes non plus : il fallait dérouler et
+      // chercher pour poser une heure qu'on sait déjà. On tape « 11h », « 11h30 »
+      // ou « 1130 », le champ se normalise en sortant, et l'affichage reste en
+      // vingt-quatre heures quelle que soit la langue du téléphone.
+      const debut = lireHeure(v);
       return (
-        <span className="afhm">
-          <select id={id} value={hh} onChange={(e) => poser(e.target.value, mm)} aria-label="Heure">
-            <option value="">— h</option>
-            {MOMENTS.map((m) => (
-              <optgroup key={m.titre} label={m.titre}>
-                {Array.from({ length: m.a - m.de + 1 }, (_, k) => m.de + k).map((h) => (
-                  <option key={h} value={String(h).padStart(2, "0")}>{libelleHeure(h)}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <select value={mm} onChange={(e) => poser(hh, e.target.value)} disabled={!hh} aria-label="Minutes">
-            {MINUTES.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
+        <span className="afhm" id={id}>
+          <SaisieHeure
+            valeur={debut}
+            onChange={(min) => set(min == null ? "" : `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`)}
+            label={c.label}
+          />
         </span>
       );
     }
@@ -642,7 +640,7 @@ export function ProRelance({
     <>
       <style
         dangerouslySetInnerHTML={{
-          __html: `
+          __html: STYLES_SAISIE_HEURE + `
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
           .pro .relance .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}

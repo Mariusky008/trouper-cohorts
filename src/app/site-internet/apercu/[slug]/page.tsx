@@ -10,6 +10,7 @@ import { SuivreBouton } from "./suivre-bouton";
 import { BarreDirect } from "./barre-direct";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { noterClic } from "@/lib/direct/publications";
+import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
 import { villeSlug as slugDeVille } from "@/lib/direct/ville";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
 import { partnerOffers as loadPartnerOffers, noteCatalogueViews, type PartnerOffer } from "@/lib/site-internet/collectif";
@@ -342,7 +343,31 @@ export default async function ApercuMaquette({
       : { q: `Bonsoir, avez-vous un créneau samedi ?`, a: `Bonsoir 😊 Je note votre demande pour samedi et je la transmets à ${nom} — vous aurez une réponse rapidement.` };
 
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-  const horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
+  // LES HORAIRES DU COMMERÇANT PRIMENT. `diagnostic.horaires` vient de Google :
+  // c'est une information de seconde main, que le commerçant ne contrôle pas.
+  // Lui les saisit dans son espace pro, où ils partent dans
+  // `human_site_availability` — et personne ne les lisait. Il modifiait ses
+  // horaires, son site n'en montrait rien, et rien ne le lui disait.
+  //
+  // Repli sur Google quand il n'a rien saisi : mieux vaut une information de
+  // seconde main qu'une section vide.
+  let horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
+  try {
+    const { data: av } = await supabase
+      .from("human_site_availability")
+      .select("weekday, start_min, end_min")
+      .eq("site_id", str(row.id));
+    const siennes = horairesLisibles(
+      ((Array.isArray(av) ? av : []) as Array<Record<string, unknown>>).map((w) => ({
+        weekday: Number(w.weekday),
+        start_min: Number(w.start_min),
+        end_min: Number(w.end_min),
+      }))
+    );
+    if (siennes.length) horaires = siennes;
+  } catch {
+    /* table absente → on garde ceux de Google */
+  }
 
   // Photos : celles gérées par le pro en priorité (data URI), sinon Google.
   const proPhotos = (Array.isArray(row.gallery_photos) ? row.gallery_photos : [])

@@ -57,13 +57,24 @@ export async function configVille(supabase: Supabase, slug: string): Promise<Vil
 
   // Le nom exact tel que stocké sur les fiches : c'est lui qui sert à filtrer,
   // et il vaut mieux que l'embellissement du slug quand il existe.
+  //
+  // LE FILTRE EST FAIT EN SQL, pas en mémoire. Lire 500 fiches puis chercher la
+  // ville dedans marche tant qu'on a moins de 500 fiches ; au-delà, une ville
+  // parfaitement active se déclare « pas encore couverte » simplement parce
+  // qu'elle n'est pas dans les 500 premières lignes rendues.
+  //
+  // `ilike %ville%` est volontairement large : le champ contient « Bordeaux »,
+  // « Bordeaux, France » ou « 33000 Bordeaux ». Le tri fin se fait ensuite sur
+  // le slug, qui est la seule comparaison fiable.
+  const motif = s.replace(/-/g, " ");
   try {
     const { data } = await supabase
       .from("human_vitrine_sites")
       .select("city")
       .eq("channel", "letter")
       .eq("published", true)
-      .limit(500);
+      .ilike("city", `%${motif}%`)
+      .limit(50);
     for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
       const c = str(r.city).trim();
       if (!c) continue;
@@ -76,6 +87,30 @@ export async function configVille(supabase: Supabase, slug: string): Promise<Vil
     }
   } catch {
     /* base indisponible → la ville reste inactive, l'écran le dit */
+  }
+
+  // UNE VILLE QUI A DES PUBLICATIONS EST COUVERTE, quoi qu'en dise la requête
+  // ci-dessus. Le fil et ce drapeau se contredisaient : on pouvait lire des
+  // annonces de Bordeaux sous un titre « Bordeaux n'est pas encore couverte ».
+  // La présence d'une publication est la preuve la plus directe qu'il s'y passe
+  // quelque chose.
+  if (!base.active) {
+    try {
+      const { data } = await supabase
+        .from("human_publications")
+        .select("ville")
+        .eq("ville_slug", s)
+        .is("retire_le", null)
+        .limit(1);
+      const p0 = (Array.isArray(data) ? data : [])[0] as Record<string, unknown> | undefined;
+      if (p0) {
+        base.active = true;
+        const v = str(p0.ville).replace(/,.*$/, "").replace(/\b\d{5}\b/g, "").trim();
+        if (v) base.nom = nomDeVille(v);
+      }
+    } catch {
+      /* table non migrée → on garde ce qu'on a */
+    }
   }
 
   try {

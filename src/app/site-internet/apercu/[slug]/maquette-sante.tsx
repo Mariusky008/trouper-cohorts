@@ -681,7 +681,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         ))}
       </section>
 
-      {published ? (
+      {/* Le pied de page a deux visages : la prise de rendez-vous pour un client,
+          l'argumentaire « Garder ce site gratuitement » pour le commerçant. Il
+          testait `published` : un habitant venu du fil, sur un site pas encore
+          publié, lisait donc l'argumentaire adressé au commerçant. */}
+      {!modeDemo ? (
         <div className="close" id="site-rappel">
           <div className="t">{nom}</div>
           <div className="p">
