@@ -65,9 +65,23 @@ const config: NextConfig = {
     // (site + assistante pour commerçants). Temporaire (307) → réversible.
     const toHome = (source: string) => ({ source, destination: "/", permanent: false });
     const OLD = [
-      "dashboard", "mon-reseau-local", "popey-human", "privilege", "cohorts-demo",
+      "dashboard", "mon-reseau-local", "privilege", "cohorts-demo",
       "programme-commando", "quiz-statut-business", "marketplace", "entrepreneur",
       "alliance", "cm-dashboard", "radar-elite-preview", "side-project", "personnel",
+    ];
+
+    // `/popey-human` NE PEUT PAS être enterré en bloc : c'est là que vivent les
+    // deux SEULES pages de connexion du site, dont celle de l'administration.
+    // Tant qu'il était dans la liste ci-dessus, `/popey-human/admin-login`
+    // partait en 307 vers l'accueil — plus aucun formulaire de connexion n'était
+    // atteignable, et le bouton « Se déconnecter » de l'admin (qui renvoie vers
+    // `/popey-human/login`) achevait d'enfermer dehors.
+    const GARDE_HUMAN = ["login", "admin-login", "app"];
+    const gardeHuman = GARDE_HUMAN.map((r) => `${r}$|${r}/`).join("|");
+    const ancienHuman = [
+      toHome("/popey-human"),
+      // les sous-pages de l'ancien produit, SAUF authentification et espace membre
+      toHome(`/popey-human/:path((?!${gardeHuman}).*)`),
     ];
     // L'ANCIEN DOMAINE REDIRIGE VERS LE NOUVEAU, en 301 (permanent).
     //
@@ -113,6 +127,7 @@ const config: NextConfig = {
       ...ancienDomaine,
       // chaque ancien produit : la racine ET ses sous-pages
       ...OLD.flatMap((s) => [toHome(`/${s}`), toHome(`/${s}/:path*`)]),
+      ...ancienHuman,
       // L'app cliente v3 (/m/<ville>) est retirée. Une icône restée sur un écran
       // d'accueil doit atterrir sur le catalogue actuel, pas sur une erreur.
       { source: "/m/:ville", destination: "/ville/:ville", permanent: false },
