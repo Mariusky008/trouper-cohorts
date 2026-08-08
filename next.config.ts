@@ -83,10 +83,26 @@ const config: NextConfig = {
     // 301 et non 307 : c'est le seul code que Google traite comme un
     // déménagement définitif. En 307, il garderait les deux domaines en
     // concurrence indéfiniment.
+    // CE QUI N'EST PAS REDIRIGÉ : l'administration, l'authentification et les
+    // routes d'API.
+    //
+    // Les cookies de session sont cloisonnés par domaine (`.popey.academy` et
+    // `.clikme.fr` sont deux mondes séparés). Rediriger une page authentifiée
+    // fait donc arriver la personne SANS sa session, sur un écran qui lui dit
+    // qu'elle n'a pas les droits — ce qui s'est produit.
+    //
+    // Ces routes n'ont par ailleurs aucune valeur de référencement : une
+    // redirection permanente n'y gagne rien et coûte l'accès. Et un 301 sur une
+    // route d'API transforme un POST en GET chez certains clients.
+    const PRIVE = ["admin", "auth", "api", "popey-human", "p"];
+    const exclusion = PRIVE.map((r) => `${r}$|${r}/`).join("|");
+
+    // Le motif couvre aussi la racine (`path` y vaut la chaîne vide) : pas de
+    // règle séparée, vérifié au motif compilé.
     const ancienDomaine = ["www.popey.academy", "popey.academy"].map((host) => ({
-      source: "/:path*",
+      source: `/:path((?!${exclusion}).*)`,
       has: [{ type: "host" as const, value: host }],
-      destination: `https://www.clikme.fr/:path*`,
+      destination: `https://www.clikme.fr/:path`,
       permanent: true,
     }));
 
