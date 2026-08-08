@@ -63,6 +63,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     famille: p.famille,
     texte: p.texte,
     photo: p.photo,
+    video: p.video,
     lien: p.lien,
     auteurNom: p.auteurNom,
     auteurMetier: p.auteurMetier,

@@ -6,11 +6,13 @@
 // application ressemble à une application plutôt qu'à quatre pages.
 //
 // Tout est préfixé `.dir` : ces écrans cohabitent avec le reste du site.
+import { STYLES_VIDEO_CARTE } from "./video-carte";
+
 export function StylesDirect() {
   return (
     <style
       dangerouslySetInnerHTML={{
-        __html: `
+        __html: STYLES_VIDEO_CARTE + `
 .dir{--ink:#14201A;--body:#3C4A43;--soft:#6B7A72;--faint:#9DAAA3;--line:#E6EBE8;--line2:#D3DBD7;
   --paper:#FFF;--bg:#F4F7F5;--g:#0F8F5F;--gl:#3FD79A;--gs:#E6F4EE;--gd:#0A6B48;--amber:#D9A03C;--red:#D2634A;--vio:#5C4BD4;
   background:var(--bg);color:var(--body);font-family:var(--fb),system-ui,sans-serif;-webkit-font-smoothing:antialiased;

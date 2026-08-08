@@ -41,7 +41,7 @@ async function chargerGardees(
     const { data } = await supabase
       .from("human_gardees")
       .select(
-        "publication_id, human_publications!inner(id, famille, texte, photo, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le, retire_le)"
+        "publication_id, human_publications!inner(id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le, retire_le)"
       )
       .eq("habitant_id", habitantId);
     const maintenant = Date.now();
@@ -53,6 +53,7 @@ async function chargerGardees(
         famille: (str(p.famille) || "offre") as Publication["famille"],
         texte: str(p.texte),
         photo: str(p.photo) || null,
+        video: str(p.video) || null,
         lien: str(p.lien) || null,
         auteurNom: str(p.auteur_nom) || "Un commerce",
         auteurMetier: str(p.auteur_metier),
@@ -119,6 +120,7 @@ export default async function MesCommercesPage({
     famille: p.famille,
     texte: p.texte,
     photo: p.photo,
+    video: p.video,
     lien: p.lien,
     auteurNom: p.auteurNom,
     auteurMetier: p.auteurMetier,

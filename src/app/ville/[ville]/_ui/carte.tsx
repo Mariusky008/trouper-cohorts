@@ -15,12 +15,16 @@ import Link from "next/link";
 import { FAMILLE_LABEL, type Famille } from "@/lib/direct/publications";
 import { usePosition } from "@/lib/direct/position";
 import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
+import { VideoCarte } from "./video-carte";
 
 export type CarteVue = {
   id: string;
   famille: Famille;
   texte: string;
   photo: string | null;
+  /** Vidéo de l'annonce. La photo reste l'image d'affiche : elle s'affiche
+   *  partout où la vidéo ne peut pas se lire (e-mail, aperçu de lien). */
+  video: string | null;
   lien: string | null;
   auteurNom: string;
   auteurMetier: string;
@@ -114,7 +118,11 @@ export function Carte({
       )}
 
       <p className="pb">{p.texte}</p>
-      {p.photo ? <div className="pimg" style={{ backgroundImage: `url(${JSON.stringify(p.photo)})` }} role="presentation" /> : null}
+      {p.video ? (
+        <VideoCarte src={p.video} poster={p.photo} alt={`Vidéo de ${p.auteurNom}`} />
+      ) : p.photo ? (
+        <div className="pimg" style={{ backgroundImage: `url(${JSON.stringify(p.photo)})` }} role="presentation" />
+      ) : null}
 
       <div className="pf">
         {fiche ? (

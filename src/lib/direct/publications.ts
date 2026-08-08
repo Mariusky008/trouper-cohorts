@@ -49,6 +49,7 @@ export type Publication = {
   famille: Famille;
   texte: string;
   photo: string | null;
+  video: string | null;
   lien: string | null;
   auteurNom: string;
   auteurMetier: string;
@@ -76,6 +77,7 @@ function lirePublication(r: Row, site?: Row | null): Publication | null {
     famille,
     texte,
     photo: str(r.photo) || null,
+    video: str(r.video) || null,
     lien: str(r.lien) || null,
     auteurNom: str(r.auteur_nom) || (famille === "ville" ? "Ma ville" : "Un commerce"),
     auteurMetier: str(r.auteur_metier),
@@ -122,7 +124,7 @@ export async function filDeVille(
   try {
     const { data, error } = await supabase
       .from("human_publications")
-      .select("id, famille, texte, photo, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
+      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
       .eq("ville_slug", slug)
       .is("retire_le", null)
       .gte("publie_le", depuis)
@@ -166,7 +168,7 @@ export async function filDeCommerce(supabase: Supabase, siteId: string, max = 12
   try {
     const { data, error } = await supabase
       .from("human_publications")
-      .select("id, famille, texte, photo, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
+      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
       .eq("site_id", siteId)
       .is("retire_le", null)
       .order("publie_le", { ascending: false })
@@ -195,6 +197,7 @@ export async function publier(
     famille: Famille;
     texte: string;
     photo?: string | null;
+    video?: string | null;
     lien?: string | null;
     expireLe?: string | null;
     site?: { id: string; slug: string; nom: string; activite: string } | null;
@@ -216,6 +219,7 @@ export async function publier(
         famille: p.famille,
         texte,
         photo: p.photo ?? null,
+        video: p.video ?? null,
         lien: p.lien ?? null,
         expire_le: p.expireLe ?? null,
       })

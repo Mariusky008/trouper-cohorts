@@ -9,6 +9,7 @@
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { SaisieHeure, lireHeure, STYLES_SAISIE_HEURE } from "./saisie-heure";
+import { EnvoiVideo, STYLES_ENVOI_VIDEO } from "./envoi-video";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { compresserImage } from "@/lib/site-internet/image-client";
 import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
@@ -144,6 +145,10 @@ export function ProRelance({
   // remplaçable en un geste — jamais publiée en silence.
   const [photos, setPhotos] = useState<string[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
+  // La vidéo ne remplace jamais la photo : son affiche DEVIENT la photo. Tout ce
+  // qui affiche déjà `photo` — le résumé par e-mail, l'aperçu d'un lien — continue
+  // de fonctionner sans rien savoir de la vidéo.
+  const [video, setVideo] = useState<string | null>(null);
   const [touchePhoto, setTouchePhoto] = useState(false);
   const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
@@ -289,6 +294,7 @@ export function ProRelance({
           text: t.slice(0, 140),
           until: fin ? fin.toISOString() : null,
           photo,
+          video,
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -640,7 +646,7 @@ export function ProRelance({
     <>
       <style
         dangerouslySetInnerHTML={{
-          __html: STYLES_SAISIE_HEURE + `
+          __html: STYLES_SAISIE_HEURE + STYLES_ENVOI_VIDEO + `
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
           .pro .relance .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
@@ -1209,6 +1215,30 @@ export function ProRelance({
                             {envoiPhoto ? "Ajout…" : "📷 Prendre ou choisir une autre photo"}
                           </button>
                           {photoErr && <div className="ph-err">{photoErr}</div>}
+                          <div style={{ marginTop: 10 }}>
+                            {video ? (
+                              <button
+                                type="button"
+                                className="ev-btn"
+                                onClick={() => setVideo(null)}
+                                aria-label="Retirer la vidéo"
+                              >
+                                🎬 Vidéo ajoutée · retirer
+                              </button>
+                            ) : (
+                              <EnvoiVideo
+                                slug={slug}
+                                token={token}
+                                onEnvoyee={({ url, poster }) => {
+                                  setVideo(url);
+                                  // L'affiche de la vidéo devient la photo, sauf
+                                  // s'il en avait déjà choisi une : son choix
+                                  // délibéré passe avant une image extraite.
+                                  if (poster && !photo) setPhoto(poster);
+                                }}
+                              />
+                            )}
+                          </div>
                         </div>
                       )}
 

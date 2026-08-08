@@ -88,6 +88,7 @@ export default async function LeDirectPage({
     famille: p.famille,
     texte: p.texte,
     photo: p.photo,
+    video: p.video,
     lien: p.lien,
     auteurNom: p.auteurNom,
     auteurMetier: p.auteurMetier,

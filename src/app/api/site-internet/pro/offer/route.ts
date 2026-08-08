@@ -131,7 +131,17 @@ export async function POST(request: Request) {
     // On n'accepte que ce qui est DÉJÀ dans sa galerie : le champ est un choix
     // parmi ses photos, pas une adresse d'image libre à publier sur le catalogue.
     const voulue = str(p?.photo);
-    const photo = voulue && galerie.includes(voulue) ? voulue : null;
+    // L'affiche d'une vidéo n'est PAS dans la galerie : elle vient d'être
+    // extraite du fichier. On l'accepte à ce titre, en la bornant comme une
+    // photo de galerie — sans quoi le champ redeviendrait une adresse d'image
+    // libre à publier sur une page publique.
+    const posterVideo = /^data:image\/(jpe?g|png|webp);base64,/.test(voulue) && voulue.length <= 900000;
+    const photo = voulue && (galerie.includes(voulue) || posterVideo) ? voulue : null;
+    // Le fichier doit venir de NOTRE stockage : accepter une adresse
+    // quelconque ferait jouer, sur le fil d'une ville, une vidéo qu'on
+    // n'héberge pas et qui peut changer de contenu après coup.
+    const videoBrute = str(p?.video);
+    const video = /^https:\/\/\S+\/storage\/v1\/object\/public\/annonces\/\S+$/.test(videoBrute) ? videoBrute : null;
     const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
     try {
       await supabase.from("human_vitrine_sites").update({ current_offer: offer }).eq("id", id);
@@ -170,6 +180,7 @@ export async function POST(request: Request) {
         famille: familleDuTexte(text),
         texte: text,
         photo,
+        video,
         expireLe: until,
         site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
       });
