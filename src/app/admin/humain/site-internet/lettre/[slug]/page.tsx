@@ -161,13 +161,22 @@ export default async function SiteInternetLettrePage({
           <span style={{ marginLeft: "auto", opacity: 0.5 }}>Site à {str(ancien.prix) || "690"} € · sans fil de ville</span>
         </div>
 
-        <style dangerouslySetInnerHTML={{ __html: readLetterStylesReglementee() }} />
-        {/* `#letter-root` n'est pas décoratif : l'export PNG et le garde-fou
-            « tenir sur une page » cherchent leurs feuilles par ce sélecteur. */}
-        <div id="letter-root" className="si-root" style={{ paddingTop: 8 }}>
-          <div dangerouslySetInnerHTML={{ __html: r.recto }} />
-          {r.verso ? <div dangerouslySetInnerHTML={{ __html: r.verso }} /> : null}
-        </div>
+        {/* Les styles sont injectés AVEC la lettre, jamais dans un `<style>` à
+            nous : `styles.html` porte déjà sa propre balise. L'imbriquer donnait
+            `<style><style>…` — le parseur CSS avalait alors tout jusqu'à la
+            première accolade comme un sélecteur, donc le bloc `:root` avec. Sans
+            `--frame` ni `--paper`, la lettre perdait son cadre et son papier
+            blanc : elle s'imprimait nue.
+
+            `#letter-root` n'est pas décoratif non plus : l'export PNG et le
+            garde-fou « tenir sur une page » cherchent leurs feuilles par ce
+            sélecteur. */}
+        <div
+          id="letter-root"
+          className="si-root"
+          style={{ paddingTop: 8 }}
+          dangerouslySetInnerHTML={{ __html: readLetterStylesReglementee() + r.recto + r.verso }}
+        />
         <FitLetter />
       </>
     );
