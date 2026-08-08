@@ -53,6 +53,10 @@ function parseContactLines(text: string): Array<{ prenom: string; phone: string 
 export function ProContacts({ slug, token, reviewLink }: { slug: string; token: string; reviewLink: string }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // Une liste VIDE et une liste ILLISIBLE se ressemblent à l'écran. Les
+  // confondre fait conclure au commerçant qu'il n'a pas de clients alors que la
+  // lecture échoue — c'est ce qui rendait le problème introuvable.
+  const [lectureKo, setLectureKo] = useState("");
   const [prenom, setPrenom] = useState("");
   const [phone, setPhone] = useState("");
   const [consent, setConsent] = useState(false);
@@ -80,7 +84,13 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
     (async () => {
       try {
         const { ok, j } = await call({ action: "list" });
-        if (!cancelled && ok && Array.isArray(j.contacts)) setContacts(j.contacts as Contact[]);
+        if (cancelled) return;
+        if (!ok) {
+          setLectureKo(typeof j.error === "string" ? j.error : "La liste n'a pas pu être lue.");
+          return;
+        }
+        if (typeof j.lectureEchouee === "string") setLectureKo(j.lectureEchouee);
+        if (Array.isArray(j.contacts)) setContacts(j.contacts as Contact[]);
       } catch {
         /* best-effort */
       } finally {
@@ -288,7 +298,12 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
           </div>
         </details>
 
-        {loaded && contacts.length === 0 ? (
+        {lectureKo ? (
+          <div className="ct-empty" role="alert" style={{ color: "#D2634A" }}>
+            Vos client·es n&apos;ont pas pu être chargés. Ce n&apos;est pas qu&apos;il n&apos;y en a pas —
+            la liste n&apos;a pas pu être lue. Signalez-nous ce message&nbsp;: <code>{lectureKo}</code>
+          </div>
+        ) : loaded && contacts.length === 0 ? (
           <div className="none">
             Aucun client enregistré pour l&apos;instant. Ajoutez-en un après une visite — avec son accord.
           </div>

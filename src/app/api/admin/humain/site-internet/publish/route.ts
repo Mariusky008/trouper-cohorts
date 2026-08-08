@@ -71,6 +71,30 @@ export async function POST(request: Request) {
   if (Object.keys(patch).length) {
     const { error: updErr } = await supabase.from("human_vitrine_sites").update(patch).eq("id", s(site.id));
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+    // ON RELIT POUR VÉRIFIER. Une écriture sans erreur n'est pas une écriture
+    // qui a pris : un déclencheur, une politique ou une contrainte différée
+    // peuvent l'annuler sans rien remonter ici. Le symptôme était impossible à
+    // diagnostiquer — l'interface annonçait « publié », l'espace pro affichait
+    // « pas encore en ligne », et les deux disaient vrai de leur point de vue.
+    if ("published" in patch) {
+      const { data: apres } = await supabase
+        .from("human_vitrine_sites")
+        .select("published")
+        .eq("id", s(site.id))
+        .maybeSingle();
+      const reel = Boolean((apres as Record<string, unknown> | null)?.published);
+      if (reel !== Boolean(patch.published)) {
+        return NextResponse.json(
+          {
+            error:
+              "La base n'a pas retenu le changement. La ligne existe et l'écriture n'a pas signalé d'erreur : " +
+              "cherchez du côté d'un déclencheur ou d'une politique sur human_vitrine_sites.",
+          },
+          { status: 500 }
+        );
+      }
+    }
   }
 
   // Jeton Espace Pro (créé si absent, court).

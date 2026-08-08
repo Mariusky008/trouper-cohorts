@@ -42,7 +42,15 @@ export function ProHome(p: Props) {
     acts.push({ icon: "👤", label: "Ajouter un client", go: () => goto("clients:liste") });
   }
   acts.push({ icon: "🕐", label: "Modifier mes horaires", go: () => goto("agenda") });
-  if (p.clientsNew > 0) acts.unshift({ icon: "🔔", label: `Mes clients · ${nf(p.clientsNew)} nouveau${p.clientsNew > 1 ? "x" : ""}`, go: () => goto("contacts") });
+    // `clients:liste` — groupe puis sous-onglet. `goto("contacts")` visait un
+  // onglet qui n'existe pas : le clic ne faisait rien, en silence.
+  if (p.clientsNew > 0) {
+    acts.unshift({
+      icon: "🔔",
+      label: `Mes clients · ${nf(p.clientsNew)} nouveau${p.clientsNew > 1 ? "x" : ""}`,
+      go: () => goto("clients:liste"),
+    });
+  }
   acts.push({ icon: "🎨", label: "Modifier mon site", go: () => goto("site") });
   acts.push({ icon: "📊", label: "Voir mes résultats", go: () => setShowAll((v) => !v) });
 

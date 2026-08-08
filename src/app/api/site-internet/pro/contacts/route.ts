@@ -222,19 +222,25 @@ export async function POST(request: Request) {
   const BASE = "id, prenom, phone_e164, last_contacted_at, created_at, unsub_token, source";
   // On dégrade colonne par colonne : chaque migration manquante retire une
   // information, jamais la liste entière.
-  try {
-    contacts = await listWith(`${BASE}, topics, wa_intro_at`);
-  } catch {
+  //
+  // DERNIER RECOURS `*` : la chaîne précédente s'arrêtait à `BASE`, et si UNE
+  // seule de ses colonnes manquait, les trois tentatives échouaient et le
+  // commerçant voyait « aucun client » alors que son compteur en annonçait un.
+  // `*` ne peut pas échouer sur une colonne absente.
+  let echec = "";
+  for (const cols of [`${BASE}, topics, wa_intro_at`, `${BASE}, topics`, BASE, "*"]) {
     try {
-      contacts = await listWith(`${BASE}, topics`);
-    } catch {
-      try {
-        contacts = await listWith(BASE);
-      } catch {
-        /* table pas encore migrée → liste vide, la page reste fonctionnelle */
-      }
+      contacts = await listWith(cols);
+      echec = "";
+      break;
+    } catch (e) {
+      echec = e instanceof Error ? e.message : String(e);
     }
   }
 
-  return NextResponse.json({ ok: true, contacts, summary }, { status: 200 });
+  // On REMONTE l'échec au lieu de renvoyer une liste vide. Une liste vide et
+  // une liste illisible se ressemblent à l'écran, et c'est exactement ce qui
+  // rendait le problème introuvable : le commerçant conclut qu'il n'a pas de
+  // clients, alors que la requête échoue.
+  return NextResponse.json({ ok: true, contacts, summary, ...(echec ? { lectureEchouee: echec } : {}) }, { status: 200 });
 }
