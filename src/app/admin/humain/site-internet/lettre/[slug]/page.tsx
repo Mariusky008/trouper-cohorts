@@ -23,6 +23,26 @@ export const revalidate = 0;
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
+// La barre d'outils est la MÊME pour les deux lettres. Écrite deux fois, elle
+// aurait divergé au premier ajout de bouton — c'est exactement comme ça que la
+// lettre des professions réglementées s'est retrouvée sans bouton d'impression.
+const BARRE: React.CSSProperties = {
+  position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+  background: "#14140F", color: "#fff", padding: "10px 20px",
+  display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+  fontFamily: "sans-serif", fontSize: 14,
+};
+const BADGE: React.CSSProperties = {
+  marginLeft: 8, background: "#B8A87A", color: "#000",
+  borderRadius: 4, padding: "1px 7px", fontSize: 12, fontWeight: 700,
+};
+const LIEN: React.CSSProperties = { color: "#00E0A0", textDecoration: "none" };
+
+const statusLabel: Record<string, string> = {
+  draft: "Brouillon", validated: "Validée", printed: "Imprimée",
+  delivered: "Remise", contacted: "Contact reçu", skipped: "Ignorée", excluded: "Exclu",
+};
+
 export default async function SiteInternetLettrePage({
   params,
   searchParams,
@@ -78,13 +98,77 @@ export default async function SiteInternetLettrePage({
   // promotion » avec « on n'a rien à lui proposer ».
   //
   // Il reçoit donc l'ancienne lettre : un site à 690 €, sans catalogue de ville.
-  if (deontologieOf(str(place.activite)) !== "none") {
-    const r = await composeLettreReglementee({ place, overrides, slug, appUrl, shotManual: "", searchVolume: null });
+  const deontologie = deontologieOf(str(place.activite));
+  if (deontologie !== "none") {
+    // Cette lettre-là lit des colonnes que la lettre du Direct n'utilise plus :
+    // `type_diagnostic` choisit lequel des sept rectos sort de l'imprimante,
+    // `prix` et `source_website` s'affichent dedans. Lecture SÉPARÉE et
+    // tolérante : les ajouter au select principal ferait échouer toute la page
+    // (« Prospect introuvable ») sur une seule colonne non migrée.
+    let ancien: Record<string, unknown> = {};
+    {
+      const { data: row3 } = await supabase
+        .from("human_vitrine_sites")
+        .select("type_diagnostic, prix, source_website, site_shot_manual, search_volume")
+        .eq("slug", slug)
+        .eq("channel", "letter")
+        .maybeSingle();
+      if (row3 && typeof row3 === "object") ancien = row3 as Record<string, unknown>;
+    }
+
+    // Le volume de recherches se corrige DANS le panneau d'édition, et celui-ci
+    // n'écrit que dans `letter_overrides` : c'est la seule voie que l'API
+    // d'édition accepte encore. On lit donc la correction d'abord, la colonne
+    // `search_volume` ne servant plus que de valeur d'origine. Sans ça, le champ
+    // « Recherches Google / mois » s'enregistrait sans jamais rien changer.
+    const nombre = (v: unknown) => {
+      const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const searchVolume = nombre(overrides.search_volume) ?? nombre(ancien.search_volume);
+
+    const r = await composeLettreReglementee({
+      place: { ...place, ...ancien },
+      overrides,
+      slug,
+      appUrl,
+      shotManual: str(ancien.site_shot_manual),
+      searchVolume,
+    });
+
     return (
       <>
+        <div className="no-print" style={BARRE}>
+          <span>
+            <strong>{nom || slug}</strong> · {str(place.city)}
+            <span style={BADGE}>{r.type}</span>
+            <span style={{ ...BADGE, background: "#7C6BAF", color: "#fff" }}>
+              {deontologie === "droit" ? "réglementé · droit" : "réglementé · santé"}
+            </span>
+            <span style={{ marginLeft: 8, opacity: 0.7 }}>
+              {statusLabel[str(place.letter_status)] ?? str(place.letter_status)}
+            </span>
+          </span>
+          <PrintButton />
+          <LetterDownload slug={slug} />
+          <LetterValidation slug={slug} />
+          <LetterContentEdit slug={slug} fields={r.editableFields} />
+          <ProLinkButton slug={slug} />
+          <PublishButton slug={slug} />
+          <a href="/admin/humain/site-internet" style={LIEN}>← Liste</a>
+          {/* Pas de « bandeau au filet » ici : cette lettre n'a pas d'aplat noir,
+              l'option n'aurait aucun effet. */}
+          <span style={{ marginLeft: "auto", opacity: 0.5 }}>Site à {str(ancien.prix) || "690"} € · sans fil de ville</span>
+        </div>
+
         <style dangerouslySetInnerHTML={{ __html: readLetterStylesReglementee() }} />
-        <div dangerouslySetInnerHTML={{ __html: r.recto }} />
-        {r.verso ? <div dangerouslySetInnerHTML={{ __html: r.verso }} /> : null}
+        {/* `#letter-root` n'est pas décoratif : l'export PNG et le garde-fou
+            « tenir sur une page » cherchent leurs feuilles par ce sélecteur. */}
+        <div id="letter-root" className="si-root" style={{ paddingTop: 8 }}>
+          <div dangerouslySetInnerHTML={{ __html: r.recto }} />
+          {r.verso ? <div dangerouslySetInnerHTML={{ __html: r.verso }} /> : null}
+        </div>
+        <FitLetter />
       </>
     );
   }
@@ -92,11 +176,6 @@ export default async function SiteInternetLettrePage({
   const { html, exclusion, editableFields } = await composeLetterHtml({ place, overrides, slug, appUrl, sansAplat });
   const styles = readLetterStyles();
   const ville = str(place.city);
-
-  const statusLabel: Record<string, string> = {
-    draft: "Brouillon", validated: "Validée", printed: "Imprimée",
-    delivered: "Remise", contacted: "Contact reçu", skipped: "Ignorée", excluded: "Exclu",
-  };
 
   // Une exclusion n'est pas une erreur technique : c'est une décision, et elle
   // doit s'expliquer à l'écran pour que l'opérateur sache pourquoi ce prospect
@@ -132,15 +211,7 @@ export default async function SiteInternetLettrePage({
 
   return (
     <>
-      <div
-        className="no-print"
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-          background: "#14140F", color: "#fff", padding: "10px 20px",
-          display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
-          fontFamily: "sans-serif", fontSize: 14,
-        }}
-      >
+      <div className="no-print" style={BARRE}>
         <span>
           <strong>{nom || slug}</strong> · {ville}
           <span style={{ marginLeft: 8, opacity: 0.7 }}>{statusLabel[str(place.letter_status)] ?? str(place.letter_status)}</span>
@@ -153,11 +224,11 @@ export default async function SiteInternetLettrePage({
         <PublishButton slug={slug} />
         <a
           href={sansAplat ? `/admin/humain/site-internet/lettre/${slug}` : `/admin/humain/site-internet/lettre/${slug}?filet=1`}
-          style={{ color: "#00E0A0", textDecoration: "none" }}
+          style={LIEN}
         >
           {sansAplat ? "Bandeau plein" : "Bandeau au filet"}
         </a>
-        <a href="/admin/humain/site-internet" style={{ color: "#00E0A0", textDecoration: "none" }}>← Liste</a>
+        <a href="/admin/humain/site-internet" style={LIEN}>← Liste</a>
         <span style={{ marginLeft: "auto", opacity: 0.5 }}>QR → son espace</span>
       </div>
 
