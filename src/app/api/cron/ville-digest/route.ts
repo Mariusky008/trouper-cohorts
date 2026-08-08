@@ -94,21 +94,27 @@ export async function GET(request: Request) {
     nomVille.set(a.ville_slug, (await configVille(supabase, a.ville_slug)).nom);
   }
 
-  // Les commerces suivis, en UNE requête pour tout le monde : un aller-retour
-  // par abonné multiplierait la durée du cron par le nombre d'abonnés.
+  // Les commerces suivis, PAR LOTS. Un `in()` sur cinq mille identifiants dépasse la longueur d'URL
+  // acceptée : la requête échouait, le `catch` la traduisait en « personne ne
+  // suit personne », et la section « Vos commerces » disparaissait sans bruit —
+  // en emportant le cas « résumé coupé, suivis gardés », qui n'aurait alors plus
+  // rien envoyé du tout.
   const suivisPar = new Map<string, Set<string>>();
-  try {
-    const { data } = await supabase
-      .from("human_suivis")
-      .select("habitant_id, site_id")
-      .in("habitant_id", abonnes.map((a) => a.id));
-    for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
-      const h = str(r.habitant_id);
-      if (!suivisPar.has(h)) suivisPar.set(h, new Set());
-      suivisPar.get(h)!.add(str(r.site_id));
+  const LOT = 200;
+  for (let i = 0; i < abonnes.length; i += LOT) {
+    const ids = abonnes.slice(i, i + LOT).map((a) => a.id);
+    try {
+      const { data, error } = await supabase.from("human_suivis").select("habitant_id, site_id").in("habitant_id", ids);
+      if (error) throw new Error(error.message);
+      for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {
+        const h = str(r.habitant_id);
+        if (!suivisPar.has(h)) suivisPar.set(h, new Set());
+        suivisPar.get(h)!.add(str(r.site_id));
+      }
+    } catch {
+      /* ce lot échoue → ses abonnés reçoivent le résumé sans section « Vos
+         commerces », les autres lots ne sont pas pénalisés */
     }
-  } catch {
-    /* table absente → personne ne suit personne, le résumé reste complet */
   }
 
   let envoyes = 0;

@@ -21,12 +21,18 @@ export type Reglages = {
   recoitVilleInfos: boolean;
 };
 
-async function enregistrer(patch: Record<string, unknown>): Promise<boolean> {
+/**
+ * Enregistre un réglage. **La ville est obligatoire** : au premier réglage,
+ * l'habitant est CRÉÉ, et sans ville il naît avec `ville_slug` vide — invisible
+ * pour le résumé, les alertes et le fil, qui interrogent tous par ville. Il
+ * réglerait ses préférences et ne recevrait jamais rien.
+ */
+async function enregistrer(ville: string, patch: Record<string, unknown>): Promise<boolean> {
   try {
     const r = await fetch("/api/direct/reglages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
+      body: JSON.stringify({ ville, ...patch }),
     });
     return r.ok;
   } catch {
@@ -73,7 +79,7 @@ const CANAUX: Array<{ cle: keyof Reglages; ic: string; t: string; s: string }> =
   { cle: "recoitVilleInfos", ic: "▣", t: "Informations de la ville", s: "Travaux, marchés, événements" },
 ];
 
-export function ReglagesCanaux({ initial, actif }: { initial: Reglages; actif: boolean }) {
+export function ReglagesCanaux({ initial, actif, ville }: { initial: Reglages; actif: boolean; ville: string }) {
   const [v, setV] = useState(initial);
   const [err, setErr] = useState("");
 
@@ -81,7 +87,7 @@ export function ReglagesCanaux({ initial, actif }: { initial: Reglages; actif: b
     const vise = !v[cle];
     setV((s) => ({ ...s, [cle]: vise }));
     setErr("");
-    if (!(await enregistrer({ [cle]: vise }))) {
+    if (!(await enregistrer(ville, { [cle]: vise }))) {
       setV((s) => ({ ...s, [cle]: !vise }));
       setErr("Réglage non enregistré — réessayez.");
     }
@@ -118,9 +124,11 @@ export function ReglagesCanaux({ initial, actif }: { initial: Reglages; actif: b
 export function PanneauCategories({
   disponibles,
   initial,
+  ville,
 }: {
   disponibles: string[];
   initial: string[];
+  ville: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [sel, setSel] = useState<string[]>(initial);
@@ -130,7 +138,7 @@ export function PanneauCategories({
     const suivant = sel.includes(c) ? sel.filter((x) => x !== c) : [...sel, c];
     setSel(suivant);
     setErr("");
-    if (!(await enregistrer({ categories: suivant }))) {
+    if (!(await enregistrer(ville, { categories: suivant }))) {
       setSel(sel);
       setErr("Non enregistré — réessayez.");
     }
@@ -166,7 +174,7 @@ export function PanneauCategories({
             ))}
           </div>
           {sel.length > 0 && (
-            <button type="button" className="lien" onClick={() => { setSel([]); void enregistrer({ categories: [] }); }}>
+            <button type="button" className="lien" onClick={() => { setSel([]); void enregistrer(ville, { categories: [] }); }}>
               Tout réafficher
             </button>
           )}
@@ -192,11 +200,13 @@ export function PanneauSecteur({
   quartierInitial,
   rayonInitial,
   ville,
+  villeSlug,
 }: {
   quartiers: string[];
   quartierInitial: string;
   rayonInitial: number;
   ville: string;
+  villeSlug: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [quartier, setQuartier] = useState(quartierInitial);
@@ -204,11 +214,11 @@ export function PanneauSecteur({
 
   const majQuartier = async (q: string) => {
     setQuartier(q);
-    void enregistrer({ quartier: q });
+    void enregistrer(villeSlug, { quartier: q });
   };
   const majRayon = async (m: number) => {
     setRayon(m);
-    void enregistrer({ rayonM: m });
+    void enregistrer(villeSlug, { rayonM: m });
   };
 
   const rayonL = RAYONS.find((r) => r.m === rayon)?.l ?? `${rayon} m`;
@@ -253,7 +263,7 @@ export function PanneauSecteur({
 }
 
 // ── Horaires de tranquillité ────────────────────────────────────────────────
-export function PanneauHoraires({ avantInitial, apresInitial }: { avantInitial: number; apresInitial: number }) {
+export function PanneauHoraires({ avantInitial, apresInitial, ville }: { avantInitial: number; apresInitial: number; ville: string }) {
   const [ouvert, setOuvert] = useState(false);
   const [avant, setAvant] = useState(avantInitial);
   const [apres, setApres] = useState(apresInitial);
@@ -269,7 +279,7 @@ export function PanneauHoraires({ avantInitial, apresInitial }: { avantInitial: 
     setErr("");
     setAvant(a);
     setApres(b);
-    void enregistrer({ silenceAvant: a, silenceApres: b });
+    void enregistrer(ville, { silenceAvant: a, silenceApres: b });
   };
 
   const heures = Array.from({ length: 24 }, (_, h) => h);
@@ -450,7 +460,7 @@ export function SeDesabonner({ ville }: { ville: string }) {
   const partir = async () => {
     setBusy(true);
     try {
-      await enregistrer({ desabonner: true, ville });
+      await enregistrer(ville, { desabonner: true });
       setFait(true);
     } finally {
       setBusy(false);

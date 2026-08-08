@@ -63,10 +63,21 @@ export function SaisieHeure({
   label: string;
 }) {
   // Texte tant qu'on tape, valeur normalisée dès qu'on sort. Normaliser à chaque
-  // frappe empêcherait d'écrire « 11h30 » : le champ se réécrirait en « 1 h »
-  // au premier caractère.
+  // frappe empêcherait d'écrire « 11h30 » : le champ se réécrirait en « 1 h » au
+  // premier caractère.
   const [texte, setTexte] = useState(() => ecrireHeure(valeur));
   const [faux, setFaux] = useState(false);
+
+  // Resynchronisation quand la valeur change EN DEHORS du champ — changement
+  // d'intention, remise à zéro du formulaire. Sans elle, l'ancienne heure
+  // restait affichée alors que la réponse enregistrée était vide : le commerçant
+  // lisait « 11 h » et publiait une annonce sans heure.
+  const [vu, setVu] = useState(valeur);
+  if (vu !== valeur) {
+    setVu(valeur);
+    setTexte(ecrireHeure(valeur));
+    setFaux(false);
+  }
 
   return (
     <input

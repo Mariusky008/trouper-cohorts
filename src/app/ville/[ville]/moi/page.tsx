@@ -96,6 +96,7 @@ export default async function MoiPage({ params }: { params: Promise<{ ville: str
 
       <div className="grp">Ce que je reçois</div>
       <ReglagesCanaux
+        ville={ville}
         actif={Boolean(habitant?.email)}
         initial={{
           recoitResume: habitant?.recoitResume ?? true,
@@ -106,14 +107,15 @@ export default async function MoiPage({ params }: { params: Promise<{ ville: str
       />
 
       <div className="grp">Ce qui m&apos;intéresse</div>
-      <PanneauCategories disponibles={categories} initial={habitant?.categories ?? []} />
+      <PanneauCategories disponibles={categories} initial={habitant?.categories ?? []} ville={ville} />
       <PanneauSecteur
         quartiers={cfg.quartiers}
         quartierInitial={habitant?.quartier ?? ""}
         rayonInitial={habitant?.rayonM ?? 2000}
         ville={cfg.nom}
+        villeSlug={ville}
       />
-      <PanneauHoraires avantInitial={habitant?.silenceAvant ?? 9} apresInitial={habitant?.silenceApres ?? 20} />
+      <PanneauHoraires avantInitial={habitant?.silenceAvant ?? 9} apresInitial={habitant?.silenceApres ?? 20} ville={ville} />
 
       <div className="grp">Mon compte</div>
       <PanneauAdresse

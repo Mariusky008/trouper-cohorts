@@ -50,6 +50,15 @@ const MAX_MS = 30 * 24 * 3600 * 1000; // au-delà, ce n'est plus « l'offre du m
 // midi, soir) sans qu'un seul commerce occupe l'écran d'accueil d'une ville.
 const MAX_VIVANTES = 3;
 
+/** Une vidéo n'est acceptée que si elle sort de NOTRE seau `annonces`. */
+function videoAcceptee(url: string): string | null {
+  if (!url) return null;
+  const base = str(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, "");
+  if (!base) return null;
+  const attendu = `${base}/storage/v1/object/public/annonces/`;
+  return url.startsWith(attendu) && url.length <= 500 && !url.includes("..") ? url : null;
+}
+
 /**
  * L'échéance de l'annonce, en ISO. Le client sait seul à quelle heure locale son
  * offre s'arrête ; on ne recalcule donc pas ici, on VALIDE : une date passée ou
@@ -143,8 +152,11 @@ export async function POST(request: Request) {
     // Le fichier doit venir de NOTRE stockage : accepter une adresse
     // quelconque ferait jouer, sur le fil d'une ville, une vidéo qu'on
     // n'héberge pas et qui peut changer de contenu après coup.
-    const videoBrute = str(p?.video);
-    const video = /^https:\/\/\S+\/storage\/v1\/object\/public\/annonces\/\S+$/.test(videoBrute) ? videoBrute : null;
+    // L'HÔTE EST ÉPINGLÉ. Le motif précédent acceptait n'importe quel domaine
+    // pourvu que le chemin ressemble à du Supabase : un jeton pro suffisait donc
+    // à faire jouer, dans le fil de toute une ville, une vidéo hébergée
+    // ailleurs — dont le contenu peut changer après validation.
+    const video = videoAcceptee(str(p?.video));
     const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
     try {
       await supabase.from("human_vitrine_sites").update({ current_offer: offer }).eq("id", id);

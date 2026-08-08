@@ -13,7 +13,16 @@
 export type PlagePro = { weekday: number; start_min: number; end_min: number };
 export type LigneHoraire = { jours: string; horaires: string };
 
-const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+// INDEXÉ PAR LA CONVENTION JAVASCRIPT — 0 = dimanche — parce que c'est ce que
+// `weekday` contient : l'espace pro écrit ses plages avec `getDay()`. Un tableau
+// commençant à lundi décalait TOUS les jours d'un cran : « lundi – vendredi »
+// s'affichait « mardi – samedi », et le jour de fermeture désignait le mauvais.
+const JOURS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+// L'ordre d'AFFICHAGE, lui, commence le lundi : c'est ainsi qu'on lit des
+// horaires de commerce. Les deux ordres coexistent, chacun nommé pour ce qu'il
+// est — les confondre est précisément ce qui a produit le décalage.
+const ORDRE_LECTURE = [1, 2, 3, 4, 5, 6, 0];
 
 /** 570 → « 9 h 30 », 540 → « 9 h ». Les minutes ne s'écrivent que si elles
  *  existent : « 9 h 00 » se lit comme une heure d'ouverture de gare. */
@@ -65,15 +74,18 @@ export function horairesLisibles(plages: PlagePro[]): LigneHoraire[] {
   };
 
   const lignes: LigneHoraire[] = [];
-  let debut = 0;
-  for (let j = 1; j <= 7; j++) {
-    if (j < 7 && texte(j) === texte(debut)) continue;
-    const fin = j - 1;
+  let debut = 0; // index dans ORDRE_LECTURE, pas un jour
+  for (let i = 1; i <= 7; i++) {
+    if (i < 7 && texte(ORDRE_LECTURE[i]) === texte(ORDRE_LECTURE[debut])) continue;
+    const fin = i - 1;
     lignes.push({
-      jours: debut === fin ? JOURS[debut] : `${JOURS[debut]} – ${JOURS[fin]}`,
-      horaires: texte(debut),
+      jours:
+        debut === fin
+          ? JOURS[ORDRE_LECTURE[debut]]
+          : `${JOURS[ORDRE_LECTURE[debut]]} – ${JOURS[ORDRE_LECTURE[fin]]}`,
+      horaires: texte(ORDRE_LECTURE[debut]),
     });
-    debut = j;
+    debut = i;
   }
   return lignes;
 }

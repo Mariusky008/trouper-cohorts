@@ -37,9 +37,56 @@ export type Pouls = {
   places: number;
 };
 
+/**
+ * L'heure qu'il est CHEZ L'HABITANT, pas sur le serveur.
+ *
+ * Le serveur tourne en UTC. `getHours()` y renvoyait 18 h alors qu'il est 20 h
+ * à Dax : le fil basculait au passé deux heures trop tard, et le début de
+ * journée — celui qui décide de « x choses se passent aujourd'hui » — sautait à
+ * 2 h du matin en été. Même raison que dans `alertes.ts`, même correction.
+ */
+const ZONE = "Europe/Paris";
+
+function heureLocale(quand: Date): number {
+  try {
+    const p = new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: ZONE }).formatToParts(quand);
+    const n = Number(p.find((x) => x.type === "hour")?.value);
+    return Number.isFinite(n) ? n % 24 : quand.getUTCHours();
+  } catch {
+    return quand.getUTCHours();
+  }
+}
+
+/**
+ * Le début de la journée LOCALE, en instant absolu.
+ *
+ * Calculé en retranchant le temps écoulé depuis minuit chez l'habitant. Pas de
+ * construction de date à partir d'une chaîne : c'est ce qui casse aux
+ * changements d'heure, où une journée fait 23 ou 25 heures.
+ */
+function debutDuJour(quand: Date): number {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: ZONE,
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).formatToParts(quand);
+    const lire = (t: string) => Number(parts.find((x) => x.type === t)?.value ?? NaN);
+    const h = lire("hour") % 24;
+    const m = lire("minute");
+    const sec = lire("second");
+    if (![h, m, sec].every(Number.isFinite)) return quand.getTime();
+    return quand.getTime() - (h * 3600 + m * 60 + sec) * 1000 - quand.getMilliseconds();
+  } catch {
+    return quand.getTime();
+  }
+}
+
 /** Après 18 h, la journée est derrière : le fil se raconte au passé. */
 function auPasse(maintenant: Date): boolean {
-  return maintenant.getHours() >= 18;
+  return heureLocale(maintenant) >= 18;
 }
 
 /**
@@ -64,9 +111,8 @@ export function calculerPouls(
   const seuil = opts.seuil ?? SEUIL_COMPTEUR_DEFAUT;
   const t = maintenant.getTime();
 
-  const debutJour = new Date(maintenant);
-  debutJour.setHours(0, 0, 0, 0);
-  const duJour = publications.filter((p) => Date.parse(p.publieLe) >= debutJour.getTime());
+  const debutJour = debutDuJour(maintenant);
+  const duJour = publications.filter((p) => Date.parse(p.publieLe) >= debutJour);
 
   const n = duJour.length;
   const chiffre = n >= seuil;

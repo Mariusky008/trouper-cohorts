@@ -118,7 +118,13 @@ export async function filDeVille(
   const slug = villeSlug.trim().toLowerCase();
   if (!slug) return [];
   const fenetre = opts.fenetreLarge ? FENETRE_LARGE_MS : FENETRE_SANS_ECHEANCE_MS;
+  // La fenêtre borne les publications SANS échéance, jamais celles qui en ont
+  // une. Une offre annoncée « jusqu'au 30 » disparaissait du fil au bout de
+  // trois jours alors qu'elle courait encore — et qu'elle restait affichée sur
+  // le bandeau du commerçant. Le filtre SQL laisse donc passer tout ce qui a une
+  // échéance future ; `estVivante` tranche ensuite, avec la même règle qu'ici.
   const depuis = new Date(Date.now() - fenetre).toISOString();
+  const maintenantIso = new Date().toISOString();
 
   let rows: Row[] = [];
   try {
@@ -127,7 +133,7 @@ export async function filDeVille(
       .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
       .eq("ville_slug", slug)
       .is("retire_le", null)
-      .gte("publie_le", depuis)
+      .or(`publie_le.gte.${depuis},expire_le.gt.${maintenantIso}`)
       .order("publie_le", { ascending: false })
       .limit(opts.max ?? 200);
     if (error) throw new Error(error.message);

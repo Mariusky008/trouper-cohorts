@@ -115,11 +115,29 @@ export async function POST(request: Request) {
       return OK;
     }
 
-    // Adresse inconnue. Si l'appareil a déjà une ligne, l'adresse s'y POSE.
-    if (surAppareil) {
+    // Adresse inconnue. Si l'appareil a déjà une ligne POUR CETTE VILLE,
+    // l'adresse s'y pose ; sinon on en crée une nouvelle.
+    //
+    // On ne réécrit PAS `ville_slug` sur une ligne existante : la même personne
+    // peut suivre deux villes depuis le même téléphone, et déplacer sa ligne
+    // annulerait silencieusement son premier abonnement.
+    if (surAppareil && surAppareil.villeSlug === slug) {
       const { data: maj, error } = await supabase
         .from("human_habitants")
-        .update({ email, ville, ville_slug: slug, recoit_resume: true, ...consentement })
+        .update({
+          email,
+          ville,
+          recoit_resume: true,
+          // REMISE À ZÉRO DE LA CONFIRMATION. Sans elle, quelqu'un de déjà
+          // confirmé qui change d'adresse verrait la NOUVELLE recevoir le
+          // résumé du lendemain sans avoir jamais cliqué : le double opt-in
+          // sauté par une porte dérobée. Et un désabonné n'aurait jamais pu
+          // revenir, la page de confirmation ne levant le retrait que si la
+          // confirmation est nulle.
+          confirmed_at: null,
+          unsubscribed_at: null,
+          ...consentement,
+        })
         .eq("id", surAppareil.id)
         .select("confirm_token")
         .maybeSingle();

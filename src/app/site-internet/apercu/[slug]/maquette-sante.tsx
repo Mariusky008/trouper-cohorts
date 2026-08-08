@@ -486,9 +486,14 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           // en ligne) : le raccourci aussi, avec le libellé de ce qu'on y trouve.
           // Jamais de raccourci vers une ancre absente : le bloc en ligne suppose
           // une ville et une participation au catalogue.
-          ...(modeDemo || (villeAff && collectifActif)
+          // La condition suit ce qui est RÉELLEMENT rendu plus bas : la section
+          // en ligne exige `published`, celle de démonstration exige `modeDemo`.
+          // Un visiteur venu du QR de la boutique sur un site pas encore publié
+          // tombait entre les deux — le raccourci s'affichait, l'ancre n'existait
+          // pas, et le clic ne menait nulle part.
+          ...(modeDemo || (published && villeAff && collectifActif)
             ? [{
-                label: published ? `📍 Aujourd'hui à ${villeAff}` : `🤝 Le catalogue de ${villeAff}`,
+                label: modeDemo ? `🤝 Le catalogue de ${villeAff}` : `📍 Aujourd'hui à ${villeAff}`,
                 target: "mq-collectif",
                 gold: true,
               }]
