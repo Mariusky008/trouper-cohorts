@@ -408,7 +408,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         busyWord={busyWord}
         hideBubble
         cloudTts={modeDemo}
-        published={published}
+        // `!modeDemo`, pas `published` : du point de vue d'un composant enfant,
+        // ce drapeau veut dire « montre la version réelle, pas l'argumentaire ».
+        // Lui passer `published` faisait basculer en démonstration tout visiteur
+        // arrivé sur un site pas encore converti — y compris depuis le fil.
+        published={!modeDemo}
       />
 
       {/* Habillage DÉMO : teaser + simulation pro + bandeau. Retiré une fois publié. */}
@@ -464,7 +468,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       {/* Le bandeau écoute l'Action Flash : dès que le commerçant écrit son
           annonce dans la maquette, elle s'affiche ici — c'est la promesse même
           de la démo (« elle s'affiche en haut de votre site »). */}
-      <OfferBand slug={slug} realOffer={offer?.text || ""} example={published ? "" : p.flashExample} />
+      {/* L'EXEMPLE D'ANNONCE est un argumentaire adressé au commerçant. Écrit
+          `published ? "" : …`, il échappait à la correction précédente qui ne
+          cherchait que `!published` — la même condition, formulée autrement. */}
+      <OfferBand slug={slug} realOffer={offer?.text || ""} example={modeDemo ? p.flashExample : ""} />
 
       <LivingHero
         nom={nom}
@@ -491,7 +498,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           // Un visiteur venu du QR de la boutique sur un site pas encore publié
           // tombait entre les deux — le raccourci s'affichait, l'ancre n'existait
           // pas, et le clic ne menait nulle part.
-          ...(modeDemo || (published && villeAff && collectifActif)
+          ...(modeDemo || (villeAff && collectifActif)
             ? [{
                 label: modeDemo ? `🤝 Le catalogue de ${villeAff}` : `📍 Aujourd'hui à ${villeAff}`,
                 target: "mq-collectif",
@@ -626,13 +633,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
       )}
 
       {canFollow && (
-        <CercleSection slug={slug} accent={accent} nom={nom} published={published} promesse={follow.promesse} topics={follow.topics} />
+        <CercleSection slug={slug} accent={accent} nom={nom} published={!modeDemo} promesse={follow.promesse} topics={follow.topics} />
       )}
 
       {/* Site EN LIGNE : la fenêtre sur le catalogue de la ville, avec les annonces
           réelles des commerces voisins. Le bloc existe même sans voisin (sinon le
           catalogue n'a aucune porte d'entrée) — mais jamais si le pro s'en est retiré. */}
-      {published && canFollow && collectifActif && (
+      {!modeDemo && canFollow && collectifActif && (
         <CollectifLive ville={villeAff} nom={nom} offers={partnerOffers} accent={accent} />
       )}
 
@@ -646,8 +653,10 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           metier={metierLabel}
           photo={photos[0] || ""}
           partners={partners}
-          published={published}
-          offerText={offer?.text || p.flashExample}
+          published={!modeDemo}
+          // Sans vraie offre, on retombait sur l'EXEMPLE : un visiteur public
+          // lisait une annonce fictive présentée comme réelle.
+          offerText={offer?.text || (modeDemo ? p.flashExample : "")}
         />
       )}
 
@@ -723,10 +732,12 @@ export function MaquetteSante(p: MaquetteSanteProps) {
         </div>
       )}
 
-      {/* Barre d'actions CLIENTS : uniquement sur le site ACTIVÉ. En découverte,
-          le commerçant explore sa maquette — ces boutons ne s'adressent pas à lui
-          (il a sa barre « côté pro » en haut). */}
-      {published && (
+      {/* Barre d'actions CLIENTS. En découverte, le commerçant explore sa
+          maquette — ces boutons ne s'adressent pas à lui (il a sa barre « côté
+          pro » en haut). Mais un VRAI client, lui, doit les avoir : ils étaient
+          absents pour un visiteur venu du fil sur un site pas encore converti,
+          qui se retrouvait sans aucun moyen de prendre rendez-vous. */}
+      {!modeDemo && (
         <div className="bar">
           <a className="call" data-accueil-open>💬 Parler à mon assistante</a>
           <a className="rdv" {...rdvProps}>Prendre rendez-vous</a>
