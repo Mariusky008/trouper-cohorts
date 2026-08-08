@@ -20,7 +20,7 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
-import { publier, retirerToutesDe } from "@/lib/direct/publications";
+import { publier, retirerToutesDe, limiterVivantes } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
@@ -46,6 +46,9 @@ function readOffer(v: unknown): Offer | null {
 }
 
 const MAX_MS = 30 * 24 * 3600 * 1000; // au-delà, ce n'est plus « l'offre du moment »
+// Trois annonces vivantes par commerce : de quoi couvrir une journée (matin,
+// midi, soir) sans qu'un seul commerce occupe l'écran d'accueil d'une ville.
+const MAX_VIVANTES = 3;
 
 /**
  * L'échéance de l'annonce, en ISO. Le client sait seul à quelle heure locale son
@@ -160,16 +163,20 @@ export async function POST(request: Request) {
     // remplit pas un formulaire à catégories. Un échec de publication ne fait pas
     // échouer l'enregistrement — son bandeau est déjà en ligne, et lui refuser sa
     // propre offre parce que le fil est indisponible serait absurde.
-    // UNE SEULE OFFRE VIVANTE À LA FOIS, parce que c'est ce que son écran lui
-    // promet : il voit « votre offre en cours », au singulier, et un bouton pour
-    // la remplacer. Sans ce retrait, enregistrer cinq fois dans la semaine
-    // laisserait cinq cartes de lui dans le fil, disant cinq choses
-    // différentes — et il n'aurait aucun moyen de s'en apercevoir.
+    // PLUSIEURS ANNONCES VIVANTES À LA FOIS. Une matinée et une fin de
+    // journée n'ont rien à voir : un boulanger annonce sa fournée de 7 h puis
+    // ses invendus de 19 h, et les deux méritent d'exister ensemble. La table a
+    // toujours su le porter — c'est moi qui retirais les précédentes à chaque
+    // enregistrement, par prudence excessive.
     //
-    // La table sait porter plusieurs publications par commerce ; c'est l'écran
-    // qui n'en propose qu'une. Le jour où il en proposera plusieurs, c'est cette
-    // ligne qui saute, pas le modèle.
-    await retirerToutesDe(supabase, id);
+    // Le bandeau de SON site ne montre toujours qu'une chose (`current_offer`
+    // est un objet unique) : c'est la dernière, et c'est cohérent avec un
+    // bandeau. Le fil, lui, les montre toutes.
+    //
+    // Un plafond, pour qu'un commerce ne monopolise pas le fil de sa ville : au
+    // delà de MAX_VIVANTES, la plus ancienne s'efface au profit de la nouvelle.
+    // Le fil est un bien commun, pas un mur d'affichage privé.
+    await limiterVivantes(supabase, id, MAX_VIVANTES - 1);
 
     const ville = str(site.city);
     if (ville) {

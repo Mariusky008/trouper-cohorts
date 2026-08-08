@@ -253,6 +253,38 @@ export async function retirerToutesDe(supabase: Supabase, siteId: string): Promi
   }
 }
 
+/**
+ * Ne garde que les `garder` publications les plus récentes d'un commerce, et
+ * retire les plus anciennes.
+ *
+ * Un plafond, pas une exclusivité : plusieurs annonces peuvent coexister — une
+ * fournée du matin et des invendus du soir n'ont rien à voir. Mais le fil est
+ * le bien commun d'une ville : sans borne, un commerce prolixe occuperait à lui
+ * seul l'écran d'accueil de tous les habitants.
+ */
+export async function limiterVivantes(supabase: Supabase, siteId: string, garder: number): Promise<void> {
+  if (!siteId || garder < 0) return;
+  try {
+    const { data } = await supabase
+      .from("human_publications")
+      .select("id")
+      .eq("site_id", siteId)
+      .is("retire_le", null)
+      .order("publie_le", { ascending: false });
+    const ids = ((Array.isArray(data) ? data : []) as Array<Record<string, unknown>>)
+      .map((r) => str(r.id))
+      .filter(Boolean)
+      .slice(garder);
+    if (!ids.length) return;
+    await supabase
+      .from("human_publications")
+      .update({ retire_le: new Date().toISOString() })
+      .in("id", ids);
+  } catch {
+    /* table absente → rien à limiter */
+  }
+}
+
 /** Retrait par l'auteur. On marque plutôt que de supprimer : les gardées des
  *  habitants pointent dessus, et une disparition doit pouvoir s'expliquer. */
 export async function retirer(supabase: Supabase, id: string, siteId: string): Promise<boolean> {

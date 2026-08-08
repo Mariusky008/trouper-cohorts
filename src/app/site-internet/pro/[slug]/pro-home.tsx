@@ -130,11 +130,19 @@ export function ProHome(p: Props) {
       <div className="home">
         <div className="hi">Bonjour{p.nom ? `, ${p.nom}` : ""} 👋</div>
 
-        <div className={`live ${p.sitePublished ? "on" : "off"}`}>
-          <span aria-hidden="true">{p.sitePublished ? "🌐" : "⏳"}</span>
+        {/* SON SITE EST TOUJOURS EN LIGNE. C'est là que le message précédent
+            mentait : la page répond à cette adresse, publiée ou non — le
+            commerçant pouvait l'ouvrir, la partager, la voir fonctionner, et
+            lire ici « pas encore en ligne ».
+            `published` ne dit pas « joignable », il dit « converti en client » :
+            deux choses différentes sous un seul mot. On affiche donc l'adresse,
+            qui est vraie, et on ne promet plus un « on vous prévient » qui
+            n'arrivait jamais. */}
+        <div className="live on">
+          <span aria-hidden="true">🌐</span>
           <span className="lb">
-            <b>{p.sitePublished ? "Votre site est en ligne" : "Votre site n'est pas encore en ligne"}</b>
-            <span>{p.sitePublished ? p.siteUrl.replace(/^https?:\/\//, "") : "On vous prévient dès qu'il est publié."}</span>
+            <b>Votre site est en ligne</b>
+            <span>{p.siteUrl.replace(/^https?:\/\//, "")}</span>
           </span>
           <a href={p.siteUrl} target="_blank" rel="noreferrer">
             {p.sitePublished ? "Voir" : "Aperçu"}
