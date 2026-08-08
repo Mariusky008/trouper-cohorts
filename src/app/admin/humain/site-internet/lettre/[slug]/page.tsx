@@ -8,6 +8,8 @@
 // filet, au cas où le tirage d'essai sur papier épais donne un aplat irrégulier.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composeLetterHtml, readLetterStyles } from "@/lib/site-internet/letter-html";
+import { composeLettreReglementee, readLetterStylesReglementee } from "@/lib/site-internet/letter-html-reglemente";
+import { deontologieOf } from "@/lib/site-internet/metier-profiles";
 import { FitLetter } from "./fit-letter";
 import { PrintButton } from "./print-button";
 import { LetterDownload } from "./letter-download";
@@ -66,10 +68,29 @@ export default async function SiteInternetLettrePage({
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.clikme.fr";
+  const nom = str(place.business_name);
+
+  // DEUX LETTRES, PAS UNE BLOQUÉE. La lettre du Direct repose sur la
+  // publication d'annonces commerciales dans un fil public : incompatible avec
+  // une profession réglementée, sans version adoucie. Mais un diététicien a
+  // toujours besoin d'un site, et il peut toujours le payer — refuser
+  // d'imprimer QUOI QUE CE SOIT pour lui confondait « il ne peut pas faire de
+  // promotion » avec « on n'a rien à lui proposer ».
+  //
+  // Il reçoit donc l'ancienne lettre : un site à 690 €, sans catalogue de ville.
+  if (deontologieOf(str(place.activite)) !== "none") {
+    const r = await composeLettreReglementee({ place, overrides, slug, appUrl, shotManual: "", searchVolume: null });
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: readLetterStylesReglementee() }} />
+        <div dangerouslySetInnerHTML={{ __html: r.recto }} />
+        {r.verso ? <div dangerouslySetInnerHTML={{ __html: r.verso }} /> : null}
+      </>
+    );
+  }
+
   const { html, exclusion, editableFields } = await composeLetterHtml({ place, overrides, slug, appUrl, sansAplat });
   const styles = readLetterStyles();
-
-  const nom = str(place.business_name);
   const ville = str(place.city);
 
   const statusLabel: Record<string, string> = {

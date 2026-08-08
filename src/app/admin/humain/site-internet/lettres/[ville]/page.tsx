@@ -5,7 +5,12 @@
 //
 // Les deux règles d'exclusion (déontologie, données insuffisantes) s'appliquent
 // ici aussi : les prospects concernés ne sont pas imprimés, ils sont listés à
-// l'écran (hors impression) avec le motif. Le rapport de fin de campagne est
+// l'écran (hors impression) avec le motif.
+//
+// Pour les professions réglementées, « exclu » ne veut PAS dire « rien à leur
+// envoyer » : ils ont leur propre lettre — un site à 690 €, sans catalogue de
+// ville — qui s'imprime depuis leur fiche. Son gabarit n'a rien de commun avec
+// celui-ci, d'où l'impression une par une plutôt qu'une pile mixte. Le rapport de fin de campagne est
 // également exposé dans `window.__CLIKME_RAPPORT__` pour le script de génération
 // PDF par prospect (scripts/lettres-pdf.mjs).
 //
@@ -150,7 +155,13 @@ export default async function LettresVillePage({
         <span>
           <strong>{villeAff}</strong> · {rapport.genere} lettre{rapport.genere > 1 ? "s" : ""}
           {rapport.exclu_deontologie > 0 && (
-            <span style={{ marginLeft: 8, color: "#FF9A8B" }}>· {rapport.exclu_deontologie} exclue(s) déontologie</span>
+            // Ces prospects ne sont pas SANS lettre : ils en ont une autre, qui
+            // vend un site sans catalogue de ville. Elle s'imprime une par une
+            // depuis leur fiche — son gabarit diffère de bout en bout, l'empiler
+            // ici produirait une pile aux styles mélangés.
+            <span style={{ marginLeft: 8, color: "#FF9A8B" }}>
+              · {rapport.exclu_deontologie} en lettre « site seul » (à imprimer une par une)
+            </span>
           )}
           {rapport.exclu_donnees > 0 && (
             <span style={{ marginLeft: 8, color: "#F5C86B" }}>· {rapport.exclu_donnees} exclue(s) données</span>
