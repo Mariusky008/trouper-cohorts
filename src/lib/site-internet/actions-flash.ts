@@ -259,14 +259,23 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       sous: "Prévenez ceux qui attendaient une place.",
       champs: [
         { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
-        { cle: "heure", label: "À quelle heure ?", type: "heure", requis: true },
+        { cle: "heure", label: "À partir de quelle heure ?", type: "heure", requis: true },
+        // FACULTATIF, et c'est le point : une place peut se libérer à 16 h
+        // précises, ou pour tout un après-midi. Rendre la fin obligatoire
+        // forcerait à inventer une heure pour le premier cas ; l'omettre
+        // interdisait d'annoncer le second.
+        { cle: "fin", label: "Jusqu'à quelle heure ? (facultatif)", type: "heure", requis: false },
         { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
       brief: (x) =>
-        `Un ${v.place} vient de se libérer ${libelleJour(x.jour, new Date())} à ${heureLisible(x.heure)}` +
+        `Un ${v.place} vient de se libérer ${libelleJour(x.jour, new Date())} ` +
+        `${x.fin ? `de ${heureLisible(x.heure)} à ${heureLisible(x.fin)}` : `à ${heureLisible(x.heure)}`}` +
         `${x.quoi ? ` pour ${x.quoi}` : ""}. Je vous le réserve ?`,
-      fin: (x, now) => moment(now, x.heure, x.jour),
-      demo: (now) => ({ jour: jourISO(dansNJours(now, 1)), heure: "16:00", quoi: "" }),
+      // L'annonce tient jusqu'à la FIN de la plage quand elle est donnée :
+      // retirer à 11 h une place ouverte jusqu'à 17 h la ferait disparaître
+      // alors qu'elle est encore à prendre.
+      fin: (x, now) => moment(now, x.fin || x.heure, x.jour),
+      demo: (now) => ({ jour: jourISO(dansNJours(now, 1)), heure: "16:00", fin: "", quoi: "" }),
       cta: "Réserver",
     });
 
@@ -394,10 +403,14 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "quoi", label: "Quel événement ?", type: "texte", exemple: "une dégustation", requis: true },
       { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
       { cle: "heure", label: "À quelle heure ?", type: "heure", requis: false },
+      { cle: "fin", label: "Jusqu'à quelle heure ? (facultatif)", type: "heure", requis: false },
     ],
-    brief: (x) => `J'organise ${x.quoi} ${j(x, new Date())}${x.heure ? ` à partir de ${heureLisible(x.heure)}` : ""}, ${v.lieu}.`,
+    brief: (x) =>
+      `J'organise ${x.quoi} ${j(x, new Date())}` +
+      `${x.heure ? (x.fin ? ` de ${heureLisible(x.heure)} à ${heureLisible(x.fin)}` : ` à partir de ${heureLisible(x.heure)}`) : ""}` +
+      `, ${v.lieu}.`,
     fin: (x, now) => finDeJour(now, x.jour),
-    demo: (now) => ({ quoi: "une journée portes ouvertes", jour: jourISO(dansNJours(now, 3)), heure: "10:00" }),
+    demo: (now) => ({ quoi: "une journée portes ouvertes", jour: jourISO(dansNJours(now, 3)), heure: "10:00", fin: "" }),
     cta: "Je participe",
   });
 

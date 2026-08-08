@@ -307,6 +307,22 @@ export default async function EspacePro({
     cnt(supabase.from("human_site_requests").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("status", "new")),
   ]);
 
+  // Combien de clients il n'a PAS encore vus. Même mécanique que les avis : on
+  // retient ce qu'il a déjà consulté, la différence fait la pastille. Sans
+  // repère, on ne saurait dire « nouveau » que de façon arbitraire.
+  let clientsNew = 0;
+  try {
+    const { data: cs } = await supabase
+      .from("human_vitrine_sites")
+      .select("pro_clients_seen")
+      .eq("id", siteId)
+      .maybeSingle();
+    const vus = (cs as Record<string, unknown> | null)?.pro_clients_seen;
+    clientsNew = Math.max(0, clientsCount - (typeof vus === "number" ? vus : 0));
+  } catch {
+    /* colonne non migrée → aucune pastille, jamais d'erreur */
+  }
+
   // ── Onglet ACCUEIL : tableau de bord + carte avis (A, B) et/ou note sobre. ──
   const accueilNode = (
     <>
@@ -319,6 +335,7 @@ export default async function EspacePro({
         annonces={annoncesCount}
         demandes={demandesCount}
         clients={clientsCount}
+        clientsNew={clientsNew}
         avis={delta}
         rdvTomorrow={rdvTomorrow}
         demandesNew={demandesNew}

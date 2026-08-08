@@ -9,8 +9,10 @@
 //  • on archive la phrase exacte acceptée + l'horodatage (preuve du consentement) ;
 //  • déonto : refusé pour la santé encadrée et le droit, comme la route Espace Pro ;
 //  • une désinscription ne peut jamais être annulée en douce par une réinscription.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { SITE_URL } from "@/lib/site-url";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { toE164 } from "@/lib/site-internet/phone";
 
@@ -176,6 +178,40 @@ export async function POST(request: Request) {
       );
     }
   }
+
+  // PRÉVENIR LE COMMERÇANT. C'est le seul geste d'engagement d'un visiteur, et
+  // il tombait dans le silence : ni alerte pour lui, ni confirmation pour la
+  // personne. Un client qui s'inscrit et ne reçoit rien conclut que ça n'a pas
+  // marché ; un commerçant qui n'apprend rien ne rappellera personne.
+  //
+  // Sur SON numéro, pas celui de la plateforme : c'est SON client. En
+  // `after()`, une fois la réponse partie — l'inscription ne doit pas attendre
+  // qu'un message soit remis, et un échec d'envoi ne doit pas la faire échouer.
+  after(async () => {
+    try {
+      const { data: st } = await supabase
+        .from("human_vitrine_sites")
+        .select("business_name, whatsapp_phone_e164, pro_token, slug")
+        .eq("id", siteId)
+        .maybeSingle();
+      const site = (st as Record<string, unknown> | null) ?? null;
+      const numero = String(site?.whatsapp_phone_e164 ?? "").trim();
+      if (!numero) return;
+
+      const jeton = String(site?.pro_token ?? "").trim();
+      const espace = jeton ? `${SITE_URL}/p/${jeton}` : "";
+      const qui = prenom ? `${prenom} (${phone})` : phone;
+      await sendWhatsAppTextMessage(
+        numero,
+        `🔔 ${qui} vient de s'inscrire pour être prévenu·e de vos offres.` +
+          `${espace ? `\nRetrouvez-le dans « Mes clients » : ${espace}` : ""}`,
+        { source: "site_internet_follow" }
+      );
+    } catch {
+      // La pastille « nouveaux clients » de son espace pro reste, elle, fiable :
+      // elle se calcule sur la base, pas sur un message remis.
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

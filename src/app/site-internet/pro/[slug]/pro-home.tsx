@@ -15,6 +15,7 @@ type Props = {
   annonces: number;
   demandes: number;
   clients: number;
+  clientsNew: number; // clients inscrits qu'il n'a pas encore vus
   avis: number; // +N nouveaux avis
   rdvTomorrow: number;
   demandesNew: number; // demandes du site en ligne qui attendent un rappel
@@ -41,6 +42,7 @@ export function ProHome(p: Props) {
     acts.push({ icon: "👤", label: "Ajouter un client", go: () => goto("clients:liste") });
   }
   acts.push({ icon: "🕐", label: "Modifier mes horaires", go: () => goto("agenda") });
+  if (p.clientsNew > 0) acts.unshift({ icon: "🔔", label: `Mes clients · ${nf(p.clientsNew)} nouveau${p.clientsNew > 1 ? "x" : ""}`, go: () => goto("contacts") });
   acts.push({ icon: "🎨", label: "Modifier mon site", go: () => goto("site") });
   acts.push({ icon: "📊", label: "Voir mes résultats", go: () => setShowAll((v) => !v) });
 
@@ -60,6 +62,16 @@ export function ProHome(p: Props) {
 
   // À traiter / à préparer.
   const todos: string[] = [];
+  // En TÊTE des choses à voir : quelqu'un vient de choisir d'être prévenu par
+  // lui. C'est le seul geste d'engagement d'un visiteur, et il tombait dans le
+  // silence — ni alerte ici, ni confirmation à la personne.
+  if (p.clientsNew > 0) {
+    todos.push(
+      p.clientsNew > 1
+        ? `${nf(p.clientsNew)} nouveaux client·es vous suivent — à retrouver dans « Mes clients »`
+        : `Un·e nouveau·elle client·e vous suit — à retrouver dans « Mes clients »`
+    );
+  }
   if (p.demandesNew > 0) todos.push(`${nf(p.demandesNew)} personne${p.demandesNew > 1 ? "s" : ""} attend${p.demandesNew > 1 ? "ent" : ""} votre rappel`);
   if (p.rdvTomorrow > 0) todos.push(`${nf(p.rdvTomorrow)} rendez-vous demain — pensez aux rappels`);
 

@@ -93,6 +93,16 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, token]);
 
+  // Ouvrir la liste vaut « j'ai vu » : la pastille de l'accueil s'éteint. Elle
+  // ne pouvait pas s'éteindre plus tôt sans cesser de signaler quoi que ce soit.
+  useEffect(() => {
+    void fetch("/api/site-internet/pro/clients-vus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, token }),
+    }).catch(() => {});
+  }, [slug, token]);
+
   const digits = toWaDigits(phone);
   const canAdd = consent && digits.length >= 9 && !busy;
 
