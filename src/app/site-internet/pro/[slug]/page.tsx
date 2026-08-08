@@ -13,6 +13,7 @@ import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
 import { slugify } from "@/lib/popey-marketplace";
 import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
+import { ProAnnonces } from "./pro-annonces";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
@@ -447,6 +448,13 @@ export default async function EspacePro({
                 voisins={catVoisins}
               />
             ),
+          },
+          {
+            key: "annonces",
+            label: "Mes annonces",
+            icon: "📣",
+            hidden: true, // atteint depuis l'accueil
+            node: <ProAnnonces slug={slug} token={token} />,
           },
           {
             key: "clients",

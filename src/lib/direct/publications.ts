@@ -291,6 +291,65 @@ export async function limiterVivantes(supabase: Supabase, siteId: string, garder
   }
 }
 
+/**
+ * Les publications VIVANTES d'un commerce, pour son espace pro.
+ *
+ * Il n'avait aucun moyen de voir ce qui tourne à son nom : il publiait, et
+ * l'annonce lui échappait. Trois peuvent coexister — sans liste, il ne savait
+ * même pas lesquelles.
+ */
+export async function siennesVivantes(supabase: Supabase, siteId: string): Promise<Publication[]> {
+  if (!siteId) return [];
+  try {
+    const { data, error } = await supabase
+      .from("human_publications")
+      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
+      .eq("site_id", siteId)
+      .is("retire_le", null)
+      .order("publie_le", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    const maintenant = Date.now();
+    return ((Array.isArray(data) ? data : []) as Row[])
+      .map((r) => lirePublication(r))
+      .filter((p): p is Publication => p !== null)
+      .filter((p) => estVivante(p, maintenant));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Repousse l'échéance d'une annonce. « La remettre pour demain » sans la
+ * réécrire : le commerçant qui a une place libre chaque jeudi ne devrait pas
+ * retaper la même phrase toutes les semaines.
+ *
+ * L'appartenance est vérifiée dans la requête même (`site_id`) : sans elle, un
+ * jeton pro permettrait de prolonger l'annonce d'un voisin.
+ */
+export async function prolonger(
+  supabase: Supabase,
+  id: string,
+  siteId: string,
+  expireLe: string | null
+): Promise<boolean> {
+  if (!id || !siteId) return false;
+  try {
+    const { error } = await supabase
+      .from("human_publications")
+      // `publie_le` avance aussi : une annonce prolongée est de nouveau
+      // d'actualité, et le fil est chronologique. La laisser à sa date d'origine
+      // la renverrait tout en bas, invisible — prolonger n'aurait servi à rien.
+      .update({ expire_le: expireLe, publie_le: new Date().toISOString() })
+      .eq("id", id)
+      .eq("site_id", siteId)
+      .is("retire_le", null);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 /** Retrait par l'auteur. On marque plutôt que de supprimer : les gardées des
  *  habitants pointent dessus, et une disparition doit pouvoir s'expliquer. */
 export async function retirer(supabase: Supabase, id: string, siteId: string): Promise<boolean> {

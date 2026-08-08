@@ -20,7 +20,7 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
-import { publier, retirerToutesDe, limiterVivantes } from "@/lib/direct/publications";
+import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, prolonger, retirer } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
@@ -122,6 +122,38 @@ export async function POST(request: Request) {
       return null;
     }
   };
+
+  // Ses annonces vivantes — celles du FIL, pas le bandeau. Il peut en avoir
+  // trois ; sans cette liste, il ne savait même pas lesquelles tournaient.
+  const mesAnnonces = async () =>
+    (await siennesVivantes(supabase, id)).map((a) => ({
+      id: a.id,
+      texte: a.texte,
+      photo: a.photo,
+      video: a.video,
+      famille: a.famille,
+      publieLe: a.publieLe,
+      expireLe: a.expireLe,
+    }));
+
+  if (action === "annonces") {
+    return NextResponse.json({ ok: true, annonces: await mesAnnonces() });
+  }
+
+  if (action === "retirer_annonce") {
+    const cible = str(p?.id);
+    if (!cible) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    await retirer(supabase, cible, id);
+    return NextResponse.json({ ok: true, annonces: await mesAnnonces() });
+  }
+
+  if (action === "prolonger") {
+    const cible = str(p?.id);
+    if (!cible) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    const ok = await prolonger(supabase, cible, id, echeance(p));
+    if (!ok) return NextResponse.json({ error: "Prolongation impossible." }, { status: 500 });
+    return NextResponse.json({ ok: true, annonces: await mesAnnonces() });
+  }
 
   if (action === "clear") {
     try {
@@ -225,5 +257,5 @@ export async function POST(request: Request) {
 
   // get — la galerie voyage avec l'offre : le sélecteur de photo n'a pas besoin
   // d'un second aller-retour pour s'afficher.
-  return NextResponse.json({ ok: true, offer: await current(), photos: galerie });
+  return NextResponse.json({ ok: true, offer: await current(), photos: galerie, annonces: await mesAnnonces() });
 }

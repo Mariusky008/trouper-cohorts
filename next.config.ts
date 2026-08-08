@@ -63,7 +63,32 @@ const config: NextConfig = {
       "programme-commando", "quiz-statut-business", "marketplace", "entrepreneur",
       "alliance", "cm-dashboard", "radar-elite-preview", "side-project", "personnel",
     ];
+    // L'ANCIEN DOMAINE REDIRIGE VERS LE NOUVEAU, en 301 (permanent).
+    //
+    // Tant que popey.academy sert les mêmes pages que clikme.fr, Google voit
+    // deux sites identiques et n'en indexe qu'un — c'est l'ancien qui gagne,
+    // parce qu'il a l'ancienneté. Une redirection permanente transfère cette
+    // ancienneté au lieu de la mettre en concurrence.
+    //
+    // Le CHEMIN est conservé : un QR code déjà imprimé sur une lettre, un lien
+    // dans un e-mail envoyé le mois dernier, un favori d'espace pro — tous
+    // continuent d'arriver au bon endroit, sur le nouveau domaine.
+    //
+    // 301 et non 307 : c'est le seul code que Google traite comme un
+    // déménagement définitif. En 307, il garderait les deux domaines en
+    // concurrence indéfiniment.
+    const ancienDomaine = ["www.popey.academy", "popey.academy"].map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: `https://www.clikme.fr/:path*`,
+      permanent: true,
+    }));
+
     return [
+      // L'ancien domaine EN PREMIER : la redirection doit s'appliquer avant
+      // toute autre règle, sinon une ancienne page redirigerait vers l'accueil
+      // de l'ancien domaine au lieu de partir sur le nouveau.
+      ...ancienDomaine,
       // chaque ancien produit : la racine ET ses sous-pages
       ...OLD.flatMap((s) => [toHome(`/${s}`), toHome(`/${s}/:path*`)]),
       // L'app cliente v3 (/m/<ville>) est retirée. Une icône restée sur un écran
