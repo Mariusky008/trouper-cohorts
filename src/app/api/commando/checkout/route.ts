@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy";
+    const appUrl = SITE_URL;
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: plan === "core" ? "subscription" : "payment",

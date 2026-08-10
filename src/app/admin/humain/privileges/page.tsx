@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SITE_URL } from "@/lib/site-url";
 import {
   adminUpdatePrivilegeActivationStatusAction,
   getAdminMarketplaceSnapshot,
@@ -74,7 +75,7 @@ export default async function AdminHumainPrivilegesPage({ searchParams }: Privil
   const selectedStatus = typeof params.status === "string" ? params.status : "all";
   const selectedCity = typeof params.city === "string" ? params.city : "all";
   const queryText = typeof params.q === "string" ? params.q.trim().toLowerCase() : "";
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appBase = SITE_URL;
 
   const snapshot = await getAdminMarketplaceSnapshot({ placeCity: "all" });
   const activationsRaw = snapshot.recentActivations || [];

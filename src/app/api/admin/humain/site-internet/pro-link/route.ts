@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy";
+  const appUrl = SITE_URL;
   // Lien court à envoyer au commerçant : /p/<jeton> → redirige vers son espace.
   const url = `${appUrl}/p/${token}`;
   return NextResponse.json({ ok: true, url }, { status: 200 });

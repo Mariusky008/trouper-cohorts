@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { SITE_URL } from "@/lib/site-url";
 
 export async function createOpportunity(data: {
   receiverId?: string;
@@ -20,7 +21,7 @@ export async function createOpportunity(data: {
       return { success: false, error: "Vous devez être connecté pour effectuer cette action." };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = SITE_URL;
     const internalSecret = process.env.CRON_SECRET;
 
     const points = Math.round(data.points);

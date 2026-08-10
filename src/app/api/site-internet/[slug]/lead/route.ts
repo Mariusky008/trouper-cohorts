@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { sendSms } from "@/lib/site-internet/accueil-sms";
 import { toE164 } from "@/lib/site-internet/phone";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export async function POST(
   const commerce = String(row.business_name || "un commerce");
   const ville = String(row.city || "");
   const who = name ? `${name} (${commerce}${ville ? ` · ${ville}` : ""})` : `${commerce}${ville ? ` · ${ville}` : ""}`;
-  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appUrl = SITE_URL;
   const adminLink = appUrl ? `${appUrl}/admin/humain/site-internet` : "";
   const text = `🔔 Nouveau contact « Site internet » : ${who} souhaite être rappelé au ${phoneRaw}.`;
 

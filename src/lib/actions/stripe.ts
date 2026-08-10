@@ -3,6 +3,7 @@
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { SITE_URL } from "@/lib/site-url";
 
 export async function createCheckoutSession(priceId: string) {
   const supabase = await createClient();
@@ -33,8 +34,8 @@ export async function createCheckoutSession(priceId: string) {
         },
       ],
       mode: "subscription", // or 'payment' for one-time
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/mon-reseau-local/dashboard?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/mon-reseau-local/dashboard?payment=cancelled`,
+      success_url: `${SITE_URL}/mon-reseau-local/dashboard?payment=success`,
+      cancel_url: `${SITE_URL}/mon-reseau-local/dashboard?payment=cancelled`,
       customer_email: email,
       metadata: {
         userId: user.id,

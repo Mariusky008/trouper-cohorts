@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import type { ReactElement } from "react";
 import { HumanDailyBriefEmail } from "@/emails/human-daily-brief-email";
 import { isCronAuthorized } from "@/lib/cron-auth";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -55,7 +56,7 @@ async function handleSendHumanDailyEmails(request: Request) {
     const dayStartIso = new Date(`${targetDate}T00:00:00.000Z`).toISOString();
     const dayEndIso = new Date(`${targetDate}T23:59:59.999Z`).toISOString();
     const fromEmail = process.env.EMAIL_FROM || "Popey Academy <contact@popey.academy>";
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://popey.academy"}/popey-human/app`;
+    const dashboardUrl = `${SITE_URL}/popey-human/app`;
 
     log(`[HUMAN-CRON] Start for date ${targetDate}`);
     if (onlyEmail) {

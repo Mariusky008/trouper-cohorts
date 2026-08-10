@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMerchantStatsToken } from "@/lib/popey-human/marketplace-landing-token";
 import { getCatalogueLeaderboard } from "@/lib/popey-human/catalogue-leaderboard";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -195,7 +196,7 @@ export default async function PrivilegeProPage({ searchParams }: ProPageProps) {
   const proName = String(place.company_name || place.owner_display_name || place.metier || "Votre commerce").trim();
 
   // Lien COURT à partager (/c/<slug>) → redirige vers le catalogue avec le référent
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appBase = SITE_URL;
   const shareLink = (appBase || "") + "/c/" + encodeURIComponent(proSlug || placeId);
   const cityName = String(place.city || "ta ville");
   const waText =

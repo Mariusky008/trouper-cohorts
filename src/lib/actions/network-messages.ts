@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 
 export async function getConversation(partnerId: string) {
   const supabase = await createClient();
@@ -50,7 +51,7 @@ export async function sendMessage(partnerId: string, content: string) {
       .single();
       
     const senderName = senderProfile?.display_name || "Un membre";
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = SITE_URL;
     const internalSecret = process.env.CRON_SECRET;
 
     if (!internalSecret) {

@@ -21,6 +21,7 @@ import { getMatchContactState } from "@/lib/actions/network-match";
 import { logWhatsAppMissionAction } from "@/lib/actions/network-mission-actions";
 
 import { createClient } from "@/lib/supabase/client";
+import { SITE_URL } from "@/lib/site-url";
 
 // --- FOUNDER CARD PREVIEW COMPONENT (INLINED TO AVOID CIRCULAR DEPENDENCY) ---
 function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboarding" | "rescue", onConfirm: () => void }) {
@@ -474,7 +475,7 @@ const getPopeyShortLink = (profile: any): string => {
     const featuredLink = normalizeHttpUrl(profile?.featured_link);
     const profileId = String(profile?.id || "").trim();
     if (!featuredLink || !profileId) return "";
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://popey.academy").replace(/\/+$/, "");
+    const baseUrl = SITE_URL;
     return `${baseUrl}/r/${profileId}`;
 };
 

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
+import { SITE_URL } from "@/lib/site-url";
 
 type PushSubscriptionJSON = {
   endpoint?: string;
@@ -88,7 +89,7 @@ export async function sendTestPushToCurrentUser() {
     throw new Error("User not authenticated");
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = SITE_URL;
   const secret = process.env.CRON_SECRET;
 
   if (!secret) {

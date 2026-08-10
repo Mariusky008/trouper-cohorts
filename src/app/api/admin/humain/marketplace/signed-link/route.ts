@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { isMarketplaceLandingTokenConfigured, signMarketplaceLandingContext } from "@/lib/popey-human/marketplace-landing-token";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       city,
       exp,
     });
-    const baseUrl = trim(process.env.NEXT_PUBLIC_APP_URL || "");
+    const baseUrl = SITE_URL;
     const safeBase = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
     const citySlug = slugifyCity(city || "dax") || "dax";
     const landingPath = `/privilege/${citySlug}?ctx=${encodeURIComponent(ctx)}`;

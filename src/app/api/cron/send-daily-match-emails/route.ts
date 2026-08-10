@@ -5,6 +5,7 @@ import { Resend } from 'resend';
 import { DailyMatchEmail } from '@/emails/daily-match-email';
 import { generateMatches } from '@/lib/matching';
 import { isCronAuthorized } from '@/lib/cron-auth';
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds execution time
@@ -211,7 +212,7 @@ async function handleSendEmails(request: Request) {
                 matchGoal: goalLabel1,
                 matchSuperpower: user2.superpower,
                 matchNeed: user2.current_need,
-                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+                dashboardUrl: `${SITE_URL}/mon-reseau-local/dashboard`
             })
         });
 
@@ -230,7 +231,7 @@ async function handleSendEmails(request: Request) {
                 matchGoal: goalLabel2,
                 matchSuperpower: user1.superpower,
                 matchNeed: user1.current_need,
-                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+                dashboardUrl: `${SITE_URL}/mon-reseau-local/dashboard`
             })
         });
     }

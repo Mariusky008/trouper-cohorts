@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -253,7 +254,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: invite.error }, { status: 500 });
   }
 
-  const baseUrl = trim(process.env.NEXT_PUBLIC_APP_URL, 200) || "https://www.popey.academy";
+  const baseUrl = SITE_URL;
   const normalizedBase = baseUrl.replace(/\/+$/, "");
   const rawRef = invite.shortCode
     ? invite.shortCode.replace(/[^A-Z0-9]/gi, "").toLowerCase()

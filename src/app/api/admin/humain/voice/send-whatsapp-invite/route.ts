@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
   if (!phone) return NextResponse.json({ success: false, error: "phone requis." }, { status: 400 });
 
-  const baseUrl = trim(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const baseUrl = SITE_URL;
   const rappelUrl = baseUrl ? `${baseUrl}/popey-human/rappel` : "/popey-human/rappel";
 
   const greeting = firstName ? `Bonjour ${firstName},` : "Bonjour,";

@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site-url";
 function readBoolean(value: string | undefined, fallback: boolean): boolean {
   const normalized = String(value || "")
     .trim()
@@ -12,14 +13,11 @@ function trim(value: unknown): string {
   return String(value || "").trim();
 }
 
-function stripTrailingSlash(url: string): string {
-  return trim(url).replace(/\/+$/, "");
-}
-
 function buildDefaultUrl(pathname: string): string {
-  const base = stripTrailingSlash(process.env.NEXT_PUBLIC_APP_URL || "");
-  if (!base) return "";
-  return `${base}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
+  // `SITE_URL` arrive déjà sans « / » final : le nettoyage local n'avait plus
+  // d'objet, et deux façons de normaliser la même adresse finissent toujours par
+  // se contredire.
+  return `${SITE_URL}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
 }
 
 export const voiceTwilioConfig = {

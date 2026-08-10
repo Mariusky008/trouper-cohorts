@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SITE_URL } from "@/lib/site-url";
 
 type MemberOption = {
   id: string;
@@ -74,7 +75,7 @@ export function SignedLinkGenerator({ members }: { members: MemberOption[] }) {
     const citySlug = slugify(cityLabel || "dax") || "dax";
     const referralCode = slugify(`${refName}-${cityLabel}`) || slugify(refName) || "ref-popey";
     const base =
-      trim(process.env.NEXT_PUBLIC_APP_URL || "") ||
+      SITE_URL ||
       (typeof window !== "undefined" && window.location?.origin ? window.location.origin : "");
     const cleanBase = base.replace(/\/+$/, "");
     const query = new URLSearchParams({

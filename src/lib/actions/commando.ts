@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/site-url";
 
 const COMMANDO_MONTHLY_PRICE_ID = process.env.STRIPE_COMMANDO_PRICE_ID || "price_1TF9BQDfAHlQD3uIfW5gBnDJ";
 
@@ -64,7 +65,7 @@ export async function createCommandoCheckoutSession(applicationId: string) {
     return { error: "Candidature introuvable." };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy";
+  const appUrl = SITE_URL;
 
   try {
     const session = await stripe.checkout.sessions.create({

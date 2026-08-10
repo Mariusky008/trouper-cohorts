@@ -19,8 +19,22 @@
 // côté serveur : changer la variable sur Vercel ne suffit pas, il faut
 // redéployer pour qu'elle prenne effet.
 //
+// DEUX VARIABLES LUES, UNE SEULE VÉRITÉ. `NEXT_PUBLIC_APP_URL` désignait la même
+// chose et vivait en parallèle, recopiée dans trente-trois endroits avec SIX
+// replis différents — dont `https://popey.academy`, `""`, `http://localhost:3000`
+// et, dans le paiement Stripe, aucun (l'adresse produite commençait alors par le
+// texte « undefined »). Deux d'entre eux fabriquaient le lien d'espace pro envoyé
+// au commerçant sur l'ancien domaine, lequel est volontairement exclu de la
+// redirection 301 : le commerçant y arrivait donc pour de bon, dans une session
+// séparée de la sienne.
+//
+// On lit les deux pour n'exiger aucune manipulation sur Vercel selon celle qui
+// s'y trouve, mais le code n'a plus qu'un seul symbole à connaître.
+//
 // Sans « / » final : tout le code concatène des chemins qui commencent par « / ».
-export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.clikme.fr").replace(/\/+$/, "");
+export const SITE_URL = String(
+  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://www.clikme.fr"
+).replace(/\/+$/, "");
 
 /** L'hôte seul, pour l'affichage (pied d'image de partage, lettres…). */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "").replace(/^www\./, "");

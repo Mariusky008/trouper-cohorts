@@ -5,6 +5,7 @@ import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "./print-button";
 import { LetterActions } from "./letter-actions";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,7 +75,7 @@ export default async function LettreSlugPage({
   const activite = str(place.activite);
   const isArtisan = str(place.type_membre) === "artisan";
 
-  const qrTargetUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.popey.academy"}/rejoindre/${slug}`;
+  const qrTargetUrl = `${SITE_URL}/rejoindre/${slug}`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(qrTargetUrl)}`;
   let qrDataUri = qrApiUrl;
   try {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
   const authToken = String(process.env.TWILIO_AUTH_TOKEN || "").trim();
   const whatsappFrom = String(process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886").trim();
   const contentSidJ1 = String(process.env.TWILIO_REVIEW_CONTENT_SID_J1 || "").trim();
-  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy").trim();
+  const appUrl = SITE_URL;
 
   if (!accountSid || !authToken || !contentSidJ1) {
     return NextResponse.json({

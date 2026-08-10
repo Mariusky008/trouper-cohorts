@@ -5,6 +5,7 @@ import { CsvImport } from "./_components/csv-import";
 import { CommercantEditForm } from "./_components/commercant-edit-form";
 import { PipelineTable } from "./_components/pipeline-table";
 import { CopyButton } from "./_components/copy-button";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +60,8 @@ export default async function CommercantDetailPage({ params }: PageProps) {
 
   const delta = Math.max(0, (commerce.nb_avis_actuel ?? 0) - (commerce.nb_avis_debut ?? 0));
 
-  const lienSaisie = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/saisie/${commerce.token_saisie}`;
-  const lienFiltrage = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/avis/${commerce.slug}`;
+  const lienSaisie = `${SITE_URL}/saisie/${commerce.token_saisie}`;
+  const lienFiltrage = `${SITE_URL}/avis/${commerce.slug}`;
 
   return (
     <section className="space-y-6">

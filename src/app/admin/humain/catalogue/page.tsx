@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 import OfferMediaUploader from "./_components/offer-media-uploader";
 import ProfilePhotoUploader from "./_components/profile-photo-uploader";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -848,7 +849,7 @@ export default async function AdminCataloguePage({ searchParams }: CataloguePage
   );
 
   // Lien "espace commerçant" court & lisible : /pro?p=<slug> (nouvelle app v3, fallback id).
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appBase = SITE_URL;
   const merchantLinks: Record<string, string> = {};
   const shareLinks: Record<string, string> = {};
   configured.forEach((p) => {

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerUserIdWithProxyFallback } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
     await supabase.from("human_vitrine_sites").update({ pro_token: token }).eq("id", s(site.id));
   }
 
-  const appUrl = s(process.env.NEXT_PUBLIC_APP_URL) || "https://www.popey.academy";
+  const appUrl = SITE_URL;
   const published = "published" in patch ? Boolean(patch.published) : Boolean(site.published);
   const customDomain = "custom_domain" in patch ? (patch.custom_domain as string | null) : (s(site.custom_domain) || null);
   const publicUrl = customDomain ? `https://${customDomain}` : `${appUrl}/site-internet/apercu/${slug}`;

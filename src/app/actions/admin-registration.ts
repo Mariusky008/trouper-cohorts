@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { Resend } from 'resend';
 import WelcomeEmail from '@/emails/welcome-email';
+import { SITE_URL } from "@/lib/site-url";
 
 // Instanciation paresseuse : évite que `new Resend` (qui lève sans clé) casse
 // le build au chargement du module.
@@ -144,7 +145,7 @@ export async function validateRegistration(registrationId: string) {
   // 6. ENVOI EMAIL DE BIENVENUE (RESEND)
   if (process.env.RESEND_API_KEY) {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.popey.academy';
+        const baseUrl = SITE_URL;
         const loginUrl = `${baseUrl}/login?email=${encodeURIComponent(email)}`;
 
         await getResend().emails.send({

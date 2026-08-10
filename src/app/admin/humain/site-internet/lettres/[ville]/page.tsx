@@ -24,6 +24,7 @@ import {
 } from "@/lib/site-internet/letter-html";
 import { FitLetter } from "../../lettre/[slug]/fit-letter";
 import { PrintButton } from "../../lettre/[slug]/print-button";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -104,7 +105,7 @@ export default async function LettresVillePage({
       return av !== 0 ? av : norm(a.business_name).localeCompare(norm(b.business_name), "fr");
     });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.clikme.fr";
+  const appUrl = SITE_URL;
   const villeAff = cap(ville);
 
   if (err) {

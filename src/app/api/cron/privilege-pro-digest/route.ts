@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPrivilegeProDigest } from "@/lib/actions/whatsapp-twilio";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -16,7 +17,7 @@ function originOf(request: Request) {
   try {
     return new URL(request.url).origin;
   } catch {
-    return String(process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy").replace(/\/+$/, "");
+    return SITE_URL;
   }
 }
 

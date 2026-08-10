@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppTextMessage } from "@/lib/actions/whatsapp-twilio";
 import { sendSms } from "@/lib/site-internet/accueil-sms";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const commerce = String(row.business_name || "un commerce");
   const ville = String(row.city || "");
   const activite = String(row.activite || "");
-  const appUrl = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appUrl = SITE_URL;
   const adminLink = appUrl ? `${appUrl}/admin/humain/site-internet` : "";
   const text = `👀 QR scanné : ${commerce}${ville ? ` · ${ville}` : ""}${activite ? ` (${activite})` : ""} vient d'ouvrir sa maquette.`;
 

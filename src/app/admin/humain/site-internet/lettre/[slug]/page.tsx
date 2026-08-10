@@ -17,6 +17,7 @@ import { LetterValidation } from "./letter-validation";
 import { LetterContentEdit } from "./letter-content-edit";
 import { ProLinkButton } from "./pro-link-button";
 import { PublishButton } from "./publish-button";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -87,7 +88,7 @@ export default async function SiteInternetLettrePage({
     if (o && typeof o === "object") overrides = o as Record<string, string>;
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.clikme.fr";
+  const appUrl = SITE_URL;
   const nom = str(place.business_name);
 
   // DEUX LETTRES, PAS UNE BLOQUÉE. La lettre du Direct repose sur la

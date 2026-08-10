@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminMarketplaceSnapshot } from "@/lib/actions/human-marketplace";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -136,7 +137,7 @@ export default async function AdminHumainMarketplacePage({
   const params = (await searchParams) || {};
   const marketStatus = typeof params.marketStatus === "string" ? params.marketStatus : "";
   const marketMessage = typeof params.marketMessage === "string" ? params.marketMessage : "";
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const appBase = SITE_URL;
   const snapshot = await getAdminMarketplaceSnapshot({
     offerStatus: typeof params.offerStatus === "string" ? params.offerStatus : "all",
     offerActionType: typeof params.offerActionType === "string" ? params.offerActionType : "all",
