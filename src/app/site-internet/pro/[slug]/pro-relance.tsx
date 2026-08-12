@@ -93,7 +93,6 @@ export function ProRelance({
   confirmation,
   secteur,
   collectifActif,
-  sitePublie,
   voisins,
 }: {
   slug: string;
@@ -106,7 +105,6 @@ export function ProRelance({
   /** Le pro participe au catalogue de sa ville (il peut s'en retirer). */
   collectifActif: boolean;
   /** Son site est en ligne. Sinon RIEN de ce qu'il publie n'est visible. */
-  sitePublie: boolean;
   /** Commerces de sa ville déjà en ligne — donc susceptibles de la relayer. */
   voisins: number;
 }) {
@@ -1055,9 +1053,14 @@ export function ProRelance({
                         <div className="lok">
                           🎉 <b>Votre annonce est publiée.</b>
                           <span>
-                            {sitePublie
-                              ? `Elle est en ligne sur votre site${collectifActif ? ` et dans le catalogue de ${ville}` : ""}.`
-                              : "Elle apparaîtra dès que votre site sera en ligne."}
+                            {/* `sitePublie` ne décide plus de ce qu'on annonce ici :
+                                il ne veut pas dire « joignable », il veut dire
+                                « converti en client ». Le site répond à son adresse
+                                dans les deux cas, et le fil de la ville ne filtre pas
+                                dessus — l'annonce EST visible. Le dire autrement
+                                revenait à démentir ce que le commerçant voit de ses
+                                propres yeux en ouvrant son site. */}
+                            {`Elle est en ligne sur votre site${collectifActif ? ` et dans le fil de ${ville}` : ""}.`}
                             {offer.until ? ` Elle se retire ${echeanceLisible(new Date(offer.until))}.` : ""}
                           </span>
                         </div>
@@ -1145,34 +1148,28 @@ export function ProRelance({
                       {/* Le catalogue de la ville n'était nommé nulle part dans le
                           parcours : le pro publiait sans savoir que son annonce y
                           entrait. C'est pourtant la moitié de ce qu'on lui promet. */}
-                      {/* Le catalogue n'accepte que les sites en ligne. Publier
-                          avant, c'est écrire dans le vide — on le dit, plutôt que
-                          de laisser croire à une diffusion qui n'aura pas lieu. */}
-                      {!sitePublie ? (
-                        <div className="ofdest attente">
-                          <span className="od off">
-                            <b>⏳ Votre site n&apos;est pas encore en ligne</b>
-                            <i>
-                              Votre annonce est enregistrée, mais elle ne sera visible nulle part — ni sur votre site,
-                              ni dans le catalogue de {ville} — tant que votre site n&apos;est pas publié. Elle
-                              apparaîtra d&apos;elle-même à ce moment-là, si elle n&apos;a pas expiré d&apos;ici là.
-                            </i>
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="ofdest">
+                      {/* CE BLOC AFFIRMAIT LE CONTRAIRE DE LA RÉALITÉ.
+                          Il annonçait « votre annonce ne sera visible nulle part »
+                          dès que `published` valait faux. Or ce drapeau ne décrit
+                          pas la visibilité, il décrit la conversion commerciale :
+                          le site public répond à son adresse dans les deux cas, et
+                          `filDeVille` ne filtre jamais dessus. Le commerçant lisait
+                          donc « invisible » en voyant son annonce dans le fil de sa
+                          ville — le genre de contradiction qui fait cesser de croire
+                          tout le reste de l'écran. */}
+                      <div className="ofdest">
                           <span className="od">
                             <b>🌐 En haut de votre site</b>
                             <i>Un bandeau, visible par tous vos visiteurs.</i>
                           </span>
                           {collectifActif ? (
                             <span className="od">
-                              <b>📍 Dans le catalogue de {ville}</b>
+                              <b>📍 Dans le fil de {ville}</b>
                               <i>Une carte parmi les annonces du jour des commerçants de la ville.</i>
                             </span>
                           ) : (
                             <span className="od off">
-                              <b>📍 Pas dans le catalogue de {ville}</b>
+                              <b>📍 Pas dans le fil de {ville}</b>
                               <i>Vous vous en êtes retiré·e. Réactivable depuis « Mon site ».</i>
                             </span>
                           )}
@@ -1187,10 +1184,9 @@ export function ProRelance({
                               </i>
                             </span>
                           )}
-                        </div>
-                      )}
+                      </div>
 
-                      {/* La photo n'est pas un détail : dans le catalogue, c'est
+                      {/* La photo n'est pas un détail : dans le fil, c'est
                           elle qu'on voit avant le texte. On la montre donc AVANT
                           publication, plutôt que d'en choisir une en silence. */}
                       {photos.length > 0 && photo && (
