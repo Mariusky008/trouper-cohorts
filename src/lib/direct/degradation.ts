@@ -47,7 +47,10 @@ export type Pouls = {
  */
 const ZONE = "Europe/Paris";
 
-function heureLocale(quand: Date): number {
+/** L'heure dans la ville, pas celle du serveur. Exportée parce qu'un deuxième
+ *  module en a besoin : recopiée, elle finirait par diverger — et c'est
+ *  exactement le bug qu'on a déjà eu deux fois avec le fuseau. */
+export function heureLocale(quand: Date): number {
   try {
     const p = new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: ZONE }).formatToParts(quand);
     const n = Number(p.find((x) => x.type === "hour")?.value);

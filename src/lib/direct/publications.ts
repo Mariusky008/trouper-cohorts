@@ -17,13 +17,19 @@ type Supabase = {
   rpc?: (fn: string, args: Record<string, unknown>) => PromiseLike<unknown>;
 };
 
-/** Les quatre familles. L'ordre est celui des filtres à l'écran. */
-export const FAMILLES = ["place", "offre", "evenement", "ville"] as const;
+/** Les familles. L'ordre est celui des filtres à l'écran.
+ *
+ *  `menu` — le plat du jour — n'est pas une offre comme une autre : il expire à
+ *  la fin du service, il remonte en tête entre 10 h et 14 h, et il est réservé
+ *  à la restauration. Trois comportements différents : trois raisons de ne pas
+ *  le confondre avec `offre`. Les règles vivent dans `dejeuner.ts`. */
+export const FAMILLES = ["place", "offre", "menu", "evenement", "ville"] as const;
 export type Famille = (typeof FAMILLES)[number];
 
 export const FAMILLE_LABEL: Record<Famille, string> = {
   place: "Place libre",
   offre: "Offre",
+  menu: "Plat du jour",
   evenement: "Événement",
   ville: "Ma ville",
 };

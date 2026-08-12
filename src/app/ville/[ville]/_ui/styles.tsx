@@ -65,6 +65,9 @@ export function StylesDirect() {
 .dir .meta .kind{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:9px;}
 .dir .k-place{background:#FBE9E4;color:var(--red);}
 .dir .k-offre{background:var(--gs);color:var(--gd);}
+/* Le plat du jour a sa propre couleur : confondu avec « Offre », on ne
+   distinguerait plus la seule famille qui meurt à la fin du service. */
+.dir .k-menu{background:#FBF2DF;color:#A56C11;}
 .dir .k-evenement{background:#EDE9F8;color:var(--vio);}
 .dir .k-ville{background:#FBF3E3;color:#8A6A22;}
 .dir .post .ph{display:flex;align-items:center;gap:9px;padding:8px 12px;text-decoration:none;}
