@@ -72,7 +72,7 @@ export async function configVille(supabase: Supabase, slug: string): Promise<Vil
       .from("human_vitrine_sites")
       .select("city")
       .eq("channel", "letter")
-      .eq("published", true)
+      .eq("est_client", true)
       .ilike("city", `%${motif}%`)
       .limit(50);
     for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {

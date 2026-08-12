@@ -47,7 +47,7 @@ export default async function AdminDirectPage() {
 
   const [cfgRes, sitesRes, pubsRes, habRes] = await Promise.all([
     supabase.from("human_villes_config").select("ville_slug, ville, seuil_compteur, quartiers, auteur_nom, admin_token").order("ville_slug"),
-    supabase.from("human_vitrine_sites").select("city, latitude").eq("channel", "letter").eq("published", true).limit(1000),
+    supabase.from("human_vitrine_sites").select("city, latitude").eq("channel", "letter").eq("est_client", true).limit(1000),
     supabase.from("human_publications").select("ville_slug, publie_le, retire_le, expire_le").is("retire_le", null).limit(2000),
     supabase.from("human_habitants").select("ville_slug, email, confirmed_at, unsubscribed_at").limit(5000),
   ]);

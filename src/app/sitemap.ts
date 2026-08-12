@@ -37,7 +37,7 @@ async function villesCouvertes(): Promise<string[]> {
       .from("human_vitrine_sites")
       .select("city")
       .eq("channel", "letter")
-      .eq("published", true)
+      .eq("est_client", true)
       .not("city", "is", null)
       .limit(2000);
     for (const r of (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>) {

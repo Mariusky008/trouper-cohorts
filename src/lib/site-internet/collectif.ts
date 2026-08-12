@@ -116,7 +116,7 @@ export async function partnerOffers(
       .select(cols)
       .eq("channel", "letter")
       .eq("city", ville)
-      .eq("published", true)
+      .eq("est_client", true)
       .neq("id", siteId)
       .limit(40);
   const BASE = "id, slug, business_name, activite, current_offer, gallery_photos, diagnostic";
@@ -210,7 +210,7 @@ export async function cityDirectory(
 
   const BASE = "id, slug, business_name, city, activite, current_offer, gallery_photos, diagnostic, google_rating, google_reviews";
   const query = (cols: string) =>
-    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("published", true).limit(500);
+    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("est_client", true).limit(500);
 
   let rows: SiteRow[] = [];
   try {
@@ -298,7 +298,7 @@ export type VilleEntry = { nom: string; slug: string; commerces: number; annonce
 export async function cityList(supabase: Supabase): Promise<VilleEntry[]> {
   const BASE = "city, activite, current_offer";
   const query = (cols: string) =>
-    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("published", true).limit(500);
+    supabase.from("human_vitrine_sites").select(cols).eq("channel", "letter").eq("est_client", true).limit(500);
 
   let rows: SiteRow[] = [];
   try {

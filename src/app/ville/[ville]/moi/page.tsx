@@ -50,7 +50,7 @@ async function categoriesDeLaVille(
       .from("human_vitrine_sites")
       .select("city, activite")
       .eq("channel", "letter")
-      .eq("published", true)
+      .eq("est_client", true)
       // Filtré en SQL : lire 500 fiches puis chercher la ville dedans marchait
       // tant qu'on en avait moins de 500. Au-delà, une ville bien fournie se
       // retrouvait sans aucune catégorie à proposer.

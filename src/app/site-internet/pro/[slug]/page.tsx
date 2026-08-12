@@ -177,7 +177,7 @@ export default async function EspacePro({
   try {
     const { data: pub } = await supabase
       .from("human_vitrine_sites")
-      .select("published, custom_domain")
+      .select("est_client, custom_domain")
       .eq("id", siteId)
       .maybeSingle();
     const pr = (pub as Record<string, unknown> | null) ?? null;
@@ -236,7 +236,7 @@ export default async function EspacePro({
         .select("id, activite")
         .eq("channel", "letter")
         .eq("city", ville)
-        .eq("published", true)
+        .eq("est_client", true)
         .neq("id", siteId)
         .limit(200);
       const rows = Array.isArray(vs) ? (vs as Array<Record<string, unknown>>) : [];

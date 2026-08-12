@@ -38,11 +38,11 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row, error: readErr } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, published, custom_domain, business_name, whatsapp_phone_e164, metadata")
+    .select("id, pro_token, est_client, custom_domain, business_name, whatsapp_phone_e164, metadata")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
-  if (readErr && /published|custom_domain/.test(readErr.message)) {
+  if (readErr && /est_client|custom_domain/.test(readErr.message)) {
     return NextResponse.json({ error: "Colonnes non migrées. Applique le SQL « publish »." }, { status: 400 });
   }
   const site = (row as Record<string, unknown> | null) ?? null;
@@ -50,8 +50,10 @@ export async function POST(request: Request) {
 
   const patch: Record<string, unknown> = {};
   if (typeof p?.published === "boolean") {
-    patch.published = p.published;
-    patch.published_at = p.published ? new Date().toISOString() : null;
+    // On écrit sur l'axe COMMERCIAL. `published` reste tenue à jour par le
+    // déclencheur miroir, le temps que plus rien d'externe ne la lise.
+    patch.est_client = p.published;
+    patch.est_client_depuis = p.published ? new Date().toISOString() : null;
     // On n'écrit PAS `letter_status = "client"`. Trois raisons, et la première
     // suffisait : « client » n'est pas une valeur autorisée par la contrainte
     // `human_vitrine_sites_letter_status_check`, donc l'UPDATE échouait EN
@@ -78,14 +80,14 @@ export async function POST(request: Request) {
     // peuvent l'annuler sans rien remonter ici. Le symptôme était impossible à
     // diagnostiquer — l'interface annonçait « publié », l'espace pro affichait
     // « pas encore en ligne », et les deux disaient vrai de leur point de vue.
-    if ("published" in patch) {
+    if ("est_client" in patch) {
       const { data: apres } = await supabase
         .from("human_vitrine_sites")
-        .select("published")
+        .select("est_client")
         .eq("id", s(site.id))
         .maybeSingle();
-      const reel = Boolean((apres as Record<string, unknown> | null)?.published);
-      if (reel !== Boolean(patch.published)) {
+      const reel = Boolean((apres as Record<string, unknown> | null)?.est_client);
+      if (reel !== Boolean(patch.est_client)) {
         return NextResponse.json(
           {
             error:
@@ -106,13 +108,13 @@ export async function POST(request: Request) {
   }
 
   const appUrl = SITE_URL;
-  const published = "published" in patch ? Boolean(patch.published) : Boolean(site.published);
+  const published = "est_client" in patch ? Boolean(patch.est_client) : Boolean(site.est_client);
   const customDomain = "custom_domain" in patch ? (patch.custom_domain as string | null) : (s(site.custom_domain) || null);
   const publicUrl = customDomain ? `https://${customDomain}` : `${appUrl}/site-internet/apercu/${slug}`;
 
   // « On vous prévient dès qu'il est publié » : l'Espace Pro le promet, on le tient.
   // Uniquement au PASSAGE en ligne (pas à chaque enregistrement), et best-effort.
-  if (patch.published === true && !site.published) {
+  if (patch.est_client === true && !site.est_client) {
     try {
       const { proPhoneFrom } = await import("@/lib/site-internet/pro-phone");
       const { sendSms, isSmsConfigured } = await import("@/lib/site-internet/accueil-sms");

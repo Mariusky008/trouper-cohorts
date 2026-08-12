@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       .from("human_vitrine_sites")
       .select("id, google_place_id")
       .eq("channel", "letter")
-      .eq("published", true)
+      .eq("est_client", true)
       .not("google_place_id", "is", null)
       .is("latitude", null)
       .limit(LOT);

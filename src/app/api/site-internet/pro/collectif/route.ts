@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       .select("id", { count: "exact", head: true })
       .eq("channel", "letter")
       .eq("city", s(site.city))
-      .eq("published", true)
+      .eq("est_client", true)
       .neq("id", s(site.id));
     if (typeof count === "number") voisins = count;
   } catch {

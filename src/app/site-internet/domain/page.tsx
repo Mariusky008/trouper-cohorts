@@ -36,7 +36,7 @@ export default async function DomainSite() {
       .from("human_vitrine_sites")
       .select("slug")
       .eq("custom_domain", host)
-      .eq("published", true)
+      .eq("visible_public", true)
       .eq("channel", "letter")
       .maybeSingle();
     slug = s((data as Record<string, unknown> | null)?.slug);
