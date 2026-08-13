@@ -86,28 +86,30 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // 3 — Je vous fais connaître. Les quatre bulles s'allument à mesure qu'elle
   //     les nomme : créneau, nouveauté, offre, événement.
   const SAY_CONNAITRE =
-    `Mais je ne suis pas seulement là pour répondre. Lorsqu'un créneau se libère, qu'une nouveauté arrive, ` +
-    `que vous lancez une offre ou préparez un événement, je peux aussi vous aider à le faire connaître dans votre ville.`;
+    `Mais regardez surtout ceci : chaque heure, ${MARQUE} montre ce que ${villeAff || "votre ville"} peut offrir maintenant. ` +
+    `À midi les menus, l'après-midi les créneaux qui se libèrent, le soir les sorties et les événements.`;
+  // Les bulles s'allument sur les mots QUI LES NOMMENT. Changer la phrase sans
+  // déplacer ces repères les ferait toutes apparaître à la première seconde.
   const BULLES_AT = [
-    auMot(SAY_CONNAITRE, "un créneau se libère"),
-    auMot(SAY_CONNAITRE, "une nouveauté arrive"),
-    auMot(SAY_CONNAITRE, "vous lancez une offre"),
-    auMot(SAY_CONNAITRE, "préparez un événement"),
+    auMot(SAY_CONNAITRE, "chaque heure"),
+    auMot(SAY_CONNAITRE, "À midi les menus"),
+    auMot(SAY_CONNAITRE, "les créneaux qui se libèrent"),
+    auMot(SAY_CONNAITRE, "les sorties et les événements"),
   ];
 
   // 4 — Le moteur. Le catalogue, puis les sites partenaires, puis leurs clients.
   const SAY_MOTEUR =
-    `Pour cela, j'utilise le catalogue ${MARQUE}, qui rassemble chaque jour les nouveautés, les offres et les événements des commerces locaux. ` +
-    `Tous les commerces partenaires l'affichent sur leur propre site, ce qui vous fera connaître de leurs clients. ` +
-    `Grâce à ce réseau, votre actualité peut être découverte dans toute la ville, sans publicité et presque sans effort.`;
+    `C'est Le Direct de ${villeAff || "votre ville"} : tout ce qui se passe ici en ce moment, commerce par commerce. ` +
+    `Les commerces partenaires l'affichent aussi sur leur propre site, ce qui vous fera connaître de leurs clients. ` +
+    `Votre commerce y apparaît au moment où son offre devient utile.`;
   const MOTEUR_AT = {
     // Le catalogue est là dès qu'elle le nomme.
-    coeur: auMot(SAY_MOTEUR, `le catalogue ${MARQUE}`),
+    coeur: auMot(SAY_MOTEUR, `Le Direct de ${villeAff || "votre ville"}`),
     // Les sites s'allument pendant qu'elle dit ce que le catalogue rassemble —
     // attendre « Tous les commerces partenaires » laissait le noyau seul 9 s.
-    sites: auMot(SAY_MOTEUR, "qui rassemble chaque jour"),
+    sites: auMot(SAY_MOTEUR, "tout ce qui se passe ici"),
     // …le catalogue s'y copie quand elle dit qu'ils l'affichent…
-    copies: auMot(SAY_MOTEUR, "l'affichent sur leur propre site"),
+    copies: auMot(SAY_MOTEUR, "l'affichent aussi sur leur propre site"),
     // …et leurs clients apparaissent quand elle les nomme.
     habitants: auMot(SAY_MOTEUR, "connaître de leurs clients"),
   };
@@ -116,17 +118,18 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const SAY_PHRASE =
     `Par exemple, dites-moi simplement : « ${flashSaid} » Une phrase suffit. ` +
     `Je rédige l'annonce, je choisis la photo et, après votre validation, je la diffuse sur votre site ` +
-    `et dans le catalogue de ${villeAff || "votre ville"}. ` +
+    `et dans Le Direct de ${villeAff || "votre ville"}. ` +
     `Des habitants qui ne vous connaissent pas encore peuvent alors découvrir votre actualité.`;
   const PHRASE_AT = {
     ecrit: auMot(SAY_PHRASE, "Je rédige l'annonce"),
-    catalogue: auMot(SAY_PHRASE, `et dans le catalogue de ${villeAff || "votre ville"}`),
+    direct: auMot(SAY_PHRASE, `et dans Le Direct de ${villeAff || "votre ville"}`),
     decouverte: auMot(SAY_PHRASE, "peuvent alors découvrir"),
   };
 
   // 6 — À vous. Elle s'efface, le site reste.
   const SAY_FIN =
-    `Voilà, votre site est prêt, et je suis déjà là pour vous accompagner. Je vous laisse maintenant l'explorer. ` +
+    `Voilà : votre site répond, et votre actualité apparaît au moment où elle est utile. ` +
+    `Des habitants qui ne vous connaissent pas encore peuvent vous découvrir. ` +
     `Si vous souhaitez le garder, cliquez simplement sur « Garder mon site gratuitement ».`;
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
@@ -231,7 +234,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // en train de garder sa propre annonce — d'où le badge « vous » et le tampon
   // « Gardé » sur sa carte, qui rendaient la scène incompréhensible. Sa carte
   // arrive donc en dernier, et c'est celle-là que le visiteur garde.
-  const catalogueCards = [
+  const cartesDuDirect = [
     // Les autres : libellé de métier et emoji, jamais un commerce inventé ni une
     // photo qui ne leur appartient pas. Le panneau porte « exemple » en permanence.
     ...partnersList.slice(0, 1).map((pn, i) => ({
@@ -538,18 +541,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     steps.push({
       title: "Voici votre site",
       say:
-        `Bonjour, je suis Léa, votre assistante. Voici votre nouveau site : je l'ai préparé à partir de votre fiche Google — ` +
-        `vos photos, vos prestations, vos horaires${hasReviews ? " et vos avis" : " et vos informations"}. ` +
-        `Et vous pourrez le modifier quand vous le souhaitez.`,
+        `Bonjour, je suis Léa, votre assistante. J'ai créé le site de ${nom} à partir de votre fiche Google : ` +
+        `vos photos, vos prestations, vos horaires${hasReviews ? " et vos avis" : ""}.`,
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
-    });
-
-    // 2 — JE RÉPONDS : la conversation, calée sur sa phrase. Elle décrit sa
-    //     mission pendant que la scène la prouve, réplique après réplique.
-    steps.push({
-      title: "Je réponds pour vous",
-      say: SAY_REPOND,
-      enter: () => { chime(); setLvAt(REPOND_AT); setScene("alive"); },
     });
 
     // Les étapes « faire connaître » n'existent qu'en déonto ouverte : on ne
@@ -565,7 +559,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
       // 4 — LE MOTEUR : le catalogue, les vitrines du réseau, puis leurs clients.
       steps.push({
-        title: `Le catalogue de ${villeAff || "votre ville"}`,
+        title: `Le Direct de ${villeAff || "votre ville"}`,
         say: SAY_MOTEUR,
         enter: () => { chime(); setScene("reseau"); },
       });
@@ -581,11 +575,11 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           setCatFly("");
           setCatStamp("");
           window.setTimeout(() => setFxStep(1), PHRASE_AT.ecrit);
-          window.setTimeout(() => setFxStep(2), PHRASE_AT.catalogue);
+          window.setTimeout(() => setFxStep(2), PHRASE_AT.direct);
           // Un habitant parcourt le catalogue : il passe une annonce, tombe sur
           // la sienne, et la garde — pile quand elle dit qu'on peut le découvrir.
           const d = PHRASE_AT.decouverte;
-          const av = (ms: number) => Math.max(PHRASE_AT.catalogue + 600, d - ms);
+          const av = (ms: number) => Math.max(PHRASE_AT.direct + 600, d - ms);
           window.setTimeout(() => setCatStamp("non"), av(2600));
           window.setTimeout(() => setCatFly("non"), av(2200));
           window.setTimeout(() => { setCatFly(""); setCatStamp(""); setCatSlide(1); }, av(1800));
@@ -593,6 +587,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         },
       });
     }
+
+    // 5 — JE RÉPONDS : la conversation, calée sur sa phrase. Elle décrit sa
+    //     mission pendant que la scène la prouve, réplique après réplique.
+    steps.push({
+      title: "Je réponds pour vous",
+      say: SAY_REPOND,
+      enter: () => { chime(); setLvAt(REPOND_AT); setScene("alive"); },
+    });
 
     // 6 — À VOUS : elle s'efface, le site reste entier sous les yeux du pro.
     //     L'écran de décision arrive à la fin de sa phrase, quand elle nomme
@@ -1429,7 +1431,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                     >
                       <span className="ns-bar"><i /><i /><i /></span>
                       <span className="ns-nom">{nd.t}</span>
-                      <span className="ns-cat" style={{ animationDelay: `${MOTEUR_AT.copies + 900 + i * 220}ms` }}>📍 Catalogue</span>
+                      <span className="ns-cat" style={{ animationDelay: `${MOTEUR_AT.copies + 900 + i * 220}ms` }}>📍 Le Direct</span>
                     </span>
                   ))}
                   {habitants.map((h, i) => (
@@ -1485,21 +1487,21 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                         <span className="fc-ex">exemple</span>
                       </div>
                       <div className="fc-stack">
-                        {catSlide + 2 < catalogueCards.length && <div className="fc-ghost g2" aria-hidden="true" />}
-                        {catSlide + 1 < catalogueCards.length && <div className="fc-ghost g1" aria-hidden="true" />}
-                        {catalogueCards[catSlide] && (
+                        {catSlide + 2 < cartesDuDirect.length && <div className="fc-ghost g2" aria-hidden="true" />}
+                        {catSlide + 1 < cartesDuDirect.length && <div className="fc-ghost g1" aria-hidden="true" />}
+                        {cartesDuDirect[catSlide] && (
                           <div className={`fc-card${catFly ? ` fly-${catFly}` : ""}`} key={catSlide}>
                             <div
-                              className={`fc-media${catalogueCards[catSlide].photo ? "" : " vide"}`}
+                              className={`fc-media${cartesDuDirect[catSlide].photo ? "" : " vide"}`}
                               style={
-                                catalogueCards[catSlide].photo
-                                  ? { backgroundImage: `url("${catalogueCards[catSlide].photo}")` }
+                                cartesDuDirect[catSlide].photo
+                                  ? { backgroundImage: `url("${cartesDuDirect[catSlide].photo}")` }
                                   : undefined
                               }
                             >
-                              {!catalogueCards[catSlide].photo && (
+                              {!cartesDuDirect[catSlide].photo && (
                                 <span className="fc-ill" aria-hidden="true">
-                                  {catalogueCards[catSlide].ic || catalogueCards[catSlide].nom.trim().slice(0, 1).toUpperCase()}
+                                  {cartesDuDirect[catSlide].ic || cartesDuDirect[catSlide].nom.trim().slice(0, 1).toUpperCase()}
                                 </span>
                               )}
                             </div>
@@ -1510,19 +1512,19 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                               </span>
                             )}
                             <div className="fc-info">
-                              <div className="fc-nm">{catalogueCards[catSlide].nom}</div>
+                              <div className="fc-nm">{cartesDuDirect[catSlide].nom}</div>
                               <div className="fc-meta">
-                                📍 {catalogueCards[catSlide].metier} · {villeAff || "votre ville"}
+                                📍 {cartesDuDirect[catSlide].metier} · {villeAff || "votre ville"}
                               </div>
                               <div className="fc-ok">✦ En ce moment</div>
-                              <div className="fc-ot">{catalogueCards[catSlide].texte}</div>
-                              <div className="fc-w">{catalogueCards[catSlide].quand}</div>
+                              <div className="fc-ot">{cartesDuDirect[catSlide].texte}</div>
+                              <div className="fc-w">{cartesDuDirect[catSlide].quand}</div>
                             </div>
                           </div>
                         )}
                       </div>
                       <div className="fc-dots" aria-hidden="true">
-                        {catalogueCards.map((c, i) => (
+                        {cartesDuDirect.map((c, i) => (
                           <i className={i === catSlide ? "on" : i < catSlide ? "done" : ""} key={`d-${c.nom}-${i}`} />
                         ))}
                       </div>
