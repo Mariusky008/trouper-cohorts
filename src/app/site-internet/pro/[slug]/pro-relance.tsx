@@ -13,6 +13,7 @@ import { EnvoiVideo, STYLES_ENVOI_VIDEO } from "./envoi-video";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { chargerImage, type PhotoChargee } from "@/lib/site-internet/image-client";
 import { verifierTaille } from "@/lib/site-internet/cadrage";
+import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { CadragePhoto, STYLES_CADRAGE } from "./cadrage-photo";
 import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
 import {
@@ -141,6 +142,23 @@ export function ProRelance({
   const [offer, setOffer] = useState<Offer | null>(null);
   const [offerText, setOfferText] = useState("");
   const [duree, setDuree] = useState("2j");
+  /** L'échéance que le TEXTE annonce, quand le commerçant n'en choisit aucune.
+   *  Montrée avant publication : une annonce qui se retire toute seule sans
+   *  qu'on l'ait dit, c'est un commerçant qui la croit perdue. */
+  const [retraitDeduit, setRetraitDeduit] = useState<Date | null>(null);
+  /**
+   * LE SEUL POINT D'ÉCRITURE du texte de l'annonce.
+   *
+   * La relecture accompagne l'écriture plutôt que de la suivre dans un effet :
+   * `echeanceDuTexte` consulte l'horloge, donc elle n'a sa place ni dans le
+   * rendu (impur) ni dans un effet (rendus en cascade pour une valeur qui
+   * dérive d'une saisie). Ici, elle est exactement où le texte change.
+   */
+  const majTexte = (v: string) => {
+    setOfferText(v);
+    const d = echeanceDuTexte(v);
+    setRetraitDeduit(d ? new Date(d.expireLe) : null);
+  };
   // La photo qui illustrera l'annonce dans le catalogue. Pré-choisie, MONTRÉE,
   // remplaçable en un geste — jamais publiée en silence.
   const [photos, setPhotos] = useState<string[]>([]);
@@ -628,7 +646,7 @@ export function ProRelance({
   const goStep3 = () => {
     const resume = resumeBandeau(msg);
     if (chSite && resume) {
-      setOfferText(resume);
+      majTexte(resume);
       setRemplace(!offer || offer.text.trim() !== resume.trim());
       setPubliee(false);
     }
@@ -1128,14 +1146,14 @@ export function ProRelance({
                         )}
                       </div>
                       <div className="lact">
-                        <button onClick={() => { setOfferText(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
+                        <button onClick={() => { majTexte(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
                         {/* EN AJOUTER UNE AUTRE. L'écran ne proposait que
                             « modifier » ou « retirer » : un boulanger ne pouvait
                             pas annoncer sa fournée du matin ET ses invendus du
                             soir. On peut en avoir trois vivantes — le champ se
                             vide, on écrit la suivante, la précédente reste. */}
                         <button
-                          onClick={() => { setOfferText(""); setPhoto(null); setVideo(null); setRemplace(true); setPubliee(false); }}
+                          onClick={() => { majTexte(""); setPhoto(null); setVideo(null); setRemplace(true); setPubliee(false); }}
                           disabled={offerBusy}
                         >
                           ➕ En publier une autre
@@ -1160,7 +1178,7 @@ export function ProRelance({
                         id="offer-text"
                         type="text"
                         value={offerText}
-                        onChange={(e) => setOfferText(e.target.value)}
+                        onChange={(e) => majTexte(e.target.value)}
                         placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
                         maxLength={140}
                       />
@@ -1181,8 +1199,10 @@ export function ProRelance({
                       </div>
                       <div className="rtip" style={{ marginTop: 8 }}>
                         {duree === "0"
-                          ? "Elle restera affichée jusqu'à ce que vous la retiriez vous-même."
-                          : "Elle disparaît toute seule de votre site et du catalogue — vous n'avez rien à faire."}
+                          ? retraitDeduit
+                            ? `Votre texte annonce une fin : elle se retirera ${echeanceLisible(retraitDeduit)}.`
+                            : "Elle restera affichée jusqu'à ce que vous la retiriez vous-même."
+                          : "Elle disparaît toute seule de votre site et du fil de votre ville — vous n'avez rien à faire."}
                       </div>
 
                       {/* Le catalogue de la ville n'était nommé nulle part dans le

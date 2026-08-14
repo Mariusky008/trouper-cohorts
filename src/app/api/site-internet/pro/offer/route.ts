@@ -24,6 +24,7 @@ import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, prolonger, 
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
+import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 
 export const dynamic = "force-dynamic";
 
@@ -171,7 +172,18 @@ export async function POST(request: Request) {
   if (action === "set") {
     const text = str(p?.text).slice(0, 140);
     if (!text) return NextResponse.json({ error: "Écrivez le texte de l'offre." }, { status: 400 });
-    const until = echeance(p);
+    // L'ÉCHÉANCE DÉCLARÉE, SINON CELLE QUE LE TEXTE ANNONCE.
+    //
+    // « Un créneau s'est libéré lundi de 11h à 13h » sans date de fin restait
+    // au fil trois jours — sept dans une ville calme — bien après le lundi en
+    // question. Le commerçant AVAIT donné la fin : dans sa phrase. On la lit.
+    //
+    // Uniquement en repli : ce qu'il a choisi explicitement prime toujours, et
+    // la déduction rend `null` dès qu'elle n'est pas sûre. Une échéance
+    // inventée retirerait une offre encore valable, ce qui est pire que de la
+    // laisser un jour de trop.
+    const deduite = echeanceDuTexte(text);
+    const until = echeance(p) ?? deduite?.expireLe ?? null;
     // On n'accepte que ce qui est DÉJÀ dans sa galerie : le champ est un choix
     // parmi ses photos, pas une adresse d'image libre à publier sur le catalogue.
     const voulue = str(p?.photo);
