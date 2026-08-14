@@ -3,7 +3,7 @@
 // Espace Pro — « Mes photos ». Le pro ajoute ses propres réalisations : le
 // navigateur les compresse (max ~1200 px, JPEG) avant l'envoi, pour rester léger.
 // Si des photos sont présentes, elles remplacent les photos Google sur la maquette.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { compresserImage } from "@/lib/site-internet/image-client";
 
 export function ProGallery({ slug, token }: { slug: string; token: string }) {
@@ -17,7 +17,22 @@ export function ProGallery({ slug, token }: { slug: string; token: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const catalogueUrl = typeof window !== "undefined" ? `${window.location.origin}/site-internet/apercu/${slug}/catalogue` : `/site-internet/apercu/${slug}/catalogue`;
+  // L'ADRESSE COMPLÈTE, sans faire diverger le rendu.
+  //
+  // `typeof window !== "undefined"` évalué pendant le rendu produisait un lien
+  // relatif côté serveur et un lien absolu côté navigateur : React jetait tout
+  // ce sous-arbre et le refabriquait à chaque chargement de l'espace pro.
+  //
+  // `useSyncExternalStore` est la façon dont React veut qu'on lise un fait
+  // d'environnement : le premier rendu du navigateur donne la même chose que
+  // celui du serveur, et l'origine apparaît au rendu suivant.
+  const chemin = `/site-internet/apercu/${slug}/catalogue`;
+  const origine = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => ""
+  );
+  const catalogueUrl = origine ? origine + chemin : chemin;
 
   const call = async (body: Record<string, unknown>) => {
     const r = await fetch("/api/site-internet/pro/gallery", {

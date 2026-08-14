@@ -24,6 +24,7 @@ import { ProMotifs } from "./pro-motifs";
 import { ProApproche } from "./pro-approche";
 import { ProFaq } from "./pro-faq";
 import { ProCollectif } from "./pro-collectif";
+import { ProClik } from "./pro-clik";
 import { ProCatalogue } from "./pro-catalogue";
 import { ProDiffusion } from "./pro-diffusion";
 import { ProRequests } from "./pro-requests";
@@ -522,6 +523,11 @@ export default async function EspacePro({
               <>
                 <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
                 <ProCollectif slug={slug} token={token} />
+                <div style={{ borderTop: "1px solid var(--hair)", margin: "24px 0 0" }} />
+                {/* Même garde déontologique que le Collectif : une profession
+                    réglementée ne fait ni prix de groupe ni cadeau d'accueil.
+                    La route le revérifie — un écran caché n'est pas une règle. */}
+                <ProClik slug={slug} token={token} ville={ville} />
               </>
             )}
           </div>
@@ -537,7 +543,7 @@ export default async function EspacePro({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          /* Identité commune au catalogue : encre, crème, or, turquoise.
+          /* Identité commune au fil de la ville : encre, crème, or, turquoise.
              « --violet » garde son nom (il est utilisé partout) mais porte
              désormais le turquoise — renommer 40 occurrences pour la même
              valeur n'aurait rien apporté. « --gold » reste l'or des étoiles
