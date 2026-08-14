@@ -13,32 +13,44 @@ export function StylesDirect() {
     <style
       dangerouslySetInnerHTML={{
         __html: STYLES_VIDEO_CARTE + `
-/* PALETTE — celle du prototype, avec deux corrections MESURÉES et non jugées à
-   l'œil :
-     · le lime ne fait que 1,68:1 sur la crème. Il ne porte donc JAMAIS de texte
-       sur fond clair — uniquement des aplats, des pastilles et des points, où
-       l'encre sur lime atteint 8,27:1 ;
-     · les gris secondaires d'origine tombaient à 3,82 et 2,32:1. Remontés à
-       5,93 et 5,03:1 — c'est un fil qu'on lit dehors, en plein soleil, à midi. */
+/* LES JETONS DU PROTOTYPE, repris tels quels.
+   Les miens en étaient proches sans l'être : chaque écart de 2 px et de 5 %
+   d'opacité s'accumule, et l'ensemble finit par « ressembler à » sans jamais
+   être la même chose. Les rayons portent leurs noms d'origine (--rm/--rl/--rx)
+   parce que c'est leur rapport qui compte, pas leur valeur isolée.
+
+   Deux corrections MESURÉES, et elles tiennent toujours : le lime ne fait que
+   1,68:1 sur la crème, il ne porte donc jamais de texte sur fond clair ; et les
+   gris secondaires sont remontés à 5,9 et 5,0:1 — c'est un fil qu'on lit
+   dehors, en plein soleil. */
 .dir{--ink:#0E2A1C;--body:#3A453E;--soft:#54605A;--faint:#5F6B63;--line:#E6E2DA;--line2:#D8D3C9;
-  --paper:#FFF;--bg:#F5F3EF;--g:#257A41;--gl:#93D02C;--gs:#E9F6D6;--gd:#1F6B39;--amber:#B96F12;--red:#B2452C;--vio:#5C4BD4;
+  --paper:#FFF;--bg:#F5F3EF;--g:#2C8A4B;--gl:#93D02C;--gld:#6FA81C;--gs:#E9F6D6;--gd:#1F6B39;
+  --orange:#DB8A2C;--red:#C4553A;--vio:#6B5BD4;
+  --rm:14px;--rl:20px;--rx:26px;
+  --sh:0 1px 2px rgba(14,42,28,.04),0 10px 26px -14px rgba(14,42,28,.26);
   background:var(--bg);color:var(--body);font-family:var(--fb),system-ui,sans-serif;-webkit-font-smoothing:antialiased;
   min-height:100dvh;display:flex;flex-direction:column;}
 .dir *{box-sizing:border-box;}
-.dir .vue{flex:1;padding-bottom:78px;max-width:620px;width:100%;margin:0 auto;}
+.dir .vue{flex:1;padding-bottom:96px;max-width:620px;width:100%;margin:0 auto;}
 
-/* ── en-tête ─────────────────────────────────────────────────────────────── */
-.dir .fhead{background:var(--ink);color:#fff;padding:22px 16px 15px;}
-/* LE TITRE EN DEUX TEMPS. La coupure est décidée, pas subie : « Ce qui se
-   passe / maintenant à Dax » se lit comme une phrase dite, alors qu'une
-   coupure au hasard de la largeur se lit comme un bug de mise en page. */
-.dir .fhead h1{font-family:var(--fd),Georgia,serif;font-size:27px;font-weight:600;margin:10px 0 0;
-  line-height:1.14;letter-spacing:-.4px;}
+/* ── L'EN-TÊTE ────────────────────────────────────────────────────────────
+   SUR FOND CLAIR, comme le prototype. Le bandeau vert foncé que j'avais mis
+   fait « application » ; le fond crème fait « journal du jour », et c'est ce
+   qu'on veut : on ouvre une page, pas un tableau de bord. Le titre en serif
+   sombre sur crème est aussi ce qui se lit le mieux dehors. */
+.dir .fhead{background:var(--bg);color:var(--ink);padding:20px 16px 0;}
+.dir .fhead h1{font-family:var(--fd),Georgia,serif;font-size:31px;font-weight:700;margin:14px 0 0;
+  line-height:1.12;letter-spacing:-.6px;color:var(--ink);}
 .dir .fhead h1 .lg{display:block;}
-.dir .fhead .live{display:flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gl);font-weight:700;}
-.dir .fhead .live .dot{width:6px;height:6px;border-radius:50%;background:var(--gl);animation:dirPulse 2.4s ease-in-out infinite;}
-@keyframes dirPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
-.dir .fhead .upd{font-size:12px;color:#8FA79A;margin-top:8px;}
+.dir .fhead .live{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--g);font-weight:800;}
+/* Le point qui bat, avec son halo : c'est le seul signe qui dit « maintenant »
+   avant qu'on ait lu quoi que ce soit. */
+.dir .fhead .live .dot{width:8px;height:8px;border-radius:50%;background:var(--gl);position:relative;}
+.dir .fhead .live .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:1.5px solid var(--gl);animation:dirPulse 2.2s infinite;}
+@keyframes dirPulse{0%{transform:scale(.6);opacity:.85}100%{transform:scale(2);opacity:0}}
+.dir .fhead .upd{font-size:14.5px;color:var(--soft);margin-top:8px;line-height:1.4;}
 
 /* ── le pouls ────────────────────────────────────────────────────────────── */
 .dir .pulse{background:linear-gradient(160deg,#1B2E25,#0E1913);color:#fff;padding:15px 16px 16px;}
@@ -51,21 +63,32 @@ export function StylesDirect() {
 .dir .pulse .cta{display:block;margin-top:13px;background:var(--gl);color:#08140E;border-radius:23px;padding:13px;
   text-align:center;font-size:13px;font-weight:700;text-decoration:none;border:none;width:100%;cursor:pointer;font-family:inherit;}
 
-/* ── filtres ─────────────────────────────────────────────────────────────── */
-.dir .chips{display:flex;gap:7px;padding:12px 16px 10px;overflow-x:auto;background:var(--paper);border-bottom:1px solid var(--line);
-  scrollbar-width:none;position:sticky;top:0;z-index:20;}
+/* ── LES ONGLETS ─────────────────────────────────────────────────────────
+   Plus collants et plus grands : ils se touchent au pouce, en marchant. Le
+   fond n'est plus blanc — sur un en-tête clair, une bande blanche dessinait
+   une frontière là où il n'y en a pas. */
+.dir .chips{display:flex;gap:7px;padding:18px 16px 4px;overflow-x:auto;background:var(--bg);
+  scrollbar-width:none;}
 .dir .chips::-webkit-scrollbar{display:none;}
-.dir .chip{font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:16px;border:1px solid var(--line2);
-  color:var(--soft);white-space:nowrap;background:#fff;text-decoration:none;cursor:pointer;font-family:inherit;}
+.dir .chip{font-size:13.5px;font-weight:600;padding:10px 17px;border-radius:999px;border:1px solid var(--line2);
+  color:var(--body);white-space:nowrap;background:var(--paper);text-decoration:none;cursor:pointer;
+  font-family:inherit;flex:none;}
 .dir .chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
 
-.dir .sect{padding:14px 16px 4px;}
-.dir .sect .st{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);font-weight:700;}
-.dir .sect .ss{font-size:10px;color:var(--faint);margin-top:3px;}
+/* Le titre de section, avec sa preuve de fraîcheur à droite. */
+.dir .sect{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:24px 16px 12px;}
+.dir .sect .st{font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-weight:800;}
+.dir .sect .ss{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--soft);
+  white-space:nowrap;margin:0;}
+.dir .sect .ss::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gl);flex:none;}
 
 /* ── la carte ────────────────────────────────────────────────────────────── */
-.dir .feed{padding:6px 16px 0;}
-.dir .post{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.dir .feed{padding:0 16px;}
+/* La carte DÉTACHÉE du fond : rayon large, ombre portée, pas de trait. Le
+   contour fin qu'elle avait la collait à la page ; l'ombre la pose dessus, et
+   c'est ce qui donne l'impression d'objets qu'on peut prendre. */
+.dir .post{background:var(--paper);border-radius:var(--rx);margin-bottom:16px;overflow:hidden;
+  box-shadow:var(--sh);}
 /* L'ANCIENNE CARTE — ligne de marqueurs, en-tête d'auteur, corps de texte,
    photo en pied — a été retirée avec le passage à l'image d'abord. Les règles
    sont parties avec elle : du CSS qui ne s'applique plus à rien finit toujours
@@ -81,7 +104,7 @@ export function StylesDirect() {
    qu'une photo de vitrine posée à côté d'un plat qu'elle ne montre pas. Une
    image qui ne correspond pas à l'annonce est un mensonge par juxtaposition,
    et elle coûte plus cher que pas d'image du tout. */
-.dir .pic{position:relative;height:246px;overflow:hidden;background:#2A2318;}
+.dir .pic{position:relative;height:280px;overflow:hidden;background:#2A2318;}
 .dir .pic .fond{position:absolute;inset:0;background-size:cover;background-position:center;}
 .dir .pic .voile{position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(14,42,28,.46) 0,rgba(14,42,28,0) 26%,rgba(14,42,28,.32) 52%,rgba(14,42,28,.92) 100%);}
@@ -93,11 +116,11 @@ export function StylesDirect() {
 /* LE NOM ET LA DISTANCE, sur fond sombre translucide : posé en blanc opaque,
    le badge découpait un trou dans la photo. Il doit se lire sans arracher
    l'image, puisque c'est l'image qui vend. */
-.dir .pic .bg{position:absolute;top:12px;left:12px;background:rgba(14,42,28,.8);color:#fff;
-  backdrop-filter:blur(8px);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;
+.dir .pic .bg{position:absolute;top:13px;left:13px;background:rgba(14,42,28,.8);color:#fff;
+  backdrop-filter:blur(8px);border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:600;
   max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.dir .pic .bd{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);color:var(--ink);
-  border-radius:999px;padding:7px 12px;font-size:11.5px;font-weight:800;}
+.dir .pic .bd{position:absolute;top:13px;right:13px;background:rgba(255,255,255,.94);color:var(--ink);
+  border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:800;}
 /* Rouge quand ça presse — et seulement là. Une heure limite toujours rouge ne
    presse plus personne au bout de trois cartes. */
 .dir .pic .bd.chaud{background:var(--red);color:#fff;}
@@ -105,10 +128,10 @@ export function StylesDirect() {
    photo ordinaire, mais on ne choisit pas les photos : un commerçant enverra un
    plat très clair sur une nappe blanche, et ce jour-là le voile seul ne tient
    plus. L'ombre ne se voit pas sur un fond sombre et sauve le fond clair. */
-.dir .sur{position:absolute;left:14px;right:14px;bottom:13px;color:#fff;text-decoration:none;display:block;
+.dir .sur{position:absolute;left:16px;right:16px;bottom:16px;color:#fff;text-decoration:none;display:block;
   text-shadow:0 1px 3px rgba(8,20,14,.6);}
-.dir .sur .conf{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D5E5DB;margin-top:9px;}
-.dir .sur .conf i{width:6px;height:6px;border-radius:50%;background:var(--gl);font-style:normal;}
+.dir .sur .conf{display:flex;align-items:center;gap:7px;font-size:13px;color:#DCE8E1;margin-top:10px;}
+.dir .sur .conf i{width:7px;height:7px;border-radius:50%;background:var(--gl);font-style:normal;}
 /* TROIS LIGNES, PAS PLUS.
    Le texte est écrit par un commerçant, et parfois par une assistante bavarde :
    « Un créneau s'est libéré lundi 10 de 11h à 13h, avec un café offert sur
@@ -118,11 +141,11 @@ export function StylesDirect() {
    l'annonce entière — la suite est sur la boutique, à un doigt de là.
    Une carte qui déborde ne dit pas « il y a beaucoup à lire », elle dit
    « c'est cassé ». */
-.dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:600;line-height:1.22;margin:6px 0 0;color:#fff;
+.dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:23px;font-weight:700;line-height:1.15;margin:10px 0 0;color:#fff;letter-spacing:-.3px;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 /* Le nom tient sur UNE ligne : « Esthéticienne Guinot - LPG - institut de
    beauté » est une liste de mots-clés, pas une information à lire en entier. */
-.dir .sur .qui{font-size:11.5px;color:#CFE0D6;margin-top:4px;display:block;
+.dir .sur .qui{font-size:13.5px;color:#DCE8E1;margin-top:8px;display:block;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* ── LES PASTILLES DE FAMILLE ─────────────────────────────────────────────
@@ -137,8 +160,8 @@ export function StylesDirect() {
      · UNE OMBRE COURTE, pour les décoller d'un fond chargé sans les alourdir.
 
    Les cinq couples texte/fond sont mesurés, le plus faible tient 6,15:1. */
-.dir .pastille{display:inline-block;text-shadow:none;border-radius:999px;padding:5px 11px;font-size:10.5px;
-  font-weight:800;letter-spacing:.02em;box-shadow:0 1px 4px rgba(8,20,14,.34);}
+.dir .pastille{display:inline-flex;align-items:center;text-shadow:none;border-radius:999px;
+  padding:8px 15px;font-size:12.5px;font-weight:800;letter-spacing:.02em;box-shadow:0 1px 4px rgba(8,20,14,.34);}
 /* Le lime est la couleur signature, et « Place libre » est le signal
    signature : ce qui part maintenant, chez quelqu'un, tout près. */
 .dir .k-place{background:var(--gl);color:#0E2A1C;}      /*  8,27:1 */
@@ -158,28 +181,31 @@ export function StylesDirect() {
 
    Chaque façon garde sa teinte propre, la même partout dans l'application :
    le cadeau en crème, l'express en ambre, la table à partager en violet. */
-.dir .fac{border-top:1px solid var(--line);padding:12px;background:var(--bg);}
-.dir .fac-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px;}
-.dir .fac-q{font-size:13px;font-weight:800;color:var(--ink);line-height:1.25;}
+/* Pas de trait de séparation : la carte est un objet d'un seul tenant, et
+   l'échelle des prix en fait partie. */
+.dir .fac{padding:18px 16px 6px;}
+.dir .fac-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:13px;}
+.dir .fac-q{font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:700;color:var(--ink);line-height:1.25;}
 /* La suite des prix, en petit et à droite : elle résume la carte avant même
    qu'on lise les lignes. */
-.dir .fac-pr{font-size:11px;color:var(--soft);font-weight:700;white-space:nowrap;flex:none;}
+.dir .fac-pr{font-family:var(--fd),Georgia,serif;font-size:14px;color:var(--soft);font-weight:700;white-space:nowrap;flex:none;}
 
-.dir .fac-l{display:flex;align-items:center;gap:11px;padding:11px;border-radius:13px;background:#fff;
-  border:1px solid var(--line);text-decoration:none;margin-bottom:7px;}
+.dir .fac-l{display:flex;align-items:center;gap:12px;padding:13px;border-radius:var(--rl);background:var(--paper);
+  border:1.5px solid var(--line2);text-decoration:none;margin-bottom:9px;}
 .dir .fac-l:last-child{margin-bottom:0;}
-.dir .fac-ic{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:var(--bg);}
+.dir .fac-ic{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font-size:19px;background:var(--bg);}
 .dir .fac-c{flex:1;min-width:0;}
-.dir .fac-t{display:flex;align-items:baseline;gap:7px;}
-.dir .fac-t b{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;color:var(--ink);line-height:1;}
-.dir .fac-t em{font-style:normal;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:var(--soft);}
-.dir .fac-s{display:block;font-size:11.5px;color:var(--body);margin-top:4px;line-height:1.35;}
+.dir .fac-t{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.dir .fac-t b{font-family:var(--fd),Georgia,serif;font-size:23px;font-weight:700;color:var(--ink);line-height:1;}
+.dir .fac-t em{font-style:normal;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--soft);}
+.dir .fac-s{display:block;font-size:12.5px;color:var(--soft);margin-top:5px;line-height:1.35;}
 /* L'heure limite est la seule information vraiment urgente de la ligne : elle
    porte une pastille, pas une nuance de gris. */
-.dir .fac-q2{display:inline-block;font-size:10px;font-weight:700;color:var(--soft);background:var(--bg);
-  border-radius:999px;padding:3px 8px;margin-top:6px;}
-.dir .fac-j{display:block;height:4px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
+.dir .fac-q2{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--soft);
+  background:var(--bg);border-radius:999px;padding:5px 10px;margin-top:8px;}
+.dir .fac-q2::before{content:"⏱";font-weight:400;}
+.dir .fac-j{display:block;height:5px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
 .dir .fac-j i{display:block;height:100%;border-radius:3px;background:var(--vio);}
 .dir .fac-go{flex:none;font-size:19px;color:var(--faint);line-height:1;}
 
@@ -216,10 +242,11 @@ export function StylesDirect() {
 .dir .fac-off{opacity:.5;}
 .dir .fac-off .fac-t b{text-decoration:line-through;}
 
-.dir .post .pf{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);}
+.dir .post .pf{display:flex;align-items:center;gap:8px;padding:8px 16px 16px;}
 /* La sortie vers le commerce prend toute la place qui reste : c'est le geste
    qui suit la décision, pas une option à côté du cœur. */
-.dir .post .pf .act{flex:1;text-align:center;padding:11px 13px;border-radius:999px;}
+.dir .post .pf .act{flex:1;text-align:center;padding:12px;border-radius:999px;font-size:13.5px;font-weight:700;
+  background:var(--paper);border:1.5px solid var(--line2);color:var(--ink);}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
 .dir .act.gh{background:#fff;border:1px solid var(--line2);color:var(--body);}
@@ -282,27 +309,25 @@ export function StylesDirect() {
 .dir .vide p{font-size:12px;color:var(--soft);line-height:1.6;margin:0;}
 
 /* ── LA BARRE D'ONGLETS ────────────────────────────────────────────────────
-   L'onglet actif était signalé par une nuance de vert sur une nuance de gris —
-   la différence la plus fragile qui soit : elle s'efface en plein soleil, et
-   elle n'existe pas pour un daltonien. Il porte maintenant une PASTILLE LIME
-   pleine derrière son icône. C'est une forme, pas une teinte, et ça se voit
-   d'un coup d'œil au bout du bras.
+   Elle prend le fond crème de l'application, pas du blanc : sur un fil clair,
+   une barre blanche découpe une bande là où il n'y a rien à séparer.
 
-   Le lime en aplat, jamais en texte : sur du blanc il ne monte qu'à 1,68:1.
-   Le libellé actif passe donc à l'encre (13,9:1), pas au lime. */
-.dir .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
-  border-top:1px solid var(--line);display:flex;padding:7px 0 max(11px,env(safe-area-inset-bottom));z-index:60;}
-.dir .nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-size:9px;color:var(--faint);font-weight:600;text-decoration:none;line-height:1.1;}
-.dir .nav a .i{display:flex;align-items:center;justify-content:center;width:46px;height:25px;
-  border-radius:999px;font-size:15px;line-height:1;transition:background .16s,color .16s;}
+   L'onglet actif porte une pastille lime pleine derrière son icône — une
+   forme, pas une teinte. Signalé par une nuance de vert sur une nuance de
+   gris, il s'effaçait en plein soleil et n'existait pas pour un daltonien. */
+.dir .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(245,243,239,.97);backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);display:flex;padding:10px 0 max(22px,env(safe-area-inset-bottom));z-index:60;
+  max-width:620px;margin:0 auto;}
+.dir .nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:10.5px;color:var(--soft);font-weight:700;text-decoration:none;line-height:1.1;}
+.dir .nav a .i{display:flex;align-items:center;justify-content:center;width:48px;height:28px;
+  border-radius:999px;font-size:19px;line-height:1;transition:background .16s,color .16s;}
 .dir .nav a.on{color:var(--ink);font-weight:800;}
 .dir .nav a.on .i{background:var(--gl);color:#0E2A1C;}
 /* « À saisir » est plein écran et sombre : la barre s'y accorde, sinon elle
-   découpe un bandeau blanc au bas d'une image. La pastille, elle, ne change
-   pas — c'est le repère qui doit rester constant d'un écran à l'autre. */
-.dir .nav.dark{background:rgba(10,16,12,.97);border-top-color:#22332B;}
-.dir .nav.dark a{color:#8FA79A;}          /*  7,47:1 */
+   découpe un bandeau clair au bas d'une image. */
+.dir .nav.dark{background:rgba(10,19,16,.97);border-top-color:rgba(255,255,255,.1);}
+.dir .nav.dark a{color:#8FA79A;}
 .dir .nav.dark a.on{color:#fff;}
 .dir .nav.dark a.on .i{background:var(--gl);color:#0E2A1C;}
 

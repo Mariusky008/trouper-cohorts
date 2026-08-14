@@ -157,34 +157,16 @@ export default async function LeDirectPage({
           {/* Le sous-titre est COMPTÉ, jamais annoncé : un chiffre inventé se
               démonte au premier coup d'œil au fil, et c'est la seule chose que
               cette application vend — que ce qui est écrit soit vrai. */}
+          {/* LE POULS EST ICI, EN UNE LIGNE, et plus dans une bande vert foncé
+              posée entre un en-tête clair et des onglets clairs. Elle coupait
+              la page en deux et répétait ce que ce sous-titre dit déjà. Le
+              pont vers « À saisir » ne disparaît pas pour autant : il est dans
+              la barre du bas, où il est permanent plutôt qu'occasionnel. */}
           {sousTitre(visibles, onglet) || `Tout ce qui se passe à ${cfg.nom}`}
+          {pouls.bientot > 0 ? ` · ${pouls.bientot} ${pouls.bientot > 1 ? "finissent" : "finit"} bientôt` : ""}
           {maj ? ` · mis à jour ${maj}` : ""}
         </div>
       </header>
-
-      <section className="pulse" aria-label="Le pouls de la ville">
-        <div className="n">{pouls.phrase}</div>
-        <div className="sub">{pouls.sous}</div>
-
-        {/* Un sous-compteur à zéro se lit comme « il n'y a rien » : on n'affiche
-            que ceux qui portent une information. */}
-        {(pouls.pres > 0 || pouls.bientot > 0 || pouls.places > 0) && (
-          <div className="rows">
-            {pouls.pres > 0 && <div className="r"><b>{pouls.pres}</b><span>près de vous</span></div>}
-            {pouls.bientot > 0 && <div className="r"><b>{pouls.bientot}</b><span>finissent bientôt</span></div>}
-            {pouls.places > 0 && <div className="r"><b>{pouls.places}</b><span>places libres</span></div>}
-          </div>
-        )}
-
-        {/* LE PONT entre les deux premiers onglets, et le seul. Si l'habitant ne
-            perçoit pas la différence entre Le Direct et À saisir, l'architecture
-            a échoué — ce bouton est ce qui la rend évidente. */}
-        {publications.length > 0 && (
-          <Link href={`/ville/${ville}/a-saisir`} className="cta">
-            Voir ce qui vaut le coup maintenant →
-          </Link>
-        )}
-      </section>
 
       <nav className="chips" aria-label="Ce que vous cherchez">
         {DEFS.map((d) => (
@@ -204,11 +186,11 @@ export default async function LeDirectPage({
         <>
           <div className="sect">
             <div className="st">Le fil</div>
+            {/* Le libellé suit le tri réel. Il annonçait « du plus récent au
+                plus ancien » alors que le fil part de ce qui disparaît le plus
+                tôt — un écran qui décrit mal son propre ordre est pire qu'un
+                écran muet. */}
             <div className="ss">
-              {/* Le libellé suit le tri réel. Il annonçait « du plus récent au
-                  plus ancien » alors que le fil part désormais de ce qui
-                  disparaît le plus tôt — un écran qui décrit mal son propre
-                  ordre est pire qu'un écran muet. */}
               ce qui part en premier
               {pouls.fenetreLarge ? " · les sept derniers jours" : ""}
             </div>
