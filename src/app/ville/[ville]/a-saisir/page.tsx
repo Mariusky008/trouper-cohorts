@@ -77,7 +77,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     // manipule au glissement : une bande cliquable posée dedans se
     // déclencherait par accident à chaque geste raté. Le Clik se découvre
     // dans le fil, où il a la place d'exister.
-    clik: null,
+    facons: [],
   }));
 
   return (

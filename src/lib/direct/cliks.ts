@@ -1,12 +1,8 @@
 // LES CLIKS, CÔTÉ HABITANT.
 //
-// Deux mécaniques, un seul module — comme en base, et pour la même raison :
-// elles partagent le commerce, l'échéance, le statut et l'annonce d'origine.
-//
-//   'cadeau'    → un stock d'avantages qui S'ÉPUISE. On sait tout de suite ce
-//                 qu'on a. Le ressort est la rareté immédiate.
-//   'collectif' → un objectif qui SE REMPLIT. On ne sait qu'à la fin, mais on
-//                 peut faire basculer le groupe. Le ressort est l'imminence.
+// Une annonce porte UNE À TROIS FAÇONS d'en profiter, et l'habitant choisit.
+// Elles partagent le commerce, l'annonce d'origine et l'échéance ; seul change
+// ce qu'on demande en échange du prix.
 //
 // CE MODULE NE DESSINE RIEN. Il dit ce qui est vrai d'une campagne à un instant
 // donné, et l'écran en tire les conséquences. C'est ce qui permet de tester les
@@ -27,8 +23,42 @@ type Supabase = {
   from: (t: string) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
-export const TYPES_CLIK = ["cadeau", "collectif"] as const;
+// TROIS FAÇONS DE PROFITER D'UNE MÊME ANNONCE, pas un mécanisme unique.
+//
+//   'cadeau'    → prix normal, PLUS un avantage surprise. Ne coûte rien au
+//                 commerçant sur son prix, et c'est la façon qui n'exige rien.
+//   'express'   → prix réduit si l'on vient tout de suite. Rémunère la vitesse,
+//                 c'est-à-dire le remplissage d'un creux.
+//   'collectif' → prix le plus bas si l'on vient à plusieurs. Rémunère le
+//                 nombre, c'est-à-dire le remplissage d'une table.
+//
+// Le commerce ne brade pas, il RÉMUNÈRE UN COMPORTEMENT. C'est toute la
+// différence avec un site de bons de réduction, et c'est pour ça que les trois
+// façons doivent se voir ENSEMBLE : c'est la comparaison qui donne son sens à
+// chaque prix.
+export const TYPES_CLIK = ["cadeau", "express", "collectif"] as const;
 export type TypeClik = (typeof TYPES_CLIK)[number];
+
+/** L'ordre d'affichage, du moindre effort au plus engageant — et donc du prix
+ *  le plus haut au plus bas. C'est cette descente qui rend la carte lisible. */
+export const ORDRE_TYPE: Record<TypeClik, number> = { cadeau: 0, express: 1, collectif: 2 };
+
+/** Ce que chaque façon s'appelle, côté habitant. Les libellés sont ici et pas
+ *  dans l'écran : ils doivent être les mêmes dans le fil, sur la fiche du Clik
+ *  et dans l'espace du commerçant. */
+export const FACON_LABEL: Record<TypeClik, string> = {
+  cadeau: "Le cadeau",
+  express: "L'express",
+  collectif: "Table à partager",
+};
+
+/** La promesse de chaque façon, en une ligne. Elle dit CE QU'ON DOIT FAIRE, pas
+ *  ce qu'on obtient : le prix est déjà affiché juste à côté. */
+export const FACON_PROMESSE: Record<TypeClik, string> = {
+  cadeau: "Prix normal + cadeau surprise",
+  express: "Prix réduit si vous venez vite",
+  collectif: "Prix de groupe si vous venez à plusieurs",
+};
 
 export type Campagne = {
   id: string;
@@ -43,6 +73,8 @@ export type Campagne = {
   prixGroupe: number | null;
   echeance: string;
   statut: string;
+  /** Rang d'affichage parmi les façons d'une même annonce. */
+  ordre: number;
   /** Renseigné pour les campagnes « cadeau » uniquement. */
   restants: number | null;
   total: number | null;
@@ -76,6 +108,9 @@ export function etatDe(c: Campagne, maintenant: number = Date.now()): EtatClik {
   if (c.type === "cadeau") {
     return (c.restants ?? 0) > 0 ? "ouverte" : "epuise";
   }
+  // L'express n'a ni stock ni groupe : il ne dépend que de l'heure, déjà
+  // tranchée au-dessus. Tant qu'elle n'est pas passée, il est ouvert.
+  if (c.type === "express") return "ouverte";
 
   const obj = c.objectif ?? 0;
   if (obj > 0 && c.participants >= obj) return "complete";
@@ -105,6 +140,7 @@ export function phraseClik(c: Campagne, maintenant: number = Date.now()): string
     if (r <= 0) return "Tout est parti";
     return r === 1 ? "Il en reste 1" : `Il en reste ${r}`;
   }
+  if (c.type === "express") return "Prix réduit si vous venez vite";
   if (e === "complete") return "C'est débloqué pour tout le monde";
   const m = manque(c);
   return m === 1 ? "Encore 1 personne et le prix baisse" : `Encore ${m} personnes et le prix baisse`;
@@ -112,7 +148,10 @@ export function phraseClik(c: Campagne, maintenant: number = Date.now()): string
 
 /** La remise, en pourcentage entier. `null` si elle n'a pas de sens. */
 export function remise(c: Campagne): number | null {
-  if (c.type !== "collectif" || !c.prixInitial || !c.prixGroupe) return null;
+  // L'express aussi affiche un prix barré : c'est la même mécanique de remise,
+  // sur un autre effort. La réserver au collectif privait la façon du milieu de
+  // la seule chose qui la rend comparable aux deux autres.
+  if (c.type === "cadeau" || !c.prixInitial || !c.prixGroupe) return null;
   if (c.prixInitial <= 0 || c.prixGroupe >= c.prixInitial) return null;
   return Math.round(((c.prixInitial - c.prixGroupe) / c.prixInitial) * 100);
 }
@@ -140,7 +179,8 @@ export function avancement(c: Campagne): number {
 /** Traduit une ligne PostgREST. Tolérant : une colonne absente ne doit pas
  *  faire disparaître la campagne du fil. */
 export function versCampagne(r: Record<string, unknown>, restants?: number, total?: number): Campagne {
-  const type: TypeClik = str(r.type) === "cadeau" ? "cadeau" : "collectif";
+  const brut = str(r.type);
+  const type: TypeClik = (TYPES_CLIK as readonly string[]).includes(brut) ? (brut as TypeClik) : "collectif";
   return {
     id: str(r.id),
     siteId: str(r.site_id),
@@ -154,6 +194,9 @@ export function versCampagne(r: Record<string, unknown>, restants?: number, tota
     prixGroupe: r.prix_groupe == null ? null : num(r.prix_groupe),
     echeance: str(r.echeance),
     statut: str(r.statut),
+    // L'ordre stocké fait foi ; sans lui (migration fraîche), on retombe sur
+    // l'ordre canonique du type, qui donne déjà la bonne descente de prix.
+    ordre: r.ordre == null ? ORDRE_TYPE[type] : num(r.ordre),
     restants: restants == null ? null : restants,
     total: total == null ? null : total,
     aGagner: [],
@@ -288,15 +331,43 @@ export async function maParticipation(
   }
 }
 
-/** Indexe les campagnes par publication, pour les accrocher au fil. */
-export function parPublication(campagnes: readonly Campagne[]): Map<string, Campagne> {
-  const m = new Map<string, Campagne>();
+/**
+ * LES FAÇONS DE CHAQUE ANNONCE, groupées et ordonnées.
+ *
+ * La version précédente ne gardait QU'UNE campagne par annonce — celle qui
+ * finissait le plus tôt — parce qu'elle supposait un mécanisme unique. C'est
+ * exactement ce qui manquait : la carte doit montrer les trois façons ensemble,
+ * puisque c'est la comparaison des trois prix qui donne son sens à chacun.
+ *
+ * L'ordre suit `ordre`, donc la descente des prix, et jamais l'échéance : deux
+ * façons dont les heures limites se croisent réordonneraient la colonne des
+ * prix d'un rafraîchissement à l'autre.
+ */
+export function faconsParPublication(campagnes: readonly Campagne[]): Map<string, Campagne[]> {
+  const m = new Map<string, Campagne[]>();
   for (const c of campagnes) {
     if (!c.publicationId) continue;
-    // À égalité, on garde CELLE QUI FINIT LE PLUS TÔT : c'est celle qui a
-    // besoin d'être vue maintenant.
-    const dejà = m.get(c.publicationId);
-    if (!dejà || Date.parse(c.echeance) < Date.parse(dejà.echeance)) m.set(c.publicationId, c);
+    const l = m.get(c.publicationId);
+    if (l) l.push(c);
+    else m.set(c.publicationId, [c]);
+  }
+  for (const l of m.values()) {
+    l.sort((a, b) => (a.ordre !== b.ordre ? a.ordre - b.ordre : ORDRE_TYPE[a.type] - ORDRE_TYPE[b.type]));
   }
   return m;
+}
+
+/**
+ * Ce que le tri du fil doit savoir d'une annonce : le collectif le plus proche
+ * de basculer, s'il y en a un.
+ *
+ * Le rang « presque » du §3 récompense l'imminence d'un basculement. Parmi
+ * plusieurs façons, seule la « table à partager » peut basculer — les deux
+ * autres ne dépendent que du temps.
+ */
+export function collectifDe(facons: readonly Campagne[] | undefined): { participants: number; objectif: number } | null {
+  for (const c of facons ?? []) {
+    if (c.type === "collectif" && c.objectif) return { participants: c.participants, objectif: c.objectif };
+  }
+  return null;
 }

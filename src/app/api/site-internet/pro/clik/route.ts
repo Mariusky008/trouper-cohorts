@@ -40,6 +40,9 @@ const OBJECTIF_MIN = 2;
 const OBJECTIF_MAX = 50;
 /** Un stock d'avantages reste un geste, pas un catalogue de bons. */
 const STOCK_MAX = 200;
+/** L'express récompense la vitesse : au-delà de trois heures, il ne récompense
+ *  plus rien et devient une remise ordinaire. */
+const EXPRESS_MAX_MIN = 180;
 
 const migrationManquante = (msg: string) => /does not exist|schema cache|Could not find/i.test(msg);
 
@@ -131,105 +134,151 @@ export async function POST(request: Request) {
   if (action !== "creer") return NextResponse.json({ error: "action inconnue" }, { status: 400 });
 
   // ── Créer ─────────────────────────────────────────────────────────────────
-  const type = s(p?.type) === "cadeau" ? "cadeau" : "collectif";
+  //
+  // UNE ANNONCE, JUSQU'À TROIS FAÇONS D'EN PROFITER. Le commerçant coche celles
+  // qu'il veut proposer, et elles partagent la même annonce dans le fil. C'est
+  // la comparaison des trois prix qui donne son sens à chacun : proposée seule,
+  // une remise se lit comme une promotion ; proposées ensemble, elles se lisent
+  // comme un échange — payer moins contre venir vite, ou à plusieurs.
   const texte = s(p?.texte).slice(0, 140);
   if (!texte) return NextResponse.json({ error: "Écrivez ce que vous proposez." }, { status: 400 });
-
-  const jours = Math.min(DUREE_MAX_J, Math.max(1, Math.round(n(p?.jours) || 7)));
-  const echeance = new Date(Date.now() + jours * 24 * 3600 * 1000).toISOString();
 
   const ville = s(site.city);
   if (!ville) return NextResponse.json({ error: "Votre ville n'est pas renseignée." }, { status: 400 });
 
-  // La validation d'abord, l'écriture ensuite : on ne veut pas d'une annonce
-  // publiée dans la ville alors que la campagne sera refusée deux lignes plus bas.
-  let champs: Record<string, unknown>;
-  let lots: Array<{ libelle: string; condition_achat: string }> = [];
+  const heures = Math.min(DUREE_MAX_J * 24, Math.max(1, Math.round(n(p?.heures) || 24)));
+  const finGenerale = new Date(Date.now() + heures * 3600 * 1000).toISOString();
+  const prixNormal = n(p?.prixNormal);
+  if (!Number.isFinite(prixNormal) || prixNormal <= 0) {
+    return NextResponse.json({ error: "Indiquez votre prix habituel." }, { status: 400 });
+  }
 
-  if (type === "collectif") {
-    const objectif = Math.round(n(p?.objectif));
-    const prixInitial = n(p?.prixInitial);
-    const prixGroupe = n(p?.prixGroupe);
-    if (!Number.isFinite(objectif) || objectif < OBJECTIF_MIN || objectif > OBJECTIF_MAX) {
-      return NextResponse.json({ error: `Le groupe doit compter entre ${OBJECTIF_MIN} et ${OBJECTIF_MAX} personnes.` }, { status: 400 });
-    }
-    if (!Number.isFinite(prixInitial) || !Number.isFinite(prixGroupe) || prixInitial <= 0) {
-      return NextResponse.json({ error: "Indiquez le prix habituel et le prix de groupe." }, { status: 400 });
-    }
-    if (prixGroupe >= prixInitial) {
-      return NextResponse.json({ error: "Le prix de groupe doit être inférieur au prix habituel." }, { status: 400 });
-    }
-    champs = { objectif, prix_initial: prixInitial, prix_groupe: prixGroupe };
-  } else {
-    const quantite = Math.round(n(p?.quantite));
-    const libelle = s(p?.libelle).slice(0, 120);
-    const condition = s(p?.conditionAchat).slice(0, 120);
+  // Chaque façon est validée AVANT toute écriture : on ne veut pas d'une
+  // annonce publiée dans la ville alors que la deuxième façon sera refusée.
+  type Facon = { ligne: Record<string, unknown>; lots: Array<{ libelle: string; condition_achat: string }> };
+  const facons: Facon[] = [];
+  const base = {
+    site_id: siteId,
+    ville_slug: villeSlug(ville),
+    titre: texte,
+    statut: "active",
+    prix_initial: prixNormal,
+  };
+
+  // ① LE CADEAU — prix normal, plus un avantage. Il ne coûte rien sur le prix.
+  if (p?.cadeau) {
+    const quantite = Math.round(n(p?.cadeauQuantite));
+    const libelle = s(p?.cadeauLibelle).slice(0, 120);
+    const condition = s(p?.cadeauCondition).slice(0, 120);
     if (!Number.isFinite(quantite) || quantite < 1 || quantite > STOCK_MAX) {
-      return NextResponse.json({ error: `Indiquez combien d'avantages, entre 1 et ${STOCK_MAX}.` }, { status: 400 });
+      return NextResponse.json({ error: `Le cadeau : indiquez combien, entre 1 et ${STOCK_MAX}.` }, { status: 400 });
     }
-    if (!libelle) return NextResponse.json({ error: "Dites ce que les premiers reçoivent." }, { status: 400 });
-    // LA RÈGLE QUI REND L'OPÉRATION TENABLE. Elle est aussi `NOT NULL` en base :
-    // deux verrous pour la seule chose qui empêche un commerce de se ruiner en
-    // cadeaux à des gens qui n'achètent rien.
+    if (!libelle) return NextResponse.json({ error: "Le cadeau : dites ce que les premiers reçoivent." }, { status: 400 });
+    // LA RÈGLE QUI REND L'OPÉRATION TENABLE, tenue aussi par un `NOT NULL` en
+    // base : sans condition d'achat, on donne à des gens qui n'achètent rien.
     if (!condition) {
-      return NextResponse.json({ error: "Indiquez à partir de quel achat l'avantage s'applique." }, { status: 400 });
+      return NextResponse.json({ error: "Le cadeau : indiquez à partir de quel achat il s'applique." }, { status: 400 });
     }
-    champs = {};
-    lots = Array.from({ length: quantite }, () => ({ libelle, condition_achat: condition }));
+    facons.push({
+      ligne: { ...base, type: "cadeau", ordre: 0, echeance: finGenerale },
+      lots: Array.from({ length: quantite }, () => ({ libelle, condition_achat: condition })),
+    });
+  }
+
+  // ② L'EXPRESS — prix réduit contre la vitesse. Sa fenêtre est COURTE par
+  //    nature : un express valable jusqu'à demain ne récompense plus rien.
+  if (p?.express) {
+    const prix = n(p?.expressPrix);
+    const minutes = Math.min(EXPRESS_MAX_MIN, Math.max(10, Math.round(n(p?.expressMinutes) || 60)));
+    if (!Number.isFinite(prix) || prix <= 0) {
+      return NextResponse.json({ error: "L'express : indiquez le prix réduit." }, { status: 400 });
+    }
+    if (prix >= prixNormal) {
+      return NextResponse.json({ error: "L'express : le prix doit être inférieur à votre prix habituel." }, { status: 400 });
+    }
+    facons.push({
+      ligne: {
+        ...base, type: "express", ordre: 1, prix_groupe: prix,
+        echeance: new Date(Date.now() + minutes * 60_000).toISOString(),
+      },
+      lots: [],
+    });
+  }
+
+  // ③ LA TABLE À PARTAGER — le prix le plus bas contre le nombre.
+  if (p?.partage) {
+    const objectif = Math.round(n(p?.partageObjectif));
+    const prix = n(p?.partagePrix);
+    if (!Number.isFinite(objectif) || objectif < OBJECTIF_MIN || objectif > OBJECTIF_MAX) {
+      return NextResponse.json({ error: `La table à partager : entre ${OBJECTIF_MIN} et ${OBJECTIF_MAX} personnes.` }, { status: 400 });
+    }
+    if (!Number.isFinite(prix) || prix <= 0 || prix >= prixNormal) {
+      return NextResponse.json({ error: "La table à partager : le prix doit être inférieur à votre prix habituel." }, { status: 400 });
+    }
+    facons.push({
+      ligne: { ...base, type: "collectif", ordre: 2, objectif, prix_groupe: prix, echeance: finGenerale },
+      lots: [],
+    });
+  }
+
+  if (!facons.length) {
+    return NextResponse.json({ error: "Choisissez au moins une façon d'en profiter." }, { status: 400 });
   }
 
   try {
-    // ① L'ANNONCE D'ABORD. Sans elle, la campagne n'a rien à quoi s'accrocher
-    //    dans le fil, et l'habitant ne la verrait jamais.
+    // L'ANNONCE D'ABORD. Sans elle, les façons n'ont rien à quoi s'accrocher
+    // dans le fil, et l'habitant ne les verrait jamais.
     //
-    //    L'échéance de l'annonce suit celle de la campagne : une annonce qui
-    //    survivrait à son Clik enverrait sur un écran « c'est fini ».
+    // Son échéance est la PLUS TARDIVE des façons : une annonce qui
+    // disparaîtrait avant sa dernière porte fermerait le magasin en laissant
+    // quelqu'un dedans.
+    const finLaPlusTardive = facons
+      .map((f) => String(f.ligne.echeance))
+      .sort()
+      .pop() as string;
     const pub = await publier(supabase, {
       ville,
       villeSlug: villeSlug(ville),
       famille: familleDuTexte(texte),
       texte,
-      expireLe: echeanceDuTexte(texte)?.expireLe ?? echeance,
+      expireLe: echeanceDuTexte(texte)?.expireLe ?? finLaPlusTardive,
       site: { id: siteId, slug: s(site.slug), nom: s(site.business_name), activite: s(site.activite) },
     });
 
     const { data, error } = await supabase
       .from("clik_campaign")
-      .insert({
-        site_id: siteId,
-        publication_id: pub?.id ?? null,
-        ville_slug: villeSlug(ville),
-        type,
-        titre: texte,
-        echeance,
-        statut: "active",
-        ...champs,
-      })
-      .select("id")
-      .maybeSingle();
+      .insert(facons.map((f) => ({ ...f.ligne, publication_id: pub?.id ?? null })))
+      .select("id, type, ordre");
     if (error) throw new Error(error.message);
-    const campagneId = s((data as Record<string, unknown> | null)?.id);
-    if (!campagneId) throw new Error("campagne non créée");
+    const creees = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+    if (!creees.length) throw new Error("campagnes non créées");
 
-    // ② LE STOCK, mélangé avant d'être écrit.
-    //    La séquence est figée à la création puis distribuée dans l'ordre : le
-    //    serveur ne choisit rien au moment du clic, ce qui rend la distribution
-    //    vérifiable et interdit tout favoritisme. Avec des lots identiques le
-    //    mélange ne change rien — il compte le jour où ils différeront, et il
-    //    vaut mieux qu'il soit déjà là que rajouté après coup.
-    if (lots.length) {
-      const melange = [...lots];
+    // LE STOCK DU CADEAU, mélangé avant d'être écrit.
+    // La séquence est figée à la création puis distribuée dans l'ordre : le
+    // serveur ne choisit rien au moment du clic, ce qui rend la distribution
+    // vérifiable et interdit tout favoritisme. Avec des lots identiques le
+    // mélange ne change rien — il compte le jour où ils différeront, et il vaut
+    // mieux qu'il soit déjà là que rajouté après coup.
+    const lignesLots: Array<Record<string, unknown>> = [];
+    for (const f of facons) {
+      if (!f.lots.length) continue;
+      const cible = creees.find((c) => s(c.type) === s(f.ligne.type));
+      if (!cible) continue;
+      const melange = [...f.lots];
       for (let i = melange.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [melange[i], melange[j]] = [melange[j], melange[i]];
       }
-      const { error: e2 } = await supabase.from("clik_reward").insert(
-        melange.map((l, i) => ({ campagne_id: campagneId, position: i, libelle: l.libelle, condition_achat: l.condition_achat }))
+      melange.forEach((l, i) =>
+        lignesLots.push({ campagne_id: s(cible.id), position: i, libelle: l.libelle, condition_achat: l.condition_achat })
       );
+    }
+    if (lignesLots.length) {
+      const { error: e2 } = await supabase.from("clik_reward").insert(lignesLots);
       if (e2) throw new Error(e2.message);
     }
 
-    return NextResponse.json({ ok: true, id: campagneId, publicationId: pub?.id ?? null });
+    return NextResponse.json({ ok: true, ids: creees.map((c) => s(c.id)), publicationId: pub?.id ?? null });
   } catch (e) {
     const msg = String(e);
     if (migrationManquante(msg)) {

@@ -40,17 +40,26 @@ export type CarteVue = {
   lng: number | null;
   fraicheur: string;
   echeance: string;
-  /** Le Clik attaché à l'annonce, déjà résumé par le serveur. `null` quand il
-   *  n'y en a pas, ou quand il est terminé. */
-  clik: {
+  /** LES FAÇONS DE PROFITER DE L'ANNONCE, déjà résumées par le serveur, dans
+   *  l'ordre d'affichage (du prix le plus haut au plus bas). Vide quand il n'y
+   *  en a aucune, ou qu'elles sont toutes terminées. */
+  facons: Array<{
     id: string;
-    type: "cadeau" | "collectif";
-    /** « Encore 2 personnes et le prix baisse », « Il en reste 3 ». */
-    phrase: string;
-    /** Avancement entre 0 et 1, pour la jauge. */
-    part: number;
+    type: "cadeau" | "express" | "collectif";
+    /** « Le cadeau », « L'express », « Table à partager ». */
+    label: string;
+    /** Ce qu'on doit faire pour l'obtenir. */
+    promesse: string;
+    /** Le prix à payer avec cette façon, déjà mis en forme. */
+    prix: string;
+    /** La contrainte de temps, en clair : « Arrivée avant 12 h 47 ». */
+    quand: string;
+    /** « 2 / 4 déjà intéressés » — uniquement pour la table à partager. */
+    compte: string;
+    /** Avancement entre 0 et 1, pour la jauge. `null` sans jauge à montrer. */
+    part: number | null;
     etat: "ouverte" | "presque" | "complete" | "epuise";
-  } | null;
+  }>;
 };
 
 export function Carte({
@@ -139,21 +148,49 @@ export function Carte({
         )}
       </div>
 
-      {/* LE CLIK, sous l'image et au-dessus des actions ordinaires.
-          Il n'est pas « une action de plus » : c'est le seul endroit du fil où
-          le geste de l'habitant change quelque chose pour les autres. Il occupe
-          donc toute la largeur, avec sa jauge — noyé parmi « La boutique » et le
-          cœur, il ne se distinguerait plus d'un lien. */}
-      {p.clik && (
-        <Link href={`/ville/${ville}/clik/${p.clik.id}`} className={`clk clk-${p.clik.etat}`} prefetch={false}>
-          <span className="clk-h">
-            <span className="clk-t">{p.clik.type === "collectif" ? "À plusieurs" : "Pour les premiers"}</span>
-            <span className="clk-p">{p.clik.phrase}</span>
-          </span>
-          <span className="clk-j" aria-hidden="true">
-            <i style={{ width: `${Math.round(p.clik.part * 100)}%` }} />
-          </span>
-        </Link>
+      {/* COMMENT VOULEZ-VOUS EN PROFITER ?
+          Les façons sont montrées ENSEMBLE, et c'est tout l'intérêt : c'est la
+          descente des prix qui rend chacun compréhensible. Une seule façon à
+          l'écran, l'habitant lit une remise ; les trois, il comprend qu'on lui
+          propose un échange — payer moins contre venir vite, ou à plusieurs.
+          Le commerce ne brade pas, il rémunère un comportement. */}
+      {p.facons.length > 0 && (
+        <div className="fac">
+          <div className="fac-h">
+            <span className="fac-q">Comment voulez-vous en profiter&nbsp;?</span>
+            {p.facons.length > 1 && (
+              <span className="fac-pr" aria-hidden="true">
+                {p.facons.map((f) => f.prix).join(" → ")}
+              </span>
+            )}
+          </div>
+          {p.facons.map((f) => (
+            <Link
+              key={f.id}
+              href={`/ville/${ville}/clik/${f.id}`}
+              className={`fac-l fac-${f.type}${f.etat === "epuise" ? " fac-off" : ""}`}
+              prefetch={false}
+            >
+              <span className="fac-ic" aria-hidden="true">
+                {f.type === "cadeau" ? "🎁" : f.type === "express" ? "⚡" : "👥"}
+              </span>
+              <span className="fac-c">
+                <span className="fac-t">
+                  <b>{f.prix}</b>
+                  <em>{f.label}</em>
+                </span>
+                <span className="fac-s">{f.compte || f.promesse}</span>
+                {f.quand && <span className="fac-q2">{f.quand}</span>}
+                {f.part != null && (
+                  <span className="fac-j" aria-hidden="true">
+                    <i style={{ width: `${Math.round(f.part * 100)}%` }} />
+                  </span>
+                )}
+              </span>
+              <span className="fac-go" aria-hidden="true">›</span>
+            </Link>
+          ))}
+        </div>
       )}
 
       <div className="pf">

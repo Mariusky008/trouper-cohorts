@@ -138,31 +138,51 @@ export function StylesDirect() {
 /* « Ma ville » ne vend rien : elle reste en retrait, sur un parchemin calme,
    là où les quatre autres réclament un geste. */
 .dir .k-ville{background:#F1E6CE;color:#6B4E12;}        /*  6,22:1 */
-/* ── LE CLIK SUR LA CARTE ─────────────────────────────────────────────────
-   Une bande pleine largeur, pas un bouton parmi d'autres. C'est le seul
-   endroit du fil où le geste de l'habitant change quelque chose POUR LES
-   AUTRES, et ça doit se voir avant d'être lu.
+/* ── COMMENT VOULEZ-VOUS EN PROFITER ? ────────────────────────────────────
+   Les façons se lisent comme une colonne de PRIX QUI DESCEND. C'est la forme
+   qui porte le sens : on voit d'un coup qu'il y a trois portes, et que la
+   moins chère demande le plus d'effort. Trois bandes identiques auraient dit
+   « trois promos » ; trois prix alignés disent « choisissez votre échange ».
 
-   L'état colore la bande, et il n'y en a que trois qui appellent un geste :
-     · ouverte  → calme, on informe ;
-     · presque  → lime : il manque deux personnes, c'est maintenant que ça se
-                  joue, et c'est la seule couleur d'urgence du fil ;
-     · complete → vert plein : c'est gagné, on le dit franchement.
-   « epuise » garde la bande grise plutôt que de la retirer : disparaître
-   ferait croire qu'il n'y a jamais rien eu. */
-.dir .clk{display:block;text-decoration:none;padding:10px 12px 11px;border-top:1px solid var(--line);
-  background:var(--bg);}
-.dir .clk-h{display:flex;align-items:baseline;gap:8px;}
-.dir .clk-t{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:var(--soft);flex:none;}
-.dir .clk-p{font-size:12px;font-weight:700;color:var(--ink);line-height:1.25;}
-.dir .clk-j{display:block;height:5px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
-.dir .clk-j i{display:block;height:100%;background:var(--g);border-radius:3px;}
-.dir .clk-presque{background:var(--gs);}
-.dir .clk-presque .clk-t{color:var(--gd);}
-.dir .clk-presque .clk-j i{background:var(--gl);}
-.dir .clk-complete .clk-j i{background:var(--g);}
-.dir .clk-epuise .clk-p{color:var(--soft);}
-.dir .clk-epuise .clk-j i{background:var(--faint);}
+   Chaque façon garde sa teinte propre, la même partout dans l'application :
+   le cadeau en crème, l'express en ambre, la table à partager en violet. */
+.dir .fac{border-top:1px solid var(--line);padding:12px;background:var(--bg);}
+.dir .fac-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px;}
+.dir .fac-q{font-size:13px;font-weight:800;color:var(--ink);line-height:1.25;}
+/* La suite des prix, en petit et à droite : elle résume la carte avant même
+   qu'on lise les lignes. */
+.dir .fac-pr{font-size:11px;color:var(--soft);font-weight:700;white-space:nowrap;flex:none;}
+
+.dir .fac-l{display:flex;align-items:center;gap:11px;padding:11px;border-radius:13px;background:#fff;
+  border:1px solid var(--line);text-decoration:none;margin-bottom:7px;}
+.dir .fac-l:last-child{margin-bottom:0;}
+.dir .fac-ic{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:var(--bg);}
+.dir .fac-c{flex:1;min-width:0;}
+.dir .fac-t{display:flex;align-items:baseline;gap:7px;}
+.dir .fac-t b{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;color:var(--ink);line-height:1;}
+.dir .fac-t em{font-style:normal;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:var(--soft);}
+.dir .fac-s{display:block;font-size:11.5px;color:var(--body);margin-top:4px;line-height:1.35;}
+/* L'heure limite est la seule information vraiment urgente de la ligne : elle
+   porte une pastille, pas une nuance de gris. */
+.dir .fac-q2{display:inline-block;font-size:10px;font-weight:700;color:var(--soft);background:var(--bg);
+  border-radius:999px;padding:3px 8px;margin-top:6px;}
+.dir .fac-j{display:block;height:4px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
+.dir .fac-j i{display:block;height:100%;border-radius:3px;background:var(--vio);}
+.dir .fac-go{flex:none;font-size:19px;color:var(--faint);line-height:1;}
+
+.dir .fac-cadeau{background:#FFFDF7;border-color:#EFE6CF;}
+.dir .fac-cadeau .fac-ic{background:#FBF2DF;}
+.dir .fac-express{background:#FFFBF3;border-color:#F0DFC0;}
+.dir .fac-express .fac-ic{background:#FCEFD4;}
+.dir .fac-express .fac-t em{color:#A56C11;}
+.dir .fac-collectif{background:#FAF9FF;border-color:#E2DDF7;}
+.dir .fac-collectif .fac-ic{background:#EDE9F8;}
+.dir .fac-collectif .fac-t em{color:var(--vio);}
+/* Épuisée, la façon RESTE À L'ÉCRAN, éteinte : la retirer ferait croire qu'elle
+   n'a jamais existé, et priverait les deux autres de leur point de comparaison. */
+.dir .fac-off{opacity:.5;}
+.dir .fac-off .fac-t b{text-decoration:line-through;}
 
 .dir .post .pf{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;

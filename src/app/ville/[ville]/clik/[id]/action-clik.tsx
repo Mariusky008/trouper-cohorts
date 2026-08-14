@@ -27,7 +27,7 @@ export function ActionClik({
 }: {
   campagneId: string;
   ville: string;
-  type: "cadeau" | "collectif";
+  type: "cadeau" | "express" | "collectif";
   etat: Etat;
   dejaDedans: boolean;
   statutInitial: string | null;
@@ -72,7 +72,9 @@ export function ActionClik({
             ? "Le groupe est complet. Si quelqu'un se désiste, la place est pour vous et vous serez prévenu."
             : type === "collectif"
               ? "Vous serez prévenu dès que le groupe est au complet."
-              : "Présentez-vous au commerce, votre avantage vous y attend."}
+              : type === "express"
+                ? "Venez avant l'heure indiquée et annoncez-vous : le prix réduit est à vous."
+                : "Présentez-vous au commerce, votre avantage vous y attend."}
         </div>
       </div>
     );
@@ -95,6 +97,8 @@ export function ActionClik({
       const r = await fetch("/api/direct/clik", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Le cadeau puise dans un stock ; l'express et le groupe enregistrent
+        // un engagement. C'est la seule différence de chemin entre les trois.
         body: JSON.stringify({ campagneId, ville, action: type === "cadeau" ? "prendre" : "rejoindre" }),
       });
       const j = await r.json().catch(() => ({}));
@@ -124,7 +128,7 @@ export function ActionClik({
   return (
     <>
       <button type="button" className="ck-b" onClick={agir} disabled={envoi} aria-busy={envoi}>
-        {envoi ? "Un instant…" : type === "cadeau" ? "Je prends" : "J'en suis"}
+        {envoi ? "Un instant…" : type === "cadeau" ? "Je prends" : type === "express" ? "J'y vais tout de suite" : "J'en suis"}
       </button>
       {message && <div className="ck-msg">{message}</div>}
     </>

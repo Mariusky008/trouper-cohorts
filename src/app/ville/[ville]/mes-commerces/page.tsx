@@ -12,7 +12,8 @@ import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, suivis, barreCoeurs, coeurs, PALIER_AVANTAGE } from "@/lib/direct/habitant";
 import { estVivante, type Publication } from "@/lib/direct/publications";
 import { repereSpatial } from "@/lib/direct/degradation";
-import { cliksDeVille, parPublication, phraseClik, avancement, etatDe } from "@/lib/direct/cliks";
+import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
+import { faconsVue } from "@/lib/direct/facons-vue";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { Carte, type CarteVue } from "../_ui/carte";
@@ -117,7 +118,7 @@ export default async function MesCommercesPage({
   // Les Cliks en cours, pour les annonces gardées. C'est ici qu'ils comptent le
   // plus : quelqu'un qui a gardé une annonce est exactement la personne à
   // prévenir quand il ne manque plus que deux personnes au groupe.
-  const cliksParPub = parPublication(await cliksDeVille(supabase, cfg.slug));
+  const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
   const expirentAujourdhui = expirantAujourdhui(gardeesVives);
 
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
@@ -136,13 +137,7 @@ export default async function MesCommercesPage({
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
-    clik: (() => {
-      const c = cliksParPub.get(p.id);
-      if (!c) return null;
-      const e = etatDe(c);
-      if (e === "terminee") return null;
-      return { id: c.id, type: c.type, phrase: phraseClik(c), part: avancement(c), etat: e };
-    })(),
+    facons: faconsVue(cliksParPub.get(p.id)),
   }));
 
   // ── Les commerces suivis ──────────────────────────────────────────────────
