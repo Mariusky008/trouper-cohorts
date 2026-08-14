@@ -19,9 +19,26 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { campagneParId, maParticipation, etatDe, phraseClik, avancement, remise, manque } from "@/lib/direct/cliks";
+import { campagneParId, maParticipation, etatDe, phraseClik, avancement, remise, manque, FACON_LABEL } from "@/lib/direct/cliks";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { ActionClik } from "./action-clik";
+
+/**
+ * La condition d'achat, telle qu'on peut la lire.
+ *
+ * Le commerçant écrit ce qu'il veut. « dès 10 € d'achat » se préfixe bien par
+ * « Valable » ; « 12 » donne « Valable 12. », qui ne veut rien dire. On ne
+ * préfixe donc que si la phrase commence comme une condition — sinon on la
+ * présente autrement, plutôt que de produire une phrase bancale.
+ */
+function conditionLisible(conditions: readonly string[]): string {
+  const t = conditions.join(" ou ").trim();
+  if (!t) return "";
+  if (/^(d[eè]s|[àa] partir|pour|avec|sur|en cas|jusqu)/i.test(t)) return `Valable ${t}.`;
+  // Un nombre seul est presque toujours un montant : on le dit comme tel.
+  if (/^\d+([.,]\d+)?\s*€?$/.test(t)) return `Valable dès ${t.replace(/\s*€?$/, "")} € d'achat.`;
+  return `Condition : ${t}.`;
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -49,6 +66,7 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
   const part = avancement(campagne);
   const pct = remise(campagne);
   const fin = echeanceCourte(campagne.echeance);
+  const euro = (v: number) => `${v.toFixed(2).replace(/[.,]00$/, "").replace(".", ",")} €`;
 
   // « Dedans » couvre les trois statuts qui veulent dire la même chose pour
   // l'habitant : il n'a plus rien à faire. Les distinguer à l'écran
@@ -58,7 +76,10 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
   return (
     <>
       <header className="fhead">
-        <div className="live"><span className="dot" aria-hidden="true" />{campagne.type === "collectif" ? "À plusieurs" : "Pour les premiers"}</div>
+        {/* Le nom de la façon, pas une approximation : « Pour les premiers »
+            s'affichait au-dessus d'un express, qui n'a aucun stock. Le nom
+            choisi par le commerçant prime quand il en a donné un. */}
+        <div className="live"><span className="dot" aria-hidden="true" />{campagne.nom || FACON_LABEL[campagne.type]}</div>
         <h1>{campagne.titre || "Une offre de la ville"}</h1>
         <div className="upd">
           {cfg.nom}
@@ -67,21 +88,37 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
       </header>
 
       <section className="ck">
-        {/* ① CE QU'ON GAGNE */}
-        {campagne.type === "collectif" && campagne.prixInitial != null && campagne.prixGroupe != null ? (
+        {/* ① CE QU'ON GAGNE — pour TOUTES les façons qui portent un prix.
+            Le bloc était réservé au collectif : l'express annonçait « prix
+            réduit si vous venez vite » sans jamais dire de combien, et le
+            cadeau ne montrait pas ce qu'on paie. Une offre dont on cache le
+            prix ne se compare à rien. */}
+        {campagne.prixGroupe != null && campagne.prixInitial != null ? (
           <div className="ck-prix">
-            <span className="ck-barre">{campagne.prixInitial.toFixed(2).replace(".", ",")} €</span>
-            <span className="ck-net">{campagne.prixGroupe.toFixed(2).replace(".", ",")} €</span>
+            <span className="ck-barre">{euro(campagne.prixInitial)}</span>
+            <span className="ck-net">{euro(campagne.prixGroupe)}</span>
             {pct != null && <span className="ck-pct">−{pct} %</span>}
+          </div>
+        ) : campagne.prixInitial != null ? (
+          // Le cadeau se prend au prix normal : on l'affiche seul, sans barré —
+          // barrer un prix qui ne baisse pas serait un mensonge.
+          <div className="ck-prix">
+            <span className="ck-net">{euro(campagne.prixInitial)}</span>
+            <span className="ck-plus">+ un cadeau</span>
           </div>
         ) : null}
 
         {/* ② OÙ EN EST LE GROUPE */}
         <div className={`ck-etat ck-${etat}`}>
           <div className="ck-phrase">{phraseClik(campagne)}</div>
-          <div className="ck-jauge" aria-hidden="true">
-            <i style={{ width: `${Math.round(part * 100)}%` }} />
-          </div>
+          {/* Pas de jauge pour l'express ni « à prendre » : ils ne se
+              remplissent pas. Une barre vide sous « prix réduit si vous venez
+              vite » laissait croire qu'on attendait du monde. */}
+          {(campagne.type === "collectif" || campagne.type === "cadeau") && (
+            <div className="ck-jauge" aria-hidden="true">
+              <i style={{ width: `${Math.round(part * 100)}%` }} />
+            </div>
+          )}
           {campagne.type === "collectif" && campagne.objectif ? (
             <div className="ck-compte">
               {campagne.participants} sur {campagne.objectif}
@@ -108,10 +145,12 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
                 <li key={l}>{l}</li>
               ))}
             </ul>
+            {/* On ne préfixe QUE si la phrase du commerçant n'est pas déjà une
+                condition complète. « Valable dès 10 € d'achat » se lit ;
+                « Valable 12. » ne veut rien dire — et un commerçant tape « 12 »
+                plus souvent qu'on ne le croit. */}
             {campagne.conditions.length > 0 && (
-              <div className="ck-pool-c">
-                Valable {campagne.conditions.join(" ou ")}.
-              </div>
+              <div className="ck-pool-c">{conditionLisible(campagne.conditions)}</div>
             )}
           </div>
         )}

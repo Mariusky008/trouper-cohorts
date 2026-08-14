@@ -67,6 +67,40 @@ export async function POST(request: Request) {
       });
     }
 
+    // QUELLE FAÇON, ET DONC QUEL CHEMIN.
+    //
+    // « rejoindre » appelait `clik_rejoindre` pour tout le monde. Or cette
+    // fonction ne connaît que le collectif : appelée sur un express, elle ne
+    // trouve ni objectif ni place, et répond « le groupe et sa liste d'attente
+    // sont pleins ». L'habitant lisait ça sous un bouton « j'y vais tout de
+    // suite », sur une offre qui n'a jamais eu de groupe.
+    const { data: ligne } = await supabase
+      .from("clik_campaign")
+      .select("type, statut, echeance")
+      .eq("id", campagneId)
+      .maybeSingle();
+    const c = (ligne as Record<string, unknown> | null) ?? null;
+    const type = String(c?.type ?? "collectif");
+
+    // L'express et le « à prendre » n'ont ni stock ni groupe : il n'y a rien à
+    // sérialiser, donc rien qui justifie une fonction SQL. On enregistre
+    // l'engagement, et c'est tout. L'échéance reste la seule limite.
+    if (type === "express" || type === "simple") {
+      const fin = Date.parse(String(c?.echeance ?? ""));
+      const close = !["active", "debloquee"].includes(String(c?.statut ?? ""));
+      if (close || (Number.isFinite(fin) && fin <= Date.now())) {
+        return NextResponse.json({ ok: false, etat: "terminee", phrase: PHRASE.terminee });
+      }
+      const { error: e } = await supabase
+        .from("clik_participation")
+        .upsert(
+          { campagne_id: campagneId, habitant_id: habitant.id, statut: "confirme", resolu_le: new Date().toISOString() },
+          { onConflict: "campagne_id,habitant_id" }
+        );
+      if (e) throw new Error(e.message);
+      return NextResponse.json({ ok: true, etat: "confirme", phrase: PHRASE.confirme });
+    }
+
     const { data, error } = await supabase.rpc("clik_rejoindre", {
       p_campagne: campagneId,
       p_habitant: habitant.id,
