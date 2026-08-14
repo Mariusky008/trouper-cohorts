@@ -13,7 +13,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { filDeVille, noterAffichages } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
-import { trierLeFil } from "@/lib/direct/fil";
+import { trierLeFil, presse } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication, collectifDe } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
@@ -123,6 +123,7 @@ export default async function LeDirectPage({
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
+    urgent: presse(p.expireLe),
     // LES FAÇONS, MISES EN FORME CÔTÉ SERVEUR. La carte ne reçoit pas les
     // campagnes mais ce qu'elle affiche. Le calcul dépend de l'heure
     // (« Arrivée avant 12 h 47 ») : fait dans la carte, qui est un composant

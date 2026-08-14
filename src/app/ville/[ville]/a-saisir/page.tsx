@@ -21,6 +21,7 @@ import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees, suivis } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
+import { presse } from "@/lib/direct/fil";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -73,6 +74,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
+    urgent: presse(p.expireLe),
     // PAS DE CLIK SUR CET ÉCRAN, et c'est un choix. La carte du swipe se
     // manipule au glissement : une bande cliquable posée dedans se
     // déclencherait par accident à chaque geste raté. Le Clik se découvre

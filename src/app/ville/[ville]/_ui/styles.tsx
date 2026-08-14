@@ -90,10 +90,17 @@ export function StylesDirect() {
 .dir .pic .repli{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 22px 86px;}
 .dir .pic .repli span{font-family:var(--fd),Georgia,serif;font-size:62px;line-height:1;color:#fff;
   letter-spacing:.05em;opacity:.19;}
-.dir .pic .bg{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.94);color:var(--ink);
-  border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
-.dir .pic .bd{position:absolute;top:12px;right:12px;background:rgba(14,42,28,.74);color:#fff;
-  border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
+/* LE NOM ET LA DISTANCE, sur fond sombre translucide : posé en blanc opaque,
+   le badge découpait un trou dans la photo. Il doit se lire sans arracher
+   l'image, puisque c'est l'image qui vend. */
+.dir .pic .bg{position:absolute;top:12px;left:12px;background:rgba(14,42,28,.8);color:#fff;
+  backdrop-filter:blur(8px);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;
+  max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dir .pic .bd{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);color:var(--ink);
+  border-radius:999px;padding:7px 12px;font-size:11.5px;font-weight:800;}
+/* Rouge quand ça presse — et seulement là. Une heure limite toujours rouge ne
+   presse plus personne au bout de trois cartes. */
+.dir .pic .bd.chaud{background:var(--red);color:#fff;}
 /* Le texte posé sur l'image porte une ombre courte. Le voile suffit sur une
    photo ordinaire, mais on ne choisit pas les photos : un commerçant enverra un
    plat très clair sur une nappe blanche, et ce jour-là le voile seul ne tient
@@ -209,7 +216,10 @@ export function StylesDirect() {
 .dir .fac-off{opacity:.5;}
 .dir .fac-off .fac-t b{text-decoration:line-through;}
 
-.dir .post .pf{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);}
+.dir .post .pf{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);}
+/* La sortie vers le commerce prend toute la place qui reste : c'est le geste
+   qui suit la décision, pas une option à côté du cœur. */
+.dir .post .pf .act{flex:1;text-align:center;padding:11px 13px;border-radius:999px;}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
 .dir .act.gh{background:#fff;border:1px solid var(--line2);color:var(--body);}

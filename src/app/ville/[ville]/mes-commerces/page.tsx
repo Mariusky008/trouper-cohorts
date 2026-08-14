@@ -16,6 +16,7 @@ import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
+import { presse } from "@/lib/direct/fil";
 import { Carte, type CarteVue } from "../_ui/carte";
 
 export const dynamic = "force-dynamic";
@@ -137,6 +138,7 @@ export default async function MesCommercesPage({
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
+    urgent: presse(p.expireLe),
     facons: faconsVue(cliksParPub.get(p.id)),
   }));
 

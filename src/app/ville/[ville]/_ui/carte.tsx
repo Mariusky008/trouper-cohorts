@@ -40,6 +40,9 @@ export type CarteVue = {
   lng: number | null;
   fraicheur: string;
   echeance: string;
+  /** Vrai quand l'annonce disparaît dans l'heure. Calculé au serveur : lu ici,
+   *  il ferait diverger le rendu du navigateur de celui du serveur. */
+  urgent: boolean;
   /** LES FAÇONS DE PROFITER DE L'ANNONCE, déjà résumées par le serveur, dans
    *  l'ordre d'affichage (du prix le plus haut au plus bas). Vide quand il n'y
    *  en a aucune, ou qu'elles sont toutes terminées. */
@@ -126,8 +129,14 @@ export function Carte({
           </div>
         )}
         <div className="voile" aria-hidden="true" />
-        {repere ? <span className="bg">{repere}</span> : null}
-        {p.echeance ? <span className="bd">{p.echeance}</span> : null}
+        {/* LE NOM AVEC LA DISTANCE. « Dax » seul, dans Le Direct de Dax, ne dit
+            rien — c'était le badge le plus inutile de la carte. « Chez Bergeron
+            · 350 m » dit à la fois chez qui et à quelle distance, c'est-à-dire
+            les deux choses qui décident si l'on y va. */}
+        <span className="bg">{p.auteurNom}{repere ? ` · ${repere}` : ""}</span>
+        {/* L'échéance passe au ROUGE quand elle presse. Une heure limite dans
+            la même teinte calme que le reste ne presse personne. */}
+        {p.echeance ? <span className={`bd${p.urgent ? " chaud" : ""}`}>{p.echeance}</span> : null}
 
         {/* NIVEAU 2 — LA DÉCISION, puis NIVEAU 3 — LA PREUVE : la fraîcheur.
             « il y a 4 min » est le signal qui sépare ce fil d'un annuaire. */}
@@ -136,14 +145,20 @@ export function Carte({
             <span className={`pastille k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
             {p.fraicheur ? <span className="conf"><i />{p.fraicheur}</span> : null}
             <h3>{p.texte}</h3>
-            <span className="qui">{p.auteurNom}{p.auteurMetier ? ` · ${p.auteurMetier}` : ""}</span>
+            {/* LE MÉTIER SEUL. Le nom du commerce est déjà sur le badge du haut :
+                l'écrire une seconde fois trois lignes plus bas ne disait rien de
+                plus et poussait le titre vers le milieu de l'image. */}
+            <span className="qui">{p.auteurMetier || p.auteurNom}</span>
           </Link>
         ) : (
           <div className="sur">
             <span className={`pastille k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
             {p.fraicheur ? <span className="conf"><i />{p.fraicheur}</span> : null}
             <h3>{p.texte}</h3>
-            <span className="qui">{p.auteurNom}{p.auteurMetier ? ` · ${p.auteurMetier}` : ""}</span>
+            {/* LE MÉTIER SEUL. Le nom du commerce est déjà sur le badge du haut :
+                l'écrire une seconde fois trois lignes plus bas ne disait rien de
+                plus et poussait le titre vers le milieu de l'image. */}
+            <span className="qui">{p.auteurMetier || p.auteurNom}</span>
           </div>
         )}
       </div>
@@ -200,6 +215,9 @@ export function Carte({
         </div>
       )}
 
+      {/* LE SITE DU COMMERCE, en pied et pleine largeur. C'est la sortie vers
+          chez lui — celle qui existait déjà en petit à côté du cœur, et que
+          personne ne voyait. */}
       <div className="pf">
         {fiche ? (
           <Link href={fiche} className="act gh" prefetch={false}>La boutique</Link>

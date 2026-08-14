@@ -58,6 +58,14 @@ export function encoreLa(e: EntreeFil, maintenant: number): boolean {
   return Number.isNaN(t) || t > maintenant;
 }
 
+/** Vrai quand l'annonce disparaît dans l'heure — la MÊME borne que le rang
+ *  « urgent » du tri. Une carte marquée en rouge qui ne serait pas remontée en
+ *  tête du fil dirait deux choses contraires du même instant. */
+export function presse(expireLe: string | null | undefined, maintenant: number = Date.now()): boolean {
+  const t = ms(expireLe);
+  return !Number.isNaN(t) && t > maintenant && t - maintenant <= URGENT_MS;
+}
+
 export function rangDe(e: EntreeFil, maintenant: number): Rang {
   const exp = ms(e.expireLe);
   if (!Number.isNaN(exp) && exp - maintenant <= URGENT_MS) return "urgent";
