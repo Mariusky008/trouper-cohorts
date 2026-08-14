@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
+import { codeDe } from "@/lib/direct/code-bon";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
         libelle: String(l.libelle ?? ""),
         conditionAchat: String(l.condition_achat ?? ""),
         restants: Number(l.restants ?? 0),
+        code: codeDe(campagneId, habitant.id),
       });
     }
 
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
           { onConflict: "campagne_id,habitant_id" }
         );
       if (e) throw new Error(e.message);
-      return NextResponse.json({ ok: true, etat: "confirme", phrase: PHRASE.confirme });
+      return NextResponse.json({ ok: true, etat: "confirme", phrase: PHRASE.confirme, code: codeDe(campagneId, habitant.id) });
     }
 
     const { data, error } = await supabase.rpc("clik_rejoindre", {
@@ -114,6 +116,7 @@ export async function POST(request: Request) {
       ok: etat === "engage" || etat === "liste_attente" || etat === "confirme",
       etat,
       phrase: PHRASE[etat] ?? "",
+      code: codeDe(campagneId, habitant.id),
       participants: Number(l?.participants ?? 0),
       objectif: l?.objectif == null ? null : Number(l.objectif),
     });

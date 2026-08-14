@@ -19,9 +19,10 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { campagneParId, maParticipation, etatDe, phraseClik, avancement, remise, manque, FACON_LABEL } from "@/lib/direct/cliks";
+import { campagneParId, maParticipation, etatDe, phraseClik, avancement, remise, FACON_LABEL } from "@/lib/direct/cliks";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { ActionClik } from "./action-clik";
+import { codeDe } from "@/lib/direct/code-bon";
 
 /**
  * La condition d'achat, telle qu'on peut la lire.
@@ -39,6 +40,10 @@ function conditionLisible(conditions: readonly string[]): string {
   if (/^\d+([.,]\d+)?\s*€?$/.test(t)) return `Valable dès ${t.replace(/\s*€?$/, "")} € d'achat.`;
   return `Condition : ${t}.`;
 }
+
+/** La même icône que sur la ligne du fil : c'est ce qui dit qu'on est bien
+ *  arrivé sur la porte qu'on a poussée. */
+const ICONE: Record<string, string> = { simple: "🕐", cadeau: "🎁", express: "⚡", collectif: "👥" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -88,92 +93,112 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
       </header>
 
       <section className="ck">
-        {/* ① CE QU'ON GAGNE — pour TOUTES les façons qui portent un prix.
-            Le bloc était réservé au collectif : l'express annonçait « prix
-            réduit si vous venez vite » sans jamais dire de combien, et le
-            cadeau ne montrait pas ce qu'on paie. Une offre dont on cache le
-            prix ne se compare à rien. */}
-        {campagne.prixGroupe != null && campagne.prixInitial != null ? (
-          <div className="ck-prix">
-            <span className="ck-barre">{euro(campagne.prixInitial)}</span>
-            <span className="ck-net">{euro(campagne.prixGroupe)}</span>
-            {pct != null && <span className="ck-pct">−{pct} %</span>}
+        {/* UN SEUL BLOC, DE LA COULEUR DE LA FAÇON. L'écran empilait des
+            encarts blancs : rien ne rappelait sur quelle porte on venait
+            d'appuyer, et les trois façons se ressemblaient une fois dedans. */}
+        <div className={`ck-blk b-${campagne.type}`}>
+          <div className="ck-hh">
+            <span className="ck-ic" aria-hidden="true">{ICONE[campagne.type]}</span>
+            <div>
+              <div className="ck-pr">
+                {campagne.prixGroupe != null
+                  ? euro(campagne.prixGroupe)
+                  : campagne.prixInitial != null
+                    ? euro(campagne.prixInitial)
+                    : "Prix habituel"}
+                {/* Le prix barré n'apparaît QUE s'il baisse vraiment. Barré
+                    sur un cadeau, il ferait croire à une remise qui n'existe
+                    pas — le cadeau se prend au prix normal. */}
+                {campagne.prixGroupe != null && campagne.prixInitial != null && (
+                  <span className="ck-old">{euro(campagne.prixInitial)}</span>
+                )}
+              </div>
+              <div className="ck-nm">
+                {campagne.nom || FACON_LABEL[campagne.type]}
+                {pct != null ? ` · −${pct} %` : ""}
+              </div>
+            </div>
           </div>
-        ) : campagne.prixInitial != null ? (
-          // Le cadeau se prend au prix normal : on l'affiche seul, sans barré —
-          // barrer un prix qui ne baisse pas serait un mensonge.
-          <div className="ck-prix">
-            <span className="ck-net">{euro(campagne.prixInitial)}</span>
-            <span className="ck-plus">+ un cadeau</span>
-          </div>
-        ) : null}
 
-        {/* ② OÙ EN EST LE GROUPE */}
-        <div className={`ck-etat ck-${etat}`}>
-          <div className="ck-phrase">{phraseClik(campagne)}</div>
-          {/* Pas de jauge pour l'express ni « à prendre » : ils ne se
-              remplissent pas. Une barre vide sous « prix réduit si vous venez
-              vite » laissait croire qu'on attendait du monde. */}
-          {(campagne.type === "collectif" || campagne.type === "cadeau") && (
-            <div className="ck-jauge" aria-hidden="true">
-              <i style={{ width: `${Math.round(part * 100)}%` }} />
+          <h2>{campagne.titre || "Une offre de la ville"}</h2>
+          <p>{phraseClik(campagne)}</p>
+
+          {/* CE QU'ON PEUT OBTENIR, avant d'appuyer. La séquence est figée et
+              mélangée : on ne peut pas promettre lequel on aura, mais on peut
+              dire ce qu'il reste et à quelle condition — et il le faut. Une
+              condition d'achat découverte APRÈS le clic se lit comme un piège,
+              alors que c'est elle qui rend l'opération tenable. */}
+          {campagne.type === "cadeau" && !participation?.libelle && campagne.aGagner.length > 0 && etat !== "epuise" && (
+            <div className="ck-pool">
+              <div className="ck-pool-t">{campagne.aGagner.length > 1 ? "Un avantage parmi" : "Ce qui vous attend"}</div>
+              <ul className="ck-pool-l">
+                {campagne.aGagner.map((l) => (
+                  <li key={l}>{l}</li>
+                ))}
+              </ul>
+              {campagne.conditions.length > 0 && (
+                <div className="ck-pool-c">{conditionLisible(campagne.conditions)}</div>
+              )}
             </div>
           )}
+
+          {/* LE GROUPE EN PASTILLES. « 2 sur 4 » est un chiffre ; deux ronds
+              pleins et deux vides sont un groupe qu'il manque deux personnes à
+              finir. Même donnée, autre envie. */}
           {campagne.type === "collectif" && campagne.objectif ? (
-            <div className="ck-compte">
-              {campagne.participants} sur {campagne.objectif}
-              {manque(campagne) > 0 ? " personnes" : " — c'est atteint"}
-            </div>
+            <>
+              <div className="ck-pp" aria-hidden="true">
+                {Array.from({ length: Math.min(campagne.objectif, 12) }, (_, i) => (
+                  <i key={i} className={i < campagne.participants ? "" : "vide"}>
+                    {i < campagne.participants ? "✓" : "?"}
+                  </i>
+                ))}
+              </div>
+              <div className="ck-jauge" aria-hidden="true">
+                <i style={{ width: `${Math.round(part * 100)}%` }} />
+              </div>
+            </>
           ) : campagne.total != null ? (
-            <div className="ck-compte">
-              {campagne.restants} sur {campagne.total} encore disponibles
+            <div className="ck-when">
+              <span className="w1">Il en reste</span>
+              <span className="w2">{campagne.restants} sur {campagne.total}</span>
             </div>
           ) : null}
+
+          {/* L'ÉCHÉANCE DANS SON PROPRE ENCADRÉ : en ligne de texte parmi
+              d'autres, elle se lisait après avoir décidé, c'est-à-dire jamais.
+              C'est pourtant la seule contrainte à retenir. */}
+          {fin && (
+            <div className="ck-when">
+              <span className="w1">{campagne.type === "express" ? "Vous devez arriver" : "Jusqu'à"}</span>
+              {/* `echeanceCourte` rend déjà « jusqu'à 18 h 53 » : sous une
+                  étiquette « JUSQU'À », ça donnait « jusqu'à jusqu'à ». */}
+              <span className="w2">{fin.replace(/^jusqu.à\s*/i, "")}</span>
+            </div>
+          )}
+
+          <ActionClik
+            campagneId={campagne.id}
+            ville={ville}
+            type={campagne.type}
+            etat={etat}
+            dejaDedans={dedans}
+            statutInitial={participation?.statut ?? null}
+            gainInitial={
+              participation?.libelle
+                ? { libelle: participation.libelle, condition: participation.conditionAchat ?? "" }
+                : null
+            }
+            // Le même calcul que la route, pour que le code survive à un
+            // rechargement : sans lui, revenir sur la page effacerait ce que le
+            // commerçant doit retrouver.
+            codeInitial={dedans && habitant ? codeDe(campagne.id, habitant.id) : null}
+          />
         </div>
 
-        {/* CE QU'ON PEUT OBTENIR, avant d'appuyer.
-            La séquence des avantages est figée et mélangée à la création : on ne
-            peut donc pas promettre lequel on aura. Mais on peut dire ce qu'il y
-            a dans le stock et à quelle condition — et il le faut. La condition
-            d'achat découverte APRÈS avoir appuyé se lit comme un piège, alors
-            que c'est la règle qui rend l'opération tenable pour le commerce. */}
-        {campagne.type === "cadeau" && !participation?.libelle && campagne.aGagner.length > 0 && etat !== "epuise" && (
-          <div className="ck-pool">
-            <div className="ck-pool-t">{campagne.aGagner.length > 1 ? "Un avantage parmi" : "Ce qui vous attend"}</div>
-            <ul className="ck-pool-l">
-              {campagne.aGagner.map((l) => (
-                <li key={l}>{l}</li>
-              ))}
-            </ul>
-            {/* On ne préfixe QUE si la phrase du commerçant n'est pas déjà une
-                condition complète. « Valable dès 10 € d'achat » se lit ;
-                « Valable 12. » ne veut rien dire — et un commerçant tape « 12 »
-                plus souvent qu'on ne le croit. */}
-            {campagne.conditions.length > 0 && (
-              <div className="ck-pool-c">{conditionLisible(campagne.conditions)}</div>
-            )}
-          </div>
-        )}
-
-        {/* L'avantage obtenu est affiché par `ActionClik`, et par lui seul —
-            qu'il vienne du serveur (on revient sur la page) ou de la réponse
-            au clic (on vient d'appuyer). Deux blocs pour la même chose se
-            retrouvaient tous les deux à l'écran après le rafraîchissement. */}
-        <ActionClik
-          campagneId={campagne.id}
-          ville={ville}
-          type={campagne.type}
-          etat={etat}
-          dejaDedans={dedans}
-          statutInitial={participation?.statut ?? null}
-          gainInitial={
-            participation?.libelle
-              ? { libelle: participation.libelle, condition: participation.conditionAchat ?? "" }
-              : null
-          }
-        />
-
-        {/* ③ CE QU'ON RISQUE — c'est-à-dire rien, et ça se dit. */}
+        {/* CE QU'ON RISQUE — c'est-à-dire rien, et ça se dit. Le filet de
+            sécurité est la moitié de l'argument : sans lui, rejoindre
+            ressemble à un pari. */}
         {campagne.type === "collectif" && (
           <p className="ck-filet">
             Si le groupe n&apos;est pas complet à temps, votre place reste valable au prix

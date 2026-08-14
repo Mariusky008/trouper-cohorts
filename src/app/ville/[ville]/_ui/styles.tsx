@@ -254,54 +254,95 @@ export function StylesDirect() {
 .dir .coeur.on{color:var(--red);}
 
 /* ── L'ÉCRAN D'UN CLIK ────────────────────────────────────────────────────
-   Le prix barré et le prix obtenu sur la même ligne, l'écart entre les deux
-   lisible d'un coup d'œil : c'est l'argument, tout le reste l'explique. */
-.dir .ck{padding:16px;}
-.dir .ck-prix{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
-.dir .ck-barre{font-size:15px;color:var(--faint);text-decoration:line-through;}
-.dir .ck-net{font-family:var(--fd),Georgia,serif;font-size:34px;font-weight:600;color:var(--ink);line-height:1;}
-.dir .ck-pct{background:var(--gl);color:#0E2A1C;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;}
+   UN BLOC, DE LA COULEUR DE LA FAÇON. L'écran était une suite d'encarts blancs
+   posés les uns sous les autres : rien ne rappelait sur quelle porte on venait
+   d'appuyer, et les trois façons se ressemblaient une fois qu'on y était.
+   Le bloc reprend la teinte de la ligne du fil — vert, orange, violet — et
+   c'est ce qui fait qu'on se sait au bon endroit. */
+.dir .ck{padding:20px 16px 0;}
+.dir .ck-blk{border-radius:var(--rx);padding:20px 18px;border:1.5px solid var(--line2);background:var(--paper);}
+.dir .ck-blk.b-cadeau{border-color:#C4E0A8;background:#FBFDF7;}
+.dir .ck-blk.b-express{border-color:#F0D9B4;background:#FDF2E4;}
+.dir .ck-blk.b-collectif{border-color:#CFC8F2;background:#EEEBFB;}
+.dir .ck-hh{display:flex;align-items:center;gap:12px;}
+.dir .ck-ic{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font-size:25px;background:#fff;}
+.dir .ck-pr{font-family:var(--fd),Georgia,serif;font-size:32px;font-weight:700;color:var(--ink);line-height:1;}
+.dir .ck-old{font-family:var(--fd),Georgia,serif;font-size:19px;color:var(--faint);text-decoration:line-through;margin-left:9px;}
+.dir .ck-nm{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;margin-top:5px;}
+.dir .b-cadeau .ck-nm{color:#2C8A4B;}
+.dir .b-express .ck-nm{color:#DB8A2C;}
+.dir .b-collectif .ck-nm{color:#6B5BD4;}
+.dir .b-simple .ck-nm{color:var(--soft);}
+.dir .ck-blk h2{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:700;color:var(--ink);
+  margin:15px 0 0;line-height:1.25;}
+.dir .ck-blk p{font-size:14px;color:var(--soft);margin:8px 0 0;line-height:1.55;}
 
-.dir .ck-etat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;}
-.dir .ck-phrase{font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;}
-.dir .ck-jauge{height:7px;border-radius:4px;background:var(--line2);margin-top:11px;overflow:hidden;}
-.dir .ck-jauge i{display:block;height:100%;background:var(--g);border-radius:4px;transition:width .3s ease;}
-.dir .ck-compte{font-size:10.5px;color:var(--soft);margin-top:7px;}
-/* Le lime marque le moment où le geste compte le plus, ici comme dans le fil. */
-.dir .ck-presque{background:var(--gs);border-color:#CDE6A6;}
-.dir .ck-presque .ck-jauge i{background:var(--gl);}
-.dir .ck-epuise .ck-jauge i,.dir .ck-terminee .ck-jauge i{background:var(--faint);}
+/* L'ÉCHÉANCE DANS SON PROPRE ENCADRÉ BLANC. En ligne de texte parmi d'autres,
+   elle se lisait après avoir décidé — c'est-à-dire jamais. C'est pourtant la
+   seule contrainte que l'habitant doit retenir. */
+.dir .ck-when{display:flex;flex-direction:column;background:#fff;border-radius:var(--rm);
+  padding:12px 14px;margin-top:14px;}
+.dir .ck-when .w1{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--soft);font-weight:800;}
+.dir .ck-when .w2{font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:700;color:var(--ink);margin-top:3px;}
 
-.dir .ck-pool{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;}
-.dir .ck-pool-t{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--soft);}
-/* Sans puce : à un seul avantage, une liste à puces fait bureaucratique, et le
-   titre au-dessus dit déjà qu'il y en a plusieurs quand c'est le cas. */
-.dir .ck-pool-l{margin:6px 0 0;padding:0;list-style:none;}
-.dir .ck-pool-l li{font-size:14px;color:var(--ink);line-height:1.45;font-weight:600;}
-.dir .ck-pool-l li + li{margin-top:3px;}
-/* La condition d'achat n'est pas une mention légale en bas de page : c'est la
-   règle du jeu, et elle se lit avant d'appuyer, à la même taille que le reste. */
-.dir .ck-pool-c{font-size:11.5px;color:var(--soft);margin-top:9px;line-height:1.5;}
+/* LES PARTICIPANTS EN PASTILLES. « 2 sur 4 » est un chiffre ; deux ronds
+   pleins et deux vides sont un groupe qu'il manque deux personnes à finir.
+   C'est la même donnée, et ce n'est pas la même envie. */
+.dir .ck-pp{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap;}
+/* « flex:none » : sans lui, les pastilles s'étirent en ellipses dans la ligne
+   flexible qui les contient — un rond aplati ne se lit plus comme quelqu'un. */
+.dir .ck-pp i{width:34px;height:34px;flex:none;border-radius:50%;background:#6B5BD4;display:flex;
+  align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:800;font-style:normal;}
+.dir .ck-pp i.vide{background:transparent;border:2px dashed #CFC8F2;color:var(--faint);}
+.dir .ck-jauge{height:8px;border-radius:5px;background:rgba(107,91,212,.18);overflow:hidden;margin-top:12px;}
+.dir .ck-jauge i{display:block;height:100%;background:#6B5BD4;border-radius:5px;transition:width .3s ease;}
 
-
-.dir .ck-b{width:100%;margin-top:14px;padding:15px;border-radius:26px;border:none;background:var(--ink);
-  color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+.dir .ck-b{width:100%;margin-top:14px;padding:15px;border-radius:999px;border:none;background:var(--ink);
+  color:#fff;font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:700;cursor:pointer;}
 .dir .ck-b:disabled{background:var(--line2);color:var(--faint);cursor:default;}
-.dir .ck-msg{margin-top:10px;font-size:11.5px;color:var(--red);font-weight:600;line-height:1.5;}
+.dir .ck-msg{margin-top:12px;font-size:13.5px;color:var(--red);font-weight:600;line-height:1.5;}
 
-.dir .ck-fait{margin-top:14px;background:var(--ink);color:#fff;border-radius:14px;padding:15px;}
-.dir .ck-fait-t{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;}
-/* L'avantage obtenu, sur le bandeau sombre : c'est la ligne qu'on relit, et
-   celle qu'on montrera au commerçant. Le lime la sépare du reste sans crier. */
-.dir .ck-fait-g{font-size:15px;font-weight:700;color:var(--gl);margin-top:8px;line-height:1.4;}
-.dir .ck-fait-g span{color:#9DB5A8;font-weight:600;font-size:12px;}
-.dir .ck-fait-s{font-size:11.5px;color:#9DB5A8;margin-top:6px;line-height:1.55;}
-.dir .ck-fini{margin-top:14px;font-size:12.5px;color:var(--soft);line-height:1.6;}
-.dir .ck-fini a{color:var(--gd);font-weight:700;}
+/* ── CE QU'ON PEUT OBTENIR ─────────────────────────────────────────────── */
+.dir .ck-pool{margin-top:14px;background:#fff;border-radius:var(--rm);padding:14px;}
+.dir .ck-pool-t{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:var(--soft);}
+.dir .ck-pool-l{margin:7px 0 0;padding:0;list-style:none;}
+.dir .ck-pool-l li{font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:700;color:var(--ink);line-height:1.35;}
+.dir .ck-pool-l li + li{margin-top:4px;}
+.dir .ck-pool-c{font-size:13px;color:var(--soft);margin-top:8px;line-height:1.5;}
 
-.dir .ck-filet{font-size:11.5px;color:var(--soft);line-height:1.6;margin:14px 0 0;}
-.dir .ck-note{font-size:10.5px;color:var(--faint);line-height:1.6;margin:9px 0 0;}
-.dir .ck-retour{display:inline-block;margin-top:18px;font-size:12px;font-weight:700;color:var(--soft);text-decoration:none;}
+/* ── L'ÉCRAN DE CONFIRMATION ──────────────────────────────────────────────
+   Centré, avec une pastille pleine : c'est le seul moment où l'application a
+   quelque chose à célébrer, et elle le faisait dans un encart de la taille
+   d'un message d'erreur. */
+.dir .ck-fait{text-align:center;padding:4px 0 0;}
+.dir .ck-sl{width:92px;height:92px;border-radius:50%;margin:24px auto 0;display:flex;align-items:center;
+  justify-content:center;font-size:40px;color:#fff;background:#2C8A4B;}
+.dir .ck-sl.s-express{background:#DB8A2C;}
+.dir .ck-sl.s-collectif{background:#6B5BD4;}
+.dir .ck-fait-k{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);
+  font-weight:800;margin-top:18px;}
+.dir .ck-fait-t{font-family:var(--fd),Georgia,serif;font-size:27px;font-weight:700;color:var(--ink);
+  margin-top:12px;line-height:1.24;letter-spacing:-.3px;}
+.dir .ck-fait-g{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:700;color:var(--ink);
+  margin-top:8px;line-height:1.3;}
+.dir .ck-fait-g span{display:block;font-family:var(--fb),system-ui,sans-serif;font-size:14px;
+  font-weight:400;color:var(--soft);margin-top:6px;}
+.dir .ck-fait-s{font-size:14.5px;color:var(--body);margin-top:11px;line-height:1.5;}
+/* LE BON À PRÉSENTER. Sans code, « c'est réservé » n'est qu'une promesse à
+   l'écran : le commerçant n'a rien à quoi se raccrocher quand la personne
+   arrive. */
+.dir .ck-code{display:inline-flex;align-items:center;gap:8px;border:1.5px solid #C4E0A8;border-radius:999px;
+  padding:11px 21px;font-size:14.5px;color:#2C8A4B;font-weight:600;margin-top:16px;}
+.dir .ck-code i{width:7px;height:7px;border-radius:50%;background:var(--gl);font-style:normal;}
+.dir .ck-code b{font-family:var(--fd),Georgia,serif;letter-spacing:.06em;color:var(--ink);}
+.dir .ck-fini{margin-top:14px;font-size:14px;color:var(--soft);line-height:1.6;text-align:center;}
+.dir .ck-fini a{color:#2C8A4B;font-weight:700;}
+
+.dir .ck-filet{font-size:13.5px;color:var(--soft);line-height:1.6;margin:16px 0 0;}
+.dir .ck-note{font-size:12.5px;color:var(--faint);line-height:1.6;margin:10px 0 0;}
+.dir .ck-retour{display:inline-block;margin-top:22px;font-family:var(--fd),Georgia,serif;font-size:15.5px;
+  font-weight:700;color:var(--ink);text-decoration:none;border-bottom:2px solid var(--gl);padding-bottom:3px;}
 
 /* ── état vide ───────────────────────────────────────────────────────────── */
 .dir .vide{margin:16px;padding:26px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;text-align:center;}

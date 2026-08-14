@@ -24,6 +24,7 @@ export function ActionClik({
   dejaDedans,
   statutInitial,
   gainInitial,
+  codeInitial,
 }: {
   campagneId: string;
   ville: string;
@@ -33,6 +34,8 @@ export function ActionClik({
   statutInitial: string | null;
   /** L'avantage déjà obtenu, connu du serveur quand on revient sur la page. */
   gainInitial: { libelle: string; condition: string } | null;
+  /** Le code, quand le serveur le connaît déjà (on revient sur la page). */
+  codeInitial: string | null;
 }) {
   const router = useRouter();
   const [envoi, setEnvoi] = useState(false);
@@ -47,28 +50,32 @@ export function ActionClik({
    *  dire quoi, le temps qu'une requête revienne, transforme le moment de la
    *  récompense en écran de chargement. */
   const [gagne, setGagne] = useState(gainInitial);
+  /** Le code à présenter, renvoyé par le serveur au moment de l'engagement. */
+  const [code, setCode] = useState(codeInitial);
 
   // Déjà dedans : on ne propose plus rien, on confirme. Laisser le bouton
   // actif inviterait à réappuyer, et un second appel ne peut que renvoyer la
   // même chose — l'écran donnerait l'impression de ne pas avoir enregistré.
   if (dedans) {
+    const attente = statut === "liste_attente";
     return (
       <div className="ck-fait">
+        {/* UNE PASTILLE PLEINE, ET CENTRÉE. C'est le seul moment où
+            l'application a quelque chose à célébrer, et elle le faisait dans un
+            encart de la taille d'un message d'erreur. */}
+        <div className={`ck-sl s-${type}`} aria-hidden="true">{attente ? "⏳" : "✓"}</div>
+        <div className="ck-fait-k">{attente ? "En liste d'attente" : "C'est confirmé"}</div>
         <div className="ck-fait-t">
-          {statut === "liste_attente"
-            ? "Vous êtes en liste d'attente"
-            : gagne
-              ? "C'est à vous"
-              : "Vous en êtes"}
+          {attente ? "Vous êtes en liste d'attente" : gagne ? "C'est à vous" : "Vous en êtes"}
         </div>
         {gagne && (
           <div className="ck-fait-g">
             {gagne.libelle}
-            {gagne.condition ? <span> · valable {gagne.condition}</span> : null}
+            {gagne.condition ? <span>valable {gagne.condition}</span> : null}
           </div>
         )}
         <div className="ck-fait-s">
-          {statut === "liste_attente"
+          {attente
             ? "Le groupe est complet. Si quelqu'un se désiste, la place est pour vous et vous serez prévenu."
             : type === "collectif"
               ? "Vous serez prévenu dès que le groupe est au complet."
@@ -78,6 +85,12 @@ export function ActionClik({
                   ? "Le créneau est à vous. Présentez-vous au commerce à l'heure prévue."
                   : "Présentez-vous au commerce, votre avantage vous y attend."}
         </div>
+        {/* LE CODE À PRÉSENTER. Sans lui, « c'est confirmé » n'est qu'une
+            promesse à l'écran : le commerçant n'a rien à quoi se raccrocher
+            quand la personne se présente. */}
+        {code && !attente && (
+          <div className="ck-code"><i />Code <b>{code}</b></div>
+        )}
       </div>
     );
   }
@@ -112,6 +125,7 @@ export function ActionClik({
         setDedans(true);
         setStatut(String(j.etat ?? "engage"));
         if (j.libelle) setGagne({ libelle: String(j.libelle), condition: String(j.conditionAchat ?? "") });
+        if (j.code) setCode(String(j.code));
         // Le compteur du groupe a changé pour tout le monde : on rafraîchit les
         // données du serveur pour que la jauge au-dessus dise la vérité, sans
         // recharger la page ni perdre l'état de ce composant.
