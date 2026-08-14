@@ -20,7 +20,6 @@
 //      affichent encore le menu de midi et paraissent mortes.
 import { heureLocale } from "./degradation";
 import { modeleDuMetier } from "./modeles-fiche";
-import type { Publication } from "./publications";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -96,51 +95,13 @@ function minuteLocale(quand: Date): number {
   }
 }
 
-/** Ce qu'un moment met en avant. Une famille absente n'est pas exclue : elle
- *  passe simplement après. */
-const EN_TETE: Record<Moment, ReadonlySet<string>> = {
-  matin: new Set(["offre", "ville"]),
-  dejeuner: new Set(["menu"]),
-  apresmidi: new Set(["place"]),
-  soir: new Set(["evenement", "menu"]),
-  nuit: new Set(),
-};
-
-const MS_LOIN = Number.MAX_SAFE_INTEGER;
-
-/** Millisecondes avant disparition. Sans échéance : traité comme très loin,
- *  donc en fin de groupe — jamais exclu. */
-function expireDans(p: Pick<Publication, "expireLe">, maintenant: number): number {
-  const t = p.expireLe ? Date.parse(p.expireLe) : NaN;
-  return Number.isFinite(t) ? Math.max(0, t - maintenant) : MS_LOIN;
-}
-
-/**
- * Le tri du fil pour un moment donné.
- *
- * Deux groupes seulement — « ce que ce moment met en avant », puis le reste — et
- * dans chaque groupe, la plus courte échéance d'abord. Volontairement simple :
- * un score pondéré à cinq facteurs se règle au doigt mouillé et devient
- * indébogable au premier utilisateur qui trouve l'ordre bizarre.
- */
-export function trierParMoment<T extends Pick<Publication, "famille" | "expireLe" | "publieLe">>(
-  publications: readonly T[],
-  moment: Moment = momentDuJour(),
-  maintenant: number = Date.now()
-): T[] {
-  const tete = EN_TETE[moment];
-  return [...publications].sort((a, b) => {
-    const ga = tete.has(String(a.famille)) ? 0 : 1;
-    const gb = tete.has(String(b.famille)) ? 0 : 1;
-    if (ga !== gb) return ga - gb;
-    const ea = expireDans(a, maintenant);
-    const eb = expireDans(b, maintenant);
-    if (ea !== eb) return ea - eb;
-    // À égalité stricte, le plus récent d'abord : c'est le seul cas où la
-    // chronologie a encore un sens.
-    return Date.parse(str(b.publieLe)) - Date.parse(str(a.publieLe));
-  });
-}
+// LE TRI DU FIL A DÉMÉNAGÉ dans `fil.ts`, et il n'y a plus qu'une règle : celle
+// du §3 — expire dans l'heure, collectif proche du seuil, vient d'arriver, puis
+// proximité. Ce module gardait sa propre version, qui mettait les menus en tête
+// à midi ; deux tris pour un même fil auraient fini par se contredire.
+//
+// Le moment du jour reste utile, mais pour autre chose : il choisit la pastille
+// PRÉ-SÉLECTIONNÉE. Il oriente l'attention, il n'ordonne plus rien.
 
 /** Le libellé du moment, côté habitant. « nuit » n'a pas de nom : à 3 h du
  *  matin on ne met rien en avant, et l'écran garde son titre habituel. */
