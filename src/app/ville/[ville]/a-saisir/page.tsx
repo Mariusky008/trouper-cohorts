@@ -73,6 +73,11 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
+    // PAS DE CLIK SUR CET ÉCRAN, et c'est un choix. La carte du swipe se
+    // manipule au glissement : une bande cliquable posée dedans se
+    // déclencherait par accident à chaque geste raté. Le Clik se découvre
+    // dans le fil, où il a la place d'exister.
+    clik: null,
   }));
 
   return (

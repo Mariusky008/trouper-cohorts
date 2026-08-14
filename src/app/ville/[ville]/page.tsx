@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { filDeVille, noterAffichages, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
 import { trierLeFil } from "@/lib/direct/fil";
+import { cliksDeVille, parPublication, phraseClik, avancement, etatDe } from "@/lib/direct/cliks";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
@@ -73,6 +74,11 @@ export default async function LeDirectPage({
 
   const mesGardees = habitant ? await gardees(supabase, habitant.id) : new Set<string>();
 
+  // Les Cliks en cours dans la ville, indexés par annonce. Une lecture de plus,
+  // mais elle change l'ordre du fil autant que son contenu : sans elle, un
+  // groupe à 5/6 se noie au milieu des annonces ordinaires.
+  const cliksParPub = parPublication(await cliksDeVille(supabase, cfg.slug));
+
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
   let visibles = publications;
   if (filtre === "pres") {
@@ -86,17 +92,33 @@ export default async function LeDirectPage({
   }
 
   // L'ORDRE DU FIL — la règle du §3, à la place du simple ordre chronologique.
-  // Ce qui expire dans l'heure passe devant, puis le reste.
+  // Ce qui expire dans l'heure passe devant, puis les collectifs proches du
+  // seuil, puis les nouveautés.
   //
-  // Deux des quatre rangs ne sont pas encore alimentés, et c'est volontaire
-  // plutôt qu'oublié : la DISTANCE ne se connaît qu'au navigateur (la position
-  // n'est jamais envoyée au serveur), et les CAMPAGNES collectives ne sont pas
-  // encore rattachées aux publications. Les deux entrées existent dans
-  // `trierLeFil` ; les brancher ne changera pas une ligne ici.
+  // La DISTANCE reste vide, et c'est volontaire plutôt qu'oublié : elle ne se
+  // connaît qu'au navigateur, la position n'étant jamais envoyée au serveur.
+  //
+  // Le rang « presque » est désormais alimenté : un collectif à qui il manque
+  // deux personnes passe devant une nouveauté. C'est le seul cas où l'habitant
+  // peut changer le résultat pour tout le monde, et le fil doit le mettre là où
+  // ça se voit.
+  //
   // L'horloge est lue DANS `trierLeFil`, pas ici : un `Date.now()` dans le corps
   // du composant rend le rendu impur, et la règle `react-hooks/purity` le refuse
   // — à raison, puisque deux rendus du même état donneraient deux résultats.
-  visibles = trierLeFil(visibles.map((p) => ({ ...p, distanceM: null, collectif: null })));
+  visibles = trierLeFil(
+    visibles.map((p) => {
+      const c = cliksParPub.get(p.id);
+      return {
+        ...p,
+        distanceM: null,
+        collectif:
+          c && c.type === "collectif" && c.objectif
+            ? { participants: c.participants, objectif: c.objectif }
+            : null,
+      };
+    })
+  );
 
   const cartes: CarteVue[] = visibles.map((p) => ({
     id: p.id,
@@ -113,6 +135,17 @@ export default async function LeDirectPage({
     lng: p.lng,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
+    // LE CLIK, RÉSUMÉ CÔTÉ SERVEUR. La carte ne reçoit pas la campagne entière
+    // mais les trois choses qu'elle affiche — la phrase, l'avancement, l'état.
+    // Le calcul dépend de l'heure : fait dans la carte (composant client), il
+    // divergerait entre le rendu serveur et l'hydratation.
+    clik: (() => {
+      const c = cliksParPub.get(p.id);
+      if (!c) return null;
+      const e = etatDe(c);
+      if (e === "terminee") return null; // une opération finie n'a rien à faire sur la carte
+      return { id: c.id, type: c.type, phrase: phraseClik(c), part: avancement(c), etat: e };
+    })(),
   }));
 
   // Après avoir décidé ce qui s'affiche, pas avant : on ne compte que ce qui est

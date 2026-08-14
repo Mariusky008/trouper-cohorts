@@ -125,12 +125,88 @@ export function StylesDirect() {
 /* « Ma ville » ne vend rien : elle reste en retrait, sur un parchemin calme,
    là où les quatre autres réclament un geste. */
 .dir .k-ville{background:#F1E6CE;color:#6B4E12;}        /*  6,22:1 */
+/* ── LE CLIK SUR LA CARTE ─────────────────────────────────────────────────
+   Une bande pleine largeur, pas un bouton parmi d'autres. C'est le seul
+   endroit du fil où le geste de l'habitant change quelque chose POUR LES
+   AUTRES, et ça doit se voir avant d'être lu.
+
+   L'état colore la bande, et il n'y en a que trois qui appellent un geste :
+     · ouverte  → calme, on informe ;
+     · presque  → lime : il manque deux personnes, c'est maintenant que ça se
+                  joue, et c'est la seule couleur d'urgence du fil ;
+     · complete → vert plein : c'est gagné, on le dit franchement.
+   « epuise » garde la bande grise plutôt que de la retirer : disparaître
+   ferait croire qu'il n'y a jamais rien eu. */
+.dir .clk{display:block;text-decoration:none;padding:10px 12px 11px;border-top:1px solid var(--line);
+  background:var(--bg);}
+.dir .clk-h{display:flex;align-items:baseline;gap:8px;}
+.dir .clk-t{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:var(--soft);flex:none;}
+.dir .clk-p{font-size:12px;font-weight:700;color:var(--ink);line-height:1.25;}
+.dir .clk-j{display:block;height:5px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
+.dir .clk-j i{display:block;height:100%;background:var(--g);border-radius:3px;}
+.dir .clk-presque{background:var(--gs);}
+.dir .clk-presque .clk-t{color:var(--gd);}
+.dir .clk-presque .clk-j i{background:var(--gl);}
+.dir .clk-complete .clk-j i{background:var(--g);}
+.dir .clk-epuise .clk-p{color:var(--soft);}
+.dir .clk-epuise .clk-j i{background:var(--faint);}
+
 .dir .post .pf{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
 .dir .act.gh{background:#fff;border:1px solid var(--line2);color:var(--body);}
 .dir .coeur{margin-left:auto;font-size:17px;color:var(--faint);background:none;border:none;cursor:pointer;padding:2px 4px;line-height:1;}
 .dir .coeur.on{color:var(--red);}
+
+/* ── L'ÉCRAN D'UN CLIK ────────────────────────────────────────────────────
+   Le prix barré et le prix obtenu sur la même ligne, l'écart entre les deux
+   lisible d'un coup d'œil : c'est l'argument, tout le reste l'explique. */
+.dir .ck{padding:16px;}
+.dir .ck-prix{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.dir .ck-barre{font-size:15px;color:var(--faint);text-decoration:line-through;}
+.dir .ck-net{font-family:var(--fd),Georgia,serif;font-size:34px;font-weight:600;color:var(--ink);line-height:1;}
+.dir .ck-pct{background:var(--gl);color:#0E2A1C;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;}
+
+.dir .ck-etat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;}
+.dir .ck-phrase{font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;}
+.dir .ck-jauge{height:7px;border-radius:4px;background:var(--line2);margin-top:11px;overflow:hidden;}
+.dir .ck-jauge i{display:block;height:100%;background:var(--g);border-radius:4px;transition:width .3s ease;}
+.dir .ck-compte{font-size:10.5px;color:var(--soft);margin-top:7px;}
+/* Le lime marque le moment où le geste compte le plus, ici comme dans le fil. */
+.dir .ck-presque{background:var(--gs);border-color:#CDE6A6;}
+.dir .ck-presque .ck-jauge i{background:var(--gl);}
+.dir .ck-epuise .ck-jauge i,.dir .ck-terminee .ck-jauge i{background:var(--faint);}
+
+.dir .ck-pool{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;}
+.dir .ck-pool-t{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--soft);}
+/* Sans puce : à un seul avantage, une liste à puces fait bureaucratique, et le
+   titre au-dessus dit déjà qu'il y en a plusieurs quand c'est le cas. */
+.dir .ck-pool-l{margin:6px 0 0;padding:0;list-style:none;}
+.dir .ck-pool-l li{font-size:14px;color:var(--ink);line-height:1.45;font-weight:600;}
+.dir .ck-pool-l li + li{margin-top:3px;}
+/* La condition d'achat n'est pas une mention légale en bas de page : c'est la
+   règle du jeu, et elle se lit avant d'appuyer, à la même taille que le reste. */
+.dir .ck-pool-c{font-size:11.5px;color:var(--soft);margin-top:9px;line-height:1.5;}
+
+
+.dir .ck-b{width:100%;margin-top:14px;padding:15px;border-radius:26px;border:none;background:var(--ink);
+  color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+.dir .ck-b:disabled{background:var(--line2);color:var(--faint);cursor:default;}
+.dir .ck-msg{margin-top:10px;font-size:11.5px;color:var(--red);font-weight:600;line-height:1.5;}
+
+.dir .ck-fait{margin-top:14px;background:var(--ink);color:#fff;border-radius:14px;padding:15px;}
+.dir .ck-fait-t{font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;}
+/* L'avantage obtenu, sur le bandeau sombre : c'est la ligne qu'on relit, et
+   celle qu'on montrera au commerçant. Le lime la sépare du reste sans crier. */
+.dir .ck-fait-g{font-size:15px;font-weight:700;color:var(--gl);margin-top:8px;line-height:1.4;}
+.dir .ck-fait-g span{color:#9DB5A8;font-weight:600;font-size:12px;}
+.dir .ck-fait-s{font-size:11.5px;color:#9DB5A8;margin-top:6px;line-height:1.55;}
+.dir .ck-fini{margin-top:14px;font-size:12.5px;color:var(--soft);line-height:1.6;}
+.dir .ck-fini a{color:var(--gd);font-weight:700;}
+
+.dir .ck-filet{font-size:11.5px;color:var(--soft);line-height:1.6;margin:14px 0 0;}
+.dir .ck-note{font-size:10.5px;color:var(--faint);line-height:1.6;margin:9px 0 0;}
+.dir .ck-retour{display:inline-block;margin-top:18px;font-size:12px;font-weight:700;color:var(--soft);text-decoration:none;}
 
 /* ── état vide ───────────────────────────────────────────────────────────── */
 .dir .vide{margin:16px;padding:26px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;text-align:center;}

@@ -40,6 +40,17 @@ export type CarteVue = {
   lng: number | null;
   fraicheur: string;
   echeance: string;
+  /** Le Clik attaché à l'annonce, déjà résumé par le serveur. `null` quand il
+   *  n'y en a pas, ou quand il est terminé. */
+  clik: {
+    id: string;
+    type: "cadeau" | "collectif";
+    /** « Encore 2 personnes et le prix baisse », « Il en reste 3 ». */
+    phrase: string;
+    /** Avancement entre 0 et 1, pour la jauge. */
+    part: number;
+    etat: "ouverte" | "presque" | "complete" | "epuise";
+  } | null;
 };
 
 export function Carte({
@@ -127,6 +138,23 @@ export function Carte({
           </div>
         )}
       </div>
+
+      {/* LE CLIK, sous l'image et au-dessus des actions ordinaires.
+          Il n'est pas « une action de plus » : c'est le seul endroit du fil où
+          le geste de l'habitant change quelque chose pour les autres. Il occupe
+          donc toute la largeur, avec sa jauge — noyé parmi « La boutique » et le
+          cœur, il ne se distinguerait plus d'un lien. */}
+      {p.clik && (
+        <Link href={`/ville/${ville}/clik/${p.clik.id}`} className={`clk clk-${p.clik.etat}`} prefetch={false}>
+          <span className="clk-h">
+            <span className="clk-t">{p.clik.type === "collectif" ? "À plusieurs" : "Pour les premiers"}</span>
+            <span className="clk-p">{p.clik.phrase}</span>
+          </span>
+          <span className="clk-j" aria-hidden="true">
+            <i style={{ width: `${Math.round(p.clik.part * 100)}%` }} />
+          </span>
+        </Link>
+      )}
 
       <div className="pf">
         {fiche ? (
