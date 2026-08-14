@@ -11,11 +11,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { filDeVille, noterAffichages, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
+import { filDeVille, noterAffichages } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
 import { trierLeFil } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication, collectifDe } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
+import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
@@ -40,13 +41,6 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   };
 }
 
-const FILTRES: Array<{ cle: string; label: string }> = [
-  { cle: "", label: "Tout" },
-  { cle: "pres", label: "Près de moi" },
-  { cle: "offre", label: FAMILLE_LABEL.offre + "s" },
-  { cle: "place", label: "Places" },
-  { cle: "ville", label: FAMILLE_LABEL.ville },
-];
 
 export default async function LeDirectPage({
   params,
@@ -57,7 +51,11 @@ export default async function LeDirectPage({
 }) {
   const { ville } = await params;
   const sp = await searchParams;
-  const filtre = String(Array.isArray(sp.f) ? sp.f[0] : sp.f || "");
+  // L'onglet demandé. Un paramètre inconnu retombe sur « tout » plutôt que de
+  // vider le fil : un lien partagé qui donne un écran vide se lit comme une
+  // panne, pas comme une faute de frappe.
+  const brut = String(Array.isArray(sp.f) ? sp.f[0] : sp.f || "");
+  const onglet: Onglet = estOnglet(brut) ? brut : "tout";
 
   const supabase = createAdminClient();
   const [cfg, habitant] = await Promise.all([configVille(supabase, ville), habitantCourant(supabase)]);
@@ -81,16 +79,11 @@ export default async function LeDirectPage({
   const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
 
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
-  let visibles = publications;
-  if (filtre === "pres") {
-    // Sans position, « près de moi » ne peut pas trier par distance. On tombe
-    // sur le secteur déclaré dans l'onglet Moi — et si rien n'est déclaré, on
-    // n'invente pas un tri : on montre tout, l'onglet Moi propose de le régler.
-    const q = habitant?.quartier;
-    if (q) visibles = publications.filter((p) => p.quartier === q);
-  } else if (estFamille(filtre)) {
-    visibles = publications.filter((p) => p.famille === (filtre as Famille));
-  }
+  // LE FILTRE SUIT L'INTENTION, pas notre taxonomie. On ne cherche pas « une
+  // publication de famille place », on cherche à déjeuner ou un créneau chez le
+  // coiffeur. C'est le MÉTIER qui décide, pas la famille : un restaurant qui
+  // annonce une place libre relève quand même du déjeuner.
+  const visibles = publications.filter((p) => dansOnglet(p, onglet));
 
   // L'ORDRE DU FIL — la règle du §3, à la place du simple ordre chronologique.
   // Ce qui expire dans l'heure passe devant, puis les collectifs proches du
@@ -107,7 +100,7 @@ export default async function LeDirectPage({
   // L'horloge est lue DANS `trierLeFil`, pas ici : un `Date.now()` dans le corps
   // du composant rend le rendu impur, et la règle `react-hooks/purity` le refuse
   // — à raison, puisque deux rendus du même état donneraient deux résultats.
-  visibles = trierLeFil(
+  const triees = trierLeFil(
     visibles.map((p) => {
       // Parmi les façons, seule la « table à partager » peut basculer : c'est
       // elle que le rang « presque » du §3 doit voir.
@@ -115,7 +108,7 @@ export default async function LeDirectPage({
     })
   );
 
-  const cartes: CarteVue[] = visibles.map((p) => ({
+  const cartes: CarteVue[] = triees.map((p) => ({
     id: p.id,
     famille: p.famille,
     texte: p.texte,
@@ -140,17 +133,30 @@ export default async function LeDirectPage({
   // Après avoir décidé ce qui s'affiche, pas avant : on ne compte que ce qui est
   // réellement passé sous les yeux, filtre compris. Sans `await` bloquant le
   // rendu — un compteur légèrement bas vaut mieux qu'une page qui attend.
-  void noterAffichages(supabase, visibles);
+  void noterAffichages(supabase, triees);
 
   const maj = publications.length ? ilYA(publications[0].publieLe) : "";
+  const def = DEFS.find((d) => d.cle === onglet) ?? DEFS[0];
 
   return (
     <>
+      {/* LE TITRE SUIT L'ONGLET. « Ce qui se passe maintenant à Dax » et « On
+          mange quoi maintenant ? » ne sont pas la même question, et l'écran
+          doit répondre à celle qu'on vient de poser. Un titre fixe au-dessus
+          d'un filtre qui change donne l'impression d'un tableau de bord ; un
+          titre qui suit donne l'impression d'avoir été compris. */}
       <header className="fhead">
-        <div className="live"><span className="dot" aria-hidden="true" />En direct</div>
-        <h1>Le Direct de {cfg.nom}</h1>
+        <div className="live"><span className="dot" aria-hidden="true" />En direct · {cfg.nom}</div>
+        <h1>
+          {def.titre(cfg.nom).split("\n").map((l, i) => (
+            <span key={i} className="lg">{l}</span>
+          ))}
+        </h1>
         <div className="upd">
-          Tout ce qui se passe à {cfg.nom}
+          {/* Le sous-titre est COMPTÉ, jamais annoncé : un chiffre inventé se
+              démonte au premier coup d'œil au fil, et c'est la seule chose que
+              cette application vend — que ce qui est écrit soit vrai. */}
+          {sousTitre(visibles, onglet) || `Tout ce qui se passe à ${cfg.nom}`}
           {maj ? ` · mis à jour ${maj}` : ""}
         </div>
       </header>
@@ -179,15 +185,15 @@ export default async function LeDirectPage({
         )}
       </section>
 
-      <nav className="chips" aria-label="Filtrer le fil">
-        {FILTRES.map((f) => (
+      <nav className="chips" aria-label="Ce que vous cherchez">
+        {DEFS.map((d) => (
           <Link
-            key={f.cle || "tout"}
-            href={f.cle ? `/ville/${ville}?f=${f.cle}` : `/ville/${ville}`}
-            className={`chip${filtre === f.cle ? " on" : ""}`}
+            key={d.cle}
+            href={d.cle === "tout" ? `/ville/${ville}` : `/ville/${ville}?f=${d.cle}`}
+            className={`chip${onglet === d.cle ? " on" : ""}`}
             scroll={false}
           >
-            {f.label}
+            {d.label}
           </Link>
         ))}
         <BoutonPosition />
@@ -217,8 +223,8 @@ export default async function LeDirectPage({
           <h3>{cfg.active ? "Rien de neuf pour l'instant" : `${cfg.nom} n'est pas encore couverte`}</h3>
           <p>
             {cfg.active
-              ? filtre
-                ? "Aucune publication ne correspond à ce filtre en ce moment. Le fil ne garde que ce qui est encore vrai — revenez tout à l'heure."
+              ? onglet !== "tout"
+                ? "Rien dans cette catégorie en ce moment. Le fil ne garde que ce qui est encore vrai — essayez « Tout », ou revenez tout à l'heure."
                 : "Le fil ne garde que ce qui est encore vrai aujourd'hui. Les commerçants publient au fil de la journée : revenez tout à l'heure."
               : "Aucun commerce n'a encore rejoint Le Direct ici. C'est en train de se construire, ville par ville."}
           </p>

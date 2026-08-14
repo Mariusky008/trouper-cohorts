@@ -29,11 +29,16 @@ export function StylesDirect() {
 
 /* ── en-tête ─────────────────────────────────────────────────────────────── */
 .dir .fhead{background:var(--ink);color:#fff;padding:22px 16px 15px;}
-.dir .fhead h1{font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:600;margin:0;}
+/* LE TITRE EN DEUX TEMPS. La coupure est décidée, pas subie : « Ce qui se
+   passe / maintenant à Dax » se lit comme une phrase dite, alors qu'une
+   coupure au hasard de la largeur se lit comme un bug de mise en page. */
+.dir .fhead h1{font-family:var(--fd),Georgia,serif;font-size:27px;font-weight:600;margin:10px 0 0;
+  line-height:1.14;letter-spacing:-.4px;}
+.dir .fhead h1 .lg{display:block;}
 .dir .fhead .live{display:flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gl);font-weight:700;}
 .dir .fhead .live .dot{width:6px;height:6px;border-radius:50%;background:var(--gl);animation:dirPulse 2.4s ease-in-out infinite;}
 @keyframes dirPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
-.dir .fhead .upd{font-size:10px;color:#8FA79A;margin-top:4px;}
+.dir .fhead .upd{font-size:12px;color:#8FA79A;margin-top:8px;}
 
 /* ── le pouls ────────────────────────────────────────────────────────────── */
 .dir .pulse{background:linear-gradient(160deg,#1B2E25,#0E1913);color:#fff;padding:15px 16px 16px;}
