@@ -27,7 +27,7 @@ export function ActionClik({
 }: {
   campagneId: string;
   ville: string;
-  type: "cadeau" | "express" | "collectif";
+  type: "simple" | "cadeau" | "express" | "collectif";
   etat: Etat;
   dejaDedans: boolean;
   statutInitial: string | null;
@@ -74,7 +74,9 @@ export function ActionClik({
               ? "Vous serez prévenu dès que le groupe est au complet."
               : type === "express"
                 ? "Venez avant l'heure indiquée et annoncez-vous : le prix réduit est à vous."
-                : "Présentez-vous au commerce, votre avantage vous y attend."}
+                : type === "simple"
+                  ? "Le créneau est à vous. Présentez-vous au commerce à l'heure prévue."
+                  : "Présentez-vous au commerce, votre avantage vous y attend."}
         </div>
       </div>
     );
@@ -128,7 +130,15 @@ export function ActionClik({
   return (
     <>
       <button type="button" className="ck-b" onClick={agir} disabled={envoi} aria-busy={envoi}>
-        {envoi ? "Un instant…" : type === "cadeau" ? "Je prends" : type === "express" ? "J'y vais tout de suite" : "J'en suis"}
+        {envoi
+          ? "Un instant…"
+          : type === "cadeau"
+            ? "Je prends"
+            : type === "express"
+              ? "J'y vais tout de suite"
+              : type === "simple"
+                ? "Je prends le créneau"
+                : "J'en suis"}
       </button>
       {message && <div className="ck-msg">{message}</div>}
     </>

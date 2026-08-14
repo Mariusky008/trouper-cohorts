@@ -16,7 +16,7 @@ import { etatDe, manque, FACON_LABEL, FACON_PROMESSE, avancement, type Campagne 
  *  Le cadeau se prend au prix normal — c'est sa définition, on ne paie pas
  *  moins, on reçoit en plus. Les deux autres affichent leur prix réduit. */
 function prixDe(c: Campagne): number | null {
-  if (c.type === "cadeau") return c.prixInitial;
+  if (c.type === "cadeau" || c.type === "simple") return c.prixInitial;
   return c.prixGroupe ?? c.prixInitial;
 }
 
@@ -66,12 +66,13 @@ function quandDe(c: Campagne, maintenant: number): string {
   const auj = memeJour(c.echeance, maintenant);
   if (c.type === "express") return auj ? `Arrivée avant ${h}` : `Arrivée avant ${h}, demain`;
   if (c.type === "collectif") return auj ? `Groupe fermé à ${h}` : `Groupe fermé à ${h}, demain`;
+  if (c.type === "simple") return auj ? `À prendre avant ${h}` : `À prendre avant ${h}, demain`;
   return auj ? `Aujourd'hui, jusqu'à ${h}` : `Jusqu'à ${h}, demain`;
 }
 
 export type FaconVue = {
   id: string;
-  type: "cadeau" | "express" | "collectif";
+  type: "simple" | "cadeau" | "express" | "collectif";
   label: string;
   promesse: string;
   prix: string;
@@ -98,9 +99,13 @@ export function faconsVue(facons: readonly Campagne[] | undefined, maintenant: n
     out.push({
       id: c.id,
       type: c.type,
-      label: FACON_LABEL[c.type],
+      // Le nom du commerçant prime sur le nôtre : « table à partager » ne veut
+      // rien dire chez un fleuriste, et c'est lui qui connaît son métier.
+      label: c.nom || FACON_LABEL[c.type],
       promesse: FACON_PROMESSE[c.type],
-      prix: euro(prixDe(c)),
+      // Un « à prendre » sans prix affiche « Prix habituel » : écrire « 0 € »
+      // ou laisser vide ferait croire à la gratuité.
+      prix: c.type === "simple" && !c.prixInitial ? "Prix habituel" : euro(prixDe(c)),
       quand: quandDe(c, maintenant),
       // Le compteur ne s'affiche que pour le groupe, et il dit COMBIEN SONT
       // DÉJÀ LÀ plutôt que combien il manque : sur une carte du fil, on choisit

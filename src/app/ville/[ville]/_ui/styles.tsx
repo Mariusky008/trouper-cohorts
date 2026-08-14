@@ -171,14 +171,34 @@ export function StylesDirect() {
 .dir .fac-j i{display:block;height:100%;border-radius:3px;background:var(--vio);}
 .dir .fac-go{flex:none;font-size:19px;color:var(--faint);line-height:1;}
 
-.dir .fac-cadeau{background:#FFFDF7;border-color:#EFE6CF;}
-.dir .fac-cadeau .fac-ic{background:#FBF2DF;}
-.dir .fac-express{background:#FFFBF3;border-color:#F0DFC0;}
-.dir .fac-express .fac-ic{background:#FCEFD4;}
-.dir .fac-express .fac-t em{color:#A56C11;}
-.dir .fac-collectif{background:#FAF9FF;border-color:#E2DDF7;}
-.dir .fac-collectif .fac-ic{background:#EDE9F8;}
-.dir .fac-collectif .fac-t em{color:var(--vio);}
+/* UNE COULEUR PAR FAÇON, celles du prototype. Elles ne décorent pas : elles
+   sont le seul moyen de reconnaître une façon d'un coup d'œil quand on a déjà
+   vu trois cartes, et elles doivent donc être les mêmes partout — fil, écran du
+   Clik, espace du commerçant. La pastille d'heure limite prend la même teinte,
+   plus soutenue : c'est l'information urgente de la ligne. */
+.dir .fac-cadeau{background:#FBFDF7;border-color:#C4E0A8;}
+.dir .fac-cadeau .fac-ic{background:#E4F2DC;}
+.dir .fac-cadeau .fac-t em{color:#2C8A4B;}
+.dir .fac-cadeau .fac-q2{background:#E4F2DC;color:#1F6B39;}
+
+.dir .fac-express{background:#FDF2E4;border-color:#F0D9B4;}
+.dir .fac-express .fac-ic{background:#F8E7CE;}
+.dir .fac-express .fac-t em{color:#DB8A2C;}
+.dir .fac-express .fac-q2{background:#F6DFC0;color:#96601A;}
+
+.dir .fac-collectif{background:#EEEBFB;border-color:#CFC8F2;}
+.dir .fac-collectif .fac-ic{background:#DFDAF7;}
+.dir .fac-collectif .fac-t em{color:#6B5BD4;}
+.dir .fac-collectif .fac-q2{background:#DFDAF7;color:#4B3CA8;}
+.dir .fac-collectif .fac-j{background:rgba(107,91,212,.18);}
+.dir .fac-collectif .fac-j i{background:#6B5BD4;}
+
+/* « À prendre » n'est pas une remise : il reste neutre, et seule son heure
+   limite est rouge — c'est la seule chose qui presse. */
+.dir .fac-simple{background:var(--paper);border-color:var(--line2);}
+.dir .fac-simple .fac-ic{background:var(--bg);}
+.dir .fac-simple .fac-t em{color:var(--soft);}
+.dir .fac-simple .fac-q2{background:#FBEDE8;color:#C4553A;}
 /* Épuisée, la façon RESTE À L'ÉCRAN, éteinte : la retirer ferait croire qu'elle
    n'a jamais existé, et priverait les deux autres de leur point de comparaison. */
 .dir .fac-off{opacity:.5;}

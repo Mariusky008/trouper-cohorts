@@ -45,7 +45,7 @@ export type CarteVue = {
    *  en a aucune, ou qu'elles sont toutes terminées. */
   facons: Array<{
     id: string;
-    type: "cadeau" | "express" | "collectif";
+    type: "simple" | "cadeau" | "express" | "collectif";
     /** « Le cadeau », « L'express », « Table à partager ». */
     label: string;
     /** Ce qu'on doit faire pour l'obtenir. */
@@ -156,8 +156,15 @@ export function Carte({
           Le commerce ne brade pas, il rémunère un comportement. */}
       {p.facons.length > 0 && (
         <div className="fac">
+          {/* L'EN-TÊTE DÉPEND DE CE QU'IL Y A À CHOISIR.
+              « Comment voulez-vous en profiter ? » devant une seule porte est
+              une question sans objet — et pire, elle laisse croire qu'on cache
+              les autres. Un créneau qui se libère n'a rien à comparer : il a
+              une seule chose à faire, et on le dit comme ça. */}
           <div className="fac-h">
-            <span className="fac-q">Comment voulez-vous en profiter&nbsp;?</span>
+            <span className="fac-q">
+              {p.facons.length > 1 ? "Comment voulez-vous en profiter ?" : "Une seule chose à faire"}
+            </span>
             {p.facons.length > 1 && (
               <span className="fac-pr" aria-hidden="true">
                 {p.facons.map((f) => f.prix).join(" → ")}
@@ -172,7 +179,7 @@ export function Carte({
               prefetch={false}
             >
               <span className="fac-ic" aria-hidden="true">
-                {f.type === "cadeau" ? "🎁" : f.type === "express" ? "⚡" : "👥"}
+                {f.type === "cadeau" ? "🎁" : f.type === "express" ? "⚡" : f.type === "collectif" ? "👥" : "🕐"}
               </span>
               <span className="fac-c">
                 <span className="fac-t">

@@ -10,6 +10,13 @@
 --   17 € · L'EXPRESS          → prix réduit si l'on vient tout de suite
 --   16 € · TABLE À PARTAGER   → prix le plus bas si l'on vient à plusieurs
 --
+-- ET UN QUATRIÈME CAS, QUI N'EST PAS UN PRIX : « À PRENDRE ».
+-- Un créneau qui vient de se libérer n'a ni réduction ni cadeau — il a juste
+-- besoin de quelqu'un. C'est le cas le plus fréquent chez un coiffeur ou un
+-- tatoueur, et c'était le grand absent : une annonce de ce genre n'offrait
+-- AUCUNE action, on pouvait seulement la regarder. Elle s'affiche seule, sans
+-- échelle de prix, sous « Une seule chose à faire ».
+--
 -- C'est le cœur de la proposition : le commerce ne brade pas, il RÉMUNÈRE un
 -- comportement. Venir vite remplit un creux ; venir à plusieurs remplit une
 -- table. Le cadeau, lui, ne coûte rien au commerçant sur son prix.
@@ -23,7 +30,7 @@
 ALTER TABLE public.clik_campaign DROP CONSTRAINT IF EXISTS clik_campaign_type_check;
 ALTER TABLE public.clik_campaign
   ADD CONSTRAINT clik_campaign_type_check
-  CHECK (type IN ('cadeau', 'collectif', 'express'));
+  CHECK (type IN ('simple', 'cadeau', 'collectif', 'express'));
 
 -- ── L'ordre d'affichage ─────────────────────────────────────────────────────
 -- Les trois façons se lisent de la plus chère à la moins chère, parce que
@@ -54,4 +61,4 @@ CREATE INDEX IF NOT EXISTS clik_campaign_publication_idx
   WHERE statut IN ('active', 'debloquee');
 
 COMMENT ON COLUMN public.clik_campaign.ordre IS
-  'Ordre d''affichage des façons d''une même annonce : 0 = cadeau, 1 = express, 2 = partage.';
+  'Ordre d''affichage des façons d''une même annonce : 0 = cadeau, 1 = express, 2 = partage. « simple » est toujours seul.';

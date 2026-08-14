@@ -36,25 +36,37 @@ type Supabase = {
 // différence avec un site de bons de réduction, et c'est pour ça que les trois
 // façons doivent se voir ENSEMBLE : c'est la comparaison qui donne son sens à
 // chaque prix.
-export const TYPES_CLIK = ["cadeau", "express", "collectif"] as const;
+// ET UN QUATRIÈME CAS, QUI N'EST PAS UN PRIX : « À PRENDRE ».
+//
+//   'simple' → un créneau qui vient de se libérer. Ni réduction, ni cadeau : il
+//              a juste besoin de quelqu'un. C'est le cas le plus fréquent chez
+//              un coiffeur ou un tatoueur, et il ne se compare à rien — il
+//              s'affiche donc SEUL, sans échelle de prix.
+export const TYPES_CLIK = ["simple", "cadeau", "express", "collectif"] as const;
 export type TypeClik = (typeof TYPES_CLIK)[number];
 
 /** L'ordre d'affichage, du moindre effort au plus engageant — et donc du prix
  *  le plus haut au plus bas. C'est cette descente qui rend la carte lisible. */
-export const ORDRE_TYPE: Record<TypeClik, number> = { cadeau: 0, express: 1, collectif: 2 };
+export const ORDRE_TYPE: Record<TypeClik, number> = { simple: 0, cadeau: 1, express: 2, collectif: 3 };
 
 /** Ce que chaque façon s'appelle, côté habitant. Les libellés sont ici et pas
  *  dans l'écran : ils doivent être les mêmes dans le fil, sur la fiche du Clik
- *  et dans l'espace du commerçant. */
+ *  et dans l'espace du commerçant.
+ *
+ *  Le collectif porte un nom PAR DÉFAUT seulement : « Table à partager » chez un
+ *  restaurant, « Le collectif » ailleurs. Le commerçant peut le renommer, et
+ *  c'est ce nom-là qui prime — « table » ne veut rien dire chez un fleuriste. */
 export const FACON_LABEL: Record<TypeClik, string> = {
+  simple: "À prendre",
   cadeau: "Le cadeau",
   express: "L'express",
-  collectif: "Table à partager",
+  collectif: "Le collectif",
 };
 
 /** La promesse de chaque façon, en une ligne. Elle dit CE QU'ON DOIT FAIRE, pas
  *  ce qu'on obtient : le prix est déjà affiché juste à côté. */
 export const FACON_PROMESSE: Record<TypeClik, string> = {
+  simple: "Aucune réduction, aucun cadeau : un créneau qui cherche preneur",
   cadeau: "Prix normal + cadeau surprise",
   express: "Prix réduit si vous venez vite",
   collectif: "Prix de groupe si vous venez à plusieurs",
@@ -75,6 +87,10 @@ export type Campagne = {
   statut: string;
   /** Rang d'affichage parmi les façons d'une même annonce. */
   ordre: number;
+  /** Le nom que le commerçant donne à cette façon, quand il en donne un.
+   *  « Table à partager » chez un restaurant, « Le bouquet à plusieurs » chez
+   *  un fleuriste : le mot juste dépend du métier, pas de nous. */
+  nom: string;
   /** Renseigné pour les campagnes « cadeau » uniquement. */
   restants: number | null;
   total: number | null;
@@ -108,9 +124,10 @@ export function etatDe(c: Campagne, maintenant: number = Date.now()): EtatClik {
   if (c.type === "cadeau") {
     return (c.restants ?? 0) > 0 ? "ouverte" : "epuise";
   }
-  // L'express n'a ni stock ni groupe : il ne dépend que de l'heure, déjà
-  // tranchée au-dessus. Tant qu'elle n'est pas passée, il est ouvert.
-  if (c.type === "express") return "ouverte";
+  // L'express et le « à prendre » n'ont ni stock ni groupe : ils ne dépendent
+  // que de l'heure, déjà tranchée au-dessus. Tant qu'elle n'est pas passée, ils
+  // sont ouverts.
+  if (c.type === "express" || c.type === "simple") return "ouverte";
 
   const obj = c.objectif ?? 0;
   if (obj > 0 && c.participants >= obj) return "complete";
@@ -140,6 +157,7 @@ export function phraseClik(c: Campagne, maintenant: number = Date.now()): string
     if (r <= 0) return "Tout est parti";
     return r === 1 ? "Il en reste 1" : `Il en reste ${r}`;
   }
+  if (c.type === "simple") return "À prendre";
   if (c.type === "express") return "Prix réduit si vous venez vite";
   if (e === "complete") return "C'est débloqué pour tout le monde";
   const m = manque(c);
@@ -151,7 +169,7 @@ export function remise(c: Campagne): number | null {
   // L'express aussi affiche un prix barré : c'est la même mécanique de remise,
   // sur un autre effort. La réserver au collectif privait la façon du milieu de
   // la seule chose qui la rend comparable aux deux autres.
-  if (c.type === "cadeau" || !c.prixInitial || !c.prixGroupe) return null;
+  if (c.type === "cadeau" || c.type === "simple" || !c.prixInitial || !c.prixGroupe) return null;
   if (c.prixInitial <= 0 || c.prixGroupe >= c.prixInitial) return null;
   return Math.round(((c.prixInitial - c.prixGroupe) / c.prixInitial) * 100);
 }
@@ -197,6 +215,7 @@ export function versCampagne(r: Record<string, unknown>, restants?: number, tota
     // L'ordre stocké fait foi ; sans lui (migration fraîche), on retombe sur
     // l'ordre canonique du type, qui donne déjà la bonne descente de prix.
     ordre: r.ordre == null ? ORDRE_TYPE[type] : num(r.ordre),
+    nom: str(r.nom_facon),
     restants: restants == null ? null : restants,
     total: total == null ? null : total,
     aGagner: [],
