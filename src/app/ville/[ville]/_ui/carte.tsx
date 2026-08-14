@@ -17,6 +17,8 @@ import { usePosition } from "@/lib/direct/position";
 import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
 import { VideoCarte } from "./video-carte";
 import { teinte, initiales } from "./teinte";
+import { Reactions } from "./reactions";
+import type { VueReactions } from "@/lib/direct/reactions";
 
 export type CarteVue = {
   id: string;
@@ -63,6 +65,8 @@ export type CarteVue = {
     part: number | null;
     etat: "ouverte" | "presque" | "complete" | "epuise";
   }>;
+  /** Les réactions déjà posées, et celles qui sont miennes. */
+  reactions: VueReactions;
 };
 
 export function Carte({
@@ -214,6 +218,12 @@ export function Carte({
           ))}
         </div>
       )}
+
+      {/* LES RÉACTIONS, entre l'offre et la sortie. Quatre intentions, aucun
+          « like » : « douze personnes passent voir » se comprend, « douze
+          pouces levés » ne veut rien dire — ni pour l'habitant qui appuie, ni
+          pour le commerçant qui lit. */}
+      <Reactions publicationId={p.id} ville={ville} initial={p.reactions} />
 
       {/* LE SITE DU COMMERCE, en pied et pleine largeur. C'est la sortie vers
           chez lui — celle qui existait déjà en petit à côté du cœur, et que

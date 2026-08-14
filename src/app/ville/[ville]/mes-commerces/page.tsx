@@ -14,6 +14,7 @@ import { estVivante, type Publication } from "@/lib/direct/publications";
 import { repereSpatial } from "@/lib/direct/degradation";
 import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
+import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
@@ -123,6 +124,10 @@ export default async function MesCommercesPage({
   const expirentAujourdhui = expirantAujourdhui(gardeesVives);
 
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
+  // Les réactions des annonces affichées, en UNE lecture : une requête par
+  // carte multiplierait les allers-retours par le nombre d'annonces.
+  const reacts = await reactionsDesPublications(supabase, gardeesVives.map((p) => p.id), habitant?.id ?? null);
+
   const cartes: CarteVue[] = gardeesVives.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -140,6 +145,7 @@ export default async function MesCommercesPage({
     echeance: echeanceCourte(p.expireLe),
     urgent: presse(p.expireLe),
     facons: faconsVue(cliksParPub.get(p.id)),
+    reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 
   // ── Les commerces suivis ──────────────────────────────────────────────────

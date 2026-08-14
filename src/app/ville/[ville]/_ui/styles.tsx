@@ -242,6 +242,22 @@ export function StylesDirect() {
 .dir .fac-off{opacity:.5;}
 .dir .fac-off .fac-t b{text-decoration:line-through;}
 
+/* ── LES RÉACTIONS ────────────────────────────────────────────────────────
+   Quatre pastilles, à la première personne. Elles se touchent au pouce sans
+   viser : 8 px de moins et on en appuie une pour l'autre en marchant.
+
+   Le compteur ne paraît qu'à partir de trois — « 1 » dit à l'habitant qu'il
+   est seul, ce qui décourage exactement le geste qu'on espère. */
+.dir .rx{display:flex;flex-wrap:wrap;gap:7px;padding:4px 16px 12px;}
+.dir .rx-b{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;
+  background:var(--paper);color:var(--soft);font-size:12.5px;font-weight:600;padding:8px 13px;
+  cursor:pointer;font-family:inherit;line-height:1;}
+.dir .rx-b b{font-size:11.5px;font-weight:800;color:var(--faint);}
+/* Choisie : l'encre pleine. Une simple nuance de gris ne se voit pas, et une
+   réaction dont on ne sait pas si elle a pris se réappuie. */
+.dir .rx-b.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.dir .rx-b.on b{color:var(--gl);}
+
 .dir .post .pf{display:flex;align-items:center;gap:8px;padding:8px 16px 16px;}
 /* La sortie vers le commerce prend toute la place qui reste : c'est le geste
    qui suit la décision, pas une option à côté du cœur. */

@@ -24,6 +24,7 @@ import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
+import { reactionsDesPublications } from "@/lib/direct/reactions";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -64,6 +65,10 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
   const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
 
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
+  // Les réactions des annonces affichées, en UNE lecture : une requête par
+  // carte multiplierait les allers-retours par le nombre d'annonces.
+  const reacts = await reactionsDesPublications(supabase, choisies.map((p) => p.id), habitant?.id ?? null);
+
   const cartes: CarteVue[] = choisies.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -85,6 +90,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     // chaque geste raté. On montre les prix — sans eux on glisse au hasard —
     // et le glissement vers le haut reste le seul geste qui engage.
     facons: faconsVue(cliksParPub.get(p.id)),
+    reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 
   return (

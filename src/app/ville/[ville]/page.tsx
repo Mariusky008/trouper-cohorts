@@ -16,6 +16,7 @@ import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
 import { trierLeFil, presse } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication, collectifDe } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
+import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
@@ -108,6 +109,10 @@ export default async function LeDirectPage({
     })
   );
 
+  // Les réactions des annonces affichées, en UNE lecture : une requête par
+  // carte multiplierait les allers-retours par le nombre d'annonces.
+  const reacts = await reactionsDesPublications(supabase, triees.map((p) => p.id), habitant?.id ?? null);
+
   const cartes: CarteVue[] = triees.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -129,6 +134,7 @@ export default async function LeDirectPage({
     // (« Arrivée avant 12 h 47 ») : fait dans la carte, qui est un composant
     // client, il divergerait entre le rendu serveur et l'hydratation.
     facons: faconsVue(cliksParPub.get(p.id)),
+    reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 
   // Après avoir décidé ce qui s'affiche, pas avant : on ne compte que ce qui est
