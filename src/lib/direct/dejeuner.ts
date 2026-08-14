@@ -19,7 +19,7 @@
 //      reproche fait à toutes les applications de ville : à 15 h, elles
 //      affichent encore le menu de midi et paraissent mortes.
 import { heureLocale } from "./degradation";
-import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { modeleDuMetier } from "./modeles-fiche";
 import type { Publication } from "./publications";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -38,17 +38,19 @@ export function momentDuJour(quand: Date = new Date()): Moment {
   return "nuit";
 }
 
-/** Les métiers qui ont un plat du jour. Volontairement court : un métier qui
- *  n'a rien de neuf chaque jour ne doit PAS pouvoir publier ici — une seule
- *  publication ennuyeuse et l'habitant cesse d'ouvrir l'application. */
-const METIERS_DU_MIDI = new Set(["restaurant", "bar", "traiteur événementiel"]);
-
+/**
+ * Qui peut publier un plat du jour.
+ *
+ * UNE SEULE DÉFINITION, celle du modèle de fiche. Ce module tenait sa propre
+ * liste de métiers, et elle avait déjà divergé : un café obtenait la fiche
+ * « Menu du jour » mais se voyait refuser la publication d'un plat du jour.
+ * Deux endroits décidaient qui sert à manger — il n'en faut qu'un.
+ *
+ * Un métier qui n'a rien de neuf chaque jour ne doit PAS pouvoir publier ici :
+ * une seule publication ennuyeuse et l'habitant cesse d'ouvrir l'application.
+ */
 export function estRestauration(activite: string): boolean {
-  const { entry } = resolveMetier(str(activite));
-  if (entry && METIERS_DU_MIDI.has(entry.label)) return true;
-  // Repli sur le texte brut : une fiche Google mal catégorisée ne doit pas
-  // priver un restaurateur de la fonction qui le concerne le plus.
-  return /restaurant|resto|bistrot|brasserie|pizz|cr[eê]per|traiteur|\bbar\b|table d/i.test(str(activite));
+  return modeleDuMetier(str(activite)) === "menu";
 }
 
 /** Fin du service, en heure LOCALE, au format ISO.
