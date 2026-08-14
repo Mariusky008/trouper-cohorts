@@ -16,25 +16,7 @@ import { FAMILLE_LABEL, type Famille } from "@/lib/direct/publications";
 import { usePosition } from "@/lib/direct/position";
 import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
 import { VideoCarte } from "./video-carte";
-
-
-/** Teinte du repli quand aucune photo n'est exploitable.
- *
- *  Dérivée du NOM, donc stable : une couleur tirée au hasard changerait à chaque
- *  rendu et le commerce n'aurait jamais d'identité visuelle. Cinq fonds sombres
- *  seulement — le texte blanc doit rester lisible sur tous. */
-const TEINTES = [
-  "linear-gradient(150deg,#3B5140,#16231B)",
-  "linear-gradient(150deg,#4A4130,#1F1B14)",
-  "linear-gradient(150deg,#3A4A52,#161F23)",
-  "linear-gradient(150deg,#4E3B3B,#211818)",
-  "linear-gradient(150deg,#404A34,#1A2016)",
-];
-function teinte(nom: string): string {
-  let h = 0;
-  for (let i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0;
-  return TEINTES[h % TEINTES.length];
-}
+import { teinte, initiales } from "./teinte";
 
 export type CarteVue = {
   id: string;
@@ -119,8 +101,8 @@ export function Carte({
         ) : p.photo ? (
           <div className="fond" style={{ backgroundImage: `url(${JSON.stringify(p.photo)})` }} role="presentation" />
         ) : (
-          <div className="repli" style={{ background: teinte(p.auteurNom) }}>
-            <span>{p.auteurNom}</span>
+          <div className="repli" style={{ background: teinte(p.auteurNom) }} aria-hidden="true">
+            <span>{initiales(p.auteurNom)}</span>
           </div>
         )}
         <div className="voile" aria-hidden="true" />

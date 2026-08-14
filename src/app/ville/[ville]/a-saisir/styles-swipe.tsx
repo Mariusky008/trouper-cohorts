@@ -19,10 +19,10 @@ export function StylesSwipe() {
 .asx-top .t{font-size:12.5px;font-weight:700;}
 .asx-top .s{font-size:9.5px;color:#8FA79A;margin-top:2px;}
 .asx-cnt{margin-left:auto;text-align:right;flex:none;}
-.asx-cnt b{display:block;font-size:12px;font-weight:700;color:#3FD79A;}
+.asx-cnt b{display:block;font-size:12px;font-weight:700;color:#93D02C;}
 .asx-cnt span{font-size:8.5px;color:#8FA79A;}
 .asx-jauge{height:3px;border-radius:2px;background:rgba(255,255,255,.12);margin-top:9px;overflow:hidden;}
-.asx-jauge span{display:block;height:100%;background:#3FD79A;transition:width .28s ease;}
+.asx-jauge span{display:block;height:100%;background:#93D02C;transition:width .28s ease;}
 
 .asx-pile{flex:1;position:relative;margin-top:14px;min-height:320px;}
 .asx-derr{position:absolute;border-radius:20px;background:#22382D;}
@@ -37,14 +37,23 @@ export function StylesSwipe() {
    À hauteur fixe, une annonce courte laissait un grand vide blanc sous elle —
    sur un écran dont l'argument est l'image, c'est le pire endroit où mettre du
    blanc. */
+/* Le fond est TOUJOURS posé en ligne : la photo, ou la teinte dérivée du nom du
+   commerce. Le dégradé sable qui vivait ici servait de repli à tout le monde —
+   toutes les annonces sans photo se ressemblaient, et aucune ne ressemblait à
+   ce qu'on venait de voir dans le fil. */
 .asx-img{flex:1;min-height:170px;position:relative;background-size:cover;background-position:center;
-  background-color:#2E4A3C;background-image:linear-gradient(140deg,#D8B08C,#8A5A3B);}
-.asx-ech{position:absolute;top:11px;left:11px;background:rgba(210,99,74,.95);color:#fff;font-size:9px;
+  background-color:#2E4A3C;}
+.asx-ech{position:absolute;top:11px;left:11px;background:rgba(178,69,44,.95);color:#fff;font-size:9px;
   font-weight:700;padding:5px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.03em;}
 .asx-dist{position:absolute;top:11px;right:11px;background:rgba(255,255,255,.94);color:#14201A;font-size:9px;
   font-weight:700;padding:5px 10px;border-radius:12px;}
+/* Le monogramme du repli, quand il n'y a pas de photo : il occupe le vide sans
+   rien promettre. Posé AVANT le voile dans le balisage — placé après, il
+   passerait par-dessus le nom du commerce. */
+.asx-mono{position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);
+  font-family:var(--fd),Georgia,serif;font-size:82px;line-height:1;color:#fff;letter-spacing:.05em;opacity:.17;}
 .asx-voile{position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(180deg,transparent,rgba(20,32,26,.88));}
-.asx-qui{position:absolute;bottom:11px;left:13px;right:13px;color:#fff;}
+.asx-qui{position:absolute;bottom:11px;left:13px;right:13px;color:#fff;text-shadow:0 1px 3px rgba(8,20,14,.6);}
 .asx-qui em{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-style:normal;}
 .asx-qui b{display:block;font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;line-height:1.15;}
 .asx-tampon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-11deg);
@@ -58,20 +67,20 @@ export function StylesSwipe() {
 .asx-boutons{display:flex;justify-content:center;gap:14px;margin-top:16px;}
 .asx-boutons .b{border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
 .asx-boutons .s{width:46px;height:46px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#C9D8D0;font-size:17px;}
-.asx-boutons .g{width:57px;height:57px;background:linear-gradient(150deg,#4FE0A0,#2E9E74);border:none;color:#08140E;
-  font-size:22px;box-shadow:0 8px 19px -6px rgba(79,224,160,.65);}
+.asx-boutons .g{width:57px;height:57px;background:linear-gradient(150deg,#A8E03A,#6FAF1E);border:none;color:#08140E;
+  font-size:22px;box-shadow:0 8px 19px -6px rgba(147,208,44,.55);}
 .asx-leg{display:flex;justify-content:center;gap:14px;margin-top:7px;}
 /* nowrap : « La boutique » passait à la ligne dans sa boîte de 46 px, et une
    légende sur deux lignes déséquilibre les trois boutons qu'elle décrit. */
-.asx-leg span{width:46px;text-align:center;font-size:8.5px;color:#7C9186;font-weight:600;white-space:nowrap;}
-.asx-leg .mid{width:57px;color:#3FD79A;font-weight:700;}
-.asx-aide{text-align:center;font-size:9px;color:#7C9186;margin:8px 0 16px;}
+.asx-leg span{width:46px;text-align:center;font-size:8.5px;color:#8FA79A;font-weight:600;white-space:nowrap;}
+.asx-leg .mid{width:57px;color:#93D02C;font-weight:700;}
+.asx-aide{text-align:center;font-size:9px;color:#8FA79A;margin:8px 0 16px;}
 
 .asx-fin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;padding:40px 28px 90px;color:#fff;}
 .asx-fin h2{font-family:var(--fd),Georgia,serif;font-size:22px;font-weight:600;margin:0 0 10px;}
 .asx-fin p{font-size:12.5px;color:#9DB5A8;line-height:1.65;margin:0;max-width:340px;}
-.asx-retour{margin-top:22px;background:#3FD79A;color:#08140E;border:none;border-radius:23px;
+.asx-retour{margin-top:22px;background:#93D02C;color:#08140E;border:none;border-radius:23px;
   padding:13px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 
 @media (prefers-reduced-motion:reduce){.asx-carte,.asx-jauge span{transition:none!important;}}

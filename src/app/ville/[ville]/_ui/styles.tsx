@@ -61,29 +61,10 @@ export function StylesDirect() {
 /* ── la carte ────────────────────────────────────────────────────────────── */
 .dir .feed{padding:6px 16px 0;}
 .dir .post{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
-/* La ligne de marqueurs est EN TÊTE, pas en pied : distance, fraîcheur,
-   échéance. C'est elle qui crée le réflexe — reléguée en bas, elle ne se lit
-   qu'après avoir décidé, donc jamais. */
-.dir .meta{display:flex;align-items:center;gap:5px;padding:10px 12px 0;font-size:9.5px;font-weight:700;flex-wrap:wrap;}
-.dir .meta .dist{color:var(--ink);}
-.dir .meta .sep{color:var(--faint);}
-.dir .meta .fresh{color:var(--g);}
-.dir .meta .left{color:var(--red);}
-.dir .meta .kind{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:9px;}
-.dir .k-place{background:#FBE9E4;color:var(--red);}
-.dir .k-offre{background:var(--gs);color:var(--gd);}
-/* Le plat du jour a sa propre couleur : confondu avec « Offre », on ne
-   distinguerait plus la seule famille qui meurt à la fin du service. */
-.dir .k-menu{background:#FBF2DF;color:#A56C11;}
-.dir .k-evenement{background:#EDE9F8;color:var(--vio);}
-.dir .k-ville{background:#FBF3E3;color:#8A6A22;}
-.dir .post .ph{display:flex;align-items:center;gap:9px;padding:8px 12px;text-decoration:none;}
-.dir .post .pav{width:29px;height:29px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
-  font-size:12px;color:#fff;font-weight:700;background:#3C4A43;}
-.dir .post .pn{font-size:12px;font-weight:700;color:var(--ink);line-height:1.2;}
-.dir .post .pm{font-size:9px;color:var(--faint);}
-.dir .post .pb{padding:0 12px 10px;font-size:12.5px;color:var(--ink);line-height:1.45;}
-.dir .post .pimg{height:150px;background-size:cover;background-position:center;background-color:#DDE4E0;}
+/* L'ANCIENNE CARTE — ligne de marqueurs, en-tête d'auteur, corps de texte,
+   photo en pied — a été retirée avec le passage à l'image d'abord. Les règles
+   sont parties avec elle : du CSS qui ne s'applique plus à rien finit toujours
+   par être recopié « au cas où » dans le suivant. */
 
 /* ── L'IMAGE D'ABORD ──────────────────────────────────────────────────────
    La carte s'ouvre sur l'image, et le texte est POSÉ DESSUS. Photo en bas de
@@ -91,7 +72,7 @@ export function StylesDirect() {
    vitrine. C'est le même contenu et ce n'est pas le même geste.
 
    REPLI SANS PHOTO : jamais de carte vide dans un fil qui vit de l'image. Un
-   aplat teinté porte le nom du commerce en grand — mieux vaut un carton propre
+   aplat teinté, marqué du monogramme du commerce — mieux vaut un carton propre
    qu'une photo de vitrine posée à côté d'un plat qu'elle ne montre pas. Une
    image qui ne correspond pas à l'annonce est un mensonge par juxtaposition,
    et elle coûte plus cher que pas d'image du tout. */
@@ -99,20 +80,51 @@ export function StylesDirect() {
 .dir .pic .fond{position:absolute;inset:0;background-size:cover;background-position:center;}
 .dir .pic .voile{position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(14,42,28,.46) 0,rgba(14,42,28,0) 26%,rgba(14,42,28,.32) 52%,rgba(14,42,28,.92) 100%);}
-.dir .pic .repli{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;}
-.dir .pic .repli span{font-family:var(--fd),Georgia,serif;font-size:27px;line-height:1.15;color:#fff;
-  text-align:center;opacity:.92;}
+/* Le monogramme se centre dans la MOITIÉ HAUTE : le bas de l'image appartient à
+   la pastille et au titre. Centré sur toute la hauteur, il passait dessous. */
+.dir .pic .repli{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 22px 86px;}
+.dir .pic .repli span{font-family:var(--fd),Georgia,serif;font-size:62px;line-height:1;color:#fff;
+  letter-spacing:.05em;opacity:.19;}
 .dir .pic .bg{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.94);color:var(--ink);
   border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
 .dir .pic .bd{position:absolute;top:12px;right:12px;background:rgba(14,42,28,.74);color:#fff;
   border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
-.dir .sur{position:absolute;left:14px;right:14px;bottom:13px;color:#fff;text-decoration:none;display:block;}
-.dir .sur .pastille{display:inline-block;background:var(--gl);color:#0E2A1C;border-radius:999px;
-  padding:5px 11px;font-size:10.5px;font-weight:800;letter-spacing:.02em;}
+/* Le texte posé sur l'image porte une ombre courte. Le voile suffit sur une
+   photo ordinaire, mais on ne choisit pas les photos : un commerçant enverra un
+   plat très clair sur une nappe blanche, et ce jour-là le voile seul ne tient
+   plus. L'ombre ne se voit pas sur un fond sombre et sauve le fond clair. */
+.dir .sur{position:absolute;left:14px;right:14px;bottom:13px;color:#fff;text-decoration:none;display:block;
+  text-shadow:0 1px 3px rgba(8,20,14,.6);}
 .dir .sur .conf{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D5E5DB;margin-top:9px;}
 .dir .sur .conf i{width:6px;height:6px;border-radius:50%;background:var(--gl);font-style:normal;}
 .dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:600;line-height:1.22;margin:6px 0 0;color:#fff;}
 .dir .sur .qui{font-size:11.5px;color:#CFE0D6;margin-top:4px;}
+
+/* ── LES PASTILLES DE FAMILLE ─────────────────────────────────────────────
+   Elles sont posées SUR UNE PHOTO, et c'est tout ce qui dicte leur dessin :
+
+     · OPAQUES. Une pastille translucide prend la couleur de ce qu'il y a
+       dessous ; sur une photo claire elle disparaît, et c'est justement sur
+       une photo appétissante qu'on a le plus besoin de lire « Plat du jour ».
+     · UNE COULEUR PAR FAMILLE. Cinq familles qu'il faut distinguer SANS LIRE,
+       à la vitesse d'un pouce qui défile. Les cinq portaient la même teinte
+       verte : la couleur ne disait plus rien, elle décorait.
+     · UNE OMBRE COURTE, pour les décoller d'un fond chargé sans les alourdir.
+
+   Les cinq couples texte/fond sont mesurés, le plus faible tient 6,15:1. */
+.dir .pastille{display:inline-block;text-shadow:none;border-radius:999px;padding:5px 11px;font-size:10.5px;
+  font-weight:800;letter-spacing:.02em;box-shadow:0 1px 4px rgba(8,20,14,.34);}
+/* Le lime est la couleur signature, et « Place libre » est le signal
+   signature : ce qui part maintenant, chez quelqu'un, tout près. */
+.dir .k-place{background:var(--gl);color:#0E2A1C;}      /*  8,27:1 */
+/* Le plat du jour a sa propre couleur : confondu avec « Offre », on ne
+   distinguerait plus la seule famille qui meurt à la fin du service. */
+.dir .k-menu{background:#F5B921;color:#3D2604;}         /*  8,02:1 */
+.dir .k-offre{background:var(--gd);color:#fff;}         /*  6,52:1 */
+.dir .k-evenement{background:var(--vio);color:#fff;}    /*  6,15:1 */
+/* « Ma ville » ne vend rien : elle reste en retrait, sur un parchemin calme,
+   là où les quatre autres réclament un geste. */
+.dir .k-ville{background:#F1E6CE;color:#6B4E12;}        /*  6,22:1 */
 .dir .post .pf{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
@@ -125,14 +137,30 @@ export function StylesDirect() {
 .dir .vide h3{font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:600;color:var(--ink);margin:0 0 7px;}
 .dir .vide p{font-size:12px;color:var(--soft);line-height:1.6;margin:0;}
 
-/* ── onglets ─────────────────────────────────────────────────────────────── */
+/* ── LA BARRE D'ONGLETS ────────────────────────────────────────────────────
+   L'onglet actif était signalé par une nuance de vert sur une nuance de gris —
+   la différence la plus fragile qui soit : elle s'efface en plein soleil, et
+   elle n'existe pas pour un daltonien. Il porte maintenant une PASTILLE LIME
+   pleine derrière son icône. C'est une forme, pas une teinte, et ça se voit
+   d'un coup d'œil au bout du bras.
+
+   Le lime en aplat, jamais en texte : sur du blanc il ne monte qu'à 1,68:1.
+   Le libellé actif passe donc à l'encre (13,9:1), pas au lime. */
 .dir .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
-  border-top:1px solid var(--line);display:flex;padding:8px 0 max(12px,env(safe-area-inset-bottom));z-index:60;}
-.dir .nav a{flex:1;text-align:center;font-size:8.5px;color:var(--faint);font-weight:600;text-decoration:none;}
-.dir .nav a .i{display:block;font-size:15px;margin-bottom:3px;}
-.dir .nav a.on{color:var(--g);}
+  border-top:1px solid var(--line);display:flex;padding:7px 0 max(11px,env(safe-area-inset-bottom));z-index:60;}
+.dir .nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:9px;color:var(--faint);font-weight:600;text-decoration:none;line-height:1.1;}
+.dir .nav a .i{display:flex;align-items:center;justify-content:center;width:46px;height:25px;
+  border-radius:999px;font-size:15px;line-height:1;transition:background .16s,color .16s;}
+.dir .nav a.on{color:var(--ink);font-weight:800;}
+.dir .nav a.on .i{background:var(--gl);color:#0E2A1C;}
+/* « À saisir » est plein écran et sombre : la barre s'y accorde, sinon elle
+   découpe un bandeau blanc au bas d'une image. La pastille, elle, ne change
+   pas — c'est le repère qui doit rester constant d'un écran à l'autre. */
 .dir .nav.dark{background:rgba(10,16,12,.97);border-top-color:#22332B;}
-.dir .nav.dark a{color:#6E8579;} .dir .nav.dark a.on{color:var(--gl);}
+.dir .nav.dark a{color:#8FA79A;}          /*  7,47:1 */
+.dir .nav.dark a.on{color:#fff;}
+.dir .nav.dark a.on .i{background:var(--gl);color:#0E2A1C;}
 
 /* ── onglets internes (Mes commerces) ────────────────────────────────────── */
 .dir .tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);}
@@ -153,7 +181,9 @@ export function StylesDirect() {
 
 /* ── réglages (Moi) ──────────────────────────────────────────────────────── */
 .dir .prof{background:var(--ink);color:#fff;padding:26px 16px 18px;text-align:center;}
-.dir .prof .av{width:58px;height:58px;border-radius:50%;background:linear-gradient(150deg,#4FE0A0,#2E9E74);
+/* L'avatar portait encore le menthe de l'ancienne palette — sur l'écran le plus
+   personnel, c'est-à-dire celui qu'on regarde le plus longtemps. */
+.dir .prof .av{width:58px;height:58px;border-radius:50%;background:linear-gradient(150deg,#A8E03A,#6FAF1E);
   margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:23px;color:#08140E;font-weight:700;}
 .dir .prof .nm{font-family:var(--fd),Georgia,serif;font-size:18px;font-weight:600;}
 .dir .prof .sb{font-size:10px;color:#8FA79A;margin-top:4px;}

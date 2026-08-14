@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { CarteVue } from "../_ui/carte";
+import { teinte, initiales } from "../_ui/teinte";
 
 const CLE_USAGES = "clikme_asaisir_usages";
 const USAGES_AVEC_LEGENDE = 3;
@@ -192,7 +193,19 @@ export function SelectionSwipe({
           onPointerUp={onUp}
           onPointerCancel={onUp}
         >
-          <div className="asx-img" style={carte.photo ? { backgroundImage: `url(${JSON.stringify(carte.photo)})` } : undefined}>
+          {/* Sans photo : le MÊME repli que le fil, teinté d'après le nom du
+              commerce. Cet écran affichait un dégradé sable fixe, identique
+              pour tout le monde — deux annonces différentes se ressemblaient,
+              et aucune ne ressemblait à ce qu'on venait de voir dans le fil. */}
+          <div
+            className="asx-img"
+            style={
+              carte.photo
+                ? { backgroundImage: `url(${JSON.stringify(carte.photo)})` }
+                : { backgroundImage: teinte(carte.auteurNom) }
+            }
+          >
+            {carte.photo ? null : <span className="asx-mono" aria-hidden="true">{initiales(carte.auteurNom)}</span>}
             {carte.echeance ? <span className="asx-ech">{carte.echeance}</span> : null}
             {carte.repere ? <span className="asx-dist">{carte.repere}</span> : null}
             <span className="asx-voile" />

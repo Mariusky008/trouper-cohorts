@@ -10,7 +10,7 @@
 //
 // Le bouton disparaît une fois la position obtenue : les distances sont à
 // l'écran, la proposition n'a plus lieu d'être.
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { demanderPosition, oublierPosition, usePosition, positionDisponible } from "@/lib/direct/position";
 
 export function BoutonPosition() {
@@ -18,7 +18,21 @@ export function BoutonPosition() {
   const [refuse, setRefuse] = useState(false);
   const [attente, setAttente] = useState(false);
 
-  if (!positionDisponible()) return null;
+  // `positionDisponible()` interroge `navigator` : faux au serveur, vrai au
+  // navigateur. Appelé pendant le rendu, il produisait un bouton côté client
+  // que le HTML du serveur ne contenait pas — React jetait alors toute la
+  // rangée de filtres et la refabriquait à chaque chargement.
+  //
+  // `useSyncExternalStore` avec un instantané serveur explicite est la façon
+  // dont React veut qu'on lise un fait d'environnement : le premier rendu du
+  // navigateur donne `false` comme celui du serveur, et le bouton apparaît au
+  // rendu suivant — sans divergence.
+  const dispo = useSyncExternalStore(
+    () => () => {},
+    () => positionDisponible(),
+    () => false
+  );
+  if (!dispo) return null;
 
   if (moi) {
     return (
