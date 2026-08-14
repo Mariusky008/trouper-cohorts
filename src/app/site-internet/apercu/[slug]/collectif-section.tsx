@@ -160,12 +160,12 @@ export function CollectifSection({ ville, accent, nom, metier, photo, partners, 
           {!published ? (
             <>
               {/* AU PRO : le mécanisme RÉEL. Son annonce n'est pas recopiée sur cinq
-                  sites de partenaires — elle entre dans UN catalogue, celui de la
+                  sites de partenaires — elle entre dans UN fil, celui de la
                   ville, dont chaque site du réseau montre une fenêtre. C'est ce qui
                   rend le produit utile dès le deuxième commerçant, au lieu d'attendre
                   cinq appariements. Cadré « exemple » : c'est le rendu simulé avec sa
                   propre annonce, jamais du direct. */}
-              <div className="cl-h">Votre annonce, dans <em>le catalogue de {ville}.</em></div>
+              <div className="cl-h">Votre annonce, dans <em>Le Direct de {ville}.</em></div>
               <div className="cl-p">
                 Une seule page rassemble les annonces du jour des commerçants de {ville}.
                 <b> Chaque site du réseau en montre une fenêtre</b> — le vôtre comme les autres.
@@ -208,7 +208,7 @@ export function CollectifSection({ ville, accent, nom, metier, photo, partners, 
                 </div>
               </div>
               {/* Sans ville identifiée, la page n'existe pas : pas de lien mort. */}
-              {villeUrl && <a className="cl-projgo" href={villeUrl}>Voir le catalogue de {ville} →</a>}
+              {villeUrl && <a className="cl-projgo" href={villeUrl}>Voir Le Direct de {ville} →</a>}
               <div className="cl-projtip">
                 On y parcourt les commerces un par un. Une annonce publiée à 9 h passe devant celle
                 d&apos;hier — c&apos;est ce qui vous rend trouvable par des gens qui ne vous connaissent pas encore.
@@ -254,7 +254,7 @@ export function CollectifSection({ ville, accent, nom, metier, photo, partners, 
           <div className="cl-note">
             {published
               ? "Des commerces complémentaires, jamais un concurrent. Aucune donnée n'est partagée sans accord."
-              : `Inclus dans votre site. Le catalogue se construit commerce par commerce : votre annonce y entre dès sa publication, et vous y voyez celles des autres. Sur votre site, la fenêtre ne montre que des commerces complémentaires, jamais un concurrent — seule votre annonce circule, jamais vos données client.`}
+              : `Inclus dans votre site. Le Direct se construit commerce par commerce : votre annonce y entre dès sa publication, et vous y voyez celles des autres. Sur votre site, la fenêtre ne montre que des commerces complémentaires, jamais un concurrent — seule votre annonce circule, jamais vos données client.`}
           </div>
         </div>
       </div>

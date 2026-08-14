@@ -500,7 +500,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           // pas, et le clic ne menait nulle part.
           ...(modeDemo || (villeAff && collectifActif)
             ? [{
-                label: modeDemo ? `🤝 Le catalogue de ${villeAff}` : `📍 Aujourd'hui à ${villeAff}`,
+                label: modeDemo ? `🤝 Le Direct de ${villeAff}` : `📍 Aujourd'hui à ${villeAff}`,
                 target: "mq-collectif",
                 gold: true,
               }]

@@ -20,7 +20,7 @@ type Props = {
   nom: string;
   metierLabel: string;
   villeAff: string;
-  photos?: string[]; // photos Google du pro — la carte du catalogue est pleine photo
+  photos?: string[]; // photos Google du pro — la carte du fil est pleine photo
   note: string | null;
   reviewsCount: number | null;
   avisAllowed: boolean; // commerce (déonto none) : avis + « remplir ce soir » autorisés
@@ -34,17 +34,22 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "vision" | "conclu" | "alive" | "final";
+type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "clik" | "vision" | "conclu" | "alive" | "final";
 
 export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
-  // La transformation se joue en QUATRE temps continus, plus l'écran du catalogue :
-  //   0 = il dit · 1 = elle rédige · 2 = l'annonce est prête · 3 = le catalogue.
+  // La transformation se joue en QUATRE temps continus, plus l'écran du fil :
+  //   0 = il dit · 1 = elle rédige · 2 = l'annonce est prête · 3 = le fil.
   const [fxStep, setFxStep] = useState(0);
-  const [catSlide, setCatSlide] = useState(0); // carte visible du catalogue d'exemple
+  const [catSlide, setCatSlide] = useState(0); // carte visible du fil d'exemple
+  // Le Clik collectif : le nombre d'engagés, qui monte pendant qu'elle parle.
+  // Un état plutôt qu'une animation CSS : le basculement doit tomber sur SON
+  // mot (« dès la sixième »), pas sur une durée fixe qui dériverait dès qu'on
+  // retouche la phrase.
+  const [clikN, setClikN] = useState(3);
   // La phrase que le pro « dirait » — la même aux deux temps, pour que la
   // transformation soit lisible : on ne change que l'habillage, pas le fait.
   const flashPhrase = flashExample || "Une nouveauté cette semaine.";
@@ -53,7 +58,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // annonce » est pourtant tout le produit.
   const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
   // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
-  // catalogue, et c'est à cet instant que l'écran doit basculer dessus.
+  // fil, et c'est à cet instant que l'écran doit basculer dessus.
   /* ─────────────────── LES SIX RÉPLIQUES, ET LEUR MINUTAGE ───────────────────
    *
    * Règle de cette section : la LÉGENDE du bas est mot pour mot ce que la voix
@@ -97,18 +102,18 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     auMot(SAY_CONNAITRE, "les sorties et les événements"),
   ];
 
-  // 4 — Le moteur. Le catalogue, puis les sites partenaires, puis leurs clients.
+  // 4 — Le moteur. Le fil, puis les sites partenaires, puis leurs clients.
   const SAY_MOTEUR =
     `C'est Le Direct de ${villeAff || "votre ville"} : tout ce qui se passe ici en ce moment, commerce par commerce. ` +
     `Les commerces partenaires l'affichent aussi sur leur propre site, ce qui vous fera connaître de leurs clients. ` +
     `Votre commerce y apparaît au moment où son offre devient utile.`;
   const MOTEUR_AT = {
-    // Le catalogue est là dès qu'elle le nomme.
+    // Le fil est là dès qu'elle le nomme.
     coeur: auMot(SAY_MOTEUR, `Le Direct de ${villeAff || "votre ville"}`),
-    // Les sites s'allument pendant qu'elle dit ce que le catalogue rassemble —
+    // Les sites s'allument pendant qu'elle dit ce que le fil rassemble —
     // attendre « Tous les commerces partenaires » laissait le noyau seul 9 s.
     sites: auMot(SAY_MOTEUR, "tout ce qui se passe ici"),
-    // …le catalogue s'y copie quand elle dit qu'ils l'affichent…
+    // …le fil s'y copie quand elle dit qu'ils l'affichent…
     copies: auMot(SAY_MOTEUR, "l'affichent aussi sur leur propre site"),
     // …et leurs clients apparaissent quand elle les nomme.
     habitants: auMot(SAY_MOTEUR, "connaître de leurs clients"),
@@ -124,6 +129,30 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     ecrit: auMot(SAY_PHRASE, "Je rédige l'annonce"),
     direct: auMot(SAY_PHRASE, `et dans Le Direct de ${villeAff || "votre ville"}`),
     decouverte: auMot(SAY_PHRASE, "peuvent alors découvrir"),
+  };
+
+  // 5 bis — LE CLIK COLLECTIF.
+  //
+  // C'est la seule mécanique qui distingue vraiment Clikme d'un panneau
+  // d'affichage, et elle manquait à la démonstration. Elle est racontée du
+  // point de vue du COMMERÇANT — ce que ça lui apporte — et pas du point de vue
+  // de l'habitant : il regarde cette démo pour savoir ce qu'il y gagne.
+  //
+  // Le chiffre est dit à voix haute (« six personnes ») pendant que la jauge se
+  // remplit : c'est la même information par deux canaux, et c'est ce qui fait
+  // comprendre le mécanisme en une fois.
+  const SAY_CLIK =
+    `Et vous pouvez aller plus loin : proposez un prix de groupe. ` +
+    `Tant que six personnes ne se sont pas engagées, rien ne change ; ` +
+    `dès la sixième, le prix baisse pour tout le monde et vous les voyez arriver ensemble. ` +
+    `Ce ne sont pas six clients de plus au hasard : ce sont six personnes qui se sont donné rendez-vous chez vous.`;
+  const CLIK_AT = {
+    // La carte apparaît dès qu'elle propose la chose.
+    carte: auMot(SAY_CLIK, "proposez un prix de groupe"),
+    // La jauge se remplit pendant qu'elle décrit l'attente…
+    remplit: auMot(SAY_CLIK, "Tant que six personnes"),
+    // …et bascule exactement sur « dès la sixième ».
+    bascule: auMot(SAY_CLIK, "dès la sixième"),
   };
 
   // 6 — À vous. Elle s'efface, le site reste.
@@ -149,7 +178,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
-  // La carte du catalogue de démo « part » avant d'être remplacée : c'est ce qui
+  // La carte du fil de démo « part » avant d'être remplacée : c'est ce qui
   // fait lire un glissement plutôt qu'un changement d'image.
   const [catFly, setCatFly] = useState<"" | "oui" | "non">("");
   // Tampon montré pendant le geste automatique : « gardé » puis « passer ».
@@ -159,7 +188,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const [lvAt, setLvAt] = useState({ question: 150, reponse: 1050, transmis: 2100 });
 
   /**
-   * Le catalogue doit tenir ENTIER dans la hauteur disponible — les trois gestes
+   * Le fil doit tenir ENTIER dans la hauteur disponible — les trois gestes
    * du bas compris. Sur un écran court il était simplement rogné : on montrait
    * une carte magnifique dont on ne voyait pas les boutons, donc pas le geste.
    *
@@ -173,7 +202,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     if (!el) return;
     const inner = el.firstElementChild as HTMLElement | null;
     if (!inner) return;
-    // Mesuré puis mis à l'échelle AVANT d'être montré : sinon le catalogue
+    // Mesuré puis mis à l'échelle AVANT d'être montré : sinon le fil
     // paraît une fraction de seconde à sa taille naturelle, puis rétrécit d'un
     // coup — ce clignotement se lit comme un écran de plus qui ne sert à rien.
     let raf = 0;
@@ -201,7 +230,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     { ic: "🌸", t: "Fleuriste" }, { ic: "📸", t: "Photographe" }, { ic: "💇", t: "Coiffeur" }, { ic: "🍽️", t: "Restaurant" }, { ic: "🎉", t: "Événementiel" },
   ]).slice(0, 6);
 
-  // Le catalogue d'exemple montré au 3ᵉ temps de l'Action Flash.
+  // Le fil d'exemple montré au 3ᵉ temps de l'Action Flash.
   // Sa carte à lui est RÉELLE (son nom, l'annonce qu'il vient de « dire »). Les
   // autres sont des ILLUSTRATIONS : jamais un faux commerce nommé — un métier
   // complémentaire de sa ville, et une annonce générique. Le panneau porte un
@@ -229,7 +258,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   };
   const annonceDe = (t: string) => ANNONCE_METIER[t] || "Une nouveauté cette semaine.";
 
-  // L'ORDRE compte : un habitant qui parcourt le catalogue tombe sur d'autres
+  // L'ORDRE compte : un habitant qui parcourt le fil tombe sur d'autres
   // annonces AVANT la sienne. En la mettant en tête, on montrait le commerçant
   // en train de garder sa propre annonce — d'où le badge « vous » et le tampon
   // « Gardé » sur sa carte, qui rendaient la scène incompréhensible. Sa carte
@@ -250,7 +279,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       metier: metierLabel || "Commerce",
       texte: flashPhrase,
       quand: "à l'instant",
-      // Sa VRAIE photo Google : la carte du catalogue est pleine photo, et la
+      // Sa VRAIE photo Google : la carte du fil est pleine photo, et la
       // sienne est la seule dont nous ayons une image légitime.
       photo: (photos && photos[0]) || "",
       ic: "",
@@ -557,7 +586,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         enter: () => { chime(); setScene("daily"); },
       });
 
-      // 4 — LE MOTEUR : le catalogue, les vitrines du réseau, puis leurs clients.
+      // 4 — LE MOTEUR : le fil, les vitrines du réseau, puis leurs clients.
       steps.push({
         title: `Le Direct de ${villeAff || "votre ville"}`,
         say: SAY_MOTEUR,
@@ -576,7 +605,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           setCatStamp("");
           window.setTimeout(() => setFxStep(1), PHRASE_AT.ecrit);
           window.setTimeout(() => setFxStep(2), PHRASE_AT.direct);
-          // Un habitant parcourt le catalogue : il passe une annonce, tombe sur
+          // Un habitant parcourt le fil : il passe une annonce, tombe sur
           // la sienne, et la garde — pile quand elle dit qu'on peut le découvrir.
           const d = PHRASE_AT.decouverte;
           const av = (ms: number) => Math.max(PHRASE_AT.direct + 600, d - ms);
@@ -584,6 +613,22 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           window.setTimeout(() => setCatFly("non"), av(2200));
           window.setTimeout(() => { setCatFly(""); setCatStamp(""); setCatSlide(1); }, av(1800));
           window.setTimeout(() => setCatStamp("oui"), d + 200);
+        },
+      });
+
+      // 5 bis — À PLUSIEURS : la jauge se remplit et bascule sur son mot.
+      steps.push({
+        title: "À plusieurs, c'est moins cher",
+        say: SAY_CLIK,
+        enter: () => {
+          chime();
+          setClikN(3);
+          setScene("clik");
+          const t0 = CLIK_AT.remplit;
+          const pas = Math.max(400, (CLIK_AT.bascule - t0) / 3);
+          window.setTimeout(() => setClikN(4), t0);
+          window.setTimeout(() => setClikN(5), t0 + pas);
+          window.setTimeout(() => setClikN(6), CLIK_AT.bascule);
         },
       });
     }
@@ -660,7 +705,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             <div className="end-list">
               <div className="end-i"><span>🎁</span>Site offert</div>
               <div className="end-i"><span>✨</span>Assistante IA incluse</div>
-              <div className="end-i"><span>📍</span>Relié au catalogue de {villeAff || "votre ville"}</div>
+              <div className="end-i"><span>📍</span>Relié au Direct de {villeAff || "votre ville"}</div>
             </div>
             <div className="end-cta">
               <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
@@ -784,8 +829,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .rz2-oppb{display:block;font-size:13.5px;line-height:1.45;color:#EAF0FA;margin-top:10px;}
           .dtour-card .rz2-oppb b{color:#7FE6C0;}
           @keyframes dtPop{to{opacity:1;transform:none}}
-          /* ── LE MOTEUR : un catalogue, des vitrines dans la ville ──────────
-             Quatre temps : le catalogue seul, les sites qui s'allument, la copie
+          /* ── LE MOTEUR : un fil, des vitrines dans la ville ──────────
+             Quatre temps : le fil seul, les sites qui s'allument, la copie
              qui part vers chacun, les habitants qui arrivent autour. */
           .dtour-net{display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:auto;z-index:2;}
           .net-sc{position:relative;width:320px;height:320px;flex:none;}
@@ -797,7 +842,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             background:linear-gradient(90deg,rgba(207,196,255,.7),rgba(207,196,255,.08));
             opacity:0;animation:netLn .5s ease forwards;}
           @keyframes netLn{to{opacity:1}}
-          /* ① Le catalogue, seul d'abord. */
+          /* ① Le fil, seul d'abord. */
           .net-core{position:absolute;left:50%;top:50%;z-index:5;
             display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
             width:108px;height:108px;border-radius:32px;text-align:center;
@@ -808,7 +853,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .net-core b{font-size:23px;line-height:1;}
           .net-core i{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.04em;color:#F0ECFF;line-height:1.25;}
           /* ② Les sites partenaires : de petites fenêtres, pas des pictogrammes.
-             Un emoji en orbite se lisait « une catégorie alimente le catalogue »
+             Un emoji en orbite se lisait « une catégorie alimente le fil »
              — exactement l'inverse du mécanisme. */
           .net-site{position:absolute;left:50%;top:50%;z-index:3;width:94px;border-radius:11px;overflow:hidden;
             display:flex;flex-direction:column;text-align:left;
@@ -822,19 +867,19 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .net-site .ns-bar i{width:4px;height:4px;border-radius:50%;background:#B9B4A8;}
           .net-site .ns-nom{padding:6px 8px 5px;font-size:9.5px;font-weight:800;color:#16160F;line-height:1.15;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-          /* ③ …et le catalogue qui s'y affiche, une fois la copie arrivée. */
+          /* ③ …et le fil qui s'y affiche, une fois la copie arrivée. */
           .net-site .ns-cat{margin:0 6px 6px;border-radius:6px;padding:4px 6px;font-size:8.5px;font-weight:800;
             letter-spacing:.02em;color:#3A2A6B;background:linear-gradient(100deg,#C9BCF2,#EDE8FF);
             opacity:0;animation:netCat .45s ease forwards;}
           @keyframes netCat{to{opacity:1}}
-          /* La copie du catalogue en voyage : une petite carte, pas un point —
+          /* La copie du fil en voyage : une petite carte, pas un point —
              on doit reconnaître ce qui se déplace. */
           .net-copie{position:absolute;left:50%;top:50%;z-index:4;width:26px;height:26px;margin:-13px 0 0 -13px;
             border-radius:8px;background:linear-gradient(140deg,#A594FF,#6B4BC7);
             box-shadow:0 0 16px 4px rgba(165,148,255,.6);opacity:0;
             animation:netCopie 1.9s cubic-bezier(.4,0,.3,1) infinite;}
           /* Elle s'arrête AU BORD de la fenêtre : arrivée au centre, elle
-             recouvrait précisément le « 📍 Catalogue » qu'elle vient d'y poser. */
+             recouvrait précisément le « 📍 Le Direct » qu'elle vient d'y poser. */
           @keyframes netCopie{
             0%{opacity:0;transform:translate(0,0) scale(.4)}
             12%{opacity:1;transform:translate(0,0) scale(1)}
@@ -871,7 +916,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .fx-h{font-family:Georgia,serif;font-size:19px;line-height:1.25;font-weight:700;color:#141A2E;margin-bottom:14px;}
           .dtour-card .fx-revh{font-family:Georgia,serif;font-size:19px;line-height:1.28;font-weight:700;color:#141A2E;}
           .dtour-card .fx-revs{font-size:12.5px;line-height:1.45;color:#5F6358;margin:7px 0 13px;}
-          /* Le catalogue tient dans la hauteur restante, réduit s'il le faut —
+          /* Le fil tient dans la hauteur restante, réduit s'il le faut —
              jamais rogné : sans ses trois boutons, le geste ne se lit pas. */
           .dtour-card.cat{display:flex;flex-direction:column;overflow:hidden;}
           .dtour-card .fx-fit{overflow:hidden;opacity:0;transition:opacity .2s ease;}
@@ -879,6 +924,36 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .fx-fit > *{transform-origin:top center;}
           .dtour-card .fx-aussi{flex:none;align-self:center;margin-top:11px;font-size:11.5px;font-weight:800;color:#0B7A55;
             background:#E4F7EE;border:1px solid #BFE9D4;border-radius:999px;padding:7px 13px;}
+          /* ── À PLUSIEURS : le Clik collectif ──────────────────────────────
+             Les mêmes couleurs que la carte du fil, à dessein : le commerçant
+             vient de voir cet écran, il doit reconnaître le même produit.
+             Le lime ne sert qu'à marquer LE BASCULEMENT — utilisé dès le
+             départ, il n'aurait plus rien à signaler quand ça se débloque. */
+          .dtour-card .ck-demo{background:#FFF;border:1px solid #E6E2DA;border-radius:16px;padding:15px;
+            text-align:left;transition:border-color .3s ease,background .3s ease;}
+          .dtour-card .ck-demo.ok{background:#E9F6D6;border-color:#93D02C;}
+          .dtour-card .ckd-prix{display:flex;align-items:baseline;gap:10px;}
+          .dtour-card .ckd-barre{font-size:15px;color:#7A8580;text-decoration:line-through;}
+          .dtour-card .ckd-net{font-family:Georgia,serif;font-size:30px;font-weight:600;color:#0E2A1C;line-height:1;}
+          .dtour-card .ckd-pct{background:#93D02C;color:#0E2A1C;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;}
+          .dtour-card .ckd-bande{margin-top:13px;}
+          .dtour-card .ckd-p{font-size:15px;font-weight:800;color:#0E2A1C;line-height:1.3;}
+          .dtour-card .ckd-j{height:8px;border-radius:5px;background:#D8D3C9;margin-top:10px;overflow:hidden;}
+          /* La jauge se remplit en 0,5 s : assez lent pour qu'on voie le
+             mouvement, assez rapide pour rester calé sur la voix. */
+          .dtour-card .ckd-j i{display:block;height:100%;border-radius:5px;background:#257A41;
+            transition:width .5s cubic-bezier(.3,.9,.4,1),background .3s ease;}
+          .dtour-card .ck-demo.ok .ckd-j i{background:#93D02C;}
+          /* Des pastilles dessinées, pas un emoji : le 👤 sort en bleu vif sur
+             la plupart des systèmes, et six taches bleues sur une carte lime
+             donnaient l'impression de deux produits collés l'un à l'autre. */
+          .dtour-card .ckd-gens{display:flex;gap:8px;margin-top:12px;}
+          .dtour-card .ckd-gens span{width:17px;height:17px;border-radius:50%;background:#D8D3C9;
+            transition:background .35s ease,transform .35s ease;}
+          .dtour-card .ckd-gens span.on{background:#257A41;transform:scale(1.12);}
+          .dtour-card .ck-demo.ok .ckd-gens span.on{background:#0E2A1C;}
+          .dtour-card .ckd-c{font-size:12px;color:#54605A;margin-top:9px;font-weight:600;}
+
           /* Sa phrase : une bulle de voix, pas une citation grise. */
           .dtour-card .fx-said{display:flex;align-items:flex-start;gap:10px;text-align:left;font-size:16px;line-height:1.5;
             color:#2C3350;font-style:italic;background:#F4F1FF;border:1px solid #E4DEF7;border-radius:15px;
@@ -908,10 +983,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .fx-checks span{font-size:13.5px;font-weight:700;color:#0B7A55;}
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-av,.dtour-card .fx-out{animation:none;}}
 
-          /* ── 3ᵉ temps : une RÉPLIQUE de l'écran catalogue ───────────────────
+          /* ── 3ᵉ temps : une RÉPLIQUE de l'écran du Direct ───────────────────
              Mêmes codes que /ville : entête, carte pleine photo avec voile,
              pastilles, barre de trois actions. Le cadre est sombre parce que le
-             catalogue l'est — on change de lieu, ça doit se voir. */
+             le fil l'est — on change de lieu, ça doit se voir. */
           .dtour-card .fx-cat{margin-top:2px;border-radius:20px;padding:12px 12px 14px;text-align:left;
             background:radial-gradient(120% 70% at 50% 0%,#141A20 0%,#0B0D12 60%,#08090D 100%);color:#EAEEF5;
             box-shadow:0 22px 46px -22px rgba(0,0,0,.95);animation:fxIn .5s cubic-bezier(.22,1,.36,1);}
@@ -970,7 +1045,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-card .fc-dots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .25s ease;}
           .dtour-card .fc-dots i.on{width:15px;border-radius:3px;background:#00E0A0;}
           .dtour-card .fc-dots i.done{background:rgba(255,255,255,.4);}
-          /* La barre d'actions du catalogue, à l'échelle : elle fait comprendre
+          /* La barre d'actions du fil, à l'échelle : elle fait comprendre
              qu'on est dans un endroit où l'on choisit, pas devant une image. */
           .dtour-card .fc-bar{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:12px;}
           .dtour-card .fc-act{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8.5px;
@@ -980,7 +1055,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);}
           .dtour-card .fc-act.want i{width:48px;height:48px;font-size:19px;border:none;color:#06231A;
             background:linear-gradient(90deg,#00E0A0,#07B083);box-shadow:0 8px 20px rgba(0,224,160,.35);}
-          /* La légende est NOTRE phrase, pas celle du catalogue : elle vit dehors. */
+          /* La légende est NOTRE phrase, pas celle du fil : elle vit dehors. */
           @media (prefers-reduced-motion:reduce){.dtour-card .fx-cat,.dtour-card .fc-card{animation:none;}}
 
           /* Scène « vision » : la clôture émotionnelle — une constellation vivante,
@@ -1403,10 +1478,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           {/* VOTRE ACTUALITÉ SE FAIT CONNAÎTRE — quatre temps.
               A · il dit · B · votre assistante rédige · C · l'annonce se pose
               dans le vrai bandeau du site · D · un habitant la découvre. */}
-          {/* LE MOTEUR — un catalogue au centre, des vitrines dans la ville.
+          {/* LE MOTEUR — le fil au centre, des vitrines dans la ville.
               Des emojis en orbite se lisaient comme « des catégories alimentent
-              le catalogue » : l'inverse de ce qui se passe. Ce sont maintenant
-              de petites fenêtres de sites, le catalogue s'y duplique, et des
+              le fil » : l'inverse de ce qui se passe. Ce sont maintenant
+              de petites fenêtres de sites, le fil s'y duplique, et des
               habitants apparaissent autour — on voit QUI découvre l'annonce. */}
           {scene === "reseau" && (
             <div className="dtour-ov alive-ov">
@@ -1415,7 +1490,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                   {reseauSites.map((nd, i) => (
                     <span key={`nl-${nd.t}`} className="net-line" style={{ width: `${RESEAU_R}px`, transform: `rotate(${nd.deg}deg)`, animationDelay: `${Math.max(600, MOTEUR_AT.sites - 500) + i * 120}ms` }} />
                   ))}
-                  {/* La copie du catalogue part du centre et rejoint chaque site. */}
+                  {/* La copie du fil part du centre et rejoint chaque site. */}
                   {reseauSites.map((nd, i) => (
                     <span
                       key={`nf-${nd.t}`}
@@ -1443,9 +1518,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                       👤
                     </span>
                   ))}
-                  <span className="net-core"><b>📍</b><i>Catalogue<br />de {villeAff || "votre ville"}</i></span>
+                  <span className="net-core"><b>📍</b><i>Le Direct<br />de {villeAff || "votre ville"}</i></span>
                 </div>
-                <div className="net-h">Un catalogue.<br />Des dizaines de vitrines dans la ville.</div>
+                <div className="net-h">Un seul fil.<br />Des dizaines de vitrines dans la ville.</div>
                 <div className="net-s">Votre actualité circule sur tout le réseau local.</div>
               </div>
             </div>
@@ -1477,12 +1552,12 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                     d'où la mise à l'échelle calculée juste en dessous. */}
                 {fxStep === 2 && (
                   <>
-                    <div className="fx-revh">Votre annonce rejoint le catalogue de {villeAff || "votre ville"}.</div>
+                    <div className="fx-revh">Votre annonce rejoint Le Direct de {villeAff || "votre ville"}.</div>
                     <div className="fx-revs">Des habitants qui ne vous connaissent pas encore peuvent maintenant vous découvrir.</div>
                     <div className="fx-fit" ref={fitRef}>
                       <div className="fx-cat">
                       <div className="fc-top">
-                        <span className="fc-logo">Catalogue de {villeAff || "votre ville"}</span>
+                        <span className="fc-logo">Le Direct de {villeAff || "votre ville"}</span>
                         <span className="fc-city">👤 Vue habitant</span>
                         <span className="fc-ex">exemple</span>
                       </div>
@@ -1540,6 +1615,52 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                     <div className="fx-aussi">✓ Également affichée sur votre site</div>
                   </>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* À PLUSIEURS — le Clik collectif.
+              La carte est celle du fil, avec sa bande et sa jauge : le
+              commerçant doit reconnaître l'écran qu'on vient de lui montrer,
+              pas découvrir un troisième dessin pour la même application.
+              Le compteur monte pendant qu'elle parle et bascule sur son mot. */}
+          {scene === "clik" && (
+            <div className="dtour-ov">
+              <div className="dtour-card">
+                <div className="fx-revh">À plusieurs, le prix baisse.</div>
+                <div className="fx-revs">
+                  Vous fixez le nombre et le prix de groupe. Nous rassemblons les gens.
+                </div>
+                <div className={`ck-demo${clikN >= 6 ? " ok" : ""}`}>
+                  <div className="ckd-prix">
+                    <span className="ckd-barre">24,00 €</span>
+                    <span className="ckd-net">16,80 €</span>
+                    <span className="ckd-pct">−30 %</span>
+                  </div>
+                  <div className="ckd-bande">
+                    <div className="ckd-p">
+                      {clikN >= 6
+                        ? "C'est débloqué pour tout le monde"
+                        : `Encore ${6 - clikN} personne${6 - clikN > 1 ? "s" : ""} et le prix baisse`}
+                    </div>
+                    <div className="ckd-j" aria-hidden="true">
+                      <i style={{ width: `${Math.round((Math.min(clikN, 6) / 6) * 100)}%` }} />
+                    </div>
+                    {/* Les silhouettes rendent le groupe concret : « 5 sur 6 »
+                        est un chiffre, cinq personnes allumées sont un groupe. */}
+                    <div className="ckd-gens" aria-hidden="true">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <span key={i} className={i < clikN ? "on" : ""} />
+                      ))}
+                    </div>
+                    <div className="ckd-c">
+                      {Math.min(clikN, 6)} sur 6 personnes
+                    </div>
+                  </div>
+                </div>
+                <div className="fx-aussi">
+                  {clikN >= 6 ? "✓ Six personnes arrivent ensemble" : "En cours dans Le Direct"}
+                </div>
               </div>
             </div>
           )}

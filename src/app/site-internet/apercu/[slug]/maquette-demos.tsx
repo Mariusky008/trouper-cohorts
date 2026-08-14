@@ -409,7 +409,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
 
   /** 2/2 — la carte du catalogue, presque plein écran, qui se laisse glisser. */
   const revCatalogue = (msg: string) =>
-    `<div class="asx-rev">2/2 — Dans le catalogue de ${villeNom}</div>` +
+    `<div class="asx-rev">2/2 — Dans Le Direct de ${villeNom}</div>` +
     `<div class="asx-swipe">${carteCatalogue(msg)}</div>` +
     // La barre de gestes du vrai swipe (a-saisir/selection-swipe.tsx) : sans elle,
     // on montre une belle carte mais pas l'objet que les habitants manipulent.
