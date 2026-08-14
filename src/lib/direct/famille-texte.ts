@@ -43,9 +43,22 @@ const norm = (s: string) =>
 const LIBERATION =
   /\b(?:creneaux?\b|s['’ ]?est liber|(?:vient|viennent) de se liber|se (?:sont |est )?liber|annulation\b|desistement\b|se desist|places? libres?\b|place de libre\b|rendez.?vous (?:de )?libre\b|table libre\b)/;
 
-// Un jour, une date, un mois : ce qui se passe À une date.
+// UN ÉVÉNEMENT SE RECONNAÎT À SON NOM, PAS À SA DATE.
+//
+// La liste contenait les jours de la semaine et les dates. C'était une prise
+// beaucoup trop large : « promo mardi », « ouvert dimanche », « le brushing à
+// plusieurs mardi après-midi » devenaient tous des événements, avec la pastille
+// violette sur des offres ordinaires. Presque toutes les annonces d'un commerce
+// portent un jour ou une heure — la date ne distingue donc rien.
+//
+// Ce qui distingue un événement, c'est qu'on VIENNE À quelque chose d'organisé,
+// et ça se dit par un nom : un concert, une braderie, un vernissage.
+//
+// CONSÉQUENCE ASSUMÉE : « Venez le 12 septembre à 18 h », sans nom, tombe en
+// « offre ». C'est le repli neutre, et il est cohérent avec la règle du bas de
+// ce fichier — annoncer une offre là où il y avait un événement déçoit peu.
 const EVENEMENT =
-  /\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|week.?end|portes ouvertes|vernissage|degustation|atelier|concert|dedicace|vente privee|braderie|marche de|animation|soiree|matinee|inauguration|conference|salon\b|festival|exposition|stage)\b|\ble \d{1,2}\b|\b\d{1,2} (janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/;
+  /\b(portes ouvertes|vernissage|degustation|atelier|concert|dedicace|vente privee|braderie|marche de|animation|soiree|matinee|inauguration|conference|salon\b|festival|exposition|stage|spectacle|projection|loto|kermesse|tournoi|defile|carnaval|feria|bal\b)\b/;
 
 // Une place, un créneau, un rendez-vous qui se libère.
 const PLACE =
