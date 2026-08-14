@@ -17,6 +17,25 @@ import { usePosition } from "@/lib/direct/position";
 import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
 import { VideoCarte } from "./video-carte";
 
+
+/** Teinte du repli quand aucune photo n'est exploitable.
+ *
+ *  Dérivée du NOM, donc stable : une couleur tirée au hasard changerait à chaque
+ *  rendu et le commerce n'aurait jamais d'identité visuelle. Cinq fonds sombres
+ *  seulement — le texte blanc doit rester lisible sur tous. */
+const TEINTES = [
+  "linear-gradient(150deg,#3B5140,#16231B)",
+  "linear-gradient(150deg,#4A4130,#1F1B14)",
+  "linear-gradient(150deg,#3A4A52,#161F23)",
+  "linear-gradient(150deg,#4E3B3B,#211818)",
+  "linear-gradient(150deg,#404A34,#1A2016)",
+];
+function teinte(nom: string): string {
+  let h = 0;
+  for (let i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0;
+  return TEINTES[h % TEINTES.length];
+}
+
 export type CarteVue = {
   id: string;
   famille: Famille;
@@ -90,39 +109,42 @@ export function Carte({
 
   return (
     <article className="post">
-      <div className="meta">
-        {repere ? <span className="dist">{repere}</span> : null}
-        {repere && p.fraicheur ? <span className="sep">·</span> : null}
-        {p.fraicheur ? <span className="fresh">{p.fraicheur}</span> : null}
-        {p.echeance ? <span className="sep">·</span> : null}
-        {p.echeance ? <span className="left">{p.echeance}</span> : null}
-        <span className={`kind k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
+      {/* NIVEAU 1 — L'ENVIE. L'image occupe la tête de carte et porte le texte.
+          Sans photo, un aplat teinté avec le nom du commerce : jamais de carte
+          vide, et surtout jamais une photo de vitrine posée à côté d'un plat
+          qu'elle ne montre pas — l'image doit dire ce que l'annonce dit. */}
+      <div className="pic">
+        {p.video ? (
+          <VideoCarte src={p.video} poster={p.photo} alt={`Vidéo de ${p.auteurNom}`} />
+        ) : p.photo ? (
+          <div className="fond" style={{ backgroundImage: `url(${JSON.stringify(p.photo)})` }} role="presentation" />
+        ) : (
+          <div className="repli" style={{ background: teinte(p.auteurNom) }}>
+            <span>{p.auteurNom}</span>
+          </div>
+        )}
+        <div className="voile" aria-hidden="true" />
+        {repere ? <span className="bg">{repere}</span> : null}
+        {p.echeance ? <span className="bd">{p.echeance}</span> : null}
+
+        {/* NIVEAU 2 — LA DÉCISION, puis NIVEAU 3 — LA PREUVE : la fraîcheur.
+            « il y a 4 min » est le signal qui sépare ce fil d'un annuaire. */}
+        {fiche ? (
+          <Link href={fiche} className="sur" prefetch={false}>
+            <span className={`pastille k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
+            {p.fraicheur ? <span className="conf"><i />{p.fraicheur}</span> : null}
+            <h3>{p.texte}</h3>
+            <span className="qui">{p.auteurNom}{p.auteurMetier ? ` · ${p.auteurMetier}` : ""}</span>
+          </Link>
+        ) : (
+          <div className="sur">
+            <span className={`pastille k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
+            {p.fraicheur ? <span className="conf"><i />{p.fraicheur}</span> : null}
+            <h3>{p.texte}</h3>
+            <span className="qui">{p.auteurNom}{p.auteurMetier ? ` · ${p.auteurMetier}` : ""}</span>
+          </div>
+        )}
       </div>
-
-      {fiche ? (
-        <Link href={fiche} className="ph" prefetch={false}>
-          <span className="pav" aria-hidden="true">{p.auteurNom.charAt(0).toUpperCase()}</span>
-          <span>
-            <span className="pn" style={{ display: "block" }}>{p.auteurNom}</span>
-            {p.auteurMetier ? <span className="pm">{p.auteurMetier}</span> : null}
-          </span>
-        </Link>
-      ) : (
-        <div className="ph">
-          <span className="pav" aria-hidden="true">{p.auteurNom.charAt(0).toUpperCase()}</span>
-          <span>
-            <span className="pn" style={{ display: "block" }}>{p.auteurNom}</span>
-            {p.auteurMetier ? <span className="pm">{p.auteurMetier}</span> : null}
-          </span>
-        </div>
-      )}
-
-      <p className="pb">{p.texte}</p>
-      {p.video ? (
-        <VideoCarte src={p.video} poster={p.photo} alt={`Vidéo de ${p.auteurNom}`} />
-      ) : p.photo ? (
-        <div className="pimg" style={{ backgroundImage: `url(${JSON.stringify(p.photo)})` }} role="presentation" />
-      ) : null}
 
       <div className="pf">
         {fiche ? (

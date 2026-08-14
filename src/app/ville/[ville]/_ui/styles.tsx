@@ -13,8 +13,15 @@ export function StylesDirect() {
     <style
       dangerouslySetInnerHTML={{
         __html: STYLES_VIDEO_CARTE + `
-.dir{--ink:#14201A;--body:#3C4A43;--soft:#6B7A72;--faint:#9DAAA3;--line:#E6EBE8;--line2:#D3DBD7;
-  --paper:#FFF;--bg:#F4F7F5;--g:#0F8F5F;--gl:#3FD79A;--gs:#E6F4EE;--gd:#0A6B48;--amber:#D9A03C;--red:#D2634A;--vio:#5C4BD4;
+/* PALETTE — celle du prototype, avec deux corrections MESURÉES et non jugées à
+   l'œil :
+     · le lime ne fait que 1,68:1 sur la crème. Il ne porte donc JAMAIS de texte
+       sur fond clair — uniquement des aplats, des pastilles et des points, où
+       l'encre sur lime atteint 8,27:1 ;
+     · les gris secondaires d'origine tombaient à 3,82 et 2,32:1. Remontés à
+       5,93 et 5,03:1 — c'est un fil qu'on lit dehors, en plein soleil, à midi. */
+.dir{--ink:#0E2A1C;--body:#3A453E;--soft:#54605A;--faint:#5F6B63;--line:#E6E2DA;--line2:#D8D3C9;
+  --paper:#FFF;--bg:#F5F3EF;--g:#257A41;--gl:#93D02C;--gs:#E9F6D6;--gd:#1F6B39;--amber:#B96F12;--red:#B2452C;--vio:#5C4BD4;
   background:var(--bg);color:var(--body);font-family:var(--fb),system-ui,sans-serif;-webkit-font-smoothing:antialiased;
   min-height:100dvh;display:flex;flex-direction:column;}
 .dir *{box-sizing:border-box;}
@@ -77,6 +84,35 @@ export function StylesDirect() {
 .dir .post .pm{font-size:9px;color:var(--faint);}
 .dir .post .pb{padding:0 12px 10px;font-size:12.5px;color:var(--ink);line-height:1.45;}
 .dir .post .pimg{height:150px;background-size:cover;background-position:center;background-color:#DDE4E0;}
+
+/* ── L'IMAGE D'ABORD ──────────────────────────────────────────────────────
+   La carte s'ouvre sur l'image, et le texte est POSÉ DESSUS. Photo en bas de
+   carte, on lit une notice ; photo en tête avec le titre dedans, on regarde une
+   vitrine. C'est le même contenu et ce n'est pas le même geste.
+
+   REPLI SANS PHOTO : jamais de carte vide dans un fil qui vit de l'image. Un
+   aplat teinté porte le nom du commerce en grand — mieux vaut un carton propre
+   qu'une photo de vitrine posée à côté d'un plat qu'elle ne montre pas. Une
+   image qui ne correspond pas à l'annonce est un mensonge par juxtaposition,
+   et elle coûte plus cher que pas d'image du tout. */
+.dir .pic{position:relative;height:246px;overflow:hidden;background:#2A2318;}
+.dir .pic .fond{position:absolute;inset:0;background-size:cover;background-position:center;}
+.dir .pic .voile{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(14,42,28,.46) 0,rgba(14,42,28,0) 26%,rgba(14,42,28,.32) 52%,rgba(14,42,28,.92) 100%);}
+.dir .pic .repli{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;}
+.dir .pic .repli span{font-family:var(--fd),Georgia,serif;font-size:27px;line-height:1.15;color:#fff;
+  text-align:center;opacity:.92;}
+.dir .pic .bg{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.94);color:var(--ink);
+  border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
+.dir .pic .bd{position:absolute;top:12px;right:12px;background:rgba(14,42,28,.74);color:#fff;
+  border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;}
+.dir .sur{position:absolute;left:14px;right:14px;bottom:13px;color:#fff;text-decoration:none;display:block;}
+.dir .sur .pastille{display:inline-block;background:var(--gl);color:#0E2A1C;border-radius:999px;
+  padding:5px 11px;font-size:10.5px;font-weight:800;letter-spacing:.02em;}
+.dir .sur .conf{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D5E5DB;margin-top:9px;}
+.dir .sur .conf i{width:6px;height:6px;border-radius:50%;background:var(--gl);font-style:normal;}
+.dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:600;line-height:1.22;margin:6px 0 0;color:#fff;}
+.dir .sur .qui{font-size:11.5px;color:#CFE0D6;margin-top:4px;}
 .dir .post .pf{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);}
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
