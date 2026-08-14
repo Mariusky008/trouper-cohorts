@@ -97,8 +97,21 @@ export function StylesDirect() {
   text-shadow:0 1px 3px rgba(8,20,14,.6);}
 .dir .sur .conf{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D5E5DB;margin-top:9px;}
 .dir .sur .conf i{width:6px;height:6px;border-radius:50%;background:var(--gl);font-style:normal;}
-.dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:600;line-height:1.22;margin:6px 0 0;color:#fff;}
-.dir .sur .qui{font-size:11.5px;color:#CFE0D6;margin-top:4px;}
+/* TROIS LIGNES, PAS PLUS.
+   Le texte est écrit par un commerçant, et parfois par une assistante bavarde :
+   « Un créneau s'est libéré lundi 10 de 11h à 13h, avec un café offert sur
+   place. Répondez-moi pour réserver ce moment ! » remplissait quatre lignes,
+   poussait le bloc jusqu'à percuter les badges du haut, et faisait passer le
+   nom du commerce sur deux lignes. La carte du fil est une accroche, pas
+   l'annonce entière — la suite est sur la boutique, à un doigt de là.
+   Une carte qui déborde ne dit pas « il y a beaucoup à lire », elle dit
+   « c'est cassé ». */
+.dir .sur h3{font-family:var(--fd),Georgia,serif;font-size:20px;font-weight:600;line-height:1.22;margin:6px 0 0;color:#fff;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+/* Le nom tient sur UNE ligne : « Esthéticienne Guinot - LPG - institut de
+   beauté » est une liste de mots-clés, pas une information à lire en entier. */
+.dir .sur .qui{font-size:11.5px;color:#CFE0D6;margin-top:4px;display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* ── LES PASTILLES DE FAMILLE ─────────────────────────────────────────────
    Elles sont posées SUR UNE PHOTO, et c'est tout ce qui dicte leur dessin :
