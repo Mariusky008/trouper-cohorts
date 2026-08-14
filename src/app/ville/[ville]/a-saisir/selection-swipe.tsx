@@ -164,22 +164,25 @@ export function SelectionSwipe({
   return (
     <div className="asx">
       <div className="asx-top">
-        <div>
-          <div className="t">Sélectionné pour vous, maintenant</div>
+        <div style={{ flex: 1 }}>
+          <div className="t">Sélectionné pour vous</div>
           <div className="s">
             {i + 1} sur {cartes.length} · les plus proches, les plus urgents
+            {gardees.size > 0 ? ` · ${gardees.size} gardée${gardees.size > 1 ? "s" : ""}` : ""}
           </div>
         </div>
-        <div className="asx-cnt">
-          <b>♥ {gardees.size}</b>
-          <span>gardées</span>
-        </div>
       </div>
-      <div className="asx-jauge" aria-hidden="true">
-        <span style={{ width: `${Math.round(((i + 1) / cartes.length) * 100)}%` }} />
+      {/* UNE BARRE PAR CARTE, pas une jauge continue. Une jauge dit « vous
+          avancez » ; des segments disent « il en reste trois », qui est la
+          seule question qu'on se pose en glissant. */}
+      <div className="asx-seg" aria-hidden="true">
+        {cartes.map((c, k) => (
+          <i key={c.id} className={k <= i ? "on" : ""} />
+        ))}
       </div>
 
       <div className="asx-pile">
+       <div className="asx-stack">
         {reste > 2 && <div className="asx-derr b2" aria-hidden="true" />}
         {reste > 1 && <div className="asx-derr b1" aria-hidden="true" />}
         <div
@@ -217,9 +220,30 @@ export function SelectionSwipe({
           </div>
           <div className="asx-corps">
             <p className="asx-texte">{carte.texte}</p>
-            {carte.fraicheur ? <div className="asx-quand">{carte.fraicheur}</div> : null}
           </div>
+
+          {/* L'ÉCHELLE DES PRIX, DANS LA CARTE. Sans elle, on glisse sur des
+              annonces sans savoir ce qu'elles proposent — c'est-à-dire au
+              hasard. Non cliquable : la carte se manipule au doigt, un lien
+              dedans se déclencherait à chaque geste raté. Le glissement vers le
+              haut reste le geste qui engage. */}
+          {carte.facons.length > 0 && (
+            <div className="asx-fac" aria-hidden="true">
+              {carte.facons.slice(0, 3).map((f) => (
+                <div key={f.id} className={`asx-fac-l f-${f.type}`}>
+                  <span className="asx-fac-ic">
+                    {f.type === "cadeau" ? "🎁" : f.type === "express" ? "⚡" : f.type === "collectif" ? "👥" : "🕐"}
+                  </span>
+                  <span>
+                    <span className="asx-fac-pr">{f.prix}</span>
+                    <span className="asx-fac-nm">{f.label}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+       </div>
       </div>
 
       <div className="asx-boutons">
@@ -230,7 +254,7 @@ export function SelectionSwipe({
       {legende && (
         <div className="asx-leg">
           <span>Passer</span>
-          <span className="mid">Garder</span>
+          <span>Garder</span>
           <span>La boutique</span>
         </div>
       )}

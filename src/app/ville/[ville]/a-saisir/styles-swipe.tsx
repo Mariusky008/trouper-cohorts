@@ -9,81 +9,101 @@ export function StylesSwipe() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-/* La coque passe en sombre pour cet onglet : une barre blanche sous une carte
-   plein écran découpe l'image et casse l'effet de pile. */
-.dir:has(.asx),.dir:has(.asx-fin){background:radial-gradient(120% 70% at 50% -10%,#1B2E25 0%,#080F0B 60%);}
-.dir:has(.asx) .vue,.dir:has(.asx-fin) .vue{display:flex;flex-direction:column;min-height:100dvh;}
+/* L'écran est PLEIN ÉCRAN ET SOMBRE : le glissement vertical réserve, et un
+   geste vertical ne peut pas cohabiter avec une page qui défile — le
+   navigateur gagnerait toujours. La coque s'assombrit avec lui, sinon une
+   barre claire découpe le bas d'une image. */
+.dir:has(.asx),.dir:has(.asx-fin){background:#0A1310;}
+.dir:has(.asx) .vue,.dir:has(.asx-fin) .vue{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0;}
 
-.asx{flex:1;display:flex;flex-direction:column;padding:18px 16px 0;color:#fff;min-height:0;}
-.asx-top{display:flex;align-items:flex-start;gap:10px;}
-.asx-top .t{font-size:12.5px;font-weight:700;}
-.asx-top .s{font-size:9.5px;color:#8FA79A;margin-top:2px;}
-.asx-cnt{margin-left:auto;text-align:right;flex:none;}
-.asx-cnt b{display:block;font-size:12px;font-weight:700;color:#93D02C;}
-.asx-cnt span{font-size:8.5px;color:#8FA79A;}
-.asx-jauge{height:3px;border-radius:2px;background:rgba(255,255,255,.12);margin-top:9px;overflow:hidden;}
-.asx-jauge span{display:block;height:100%;background:#93D02C;transition:width .28s ease;}
+.asx{flex:1;display:flex;flex-direction:column;padding:20px 14px 0;color:#fff;min-height:0;}
+.asx-top{display:flex;align-items:center;gap:11px;}
+.asx-top .t{font-size:13px;font-weight:800;color:#fff;}
+.asx-top .s{color:#7E9A8D;font-size:10.5px;margin-top:2px;}
 
-.asx-pile{flex:1;position:relative;margin-top:14px;min-height:320px;}
-.asx-derr{position:absolute;border-radius:20px;background:#22382D;}
-.asx-derr.b2{left:15px;right:15px;top:9px;bottom:11px;transform:rotate(2.5deg);}
-.asx-derr.b1{left:7px;right:7px;top:4px;bottom:5px;background:#2E4A3C;transform:rotate(-1.8deg);}
-.asx-carte{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:#fff;
-  box-shadow:0 15px 34px -13px rgba(0,0,0,.7);display:flex;flex-direction:column;
+/* UNE BARRE PAR CARTE, pas une jauge continue. Une jauge dit « vous avancez » ;
+   des segments disent « il en reste trois », ce qui est la seule question
+   qu'on se pose en glissant. */
+.asx-seg{display:flex;gap:4px;margin-top:12px;}
+.asx-seg i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.2);}
+.asx-seg i.on{background:#fff;}
+
+.asx-pile{flex:1;display:flex;flex-direction:column;min-height:0;margin-top:13px;}
+.asx-stack{position:relative;flex:1;min-height:0;}
+/* La pile derrière : deux barres décalées, pas des cartes tournées. Un empilage
+   penché fait « jeu de cartes » ; deux traits droits font « il y en a
+   d'autres », ce qui est l'information. */
+.asx-derr{position:absolute;border-radius:24px;}
+.asx-derr.b2{left:16px;right:16px;top:-9px;height:26px;background:#22392C;}
+.asx-derr.b1{left:8px;right:8px;top:-4px;height:20px;background:#31543F;}
+
+.asx-carte{position:absolute;inset:0;border-radius:26px;overflow:hidden;background:#fff;
+  box-shadow:0 22px 46px -18px rgba(0,0,0,.85);display:flex;flex-direction:column;
   transition:transform .22s cubic-bezier(.2,.7,.3,1);touch-action:none;cursor:grab;user-select:none;}
 .asx-carte:active{cursor:grabbing;}
 
-/* La photo absorbe l'espace disponible, le texte prend ce qu'il lui faut.
-   À hauteur fixe, une annonce courte laissait un grand vide blanc sous elle —
-   sur un écran dont l'argument est l'image, c'est le pire endroit où mettre du
-   blanc. */
-/* Le fond est TOUJOURS posé en ligne : la photo, ou la teinte dérivée du nom du
-   commerce. Le dégradé sable qui vivait ici servait de repli à tout le monde —
-   toutes les annonces sans photo se ressemblaient, et aucune ne ressemblait à
-   ce qu'on venait de voir dans le fil. */
-.asx-img{flex:1;min-height:170px;position:relative;background-size:cover;background-position:center;
+/* La photo absorbe l'espace disponible, le reste prend ce qu'il lui faut. */
+.asx-img{flex:1;min-height:140px;position:relative;background-size:cover;background-position:center;
   background-color:#2E4A3C;}
-.asx-ech{position:absolute;top:11px;left:11px;background:rgba(178,69,44,.95);color:#fff;font-size:9px;
-  font-weight:700;padding:5px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.03em;}
-.asx-dist{position:absolute;top:11px;right:11px;background:rgba(255,255,255,.94);color:#14201A;font-size:9px;
-  font-weight:700;padding:5px 10px;border-radius:12px;}
-/* Le monogramme du repli, quand il n'y a pas de photo : il occupe le vide sans
-   rien promettre. Posé AVANT le voile dans le balisage — placé après, il
-   passerait par-dessus le nom du commerce. */
 .asx-mono{position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);
   font-family:var(--fd),Georgia,serif;font-size:82px;line-height:1;color:#fff;letter-spacing:.05em;opacity:.17;}
-.asx-voile{position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(180deg,transparent,rgba(20,32,26,.88));}
-.asx-qui{position:absolute;bottom:11px;left:13px;right:13px;color:#fff;text-shadow:0 1px 3px rgba(8,20,14,.6);}
-.asx-qui em{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-style:normal;}
-.asx-qui b{display:block;font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:600;line-height:1.15;}
+.asx-ech{position:absolute;top:13px;left:13px;background:#C4553A;color:#fff;font-size:12.5px;
+  font-weight:800;padding:8px 14px;border-radius:999px;}
+.asx-dist{position:absolute;top:13px;right:13px;background:rgba(14,42,28,.8);backdrop-filter:blur(8px);
+  color:#fff;font-size:13.5px;font-weight:600;padding:8px 15px;border-radius:999px;}
+.asx-voile{position:absolute;left:0;right:0;bottom:0;height:120px;
+  background:linear-gradient(180deg,transparent,rgba(14,42,28,.95));}
+.asx-qui{position:absolute;bottom:14px;left:16px;right:16px;color:#fff;text-shadow:0 1px 3px rgba(8,20,14,.6);}
+.asx-qui em{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;font-style:normal;}
+.asx-qui b{display:block;font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:700;line-height:1.15;margin-top:4px;}
 .asx-tampon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-11deg);
-  border:3px solid #fff;color:#fff;font-size:19px;font-weight:800;letter-spacing:.09em;padding:7px 15px;
-  border-radius:9px;background:rgba(20,32,26,.42);}
+  border:3px solid #fff;color:#fff;font-size:21px;font-weight:800;letter-spacing:.09em;padding:8px 17px;
+  border-radius:11px;background:rgba(20,32,26,.42);}
 
-.asx-corps{padding:14px 15px 15px;flex:none;}
-.asx-texte{font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:600;color:#14201A;line-height:1.32;margin:0;}
-.asx-quand{margin-top:9px;font-size:10px;color:#6B7A72;}
+.asx-corps{padding:13px 14px 10px;flex:none;}
+.asx-texte{font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:700;color:#14201A;line-height:1.3;margin:0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
-.asx-boutons{display:flex;justify-content:center;gap:14px;margin-top:16px;}
-.asx-boutons .b{border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
-.asx-boutons .s{width:46px;height:46px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#C9D8D0;font-size:17px;}
-.asx-boutons .g{width:57px;height:57px;background:linear-gradient(150deg,#A8E03A,#6FAF1E);border:none;color:#08140E;
-  font-size:22px;box-shadow:0 8px 19px -6px rgba(147,208,44,.55);}
-.asx-leg{display:flex;justify-content:center;gap:14px;margin-top:7px;}
-/* nowrap : « La boutique » passait à la ligne dans sa boîte de 46 px, et une
-   légende sur deux lignes déséquilibre les trois boutons qu'elle décrit. */
-.asx-leg span{width:46px;text-align:center;font-size:8.5px;color:#8FA79A;font-weight:600;white-space:nowrap;}
-.asx-leg .mid{width:57px;color:#93D02C;font-weight:700;}
-.asx-aide{text-align:center;font-size:9px;color:#8FA79A;margin:8px 0 16px;}
+/* L'ÉCHELLE DES PRIX, DANS LA CARTE. Sans elle, on glisse sur des annonces
+   sans savoir ce qu'elles proposent — c'est-à-dire qu'on glisse au hasard.
+   Réduite, et NON CLIQUABLE : la carte se manipule au doigt, un lien dedans se
+   déclencherait à chaque geste raté. */
+.asx-fac{padding:0 14px 12px;}
+.asx-fac-l{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line2);border-radius:16px;
+  padding:9px 11px;margin-bottom:6px;background:#fff;}
+.asx-fac-l:last-child{margin-bottom:0;}
+.asx-fac-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;background:var(--bg);}
+.asx-fac-pr{display:block;font-family:var(--fd),Georgia,serif;font-size:19px;font-weight:700;color:#14201A;line-height:1;}
+/* En bloc : côte à côte, « 19 € » et « LE CADEAU » se collaient en
+   « 19 €LE CADEAU ». */
+.asx-fac-nm{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--soft);margin-top:3px;}
+.asx-fac-l.f-cadeau{border-color:#C4E0A8;background:#FBFDF7;}
+.asx-fac-l.f-cadeau .asx-fac-ic{background:#E4F2DC;} .asx-fac-l.f-cadeau .asx-fac-nm{color:#2C8A4B;}
+.asx-fac-l.f-express{border-color:#F0D9B4;background:#FDF2E4;}
+.asx-fac-l.f-express .asx-fac-ic{background:#F8E7CE;} .asx-fac-l.f-express .asx-fac-nm{color:#DB8A2C;}
+.asx-fac-l.f-collectif{border-color:#CFC8F2;background:#EEEBFB;}
+.asx-fac-l.f-collectif .asx-fac-ic{background:#DFDAF7;} .asx-fac-l.f-collectif .asx-fac-nm{color:#6B5BD4;}
+
+.asx-boutons{flex:none;display:flex;justify-content:center;gap:16px;padding:16px 0 6px;}
+.asx-boutons .b{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.22);color:#fff;font-size:21px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-family:inherit;}
+/* Le geste principal est le SEUL en lime : trois boutons identiques ne disent
+   pas lequel fait avancer. */
+.asx-boutons .g{background:rgba(147,208,44,.16);border-color:rgba(147,208,44,.4);color:var(--gl);}
+.asx-leg{flex:none;display:flex;justify-content:center;gap:16px;padding-bottom:104px;}
+.asx-leg span{width:56px;text-align:center;font-size:9.5px;color:#7E9A8D;font-weight:700;white-space:nowrap;}
+.asx-aide{text-align:center;font-size:10.5px;color:#7E9A8D;margin:6px 0 0;}
 
 .asx-fin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:40px 28px 90px;color:#fff;}
-.asx-fin h2{font-family:var(--fd),Georgia,serif;font-size:22px;font-weight:600;margin:0 0 10px;}
-.asx-fin p{font-size:12.5px;color:#9DB5A8;line-height:1.65;margin:0;max-width:340px;}
-.asx-retour{margin-top:22px;background:#93D02C;color:#08140E;border:none;border-radius:23px;
-  padding:13px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+  text-align:center;padding:40px 28px 120px;color:#7E9A8D;}
+.asx-fin h2{font-family:var(--fd),Georgia,serif;font-size:22px;font-weight:700;color:#fff;margin:0 0 10px;}
+.asx-fin p{font-size:14px;line-height:1.5;margin:0;max-width:340px;}
+.asx-retour{margin-top:22px;background:var(--gl);color:#08140E;border:none;border-radius:999px;
+  padding:14px 26px;font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:700;cursor:pointer;}
 
-@media (prefers-reduced-motion:reduce){.asx-carte,.asx-jauge span{transition:none!important;}}
+@media (prefers-reduced-motion:reduce){.asx-carte{transition:none!important;}}
 `,
       }}
     />

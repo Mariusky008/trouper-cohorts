@@ -22,6 +22,8 @@ import { habitantCourant, gardees, suivis } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
+import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
+import { faconsVue } from "@/lib/direct/facons-vue";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -58,6 +60,9 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
   // Seules les huit retenues comptent, pas tout le fil relu pour les choisir.
   void noterAffichages(supabase, choisies);
 
+  // Les façons des annonces retenues : sans les prix, on glisse au hasard.
+  const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
+
   const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
   const cartes: CarteVue[] = choisies.map((p) => ({
     id: p.id,
@@ -75,11 +80,11 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
     urgent: presse(p.expireLe),
-    // PAS DE CLIK SUR CET ÉCRAN, et c'est un choix. La carte du swipe se
-    // manipule au glissement : une bande cliquable posée dedans se
-    // déclencherait par accident à chaque geste raté. Le Clik se découvre
-    // dans le fil, où il a la place d'exister.
-    facons: [],
+    // LES FAÇONS S'AFFICHENT ICI AUSSI, mais SANS LIEN : la carte se manipule
+    // au glissement, et une bande cliquable posée dedans se déclencherait à
+    // chaque geste raté. On montre les prix — sans eux on glisse au hasard —
+    // et le glissement vers le haut reste le seul geste qui engage.
+    facons: faconsVue(cliksParPub.get(p.id)),
   }));
 
   return (
