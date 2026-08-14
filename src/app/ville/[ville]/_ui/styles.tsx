@@ -365,6 +365,26 @@ export function StylesDirect() {
   padding:11px 21px;font-size:14.5px;color:#2C8A4B;font-weight:600;margin-top:16px;}
 .dir .ck-code i{width:7px;height:7px;border-radius:50%;background:var(--gl);font-style:normal;}
 .dir .ck-code b{font-family:var(--fd),Georgia,serif;letter-spacing:.06em;color:var(--ink);}
+/* OÙ SE RENDRE — quatre lignes, alignées en colonnes.
+   Le code au-dessus s'adresse au commerçant ; ce bloc s'adresse à celui qui
+   vient. Il est ALIGNÉ À GAUCHE au milieu d'un écran centré, et c'est
+   volontaire : une adresse centrée se lit ligne par ligne, sans qu'on puisse
+   balayer la colonne des libellés. */
+.dir .ck-rec{margin-top:18px;text-align:left;background:var(--paper);border:1px solid var(--line);
+  border-radius:var(--rl);padding:15px 16px;}
+.dir .ck-rec-t{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;
+  color:var(--faint);margin-bottom:11px;}
+.dir .ck-rec-l{display:grid;grid-template-columns:20px 74px 1fr;align-items:baseline;gap:8px;
+  padding:5px 0;font-size:14px;line-height:1.45;}
+.dir .ck-rec-i{font-size:13px;line-height:1.45;}
+.dir .ck-rec-k{color:var(--faint);font-size:12px;font-weight:700;}
+.dir .ck-rec-v{color:var(--ink);font-weight:600;}
+/* Recopier une adresse depuis un écran de téléphone est le pas où l'on
+   abandonne : le lien ouvre l'application de cartes déjà installée. */
+.dir .ck-rec-go{display:inline-block;margin-top:11px;font-size:13.5px;font-weight:800;
+  color:var(--gd);text-decoration:none;}
+.dir .ck-rec-go:hover{text-decoration:underline;}
+
 .dir .ck-fini{margin-top:14px;font-size:14px;color:var(--soft);line-height:1.6;text-align:center;}
 .dir .ck-fini a{color:#2C8A4B;font-weight:700;}
 

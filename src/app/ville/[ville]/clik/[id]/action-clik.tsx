@@ -13,21 +13,28 @@
 // promettre une place qu'on n'a peut-être pas. On attend, et on le montre.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RecapCommerce } from "./recap";
+import type { CommerceVue } from "@/lib/direct/commerce-vue";
 
 type Etat = "ouverte" | "presque" | "complete" | "epuise" | "terminee";
 
 export function ActionClik({
   campagneId,
   ville,
+  villeNom,
   type,
   etat,
   dejaDedans,
   statutInitial,
   gainInitial,
   codeInitial,
+  commerce,
 }: {
   campagneId: string;
   ville: string;
+  /** Le nom lisible de la ville — dernier repère spatial quand on n'a ni
+   *  position accordée ni quartier. */
+  villeNom: string;
   type: "simple" | "cadeau" | "express" | "collectif";
   etat: Etat;
   dejaDedans: boolean;
@@ -36,6 +43,9 @@ export function ActionClik({
   gainInitial: { libelle: string; condition: string } | null;
   /** Le code, quand le serveur le connaît déjà (on revient sur la page). */
   codeInitial: string | null;
+  /** Où se rendre. `null` quand la fiche du commerce est introuvable — on
+   *  n'invente pas une adresse. */
+  commerce: CommerceVue | null;
 }) {
   const router = useRouter();
   const [envoi, setEnvoi] = useState(false);
@@ -91,6 +101,14 @@ export function ActionClik({
         {code && !attente && (
           <div className="ck-code"><i />Code <b>{code}</b></div>
         )}
+        {/* OÙ SE RENDRE. Le code s'adresse au commerçant ; ces quatre lignes
+            s'adressent à celui qui vient. Sans elles, on repartait d'ici avec
+            une confirmation et aucune idée d'où aller.
+
+            Affiché aussi en liste d'attente : la place peut se libérer d'un
+            instant à l'autre, et c'est justement à ce moment-là qu'on n'a plus
+            le temps de chercher l'adresse. */}
+        {commerce && <RecapCommerce commerce={commerce} villeNom={villeNom} />}
       </div>
     );
   }

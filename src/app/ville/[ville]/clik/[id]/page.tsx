@@ -23,6 +23,7 @@ import { campagneParId, maParticipation, etatDe, phraseClik, avancement, remise,
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { ActionClik } from "./action-clik";
 import { codeDe } from "@/lib/direct/code-bon";
+import { commerceDuClik } from "@/lib/direct/commerce-vue";
 
 /**
  * La condition d'achat, telle qu'on peut la lire.
@@ -66,7 +67,13 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
   ]);
   if (!campagne) notFound();
 
-  const participation = habitant ? await maParticipation(supabase, campagne.id, habitant.id) : null;
+  // La fiche du commerce, pour le récapitulatif d'après-clic. Lue ici et non
+  // dans le composant : c'est une lecture de base, et le composant qui affiche
+  // la distance doit être client pour connaître la position de qui lit.
+  const [participation, commerce] = await Promise.all([
+    habitant ? maParticipation(supabase, campagne.id, habitant.id) : Promise.resolve(null),
+    commerceDuClik(supabase, campagne.siteId),
+  ]);
   const etat = etatDe(campagne);
   const part = avancement(campagne);
   const pct = remise(campagne);
@@ -180,6 +187,7 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
           <ActionClik
             campagneId={campagne.id}
             ville={ville}
+            villeNom={cfg.nom}
             type={campagne.type}
             etat={etat}
             dejaDedans={dedans}
@@ -193,6 +201,7 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
             // rechargement : sans lui, revenir sur la page effacerait ce que le
             // commerçant doit retrouver.
             codeInitial={dedans && habitant ? codeDe(campagne.id, habitant.id) : null}
+            commerce={commerce}
           />
         </div>
 
