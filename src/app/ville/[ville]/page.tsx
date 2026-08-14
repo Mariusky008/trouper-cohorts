@@ -1,6 +1,7 @@
 // ÉCRAN 1 — LE DIRECT.
 //
-// Tout ce qui se passe dans la ville : le pouls, puis le fil chronologique. Ce
+// Tout ce qui se passe dans la ville : le pouls, puis le fil trié PAR ORDRE DE
+// DISPARITION — ce qui part le plus tôt d'abord, jamais par date. Ce
 // n'est pas un catalogue, c'est le pouls de la ville en temps réel — le mot
 // « catalogue » n'apparaît nulle part à l'écran, et aucune notion d'édition, de
 // numéro ni de mois n'existe.
@@ -12,6 +13,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { filDeVille, noterAffichages, FAMILLE_LABEL, estFamille, type Famille } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
+import { trierLeFil } from "@/lib/direct/fil";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
@@ -82,6 +84,19 @@ export default async function LeDirectPage({
   } else if (estFamille(filtre)) {
     visibles = publications.filter((p) => p.famille === (filtre as Famille));
   }
+
+  // L'ORDRE DU FIL — la règle du §3, à la place du simple ordre chronologique.
+  // Ce qui expire dans l'heure passe devant, puis le reste.
+  //
+  // Deux des quatre rangs ne sont pas encore alimentés, et c'est volontaire
+  // plutôt qu'oublié : la DISTANCE ne se connaît qu'au navigateur (la position
+  // n'est jamais envoyée au serveur), et les CAMPAGNES collectives ne sont pas
+  // encore rattachées aux publications. Les deux entrées existent dans
+  // `trierLeFil` ; les brancher ne changera pas une ligne ici.
+  // L'horloge est lue DANS `trierLeFil`, pas ici : un `Date.now()` dans le corps
+  // du composant rend le rendu impur, et la règle `react-hooks/purity` le refuse
+  // — à raison, puisque deux rendus du même état donneraient deux résultats.
+  visibles = trierLeFil(visibles.map((p) => ({ ...p, distanceM: null, collectif: null })));
 
   const cartes: CarteVue[] = visibles.map((p) => ({
     id: p.id,
@@ -161,7 +176,11 @@ export default async function LeDirectPage({
           <div className="sect">
             <div className="st">Le fil</div>
             <div className="ss">
-              du plus récent au plus ancien
+              {/* Le libellé suit le tri réel. Il annonçait « du plus récent au
+                  plus ancien » alors que le fil part désormais de ce qui
+                  disparaît le plus tôt — un écran qui décrit mal son propre
+                  ordre est pire qu'un écran muet. */}
+              ce qui part en premier
               {pouls.fenetreLarge ? " · les sept derniers jours" : ""}
             </div>
           </div>
