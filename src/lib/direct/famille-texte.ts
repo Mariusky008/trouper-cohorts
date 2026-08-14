@@ -6,7 +6,19 @@
 //
 // L'ordre des tests est la logique : on cherche d'abord ce qui est le plus
 // discriminant. « Deux places pour l'atelier de samedi » est un événement, pas
-// une place libre — la date l'emporte sur le mot « place ».
+// une place libre — le mot « place » seul ne suffit pas à en faire une.
+//
+// MAIS LA DATE NE PEUT PAS L'EMPORTER SUR TOUT. La règle a d'abord été écrite
+// « un nom de jour ⇒ événement », et elle classait « Un créneau s'est libéré
+// lundi 10 » en événement, avec la pastille violette au lieu du lime — donc au
+// mauvais rang dans le fil, et sans l'urgence qui est tout l'intérêt d'une
+// place qui se libère. Pire : « Annulation ce jeudi, la place est libre »
+// devenait un événement.
+//
+// Ce qui distingue un événement, ce n'est pas qu'une date apparaisse — c'est
+// qu'on VIENNE À quelque chose d'organisé. Une phrase qui dit qu'un créneau
+// S'EST LIBÉRÉ décrit l'inverse : quelque chose qui était pris ne l'est plus.
+// Ce signal-là passe donc AVANT la date.
 //
 // En cas de doute, « offre ». C'est la famille la plus neutre : annoncer une
 // offre là où il y avait une place libre déçoit peu ; annoncer une place libre
@@ -15,6 +27,21 @@ import type { Famille } from "./publications";
 
 const norm = (s: string) =>
   String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+// UNE PLACE QUI SE LIBÈRE — le signal le plus fort du fil, et le seul qui
+// l'emporte sur une date. Volontairement étroit : ce sont des tournures qui
+// décrivent quelque chose qui SE DÉFAIT (une annulation, un désistement, un
+// créneau rendu), pas simplement des places disponibles.
+//
+// « Il me reste deux places pour l'atelier de samedi » n'est PAS ici, et c'est
+// exprès : il reste des places à un événement, l'événement tient toujours.
+//
+// PAS DE `\b` FINAL SUR LES RADICAUX : « liber » suivi du « é » de « libéré »
+// n'est pas une frontière de mot, et un `\b` de fermeture faisait échouer
+// toutes les formes conjuguées d'un coup. Chaque alternative porte donc sa
+// propre fermeture, là où elle a un sens.
+const LIBERATION =
+  /\b(?:creneaux?\b|s['’ ]?est liber|(?:vient|viennent) de se liber|se (?:sont |est )?liber|annulation\b|desistement\b|se desist|places? libres?\b|place de libre\b|rendez.?vous (?:de )?libre\b|table libre\b)/;
 
 // Un jour, une date, un mois : ce qui se passe À une date.
 const EVENEMENT =
@@ -30,6 +57,7 @@ const PLACE =
  */
 export function familleDuTexte(texte: string): Famille {
   const t = norm(texte);
+  if (LIBERATION.test(t)) return "place";
   if (EVENEMENT.test(t)) return "evenement";
   if (PLACE.test(t)) return "place";
   return "offre";

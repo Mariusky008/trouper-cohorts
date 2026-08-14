@@ -366,5 +366,15 @@ export function ilYA(iso: string | null): string {
   const h = Math.floor(min / 60);
   if (h < 24) return `il y a ${h} h`;
   if (h < 48) return "hier";
+  // « il y a 3 jours » plutôt que « 11/08 ».
+  //
+  // Cette ligne est LE signal de vivacité de la carte : elle est là pour dire
+  // que quelque chose vient de se passer. Une date brute demande à celui qui
+  // lit de faire la soustraction lui-même, et le fil d'une ville calme — qui
+  // s'élargit à sept jours faute de volume — n'affichait plus que des « 11/08 »
+  // illisibles. Quitte à montrer une annonce de trois jours, autant l'écrire :
+  // une ancienneté qu'on assume se lit mieux qu'une date qu'on déchiffre.
+  const j = Math.floor(h / 24);
+  if (j < 7) return `il y a ${j} jours`;
   return new Date(t).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
