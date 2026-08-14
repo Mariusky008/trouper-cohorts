@@ -11,7 +11,9 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { SaisieHeure, lireHeure, STYLES_SAISIE_HEURE } from "./saisie-heure";
 import { EnvoiVideo, STYLES_ENVOI_VIDEO } from "./envoi-video";
 import { toWaDigits } from "@/lib/site-internet/phone";
-import { compresserImage } from "@/lib/site-internet/image-client";
+import { chargerImage, type PhotoChargee } from "@/lib/site-internet/image-client";
+import { verifierTaille } from "@/lib/site-internet/cadrage";
+import { CadragePhoto, STYLES_CADRAGE } from "./cadrage-photo";
 import { drawVisuel, VISUEL_SIZE, VISUEL_STYLES } from "@/lib/site-internet/annonce-visuel";
 import {
   intentionsPour,
@@ -150,6 +152,9 @@ export function ProRelance({
   const [touchePhoto, setTouchePhoto] = useState(false);
   const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
+  /** La photo en attente de cadrage. */
+  const [aCadrer, setACadrer] = useState<PhotoChargee | null>(null);
+  const fermerCadrage = () => setACadrer(null);
   const fichierRef = useRef<HTMLInputElement | null>(null);
   /** La nouvelle annonce doit remplacer celle qui est déjà en ligne. */
   const [remplace, setRemplace] = useState(false);
@@ -198,6 +203,12 @@ export function ProRelance({
    * en haut d'une page très longue, la galerie quinze écrans plus bas, et son
    * annonce en cours nulle part en vue. On prend donc la photo ici, on l'ajoute
    * à sa galerie, et on la choisit dans la foulée.
+   *
+   * Deux étapes désormais, parce que la carte du fil découpe l'image en 16:9 :
+   * on MESURE d'abord (et on refuse ce qui sera flou), puis on montre le
+   * cadrage. L'envoi n'a lieu qu'après. Une photo envoyée puis rognée en
+   * silence, c'est un commerçant qui découvre son plat coupé en deux dans la
+   * ville — et qui n'en publie pas de seconde.
    */
   const ajouterPhoto = async (files: FileList | null) => {
     const file = files?.[0];
@@ -206,10 +217,40 @@ export function ProRelance({
       setPhotoErr("Ce fichier n'est pas une image.");
       return;
     }
+    setPhotoErr("");
+    try {
+      const chargee = await chargerImage(file);
+      const verdict = verifierTaille(chargee.largeur, chargee.hauteur);
+      if (!verdict.ok) {
+        chargee.liberer();
+        setPhotoErr(verdict.raison);
+        return;
+      }
+      setACadrer(chargee);
+    } catch {
+      setPhotoErr("Impossible d'ouvrir cette image.");
+    } finally {
+      // Remis à zéro tout de suite : sans ça, reprendre LE MÊME fichier après
+      // un refus ne déclenche aucun `change` et le bouton paraît cassé.
+      if (fichierRef.current) fichierRef.current.value = "";
+    }
+  };
+
+  // La photo chargée retient le fichier en mémoire jusqu'à `liberer()`. Le
+  // nettoyage passe par un effet plutôt que par le bouton « Annuler » : ainsi
+  // il a lieu AUSSI quand le composant disparaît avec un cadrage ouvert, et
+  // cinq essais de suite ne laissent pas 30 Mo derrière eux.
+  useEffect(() => {
+    if (!aCadrer) return;
+    return () => aCadrer.liberer();
+  }, [aCadrer]);
+
+  /** Le cadrage est validé : c'est seulement maintenant qu'on envoie. */
+  const envoyerRecadree = async (dataUrl: string) => {
+    fermerCadrage();
     setEnvoiPhoto(true);
     setPhotoErr("");
     try {
-      const dataUrl = await compresserImage(file);
       const r = await fetch("/api/site-internet/pro/gallery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,7 +269,6 @@ export function ProRelance({
       setPhotoErr("Impossible de traiter cette image.");
     } finally {
       setEnvoiPhoto(false);
-      if (fichierRef.current) fichierRef.current.value = "";
     }
   };
 
@@ -644,7 +684,7 @@ export function ProRelance({
     <>
       <style
         dangerouslySetInnerHTML={{
-          __html: STYLES_SAISIE_HEURE + STYLES_ENVOI_VIDEO + `
+          __html: STYLES_SAISIE_HEURE + STYLES_ENVOI_VIDEO + STYLES_CADRAGE + `
           .pro .relance{margin-top:30px;border-top:1px solid var(--hair);padding-top:24px;}
           .pro .relance .a-title{font-family:var(--fd),Georgia,serif;font-weight:700;font-size:19px;}
           .pro .relance .a-sub{font-size:13px;color:var(--soft);margin-top:4px;line-height:1.45;}
@@ -1391,6 +1431,13 @@ export function ProRelance({
           </>
         )}
       </div>
+
+      {/* Le cadrage se superpose au formulaire au lieu de le remplacer : le
+          commerçant doit garder son annonce sous les yeux, c'est elle que la
+          photo est censée illustrer. */}
+      {aCadrer && (
+        <CadragePhoto photo={aCadrer} onValider={envoyerRecadree} onAnnuler={fermerCadrage} />
+      )}
     </>
   );
 }
