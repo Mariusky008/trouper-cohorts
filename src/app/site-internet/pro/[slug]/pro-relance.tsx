@@ -105,7 +105,7 @@ export function ProRelance({
   ville: string;
   confirmation: Confirmation;
   secteur: Secteur;
-  /** Le pro participe au catalogue de sa ville (il peut s'en retirer). */
+  /** Le pro participe au fil de sa ville (il peut s'en retirer). */
   collectifActif: boolean;
   /** Son site est en ligne. Sinon RIEN de ce qu'il publie n'est visible. */
   /** Commerces de sa ville déjà en ligne — donc susceptibles de la relayer. */
@@ -142,6 +142,36 @@ export function ProRelance({
   const [offer, setOffer] = useState<Offer | null>(null);
   const [offerText, setOfferText] = useState("");
   const [duree, setDuree] = useState("2j");
+  // ── LES FAÇONS D'EN PROFITER ──────────────────────────────────────────────
+  // Elles vivaient dans un autre onglet, si bien que publier une annonce ici
+  // n'en proposait aucune : le commerçant devait republier ailleurs, et le
+  // créneau se retrouvait annoncé deux fois. Elles sont désormais à l'endroit
+  // où l'on décide de ce qu'on propose.
+  const [facPrix, setFacPrix] = useState("");
+  const [facSimple, setFacSimple] = useState(true);
+  const [facCadeau, setFacCadeau] = useState(false);
+  const [facCadeauQte, setFacCadeauQte] = useState("10");
+  const [facCadeauLib, setFacCadeauLib] = useState("");
+  const [facCadeauCond, setFacCadeauCond] = useState("");
+  const [facExpress, setFacExpress] = useState(false);
+  const [facExpressPrix, setFacExpressPrix] = useState("");
+  const [facPartage, setFacPartage] = useState(false);
+  const [facPartagePrix, setFacPartagePrix] = useState("");
+  const [facPartageObj, setFacPartageObj] = useState("4");
+  /** Cocher une façon à prix éteint « à prendre » : les deux ne peuvent pas
+   *  coexister, proposer plein tarif à côté d'un prix de groupe n'est pas un
+   *  choix. */
+  const choisirFacon = (quoi: "simple" | "cadeau" | "express" | "partage", actif: boolean) => {
+    if (quoi === "simple") {
+      setFacSimple(actif);
+      if (actif) { setFacCadeau(false); setFacExpress(false); setFacPartage(false); }
+      return;
+    }
+    if (actif) setFacSimple(false);
+    if (quoi === "cadeau") setFacCadeau(actif);
+    if (quoi === "express") setFacExpress(actif);
+    if (quoi === "partage") setFacPartage(actif);
+  };
   /** L'échéance que le TEXTE annonce, quand le commerçant n'en choisit aucune.
    *  Montrée avant publication : une annonce qui se retire toute seule sans
    *  qu'on l'ait dit, c'est un commerçant qui la croit perdue. */
@@ -190,6 +220,23 @@ export function ProRelance({
   const [chSite, setChSite] = useState(true); // bandeau sur le site + fil (offert)
   const [chWa, setChWa] = useState(false); // WhatsApp (option)
   const [chSocial, setChSocial] = useState(false); // Facebook / Instagram (texte à coller)
+
+  // L'APERÇU DE LA COLONNE DE PRIX, telle que l'habitant la verra. Le
+  // commerçant doit lire ses propres chiffres dans l'ordre où ils paraîtront —
+  // c'est ce qui rend l'engagement concret avant de le prendre.
+  const apercuFacons: Array<{ cle: string; prix: string; nom: string }> = [];
+  {
+    const eur = (v: string) => {
+      const x = Number(String(v).replace(",", "."));
+      return Number.isFinite(x) && x > 0 ? `${x.toFixed(2).replace(/[.,]00$/, "").replace(".", ",")} €` : "";
+    };
+    const pn = eur(facPrix);
+    if (facCadeau && pn) apercuFacons.push({ cle: "cadeau", prix: pn, nom: "Le cadeau" });
+    const pe = eur(facExpressPrix);
+    if (facExpress && pe) apercuFacons.push({ cle: "express", prix: pe, nom: "L'express" });
+    const pp = eur(facPartagePrix);
+    if (facPartage && pp) apercuFacons.push({ cle: "partage", prix: pp, nom: `Le collectif · dès ${facPartageObj}` });
+  }
 
   const trackLink = typeof window !== "undefined" ? `${window.location.origin}/offre/${slug}` : `/offre/${slug}`;
 
@@ -351,6 +398,20 @@ export function ProRelance({
           until: fin ? fin.toISOString() : null,
           photo,
           video,
+          // LES FAÇONS D'EN PROFITER, publiées avec l'annonce. Un seul appel :
+          // deux requêtes créeraient deux annonces pour un même créneau si la
+          // seconde échouait.
+          simple: facSimple,
+          prixNormal: facPrix,
+          cadeau: facCadeau,
+          cadeauQuantite: facCadeauQte,
+          cadeauLibelle: facCadeauLib,
+          cadeauCondition: facCadeauCond,
+          express: facExpress,
+          expressPrix: facExpressPrix,
+          partage: facPartage,
+          partagePrix: facPartagePrix,
+          partageObjectif: facPartageObj,
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -360,6 +421,9 @@ export function ProRelance({
         // pour aller voir le résultat aux deux endroits.
         setRemplace(false);
         setPubliee(true);
+        // L'annonce est partie même si les façons ont échoué : on le dit,
+        // plutôt que de laisser croire que tout s'est passé comme prévu.
+        if (typeof j.avertissement === "string" && j.avertissement) setOfferErr(j.avertissement);
       } else {
         setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
       }
@@ -768,7 +832,7 @@ export function ProRelance({
             font-size:12.5px;font-weight:800;color:var(--ink);}
           .pro .relance .phot .ph-h button{border:1px solid var(--hair);background:#fff;color:var(--violet);
             border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;}
-          /* L'aperçu reprend le CADRAGE de la carte du catalogue (portrait) : sur
+          /* L'aperçu reprend le CADRAGE de la carte du fil (portrait) : sur
              une bande large, le pro voyait une image qui n'était pas celle que
              ses client·es verraient, et découvrait le recadrage après coup. */
           .pro .relance .phot .ph-g{display:block;width:auto;height:230px;aspect-ratio:4/5;object-fit:cover;
@@ -869,6 +933,26 @@ export function ProRelance({
           .pro .relance .rlz-steps .s.on .n{background:var(--grad,#00926E);color:#fff;}
           .pro .relance .rlz-steps .s.done .n{background:#12A65C;color:#fff;}
           .pro .relance .rlz-h{font-family:var(--fd),Georgia,serif;font-size:18px;font-weight:700;margin-top:18px;}
+          /* ── LES FAÇONS D'EN PROFITER ────────────────────────────────
+             Un encart qui s'ouvre SOUS la case cochée, jamais un écran de
+             plus : le commerçant doit garder sous les yeux les autres façons
+             pour comprendre qu'il compose une échelle, pas une promo isolée. */
+          .pro .relance .facbox{background:#FAF9F6;border:1px solid var(--hair);border-radius:14px;
+            padding:12px;margin:-4px 0 10px;}
+          .pro .relance .facduo{display:flex;gap:9px;margin-bottom:9px;}
+          .pro .relance .facduo label{flex:1;}
+          .pro .relance .facduo span{display:block;font-size:11px;font-weight:700;color:var(--soft);margin-bottom:5px;}
+          .pro .relance .facbox input,.pro .relance .facbox select{width:100%;padding:10px 11px;
+            border:1px solid var(--hair);border-radius:10px;font-size:15px;font-family:inherit;color:var(--ink);background:#fff;}
+          .pro .relance .faclab{display:block;font-size:11px;font-weight:700;color:var(--soft);margin-bottom:5px;}
+          .pro .relance .facnote{font-size:11px;color:#8A5A1A;background:#FBF2DF;border-radius:9px;
+            padding:8px 10px;margin-top:8px;line-height:1.45;}
+          /* L'aperçu : la colonne de prix telle qu'elle paraîtra dans le fil. */
+          .pro .relance .facap{margin-top:10px;background:#0E2A1C;border-radius:11px;padding:10px 12px;}
+          .pro .relance .facap-l{display:flex;align-items:baseline;gap:9px;padding:4px 0;}
+          .pro .relance .facap-l b{font-family:var(--fd),Georgia,serif;font-size:17px;color:#fff;min-width:66px;}
+          .pro .relance .facap-l span{font-size:11px;color:#93D02C;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+
           .pro .relance .rlz-nav{display:flex;gap:9px;margin-top:18px;}
           .pro .relance .rlz-nav button{flex:1;border-radius:12px;padding:13px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;border:none;}
           .pro .relance .rlz-nav .back{flex:0 0 auto;background:#F1EFF7;color:var(--soft);border:1px solid var(--hair);padding:13px 18px;}
@@ -1061,7 +1145,7 @@ export function ProRelance({
             <div className={`chan${chSite ? " on" : ""}`} onClick={() => setChSite((v) => !v)}>
               <span className="ce">🌐</span>
               <span className="cb">
-                <span className="ct">{collectifActif ? `Mon site + le catalogue de ${ville}` : "Sur mon site"}</span>
+                <span className="ct">{collectifActif ? `Mon site + Le Direct de ${ville}` : "Sur mon site"}</span>
                 <span className="cs">
                   {collectifActif
                     ? "Un bandeau en haut de votre site, et une carte dans les annonces du jour de la ville"
@@ -1083,6 +1167,98 @@ export function ProRelance({
               <span className="tag opt">option</span>
               <span className="ck">{chSocial ? "✓" : ""}</span>
             </div>
+            {/* COMMENT PEUT-ON EN PROFITER ?
+                Quatre cas, dont un exclusif. « À prendre » est coché d'avance
+                parce que c'est le plus fréquent — un créneau qui se libère n'a
+                ni prix ni cadeau, il a besoin de quelqu'un. Les trois autres
+                ouvrent une échelle de prix, et cochés ils décochent le premier :
+                proposer plein tarif à côté d'un prix de groupe n'est pas un
+                choix. */}
+            <div className="rlz-h" style={{ marginTop: 22 }}>Comment peut-on en profiter&nbsp;?</div>
+
+            <div className={`chan${facSimple ? " on" : ""}`} onClick={() => choisirFacon("simple", !facSimple)}>
+              <span className="ce">🕐</span>
+              <span className="cb">
+                <span className="ct">À prendre, tout simplement</span>
+                <span className="cs">Ni réduction ni cadeau — le créneau cherche preneur</span>
+              </span>
+              <span className="ck">{facSimple ? "✓" : ""}</span>
+            </div>
+
+            <div className={`chan${facCadeau ? " on" : ""}`} onClick={() => choisirFacon("cadeau", !facCadeau)}>
+              <span className="ce">🎁</span>
+              <span className="cb">
+                <span className="ct">Le cadeau</span>
+                <span className="cs">Prix normal, plus un avantage — ne vous coûte rien sur le prix</span>
+              </span>
+              <span className="ck">{facCadeau ? "✓" : ""}</span>
+            </div>
+            {facCadeau && (
+              <div className="facbox">
+                <div className="facduo">
+                  <label><span>Combien</span>
+                    <input inputMode="numeric" value={facCadeauQte} onChange={(e) => setFacCadeauQte(e.target.value)} /></label>
+                  <label><span>Ce qu&apos;ils reçoivent</span>
+                    <input value={facCadeauLib} onChange={(e) => setFacCadeauLib(e.target.value)} maxLength={120} placeholder="Un café offert" /></label>
+                </div>
+                <label className="faclab">À partir de quel achat</label>
+                <input value={facCadeauCond} onChange={(e) => setFacCadeauCond(e.target.value)} maxLength={120} placeholder="dès 10 € d'achat" />
+                <div className="facnote">
+                  Obligatoire&nbsp;: sans condition d&apos;achat, vous donnez à des gens qui n&apos;achètent rien.
+                </div>
+              </div>
+            )}
+
+            <div className={`chan${facExpress ? " on" : ""}`} onClick={() => choisirFacon("express", !facExpress)}>
+              <span className="ce">⚡</span>
+              <span className="cb">
+                <span className="ct">L&apos;express</span>
+                <span className="cs">Moins cher à qui vient dans l&apos;heure — remplit un creux</span>
+              </span>
+              <span className="ck">{facExpress ? "✓" : ""}</span>
+            </div>
+
+            <div className={`chan${facPartage ? " on" : ""}`} onClick={() => choisirFacon("partage", !facPartage)}>
+              <span className="ce">👥</span>
+              <span className="cb">
+                <span className="ct">Le collectif</span>
+                <span className="cs">Le prix le plus bas, si plusieurs viennent ensemble</span>
+              </span>
+              <span className="ck">{facPartage ? "✓" : ""}</span>
+            </div>
+
+            {(facCadeau || facExpress || facPartage) && (
+              <div className="facbox">
+                <div className="facduo">
+                  <label><span>Votre prix habituel</span>
+                    <input inputMode="decimal" value={facPrix} onChange={(e) => setFacPrix(e.target.value)} placeholder="19" /></label>
+                  {facExpress && (
+                    <label><span>Prix express</span>
+                      <input inputMode="decimal" value={facExpressPrix} onChange={(e) => setFacExpressPrix(e.target.value)} placeholder="17" /></label>
+                  )}
+                </div>
+                {facPartage && (
+                  <div className="facduo">
+                    <label><span>Prix de groupe</span>
+                      <input inputMode="decimal" value={facPartagePrix} onChange={(e) => setFacPartagePrix(e.target.value)} placeholder="16" /></label>
+                    <label><span>À partir de</span>
+                      <select value={facPartageObj} onChange={(e) => setFacPartageObj(e.target.value)}>
+                        {[2, 3, 4, 5, 6, 8, 10, 12].map((v) => <option key={v} value={v}>{v} personnes</option>)}
+                      </select></label>
+                  </div>
+                )}
+                {/* L'aperçu de la colonne de prix, telle que les habitants la
+                    verront. C'est ce qui rend l'engagement concret. */}
+                {apercuFacons.length > 0 && (
+                  <div className="facap">
+                    {apercuFacons.map((l) => (
+                      <div key={l.cle} className="facap-l"><b>{l.prix}</b><span>{l.nom}</span></div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="rlz-nav">
               <button className="back" onClick={() => setStep(1)}>←</button>
               <button className="next" onClick={goStep3} disabled={!anyChannel}>Suivant →</button>
@@ -1098,7 +1274,7 @@ export function ProRelance({
             {chSite && (
               <div className="rlz-block">
                 <div className="rbh">
-                  🌐 {collectifActif ? `Mon site et le catalogue de ${ville}` : "Sur mon site"}{" "}
+                  🌐 {collectifActif ? `Mon site et Le Direct de ${ville}` : "Sur mon site"}{" "}
                   <span className="tag free">offert</span>
                 </div>
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
@@ -1142,7 +1318,7 @@ export function ProRelance({
                       <div className="lvoir">
                         <a href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">👁 Voir sur mon site ↗</a>
                         {collectifActif && villeSlug && (
-                          <a href={`/ville/${villeSlug}`} target="_blank" rel="noreferrer">📍 Voir dans le catalogue ↗</a>
+                          <a href={`/ville/${villeSlug}`} target="_blank" rel="noreferrer">📍 Voir dans Le Direct ↗</a>
                         )}
                       </div>
                       <div className="lact">
@@ -1159,7 +1335,7 @@ export function ProRelance({
                           ➕ En publier une autre
                         </button>
                         {/* « Retirer du site » laissait croire qu'elle restait
-                            dans le catalogue. Elle part des deux d'un coup. */}
+                            dans Le Direct. Elle part des deux d'un coup. */}
                         <button className="rm" onClick={clearOffer} disabled={offerBusy}>
                           {collectifActif ? "Retirer partout" : "Retirer du site"}
                         </button>
@@ -1173,7 +1349,7 @@ export function ProRelance({
                           {offer.text.length > 60 ? "…" : ""}&nbsp;».
                         </div>
                       )}
-                      <label className="ofl" htmlFor="offer-text">Le titre affiché sur votre site et dans le catalogue</label>
+                      <label className="ofl" htmlFor="offer-text">Le titre affiché sur votre site et dans Le Direct</label>
                       <input
                         id="offer-text"
                         type="text"
@@ -1205,7 +1381,7 @@ export function ProRelance({
                           : "Elle disparaît toute seule de votre site et du fil de votre ville — vous n'avez rien à faire."}
                       </div>
 
-                      {/* Le catalogue de la ville n'était nommé nulle part dans le
+                      {/* Le fil de la ville n'était nommé nulle part dans le
                           parcours : le pro publiait sans savoir que son annonce y
                           entrait. C'est pourtant la moitié de ce qu'on lui promet. */}
                       {/* CE BLOC AFFIRMAIT LE CONTRAIRE DE LA RÉALITÉ.
@@ -1240,7 +1416,7 @@ export function ProRelance({
                               <b>🤝 Chez les commerces voisins</b>
                               <i>
                                 {voisins} commerce{voisins > 1 ? "s" : ""} de {ville} affiche
-                                {voisins > 1 ? "nt" : ""} le catalogue sur leur site — jamais un concurrent direct.
+                                {voisins > 1 ? "nt" : ""} Le Direct sur leur site — jamais un concurrent direct.
                               </i>
                             </span>
                           )}
@@ -1260,7 +1436,7 @@ export function ProRelance({
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img className="ph-g" src={photo} alt="" />
                           <div className="ph-s">
-                            C&apos;est elle qui illustrera votre annonce dans le catalogue de {ville}.
+                            C&apos;est elle qui illustrera votre annonce dans Le Direct de {ville}.
                           </div>
                           {touchePhoto && (
                             <div className="ph-l">
@@ -1309,7 +1485,7 @@ export function ProRelance({
                         </div>
                       )}
 
-                      {/* Sans photo, la carte du catalogue est un aplat de
+                      {/* Sans photo, la carte du fil est un aplat de
                           couleur. On le DIT, au lieu de laisser la découverte
                           se faire sur la page publique. */}
                       {photos.length === 0 && (

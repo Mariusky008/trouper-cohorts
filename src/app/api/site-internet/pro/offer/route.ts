@@ -25,6 +25,7 @@ import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
+import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 
 export const dynamic = "force-dynamic";
 
@@ -202,6 +203,8 @@ export async function POST(request: Request) {
     // ailleurs — dont le contenu peut changer après validation.
     const video = videoAcceptee(str(p?.video));
     const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
+    /** Renseigné si les façons ont échoué APRÈS la publication de l'annonce. */
+    let avertissementFacons = "";
     try {
       await supabase.from("human_vitrine_sites").update({ current_offer: offer }).eq("id", id);
     } catch {
@@ -237,7 +240,7 @@ export async function POST(request: Request) {
     const ville = str(site.city);
     if (ville) {
       const slugVille = villeSlug(ville);
-      await publier(supabase, {
+      const pub = await publier(supabase, {
         ville,
         villeSlug: slugVille,
         famille: familleDuTexte(text),
@@ -247,6 +250,37 @@ export async function POST(request: Request) {
         expireLe: until,
         site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
       });
+
+      // LES FAÇONS D'EN PROFITER, quand le commerçant en a coché.
+      //
+      // C'est le vrai chaînon manquant : jusqu'ici, publier une annonce depuis
+      // ce parcours ne proposait AUCUNE façon à l'habitant. Il fallait aller
+      // dans un autre onglet, republier autre chose, et on se retrouvait avec
+      // deux annonces pour un seul créneau.
+      //
+      // Un échec ici ne doit PAS annuler l'annonce : elle est déjà publiée et
+      // elle est utile telle quelle. On l'écrit dans la réponse pour que
+      // l'écran puisse le dire, plutôt que de faire croire au silence.
+      let faconsErr = "";
+      if (pub?.id && (p?.simple || p?.cadeau || p?.express || p?.partage)) {
+        const prep = preparerFacons(p ?? {}, { finGenerale: until ?? new Date(Date.now() + 24 * 3600 * 1000).toISOString() });
+        if (!prep.ok) faconsErr = prep.erreur;
+        else {
+          try {
+            await ecrireFacons(supabase, prep.facons, {
+              siteId: id,
+              villeSlug: slugVille,
+              titre: text,
+              publicationId: pub.id,
+            });
+          } catch (e) {
+            faconsErr = /does not exist|schema cache|Could not find/i.test(String(e))
+              ? "Votre annonce est publiée, mais les façons d'en profiter ne sont pas encore activées sur votre espace."
+              : "Votre annonce est publiée, mais les façons d'en profiter n'ont pas pu être enregistrées.";
+          }
+        }
+      }
+      if (faconsErr) avertissementFacons = faconsErr;
 
       // L'ALERTE PART ICI, pas dans un cron. Une place qui se libère à 16 h et
       // annoncée à 17 h n'est plus une place qui se libère. `after()` : le
@@ -264,7 +298,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true, offer });
+    return NextResponse.json({ ok: true, offer, avertissement: avertissementFacons || undefined });
   }
 
   // get — la galerie voyage avec l'offre : le sélecteur de photo n'a pas besoin
