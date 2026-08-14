@@ -248,6 +248,14 @@ export async function POST(request: Request) {
         photo,
         video,
         expireLe: until,
+        // CE QU'IL RESTE ET L'ARDOISE, saisis par le commerçant.
+        //
+        // La carte du fil montrait « 2 tables » et « Voir l'ardoise » sans que
+        // personne ne les saisisse : c'était du décor. Le lien est borné à
+        // http(s) — un `javascript:` collé ici s'exécuterait sur la page
+        // d'accueil de toute une ville.
+        reste: str(p?.reste).slice(0, 40),
+        ardoise: /^https?:\/\//i.test(str(p?.ardoise)) ? str(p?.ardoise).slice(0, 500) : null,
         site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
       });
 

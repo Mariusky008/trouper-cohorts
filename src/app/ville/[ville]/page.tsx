@@ -134,6 +134,8 @@ export default async function LeDirectPage({
     // (« Arrivée avant 12 h 47 ») : fait dans la carte, qui est un composant
     // client, il divergerait entre le rendu serveur et l'hydratation.
     facons: faconsVue(cliksParPub.get(p.id)),
+    reste: p.reste,
+    ardoise: p.ardoise,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 

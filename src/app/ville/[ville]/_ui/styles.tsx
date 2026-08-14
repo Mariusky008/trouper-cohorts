@@ -181,6 +181,19 @@ export function StylesDirect() {
 
    Chaque façon garde sa teinte propre, la même partout dans l'application :
    le cadeau en crème, l'express en ambre, la table à partager en violet. */
+/* CE QU'IL RESTE, ET L'ARDOISE — la première ligne sous l'image.
+   Elle porte deux faits saisis par le commerçant, et rien d'automatique : le
+   stock à gauche, sa carte du jour à droite. Le trait est SOUS la ligne, pas
+   au-dessus : il la rattache à l'image dont elle donne le détail, au lieu de
+   la coller à l'échelle des prix qui n'a rien à voir. */
+.dir .det{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--line);}
+.dir .det-r{font-size:13.5px;font-weight:700;color:var(--body);}
+/* Le lien est un lien, pas un bouton : « Voir l'ardoise » ne remplace jamais
+   « La boutique » ni une façon d'en profiter — c'est un détour, pas la sortie. */
+.dir .det-a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;white-space:nowrap;flex:none;}
+.dir .det-a:hover{text-decoration:underline;}
+
 /* Pas de trait de séparation : la carte est un objet d'un seul tenant, et
    l'échelle des prix en fait partie. */
 .dir .fac{padding:18px 16px 6px;}

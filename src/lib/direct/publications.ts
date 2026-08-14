@@ -68,9 +68,45 @@ export type Publication = {
   lng: number | null;
   /** Quartier de l'auteur — le repli d'affichage quand la position est refusée. */
   quartier: string;
+  /** CE QU'IL RESTE, en clair : « 2 tables », « 3 parts ». Saisi par le
+   *  commerçant, jamais déduit — nous ne savons pas ce qu'il lui reste. */
+  reste: string;
+  /** L'adresse de sa carte du jour, affichée « Voir l'ardoise ». */
+  ardoise: string | null;
 };
 
 type Row = Record<string, unknown>;
+
+// LES COLONNES RÉCENTES SONT DEMANDÉES À PART.
+//
+// PostgREST refuse TOUTE la requête quand une seule colonne demandée n'existe
+// pas. Une migration non appliquée ne doit pas vider le fil d'une ville : on
+// tente avec, et on retente sans. C'est exactement la leçon de `nom_facon`, qui
+// avait fait disparaître les trois façons d'une annonce en silence.
+const CHAMPS_BASE =
+  "id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le";
+const CHAMPS_RECENTS = "reste, ardoise";
+const CHAMPS = `${CHAMPS_BASE}, ${CHAMPS_RECENTS}`;
+
+/** Vrai quand l'erreur PostgREST dit « cette colonne n'existe pas ».
+ *
+ *  On teste les formulations de PostgREST, pas les noms de colonnes : `reste`
+ *  est un mot trop courant pour servir de signal — il apparaîtrait dans des
+ *  messages qui n'ont rien à voir, et on retenterait des requêtes saines. */
+function colonneAbsente(e: unknown): boolean {
+  return /does not exist|schema cache|Could not find|42703|PGRST204/i.test(String(e));
+}
+
+/**
+ * Lance `construire(champs)` avec les colonnes récentes, puis sans elles si la
+ * base ne les connaît pas encore.
+ */
+async function avecRepli(construire: (champs: string) => PromiseLike<{ data: unknown; error: unknown }>): Promise<Row[]> {
+  let { data, error } = await construire(CHAMPS);
+  if (error && colonneAbsente(error)) ({ data, error } = await construire(CHAMPS_BASE));
+  if (error) throw new Error(String((error as { message?: string })?.message ?? error));
+  return Array.isArray(data) ? (data as Row[]) : [];
+}
 
 function lirePublication(r: Row, site?: Row | null): Publication | null {
   const texte = str(r.texte).trim();
@@ -94,6 +130,11 @@ function lirePublication(r: Row, site?: Row | null): Publication | null {
     lat: typeof nLat === "number" ? nLat : null,
     lng: typeof nLng === "number" ? nLng : null,
     quartier: str(site?.quartier),
+    reste: str(r.reste).trim().slice(0, 40),
+    // Relu à la sortie autant qu'à l'entrée : une ligne écrite avant ce contrôle,
+    // ou par une autre voie, ne doit pas poser un `javascript:` sur la page
+    // d'accueil d'une ville.
+    ardoise: /^https?:\/\//i.test(str(r.ardoise)) ? str(r.ardoise) : null,
   };
 }
 
@@ -134,16 +175,16 @@ export async function filDeVille(
 
   let rows: Row[] = [];
   try {
-    const { data, error } = await supabase
-      .from("human_publications")
-      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
-      .eq("ville_slug", slug)
-      .is("retire_le", null)
-      .or(`publie_le.gte.${depuis},expire_le.gt.${maintenantIso}`)
-      .order("publie_le", { ascending: false })
-      .limit(opts.max ?? 200);
-    if (error) throw new Error(error.message);
-    if (Array.isArray(data)) rows = data as Row[];
+    rows = await avecRepli((champs) =>
+      supabase
+        .from("human_publications")
+        .select(champs)
+        .eq("ville_slug", slug)
+        .is("retire_le", null)
+        .or(`publie_le.gte.${depuis},expire_le.gt.${maintenantIso}`)
+        .order("publie_le", { ascending: false })
+        .limit(opts.max ?? 200)
+    );
   } catch {
     // Table absente (migration non appliquée) : un fil vide, pas une page en
     // erreur. L'écran a déjà son état « rien pour l'instant ».
@@ -178,16 +219,17 @@ export async function filDeVille(
 export async function filDeCommerce(supabase: Supabase, siteId: string, max = 12): Promise<Publication[]> {
   if (!siteId) return [];
   try {
-    const { data, error } = await supabase
-      .from("human_publications")
-      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
-      .eq("site_id", siteId)
-      .is("retire_le", null)
-      .order("publie_le", { ascending: false })
-      .limit(max);
-    if (error) throw new Error(error.message);
+    const rows = await avecRepli((champs) =>
+      supabase
+        .from("human_publications")
+        .select(champs)
+        .eq("site_id", siteId)
+        .is("retire_le", null)
+        .order("publie_le", { ascending: false })
+        .limit(max)
+    );
     const maintenant = Date.now();
-    return ((Array.isArray(data) ? data : []) as Row[])
+    return rows
       .map((r) => lirePublication(r))
       .filter((p): p is Publication => p !== null)
       .filter((p) => estVivante(p, maintenant));
@@ -212,31 +254,42 @@ export async function publier(
     video?: string | null;
     lien?: string | null;
     expireLe?: string | null;
+    /** « 2 tables » — ce qu'il reste, tel que le commerçant l'a écrit. */
+    reste?: string | null;
+    /** L'adresse de sa carte du jour. */
+    ardoise?: string | null;
     site?: { id: string; slug: string; nom: string; activite: string } | null;
   }
 ): Promise<{ id: string } | null> {
   const texte = p.texte.trim();
   if (!texte || !p.villeSlug.trim()) return null;
   const metier = p.site ? resolveMetier(p.site.activite).entry?.label ?? p.site.activite : "";
+  const base = {
+    ville: p.ville,
+    ville_slug: p.villeSlug.trim().toLowerCase(),
+    site_id: p.site?.id ?? null,
+    auteur_nom: p.site?.nom ?? "",
+    auteur_metier: metier,
+    auteur_slug: p.site?.slug ?? "",
+    famille: p.famille,
+    texte,
+    photo: p.photo ?? null,
+    video: p.video ?? null,
+    lien: p.lien ?? null,
+    expire_le: p.expireLe ?? null,
+  };
+  const recents = {
+    reste: (p.reste ?? "").trim().slice(0, 40) || null,
+    ardoise: /^https?:\/\//i.test(p.ardoise ?? "") ? (p.ardoise as string).slice(0, 500) : null,
+  };
+  const inserer = (ligne: Record<string, unknown>) =>
+    supabase.from("human_publications").insert(ligne).select("id").maybeSingle();
   try {
-    const { data, error } = await supabase
-      .from("human_publications")
-      .insert({
-        ville: p.ville,
-        ville_slug: p.villeSlug.trim().toLowerCase(),
-        site_id: p.site?.id ?? null,
-        auteur_nom: p.site?.nom ?? "",
-        auteur_metier: metier,
-        auteur_slug: p.site?.slug ?? "",
-        famille: p.famille,
-        texte,
-        photo: p.photo ?? null,
-        video: p.video ?? null,
-        lien: p.lien ?? null,
-        expire_le: p.expireLe ?? null,
-      })
-      .select("id")
-      .maybeSingle();
+    // MIGRATION NON APPLIQUÉE : on republie SANS les deux colonnes récentes.
+    // Refuser l'annonce entière parce qu'un détail facultatif ne peut pas être
+    // écrit serait la pire réponse possible — l'annonce, elle, est le sujet.
+    let { data, error } = await inserer({ ...base, ...recents });
+    if (error && colonneAbsente(error.message)) ({ data, error } = await inserer(base));
     if (error) throw new Error(error.message);
     const id = str((data as Row | null)?.id);
     return id ? { id } : null;
@@ -307,16 +360,17 @@ export async function limiterVivantes(supabase: Supabase, siteId: string, garder
 export async function siennesVivantes(supabase: Supabase, siteId: string): Promise<Publication[]> {
   if (!siteId) return [];
   try {
-    const { data, error } = await supabase
-      .from("human_publications")
-      .select("id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le")
-      .eq("site_id", siteId)
-      .is("retire_le", null)
-      .order("publie_le", { ascending: false })
-      .limit(20);
-    if (error) throw new Error(error.message);
+    const rows = await avecRepli((champs) =>
+      supabase
+        .from("human_publications")
+        .select(champs)
+        .eq("site_id", siteId)
+        .is("retire_le", null)
+        .order("publie_le", { ascending: false })
+        .limit(20)
+    );
     const maintenant = Date.now();
-    return ((Array.isArray(data) ? data : []) as Row[])
+    return rows
       .map((r) => lirePublication(r))
       .filter((p): p is Publication => p !== null)
       .filter((p) => estVivante(p, maintenant));

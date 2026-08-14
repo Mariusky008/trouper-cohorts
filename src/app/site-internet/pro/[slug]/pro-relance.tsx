@@ -142,6 +142,15 @@ export function ProRelance({
   const [offer, setOffer] = useState<Offer | null>(null);
   const [offerText, setOfferText] = useState("");
   const [duree, setDuree] = useState("2j");
+  // ── CE QU'IL RESTE, ET L'ARDOISE ──────────────────────────────────────────
+  // La carte du fil affichait « 2 tables » et « Voir l'ardoise » sans que
+  // personne ne les saisisse nulle part. Deux champs, facultatifs : une place
+  // qui se libère n'a rien à compter, et tous les métiers n'ont pas de carte.
+  //
+  // L'HEURE DE FIN N'EST PAS DEMANDÉE ICI : elle est déjà choisie à l'étape
+  // suivante, et la redemander créerait deux vérités sur le même sujet.
+  const [reste, setReste] = useState("");
+  const [ardoise, setArdoise] = useState("");
   // ── LES FAÇONS D'EN PROFITER ──────────────────────────────────────────────
   // Elles vivaient dans un autre onglet, si bien que publier une annonce ici
   // n'en proposait aucune : le commerçant devait republier ailleurs, et le
@@ -402,6 +411,10 @@ export function ProRelance({
           until: fin ? fin.toISOString() : null,
           photo,
           video,
+          // Ce qu'il reste et la carte du jour : ils s'affichent sur la carte du
+          // fil, sous le titre de l'annonce.
+          reste: reste.trim().slice(0, 40),
+          ardoise: ardoise.trim().slice(0, 500),
           // LES FAÇONS D'EN PROFITER, publiées avec l'annonce. Un seul appel :
           // deux requêtes créeraient deux annonces pour un même créneau si la
           // seconde échouait.
@@ -876,6 +889,12 @@ export function ProRelance({
           .pro .relance .opt{margin-top:12px;}
           .pro .relance .opt label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:6px;}
           .pro .relance .opt textarea{width:100%;border:1px solid var(--hair);border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;line-height:1.5;}
+          /* Les deux champs « ce qu'il reste » et « l'ardoise » : même dessin
+             que la zone de message, pour qu'ils se lisent comme la suite du
+             même formulaire et non comme un réglage avancé. */
+          .pro .relance .opt input{width:100%;border:1px solid var(--hair);border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;background:#fff;}
+          .pro .relance .opt label i{font-style:normal;font-weight:500;text-transform:none;letter-spacing:0;opacity:.75;}
+          .pro .relance .opthint{display:block;margin-top:6px;font-size:11.5px;line-height:1.45;color:var(--faint);}
           .pro .relance .rbub{margin-top:18px;background:#EAF4E4;border:1px solid #CFE6C2;border-radius:14px;border-top-left-radius:4px;padding:13px 15px;font-size:13px;line-height:1.5;color:#25381C;white-space:pre-line;}
           .pro .relance .rbtn{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:15.5px;border:none;border-radius:15px;padding:16px;cursor:pointer;}
           .pro .relance .rbtn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
@@ -1115,6 +1134,43 @@ export function ProRelance({
                     rows={4}
                     placeholder="Écrivez exactement ce que vous proposez…"
                   />
+                </div>
+                {/* CE QU'IL RESTE, ET L'ARDOISE.
+                    Deux détails qui décident, et que nous ne pouvons pas
+                    deviner : nous ne savons pas combien de tables il vous
+                    reste, ni où se trouve votre carte. Facultatifs — une place
+                    qui se libère n'a rien à compter.
+
+                    L'heure de fin n'est PAS ici : elle se choisit à l'étape
+                    suivante, et la demander deux fois donnerait deux réponses
+                    différentes. */}
+                <div className="opt">
+                  <label htmlFor="pro-reste">Combien vous en reste-t-il&nbsp;? <i>· facultatif</i></label>
+                  <input
+                    id="pro-reste"
+                    value={reste}
+                    onChange={(e) => setReste(e.target.value)}
+                    maxLength={40}
+                    placeholder="2 tables"
+                  />
+                  <span className="opthint">
+                    S&apos;affiche sous votre annonce&nbsp;: «&nbsp;{reste.trim() || "2 tables"}&nbsp;». Écrivez l&apos;unité
+                    de votre métier — 2 tables, 3 parts, 1 créneau.
+                  </span>
+                </div>
+                <div className="opt">
+                  <label htmlFor="pro-ardoise">Le lien vers votre carte du jour <i>· facultatif</i></label>
+                  <input
+                    id="pro-ardoise"
+                    value={ardoise}
+                    onChange={(e) => setArdoise(e.target.value)}
+                    maxLength={500}
+                    inputMode="url"
+                    placeholder="https://…"
+                  />
+                  <span className="opthint">
+                    Un bouton «&nbsp;Voir l&apos;ardoise&nbsp;» apparaît sur votre carte. Sans lien, il ne s&apos;affiche pas.
+                  </span>
                 </div>
                 {/* Un [crochet] est la façon honnête pour l'assistante de dire
                     « il me manque cette information ». Publié tel quel, il part

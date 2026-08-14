@@ -65,8 +65,31 @@ export type CarteVue = {
     part: number | null;
     etat: "ouverte" | "presque" | "complete" | "epuise";
   }>;
+  /** CE QU'IL RESTE, écrit par le commerçant : « 2 tables », « 3 parts ».
+   *  Vide quand il ne l'a pas renseigné — on n'invente pas un stock. */
+  reste: string;
+  /** L'adresse de sa carte du jour. `null` : pas de bouton « Voir l'ardoise ». */
+  ardoise: string | null;
   /** Les réactions déjà posées, et celles qui sont miennes. */
   reactions: VueReactions;
+};
+
+/** Le pictogramme de la ligne « ce qu'il reste ».
+ *
+ *  Il suit la FAMILLE, pas le métier : « 2 tables » sous une assiette et
+ *  « 2 places » sous une chaise se lisent d'un coup d'œil, alors qu'une puce
+ *  neutre obligerait à lire le texte pour comprendre de quoi il reste deux. */
+//
+// LE SÉLECTEUR DE VARIANTE (U+FE0F) EST OBLIGATOIRE ici. Sans lui, U+1F37D,
+// U+1F3F7 et U+1F39F se dessinent en style TEXTE — une glyphe étroite en noir
+// et blanc, qui se superposait au chiffre juste à côté. Mesuré : 40 px contre
+// 50 px pour les autres pictogrammes de la carte.
+const PICTO: Record<Famille, string> = {
+  menu: "🍽️",
+  place: "💺",
+  offre: "🏷️",
+  evenement: "🎟️",
+  ville: "📣",
 };
 
 export function Carte({
@@ -166,6 +189,33 @@ export function Carte({
           </div>
         )}
       </div>
+
+      {/* CE QU'IL RESTE, ET L'ARDOISE. Deux informations que le commerçant
+          saisit lui-même — elles étaient dessinées sur la maquette sans que
+          personne ne les renseigne nulle part.
+
+          L'HEURE DE FIN N'EST PAS RÉPÉTÉE ICI : elle est déjà sur le badge de
+          l'image, en rouge quand elle presse. L'écrire une seconde fois sous
+          l'image donnerait deux endroits à tenir à jour pour un seul fait.
+
+          La ligne ne s'affiche que si l'un des deux existe : une barre vide
+          sous chaque carte ferait du bruit à la place d'une information. */}
+      {(p.reste || p.ardoise) && (
+        <div className="det">
+          {p.reste ? (
+            <span className="det-r">
+              <span aria-hidden="true">{PICTO[p.famille]}</span> {p.reste}
+            </span>
+          ) : (
+            <span />
+          )}
+          {p.ardoise ? (
+            <a className="det-a" href={p.ardoise} target="_blank" rel="noreferrer noopener">
+              Voir l&apos;ardoise ›
+            </a>
+          ) : null}
+        </div>
+      )}
 
       {/* COMMENT VOULEZ-VOUS EN PROFITER ?
           Les façons sont montrées ENSEMBLE, et c'est tout l'intérêt : c'est la

@@ -41,15 +41,21 @@ async function chargerGardees(
   supabase: ReturnType<typeof createAdminClient>,
   habitantId: string
 ): Promise<Publication[]> {
+  const BASE =
+    "id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le, retire_le";
+  const lire = (champs: string) =>
+    supabase.from("human_gardees").select(`publication_id, human_publications!inner(${champs})`).eq("habitant_id", habitantId);
   try {
-    const { data } = await supabase
-      .from("human_gardees")
-      .select(
-        "publication_id, human_publications!inner(id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le, retire_le)"
-      )
-      .eq("habitant_id", habitantId);
+    // Les deux colonnes récentes en premier, puis sans elles : PostgREST refuse
+    // TOUTE la requête quand une seule colonne demandée n'existe pas, et une
+    // migration non appliquée ne doit pas vider les gardées de quelqu'un.
+    const premier = await lire(`${BASE}, reste, ardoise`);
+    const { data } = premier.error ? await lire(BASE) : premier;
     const maintenant = Date.now();
-    return ((Array.isArray(data) ? data : []) as Array<Record<string, unknown>>)
+    // `as unknown` d'abord : la sélection est construite à l'exécution (deux
+    // listes de colonnes possibles), le typage statique de PostgREST ne peut
+    // donc pas la déduire.
+    return ((Array.isArray(data) ? data : []) as unknown as Array<Record<string, unknown>>)
       .map((r) => r.human_publications as Record<string, unknown> | null)
       .filter((p): p is Record<string, unknown> => Boolean(p) && !str(p!.retire_le))
       .map((p) => ({
@@ -68,6 +74,8 @@ async function chargerGardees(
         lat: null,
         lng: null,
         quartier: "",
+        reste: str(p.reste).trim().slice(0, 40),
+        ardoise: /^https?:\/\//i.test(str(p.ardoise)) ? str(p.ardoise) : null,
       }))
       // Une gardée expirée n'est pas une gardée : elle ne peut plus servir, et
       // la laisser donnerait l'impression d'une offre qu'on a laissée filer.
@@ -145,6 +153,8 @@ export default async function MesCommercesPage({
     echeance: echeanceCourte(p.expireLe),
     urgent: presse(p.expireLe),
     facons: faconsVue(cliksParPub.get(p.id)),
+    reste: p.reste,
+    ardoise: p.ardoise,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 

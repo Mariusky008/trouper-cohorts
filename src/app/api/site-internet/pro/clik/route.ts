@@ -156,6 +156,10 @@ export async function POST(request: Request) {
       famille: familleDuTexte(texte),
       texte,
       expireLe: echeanceDuTexte(texte)?.expireLe ?? finLaPlusTardive,
+      // Les deux mêmes champs que l'autre parcours de publication : une seule
+      // façon de renseigner ce qu'il reste, quel que soit l'écran d'où l'on part.
+      reste: s(p?.reste).slice(0, 40),
+      ardoise: /^https?:\/\//i.test(s(p?.ardoise)) ? s(p?.ardoise).slice(0, 500) : null,
       site: { id: siteId, slug: s(site.slug), nom: s(site.business_name), activite: s(site.activite) },
     });
 

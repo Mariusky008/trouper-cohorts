@@ -90,6 +90,8 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     // chaque geste raté. On montre les prix — sans eux on glisse au hasard —
     // et le glissement vers le haut reste le seul geste qui engage.
     facons: faconsVue(cliksParPub.get(p.id)),
+    reste: p.reste,
+    ardoise: p.ardoise,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 
