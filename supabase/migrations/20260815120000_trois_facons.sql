@@ -41,6 +41,13 @@ ALTER TABLE public.clik_campaign
 ALTER TABLE public.clik_campaign
   ADD COLUMN IF NOT EXISTS ordre integer NOT NULL DEFAULT 0;
 
+-- ── LE NOM QUE LE COMMERÇANT DONNE À SA FAÇON ──────────────────────────────
+-- « Table à partager » chez un restaurant, « Le bouquet à plusieurs » chez un
+-- fleuriste : le mot juste dépend du métier, pas de nous. Vide, l'affichage
+-- retombe sur le nom générique.
+ALTER TABLE public.clik_campaign
+  ADD COLUMN IF NOT EXISTS nom_facon text;
+
 -- ── L'express doit vraiment être moins cher ────────────────────────────────
 -- Même exigence que pour le collectif : une façon « à prix réduit » qui ne
 -- réduit rien est une annonce mensongère, et la base est le seul endroit où

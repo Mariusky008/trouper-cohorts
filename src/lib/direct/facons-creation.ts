@@ -158,19 +158,38 @@ export async function ecrireFacons(
   facons: readonly Facon[],
   commun: { siteId: string; villeSlug: string; titre: string; publicationId: string | null }
 ): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("clik_campaign")
-    .insert(
-      facons.map((f) => ({
-        ...f.ligne,
-        site_id: commun.siteId,
-        ville_slug: commun.villeSlug,
-        titre: commun.titre,
-        statut: "active",
-        publication_id: commun.publicationId,
-      }))
-    )
-    .select("id, type");
+  const lignes: Array<Record<string, unknown>> = facons.map((f) => ({
+    ...f.ligne,
+    site_id: commun.siteId,
+    ville_slug: commun.villeSlug,
+    titre: commun.titre,
+    statut: "active",
+    publication_id: commun.publicationId,
+  }));
+
+  // DEUX ESSAIS, ET LE SECOND EST LE FILET.
+  //
+  // `ordre` et `nom_facon` sont des colonnes de confort : l'ordre retombe sur
+  // l'ordre canonique du type, et le nom sur le libellé générique. Mais tant
+  // que la migration n'est pas passée, leur simple présence dans l'insert fait
+  // échouer les TROIS façons d'un coup — le commerçant les renseigne, elles
+  // n'apparaissent nulle part, et rien ne dit pourquoi. C'est exactement ce qui
+  // s'est produit.
+  //
+  // On réessaie donc sans elles plutôt que de tout perdre pour un agrément.
+  const OPTIONNELLES = ["ordre", "nom_facon"];
+  const inserer = (l: Array<Record<string, unknown>>) =>
+    supabase.from("clik_campaign").insert(l).select("id, type");
+
+  let { data, error } = await inserer(lignes);
+  if (error && /ordre|nom_facon/.test(String(error.message))) {
+    const sobres = lignes.map((l) => {
+      const c = { ...l };
+      for (const k of OPTIONNELLES) delete c[k];
+      return c;
+    });
+    ({ data, error } = await inserer(sobres));
+  }
   if (error) throw new Error(error.message);
   const creees = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
   if (!creees.length) throw new Error("façons non créées");

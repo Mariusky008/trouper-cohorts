@@ -255,7 +255,7 @@ export async function cliksDeVille(supabase: unknown, villeSlug: string): Promis
   try {
     const { data, error } = await sb
       .from("clik_campaign")
-      .select("id, site_id, publication_id, ville_slug, type, titre, objectif, participants, prix_initial, prix_groupe, echeance, statut")
+      .select("id, site_id, publication_id, ville_slug, type, titre, objectif, participants, prix_initial, prix_groupe, echeance, statut, ordre, nom_facon")
       .eq("ville_slug", villeSlug);
     if (error || !Array.isArray(data)) return [];
 

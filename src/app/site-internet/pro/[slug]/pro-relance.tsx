@@ -210,6 +210,10 @@ export function ProRelance({
   const [publiee, setPubliee] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
+  /** Ce qui a échoué APRÈS que l'annonce soit partie. Séparé de `offerErr`,
+   *  qui vit dans le bloc du bouton « Publier » : ce bloc disparaît une fois
+   *  publié, si bien qu'un avertissement posé là n'était jamais lu. */
+  const [avertPublie, setAvertPublie] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
   // Parcours en 3 étapes : ① quoi annoncer → ② où l'afficher → ③ vérifier & lancer.
   const [step, setStep] = useState(1);
@@ -423,7 +427,7 @@ export function ProRelance({
         setPubliee(true);
         // L'annonce est partie même si les façons ont échoué : on le dit,
         // plutôt que de laisser croire que tout s'est passé comme prévu.
-        if (typeof j.avertissement === "string" && j.avertissement) setOfferErr(j.avertissement);
+        setAvertPublie(typeof j.avertissement === "string" ? j.avertissement : "");
       } else {
         setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
       }
@@ -937,6 +941,8 @@ export function ProRelance({
              Un encart qui s'ouvre SOUS la case cochée, jamais un écran de
              plus : le commerçant doit garder sous les yeux les autres façons
              pour comprendre qu'il compose une échelle, pas une promo isolée. */
+          .pro .relance .lwarn{margin-top:10px;font-size:12.5px;font-weight:600;color:#8A5A1A;
+            background:#FBF2DF;border-radius:10px;padding:10px 12px;line-height:1.5;}
           .pro .relance .facbox{background:#FAF9F6;border:1px solid var(--hair);border-radius:14px;
             padding:12px;margin:-4px 0 10px;}
           .pro .relance .facduo{display:flex;gap:9px;margin-bottom:9px;}
@@ -1297,6 +1303,13 @@ export function ProRelance({
                             {`Elle est en ligne sur votre site${collectifActif ? ` et dans le fil de ${ville}` : ""}.`}
                             {offer.until ? ` Elle se retire ${echeanceLisible(new Date(offer.until))}.` : ""}
                           </span>
+                          {/* CE QUI N'A PAS MARCHÉ, dit ici et pas ailleurs.
+                              L'annonce est partie — elle est utile telle
+                              quelle — mais les façons d'en profiter, non. Le
+                              silence ferait croire que tout s'est passé comme
+                              prévu, et le commerçant chercherait ses Cliks dans
+                              le fil sans comprendre. */}
+                          {avertPublie && <div className="lwarn">⚠ {avertPublie}</div>}
                         </div>
                       )}
                       {offer.photo && (
