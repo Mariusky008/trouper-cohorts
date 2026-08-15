@@ -196,6 +196,18 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
             codeInitial={dedans && habitant ? codeDe(campagne.id, habitant.id) : null}
             commerce={commerce}
             contact={{ prenom: habitant?.prenom ?? "", telephone: habitantTel }}
+            // De quoi composer le message WhatsApp. Mis en forme au serveur :
+            // « Arrivée avant 12 h 47 » dépend de l'horloge, et le calculer
+            // dans un composant client ferait diverger le rendu.
+            reservation={{
+              facon: campagne.nom || FACON_LABEL[campagne.type],
+              titre: campagne.titre,
+              quand: fin ? fin.replace(/^jusqu.à\s*/i, "avant ") : "",
+              groupe:
+                campagne.type === "collectif" && campagne.objectif
+                  ? { participants: campagne.participants, objectif: campagne.objectif }
+                  : null,
+            }}
           />
         </div>
 

@@ -33,6 +33,11 @@ export const STOCK_MAX = 200;
  *  pas de choix du tout. */
 export const EXPRESS_MAX_MIN = 360;
 
+/** UNE SEMAINE AU PLUS pour former un groupe. Au-delà, ce n'est plus le pouls
+ *  d'une ville : c'est une liste d'attente, et plus personne ne se souvient de
+ *  s'être inscrit. */
+export const COLLECTIF_MAX_H = 24 * 7;
+
 export type Entree = {
   /** Le prix habituel. Facultatif : un « à prendre » n'en a pas. */
   prixNormal?: unknown;
@@ -48,6 +53,8 @@ export type Entree = {
   partagePrix?: unknown;
   partageObjectif?: unknown;
   partageNom?: unknown;
+  /** Dans combien d'heures le groupe ferme. Choisi par le commerçant. */
+  partageHeures?: unknown;
 };
 
 export type Facon = {
@@ -131,11 +138,24 @@ export function preparerFacons(p: Entree, contexte: { finGenerale: string }): Pr
     if (!Number.isFinite(prix) || prix <= 0 || prix >= prixNormal) {
       return { ok: false, erreur: "Le collectif : le prix doit être inférieur à votre prix habituel." };
     }
+    // L'HEURE DE CLÔTURE DU GROUPE, CHOISIE.
+    //
+    // Elle suivait l'échéance de l'annonce, c'est-à-dire la dernière seconde.
+    // Un restaurateur ne peut pas apprendre à 20 h qu'une table de quatre se
+    // tient à 20 h : il lui faut le temps de la dresser — ou de la rendre à ses
+    // propres clients si le groupe ne s'est pas formé. C'est lui qui sait
+    // combien de temps il lui faut, donc c'est lui qui le dit.
+    const heures = n(p.partageHeures);
+    const ferme = Number.isFinite(heures) && heures > 0
+      ? new Date(Date.now() + Math.min(COLLECTIF_MAX_H, Math.max(1, Math.round(heures))) * 3600_000).toISOString()
+      : contexte.finGenerale;
     facons.push({
       ligne: {
         ...base, type: "collectif", ordre: 3, objectif, prix_groupe: prix,
         nom_facon: s(p.partageNom).slice(0, 40) || null,
-        echeance: contexte.finGenerale,
+        // Jamais APRÈS l'annonce : un groupe qui se fermerait après la
+        // disparition de l'offre attendrait des gens qui ne peuvent plus venir.
+        echeance: ferme < contexte.finGenerale ? ferme : contexte.finGenerale,
       },
       lots: [],
     });

@@ -17,6 +17,8 @@ import { RecapCommerce } from "./recap";
 import type { CommerceVue } from "@/lib/direct/commerce-vue";
 import { conditionPhrase } from "@/lib/direct/condition-achat";
 import { LaisserContact } from "./contact";
+import { Prevenir } from "./prevenir";
+import { messageReservation, lienWhatsapp } from "@/lib/direct/whatsapp-reservation";
 
 type Etat = "ouverte" | "presque" | "complete" | "epuise" | "terminee";
 
@@ -32,6 +34,7 @@ export function ActionClik({
   codeInitial,
   commerce,
   contact,
+  reservation,
 }: {
   campagneId: string;
   ville: string;
@@ -51,6 +54,8 @@ export function ActionClik({
   commerce: CommerceVue | null;
   /** Ce que la personne a déjà laissé, s'il y a lieu. On ne le redemande pas. */
   contact: { prenom: string; telephone: string };
+  /** De quoi composer le message WhatsApp : ce que le client dira au commerce. */
+  reservation: { facon: string; titre: string; quand: string; groupe: { participants: number; objectif: number } | null };
 }) {
   const router = useRouter();
   const [envoi, setEnvoi] = useState(false);
@@ -75,13 +80,35 @@ export function ActionClik({
   // même chose — l'écran donnerait l'impression de ne pas avoir enregistré.
   if (dedans) {
     const attente = statut === "liste_attente";
+    // LE MESSAGE QUE LE CLIENT ENVERRA. Composé ici parce qu'il dépend de ce
+    // qu'on vient d'obtenir — l'avantage tiré du stock n'est connu qu'après le
+    // clic, et c'est justement ce que le commerçant doit lire.
+    const lien = commerce
+      ? lienWhatsapp(
+          commerce.telephone,
+          messageReservation({
+            commerce: commerce.nom,
+            facon: reservation.facon,
+            type,
+            titre: reservation.titre,
+            code: code ?? "",
+            quand: reservation.quand,
+            gain: gagne?.libelle ?? "",
+            groupe: reservation.groupe,
+            prenom: contact.prenom,
+          })
+        )
+      : "";
     return (
       <div className="ck-fait">
         {/* UNE PASTILLE PLEINE, ET CENTRÉE. C'est le seul moment où
             l'application a quelque chose à célébrer, et elle le faisait dans un
             encart de la taille d'un message d'erreur. */}
         <div className={`ck-sl s-${type}`} aria-hidden="true">{attente ? "⏳" : "✓"}</div>
-        <div className="ck-fait-k">{attente ? "En liste d'attente" : "C'est confirmé"}</div>
+        {/* « C'EST CONFIRMÉ » ÉTAIT UN MENSONGE tant que le commerçant n'avait
+            rien vu. On dit ce qui est vrai : c'est noté chez nous, et il reste
+            à le prévenir. Sa réponse fait foi. */}
+        <div className="ck-fait-k">{attente ? "En liste d'attente" : lien ? "C'est noté" : "C'est confirmé"}</div>
         <div className="ck-fait-t">
           {attente ? "Vous êtes en liste d'attente" : gagne ? "C'est à vous" : "Vous en êtes"}
         </div>
@@ -98,7 +125,9 @@ export function ActionClik({
           {attente
             ? "Le groupe est complet. Si quelqu'un se désiste, la place est pour vous et vous serez prévenu."
             : type === "collectif"
-              ? "Vous serez prévenu dès que le groupe est au complet."
+              ? lien
+                ? "Prévenez le commerce ci-dessous : il saura où en est le groupe."
+                : "Vous serez prévenu dès que le groupe est au complet."
               : type === "express"
                 ? "Venez avant l'heure indiquée et annoncez-vous : le prix réduit est à vous."
                 : type === "simple"
@@ -111,6 +140,10 @@ export function ActionClik({
         {code && !attente && (
           <div className="ck-code"><i />Code <b>{code}</b></div>
         )}
+        {/* PRÉVENIR LE COMMERCE, EN HAUT DE CE QUI RESTE À FAIRE. C'est le
+            geste qui rend la réservation réelle : il arrive sur un téléphone
+            que le commerçant regarde déjà, sans qu'il ait rien à ouvrir. */}
+        <Prevenir lien={lien} commerce={commerce?.nom ?? ""} />
         {/* OÙ SE RENDRE. Le code s'adresse au commerçant ; ces quatre lignes
             s'adressent à celui qui vient. Sans elles, on repartait d'ici avec
             une confirmation et aucune idée d'où aller.

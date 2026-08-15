@@ -16,6 +16,7 @@
 import Link from "next/link";
 import type { MonClic } from "@/lib/direct/engagements";
 import { Desister } from "./desister";
+import { messageReservation, lienWhatsapp } from "@/lib/direct/whatsapp-reservation";
 
 const ICONE: Record<string, string> = { simple: "🕐", cadeau: "🎁", express: "⚡", collectif: "👥" };
 
@@ -29,11 +30,14 @@ export function MesClics({
   clics,
   qr,
   ville,
+  prenom,
 }: {
   clics: MonClic[];
   /** Le QR de chaque code, déjà encodé en data URI par le serveur. */
   qr: Map<string, string>;
   ville: string;
+  /** Le prénom laissé, pour signer le message envoyé au commerce. */
+  prenom: string;
 }) {
   if (!clics.length) {
     return (
@@ -79,6 +83,46 @@ export function MesClics({
               <div className="clic-s">À montrer au commerce. Le QR fait la même chose, en plus rapide.</div>
             </div>
           </div>
+
+          {/* PRÉVENIR LE COMMERCE, ICI AUSSI. On revient sur cet écran quand on
+              a fermé WhatsApp sans envoyer, ou quand personne n'a répondu :
+              c'est donc ici que le message doit rester disponible. */}
+          {lienWhatsapp(
+            c.telephone,
+            messageReservation({
+              commerce: c.commerce,
+              facon: c.facon,
+              type: c.type,
+              titre: c.titre,
+              code: c.code,
+              quand: "",
+              gain: c.gain,
+              groupe: c.groupe,
+              prenom,
+            })
+          ) ? (
+            <a
+              className="clic-wa"
+              href={lienWhatsapp(
+                c.telephone,
+                messageReservation({
+                  commerce: c.commerce,
+                  facon: c.facon,
+                  type: c.type,
+                  titre: c.titre,
+                  code: c.code,
+                  quand: "",
+                  gain: c.gain,
+                  groupe: c.groupe,
+                  prenom,
+                })
+              )}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <span aria-hidden="true">💬</span> Prévenir {c.commerce || "le commerce"}
+            </a>
+          ) : null}
 
           <div className="clic-r">
             <Link href={`/ville/${ville}/clik/${c.campagneId}`} prefetch={false}>Voir le détail ›</Link>

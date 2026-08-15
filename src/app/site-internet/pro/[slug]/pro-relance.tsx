@@ -194,6 +194,11 @@ export function ProRelance({
   const [facPartage, setFacPartage] = useState(false);
   const [facPartagePrix, setFacPartagePrix] = useState("");
   const [facPartageObj, setFacPartageObj] = useState("4");
+  /** QUAND LE GROUPE FERME. Il suivait l'échéance de l'annonce — donc la
+   *  dernière seconde. Un restaurateur ne peut pas apprendre à 20 h qu'une
+   *  table de quatre se tient à 20 h : il lui faut le temps de la dresser, ou
+   *  de la rendre à ses propres clients. */
+  const [facPartageFerme, setFacPartageFerme] = useState("4");
   /** Cocher une façon à prix éteint « à prendre » : les deux ne peuvent pas
    *  coexister, proposer plein tarif à côté d'un prix de groupe n'est pas un
    *  choix. */
@@ -469,6 +474,7 @@ export function ProRelance({
           partage: facPartage,
           partagePrix: facPartagePrix,
           partageObjectif: facPartageObj,
+          partageHeures: Number(facPartageFerme) || 0,
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -1575,7 +1581,22 @@ export function ProRelance({
                       {[2, 3, 4, 5, 6, 8, 10, 12].map((v) => <option key={v} value={v}>{v} personnes</option>)}
                     </select></label>
                 </div>
+                <label className="faclab" htmlFor="fac-ferme" style={{ marginTop: 12 }}>
+                  Le groupe ferme dans combien de temps&nbsp;?
+                </label>
+                <select id="fac-ferme" value={facPartageFerme} onChange={(e) => setFacPartageFerme(e.target.value)}>
+                  <option value="2">2 heures</option>
+                  <option value="4">4 heures</option>
+                  <option value="6">6 heures</option>
+                  <option value="12">12 heures</option>
+                  <option value="24">Demain à la même heure</option>
+                  <option value="48">Dans deux jours</option>
+                </select>
                 <div className="facnote">
+                  C&apos;est le temps qu&apos;il vous faut pour vous organiser. Passé ce délai, plus personne ne
+                  rejoint&nbsp;: vous savez ce que vous avez, et vous pouvez dresser la table — ou la rendre à
+                  vos propres clients si le groupe ne s&apos;est pas formé.
+                  <br />
                   Si le groupe ne se forme pas, chacun garde sa place au prix habituel. Personne ne perd rien.
                 </div>
               </div>

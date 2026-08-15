@@ -10,6 +10,7 @@
 // sur chaque Clik serait figée au moment du déménagement, et c'est l'ancienne
 // adresse qui resterait affichée.
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
+import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -32,6 +33,10 @@ export type CommerceVue = {
   /** Le repère de repli quand la position est refusée : le quartier, sinon la
    *  ville. Règle de dégradation : jamais d'écran sans repère spatial. */
   quartier: string;
+  /** Son WhatsApp, pour que le client puisse le prévenir lui-même. Chaîne vide
+   *  quand on n'en a aucun : le bouton ne s'affiche alors pas, plutôt que
+   *  d'ouvrir WhatsApp sur le vide. */
+  telephone: string;
 };
 
 /** Le jour d'aujourd'hui, à la convention JavaScript (0 = dimanche) — la même
@@ -85,7 +90,9 @@ export async function commerceDuClik(supabase: unknown, siteId: string): Promise
   try {
     const { data } = await sb
       .from("human_vitrine_sites")
-      .select("id, business_name, activite, address, latitude, longitude, quartier, diagnostic")
+      .select(
+        "id, business_name, activite, address, latitude, longitude, quartier, diagnostic, whatsapp_phone_e164, metadata"
+      )
       .eq("id", siteId)
       .maybeSingle();
     row = (data as Record<string, unknown> | null) ?? null;
@@ -125,5 +132,10 @@ export async function commerceDuClik(supabase: unknown, siteId: string): Promise
     lat: typeof lat === "number" ? lat : null,
     lng: typeof lng === "number" ? lng : null,
     quartier: str(row.quartier),
+    // `proPhoneFrom` connaît les deux endroits où le numéro peut être : la
+    // colonne du canal « vitrines », et le formulaire de rappel des sites issus
+    // d'une lettre. Sans ce repli, la moitié des commerces n'aurait pas de
+    // bouton WhatsApp.
+    telephone: proPhoneFrom(row as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
   };
 }

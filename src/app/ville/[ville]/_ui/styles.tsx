@@ -442,6 +442,17 @@ export function StylesDirect() {
   border-radius:var(--rm);padding:11px;font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer;}
 .dir .ck-ct-r button.go{background:var(--gd);border-color:var(--gd);color:#fff;}
 
+/* PRÉVENIR LE COMMERCE — le geste qui rend la réservation réelle, donc le
+   bouton le plus voyant de l'écran. Le vert de WhatsApp, parce qu'on ouvre
+   WhatsApp : un bouton aux couleurs de Clikme ne dirait pas où il mène. */
+.dir .ck-wa{margin-top:16px;}
+.dir .ck-wa-b{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:#25D366;color:#08140E;border:none;border-radius:999px;padding:15px;
+  font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:700;text-decoration:none;
+  box-shadow:0 10px 24px -12px rgba(37,211,102,.8);}
+.dir .ck-wa-b span{font-size:19px;line-height:1;}
+.dir .ck-wa-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin:9px 0 0;}
+
 /* « Prendre celle-ci à la place » : un second bouton, plus sobre que le
    premier — c'est un changement d'avis, pas l'action principale. */
 .dir .ck-b2{display:block;width:100%;margin-top:10px;background:var(--paper);color:var(--ink);
@@ -508,7 +519,12 @@ export function StylesDirect() {
 .dir .clic-v{font-family:var(--fd),Georgia,serif;font-size:27px;font-weight:700;color:var(--ink);
   letter-spacing:.05em;line-height:1.15;margin-top:3px;}
 .dir .clic-s{font-size:11.5px;color:var(--soft);line-height:1.4;margin-top:6px;}
-.dir .clic-r{display:flex;gap:14px;margin-top:12px;}
+/* Le même bouton que sur l'écran du Clik, aux mêmes couleurs : c'est le même
+   geste, il doit se reconnaître d'un écran à l'autre. */
+.dir .clic-wa{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:13px;
+  background:#25D366;color:#08140E;border-radius:999px;padding:13px;text-decoration:none;
+  font-family:var(--fd),Georgia,serif;font-size:15.5px;font-weight:700;}
+.dir .clic-r{display:flex;gap:14px;margin-top:12px;align-items:center;flex-wrap:wrap;}
 .dir .clic-r a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;}
 /* Se désister est DISCRET, à droite et en gris : c'est une sortie, pas une
    action qu'on met en avant. Il ne devient rouge qu'à la confirmation. */

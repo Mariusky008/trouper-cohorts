@@ -186,7 +186,7 @@ export default async function MesCommercesPage({
               <div className="ss">votre code suffit</div>
             </div>
           )}
-          <MesClics clics={clics} qr={qr} ville={ville} />
+          <MesClics clics={clics} qr={qr} ville={ville} prenom={habitant?.prenom ?? ""} />
         </>
       ) : onglet === "gardees" ? (
         gardeesVives.length > 0 ? (
