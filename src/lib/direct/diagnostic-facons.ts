@@ -35,12 +35,23 @@ export type VerdictFacon = {
   detail: string;
 };
 
+export type VerdictAnnonce = {
+  id: string;
+  texte: string;
+  visible: boolean;
+  cause: string;
+};
+
 export type Diagnostic = {
   /** Les colonnes récentes que la base connaît. */
   colonnes: { ordre: boolean; nom_facon: boolean; reste: boolean; ardoise: boolean };
   /** Les types que la contrainte de la base accepte réellement. */
   typesAcceptes: { simple: boolean; express: boolean };
   villeDuFil: string;
+  /** Ses annonces, et pourquoi chacune ne figure pas dans « Mes annonces en
+   *  cours ». Le commerçant voyait « aucune annonce » avec une annonce en
+   *  ligne : trois causes possibles, aucune visible. */
+  annonces: VerdictAnnonce[];
   facons: VerdictFacon[];
   /** Le résumé en une phrase. */
   resume: string;
@@ -107,29 +118,61 @@ export async function diagnostiquerFacons(
     lignes = [];
   }
 
-  // Les annonces concernées : une façon rattachée à une annonce retirée ou
-  // expirée ne s'affiche pas, même si elle est parfaite par ailleurs.
-  const pubIds = Array.from(new Set(lignes.map((r) => str(r.publication_id)).filter(Boolean)));
-  const pubs = new Map<string, { retire: boolean; expire: string; ville: string }>();
-  if (pubIds.length) {
-    try {
-      const { data } = await sb
-        .from("human_publications")
-        .select("id, retire_le, expire_le, ville_slug")
-        .in("id", pubIds);
-      for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) {
-        pubs.set(str(r.id), {
-          retire: str(r.retire_le) !== "",
-          expire: str(r.expire_le),
-          ville: str(r.ville_slug),
-        });
-      }
-    } catch {
-      /* sans les annonces, on ne pourra pas trancher la dernière condition */
+  // SES ANNONCES — toutes, pas seulement celles qui portent une façon. C'est
+  // ce qui répond à « j'ai une annonce valide et Mes annonces en cours dit
+  // qu'il n'y en a aucune ».
+  const pubs = new Map<string, { retire: boolean; expire: string; ville: string; texte: string; publie: string }>();
+  try {
+    const { data } = await sb
+      .from("human_publications")
+      .select("id, texte, retire_le, expire_le, ville_slug, publie_le")
+      .eq("site_id", siteId)
+      .order("publie_le", { ascending: false })
+      .limit(30);
+    for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) {
+      pubs.set(str(r.id), {
+        retire: str(r.retire_le) !== "",
+        expire: str(r.expire_le),
+        ville: str(r.ville_slug),
+        texte: str(r.texte),
+        publie: str(r.publie_le),
+      });
     }
+  } catch {
+    /* sans les annonces, on ne pourra pas trancher la dernière condition */
   }
 
   const maintenant = Date.now();
+  // TROIS JOURS : la même fenêtre que `FENETRE_SANS_ECHEANCE_MS`. Une annonce
+  // sans échéance sort du fil au bout de trois jours, et son auteur ne le sait
+  // pas — c'est une des trois causes de « aucune annonce en ce moment ».
+  const FENETRE_MS = 3 * 24 * 3600 * 1000;
+  const annonces: VerdictAnnonce[] = [...pubs.entries()].map(([id, p]) => {
+    const court = p.texte.length > 60 ? `${p.texte.slice(0, 60)}…` : p.texte;
+    if (p.retire) return { id, texte: court, visible: false, cause: "Vous l'avez retirée." };
+    const fin = p.expire ? Date.parse(p.expire) : NaN;
+    if (Number.isFinite(fin) && fin <= maintenant) {
+      return {
+        id,
+        texte: court,
+        visible: false,
+        cause: `Son échéance est passée (${new Date(fin).toLocaleString("fr-FR")}).`,
+      };
+    }
+    const pub = Date.parse(p.publie);
+    if (!p.expire && Number.isFinite(pub) && maintenant - pub >= FENETRE_MS) {
+      return {
+        id,
+        texte: court,
+        visible: false,
+        cause: "Publiée il y a plus de trois jours, sans date de fin : le fil ne la montre plus.",
+      };
+    }
+    if (p.ville !== villeSlugAttendu) {
+      return { id, texte: court, visible: false, cause: `Enregistrée pour « ${p.ville || "(vide)"} ».` };
+    }
+    return { id, texte: court, visible: true, cause: "" };
+  });
   const facons: VerdictFacon[] = lignes.map((r) => {
     const id = str(r.id);
     const type = str(r.type);
@@ -189,5 +232,5 @@ export async function diagnostiquerFacons(
         ? `${visibles} façon${visibles > 1 ? "s" : ""} visible${visibles > 1 ? "s" : ""} dans le fil.`
         : `${visibles} visible${visibles > 1 ? "s" : ""} sur ${facons.length}.`;
 
-  return { colonnes, typesAcceptes, villeDuFil: villeSlugAttendu, facons, resume };
+  return { colonnes, typesAcceptes, villeDuFil: villeSlugAttendu, annonces, facons, resume };
 }

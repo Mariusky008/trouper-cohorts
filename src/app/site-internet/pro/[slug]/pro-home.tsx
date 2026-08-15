@@ -46,6 +46,9 @@ export function ProHome(p: Props) {
   // il publiait, et l'annonce lui échappait.
   if (p.soliciter) {
     acts.push({ icon: "📋", label: "Mes annonces en cours", go: () => goto("annonces") });
+    // QUI VIENT. C'est la liste qu'on ouvre DEVANT quelqu'un, au comptoir :
+    // elle mérite un accès direct, pas un défilement jusqu'au bas de l'accueil.
+    acts.push({ icon: "🎟️", label: "Mes réservations", go: () => goto("reservations") });
   }
   // Les horaires restent, mais après. Ils ne servaient à rien tant que le site
   // public affichait ceux de Google ; depuis qu'il affiche les siens, les

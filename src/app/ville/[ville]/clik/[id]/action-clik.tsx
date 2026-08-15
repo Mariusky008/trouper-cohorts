@@ -65,6 +65,8 @@ export function ActionClik({
    *  dire quoi, le temps qu'une requête revienne, transforme le moment de la
    *  récompense en écran de chargement. */
   const [gagne, setGagne] = useState(gainInitial);
+  /** L'autre façon déjà prise sur CETTE annonce, quand il y en a une. */
+  const [autre, setAutre] = useState<{ campagneId: string; facon: string } | null>(null);
   /** Le code à présenter, renvoyé par le serveur au moment de l'engagement. */
   const [code, setCode] = useState(codeInitial);
 
@@ -122,7 +124,7 @@ export function ActionClik({
             jamais comment : le commerçant n'avait aucun contact, et la
             promesse ne pouvait pas être tenue. Facultatif : refuser ne retire
             rien à la place déjà obtenue. */}
-        <LaisserContact dejaPrenom={contact.prenom} dejaTel={contact.telephone} />
+        <LaisserContact dejaPrenom={contact.prenom} dejaTel={contact.telephone} type={type} />
       </div>
     );
   }
@@ -136,7 +138,7 @@ export function ActionClik({
     );
   }
 
-  const agir = async () => {
+  const agir = async (remplacer = false) => {
     if (envoi) return;
     setEnvoi(true);
     setMessage("");
@@ -146,14 +148,23 @@ export function ActionClik({
         headers: { "Content-Type": "application/json" },
         // Le cadeau puise dans un stock ; l'express et le groupe enregistrent
         // un engagement. C'est la seule différence de chemin entre les trois.
-        body: JSON.stringify({ campagneId, ville, action: type === "cadeau" ? "prendre" : "rejoindre" }),
+        body: JSON.stringify({ campagneId, ville, action: type === "cadeau" ? "prendre" : "rejoindre", remplacer }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
         setMessage("Impossible d'enregistrer pour l'instant. Réessayez dans un instant.");
         return;
       }
+      // DÉJÀ PRIS AILLEURS sur la même annonce : les trois façons sont trois
+      // portes vers la même chose. On propose de changer plutôt que de
+      // refuser sans issue.
+      if (!j.ok && j.etat === "deja") {
+        setAutre(j.autre ?? null);
+        setMessage(String(j.phrase || ""));
+        return;
+      }
       if (j.ok) {
+        setAutre(null);
         setDedans(true);
         setStatut(String(j.etat ?? "engage"));
         if (j.libelle) setGagne({ libelle: String(j.libelle), condition: String(j.conditionAchat ?? "") });
@@ -175,7 +186,7 @@ export function ActionClik({
 
   return (
     <>
-      <button type="button" className="ck-b" onClick={agir} disabled={envoi} aria-busy={envoi}>
+      <button type="button" className="ck-b" onClick={() => agir(false)} disabled={envoi} aria-busy={envoi}>
         {envoi
           ? "Un instant…"
           : type === "cadeau"
@@ -187,6 +198,14 @@ export function ActionClik({
                 : "J'en suis"}
       </button>
       {message && <div className="ck-msg">{message}</div>}
+      {/* CHANGER D'AVIS, EN UN GESTE. Sans ce bouton, il faudrait comprendre
+          qu'il faut d'abord aller se désister de l'autre façon — c'est-à-dire
+          abandonner. */}
+      {autre && (
+        <button type="button" className="ck-b2" onClick={() => agir(true)} disabled={envoi}>
+          Prendre celle-ci à la place
+        </button>
+      )}
     </>
   );
 }

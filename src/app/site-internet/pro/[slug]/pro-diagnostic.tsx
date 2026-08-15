@@ -13,10 +13,12 @@
 import { useEffect, useState } from "react";
 
 type Verdict = { campagneId: string; type: string; titre: string; visible: boolean; cause: string; detail: string };
+type VerdictAnnonce = { id: string; texte: string; visible: boolean; cause: string };
 type Diagnostic = {
   colonnes: { ordre: boolean; nom_facon: boolean; reste: boolean; ardoise: boolean };
   typesAcceptes: { simple: boolean; express: boolean };
   villeDuFil: string;
+  annonces: VerdictAnnonce[];
   facons: Verdict[];
   resume: string;
 };
@@ -48,9 +50,11 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
 
   if (!d) return null;
   const bloquees = d.facons.filter((f) => !f.visible);
+  const annoncesKo = (d.annonces ?? []).filter((a) => !a.visible);
+  const annoncesOk = (d.annonces ?? []).filter((a) => a.visible).length;
   const colonnesManquantes = Object.entries(d.colonnes).filter(([, ok]) => !ok).map(([c]) => c);
   // Tout va bien : le bloc n'existe pas.
-  if (!bloquees.length && !colonnesManquantes.length) return null;
+  if (!bloquees.length && !colonnesManquantes.length && !annoncesKo.length) return null;
 
   return (
     <>
@@ -78,7 +82,9 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
         <div className="t">
           {colonnesManquantes.length
             ? "Votre base n'est pas tout à fait à jour"
-            : `${bloquees.length} de vos façons ne s'affiche${bloquees.length > 1 ? "nt" : ""} pas dans Le Direct`}
+            : bloquees.length
+              ? `${bloquees.length} de vos façons ne s'affiche${bloquees.length > 1 ? "nt" : ""} pas dans Le Direct`
+              : `${annoncesKo.length} de vos annonces ne ${annoncesKo.length > 1 ? "sont" : "est"} plus en ligne`}
         </div>
         <div className="s">{d.resume}</div>
 
@@ -97,6 +103,27 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
                 fonctionner sans elles, mais vous perdez leur ordre d&apos;affichage et leur nom personnalisé.
               </div>
             </div>
+          </div>
+        )}
+
+        {/* SES ANNONCES. « Aucune annonce en ce moment » avec une annonce
+            publiée le matin même : trois causes possibles — retirée, échéance
+            passée, ou plus de trois jours sans date de fin — et aucune n'était
+            visible depuis son écran. */}
+        {annoncesKo.length > 0 && (
+          <div className="l">
+            {annoncesKo.slice(0, 4).map((a) => (
+              <div className="e" key={a.id}>
+                <div className="h">📣 {a.texte}</div>
+                <div className="c">{a.cause}</div>
+                <div className="d">
+                  Elle ne figure donc ni dans «&nbsp;Mes annonces en cours&nbsp;», ni dans le fil de votre ville.
+                  {annoncesOk > 0
+                    ? ` ${annoncesOk} de vos annonces ${annoncesOk > 1 ? "sont" : "est"} en ligne.`
+                    : " Republiez-la pour qu'elle reparte."}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

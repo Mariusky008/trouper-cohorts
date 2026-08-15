@@ -16,7 +16,46 @@
 // formulaire là où on venait de célébrer quelque chose.
 import { useState } from "react";
 
-export function LaisserContact({ dejaPrenom, dejaTel }: { dejaPrenom: string; dejaTel: string }) {
+/** CE POUR QUOI ON SERA PRÉVENU, façon par façon.
+ *
+ *  « Laisser un numéro pour être prévenu » ne disait pas prévenu de QUOI —
+ *  c'est-à-dire la seule chose qui donne une raison de le laisser. Chaque
+ *  phrase décrit un évènement réel de cette façon-là, jamais une généralité. */
+const POURQUOI: Record<string, { bouton: string; titre: string; detail: string }> = {
+  collectif: {
+    bouton: "Être prévenu quand le groupe est complet →",
+    titre: "Pour vous prévenir quand le groupe est complet",
+    detail:
+      "C'est le moment où le prix se débloque — et celui où il faut venir. Sans numéro, nous n'avons aucun moyen de vous le dire.",
+  },
+  express: {
+    bouton: "Laisser un numéro au commerce →",
+    titre: "Pour que le commerce puisse vous joindre",
+    detail: "S'il doit fermer plus tôt ou décaler, il vous prévient au lieu de vous laisser venir pour rien.",
+  },
+  cadeau: {
+    bouton: "Laisser un numéro au commerce →",
+    titre: "Pour que le commerce puisse vous joindre",
+    detail: "S'il y a un imprévu sur votre avantage, il vous prévient plutôt que de vous l'annoncer sur place.",
+  },
+  simple: {
+    bouton: "Laisser un numéro au commerce →",
+    titre: "Pour que le commerce puisse vous joindre",
+    detail: "Si le créneau bouge, il vous prévient. C'est le seul usage qui en sera fait.",
+  },
+};
+
+export function LaisserContact({
+  dejaPrenom,
+  dejaTel,
+  type,
+}: {
+  dejaPrenom: string;
+  dejaTel: string;
+  /** La façon prise : ce qu'on promet de signaler n'est pas le même. */
+  type: string;
+}) {
+  const quoi = POURQUOI[type] ?? POURQUOI.simple;
   const [prenom, setPrenom] = useState(dejaPrenom);
   const [tel, setTel] = useState(dejaTel);
   const [ouvert, setOuvert] = useState(false);
@@ -60,17 +99,16 @@ export function LaisserContact({ dejaPrenom, dejaTel }: { dejaPrenom: string; de
   if (!ouvert) {
     return (
       <button type="button" className="ck-ct-go" onClick={() => setOuvert(true)}>
-        Laisser un numéro pour être prévenu →
+        {quoi.bouton}
       </button>
     );
   }
 
   return (
     <div className="ck-ct">
-      <div className="ck-ct-t">Pour qu&apos;on puisse vous joindre</div>
+      <div className="ck-ct-t">{quoi.titre}</div>
       <div className="ck-ct-s">
-        Facultatif, et pour ce commerce uniquement. Votre place est déjà à vous&nbsp;: ceci sert
-        seulement à vous prévenir si quelque chose change.
+        {quoi.detail} Facultatif, et pour ce commerce uniquement&nbsp;: votre place est déjà à vous.
       </div>
       <input
         value={prenom}

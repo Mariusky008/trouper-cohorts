@@ -26,7 +26,12 @@ export const OBJECTIF_MAX = 50;
 export const STOCK_MAX = 200;
 /** L'express récompense la vitesse : au-delà de trois heures il ne récompense
  *  plus rien et devient une remise ordinaire. */
-export const EXPRESS_MAX_MIN = 180;
+/** SIX HEURES AU PLUS. Au-delà, « l'express » n'est plus un express : c'est un
+ *  prix réduit qui dure la journée, et il n'y a plus de raison de se dépêcher.
+ *  Relevé de 3 à 6 h parce que l'écran propose désormais de le choisir — et un
+ *  plafond qui rogne en silence le choix qu'on vient de faire est pire que
+ *  pas de choix du tout. */
+export const EXPRESS_MAX_MIN = 360;
 
 export type Entree = {
   /** Le prix habituel. Facultatif : un « à prendre » n'en a pas. */

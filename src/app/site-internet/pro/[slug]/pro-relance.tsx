@@ -26,6 +26,7 @@ import {
 } from "@/lib/site-internet/actions-flash";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 import { motsMetier } from "@/lib/direct/mots-metier";
+import { ProHistoire } from "./pro-histoire";
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
@@ -186,6 +187,10 @@ export function ProRelance({
   const [facCadeauCond, setFacCadeauCond] = useState("");
   const [facExpress, setFacExpress] = useState(false);
   const [facExpressPrix, setFacExpressPrix] = useState("");
+  /** COMBIEN DE TEMPS L'EXPRESS COURT. Il était codé en dur à 60 minutes :
+   *  personne ne le choisissait, et une offre publiée à 14 h s'éteignait seule
+   *  à 15 h sans que le commerçant l'ait décidé ni sache pourquoi. */
+  const [facExpressMin, setFacExpressMin] = useState("60");
   const [facPartage, setFacPartage] = useState(false);
   const [facPartagePrix, setFacPartagePrix] = useState("");
   const [facPartageObj, setFacPartageObj] = useState("4");
@@ -231,6 +236,8 @@ export function ProRelance({
   const [touchePhoto, setTouchePhoto] = useState(false);
   const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
+  /** L'avertissement « un peu petite » : la photo passe, on le dit quand même. */
+  const [photoAvis, setPhotoAvis] = useState("");
   /** La photo en attente de cadrage. */
   const [aCadrer, setACadrer] = useState<PhotoChargee | null>(null);
   const fermerCadrage = () => setACadrer(null);
@@ -329,8 +336,13 @@ export function ProRelance({
       if (!verdict.ok) {
         chargee.liberer();
         setPhotoErr(verdict.raison);
+        setPhotoAvis("");
         return;
       }
+      // « Un peu petite » n'est pas « refusée » : on prévient et on continue.
+      // Le mur d'avant rejetait captures d'écran et photos reçues par message,
+      // c'est-à-dire l'essentiel de ce qu'un commerçant a sous la main.
+      setPhotoAvis(verdict.niveau === "moyen" ? verdict.raison : "");
       setACadrer(chargee);
     } catch {
       setPhotoErr("Impossible d'ouvrir cette image.");
@@ -453,6 +465,7 @@ export function ProRelance({
           cadeauCondition: facCadeauCond,
           express: facExpress,
           expressPrix: facExpressPrix,
+          expressMinutes: Number(facExpressMin) || 60,
           partage: facPartage,
           partagePrix: facPartagePrix,
           partageObjectif: facPartageObj,
@@ -1058,6 +1071,10 @@ export function ProRelance({
           /* TERMINÉE — l'annonce n'est plus visible de personne, et l'écran
              doit le dire au lieu de la présenter comme « en ligne ». Teinte
              sable et non verte : le vert dit « ça tourne ». */
+          /* « Un peu petite », pas « refusée » : ambre et non rouge — la photo
+             part quand même, et la couleur doit le dire avant le texte. */
+          .pro .relance .ph-avis{margin-top:9px;font-size:12px;line-height:1.5;color:#8A6A12;
+            background:#FFF7E9;border:1px solid #F6E4BD;border-radius:11px;padding:10px 12px;}
           .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
           .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
           .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
@@ -1222,6 +1239,13 @@ export function ProRelance({
                 )}
               </>
             )}
+
+            {/* LA PETITE HISTOIRE DU JOUR, ICI AUSSI. Elle vivait uniquement en
+                haut de l'accueil : quand on est en train d'écrire une annonce,
+                on est précisément dans le moment où l'on a quelque chose à
+                raconter — et on ne remonte pas à l'accueil pour le faire.
+                C'est le MÊME bloc, donc la même unique histoire du jour. */}
+            {!intention && !libre && <ProHistoire slug={slug} token={token} />}
 
             {/* VOS ANNONCES PASSÉES. Elles existaient déjà en base — une
                 annonce retirée n'est pas supprimée, elle porte un `retire_le` —
@@ -1503,16 +1527,32 @@ export function ProRelance({
             </div>
             {facExpress && (
               <div className="facbox">
-                <label className="faclab" htmlFor="fac-express">Le prix pour qui vient tout de suite</label>
-                <input
-                  id="fac-express"
-                  inputMode="decimal"
-                  value={facExpressPrix}
-                  onChange={(e) => setFacExpressPrix(e.target.value)}
-                  placeholder="17"
-                />
+                <div className="facduo">
+                  <label><span>Le prix pour qui vient vite</span>
+                    <input
+                      id="fac-express"
+                      inputMode="decimal"
+                      value={facExpressPrix}
+                      onChange={(e) => setFacExpressPrix(e.target.value)}
+                      placeholder="17"
+                    /></label>
+                  {/* LA DURÉE SE CHOISIT. Elle était codée en dur à une heure :
+                      une offre publiée à 14 h s'éteignait à 15 h sans que
+                      personne l'ait décidé — et sans que rien ne le dise. */}
+                  <label><span>Pendant combien de temps</span>
+                    <select value={facExpressMin} onChange={(e) => setFacExpressMin(e.target.value)}>
+                      <option value="30">30 minutes</option>
+                      <option value="60">1 heure</option>
+                      <option value="90">1 h 30</option>
+                      <option value="120">2 heures</option>
+                      <option value="180">3 heures</option>
+                      <option value="240">4 heures</option>
+                      <option value="360">6 heures</option>
+                    </select></label>
+                </div>
                 <div className="facnote">
-                  Doit être inférieur à votre prix habituel — c&apos;est ce qui fait venir dans l&apos;heure.
+                  Le prix doit être inférieur à votre prix habituel — c&apos;est ce qui fait venir vite.
+                  Passé ce délai, l&apos;express disparaît tout seul&nbsp;; vos autres façons restent.
                 </div>
               </div>
             )}
@@ -1784,6 +1824,7 @@ export function ProRelance({
                             {envoiPhoto ? "Ajout…" : "📷 Prendre ou choisir une autre photo"}
                           </button>
                           {photoErr && <div className="ph-err">{photoErr}</div>}
+                          {photoAvis && <div className="ph-avis">⚠ {photoAvis}</div>}
                           <div style={{ marginTop: 10 }}>
                             {video ? (
                               <button
@@ -1835,6 +1876,7 @@ export function ProRelance({
                             le travail de quelqu&apos;un d&apos;autre.
                           </div>
                           {photoErr && <div className="ph-err">{photoErr}</div>}
+                          {photoAvis && <div className="ph-avis">⚠ {photoAvis}</div>}
                         </div>
                       )}
 

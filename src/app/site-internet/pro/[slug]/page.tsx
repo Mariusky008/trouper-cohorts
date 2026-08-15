@@ -358,7 +358,6 @@ export default async function EspacePro({
       {/* QUI VIENT — la contrepartie du code donné à l'habitant. Sur l'accueil
           et non dans un onglet : c'est ce qu'on regarde en ouvrant son espace
           le matin, pas ce qu'on va chercher. */}
-      {soliciter && <ProEngagements slug={slug} token={token} />}
       {/* NE S'AFFICHE QUE SI QUELQUE CHOSE CLOCHE. Un panneau de diagnostic
           permanent transformerait son espace en console d'administration. */}
       {soliciter && <ProDiagnostic slug={slug} token={token} />}
@@ -513,6 +512,22 @@ export default async function EspacePro({
       hidden: true,
       node: <ProRequests slug={slug} token={token} />,
     },
+    // MES RÉSERVATIONS — un onglet, pas un encart en bas de l'accueil.
+    //
+    // « Qui vient » y était rangé après les statistiques et les choses à
+    // traiter : le commerçant devait faire défiler tout son accueil pour
+    // retrouver qui l'attend. C'est pourtant ce qu'il regarde le plus souvent,
+    // et c'est la seule liste qu'il consulte DEVANT quelqu'un.
+    ...(soliciter
+      ? ([
+          {
+            key: "reservations",
+            label: "Mes réservations",
+            icon: "📋",
+            node: <ProEngagements slug={slug} token={token} />,
+          },
+        ] as ProTab[])
+      : []),
     { key: "agenda", label: "Agenda", icon: "📅", node: <ProAgenda slug={slug} token={token} canAskReview={soliciter} reviewLink={reviewLink} /> },
     {
       // « Mon site » sur UNE page (blocs empilés) plutôt que des sous-onglets.

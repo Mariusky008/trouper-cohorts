@@ -15,6 +15,7 @@
 // Composant SERVEUR : il ne fait que rendre ce qu'on lui donne.
 import Link from "next/link";
 import type { MonClic } from "@/lib/direct/engagements";
+import { Desister } from "./desister";
 
 const ICONE: Record<string, string> = { simple: "🕐", cadeau: "🎁", express: "⚡", collectif: "👥" };
 
@@ -86,6 +87,10 @@ export function MesClics({
                 La boutique ↗
               </a>
             )}
+            {/* SE DÉSISTER, ICI ET NULLE PART AILLEURS. C'est l'écran où l'on
+                voit ce qu'on a pris : c'est donc celui où l'on doit pouvoir le
+                rendre. Et une place rendue repart au premier qui attend. */}
+            <span className="clic-fin"><Desister campagneId={c.campagneId} ville={ville} /></span>
           </div>
         </div>
       ))}

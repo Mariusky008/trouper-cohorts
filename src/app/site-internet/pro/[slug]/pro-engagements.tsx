@@ -81,10 +81,10 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
     };
   }, [slug, token]);
 
-  const rienDuTout = charge && !liste.length && (!reactions || Object.values(reactions).every((n) => !n));
-  // Rien à montrer : le bloc n'existe pas. Un encart « 0 réservation » sur
-  // l'accueil d'un commerçant qui démarre ne l'informe pas, il le décourage.
-  if (!charge || rienDuTout) return null;
+  // C'est un ONGLET désormais, plus un encart en bas de l'accueil : il doit
+  // donc exister même vide. Un onglet qui ne s'ouvre sur rien est un onglet
+  // cassé ; on dit ce qui manque et comment le remplir.
+  if (!charge) return null;
 
   const visibles = tout ? liste : liste.slice(0, 5);
 
@@ -120,6 +120,9 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
           .pro .peng .e .tel{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;
             text-decoration:none;color:var(--ink);border:1px solid var(--hair);border-radius:9px;padding:7px 11px;}
           .pro .peng .e .sans{margin-top:8px;font-size:11.5px;color:var(--faint);line-height:1.4;}
+          .pro .peng .peng-vide{margin-top:13px;background:#F7F5EF;border-radius:13px;padding:14px;}
+          .pro .peng .peng-vide b{display:block;font-size:14px;}
+          .pro .peng .peng-vide span{display:block;font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:5px;}
           .pro .peng .plus{margin-top:10px;width:100%;border:none;background:none;color:var(--violet);
             font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;padding:4px;}
           `,
@@ -131,6 +134,16 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
           Chacun se présentera avec son code. Vous n&apos;avez rien à cocher&nbsp;: la liste est là pour
           reconnaître la personne et pouvoir la joindre si besoin.
         </div>
+
+        {liste.length === 0 && (
+          <div className="peng-vide">
+            <b>Personne pour l&apos;instant.</b>
+            <span>
+              Dès qu&apos;un habitant prend l&apos;une de vos façons d&apos;en profiter, il apparaît ici avec son
+              code — et son numéro s&apos;il a voulu le laisser.
+            </span>
+          </div>
+        )}
 
         {reactions && (
           <div className="rx">

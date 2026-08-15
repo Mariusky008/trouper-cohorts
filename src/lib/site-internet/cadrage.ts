@@ -24,6 +24,19 @@ export const RATIO_FIL = 16 / 9;
  * son texte. 800 px est le minimum pour que le recadrage 16:9 laisse encore de
  * quoi afficher proprement.
  */
+/** EN DESSOUS, ON REFUSE. C'est le seuil où l'image devient franchement
+ *  inutilisable une fois découpée en 16:9 et affichée sur 280 px de haut. */
+export const LARGEUR_REFUS = 480;
+
+/** EN DESSOUS, ON PRÉVIENT SANS BLOQUER. C'est la largeur à partir de laquelle
+ *  une photo est nette sur un écran de téléphone moderne.
+ *
+ *  Elle servait de MUR : toute image plus étroite était refusée. Une capture
+ *  d'écran de téléphone (780 px), une photo reçue par message (720 px) — donc
+ *  la majorité de ce qu'un commerçant a sous la main — étaient rejetées, et le
+ *  bouton « ajouter une photo » ne servait plus à rien. Une carte avec une
+ *  photo un peu douce vaut mieux qu'une carte sans photo : c'est l'image qui
+ *  donne envie. On prévient, il décide. */
 export const LARGEUR_MIN = 800;
 
 /** La largeur du JPEG produit. 1200 couvre les écrans à forte densité sans
@@ -68,28 +81,54 @@ export function axeMobile(largeur: number, hauteur: number, ratio = RATIO_FIL): 
   return null;
 }
 
-export type Verdict = { ok: true } | { ok: false; raison: string };
+/**
+ * Ce qu'on pense de la taille d'une image.
+ *
+ *   `refus` — inutilisable, on n'ira pas plus loin.
+ *   `moyen` — publiable, mais un peu douce : on le DIT et on laisse décider.
+ *   `bon`   — rien à signaler.
+ */
+export type NiveauTaille = "refus" | "moyen" | "bon";
+export type Verdict = { ok: true; niveau: "bon" } | { ok: true; niveau: "moyen"; raison: string } | { ok: false; niveau: "refus"; raison: string };
 
 /**
- * Le refus, avec la phrase que verra le commerçant.
+ * Le verdict, avec la phrase que verra le commerçant.
  *
  * Elle dit quoi faire, pas ce qui ne va pas : « 640 px » ne veut rien dire pour
  * quelqu'un qui vend du pain.
+ *
+ * TROIS NIVEAUX, ET C'EST LE POINT. Un seuil unique refusait la majorité de ce
+ * qu'un commerçant a sous la main — captures d'écran, photos reçues par
+ * message — et le bouton « ajouter une photo » devenait décoratif. Une carte
+ * avec une photo un peu douce vaut mieux qu'une carte sans photo.
  */
-export function verifierTaille(largeur: number, hauteur: number, min = LARGEUR_MIN): Verdict {
+export function verifierTaille(
+  largeur: number,
+  hauteur: number,
+  seuilNet = LARGEUR_MIN,
+  seuilRefus = LARGEUR_REFUS
+): Verdict {
   if (!Number.isFinite(largeur) || !Number.isFinite(hauteur) || largeur < 1 || hauteur < 1) {
-    return { ok: false, raison: "Ce fichier ne s'ouvre pas comme une image." };
+    return { ok: false, niveau: "refus", raison: "Ce fichier ne s'ouvre pas comme une image." };
   }
   // On borne sur le PLUS PETIT côté : une panoramique de 2000×300 est large sur
   // le papier et n'a pas de quoi remplir la hauteur du cadre.
   const petit = Math.min(largeur, hauteur);
-  const requis = Math.round(min / RATIO_FIL);
-  if (largeur < min || petit < requis) {
+  if (largeur < seuilRefus || petit < Math.round(seuilRefus / RATIO_FIL)) {
     return {
       ok: false,
+      niveau: "refus",
       raison:
-        "Cette image est trop petite pour être nette dans le fil. Prenez-la avec l'appareil photo du téléphone plutôt que de l'enregistrer depuis une conversation — une photo reçue par message a déjà perdu la moitié de sa définition.",
+        "Cette image est vraiment trop petite : elle serait floue au point d'être illisible. Prenez-la avec l'appareil photo du téléphone.",
     };
   }
-  return { ok: true };
+  if (largeur < seuilNet || petit < Math.round(seuilNet / RATIO_FIL)) {
+    return {
+      ok: true,
+      niveau: "moyen",
+      raison:
+        "Cette photo est un peu petite : elle sera légèrement floue dans le fil. Vous pouvez la publier quand même — une photo un peu douce vaut mieux que pas de photo. Pour qu'elle soit nette, prenez-la avec l'appareil photo du téléphone plutôt que de l'enregistrer depuis une conversation.",
+    };
+  }
+  return { ok: true, niveau: "bon" };
 }
