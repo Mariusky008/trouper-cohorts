@@ -86,6 +86,23 @@ export async function habitantCourant(supabase: Supabase): Promise<Habitant | nu
 }
 
 /**
+ * Le numéro déjà laissé par un habitant, s'il y en a un.
+ *
+ * Lu à part de `habitantCourant` : le téléphone ne sert qu'aux deux écrans qui
+ * proposent de le laisser, et le charger partout ferait voyager une donnée
+ * personnelle dans des pages qui n'en ont aucun usage.
+ */
+export async function telephoneDe(supabase: Supabase, habitantId: string): Promise<string> {
+  if (!habitantId) return "";
+  try {
+    const { data } = await supabase.from("human_habitants").select("telephone").eq("id", habitantId).maybeSingle();
+    return str((data as Record<string, unknown> | null)?.telephone);
+  } catch {
+    return "";
+  }
+}
+
+/**
  * L'habitant courant, créé au besoin. Appelée UNIQUEMENT depuis une route
  * d'action (garder, suivre, régler) — jamais depuis le rendu d'une page.
  *

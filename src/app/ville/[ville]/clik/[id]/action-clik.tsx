@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { RecapCommerce } from "./recap";
 import type { CommerceVue } from "@/lib/direct/commerce-vue";
 import { conditionPhrase } from "@/lib/direct/condition-achat";
+import { LaisserContact } from "./contact";
 
 type Etat = "ouverte" | "presque" | "complete" | "epuise" | "terminee";
 
@@ -30,6 +31,7 @@ export function ActionClik({
   gainInitial,
   codeInitial,
   commerce,
+  contact,
 }: {
   campagneId: string;
   ville: string;
@@ -47,6 +49,8 @@ export function ActionClik({
   /** Où se rendre. `null` quand la fiche du commerce est introuvable — on
    *  n'invente pas une adresse. */
   commerce: CommerceVue | null;
+  /** Ce que la personne a déjà laissé, s'il y a lieu. On ne le redemande pas. */
+  contact: { prenom: string; telephone: string };
 }) {
   const router = useRouter();
   const [envoi, setEnvoi] = useState(false);
@@ -113,6 +117,12 @@ export function ActionClik({
             instant à l'autre, et c'est justement à ce moment-là qu'on n'a plus
             le temps de chercher l'adresse. */}
         {commerce && <RecapCommerce commerce={commerce} villeNom={villeNom} />}
+        {/* COMMENT VOUS JOINDRE — proposé ici et nulle part avant. L'écran
+            promettait « vous serez prévenu » sans que personne ne demande
+            jamais comment : le commerçant n'avait aucun contact, et la
+            promesse ne pouvait pas être tenue. Facultatif : refuser ne retire
+            rien à la place déjà obtenue. */}
+        <LaisserContact dejaPrenom={contact.prenom} dejaTel={contact.telephone} />
       </div>
     );
   }

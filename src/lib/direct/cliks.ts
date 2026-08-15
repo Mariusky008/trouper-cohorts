@@ -56,6 +56,10 @@ export const ORDRE_TYPE: Record<TypeClik, number> = { simple: 0, cadeau: 1, expr
  *  Le collectif porte un nom PAR DÉFAUT seulement : « Table à partager » chez un
  *  restaurant, « Le collectif » ailleurs. Le commerçant peut le renommer, et
  *  c'est ce nom-là qui prime — « table » ne veut rien dire chez un fleuriste. */
+export function estTypeClik(v: unknown): v is TypeClik {
+  return typeof v === "string" && (TYPES_CLIK as readonly string[]).includes(v);
+}
+
 export const FACON_LABEL: Record<TypeClik, string> = {
   simple: "À prendre",
   cadeau: "Le cadeau",

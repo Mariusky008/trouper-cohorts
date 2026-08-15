@@ -405,6 +405,26 @@ export function StylesDirect() {
   color:var(--gd);text-decoration:none;}
 .dir .ck-rec-go:hover{text-decoration:underline;}
 
+/* LAISSER UN NUMÉRO — après la confirmation, jamais avant. Discret : le
+   moment appartient à la confirmation, pas à un formulaire. */
+.dir .ck-ct-go{display:block;width:100%;margin-top:14px;background:none;border:1px dashed var(--line2);
+  border-radius:var(--rm);padding:12px;font-family:inherit;font-size:13px;font-weight:700;
+  color:var(--soft);cursor:pointer;}
+.dir .ck-ct{margin-top:14px;text-align:left;border:1px solid var(--line);border-radius:var(--rl);padding:14px;}
+.dir .ck-ct.ok{display:flex;align-items:center;gap:10px;justify-content:space-between;
+  background:var(--gs);border-color:#C4E0A8;font-size:13.5px;font-weight:700;color:var(--gd);}
+.dir .ck-ct.ok button{background:none;border:none;color:var(--soft);font-size:12.5px;font-weight:700;
+  font-family:inherit;cursor:pointer;text-decoration:underline;flex:none;}
+.dir .ck-ct-t{font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:700;color:var(--ink);}
+.dir .ck-ct-s{font-size:12.5px;color:var(--soft);line-height:1.45;margin-top:5px;}
+.dir .ck-ct input{width:100%;margin-top:9px;border:1px solid var(--line2);border-radius:var(--rm);
+  padding:12px 13px;font-size:15px;font-family:inherit;background:var(--paper);color:var(--ink);}
+.dir .ck-ct-e{margin-top:9px;font-size:12.5px;color:#8A3D26;line-height:1.4;}
+.dir .ck-ct-r{display:flex;gap:8px;margin-top:11px;}
+.dir .ck-ct-r button{flex:1;border:1px solid var(--line2);background:var(--paper);color:var(--ink);
+  border-radius:var(--rm);padding:11px;font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer;}
+.dir .ck-ct-r button.go{background:var(--gd);border-color:var(--gd);color:#fff;}
+
 .dir .ck-fini{margin-top:14px;font-size:14px;color:var(--soft);line-height:1.6;text-align:center;}
 .dir .ck-fini a{color:#2C8A4B;font-weight:700;}
 

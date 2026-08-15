@@ -83,6 +83,46 @@ export async function reactionsDesPublications(
 }
 
 /**
+ * CE QUE LES RÉACTIONS DEVIENNENT, côté commerçant.
+ *
+ * C'est la réponse à « ça sert à quoi ? ». Un habitant appuie sur « 👀 je passe
+ * voir » et il ne se passe rien à son écran — normal : le geste ne s'adresse
+ * pas à lui, il s'adresse au commerce. Sans cet écran-là, les quatre boutons
+ * n'étaient effectivement qu'une décoration.
+ *
+ * « 📍 J'y suis » est le chiffre qui compte : c'est la seule preuve de VENUE
+ * RÉELLE du système, et le seul qu'aucune plateforme ne peut fournir à un
+ * commerçant.
+ *
+ * Compte des PERSONNES, pas des appuis : quelqu'un qui a mis « j'en veux » sur
+ * trois annonces du même commerce est une personne, pas trois.
+ */
+export async function resumeReactions(
+  supabase: unknown,
+  siteId: string
+): Promise<Record<Reaction, number>> {
+  const vide = { jenveux: 0, jepassevoir: 0, prefere: 0, jysuis: 0 } as Record<Reaction, number>;
+  if (!siteId) return vide;
+  try {
+    const { data, error } = await (supabase as Supabase)
+      .from("clik_reaction")
+      .select("type, habitant_id")
+      .eq("site_id", siteId);
+    if (error || !Array.isArray(data)) return vide;
+    const gens: Record<string, Set<string>> = {};
+    for (const r of data as Record<string, unknown>[]) {
+      const t = str(r.type);
+      if (!estReaction(t)) continue;
+      (gens[t] ??= new Set()).add(str(r.habitant_id));
+    }
+    for (const t of REACTIONS) vide[t] = gens[t]?.size ?? 0;
+    return vide;
+  } catch {
+    return vide;
+  }
+}
+
+/**
  * Le compteur affiché à côté d'une réaction.
  *
  * Rien en dessous de trois, et c'est délibéré. « 1 » sous une réaction dit à

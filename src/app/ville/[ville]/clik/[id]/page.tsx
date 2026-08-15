@@ -25,6 +25,7 @@ import { ActionClik } from "./action-clik";
 import { codeDe } from "@/lib/direct/code-bon";
 import { commerceDuClik } from "@/lib/direct/commerce-vue";
 import { conditionPhrase } from "@/lib/direct/condition-achat";
+import { telephoneDe } from "@/lib/direct/habitant";
 
 /** La condition d'achat, telle qu'on peut la lire. La mise en forme vit dans
  *  `condition-achat` : trois écrans l'affichent, et chacun la formulait à sa
@@ -63,6 +64,9 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
     habitant ? maParticipation(supabase, campagne.id, habitant.id) : Promise.resolve(null),
     commerceDuClik(supabase, campagne.siteId),
   ]);
+  // Le numéro déjà laissé, s'il y en a un : on ne le redemande pas. Il vit sur
+  // la ligne de l'habitant et nulle part ailleurs.
+  const habitantTel = await telephoneDe(supabase, habitant?.id ?? "");
   const etat = etatDe(campagne);
   const part = avancement(campagne);
   const pct = remise(campagne);
@@ -191,6 +195,7 @@ export default async function ClikPage({ params }: { params: Promise<{ ville: st
             // commerçant doit retrouver.
             codeInitial={dedans && habitant ? codeDe(campagne.id, habitant.id) : null}
             commerce={commerce}
+            contact={{ prenom: habitant?.prenom ?? "", telephone: habitantTel }}
           />
         </div>
 

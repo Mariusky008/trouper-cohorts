@@ -22,6 +22,8 @@ import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
+import { engagementsDuCommerce } from "@/lib/direct/engagements";
+import { resumeReactions } from "@/lib/direct/reactions";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +102,25 @@ export async function POST(request: Request) {
     } catch (e) {
       // Migration non appliquée : une liste vide, pas une page en erreur.
       if (migrationManquante(String(e))) return NextResponse.json({ ok: true, campagnes: [] });
+      return NextResponse.json({ error: String(e) }, { status: 500 });
+    }
+  }
+
+  // ── QUI VIENT, ET COMMENT LE JOINDRE ──────────────────────────────────────
+  //
+  // Le code donné à l'habitant (« RR-8863 ») n'existait nulle part côté
+  // commerçant : il ne servait donc à rien. Et « vous serez prévenu dès que le
+  // groupe est complet » était une promesse que personne ne pouvait tenir,
+  // faute de contact.
+  if (action === "engagements") {
+    try {
+      const [engagements, reactions] = await Promise.all([
+        engagementsDuCommerce(supabase, siteId),
+        resumeReactions(supabase, siteId),
+      ]);
+      return NextResponse.json({ ok: true, engagements, reactions });
+    } catch (e) {
+      if (migrationManquante(String(e))) return NextResponse.json({ ok: true, engagements: [], reactions: null });
       return NextResponse.json({ error: String(e) }, { status: 500 });
     }
   }

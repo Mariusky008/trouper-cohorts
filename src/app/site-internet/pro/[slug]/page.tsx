@@ -19,6 +19,7 @@ import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
 import { ProHome } from "./pro-home";
 import { ProHistoire } from "./pro-histoire";
+import { ProEngagements } from "./pro-engagements";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -353,6 +354,10 @@ export default async function EspacePro({
           Réservée aux métiers qui sollicitent : raconter sa journée n'a pas de
           sens pour une profession réglementée, et sa déontologie l'interdirait. */}
       {soliciter && <ProHistoire slug={slug} token={token} />}
+      {/* QUI VIENT — la contrepartie du code donné à l'habitant. Sur l'accueil
+          et non dans un onglet : c'est ce qu'on regarde en ouvrant son espace
+          le matin, pas ce qu'on va chercher. */}
+      {soliciter && <ProEngagements slug={slug} token={token} />}
       {soliciter && villeUrl && (
         <ProCatalogue
           ville={ville}
