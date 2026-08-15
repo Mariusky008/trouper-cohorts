@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
 import { PrintBar, type AfficheKind } from "./print-button";
-import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
+import { numeroReservations } from "@/lib/site-internet/pro-phone";
 import { toWaDigits } from "@/lib/site-internet/phone";
 import { followCopy, resolveMetier } from "@/lib/site-internet/metier-profiles";
 
@@ -87,7 +87,12 @@ export default async function AffichePro({
   // le premier. C'est le seul moyen propre de constituer une liste de diffusion —
   // il enregistre le numéro, la conversation existe, et le commerçant ne risque
   // aucun signalement pour message non sollicité.
-  const waDigits = toWaDigits(proPhoneFrom(row));
+  //
+  // `numeroReservations` et non le numéro du patron : cette affiche est collée
+  // sur le comptoir, et pendant ses congés elle doit ouvrir la conversation du
+  // remplaçant — comme le bouton de confirmation du Direct. Sinon deux portes
+  // d'entrée du même commerce mèneraient à deux personnes différentes.
+  const waDigits = toWaDigits(numeroReservations(row));
   const secteur = resolveMetier(str(row.activite)).entry?.secteur ?? "flux";
   const promesse = followCopy(secteur).promesse.replace(/^Être prévenu·e /, "");
   const waTexte = `Bonjour ! Je souhaite être prévenu·e ${promesse}`;

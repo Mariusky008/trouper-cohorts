@@ -25,6 +25,7 @@
 // collectivité ne l'hébergera pas. Les habitants s'expriment par les quatre
 // réactions, qui ne sont pas du texte.
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { jourParis } from "@/lib/jour-paris";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -100,13 +101,10 @@ export function histoireValide(texte: string): boolean {
   return texte.length >= MIN_HISTOIRE && texte.length <= MAX_HISTOIRE;
 }
 
-/** La date du jour telle que la base la stocke : la journée du commerce, à
- *  l'heure de Paris. Le serveur peut tourner ailleurs. */
-export function jourParis(maintenant = new Date()): string {
-  // `en-CA` rend « 2026-08-15 », le seul format que PostgreSQL lit sans
-  // ambiguïté. `fr-FR` rendrait « 15/08/2026 », qui serait relu à l'envers.
-  return maintenant.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
-}
+// La journée du commerce se compte à l'heure de Paris — et cette règle ne vaut
+// pas que pour les histoires : le remplacement WhatsApp pendant les congés se
+// termine le même « aujourd'hui ». Une seule définition, dans `@/lib/jour-paris`.
+export { jourParis };
 
 /**
  * Les histoires du jour des commerces dont on affiche les annonces.

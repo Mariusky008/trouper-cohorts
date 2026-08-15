@@ -10,7 +10,7 @@
 // sur chaque Clik serait figée au moment du déménagement, et c'est l'ancienne
 // adresse qui resterait affichée.
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
-import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
+import { numeroReservations } from "@/lib/site-internet/pro-phone";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -132,10 +132,11 @@ export async function commerceDuClik(supabase: unknown, siteId: string): Promise
     lat: typeof lat === "number" ? lat : null,
     lng: typeof lng === "number" ? lng : null,
     quartier: str(row.quartier),
-    // `proPhoneFrom` connaît les deux endroits où le numéro peut être : la
-    // colonne du canal « vitrines », et le formulaire de rappel des sites issus
-    // d'une lettre. Sans ce repli, la moitié des commerces n'aurait pas de
-    // bouton WhatsApp.
-    telephone: proPhoneFrom(row as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
+    // `numeroReservations`, pas `proPhoneFrom` : c'est l'habitant qui écrit, et
+    // pendant les congés du patron c'est l'employé de garde qui doit recevoir.
+    // Elle connaît aussi les deux endroits où le numéro du commerçant peut
+    // être — la colonne du canal « vitrines », et le formulaire de rappel des
+    // sites issus d'une lettre.
+    telephone: numeroReservations(row as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
   };
 }

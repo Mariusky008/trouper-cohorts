@@ -18,7 +18,7 @@
 // incomplet à remplir.
 import { codeDe } from "@/lib/direct/code-bon";
 import { FACON_LABEL, estTypeClik } from "@/lib/direct/cliks";
-import { proPhoneFrom } from "@/lib/site-internet/pro-phone";
+import { numeroReservations } from "@/lib/site-internet/pro-phone";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -262,7 +262,9 @@ export async function mesClics(supabase: unknown, habitantId: string, max = 30):
         sites.set(str(r.id), {
           nom: str(r.business_name),
           slug: str(r.slug),
-          telephone: proPhoneFrom(r as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
+          // Le numéro que l'habitant recontacte depuis « Mes Clics » : celui de
+          // garde pendant les congés, celui du patron le reste du temps.
+          telephone: numeroReservations(r as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
         });
       }
     } catch {

@@ -19,6 +19,17 @@ export function toWaDigits(raw: string): string {
   return toE164(raw).replace(/\D/g, "");
 }
 
+// Numéro français écrit comme on le lit à voix haute : « 06 12 34 56 78 ».
+// Pour les écrans où le commerçant doit RECONNAÎTRE son propre numéro : en
+// « +33612345678 » il ne le relit pas, il le devine — et un numéro qu'on ne
+// relit pas est un numéro qu'on ne corrige jamais.
+export function frLisible(e164: string): string {
+  const d = String(e164 || "").replace(/\D/g, "");
+  const local = d.startsWith("33") ? "0" + d.slice(2) : d;
+  if (local.length !== 10) return e164 || "";
+  return local.replace(/(\d\d)(?=\d)/g, "$1 ").trim();
+}
+
 // Numéro lisible et discret pour l'affichage (masque les chiffres du milieu).
 export function maskPhone(e164: string): string {
   const d = String(e164 || "").replace(/\D/g, "");
