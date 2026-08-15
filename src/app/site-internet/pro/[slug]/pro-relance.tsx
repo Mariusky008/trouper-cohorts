@@ -25,6 +25,7 @@ import {
   type Intention,
 } from "@/lib/site-internet/actions-flash";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
+import { motsMetier } from "@/lib/direct/mots-metier";
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
@@ -533,6 +534,11 @@ export function ProRelance({
     dire(true);
     return () => dire(false);
   }, []);
+  // LES MOTS DE SON MÉTIER. Un coiffeur se voyait demander « 2 tables » et un
+  // « lien vers votre carte du jour » : des mots de restauration, qui ne
+  // veulent rien dire chez lui — et un formulaire qui ne parle pas sa langue
+  // ne se remplit pas.
+  const mots = useMemo(() => motsMetier(metier), [metier]);
   const toutes = useMemo(() => intentionsPour(metier, confirmation, secteur), [metier, confirmation, secteur]);
   const podium = useMemo(
     () => (monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3)),
@@ -1308,21 +1314,20 @@ export function ProRelance({
                     suivante, et la demander deux fois donnerait deux réponses
                     différentes. */}
                 <div className="opt">
-                  <label htmlFor="pro-reste">Combien vous en reste-t-il&nbsp;? <i>· facultatif</i></label>
+                  <label htmlFor="pro-reste">{mots.resteLabel} <i>· facultatif</i></label>
                   <input
                     id="pro-reste"
                     value={reste}
                     onChange={(e) => setReste(e.target.value)}
                     maxLength={40}
-                    placeholder="2 tables"
+                    placeholder={mots.resteExemple}
                   />
                   <span className="opthint">
-                    S&apos;affiche sous votre annonce&nbsp;: «&nbsp;{reste.trim() || "2 tables"}&nbsp;». Écrivez l&apos;unité
-                    de votre métier — 2 tables, 3 parts, 1 créneau.
+                    S&apos;affiche sous votre annonce&nbsp;: «&nbsp;{reste.trim() || mots.resteExemple}&nbsp;». {mots.resteAide}
                   </span>
                 </div>
                 <div className="opt">
-                  <label htmlFor="pro-ardoise">Le lien vers votre carte du jour <i>· facultatif</i></label>
+                  <label htmlFor="pro-ardoise">{mots.lienLabel} <i>· facultatif</i></label>
                   <input
                     id="pro-ardoise"
                     value={ardoise}
@@ -1331,9 +1336,7 @@ export function ProRelance({
                     inputMode="url"
                     placeholder="https://…"
                   />
-                  <span className="opthint">
-                    Un bouton «&nbsp;Voir l&apos;ardoise&nbsp;» apparaît sur votre carte. Sans lien, il ne s&apos;affiche pas.
-                  </span>
+                  <span className="opthint">{mots.lienAide} Sans lien, il ne s&apos;affiche pas.</span>
                 </div>
                 {/* Un [crochet] est la façon honnête pour l'assistante de dire
                     « il me manque cette information ». Publié tel quel, il part

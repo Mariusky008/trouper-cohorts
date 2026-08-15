@@ -18,6 +18,7 @@ import { cliksDeVille, faconsParPublication, collectifDe, mesParticipations } fr
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
+import { boutonLien } from "@/lib/direct/mots-metier";
 import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
@@ -153,6 +154,7 @@ export default async function LeDirectPage({
     facons: faconsVue(cliksParPub.get(p.id), miennes),
     reste: p.reste,
     ardoise: p.ardoise,
+    ardoiseLabel: boutonLien(p.auteurMetier),
     histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));

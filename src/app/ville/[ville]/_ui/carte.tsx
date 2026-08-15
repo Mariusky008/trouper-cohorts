@@ -70,8 +70,13 @@ export type CarteVue = {
   /** CE QU'IL RESTE, écrit par le commerçant : « 2 tables », « 3 parts ».
    *  Vide quand il ne l'a pas renseigné — on n'invente pas un stock. */
   reste: string;
-  /** L'adresse de sa carte du jour. `null` : pas de bouton « Voir l'ardoise ». */
+  /** L'adresse de sa carte du jour. `null` : pas de bouton. */
   ardoise: string | null;
+  /** Le libellé du bouton, dans les mots de SON métier : « Voir l'ardoise »
+   *  chez un restaurant, « Voir les prestations » chez un coiffeur. Calculé au
+   *  serveur pour que la question posée au commerçant et le bouton lu par
+   *  l'habitant disent la même chose. */
+  ardoiseLabel: string;
   /** LA PETITE HISTOIRE DU JOUR de ce commerce, quand il en a écrit une.
    *  Ce n'est pas une offre : elle ne propose rien, elle donne envie de
    *  passer. `null` la plupart du temps, et c'est normal. */
@@ -217,7 +222,7 @@ export function Carte({
           )}
           {p.ardoise ? (
             <a className="det-a" href={p.ardoise} target="_blank" rel="noreferrer noopener">
-              Voir l&apos;ardoise ›
+              {p.ardoiseLabel} ›
             </a>
           ) : null}
         </div>

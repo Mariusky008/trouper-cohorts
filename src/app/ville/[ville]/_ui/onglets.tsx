@@ -13,7 +13,10 @@ import { usePathname } from "next/navigation";
 const ONGLETS = [
   { seg: "", i: "◉", label: "Le Direct" },
   { seg: "a-saisir", i: "⚡", label: "À saisir" },
-  { seg: "mes-commerces", i: "♡", label: "Mes commerces" },
+  // « MES CLICS » et non « Mes commerces » : ce qu'on vient y chercher, c'est le
+  // code à présenter en poussant la porte d'un commerce. Les gardées et les
+  // suivis restent dedans, en second.
+  { seg: "mes-commerces", i: "♡", label: "Mes Clics" },
   { seg: "moi", i: "◔", label: "Moi" },
 ] as const;
 

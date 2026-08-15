@@ -11,15 +11,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, suivis, barreCoeurs, coeurs, PALIER_AVANTAGE } from "@/lib/direct/habitant";
 import { estVivante, type Publication } from "@/lib/direct/publications";
-import { repereSpatial } from "@/lib/direct/degradation";
-import { cliksDeVille, faconsParPublication, mesParticipations } from "@/lib/direct/cliks";
-import { faconsVue } from "@/lib/direct/facons-vue";
-import { reactionsDesPublications } from "@/lib/direct/reactions";
-import { histoiresDuJour } from "@/lib/direct/histoire";
-import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
-import { Carte, type CarteVue } from "../_ui/carte";
+import QRCode from "qrcode";
+import { mesClics } from "@/lib/direct/engagements";
+import { MesClics } from "./mes-clics";
+import { GardeeLigne } from "./gardee-ligne";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,7 +26,7 @@ const str = (v: unknown) => (v == null ? "" : String(v));
 export async function generateMetadata({ params }: { params: Promise<{ ville: string }> }): Promise<Metadata> {
   const { ville } = await params;
   const cfg = await configVille(createAdminClient(), ville);
-  return { title: `Mes commerces — ${cfg.nom}`, robots: { index: false } };
+  return { title: `Mes Clics — ${cfg.nom}`, robots: { index: false } };
 }
 
 /**
@@ -119,62 +116,18 @@ export default async function MesCommercesPage({
 }) {
   const { ville } = await params;
   const sp = await searchParams;
-  const onglet = String(Array.isArray(sp.t) ? sp.t[0] : sp.t || "") === "suivis" ? "suivis" : "gardees";
+  // TROIS ONGLETS INTERNES, et « Mes Clics » en premier : c'est ce qu'on vient
+  // chercher ici. Les gardées sont un pense-bête, les suivis un réglage ; le
+  // code à présenter, lui, se cherche en poussant la porte d'un commerce.
+  const brut = String(Array.isArray(sp.t) ? sp.t[0] : sp.t || "");
+  const onglet = brut === "suivis" ? "suivis" : brut === "gardees" ? "gardees" : "clics";
 
   const supabase = createAdminClient();
-  const [cfg, habitant] = await Promise.all([configVille(supabase, ville), habitantCourant(supabase)]);
+  const habitant = await habitantCourant(supabase);
 
   const gardeesVives = habitant ? await chargerGardees(supabase, habitant.id) : [];
 
-  // Les Cliks en cours, pour les annonces gardées. C'est ici qu'ils comptent le
-  // plus : quelqu'un qui a gardé une annonce est exactement la personne à
-  // prévenir quand il ne manque plus que deux personnes au groupe.
-  const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
   const expirentAujourdhui = expirantAujourdhui(gardeesVives);
-
-  const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
-  // Les réactions des annonces affichées, en UNE lecture : une requête par
-  // carte multiplierait les allers-retours par le nombre d'annonces.
-  const reacts = await reactionsDesPublications(supabase, gardeesVives.map((p) => p.id), habitant?.id ?? null);
-
-  // LA PETITE HISTOIRE DU JOUR de chaque commerce affiché, en UNE lecture.
-  // Elle est portée par le COMMERCE, pas par l'annonce : deux annonces du même
-  // boulanger montrent la même histoire, parce qu'il ne s'en passe qu'une chez
-  // lui aujourd'hui.
-  const histoires = await histoiresDuJour(supabase, gardeesVives.map((p) => p.siteId ?? ""));
-
-  // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
-  // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
-  // donnait l'impression qu'il fallait recommencer.
-  const miennes = await mesParticipations(
-    supabase,
-    gardeesVives.flatMap((p) => (cliksParPub.get(p.id) ?? []).map((c) => c.id)),
-    habitant?.id ?? null
-  );
-
-
-  const cartes: CarteVue[] = gardeesVives.map((p) => ({
-    id: p.id,
-    famille: p.famille,
-    texte: p.texte,
-    photo: p.photo,
-    video: p.video,
-    lien: p.lien,
-    auteurNom: p.auteurNom,
-    auteurMetier: p.auteurMetier,
-    auteurSlug: p.auteurSlug,
-    repere: repereSpatial(p, ctx),
-    lat: p.lat,
-    lng: p.lng,
-    fraicheur: ilYA(p.publieLe),
-    echeance: echeanceCourte(p.expireLe),
-    urgent: presse(p.expireLe),
-    facons: faconsVue(cliksParPub.get(p.id), miennes),
-    reste: p.reste,
-    ardoise: p.ardoise,
-    histoire: (p.siteId && histoires.get(p.siteId)) || null,
-    reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
-  }));
 
   // ── Les commerces suivis ──────────────────────────────────────────────────
   const mesSuivis = habitant ? await suivis(supabase, habitant.id) : [];
@@ -191,25 +144,52 @@ export default async function MesCommercesPage({
     }
   }
 
+  // MES CLICS, et le QR de chaque code. Le QR est encodé ICI et pas dans le
+  // navigateur : devant un comptoir, le réseau ne passe pas toujours, et une
+  // image qui reste à charger au moment de payer ne sert à rien.
+  const clics = habitant ? await mesClics(supabase, habitant.id) : [];
+  const qr = new Map<string, string>();
+  for (const c of clics) {
+    try {
+      qr.set(c.code, await QRCode.toDataURL(c.code, { margin: 0, width: 184, color: { dark: "#0E2A1C", light: "#FFFFFF" } }));
+    } catch {
+      /* sans QR, le code écrit en clair fait le travail */
+    }
+  }
+
   const racine = `/ville/${ville}/mes-commerces`;
 
   return (
     <>
       <header className="fhead">
-        <h1>Mes commerces</h1>
+        <h1>Mes Clics</h1>
         <div className="upd">
+          {clics.length > 0
+            ? `${clics.length} Clic${clics.length > 1 ? "s" : ""} en cours · `
+            : ""}
           {gardeesVives.length} gardée{gardeesVives.length > 1 ? "s" : ""} · {mesSuivis.length} commerce
           {mesSuivis.length > 1 ? "s" : ""} suivi{mesSuivis.length > 1 ? "s" : ""}
         </div>
       </header>
 
-      <nav className="tabs" aria-label="Mes commerces">
-        <Link href={racine} className={onglet === "gardees" ? "on" : undefined} scroll={false}>Gardées</Link>
+      <nav className="tabs" aria-label="Mes Clics">
+        <Link href={racine} className={onglet === "clics" ? "on" : undefined} scroll={false}>Mes Clics</Link>
+        <Link href={`${racine}?t=gardees`} className={onglet === "gardees" ? "on" : undefined} scroll={false}>Gardées</Link>
         <Link href={`${racine}?t=suivis`} className={onglet === "suivis" ? "on" : undefined} scroll={false}>Je suis</Link>
       </nav>
 
-      {onglet === "gardees" ? (
-        cartes.length > 0 ? (
+      {onglet === "clics" ? (
+        <>
+          {clics.length > 0 && (
+            <div className="sect">
+              <div className="st">À présenter au commerce</div>
+              <div className="ss">votre code suffit</div>
+            </div>
+          )}
+          <MesClics clics={clics} qr={qr} ville={ville} />
+        </>
+      ) : onglet === "gardees" ? (
+        gardeesVives.length > 0 ? (
           <>
             <div className="sect">
               <div className="st">À utiliser bientôt</div>
@@ -219,9 +199,23 @@ export default async function MesCommercesPage({
                   : "les plus urgentes en tête"}
               </div>
             </div>
+            {/* EN LIGNES, PAS EN CARTES DU FIL. Rendues avec le composant
+                complet, les gardées donnaient l'impression de relire le fil
+                dans un autre onglet — et « ce qui expire aujourd'hui », la
+                seule chose qu'on vient vérifier, s'y perdait. */}
             <div className="feed">
-              {cartes.map((c) => (
-                <Carte key={c.id} p={c} gardee ville={ville} action="retirer" />
+              {gardeesVives.map((p) => (
+                <GardeeLigne
+                  key={p.id}
+                  id={p.id}
+                  ville={ville}
+                  texte={p.texte}
+                  photo={p.photo}
+                  auteurNom={p.auteurNom}
+                  auteurSlug={p.auteurSlug}
+                  echeance={echeanceCourte(p.expireLe)}
+                  urgent={presse(p.expireLe)}
+                />
               ))}
             </div>
           </>

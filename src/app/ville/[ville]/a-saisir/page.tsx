@@ -26,6 +26,7 @@ import { cliksDeVille, faconsParPublication, mesParticipations } from "@/lib/dir
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
+import { boutonLien } from "@/lib/direct/mots-metier";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -109,6 +110,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     facons: faconsVue(cliksParPub.get(p.id), miennes),
     reste: p.reste,
     ardoise: p.ardoise,
+    ardoiseLabel: boutonLien(p.auteurMetier),
     histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));

@@ -194,6 +194,14 @@ export function StylesDirect() {
 .dir .det-a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;white-space:nowrap;flex:none;}
 .dir .det-a:hover{text-decoration:underline;}
 
+/* CE QUE LE GESTE PRODUIT. « Rien ne se passe » était exact du point de vue de
+   l'habitant : la pastille s'allume, et c'est tout — parce que le geste
+   s'adresse au commerce, pas à lui. La phrase le dit, et s'efface. */
+.dir .rx-dit{grid-column:1/-1;margin:2px 0 0;font-size:12.5px;line-height:1.45;color:var(--gd);
+  background:var(--gs);border-radius:var(--rm);padding:9px 11px;animation:dirDit .18s ease-out;}
+@keyframes dirDit{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.dir .rx-dit{animation:none;}}
+
 /* DÉJÀ PRIS. La ligne cesse d'être une proposition : fond vert pâle, prix
    estompé, coche à la place du chevron. Sans ce changement, on relisait
    « 16 € · table à partager » sur une offre rejointe dix minutes plus tôt, et
@@ -443,6 +451,8 @@ export function StylesDirect() {
   font-weight:700;color:var(--ink);text-decoration:none;border-bottom:2px solid var(--gl);padding-bottom:3px;}
 
 /* ── état vide ───────────────────────────────────────────────────────────── */
+.dir .vide-b{display:inline-block;margin-top:16px;background:var(--gd);color:#fff;border-radius:999px;
+  padding:12px 22px;font-family:var(--fd),Georgia,serif;font-size:15px;font-weight:700;text-decoration:none;}
 .dir .vide{margin:16px;padding:26px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;text-align:center;}
 .dir .vide h3{font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:600;color:var(--ink);margin:0 0 7px;}
 .dir .vide p{font-size:12px;color:var(--soft);line-height:1.6;margin:0;}
@@ -470,7 +480,53 @@ export function StylesDirect() {
 .dir .nav.dark a.on{color:#fff;}
 .dir .nav.dark a.on .i{background:var(--gl);color:#0E2A1C;}
 
-/* ── onglets internes (Mes commerces) ────────────────────────────────────── */
+/* ── MES CLICS ────────────────────────────────────────────────────────────
+   Le code et son QR, en grand : c'est la seule chose qu'on cherche en
+   poussant la porte du commerce. */
+.dir .clic{background:var(--paper);border-radius:var(--rx);margin-bottom:14px;padding:15px 16px;
+  box-shadow:var(--sh);}
+.dir .clic-h{display:flex;align-items:flex-start;gap:11px;}
+.dir .clic-ic{font-size:19px;line-height:1.2;flex:none;}
+.dir .clic-t{flex:1;min-width:0;}
+.dir .clic-ou{font-family:var(--fd),Georgia,serif;font-size:18px;font-weight:700;color:var(--ink);line-height:1.2;}
+.dir .clic-q{font-size:12.5px;color:var(--soft);margin-top:4px;line-height:1.4;}
+.dir .clic-st{flex:none;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;
+  color:var(--gd);background:var(--gs);border-radius:999px;padding:5px 10px;}
+.dir .clic-st.att{color:#8A6A12;background:#FFF4DE;}
+.dir .clic-g{margin-top:11px;font-size:14px;color:var(--ink);font-weight:600;}
+/* Le QR à gauche, le code à droite : on lit le code, on tend l'écran. */
+.dir .clic-code{display:flex;align-items:center;gap:14px;margin-top:13px;padding:13px;
+  border:1px solid var(--line);border-radius:var(--rl);background:var(--bg);}
+.dir .clic-code img{flex:none;border-radius:8px;background:#fff;padding:5px;}
+.dir .clic-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:800;}
+.dir .clic-v{font-family:var(--fd),Georgia,serif;font-size:27px;font-weight:700;color:var(--ink);
+  letter-spacing:.05em;line-height:1.15;margin-top:3px;}
+.dir .clic-s{font-size:11.5px;color:var(--soft);line-height:1.4;margin-top:6px;}
+.dir .clic-r{display:flex;gap:14px;margin-top:12px;}
+.dir .clic-r a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;}
+
+/* ── UNE GARDÉE, EN LIGNE ─────────────────────────────────────────────────
+   Rendues avec le composant complet du fil, les gardées donnaient
+   l'impression de relire le fil dans un autre onglet — et « ce qui expire
+   aujourd'hui », la seule chose qu'on vient vérifier, s'y perdait. */
+.dir .gl{display:flex;align-items:stretch;gap:0;background:var(--paper);border-radius:var(--rl);
+  margin-bottom:9px;box-shadow:var(--sh);overflow:hidden;}
+.dir .gl-l{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:11px 4px 11px 11px;
+  text-decoration:none;color:inherit;}
+.dir .gl-img{width:58px;height:58px;flex:none;border-radius:var(--rm);background-size:cover;
+  background-position:center;display:flex;align-items:center;justify-content:center;}
+.dir .gl-img i{font-family:var(--fd),Georgia,serif;font-size:20px;color:#fff;opacity:.55;font-style:normal;}
+.dir .gl-c{flex:1;min-width:0;}
+.dir .gl-qui{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);font-weight:800;}
+.dir .gl-t{display:block;font-size:14px;color:var(--ink);line-height:1.35;margin-top:3px;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.dir .gl-e{display:inline-block;font-size:11.5px;font-weight:800;color:var(--soft);margin-top:5px;}
+.dir .gl-e.chaud{color:var(--red);}
+.dir .gl-x{flex:none;width:44px;border:none;background:none;color:var(--faint);font-size:15px;
+  cursor:pointer;font-family:inherit;}
+
+/* ── onglets internes (Mes Clics) ────────────────────────────────────────── */
 .dir .tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);}
 .dir .tabs a{flex:1;text-align:center;padding:12px 0;font-size:11.5px;font-weight:700;color:var(--faint);
   border-bottom:2px solid transparent;text-decoration:none;}

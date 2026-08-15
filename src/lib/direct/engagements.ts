@@ -176,3 +176,113 @@ export async function engagementsDuCommerce(
     };
   });
 }
+
+
+/** Un Clic pris par MOI, tel que l'écran « Mes Clics » l'affiche. */
+export type MonClic = {
+  campagneId: string;
+  facon: string;
+  type: string;
+  titre: string;
+  code: string;
+  statut: string;
+  le: string;
+  gain: string;
+  /** Chez qui, et où aller. */
+  commerce: string;
+  slug: string;
+  echeance: string;
+};
+
+/**
+ * MES CLICS — l'autre sens de la même lecture.
+ *
+ * L'onglet du bas s'appelait « Mes commerces » et ne montrait que des annonces
+ * gardées, rendues comme des cartes du fil : on croyait relire le fil. Ce qui
+ * manquait, c'est ce qu'on a RÉELLEMENT pris — et le code à présenter, qui
+ * n'existait que sur l'écran où on venait de le décrocher.
+ *
+ * Deux lectures : mes participations, puis les campagnes concernées. Pas une
+ * par ligne.
+ */
+export async function mesClics(supabase: unknown, habitantId: string, max = 30): Promise<MonClic[]> {
+  if (!habitantId) return [];
+  const sb = supabase as Supabase;
+
+  type Ligne = { campagneId: string; statut: string; le: string; rewardId: string };
+  const lignes: Ligne[] = [];
+  try {
+    const { data, error } = await sb
+      .from("clik_participation")
+      .select("campagne_id, statut, rejoint_le, reward_id")
+      .eq("habitant_id", habitantId)
+      .order("rejoint_le", { ascending: false })
+      .limit(max);
+    if (error || !Array.isArray(data)) return [];
+    for (const r of data as Record<string, unknown>[]) {
+      const statut = str(r.statut);
+      if (!VIVANTS.includes(statut)) continue;
+      lignes.push({ campagneId: str(r.campagne_id), statut, le: str(r.rejoint_le), rewardId: str(r.reward_id) });
+    }
+  } catch {
+    return [];
+  }
+  if (!lignes.length) return [];
+
+  // Les campagnes, avec le repli habituel sur les colonnes récentes.
+  const champs = "id, type, titre, echeance, site_id";
+  const camp = new Map<string, Record<string, unknown>>();
+  try {
+    let { data, error } = await sb
+      .from("clik_campaign")
+      .select(`${champs}, nom_facon`)
+      .in("id", lignes.map((l) => l.campagneId));
+    if (error) ({ data, error } = await sb.from("clik_campaign").select(champs).in("id", lignes.map((l) => l.campagneId)));
+    for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) camp.set(str(r.id), r);
+  } catch {
+    return [];
+  }
+
+  // Chez qui. Une seule lecture pour tous les commerces concernés.
+  const sites = new Map<string, { nom: string; slug: string }>();
+  const siteIds = Array.from(new Set([...camp.values()].map((c) => str(c.site_id)).filter(Boolean)));
+  if (siteIds.length) {
+    try {
+      const { data } = await sb.from("human_vitrine_sites").select("id, business_name, slug").in("id", siteIds);
+      for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) {
+        sites.set(str(r.id), { nom: str(r.business_name), slug: str(r.slug) });
+      }
+    } catch {
+      /* sans le nom du commerce, le code et la façon restent utiles */
+    }
+  }
+
+  const gains = new Map<string, string>();
+  const rewardIds = lignes.map((l) => l.rewardId).filter(Boolean);
+  if (rewardIds.length) {
+    try {
+      const { data } = await sb.from("clik_reward").select("id, libelle").in("id", Array.from(new Set(rewardIds)));
+      for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) gains.set(str(r.id), str(r.libelle));
+    } catch {
+      /* pas de libellé : la ligne vaut toujours pour son code */
+    }
+  }
+
+  return lignes.map((l) => {
+    const c = camp.get(l.campagneId);
+    const s = sites.get(str(c?.site_id));
+    return {
+      campagneId: l.campagneId,
+      facon: nomFacon(str(c?.nom_facon), str(c?.type)),
+      type: str(c?.type),
+      titre: str(c?.titre),
+      code: codeDe(l.campagneId, habitantId),
+      statut: l.statut,
+      le: l.le,
+      gain: gains.get(l.rewardId) ?? "",
+      commerce: s?.nom ?? "",
+      slug: s?.slug ?? "",
+      echeance: str(c?.echeance),
+    };
+  });
+}
