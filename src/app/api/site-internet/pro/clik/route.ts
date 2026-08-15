@@ -24,6 +24,7 @@ import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { engagementsDuCommerce } from "@/lib/direct/engagements";
 import { resumeReactions } from "@/lib/direct/reactions";
+import { diagnostiquerFacons } from "@/lib/direct/diagnostic-facons";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, engagements, reactions });
     } catch (e) {
       if (migrationManquante(String(e))) return NextResponse.json({ ok: true, engagements: [], reactions: null });
+      return NextResponse.json({ error: String(e) }, { status: 500 });
+    }
+  }
+
+  // ── POURQUOI MES FAÇONS N'APPARAISSENT PAS ────────────────────────────────
+  //
+  // Six causes possibles, indiscernables de l'extérieur — j'en ai déduit la
+  // mauvaise faute d'avoir regardé la vraie base. Celle-ci constate au lieu de
+  // supposer.
+  if (action === "diagnostic") {
+    try {
+      const d = await diagnostiquerFacons(supabase, siteId, villeSlug(s(site.city)));
+      return NextResponse.json({ ok: true, diagnostic: d });
+    } catch (e) {
       return NextResponse.json({ error: String(e) }, { status: 500 });
     }
   }

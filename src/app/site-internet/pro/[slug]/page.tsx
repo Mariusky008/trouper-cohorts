@@ -20,6 +20,7 @@ import { ProAssistant } from "./pro-assistant";
 import { ProHome } from "./pro-home";
 import { ProHistoire } from "./pro-histoire";
 import { ProEngagements } from "./pro-engagements";
+import { ProDiagnostic } from "./pro-diagnostic";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -358,6 +359,9 @@ export default async function EspacePro({
           et non dans un onglet : c'est ce qu'on regarde en ouvrant son espace
           le matin, pas ce qu'on va chercher. */}
       {soliciter && <ProEngagements slug={slug} token={token} />}
+      {/* NE S'AFFICHE QUE SI QUELQUE CHOSE CLOCHE. Un panneau de diagnostic
+          permanent transformerait son espace en console d'administration. */}
+      {soliciter && <ProDiagnostic slug={slug} token={token} />}
       {soliciter && villeUrl && (
         <ProCatalogue
           ville={ville}
