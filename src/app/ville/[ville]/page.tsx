@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { filDeVille, noterAffichages } from "@/lib/direct/publications";
 import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
 import { trierLeFil, presse } from "@/lib/direct/fil";
-import { cliksDeVille, faconsParPublication, collectifDe } from "@/lib/direct/cliks";
+import { cliksDeVille, faconsParPublication, collectifDe, mesParticipations } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
@@ -120,6 +120,16 @@ export default async function LeDirectPage({
   // lui aujourd'hui.
   const histoires = await histoiresDuJour(supabase, triees.map((p) => p.siteId ?? ""));
 
+  // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
+  // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
+  // donnait l'impression qu'il fallait recommencer.
+  const miennes = await mesParticipations(
+    supabase,
+    triees.flatMap((p) => (cliksParPub.get(p.id) ?? []).map((c) => c.id)),
+    habitant?.id ?? null
+  );
+
+
   const cartes: CarteVue[] = triees.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -140,7 +150,7 @@ export default async function LeDirectPage({
     // campagnes mais ce qu'elle affiche. Le calcul dépend de l'heure
     // (« Arrivée avant 12 h 47 ») : fait dans la carte, qui est un composant
     // client, il divergerait entre le rendu serveur et l'hydratation.
-    facons: faconsVue(cliksParPub.get(p.id)),
+    facons: faconsVue(cliksParPub.get(p.id), miennes),
     reste: p.reste,
     ardoise: p.ardoise,
     histoire: (p.siteId && histoires.get(p.siteId)) || null,

@@ -324,6 +324,42 @@ export async function campagneParId(supabase: unknown, id: string): Promise<Camp
 }
 
 /** L'engagement de cet habitant sur cette campagne, s'il y en a un. */
+/**
+ * LES FAÇONS AUXQUELLES JE PARTICIPE DÉJÀ, pour tout le fil.
+ *
+ * Une seule lecture : le fil affiche une trentaine de façons, et une requête
+ * par ligne multiplierait les allers-retours d'autant.
+ *
+ * Sert à ce que la carte ne REPROPOSE pas ce qui est déjà pris. Sans ça, on
+ * lisait « 16 € · table à partager » sur une offre qu'on avait rejointe dix
+ * minutes plus tôt : la carte donnait l'impression qu'il fallait recommencer.
+ */
+export async function mesParticipations(
+  supabase: unknown,
+  campagneIds: readonly string[],
+  habitantId: string | null
+): Promise<Set<string>> {
+  const out = new Set<string>();
+  const ids = Array.from(new Set(campagneIds.filter(Boolean)));
+  if (!habitantId || !ids.length) return out;
+  try {
+    const { data, error } = await (supabase as Supabase)
+      .from("clik_participation")
+      .select("campagne_id, statut")
+      .in("campagne_id", ids)
+      .eq("habitant_id", habitantId);
+    if (error || !Array.isArray(data)) return out;
+    for (const r of data as Record<string, unknown>[]) {
+      // Une participation annulée n'en est plus une : la façon redevient
+      // disponible, et la carte doit la reproposer.
+      if (["engage", "liste_attente", "confirme"].includes(str(r.statut))) out.add(str(r.campagne_id));
+    }
+  } catch {
+    /* table absente : la carte propose tout, comme avant */
+  }
+  return out;
+}
+
 export async function maParticipation(
   supabase: unknown,
   campagneId: string,

@@ -80,6 +80,9 @@ export type FaconVue = {
   compte: string;
   part: number | null;
   etat: "ouverte" | "presque" | "complete" | "epuise";
+  /** VRAI quand cette personne a déjà pris cette façon. La carte cesse alors de
+   *  la proposer : elle la confirme. */
+  mienne: boolean;
 };
 
 /**
@@ -90,7 +93,20 @@ export type FaconVue = {
  * elle, RESTE — barrée. La nuance compte : « tout est parti » raconte que
  * d'autres l'ont prise, ce qui donne envie des deux autres.
  */
-export function faconsVue(facons: readonly Campagne[] | undefined, maintenant: number = Date.now()): FaconVue[] {
+export function faconsVue(
+  facons: readonly Campagne[] | undefined,
+  /** Les campagnes auxquelles CETTE personne participe déjà. La carte ne doit
+   *  pas reproposer ce qui est acquis : on lisait « 16 € · table à partager »
+   *  sur une offre rejointe dix minutes plus tôt, ce qui donnait l'impression
+   *  qu'il fallait recommencer.
+   *
+   *  AVANT `maintenant`, et c'est délibéré : l'horloge garde sa valeur par
+   *  défaut, évaluée DANS la fonction. Passée par l'appelant, elle serait lue
+   *  pendant le rendu d'un composant — ce que la règle `react-hooks/purity`
+   *  refuse, à raison. */
+  miennes?: ReadonlySet<string>,
+  maintenant: number = Date.now()
+): FaconVue[] {
   const out: FaconVue[] = [];
   for (const c of facons ?? []) {
     const etat = etatDe(c, maintenant);
@@ -119,6 +135,7 @@ export function faconsVue(facons: readonly Campagne[] | undefined, maintenant: n
           : "",
       part: c.type === "collectif" ? avancement(c) : null,
       etat,
+      mienne: miennes?.has(c.id) ?? false,
     });
   }
   return out;

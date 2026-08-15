@@ -22,7 +22,7 @@ import { habitantCourant, gardees, suivis } from "@/lib/direct/habitant";
 import { ilYA } from "@/lib/site-internet/collectif";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
-import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
+import { cliksDeVille, faconsParPublication, mesParticipations } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
@@ -76,6 +76,16 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
   // lui aujourd'hui.
   const histoires = await histoiresDuJour(supabase, choisies.map((p) => p.siteId ?? ""));
 
+  // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
+  // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
+  // donnait l'impression qu'il fallait recommencer.
+  const miennes = await mesParticipations(
+    supabase,
+    choisies.flatMap((p) => (cliksParPub.get(p.id) ?? []).map((c) => c.id)),
+    habitant?.id ?? null
+  );
+
+
   const cartes: CarteVue[] = choisies.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -96,7 +106,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     // au glissement, et une bande cliquable posée dedans se déclencherait à
     // chaque geste raté. On montre les prix — sans eux on glisse au hasard —
     // et le glissement vers le haut reste le seul geste qui engage.
-    facons: faconsVue(cliksParPub.get(p.id)),
+    facons: faconsVue(cliksParPub.get(p.id), miennes),
     reste: p.reste,
     ardoise: p.ardoise,
     histoire: (p.siteId && histoires.get(p.siteId)) || null,

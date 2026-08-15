@@ -12,7 +12,7 @@ import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, suivis, barreCoeurs, coeurs, PALIER_AVANTAGE } from "@/lib/direct/habitant";
 import { estVivante, type Publication } from "@/lib/direct/publications";
 import { repereSpatial } from "@/lib/direct/degradation";
-import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
+import { cliksDeVille, faconsParPublication, mesParticipations } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
@@ -143,6 +143,16 @@ export default async function MesCommercesPage({
   // lui aujourd'hui.
   const histoires = await histoiresDuJour(supabase, gardeesVives.map((p) => p.siteId ?? ""));
 
+  // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
+  // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
+  // donnait l'impression qu'il fallait recommencer.
+  const miennes = await mesParticipations(
+    supabase,
+    gardeesVives.flatMap((p) => (cliksParPub.get(p.id) ?? []).map((c) => c.id)),
+    habitant?.id ?? null
+  );
+
+
   const cartes: CarteVue[] = gardeesVives.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -159,7 +169,7 @@ export default async function MesCommercesPage({
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
     urgent: presse(p.expireLe),
-    facons: faconsVue(cliksParPub.get(p.id)),
+    facons: faconsVue(cliksParPub.get(p.id), miennes),
     reste: p.reste,
     ardoise: p.ardoise,
     histoire: (p.siteId && histoires.get(p.siteId)) || null,

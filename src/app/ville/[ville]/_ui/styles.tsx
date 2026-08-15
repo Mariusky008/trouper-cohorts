@@ -194,6 +194,15 @@ export function StylesDirect() {
 .dir .det-a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;white-space:nowrap;flex:none;}
 .dir .det-a:hover{text-decoration:underline;}
 
+/* DÉJÀ PRIS. La ligne cesse d'être une proposition : fond vert pâle, prix
+   estompé, coche à la place du chevron. Sans ce changement, on relisait
+   « 16 € · table à partager » sur une offre rejointe dix minutes plus tôt, et
+   la carte donnait l'impression qu'il fallait recommencer. */
+.dir .fac-l.fac-moi{background:var(--gs);border-color:#C4E0A8;}
+.dir .fac-l.fac-moi .fac-t b{color:var(--gd);}
+.dir .fac-l.fac-moi .fac-s{color:var(--gd);font-weight:700;}
+.dir .fac-l.fac-moi .fac-go{color:var(--gd);font-weight:800;}
+
 /* LA PETITE HISTOIRE DU JOUR — la voix du commerce, sur sa propre carte.
    Fond crème et italique : l'œil doit voir que ce n'est PAS une ligne d'offre
    avant même de lire. Le filet vertical à gauche est la marque d'une citation ;

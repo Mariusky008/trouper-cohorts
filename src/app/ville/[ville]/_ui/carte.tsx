@@ -64,6 +64,8 @@ export type CarteVue = {
     /** Avancement entre 0 et 1, pour la jauge. `null` sans jauge à montrer. */
     part: number | null;
     etat: "ouverte" | "presque" | "complete" | "epuise";
+    /** Déjà pris par cette personne : la ligne confirme au lieu de proposer. */
+    mienne: boolean;
   }>;
   /** CE QU'IL RESTE, écrit par le commerçant : « 2 tables », « 3 parts ».
    *  Vide quand il ne l'a pas renseigné — on n'invente pas un stock. */
@@ -248,7 +250,7 @@ export function Carte({
             <Link
               key={f.id}
               href={`/ville/${ville}/clik/${f.id}`}
-              className={`fac-l fac-${f.type}${f.etat === "epuise" ? " fac-off" : ""}`}
+              className={`fac-l fac-${f.type}${f.etat === "epuise" ? " fac-off" : ""}${f.mienne ? " fac-moi" : ""}`}
               prefetch={false}
             >
               <span className="fac-ic" aria-hidden="true">
@@ -259,7 +261,12 @@ export function Carte({
                   <b>{f.prix}</b>
                   <em>{f.label}</em>
                 </span>
-                <span className="fac-s">{f.compte || f.promesse}</span>
+                {/* DÉJÀ PRIS : la ligne ne propose plus, elle confirme — et
+                    elle mène toujours à l'écran du Clik, parce que c'est là
+                    que se trouve le code à présenter. La fermer complètement
+                    cacherait précisément ce dont on a besoin en arrivant au
+                    commerce. */}
+                <span className="fac-s">{f.mienne ? "Vous en êtes — voir votre code" : f.compte || f.promesse}</span>
                 {f.quand && <span className="fac-q2">{f.quand}</span>}
                 {f.part != null && (
                   <span className="fac-j" aria-hidden="true">
@@ -267,7 +274,7 @@ export function Carte({
                   </span>
                 )}
               </span>
-              <span className="fac-go" aria-hidden="true">›</span>
+              <span className="fac-go" aria-hidden="true">{f.mienne ? "✓" : "›"}</span>
             </Link>
           ))}
         </div>
