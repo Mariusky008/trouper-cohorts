@@ -257,10 +257,20 @@ function distincts(v: readonly string[]): string[] {
 export async function cliksDeVille(supabase: unknown, villeSlug: string): Promise<Campagne[]> {
   const sb = supabase as Supabase;
   try {
-    const { data, error } = await sb
-      .from("clik_campaign")
-      .select("id, site_id, publication_id, ville_slug, type, titre, objectif, participants, prix_initial, prix_groupe, echeance, statut, ordre, nom_facon")
-      .eq("ville_slug", villeSlug);
+    // LES COLONNES RÉCENTES SONT DEMANDÉES À PART, ET LEUR ABSENCE NE DOIT PAS
+    // VIDER LE FIL.
+    //
+    // C'est le défaut le plus coûteux qu'on ait eu : PostgREST refuse TOUTE la
+    // requête quand une seule colonne demandée n'existe pas. Tant que la
+    // migration `trois_facons` n'était pas appliquée, cette lecture renvoyait
+    // une erreur — donc AUCUNE façon, sur AUCUNE annonce, dans le fil comme
+    // dans « À saisir ». Le commerçant cochait ses trois options, elles
+    // s'écrivaient bien (l'écriture, elle, avait déjà son repli), et rien ne
+    // s'affichait. Impossible à deviner de l'extérieur.
+    const champs =
+      "id, site_id, publication_id, ville_slug, type, titre, objectif, participants, prix_initial, prix_groupe, echeance, statut";
+    let { data, error } = await sb.from("clik_campaign").select(`${champs}, ordre, nom_facon`).eq("ville_slug", villeSlug);
+    if (error) ({ data, error } = await sb.from("clik_campaign").select(champs).eq("ville_slug", villeSlug));
     if (error || !Array.isArray(data)) return [];
 
     const lignes = data as Record<string, unknown>[];
