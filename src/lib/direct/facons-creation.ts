@@ -1,3 +1,4 @@
+
 // CRÉER LES FAÇONS D'UNE ANNONCE.
 //
 // Deux chemins mènent ici — le panneau « Faire venir du monde » et le parcours
@@ -9,7 +10,9 @@
 //
 // LES GARDE-FOUS SONT ICI, PAS DANS LES ÉCRANS. Un formulaire se contourne.
 
+import { conditionNormalisee } from "@/lib/direct/condition-achat";
 const s = (v: unknown) => String(v ?? "").trim();
+
 const n = (v: unknown): number => {
   const x = Number(String(v ?? "").replace(",", "."));
   return Number.isFinite(x) ? x : NaN;
@@ -77,7 +80,10 @@ export function preparerFacons(p: Entree, contexte: { finGenerale: string }): Pr
   if (p.cadeau) {
     const quantite = Math.round(n(p.cadeauQuantite));
     const libelle = s(p.cadeauLibelle).slice(0, 120);
-    const condition = s(p.cadeauCondition).slice(0, 120);
+    // NORMALISÉE À L'ÉCRITURE. Le commerçant a tapé « 12 », et l'écran de
+    // confirmation affichait « valable 12 ». La base porte désormais une phrase
+    // lisible, et les écrans qui la relisent n'ont plus à la deviner.
+    const condition = conditionNormalisee(p.cadeauCondition);
     if (!Number.isFinite(quantite) || quantite < 1 || quantite > STOCK_MAX) {
       return { ok: false, erreur: `Le cadeau : indiquez combien, entre 1 et ${STOCK_MAX}.` };
     }

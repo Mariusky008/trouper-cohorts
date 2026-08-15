@@ -351,6 +351,50 @@ export async function limiterVivantes(supabase: Supabase, siteId: string, garder
 }
 
 /**
+ * SES ANNONCES PASSÉES — celles qui sont terminées ou qu'il a retirées.
+ *
+ * PAS DE NOUVELLE TABLE : une annonce retirée n'est pas supprimée, elle porte
+ * un `retire_le`. L'historique qu'il demande existait déjà en base, personne ne
+ * le lui montrait. Une table « historique » aurait dupliqué la même vérité à
+ * deux endroits, et l'un des deux aurait fini par mentir.
+ *
+ * Sert à REPRENDRE un texte : un commerçant republie souvent la même chose (le
+ * plat du jeudi, la fournée du samedi). Le retaper à chaque fois est la
+ * première raison de ne pas republier du tout.
+ */
+export async function siennesPassees(supabase: Supabase, siteId: string, max = 12): Promise<Publication[]> {
+  if (!siteId) return [];
+  try {
+    // `retire_le` EN PLUS des champs habituels : c'est lui qui distingue une
+    // annonce retirée à la main d'une annonce simplement expirée, et les deux
+    // sont « passées ».
+    const rows = await avecRepli((champs) =>
+      supabase
+        .from("human_publications")
+        .select(`${champs}, retire_le`)
+        .eq("site_id", siteId)
+        .order("publie_le", { ascending: false })
+        .limit(60)
+    );
+    const maintenant = Date.now();
+    const out: Publication[] = [];
+    // On garde la ligne brute AVEC sa publication : filtrer d'abord puis relire
+    // `rows[i]` désaligne les index dès qu'une ligne est écartée.
+    for (const r of rows) {
+      const pub = lirePublication(r);
+      if (!pub) continue;
+      const retiree = str(r.retire_le) !== "";
+      if (!retiree && estVivante(pub, maintenant)) continue;
+      out.push(pub);
+      if (out.length >= max) break;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Les publications VIVANTES d'un commerce, pour son espace pro.
  *
  * Il n'avait aucun moyen de voir ce qui tourne à son nom : il publiait, et

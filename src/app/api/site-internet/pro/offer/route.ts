@@ -20,7 +20,7 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
-import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, prolonger, retirer } from "@/lib/direct/publications";
+import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, siennesPassees, prolonger, retirer } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
@@ -31,7 +31,26 @@ export const dynamic = "force-dynamic";
 
 const str = (v: unknown) => String(v ?? "").trim();
 
-type Offer = { text: string; until: string | null; photo: string | null; clicks: number; created_at: string };
+type Offer = {
+  text: string;
+  until: string | null;
+  photo: string | null;
+  clicks: number;
+  created_at: string;
+  /** VRAI quand l'échéance est passée. Calculé ICI et pas dans l'écran :
+   *  l'écran est un composant React, et lire l'horloge pendant un rendu le rend
+   *  impur — deux rendus du même état donneraient deux réponses. Sans ce
+   *  drapeau, une annonce terminée la veille s'affichait « en ligne » et le
+   *  rafraîchissement n'y changeait rien. */
+  expiree?: boolean;
+};
+
+/** L'offre, avec son état réel vis-à-vis de l'horloge du serveur. */
+function avecEtat(o: Offer | null, maintenant = Date.now()): Offer | null {
+  if (!o) return null;
+  const t = o.until ? Date.parse(o.until) : NaN;
+  return { ...o, expiree: Number.isFinite(t) && t <= maintenant };
+}
 
 function readOffer(v: unknown): Offer | null {
   if (!v || typeof v !== "object") return null;
@@ -138,8 +157,24 @@ export async function POST(request: Request) {
       expireLe: a.expireLe,
     }));
 
+  // SES ANNONCES PASSÉES. Il republie souvent la même chose — le plat du
+  // jeudi, la fournée du samedi — et retaper le texte à chaque fois est la
+  // première raison de ne pas republier du tout.
+  const monHistorique = async () =>
+    (await siennesPassees(supabase, id)).map((a) => ({
+      id: a.id,
+      texte: a.texte,
+      photo: a.photo,
+      famille: a.famille,
+      publieLe: a.publieLe,
+    }));
+
   if (action === "annonces") {
-    return NextResponse.json({ ok: true, annonces: await mesAnnonces() });
+    return NextResponse.json({ ok: true, annonces: await mesAnnonces(), historique: await monHistorique() });
+  }
+
+  if (action === "historique") {
+    return NextResponse.json({ ok: true, historique: await monHistorique() });
   }
 
   if (action === "retirer_annonce") {
@@ -167,7 +202,9 @@ export async function POST(request: Request) {
     // dans Le Direct enverrait des gens vers une offre qu'il vient d'annuler —
     // c'est la pire promesse qu'on puisse faire à sa place.
     await retirerToutesDe(supabase, id);
-    return NextResponse.json({ ok: true, offer: null });
+    // L'historique part avec la réponse : l'écran remet le parcours à zéro
+    // et doit pouvoir montrer immédiatement où le texte a été rangé.
+    return NextResponse.json({ ok: true, offer: null, historique: await monHistorique() });
   }
 
   if (action === "set") {
@@ -306,10 +343,16 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true, offer, avertissement: avertissementFacons || undefined });
+    return NextResponse.json({ ok: true, offer: avecEtat(offer), avertissement: avertissementFacons || undefined });
   }
 
   // get — la galerie voyage avec l'offre : le sélecteur de photo n'a pas besoin
   // d'un second aller-retour pour s'afficher.
-  return NextResponse.json({ ok: true, offer: await current(), photos: galerie, annonces: await mesAnnonces() });
+  return NextResponse.json({
+    ok: true,
+    offer: avecEtat(await current()),
+    photos: galerie,
+    annonces: await mesAnnonces(),
+    historique: await monHistorique(),
+  });
 }

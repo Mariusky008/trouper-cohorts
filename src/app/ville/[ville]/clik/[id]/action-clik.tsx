@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RecapCommerce } from "./recap";
 import type { CommerceVue } from "@/lib/direct/commerce-vue";
+import { conditionPhrase } from "@/lib/direct/condition-achat";
 
 type Etat = "ouverte" | "presque" | "complete" | "epuise" | "terminee";
 
@@ -81,7 +82,10 @@ export function ActionClik({
         {gagne && (
           <div className="ck-fait-g">
             {gagne.libelle}
-            {gagne.condition ? <span>valable {gagne.condition}</span> : null}
+            {/* La phrase complète, pas « valable » + ce qu'il a tapé : il a
+                tapé « 12 », et cet écran affichait « valable 12 » — juste après
+                que quelqu'un se soit engagé, c'est-à-dire au pire moment. */}
+            {gagne.condition ? <span>{conditionPhrase(gagne.condition)}</span> : null}
           </div>
         )}
         <div className="ck-fait-s">

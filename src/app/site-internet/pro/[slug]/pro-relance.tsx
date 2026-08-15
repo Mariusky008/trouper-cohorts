@@ -28,7 +28,28 @@ import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles"
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
-type Offer = { text: string; until: string | null; photo?: string | null; clicks: number; created_at: string };
+type Offer = {
+  text: string;
+  until: string | null;
+  photo?: string | null;
+  clicks: number;
+  created_at: string;
+  /** Calculé PAR LE SERVEUR. Lire l'horloge pendant un rendu React rendrait le
+   *  composant impur ; et sans ce drapeau, une annonce terminée la veille
+   *  restait affichée « en ligne », rafraîchissement compris. */
+  expiree?: boolean;
+};
+
+/** « 12 août ». Le jour suffit pour reconnaître une annonce : l'heure exacte
+ *  n'aide personne à retrouver « celle du jeudi ». */
+function dateCourte(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  return new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
+/** Une annonce passée, telle que la route la renvoie. */
+type Passee = { id: string; texte: string; photo: string | null; famille: string; publieLe: string };
 
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
@@ -217,6 +238,11 @@ export function ProRelance({
   const [remplace, setRemplace] = useState(false);
   /** L'annonce vient d'être publiée dans cette session : on le confirme franchement. */
   const [publiee, setPubliee] = useState(false);
+  /** SES ANNONCES PASSÉES — terminées ou retirées. Elles existaient déjà en
+   *  base (`retire_le`), personne ne les lui montrait : il retapait chaque
+   *  semaine le texte du plat du jeudi. */
+  const [historique, setHistorique] = useState<Passee[]>([]);
+  const [voirHisto, setVoirHisto] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
   /** Ce qui a échoué APRÈS que l'annonce soit partie. Séparé de `offerErr`,
@@ -434,6 +460,7 @@ export function ProRelance({
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.offer) {
         setOffer(j.offer);
+        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
         // Publiée : on repasse sur la carte « en ligne », qui porte les liens
         // pour aller voir le résultat aux deux endroits.
         setRemplace(false);
@@ -451,6 +478,17 @@ export function ProRelance({
     }
   };
 
+  /**
+   * RETIRER, ET REVENIR À ZÉRO.
+   *
+   * Le retrait ne vidait que `offer` : l'écran retombait alors sur le
+   * formulaire de l'étape 3, c'est-à-dire l'étape juste avant la publication,
+   * avec l'ancien texte encore dedans. On venait de retirer son annonce et on
+   * se retrouvait à un bouton de la republier.
+   *
+   * Le texte n'est pas perdu pour autant : il part dans l'historique, d'où on
+   * peut le reprendre en un geste.
+   */
   const clearOffer = async () => {
     if (offerBusy) return;
     setOfferBusy(true);
@@ -461,7 +499,16 @@ export function ProRelance({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug, token, action: "clear" }),
       });
-      if (r.ok) setOffer(null);
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) {
+        setOffer(null);
+        // L'annonce retirée rejoint l'historique côté serveur (`retire_le`) :
+        // on relit la liste plutôt que d'en tenir une copie ici, qui finirait
+        // par diverger de la base.
+        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
+        else void rafraichirHistorique();
+        recommencer();
+      }
     } catch {
       setOfferErr("Retrait impossible. Réessayez.");
     } finally {
@@ -566,6 +613,76 @@ export function ProRelance({
   };
 
   /**
+   * REVENIR À ZÉRO — après un retrait, ou pour repartir sur autre chose.
+   *
+   * Tout est remis dans l'état du premier écran : le choix de l'action, le
+   * texte, la photo, les façons. Ne remettre que le numéro d'étape laisserait
+   * l'ancien message dans le champ, et on republierait sans s'en apercevoir ce
+   * qu'on vient de retirer.
+   */
+  const recommencer = () => {
+    setStep(1);
+    setIntention(null);
+    setLibre(false);
+    setTrous([]);
+    setReponses({});
+    setBrief("");
+    setMessage("");
+    setVariantes([]);
+    setVariante(0);
+    setAiUsed(false);
+    setAiErr("");
+    setBrut(false);
+    setEcheance(null);
+    setDuree("2j");
+    setPhoto(null);
+    setVideo(null);
+    setReste("");
+    setArdoise("");
+    setOfferText("");
+    setPubliee(false);
+    setRemplace(false);
+    setAvertPublie("");
+    setOfferErr("");
+    // Les façons repartent sur le défaut : « à prendre », seul coché.
+    setFacSimple(true);
+    setFacCadeau(false);
+    setFacExpress(false);
+    setFacPartage(false);
+    setFacPrix("");
+    setFacExpressPrix("");
+    setFacPartagePrix("");
+    setFacCadeauLib("");
+    setFacCadeauCond("");
+  };
+
+  /** Relit l'historique après un changement. */
+  const rafraichirHistorique = async () => {
+    try {
+      const r = await fetch("/api/site-internet/pro/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "historique" }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
+    } catch {
+      /* l'historique reste tel quel : il n'empêche rien */
+    }
+  };
+
+  /** Reprendre un texte déjà publié : on repart de l'étape de relecture, pas
+   *  du choix d'action — il sait déjà ce qu'il veut dire. */
+  const reprendre = (texte: string) => {
+    recommencer();
+    setLibre(true);
+    setMessage(texte);
+    setAiUsed(true);
+    setVoirHisto(false);
+    setStep(1);
+  };
+
+  /**
    * Le champ correspondant à une question. Les types natifs (`time`, `number`)
    * plutôt qu'un texte libre : sur un téléphone, ils ouvrent le bon clavier et
    * suppriment l'ambiguïté d'une heure écrite « 18h », « 18 h » ou « 6 h du soir ».
@@ -665,6 +782,7 @@ export function ProRelance({
         const j = await r.json().catch(() => ({}));
         if (cancelled || !r.ok) return;
         if (j.offer) setOffer(j.offer as Offer);
+        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
         const g = Array.isArray(j.photos) ? (j.photos as unknown[]).map(String).filter(Boolean) : [];
         setPhotos(g);
         // Pré-choix : la photo déjà associée à l'annonce en cours, sinon la
@@ -931,6 +1049,29 @@ export function ProRelance({
           .pro .relance .offer select{border:1px solid var(--hair);border-radius:10px;padding:8px 11px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--ink);}
           .pro .relance .offer .obtn{margin-top:11px;width:100%;background:var(--grad,#00926E);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;}
           .pro .relance .offer .obtn:disabled{opacity:.55;cursor:not-allowed;}
+          /* TERMINÉE — l'annonce n'est plus visible de personne, et l'écran
+             doit le dire au lieu de la présenter comme « en ligne ». Teinte
+             sable et non verte : le vert dit « ça tourne ». */
+          .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+          .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
+          .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
+          .pro .relance .ofin-s{font-size:12px;color:var(--soft);line-height:1.45;margin-top:7px;}
+          .pro .relance .ofin-r{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap;}
+          .pro .relance .ofin-r button{flex:1;min-width:150px;border:1px solid var(--hair);background:#fff;color:var(--ink);
+            border-radius:11px;padding:10px 13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;}
+
+          /* VOS ANNONCES PASSÉES — un recours, pas le sujet : replié par défaut. */
+          .pro .relance .histo{margin-top:14px;}
+          .pro .relance .histo-h{width:100%;border:1px dashed var(--hair);background:none;color:var(--soft);
+            border-radius:12px;padding:11px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .histo-l{margin-top:8px;display:flex;flex-direction:column;gap:7px;}
+          .pro .relance .histo-i{display:flex;align-items:center;gap:10px;text-align:left;width:100%;
+            border:1px solid var(--hair);background:#fff;border-radius:12px;padding:10px 12px;
+            font-family:inherit;cursor:pointer;color:var(--ink);}
+          .pro .relance .histo-t{flex:1;min-width:0;font-size:13px;line-height:1.4;overflow:hidden;
+            display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+          .pro .relance .histo-d{flex:none;font-size:11px;color:var(--faint);font-weight:700;}
+
           .pro .relance .offer .oerr{margin-top:8px;font-size:12px;color:#B4453C;line-height:1.4;}
           .pro .relance .offer .live{margin-top:11px;border:1px solid #CFE6C2;background:linear-gradient(180deg,#EDF7E7,#fff);border-radius:14px;padding:13px 15px;}
           /* Même cadrage que l'aperçu : une bande large coupait le visuel en deux. */
@@ -1074,6 +1215,28 @@ export function ProRelance({
                   <div className="afech">⏳ Se retire tout seul <b>{echeanceLisible(echeance)}</b> — vous n&apos;avez rien à faire.</div>
                 )}
               </>
+            )}
+
+            {/* VOS ANNONCES PASSÉES. Elles existaient déjà en base — une
+                annonce retirée n'est pas supprimée, elle porte un `retire_le` —
+                et rien ne les montrait : le plat du jeudi se retapait chaque
+                semaine. Repliées par défaut : c'est un recours, pas le sujet. */}
+            {!intention && !libre && historique.length > 0 && (
+              <div className="histo">
+                <button type="button" className="histo-h" onClick={() => setVoirHisto((v) => !v)}>
+                  ↻ Reprendre une annonce passée ({historique.length}) {voirHisto ? "▴" : "▾"}
+                </button>
+                {voirHisto && (
+                  <div className="histo-l">
+                    {historique.map((h) => (
+                      <button type="button" key={h.id} className="histo-i" onClick={() => reprendre(h.texte)}>
+                        <span className="histo-t">{h.texte}</span>
+                        <span className="histo-d">{dateCourte(h.publieLe)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ③ Le mode libre : celui qui sait déjà quoi dire n'est pas ralenti. */}
@@ -1238,6 +1401,24 @@ export function ProRelance({
                 choix. */}
             <div className="rlz-h" style={{ marginTop: 22 }}>Comment peut-on en profiter&nbsp;?</div>
 
+            {/* LE PRIX HABITUEL, UNE SEULE FOIS ET EN PREMIER. Les trois façons
+                payantes en partent toutes : le demander dans la boîte de l'une
+                d'elles le faisait sauter d'un endroit à l'autre selon ce qui
+                était coché. */}
+            {(facCadeau || facExpress || facPartage) && (
+              <div className="facbox">
+                <label className="faclab" htmlFor="fac-prix">Votre prix habituel, avant remise</label>
+                <input
+                  id="fac-prix"
+                  inputMode="decimal"
+                  value={facPrix}
+                  onChange={(e) => setFacPrix(e.target.value)}
+                  placeholder="19"
+                />
+                <div className="facnote">En euros. C&apos;est le prix barré que les habitants verront.</div>
+              </div>
+            )}
+
             <div className={`chan${facSimple ? " on" : ""}`} onClick={() => choisirFacon("simple", !facSimple)}>
               <span className="ce">🕐</span>
               <span className="cb">
@@ -1257,16 +1438,54 @@ export function ProRelance({
             </div>
             {facCadeau && (
               <div className="facbox">
-                <div className="facduo">
-                  <label><span>Combien</span>
-                    <input inputMode="numeric" value={facCadeauQte} onChange={(e) => setFacCadeauQte(e.target.value)} /></label>
-                  <label><span>Ce qu&apos;ils reçoivent</span>
-                    <input value={facCadeauLib} onChange={(e) => setFacCadeauLib(e.target.value)} maxLength={120} placeholder="Un café offert" /></label>
-                </div>
-                <label className="faclab">À partir de quel achat</label>
-                <input value={facCadeauCond} onChange={(e) => setFacCadeauCond(e.target.value)} maxLength={120} placeholder="dès 10 € d'achat" />
+                {/* TROIS LIBELLÉS RÉÉCRITS. « Combien » ne disait pas combien de
+                    quoi, « ce qu'ils reçoivent » ne se rattachait à rien, et
+                    « à partir de quel achat » n'avait aucun exemple sous les
+                    yeux. Chaque champ dit maintenant son objet, et montre ce
+                    qu'on attend juste en dessous. */}
+                <label className="faclab" htmlFor="fac-cad-lib">Le cadeau que vous offrez</label>
+                <input
+                  id="fac-cad-lib"
+                  value={facCadeauLib}
+                  onChange={(e) => setFacCadeauLib(e.target.value)}
+                  maxLength={120}
+                  placeholder="Un café offert"
+                />
                 <div className="facnote">
-                  Obligatoire&nbsp;: sans condition d&apos;achat, vous donnez à des gens qui n&apos;achètent rien.
+                  Écrivez-le comme la personne le lira&nbsp;: «&nbsp;un café offert&nbsp;», «&nbsp;un dessert
+                  au choix&nbsp;», «&nbsp;10&nbsp;% sur la suite&nbsp;».
+                </div>
+
+                <label className="faclab" htmlFor="fac-cad-qte" style={{ marginTop: 12 }}>
+                  Combien de personnes peuvent l&apos;avoir&nbsp;?
+                </label>
+                <input
+                  id="fac-cad-qte"
+                  inputMode="numeric"
+                  value={facCadeauQte}
+                  onChange={(e) => setFacCadeauQte(e.target.value)}
+                  placeholder="10"
+                />
+                <div className="facnote">
+                  Le stock s&apos;épuise tout seul&nbsp;: passé ce nombre, le cadeau disparaît de votre annonce.
+                </div>
+
+                <label className="faclab" htmlFor="fac-cad-cond" style={{ marginTop: 12 }}>
+                  À partir de quel achat&nbsp;?
+                </label>
+                <input
+                  id="fac-cad-cond"
+                  value={facCadeauCond}
+                  onChange={(e) => setFacCadeauCond(e.target.value)}
+                  maxLength={120}
+                  placeholder="10"
+                />
+                <div className="facnote">
+                  Un montant suffit&nbsp;: tapez <b>10</b>, la personne lira «&nbsp;valable dès 10&nbsp;€
+                  d&apos;achat&nbsp;». Vous pouvez aussi écrire une phrase&nbsp;: «&nbsp;pour tout menu&nbsp;»,
+                  «&nbsp;à partir de 2 plats&nbsp;».
+                  <br />
+                  <b>Obligatoire</b>&nbsp;: sans condition d&apos;achat, vous donnez à des gens qui n&apos;achètent rien.
                 </div>
               </div>
             )}
@@ -1279,6 +1498,21 @@ export function ProRelance({
               </span>
               <span className="ck">{facExpress ? "✓" : ""}</span>
             </div>
+            {facExpress && (
+              <div className="facbox">
+                <label className="faclab" htmlFor="fac-express">Le prix pour qui vient tout de suite</label>
+                <input
+                  id="fac-express"
+                  inputMode="decimal"
+                  value={facExpressPrix}
+                  onChange={(e) => setFacExpressPrix(e.target.value)}
+                  placeholder="17"
+                />
+                <div className="facnote">
+                  Doit être inférieur à votre prix habituel — c&apos;est ce qui fait venir dans l&apos;heure.
+                </div>
+              </div>
+            )}
 
             <div className={`chan${facPartage ? " on" : ""}`} onClick={() => choisirFacon("partage", !facPartage)}>
               <span className="ce">👥</span>
@@ -1288,36 +1522,36 @@ export function ProRelance({
               </span>
               <span className="ck">{facPartage ? "✓" : ""}</span>
             </div>
-
-            {(facCadeau || facExpress || facPartage) && (
+            {facPartage && (
               <div className="facbox">
                 <div className="facduo">
-                  <label><span>Votre prix habituel</span>
-                    <input inputMode="decimal" value={facPrix} onChange={(e) => setFacPrix(e.target.value)} placeholder="19" /></label>
-                  {facExpress && (
-                    <label><span>Prix express</span>
-                      <input inputMode="decimal" value={facExpressPrix} onChange={(e) => setFacExpressPrix(e.target.value)} placeholder="17" /></label>
-                  )}
+                  <label><span>Le prix si le groupe se forme</span>
+                    <input inputMode="decimal" value={facPartagePrix} onChange={(e) => setFacPartagePrix(e.target.value)} placeholder="16" /></label>
+                  <label><span>Il faut au moins</span>
+                    <select value={facPartageObj} onChange={(e) => setFacPartageObj(e.target.value)}>
+                      {[2, 3, 4, 5, 6, 8, 10, 12].map((v) => <option key={v} value={v}>{v} personnes</option>)}
+                    </select></label>
                 </div>
-                {facPartage && (
-                  <div className="facduo">
-                    <label><span>Prix de groupe</span>
-                      <input inputMode="decimal" value={facPartagePrix} onChange={(e) => setFacPartagePrix(e.target.value)} placeholder="16" /></label>
-                    <label><span>À partir de</span>
-                      <select value={facPartageObj} onChange={(e) => setFacPartageObj(e.target.value)}>
-                        {[2, 3, 4, 5, 6, 8, 10, 12].map((v) => <option key={v} value={v}>{v} personnes</option>)}
-                      </select></label>
-                  </div>
-                )}
-                {/* L'aperçu de la colonne de prix, telle que les habitants la
-                    verront. C'est ce qui rend l'engagement concret. */}
-                {apercuFacons.length > 0 && (
-                  <div className="facap">
-                    {apercuFacons.map((l) => (
-                      <div key={l.cle} className="facap-l"><b>{l.prix}</b><span>{l.nom}</span></div>
-                    ))}
-                  </div>
-                )}
+                <div className="facnote">
+                  Si le groupe ne se forme pas, chacun garde sa place au prix habituel. Personne ne perd rien.
+                </div>
+              </div>
+            )}
+
+            {/* L'APERÇU, EN DERNIER : c'est un résumé, il vient après ce qu'il
+                résume. Les réglages de chaque façon, eux, sont désormais
+                DIRECTEMENT sous la façon qu'ils règlent — les mettre tous ici
+                faisait apparaître les champs de l'express en dessous du
+                collectif, deux options plus bas que celle qu'on venait de
+                cocher. */}
+            {apercuFacons.length > 0 && (
+              <div className="facbox">
+                <div className="faclab" style={{ marginBottom: 8 }}>Ce que les habitants verront</div>
+                <div className="facap">
+                  {apercuFacons.map((l) => (
+                    <div key={l.cle} className="facap-l"><b>{l.prix}</b><span>{l.nom}</span></div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1340,7 +1574,7 @@ export function ProRelance({
                   <span className="tag free">offert</span>
                 </div>
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
-                  {offer && !remplace ? (
+                  {offer && !remplace && !offer.expiree ? (
                     <div className="live">
                       {/* Confirmation franche : sans elle, l'écran d'après la
                           publication ressemblait à celui d'avant, et on ne
@@ -1412,7 +1646,27 @@ export function ProRelance({
                     </div>
                   ) : (
                     <>
-                      {offer && (
+                      {/* TERMINÉE, ET DIT COMME TEL. Une annonce dont
+                          l'échéance est passée s'affichait « en ligne », et
+                          rafraîchir n'y changeait rien : l'écran lisait le
+                          bandeau du site, qui n'expire jamais, au lieu de
+                          l'état réel. Elle n'est plus visible de personne — on
+                          propose donc la seule chose utile : la reprendre. */}
+                      {offer && offer.expiree && (
+                        <div className="ofin">
+                          <div className="ofin-k">Terminée</div>
+                          <div className="ofin-t">«&nbsp;{offer.text}&nbsp;»</div>
+                          <div className="ofin-s">
+                            Elle n&apos;est plus affichée nulle part. Vous pouvez la reprendre telle quelle,
+                            ou en écrire une autre.
+                          </div>
+                          <div className="ofin-r">
+                            <button type="button" onClick={() => reprendre(offer.text)}>↻ Reprendre ce texte</button>
+                            <button type="button" onClick={recommencer}>✎ Écrire autre chose</button>
+                          </div>
+                        </div>
+                      )}
+                      {offer && !offer.expiree && (
                         <div className="rtip" style={{ margin: "0 0 10px" }}>
                           Ceci remplacera l&apos;annonce actuellement en ligne&nbsp;: «&nbsp;{offer.text.slice(0, 60)}
                           {offer.text.length > 60 ? "…" : ""}&nbsp;».

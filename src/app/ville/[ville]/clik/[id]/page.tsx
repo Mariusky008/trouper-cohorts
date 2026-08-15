@@ -24,23 +24,12 @@ import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { ActionClik } from "./action-clik";
 import { codeDe } from "@/lib/direct/code-bon";
 import { commerceDuClik } from "@/lib/direct/commerce-vue";
+import { conditionPhrase } from "@/lib/direct/condition-achat";
 
-/**
- * La condition d'achat, telle qu'on peut la lire.
- *
- * Le commerçant écrit ce qu'il veut. « dès 10 € d'achat » se préfixe bien par
- * « Valable » ; « 12 » donne « Valable 12. », qui ne veut rien dire. On ne
- * préfixe donc que si la phrase commence comme une condition — sinon on la
- * présente autrement, plutôt que de produire une phrase bancale.
- */
-function conditionLisible(conditions: readonly string[]): string {
-  const t = conditions.join(" ou ").trim();
-  if (!t) return "";
-  if (/^(d[eè]s|[àa] partir|pour|avec|sur|en cas|jusqu)/i.test(t)) return `Valable ${t}.`;
-  // Un nombre seul est presque toujours un montant : on le dit comme tel.
-  if (/^\d+([.,]\d+)?\s*€?$/.test(t)) return `Valable dès ${t.replace(/\s*€?$/, "")} € d'achat.`;
-  return `Condition : ${t}.`;
-}
+/** La condition d'achat, telle qu'on peut la lire. La mise en forme vit dans
+ *  `condition-achat` : trois écrans l'affichent, et chacun la formulait à sa
+ *  manière — dont un qui rendait « valable 12 ». */
+const conditionLisible = (conditions: readonly string[]) => conditionPhrase(conditions.join(" ou "));
 
 /** La même icône que sur la ligne du fil : c'est ce qui dit qu'on est bien
  *  arrivé sur la porte qu'on a poussée. */
