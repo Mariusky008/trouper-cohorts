@@ -16,7 +16,13 @@ export function StylesSwipe() {
 .dir:has(.asx),.dir:has(.asx-fin){background:#0A1310;}
 .dir:has(.asx) .vue,.dir:has(.asx-fin) .vue{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0;}
 
-.asx{flex:1;display:flex;flex-direction:column;padding:20px 14px 0;color:#fff;min-height:0;}
+/* LA RÉSERVE DU BAS EST ICI, pas sur la légende.
+   Elle y était : la légende « Passer · Garder · La boutique » et la phrase
+   « glissez vers le haut » passaient SOUS la barre d'onglets à toutes les
+   hauteurs d'écran — mesuré de 667 à 844 px. On ne voyait donc jamais à quoi
+   servaient les trois boutons ronds. Et quand la légende disparaît, au
+   quatrième usage, plus rien ne réservait la place du tout. */
+.asx{flex:1;display:flex;flex-direction:column;padding:20px 14px 92px;color:#fff;min-height:0;}
 .asx-top{display:flex;align-items:center;gap:11px;}
 .asx-top .t{font-size:13px;font-weight:800;color:#fff;}
 .asx-top .s{color:#7E9A8D;font-size:10.5px;margin-top:2px;}
@@ -69,8 +75,16 @@ export function StylesSwipe() {
    Réduite, et NON CLIQUABLE : la carte se manipule au doigt, un lien dedans se
    déclencherait à chaque geste raté. */
 .asx-fac{padding:0 14px 12px;}
+.asx-fac-c{flex:1;min-width:0;}
+/* CLIQUABLES. Elles ne l'étaient pas : on voyait trois prix et rien ne se
+   passait au doigt. Un lien dans une carte qui se manipule au glissement se
+   déclencherait à chaque geste raté — c'est pourquoi le composant n'ouvre la
+   façon QUE si le doigt n'a pas bougé. */
 .asx-fac-l{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line2);border-radius:16px;
-  padding:9px 11px;margin-bottom:6px;background:#fff;}
+  padding:9px 11px;margin-bottom:6px;background:#fff;width:100%;text-align:left;
+  font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.asx-fac-l:active{transform:scale(.985);}
+.asx-fac-go{margin-left:auto;flex:none;color:var(--soft);font-size:17px;font-weight:700;}
 .asx-fac-l:last-child{margin-bottom:0;}
 .asx-fac-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:15px;background:var(--bg);}
@@ -92,7 +106,7 @@ export function StylesSwipe() {
 /* Le geste principal est le SEUL en lime : trois boutons identiques ne disent
    pas lequel fait avancer. */
 .asx-boutons .g{background:rgba(147,208,44,.16);border-color:rgba(147,208,44,.4);color:var(--gl);}
-.asx-leg{flex:none;display:flex;justify-content:center;gap:16px;padding-bottom:104px;}
+.asx-leg{flex:none;display:flex;justify-content:center;gap:16px;}
 .asx-leg span{width:56px;text-align:center;font-size:9.5px;color:#7E9A8D;font-weight:700;white-space:nowrap;}
 .asx-aide{text-align:center;font-size:10.5px;color:#7E9A8D;margin:6px 0 0;}
 

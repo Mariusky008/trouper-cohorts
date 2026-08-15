@@ -354,7 +354,15 @@ export function StylesDirect() {
    Centré, avec une pastille pleine : c'est le seul moment où l'application a
    quelque chose à célébrer, et elle le faisait dans un encart de la taille
    d'un message d'erreur. */
-.dir .ck-fait{text-align:center;padding:4px 0 0;}
+/* SA PROPRE SURFACE, BLANCHE, dans le bloc coloré de la façon.
+   Le contraste des textes était conforme (mesuré : 6,4 à 15 sur chaque fond) —
+   le défaut était ailleurs : la confirmation se posait sur le MÊME aplat que
+   l'offre au-dessus, si bien que le moment où quelque chose est acquis ne se
+   distinguait pas du moment où on hésitait encore. Une carte blanche posée
+   dessus sépare les deux d'un coup d'œil. */
+.dir .ck-fait{text-align:center;margin:20px -6px 0;padding:4px 14px 20px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--rl);
+  box-shadow:0 1px 2px rgba(14,42,28,.05),0 12px 28px -18px rgba(14,42,28,.3);}
 .dir .ck-sl{width:92px;height:92px;border-radius:50%;margin:24px auto 0;display:flex;align-items:center;
   justify-content:center;font-size:40px;color:#fff;background:#2C8A4B;}
 .dir .ck-sl.s-express{background:#DB8A2C;}
@@ -371,8 +379,10 @@ export function StylesDirect() {
 /* LE BON À PRÉSENTER. Sans code, « c'est réservé » n'est qu'une promesse à
    l'écran : le commerçant n'a rien à quoi se raccrocher quand la personne
    arrive. */
+/* Vert FONCÉ, pas le vert de marque : mesuré, #2C8A4B tombait à 3,7 sur le
+   violet du collectif — sous le seuil AA pour un texte de cette taille. */
 .dir .ck-code{display:inline-flex;align-items:center;gap:8px;border:1.5px solid #C4E0A8;border-radius:999px;
-  padding:11px 21px;font-size:14.5px;color:#2C8A4B;font-weight:600;margin-top:16px;}
+  padding:11px 21px;font-size:14.5px;color:var(--gd);font-weight:700;margin-top:16px;background:var(--gs);}
 .dir .ck-code i{width:7px;height:7px;border-radius:50%;background:var(--gl);font-style:normal;}
 .dir .ck-code b{font-family:var(--fd),Georgia,serif;letter-spacing:.06em;color:var(--ink);}
 /* OÙ SE RENDRE — quatre lignes, alignées en colonnes.

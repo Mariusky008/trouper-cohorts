@@ -19,6 +19,8 @@ import { teinte, initiales } from "../_ui/teinte";
 const CLE_USAGES = "clikme_asaisir_usages";
 const USAGES_AVEC_LEGENDE = 3;
 const SEUIL_PX = 96;
+/** Au-delà, le doigt a glissé : ce n'était pas un appui. */
+const SEUIL_APPUI = 8;
 
 type Geste = "passer" | "garder" | "boutique" | "reserver";
 
@@ -38,6 +40,13 @@ export function SelectionSwipe({
   const [gardees, setGardees] = useState<Set<string>>(() => new Set(gardeesInitiales));
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
   const depart = useRef<{ x: number; y: number } | null>(null);
+  /** L'amplitude du dernier geste, en pixels.
+   *
+   *  Elle sert à distinguer UN APPUI d'un GLISSEMENT. Sans elle, on ne peut pas
+   *  rendre les façons cliquables : un lien dans une carte qu'on manipule au
+   *  doigt se déclencherait à chaque geste raté. Au-delà de quelques pixels, le
+   *  doigt glissait — l'appui n'en est pas un. */
+  const amplitude = useRef(0);
 
   // Le compteur d'usages est local à l'appareil : il ne concerne que
   // l'apprentissage du geste, il n'a rien à faire sur un serveur.
@@ -107,14 +116,31 @@ export function SelectionSwipe({
     [carte, garder, router]
   );
 
+  /**
+   * Ouvrir une façon depuis la carte.
+   *
+   * REFUSÉE APRÈS UN GLISSEMENT. La carte se manipule au doigt : sans ce
+   * garde-fou, un balayage horizontal qui commence sur une ligne de prix
+   * ouvrirait l'écran du Clik au lieu de passer la carte. Le seuil est petit —
+   * un doigt bouge toujours un peu — mais suffit à séparer les deux gestes.
+   */
+  const ouvrirFacon = (idFacon: string) => {
+    if (amplitude.current > SEUIL_APPUI) return;
+    router.push(`/ville/${ville}/clik/${idFacon}`);
+  };
+
   // ── Gestes ────────────────────────────────────────────────────────────────
   const onDown = (x: number, y: number) => {
     depart.current = { x, y };
+    amplitude.current = 0;
     setDrag({ x: 0, y: 0 });
   };
   const onMove = (x: number, y: number) => {
     if (!depart.current) return;
-    setDrag({ x: x - depart.current.x, y: y - depart.current.y });
+    const dx = x - depart.current.x;
+    const dy = y - depart.current.y;
+    amplitude.current = Math.max(amplitude.current, Math.hypot(dx, dy));
+    setDrag({ x: dx, y: dy });
   };
   const onUp = () => {
     if (!depart.current || !drag) {
@@ -228,17 +254,23 @@ export function SelectionSwipe({
               dedans se déclencherait à chaque geste raté. Le glissement vers le
               haut reste le geste qui engage. */}
           {carte.facons.length > 0 && (
-            <div className="asx-fac" aria-hidden="true">
+            <div className="asx-fac">
               {carte.facons.slice(0, 3).map((f) => (
-                <div key={f.id} className={`asx-fac-l f-${f.type}`}>
-                  <span className="asx-fac-ic">
+                <button
+                  type="button"
+                  key={f.id}
+                  className={`asx-fac-l f-${f.type}`}
+                  onClick={() => ouvrirFacon(f.id)}
+                >
+                  <span className="asx-fac-ic" aria-hidden="true">
                     {f.type === "cadeau" ? "🎁" : f.type === "express" ? "⚡" : f.type === "collectif" ? "👥" : "🕐"}
                   </span>
-                  <span>
+                  <span className="asx-fac-c">
                     <span className="asx-fac-pr">{f.prix}</span>
                     <span className="asx-fac-nm">{f.label}</span>
                   </span>
-                </div>
+                  <span className="asx-fac-go" aria-hidden="true">›</span>
+                </button>
               ))}
             </div>
           )}
