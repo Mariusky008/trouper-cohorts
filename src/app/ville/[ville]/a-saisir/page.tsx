@@ -25,6 +25,7 @@ import { presse } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
+import { histoiresDuJour } from "@/lib/direct/histoire";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -69,6 +70,12 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
   // carte multiplierait les allers-retours par le nombre d'annonces.
   const reacts = await reactionsDesPublications(supabase, choisies.map((p) => p.id), habitant?.id ?? null);
 
+  // LA PETITE HISTOIRE DU JOUR de chaque commerce affiché, en UNE lecture.
+  // Elle est portée par le COMMERCE, pas par l'annonce : deux annonces du même
+  // boulanger montrent la même histoire, parce qu'il ne s'en passe qu'une chez
+  // lui aujourd'hui.
+  const histoires = await histoiresDuJour(supabase, choisies.map((p) => p.siteId ?? ""));
+
   const cartes: CarteVue[] = choisies.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -92,6 +99,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     facons: faconsVue(cliksParPub.get(p.id)),
     reste: p.reste,
     ardoise: p.ardoise,
+    histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 

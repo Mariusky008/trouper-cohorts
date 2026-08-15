@@ -194,6 +194,16 @@ export function StylesDirect() {
 .dir .det-a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;white-space:nowrap;flex:none;}
 .dir .det-a:hover{text-decoration:underline;}
 
+/* LA PETITE HISTOIRE DU JOUR — la voix du commerce, sur sa propre carte.
+   Fond crème et italique : l'œil doit voir que ce n'est PAS une ligne d'offre
+   avant même de lire. Le filet vertical à gauche est la marque d'une citation ;
+   sans lui, la phrase se lisait comme un sous-titre de l'annonce. */
+.dir .hist{display:flex;gap:10px;align-items:flex-start;margin:0 16px 14px;
+  background:#FAF8F2;border-left:3px solid var(--gl);border-radius:0 var(--rm) var(--rm) 0;
+  padding:12px 14px;}
+.dir .hist-e{font-size:17px;line-height:1.45;flex:none;}
+.dir .hist-t{font-size:14px;line-height:1.5;color:var(--body);font-style:italic;}
+
 /* Pas de trait de séparation : la carte est un objet d'un seul tenant, et
    l'échelle des prix en fait partie. */
 .dir .fac{padding:18px 16px 6px;}

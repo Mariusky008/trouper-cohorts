@@ -70,6 +70,10 @@ export type CarteVue = {
   reste: string;
   /** L'adresse de sa carte du jour. `null` : pas de bouton « Voir l'ardoise ». */
   ardoise: string | null;
+  /** LA PETITE HISTOIRE DU JOUR de ce commerce, quand il en a écrit une.
+   *  Ce n'est pas une offre : elle ne propose rien, elle donne envie de
+   *  passer. `null` la plupart du temps, et c'est normal. */
+  histoire: { texte: string; emoji: string } | null;
   /** Les réactions déjà posées, et celles qui sont miennes. */
   reactions: VueReactions;
 };
@@ -266,6 +270,20 @@ export function Carte({
               <span className="fac-go" aria-hidden="true">›</span>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* LA PETITE HISTOIRE DU JOUR — ce qui se passe chez eux, dit par eux.
+          Elle vit SUR la carte du commerce et non dans une carte à elle :
+          une histoire ne se saisit pas, et lui donner sa propre carte la
+          mettrait en concurrence avec les vraies offres du fil.
+
+          En italique et entre guillemets : c'est une VOIX, pas une ligne de
+          catalogue, et l'œil doit le comprendre avant de lire. */}
+      {p.histoire && (
+        <div className="hist">
+          <span className="hist-e" aria-hidden="true">{p.histoire.emoji}</span>
+          <span className="hist-t">«&nbsp;{p.histoire.texte}&nbsp;»</span>
         </div>
       )}
 

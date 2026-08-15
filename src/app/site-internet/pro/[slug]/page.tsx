@@ -18,6 +18,7 @@ import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
 import { ProHome } from "./pro-home";
+import { ProHistoire } from "./pro-histoire";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -344,6 +345,14 @@ export default async function EspacePro({
         sitePublished={sitePublished}
         siteUrl={siteUrl}
       />
+      {/* LA PETITE HISTOIRE DU JOUR, tout en haut de son espace : c'est le
+          geste le plus court de l'application, et il n'a d'intérêt que s'il se
+          fait le matin, en passant. Rangée dans un onglet, elle ne serait
+          jamais écrite.
+
+          Réservée aux métiers qui sollicitent : raconter sa journée n'a pas de
+          sens pour une profession réglementée, et sa déontologie l'interdirait. */}
+      {soliciter && <ProHistoire slug={slug} token={token} />}
       {soliciter && villeUrl && (
         <ProCatalogue
           ville={ville}

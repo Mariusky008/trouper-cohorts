@@ -10,6 +10,8 @@ import { SuivreBouton } from "./suivre-bouton";
 import { BarreDirect } from "./barre-direct";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { noterClic } from "@/lib/direct/publications";
+import { ceQuOnAime } from "@/lib/direct/aime";
+import { AimeSection } from "./aime-section";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
 import { villeSlug as slugDeVille } from "@/lib/direct/ville";
 import { bookingPlatformName } from "@/lib/site-internet/directories";
@@ -492,6 +494,14 @@ export default async function ApercuMaquette({
   if (venuDuDirect && str(pub)) void noterClic(supabase, str(pub));
   let dejaSuivi = false;
   const villeDuSite = slugDeVille(str(row.city));
+
+  // CE QUE LES GENS AIMENT ICI, déduit des réactions réelles. Uniquement pour
+  // un visiteur venu du Direct : sur la page trouvée par une recherche Google,
+  // « ce que les gens aiment » parlerait d'habitants dont ce visiteur ne fait
+  // pas partie — et la section n'aurait pas le même sens.
+  //
+  // Vide sous le seuil : elle ne s'affiche pas du tout.
+  const aime = venuDuDirect ? await ceQuOnAime(supabase, str(row.id)) : [];
   if (venuDuDirect) {
     try {
       const h = await habitantCourant(supabase);
@@ -516,6 +526,10 @@ export default async function ApercuMaquette({
         <SuivreBouton siteId={str(row.id)} ville={villeDuSite} suiviInitial={dejaSuivi} />
       </BarreDirect>
     )}
+    {/* Juste sous la barre du Direct : c'est la première chose qu'on lit en
+        arrivant du fil, et c'est exactement le moment où l'on se demande
+        pourquoi les gens vont là. */}
+    <AimeSection lignes={aime} ville={villeAff} />
     <MaquetteSante
       slug={slug}
       profil={profil}

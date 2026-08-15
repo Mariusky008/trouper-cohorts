@@ -17,6 +17,7 @@ import { trierLeFil, presse } from "@/lib/direct/fil";
 import { cliksDeVille, faconsParPublication, collectifDe } from "@/lib/direct/cliks";
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
+import { histoiresDuJour } from "@/lib/direct/histoire";
 import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, gardees } from "@/lib/direct/habitant";
@@ -113,6 +114,12 @@ export default async function LeDirectPage({
   // carte multiplierait les allers-retours par le nombre d'annonces.
   const reacts = await reactionsDesPublications(supabase, triees.map((p) => p.id), habitant?.id ?? null);
 
+  // LA PETITE HISTOIRE DU JOUR de chaque commerce affiché, en UNE lecture.
+  // Elle est portée par le COMMERCE, pas par l'annonce : deux annonces du même
+  // boulanger montrent la même histoire, parce qu'il ne s'en passe qu'une chez
+  // lui aujourd'hui.
+  const histoires = await histoiresDuJour(supabase, triees.map((p) => p.siteId ?? ""));
+
   const cartes: CarteVue[] = triees.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -136,6 +143,7 @@ export default async function LeDirectPage({
     facons: faconsVue(cliksParPub.get(p.id)),
     reste: p.reste,
     ardoise: p.ardoise,
+    histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
 
