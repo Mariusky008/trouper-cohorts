@@ -64,7 +64,22 @@ function quandDe(c: Campagne, maintenant: number): string {
   const h = heureCourte(c.echeance);
   if (!h) return "";
   const auj = memeJour(c.echeance, maintenant);
-  if (c.type === "express") return auj ? `Arrivée avant ${h}` : `Arrivée avant ${h}, demain`;
+  if (c.type === "express") {
+    // UNE PLAGE SE DIT AVEC SES DEUX BOUTS. « Arrivée avant 11 h 45 » sur un
+    // service qui ne commence qu'à 11 h 30 ferait venir à 11 h des gens qui
+    // trouveraient porte close — et le commerçant, lui, croyait avoir annoncé
+    // un créneau de quinze minutes.
+    //
+    // Le début n'est dit que s'il est ENCORE DEVANT : une fois 11 h 30 passée,
+    // « entre 11 h 30 et 11 h 45 » se lit comme une consigne d'attente alors
+    // qu'il faut venir maintenant.
+    const d = c.debut ? Date.parse(c.debut) : NaN;
+    if (Number.isFinite(d) && d > maintenant) {
+      const hd = heureCourte(c.debut);
+      if (hd) return memeJour(c.debut, maintenant) ? `Entre ${hd} et ${h}` : `Entre ${hd} et ${h}, demain`;
+    }
+    return auj ? `Arrivée avant ${h}` : `Arrivée avant ${h}, demain`;
+  }
   if (c.type === "collectif") return auj ? `Groupe fermé à ${h}` : `Groupe fermé à ${h}, demain`;
   if (c.type === "simple") return auj ? `À prendre avant ${h}` : `À prendre avant ${h}, demain`;
   return auj ? `Aujourd'hui, jusqu'à ${h}` : `Jusqu'à ${h}, demain`;

@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { SaisieHeure, lireHeure, STYLES_SAISIE_HEURE } from "./saisie-heure";
 import { EnvoiVideo, STYLES_ENVOI_VIDEO } from "./envoi-video";
 import { toWaDigits } from "@/lib/site-internet/phone";
-import { chargerImage, type PhotoChargee } from "@/lib/site-internet/image-client";
+import { chargerImage, compresserImage, type PhotoChargee } from "@/lib/site-internet/image-client";
 import { verifierTaille } from "@/lib/site-internet/cadrage";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { CadragePhoto, STYLES_CADRAGE } from "./cadrage-photo";
@@ -25,11 +25,28 @@ import {
   type Intention,
 } from "@/lib/site-internet/actions-flash";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
-import { motsMetier } from "@/lib/direct/mots-metier";
+import { motsMetier, expressMots } from "@/lib/direct/mots-metier";
 import { ProHistoire } from "./pro-histoire";
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
+/**
+ * « 11h30 » → l'instant correspondant, en ISO.
+ *
+ * Aujourd'hui si l'heure est encore devant, demain sinon : dire « jusqu'à 9 h »
+ * à 14 h ne peut vouloir dire que le lendemain matin. Le calcul se fait ici,
+ * dans le navigateur du commerçant — c'est le seul endroit qui connaisse son
+ * fuseau. Envoyer « 11h30 » au serveur reviendrait à lui faire deviner de quel
+ * 11 h 30 on parle.
+ */
+function isoDeLHeure(mn: number | null): string {
+  if (mn == null) return "";
+  const d = new Date();
+  d.setHours(Math.floor(mn / 60), mn % 60, 0, 0);
+  if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
 
@@ -169,6 +186,30 @@ export function ProRelance({
    *  personne ne le choisissait, et une offre publiée à 14 h s'éteignait seule
    *  à 15 h sans que le commerçant l'ait décidé ni sache pourquoi. */
   const [facExpressMin, setFacExpressMin] = useState("60");
+  /** LA PLAGE, pour les métiers qui servent à heure fixe. Un restaurateur
+   *  prépare son service le matin et vise le creux de 11 h 30 : en durée, il
+   *  devait calculer « il est 9 h 40, donc 110 minutes », et son prix baissait
+   *  dès qu'il appuyait — au mauvais moment. */
+  const [facExpressDe, setFacExpressDe] = useState<number | null>(null);
+  const [facExpressA, setFacExpressA] = useState<number | null>(null);
+  // ── 🍽️ LA CARTE DU JOUR ───────────────────────────────────────────────────
+  // Son propre état, séparé du reste : ce n'est pas une annonce, elle ne
+  // propose rien à réserver et n'a ni prix ni façons. Les mélanger reviendrait
+  // à faire traverser au restaurateur trois écrans de questions pour montrer
+  // ce qu'on mange à midi — c'est-à-dire à ne jamais le lui faire faire.
+  const [cartePhoto, setCartePhoto] = useState<string | null>(null);
+  const [carteTexte, setCarteTexte] = useState("");
+  const [carteEnvoi, setCarteEnvoi] = useState(false);
+  const [carteErr, setCarteErr] = useState("");
+  const carteRef = useRef<HTMLInputElement | null>(null);
+  // LES MOTS DE L'EXPRESS. Chez un restaurateur, « moins cher à qui vient dans
+  // l'heure » ne veut rien dire : son creux est à 11 h 30, pas « dans une heure
+  // à partir de maintenant ». Il choisit donc deux heures.
+  //
+  // Déclaré ICI, au-dessus de l'envoi qui s'en sert : `expressMots` est une
+  // table de correspondance, pas un calcul — la mémoriser coûterait plus que de
+  // l'appeler, et la déclarer plus bas la mettrait hors de portée.
+  const motsEx = expressMots(metier);
   const [facPartage, setFacPartage] = useState(false);
   const [facPartagePrix, setFacPartagePrix] = useState("");
   const [facPartageObj, setFacPartageObj] = useState("4");
@@ -442,6 +483,11 @@ export function ProRelance({
           express: facExpress,
           expressPrix: facExpressPrix,
           expressMinutes: Number(facExpressMin) || 60,
+          // Envoyées en ISO, jamais en « 11h30 » : une heure écrite se relit,
+          // s'interprète, et se trompe un jour de changement d'heure. Le calcul
+          // se fait ici, où l'on connaît le fuseau du commerçant.
+          expressDebut: motsEx.plage ? isoDeLHeure(facExpressDe) : "",
+          expressFin: motsEx.plage ? isoDeLHeure(facExpressA) : "",
           partage: facPartage,
           partagePrix: facPartagePrix,
           partageObjectif: facPartageObj,
@@ -470,6 +516,101 @@ export function ProRelance({
       setOfferErr("Enregistrement impossible. Réessayez.");
     } finally {
       setOfferBusy(false);
+    }
+  };
+
+  /**
+   * LA PHOTO DE L'ARDOISE — ENVOYÉE ENTIÈRE, jamais recadrée.
+   *
+   * Les photos d'annonce passent par un cadrage en 16:9, parce qu'une carte du
+   * fil est un bandeau. Une ardoise, elle, est un objet vertical couvert de
+   * texte : la rogner en 16:9 couperait la moitié des plats, et une carte du
+   * jour illisible ne vaut pas mieux que pas de carte du jour.
+   *
+   * `compresserImage` réduit sans découper. 1400 px de large suffisent à lire
+   * une ardoise sur un téléphone, et le poids reste tenable.
+   */
+  const photographierArdoise = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file || carteEnvoi) return;
+    if (!/^image\//.test(file.type)) {
+      setCarteErr("Ce fichier n'est pas une image.");
+      return;
+    }
+    setCarteEnvoi(true);
+    setCarteErr("");
+    try {
+      const dataUrl = await compresserImage(file, 1400, 0.82);
+      const r = await fetch("/api/site-internet/pro/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, action: "add", photo: dataUrl }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.photos)) {
+        setPhotos((j.photos as unknown[]).map(String).filter(Boolean));
+        setCartePhoto(dataUrl);
+      } else {
+        setCarteErr(typeof j.error === "string" ? j.error : "Envoi impossible.");
+      }
+    } catch {
+      setCarteErr("Impossible d'ouvrir cette image.");
+    } finally {
+      setCarteEnvoi(false);
+      // Remis à zéro : sans ça, reprendre LE MÊME fichier après un refus ne
+      // déclenche aucun `change`, et le bouton paraît cassé.
+      if (carteRef.current) carteRef.current.value = "";
+    }
+  };
+
+  /**
+   * PUBLIER LA CARTE DU JOUR. Un seul appel, et rien de ce qui fait une annonce.
+   *
+   * Pas de façons (elle ne propose rien à saisir), pas de prix, pas de choix de
+   * canal : elle va sur son site et dans le fil de sa ville, point. Sa famille
+   * est imposée à « menu » — c'est elle qui la fait paraître dans l'onglet
+   * « Déjeuner », à côté des cartes des autres restaurants, et le texte d'une
+   * carte ne contient aucun mot qui permettrait de le deviner.
+   *
+   * Elle s'efface ce soir : une carte du jour d'hier est pire qu'aucune carte.
+   */
+  const publierCarte = async () => {
+    if (carteEnvoi) return;
+    const texte = carteTexte.trim();
+    if (!cartePhoto && !texte) {
+      setCarteErr("Photographiez votre ardoise, ou écrivez votre carte.");
+      return;
+    }
+    setCarteEnvoi(true);
+    setCarteErr("");
+    try {
+      const soir = new Date();
+      soir.setHours(23, 59, 0, 0);
+      const r = await fetch("/api/site-internet/pro/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          token,
+          action: "set",
+          text: texte || "Notre carte du jour",
+          famille: "menu",
+          until: soir.toISOString(),
+          photo: cartePhoto ?? "",
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.offer) {
+        const publie = String((j.offer as { text?: unknown })?.text ?? "");
+        recommencer();
+        setConfirme({ texte: publie, avertissement: "" });
+      } else {
+        setCarteErr(typeof j.error === "string" ? j.error : "Publication impossible.");
+      }
+    } catch {
+      setCarteErr("Publication impossible. Réessayez.");
+    } finally {
+      setCarteEnvoi(false);
     }
   };
 
@@ -505,6 +646,9 @@ export function ProRelance({
   // ne se remplit pas.
   const mots = useMemo(() => motsMetier(metier), [metier]);
   const toutes = useMemo(() => intentionsPour(metier, confirmation, secteur), [metier, confirmation, secteur]);
+  /** L'action « carte du jour », quand ce métier en a une. Sert à y renvoyer
+   *  depuis les options de l'annonce, là où le restaurateur la cherche. */
+  const carteDuJour = toutes.find((i) => i.cle === "carte") ?? null;
   const podium = useMemo(
     () => (monte ? recommandees(toutes, new Date()) : toutes.slice(0, 3)),
     [monte, toutes],
@@ -619,6 +763,11 @@ export function ProRelance({
     setFacPartage(false);
     setFacPrix("");
     setFacExpressPrix("");
+    setFacExpressDe(null);
+    setFacExpressA(null);
+    setCartePhoto(null);
+    setCarteTexte("");
+    setCarteErr("");
     setFacPartagePrix("");
     setFacCadeauLib("");
     setFacCadeauCond("");
@@ -1028,6 +1177,19 @@ export function ProRelance({
           .pro .pubok-r button{border-radius:13px;padding:13px 16px;font-size:14px;font-weight:800;
             font-family:inherit;cursor:pointer;border:1px solid var(--hair);background:#fff;color:var(--ink);}
           .pro .pubok-r button.go{background:linear-gradient(135deg,#00C896,#00926E);border-color:transparent;color:#fff;}
+          /* ── 🍽️ La carte du jour : un écran, trois gestes ── */
+          .pro .relance .carte{margin-top:14px;}
+          .pro .relance .carte-shot{width:100%;border:2px dashed var(--hair);background:#FBFAF7;border-radius:16px;
+            padding:26px 16px;font-size:15px;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer;}
+          .pro .relance .carte-shot:disabled{opacity:.6;cursor:default;}
+          .pro .relance .carte-vue{position:relative;}
+          .pro .relance .carte-vue img{width:100%;border-radius:16px;display:block;background:#EFEDE6;}
+          .pro .relance .carte-vue button{margin-top:9px;width:100%;border:1px solid var(--hair);background:#fff;
+            border-radius:12px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+          .pro .relance .carte-ou{text-align:center;font-size:12px;color:var(--faint);margin:13px 0 8px;font-weight:700;}
+          .pro .relance .carte textarea{width:100%;border:1px solid var(--hair);border-radius:13px;padding:12px 14px;
+            font-size:15px;font-family:inherit;background:#fff;resize:vertical;line-height:1.5;}
+          .pro .relance .carte-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:10px;}
           .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
           .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
           .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
@@ -1162,7 +1324,73 @@ export function ProRelance({
 
             {/* ② Les questions. Chaque information qui engage le commerce est
                 saisie ici — jamais devinée, jamais pré-remplie. */}
-            {intention && (
+            {/* ②bis LA CARTE DU JOUR — son propre écran, court.
+
+                Elle ne passe pas par les trois étapes : elle ne propose rien à
+                réserver, n'a ni prix ni façons, et va toujours au même endroit.
+                Lui faire traverser « Quoi → Où → Publier » pour montrer ce
+                qu'on mange à midi reviendrait à ne jamais la faire écrire. Une
+                photo, éventuellement deux lignes, et c'est publié. */}
+            {intention?.cle === "carte" && (
+              <>
+                <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
+                <div className="rlz-h">{intention.emoji} {intention.titre}</div>
+                <div className="rlz-s">{intention.sous}</div>
+
+                <div className="carte">
+                  {cartePhoto ? (
+                    <div className="carte-vue">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cartePhoto} alt="Votre ardoise" />
+                      <button type="button" onClick={() => setCartePhoto(null)} disabled={carteEnvoi}>
+                        Reprendre la photo
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="carte-shot"
+                      onClick={() => carteRef.current?.click()}
+                      disabled={carteEnvoi}
+                    >
+                      {carteEnvoi ? "Un instant…" : "📷 Photographier mon ardoise"}
+                    </button>
+                  )}
+                  {/* Sans `capture` : le téléphone propose l'appareil photo OU la
+                      pellicule. `capture` imposerait l'appareil et interdirait de
+                      reprendre une photo faite ce matin. */}
+                  <input
+                    ref={carteRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => void photographierArdoise(e.target.files)}
+                  />
+                  <div className="carte-ou">ou écrivez-la</div>
+                  <textarea
+                    value={carteTexte}
+                    onChange={(e) => setCarteTexte(e.target.value.slice(0, 400))}
+                    rows={4}
+                    placeholder={"Entrée : velouté de potiron\nPlat : magret, sauce poivre\nDessert : tourtière"}
+                  />
+                  <div className="carte-s">
+                    Elle paraît sur votre site et dans «&nbsp;Déjeuner&nbsp;» à {ville}, à côté des cartes des autres
+                    restaurants. Elle s&apos;efface ce soir&nbsp;: une carte d&apos;hier est pire qu&apos;aucune carte.
+                  </div>
+                  {carteErr && <div className="aierr">{carteErr}</div>}
+                  <button
+                    type="button"
+                    className="aibtn"
+                    onClick={publierCarte}
+                    disabled={carteEnvoi || (!cartePhoto && !carteTexte.trim())}
+                  >
+                    {carteEnvoi ? "Publication…" : "Publier ma carte du jour"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {intention && intention.cle !== "carte" && (
               <>
                 <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
                 <div className="rlz-h">{intention.emoji} {intention.titre}</div>
@@ -1300,6 +1528,33 @@ export function ProRelance({
                   />
                   <span className="opthint">{mots.lienAide} Sans lien, il ne s&apos;affiche pas.</span>
                 </div>
+                {/* LÀ OÙ IL LA CHERCHE. Un restaurateur qui écrit une annonce
+                    cherche où mettre son menu, et ne trouve qu'un champ « lien ».
+                    Or la carte du jour n'est pas une pièce jointe de l'annonce :
+                    c'est une publication à elle, qui paraît dans « Déjeuner » et
+                    s'efface le soir. On le dit ici, et on y emmène en un geste —
+                    plutôt que de le laisser chercher, ou coller un lien qu'il
+                    n'a pas. */}
+                {carteDuJour && (
+                  <div className="opt">
+                    <span className="opthint" style={{ marginTop: 0 }}>
+                      🍽️ <b>Votre carte du jour se publie à part</b> — une photo de votre ardoise, et elle paraît
+                      dans «&nbsp;Déjeuner&nbsp;» à côté de celles des autres restaurants. Elle ne remplace pas
+                      cette annonce&nbsp;: les deux tiennent ensemble.
+                    </span>
+                    <button
+                      type="button"
+                      className="aflibre"
+                      style={{ marginTop: 10 }}
+                      onClick={() => {
+                        choisirAction(carteDuJour);
+                        setStep(1);
+                      }}
+                    >
+                      📷 Photographier ma carte du jour
+                    </button>
+                  </div>
+                )}
                 {/* Un [crochet] est la façon honnête pour l'assistante de dire
                     « il me manque cette information ». Publié tel quel, il part
                     chez les client·es : on bloque tant qu'il en reste un. */}
@@ -1459,7 +1714,7 @@ export function ProRelance({
               <span className="ce">⚡</span>
               <span className="cb">
                 <span className="ct">L&apos;express</span>
-                <span className="cs">Moins cher à qui vient dans l&apos;heure — remplit un creux</span>
+                <span className="cs">{motsEx.sous}</span>
               </span>
               <span className="ck">{facExpress ? "✓" : ""}</span>
             </div>
@@ -1474,24 +1729,38 @@ export function ProRelance({
                       onChange={(e) => setFacExpressPrix(e.target.value)}
                       placeholder="17"
                     /></label>
-                  {/* LA DURÉE SE CHOISIT. Elle était codée en dur à une heure :
-                      une offre publiée à 14 h s'éteignait à 15 h sans que
-                      personne l'ait décidé — et sans que rien ne le dise. */}
-                  <label><span>Pendant combien de temps</span>
-                    <select value={facExpressMin} onChange={(e) => setFacExpressMin(e.target.value)}>
-                      <option value="30">30 minutes</option>
-                      <option value="60">1 heure</option>
-                      <option value="90">1 h 30</option>
-                      <option value="120">2 heures</option>
-                      <option value="180">3 heures</option>
-                      <option value="240">4 heures</option>
-                      <option value="360">6 heures</option>
-                    </select></label>
+                  {/* UNE DURÉE, OU UNE PLAGE — selon ce que le métier permet
+                      de dire honnêtement.
+
+                      La durée part de l'instant de publication : elle convient
+                      à un créneau qui vient de se libérer. Elle ne convient pas
+                      à un service : un restaurateur prépare le sien à 9 h et
+                      veut remplir le creux de 11 h 30 à 11 h 45. En durée, il
+                      devait calculer de tête le nombre de minutes qui l'en
+                      séparait — et son prix baissait immédiatement, c'est-à-dire
+                      au mauvais moment. */}
+                  {!motsEx.plage && (
+                    <label><span>Pendant combien de temps</span>
+                      <select value={facExpressMin} onChange={(e) => setFacExpressMin(e.target.value)}>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 heure</option>
+                        <option value="90">1 h 30</option>
+                        <option value="120">2 heures</option>
+                        <option value="180">3 heures</option>
+                        <option value="240">4 heures</option>
+                        <option value="360">6 heures</option>
+                      </select></label>
+                  )}
                 </div>
-                <div className="facnote">
-                  Le prix doit être inférieur à votre prix habituel — c&apos;est ce qui fait venir vite.
-                  Passé ce délai, l&apos;express disparaît tout seul&nbsp;; vos autres façons restent.
-                </div>
+                {motsEx.plage && (
+                  <div className="facduo" style={{ marginTop: 10 }}>
+                    <label><span>À partir de quelle heure</span>
+                      <SaisieHeure label="Début de la plage" valeur={facExpressDe} onChange={setFacExpressDe} /></label>
+                    <label><span>Jusqu&apos;à quelle heure</span>
+                      <SaisieHeure label="Fin de la plage" valeur={facExpressA} onChange={setFacExpressA} /></label>
+                  </div>
+                )}
+                <div className="facnote">{motsEx.note}</div>
               </div>
             )}
 

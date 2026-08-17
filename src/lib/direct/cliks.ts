@@ -88,6 +88,10 @@ export type Campagne = {
   prixInitial: number | null;
   prixGroupe: number | null;
   echeance: string;
+  /** Début de la plage, quand la façon en a une. Vide = elle vaut dès sa
+   *  publication. Un restaurateur vise un creux précis (« entre 11 h 30 et
+   *  11 h 45 ») ; sans ce début, son prix baissait dès qu'il appuyait. */
+  debut: string;
   statut: string;
   /** Rang d'affichage parmi les façons d'une même annonce. */
   ordre: number;
@@ -215,6 +219,7 @@ export function versCampagne(r: Record<string, unknown>, restants?: number, tota
     prixInitial: r.prix_initial == null ? null : num(r.prix_initial),
     prixGroupe: r.prix_groupe == null ? null : num(r.prix_groupe),
     echeance: str(r.echeance),
+    debut: str(r.debut),
     statut: str(r.statut),
     // L'ordre stocké fait foi ; sans lui (migration fraîche), on retombe sur
     // l'ordre canonique du type, qui donne déjà la bonne descente de prix.
@@ -269,7 +274,7 @@ export async function cliksDeVille(supabase: unknown, villeSlug: string): Promis
     // s'affichait. Impossible à deviner de l'extérieur.
     const champs =
       "id, site_id, publication_id, ville_slug, type, titre, objectif, participants, prix_initial, prix_groupe, echeance, statut";
-    let { data, error } = await sb.from("clik_campaign").select(`${champs}, ordre, nom_facon`).eq("ville_slug", villeSlug);
+    let { data, error } = await sb.from("clik_campaign").select(`${champs}, ordre, nom_facon, debut`).eq("ville_slug", villeSlug);
     if (error) ({ data, error } = await sb.from("clik_campaign").select(champs).eq("ville_slug", villeSlug));
     if (error || !Array.isArray(data)) return [];
 

@@ -16,6 +16,7 @@
 // Corollaire volontaire : aucune valeur par défaut sur les champs chiffrés.
 // Suggérer « -20 % », c'est décider de la marge du commerçant à sa place.
 import type { Confirmation, Secteur } from "./metier-profiles";
+import { estRestauration } from "@/lib/direct/mots-metier";
 
 const sansAccents = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -247,6 +248,40 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   const v = vocabulaire(metier, confirmation, secteur);
   const j = (x: Record<string, string>, now: Date) => libelleJour(x.jour, now);
   const liste: Intention[] = [];
+
+  // ── 🍽️ LA CARTE DU JOUR — en tête, et seulement là où elle a un sens ─────
+  //
+  // C'est le geste le plus fréquent d'un restaurateur, et il n'existait pas.
+  // Il pouvait annoncer une table libre, une offre, un événement — mais pas
+  // simplement montrer ce qu'on mange aujourd'hui. Or c'est ce que l'habitant
+  // cherche à 11 h : pas une promotion, la carte.
+  //
+  // ELLE NE PROPOSE RIEN À RÉSERVER, et c'est pour ça qu'elle est traitée à
+  // part dans l'écran : ni questions, ni prix, ni façons d'en profiter. On
+  // photographie l'ardoise, ou on l'écrit, et c'est fini. Chaque question de
+  // plus serait une raison de ne pas le faire demain.
+  //
+  // Sa famille est « menu » : c'est elle qui la fait apparaître dans l'onglet
+  // « Déjeuner » de la ville, à côté des cartes des autres restaurants.
+  if (estRestauration(metier)) {
+    liste.push({
+      cle: "carte",
+      exempleDemo: "la photo de l'ardoise",
+      promesse: "Vos plats du jour paraissent dans « Déjeuner », à côté de ceux des autres restaurants.",
+      emoji: "🍽️",
+      action: "Montrer ma carte du jour",
+      titre: "Votre carte du jour ?",
+      sous: "Photographiez votre ardoise, ou écrivez-la. Rien d'autre.",
+      // Aucun champ : l'écran affiche son propre panneau, court, avec la photo.
+      champs: [],
+      brief: (x) => String(x.texte ?? "").trim() || "Voici notre carte du jour.",
+      // Elle vaut la journée et s'efface le soir : une carte du jour d'hier est
+      // pire qu'aucune carte.
+      fin: (_x, now) => finDeJour(now),
+      demo: () => ({ texte: "Aujourd'hui : garbure landaise, magret sauce poivre, tourtière." }),
+      cta: "Réserver une table",
+    });
+  }
 
   if (v.surRdv) {
     liste.push({
@@ -499,6 +534,14 @@ export function recommandees(liste: Intention[], now: Date, n = 3): Intention[] 
 
   const score = (cle: string): number => {
     switch (cle) {
+      // LA CARTE DU JOUR PASSE DEVANT TOUT, tant que la journée n'est pas
+      // finie. C'est le geste quotidien d'un restaurateur — le seul qu'il
+      // refera demain, et après-demain. Rangée derrière « Une autre idée »,
+      // elle n'existe pas : il ne la cherchera pas, il publiera autre chose.
+      // Après 15 h elle redescend : une carte du jour publiée à 17 h arrive
+      // après le service, et le lendemain matin elle repasse en tête.
+      case "carte":
+        return h < 15 ? 200 : 30;
       // Un désistement se traite dans l'heure : prioritaire pendant qu'on travaille.
       case "creneau":
         return h >= 8 && h < 19 ? 100 : 40;

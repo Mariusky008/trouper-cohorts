@@ -38,6 +38,13 @@ export const EXPRESS_MAX_MIN = 360;
  *  s'être inscrit. */
 export const COLLECTIF_MAX_H = 24 * 7;
 
+/** Un instant lisible, ou `null`. L'écran envoie de l'ISO ; tout le reste est
+ *  refusé plutôt que deviné — une heure mal lue déplacerait un service entier. */
+function instant(v: unknown): number | null {
+  const t = Date.parse(String(v ?? "").trim());
+  return Number.isFinite(t) ? t : null;
+}
+
 export type Entree = {
   /** Le prix habituel. Facultatif : un « à prendre » n'en a pas. */
   prixNormal?: unknown;
@@ -48,7 +55,14 @@ export type Entree = {
   cadeauCondition?: unknown;
   express?: unknown;
   expressPrix?: unknown;
+  /** Durée en minutes à partir de MAINTENANT. Le réglage historique. */
   expressMinutes?: unknown;
+  /** OU une plage explicite, en ISO. Un restaurateur ne raisonne pas en durée :
+   *  il veut remplir le creux de 11 h 30 à 11 h 45, un moment de SA journée. En
+   *  durée, il devait calculer « il est 9 h 40, donc 110 minutes » — et son prix
+   *  baissait tout de suite, c'est-à-dire au mauvais moment. */
+  expressDebut?: unknown;
+  expressFin?: unknown;
   partage?: unknown;
   partagePrix?: unknown;
   partageObjectif?: unknown;
@@ -110,19 +124,48 @@ export function preparerFacons(p: Entree, contexte: { finGenerale: string }): Pr
   }
 
   // ── ⚡ L'EXPRESS ────────────────────────────────────────────────────────
+  //
+  // DEUX FAÇONS DE LE BORNER, parce que deux métiers n'ont pas le même rapport
+  // au temps :
+  //
+  //   • EN DURÉE — « moins cher à qui vient dans l'heure ». Un créneau vient de
+  //     se libérer chez un coiffeur, il publie, le compte à rebours part de là.
+  //   • EN PLAGE — « moins cher entre 11 h 30 et 11 h 45 ». Un restaurateur
+  //     prépare son service le matin et vise un creux précis. En durée, il
+  //     devait calculer de tête le nombre de minutes qui l'en séparait, et son
+  //     prix baissait dès la publication — au mauvais moment.
+  //
+  // La plage prime quand elle est donnée. Les deux finissent en un instant de
+  // fin ; seule la plage porte en plus un début.
   if (p.express) {
     if (!aPrix) return { ok: false, erreur: "L'express : indiquez d'abord votre prix habituel." };
     const prix = n(p.expressPrix);
-    const minutes = Math.min(EXPRESS_MAX_MIN, Math.max(10, Math.round(n(p.expressMinutes) || 60)));
     if (!Number.isFinite(prix) || prix <= 0) return { ok: false, erreur: "L'express : indiquez le prix réduit." };
     if (prix >= prixNormal) {
       return { ok: false, erreur: "L'express : le prix doit être inférieur à votre prix habituel." };
     }
+
+    const debut = instant(p.expressDebut);
+    const fin = instant(p.expressFin);
+    let debutISO: string | null = null;
+    let finISO: string;
+
+    if (fin) {
+      // Une plage déjà terminée serait une façon morte à la naissance : elle
+      // s'enregistrerait, n'apparaîtrait jamais, et rien ne dirait pourquoi.
+      if (fin <= Date.now()) return { ok: false, erreur: "L'express : cette heure est déjà passée." };
+      if (debut && debut >= fin) return { ok: false, erreur: "L'express : l'heure de fin doit venir après celle de début." };
+      // Un début déjà passé n'est pas une erreur — c'est « ça a commencé ». On
+      // ne l'écrit simplement pas : la façon vaut dès maintenant.
+      debutISO = debut && debut > Date.now() ? new Date(debut).toISOString() : null;
+      finISO = new Date(fin).toISOString();
+    } else {
+      const minutes = Math.min(EXPRESS_MAX_MIN, Math.max(10, Math.round(n(p.expressMinutes) || 60)));
+      finISO = new Date(Date.now() + minutes * 60_000).toISOString();
+    }
+
     facons.push({
-      ligne: {
-        ...base, type: "express", ordre: 2, prix_groupe: prix,
-        echeance: new Date(Date.now() + minutes * 60_000).toISOString(),
-      },
+      ligne: { ...base, type: "express", ordre: 2, prix_groupe: prix, debut: debutISO, echeance: finISO },
       lots: [],
     });
   }
@@ -208,12 +251,12 @@ export async function ecrireFacons(
   // s'est produit.
   //
   // On réessaie donc sans elles plutôt que de tout perdre pour un agrément.
-  const OPTIONNELLES = ["ordre", "nom_facon"];
+  const OPTIONNELLES = ["ordre", "nom_facon", "debut"];
   const inserer = (l: Array<Record<string, unknown>>) =>
     supabase.from("clik_campaign").insert(l).select("id, type");
 
   let { data, error } = await inserer(lignes);
-  if (error && /ordre|nom_facon/.test(String(error.message))) {
+  if (error && /ordre|nom_facon|debut/.test(String(error.message))) {
     const sobres = lignes.map((l) => {
       const c = { ...l };
       for (const k of OPTIONNELLES) delete c[k];

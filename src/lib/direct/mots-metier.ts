@@ -133,3 +133,57 @@ export function motsMetier(activite: string): MotsMetier {
 export function boutonLien(activite: string): string {
   return motsMetier(activite).lienBouton;
 }
+
+/**
+ * CE MÉTIER SERT-IL À MANGER, À HEURE FIXE ?
+ *
+ * Deux choses en dépendent, et elles ont la même racine : un service se joue
+ * dans une fenêtre de la journée, décidée d'avance, pas dans un délai à partir
+ * du moment où l'on appuie sur « publier ».
+ *
+ *   • L'EXPRESS. « Moins cher à qui vient dans l'heure » ne veut rien dire pour
+ *     un restaurateur qui prépare son service à 9 h et veut remplir le creux de
+ *     11 h 30 à 11 h 45. Il lui faut deux heures, pas une durée.
+ *   • LA CARTE DU JOUR. Elle n'existe que là où le menu change chaque jour.
+ *     Proposer « votre carte du jour » à un garagiste serait absurde.
+ *
+ * Le motif reprend celui de la règle « restauration » ci-dessus. Il vit à part
+ * plutôt que d'être déduit de `motsMetier` : deux commerces peuvent partager le
+ * même vocabulaire de « table » sans servir à heure fixe, et l'inverse arrivera.
+ */
+const RESTAURATION = /restaur|brasserie|bistrot|pizz|creperie|traiteur|bar\b|cafe|salon de the|cantine|burger|sushi|snack|friterie|food/;
+
+export function estRestauration(activite: string): boolean {
+  const a = sansAccent(activite);
+  return Boolean(a) && RESTAURATION.test(a);
+}
+
+/** Les mots de l'express : une durée chez la plupart, une plage à table. */
+export type MotsExpress = {
+  /** La phrase sous le titre « L'express », dans l'écran du commerçant. */
+  sous: string;
+  /** VRAI quand on demande deux heures au lieu d'une durée. */
+  plage: boolean;
+  /** L'explication sous les champs. */
+  note: string;
+};
+
+export function expressMots(activite: string): MotsExpress {
+  if (estRestauration(activite)) {
+    return {
+      sous: "Moins cher entre deux heures que vous choisissez — remplit un creux de service",
+      plage: true,
+      note:
+        "Vous choisissez le moment : par exemple entre 11 h 30 et 11 h 45, pour remplir le début " +
+        "de service. Le prix réduit ne vaut QUE pendant cette plage, et l'express disparaît tout " +
+        "seul à la fin ; vos autres façons restent.",
+    };
+  }
+  return {
+    sous: "Moins cher à qui vient dans l'heure — remplit un creux",
+    plage: false,
+    note:
+      "Le prix doit être inférieur à votre prix habituel — c'est ce qui fait venir vite. " +
+      "Passé ce délai, l'express disparaît tout seul ; vos autres façons restent.",
+  };
+}

@@ -20,7 +20,7 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
-import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, siennesPassees, prolonger, retirer } from "@/lib/direct/publications";
+import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, siennesPassees, prolonger, retirer, estFamille, type Famille } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
@@ -325,7 +325,14 @@ export async function POST(request: Request) {
       const pub = await publier(supabase, {
         ville,
         villeSlug: slugVille,
-        famille: familleDuTexte(text),
+        // LA FAMILLE EST DÉDUITE DU TEXTE, sauf quand l'écran la connaît mieux
+        // que lui. Une carte du jour tapée « Aujourd'hui : garbure, magret »
+        // ne contient aucun mot qui trahisse un menu — elle serait classée en
+        // « offre » et n'apparaîtrait jamais dans l'onglet « Déjeuner » de la
+        // ville, qui est pourtant sa seule raison d'exister. On accepte donc
+        // une famille imposée, mais seulement une VRAIE : un mot inconnu
+        // retomberait sur la déduction plutôt que d'inventer une catégorie.
+        famille: estFamille(str(p?.famille)) ? (str(p?.famille) as Famille) : familleDuTexte(text),
         texte: text,
         photo,
         video,
