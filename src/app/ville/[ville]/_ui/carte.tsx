@@ -18,6 +18,7 @@ import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
 import { VideoCarte } from "./video-carte";
 import { teinte, initiales } from "./teinte";
 import { Reactions } from "./reactions";
+import { Loupe } from "./loupe";
 import type { VueReactions } from "@/lib/direct/reactions";
 
 export type CarteVue = {
@@ -118,6 +119,20 @@ export function Carte({
   const [on, setOn] = useState(gardee);
   const [, demarrer] = useTransition();
   const moi = usePosition();
+  /**
+   * LA CARTE DU JOUR S'OUVRE EN GRAND.
+   *
+   * Sur une annonce ordinaire, la photo illustre — appuyer dessus pour aller
+   * chez le commerçant est le bon geste. Sur une carte du jour, la photo EST le
+   * contenu : c'est le menu. La vignette la montre cadrée sur 280 px, la moitié
+   * des plats hors champ, et le geste naturel — appuyer sur la photo — menait au
+   * site du restaurant. On lisait le nom du restaurant au lieu de son menu.
+   *
+   * Réservé aux cartes du jour : ailleurs, agrandir une photo de vitrine
+   * n'apporte rien, et ça retirerait le chemin vers la boutique.
+   */
+  const [loupe, setLoupe] = useState(false);
+  const menuAVoir = p.famille === "menu" && Boolean(p.photo) && !p.video;
 
   // La distance ne remplace le repli que si les deux positions existent.
   const repere =
@@ -152,11 +167,14 @@ export function Carte({
 
   return (
     <article className="post">
+      {loupe && p.photo && (
+        <Loupe src={p.photo} alt={`Carte du jour — ${p.auteurNom}`} onFermer={() => setLoupe(false)} />
+      )}
       {/* NIVEAU 1 — L'ENVIE. L'image occupe la tête de carte et porte le texte.
           Sans photo, un aplat teinté avec le nom du commerce : jamais de carte
           vide, et surtout jamais une photo de vitrine posée à côté d'un plat
           qu'elle ne montre pas — l'image doit dire ce que l'annonce dit. */}
-      <div className="pic">
+      <div className={`pic${menuAVoir ? " pic-menu" : ""}`}>
         {p.video ? (
           <VideoCarte src={p.video} poster={p.photo} alt={`Vidéo de ${p.auteurNom}`} />
         ) : p.photo ? (
@@ -167,6 +185,21 @@ export function Carte({
           </div>
         )}
         <div className="voile" aria-hidden="true" />
+        {/* La zone d'agrandissement passe SOUS le bloc de texte (`.sur`, ancré en
+            bas) : appuyer sur l'image ouvre le menu, appuyer sur le titre mène
+            toujours chez le restaurant. Les deux gestes restent possibles, et
+            chacun donne ce qu'il annonce. */}
+        {menuAVoir && (
+          <>
+            <button
+              type="button"
+              className="agrandir"
+              onClick={() => setLoupe(true)}
+              aria-label="Voir la carte du jour en entier"
+            />
+            <span className="agrandir-i" aria-hidden="true">🔍 Voir en entier</span>
+          </>
+        )}
         {/* LE NOM AVEC LA DISTANCE. « Dax » seul, dans Le Direct de Dax, ne dit
             rien — c'était le badge le plus inutile de la carte. « Chez Bergeron
             · 350 m » dit à la fois chez qui et à quelle distance, c'est-à-dire
@@ -178,7 +211,7 @@ export function Carte({
 
         {/* NIVEAU 2 — LA DÉCISION, puis NIVEAU 3 — LA PREUVE : la fraîcheur.
             « il y a 4 min » est le signal qui sépare ce fil d'un annuaire. */}
-        {fiche ? (
+        {fiche && !menuAVoir ? (
           <Link href={fiche} className="sur" prefetch={false}>
             <span className={`pastille k-${p.famille}`}>{FAMILLE_LABEL[p.famille]}</span>
             {p.fraicheur ? <span className="conf"><i />{p.fraicheur}</span> : null}
@@ -211,7 +244,7 @@ export function Carte({
 
           La ligne ne s'affiche que si l'un des deux existe : une barre vide
           sous chaque carte ferait du bruit à la place d'une information. */}
-      {(p.reste || p.ardoise) && (
+      {(p.reste || p.ardoise || (menuAVoir && fiche)) && (
         <div className="det">
           {p.reste ? (
             <span className="det-r">
@@ -220,11 +253,24 @@ export function Carte({
           ) : (
             <span />
           )}
-          {p.ardoise ? (
-            <a className="det-a" href={p.ardoise} target="_blank" rel="noreferrer noopener">
-              {p.ardoiseLabel} ›
-            </a>
-          ) : null}
+          <span className="det-l">
+            {/* LE CHEMIN VERS LE COMMERCE, repris ici pour les cartes du jour.
+                L'image entière y ouvre le menu — c'était le geste attendu, et il
+                menait au site. Le lien ne disparaît pas pour autant : il descend
+                d'un cran, nommé, là où on le cherche une fois la carte lue.
+                Les deux cohabitent : un restaurant peut très bien avoir publié
+                sa photo ET garder un lien vers sa carte complète. */}
+            {menuAVoir && fiche ? (
+              <Link className="det-a" href={fiche} prefetch={false}>
+                Voir le restaurant ›
+              </Link>
+            ) : null}
+            {p.ardoise ? (
+              <a className="det-a" href={p.ardoise} target="_blank" rel="noreferrer noopener">
+                {p.ardoiseLabel} ›
+              </a>
+            ) : null}
+          </span>
         </div>
       )}
 

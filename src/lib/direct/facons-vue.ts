@@ -28,9 +28,17 @@ function heureCourte(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return "";
   try {
+    // `2-digit` est nécessaire pour obtenir « 09:56 » de façon stable, mais on
+    // n'écrit pas « 09 h 56 » en français : on dit « 9 h 56 ». Le zéro de tête
+    // ne se voyait presque pas tant que l'heure servait de badge ; depuis que la
+    // plage d'un express s'écrit « Entre 09 h 56 et 10 h 06 », il se lit comme
+    // une horloge d'ordinateur au milieu d'une phrase.
     return new Intl.DateTimeFormat("fr-FR", {
       timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hour12: false,
-    }).format(new Date(t)).replace(":", " h ");
+    })
+      .format(new Date(t))
+      .replace(":", " h ")
+      .replace(/^0/, "");
   } catch {
     return "";
   }

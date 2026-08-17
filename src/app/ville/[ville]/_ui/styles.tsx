@@ -128,7 +128,32 @@ export function StylesDirect() {
    photo ordinaire, mais on ne choisit pas les photos : un commerçant enverra un
    plat très clair sur une nappe blanche, et ce jour-là le voile seul ne tient
    plus. L'ombre ne se voit pas sur un fond sombre et sauve le fond clair. */
-.dir .sur{position:absolute;left:16px;right:16px;bottom:16px;color:#fff;text-decoration:none;display:block;
+.dir .pic .agrandir{position:absolute;inset:0;border:none;background:none;cursor:zoom-in;padding:0;z-index:1;}
+/* SUR UNE CARTE DU JOUR, TOUTE L'IMAGE APPARTIENT AU MENU.
+   Le bloc de texte est ancré en bas mais occupe presque toute la hauteur d'une
+   image de 280 px : appuyer au milieu de l'ardoise tombait dessus, et c'est
+   exactement le défaut signalé — on visait le menu, on arrivait sur le site.
+   Le texte reste lisible, il ne capte plus les appuis ; le chemin vers le
+   commerce est repris sous l'image, nommé. */
+.dir .pic-menu .sur{pointer-events:none;}
+/* UNE ARDOISE SE CADRE PAR LE HAUT, pas par le centre. Centrée, la vignette
+   montrait le milieu du menu — ni le titre ni le début des plats — et le bloc
+   de texte blanc se posait par-dessus des lignes de menu : les deux devenaient
+   illisibles. Cadrée en haut, on lit l'en-tête de l'ardoise et ses premières
+   lignes ; le reste s'atteint en l'ouvrant.
+   Le voile est aussi plus dense en bas : du texte blanc sur une ardoise
+   couverte d'écriture ne se lit pas sans lui. */
+.dir .pic-menu .fond{background-position:center top;}
+.dir .pic-menu .voile{background:linear-gradient(180deg,rgba(14,42,28,.30) 0,rgba(14,42,28,.10) 22%,rgba(14,42,28,.62) 55%,rgba(14,42,28,.97) 100%);}
+/* Deux liens possibles sous une carte du jour — le restaurant et l'ardoise. */
+.dir .det .det-l{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
+/* L'indice est SOUS le badge d'échéance et au-dessus du titre : il doit se voir
+   sans recouvrir l'un ni l'autre. Sans lui, personne ne devine qu'une photo de
+   menu s'agrandit — un geste invisible n'existe pas. */
+.dir .pic .agrandir-i{position:absolute;top:56px;right:13px;z-index:2;pointer-events:none;
+  background:rgba(14,42,28,.78);color:#fff;border-radius:999px;padding:6px 11px;
+  font-size:11.5px;font-weight:800;letter-spacing:.01em;}
+.dir .sur{position:absolute;left:16px;right:16px;bottom:16px;z-index:2;color:#fff;text-decoration:none;display:block;
   text-shadow:0 1px 3px rgba(8,20,14,.6);}
 .dir .sur .conf{display:flex;align-items:center;gap:7px;font-size:13px;color:#DCE8E1;margin-top:10px;}
 .dir .sur .conf i{width:7px;height:7px;border-radius:50%;background:var(--gl);font-style:normal;}
