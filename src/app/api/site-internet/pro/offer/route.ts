@@ -26,6 +26,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
+import { jourParis } from "@/lib/jour-paris";
 
 export const dynamic = "force-dynamic";
 
@@ -134,11 +135,34 @@ export async function POST(request: Request) {
   const galerie = photosDe(site);
 
   // Lecture défensive : colonne récente (migration peut ne pas être appliquée).
+  //
+  // LE BANDEAU PÉRIMÉ NE SURVIT PAS À SA JOURNÉE. Il n'a jamais été effacé :
+  // deux jours après, le commerçant rouvrait « Faire une annonce » et retrouvait
+  // en haut de l'écran son annonce de l'avant-veille, dans un cadre « Terminée ».
+  // Les surfaces publiques la filtraient déjà — elle n'était visible que de lui,
+  // et uniquement pour l'encombrer.
+  //
+  // POURQUOI PAS TOUT DE SUITE À L'ÉCHÉANCE. Le jour même, « Terminée — reprendre
+  // ce texte » est exactement ce qu'il veut : son créneau de 14 h est passé, il
+  // en rouvre un pour 16 h en un geste. C'est le lendemain que ça devient un
+  // vieux papier. Passé sa journée, le texte reste de toute façon accessible
+  // dans « Mes annonces passées », qui est fait pour ça.
   const current = async (): Promise<Offer | null> => {
     try {
       const { data } = await supabase.from("human_vitrine_sites").select("current_offer").eq("id", id).maybeSingle();
       const raw = (data as Record<string, unknown> | null)?.current_offer;
-      return readOffer(raw);
+      const o = readOffer(raw);
+      if (o?.until && jourParis(new Date(o.until)) < jourParis()) {
+        // Effacé à la lecture : c'est le moment exact où on sait qu'il est
+        // périmé, et ça se répare tout seul sans un balayage nocturne de plus.
+        try {
+          await supabase.from("human_vitrine_sites").update({ current_offer: null }).eq("id", id);
+        } catch {
+          /* la colonne refuse : on ne le montre pas pour autant */
+        }
+        return null;
+      }
+      return o;
     } catch {
       return null;
     }

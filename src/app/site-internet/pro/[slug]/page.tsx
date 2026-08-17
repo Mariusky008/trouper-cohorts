@@ -21,7 +21,6 @@ import { ProHome } from "./pro-home";
 import { ProHistoire } from "./pro-histoire";
 import { ProEngagements } from "./pro-engagements";
 import { ProWhatsapp } from "./pro-whatsapp";
-import { ProDiagnostic } from "./pro-diagnostic";
 import { ProGallery } from "./pro-gallery";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -365,9 +364,24 @@ export default async function EspacePro({
       {/* QUI VIENT — la contrepartie du code donné à l'habitant. Sur l'accueil
           et non dans un onglet : c'est ce qu'on regarde en ouvrant son espace
           le matin, pas ce qu'on va chercher. */}
-      {/* NE S'AFFICHE QUE SI QUELQUE CHOSE CLOCHE. Un panneau de diagnostic
-          permanent transformerait son espace en console d'administration. */}
-      {soliciter && <ProDiagnostic slug={slug} token={token} />}
+      {/* LE DIAGNOSTIC N'EST PLUS ICI, et c'est définitif.
+
+          Il avait été écrit pour une bonne raison : j'avais diagnostiqué de
+          travers une histoire de façons manquantes, et il fallait un outil qui
+          CONSTATE au lieu de me faire deviner. Il a servi. Mais il constate
+          avec MES yeux, pas les siens : il comptait comme « défauts » quinze
+          façons devenues invisibles parce que leur annonce avait été retirée
+          par le commerçant lui-même, ou parce que leur échéance était passée.
+          C'est le système qui fonctionne, pas une panne — et il le lui
+          annonçait en dix-neuf lignes de journal technique, en haut de son
+          accueil, avec des horodatages à la seconde.
+
+          « Une façon terminée est retirée du fil, jamais grisée » est une
+          phrase que j'écris pour moi. Lui n'a pas à la lire chez lui.
+
+          L'outil reste : `action: "diagnostic"` sur /api/site-internet/pro/clik
+          répond toujours, et `ProDiagnostic` est toujours là si j'en ai besoin
+          un jour. Ce qui disparaît, c'est sa présence dans son espace. */}
       {soliciter && villeUrl && (
         <ProCatalogue
           ville={ville}

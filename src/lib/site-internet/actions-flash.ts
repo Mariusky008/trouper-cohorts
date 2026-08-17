@@ -264,7 +264,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
         // précises, ou pour tout un après-midi. Rendre la fin obligatoire
         // forcerait à inventer une heure pour le premier cas ; l'omettre
         // interdisait d'annoncer le second.
-        { cle: "fin", label: "Jusqu'à quelle heure ? (facultatif)", type: "heure", requis: false },
+        { cle: "fin", label: "Jusqu'à quelle heure ?", type: "heure", requis: false },
         { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
       brief: (x) =>
@@ -279,21 +279,49 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       cta: "Réserver",
     });
 
+    // PLUSIEURS PLACES SUR UNE PLAGE — la variante « il m'en reste ».
+    //
+    // Elle demandait « Combien ? » et « Sur quelle période ? (ex. cette
+    // semaine) », et produisait « Il me reste 3 créneaux disponibles cette
+    // semaine ». Deux défauts, le second grave :
+    //
+    //   • le commerçant qui vient annoncer un après-midi libre ne trouvait plus
+    //     où saisir son jour ni ses heures — il n'y avait plus de case pour ça ;
+    //   • surtout, l'annonce produite n'était pas saisissable. Un habitant qui
+    //     lit « il me reste 3 créneaux cette semaine » ne sait ni quand venir,
+    //     ni s'il peut venir maintenant. Le Direct ne montre que ce qui est à
+    //     prendre : une annonce sans moment n'y a rien à faire.
+    //
+    // Elle demande donc le jour et la plage, comme sa voisine — la différence
+    // qui reste est la bonne : « un créneau vient de se libérer » annonce UNE
+    // place qui se libère à l'instant, celle-ci annonce CE QU'IL RESTE sur une
+    // plage préparée à l'avance.
     liste.push({
       cle: "dispo",
-      exempleDemo: `3 ${v.places} cette semaine`,
+      exempleDemo: `3 ${v.places} demain après-midi`,
       promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
       emoji: "📅",
       action: "Annoncer mes disponibilités",
-      titre: `Vos derniers ${v.places} de la semaine ?`,
-      sous: "Dites ce qu'il vous reste, sans promettre plus.",
+      titre: `Il vous reste des ${v.places} ?`,
+      sous: "Dites quand, et combien — sans promettre plus.",
       champs: [
         { cle: "combien", label: `Combien de ${v.places} restants ?`, type: "nombre", requis: true },
-        { cle: "quand", label: "Sur quelle période ?", type: "texte", exemple: "cette semaine", requis: true },
+        { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
+        { cle: "de", label: "À partir de quelle heure ?", type: "heure", requis: true },
+        // Facultative, comme pour un créneau isolé : trois places peuvent tenir
+        // sur un après-midi entier sans qu'on sache dire quand il se termine.
+        { cle: "a", label: "Jusqu'à quelle heure ?", type: "heure", requis: false },
+        { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
-      brief: (x) => `Il me reste ${x.combien} ${v.places} disponibles ${x.quand}.`,
-      fin: (_x, now) => dansNJours(now, 3),
-      demo: () => ({ combien: "3", quand: "cette semaine" }),
+      brief: (x) =>
+        `Il me reste ${x.combien} ${v.places} ${libelleJour(x.jour, new Date())} ` +
+        `${x.a ? `entre ${heureLisible(x.de)} et ${heureLisible(x.a)}` : `à partir de ${heureLisible(x.de)}`}` +
+        `${x.quoi ? ` pour ${x.quoi}` : ""}. Je vous en réserve un ?`,
+      // Elle tient jusqu'à la fin de la plage, ou jusqu'au soir du jour annoncé.
+      // `dansNJours(now, 3)` faisait survivre de trois jours une annonce qui
+      // parlait d'un après-midi précis.
+      fin: (x, now) => (x.a ? moment(now, x.a, x.jour) : finDeJour(now, x.jour)),
+      demo: (now) => ({ combien: "3", jour: jourISO(dansNJours(now, 1)), de: "14:00", a: "18:00", quoi: "" }),
       cta: "Réserver un créneau",
     });
   }
@@ -403,7 +431,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       { cle: "quoi", label: "Quel événement ?", type: "texte", exemple: "une dégustation", requis: true },
       { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
       { cle: "heure", label: "À quelle heure ?", type: "heure", requis: false },
-      { cle: "fin", label: "Jusqu'à quelle heure ? (facultatif)", type: "heure", requis: false },
+      { cle: "fin", label: "Jusqu'à quelle heure ?", type: "heure", requis: false },
     ],
     brief: (x) =>
       `J'organise ${x.quoi} ${j(x, new Date())}` +
