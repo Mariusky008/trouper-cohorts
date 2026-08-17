@@ -204,8 +204,29 @@ export async function POST(request: Request) {
   if (action === "retirer_annonce") {
     const cible = str(p?.id);
     if (!cible) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    // LE BANDEAU DU SITE PART AVEC, quand c'est bien de lui qu'il s'agit.
+    //
+    // « Mes annonces » retire la publication du fil de la ville. Le bandeau de
+    // son site, lui, est un objet à part (`current_offer`) : sans ce nettoyage,
+    // il continuerait d'annoncer aux visiteurs de son site une place qu'il vient
+    // de retirer — la pire promesse qu'on puisse faire à sa place.
+    //
+    // On compare les textes plutôt que de garder un identifiant : le bandeau
+    // n'en a jamais porté, et en ajouter un maintenant laisserait toutes les
+    // annonces déjà en base sans correspondance.
+    const avant = (await mesAnnonces()).find((a) => a.id === cible);
     await retirer(supabase, cible, id);
-    return NextResponse.json({ ok: true, annonces: await mesAnnonces() });
+    if (avant) {
+      const banniere = await current();
+      if (banniere && banniere.text.trim() === avant.texte.trim()) {
+        try {
+          await supabase.from("human_vitrine_sites").update({ current_offer: null }).eq("id", id);
+        } catch {
+          /* colonne récalcitrante : l'annonce est déjà hors du fil */
+        }
+      }
+    }
+    return NextResponse.json({ ok: true, annonces: await mesAnnonces(), historique: await monHistorique() });
   }
 
   if (action === "prolonger") {

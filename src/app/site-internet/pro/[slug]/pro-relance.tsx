@@ -7,7 +7,7 @@
 // ferait bannir. Un plafond quotidien (serveur) protège contre la sur-sollicitation.
 // Si le pro a constitué une audience opt-in (« Mes clients »), on la propose ici
 // en tap-par-client : chaque envoi ouvre SON WhatsApp pré-rempli (toujours natif).
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { SaisieHeure, lireHeure, STYLES_SAISIE_HEURE } from "./saisie-heure";
 import { EnvoiVideo, STYLES_ENVOI_VIDEO } from "./envoi-video";
 import { toWaDigits } from "@/lib/site-internet/phone";
@@ -30,29 +30,6 @@ import { ProHistoire } from "./pro-histoire";
 import { AnnonceVisuel } from "./annonce-visuel";
 
 type Contact = { id: string; prenom: string | null; phone_e164: string; unsub_token: string };
-type Offer = {
-  text: string;
-  until: string | null;
-  photo?: string | null;
-  clicks: number;
-  created_at: string;
-  /** Calculé PAR LE SERVEUR. Lire l'horloge pendant un rendu React rendrait le
-   *  composant impur ; et sans ce drapeau, une annonce terminée la veille
-   *  restait affichée « en ligne », rafraîchissement compris. */
-  expiree?: boolean;
-};
-
-/** « 12 août ». Le jour suffit pour reconnaître une annonce : l'heure exacte
- *  n'aide personne à retrouver « celle du jeudi ». */
-function dateCourte(iso: string): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  return new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-}
-
-/** Une annonce passée, telle que la route la renvoie. */
-type Passee = { id: string; texte: string; photo: string | null; famille: string; publieLe: string };
-
 const DEFAULT_MESSAGE =
   "Bonjour, une place se libère prochainement. Si vous souhaitez en profiter, répondez-moi simplement ici — je vous la réserve.";
 
@@ -161,8 +138,9 @@ export function ProRelance({
   const [trous, setTrous] = useState<string[]>([]);
   // Échéance déduite des réponses : l'offre « 16 h → 18 h » s'arrête à 18 h.
   const [echeance, setEcheance] = useState<Date | null>(null);
-  // « Offre du moment » : bandeau affiché sur le site du pro + lien traçable.
-  const [offer, setOffer] = useState<Offer | null>(null);
+  // LE BANDEAU EN COURS N'EST PLUS TENU ICI. Cet écran écrit une annonce ; ce
+  // qui est déjà en ligne se regarde dans « Mes annonces ». En garder une copie
+  // était précisément ce qui bloquait le commerçant sur sa dernière publication.
   const [offerText, setOfferText] = useState("");
   const [duree, setDuree] = useState("2j");
   // ── CE QU'IL RESTE, ET L'ARDOISE ──────────────────────────────────────────
@@ -247,21 +225,14 @@ export function ProRelance({
   const [aCadrer, setACadrer] = useState<PhotoChargee | null>(null);
   const fermerCadrage = () => setACadrer(null);
   const fichierRef = useRef<HTMLInputElement | null>(null);
-  /** La nouvelle annonce doit remplacer celle qui est déjà en ligne. */
-  const [remplace, setRemplace] = useState(false);
-  /** L'annonce vient d'être publiée dans cette session : on le confirme franchement. */
-  const [publiee, setPubliee] = useState(false);
-  /** SES ANNONCES PASSÉES — terminées ou retirées. Elles existaient déjà en
-   *  base (`retire_le`), personne ne les lui montrait : il retapait chaque
-   *  semaine le texte du plat du jeudi. */
-  const [historique, setHistorique] = useState<Passee[]>([]);
-  const [voirHisto, setVoirHisto] = useState(false);
+  /**
+   * L'ANNONCE VIENT DE PARTIR : une confirmation par-dessus l'écran, et c'est
+   * tout. Le parcours est déjà revenu à zéro derrière elle — on peut fermer et
+   * en écrire une deuxième dans la foulée.
+   */
+  const [confirme, setConfirme] = useState<{ texte: string; avertissement: string } | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
   const [offerErr, setOfferErr] = useState("");
-  /** Ce qui a échoué APRÈS que l'annonce soit partie. Séparé de `offerErr`,
-   *  qui vit dans le bloc du bouton « Publier » : ce bloc disparaît une fois
-   *  publié, si bien qu'un avertissement posé là n'était jamais lu. */
-  const [avertPublie, setAvertPublie] = useState("");
   const [linkAdded, setLinkAdded] = useState(false);
   // Parcours en 3 étapes : ① quoi annoncer → ② où l'afficher → ③ vérifier & lancer.
   const [step, setStep] = useState(1);
@@ -479,15 +450,19 @@ export function ProRelance({
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.offer) {
-        setOffer(j.offer);
-        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
-        // Publiée : on repasse sur la carte « en ligne », qui porte les liens
-        // pour aller voir le résultat aux deux endroits.
-        setRemplace(false);
-        setPubliee(true);
-        // L'annonce est partie même si les façons ont échoué : on le dit,
-        // plutôt que de laisser croire que tout s'est passé comme prévu.
-        setAvertPublie(typeof j.avertissement === "string" ? j.avertissement : "");
+        // PUBLIÉE : une confirmation, et le parcours repart à zéro.
+        //
+        // Avant, l'écran restait sur l'annonce qu'on venait d'écrire, avec ses
+        // liens et ses boutons. Le commerçant s'y trouvait coincé : pour en
+        // publier une deuxième, il fallait deviner qu'un bouton « En publier une
+        // autre » vidait le champ. Il croyait n'avoir droit qu'à une annonce.
+        //
+        // Elles vivent maintenant dans « Mes annonces », qui est fait pour ça.
+        // Ici, on confirme et on rend la main.
+        const publie = String((j.offer as { text?: unknown })?.text ?? "");
+        const avert = typeof j.avertissement === "string" ? j.avertissement : "";
+        recommencer();
+        setConfirme({ texte: publie, avertissement: avert });
       } else {
         setOfferErr(typeof j.error === "string" ? j.error : "Enregistrement impossible.");
       }
@@ -498,43 +473,10 @@ export function ProRelance({
     }
   };
 
-  /**
-   * RETIRER, ET REVENIR À ZÉRO.
-   *
-   * Le retrait ne vidait que `offer` : l'écran retombait alors sur le
-   * formulaire de l'étape 3, c'est-à-dire l'étape juste avant la publication,
-   * avec l'ancien texte encore dedans. On venait de retirer son annonce et on
-   * se retrouvait à un bouton de la republier.
-   *
-   * Le texte n'est pas perdu pour autant : il part dans l'historique, d'où on
-   * peut le reprendre en un geste.
-   */
-  const clearOffer = async () => {
-    if (offerBusy) return;
-    setOfferBusy(true);
-    setOfferErr("");
-    try {
-      const r = await fetch("/api/site-internet/pro/offer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, action: "clear" }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok) {
-        setOffer(null);
-        // L'annonce retirée rejoint l'historique côté serveur (`retire_le`) :
-        // on relit la liste plutôt que d'en tenir une copie ici, qui finirait
-        // par diverger de la base.
-        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
-        else void rafraichirHistorique();
-        recommencer();
-      }
-    } catch {
-      setOfferErr("Retrait impossible. Réessayez.");
-    } finally {
-      setOfferBusy(false);
-    }
-  };
+  // « RETIRER PARTOUT » A DÉMÉNAGÉ dans « Mes annonces », avec le reste de ce
+  // qui concerne une annonce déjà en ligne. Le bandeau du site part avec elle :
+  // c'est la route qui s'en charge, pour que le site n'annonce jamais une place
+  // qu'on vient de retirer du fil.
 
   const addTrackLink = () => {
     setMessage((m) => (m.includes(trackLink) ? m : `${m.trim()}\n\n👉 Réserver : ${trackLink}`));
@@ -549,7 +491,11 @@ export function ProRelance({
   // Le bouton flottant de l'assistante recouvre ce formulaire : on l'efface
   // pendant les trois étapes, il revient dès qu'on en sort.
   useEffect(() => {
-    const dire = (actif: boolean) => window.dispatchEvent(new CustomEvent("pro-parcours", { detail: actif }));
+    // `void` : `dispatchEvent` rend un booléen, et une fonction de nettoyage
+    // qui rend autre chose que `void` n'est pas une fonction de nettoyage.
+    const dire = (actif: boolean) => {
+      window.dispatchEvent(new CustomEvent("pro-parcours", { detail: actif }));
+    };
     dire(true);
     return () => dire(false);
   }, []);
@@ -665,9 +611,6 @@ export function ProRelance({
     setReste("");
     setArdoise("");
     setOfferText("");
-    setPubliee(false);
-    setRemplace(false);
-    setAvertPublie("");
     setOfferErr("");
     // Les façons repartent sur le défaut : « à prendre », seul coché.
     setFacSimple(true);
@@ -681,31 +624,29 @@ export function ProRelance({
     setFacCadeauCond("");
   };
 
-  /** Relit l'historique après un changement. */
-  const rafraichirHistorique = async () => {
-    try {
-      const r = await fetch("/api/site-internet/pro/offer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, action: "historique" }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok && Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
-    } catch {
-      /* l'historique reste tel quel : il n'empêche rien */
-    }
-  };
-
   /** Reprendre un texte déjà publié : on repart de l'étape de relecture, pas
    *  du choix d'action — il sait déjà ce qu'il veut dire. */
-  const reprendre = (texte: string) => {
+  const reprendre = useCallback((texte: string) => {
     recommencer();
     setLibre(true);
     setMessage(texte);
     setAiUsed(true);
-    setVoirHisto(false);
     setStep(1);
-  };
+  }, []);
+
+  // « REPRENDRE CE TEXTE », déclenché depuis « Mes annonces ».
+  //
+  // L'historique vit là-bas maintenant. Il envoie le texte, puis demande la
+  // bascule d'onglet — dans cet ordre, sinon on arriverait sur un formulaire
+  // encore vide, et le geste paraîtrait sans effet.
+  useEffect(() => {
+    const repris = (e: Event) => {
+      const t = (e as CustomEvent).detail;
+      if (typeof t === "string" && t.trim()) reprendre(t);
+    };
+    window.addEventListener("pro-reprendre-annonce", repris as EventListener);
+    return () => window.removeEventListener("pro-reprendre-annonce", repris as EventListener);
+  }, [reprendre]);
 
   /**
    * Le champ correspondant à une question. Les types natifs (`time`, `number`)
@@ -806,8 +747,6 @@ export function ProRelance({
         });
         const j = await r.json().catch(() => ({}));
         if (cancelled || !r.ok) return;
-        if (j.offer) setOffer(j.offer as Offer);
-        if (Array.isArray(j.historique)) setHistorique(j.historique as Passee[]);
         const g = Array.isArray(j.photos) ? (j.photos as unknown[]).map(String).filter(Boolean) : [];
         setPhotos(g);
         // Pré-choix : la photo déjà associée à l'annonce en cours, sinon la
@@ -852,12 +791,6 @@ export function ProRelance({
   };
 
   const anyChannel = chSite || chWa || chSocial;
-  const villeSlug = ville
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
   /**
    * À l'étape 3, le bandeau part de l'annonce QU'ON VIENT D'ÉCRIRE.
@@ -871,8 +804,6 @@ export function ProRelance({
     const resume = resumeBandeau(msg);
     if (chSite && resume) {
       majTexte(resume);
-      setRemplace(!offer || offer.text.trim() !== resume.trim());
-      setPubliee(false);
     }
     setStep(3);
   };
@@ -1081,6 +1012,22 @@ export function ProRelance({
              part quand même, et la couleur doit le dire avant le texte. */
           .pro .relance .ph-avis{margin-top:9px;font-size:12px;line-height:1.5;color:#8A6A12;
             background:#FFF7E9;border:1px solid #F6E4BD;border-radius:11px;padding:10px 12px;}
+          /* ── « Annonce publiée » : par-dessus, court, et on rend la main ── */
+          .pro .pubok{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+            padding:22px;background:rgba(18,20,26,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+          .pro .pubok-c{width:100%;max-width:380px;background:var(--paper);border-radius:22px;padding:24px 22px 20px;
+            text-align:center;box-shadow:0 30px 70px -30px rgba(18,20,26,.6);}
+          .pro .pubok-e{font-size:38px;line-height:1;}
+          .pro .pubok-h{font-size:22px;font-weight:850;letter-spacing:-.02em;margin-top:10px;}
+          .pro .pubok-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:11px;
+            background:#F7F5EF;border-radius:13px;padding:12px 13px;}
+          .pro .pubok-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:11px;}
+          .pro .pubok-w{margin-top:11px;font-size:12.5px;line-height:1.45;color:#8A3D26;background:#FDECE6;
+            border:1px solid #F3CDBF;border-radius:11px;padding:10px 12px;text-align:left;}
+          .pro .pubok-r{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+          .pro .pubok-r button{border-radius:13px;padding:13px 16px;font-size:14px;font-weight:800;
+            font-family:inherit;cursor:pointer;border:1px solid var(--hair);background:#fff;color:var(--ink);}
+          .pro .pubok-r button.go{background:linear-gradient(135deg,#00C896,#00926E);border-color:transparent;color:#fff;}
           .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
           .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
           .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
@@ -1253,27 +1200,12 @@ export function ProRelance({
                 C'est le MÊME bloc, donc la même unique histoire du jour. */}
             {!intention && !libre && <ProHistoire slug={slug} token={token} />}
 
-            {/* VOS ANNONCES PASSÉES. Elles existaient déjà en base — une
-                annonce retirée n'est pas supprimée, elle porte un `retire_le` —
-                et rien ne les montrait : le plat du jeudi se retapait chaque
-                semaine. Repliées par défaut : c'est un recours, pas le sujet. */}
-            {!intention && !libre && historique.length > 0 && (
-              <div className="histo">
-                <button type="button" className="histo-h" onClick={() => setVoirHisto((v) => !v)}>
-                  ↻ Reprendre une annonce passée ({historique.length}) {voirHisto ? "▴" : "▾"}
-                </button>
-                {voirHisto && (
-                  <div className="histo-l">
-                    {historique.map((h) => (
-                      <button type="button" key={h.id} className="histo-i" onClick={() => reprendre(h.texte)}>
-                        <span className="histo-t">{h.texte}</span>
-                        <span className="histo-d">{dateCourte(h.publieLe)}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* LES ANNONCES PASSÉES ONT DÉMÉNAGÉ dans « Mes annonces ».
+                Elles étaient repliées ici, sous l'écran de choix d'action : au
+                moment d'écrire quelque chose de nouveau, on ne fouille pas dans
+                ses archives. Elles sont maintenant à côté de ce qui tourne,
+                c'est la même question — « qu'est-ce que j'ai publié ». Le
+                bouton « Reprendre » y renvoie ici avec le texte déjà en place. */}
 
             {/* ③ Le mode libre : celui qui sait déjà quoi dire n'est pas ralenti. */}
             {libre && (
@@ -1638,105 +1570,21 @@ export function ProRelance({
                   <span className="tag free">offert</span>
                 </div>
                 <div className="offer" style={{ marginTop: 8, borderTop: "none", paddingTop: 0 }}>
-                  {offer && !remplace && !offer.expiree ? (
-                    <div className="live">
-                      {/* Confirmation franche : sans elle, l'écran d'après la
-                          publication ressemblait à celui d'avant, et on ne
-                          savait pas si quelque chose s'était passé. */}
-                      {publiee && (
-                        <div className="lok">
-                          🎉 <b>Votre annonce est publiée.</b>
-                          <span>
-                            {/* `sitePublie` ne décide plus de ce qu'on annonce ici :
-                                il ne veut pas dire « joignable », il veut dire
-                                « converti en client ». Le site répond à son adresse
-                                dans les deux cas, et le fil de la ville ne filtre pas
-                                dessus — l'annonce EST visible. Le dire autrement
-                                revenait à démentir ce que le commerçant voit de ses
-                                propres yeux en ouvrant son site. */}
-                            {`Elle est en ligne sur votre site${collectifActif ? ` et dans le fil de ${ville}` : ""}.`}
-                            {offer.until ? ` Elle se retire ${echeanceLisible(new Date(offer.until))}.` : ""}
-                          </span>
-                          {/* CE QUI N'A PAS MARCHÉ, dit ici et pas ailleurs.
-                              L'annonce est partie — elle est utile telle
-                              quelle — mais les façons d'en profiter, non. Le
-                              silence ferait croire que tout s'est passé comme
-                              prévu, et le commerçant chercherait ses Cliks dans
-                              le fil sans comprendre. */}
-                          {avertPublie && <div className="lwarn">⚠ {avertPublie}</div>}
-                        </div>
-                      )}
-                      {offer.photo && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="lp" src={offer.photo} alt="" />
-                      )}
-                      <div className="lt">« {offer.text} »</div>
-                      <div className="lmeta">
-                        <span className="clicks">👆 {offer.clicks} clic{offer.clicks > 1 ? "s" : ""}</span>
-                        {offer.until ? (
-                          <span>· se retire {echeanceLisible(new Date(offer.until))}</span>
-                        ) : (
-                          <span>· sans limite de date</span>
-                        )}
-                      </div>
-                      {/* Voir le résultat pour de vrai, aux deux endroits où il
-                          paraît. Sans ces liens, le pro publie sans jamais
-                          savoir à quoi ça ressemble. */}
-                      <div className="lvoir">
-                        <a href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">👁 Voir sur mon site ↗</a>
-                        {collectifActif && villeSlug && (
-                          <a href={`/ville/${villeSlug}`} target="_blank" rel="noreferrer">📍 Voir dans Le Direct ↗</a>
-                        )}
-                      </div>
-                      <div className="lact">
-                        <button onClick={() => { majTexte(offer.text); setRemplace(true); }} disabled={offerBusy}>✏️ Modifier</button>
-                        {/* EN AJOUTER UNE AUTRE. L'écran ne proposait que
-                            « modifier » ou « retirer » : un boulanger ne pouvait
-                            pas annoncer sa fournée du matin ET ses invendus du
-                            soir. On peut en avoir trois vivantes — le champ se
-                            vide, on écrit la suivante, la précédente reste. */}
-                        <button
-                          onClick={() => { majTexte(""); setPhoto(null); setVideo(null); setRemplace(true); setPubliee(false); }}
-                          disabled={offerBusy}
-                        >
-                          ➕ En publier une autre
-                        </button>
-                        {/* « Retirer du site » laissait croire qu'elle restait
-                            dans Le Direct. Elle part des deux d'un coup. */}
-                        <button className="rm" onClick={clearOffer} disabled={offerBusy}>
-                          {collectifActif ? "Retirer partout" : "Retirer du site"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* TERMINÉE, ET DIT COMME TEL. Une annonce dont
-                          l'échéance est passée s'affichait « en ligne », et
-                          rafraîchir n'y changeait rien : l'écran lisait le
-                          bandeau du site, qui n'expire jamais, au lieu de
-                          l'état réel. Elle n'est plus visible de personne — on
-                          propose donc la seule chose utile : la reprendre. */}
-                      {offer && offer.expiree && (
-                        <div className="ofin">
-                          <div className="ofin-k">Terminée</div>
-                          <div className="ofin-t">«&nbsp;{offer.text}&nbsp;»</div>
-                          <div className="ofin-s">
-                            Elle n&apos;est plus affichée nulle part. Vous pouvez la reprendre telle quelle,
-                            ou en écrire une autre.
-                          </div>
-                          <div className="ofin-r">
-                            <button type="button" onClick={() => reprendre(offer.text)}>↻ Reprendre ce texte</button>
-                            <button type="button" onClick={recommencer}>✎ Écrire autre chose</button>
-                          </div>
-                        </div>
-                      )}
-                      {offer && !offer.expiree && (
-                        <div className="rtip" style={{ margin: "0 0 10px" }}>
-                          Ceci remplacera l&apos;annonce actuellement en ligne&nbsp;: «&nbsp;{offer.text.slice(0, 60)}
-                          {offer.text.length > 60 ? "…" : ""}&nbsp;».
-                        </div>
-                      )}
-                      <label className="ofl" htmlFor="offer-text">Le titre affiché sur votre site et dans Le Direct</label>
+                  {/* CE QUI EST DÉJÀ EN LIGNE N'EST PLUS ICI.
+
+                      L'étape 3 affichait l'annonce en cours à la place du
+                      formulaire, avec ses liens et ses boutons. Résultat : une
+                      fois publiée, le commerçant se retrouvait bloqué dessus —
+                      pour en écrire une deuxième il fallait deviner qu'un bouton
+                      « En publier une autre » vidait le champ. Il croyait
+                      n'avoir droit qu'à une annonce à la fois, alors qu'il en a
+                      trois.
+
+                      Cet écran ne fait plus qu'une chose : écrire et publier.
+                      Ce qui tourne se regarde dans « Mes annonces », avec les
+                      liens pour aller le voir et les boutons pour le prolonger
+                      ou le retirer. Un écran, une question. */}
+                  <label className="ofl" htmlFor="offer-text">Le titre affiché sur votre site et dans Le Direct</label>
                       <input
                         id="offer-text"
                         type="text"
@@ -1924,8 +1772,6 @@ export function ProRelance({
                             : "Afficher sur mon site"}
                       </button>
                       {offerErr && <div className="oerr">{offerErr}</div>}
-                    </>
-                  )}
                 </div>
               </div>
             )}
@@ -2016,6 +1862,45 @@ export function ProRelance({
           </>
         )}
       </div>
+
+      {/* ANNONCE PUBLIÉE — une confirmation, et on rend la main.
+
+          Le parcours est déjà revenu à zéro derrière cette pop-up : fermer,
+          c'est se retrouver devant le choix d'action, prêt à en écrire une
+          deuxième. C'est exactement ce qui manquait — on restait collé à
+          l'annonce qu'on venait de faire. */}
+      {confirme && (
+        <div className="pubok" role="dialog" aria-modal="true" aria-label="Annonce publiée">
+          <div className="pubok-c">
+            <div className="pubok-e" aria-hidden="true">🎉</div>
+            <div className="pubok-h">Annonce publiée</div>
+            <div className="pubok-t">«&nbsp;{confirme.texte}&nbsp;»</div>
+            <div className="pubok-s">
+              Elle est en ligne sur votre site{collectifActif ? ` et dans le fil de ${ville}` : ""}, et se retire
+              toute seule à l&apos;heure prévue.
+            </div>
+            {/* CE QUI N'A PAS MARCHÉ, dit ici et pas ailleurs. L'annonce est
+                partie — elle est utile telle quelle — mais les façons d'en
+                profiter, non. Le silence ferait chercher ses Cliks dans le fil
+                sans comprendre. */}
+            {confirme.avertissement && <div className="pubok-w">⚠ {confirme.avertissement}</div>}
+            <div className="pubok-r">
+              <button type="button" className="go" onClick={() => setConfirme(null)}>
+                ➕ En publier une autre
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirme(null);
+                  window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "annonces" }));
+                }}
+              >
+                Voir mes annonces
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Le cadrage se superpose au formulaire au lieu de le remplacer : le
           commerçant doit garder son annonce sous les yeux, c'est elle que la

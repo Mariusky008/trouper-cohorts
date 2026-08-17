@@ -29,6 +29,24 @@ export function ProTabs({ tabs }: { tabs: ProTab[] }) {
     return () => window.removeEventListener("pro-goto-tab", go as EventListener);
   }, [tabs]);
 
+  /**
+   * QUEL ONGLET VIENT D'APPARAÎTRE.
+   *
+   * Tous les onglets restent montés — c'est voulu, ça préserve ce qu'on était en
+   * train de saisir en passant de l'un à l'autre. Mais leurs listes sont donc
+   * lues UNE FOIS, au chargement de la page, et plus jamais : le commerçant
+   * publiait une annonce, ouvrait « Mes annonces », et n'y trouvait rien — la
+   * liste datait d'avant sa publication. Il croyait l'annonce perdue.
+   *
+   * Un onglet qui a besoin de données fraîches écoute cet évènement et relit.
+   * Rendre l'onglet démonté/remonté aurait tout rechargé à chaque bascule, y
+   * compris les formulaires en cours de saisie.
+   */
+  useEffect(() => {
+    if (!active) return;
+    window.dispatchEvent(new CustomEvent("pro-tab-shown", { detail: active }));
+  }, [active]);
+
   return (
     <>
       <style

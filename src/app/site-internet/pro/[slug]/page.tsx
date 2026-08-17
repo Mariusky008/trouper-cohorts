@@ -492,7 +492,9 @@ export default async function EspacePro({
             label: "Mes annonces",
             icon: "📣",
             hidden: true, // atteint depuis l'accueil
-            node: <ProAnnonces slug={slug} token={token} />,
+            // `ville` sert au lien « Dans Le Direct » de chaque annonce : sans
+            // lui, le commerçant ne pourrait pas aller vérifier de ses yeux.
+            node: <ProAnnonces slug={slug} token={token} ville={villeUrl ? slugify(ville) : ""} />,
           },
           {
             key: "clients",
