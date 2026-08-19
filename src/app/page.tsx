@@ -236,6 +236,15 @@ export default function HomePage() {
           .pop-home .vv-emo{font-size:13px;line-height:1;flex:none;}
           .pop-home .vv-txt{display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.25;min-width:0;}
           .pop-home .vv-txt b{color:#7FE3B4;font-weight:800;font-variant-numeric:tabular-nums;}
+          /* LE NOMBRE PORTE LA SCÈNE. « 38 menus du jour » se lit d'un coup
+             d'œil parce que le 38 est plus gros et plus clair que le reste ;
+             tout au même poids, on lit une phrase au lieu de voir un flux. */
+          .pop-home .vv-txt em{font-style:normal;font-weight:800;color:#fff;font-size:12.5px;font-variant-numeric:tabular-nums;}
+          /* Les deux ou trois qui pressent — dernières tables, invendus du
+             soir — se colorent. C'est ce qui empêche la constellation de se
+             lire comme une liste régulière. */
+          .pop-home .vv-u .vv-dot{background:var(--warm);box-shadow:0 0 0 4px rgba(244,112,58,.16),0 0 14px 2px rgba(244,112,58,.5);}
+          .pop-home .vv-u .vv-txt b{color:#FFB48A;}
           .pop-home .vv-txt span{color:#C6D6CD;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
           /* SOUS 1080 px : PAS DE « AUTOUR ».
