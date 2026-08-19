@@ -562,14 +562,21 @@ export default function HomePage() {
             restantes…
           </p>
           <p className="why">Vous le dites. <b>{MARQUE} le fait savoir aux habitants autour de vous.</b></p>
-          <p className="sub">
-            Et votre site intelligent est créé en 1 minute. Il répond à vos clients, présente votre activité
-            et vous connecte au live de votre ville.
-          </p>
-          {/* LE PRIX ET LA SOURCE, collés au formulaire. Ce sont les deux seules
-              objections qui restent une seconde avant de taper son nom : combien
-              ça coûte, et d'où viennent les informations. Les dire ailleurs sur
-              la page, c'est les dire trop tôt. */}
+          {/* LE PARAGRAPHE SUR LE SITE A ÉTÉ RETIRÉ.
+              Il disait « Et votre site intelligent est créé en 1 minute. Il
+              répond à vos clients, présente votre activité et vous connecte au
+              live de votre ville. » Deux phrases pour ré-expliquer le site,
+              alors que le titre promet désormais autre chose — le commerce en
+              direct dans sa ville. Le délai et le site sont déjà dits deux fois
+              ailleurs : sur le bouton (« Construire mon site — gratuitement »)
+              et dans tout le bloc du bas (« Une fois créé, votre site travaille
+              pour vous »). Trois fois la même promesse sur un seul écran, c'est
+              une promesse qu'on ne lit plus.
+
+              LA LIGNE CI-DESSOUS RESTE, elle. Six mots, et ils répondent aux
+              deux seules objections qui subsistent une seconde avant de taper
+              son nom : combien ça coûte, et d'où viennent les informations. Les
+              retirer ferait du champ un formulaire sans réponse. */}
           <p className="freekick">Gratuit. À partir de vos informations Google.</p>
           {/* LA VILLE, AUTOUR DU FORMULAIRE.
               Elle enveloppe la zone de saisie plutôt que de la précéder : sur

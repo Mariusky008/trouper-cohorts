@@ -322,16 +322,32 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     });
   }
 
+  // ── 🕐 CE QUI EST LIBRE ─────────────────────────────────────────────────
+  //
+  // DEUX ACTIONS N'EN FONT PLUS QU'UNE. Il y en avait deux — « un créneau s'est
+  // libéré ? » et « il vous reste des créneaux ? » — et elles posaient les
+  // MÊMES questions à un champ près : le nombre. Chez un restaurant elles
+  // devenaient carrément indiscernables : « une table s'est libérée ? » puis
+  // « il vous reste des tables ? », l'une sous l'autre dans la même liste.
+  //
+  // Devant deux portes qui mènent au même endroit, on n'en choisit aucune : on
+  // se demande laquelle est la bonne, et on referme. Une seule porte, et le
+  // nombre devient ce qu'il aurait toujours dû être — un champ facultatif qui
+  // vaut 1 quand on ne le remplit pas.
   if (v.surRdv) {
     liste.push({
       cle: "creneau",
       exempleDemo: "demain à 16 h",
-      promesse: `Votre ${v.place} peut maintenant trouver son prochain client.`,
+      promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
       emoji: "🕐",
       action: `Remplir un ${v.place}`,
-      titre: `Un ${v.place} s'est libéré ?`,
-      sous: "Prévenez ceux qui attendaient une place.",
+      titre: `Des ${v.places} de libres ?`,
+      sous: "Dites quand — et combien, s'il y en a plusieurs.",
       champs: [
+        // FACULTATIF, ET C'EST LA FUSION. Vide = une seule place, le cas le
+        // plus fréquent : un désistement. Rempli = ce qu'il reste sur une
+        // plage préparée à l'avance. Un seul parcours pour les deux.
+        { cle: "combien", label: `Combien de ${v.places} ?`, type: "nombre", requis: false },
         { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
         { cle: "heure", label: "À partir de quelle heure ?", type: "heure", requis: true },
         // FACULTATIF, et c'est le point : une place peut se libérer à 16 h
@@ -341,10 +357,20 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
         { cle: "fin", label: "Jusqu'à quelle heure ?", type: "heure", requis: false },
         { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
       ],
-      brief: (x) =>
-        `Un ${v.place} vient de se libérer ${libelleJour(x.jour, new Date())} ` +
-        `${x.fin ? `de ${heureLisible(x.heure)} à ${heureLisible(x.fin)}` : `à ${heureLisible(x.heure)}`}` +
-        `${x.quoi ? ` pour ${x.quoi}` : ""}. Je vous le réserve ?`,
+      // UNE SEULE PHRASE POUR LES DEUX CAS. Sans nombre — le désistement — on
+      // dit « un créneau vient de se libérer » ; avec, on dit ce qu'il reste.
+      // C'est le même geste, et l'habitant lit dans les deux cas quelque chose
+      // de saisissable : un moment, et une place.
+      brief: (x) => {
+        const n = Math.round(Number(String(x.combien ?? "").replace(",", ".")));
+        const quand =
+          `${libelleJour(x.jour, new Date())} ` +
+          `${x.fin ? `de ${heureLisible(x.heure)} à ${heureLisible(x.fin)}` : `à ${heureLisible(x.heure)}`}`;
+        const pour = x.quoi ? ` pour ${x.quoi}` : "";
+        return Number.isFinite(n) && n > 1
+          ? `Il me reste ${n} ${v.places} ${quand}${pour}. Je vous en réserve un ?`
+          : `Un ${v.place} vient de se libérer ${quand}${pour}. Je vous le réserve ?`;
+      },
       // L'annonce tient jusqu'à la FIN de la plage quand elle est donnée :
       // retirer à 11 h une place ouverte jusqu'à 17 h la ferait disparaître
       // alors qu'elle est encore à prendre.
@@ -353,93 +379,56 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       cta: "Réserver",
     });
 
-    // PLUSIEURS PLACES SUR UNE PLAGE — la variante « il m'en reste ».
-    //
-    // Elle demandait « Combien ? » et « Sur quelle période ? (ex. cette
-    // semaine) », et produisait « Il me reste 3 créneaux disponibles cette
-    // semaine ». Deux défauts, le second grave :
-    //
-    //   • le commerçant qui vient annoncer un après-midi libre ne trouvait plus
-    //     où saisir son jour ni ses heures — il n'y avait plus de case pour ça ;
-    //   • surtout, l'annonce produite n'était pas saisissable. Un habitant qui
-    //     lit « il me reste 3 créneaux cette semaine » ne sait ni quand venir,
-    //     ni s'il peut venir maintenant. Le Direct ne montre que ce qui est à
-    //     prendre : une annonce sans moment n'y a rien à faire.
-    //
-    // Elle demande donc le jour et la plage, comme sa voisine — la différence
-    // qui reste est la bonne : « un créneau vient de se libérer » annonce UNE
-    // place qui se libère à l'instant, celle-ci annonce CE QU'IL RESTE sur une
-    // plage préparée à l'avance.
-    liste.push({
-      cle: "dispo",
-      exempleDemo: `3 ${v.places} demain après-midi`,
-      promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
-      emoji: "📅",
-      action: "Annoncer mes disponibilités",
-      titre: `Il vous reste des ${v.places} ?`,
-      sous: "Dites quand, et combien — sans promettre plus.",
-      champs: [
-        { cle: "combien", label: `Combien de ${v.places} restants ?`, type: "nombre", requis: true },
-        { cle: "jour", label: "Quel jour ?", type: "jour", requis: true },
-        { cle: "de", label: "À partir de quelle heure ?", type: "heure", requis: true },
-        // Facultative, comme pour un créneau isolé : trois places peuvent tenir
-        // sur un après-midi entier sans qu'on sache dire quand il se termine.
-        { cle: "a", label: "Jusqu'à quelle heure ?", type: "heure", requis: false },
-        { cle: "quoi", label: "Pour quelle prestation ?", type: "texte", exemple: "une couleur", requis: false },
-      ],
-      brief: (x) =>
-        `Il me reste ${x.combien} ${v.places} ${libelleJour(x.jour, new Date())} ` +
-        `${x.a ? `entre ${heureLisible(x.de)} et ${heureLisible(x.a)}` : `à partir de ${heureLisible(x.de)}`}` +
-        `${x.quoi ? ` pour ${x.quoi}` : ""}. Je vous en réserve un ?`,
-      // Elle tient jusqu'à la fin de la plage, ou jusqu'au soir du jour annoncé.
-      // `dansNJours(now, 3)` faisait survivre de trois jours une annonce qui
-      // parlait d'un après-midi précis.
-      fin: (x, now) => (x.a ? moment(now, x.a, x.jour) : finDeJour(now, x.jour)),
-      demo: (now) => ({ combien: "3", jour: jourISO(dansNJours(now, 1)), de: "14:00", a: "18:00", quoi: "" }),
-      cta: "Réserver un créneau",
-    });
   }
 
+  // ── ☕ UNE RAISON DE PASSER ─────────────────────────────────────────────
+  //
+  // DEUX ACTIONS N'EN FONT PLUS QU'UNE. « Faire venir du monde aujourd'hui ? »
+  // et « Une offre sur quelques heures ? » posaient les mêmes questions — quoi,
+  // de quelle heure à quelle heure — et menaient au même endroit du fil. La
+  // seule différence était que la seconde exigeait un POURCENTAGE, ce qui la
+  // rendait inutilisable pour « le café offert » et obligeait à choisir entre
+  // deux portes avant de savoir laquelle acceptait ce qu'on avait à dire.
+  //
+  // La remise devient donc un champ FACULTATIF de la même action. « Le café
+  // offert de 10 h à 12 h » et « -20 % sur tout le magasin de 16 h à 18 h »
+  // sont la même chose vue du client : une raison de pousser la porte
+  // aujourd'hui, qui s'arrête toute seule à l'heure dite.
   liste.push({
     cle: "venir",
     exempleDemo: "le café offert, de 10 h à 12 h",
     promesse: "Votre invitation peut maintenant faire venir du monde.",
     emoji: "☕",
-    action: "Faire venir du monde",
-    titre: "Faire venir du monde aujourd'hui ?",
-    sous: "Une raison simple de pousser la porte.",
+    action: "Donner une raison de passer",
+    titre: "Une raison de passer aujourd'hui ?",
+    sous: "Elle disparaît toute seule à l'heure que vous fixez.",
     champs: [
       { cle: "quoi", label: "Qu'est-ce que vous proposez ?", type: "texte", exemple: "le café offert", requis: true },
+      // FACULTATIVE, ET C'EST LA FUSION. Vide : c'est un geste (« le café
+      // offert »). Remplie : c'est une remise. Aucune valeur suggérée — on ne
+      // décide pas de la marge de quelqu'un à sa place.
+      { cle: "combien", label: "Une remise ? (en %)", type: "pourcent", requis: false },
       { cle: "de", label: "À partir de quelle heure ?", type: "heure", requis: true },
       { cle: "a", label: "Jusqu'à quelle heure ?", type: "heure", requis: true },
     ],
-    brief: (x) => `Aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} : ${x.quoi}. Passez ${v.lieu}, on vous attend.`,
+    brief: (x) => {
+      const quand = `aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)}`;
+      const remise = Math.round(Number(String(x.combien ?? "").replace(",", ".")));
+      return Number.isFinite(remise) && remise > 0
+        ? `Offre de -${remise} % sur ${x.quoi}, ${quand} uniquement.`
+        : `${quand.charAt(0).toUpperCase()}${quand.slice(1)} : ${x.quoi}. Passez ${v.lieu}, on vous attend.`;
+    },
     fin: (x, now) => moment(now, x.a),
-    demo: () => ({ quoi: "le café offert", de: "10:00", a: "12:00" }),
+    demo: () => ({ quoi: "le café offert", combien: "", de: "10:00", a: "12:00" }),
     cta: "Je passe",
   });
 
-  liste.push({
-    cle: "offre",
-    exempleDemo: "-20 % de 16 h à 18 h",
-    promesse: "Votre offre peut maintenant trouver preneur.",
-    emoji: "⚡",
-    action: "Lancer une offre flash",
-    titre: "Une offre sur quelques heures ?",
-    sous: "Elle disparaît toute seule à l'heure que vous fixez.",
-    champs: [
-      { cle: "quoi", label: "Sur quoi porte l'offre ?", type: "texte", exemple: "tout le magasin", requis: true },
-      { cle: "combien", label: "Quelle remise ?", type: "pourcent", requis: true },
-      { cle: "de", label: "De quelle heure ?", type: "heure", requis: true },
-      { cle: "a", label: "À quelle heure ?", type: "heure", requis: true },
-    ],
-    brief: (x) => `Offre de -${x.combien} % sur ${x.quoi}, aujourd'hui de ${heureLisible(x.de)} à ${heureLisible(x.a)} uniquement.`,
-    fin: (x, now) => moment(now, x.a),
-    demo: () => ({ quoi: "toutes les prestations", combien: "20", de: "16:00", a: "18:00" }),
-    cta: "J'en profite",
-  });
-
-  liste.push({
+  // UNE SEULE ACTION « C'EST NOUVEAU ». En boutique, « une nouveauté à
+  // montrer ? » et « un arrivage du jour à faire connaître ? » se suivaient
+  // dans la liste et désignaient la même chose pour un boulanger ou un
+  // primeur. L'arrivage est la version JUSTE dans ces métiers — il dit le
+  // frais et le jour — donc il remplace la nouveauté au lieu de s'y ajouter.
+  if (!v.boutique) liste.push({
     cle: "nouveaute",
     exempleDemo: "une nouvelle collection",
     promesse: "Votre nouveauté peut maintenant se faire connaître.",
@@ -579,8 +568,16 @@ export function recommandees(liste: Intention[], now: Date, n = 3): Intention[] 
       // elle n'existe pas : il ne la cherchera pas, il publiera autre chose.
       // Après 15 h elle redescend : une carte du jour publiée à 17 h arrive
       // après le service, et le lendemain matin elle repasse en tête.
+      // LA CARTE DU JOUR PASSE DEVANT TOUT, TOUTE LA JOURNÉE.
+      //
+      // Elle retombait à 30 après 15 h, et « il m'en reste » lui passait devant
+      // avec 210 : un restaurateur qui ouvrait son espace à 16 h se voyait
+      // proposer de brader ses invendus AVANT de publier sa carte. Or la carte
+      // est son geste quotidien — le seul qu'il refera demain et après-demain —
+      // et publier celle du lendemain la veille au soir est parfaitement
+      // normal. Rangée en deuxième, elle n'existe pas : il ne la cherche pas.
       case "carte":
-        return h < 15 ? 200 : 30;
+        return 300;
       // « IL M'EN RESTE » SUIT LE SERVICE, pas la matinée. On ne sait pas ce
       // qu'il reste avant d'avoir vendu : proposé à 9 h, ce geste n'a aucun
       // sens et occupe la place de la carte du jour. Il passe devant en fin de
@@ -588,22 +585,19 @@ export function recommandees(liste: Intention[], now: Date, n = 3): Intention[] 
       // c'est-à-dire au moment exact où le commerçant regarde son étal.
       case "reste":
         return h >= 13 && h < 20 ? 210 : 25;
+      // « dispo » a fusionné dans « creneau » : plus de score à lui donner.
       // Un désistement se traite dans l'heure : prioritaire pendant qu'on travaille.
       case "creneau":
         return h >= 8 && h < 19 ? 100 : 40;
       // Le creux d'après-midi se comble le matin ou juste avant.
       case "venir":
         return h >= 9 && h < 16 ? 90 : 45;
-      case "offre":
-        return h >= 11 && h < 18 ? 80 : 50;
       // Ce qui est arrivé le matin doit se dire le matin.
       case "arrivage":
         return h < 13 ? 95 : 30;
       case "evenement":
         return veilleDeWeekend ? 75 : 40;
       // En fin de journée, on remplit la suite plutôt que l'instant.
-      case "dispo":
-        return h >= 17 || jourSemaine === 1 ? 70 : 35;
       case "realisation":
         return h >= 16 ? 60 : 38;
       case "nouveaute":
