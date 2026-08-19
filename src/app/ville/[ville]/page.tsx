@@ -18,6 +18,7 @@ import { cliksDeVille, faconsParPublication, collectifDe, mesParticipations } fr
 import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
+import { telephonesDeSites } from "@/lib/direct/menus-du-jour";
 import { boutonLien } from "@/lib/direct/mots-metier";
 import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
@@ -121,6 +122,22 @@ export default async function LeDirectPage({
   // lui aujourd'hui.
   const histoires = await histoiresDuJour(supabase, triees.map((p) => p.siteId ?? ""));
 
+  // LE NUMÉRO DES RESTAURANTS QUI ONT PUBLIÉ LEUR CARTE, pour le bouton
+  // « Je réserve ». Uniquement les leurs : une carte du jour est la seule qui
+  // n'a aucune façon d'en profiter, donc la seule qui a besoin de sa propre
+  // porte. Lire le numéro de tous les commerces du fil serait une requête plus
+  // large pour un bouton qu'ils n'affichent pas.
+  // COMPTÉ SUR TOUT LE FIL, pas sur l'onglet affiché : depuis « Tout », la
+  // porte vers les menus doit exister aussi. Compté et non annoncé — « 6
+  // restaurants » doit être vrai, sinon plus rien de ce que dit cet écran ne
+  // sera cru.
+  const menusAujourdhui = publications.filter((p) => p.famille === "menu").length;
+
+  const telsMenus = await telephonesDeSites(
+    supabase,
+    triees.filter((p) => p.famille === "menu").map((p) => p.siteId ?? "")
+  );
+
   // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
   // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
   // donnait l'impression qu'il fallait recommencer.
@@ -155,6 +172,7 @@ export default async function LeDirectPage({
     reste: p.reste,
     ardoise: p.ardoise,
     ardoiseLabel: boutonLien(p.auteurMetier),
+    telephone: (p.siteId && telsMenus.get(p.siteId)) || "",
     histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
@@ -209,6 +227,26 @@ export default async function LeDirectPage({
         ))}
         <BoutonPosition />
       </nav>
+
+      {/* TOUTES LES CARTES DU JOUR, EN UN GESTE.
+          Comparer les menus est ce qu'on vient chercher à midi, et ça ne se
+          devine pas depuis un fil chronologique : il fallait ouvrir six photos
+          et les refermer une par une. La porte n'apparaît QUE s'il y a des
+          cartes publiées — l'annoncer un jour où il n'y en a aucune est la
+          meilleure façon de ne plus jamais y revenir. */}
+      {menusAujourdhui > 0 && (
+        <Link href={`/ville/${ville}/menus`} className="mnb" prefetch={false}>
+          <span className="mnb-e" aria-hidden="true">🍽️</span>
+          <span className="mnb-c">
+            <span className="mnb-t">Les cartes du jour à {cfg.nom}</span>
+            <span className="mnb-s">
+              {menusAujourdhui} restaurant{menusAujourdhui > 1 ? "s" : ""} — faites défiler les menus, réservez
+              celui qui vous tente
+            </span>
+          </span>
+          <span className="mnb-g" aria-hidden="true">›</span>
+        </Link>
+      )}
 
       {cartes.length > 0 ? (
         <>

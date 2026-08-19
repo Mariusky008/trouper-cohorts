@@ -147,6 +147,27 @@ export function StylesDirect() {
 .dir .pic-menu .voile{background:linear-gradient(180deg,rgba(14,42,28,.30) 0,rgba(14,42,28,.10) 22%,rgba(14,42,28,.62) 55%,rgba(14,42,28,.97) 100%);}
 /* Deux liens possibles sous une carte du jour — le restaurant et l'ardoise. */
 .dir .det .det-l{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
+/* « Je réserve » : vert WhatsApp, parce que c'est WhatsApp qui s'ouvre. Le
+   promettre d'une autre couleur ferait croire à un formulaire. */
+.dir .pf .act.resa{background:#25D366;border-color:transparent;color:#06301C;font-weight:800;}
+/* Revenir du défilé des menus doit poser la carte SOUS l'en-tête, pas dessous. */
+.dir .post{scroll-margin-top:18px;}
+
+/* ── LA PORTE VERS TOUTES LES CARTES DU JOUR ──────────────────────────────
+   Sans elle, la page des menus existe et personne ne la trouve : comparer six
+   menus est précisément ce qu'on vient chercher à midi, et ça ne se devine pas
+   depuis un fil chronologique. Elle n'apparaît QUE s'il y a des cartes
+   publiées — annoncer « les menus du jour » un jour où il n'y en a aucun est la
+   meilleure façon de ne plus jamais y revenir. */
+.dir .mnb{display:flex;align-items:center;gap:13px;text-decoration:none;margin:0 0 16px;
+  background:linear-gradient(135deg,#12352A,#0B2620);border-radius:18px;padding:15px 16px;
+  box-shadow:0 14px 34px -24px rgba(10,30,22,.8);}
+.dir .mnb .mnb-e{font-size:26px;line-height:1;flex:none;}
+.dir .mnb .mnb-c{flex:1;min-width:0;}
+.dir .mnb .mnb-t{display:block;font-size:15.5px;font-weight:800;color:#fff;letter-spacing:-.01em;}
+.dir .mnb .mnb-s{display:block;font-size:12.5px;color:#9FC4B1;margin-top:4px;line-height:1.4;}
+.dir .mnb .mnb-g{flex:none;color:#25D366;font-size:20px;font-weight:800;}
+.dir .mnb:active{transform:translateY(1px);}
 /* L'indice est SOUS le badge d'échéance et au-dessus du titre : il doit se voir
    sans recouvrir l'un ni l'autre. Sans lui, personne ne devine qu'une photo de
    menu s'agrandit — un geste invisible n'existe pas. */

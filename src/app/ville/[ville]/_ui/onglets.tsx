@@ -28,9 +28,11 @@ export function Onglets({ ville }: { ville: string }) {
   const reste = chemin.startsWith(racine) ? chemin.slice(racine.length).replace(/^\/+/, "") : "";
   const actif = ONGLETS.find((o) => o.seg && reste.startsWith(o.seg))?.seg ?? "";
 
-  // L'écran « À saisir » est plein écran et sombre : la barre s'accorde, sinon
-  // elle découpe un bandeau blanc au bas d'une image.
-  const sombre = actif === "a-saisir";
+  // « À saisir » et « les cartes du jour » sont pleins écran et sombres : la
+  // barre s'accorde, sinon elle découpe un bandeau blanc au bas d'une image.
+  // Les cartes du jour restent sous l'onglet « Le Direct » — c'est bien le fil
+  // qu'on est en train de lire, autrement.
+  const sombre = actif === "a-saisir" || reste.startsWith("menus");
 
   return (
     <nav className={`nav${sombre ? " dark" : ""}`} aria-label="Navigation principale">

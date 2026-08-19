@@ -19,6 +19,7 @@ import { VideoCarte } from "./video-carte";
 import { teinte, initiales } from "./teinte";
 import { Reactions } from "./reactions";
 import { Loupe } from "./loupe";
+import { lienReserverTable } from "@/lib/direct/reserver";
 import type { VueReactions } from "@/lib/direct/reactions";
 
 export type CarteVue = {
@@ -33,6 +34,10 @@ export type CarteVue = {
   auteurNom: string;
   auteurMetier: string;
   auteurSlug: string;
+  /** Le WhatsApp du commerce, pour les cartes du jour : c'est par là qu'on
+   *  réserve une table. Vide quand on n'a pas de numéro — le bouton se tait
+   *  alors plutôt que d'ouvrir une conversation avec personne. */
+  telephone?: string;
   /** Déjà formatés côté serveur : le fuseau du serveur fait foi, et un rendu
    *  client divergent provoquerait une erreur d'hydratation à chaque carte. */
   repere: string;
@@ -133,6 +138,9 @@ export function Carte({
    */
   const [loupe, setLoupe] = useState(false);
   const menuAVoir = p.famille === "menu" && Boolean(p.photo) && !p.video;
+  // Réserver ne vaut que pour une carte du jour : ailleurs, les façons d'en
+  // profiter portent déjà l'action, et un second bouton la concurrencerait.
+  const reserver = p.famille === "menu" && p.telephone ? lienReserverTable(p.telephone, p.auteurNom) : "";
 
   // La distance ne remplace le repli que si les deux positions existent.
   const repere =
@@ -166,7 +174,10 @@ export function Carte({
   const fiche = p.auteurSlug ? `/site-internet/apercu/${p.auteurSlug}?via=direct&pub=${p.id}` : null;
 
   return (
-    <article className="post">
+    /* L'ANCRE : c'est elle qui permet de revenir du défilé des menus à
+       l'annonce, à l'endroit exact. `scroll-margin-top` évite qu'elle
+       s'arrête sous l'en-tête collant. */
+    <article className="post" id={`p-${p.id}`}>
       {loupe && p.photo && (
         <Loupe src={p.photo} alt={`Carte du jour — ${p.auteurNom}`} onFermer={() => setLoupe(false)} />
       )}
@@ -351,11 +362,23 @@ export function Carte({
           pour le commerçant qui lit. */}
       <Reactions publicationId={p.id} ville={ville} initial={p.reactions} />
 
-      {/* LE SITE DU COMMERCE, en pied et pleine largeur. C'est la sortie vers
-          chez lui — celle qui existait déjà en petit à côté du cœur, et que
-          personne ne voyait. */}
+      {/* LE PIED DE CARTE : UN SEUL BOUTON, ET LE BON.
+
+          Sur une carte du jour, il disait « La boutique » et menait au même
+          endroit que « Voir le restaurant » ajouté sous l'image — deux boutons
+          pour une seule destination. Et surtout : un menu n'a aucune façon d'en
+          profiter (c'est voulu, un menu n'est pas un stock à saisir), donc
+          l'habitant qui avait faim n'avait AUCUN moyen de réserver.
+
+          « Je réserve » ouvre WhatsApp avec la demande écrite. C'est la même
+          mécanique que partout ailleurs : le client écrit, le commerçant reçoit
+          là où il regarde déjà, et son numéro arrive avec le message. */}
       <div className="pf">
-        {fiche ? (
+        {reserver ? (
+          <a className="act resa" href={reserver} target="_blank" rel="noreferrer noopener">
+            🍽️ Je réserve une table
+          </a>
+        ) : fiche ? (
           <Link href={fiche} className="act gh" prefetch={false}>La boutique</Link>
         ) : p.lien ? (
           <a className="act gh" href={p.lien} target="_blank" rel="noreferrer noopener">En savoir plus</a>
