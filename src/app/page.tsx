@@ -11,22 +11,28 @@ import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
+// LE TITRE SUIT LA PAGE. Il promettait « votre site web gratuit » quand la page
+// promet maintenant « votre commerce en direct dans votre ville » : un résultat
+// de recherche qui annonce autre chose que la page qu'il ouvre est une visite
+// perdue au premier écran. Les mots que l'on cherche vraiment — site gratuit,
+// 1 minute — restent, à leur place, dans la description.
 export const metadata: Metadata = {
-  title: { absolute: `${MARQUE} — votre site web gratuit, construit sous vos yeux en 1 minute` },
+  title: { absolute: `${MARQUE} — votre commerce en direct dans votre ville` },
   description:
-    "Site gratuit prêt en 1 minute, avec une assistante qui répond à vos clients. En un clic, annoncez un créneau libre, un événement ou une offre : votre communication est préparée et diffusée. Vous ne payez que pour aller plus loin.",
+    "Une nouveauté, une offre, une place qui se libère : vous le dites, les habitants autour de vous le savent. Et votre site intelligent est créé en 1 minute, gratuitement, à partir de vos informations Google — il répond à vos clients et prend vos rendez-vous.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: `${MARQUE} — votre site web gratuit, construit sous vos yeux en 1 minute`,
-    description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, annoncez une offre, un événement ou un créneau libre.",
+    title: `${MARQUE} — votre commerce en direct dans votre ville`,
+    description:
+      "Vous le dites, les habitants autour de vous le savent. Et votre site intelligent est créé en 1 minute, gratuitement, à partir de vos informations Google.",
     siteName: MARQUE,
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${MARQUE} — votre site web gratuit, construit sous vos yeux`,
-    description: "Un site gratuit + une assistante qui répond à vos clients. En un clic, lancez vos offres.",
+    title: `${MARQUE} — votre commerce en direct dans votre ville`,
+    description: "Vous le dites, les habitants autour de vous le savent. Site intelligent créé en 1 minute, gratuitement.",
   },
 };
 
@@ -100,6 +106,60 @@ export default function HomePage() {
           .pop-home .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a2);background:rgba(255,255,255,.75);box-shadow:0 2px 10px -4px rgba(20,22,15,.2),inset 0 0 0 1px rgba(18,185,129,.18);border-radius:999px;padding:8px 15px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
           .pop-home h1{font-size:38px;line-height:1.03;letter-spacing:-.04em;font-weight:850;margin:20px auto 0;max-width:680px;}
           .pop-home h1 .hl{background:linear-gradient(115deg,var(--a1) 10%,var(--a2) 45%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent;}
+          /* LE TITRE EN CAPITALES, avec un interlettrage RELÂCHÉ.
+             Le -.04em de la casse mixte est réglé pour des lettres à jambages ;
+             appliqué à des capitales, il les colle et « EN DIRECT » devient un
+             seul mot. Les capitales veulent l'inverse d'un titre serré.
+             La casse est faite par le CSS et non tapée dans le texte : un titre
+             écrit en majuscules dans le HTML est lu lettre par lettre par
+             certains lecteurs d'écran, et il ne se change plus sans réécrire. */
+          /* « text-wrap:balance » (pas d'accent grave dans ce bloc : il termine
+             le gabarit de chaîne) : sans lui, « EN DIRECT DANS VOTRE / VILLE. »
+             laissait un mot seul sur la dernière ligne. Le navigateur égalise
+             les longueurs de lignes lui-même — mieux qu'une coupe forcée, qui
+             serait fausse dès qu'on change un mot du titre. Ignoré par les
+             navigateurs qui ne le connaissent pas : on retombe alors sur le
+             retour à la ligne ordinaire, jamais sur un titre cassé. */
+          .pop-home h1.caps{text-transform:uppercase;letter-spacing:-.012em;line-height:1.06;text-wrap:balance;}
+          /* LE TITRE FAIT DEUX LIGNES, PAS TROIS. Le 680 px hérité était réglé
+             pour « Dans 1 minute, votre site sera prêt » ; « EN DIRECT DANS
+             VOTRE VILLE. » en capitales demande ~880 px et se brisait, laissant
+             « VILLE. » seul sur une troisième ligne. Mesuré au navigateur.
+             Uniquement sur grand écran : sur téléphone, deux lignes sont
+             impossibles et le repli naturel est le bon. */
+          @media(min-width:960px){.pop-home h1.caps{max-width:940px;}}
+          /* Les exemples : ce qu'on aurait à dire, avant qu'on explique à qui.
+             Volontairement plus discret que la promesse qui suit — c'est une
+             liste, pas un argument. */
+          .pop-home .cases{font-size:15.5px;line-height:1.55;color:var(--soft);max-width:520px;margin:16px auto 0;position:relative;z-index:2;}
+          /* Le prix et la source, en petites capitales, collés au formulaire :
+             c'est la dernière chose lue avant de taper son nom. */
+          .pop-home .freekick{margin:16px auto 0;font-size:11.5px;font-weight:800;letter-spacing:.11em;
+            text-transform:uppercase;color:var(--faint);position:relative;z-index:2;}
+
+          /* ── LE HERO SUR UN PETIT TÉLÉPHONE ────────────────────────────────
+             MESURÉ, PAS ESTIMÉ. Le nouveau texte compte trois blocs de plus que
+             l'ancien ; à réglages inchangés, le champ « Nom de votre
+             établissement » commençait à 682 px — sous la ligne de flottaison
+             d'un iPhone SE (667 px). Or cette page n'a QU'UN travail : faire
+             remplir ce formulaire. Un argumentaire qu'on lit tout entier avant
+             de découvrir qu'il y avait un champ n'est pas un argumentaire.
+             Deux réglages, aucun mot coupé :
+             — 38 px en CAPITALES ne tient pas sur 375 px : « VOTRE COMMERCE. »
+               se brisait en deux. Les capitales occupent plus de largeur que la
+               casse mixte pour laquelle cette taille avait été réglée.
+             — les respirations verticales se resserrent, la page reste aérée
+               mais le formulaire remonte au-dessus du pli. */
+          @media(max-width:480px){
+            .pop-home .hero{padding:34px 0 38px;}
+            .pop-home h1{font-size:31px;margin-top:16px;}
+            .pop-home h1.caps{font-size:29px;}
+            .pop-home .cases{font-size:15px;margin-top:13px;}
+            .pop-home .why{font-size:17.5px;margin-top:13px;}
+            .pop-home .sub{font-size:15px;margin-top:10px;}
+            .pop-home .freekick{margin-top:13px;font-size:11px;letter-spacing:.09em;}
+            .pop-home .genzone{margin-top:18px;}
+          }
           /* La phrase « pourquoi le produit existe » — juste sous le titre. */
           .pop-home .why{font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:18px auto 0;font-weight:600;letter-spacing:-.01em;position:relative;z-index:2;}
           .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
@@ -115,6 +175,13 @@ export default function HomePage() {
           .pop-home .works-a{font-size:15px;line-height:1.5;color:var(--soft);margin-top:14px;}
           .pop-home .works-a b{color:var(--ink);font-weight:800;}
           .pop-home .works-say{margin-top:14px;border-left:3px solid var(--a1);border-radius:0 12px 12px 0;background:var(--bg);padding:13px 15px;font-size:15.5px;line-height:1.45;font-style:italic;color:var(--ink);}
+          /* Les deux destinations. Puces DISCRÈTES : ce bloc avait déjà été
+             allégé une fois pour cause de trop de zones de lecture, et des
+             puces marquées le redécouperaient en sections. */
+          .pop-home .works-ou{list-style:none;margin:8px 0 0;padding:0;}
+          .pop-home .works-ou li{position:relative;padding-left:16px;font-size:15px;line-height:1.5;color:var(--soft);margin-top:5px;}
+          .pop-home .works-ou li::before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--a1);}
+          .pop-home .works-ou b{color:var(--ink);font-weight:800;}
           .pop-home .works-end{text-align:center;font-size:18px;line-height:1.5;color:var(--soft);margin:26px auto 0;max-width:420px;}
           .pop-home .works-end b{color:var(--ink);font-weight:850;}
           @media(min-width:820px){.pop-home .works-h{font-size:32px;} .pop-home .works-box{padding:26px 24px;}}
@@ -399,14 +466,35 @@ export default function HomePage() {
       <header className="hero" id="top">
         <div className="aurora"><span className="x1" /><span className="x2" /><span className="x3" /></div>
         <div className="wrap inner">
-          <span className="eyebrow">✦ Gratuit · commerçants, artisans &amp; pros</span>
-          <h1>Dans 1 minute,<br /><span className="hl">votre site sera prêt.</span></h1>
-          {/* « Pas seulement à vos abonnés » fait le travail de « réseau social
-              du commerce local » — la formule qui parle à un investisseur mais
-              qui, pour un commerçant, évoque exactement ce dont il est fatigué :
-              un compte de plus à alimenter le soir. */}
-          <p className="why">Il répond à vos clients et fait découvrir vos nouveautés <b>aux habitants de votre ville</b> — pas seulement à vos abonnés.</p>
-          <p className="sub">Construit devant vous à partir de vos vraies informations Google. Gratuitement.</p>
+          {/* « Gratuit » a quitté cette pastille : il est désormais dit juste
+              au-dessus du formulaire, à l'endroit où la question se pose. Le
+              répéter ici userait le mot avant qu'il ne serve. Reste ce que le
+              titre ne dit pas : à qui cette page s'adresse. */}
+          <span className="eyebrow">✦ Commerçants, artisans &amp; pros</span>
+          {/* LE TITRE DIT MAINTENANT LE PRODUIT, plus le délai.
+              « Dans 1 minute, votre site sera prêt » promettait un site — or ce
+              qui distingue Clikme d'un créateur de site, c'est la seconde ligne :
+              le commerce paraît EN DIRECT dans sa ville. Le délai n'a pas
+              disparu, il est descendu là où il est une preuve et non une
+              promesse (« votre site intelligent est créé en 1 minute »). */}
+          <h1 className="caps">Votre commerce.<br /><span className="hl">En direct dans votre ville.</span></h1>
+          {/* LES EXEMPLES AVANT LA PROMESSE. « Une place qui se libère » se
+              comprend sans effort ; « faire savoir aux habitants » ne veut rien
+              dire tant qu'on n'a pas en tête ce qu'on aurait à dire. */}
+          <p className="cases">
+            Une nouveauté, une offre, une place qui se libère, un produit disponible, quelques portions
+            restantes…
+          </p>
+          <p className="why">Vous le dites. <b>{MARQUE} le fait savoir aux habitants autour de vous.</b></p>
+          <p className="sub">
+            Et votre site intelligent est créé en 1 minute. Il répond à vos clients, présente votre activité
+            et vous connecte au live de votre ville.
+          </p>
+          {/* LE PRIX ET LA SOURCE, collés au formulaire. Ce sont les deux seules
+              objections qui restent une seconde avant de taper son nom : combien
+              ça coûte, et d'où viennent les informations. Les dire ailleurs sur
+              la page, c'est les dire trop tôt. */}
+          <p className="freekick">Gratuit. À partir de vos informations Google.</p>
           <div className="genzone">
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
@@ -414,7 +502,10 @@ export default function HomePage() {
             <span className="ftag t4">🤖 assistante IA incluse</span>
             <HeroGenerator />
           </div>
-          <div className="alt">✓ Gratuit · ✓ 60 secondes · ✓ Sans inscription</div>
+          {/* « Gratuit » est retiré de cette ligne : il est dit au-dessus du
+              formulaire. Trois fois le même mot dans un seul écran, et il ne
+              veut plus rien dire. */}
+          <div className="alt">✓ 60 secondes · ✓ Sans inscription</div>
         </div>
       </header>
 
@@ -434,22 +525,34 @@ export default function HomePage() {
           <div className="works-k reveal">Une fois créé</div>
           <h2 className="works-h reveal">Votre site travaille pour vous.</h2>
           <p className="works-p reveal">
-            Il répond aux questions de vos clients, prend les rendez-vous, et vous aide à recueillir
+            Il répond aux questions de vos clients, prend les rendez-vous et vous aide à recueillir
             de nouveaux avis Google.
           </p>
 
           <div className="works-box reveal">
-            <div className="works-q">Et quand il se passe quelque chose chez vous, vous le dites en une phrase&nbsp;:</div>
-            <div className="works-say">« Il me reste 1 place demain à 8 h, quelqu&apos;un la prend&nbsp;?&nbsp;»</div>
+            <div className="works-q">Et quand il se passe quelque chose chez vous, dites-le simplement.</div>
+            <div className="works-say">« Il me reste 1 place demain à 8 h. Quelqu&apos;un la prend&nbsp;?&nbsp;»</div>
             <p className="works-a">
-              Votre assistante en fait une annonce, choisit la photo, et la publie&nbsp;: sur votre site,
-              et dans <b>le catalogue de votre ville</b> — que chaque commerce du réseau affiche aussi chez lui.
+              Votre assistante transforme votre phrase en annonce, choisit la photo et la diffuse
+              automatiquement&nbsp;:
             </p>
+            {/* LES DEUX DESTINATIONS, SUR DEUX LIGNES. C'est le seul endroit de
+                la page où une énumération vaut mieux qu'une phrase : ce sont
+                deux endroits distincts, et le second — les autres commerces —
+                est précisément ce que personne n'attend d'un créateur de site.
+                Noyé dans une phrase, il se lit comme une incise. */}
+            <ul className="works-ou">
+              <li>sur votre site&nbsp;;</li>
+              <li>
+                et dans <b>le catalogue de votre ville</b>, affiché également par les autres commerces
+                du réseau.
+              </li>
+            </ul>
           </div>
 
           <div className="works-end reveal">
             Vous vous occupez de votre commerce.<br />
-            <b>On s&apos;occupe de vous faire connaître.</b>
+            <b>{MARQUE} s&apos;occupe de vous faire connaître.</b>
           </div>
         </div>
       </section>
