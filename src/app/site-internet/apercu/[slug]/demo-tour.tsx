@@ -14,6 +14,8 @@
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
+import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
+import { phraseVitrine, type EvenementVitrine } from "@/lib/direct/ville-vitrine";
 
 type Props = {
   slug: string;
@@ -31,6 +33,24 @@ type Props = {
   flashExample?: string; // l'ANNONCE que l'assistante écrit — le résultat de la transformation
   flashDit?: string; // la phrase que le commerçant DIT — le point de départ
   tourChat?: { q: string; a: string }; // la conversation jouée à l'étape « votre site répond »
+  /**
+   * L'ACTE MÉTIER — les gestes de la semaine, dans les mots de CE métier.
+   *
+   * Calculé sur le serveur à partir des actions que le commerçant trouvera
+   * vraiment dans son espace (voir `acte-metier.ts`) : la démo ne peut donc pas
+   * montrer un geste qui n'existe pas, ni s'écarter des mots du produit.
+   */
+  actes?: TempsMetier[];
+  /**
+   * LA VILLE À PLEIN RÉGIME — ce que Le Direct montrera, heure par heure.
+   *
+   * Des chiffres inventés, et c'est assumé : au lancement le fil réel est vide,
+   * et montrer « rien ne se passe » à celui qu'on veut convaincre revient à lui
+   * démontrer qu'il n'a aucune raison de s'inscrire. Le raisonnement complet
+   * est dans `ville-vitrine.ts` ; la règle qui rend ça honnête — la phrase AU
+   * FUTUR — est tenue par l'écran, juste sous les chiffres.
+   */
+  vitrine?: EvenementVitrine[];
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
@@ -47,9 +67,12 @@ type Scene =
   //                 c'est-à-dire la première phrase de la page d'accueil,
   //                 rendue à la fin. Qui a vu la page reconnaît la promesse ;
   //                 qui ne l'a pas vue la reçoit entière.
-  | "pivot" | "coupure" | "boucle";
+  | "pivot" | "coupure" | "boucle"
+  // L'ACTE MÉTIER : « et ce n'est pas que pour les offres ». Les gestes de sa
+  // semaine, un par carte, dans les mots de son métier.
+  | "metier";
 
-export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
+export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, actes, vitrine, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
@@ -63,6 +86,9 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // mot (« dès la sixième »), pas sur une durée fixe qui dériverait dès qu'on
   // retouche la phrase.
   const [clikN, setClikN] = useState(3);
+  // L'acte métier : quel temps est à l'écran. Un seul à la fois — c'est le
+  // point de cet acte, et une carte de plus le ferait retomber en catalogue.
+  const [metierN, setMetierN] = useState(0);
   // La phrase que le pro « dirait » — la même aux deux temps, pour que la
   // transformation soit lisible : on ne change que l'habillage, pas le fait.
   const flashPhrase = flashExample || "Une nouveauté cette semaine.";
@@ -90,6 +116,16 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     const i = phrase.indexOf(extrait);
     return i < 0 ? 0 : Math.round((i + extrait.length) * MS_PAR_CARACTERE);
   };
+  /** L'instant où la voix ATTAQUE l'extrait — et non celui où elle le finit.
+   *
+   *  `auMot` place une animation sur un mot qu'on vient d'entendre ; ici on a
+   *  besoin de l'inverse : la carte d'un temps doit être à l'écran PENDANT que
+   *  la phrase qui la décrit se dit. Arrivée à la fin, elle ne serait plus
+   *  qu'une illustration de ce qu'on a déjà compris. */
+  const auDebut = (phrase: string, extrait: string): number => {
+    const i = phrase.indexOf(extrait);
+    return i < 0 ? 0 : Math.round(i * MS_PAR_CARACTERE);
+  };
 
   // 2 — Je réponds. La conversation se joue pendant qu'elle décrit sa mission.
   const SAY_REPOND =
@@ -115,23 +151,36 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   const SAY_BOUCLE =
     `Votre commerce, en direct dans votre ville. Votre site, votre assistante, votre actualité, votre ville.`;
 
-  // 3 — Je vous fais connaître. Les quatre bulles s'allument à mesure qu'elle
-  //     les nomme : créneau, nouveauté, offre, événement.
+  // 3 — Je vous fais connaître. La journée de la ville s'écrit ligne à ligne,
+  //     à l'heure du visiteur.
+  //
+  // AU FUTUR, ET C'EST TOUT CE QUI SÉPARE UNE PROJECTION D'UN RELEVÉ INVENTÉ.
+  // Les chiffres qui défilent sous cette phrase ne sont pas mesurés : ils
+  // montrent la ville quand ses commerces y seront. « ${MARQUE} montre, en ce
+  // moment » au-dessus des mêmes chiffres aurait été un mensonge ;
+  // « montrera » est vrai, et c'est exactement ce qu'il vient voir.
+  // L'ÉNUMÉRATION PASSE DEVANT, la conclusion derrière — et ce n'est pas du
+  // style. Les quatre lignes s'allument sur les quatre segments : rejetés en
+  // fin de réplique, les deux derniers apparaissaient une seconde avant que
+  // l'acte ne change, et on ne les voyait tout simplement pas.
   const SAY_CONNAITRE =
-    `Mais regardez surtout ceci : chaque heure, ${MARQUE} montre ce que ${villeAff || "votre ville"} peut offrir maintenant. ` +
-    `À midi les menus, l'après-midi les créneaux qui se libèrent, le soir les sorties et les événements.`;
-  // Les bulles s'allument sur les mots QUI LES NOMMENT. Changer la phrase sans
-  // déplacer ces repères les ferait toutes apparaître à la première seconde.
+    `Chaque heure, ${MARQUE} montrera ce que ${villeAff || "votre ville"} peut offrir : ` +
+    `ce qui sort du four, ce qu'il reste à midi, ce qui se libère l'après-midi, ce qui se passe le soir. ` +
+    `Voilà la ville que votre commerce rejoint.`;
+  // Les lignes s'allument au DÉBUT du segment qui les nomme — pas à sa fin :
+  // une ligne qui arrive quand la voix a fini d'en parler illustre une chose
+  // déjà comprise. Changer la phrase sans déplacer ces repères les ferait
+  // toutes apparaître à la première seconde.
   const BULLES_AT = [
-    auMot(SAY_CONNAITRE, "chaque heure"),
-    auMot(SAY_CONNAITRE, "À midi les menus"),
-    auMot(SAY_CONNAITRE, "les créneaux qui se libèrent"),
-    auMot(SAY_CONNAITRE, "les sorties et les événements"),
+    auDebut(SAY_CONNAITRE, "ce qui sort du four"),
+    auDebut(SAY_CONNAITRE, "ce qu'il reste à midi"),
+    auDebut(SAY_CONNAITRE, "ce qui se libère l'après-midi"),
+    auDebut(SAY_CONNAITRE, "ce qui se passe le soir"),
   ];
 
   // 4 — Le moteur. Le fil, puis les sites partenaires, puis leurs clients.
   const SAY_MOTEUR =
-    `C'est Le Direct de ${villeAff || "votre ville"} : tout ce qui se passe ici en ce moment, commerce par commerce. ` +
+    `C'est Le Direct de ${villeAff || "votre ville"} : tout ce qui se passe ici, commerce par commerce. ` +
     `Les commerces partenaires l'affichent aussi sur leur propre site, ce qui vous fera connaître de leurs clients. ` +
     `Votre commerce y apparaît au moment où son offre devient utile.`;
   const MOTEUR_AT = {
@@ -181,6 +230,24 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // …et bascule exactement sur « dès la sixième ».
     bascule: auMot(SAY_CLIK, "dès la sixième"),
   };
+
+  // 5 ter — L'ACTE MÉTIER. « Et ce n'est pas que pour les offres. »
+  //
+  // LE PROBLÈME QU'IL RÉSOUT : après une annonce montrée une fois, le
+  // commerçant range le produit dans « les trucs à promotions ». Ce qu'on lui
+  // vend est pourtant un geste quotidien — sa carte le matin, ses tables vides
+  // le soir, ce qu'il lui reste à 14 h, ses habitués.
+  //
+  // UN MESSAGE À LA FOIS, ET C'EST TOUTE LA DIFFICULTÉ DE CET ÉCRAN. Quatre
+  // gestes affichés ensemble font une grille de fonctionnalités : on les
+  // survole, on n'en retient aucun. Ils arrivent donc un par un, chacun sur SA
+  // phrase — et comme tout tient dans une seule réplique, l'acte ne coûte
+  // qu'une étape au compteur au lieu de cinq.
+  const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
+  const SAY_METIER = direActe(actesListe);
+  // Chaque carte se pose quand la voix ATTAQUE sa phrase, pas quand elle la
+  // finit : elle doit être là pendant qu'on l'explique.
+  const METIER_AT = actesListe.map((t) => auDebut(SAY_METIER, t.dit));
 
   // 6 — À vous. Elle s'efface, le site reste.
   const SAY_FIN =
@@ -664,6 +731,36 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         },
       });
 
+      // 5 ter — L'ACTE MÉTIER : ses gestes de la semaine, un par carte.
+      //     Il vient APRÈS l'annonce d'exemple, parce que sa force est d'être
+      //     un démenti : « ce n'est pas que pour les offres » n'a de sens
+      //     qu'une fois l'offre montrée. Il n'existe pas si le métier n'a
+      //     aucun geste narrable — on ne joue pas un acte vide.
+      if (actesListe.length) {
+        steps.push({
+          title: "Et ce n'est pas que pour les offres",
+          say: SAY_METIER,
+          enter: () => {
+            chime();
+            setMetierN(0);
+            setScene("metier");
+            // LA LÉGENDE SUIT LES TEMPS, ELLE AUSSI. Affichée d'un bloc, elle
+            // posait les cinq phrases au bas de l'écran dès la première
+            // seconde — c'est-à-dire exactement ce que cet acte cherche à
+            // éviter : tout en même temps, rien de compris.
+            setCaption(INTRO_ACTE);
+            METIER_AT.forEach((ms, i) => {
+              window.setTimeout(() => {
+                // La première carte est posée d'avance : elle prend l'écran
+                // pendant le démenti, et sa phrase arrive dessus.
+                if (i > 0) setMetierN(i);
+                setCaption(actesListe[i].dit);
+              }, ms);
+            });
+          },
+        });
+      }
+
       // 5 bis — À PLUSIEURS : la jauge se remplit et bascule sur son mot.
       steps.push({
         title: "À plusieurs, c'est moins cher",
@@ -711,7 +808,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // Durée de repli, utilisée UNIQUEMENT si l'audio est bloqué : c'est alors le
     // temps de LECTURE de la légende. Le plafond suit la plus longue réplique —
     // sinon la phrase la plus dense défile avant d'avoir pu être lue.
-    const est = (s: string) => Math.min(17000, Math.max(2400, s.length * 60));
+    // Le plafond suit la réplique la plus longue — désormais l'acte métier, qui
+    // enchaîne cinq temps. Laissé à 17 s, il coupait la parole à sa dernière
+    // carte : elle apparaissait, et l'étape changeait dans la seconde.
+    const est = (s: string) => Math.min(21000, Math.max(2400, s.length * 60));
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
@@ -782,13 +882,13 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     a: `Bonsoir 😊 Je note votre demande pour samedi et je la transmets à ${nom} — vous aurez une réponse rapidement.`,
   };
 
-  // Ce que l'assistante sait faire connaître — quatre exemples, quatre mots.
-  const BULLES = [
-    { ic: "🕐", t: "Créneau libre" },
-    { ic: "✨", t: "Nouveauté" },
-    { ic: "⚡", t: "Offre flash" },
-    { ic: "🎉", t: "Événement" },
-  ];
+  // LA JOURNÉE DE LA VILLE, calculée sur le serveur et donnée en prop : elle
+  // dépend de l'heure, et la calculer ici la ferait diverger du rendu serveur.
+  // Repli sur rien du tout plutôt que sur des chiffres écrits en dur ici : une
+  // deuxième liste finirait par contredire la première.
+  const villeJour: EvenementVitrine[] = Array.isArray(vitrine) ? vitrine : [];
+  // Le temps de l'acte métier actuellement à l'écran.
+  const tempsCourant = actesListe[Math.min(metierN, actesListe.length - 1)];
 
   const stars = note ? "★".repeat(Math.max(1, Math.min(5, Math.round(Number(note.replace(",", ".")))))) : "★★★★★";
   return (
@@ -1248,15 +1348,106 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
           .dtour-alive .al-t{position:relative;z-index:3;margin-top:34px;max-width:320px;line-height:1.2;font-family:Georgia,serif;font-size:23px;font-weight:700;color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.75);
             opacity:0;animation:dtBub .55s ease .5s forwards;}
           .dtour-alive .al-s{position:relative;z-index:3;margin-top:11px;max-width:310px;line-height:1.5;font-size:13.5px;color:#CFC4FF;opacity:0;animation:dtBub .55s ease .72s forwards;}
+          /* ── LA JOURNÉE DE LA VILLE, sous l'assistante ────────────────
+             Des lignes et non des pastilles en orbite : « 11 h 45 · 38 menus
+             du jour » ne tient pas dans une pastille, et quatre pastilles de
+             cette longueur se chevauchaient sur 360 px. Une colonne se lit de
+             haut en bas comme une journée, ce qui est exactement le propos. */
+          .dtour-alive .dl-list{position:relative;z-index:4;margin-top:26px;display:flex;flex-direction:column;gap:7px;width:min(324px,86vw);}
+          .dtour-alive .dl-i{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:14px;
+            background:rgba(124,106,232,.2);border:1px solid rgba(207,196,255,.3);
+            -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+            box-shadow:0 14px 30px -18px rgba(0,0,0,.8);
+            opacity:0;transform:translateY(9px);animation:alBul .5s cubic-bezier(.22,1,.36,1) forwards;}
+          .dtour-alive .dl-e{font-style:normal;font-size:17px;line-height:1;flex:none;}
+          .dtour-alive .dl-h{font-size:11.5px;font-weight:800;color:#CFC4FF;flex:none;min-width:44px;letter-spacing:-.01em;}
+          .dtour-alive .dl-n{font-size:17px;font-weight:850;color:#fff;flex:none;letter-spacing:-.02em;line-height:1;}
+          .dtour-alive .dl-q{flex:1;min-width:0;font-size:12.5px;color:#E7E3FF;text-align:left;line-height:1.25;}
+          /* Les deux ou trois qui pressent se colorent — c'est ce qui fait lire
+             une ville qui vit, et pas un tableau d'affichage. */
+          .dtour-alive .dl-i.u{background:rgba(232,124,90,.22);border-color:rgba(255,186,158,.42);}
+          .dtour-alive .dl-i.u .dl-h{color:#FFC9B4;}
+          .dtour-alive .dl-s{margin-top:15px;max-width:324px;}
+          @media (max-width:380px){
+            .dtour-alive .dl-i{padding:8px 10px;gap:7px;}
+            .dtour-alive .dl-q{font-size:11.5px;}
+            .dtour-alive .dl-n{font-size:15.5px;}
+          }
+
           @media (prefers-reduced-motion:reduce){
             .al-flash,.dtour-alive .al-p,.dtour-alive .al-ring{display:none;}
             .dtour-alive .al-av,.dtour-alive .al-halo{animation:none;}
             .dtour-alive .al-t,.dtour-alive .al-s,.dtour-alive .al-bul{opacity:1;transform:none;animation:none;}
           }
 
-          /* Action Flash : le bandeau qui apparaît dans la carte */
-            background:linear-gradient(100deg,#0E5C46,#0B2A20);color:#fff;box-shadow:0 14px 30px -16px rgba(11,42,32,.85);
-            opacity:0;transform:translateY(-12px);animation:dtBub .5s cubic-bezier(.22,1,.36,1) 1.1s forwards;}
+          /* Le sélecteur de ce bloc avait disparu, ses déclarations non — et un
+             bloc sans sélecteur ne se contente pas d'être ignoré : l'analyseur
+             CSS cherche l'accolade ouvrante jusqu'à la règle SUIVANTE, qu'il
+             emporte avec lui. C'est .al-fly, l'icône qui rejoint sa place, qui
+             ne s'appliquait plus. */
+
+          /* ── L'ACTE MÉTIER ────────────────────────────────────────────
+             UN SEUL TEMPS À L'ÉCRAN. Le fond est presque opaque : ce qu'on
+             veut ici, ce n'est pas montrer le site, c'est faire lire quatre
+             phrases. Le site reviendra à l'acte suivant.
+
+             LA CARTE A UNE HAUTEUR MINIMALE, et ce n'est pas de la coquetterie :
+             sans elle, chaque temps redimensionnait le cadre selon la longueur
+             de l'annonce, et les points de progression sautaient d'un temps à
+             l'autre — on lisait un défaut d'affichage, pas une succession. */
+          .dtour-ov.mt-ov{background:rgba(7,10,20,.88);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);}
+          .mt-wrap{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:13px;pointer-events:auto;}
+          .mt-dots{display:flex;gap:6px;}
+          .mt-dots i{width:22px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .35s ease;}
+          .mt-dots i.done{background:rgba(165,148,255,.6);}
+          .mt-dots i.on{background:#fff;box-shadow:0 0 12px rgba(165,148,255,.9);}
+          .mt-card{width:100%;min-height:302px;background:#fff;border-radius:22px;padding:18px 18px 16px;
+            display:flex;flex-direction:column;font-family:'Inter',system-ui,sans-serif;
+            box-shadow:0 40px 90px -24px rgba(0,0,0,.75);animation:mtIn .45s cubic-bezier(.22,1,.36,1);}
+          @keyframes mtIn{from{opacity:0;transform:translateX(24px) scale(.97)}to{opacity:1;transform:none}}
+          .mt-chip{align-self:flex-start;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;
+            letter-spacing:.01em;color:#4B3A9E;background:#EFEBFF;border-radius:999px;padding:6px 12px;}
+          .mt-chip span{font-size:13px;line-height:1;}
+          .mt-chip.mem{color:#0E7C5A;background:#E4F7EE;}
+          /* CE QUE LE COMMERÇANT DIT. En gros, en premier, et entre guillemets :
+             c'est lui qui apporte le fait, toujours. L'assistante ne sait pas
+             combien il lui reste de tables et cet écran ne doit jamais laisser
+             croire le contraire. */
+          .mt-dis{margin-top:14px;display:flex;gap:8px;font-size:15.5px;line-height:1.4;font-weight:750;
+            color:#141A2E;letter-spacing:-.012em;}
+          .mt-dis i{font-style:normal;font-size:15px;line-height:1.3;flex:none;opacity:.7;}
+          .mt-arrow{margin:11px 0 1px;height:18px;display:flex;justify-content:center;opacity:0;animation:dtBub .35s ease .5s forwards;}
+          .mt-arrow i{display:block;width:2px;height:18px;border-radius:2px;background:linear-gradient(180deg,rgba(124,106,232,0),#7C6AE8);}
+          .mt-out{position:relative;border-radius:16px;padding:13px 14px 13px 40px;color:#fff;font-size:14px;line-height:1.45;
+            background:linear-gradient(140deg,#1A2140,#111730);box-shadow:0 20px 40px -22px rgba(17,23,48,.95);
+            opacity:0;transform:translateY(10px);animation:dtBub .5s cubic-bezier(.22,1,.36,1) .72s forwards;}
+          .mt-av{position:absolute;left:12px;top:13px;width:20px;height:20px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+            font-size:11px;background:linear-gradient(140deg,#A594FF,#5B3FA6);}
+          /* Le bas de carte est un PIED, pas un blanc : la hauteur est la même
+             pour tous les temps (sinon les points de progression sautent), donc
+             les cartes courtes laissent du vide. Un filet le transforme en
+             pied de page au lieu d'un trou. */
+          .mt-pro{margin-top:auto;border-top:1px solid #F0EFF7;padding-top:12px;font-size:11.5px;line-height:1.45;color:#6E7290;
+            opacity:0;animation:dtBub .5s ease 1.2s forwards;}
+          /* LA MÉMOIRE : ses propres gestes, reclassés par ce qu'ils rapportent.
+             Aucune fonctionnalité nouvelle à l'écran — les mêmes intitulés que
+             les cartes précédentes, avec un résultat à droite. */
+          .mt-mem{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+          .mt-ml{display:flex;align-items:center;gap:9px;background:#F5F4FF;border:1px solid #E7E4FB;border-radius:13px;padding:10px 12px;
+            opacity:0;transform:translateY(9px);animation:dtBub .45s cubic-bezier(.22,1,.36,1) forwards;}
+          .mt-mle{font-size:16px;line-height:1;flex:none;}
+          .mt-ml b{flex:1;min-width:0;font-size:12.5px;font-weight:800;color:#141A2E;letter-spacing:-.01em;line-height:1.25;}
+          .mt-ml em{flex:none;font-style:normal;padding-left:8px;font-size:11.5px;font-weight:800;color:#0E7C5A;text-align:right;line-height:1.3;max-width:54%;}
+          @media (max-width:380px){
+            .mt-card{min-height:290px;padding:16px 15px 14px;}
+            .mt-dis{font-size:14.5px;}
+            .mt-out{font-size:13px;}
+            .mt-ml b{font-size:11.5px;}
+            .mt-ml em{font-size:11px;}
+          }
+          @media (prefers-reduced-motion:reduce){
+            .mt-card,.mt-arrow,.mt-out,.mt-pro,.mt-ml{animation:none;opacity:1;transform:none;}
+          }
 
           /* ── L'icône rejoint son emplacement (le bouton « Action Flash ») ── */
           .al-fly{position:fixed;left:50%;top:46%;z-index:93;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:36px;
@@ -1528,9 +1719,14 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             </div>
           )}
 
-          {/* ELLE VOUS FAIT CONNAÎTRE — l'assistante réapparaît, entourée de ce
-              qu'elle sait faire connaître. Le retour de ce visuel casse la série
-              d'écrans-cartes et rend la promesse concrète avant de la jouer. */}
+          {/* ELLE VOUS FAIT CONNAÎTRE — la journée de la ville, ligne à ligne.
+              Elle montrait quatre étiquettes de catégories (« Créneau libre »,
+              « Nouveauté »…) : un sommaire de fonctionnalités, dont on ne
+              retient rien. Ce sont maintenant des HEURES et des NOMBRES — la
+              ville telle qu'elle sera quand ses commerces y seront — et c'est
+              la seule chose qu'il vient vérifier : « qu'est-ce que je rejoins ».
+              La ligne du bas est AU FUTUR : c'est elle qui empêche ces chiffres
+              de se lire comme un relevé. */}
           {scene === "daily" && (
             <div className="dtour-ov alive-ov">
               <span className="al-flash" aria-hidden="true" />
@@ -1541,13 +1737,17 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                   <span key={i} className="al-p" aria-hidden="true" style={{ ["--a" as string]: `${i * 45}deg`, animationDelay: `${0.28 + i * 0.045}s` }} />
                 ))}
                 <span className="al-av">✦</span>
-                {BULLES.map((b2, i) => (
-                  <span key={b2.t} className={`al-bul b${i + 1}`} style={{ animationDelay: `${BULLES_AT[i] ?? 0}ms` }}>
-                    <i>{b2.ic}</i>{b2.t}
-                  </span>
-                ))}
-                <div className="al-t">Je ne fais pas que répondre.</div>
-                <div className="al-s">Dites-moi ce qui se passe chez vous.</div>
+                <div className="dl-list">
+                  {villeJour.map((c, i) => (
+                    <span key={`${c.heure}-${c.quoi}`} className={`dl-i${c.urgent ? " u" : ""}`} style={{ animationDelay: `${BULLES_AT[i] ?? 0}ms` }}>
+                      <i className="dl-e">{c.emoji}</i>
+                      <b className="dl-h">{c.heure}</b>
+                      <span className="dl-n">{c.nombre}</span>
+                      <span className="dl-q">{c.quoi}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="al-s dl-s">{phraseVitrine(villeAff)}</div>
               </div>
             </div>
           )}
@@ -1757,6 +1957,61 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                 </div>
                 <div className="fx-aussi">
                   {clikN >= 6 ? "✓ Six personnes arrivent ensemble" : "En cours dans Le Direct"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── L'ACTE MÉTIER ────────────────────────────────────────────
+              Un temps à la fois, et rien d'autre à l'écran. Chaque carte tient
+              en un couple : ce que le COMMERÇANT dit, et l'annonce que
+              l'assistante en écrit. C'est la même mécanique répétée quatre
+              fois dans quatre situations de sa semaine — et c'est la
+              répétition, pas l'énumération, qui fait comprendre que ça vaut
+              pour tout ce qui se passe chez lui.
+
+              À L'INTÉRIEUR MÊME D'UNE CARTE, ça arrive encore en deux temps :
+              sa phrase, puis l'annonce. Les deux ensemble se liraient comme un
+              bloc de texte, et on ne verrait plus la transformation.
+
+              LE DERNIER TEMPS EST D'UNE AUTRE NATURE : ce sont ses propres
+              gestes, reclassés par ce qu'ils lui rapportent. Il n'ajoute pas
+              une fonctionnalité à retenir — il donne la raison de revenir. */}
+          {scene === "metier" && tempsCourant && (
+            <div className="dtour-ov mt-ov">
+              <div className="mt-wrap">
+                <div className="mt-dots" aria-hidden="true">
+                  {actesListe.map((t, i) => (
+                    <i key={t.genre === "geste" ? t.cle : "memoire"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
+                  ))}
+                </div>
+                {/* La clé force le remontage : sans elle, React réutiliserait la
+                    carte précédente et le texte changerait sans animation — on
+                    lirait un rafraîchissement, pas un temps qui succède. */}
+                <div className="mt-card" key={metierN}>
+                  {tempsCourant.genre === "geste" ? (
+                    <>
+                      <div className="mt-chip"><span>{tempsCourant.emoji}</span>{tempsCourant.label}</div>
+                      <div className="mt-dis"><i aria-hidden="true">{tempsCourant.via === "photo" ? "📷" : "🎙️"}</i>«&nbsp;{tempsCourant.dis}&nbsp;»</div>
+                      <div className="mt-arrow" aria-hidden="true"><i /></div>
+                      <div className="mt-out"><span className="mt-av" aria-hidden="true">✦</span>{tempsCourant.annonce}</div>
+                      <div className="mt-pro">{tempsCourant.promesse}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mt-chip mem"><span>📈</span>{MARQUE} apprend ce qui marche</div>
+                      <div className="mt-mem">
+                        {tempsCourant.lignes.map((l, i) => (
+                          <div className="mt-ml" key={l.label} style={{ animationDelay: `${420 + i * 320}ms` }}>
+                            <span className="mt-mle">{l.emoji}</span>
+                            <b>{l.label}</b>
+                            <em>{l.resultat}</em>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-pro">Vous ne recommencez pas de zéro chaque semaine.</div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

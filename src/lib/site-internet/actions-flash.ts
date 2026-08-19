@@ -199,6 +199,14 @@ export type Vocab = {
   /** Ce qui se libère chez ce commerce : un créneau, une table, une place… */
   place: string;
   places: string;
+  /**
+   * L'article de `place` — « un créneau », mais « une table ».
+   *
+   * Sans lui, l'annonce d'un restaurant disait « Un table vient de se libérer »
+   * et « Je vous en réserve un ? ». Le genre du mot ne se devine pas depuis le
+   * mot : il se range à côté de lui.
+   */
+  un: "un" | "une";
   /** Où l'on vient : « au salon », « en boutique »… */
   lieu: string;
   /** Le métier travaille sur rendez-vous → les intentions « créneau » ont un sens. */
@@ -212,25 +220,26 @@ export function vocabulaire(metier: string, confirmation: Confirmation, secteur:
   const est = (r: RegExp) => r.test(m);
 
   if (est(/restaurant|brasserie|pizzeria|creperie|bistrot|bar\b|cantine|burger|sushi/))
-    return { place: "table", places: "tables", lieu: "en salle", surRdv: true, boutique: false };
+    return { place: "table", places: "tables", un: "une", lieu: "en salle", surRdv: true, boutique: false };
 
   if (est(/cours|yoga|pilates|danse|salle de sport|fitness|escalade|poterie|atelier/))
-    return { place: "place", places: "places", lieu: "à l'atelier", surRdv: true, boutique: false };
+    return { place: "place", places: "places", un: "une", lieu: "à l'atelier", surRdv: true, boutique: false };
 
   if (est(/coiffeur|coiffure|barbier|esthetic|ongul|onglerie|institut|spa|massage|beaute|bronzage|tatou/))
-    return { place: "créneau", places: "créneaux", lieu: "au salon", surRdv: true, boutique: false };
+    return { place: "créneau", places: "créneaux", un: "un", lieu: "au salon", surRdv: true, boutique: false };
 
   if (est(/boulangerie|patisserie|boucherie|charcuterie|poissonnerie|fromagerie|primeur|epicerie|caviste|chocolat|glacier|traiteur/))
-    return { place: "commande", places: "commandes", lieu: "en boutique", surRdv: false, boutique: true };
+    return { place: "commande", places: "commandes", un: "une", lieu: "en boutique", surRdv: false, boutique: true };
 
   if (est(/fleuriste|librairie|boutique|magasin|concept store|decoration|bijou|vetement|pret-a-porter|friperie/))
-    return { place: "commande", places: "commandes", lieu: "en boutique", surRdv: false, boutique: true };
+    return { place: "commande", places: "commandes", un: "une", lieu: "en boutique", surRdv: false, boutique: true };
 
   // Défaut : on se fie au modèle métier plutôt qu'à un mot-clé qu'on n'a pas prévu.
   const rdv = confirmation === "reserve" || confirmation === "rappel";
   return {
     place: rdv ? "créneau" : "rendez-vous",
     places: rdv ? "créneaux" : "rendez-vous",
+    un: "un",
     lieu: secteur === "soin" ? "au cabinet" : "sur place",
     surRdv: rdv,
     boutique: false,
@@ -340,7 +349,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
       exempleDemo: "demain à 16 h",
       promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
       emoji: "🕐",
-      action: `Remplir un ${v.place}`,
+      action: `Remplir ${v.un} ${v.place}`,
       titre: `Des ${v.places} de libres ?`,
       sous: "Dites quand — et combien, s'il y en a plusieurs.",
       champs: [
@@ -368,8 +377,8 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
           `${x.fin ? `de ${heureLisible(x.heure)} à ${heureLisible(x.fin)}` : `à ${heureLisible(x.heure)}`}`;
         const pour = x.quoi ? ` pour ${x.quoi}` : "";
         return Number.isFinite(n) && n > 1
-          ? `Il me reste ${n} ${v.places} ${quand}${pour}. Je vous en réserve un ?`
-          : `Un ${v.place} vient de se libérer ${quand}${pour}. Je vous le réserve ?`;
+          ? `Il me reste ${n} ${v.places} ${quand}${pour}. Je vous en réserve ${v.un} ?`
+          : `${v.un === "une" ? "Une" : "Un"} ${v.place} vient de se libérer ${quand}${pour}. Je vous ${v.un === "une" ? "la" : "le"} réserve ?`;
       },
       // L'annonce tient jusqu'à la FIN de la plage quand elle est donnée :
       // retirer à 11 h une place ouverte jusqu'à 17 h la ferait disparaître

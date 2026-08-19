@@ -20,6 +20,8 @@ import { FollowBar } from "./follow-bar";
 import { OfferBand } from "./offer-band";
 import { FollowNudge } from "./follow-nudge";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
+import { acteMetier } from "@/lib/direct/acte-metier";
+import { villeVitrine } from "@/lib/direct/ville-vitrine";
 import { followCopy } from "@/lib/site-internet/metier-profiles";
 import type { Confirmation, Moteur, Profil, Secteur } from "@/lib/site-internet/metier-profiles";
 import type { PartnerOffer } from "@/lib/site-internet/collectif";
@@ -161,6 +163,21 @@ export function MaquetteSante(p: MaquetteSanteProps) {
     confirmation,
     secteur,
   };
+
+  // ── CE QUE LA DÉMONSTRATION MONTRE DU MÉTIER ET DE LA VILLE ──────────────
+  //
+  // Calculés ICI, c'est-à-dire sur le serveur, et pour deux raisons. La
+  // première : `DemoTour` est un composant client, et y faire entrer la
+  // logique métier reviendrait à l'écrire une deuxième fois — alors qu'elle
+  // vient de la liste d'actions que le commerçant trouvera vraiment chez lui.
+  // La seconde : les deux dépendent de l'HEURE, et un `new Date()` pris des
+  // deux côtés donnerait deux journées différentes à l'hydratation.
+  const maintenant = new Date();
+  const acteDuMetier = modeDemo ? acteMetier(metierLabel, confirmation, secteur, maintenant) : [];
+  // La ville à plein régime — jamais le relevé du jour, qui est vide au
+  // lancement. Le raisonnement complet est dans `ville-vitrine.ts`, et la règle
+  // qui rend ça honnête (la phrase au futur) est tenue par la démo elle-même.
+  const vitrineVille = modeDemo ? villeVitrine(maintenant, 4) : [];
 
   // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en
   // avant ET ceux révélés via « Voir plus ».
@@ -437,6 +454,8 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           flashExample={p.flashExample}
           flashDit={p.flashDit}
           tourChat={p.tourChat}
+          actes={acteDuMetier}
+          vitrine={vitrineVille}
           keepHref={p.waHref || p.telHref}
         />
       )}
