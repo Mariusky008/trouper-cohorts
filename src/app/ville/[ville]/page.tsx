@@ -173,6 +173,7 @@ export default async function LeDirectPage({
     ardoise: p.ardoise,
     ardoiseLabel: boutonLien(p.auteurMetier),
     telephone: (p.siteId && telsMenus.get(p.siteId)) || "",
+    prix: p.prix,
     histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
@@ -263,7 +264,7 @@ export default async function LeDirectPage({
           </div>
           <div className="feed">
             {cartes.map((c) => (
-              <Carte key={c.id} p={c} gardee={mesGardees.has(c.id)} ville={ville} />
+              <Carte key={c.id} p={c} gardee={mesGardees.has(c.id)} ville={ville} villeNom={cfg.nom} />
             ))}
           </div>
         </>

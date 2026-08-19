@@ -45,15 +45,32 @@ export function StylesMenus() {
 .menus .mn-qui{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding:2px 4px 11px;}
 .menus .mn-qui b{font-size:16.5px;font-weight:800;color:#fff;letter-spacing:-.01em;}
 .menus .mn-qui span{font-size:12.5px;color:#9FC4B1;font-weight:600;}
+/* LE PRIX, poussé à droite de la ligne du nom. Toujours à la même place d'un
+   volet à l'autre : c'est ce qui permet de comparer six menus en glissant, sans
+   le chercher à chaque fois. */
+.menus .mn-qui .mn-prix{margin-left:auto;font-size:16px;font-weight:800;color:#0A1310;
+  background:#93D02C;border-radius:999px;padding:4px 12px;letter-spacing:-.01em;}
 .menus .mn-img{display:block;width:100%;height:auto;border-radius:11px;background:#1B241F;}
 .menus .mn-txt{white-space:pre-wrap;font-size:16px;line-height:1.62;color:#EAF2EC;padding:6px 6px 14px;
   font-family:var(--fd),Georgia,serif;}
 
-.menus .mn-act{flex:none;display:flex;gap:9px;align-items:center;padding:11px 4px 0;}
-.menus .mn-resa{flex:1;text-align:center;text-decoration:none;background:#25D366;color:#06301C;
+/* DEUX RANGS, ET C'EST UNE MESURE QUI L'A DÉCIDÉ.
+   Les trois sorties tenaient sur une ligne tant qu'il n'y en avait que deux ;
+   « Partager » ajouté, « Je réserve une table » se repliait sur TROIS lignes
+   dans un bouton écrasé. L'action principale prend donc toute la largeur, et
+   les deux gestes de côté se rangent dessous — ce qui dit aussi la hiérarchie :
+   on vient réserver, le reste est facultatif. */
+.menus .mn-act{flex:none;display:flex;flex-direction:column;gap:8px;padding:11px 4px 0;}
+.menus .mn-resa{display:block;text-align:center;text-decoration:none;background:#25D366;color:#06301C;
   border-radius:14px;padding:15px 14px;font-size:15px;font-weight:800;}
 .menus .mn-resa.mn-off{background:rgba(255,255,255,.12);color:#EAF2EC;}
-.menus .mn-annonce{flex:none;text-decoration:none;color:#9FC4B1;font-size:13px;font-weight:800;padding:15px 8px;}
+.menus .mn-act-b{display:flex;gap:8px;align-items:center;}
+.menus .mn-annonce{margin-left:auto;text-decoration:none;color:#9FC4B1;font-size:13px;font-weight:800;padding:12px 10px;}
+/* Le partage reprend les couleurs de la page sombre : le style du fil est
+   écrit pour un fond clair et s'y perdrait. */
+.menus .mn-act .partage{flex:none;color:#EAF2EC;background:rgba(255,255,255,.12);border-radius:13px;
+  padding:12px 15px;font-size:13px;font-weight:800;}
+.menus .mn-act .partage-on{color:#93D02C;}
 
 .menus .mn-vide{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
   justify-content:center;padding:24px 22px 30px;text-align:center;}

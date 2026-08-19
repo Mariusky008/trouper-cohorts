@@ -22,6 +22,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { photosDe } from "@/lib/site-internet/collectif";
 import { publier, retirerToutesDe, limiterVivantes, siennesVivantes, siennesPassees, prolonger, retirer, estFamille, type Famille } from "@/lib/direct/publications";
 import { familleDuTexte } from "@/lib/direct/famille-texte";
+import { saisirPrix } from "@/lib/direct/prix";
 import { villeSlug } from "@/lib/direct/ville";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
@@ -270,12 +271,24 @@ export async function POST(request: Request) {
     // On n'accepte que ce qui est DÉJÀ dans sa galerie : le champ est un choix
     // parmi ses photos, pas une adresse d'image libre à publier sur le catalogue.
     const voulue = str(p?.photo);
-    // L'affiche d'une vidéo n'est PAS dans la galerie : elle vient d'être
-    // extraite du fichier. On l'accepte à ce titre, en la bornant comme une
-    // photo de galerie — sans quoi le champ redeviendrait une adresse d'image
-    // libre à publier sur une page publique.
-    const posterVideo = /^data:image\/(jpe?g|png|webp);base64,/.test(voulue) && voulue.length <= 900000;
-    const photo = voulue && (galerie.includes(voulue) || posterVideo) ? voulue : null;
+    // …OU UNE IMAGE FOURNIE TELLE QUELLE, en clair dans la requête.
+    //
+    // L'affiche d'une vidéo est dans ce cas — elle vient d'être extraite du
+    // fichier — et la PHOTO D'ARDOISE aussi, désormais. Celle-ci passait avant
+    // par la galerie du commerce, ce qui produisait deux défauts silencieux :
+    // la galerie est plafonnée à dix photos, donc la ONZIÈME carte du jour
+    // était refusée et le restaurateur ne pouvait plus rien publier ; et sa
+    // vitrine finissait tapissée de photos d'ardoises à la place de son
+    // commerce. Une ardoise n'est pas une photo de vitrine, elle n'a rien à y
+    // faire.
+    //
+    // CE QUE LE CONTRÔLE PROTÈGE VRAIMENT : pas la provenance, mais l'ADRESSE.
+    // Refuser une URL quelconque empêche de faire afficher, sur la page
+    // d'accueil d'une ville, une image hébergée ailleurs et qui peut changer
+    // après validation. Des octets en clair, bornés en type et en taille, ne
+    // posent pas ce problème : il n'y a rien à aller chercher.
+    const imageEnClair = /^data:image\/(jpe?g|png|webp);base64,/.test(voulue) && voulue.length <= 900000;
+    const photo = voulue && (galerie.includes(voulue) || imageEnClair) ? voulue : null;
     // Le fichier doit venir de NOTRE stockage : accepter une adresse
     // quelconque ferait jouer, sur le fil d'une ville, une vidéo qu'on
     // n'héberge pas et qui peut changer de contenu après coup.
@@ -345,6 +358,10 @@ export async function POST(request: Request) {
         // d'accueil de toute une ville.
         reste: str(p?.reste).slice(0, 40),
         ardoise: /^https?:\/\//i.test(str(p?.ardoise)) ? str(p?.ardoise).slice(0, 500) : null,
+        // LE PRIX ANNONCÉ. Saisi, jamais deviné : nous ne connaissons pas le
+        // prix de son menu, et l'inventer le ferait mentir à sa place devant
+        // toute une ville.
+        prix: saisirPrix(p?.prix),
         site: { id, slug: str(site.slug), nom: str(site.business_name), activite: str(site.activite) },
       });
 

@@ -124,6 +124,18 @@ export function StylesDirect() {
 /* Rouge quand ça presse — et seulement là. Une heure limite toujours rouge ne
    presse plus personne au bout de trois cartes. */
 .dir .pic .bd.chaud{background:var(--red);color:#fff;}
+/* LE PRIX — À GAUCHE, sous le nom du commerce.
+   Il était à droite sous l'échéance, et il s'est retrouvé EXACTEMENT sous
+   « 🔍 Voir en entier », qui occupe déjà ce coin sur les cartes du jour : les
+   deux se recouvraient, et le prix passait dessous. Mesuré au navigateur. La
+   colonne de gauche est libre — le nom, puis le prix — et la lecture y est
+   plus naturelle : chez qui, combien.
+   Plus gros que l'échéance, parce que c'est ce qu'on cherche en premier sur un
+   menu, et sur fond sombre pour ne pas faire une deuxième pastille blanche qui
+   la répéterait. */
+.dir .pic .bp{position:absolute;top:54px;left:13px;background:rgba(14,42,28,.86);color:#fff;
+  backdrop-filter:blur(8px);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:800;
+  letter-spacing:-.01em;}
 /* Le texte posé sur l'image porte une ombre courte. Le voile suffit sur une
    photo ordinaire, mais on ne choisit pas les photos : un commerçant enverra un
    plat très clair sur une nappe blanche, et ce jour-là le voile seul ne tient
@@ -352,6 +364,22 @@ export function StylesDirect() {
 .dir .act{font-size:11px;font-weight:700;padding:7px 13px;border-radius:16px;background:var(--ink);color:#fff;
   text-decoration:none;border:none;cursor:pointer;font-family:inherit;}
 .dir .act.gh{background:#fff;border:1px solid var(--line2);color:var(--body);}
+/* PARTAGER. Sur la carte du fil, l'icône seule : la place du pied est déjà
+   prise par « Je réserve », et un deuxième bouton texte les mettrait en
+   concurrence alors que l'un est l'action et l'autre un geste de côté.
+   Le « margin-left:auto » du cœur pousse le partage contre lui : les deux
+   gestes secondaires se tiennent à droite, l'action à gauche.
+   (Pas d'accent grave dans ce bloc : il termine le gabarit de chaîne.) */
+.dir .partage{background:none;border:none;cursor:pointer;font-family:inherit;color:var(--soft);
+  display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:9px 11px;
+  border-radius:14px;position:relative;}
+.dir .partage-c{margin-left:auto;font-size:16px;padding:2px 6px;}
+.dir .partage-c + .coeur{margin-left:0;}
+.dir .partage-on{color:var(--g);}
+/* La confirmation flotte AU-DESSUS du bouton : écrite à côté, elle élargirait
+   le pied de la carte pendant deux secondes et ferait sauter tout le fil. */
+.dir .partage-bulle{position:absolute;bottom:100%;right:0;margin-bottom:6px;white-space:nowrap;
+  background:var(--ink);color:#fff;font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:9px;}
 .dir .coeur{margin-left:auto;font-size:17px;color:var(--faint);background:none;border:none;cursor:pointer;padding:2px 4px;line-height:1;}
 .dir .coeur.on{color:var(--red);}
 

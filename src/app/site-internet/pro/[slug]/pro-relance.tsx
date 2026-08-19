@@ -202,6 +202,15 @@ export function ProRelance({
   const [carteEnvoi, setCarteEnvoi] = useState(false);
   const [carteErr, setCarteErr] = useState("");
   const carteRef = useRef<HTMLInputElement | null>(null);
+  /** LE PRIX DU MENU. Le seul champ qu'on demande en plus de la photo, parce
+   *  que c'est un nombre, qu'il se tape en trois secondes, et que c'est la
+   *  première question de quelqu'un qui compare six cartes à midi. */
+  const [cartePrix, setCartePrix] = useState("");
+  /** L'ardoise est-elle en cours de lecture, et a-t-elle été lue ? Sert à le
+   *  DIRE : un champ qui se remplit tout seul sans explication inquiète plus
+   *  qu'il n'aide, et on ne saurait pas qu'on peut le corriger. */
+  const [carteLecture, setCarteLecture] = useState(false);
+  const [carteLue, setCarteLue] = useState(false);
   // LES MOTS DE L'EXPRESS. Chez un restaurateur, « moins cher à qui vient dans
   // l'heure » ne veut rien dire : son creux est à 11 h 30, pas « dans une heure
   // à partir de maintenant ». Il choisit donc deux heures.
@@ -520,15 +529,64 @@ export function ProRelance({
   };
 
   /**
-   * LA PHOTO DE L'ARDOISE — ENVOYÉE ENTIÈRE, jamais recadrée.
+   * L'ARDOISE EST LUE POUR LUI.
    *
-   * Les photos d'annonce passent par un cadrage en 16:9, parce qu'une carte du
-   * fil est un bandeau. Une ardoise, elle, est un objet vertical couvert de
-   * texte : la rogner en 16:9 couperait la moitié des plats, et une carte du
-   * jour illisible ne vaut pas mieux que pas de carte du jour.
+   * Il photographie, la machine transcrit les plats et relève le prix, et il
+   * n'a plus qu'à corriger si c'est faux. C'est le seul moyen d'avoir des
+   * données sur une carte du jour SANS demander un formulaire à quelqu'un qui
+   * a dix minutes avant son service.
    *
-   * `compresserImage` réduit sans découper. 1400 px de large suffisent à lire
-   * une ardoise sur un téléphone, et le poids reste tenable.
+   * ELLE NE REMPLACE JAMAIS CE QU'IL A ÉCRIT. Si le champ contient déjà
+   * quelque chose, on n'y touche pas : écraser sa saisie pendant qu'il tape
+   * est la façon la plus sûre de lui faire détester la fonction.
+   *
+   * ET ELLE NE BLOQUE RIEN. Panne, lenteur, ardoise illisible : on n'affiche
+   * même pas d'erreur. Il a sa photo, il peut publier — la lecture était un
+   * confort, pas une étape.
+   */
+  const lireArdoise = async (dataUrl: string) => {
+    setCarteLecture(true);
+    try {
+      const r = await fetch("/api/site-internet/pro/ardoise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, token, photo: dataUrl }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { texte?: unknown; prix?: unknown };
+      const texte = typeof j.texte === "string" ? j.texte.trim() : "";
+      const prix = typeof j.prix === "number" && Number.isFinite(j.prix) ? j.prix : null;
+      // CE QU'ON REMPLIT SE DÉCIDE ICI, pas dans les mises à jour d'état : une
+      // fonction de mise à jour doit être pure, et React peut la rejouer. Y
+      // glisser un drapeau « on a rempli quelque chose » donnerait un drapeau
+      // faux un jour sur deux, sans rien pour le voir.
+      const remplitTexte = !carteTexte.trim() && Boolean(texte);
+      const remplitPrix = !cartePrix.trim() && prix != null;
+      if (remplitTexte) setCarteTexte(texte.slice(0, 400));
+      if (remplitPrix) setCartePrix(String(prix).replace(".", ","));
+      setCarteLue(remplitTexte || remplitPrix);
+    } catch {
+      /* rien lu : sa photo suffit à publier */
+    } finally {
+      setCarteLecture(false);
+    }
+  };
+
+  /**
+   * LA PHOTO DE L'ARDOISE — ENTIÈRE, et QUI NE VA PAS DANS SA GALERIE.
+   *
+   * Pas de recadrage : les photos d'annonce passent en 16:9 parce qu'une carte
+   * du fil est un bandeau, mais une ardoise est un objet vertical couvert de
+   * texte — la rogner couperait la moitié des plats. `compresserImage` réduit
+   * sans découper ; 1400 px suffisent à la lire sur un téléphone.
+   *
+   * PAS LA GALERIE, ET C'EST UN DÉFAUT CORRIGÉ. La photo y transitait, alors
+   * que la galerie est la VITRINE du commerce et qu'elle est plafonnée à dix
+   * images : au bout de dix jours, la onzième carte du jour était refusée et le
+   * restaurateur ne pouvait plus rien publier du tout — et en attendant, sa
+   * vitrine se tapissait de photos d'ardoises à la place de son commerce. La
+   * photo part maintenant directement avec la publication, où elle reste
+   * attachée à SON jour. C'est aussi ce qui rend possible, plus tard, de lui
+   * rendre son année en cartes : chaque jour garde la sienne.
    */
   const photographierArdoise = async (files: FileList | null) => {
     const file = files?.[0];
@@ -541,22 +599,13 @@ export function ProRelance({
     setCarteErr("");
     try {
       const dataUrl = await compresserImage(file, 1400, 0.82);
-      const r = await fetch("/api/site-internet/pro/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, token, action: "add", photo: dataUrl }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok && Array.isArray(j.photos)) {
-        setPhotos((j.photos as unknown[]).map(String).filter(Boolean));
-        setCartePhoto(dataUrl);
-      } else {
-        setCarteErr(typeof j.error === "string" ? j.error : "Envoi impossible.");
-      }
+      setCartePhoto(dataUrl);
+      setCarteEnvoi(false);
+      await lireArdoise(dataUrl);
     } catch {
       setCarteErr("Impossible d'ouvrir cette image.");
-    } finally {
       setCarteEnvoi(false);
+    } finally {
       // Remis à zéro : sans ça, reprendre LE MÊME fichier après un refus ne
       // déclenche aucun `change`, et le bouton paraît cassé.
       if (carteRef.current) carteRef.current.value = "";
@@ -597,6 +646,11 @@ export function ProRelance({
           famille: "menu",
           until: soir.toISOString(),
           photo: cartePhoto ?? "",
+          // Envoyé tel qu'il l'a tapé — virgule française comprise. C'est la
+          // route qui tranche ce qu'est un prix : deux écrans qui interprètent
+          // « 18,50 » chacun de leur côté finiraient par ne pas l'interpréter
+          // pareil.
+          prix: cartePrix,
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -768,6 +822,9 @@ export function ProRelance({
     setCartePhoto(null);
     setCarteTexte("");
     setCarteErr("");
+    setCartePrix("");
+    setCarteLue(false);
+    setCarteLecture(false);
     setFacPartagePrix("");
     setFacCadeauLib("");
     setFacCadeauCond("");
@@ -1190,6 +1247,23 @@ export function ProRelance({
           .pro .relance .carte textarea{width:100%;border:1px solid var(--hair);border-radius:13px;padding:12px 14px;
             font-size:15px;font-family:inherit;background:#fff;resize:vertical;line-height:1.5;}
           .pro .relance .carte-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:10px;}
+          /* La lecture de l'ardoise : ce qui se passe, puis d'où vient le texte.
+             Deux bandeaux discrets — la vedette reste la photo et le bouton. */
+          .pro .relance .carte-lit{margin-top:11px;font-size:13px;font-weight:700;color:var(--soft);
+            background:#F6F5F1;border-radius:12px;padding:11px 13px;}
+          .pro .relance .carte-lu{margin-top:11px;font-size:12.5px;line-height:1.5;color:#14603F;
+            background:#EAF7EF;border:1px solid #C9E9D6;border-radius:12px;padding:11px 13px;}
+          .pro .relance .carte-prix{margin-top:14px;}
+          .pro .relance .carte-prix label{display:block;font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:6px;}
+          .pro .relance .carte-prix label i{font-style:normal;font-weight:600;color:var(--faint);}
+          /* Le « € » est DANS le champ, à droite : posé à côté, il se lit comme
+             une étiquette et on tape « 18 € » dans un champ qui attend 18. */
+          .pro .relance .carte-prix-c{display:flex;align-items:center;gap:8px;border:1px solid var(--hair);
+            border-radius:13px;background:#fff;padding:0 14px;max-width:190px;}
+          .pro .relance .carte-prix-c input{flex:1;min-width:0;border:0;outline:0;background:transparent;
+            padding:12px 0;font-size:17px;font-weight:800;font-family:inherit;color:var(--ink);}
+          .pro .relance .carte-prix-c span{font-size:16px;font-weight:800;color:var(--faint);}
+          .pro .relance .carte-prix-s{font-size:12px;color:var(--soft);line-height:1.45;margin-top:7px;}
           .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
           .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
           .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
@@ -1366,13 +1440,48 @@ export function ProRelance({
                     style={{ display: "none" }}
                     onChange={(e) => void photographierArdoise(e.target.files)}
                   />
-                  <div className="carte-ou">ou écrivez-la</div>
+                  {/* CE QUI SE PASSE PENDANT QU'IL ATTEND. Un champ qui se
+                      remplit tout seul sans un mot inquiète plus qu'il n'aide,
+                      et surtout on ne devine pas qu'on a le droit de le
+                      corriger. On le dit donc, et on dit d'où ça vient. */}
+                  {carteLecture && <div className="carte-lit">🔍 Je lis votre ardoise…</div>}
+                  {!carteLecture && carteLue && (
+                    <div className="carte-lu">
+                      ✓ <b>Lu sur votre ardoise</b> — corrigez si c&apos;est faux, rien n&apos;est publié avant que vous
+                      appuyiez.
+                    </div>
+                  )}
+                  <div className="carte-ou">{cartePhoto ? "et vérifiez" : "ou écrivez-la"}</div>
                   <textarea
                     value={carteTexte}
-                    onChange={(e) => setCarteTexte(e.target.value.slice(0, 400))}
+                    onChange={(e) => { setCarteTexte(e.target.value.slice(0, 400)); setCarteLue(false); }}
                     rows={4}
                     placeholder={"Entrée : velouté de potiron\nPlat : magret, sauce poivre\nDessert : tourtière"}
                   />
+                  {/* LE PRIX — le seul champ qu'on demande en plus de la photo.
+                      Un nombre, trois secondes, et c'est la première question
+                      de quelqu'un qui compare six cartes à midi. Facultatif :
+                      le rendre obligatoire remettrait un formulaire entre lui
+                      et sa photo, ce qu'on cherche précisément à supprimer.
+                      `inputMode` : le pavé numérique s'ouvre directement. */}
+                  <div className="carte-prix">
+                    <label htmlFor="carte-prix">Prix du menu <i>· facultatif</i></label>
+                    <div className="carte-prix-c">
+                      <input
+                        id="carte-prix"
+                        type="text"
+                        inputMode="decimal"
+                        value={cartePrix}
+                        onChange={(e) => { setCartePrix(e.target.value.slice(0, 8)); setCarteLue(false); }}
+                        placeholder="18"
+                        aria-describedby="carte-prix-s"
+                      />
+                      <span aria-hidden="true">€</span>
+                    </div>
+                    <div id="carte-prix-s" className="carte-prix-s">
+                      Il s&apos;affiche sur votre carte et permet aux habitants de comparer les menus de {ville}.
+                    </div>
+                  </div>
                   <div className="carte-s">
                     Elle paraît sur votre site et dans «&nbsp;Déjeuner&nbsp;» à {ville}, à côté des cartes des autres
                     restaurants. Elle s&apos;efface ce soir&nbsp;: une carte d&apos;hier est pire qu&apos;aucune carte.

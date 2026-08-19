@@ -6,6 +6,7 @@
 // court est une information vraie ; un fil rempli d'annonces d'hier est un
 // mensonge qui coûte la confiance au deuxième usage.
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { lirePrix } from "./prix";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -73,6 +74,10 @@ export type Publication = {
   reste: string;
   /** L'adresse de sa carte du jour, affichée « Voir l'ardoise ». */
   ardoise: string | null;
+  /** LE PRIX ANNONCÉ, en euros. `null` quand le commerçant n'en annonce pas —
+   *  et c'est le cas courant : seule la carte du jour le demande, parce que
+   *  c'est la première question qu'on se pose en comparant six menus à midi. */
+  prix: number | null;
 };
 
 type Row = Record<string, unknown>;
@@ -85,7 +90,7 @@ type Row = Record<string, unknown>;
 // avait fait disparaître les trois façons d'une annonce en silence.
 const CHAMPS_BASE =
   "id, famille, texte, photo, video, lien, auteur_nom, auteur_metier, auteur_slug, site_id, publie_le, expire_le";
-const CHAMPS_RECENTS = "reste, ardoise";
+const CHAMPS_RECENTS = "reste, ardoise, prix";
 const CHAMPS = `${CHAMPS_BASE}, ${CHAMPS_RECENTS}`;
 
 /** Vrai quand l'erreur PostgREST dit « cette colonne n'existe pas ».
@@ -135,6 +140,7 @@ function lirePublication(r: Row, site?: Row | null): Publication | null {
     // ou par une autre voie, ne doit pas poser un `javascript:` sur la page
     // d'accueil d'une ville.
     ardoise: /^https?:\/\//i.test(str(r.ardoise)) ? str(r.ardoise) : null,
+    prix: lirePrix(r.prix),
   };
 }
 
@@ -258,6 +264,8 @@ export async function publier(
     reste?: string | null;
     /** L'adresse de sa carte du jour. */
     ardoise?: string | null;
+    /** Le prix annoncé, en euros. Facultatif partout sauf dans l'intention. */
+    prix?: number | null;
     site?: { id: string; slug: string; nom: string; activite: string } | null;
   }
 ): Promise<{ id: string } | null> {
@@ -281,6 +289,7 @@ export async function publier(
   const recents = {
     reste: (p.reste ?? "").trim().slice(0, 40) || null,
     ardoise: /^https?:\/\//i.test(p.ardoise ?? "") ? (p.ardoise as string).slice(0, 500) : null,
+    prix: lirePrix(p.prix),
   };
   const inserer = (ligne: Record<string, unknown>) =>
     supabase.from("human_publications").insert(ligne).select("id").maybeSingle();

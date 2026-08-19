@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { habitantCourant, suivis, barreCoeurs, coeurs, PALIER_AVANTAGE } from "@/lib/direct/habitant";
 import { estVivante, type Publication } from "@/lib/direct/publications";
+import { lirePrix } from "@/lib/direct/prix";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { presse } from "@/lib/direct/fil";
 import QRCode from "qrcode";
@@ -47,7 +48,7 @@ async function chargerGardees(
     // Les deux colonnes récentes en premier, puis sans elles : PostgREST refuse
     // TOUTE la requête quand une seule colonne demandée n'existe pas, et une
     // migration non appliquée ne doit pas vider les gardées de quelqu'un.
-    const premier = await lire(`${BASE}, reste, ardoise`);
+    const premier = await lire(`${BASE}, reste, ardoise, prix`);
     const { data } = premier.error ? await lire(BASE) : premier;
     const maintenant = Date.now();
     // `as unknown` d'abord : la sélection est construite à l'exécution (deux
@@ -74,6 +75,7 @@ async function chargerGardees(
         quartier: "",
         reste: str(p.reste).trim().slice(0, 40),
         ardoise: /^https?:\/\//i.test(str(p.ardoise)) ? str(p.ardoise) : null,
+        prix: lirePrix(p.prix),
       }))
       // Une gardée expirée n'est pas une gardée : elle ne peut plus servir, et
       // la laisser donnerait l'impression d'une offre qu'on a laissée filer.

@@ -12,6 +12,7 @@
 // un texte, et elle est vide le jour où personne n'en a publié — parce que c'est
 // alors la vérité.
 import { numeroReservations } from "@/lib/site-internet/pro-phone";
+import { lirePrix } from "./prix";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -30,6 +31,8 @@ export type MenuDuJour = {
   photo: string | null;
   /** Le texte de la carte — c'est tout le contenu quand il n'y a pas de photo. */
   texte: string;
+  /** Le prix annoncé du menu. `null` quand le restaurateur n'en annonce pas. */
+  prix: number | null;
   /** Le numéro à qui envoyer la demande de table. "" si on n'en a aucun. */
   telephone: string;
 };
@@ -76,11 +79,15 @@ export async function menusDuJour(supabase: unknown, villeSlug: string, max = 40
   if (!villeSlug) return [];
 
   const maintenant = new Date().toISOString();
-  let lignes: Record<string, unknown>[] = [];
-  try {
-    const { data, error } = await sb
+  // LE PRIX EST DEMANDÉ À PART. PostgREST refuse TOUTE la requête quand une
+  // seule colonne demandée n'existe pas : tant que la migration du prix n'est
+  // pas passée, la demander ferait disparaître la page entière des menus. On
+  // tente avec, on retente sans — le prix manque, les cartes restent.
+  const BASE = "id, site_id, texte, photo, auteur_nom, auteur_metier, auteur_slug, publie_le, expire_le";
+  const lire = (champs: string) =>
+    sb
       .from("human_publications")
-      .select("id, site_id, texte, photo, auteur_nom, auteur_metier, auteur_slug, publie_le, expire_le")
+      .select(champs)
       .eq("ville_slug", villeSlug)
       .eq("famille", "menu")
       .is("retire_le", null)
@@ -90,6 +97,13 @@ export async function menusDuJour(supabase: unknown, villeSlug: string, max = 40
       .gt("expire_le", maintenant)
       .order("publie_le", { ascending: false })
       .limit(max);
+
+  let lignes: Record<string, unknown>[] = [];
+  try {
+    let { data, error } = await lire(`${BASE}, prix`);
+    if (error && /does not exist|schema cache|Could not find|42703|PGRST204/i.test(String((error as { message?: string })?.message ?? error))) {
+      ({ data, error } = await lire(BASE));
+    }
     if (error || !Array.isArray(data)) return [];
     lignes = data as Record<string, unknown>[];
   } catch {
@@ -107,6 +121,7 @@ export async function menusDuJour(supabase: unknown, villeSlug: string, max = 40
     slug: str(r.auteur_slug),
     photo: str(r.photo) || null,
     texte: str(r.texte),
+    prix: lirePrix(r.prix),
     telephone: tels.get(str(r.site_id)) ?? "",
   }));
 }

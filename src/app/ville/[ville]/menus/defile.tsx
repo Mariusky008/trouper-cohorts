@@ -21,9 +21,23 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { MenuDuJour } from "@/lib/direct/menus-du-jour";
 import { lienReserverTable } from "@/lib/direct/reserver";
+import { prixCourt } from "@/lib/direct/prix";
+import { BoutonPartage } from "../_ui/partage";
 
-export function MenusDefile({ menus, ville }: { menus: MenuDuJour[]; ville: string }) {
-  const [actif, setActif] = useState(0);
+export function MenusDefile({
+  menus,
+  ville,
+  villeNom,
+  vise,
+}: {
+  menus: MenuDuJour[];
+  ville: string;
+  villeNom: string;
+  /** La carte à montrer d'emblée — celle d'un lien partagé. "" sinon. */
+  vise?: string;
+}) {
+  const depart = Math.max(0, menus.findIndex((m) => m.id === vise));
+  const [actif, setActif] = useState(depart);
   const railRef = useRef<HTMLDivElement | null>(null);
 
   // QUEL MENU EST DEVANT LES YEUX. Le compteur « 2 / 6 » est la seule chose qui
@@ -48,6 +62,22 @@ export function MenusDefile({ menus, ville }: { menus: MenuDuJour[]; ville: stri
     return () => obs.disconnect();
   }, [menus.length]);
 
+  // LE LIEN PARTAGÉ ATTERRIT SUR LA BONNE CARTE.
+  //
+  // Recevoir « regarde ce midi » et tomber sur le premier restaurant de la
+  // liste, ce n'est pas le menu qu'on nous a envoyé — c'est un lien qu'on
+  // n'ouvre pas deux fois. On place donc le rail sur la carte visée.
+  //
+  // SANS ANIMATION (`behavior: "instant"`) : un défilement animé au chargement
+  // se lit comme un bug, et il entre en conflit avec l'aimantation qui est en
+  // train de se mettre en place.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || depart <= 0) return;
+    const cible = rail.querySelectorAll<HTMLElement>(".mn-v")[depart];
+    if (cible) rail.scrollTo({ left: cible.offsetLeft, behavior: "instant" as ScrollBehavior });
+  }, [depart]);
+
   return (
     <>
       <div className="mn-compte" aria-live="polite">
@@ -63,6 +93,11 @@ export function MenusDefile({ menus, ville }: { menus: MenuDuJour[]; ville: stri
                 <div className="mn-qui">
                   <b>{m.commerce}</b>
                   {m.metier ? <span>{m.metier}</span> : null}
+                  {/* LE PRIX EN TÊTE DE VOLET. Sur une page faite pour comparer
+                      six menus en dix secondes, c'est l'information qui tranche
+                      — et la seule qu'on ne pouvait trouver qu'en lisant
+                      l'ardoise jusqu'en bas. */}
+                  {prixCourt(m.prix) ? <b className="mn-prix">{prixCourt(m.prix)}</b> : null}
                 </div>
                 {m.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -93,9 +128,23 @@ export function MenusDefile({ menus, ville }: { menus: MenuDuJour[]; ville: stri
                     Voir chez {m.commerce}
                   </Link>
                 )}
-                <Link className="mn-annonce" href={`/ville/${ville}?onglet=dejeuner#p-${m.id}`} prefetch={false}>
-                  Voir l&apos;annonce ›
-                </Link>
+                {/* LE SECOND RANG : les deux gestes de côté.
+                    PARTAGER n'est pas caché dans un menu — « Ça te dit ça ce
+                    midi ? » à un collègue est le geste le plus naturel de cette
+                    page, et il marche dès le premier jour : il lui faut deux
+                    amis, pas soixante-dix restaurants. */}
+                <div className="mn-act-b">
+                  <BoutonPartage
+                    id={m.id}
+                    ville={ville}
+                    villeNom={villeNom}
+                    commerce={m.commerce}
+                    prix={m.prix}
+                  />
+                  <Link className="mn-annonce" href={`/ville/${ville}?onglet=dejeuner#p-${m.id}`} prefetch={false}>
+                    Voir l&apos;annonce ›
+                  </Link>
+                </div>
               </div>
             </section>
           );

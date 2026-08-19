@@ -29,8 +29,18 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   return { title: `Les menus du jour à ${cfg.nom}`, robots: { index: false } };
 }
 
-export default async function MenusPage({ params }: { params: Promise<{ ville: string }> }) {
+export default async function MenusPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ville: string }>;
+  searchParams: Promise<{ carte?: string }>;
+}) {
   const { ville } = await params;
+  // `?carte=…` : l'adresse d'un menu partagé. Elle ouvre le défilé SUR cette
+  // carte — recevoir « regarde ce midi » et tomber sur un autre restaurant,
+  // c'est un lien qu'on n'ouvre pas deux fois.
+  const { carte } = await searchParams;
   const supabase = createAdminClient();
   const cfg = await configVille(supabase, ville);
   const menus = await menusDuJour(supabase, cfg.slug);
@@ -55,7 +65,7 @@ export default async function MenusPage({ params }: { params: Promise<{ ville: s
         </div>
 
         {menus.length > 0 ? (
-          <MenusDefile menus={menus} ville={ville} />
+          <MenusDefile menus={menus} ville={ville} villeNom={cfg.nom} vise={carte ?? ""} />
         ) : (
           /* VIDE, ET DIT COMME TEL. Remplir cette page avec les restaurants qui
              n'ont rien publié serait la seule façon de la rendre inutile : on

@@ -20,6 +20,8 @@ import { teinte, initiales } from "./teinte";
 import { Reactions } from "./reactions";
 import { Loupe } from "./loupe";
 import { lienReserverTable } from "@/lib/direct/reserver";
+import { prixCourt } from "@/lib/direct/prix";
+import { BoutonPartage } from "./partage";
 import type { VueReactions } from "@/lib/direct/reactions";
 
 export type CarteVue = {
@@ -38,6 +40,10 @@ export type CarteVue = {
    *  réserve une table. Vide quand on n'a pas de numéro — le bouton se tait
    *  alors plutôt que d'ouvrir une conversation avec personne. */
   telephone?: string;
+  /** LE PRIX ANNONCÉ, sur les cartes du jour. `null` partout ailleurs, et sur
+   *  celles dont le restaurateur n'annonce pas de prix — auquel cas la
+   *  pastille ne paraît pas, plutôt que d'afficher un prix inventé. */
+  prix?: number | null;
   /** Déjà formatés côté serveur : le fuseau du serveur fait foi, et un rendu
    *  client divergent provoquerait une erreur d'hydratation à chaque carte. */
   repere: string;
@@ -113,11 +119,15 @@ export function Carte({
   p,
   gardee,
   ville,
+  villeNom = "",
   action = "garder",
 }: {
   p: CarteVue;
   gardee: boolean;
   ville: string;
+  /** Le nom lisible de la ville — « Dax », pas « dax ». Sert au message de
+   *  partage : « à dax, ce midi » se lit comme une faute. */
+  villeNom?: string;
   /** « garder » sur le fil, « retirer » dans Mes commerces. */
   action?: "garder" | "retirer";
 }) {
@@ -141,6 +151,10 @@ export function Carte({
   // Réserver ne vaut que pour une carte du jour : ailleurs, les façons d'en
   // profiter portent déjà l'action, et un second bouton la concurrencerait.
   const reserver = p.famille === "menu" && p.telephone ? lienReserverTable(p.telephone, p.auteurNom) : "";
+  // Le prix ne s'affiche QUE sur une carte du jour : ailleurs, ce sont les
+  // façons d'en profiter qui portent les prix, et une pastille de plus les
+  // contredirait à l'écran.
+  const prix = p.famille === "menu" ? prixCourt(p.prix ?? null) : "";
 
   // La distance ne remplace le repli que si les deux positions existent.
   const repere =
@@ -219,6 +233,11 @@ export function Carte({
         {/* L'échéance passe au ROUGE quand elle presse. Une heure limite dans
             la même teinte calme que le reste ne presse personne. */}
         {p.echeance ? <span className={`bd${p.urgent ? " chaud" : ""}`}>{p.echeance}</span> : null}
+        {/* LE PRIX, GROS ET SUR LA PHOTO. C'est la première question qu'on se
+            pose devant un menu, et la dernière qu'on trouvait : il fallait
+            ouvrir l'ardoise et la lire jusqu'en bas. Sous l'échéance, pour ne
+            pas la recouvrir sur les écrans étroits. */}
+        {prix ? <span className="bp">{prix}</span> : null}
 
         {/* NIVEAU 2 — LA DÉCISION, puis NIVEAU 3 — LA PREUVE : la fraîcheur.
             « il y a 4 min » est le signal qui sépare ce fil d'un annuaire. */}
@@ -382,6 +401,23 @@ export function Carte({
           <Link href={fiche} className="act gh" prefetch={false}>La boutique</Link>
         ) : p.lien ? (
           <a className="act gh" href={p.lien} target="_blank" rel="noreferrer noopener">En savoir plus</a>
+        ) : null}
+        {/* PARTAGER — sur les cartes du jour seulement.
+            « Ça te dit ça ce midi ? » envoyé à un collègue est la seule boucle
+            de ce produit qui n'attend pas d'avoir du monde pour fonctionner :
+            il lui faut deux amis, pas soixante-dix restaurants. Et c'est le
+            client qui devient le diffuseur du restaurant.
+            Ailleurs qu'à midi, partager une place de coiffeur qui part dans
+            l'heure n'a pas de destinataire : le bouton se tait. */}
+        {p.famille === "menu" ? (
+          <BoutonPartage
+            id={p.id}
+            ville={ville}
+            villeNom={villeNom}
+            commerce={p.auteurNom}
+            prix={p.prix ?? null}
+            compact
+          />
         ) : null}
         <button
           type="button"
