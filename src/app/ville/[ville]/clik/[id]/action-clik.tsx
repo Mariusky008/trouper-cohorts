@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RecapCommerce } from "./recap";
 import type { CommerceVue } from "@/lib/direct/commerce-vue";
+import type { TypeClik } from "@/lib/direct/cliks";
 import { conditionPhrase } from "@/lib/direct/condition-achat";
 import { LaisserContact } from "./contact";
 import { Prevenir } from "./prevenir";
@@ -41,7 +42,7 @@ export function ActionClik({
   /** Le nom lisible de la ville — dernier repère spatial quand on n'a ni
    *  position accordée ni quartier. */
   villeNom: string;
-  type: "simple" | "cadeau" | "express" | "collectif";
+  type: TypeClik;
   etat: Etat;
   dejaDedans: boolean;
   statutInitial: string | null;
@@ -132,7 +133,12 @@ export function ActionClik({
                 ? "Venez avant l'heure indiquée et annoncez-vous : le prix réduit est à vous."
                 : type === "simple"
                   ? "Le créneau est à vous. Présentez-vous au commerce à l'heure prévue."
-                  : "Présentez-vous au commerce, votre avantage vous y attend."}
+                  // ELLE EST MISE DE CÔTÉ, ET ELLE ATTEND. On dit les deux
+                  // choses qui décident : qu'elle est réellement à part, et
+                  // qu'il faut venir la chercher — sans quoi elle repart.
+                  : type === "portion"
+                    ? "Elle est mise de côté à votre nom. Passez la chercher avant la fin, en présentant votre code."
+                    : "Présentez-vous au commerce, votre avantage vous y attend."}
         </div>
         {/* LE CODE À PRÉSENTER. Sans lui, « c'est confirmé » n'est qu'une
             promesse à l'écran : le commerçant n'a rien à quoi se raccrocher
@@ -181,7 +187,14 @@ export function ActionClik({
         headers: { "Content-Type": "application/json" },
         // Le cadeau puise dans un stock ; l'express et le groupe enregistrent
         // un engagement. C'est la seule différence de chemin entre les trois.
-        body: JSON.stringify({ campagneId, ville, action: type === "cadeau" ? "prendre" : "rejoindre", remplacer }),
+        // « prendre » puise dans un stock (cadeau, portion), « rejoindre »
+        // enregistre un engagement. La route retranche de toute façon sur le
+        // type réel — mais lui envoyer la bonne intention évite d'avoir à se
+        // demander, en lisant le journal, laquelle des deux a gagné.
+        body: JSON.stringify({
+          campagneId, ville, remplacer,
+          action: type === "cadeau" || type === "portion" ? "prendre" : "rejoindre",
+        }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
@@ -224,11 +237,16 @@ export function ActionClik({
           ? "Un instant…"
           : type === "cadeau"
             ? "Je prends"
-            : type === "express"
-              ? "J'y vais tout de suite"
-              : type === "simple"
-                ? "Je prends le créneau"
-                : "J'en suis"}
+            // LE MOT DIT LE GESTE RÉEL : on en met une de côté, on ne se la
+            // fait pas livrer. « Je réserve » laisserait croire à une
+            // livraison ou à une table ; c'est une part qu'on vient chercher.
+            : type === "portion"
+              ? "J'en prends une"
+              : type === "express"
+                ? "J'y vais tout de suite"
+                : type === "simple"
+                  ? "Je prends le créneau"
+                  : "J'en suis"}
       </button>
       {message && <div className="ck-msg">{message}</div>}
       {/* CHANGER D'AVIS, EN UN GESTE. Sans ce bouton, il faudrait comprendre

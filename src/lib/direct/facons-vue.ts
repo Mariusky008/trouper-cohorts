@@ -9,7 +9,7 @@
 // C'est aussi ce qui garantit que la même campagne se lit pareil dans le fil et
 // dans Mes commerces — deux formulations pour un même prix, et l'habitant croit
 // à deux offres.
-import { etatDe, manque, FACON_LABEL, FACON_PROMESSE, avancement, type Campagne } from "./cliks";
+import { etatDe, manque, FACON_LABEL, FACON_PROMESSE, avancement, type Campagne, type TypeClik } from "./cliks";
 
 /** Le prix d'une façon : ce qu'on paie AVEC elle.
  *
@@ -17,6 +17,9 @@ import { etatDe, manque, FACON_LABEL, FACON_PROMESSE, avancement, type Campagne 
  *  moins, on reçoit en plus. Les deux autres affichent leur prix réduit. */
 function prixDe(c: Campagne): number | null {
   if (c.type === "cadeau" || c.type === "simple") return c.prixInitial;
+  // La portion suit la même règle que l'express et le collectif : son prix
+  // réduit s'il existe, le prix habituel sinon — « il m'en reste 8 » se dit
+  // aussi plein tarif, et c'est alors le prix normal qu'il faut lire.
   return c.prixGroupe ?? c.prixInitial;
 }
 
@@ -90,15 +93,28 @@ function quandDe(c: Campagne, maintenant: number): string {
   }
   if (c.type === "collectif") return auj ? `Groupe fermé à ${h}` : `Groupe fermé à ${h}, demain`;
   if (c.type === "simple") return auj ? `À prendre avant ${h}` : `À prendre avant ${h}, demain`;
+  // LA PORTION S'ARRÊTE DEUX FOIS : à l'heure, ou à la dernière part. Ne dire
+  // que l'heure ferait croire qu'il en restera jusque-là ; ne dire que
+  // l'épuisement laisserait venir à 22 h. On dit les deux, dans cet ordre —
+  // c'est l'épuisement qui arrive en premier quand ça marche.
+  if (c.type === "portion") return auj ? `Jusqu'à épuisement, avant ${h}` : `Jusqu'à épuisement, avant ${h} demain`;
   return auj ? `Aujourd'hui, jusqu'à ${h}` : `Jusqu'à ${h}, demain`;
 }
 
 export type FaconVue = {
   id: string;
-  type: "simple" | "cadeau" | "express" | "collectif";
+  /** LE TYPE VIENT DE `cliks.ts`, il n'est pas recopié.
+   *  Il l'était à QUATRE endroits — ici, la carte du fil, l'écran du Clik — et
+   *  ajouter « portion » a cassé les trois autres d'un coup. Une liste de types
+   *  recopiée n'est pas une liste de types : c'est trois occasions d'oublier. */
+  type: TypeClik;
   label: string;
   promesse: string;
   prix: string;
+  /** LE PRIX D'AVANT, quand cette façon en fait baisser un. Vide sinon.
+   *  Il n'a de sens qu'affiché À CÔTÉ du nouveau : « 9 € » seul ne dit pas
+   *  qu'on économise, et « 16 € » seul ne dit rien du tout. */
+  prixAvant: string;
   quand: string;
   compte: string;
   part: number | null;
@@ -145,17 +161,30 @@ export function faconsVue(
       // Un « à prendre » sans prix affiche « Prix habituel » : écrire « 0 € »
       // ou laisser vide ferait croire à la gratuité.
       prix: c.type === "simple" && !c.prixInitial ? "Prix habituel" : euro(prixDe(c)),
+      // Rendu SEULEMENT s'il y a vraiment une baisse. Un prix barré identique
+      // au prix payé est la définition d'une fausse réduction.
+      prixAvant:
+        c.prixGroupe != null && c.prixInitial != null && c.prixGroupe < c.prixInitial
+          ? euro(c.prixInitial)
+          : "",
       quand: quandDe(c, maintenant),
       // Le compteur ne s'affiche que pour le groupe, et il dit COMBIEN SONT
       // DÉJÀ LÀ plutôt que combien il manque : sur une carte du fil, on choisit
       // une porte, on ne calcule pas. Le « combien il manque » revient sur
       // l'écran du Clik, où il devient une raison d'appuyer.
+      // LA PORTION DIT CE QU'IL EN RESTE, et c'est son information principale :
+      // c'est le nombre qui fait se lever de sa chaise. Le groupe, lui, dit
+      // combien sont déjà là. Deux façons, deux compteurs, jamais le même mot.
       compte:
-        c.type === "collectif" && c.objectif
-          ? m > 0
-            ? `${c.participants} / ${c.objectif} déjà intéressés`
-            : "C'est complet, le prix est débloqué"
-          : "",
+        c.type === "portion"
+          ? (c.restants ?? 0) > 0
+            ? `Il en reste ${c.restants} sur ${c.total ?? c.restants}`
+            : "Tout est parti"
+          : c.type === "collectif" && c.objectif
+            ? m > 0
+              ? `${c.participants} / ${c.objectif} déjà intéressés`
+              : "C'est complet, le prix est débloqué"
+            : "",
       part: c.type === "collectif" ? avancement(c) : null,
       etat,
       mienne: miennes?.has(c.id) ?? false,

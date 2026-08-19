@@ -21,6 +21,7 @@ import { Reactions } from "./reactions";
 import { Loupe } from "./loupe";
 import { lienReserverTable } from "@/lib/direct/reserver";
 import { prixCourt } from "@/lib/direct/prix";
+import type { TypeClik } from "@/lib/direct/cliks";
 import { BoutonPartage } from "./partage";
 import type { VueReactions } from "@/lib/direct/reactions";
 
@@ -62,13 +63,15 @@ export type CarteVue = {
    *  en a aucune, ou qu'elles sont toutes terminées. */
   facons: Array<{
     id: string;
-    type: "simple" | "cadeau" | "express" | "collectif";
+    type: TypeClik;
     /** « Le cadeau », « L'express », « Table à partager ». */
     label: string;
     /** Ce qu'on doit faire pour l'obtenir. */
     promesse: string;
     /** Le prix à payer avec cette façon, déjà mis en forme. */
     prix: string;
+    /** Le prix d'avant, quand cette façon le fait baisser. Vide sinon. */
+    prixAvant: string;
     /** La contrainte de temps, en clair : « Arrivée avant 12 h 47 ». */
     quand: string;
     /** « 2 / 4 déjà intéressés » — uniquement pour la table à partager. */
@@ -339,6 +342,17 @@ export function Carte({
               </span>
               <span className="fac-c">
                 <span className="fac-t">
+                  {/* LE PRIX D'AVANT — UNIQUEMENT QUAND IL N'EST PAS DÉJÀ DIT.
+                      Avec plusieurs façons, l'échelle « 19 € → 17 € → 16 € »
+                      est affichée en tête et le répéter ici la contredirait à
+                      l'œil. Avec une seule — le cas de « il m'en reste 8 » —
+                      il n'y a pas d'échelle, et « 9 € » sans le 16 € ne dit
+                      pas ce qu'on économise.
+                      MENTION RÉGLEMENTÉE : le prix de référence doit être
+                      celui réellement pratiqué. Il vient de ce que le
+                      commerçant a saisi comme prix habituel, jamais d'un
+                      calcul. */}
+                  {p.facons.length === 1 && f.prixAvant ? <s className="fac-av">{f.prixAvant}</s> : null}
                   <b>{f.prix}</b>
                   <em>{f.label}</em>
                 </span>

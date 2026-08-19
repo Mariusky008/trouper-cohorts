@@ -69,6 +69,16 @@ export type Entree = {
   partageNom?: unknown;
   /** Dans combien d'heures le groupe ferme. Choisi par le commerçant. */
   partageHeures?: unknown;
+  /** « IL M'EN RESTE 8 ». Un stock de parts, avec ou sans prix réduit. */
+  portion?: unknown;
+  /** Combien il en reste. C'est un NOMBRE EXACT : c'est tout l'intérêt. */
+  portionQuantite?: unknown;
+  /** Ce que c'est : « lasagnes maison », « parts de tarte ». */
+  portionLibelle?: unknown;
+  /** Le prix réduit. Facultatif : « il m'en reste 8 » se dit aussi plein tarif. */
+  portionPrix?: unknown;
+  /** Jusqu'à quand. Par défaut, l'échéance de l'annonce. */
+  portionFin?: unknown;
 };
 
 export type Facon = {
@@ -167,6 +177,57 @@ export function preparerFacons(p: Entree, contexte: { finGenerale: string }): Pr
     facons.push({
       ligne: { ...base, type: "express", ordre: 2, prix_groupe: prix, debut: debutISO, echeance: finISO },
       lots: [],
+    });
+  }
+
+  // ── 🥘 « IL M'EN RESTE 8 » ───────────────────────────────────────────────
+  //
+  // Un stock qui descend, et qui s'arrête tout seul à la dernière part. Le
+  // stock est fait de lignes `clik_reward` — une par portion — ce qui donne
+  // gratuitement le décompte sérialisé de `clik_prendre_avantage` : deux
+  // habitants qui appuient à la même seconde prennent deux parts différentes.
+  //
+  // LE PRIX RÉDUIT EST FACULTATIF, et c'est voulu. « Il me reste 8 parts de
+  // tarte, venez avant 19 h » est utile telle quelle. L'imposer apprendrait aux
+  // habitants à attendre la fin de journée — exactement ce qu'un commerçant ne
+  // veut pas, et le contraire de ce que cette façon doit produire.
+  if (p.portion) {
+    const quantite = Math.round(n(p.portionQuantite));
+    const libelle = s(p.portionLibelle).slice(0, 80);
+    if (!Number.isFinite(quantite) || quantite < 1 || quantite > STOCK_MAX) {
+      return { ok: false, erreur: `Il vous en reste : indiquez combien, entre 1 et ${STOCK_MAX}.` };
+    }
+    if (!libelle) return { ok: false, erreur: "Il vous en reste : dites ce que c'est (« lasagnes maison »)." };
+
+    // Le prix réduit, s'il y en a un. Les mêmes garde-fous que l'express : on
+    // n'écrit pas une « réduction » qui augmente le prix.
+    let reduit: number | null = null;
+    const brutPrix = s(p.portionPrix);
+    if (brutPrix) {
+      const prix = n(brutPrix);
+      if (!Number.isFinite(prix) || prix <= 0) return { ok: false, erreur: "Il vous en reste : ce prix ne se lit pas." };
+      if (!aPrix) return { ok: false, erreur: "Il vous en reste : indiquez d'abord votre prix habituel." };
+      if (prix >= prixNormal) {
+        return { ok: false, erreur: "Il vous en reste : le prix doit être inférieur à votre prix habituel." };
+      }
+      reduit = prix;
+    }
+
+    // JUSQU'À QUAND. Par défaut la fin de l'annonce — mais un stock du soir peut
+    // s'arrêter avant elle. Jamais APRÈS : une façon qui survivrait à son
+    // annonce attendrait des gens qui ne peuvent plus rien voir.
+    const fin = instant(p.portionFin);
+    const finISO = fin && fin > Date.now() && new Date(fin).toISOString() < contexte.finGenerale
+      ? new Date(fin).toISOString()
+      : contexte.finGenerale;
+
+    facons.push({
+      ligne: { ...base, type: "portion", ordre: 2, prix_groupe: reduit, echeance: finISO },
+      // UNE LIGNE PAR PART, et la condition d'achat est VIDE : une portion
+      // n'est pas un cadeau qui s'ajoute à un achat, c'est ce qu'on achète.
+      // Y écrire « dès 15 € d'achat » inventerait une condition que le
+      // commerçant n'a jamais posée.
+      lots: Array.from({ length: quantite }, () => ({ libelle, condition_achat: "" })),
     });
   }
 

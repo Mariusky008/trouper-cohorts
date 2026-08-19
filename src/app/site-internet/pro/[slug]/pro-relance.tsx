@@ -211,6 +211,15 @@ export function ProRelance({
    *  qu'il n'aide, et on ne saurait pas qu'on peut le corriger. */
   const [carteLecture, setCarteLecture] = useState(false);
   const [carteLue, setCarteLue] = useState(false);
+  // ── 🥘 « IL M'EN RESTE 8 » ────────────────────────────────────────────────
+  // Son propre état, comme la carte du jour : ce n'est pas une annonce à
+  // rédiger, c'est un fait à déclarer. Quatre champs, dont deux facultatifs.
+  const [resteQ, setResteQ] = useState("");
+  const [resteQuoi, setResteQuoi] = useState("");
+  const [restePrixN, setRestePrixN] = useState("");
+  const [restePrixR, setRestePrixR] = useState("");
+  const [resteEnvoi, setResteEnvoi] = useState(false);
+  const [resteErr, setResteErr] = useState("");
   // LES MOTS DE L'EXPRESS. Chez un restaurateur, « moins cher à qui vient dans
   // l'heure » ne veut rien dire : son creux est à 11 h 30, pas « dans une heure
   // à partir de maintenant ». Il choisit donc deux heures.
@@ -668,6 +677,74 @@ export function ProRelance({
     }
   };
 
+  /**
+   * PUBLIER « IL M'EN RESTE 8 ».
+   *
+   * Une annonce ET sa façon d'en profiter, en un seul appel : le stock est ce
+   * qui rend l'annonce vraie, et les publier séparément produirait une annonce
+   * qui dit « il en reste 8 » sans que personne ne puisse en prendre une —
+   * c'est-à-dire le pire des deux mondes.
+   *
+   * LE TEXTE EST CONSTRUIT ICI, à partir de ce qu'il a saisi et de rien
+   * d'autre : ni superlatif, ni « dernière chance », ni « profitez-en ». Ce
+   * n'est pas une promotion, c'est ce qui se passe maintenant — et c'est
+   * précisément parce que le texte reste factuel que ça se lit comme un fait.
+   */
+  const publierReste = async () => {
+    if (resteEnvoi) return;
+    const combien = Math.round(Number(String(resteQ).replace(",", ".")));
+    const quoi = resteQuoi.trim();
+    if (!Number.isFinite(combien) || combien < 1) {
+      setResteErr("Indiquez combien il vous en reste.");
+      return;
+    }
+    if (!quoi) {
+      setResteErr("Dites ce que c'est (« lasagnes maison »).");
+      return;
+    }
+    setResteEnvoi(true);
+    setResteErr("");
+    try {
+      const soir = new Date();
+      soir.setHours(23, 59, 0, 0);
+      const r = await fetch("/api/site-internet/pro/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          token,
+          action: "set",
+          text: `Il me reste ${combien} ${quoi}.`,
+          // « offre » : c'est bien une offre du moment. La famille est imposée
+          // parce que « il me reste 8 lasagnes » ne contient aucun mot qui la
+          // trahisse — déduite du texte, elle serait rangée au hasard.
+          famille: "offre",
+          until: soir.toISOString(),
+          // CE QU'IL RESTE, en clair sous la carte. Le même nombre que le
+          // stock : deux endroits, une seule vérité, écrite au même instant.
+          reste: `${combien} ${quoi}`,
+          prixNormal: restePrixN,
+          portion: true,
+          portionQuantite: combien,
+          portionLibelle: quoi,
+          portionPrix: restePrixR,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.offer) {
+        const publie = String((j.offer as { text?: unknown })?.text ?? "");
+        recommencer();
+        setConfirme({ texte: publie, avertissement: typeof j.avertissement === "string" ? j.avertissement : "" });
+      } else {
+        setResteErr(typeof j.error === "string" ? j.error : "Publication impossible.");
+      }
+    } catch {
+      setResteErr("Publication impossible. Réessayez.");
+    } finally {
+      setResteEnvoi(false);
+    }
+  };
+
   // « RETIRER PARTOUT » A DÉMÉNAGÉ dans « Mes annonces », avec le reste de ce
   // qui concerne une annonce déjà en ligne. Le bandeau du site part avec elle :
   // c'est la route qui s'en charge, pour que le site n'annonce jamais une place
@@ -825,6 +902,11 @@ export function ProRelance({
     setCartePrix("");
     setCarteLue(false);
     setCarteLecture(false);
+    setResteQ("");
+    setResteQuoi("");
+    setRestePrixN("");
+    setRestePrixR("");
+    setResteErr("");
     setFacPartagePrix("");
     setFacCadeauLib("");
     setFacCadeauCond("");
@@ -1264,6 +1346,27 @@ export function ProRelance({
             padding:12px 0;font-size:17px;font-weight:800;font-family:inherit;color:var(--ink);}
           .pro .relance .carte-prix-c span{font-size:16px;font-weight:800;color:var(--faint);}
           .pro .relance .carte-prix-s{font-size:12px;color:var(--soft);line-height:1.45;margin-top:7px;}
+          /* ── 🥘 « Il m'en reste » : deux lignes de deux champs ── */
+          .pro .relance .reste{margin-top:14px;}
+          .pro .relance .reste-l{display:flex;gap:10px;margin-bottom:11px;}
+          .pro .relance .reste-c{flex:1;min-width:0;}
+          /* « Combien » est un nombre à deux chiffres : lui donner la moitié de
+             la ligne écraserait « de quoi », qui porte les mots. */
+          .pro .relance .reste-c.reste-n{flex:0 0 92px;}
+          .pro .relance .reste-c label{display:block;font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:6px;}
+          .pro .relance .reste-c label i{font-style:normal;font-weight:600;color:var(--faint);}
+          .pro .relance .reste-c input{width:100%;border:1px solid var(--hair);border-radius:13px;padding:12px 14px;
+            font-size:16px;font-family:inherit;background:#fff;color:var(--ink);}
+          .pro .relance .reste-e{display:flex;align-items:center;gap:6px;border:1px solid var(--hair);
+            border-radius:13px;background:#fff;padding:0 13px;}
+          .pro .relance .reste-e input{border:0;outline:0;background:transparent;padding:12px 0;font-weight:800;}
+          .pro .relance .reste-e span{font-size:15px;font-weight:800;color:var(--faint);}
+          /* L'aperçu : ses mots, tels qu'ils paraîtront. C'est ce qui garantit
+             qu'on n'ajoutera pas de « dernière chance » dans son dos. */
+          .pro .relance .reste-vu{border-left:3px solid #00C896;border-radius:0 12px 12px 0;background:#F3FBF7;
+            padding:12px 14px;margin-bottom:11px;}
+          .pro .relance .reste-vu b{display:block;font-size:15px;color:var(--ink);line-height:1.35;}
+          .pro .relance .reste-vu span{display:block;font-size:12.5px;color:var(--soft);margin-top:5px;font-weight:700;}
           .pro .relance .ofin{border:1px solid #E8DFC9;background:#FBF7EC;border-radius:14px;padding:13px 14px;margin-bottom:12px;}
           .pro .relance .ofin-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#8A6A12;}
           .pro .relance .ofin-t{font-size:14px;line-height:1.5;color:var(--ink);font-style:italic;margin-top:7px;}
@@ -1499,7 +1602,100 @@ export function ProRelance({
               </>
             )}
 
-            {intention && intention.cle !== "carte" && (
+            {/* ②ter « IL M'EN RESTE 8 » — son écran, quatre champs.
+                Ce n'est pas une annonce à rédiger, c'est un fait à déclarer :
+                combien, quoi, et à quel prix. Le stock qui descend est créé en
+                même temps que l'annonce — publier l'un sans l'autre donnerait
+                une carte qui dit « il en reste 8 » sans que personne ne puisse
+                en prendre une. */}
+            {intention?.cle === "reste" && (
+              <>
+                <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
+                <div className="rlz-h">{intention.emoji} {intention.titre}</div>
+                <div className="rlz-s">{intention.sous}</div>
+
+                <div className="reste">
+                  <div className="reste-l">
+                    <div className="reste-c reste-n">
+                      <label htmlFor="reste-q">Combien</label>
+                      <input
+                        id="reste-q"
+                        type="text"
+                        inputMode="numeric"
+                        value={resteQ}
+                        onChange={(e) => setResteQ(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+                        placeholder="8"
+                      />
+                    </div>
+                    <div className="reste-c">
+                      <label htmlFor="reste-quoi">De quoi</label>
+                      <input
+                        id="reste-quoi"
+                        type="text"
+                        value={resteQuoi}
+                        onChange={(e) => setResteQuoi(e.target.value.slice(0, 80))}
+                        placeholder="lasagnes maison"
+                      />
+                    </div>
+                  </div>
+
+                  {/* LES DEUX PRIX SONT FACULTATIFS, et ça compte.
+                      « Il me reste 8 parts de tarte, venez avant 19 h » est une
+                      annonce utile telle quelle. Imposer une baisse apprendrait
+                      aux habitants à attendre la fin de journée — exactement ce
+                      qu'un commerçant ne veut pas. */}
+                  <div className="reste-l">
+                    <div className="reste-c">
+                      <label htmlFor="reste-pn">Prix habituel <i>· facultatif</i></label>
+                      <div className="reste-e">
+                        <input id="reste-pn" type="text" inputMode="decimal" value={restePrixN}
+                          onChange={(e) => setRestePrixN(e.target.value.slice(0, 8))} placeholder="16" />
+                        <span aria-hidden="true">€</span>
+                      </div>
+                    </div>
+                    <div className="reste-c">
+                      <label htmlFor="reste-pr">Maintenant <i>· facultatif</i></label>
+                      <div className="reste-e">
+                        <input id="reste-pr" type="text" inputMode="decimal" value={restePrixR}
+                          onChange={(e) => setRestePrixR(e.target.value.slice(0, 8))} placeholder="9" />
+                        <span aria-hidden="true">€</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CE QUE ÇA VA DONNER, avant d'appuyer. Le texte est
+                      construit à partir de ses mots et de rien d'autre : le lui
+                      montrer, c'est lui garantir qu'on n'ajoutera pas de
+                      « dernière chance » dans son dos. */}
+                  {(resteQ || resteQuoi) && (
+                    <div className="reste-vu">
+                      <b>Il me reste {resteQ || "…"} {resteQuoi || "…"}.</b>
+                      <span>
+                        {restePrixR && restePrixN
+                          ? `${restePrixN} € → ${restePrixR} € · jusqu'à épuisement`
+                          : "Jusqu'à épuisement, ce soir"}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="carte-s">
+                    Chaque habitant peut en réserver une&nbsp;; le compteur descend tout seul et l&apos;annonce s&apos;arrête
+                    à la dernière. Elle s&apos;efface ce soir&nbsp;: ce qui reste aujourd&apos;hui ne reste pas demain.
+                  </div>
+                  {resteErr && <div className="aierr">{resteErr}</div>}
+                  <button
+                    type="button"
+                    className="aibtn"
+                    onClick={publierReste}
+                    disabled={resteEnvoi || !resteQ || !resteQuoi.trim()}
+                  >
+                    {resteEnvoi ? "Publication…" : "Le dire maintenant"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {intention && intention.cle !== "carte" && intention.cle !== "reste" && (
               <>
                 <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
                 <div className="rlz-h">{intention.emoji} {intention.titre}</div>

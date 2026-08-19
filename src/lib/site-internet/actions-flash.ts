@@ -283,6 +283,45 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
     });
   }
 
+  // ── 🥘 « IL M'EN RESTE 8 » ───────────────────────────────────────────────
+  //
+  // Le geste le plus rentable du produit, et le plus facile à faire adopter :
+  // à 14 h il reste huit lasagnes, et dans deux heures elles vont à la
+  // poubelle. Le commerçant n'a pas besoin d'être convaincu — il compte
+  // 72 € qu'il jetait.
+  //
+  // ET C'EST LA SEULE FONCTION QUI MARCHE À UN COMMERÇANT ET UN CLIENT. Elle
+  // ne demande ni volume, ni habitude, ni réseau : elle vaut le premier jour.
+  //
+  // POUR QUI : la restauration, et les commerces de passage. Un coiffeur n'a
+  // pas de portions — il a des créneaux, et il a déjà l'intention qui va avec.
+  if (estRestauration(metier) || v.boutique) {
+    liste.push({
+      cle: "reste",
+      exempleDemo: "ce qu'il vous reste",
+      promesse: "Ce qu'il vous reste part maintenant, au lieu d'être jeté.",
+      emoji: "🥘",
+      action: "Il m'en reste",
+      titre: "Il vous en reste ?",
+      sous: "Dites combien, et à quel prix. Les habitants autour de vous le voient tout de suite.",
+      // Aucun champ ici : l'écran affiche son propre panneau, court. Passer par
+      // les trois étapes « Quoi → Où → Publier » pour dire « il me reste 8
+      // lasagnes » reviendrait à ne jamais le lui faire faire.
+      champs: [],
+      brief: (x) => {
+        const combien = String(x.combien ?? "").trim();
+        const quoi = String(x.quoi ?? "").trim();
+        return combien && quoi ? `Il me reste ${combien} ${quoi}.` : "Il m'en reste quelques-unes.";
+      },
+      // FIN DE JOURNÉE PAR DÉFAUT. Ce qui reste aujourd'hui ne reste pas demain,
+      // et une annonce d'invendus qui survit à la nuit est un mensonge au
+      // réveil. Le commerçant peut raccourcir depuis l'écran.
+      fin: (_x, now) => finDeJour(now),
+      demo: () => ({ combien: "8", quoi: "lasagnes maison" }),
+      cta: "J'en prends une",
+    });
+  }
+
   if (v.surRdv) {
     liste.push({
       cle: "creneau",
@@ -542,6 +581,13 @@ export function recommandees(liste: Intention[], now: Date, n = 3): Intention[] 
       // après le service, et le lendemain matin elle repasse en tête.
       case "carte":
         return h < 15 ? 200 : 30;
+      // « IL M'EN RESTE » SUIT LE SERVICE, pas la matinée. On ne sait pas ce
+      // qu'il reste avant d'avoir vendu : proposé à 9 h, ce geste n'a aucun
+      // sens et occupe la place de la carte du jour. Il passe devant en fin de
+      // service — 14 h pour le déjeuner, 18 h pour la journée d'une boutique —
+      // c'est-à-dire au moment exact où le commerçant regarde son étal.
+      case "reste":
+        return h >= 13 && h < 20 ? 210 : 25;
       // Un désistement se traite dans l'heure : prioritaire pendant qu'on travaille.
       case "creneau":
         return h >= 8 && h < 19 ? 100 : 40;

@@ -376,7 +376,7 @@ export async function POST(request: Request) {
       // elle est utile telle quelle. On l'écrit dans la réponse pour que
       // l'écran puisse le dire, plutôt que de faire croire au silence.
       let faconsErr = "";
-      if (pub?.id && (p?.simple || p?.cadeau || p?.express || p?.partage)) {
+      if (pub?.id && (p?.simple || p?.cadeau || p?.express || p?.partage || p?.portion)) {
         const prep = preparerFacons(p ?? {}, { finGenerale: until ?? new Date(Date.now() + 24 * 3600 * 1000).toISOString() });
         if (!prep.ok) faconsErr = prep.erreur;
         else {

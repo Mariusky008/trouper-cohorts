@@ -42,12 +42,21 @@ type Supabase = {
 //              a juste besoin de quelqu'un. C'est le cas le plus fréquent chez
 //              un coiffeur ou un tatoueur, et il ne se compare à rien — il
 //              s'affiche donc SEUL, sans échelle de prix.
-export const TYPES_CLIK = ["simple", "cadeau", "express", "collectif"] as const;
+//
+//   'portion' → « il me reste 8 lasagnes ». Un STOCK qui descend, avec ou sans
+//              prix réduit. C'est la seule façon qui dise un nombre exact et
+//              qui s'arrête toute seule à la dernière part — les autres n'ont
+//              soit pas de stock (express, simple), soit pas de prix propre
+//              (cadeau : il s'ajoute à un achat), soit attendent un groupe.
+export const TYPES_CLIK = ["simple", "cadeau", "express", "collectif", "portion"] as const;
 export type TypeClik = (typeof TYPES_CLIK)[number];
 
 /** L'ordre d'affichage, du moindre effort au plus engageant — et donc du prix
- *  le plus haut au plus bas. C'est cette descente qui rend la carte lisible. */
-export const ORDRE_TYPE: Record<TypeClik, number> = { simple: 0, cadeau: 1, express: 2, collectif: 3 };
+ *  le plus haut au plus bas. C'est cette descente qui rend la carte lisible.
+ *
+ *  La portion se range avec l'express : elle demande la même chose — venir
+ *  maintenant — et elle porte le même genre de prix. */
+export const ORDRE_TYPE: Record<TypeClik, number> = { simple: 0, cadeau: 1, portion: 2, express: 2, collectif: 3 };
 
 /** Ce que chaque façon s'appelle, côté habitant. Les libellés sont ici et pas
  *  dans l'écran : ils doivent être les mêmes dans le fil, sur la fiche du Clik
@@ -60,11 +69,30 @@ export function estTypeClik(v: unknown): v is TypeClik {
   return typeof v === "string" && (TYPES_CLIK as readonly string[]).includes(v);
 }
 
+/**
+ * Cette façon puise-t-elle dans un STOCK de lignes `clik_reward` ?
+ *
+ * UNE SEULE RÉPONSE, ICI. Trois endroits en dépendaient — la lecture du stock,
+ * le calcul de l'état, le choix entre « prendre » et « rejoindre » — et chacun
+ * portait sa propre liste de types. En ajoutant « portion », deux d'entre eux
+ * ont été mis à jour et pas le troisième : le stock n'était plus lu, `restants`
+ * restait à `null`, et une annonce « il me reste 8 lasagnes » s'affichait
+ * « Tout est parti », sans bouton, sur huit parts intactes. Mesuré au
+ * navigateur. La prochaine façon à stock n'aura qu'à s'ajouter ici.
+ */
+export function aStock(type: unknown): boolean {
+  return type === "cadeau" || type === "portion";
+}
+
 export const FACON_LABEL: Record<TypeClik, string> = {
   simple: "À prendre",
   cadeau: "Le cadeau",
   express: "L'express",
   collectif: "Le collectif",
+  // Le nom dit le fait, pas l'opération : ce n'est pas une promotion, c'est ce
+  // qu'il reste. Le commerçant peut le renommer (« dernières parts »,
+  // « invendus ») — `nom_facon` prime, comme pour le collectif.
+  portion: "Dernières portions",
 };
 
 /** La promesse de chaque façon, en une ligne. Elle dit CE QU'ON DOIT FAIRE, pas
@@ -74,6 +102,10 @@ export const FACON_PROMESSE: Record<TypeClik, string> = {
   cadeau: "Prix normal + cadeau surprise",
   express: "Prix réduit si vous venez vite",
   collectif: "Prix de groupe si vous venez à plusieurs",
+  // ON EN MET UNE DE CÔTÉ, ON NE LA LIVRE PAS. La promesse dit le geste réel —
+  // venir la chercher — parce que c'est là que se joue la confiance : promettre
+  // « réservé » à quelqu'un qui trouvera le bac vide se paie une seule fois.
+  portion: "Vous en réservez une, vous passez la chercher",
 };
 
 export type Campagne = {
@@ -129,7 +161,10 @@ export function etatDe(c: Campagne, maintenant: number = Date.now()): EtatClik {
   const finie = Number.isFinite(fin) && fin <= maintenant;
   if (finie || c.statut === "terminee" || c.statut === "annulee" || c.statut === "echouee") return "terminee";
 
-  if (c.type === "cadeau") {
+  // LE CADEAU ET LA PORTION PUISENT DANS LE MÊME STOCK, donc ils s'éteignent de
+  // la même façon : à zéro restant, la façon est épuisée. C'est le seul état où
+  // « épuisé » est une bonne nouvelle pour le commerçant — tout est parti.
+  if (aStock(c.type)) {
     return (c.restants ?? 0) > 0 ? "ouverte" : "epuise";
   }
   // L'express et le « à prendre » n'ont ni stock ni groupe : ils ne dépendent
@@ -282,11 +317,21 @@ export async function cliksDeVille(supabase: unknown, villeSlug: string): Promis
     const vivantes = lignes.filter((r) => ["active", "debloquee"].includes(str(r.statut)));
     if (!vivantes.length) return [];
 
-    // Le stock, uniquement pour les « cadeau » — les collectifs n'en ont pas.
-    const idsCadeau = vivantes.filter((r) => str(r.type) === "cadeau").map((r) => str(r.id));
+    // LE STOCK, POUR TOUTES LES FAÇONS QUI EN ONT UN.
+    //
+    // Cette liste ne contenait que « cadeau », et la portion est arrivée après :
+    // son stock n'était donc jamais lu, `restants` valait `null`, et `etatDe`
+    // en concluait « épuisé ». Résultat mesuré au navigateur : une annonce
+    // « il me reste 8 lasagnes » affichait « Tout est parti » et ne proposait
+    // même plus de bouton — sur un stock intact de huit parts.
+    //
+    // La liste est donc DÉDUITE du type, une seule fois, plutôt que recopiée à
+    // chaque ajout : la prochaine façon à stock n'aura rien à venir modifier
+    // ici.
+    const idsStock = vivantes.filter((r) => aStock(str(r.type))).map((r) => str(r.id));
     const stock = new Map<string, { restants: number; total: number }>();
-    if (idsCadeau.length) {
-      const { data: rw } = await sb.from("clik_reward").select("campagne_id, statut").in("campagne_id", idsCadeau);
+    if (idsStock.length) {
+      const { data: rw } = await sb.from("clik_reward").select("campagne_id, statut").in("campagne_id", idsStock);
       for (const r of (Array.isArray(rw) ? rw : []) as Record<string, unknown>[]) {
         const k = str(r.campagne_id);
         const e = stock.get(k) || { restants: 0, total: 0 };
@@ -318,7 +363,12 @@ export async function campagneParId(supabase: unknown, id: string): Promise<Camp
     const { data } = await sb.from("clik_campaign").select("*").eq("id", id).maybeSingle();
     if (!data) return null;
     const r = data as Record<string, unknown>;
-    if (str(r.type) !== "cadeau") return versCampagne(r);
+    // MÊME RÈGLE QUE PARTOUT : `aStock`, et pas un test sur « cadeau ».
+    // C'était le SECOND endroit à porter sa propre liste, et il produisait le
+    // même défaut un cran plus loin : l'écran du Clik affichait « Tout est
+    // parti » et remplaçait le bouton par un lien de sortie — sur un stock de
+    // huit parts. La carte du fil était corrigée, celui-ci non.
+    if (!aStock(r.type)) return versCampagne(r);
 
     const { data: rw } = await sb
       .from("clik_reward")
@@ -331,7 +381,9 @@ export async function campagneParId(supabase: unknown, id: string): Promise<Camp
     // Ce qu'il reste À PRENDRE, pas tout le stock d'origine : annoncer un
     // avantage déjà parti est une promesse qu'on ne peut plus tenir.
     c.aGagner = distincts(dispo.map((x) => str(x.libelle)));
-    c.conditions = distincts(dispo.map((x) => str(x.condition_achat)));
+    // Les conditions d'achat VIDES sont écartées : une portion n'en a pas, et
+    // une liste contenant une chaîne vide ferait afficher une puce sans texte.
+    c.conditions = distincts(dispo.map((x) => str(x.condition_achat)).filter(Boolean));
     return c;
   } catch {
     return null;

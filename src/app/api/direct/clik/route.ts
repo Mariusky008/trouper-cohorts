@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { codeDe } from "@/lib/direct/code-bon";
-import { FACON_LABEL, estTypeClik } from "@/lib/direct/cliks";
+import { FACON_LABEL, estTypeClik, aStock } from "@/lib/direct/cliks";
 
 export const dynamic = "force-dynamic";
 
@@ -173,8 +173,27 @@ export async function POST(request: Request) {
     }
   }
 
+  // LE CHEMIN EST DÉCIDÉ ICI, PAS PAR L'ÉCRAN.
+  //
+  // « prendre » puise dans un stock, « rejoindre » enregistre un engagement :
+  // ce n'est pas la même chose, et c'est le TYPE de la campagne qui tranche —
+  // jamais le client. Un écran qui envoie « rejoindre » sur une portion
+  // enregistrerait dix personnes sur huit parts, sans que rien ne le signale.
+  // On relit donc le type avant d'agir.
+  const { data: ligne } = await supabase
+    .from("clik_campaign")
+    .select("type, statut, echeance")
+    .eq("id", campagneId)
+    .maybeSingle();
+  const c = (ligne as Record<string, unknown> | null) ?? null;
+  const typeReel = String(c?.type ?? "");
+  // `aStock` vit dans `cliks.ts` : c'est la MÊME réponse que celle qui décide
+  // de lire le stock et de calculer l'état. Trois listes séparées, c'est ce qui
+  // a déjà produit une annonce « tout est parti » sur un stock intact.
+  const voie = typeReel ? (aStock(typeReel) ? "prendre" : "rejoindre") : action;
+
   try {
-    if (action === "prendre") {
+    if (voie === "prendre") {
       const { data, error } = await supabase.rpc("clik_prendre_avantage", {
         p_campagne: campagneId,
         p_habitant: habitant.id,
@@ -194,25 +213,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // QUELLE FAÇON, ET DONC QUEL CHEMIN.
-    //
-    // « rejoindre » appelait `clik_rejoindre` pour tout le monde. Or cette
-    // fonction ne connaît que le collectif : appelée sur un express, elle ne
-    // trouve ni objectif ni place, et répond « le groupe et sa liste d'attente
-    // sont pleins ». L'habitant lisait ça sous un bouton « j'y vais tout de
-    // suite », sur une offre qui n'a jamais eu de groupe.
-    const { data: ligne } = await supabase
-      .from("clik_campaign")
-      .select("type, statut, echeance")
-      .eq("id", campagneId)
-      .maybeSingle();
-    const c = (ligne as Record<string, unknown> | null) ?? null;
-    const type = String(c?.type ?? "collectif");
-
     // L'express et le « à prendre » n'ont ni stock ni groupe : il n'y a rien à
     // sérialiser, donc rien qui justifie une fonction SQL. On enregistre
     // l'engagement, et c'est tout. L'échéance reste la seule limite.
-    if (type === "express" || type === "simple") {
+    //
+    // (Le type est lu PLUS HAUT, en une seule requête : il servait déjà à
+    // choisir entre puiser dans un stock et enregistrer un engagement.)
+    if (typeReel === "express" || typeReel === "simple") {
       const fin = Date.parse(String(c?.echeance ?? ""));
       const close = !["active", "debloquee"].includes(String(c?.statut ?? ""));
       if (close || (Number.isFinite(fin) && fin <= Date.now())) {

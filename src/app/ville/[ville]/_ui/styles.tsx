@@ -297,6 +297,10 @@ export function StylesDirect() {
 .dir .fac-t{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
 .dir .fac-t b{font-family:var(--fd),Georgia,serif;font-size:23px;font-weight:700;color:var(--ink);line-height:1;}
 .dir .fac-t em{font-style:normal;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--soft);}
+/* Le prix d'avant : barré, plus petit et plus pâle que le prix payé. Il est là
+   pour donner l'échelle, pas pour être lu — s'il pèse autant que le nouveau,
+   on hésite une seconde sur celui qu'on paiera. */
+.dir .fac-t s{font-family:var(--fd),Georgia,serif;font-size:16px;color:var(--faint);line-height:1;text-decoration-thickness:1.5px;}
 .dir .fac-s{display:block;font-size:12.5px;color:var(--soft);margin-top:5px;line-height:1.35;}
 /* L'heure limite est la seule information vraiment urgente de la ligne : elle
    porte une pastille, pas une nuance de gris. */
