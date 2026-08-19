@@ -33,6 +33,21 @@ export function HeroGenerator() {
 
   useEffect(() => () => timers.current.forEach((t) => clearInterval(t)), []);
 
+  // LA VILLE S'ALLUME AU RYTHME DE LA SAISIE.
+  //
+  // Ce formulaire ANNONCE ce qu'il contient, il ne pilote rien : la
+  // constellation de fond écoute, la ligne d'état écoute, et demain autre chose
+  // écoutera. Leur passer des propriétés obligerait à remonter cet état dans la
+  // page — qui est rendue par le serveur, ce qui est exactement ce qui la rend
+  // rapide sur le seul écran où la vitesse décide.
+  //
+  // DANS UN EFFET et pas dans les `onChange` : un `dispatchEvent` pendant le
+  // rendu est un effet de bord au mauvais moment, et React peut rejouer un
+  // rendu. Ici, l'événement suit l'état, une fois qu'il est posé.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("clikme-champs", { detail: { nom, activite, ville } }));
+  }, [nom, activite, ville]);
+
   const startAnim = () => {
     setStep(0);
     setPct(0);

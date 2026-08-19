@@ -9,6 +9,7 @@ import { MARQUE } from "@/lib/marque";
 // HONNÊTETÉ (règle absolue) : mécanisme réel, aucun chiffre/témoignage inventé.
 import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
+import { VilleVivante, VilleEtat } from "./_home/ville-vivante";
 import { ScrollReveal } from "./_home/scroll-reveal";
 
 // LE TITRE SUIT LA PAGE. Il promettait « votre site web gratuit » quand la page
@@ -213,6 +214,81 @@ export default function HomePage() {
           @media(max-width:820px){.pop-home .ftag{display:none;}}
           .pop-home .alt{margin-top:20px;font-size:13.5px;color:var(--faint);position:relative;z-index:2;}
           .pop-home .alt a{font-weight:700;color:var(--a2);}
+
+          /* ── LA VILLE VIVANTE ──────────────────────────────────────────────
+             DESSINÉE, PAS PHOTOGRAPHIÉE : cette page sert toutes les villes, et
+             une photo aérienne de Dax serait fausse pour tous les autres — sans
+             compter son poids sur le seul écran où la vitesse décide. Ce qui
+             faisait la force de la maquette d'origine, ce n'était pas la photo :
+             c'étaient les étiquettes reliées à des points lumineux. */
+          .pop-home .vv{position:relative;z-index:1;pointer-events:none;}
+          .pop-home .vv-champ{position:absolute;inset:0;}
+          .pop-home .vv-pt{position:absolute;display:flex;align-items:center;gap:0;
+            opacity:0;transform:translateY(6px);transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .55s cubic-bezier(.22,1,.36,1);}
+          .pop-home .vv-pt.on{opacity:1;transform:none;}
+          .pop-home .vv-dot{width:7px;height:7px;border-radius:50%;background:var(--a1);flex:none;
+            box-shadow:0 0 0 4px rgba(18,185,129,.14),0 0 14px 2px rgba(18,185,129,.5);}
+          .pop-home .vv-fil{height:1px;background:linear-gradient(90deg,rgba(18,185,129,.55),rgba(18,185,129,.12));flex:none;}
+          /* L'étiquette sombre sur fond clair : c'est le contraste de la
+             maquette (nuit + chiffre lumineux) sans en payer la photo. */
+          .pop-home .vv-tag{display:inline-flex;align-items:center;gap:8px;background:#12261E;color:#EAF2EC;
+            border-radius:12px;padding:8px 12px;box-shadow:0 16px 34px -18px rgba(10,25,18,.75);}
+          .pop-home .vv-emo{font-size:13px;line-height:1;flex:none;}
+          .pop-home .vv-txt{display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.25;min-width:0;}
+          .pop-home .vv-txt b{color:#7FE3B4;font-weight:800;font-variant-numeric:tabular-nums;}
+          .pop-home .vv-txt span{color:#C6D6CD;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+          /* SOUS 1080 px : PAS DE « AUTOUR ».
+             Il n'y a pas de marge autour d'un formulaire sur un téléphone, et
+             au-dessus du champ il ne reste pas un pixel — mesuré à 557 px sur
+             667. Les points passent donc SOUS le bouton, en bande. Ils ne
+             déplacent rien de ce qui décide. */
+          @media(max-width:1079px){
+            .pop-home .genzone{display:flex;flex-direction:column;}
+            .pop-home .vv{order:2;margin-top:14px;}
+            .pop-home .vv-champ{position:static;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;}
+            .pop-home .vv-pt{position:static;}
+            .pop-home .vv-fil,.pop-home .vv-dot{display:none;}
+            .pop-home .vv-tag{padding:7px 11px;}
+            .pop-home .vv-txt{flex-direction:row;align-items:baseline;gap:6px;}
+            .pop-home .vv-txt span{max-width:44vw;}
+          }
+
+          /* AU-DESSUS DE 1080 px : la ville entoure le formulaire.
+             Les étiquettes sont ancrées HORS du bloc (right:100% / left:100%)
+             et non par un décalage en pixels : c'est la seule façon d'être
+             certain qu'elles n'entrent jamais dans le formulaire ni ne
+             débordent de la page quand la fenêtre rétrécit. */
+          @media(min-width:1080px){
+            /* LE REPÈRE DES ANCRAGES, EXPLICITE.
+               Sans ça, « .vv » reste une boîte de hauteur nulle en tête du bloc,
+               et « en haut du formulaire » / « en bas du formulaire » se
+               calculent par rapport à un point — les étiquettes flottaient à
+               peu près au bon endroit, par accident, et n'importe quel
+               changement de marge les aurait déplacées. Ici elle épouse
+               exactement la zone du formulaire, et sort du flux : la position
+               du champ n'en bouge pas d'un pixel. */
+            .pop-home .vv{position:absolute;inset:0;}
+            .pop-home .vv-tag{max-width:210px;}
+            .pop-home .vv-pt.a1,.pop-home .vv-pt.a3{flex-direction:row-reverse;right:100%;padding-right:14px;}
+            .pop-home .vv-pt.a2,.pop-home .vv-pt.a4{left:100%;padding-left:14px;}
+            .pop-home .vv-pt.a1{top:6px;}
+            .pop-home .vv-pt.a2{top:96px;}
+            .pop-home .vv-pt.a3{bottom:96px;}
+            .pop-home .vv-pt.a4{bottom:6px;}
+            .pop-home .vv-fil{width:26px;}
+            /* Quand la ville est connue, les étiquettes « ce qui compose votre
+               site » s'effacent au profit de « ce qui se passe chez vous ». Deux
+               anneaux d'étiquettes allumés en même temps, c'est du bruit — et
+               c'est le moment exact où le sujet de la page change. */
+            .pop-home .genzone:has(.vv-p3) .ftag{opacity:.22;transition:opacity .5s ease;}
+          }
+
+          /* LA LIGNE QUI DIT LA VÉRITÉ SUR SA VILLE. Elle, on la lit — d'où le
+             contraste plein et l'absence de aria-hidden côté composant. */
+          .pop-home .vv-etat{margin:16px auto 0;font-size:13.5px;line-height:1.5;color:var(--soft);
+            max-width:460px;position:relative;z-index:2;}
+          .pop-home .vv-etat b{color:var(--ink);font-weight:800;}
 
           /* Overlay de construction */
           .pop-home .genov{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;
@@ -495,13 +571,23 @@ export default function HomePage() {
               ça coûte, et d'où viennent les informations. Les dire ailleurs sur
               la page, c'est les dire trop tôt. */}
           <p className="freekick">Gratuit. À partir de vos informations Google.</p>
+          {/* LA VILLE, AUTOUR DU FORMULAIRE.
+              Elle enveloppe la zone de saisie plutôt que de la précéder : sur
+              un téléphone il n'y a plus un pixel disponible au-dessus du champ
+              (mesuré à 557 px sur 667), et sur grand écran c'est justement la
+              marge autour du formulaire qui était vide. */}
           <div className="genzone">
+            <VilleVivante />
             <span className="ftag t1">📸 vos photos</span>
             <span className="ftag t2">⭐ vos avis Google</span>
             <span className="ftag t3">🕐 vos horaires</span>
             <span className="ftag t4">🤖 assistante IA incluse</span>
             <HeroGenerator />
           </div>
+          {/* CE QUI SE PASSE VRAIMENT DANS SA VILLE, dès qu'il l'a tapée. Sous
+              le formulaire : c'est une réponse à ce qu'il vient d'écrire, pas
+              une accroche. */}
+          <VilleEtat />
           {/* « Gratuit » est retiré de cette ligne : il est dit au-dessus du
               formulaire. Trois fois le même mot dans un seul écran, et il ne
               veut plus rien dire. */}
