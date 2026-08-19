@@ -34,7 +34,20 @@ type Props = {
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
-type Scene = "" | "note" | "reso" | "daily" | "reseau" | "flash" | "clik" | "vision" | "conclu" | "alive" | "final";
+type Scene =
+  | ""
+  | "note" | "reso" | "daily" | "reseau" | "flash" | "clik" | "vision" | "conclu" | "alive" | "final"
+  // ── LES TROIS ÉCRANS QUI FONT LE RÉCIT, et qui manquaient ────────────────
+  // La démo montrait des fonctions ; elle ne racontait rien. Ces trois-là ne
+  // démontrent AUCUNE fonctionnalité — ils portent les trois virages du récit,
+  // et c'est ce qui transforme une liste de features en une histoire :
+  //   · `pivot`   — « je ne fais pas que répondre : je vais chercher vos clients »
+  //   · `coupure` — deux secondes de noir : « vous n'avez plus besoin de publier »
+  //   · `boucle`  — « Votre commerce. En direct dans votre ville. »,
+  //                 c'est-à-dire la première phrase de la page d'accueil,
+  //                 rendue à la fin. Qui a vu la page reconnaît la promesse ;
+  //                 qui ne l'a pas vue la reçoit entière.
+  | "pivot" | "coupure" | "boucle";
 
 export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
@@ -87,6 +100,20 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     reponse: auMot(SAY_REPOND, "Je réponds à leurs questions"),
     transmis: auMot(SAY_REPOND, "je vous transmets"),
   };
+
+  // 2 bis — LE PIVOT. La phrase qui fait basculer toute la démonstration.
+  const SAY_PIVOT =
+    `Mais je ne fais pas que répondre. Je vais chercher vos clients. ` +
+    `Dites-moi simplement ce qui se passe chez vous, et je m'occupe du reste.`;
+
+  // 7 — LA COUPURE. Deux secondes de silence visuel avant la conclusion.
+  const SAY_COUPURE =
+    `Vous n'avez plus besoin de publier, ni de choisir une photo, ni de trouver un titre. ` +
+    `Vous avez juste à me dire ce qui se passe.`;
+
+  // 8 — LA BOUCLE. La première phrase de la page d'accueil, rendue à la fin.
+  const SAY_BOUCLE =
+    `Votre commerce, en direct dans votre ville. Votre site, votre assistante, votre actualité, votre ville.`;
 
   // 3 — Je vous fais connaître. Les quatre bulles s'allument à mesure qu'elle
   //     les nomme : créneau, nouveauté, offre, événement.
@@ -575,9 +602,30 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
+    // 2 — JE RÉPONDS. Remontée juste après le site, et c'est le récit qui
+    //     l'exige : c'est la mission qu'on attend d'une assistante, donc celle
+    //     qu'il faut poser AVANT de la dépasser. Placée en avant-dernier, comme
+    //     elle l'était, elle retombait après le grand écran du réseau et se
+    //     lisait comme un détail technique.
+    steps.push({
+      title: "Je réponds pour vous",
+      say: SAY_REPOND,
+      enter: () => { chime(); setLvAt(REPOND_AT); setScene("alive"); },
+    });
+
     // Les étapes « faire connaître » n'existent qu'en déonto ouverte : on ne
     // montre ni offre ni annonce à un cabinet de santé ou de droit.
     if (avisAllowed) {
+      // 3 — LE PIVOT. Le seul écran qui ne démontre rien, et le plus important :
+      //     une assistante qui répond, tout le monde en a déjà vu une ; une
+      //     assistante qui va CHERCHER des clients, non. Sans ce virage
+      //     explicite, la suite se lit comme une liste d'options.
+      steps.push({
+        title: "Je ne fais pas que répondre",
+        say: SAY_PIVOT,
+        enter: () => { chime(); setScene("pivot"); },
+      });
+
       // 3 — JE VOUS FAIS CONNAÎTRE : les quatre bulles s'allument à mesure
       //     qu'elle les nomme.
       steps.push({
@@ -633,13 +681,22 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
       });
     }
 
-    // 5 — JE RÉPONDS : la conversation, calée sur sa phrase. Elle décrit sa
-    //     mission pendant que la scène la prouve, réplique après réplique.
-    steps.push({
-      title: "Je réponds pour vous",
-      say: SAY_REPOND,
-      enter: () => { chime(); setLvAt(REPOND_AT); setScene("alive"); },
-    });
+    // LA COUPURE, PUIS LA BOUCLE. Deux écrans sans démonstration, à la fin :
+    // après six actes qui montrent, il faut un silence pour que la seule
+    // phrase qu'il retiendra le lendemain soit entendue. Ils n'existent qu'en
+    // déonto ouverte — ils parlent de publier, ce qu'un cabinet ne fait pas.
+    if (avisAllowed) {
+      steps.push({
+        title: "Vous n'avez plus à publier",
+        say: SAY_COUPURE,
+        enter: () => { setScene("coupure"); },
+      });
+      steps.push({
+        title: "Votre commerce, en direct",
+        say: SAY_BOUCLE,
+        enter: () => { setScene("boucle"); },
+      });
+    }
 
     // 6 — À VOUS : elle s'efface, le site reste entier sous les yeux du pro.
     //     L'écran de décision arrive à la fin de sa phrase, quand elle nomme
@@ -797,6 +854,46 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
              de légende du bas (padding réservé) → jamais masquée. */
           .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:84px 20px 158px;
             background:rgba(9,11,20,.42);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:dtFade .35s ease;pointer-events:none;}
+          /* ── LE PIVOT, LA COUPURE, LA BOUCLE ───────────────────────────
+             Ces trois écrans ne montrent rien : ils portent le récit. D'où le
+             parti pris typographique inverse du reste de la démo — très peu de
+             mots, très gros, beaucoup de vide. Une carte chargée à cet endroit
+             ferait retomber l'attention exactement quand il faut la tenir. */
+          .dtour-card.dt-piv{text-align:center;padding:34px 24px 30px;}
+          .piv-1{font-size:19px;font-weight:700;color:#5A6660;letter-spacing:-.01em;}
+          /* LE DEUXIÈME TEMPS ARRIVE APRÈS, et il arrive gros. L'animation est
+             retardée pour que la phrase se pose dans le silence de la
+             première — les deux ensemble ne feraient qu'un slogan de plus. */
+          .piv-2{margin-top:16px;font-size:29px;line-height:1.06;font-weight:850;letter-spacing:-.035em;
+            color:#0D1B14;opacity:0;animation:dtPiv .5s cubic-bezier(.22,1,.36,1) .9s forwards;}
+          .piv-3{margin-top:18px;font-size:14.5px;line-height:1.5;color:#5A6660;
+            opacity:0;animation:dtPiv .5s ease 1.7s forwards;}
+          @keyframes dtPiv{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+          @media(min-width:520px){.piv-2{font-size:34px;}}
+
+          /* Le fond des deux écrans de récit : presque noir, et SANS carte —
+             c'est l'absence de cadre qui fait la coupure. */
+          .dtour-ov.dt-noir{background:#070C09;flex-direction:column;text-align:center;padding:30px 26px;gap:0;}
+          .cp-1{font-size:22px;line-height:1.15;font-weight:850;letter-spacing:-.03em;color:#fff;text-wrap:balance;
+            opacity:0;animation:dtPiv .55s cubic-bezier(.22,1,.36,1) .15s forwards;}
+          .cp-2{margin-top:18px;font-size:15px;line-height:1.55;color:#8FA79A;
+            opacity:0;animation:dtPiv .55s ease 1.25s forwards;}
+          .bo-1{font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.03em;color:#fff;text-wrap:balance;
+            opacity:0;animation:dtPiv .55s cubic-bezier(.22,1,.36,1) .1s forwards;}
+          .bo-2{margin-top:6px;font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.03em;text-wrap:balance;
+            background:linear-gradient(115deg,#12B981 10%,#0EA5A5 55%,#7C5CFC);-webkit-background-clip:text;
+            background-clip:text;color:transparent;opacity:0;animation:dtPiv .55s cubic-bezier(.22,1,.36,1) .55s forwards;}
+          .bo-3{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;}
+          .bo-3 span{font-size:12.5px;font-weight:700;color:#C9D6CE;background:rgba(255,255,255,.07);
+            border-radius:999px;padding:7px 13px;opacity:0;animation:dtPiv .4s ease forwards;}
+          .bo-3 span:nth-child(1){animation-delay:1.15s}
+          .bo-3 span:nth-child(2){animation-delay:1.35s}
+          .bo-3 span:nth-child(3){animation-delay:1.55s}
+          .bo-3 span:nth-child(4){animation-delay:1.75s}
+          @media(min-width:520px){.cp-1{font-size:27px;}.bo-1,.bo-2{font-size:31px;}}
+          @media(prefers-reduced-motion:reduce){
+            .piv-2,.piv-3,.cp-1,.cp-2,.bo-1,.bo-2,.bo-3 span{animation:none;opacity:1;}
+          }
           .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;max-height:calc(100dvh - 258px);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;animation:dtCardIn .42s cubic-bezier(.22,1,.36,1);pointer-events:auto;}
           @keyframes dtCardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
           /* Scène « note » : une seule ligne d'avis */
@@ -1698,6 +1795,50 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
                   <div className="cc-i"><span className="e">🔓</span>Sans engagement</div>
                 </div>
                 <div className="cc-note">Des options pourront être activées plus tard, selon vos besoins.</div>
+              </div>
+            </div>
+          )}
+
+          {/* ── LE PIVOT ──────────────────────────────────────────────────
+              Le seul moment de la démo qui ne démontre rien. Il dit à voix
+              haute ce que le prospect n'a pas encore compris : une assistante
+              qui répond aux questions, il en a déjà vu ; une assistante qui va
+              CHERCHER des clients, non. Deux temps, parce que la deuxième
+              phrase n'a de force que si la première a créé l'attente. */}
+          {scene === "pivot" && (
+            <div className="dtour-ov">
+              <div className="dtour-card dt-piv">
+                <div className="piv-1">Je ne fais pas que répondre.</div>
+                <div className="piv-2">JE VAIS CHERCHER<br />VOS CLIENTS.</div>
+                <div className="piv-3">Dites-moi simplement ce qui se passe chez vous.</div>
+              </div>
+            </div>
+          )}
+
+          {/* ── LA COUPURE ────────────────────────────────────────────────
+              Deux secondes de presque-noir, sans carte, sans illustration.
+              Après six actes qui montrent, il faut un silence pour que la
+              phrase qui compte soit entendue — et c'est la seule promesse que
+              le commerçant retiendra le lendemain. Un écran vide n'est pas du
+              temps perdu : c'est ce qui donne du poids à ce qui l'entoure. */}
+          {scene === "coupure" && (
+            <div className="dtour-ov dt-noir">
+              <div className="cp-1">VOUS N&apos;AVEZ PLUS BESOIN DE PUBLIER.</div>
+              <div className="cp-2">Vous avez juste à me dire ce qui se passe.<br />Je fais le reste.</div>
+            </div>
+          )}
+
+          {/* ── LA BOUCLE ─────────────────────────────────────────────────
+              La première phrase de la page d'accueil, rendue en dernier. Qui
+              arrive par le site reconnaît la promesse et la voit tenue ; qui
+              arrive par un lien la reçoit entière. */}
+          {scene === "boucle" && (
+            <div className="dtour-ov dt-noir">
+              <div className="bo-1">VOTRE COMMERCE.</div>
+              <div className="bo-2">EN DIRECT DANS VOTRE VILLE.</div>
+              <div className="bo-3">
+                <span>Votre site.</span><span>Votre assistante.</span>
+                <span>Votre actualité.</span><span>Votre ville.</span>
               </div>
             </div>
           )}
