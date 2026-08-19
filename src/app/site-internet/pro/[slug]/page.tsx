@@ -36,6 +36,7 @@ import { ProTabs, type ProTab } from "./pro-tabs";
 import { ProGroup } from "./pro-group";
 import { ProAssistantHub } from "./pro-assistant-hub";
 import { ReviewRefresh } from "./review-refresh";
+import { habitudePortion } from "@/lib/direct/erosion";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -250,6 +251,13 @@ export default async function EspacePro({
     }
   }
   const villeUrl = ville ? `/ville/${slugify(ville)}` : "";
+
+  // L'HABITUDE DE BRADER, s'il en a une. Lue ici plutôt que par un appel depuis
+  // l'écran : c'est une donnée du commerce, elle arrive avec le reste de sa
+  // page, et un aller-retour de plus pour une remarque qui se tait neuf fois
+  // sur dix ne se justifie pas. Elle ne bloque rien : en cas de panne, elle
+  // rend « pas d'habitude » et l'écran ne dit simplement rien.
+  const habitude = await habitudePortion(supabase, siteId);
 
   // Alerte nouvel avis : compare le compteur Google actuel à ce que le pro a vu.
   // 1re visite → on ancre le point de départ (aucune fausse alerte). Colonnes
@@ -481,6 +489,10 @@ export default async function EspacePro({
                 confirmation={mp.entry?.confirmation ?? "reserve"}
                 secteur={mp.entry?.secteur ?? "flux"}
                 collectifActif={catActif}
+                // Combien de jours d'affilée il a bradé ce qu'il lui restait.
+                // Sert à le lui DIRE au moment où il s'apprête à recommencer —
+                // pas sur son accueil, où ça ferait un panneau de plus.
+                habitude={habitude}
                 // Le catalogue n'accepte que les sites PUBLIÉS : tant que le
                 // sien ne l'est pas, son annonce n'est visible nulle part.
                 voisins={catVoisins}

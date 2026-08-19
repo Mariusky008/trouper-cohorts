@@ -26,6 +26,10 @@ import {
 } from "@/lib/site-internet/actions-flash";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 import { motsMetier, expressMots } from "@/lib/direct/mots-metier";
+// Le SEUIL n'est pas importé ici : c'est `habitudePortion` qui tranche, côté
+// serveur. L'écran ne fait qu'afficher ce qu'on lui donne — deux endroits qui
+// décident du même seuil finiraient par ne plus dire la même chose.
+import { FENETRE_JOURS, type Habitude } from "@/lib/direct/erosion";
 import { ProHistoire } from "./pro-histoire";
 import { AnnonceVisuel } from "./annonce-visuel";
 
@@ -114,6 +118,7 @@ export function ProRelance({
   secteur,
   collectifActif,
   voisins,
+  habitude,
 }: {
   slug: string;
   token: string;
@@ -127,6 +132,9 @@ export function ProRelance({
   /** Son site est en ligne. Sinon RIEN de ce qu'il publie n'est visible. */
   /** Commerces de sa ville déjà en ligne — donc susceptibles de la relayer. */
   voisins: number;
+  /** DEPUIS COMBIEN DE JOURS IL BRADE CE QU'IL LUI RESTE. Presque toujours
+   *  muette : elle ne dit quelque chose qu'au-delà du seuil. */
+  habitude?: Habitude;
 }) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -1347,6 +1355,14 @@ export function ProRelance({
           .pro .relance .carte-prix-c span{font-size:16px;font-weight:800;color:var(--faint);}
           .pro .relance .carte-prix-s{font-size:12px;color:var(--soft);line-height:1.45;margin-top:7px;}
           /* ── 🥘 « Il m'en reste » : deux lignes de deux champs ── */
+          /* L'habitude : DISCRÈTE. Teinte sable, pas rouge — ce n'est ni une
+             erreur ni un avertissement, c'est un chiffre. Un bandeau alarmant
+             au-dessus d'un geste qui lui rapporte de l'argent le ferait
+             renoncer, et ce n'est pas ce qu'on veut : on veut qu'il sache. */
+          .pro .relance .reste-hab{margin-top:14px;border:1px solid #EADFC2;background:#FCF8EF;
+            border-radius:14px;padding:12px 14px;}
+          .pro .relance .reste-hab b{display:block;font-size:13.5px;color:#7A5C10;line-height:1.4;}
+          .pro .relance .reste-hab span{display:block;font-size:12.5px;color:var(--soft);line-height:1.5;margin-top:6px;}
           .pro .relance .reste{margin-top:14px;}
           .pro .relance .reste-l{display:flex;gap:10px;margin-bottom:11px;}
           .pro .relance .reste-c{flex:1;min-width:0;}
@@ -1613,6 +1629,37 @@ export function ProRelance({
                 <button type="button" className="afback" onClick={retourChoix}>← Changer d&apos;action</button>
                 <div className="rlz-h">{intention.emoji} {intention.titre}</div>
                 <div className="rlz-s">{intention.sous}</div>
+
+                {/* ── L'HABITUDE, DITE UNE FOIS, SANS LEÇON ──────────────────
+                    « Il me reste 8 lasagnes à 9 € » est excellent tant que
+                    c'est du surplus. Répété tous les jours à la même heure, ce
+                    n'est plus du surplus : c'est un horaire, et dans une ville
+                    où les mêmes gens circulent, les habitués apprennent à venir
+                    à 14 h. Il vend alors à 9 € ce qu'il vendait à 16 €, et il
+                    ne s'en aperçoit qu'au bout de plusieurs semaines.
+
+                    UN FAIT, PAS UN CONSEIL. On lui donne le nombre qu'il ne
+                    peut pas voir tout seul, et rien de plus : pas de « nous
+                    vous recommandons », pas de blocage, pas de score. C'est son
+                    commerce. Un produit qui juge les décisions commerciales de
+                    quelqu'un se fait fermer en une semaine.
+
+                    ET ELLE SE TAIT PRESQUE TOUJOURS : rien en dessous du seuil.
+                    C'est la leçon du panneau de diagnostic qu'on a retiré de
+                    son accueil — ce qui parle à chaque visite finit non lu. */}
+                {habitude?.signaler && (
+                  <div className="reste-hab">
+                    <b>
+                      Vous l&apos;avez fait {habitude.jours} jours sur {FENETRE_JOURS}
+                      {habitude.heure ? `, autour de ${habitude.heure}` : ""}.
+                    </b>
+                    <span>
+                      {habitude.heure
+                        ? "À ce rythme, vos habitués apprennent l'heure et attendent le prix bas. Vous le savez mieux que nous — c'est juste un chiffre que vous ne pouviez pas voir."
+                        : "Au-delà de quelques jours par semaine, ce n'est plus du surplus pour vos clients : c'est un prix. À vous de voir."}
+                    </span>
+                  </div>
+                )}
 
                 <div className="reste">
                   <div className="reste-l">
