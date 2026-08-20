@@ -122,9 +122,19 @@ export function CarteSwipe({
   const c = carte;
   return (
     <div className={`cd-carte ${className}`} style={style}>
+      {/* DEUX COUCHES, PAS UNE, et c'est un filet de sécurité.
+          L'image est empilée SUR un dégradé. Si le fichier manque ou tarde, la
+          couche du dessous reste : la carte est sombre et propre au lieu d'être
+          blanche et cassée. Avec une seule couche, un `background-image` en 404
+          efface aussi la couleur de fond — on aurait un trou en plein milieu de
+          l'écran qui doit convaincre. */}
       <div
         className={`cd-photo${c.photo ? "" : " sans"}`}
-        style={c.photo ? { backgroundImage: `url(${JSON.stringify(c.photo).slice(1, -1)})` } : undefined}
+        style={
+          c.photo
+            ? { backgroundImage: `url("${encodeURI(c.photo)}"), linear-gradient(155deg,#22463A,#0D1A15 70%)` }
+            : undefined
+        }
       >
         {!c.photo && <span className="cd-ph" aria-hidden="true">{c.icone}</span>}
       </div>
@@ -184,7 +194,7 @@ export function StylesDirect() {
         .cd-carte{position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
           font-family:'Inter',system-ui,sans-serif;isolation:isolate;}
-        .cd-photo{position:absolute;inset:0;background-size:cover;background-position:center;}
+        .cd-photo{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;}
         .cd-photo.sans{display:flex;align-items:center;justify-content:center;
           background:linear-gradient(155deg,#22463A,#0D1A15 70%);}
         .cd-ph{font-size:74px;opacity:.5;}

@@ -26,6 +26,24 @@
 //     l'écran de ses clients. Quand il n'en a aucune, la carte tombe sur un
 //     fond dégradé et l'emoji du métier — jamais sur la photo d'un autre.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
+
+/**
+ * LES QUATRE PHOTOS D'ILLUSTRATION — et le périmètre étroit de leur emploi.
+ *
+ * Elles ne servent qu'à deux choses : les cartes de la VILLE (qui décrivent
+ * d'autres commerces que celui qui regarde), et le repli quand un commerçant
+ * n'a aucune photo sur sa fiche Google. Partout ailleurs ce sont les SIENNES —
+ * voir la règle 3 en tête de fichier.
+ *
+ * Un fichier absent n'est pas une panne : la carte empile l'image sur un
+ * dégradé, et c'est le dégradé qui reste. Voir `carte-swipe.tsx`.
+ */
+const PHOTOS = {
+  plat: "/direct/plat-du-jour.jpg",
+  tables: "/direct/tables-libres.jpg",
+  four: "/direct/sortie-du-four.jpg",
+  vitrine: "/direct/vitrine-du-soir.jpg",
+} as const;
 import type { GesteDuJour } from "@/lib/direct/geste-du-jour";
 import type { TempsMetier } from "@/lib/direct/acte-metier";
 
@@ -61,6 +79,7 @@ export function motDAction(g: GesteDuJour): string {
 export function cartesDeLaVille(ville: string): CarteDirect[] {
   return [
     {
+      photo: PHOTOS.plat,
       nom: "Un restaurant du centre",
       metier: "Restaurant",
       ville,
@@ -72,6 +91,7 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       social: "4 ont réservé",
     },
     {
+      photo: PHOTOS.tables,
       nom: "Une table à deux rues",
       metier: "Restaurant",
       ville,
@@ -82,6 +102,7 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       social: "1 a réservé",
     },
     {
+      photo: PHOTOS.four,
       nom: "Une boulangerie",
       metier: "Boulangerie",
       ville,
@@ -107,8 +128,11 @@ export function saCarte(
   ville: string,
   photo?: string
 ): CarteDirect {
+  // Sa photo d'abord. Sans elle, une illustration qui correspond à ce qu'il
+  // vient de photographier — jamais la photo d'un autre commerce.
+  const repli = g.cherchent === "où manger" ? PHOTOS.plat : PHOTOS.vitrine;
   return {
-    photo,
+    photo: photo || repli,
     nom,
     metier: metierLabel,
     ville,
@@ -137,6 +161,23 @@ const VU_PAR_HABITANT: Record<string, string> = {
   fideles: "Pour les habitués",
   realisation: "Vient d'être terminé",
   venir: "Aujourd'hui seulement",
+};
+
+/**
+ * L'IMAGE DE REPLI DE CHAQUE GESTE, quand le commerçant n'a pas de photo.
+ *
+ * Elle doit dire ce dont on PARLE : montrer une vitrine pendant qu'on annonce
+ * un menu, c'est exactement le genre d'écart qui fait décrocher. Le choix suit
+ * donc le geste, pas le métier.
+ */
+const PHOTO_TEMPS: Record<string, string> = {
+  carte: PHOTOS.plat,
+  arrivage: PHOTOS.four,
+  reste: PHOTOS.plat,
+  creneau: PHOTOS.tables,
+  fideles: PHOTOS.vitrine,
+  realisation: PHOTOS.vitrine,
+  venir: PHOTOS.vitrine,
 };
 
 /** L'emoji d'ambiance de chaque geste, quand il n'y a pas de photo à mettre. */
@@ -187,7 +228,10 @@ export function tempsIllustres(
   return temps.map((t, i) => {
     // Chaque temps prend une photo différente quand il y en a plusieurs : la
     // même image quatre fois de suite donne l'impression que rien ne se passe.
-    const photo = photos.length ? photos[i % photos.length] : undefined;
+    // SES photos d'abord ; l'illustration seulement s'il n'en a aucune.
+    const sienne = photos.length ? photos[i % photos.length] : undefined;
+    const repli = t.genre === "demande" ? PHOTOS.tables : PHOTO_TEMPS[t.cle];
+    const photo = sienne || repli;
 
     if (t.genre === "demande") {
       return {
