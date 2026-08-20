@@ -123,7 +123,7 @@ const NARRATION: Record<string, Narration> = {
     // Le scénario de l'intention est celui d'un restaurant (« 8 lasagnes
     // maison »). Servi à un fleuriste, il donnait une démonstration qui
     // parlait du commerce d'à côté.
-    valeurs: (_now, resto) => (resto ? {} : { combien: "6", quoi: "pièces du jour" }),
+    valeurs: (_now, resto): Record<string, string> => (resto ? {} : { combien: "6", quoi: "pièces du jour" }),
     resultat: "3× plus de réponses le jeudi",
   },
   creneau: {
@@ -169,7 +169,11 @@ const NARRATION: Record<string, Narration> = {
   },
 };
 
-/** Combien de gestes avant la mémoire. Quatre : voir `rang` ci-dessus. */
+/** Combien de gestes avant la mémoire, par défaut.
+ *
+ *  L'acte est passé à TROIS dans la démonstration : il n'y est plus le sujet
+ *  principal mais la suite de la journée, après le retour économique. Quatre
+ *  cartes à cet endroit rallongeaient sans rien ajouter. */
 const GESTES_MAX = 4;
 
 /**
@@ -183,7 +187,8 @@ export function acteMetier(
   metier: string,
   confirmation: Confirmation,
   secteur: Secteur,
-  now: Date
+  now: Date,
+  combien = GESTES_MAX
 ): TempsMetier[] {
   const v = vocabulaire(metier, confirmation, secteur);
   const resto = estRestauration(metier);
@@ -191,7 +196,7 @@ export function acteMetier(
   const gestes = intentionsPour(metier, confirmation, secteur)
     .filter((it) => NARRATION[it.cle])
     .sort((a, b) => NARRATION[a.cle].rang - NARRATION[b.cle].rang)
-    .slice(0, GESTES_MAX)
+    .slice(0, Math.max(1, combien))
     .map((it) => {
       const n = NARRATION[it.cle];
       const x = { ...it.demo(now), ...(n.valeurs ? n.valeurs(now, resto) : {}) };

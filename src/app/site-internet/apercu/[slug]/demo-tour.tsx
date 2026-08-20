@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
 import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
-import { phraseVitrine, type EvenementVitrine } from "@/lib/direct/ville-vitrine";
+import { direRetours, habitantsDe, VITRINES, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 
 type Props = {
   slug: string;
@@ -42,62 +42,39 @@ type Props = {
    */
   actes?: TempsMetier[];
   /**
-   * LA VILLE À PLEIN RÉGIME — ce que Le Direct montrera, heure par heure.
+   * LE GESTE DU JOUR — la colonne vertébrale, dans les mots de CE métier.
    *
-   * Des chiffres inventés, et c'est assumé : au lancement le fil réel est vide,
-   * et montrer « rien ne se passe » à celui qu'on veut convaincre revient à lui
-   * démontrer qu'il n'a aucune raison de s'inscrire. Le raisonnement complet
-   * est dans `ville-vitrine.ts` ; la règle qui rend ça honnête — la phrase AU
-   * FUTUR — est tenue par l'écran, juste sous les chiffres.
+   * La démo ouvrait sur le site et énumérait ce que ClikMe sait faire. Le
+   * commerçant a déjà un site : ce n'est pas la nouveauté. La nouveauté, c'est
+   * que cinq cents personnes cherchent où manger à midi et qu'il est invisible
+   * à onze heures — puis que quelque chose lui REVIENT. Voir `geste-du-jour`.
    */
-  vitrine?: EvenementVitrine[];
+  geste?: GesteDuJour;
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
 };
 
+/** Les écrans du nouveau déroulé, et rien d'autre.
+ *
+ *  Onze scènes ont disparu avec l'ancien récit — le pivot, la coupure, le
+ *  réseau, l'annonce d'exemple, le Clik collectif. Elles ne racontaient pas ce
+ *  que ClikMe rapporte au commerçant, et laisser leur code derrière un `Scene`
+ *  qui ne les nomme plus aurait fait croire qu'elles pouvaient revenir seules. */
 type Scene =
   | ""
-  | "note" | "reso" | "daily" | "reseau" | "flash" | "clik" | "vision" | "conclu" | "alive" | "final"
-  // ── LES TROIS ÉCRANS QUI FONT LE RÉCIT, et qui manquaient ────────────────
-  // La démo montrait des fonctions ; elle ne racontait rien. Ces trois-là ne
-  // démontrent AUCUNE fonctionnalité — ils portent les trois virages du récit,
-  // et c'est ce qui transforme une liste de features en une histoire :
-  //   · `pivot`   — « je ne fais pas que répondre : je vais chercher vos clients »
-  //   · `coupure` — deux secondes de noir : « vous n'avez plus besoin de publier »
-  //   · `boucle`  — « Votre commerce. En direct dans votre ville. »,
-  //                 c'est-à-dire la première phrase de la page d'accueil,
-  //                 rendue à la fin. Qui a vu la page reconnaît la promesse ;
-  //                 qui ne l'a pas vue la reçoit entière.
-  | "pivot" | "coupure" | "boucle"
-  // L'ACTE MÉTIER : « et ce n'est pas que pour les offres ». Les gestes de sa
-  // semaine, un par carte, dans les mots de son métier.
-  | "metier";
+  | "bascule"
+  | "qui"
+  | "invisible"
+  | "photo"
+  | "retour"
+  | "metier"
+  | "boucle"
+  | "final";
 
-export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, reviewsCount, avisAllowed, partners, resoExample, flashExample, flashDit, tourChat, actes, vitrine, keepHref }: Props) {
+export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flashExample, actes, geste, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
-  // La transformation se joue en QUATRE temps continus, plus l'écran du fil :
-  //   0 = il dit · 1 = elle rédige · 2 = l'annonce est prête · 3 = le fil.
-  const [fxStep, setFxStep] = useState(0);
-  const [catSlide, setCatSlide] = useState(0); // carte visible du fil d'exemple
-  // Le Clik collectif : le nombre d'engagés, qui monte pendant qu'elle parle.
-  // Un état plutôt qu'une animation CSS : le basculement doit tomber sur SON
-  // mot (« dès la sixième »), pas sur une durée fixe qui dériverait dès qu'on
-  // retouche la phrase.
-  const [clikN, setClikN] = useState(3);
-  // L'acte métier : quel temps est à l'écran. Un seul à la fois — c'est le
-  // point de cet acte, et une carte de plus le ferait retomber en catalogue.
-  const [metierN, setMetierN] = useState(0);
-  // La phrase que le pro « dirait » — la même aux deux temps, pour que la
-  // transformation soit lisible : on ne change que l'habillage, pas le fait.
-  const flashPhrase = flashExample || "Une nouveauté cette semaine.";
-  // Ce que le commerçant DIT — l'autre bout de la transformation. Sans lui, on
-  // ne voyait qu'un résultat, jamais la cause : « je dis, elle en fait une
-  // annonce » est pourtant tout le produit.
-  const flashSaid = flashDit || "J'ai une nouveauté à faire connaître aujourd'hui.";
-  // La réplique de l'Action Flash, en deux moitiés : la seconde parle du
-  // fil, et c'est à cet instant que l'écran doit basculer dessus.
   /* ─────────────────── LES SIX RÉPLIQUES, ET LEUR MINUTAGE ───────────────────
    *
    * Règle de cette section : la LÉGENDE du bas est mot pour mot ce que la voix
@@ -127,126 +104,75 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     return i < 0 ? 0 : Math.round(i * MS_PAR_CARACTERE);
   };
 
-  // 2 — Je réponds. La conversation se joue pendant qu'elle décrit sa mission.
-  const SAY_REPOND =
-    `Ma première mission : répondre à vos visiteurs lorsque vous travaillez ou que votre commerce est fermé. ` +
-    `Je réponds à leurs questions, je recueille leurs demandes et je vous transmets les informations importantes.`;
-  const REPOND_AT = {
-    question: auMot(SAY_REPOND, "répondre à vos visiteurs"),
-    reponse: auMot(SAY_REPOND, "Je réponds à leurs questions"),
-    transmis: auMot(SAY_REPOND, "je vous transmets"),
-  };
-
-  // 2 bis — LE PIVOT. La phrase qui fait basculer toute la démonstration.
-  const SAY_PIVOT =
-    `Mais je ne fais pas que répondre. Je vais chercher vos clients. ` +
-    `Dites-moi simplement ce qui se passe chez vous, et je m'occupe du reste.`;
-
-  // 7 — LA COUPURE. Deux secondes de silence visuel avant la conclusion.
-  const SAY_COUPURE =
-    `Vous n'avez plus besoin de publier, ni de choisir une photo, ni de trouver un titre. ` +
-    `Vous avez juste à me dire ce qui se passe.`;
-
   // 8 — LA BOUCLE. La première phrase de la page d'accueil, rendue à la fin.
   const SAY_BOUCLE =
     `Votre commerce, en direct dans votre ville. Votre site, votre assistante, votre actualité, votre ville.`;
 
-  // 3 — Je vous fais connaître. La journée de la ville s'écrit ligne à ligne,
-  //     à l'heure du visiteur.
-  //
-  // AU FUTUR, ET C'EST TOUT CE QUI SÉPARE UNE PROJECTION D'UN RELEVÉ INVENTÉ.
-  // Les chiffres qui défilent sous cette phrase ne sont pas mesurés : ils
-  // montrent la ville quand ses commerces y seront. « ${MARQUE} montre, en ce
-  // moment » au-dessus des mêmes chiffres aurait été un mensonge ;
-  // « montrera » est vrai, et c'est exactement ce qu'il vient voir.
-  // L'ÉNUMÉRATION PASSE DEVANT, la conclusion derrière — et ce n'est pas du
-  // style. Les quatre lignes s'allument sur les quatre segments : rejetés en
-  // fin de réplique, les deux derniers apparaissaient une seconde avant que
-  // l'acte ne change, et on ne les voyait tout simplement pas.
-  const SAY_CONNAITRE =
-    `Chaque heure, ${MARQUE} montrera ce que ${villeAff || "votre ville"} peut offrir : ` +
-    `ce qui sort du four, ce qu'il reste à midi, ce qui se libère l'après-midi, ce qui se passe le soir. ` +
-    `Voilà la ville que votre commerce rejoint.`;
-  // Les lignes s'allument au DÉBUT du segment qui les nomme — pas à sa fin :
-  // une ligne qui arrive quand la voix a fini d'en parler illustre une chose
-  // déjà comprise. Changer la phrase sans déplacer ces repères les ferait
-  // toutes apparaître à la première seconde.
-  const BULLES_AT = [
-    auDebut(SAY_CONNAITRE, "ce qui sort du four"),
-    auDebut(SAY_CONNAITRE, "ce qu'il reste à midi"),
-    auDebut(SAY_CONNAITRE, "ce qui se libère l'après-midi"),
-    auDebut(SAY_CONNAITRE, "ce qui se passe le soir"),
-  ];
+  /* ══════════ LE NOUVEAU RÉCIT ══════════════════════════════════════════
+   *
+   * L'ancien déroulé ouvrait sur le site et énumérait onze capacités en deux
+   * minutes dix. Un restaurateur en coup de feu décrochait au quatrième acte,
+   * et rien, nulle part, ne lui montrait ce que ça lui RAPPORTE.
+   *
+   * Le nouveau part de son client, pas de notre outil : cinq cents habitants
+   * cherchent où manger, son menu est sur une ardoise que personne ne voit, il
+   * la photographie, et quelque chose lui revient. Le site n'est pas renié — il
+   * est montré cinq secondes, comme preuve, puis déclassé d'une phrase.
+   */
+  const G = geste;
+  // `habitants` est déjà pris dans ce composant (les silhouettes du réseau) :
+  // deux choses sans rapport ne partagent pas un nom.
+  const gentile = habitantsDe(villeAff);
 
-  // 4 — Le moteur. Le fil, puis les sites partenaires, puis leurs clients.
-  const SAY_MOTEUR =
-    `C'est Le Direct de ${villeAff || "votre ville"} : tout ce qui se passe ici, commerce par commerce. ` +
-    `Les commerces partenaires l'affichent aussi sur leur propre site, ce qui vous fera connaître de leurs clients. ` +
-    `Votre commerce y apparaît au moment où son offre devient utile.`;
-  const MOTEUR_AT = {
-    // Le fil est là dès qu'elle le nomme.
-    coeur: auMot(SAY_MOTEUR, `Le Direct de ${villeAff || "votre ville"}`),
-    // Les sites s'allument pendant qu'elle dit ce que le fil rassemble —
-    // attendre « Tous les commerces partenaires » laissait le noyau seul 9 s.
-    sites: auMot(SAY_MOTEUR, "tout ce qui se passe ici"),
-    // …le fil s'y copie quand elle dit qu'ils l'affichent…
-    copies: auMot(SAY_MOTEUR, "l'affichent aussi sur leur propre site"),
-    // …et leurs clients apparaissent quand elle les nomme.
-    habitants: auMot(SAY_MOTEUR, "connaître de leurs clients"),
+  // 0 bis — LA BASCULE. La phrase qui fait tenir tout le reste.
+  const SAY_BASCULE =
+    `Mais le plus important n'est pas votre site. C'est ce qu'il peut vous rapporter.`;
+
+  // 1 — LA QUESTION DES HABITANTS. On ne dit pas « 500 personnes » : ça se lit
+  //     « ClikMe a 500 utilisateurs ici », et le jour où il ouvre le fil et le
+  //     trouve calme, il se sent trompé. On parle de SA ville.
+  const SAY_QUI = G
+    ? `Ce midi, ${G.combien} ${gentile} se demandent ${G.cherchent}. ` +
+      `Votre commerce est peut-être à quatre cents mètres. Mais ils ne le savent pas.`
+    : "";
+  const QUI_AT = {
+    ville: auDebut(SAY_QUI, "Votre commerce est peut-être"),
+    ignore: auDebut(SAY_QUI, "Mais ils ne le savent pas"),
   };
 
-  // 5 — Une phrase suffit. La démonstration, calée sur son récit.
-  const SAY_PHRASE =
-    `Par exemple, dites-moi simplement : « ${flashSaid} » Une phrase suffit. ` +
-    `Je rédige l'annonce, je choisis la photo et, après votre validation, je la diffuse sur votre site ` +
-    `et dans Le Direct de ${villeAff || "votre ville"}. ` +
-    `Des habitants qui ne vous connaissent pas encore peuvent alors découvrir votre actualité.`;
-  const PHRASE_AT = {
-    ecrit: auMot(SAY_PHRASE, "Je rédige l'annonce"),
-    direct: auMot(SAY_PHRASE, `et dans Le Direct de ${villeAff || "votre ville"}`),
-    decouverte: auMot(SAY_PHRASE, "peuvent alors découvrir"),
+  // 2 — CE QUE LES AUTRES MONTRENT DÉJÀ, et ce qu'ils ne montrent pas.
+  const SAY_INVISIBLE = G
+    ? `${G.ouDort} Mais qui la voit ? ` +
+      `Google, Instagram, votre vitrine : tout le monde montre votre commerce. ` +
+      `Personne ne montre ${G.pasVu}.`
+    : "";
+  const INVISIBLE_AT = {
+    autres: auDebut(SAY_INVISIBLE, "Google, Instagram"),
+    verdict: auDebut(SAY_INVISIBLE, "Personne ne montre"),
   };
 
-  // 5 bis — LE CLIK COLLECTIF.
-  //
-  // C'est la seule mécanique qui distingue vraiment Clikme d'un panneau
-  // d'affichage, et elle manquait à la démonstration. Elle est racontée du
-  // point de vue du COMMERÇANT — ce que ça lui apporte — et pas du point de vue
-  // de l'habitant : il regarde cette démo pour savoir ce qu'il y gagne.
-  //
-  // Le chiffre est dit à voix haute (« six personnes ») pendant que la jauge se
-  // remplit : c'est la même information par deux canaux, et c'est ce qui fait
-  // comprendre le mécanisme en une fois.
-  const SAY_CLIK =
-    `Et vous pouvez aller plus loin : proposez un prix de groupe. ` +
-    `Tant que six personnes ne se sont pas engagées, rien ne change ; ` +
-    `dès la sixième, le prix baisse pour tout le monde et vous les voyez arriver ensemble. ` +
-    `Ce ne sont pas six clients de plus au hasard : ce sont six personnes qui se sont donné rendez-vous chez vous.`;
-  const CLIK_AT = {
-    // La carte apparaît dès qu'elle propose la chose.
-    carte: auMot(SAY_CLIK, "proposez un prix de groupe"),
-    // La jauge se remplit pendant qu'elle décrit l'attente…
-    remplit: auMot(SAY_CLIK, "Tant que six personnes"),
-    // …et bascule exactement sur « dès la sixième ».
-    bascule: auMot(SAY_CLIK, "dès la sixième"),
+  // 3 — LE GESTE. Trois secondes, et rien d'autre à faire.
+  const SAY_PHOTO = G
+    ? `${G.geste} C'est tout. Je lis, j'écris, je publie — sur votre site et dans Le Direct de ${villeAff || "votre ville"}.`
+    : "";
+  const PHOTO_AT = {
+    lit: auMot(SAY_PHOTO, "C'est tout"),
+    publie: auDebut(SAY_PHOTO, "sur votre site"),
   };
 
-  // 5 ter — L'ACTE MÉTIER. « Et ce n'est pas que pour les offres. »
+  // 4 — CE QUI REVIENT. Le seul moment de toute la démonstration où quelque
+  //     chose revient VERS lui — et celui qui décide.
   //
-  // LE PROBLÈME QU'IL RÉSOUT : après une annonce montrée une fois, le
-  // commerçant range le produit dans « les trucs à promotions ». Ce qu'on lui
-  // vend est pourtant un geste quotidien — sa carte le matin, ses tables vides
-  // le soir, ce qu'il lui reste à 14 h, ses habitués.
-  //
-  // UN MESSAGE À LA FOIS, ET C'EST TOUTE LA DIFFICULTÉ DE CET ÉCRAN. Quatre
-  // gestes affichés ensemble font une grille de fonctionnalités : on les
-  // survole, on n'en retient aucun. Ils arrivent donc un par un, chacun sur SA
-  // phrase — et comme tout tient dans une seule réplique, l'acte ne coûte
-  // qu'une étape au compteur au lieu de cinq.
+  //     ELLE LIT LES LIGNES. La réplique tenait en six mots pendant que quatre
+  //     lignes mettaient six secondes à s'afficher : l'acte se terminait avant
+  //     d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
+  const retourDit = G ? direRetours(G) : { say: "", phrases: [] as string[] };
+  const SAY_RETOUR = retourDit.say;
+  const RETOUR_AT = retourDit.phrases.map((ph) => auDebut(SAY_RETOUR, ph));
+
+  // 5 — L'ACTE MÉTIER : la suite de sa journée, dans ses mots.
   const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
   const SAY_METIER = direActe(actesListe);
-  // Chaque carte se pose quand la voix ATTAQUE sa phrase, pas quand elle la
-  // finit : elle doit être là pendant qu'on l'explique.
   const METIER_AT = actesListe.map((t) => auDebut(SAY_METIER, t.dit));
 
   // 6 — À vous. Elle s'efface, le site reste.
@@ -268,18 +194,20 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
    */
   const [orbe, setOrbe] = useState<"" | "attente" | "vol">("");
   const [vol, setVol] = useState({ x: 0, y: 0 });
+  /* LES TEMPS DES ACTES, un état par acte.
+   *
+   * Chaque ligne tombe sur SON mot : un acte qui s'affiche d'un bloc ne se lit
+   * pas — on le survole, et rien n'en reste. C'est vrai de l'acte métier comme
+   * des quatre écrans du récit. */
+  const [metierN, setMetierN] = useState(0);
+  const [quiN, setQuiN] = useState(0);
+  const [invN, setInvN] = useState(0);
+  const [photoN, setPhotoN] = useState(0);
+  const [retourN, setRetourN] = useState(0);
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
-  // La carte du fil de démo « part » avant d'être remplacée : c'est ce qui
-  // fait lire un glissement plutôt qu'un changement d'image.
-  const [catFly, setCatFly] = useState<"" | "oui" | "non">("");
-  // Tampon montré pendant le geste automatique : « gardé » puis « passer ».
-  const [catStamp, setCatStamp] = useState<"" | "oui" | "non">("");
-  // Les instants où les répliques de la conversation apparaissent — calculés
-  // depuis la phrase de l'étape, pas choisis à la main.
-  const [lvAt, setLvAt] = useState({ question: 150, reponse: 1050, transmis: 2100 });
 
   /**
    * Le fil doit tenir ENTIER dans la hauteur disponible — les trois gestes
@@ -289,40 +217,7 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
    * On le mesure une fois affiché et on le réduit proportionnellement (jamais
    * au-delà de 1 : sur grand écran il garde sa taille naturelle).
    */
-  const fitRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (scene !== "flash" || fxStep !== 2) return;
-    const el = fitRef.current;
-    if (!el) return;
-    const inner = el.firstElementChild as HTMLElement | null;
-    if (!inner) return;
-    // Mesuré puis mis à l'échelle AVANT d'être montré : sinon le fil
-    // paraît une fraction de seconde à sa taille naturelle, puis rétrécit d'un
-    // coup — ce clignotement se lit comme un écran de plus qui ne sert à rien.
-    let raf = 0;
-    const ajuste = () => {
-      const carte = el.closest<HTMLElement>(".dtour-card");
-      if (!carte) return;
-      const dispo = carte.clientHeight - (carte.scrollHeight - el.clientHeight) - 6;
-      const naturel = inner.scrollHeight;
-      if (naturel <= 0 || dispo <= 0) return;
-      const k = Math.min(1, dispo / naturel);
-      inner.style.transform = k < 1 ? `scale(${k})` : "";
-      el.style.height = `${Math.ceil(naturel * k)}px`;
-      el.classList.add("pret");
-    };
-    ajuste();
-    raf = window.requestAnimationFrame(ajuste);
-    window.addEventListener("resize", ajuste);
-    return () => {
-      window.cancelAnimationFrame(raf);
-      window.removeEventListener("resize", ajuste);
-    };
-  }, [scene, fxStep]);
 
-  const partnersList = (partners && partners.length ? partners : [
-    { ic: "🌸", t: "Fleuriste" }, { ic: "📸", t: "Photographe" }, { ic: "💇", t: "Coiffeur" }, { ic: "🍽️", t: "Restaurant" }, { ic: "🎉", t: "Événementiel" },
-  ]).slice(0, 6);
 
   // Le fil d'exemple montré au 3ᵉ temps de l'Action Flash.
   // Sa carte à lui est RÉELLE (son nom, l'annonce qu'il vient de « dire »). Les
@@ -332,85 +227,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
   // Une annonce d'exemple PAR MÉTIER. Une phrase générique (« deux places se
   // libèrent ») n'a aucun sens chez un fleuriste : ce qu'on montre doit être ce
   // que CE métier annoncerait vraiment, sinon l'exemple dessert la démonstration.
-  const ANNONCE_METIER: Record<string, string> = {
-    Fleuriste: "Bouquets du jour à moitié prix jusqu'à 19 h.",
-    Photographe: "Une séance portrait se libère samedi matin.",
-    Restaurant: "Deux tables se libèrent ce soir à 20 h.",
-    Coiffeur: "Brushing offert pour toute couleur cette semaine.",
-    Maquilleuse: "Un créneau libre samedi matin, maquillage mariage.",
-    "Robe de mariée": "La nouvelle collection est arrivée en boutique.",
-    Événementiel: "Un samedi de septembre encore libre.",
-    "Bar à cocktails": "Happy hour prolongée jusqu'à 20 h ce jeudi.",
-    "DJ / musicien": "Deux dates encore libres en septembre.",
-    Taxi: "Disponible ce soir jusqu'à minuit.",
-    Hôtel: "Deux chambres se libèrent ce week-end.",
-    Naturopathe: "Deux créneaux libres jeudi après-midi.",
-    Nutritionniste: "Premier bilan à tarif réduit cette semaine.",
-    Kiné: "Une place s'est libérée demain matin.",
-    Ostéo: "Créneau libre vendredi à 17 h.",
-    Sophrologue: "Séance découverte à tarif réduit ce mois-ci.",
-  };
-  const annonceDe = (t: string) => ANNONCE_METIER[t] || "Une nouveauté cette semaine.";
-
-  // L'ORDRE compte : un habitant qui parcourt le fil tombe sur d'autres
-  // annonces AVANT la sienne. En la mettant en tête, on montrait le commerçant
-  // en train de garder sa propre annonce — d'où le badge « vous » et le tampon
-  // « Gardé » sur sa carte, qui rendaient la scène incompréhensible. Sa carte
-  // arrive donc en dernier, et c'est celle-là que le visiteur garde.
-  const cartesDuDirect = [
-    // Les autres : libellé de métier et emoji, jamais un commerce inventé ni une
-    // photo qui ne leur appartient pas. Le panneau porte « exemple » en permanence.
-    ...partnersList.slice(0, 1).map((pn, i) => ({
-      nom: pn.t,
-      metier: pn.t,
-      texte: annonceDe(pn.t),
-      quand: ["il y a 12 min", "il y a 1 h", "hier"][i % 3],
-      photo: "",
-      ic: pn.ic,
-    })),
-    {
-      nom,
-      metier: metierLabel || "Commerce",
-      texte: flashPhrase,
-      quand: "à l'instant",
-      // Sa VRAIE photo Google : la carte du fil est pleine photo, et la
-      // sienne est la seule dont nous ayons une image légitime.
-      photo: (photos && photos[0]) || "",
-      ic: "",
-    },
-  ];
-  // Recommandation croisée COHÉRENTE avec le métier (pilates → bien-être, pas mariage).
-  const reso = resoExample ?? {
-    partner: "un commerce partenaire",
-    clientMsg: `Je prépare un projet à ${villeAff} 🙂`,
-    recoMsg: `Je connais LE bon partenaire à ${villeAff} 😊`,
-    oppMsg: "🤝 Nouveau client — il cherche vos services. Proposer un créneau ?",
-  };
-  // Constellation de la scène « vision » : vous au centre, les partenaires en
-  // orbite, des recommandations qui affluent vers vous. Positions en cercle.
-  /**
-   * LE MOTEUR — quatre sites partenaires en croix, quatre habitants dans les
-   * diagonales. Quatre et non cinq : à cette taille (le réseau est agrandi de
-   * ~35 %), cinq fenêtres se chevauchaient sur un téléphone de 360 px.
-   */
-  const RESEAU_R = 116;
-  const reseauSites = partnersList.slice(0, 4).map((pn, i, arr) => {
-    const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
-    return { ...pn, x: Math.round(Math.cos(ang) * RESEAU_R), y: Math.round(Math.sin(ang) * RESEAU_R), deg: Math.round((ang * 180) / Math.PI) };
-  });
-  // Les habitants se placent ENTRE les fenêtres : ils ne les recouvrent pas, et
-  // le regard comprend qu'ils sont autour du réseau, pas dedans.
-  const habitants = [-45, 45, 135, 225].map((d) => ({
-    d,
-    x: Math.round(Math.cos((d * Math.PI) / 180) * 148),
-    y: Math.round(Math.sin((d * Math.PI) / 180) * 148),
-  }));
-
-  const VIZ_R = 94;
-  const vizNodes = partnersList.slice(0, 5).map((pn, i, arr) => {
-    const ang = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
-    return { ...pn, x: Math.round(Math.cos(ang) * VIZ_R), y: Math.round(Math.sin(ang) * VIZ_R), deg: Math.round((ang * 180) / Math.PI) };
-  });
 
   useEffect(() => {
     return () => {
@@ -660,99 +476,124 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
     // HONNÊTETÉ : on prépare et on diffuse, on ne « remplit » pas à sa place.
     const steps: Array<{ title: string; say: string; enter: () => void }> = [];
 
-    // 1 — VOICI VOTRE SITE : il se construit sous ses yeux, aucune carte par-dessus.
+    // ── 0. LE SITE, CINQ SECONDES, COMME PREUVE ────────────────────────────
+    //
+    // On ne le renie pas : il vient d'être créé pour lui, gratuitement, et
+    // c'est ce qui rend le reste crédible. Mais il n'est plus le SUJET — il
+    // occupait les deux premiers actes d'une démonstration qui n'a jamais
+    // montré ce que ça rapporte.
     steps.push({
-      title: "Voici votre site",
+      title: "Votre site est prêt",
       say:
-        `Bonjour, je suis Léa, votre assistante. J'ai créé le site de ${nom} à partir de votre fiche Google : ` +
-        `vos photos, vos prestations, vos horaires${hasReviews ? " et vos avis" : ""}.`,
+        `Bonjour, je suis Léa. Votre site est déjà prêt : je l'ai créé à partir de votre fiche Google, ` +
+        `avec vos photos, vos horaires${hasReviews ? " et vos avis" : ""}.`,
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
-    // 2 — JE RÉPONDS. Remontée juste après le site, et c'est le récit qui
-    //     l'exige : c'est la mission qu'on attend d'une assistante, donc celle
-    //     qu'il faut poser AVANT de la dépasser. Placée en avant-dernier, comme
-    //     elle l'était, elle retombait après le grand écran du réseau et se
-    //     lisait comme un détail technique.
+    // ── 0 bis. LA BASCULE ──────────────────────────────────────────────────
+    //
+    // La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle garde
+    // le cadeau et le déclasse en une ligne : le site est le point de départ,
+    // pas la finalité.
     steps.push({
-      title: "Je réponds pour vous",
-      say: SAY_REPOND,
-      enter: () => { chime(); setLvAt(REPOND_AT); setScene("alive"); },
+      title: "Le plus important n'est pas votre site",
+      say: SAY_BASCULE,
+      enter: () => { chime(); setScene("bascule"); },
     });
 
-    // Les étapes « faire connaître » n'existent qu'en déonto ouverte : on ne
+    // Le récit « on vous fait connaître » n'existe qu'en déonto ouverte : on ne
     // montre ni offre ni annonce à un cabinet de santé ou de droit.
-    if (avisAllowed) {
-      // 3 — LE PIVOT. Le seul écran qui ne démontre rien, et le plus important :
-      //     une assistante qui répond, tout le monde en a déjà vu une ; une
-      //     assistante qui va CHERCHER des clients, non. Sans ce virage
-      //     explicite, la suite se lit comme une liste d'options.
+    if (avisAllowed && G) {
+      // ── 1. CE QUE CHERCHENT LES HABITANTS ────────────────────────────────
       steps.push({
-        title: "Je ne fais pas que répondre",
-        say: SAY_PIVOT,
-        enter: () => { chime(); setScene("pivot"); },
-      });
-
-      // 3 — JE VOUS FAIS CONNAÎTRE : les quatre bulles s'allument à mesure
-      //     qu'elle les nomme.
-      steps.push({
-        title: "Je vous fais connaître",
-        say: SAY_CONNAITRE,
-        enter: () => { chime(); setScene("daily"); },
-      });
-
-      // 4 — LE MOTEUR : le fil, les vitrines du réseau, puis leurs clients.
-      steps.push({
-        title: `Le Direct de ${villeAff || "votre ville"}`,
-        say: SAY_MOTEUR,
-        enter: () => { chime(); setScene("reseau"); },
-      });
-
-      // 5 — UNE PHRASE SUFFIT : sa phrase, l'annonce écrite, puis la découverte.
-      steps.push({
-        title: "Une phrase suffit",
-        say: SAY_PHRASE,
+        title: `Ce midi, à ${villeAff || "votre ville"}`,
+        say: SAY_QUI,
         enter: () => {
-          setScene("flash");
-          setFxStep(0);
-          setCatSlide(0);
-          setCatFly("");
-          setCatStamp("");
-          window.setTimeout(() => setFxStep(1), PHRASE_AT.ecrit);
-          window.setTimeout(() => setFxStep(2), PHRASE_AT.direct);
-          // Un habitant parcourt le fil : il passe une annonce, tombe sur
-          // la sienne, et la garde — pile quand elle dit qu'on peut le découvrir.
-          const d = PHRASE_AT.decouverte;
-          const av = (ms: number) => Math.max(PHRASE_AT.direct + 600, d - ms);
-          window.setTimeout(() => setCatStamp("non"), av(2600));
-          window.setTimeout(() => setCatFly("non"), av(2200));
-          window.setTimeout(() => { setCatFly(""); setCatStamp(""); setCatSlide(1); }, av(1800));
-          window.setTimeout(() => setCatStamp("oui"), d + 200);
+          chime();
+          setQuiN(0);
+          setScene("qui");
+          window.setTimeout(() => setQuiN(1), QUI_AT.ville);
+          window.setTimeout(() => setQuiN(2), QUI_AT.ignore);
         },
       });
 
-      // 5 ter — L'ACTE MÉTIER : ses gestes de la semaine, un par carte.
-      //     Il vient APRÈS l'annonce d'exemple, parce que sa force est d'être
-      //     un démenti : « ce n'est pas que pour les offres » n'a de sens
-      //     qu'une fois l'offre montrée. Il n'existe pas si le métier n'a
-      //     aucun geste narrable — on ne joue pas un acte vide.
+      // ── 2. CE QUE PERSONNE NE MONTRE ─────────────────────────────────────
+      steps.push({
+        title: "Mais qui la voit ?",
+        say: SAY_INVISIBLE,
+        enter: () => {
+          setInvN(0);
+          setScene("invisible");
+          window.setTimeout(() => setInvN(1), INVISIBLE_AT.autres);
+          window.setTimeout(() => setInvN(2), INVISIBLE_AT.verdict);
+        },
+      });
+
+      // ── 3. LE GESTE ──────────────────────────────────────────────────────
+      steps.push({
+        title: G.geste,
+        say: SAY_PHOTO,
+        enter: () => {
+          chime();
+          setPhotoN(0);
+          setScene("photo");
+          window.setTimeout(() => setPhotoN(1), PHOTO_AT.lit);
+          window.setTimeout(() => setPhotoN(2), PHOTO_AT.publie);
+        },
+      });
+
+      // ── 4. CE QUI LUI REVIENT ────────────────────────────────────────────
+      //
+      // L'acte qui manquait, et le seul où quelque chose revient VERS lui.
+      // Tout le reste de la démonstration décrit ce que ClikMe fait ; celui-ci
+      // décrit ce que ça lui rapporte, et c'est le seul qui décide.
+      //
+      // Les lignes tombent une par une, avec un temps de silence entre elles :
+      // affichées d'un bloc, elles se lisent comme un tableau de bord de plus.
+      steps.push({
+        title: "Et voilà ce qui se passera ensuite",
+        say: SAY_RETOUR,
+        enter: () => {
+          chime();
+          setRetourN(-1);
+          setScene("retour");
+          // Chaque ligne tombe quand la voix l'attaque — plus sur un minuteur
+          // qui dérivait dès qu'on retouchait une phrase.
+          //
+          // LA LÉGENDE SUIT, ELLE AUSSI. Affichée d'un bloc, elle donnait les
+          // quatre chiffres au bas de l'écran avant que la première ligne ne
+          // soit apparue : on lisait la conclusion avant la démonstration.
+          setCaption("Et voilà ce qui se passera ensuite.");
+          RETOUR_AT.forEach((ms, i) => {
+            window.setTimeout(() => {
+              setRetourN(i);
+              setCaption(retourDit.phrases[i]);
+            }, ms);
+          });
+        },
+      });
+    }
+
+    if (avisAllowed) {
+      // ── 5. LE RESTE DE LA JOURNÉE ────────────────────────────────────────
+      //     L'acte métier, resserré : trois gestes et la mémoire. Il arrive
+      //     APRÈS le retour économique, parce qu'il ne vaut que si l'on a
+      //     d'abord compris à quoi sert de dire ce qui se passe.
       if (actesListe.length) {
         steps.push({
-          title: "Et ce n'est pas que pour les offres",
+          title: "Et quand les choses changent",
           say: SAY_METIER,
           enter: () => {
             chime();
             setMetierN(0);
             setScene("metier");
             // LA LÉGENDE SUIT LES TEMPS, ELLE AUSSI. Affichée d'un bloc, elle
-            // posait les cinq phrases au bas de l'écran dès la première
+            // posait toutes les phrases au bas de l'écran dès la première
             // seconde — c'est-à-dire exactement ce que cet acte cherche à
             // éviter : tout en même temps, rien de compris.
             setCaption(INTRO_ACTE);
             METIER_AT.forEach((ms, i) => {
               window.setTimeout(() => {
-                // La première carte est posée d'avance : elle prend l'écran
-                // pendant le démenti, et sa phrase arrive dessus.
                 if (i > 0) setMetierN(i);
                 setCaption(actesListe[i].dit);
               }, ms);
@@ -761,33 +602,8 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
         });
       }
 
-      // 5 bis — À PLUSIEURS : la jauge se remplit et bascule sur son mot.
-      steps.push({
-        title: "À plusieurs, c'est moins cher",
-        say: SAY_CLIK,
-        enter: () => {
-          chime();
-          setClikN(3);
-          setScene("clik");
-          const t0 = CLIK_AT.remplit;
-          const pas = Math.max(400, (CLIK_AT.bascule - t0) / 3);
-          window.setTimeout(() => setClikN(4), t0);
-          window.setTimeout(() => setClikN(5), t0 + pas);
-          window.setTimeout(() => setClikN(6), CLIK_AT.bascule);
-        },
-      });
-    }
-
-    // LA COUPURE, PUIS LA BOUCLE. Deux écrans sans démonstration, à la fin :
-    // après six actes qui montrent, il faut un silence pour que la seule
-    // phrase qu'il retiendra le lendemain soit entendue. Ils n'existent qu'en
-    // déonto ouverte — ils parlent de publier, ce qu'un cabinet ne fait pas.
-    if (avisAllowed) {
-      steps.push({
-        title: "Vous n'avez plus à publier",
-        say: SAY_COUPURE,
-        enter: () => { setScene("coupure"); },
-      });
+      // ── 6. LA BOUCLE ─────────────────────────────────────────────────────
+      //     La première phrase de la page d'accueil, rendue à la fin.
       steps.push({
         title: "Votre commerce, en direct",
         say: SAY_BOUCLE,
@@ -877,20 +693,10 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
 
   if (phase === "done") return null;
 
-  const chat = tourChat ?? {
-    q: "Bonsoir, avez-vous un créneau samedi ?",
-    a: `Bonsoir 😊 Je note votre demande pour samedi et je la transmets à ${nom} — vous aurez une réponse rapidement.`,
-  };
 
-  // LA JOURNÉE DE LA VILLE, calculée sur le serveur et donnée en prop : elle
-  // dépend de l'heure, et la calculer ici la ferait diverger du rendu serveur.
-  // Repli sur rien du tout plutôt que sur des chiffres écrits en dur ici : une
-  // deuxième liste finirait par contredire la première.
-  const villeJour: EvenementVitrine[] = Array.isArray(vitrine) ? vitrine : [];
   // Le temps de l'acte métier actuellement à l'écran.
   const tempsCourant = actesListe[Math.min(metierN, actesListe.length - 1)];
 
-  const stars = note ? "★".repeat(Math.max(1, Math.min(5, Math.round(Number(note.replace(",", ".")))))) : "★★★★★";
   return (
     <>
       <style
@@ -1386,6 +1192,103 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
              emporte avec lui. C'est .al-fly, l'icône qui rejoint sa place, qui
              ne s'appliquait plus. */
 
+          /* ══ LE NOUVEAU RÉCIT ══════════════════════════════════════════
+             Cinq écrans, et un seul propos : ce que ça lui rapporte. */
+
+          /* ── CE QUE CHERCHENT LES HABITANTS ─────────────────────────── */
+          .dtour-ov.qi{justify-content:center;}
+          .qi-n{font-family:'Inter',system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
+            letter-spacing:-.05em;line-height:.9;color:#fff;
+            opacity:0;animation:dtPiv .5s cubic-bezier(.22,1,.36,1) .1s forwards;}
+          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;
+            opacity:0;animation:dtPiv .5s ease .45s forwards;}
+          .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;}
+          /* La carte : des points, pas une vraie carte. Une vue de la ville
+             serait fausse pour toutes les villes sauf une. */
+          .qi-carte{position:relative;width:min(280px,74vw);height:150px;margin:26px 0 0;opacity:0;
+            transition:opacity .6s ease;}
+          .qi-carte.on{opacity:1;}
+          .qi-carte i{position:absolute;width:7px;height:7px;border-radius:50%;background:#4E6A5C;
+            opacity:0;animation:dtPiv .4s ease forwards;}
+          .qi-carte i:nth-child(6n+1){left:8%;}   .qi-carte i:nth-child(6n+2){left:26%;}
+          .qi-carte i:nth-child(6n+3){left:44%;}  .qi-carte i:nth-child(6n+4){left:62%;}
+          .qi-carte i:nth-child(6n+5){left:80%;}  .qi-carte i:nth-child(6n){left:93%;}
+          .qi-carte i:nth-child(-n+6){top:8%;}
+          .qi-carte i:nth-child(n+7):nth-child(-n+12){top:70%;}
+          .qi-carte i:nth-child(n+13){top:40%;}
+          .qi-vous{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+            background:linear-gradient(115deg,#12B981,#0EA5A5);color:#04120C;border-radius:999px;
+            padding:8px 15px;font-size:13px;font-weight:800;white-space:nowrap;max-width:80%;
+            overflow:hidden;text-overflow:ellipsis;box-shadow:0 0 0 6px rgba(18,185,129,.16);}
+          .qi-d{margin-top:20px;font-size:14.5px;color:#8FA79A;opacity:0;animation:dtPiv .5s ease forwards;}
+          .qi-x{margin-top:14px;font-size:clamp(19px,4.4vw,25px);font-weight:850;letter-spacing:-.03em;
+            color:#fff;text-wrap:balance;opacity:0;animation:dtPiv .5s cubic-bezier(.22,1,.36,1) forwards;}
+
+          /* ── CE QUE PERSONNE NE MONTRE ──────────────────────────────── */
+          .dtour-card.iv{text-align:center;}
+          .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#141A2E;text-wrap:balance;}
+          .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#1F2A24;color:#EBE7D9;
+            display:flex;flex-direction:column;gap:5px;font-family:Georgia,serif;}
+          .iv-ard span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9FB3A8;}
+          .iv-ard i{font-style:normal;font-size:14.5px;}
+          .iv-q{margin-top:16px;font-size:17px;font-weight:800;color:#141A2E;letter-spacing:-.01em;}
+          .iv-ch{margin-top:11px;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;}
+          .iv-ch span{font-size:12.5px;font-weight:700;color:#6E7290;background:#F1F1F6;border-radius:999px;
+            padding:7px 12px;opacity:0;}
+          .iv-ch.on span{animation:dtBub .4s ease forwards;}
+          .iv-x{margin-top:18px;padding-top:14px;border-top:1px solid #F0EFF7;
+            font-size:clamp(15px,3.4vw,18px);font-weight:850;letter-spacing:-.02em;line-height:1.2;
+            color:#B23A17;text-wrap:balance;opacity:0;animation:dtPiv .45s cubic-bezier(.22,1,.36,1) forwards;}
+
+          /* ── LE GESTE ───────────────────────────────────────────────── */
+          .dtour-card.ph{text-align:center;}
+          .ph-h{font-size:21px;font-weight:850;letter-spacing:-.025em;color:#141A2E;}
+          .ph-h em{display:block;margin-top:3px;font-style:normal;font-size:14px;font-weight:600;color:#6E7290;}
+          .ph-shot{position:relative;margin:14px auto 0;width:100%;height:96px;border-radius:16px;
+            display:flex;align-items:center;justify-content:center;background:#1F2A24;overflow:hidden;
+            transition:background .5s ease;}
+          .ph-shot.lu{background:#E4F7EE;}
+          .ph-ic{font-size:34px;}
+          .ph-flash{position:absolute;inset:0;background:#fff;opacity:0;animation:phFlash 1.1s ease-out .5s;}
+          @keyframes phFlash{0%{opacity:0}12%{opacity:.95}100%{opacity:0}}
+          .ph-out{margin-top:13px;border:1px solid #E7E4FB;border-radius:14px;padding:13px;text-align:left;
+            background:#F8F7FF;}
+          .ph-k{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#4B3A9E;}
+          .ph-l{margin-top:7px;display:flex;align-items:baseline;gap:8px;font-size:14.5px;color:#141A2E;
+            opacity:0;animation:dtBub .4s ease forwards;}
+          .ph-l i{font-style:normal;color:#0E7C5A;font-size:12px;}
+          .ph-p{margin-top:9px;font-size:22px;font-weight:850;letter-spacing:-.03em;color:#141A2E;
+            opacity:0;animation:dtBub .4s ease forwards;}
+          .ph-ou{margin-top:13px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;
+            color:#0E7C5A;opacity:0;animation:dtBub .45s ease forwards;}
+
+          /* ── CE QUI LUI REVIENT ─────────────────────────────────────────
+             L'écran le plus important de la démonstration. Les lignes tombent
+             une par une : affichées d'un bloc, elles se lisent comme un
+             tableau de bord de plus, et il n'y a plus d'événement. */
+          .dtour-card.rt{text-align:left;}
+          .rt-k{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+            color:#B23A17;background:#FBEDE3;border-radius:5px;padding:5px 9px;}
+          .rt-h{margin-top:12px;font-size:19px;font-weight:850;letter-spacing:-.025em;color:#141A2E;text-wrap:balance;}
+          .rt-l{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+          .rt-i{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid #F0EFF7;
+            opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .45s ease;}
+          .rt-i.on{opacity:1;transform:none;}
+          .rt-i:last-child{border-bottom:0;padding-bottom:0;}
+          .rt-hh{flex:none;min-width:52px;font-family:'Inter',system-ui,sans-serif;font-size:11.5px;font-weight:700;
+            color:#8B90A6;font-variant-numeric:tabular-nums;}
+          .rt-e{flex:none;font-size:16px;line-height:1;}
+          .rt-t{flex:1;min-width:0;font-size:14.5px;line-height:1.35;color:#141A2E;}
+          .rt-t b{font-size:20px;font-weight:850;letter-spacing:-.02em;margin-right:6px;}
+          /* La dernière ligne est la conclusion : elle a le poids des autres
+             réunies, sinon on la lit comme un quatrième chiffre. */
+          .rt-i.fin{margin-top:4px;padding-top:12px;border-top:1px solid #E7E4FB;}
+          .rt-i.fin .rt-t{font-size:16px;font-weight:800;letter-spacing:-.015em;}
+          @media (prefers-reduced-motion:reduce){
+            .qi-n,.qi-q,.qi-d,.qi-x,.iv-ch span,.iv-x,.ph-l,.ph-p,.ph-ou,.rt-i{animation:none;opacity:1;transform:none;}
+            .ph-flash{display:none;}
+          }
+
           /* ── L'ACTE MÉTIER ────────────────────────────────────────────
              UN SEUL TEMPS À L'ÉCRAN. Le fond est presque opaque : ce qu'on
              veut ici, ce n'est pas montrer le site, c'est faire lire quatre
@@ -1677,101 +1580,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             </div>
           )}
 
-          {scene === "note" && (
-            <div className="dtour-ov">
-              <div className="dtour-card dtour-note">
-                {hasReviews ? (
-                  <>
-                    <div className="nt-stars">{stars}</div>
-                    <div className="nt-line"><b>{note}</b> sur 5 · <b>{reviewsCount}</b> avis Google</div>
-                    <div className="nt-sub">De vrais avis, une vraie base de confiance.</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="nt-stars">★★★★★</div>
-                    <div className="nt-line">Votre site est prêt</div>
-                    <div className="nt-sub">Vos vraies infos Google, déjà en place.</div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {scene === "reso" && (
-            <div className="dtour-ov">
-              <div className="dtour-card rz2">
-                <div className="rz2-tag">🤝 Le collectif de {villeAff}</div>
-                <div className="rz2-cloud" aria-hidden="true">
-                  {partnersList.map((p, i) => (
-                    <span key={p.t} className="pc" style={{ animationDelay: `${0.15 + i * 0.16}s`, ["--fd" as string]: `${i * 0.4}s` }}>{p.ic} {p.t}</span>
-                  ))}
-                </div>
-                <div className="rz2-cloudcap" style={{ animationDelay: "1s" }}>Vos <b>métiers en synergie</b> — jusqu&apos;à 10, jamais des concurrents</div>
-                <div className="rz2-lab" style={{ animationDelay: "1.3s" }}>Un client, chez {reso.partner}…</div>
-                <div className="rz2-bub them" style={{ animationDelay: "1.7s" }}>{reso.clientMsg}</div>
-                <div className="rz2-bub me" style={{ animationDelay: "2.9s" }}>{reso.recoMsg}</div>
-                <div className="rz2-arrow" style={{ animationDelay: "4.2s" }}>↓ recommandé chez vous</div>
-                <div className="rz2-opp" style={{ animationDelay: "4.6s" }}>
-                  <span className="rz2-oppk">Pour vous</span>
-                  <span className="rz2-oppb">{reso.oppMsg}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ELLE VOUS FAIT CONNAÎTRE — la journée de la ville, ligne à ligne.
-              Elle montrait quatre étiquettes de catégories (« Créneau libre »,
-              « Nouveauté »…) : un sommaire de fonctionnalités, dont on ne
-              retient rien. Ce sont maintenant des HEURES et des NOMBRES — la
-              ville telle qu'elle sera quand ses commerces y seront — et c'est
-              la seule chose qu'il vient vérifier : « qu'est-ce que je rejoins ».
-              La ligne du bas est AU FUTUR : c'est elle qui empêche ces chiffres
-              de se lire comme un relevé. */}
-          {scene === "daily" && (
-            <div className="dtour-ov alive-ov">
-              <span className="al-flash" aria-hidden="true" />
-              <div className="dtour-alive">
-                <span className="al-halo" aria-hidden="true" />
-                <span className="al-ring" /><span className="al-ring r2" /><span className="al-ring r3" />
-                {[...Array(8)].map((_, i) => (
-                  <span key={i} className="al-p" aria-hidden="true" style={{ ["--a" as string]: `${i * 45}deg`, animationDelay: `${0.28 + i * 0.045}s` }} />
-                ))}
-                <span className="al-av">✦</span>
-                <div className="dl-list">
-                  {villeJour.map((c, i) => (
-                    <span key={`${c.heure}-${c.quoi}`} className={`dl-i${c.urgent ? " u" : ""}`} style={{ animationDelay: `${BULLES_AT[i] ?? 0}ms` }}>
-                      <i className="dl-e">{c.emoji}</i>
-                      <b className="dl-h">{c.heure}</b>
-                      <span className="dl-n">{c.nombre}</span>
-                      <span className="dl-q">{c.quoi}</span>
-                    </span>
-                  ))}
-                </div>
-                <div className="al-s dl-s">{phraseVitrine(villeAff)}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Il RÉPOND. On montre la conversation au lieu d'affirmer qu'elle
-              « vit dans votre site » : une question à 22 h 47, une réponse, et
-              la demande transmise. La preuve remplace la promesse. */}
-          {scene === "alive" && (
-            <div className="dtour-ov">
-              <div className="dtour-card">
-                <div className="lv-k">🌙 22 h 47 — vous êtes fermé</div>
-                <div className="lv-line c" style={{ animationDelay: `${lvAt.question}ms` }}>
-                  <span className="lv-who">Un visiteur</span>
-                  <span className="lv-b">{chat.q}</span>
-                </div>
-                <div className="lv-line a" style={{ animationDelay: `${lvAt.reponse}ms` }}>
-                  <span className="lv-who"><i>✦</i>Votre assistante</span>
-                  <span className="lv-b">{chat.a}</span>
-                </div>
-                <div className="lv-ok" style={{ animationDelay: `${lvAt.transmis}ms` }}>✓ Demande transmise à {nom}</div>
-              </div>
-            </div>
-          )}
-
           {/* VOTRE ACTUALITÉ SE FAIT CONNAÎTRE — quatre temps.
               A · il dit · B · votre assistante rédige · C · l'annonce se pose
               dans le vrai bandeau du site · D · un habitant la découvre. */}
@@ -1780,203 +1588,6 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
               le fil » : l'inverse de ce qui se passe. Ce sont maintenant
               de petites fenêtres de sites, le fil s'y duplique, et des
               habitants apparaissent autour — on voit QUI découvre l'annonce. */}
-          {scene === "reseau" && (
-            <div className="dtour-ov alive-ov">
-              <div className="dtour-net">
-                <div className="net-sc" aria-hidden="true">
-                  {reseauSites.map((nd, i) => (
-                    <span key={`nl-${nd.t}`} className="net-line" style={{ width: `${RESEAU_R}px`, transform: `rotate(${nd.deg}deg)`, animationDelay: `${Math.max(600, MOTEUR_AT.sites - 500) + i * 120}ms` }} />
-                  ))}
-                  {/* La copie du fil part du centre et rejoint chaque site. */}
-                  {reseauSites.map((nd, i) => (
-                    <span
-                      key={`nf-${nd.t}`}
-                      className="net-copie"
-                      style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${MOTEUR_AT.copies + i * 220}ms` }}
-                    />
-                  ))}
-                  {reseauSites.map((nd, i) => (
-                    <span
-                      key={`ns-${nd.t}`}
-                      className="net-site"
-                      style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${MOTEUR_AT.sites + i * 180}ms` }}
-                    >
-                      <span className="ns-bar"><i /><i /><i /></span>
-                      <span className="ns-nom">{nd.t}</span>
-                      <span className="ns-cat" style={{ animationDelay: `${MOTEUR_AT.copies + 900 + i * 220}ms` }}>📍 Le Direct</span>
-                    </span>
-                  ))}
-                  {habitants.map((h, i) => (
-                    <span
-                      key={`nh-${h.d}`}
-                      className="net-hab"
-                      style={{ transform: `translate(calc(-50% + ${h.x}px), calc(-50% + ${h.y}px))`, animationDelay: `${MOTEUR_AT.habitants + i * 200}ms` }}
-                    >
-                      👤
-                    </span>
-                  ))}
-                  <span className="net-core"><b>📍</b><i>Le Direct<br />de {villeAff || "votre ville"}</i></span>
-                </div>
-                <div className="net-h">Un seul fil.<br />Des dizaines de vitrines dans la ville.</div>
-                <div className="net-s">Votre actualité circule sur tout le réseau local.</div>
-              </div>
-            </div>
-          )}
-
-          {scene === "flash" && (
-            <div className="dtour-ov">
-              <div className={`dtour-card${fxStep === 2 ? " cat" : ""}`}>
-                {/* A — il DIT. */}
-                {fxStep === 0 && (
-                  <>
-                    <div className="fx-h">Vous dites ce qui se passe.</div>
-                    <div className="fx-said"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
-                  </>
-                )}
-                {/* B — VOTRE ASSISTANTE rédige. Sa phrase reste à l'écran,
-                    estompée : c'est ce qui rend la transformation lisible. */}
-                {fxStep === 1 && (
-                  <>
-                    <div className="fx-h">Votre assistante prépare l’annonce.</div>
-                    <div className="fx-said petit"><span className="fx-mic">🎙️</span>«&nbsp;{flashSaid}&nbsp;»</div>
-                    <div className="fx-prep"><span className="fx-av">✦</span>Votre assistante rédige et choisit la photo…</div>
-                    <div className="fx-out ecrit">{flashPhrase}</div>
-                  </>
-                )}
-                {/* C — LE CATALOGUE. Une réplique de l'écran de /ville : même
-                    entête, même carte pleine photo, mêmes trois gestes. Il doit
-                    tenir ENTIER dans la hauteur disponible — boutons compris —
-                    d'où la mise à l'échelle calculée juste en dessous. */}
-                {fxStep === 2 && (
-                  <>
-                    <div className="fx-revh">Votre annonce rejoint Le Direct de {villeAff || "votre ville"}.</div>
-                    <div className="fx-revs">Des habitants qui ne vous connaissent pas encore peuvent maintenant vous découvrir.</div>
-                    <div className="fx-fit" ref={fitRef}>
-                      <div className="fx-cat">
-                      <div className="fc-top">
-                        <span className="fc-logo">Le Direct de {villeAff || "votre ville"}</span>
-                        <span className="fc-city">👤 Vue habitant</span>
-                        <span className="fc-ex">exemple</span>
-                      </div>
-                      <div className="fc-stack">
-                        {catSlide + 2 < cartesDuDirect.length && <div className="fc-ghost g2" aria-hidden="true" />}
-                        {catSlide + 1 < cartesDuDirect.length && <div className="fc-ghost g1" aria-hidden="true" />}
-                        {cartesDuDirect[catSlide] && (
-                          <div className={`fc-card${catFly ? ` fly-${catFly}` : ""}`} key={catSlide}>
-                            <div
-                              className={`fc-media${cartesDuDirect[catSlide].photo ? "" : " vide"}`}
-                              style={
-                                cartesDuDirect[catSlide].photo
-                                  ? { backgroundImage: `url("${cartesDuDirect[catSlide].photo}")` }
-                                  : undefined
-                              }
-                            >
-                              {!cartesDuDirect[catSlide].photo && (
-                                <span className="fc-ill" aria-hidden="true">
-                                  {cartesDuDirect[catSlide].ic || cartesDuDirect[catSlide].nom.trim().slice(0, 1).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                            <div className="fc-scrim" />
-                            {catStamp && (
-                              <span className={`fc-stamp ${catStamp}`} aria-hidden="true">
-                                {catStamp === "oui" ? "Gardé" : "Passer"}
-                              </span>
-                            )}
-                            <div className="fc-info">
-                              <div className="fc-nm">{cartesDuDirect[catSlide].nom}</div>
-                              <div className="fc-meta">
-                                📍 {cartesDuDirect[catSlide].metier} · {villeAff || "votre ville"}
-                              </div>
-                              <div className="fc-ok">✦ En ce moment</div>
-                              <div className="fc-ot">{cartesDuDirect[catSlide].texte}</div>
-                              <div className="fc-w">{cartesDuDirect[catSlide].quand}</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="fc-dots" aria-hidden="true">
-                        {cartesDuDirect.map((c, i) => (
-                          <i className={i === catSlide ? "on" : i < catSlide ? "done" : ""} key={`d-${c.nom}-${i}`} />
-                        ))}
-                      </div>
-                      <div className="fc-bar" aria-hidden="true">
-                        <span className="fc-act"><i>✕</i>Passer</span>
-                        <span className="fc-act want"><i>♥</i>Garder</span>
-                        <span className="fc-act"><i>↑</i>Le site</span>
-                      </div>
-                      </div>
-                    </div>
-                    {/* Le bandeau du site n'a plus son écran à lui : il se
-                        rappelle ici, en une pastille. */}
-                    <div className="fx-aussi">✓ Également affichée sur votre site</div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* À PLUSIEURS — le Clik collectif.
-              La carte est celle du fil, avec sa bande et sa jauge : le
-              commerçant doit reconnaître l'écran qu'on vient de lui montrer,
-              pas découvrir un troisième dessin pour la même application.
-              Le compteur monte pendant qu'elle parle et bascule sur son mot. */}
-          {scene === "clik" && (
-            <div className="dtour-ov">
-              <div className="dtour-card">
-                <div className="fx-revh">À plusieurs, le prix baisse.</div>
-                <div className="fx-revs">
-                  Vous fixez le nombre et le prix de groupe. Nous rassemblons les gens.
-                </div>
-                <div className={`ck-demo${clikN >= 6 ? " ok" : ""}`}>
-                  <div className="ckd-prix">
-                    <span className="ckd-barre">24,00 €</span>
-                    <span className="ckd-net">16,80 €</span>
-                    <span className="ckd-pct">−30 %</span>
-                  </div>
-                  <div className="ckd-bande">
-                    <div className="ckd-p">
-                      {clikN >= 6
-                        ? "C'est débloqué pour tout le monde"
-                        : `Encore ${6 - clikN} personne${6 - clikN > 1 ? "s" : ""} et le prix baisse`}
-                    </div>
-                    <div className="ckd-j" aria-hidden="true">
-                      <i style={{ width: `${Math.round((Math.min(clikN, 6) / 6) * 100)}%` }} />
-                    </div>
-                    {/* Les silhouettes rendent le groupe concret : « 5 sur 6 »
-                        est un chiffre, cinq personnes allumées sont un groupe. */}
-                    <div className="ckd-gens" aria-hidden="true">
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <span key={i} className={i < clikN ? "on" : ""} />
-                      ))}
-                    </div>
-                    <div className="ckd-c">
-                      {Math.min(clikN, 6)} sur 6 personnes
-                    </div>
-                  </div>
-                </div>
-                <div className="fx-aussi">
-                  {clikN >= 6 ? "✓ Six personnes arrivent ensemble" : "En cours dans Le Direct"}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── L'ACTE MÉTIER ────────────────────────────────────────────
-              Un temps à la fois, et rien d'autre à l'écran. Chaque carte tient
-              en un couple : ce que le COMMERÇANT dit, et l'annonce que
-              l'assistante en écrit. C'est la même mécanique répétée quatre
-              fois dans quatre situations de sa semaine — et c'est la
-              répétition, pas l'énumération, qui fait comprendre que ça vaut
-              pour tout ce qui se passe chez lui.
-
-              À L'INTÉRIEUR MÊME D'UNE CARTE, ça arrive encore en deux temps :
-              sa phrase, puis l'annonce. Les deux ensemble se liraient comme un
-              bloc de texte, et on ne verrait plus la transformation.
-
-              LE DERNIER TEMPS EST D'UNE AUTRE NATURE : ce sont ses propres
-              gestes, reclassés par ce qu'ils lui rapportent. Il n'ajoute pas
-              une fonctionnalité à retenir — il donne la raison de revenir. */}
           {scene === "metier" && tempsCourant && (
             <div className="dtour-ov mt-ov">
               <div className="mt-wrap">
@@ -2017,76 +1628,138 @@ export function DemoTour({ slug, nom, metierLabel, villeAff, photos, note, revie
             </div>
           )}
 
-          {scene === "vision" && (
-            <div className="dtour-ov">
-              <div className="dtour-card viz">
-                <div className="viz-k">🤝 Le collectif de {villeAff}</div>
-                <div className="viz-net" aria-hidden="true">
-                  {vizNodes.map((nd) => (
-                    <span key={`ln-${nd.t}`} className="viz-line" style={{ width: `${VIZ_R}px`, transform: `rotate(${nd.deg}deg)` }} />
-                  ))}
-                  {vizNodes.map((nd, i) => (
-                    <span key={`fl-${nd.t}`} className="viz-flow" style={{ ["--sx" as string]: `${nd.x}px`, ["--sy" as string]: `${nd.y}px`, animationDelay: `${1 + i * 0.42}s` }} />
-                  ))}
-                  {vizNodes.map((nd, i) => (
-                    <span key={`pc-${nd.t}`} className="viz-pc" style={{ transform: `translate(calc(-50% + ${nd.x}px), calc(-50% + ${nd.y}px))`, animationDelay: `${0.2 + i * 0.13}s`, ["--fd" as string]: `${i * 0.4}s` }}>{nd.ic}</span>
-                  ))}
-                  <span className="viz-core"><b>{nom}</b><i>vous</i></span>
-                </div>
-                <div className="viz-h">Être connu, reconnu —<br /><em>et jamais oublié.</em></div>
-                <div className="viz-sub">Mon ambition&nbsp;: <b>jusqu&apos;à 100 commerçants de {villeAff}</b> parmi les mieux notés, chacun associé à <b>une dizaine de métiers complémentaires</b> qui se recommandent. Et&nbsp;<b>vous êtes au centre du vôtre</b>.</div>
-              </div>
-            </div>
-          )}
-
-          {scene === "conclu" && (
-            <div className="dtour-ov">
-              <div className="dtour-card dtour-conclu">
-                <div className="cc-badge">✓ Votre site est prêt</div>
-                <div className="cc-h">{nom}</div>
-                <div className="cc-list">
-                  <div className="cc-i"><span className="e">🎁</span>Site offert</div>
-                  <div className="cc-i"><span className="e">✦</span>Assistante incluse</div>
-                  <div className="cc-i"><span className="e">🔓</span>Sans engagement</div>
-                </div>
-                <div className="cc-note">Des options pourront être activées plus tard, selon vos besoins.</div>
-              </div>
-            </div>
-          )}
-
-          {/* ── LE PIVOT ──────────────────────────────────────────────────
-              Le seul moment de la démo qui ne démontre rien. Il dit à voix
-              haute ce que le prospect n'a pas encore compris : une assistante
-              qui répond aux questions, il en a déjà vu ; une assistante qui va
-              CHERCHER des clients, non. Deux temps, parce que la deuxième
-              phrase n'a de force que si la première a créé l'attente. */}
-          {scene === "pivot" && (
-            <div className="dtour-ov">
-              <div className="dtour-card dt-piv">
-                <div className="piv-1">Je ne fais pas que répondre.</div>
-                <div className="piv-2">JE VAIS CHERCHER<br />VOS CLIENTS.</div>
-                <div className="piv-3">Dites-moi simplement ce qui se passe chez vous.</div>
-              </div>
-            </div>
-          )}
-
-          {/* ── LA COUPURE ────────────────────────────────────────────────
-              Deux secondes de presque-noir, sans carte, sans illustration.
-              Après six actes qui montrent, il faut un silence pour que la
-              phrase qui compte soit entendue — et c'est la seule promesse que
-              le commerçant retiendra le lendemain. Un écran vide n'est pas du
-              temps perdu : c'est ce qui donne du poids à ce qui l'entoure. */}
-          {scene === "coupure" && (
+          {/* ── LA BASCULE ────────────────────────────────────────────────
+              Le site vient d'être montré. Cette phrase le garde et le
+              déclasse : il est le point de départ, pas la finalité. Sans elle,
+              la démonstration entière parlait d'un site web. */}
+          {scene === "bascule" && (
             <div className="dtour-ov dt-noir">
-              <div className="cp-1">VOUS N&apos;AVEZ PLUS BESOIN DE PUBLIER.</div>
-              <div className="cp-2">Vous avez juste à me dire ce qui se passe.<br />Je fais le reste.</div>
+              <div className="cp-1">LE PLUS IMPORTANT<br />N&apos;EST PAS VOTRE SITE.</div>
+              <div className="bo-2" style={{ marginTop: 18, animationDelay: "1.5s" }}>
+                C&apos;EST CE QU&apos;IL PEUT VOUS RAPPORTER.
+              </div>
             </div>
           )}
 
-          {/* ── LA BOUCLE ─────────────────────────────────────────────────
-              La première phrase de la page d'accueil, rendue en dernier. Qui
-              arrive par le site reconnaît la promesse et la voit tenue ; qui
-              arrive par un lien la reçoit entière. */}
+          {/* ── CE QUE CHERCHENT LES HABITANTS ────────────────────────────
+              On n'ouvre plus sur l'outil. On ouvre sur des gens qui cherchent
+              quelque chose, à quatre cents mètres, et qui ne le trouvent pas.
+              Le nombre parle de la VILLE — « 500 personnes cherchent » se
+              lisait « ClikMe a 500 utilisateurs ici ». */}
+          {scene === "qui" && G && (
+            <div className="dtour-ov dt-noir qi">
+              <div className="qi-n">{G.combien}</div>
+              <div className="qi-q">
+                {habitantsDe(villeAff)} se demandent<br />
+                <b>{G.cherchent}</b>
+              </div>
+              <div className={`qi-carte${quiN >= 1 ? " on" : ""}`} aria-hidden="true">
+                {[...Array(18)].map((_, i) => (
+                  <i key={i} style={{ animationDelay: `${i * 60}ms` }} />
+                ))}
+                <span className="qi-vous">{nom}</span>
+              </div>
+              {quiN >= 1 && <div className="qi-d">Votre commerce est peut-être à 400 m.</div>}
+              {quiN >= 2 && <div className="qi-x">MAIS ILS NE LE SAVENT PAS.</div>}
+            </div>
+          )}
+
+          {/* ── CE QUE PERSONNE NE MONTRE ─────────────────────────────────
+              Google, Instagram, la vitrine : tout le monde montre son commerce.
+              Personne ne montre ce qu'il sert AUJOURD'HUI. C'est vrai, c'est
+              vérifiable, et c'est le seul argument qui lui fait dire
+              « effectivement ». */}
+          {scene === "invisible" && G && (
+            <div className="dtour-ov">
+              <div className="dtour-card iv">
+                <div className="iv-h">{G.ouDort}</div>
+                <div className="iv-ard" aria-hidden="true">
+                  <span>{G.extrait.titre}</span>
+                  {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
+                </div>
+                <div className="iv-q">Mais qui la voit&nbsp;?</div>
+                <div className={`iv-ch${invN >= 1 ? " on" : ""}`}>
+                  {VITRINES.map((t, i) => (
+                    <span key={t} style={{ animationDelay: `${i * 160}ms` }}>{t}</span>
+                  ))}
+                </div>
+                {invN >= 2 && (
+                  <div className="iv-x">
+                    PERSONNE NE MONTRE<br />{G.pasVu.toUpperCase()}.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── LE GESTE ──────────────────────────────────────────────────
+              Trois secondes, et rien d'autre à faire. L'assistante lit, écrit,
+              publie — c'est la fonction telle qu'elle existe aujourd'hui. */}
+          {scene === "photo" && G && (
+            <div className="dtour-ov">
+              <div className="dtour-card ph">
+                <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
+                <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`} aria-hidden="true">
+                  <span className="ph-ic">{G.parPhoto ? "📷" : "🎙️"}</span>
+                  {photoN < 1 && <span className="ph-flash" />}
+                </div>
+                {photoN >= 1 && (
+                  <div className="ph-out">
+                    <div className="ph-k">{G.extrait.titre}</div>
+                    {G.extrait.lignes.map((l, i) => (
+                      <div className="ph-l" key={l} style={{ animationDelay: `${i * 220}ms` }}>
+                        <i aria-hidden="true">✓</i>{l}
+                      </div>
+                    ))}
+                    {G.extrait.prix && (
+                      <div className="ph-p" style={{ animationDelay: `${G.extrait.lignes.length * 220}ms` }}>
+                        {G.extrait.prix}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {photoN >= 2 && (
+                  <div className="ph-ou">
+                    <span>✓ Sur votre site</span>
+                    <span>✓ Dans Le Direct de {villeAff || "votre ville"}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── CE QUI LUI REVIENT ────────────────────────────────────────
+              L'ACTE QUI MANQUAIT À TOUTE LA DÉMONSTRATION. Partout ailleurs on
+              décrit ce que ClikMe fait ; ici, et seulement ici, quelque chose
+              revient VERS lui. C'est l'écran qui décide.
+
+              LES CHIFFRES SONT UNE PROJECTION, et l'étiquette le dit avant
+              qu'on ait à le demander. Le titre est au FUTUR pour la même
+              raison : « voilà ce qui se passe » aurait été un relevé. */}
+          {scene === "retour" && G && (
+            <div className="dtour-ov">
+              <div className="dtour-card rt">
+                <div className="rt-k">Maquette — ce que vous verrez</div>
+                <div className="rt-h">Et voilà ce qui se passera ensuite.</div>
+                <div className="rt-l">
+                  {G.retours.map((r, i) => (
+                    <div
+                      className={`rt-i${i >= G.retours.length - 1 ? " fin" : ""}${i <= retourN ? " on" : ""}`}
+                      key={`${r.heure}-${r.quoi}`}
+                    >
+                      <span className="rt-hh">{r.heure}</span>
+                      <span className="rt-e" aria-hidden="true">{r.icone}</span>
+                      <span className="rt-t">
+                        {r.nombre ? <b>{r.nombre} </b> : null}
+                        {r.quoi}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {scene === "boucle" && (
             <div className="dtour-ov dt-noir">
               <div className="bo-1">VOTRE COMMERCE.</div>

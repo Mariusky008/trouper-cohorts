@@ -21,7 +21,7 @@ import { OfferBand } from "./offer-band";
 import { FollowNudge } from "./follow-nudge";
 import { computeOpenState } from "@/lib/site-internet/opening-hours";
 import { acteMetier } from "@/lib/direct/acte-metier";
-import { villeVitrine } from "@/lib/direct/ville-vitrine";
+import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { followCopy } from "@/lib/site-internet/metier-profiles";
 import type { Confirmation, Moteur, Profil, Secteur } from "@/lib/site-internet/metier-profiles";
 import type { PartnerOffer } from "@/lib/site-internet/collectif";
@@ -173,11 +173,13 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   // La seconde : les deux dépendent de l'HEURE, et un `new Date()` pris des
   // deux côtés donnerait deux journées différentes à l'hydratation.
   const maintenant = new Date();
-  const acteDuMetier = modeDemo ? acteMetier(metierLabel, confirmation, secteur, maintenant) : [];
-  // La ville à plein régime — jamais le relevé du jour, qui est vide au
-  // lancement. Le raisonnement complet est dans `ville-vitrine.ts`, et la règle
-  // qui rend ça honnête (la phrase au futur) est tenue par la démo elle-même.
-  const vitrineVille = modeDemo ? villeVitrine(maintenant, 4) : [];
+  // TROIS GESTES, PAS QUATRE : dans le nouveau déroulé, cet acte n'est plus le
+  // sujet mais la suite de la journée, après le retour économique.
+  const acteDuMetier = modeDemo ? acteMetier(metierLabel, confirmation, secteur, maintenant, 3) : [];
+  // LA COLONNE VERTÉBRALE DE LA DÉMONSTRATION, dans les mots de ce métier :
+  // ce que les habitants cherchent, où dort son information, le geste, et ce
+  // qui lui revient. Voir `geste-du-jour.ts`.
+  const leGeste = modeDemo ? gesteDuJour(metierLabel, confirmation, secteur, villeAff) : undefined;
 
   // Carte d'un avis Google réel (jamais inventé). Réutilisée pour les 2 mis en
   // avant ET ceux révélés via « Voir plus ».
@@ -455,7 +457,7 @@ export function MaquetteSante(p: MaquetteSanteProps) {
           flashDit={p.flashDit}
           tourChat={p.tourChat}
           actes={acteDuMetier}
-          vitrine={vitrineVille}
+          geste={leGeste}
           keepHref={p.waHref || p.telHref}
         />
       )}
