@@ -93,13 +93,42 @@ const CHAMPS_BASE =
 const CHAMPS_RECENTS = "reste, ardoise, prix";
 const CHAMPS = `${CHAMPS_BASE}, ${CHAMPS_RECENTS}`;
 
+/**
+ * LE TEXTE FOUILLABLE D'UNE ERREUR, quelle que soit sa forme.
+ *
+ * LE DÉFAUT QUE CETTE FONCTION CORRIGE, et il a fait disparaître le fil d'une
+ * ville entière : `String(error)` sur un objet d'erreur PostgREST ne rend pas
+ * son message, il rend « [object Object] ». Le repli sur les colonnes récentes
+ * était donc appelé avec un objet, ne reconnaissait jamais « does not exist »,
+ * ne se déclenchait jamais — et toute lecture qui demandait `prix` sur une base
+ * où la colonne n'existe pas encore levait, au lieu de retenter sans elle.
+ *
+ * Conséquence exacte, observée : les annonces ÉTAIENT bien enregistrées —
+ * l'écriture, elle, passait le message et non l'objet — mais ni « Mes annonces
+ * en cours » ni le fil de la ville ne pouvaient les relire.
+ *
+ * On rassemble donc tout ce que PostgREST met dans son erreur : le message,
+ * mais aussi `details`, `hint` et `code`, qui portent parfois seuls le nom de
+ * la colonne ou le `42703`.
+ */
+function texteErreur(e: unknown): string {
+  if (!e) return "";
+  if (typeof e === "string") return e;
+  if (e instanceof Error) return e.message;
+  const o = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+  const bouts = [o.message, o.details, o.hint, o.code].filter(
+    (x) => typeof x === "string" || typeof x === "number"
+  );
+  return bouts.length ? bouts.join(" · ") : String(e);
+}
+
 /** Vrai quand l'erreur PostgREST dit « cette colonne n'existe pas ».
  *
  *  On teste les formulations de PostgREST, pas les noms de colonnes : `reste`
  *  est un mot trop courant pour servir de signal — il apparaîtrait dans des
  *  messages qui n'ont rien à voir, et on retenterait des requêtes saines. */
 function colonneAbsente(e: unknown): boolean {
-  return /does not exist|schema cache|Could not find|42703|PGRST204/i.test(String(e));
+  return /does not exist|schema cache|Could not find|42703|PGRST204/i.test(texteErreur(e));
 }
 
 /** Les colonnes sans lesquelles une publication ne veut plus rien dire. On ne
@@ -115,8 +144,11 @@ const INDISPENSABLES = new Set(["ville", "ville_slug", "famille", "texte"]);
  *   Postgres  — « column "video" of relation "human_publications" does not exist »
  */
 function colonneNommee(e: unknown): string | null {
-  const m = /'([a-z_]+)' column|column "([a-z_]+)"/i.exec(String(e));
-  return m ? m[1] || m[2] : null;
+  // Troisième formulation, celle qui a fini par nous le dire :
+  //   « column human_publications.prix does not exist »
+  const t = texteErreur(e);
+  const m = /'([a-z_]+)' column|column "([a-z_]+)"|column [a-z_]+\.([a-z_]+)/i.exec(t);
+  return m ? m[1] || m[2] || m[3] : null;
 }
 
 /**
@@ -126,7 +158,7 @@ function colonneNommee(e: unknown): string | null {
 async function avecRepli(construire: (champs: string) => PromiseLike<{ data: unknown; error: unknown }>): Promise<Row[]> {
   let { data, error } = await construire(CHAMPS);
   if (error && colonneAbsente(error)) ({ data, error } = await construire(CHAMPS_BASE));
-  if (error) throw new Error(String((error as { message?: string })?.message ?? error));
+  if (error) throw new Error(texteErreur(error));
   return Array.isArray(data) ? (data as Row[]) : [];
 }
 
@@ -332,7 +364,7 @@ export async function publier(
         ? { id, erreur: perdues.length ? `Colonnes absentes en base : ${perdues.join(", ")}.` : undefined }
         : { erreur: "La base n'a rien renvoyé après l'écriture." };
     }
-    dernier = String((error as { message?: string })?.message ?? error);
+    dernier = texteErreur(error);
     const nom = colonneNommee(dernier);
     if (nom && nom in ligne && !INDISPENSABLES.has(nom)) {
       delete ligne[nom];
