@@ -120,6 +120,25 @@ export function saCarte(
   };
 }
 
+/**
+ * CE QUE L'HABITANT LIT SUR LA CARTE.
+ *
+ * PAS L'INTITULÉ DU BOUTON DE L'ESPACE PRO. « Montrer ma carte du jour » est ce
+ * que le COMMERÇANT appuie ; sur la carte reçue par le client, ça se lit comme
+ * une consigne adressée à lui. Le fait est le même, le point de vue change —
+ * c'est la même règle que partout ailleurs dans cette démonstration : il parle,
+ * elle écrit, et ce qui sort est écrit pour celui qui va le lire.
+ */
+const VU_PAR_HABITANT: Record<string, string> = {
+  carte: "Le menu du jour",
+  arrivage: "Arrivé ce matin",
+  reste: "Il en reste",
+  creneau: "Il reste des places",
+  fideles: "Pour les habitués",
+  realisation: "Vient d'être terminé",
+  venir: "Aujourd'hui seulement",
+};
+
 /** L'emoji d'ambiance de chaque geste, quand il n'y a pas de photo à mettre. */
 const ICONE_TEMPS: Record<string, string> = {
   carte: "🍽️",
@@ -201,7 +220,7 @@ export function tempsIllustres(
         ville,
         reste: t.heure,
         icone: ICONE_TEMPS[t.cle] || t.emoji,
-        quoi: t.label,
+        quoi: VU_PAR_HABITANT[t.cle] || t.label,
         lignes: [t.annonce],
       },
     };

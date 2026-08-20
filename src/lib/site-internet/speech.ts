@@ -61,31 +61,77 @@ function stopCloudPlayback(): void {
   }
 }
 
+/**
+ * LE SON DÉJÀ TÉLÉCHARGÉ, RANGÉ PAR PHRASE.
+ *
+ * LE DÉFAUT QUE ÇA CORRIGE, ET IL COÛTAIT PLUS CHER QUE TOUTES LES ANIMATIONS
+ * RÉUNIES. Chaque réplique était demandée au serveur À LA FIN de la précédente :
+ * un aller-retour réseau, plus le temps de synthèse, AVANT que le premier mot ne
+ * sorte. Multiplié par les huit actes de la démonstration, ça faisait plusieurs
+ * secondes de silence total, réparties précisément aux moments où l'on change
+ * d'écran. C'est ce que le terrain a signalé : « entre chaque étape c'est trop
+ * lent ».
+ *
+ * On garde donc la promesse du téléchargement, pas seulement son résultat : la
+ * phrase suivante peut être demandée PENDANT que la précédente se joue, et
+ * `playCloud` la trouve prête. Le nombre de requêtes ne change pas — chaque
+ * texte n'est demandé qu'une fois —, seul leur moment change.
+ */
+const enAvance = new Map<string, Promise<Blob | null>>();
+
+async function telecharger(text: string): Promise<Blob | null> {
+  if (!cloudCfg || cloudDown) return null;
+  const r = await fetch("/api/site-internet/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...cloudCfg, text }),
+  });
+  if (r.status === 503) {
+    cloudDown = true; // pas de clé configurée → voix navigateur pour la session
+    return null;
+  }
+  if (!r.ok) {
+    let detail = "";
+    try {
+      const j = await r.json();
+      detail = String(j.detail || j.error || "").slice(0, 200);
+    } catch {
+      /* corps non JSON */
+    }
+    lastCloudError = `HTTP ${r.status}${detail ? ` · ${detail}` : ""}`;
+    try { window.dispatchEvent(new CustomEvent("tts-error", { detail: lastCloudError })); } catch { /* SSR */ }
+    return null;
+  }
+  return r.blob();
+}
+
+/**
+ * Demande la voix d'une phrase À L'AVANCE, sans la jouer.
+ *
+ * Appelée par la démonstration dès qu'un acte démarre, pour l'acte suivant. Un
+ * échec ici ne coûte rien : la demande sera refaite au moment de jouer.
+ */
+export function precharger(text: string): void {
+  const t = (text || "").trim();
+  if (!t || !cloudCfg || cloudDown || enAvance.has(t)) return;
+  enAvance.set(
+    t,
+    telecharger(t).catch(() => {
+      enAvance.delete(t);
+      return null;
+    })
+  );
+}
+
 async function playCloud(text: string): Promise<boolean> {
   if (!cloudCfg || cloudDown) return false;
   try {
-    const r = await fetch("/api/site-internet/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...cloudCfg, text }),
-    });
-    if (r.status === 503) {
-      cloudDown = true; // pas de clé configurée → voix navigateur pour la session
-      return false;
-    }
-    if (!r.ok) {
-      let detail = "";
-      try {
-        const j = await r.json();
-        detail = String(j.detail || j.error || "").slice(0, 200);
-      } catch {
-        /* corps non JSON */
-      }
-      lastCloudError = `HTTP ${r.status}${detail ? ` · ${detail}` : ""}`;
-      try { window.dispatchEvent(new CustomEvent("tts-error", { detail: lastCloudError })); } catch { /* SSR */ }
-      return false;
-    }
-    const blob = await r.blob();
+    const cle = text.trim();
+    // Déjà demandée pendant l'acte précédent ? On la consomme telle quelle.
+    const dejaLa = enAvance.get(cle);
+    if (dejaLa) enAvance.delete(cle);
+    const blob = dejaLa ? await dejaLa : await telecharger(text);
+    if (!blob) return false;
     if (!audioEl) {
       audioEl = new Audio();
       audioEl.setAttribute("playsinline", "");
@@ -319,6 +365,7 @@ function browserSpeak(text: string, queue = false): void {
 }
 
 export function stopSpeaking(): void {
+  enAvance.clear();
   stopCloudPlayback();
   speakingCount = 0;
   emitSpeaking(false);

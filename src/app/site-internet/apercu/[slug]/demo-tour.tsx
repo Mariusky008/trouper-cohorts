@@ -12,9 +12,12 @@
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
 import { useEffect, useRef, useState } from "react";
-import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs } from "@/lib/site-internet/speech";
+import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
+import { MARQUE } from "@/lib/marque";
 import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
-import { direRetours, habitantsDe, LE_DIRECT_MONTRE, type GesteDuJour } from "@/lib/direct/geste-du-jour";
+import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
+import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
+import { cartesDeLaVille, motDAction, saCarte, tempsIllustres } from "@/lib/direct/cartes-demo";
 
 type Props = {
   slug: string;
@@ -73,7 +76,19 @@ type Scene =
   | "metier"
   | "boucle";
 
-export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flashExample, actes, geste, keepHref }: Props) {
+export function DemoTour({
+  slug,
+  nom,
+  metierLabel,
+  villeAff,
+  photos,
+  reviewsCount,
+  avisAllowed,
+  flashExample,
+  actes,
+  geste,
+  keepHref,
+}: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
@@ -211,9 +226,27 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
   const SAY_RETOUR = retourDit.say;
   const RETOUR_AT = retourDit.phrases.map((ph) => partAu(SAY_RETOUR, ph));
 
+  /* ══════════ CE QUE LES HABITANTS VOIENT ═══════════════════════════════
+   *
+   * Les cartes du Direct, dans la forme EXACTE du fil de la ville — même
+   * composant, mêmes styles. C'était la pièce qui manquait : la démonstration
+   * parlait du Direct sans jamais le montrer, et le commerçant ne pouvait pas
+   * comprendre ce qu'on lui vendait.
+   *
+   * `photos` sont les SIENNES, celles de sa fiche Google déjà affichées sur son
+   * site. Une image d'illustration prise ailleurs serait plus jolie et moins
+   * convaincante : ce qui frappe, c'est de voir SON commerce dans l'écran de
+   * ses clients.
+   */
+  const mesPhotos = Array.isArray(photos) ? photos.filter(Boolean) : [];
+  const cartesVille = G ? cartesDeLaVille(laVille) : [];
+  const actionHabitant = G ? motDAction(G) : "Je veux";
+  const maCarte = G ? saCarte(G, nom, metierLabel, laVille, mesPhotos[0]) : null;
+
   // ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ─────────────────────────────
   //    La suite de sa journée, dans ses mots, heure par heure.
   const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
+  const tempsCartes = G ? tempsIllustres(actesListe, G, nom, metierLabel, laVille, mesPhotos) : [];
   const SAY_METIER = direActe(actesListe);
   const METIER_AT = actesListe.map((t) => partAu(SAY_METIER, t.dit));
 
@@ -254,6 +287,11 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
   const [photoN, setPhotoN] = useState(0);
   const [retourN, setRetourN] = useState(0);
   const [boucleN, setBoucleN] = useState(0);
+  /** Quelle carte est sur le dessus de la pile, à l'acte 3. Elle tourne toute
+   *  seule : une pile immobile se lit comme une image, pas comme un paquet
+   *  qu'on feuillette. */
+  const [carteVille, setCarteVille] = useState(0);
+  const rotation = useRef<number | null>(null);
   /**
    * LE NOMBRE DE LA VILLE, COMPTÉ À L'ÉCRAN.
    *
@@ -278,11 +316,26 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     };
     compteur.current = requestAnimationFrame(pas);
   };
-  // Laissé courir, le compteur continuait de rendre le composant après la fin
-  // de l'acte — et après le démontage, sur un composant qui n'existe plus.
-  useEffect(() => () => { if (compteur.current) cancelAnimationFrame(compteur.current); }, []);
+  // Laissés courir, le compteur et la rotation continuaient de rendre le
+  // composant après la fin de l'acte — et après le démontage, sur un composant
+  // qui n'existe plus.
+  useEffect(
+    () => () => {
+      if (compteur.current) cancelAnimationFrame(compteur.current);
+      if (rotation.current) window.clearInterval(rotation.current);
+    },
+    []
+  );
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
+  // La pile ne tourne QUE pendant l'acte 3 : ailleurs, elle n'est pas à
+  // l'écran, et un minuteur qui rend un composant invisible est un défaut.
+  useEffect(() => {
+    if (scene !== "qui" && rotation.current) {
+      window.clearInterval(rotation.current);
+      rotation.current = null;
+    }
+  }, [scene]);
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
 
@@ -633,6 +686,12 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           chime();
           setScene("qui");
           compter(G.combien);
+          setCarteVille(0);
+          if (rotation.current) window.clearInterval(rotation.current);
+          rotation.current = window.setInterval(
+            () => setCarteVille((n) => (n + 1) % Math.max(1, cartesVille.length)),
+            1700
+          );
           suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
         },
       });
@@ -761,6 +820,11 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       // `onReveal` est appelé au démarrage RÉEL de la voix (ou en repli si
       // l'audio est bloqué), donc rien ne peut rester en arrière.
       speak(st.say);
+      // LA VOIX DE L'ACTE SUIVANT PART MAINTENANT, pendant que celui-ci se joue.
+      // Elle était demandée à la FIN du précédent : un aller-retour réseau plus
+      // le temps de synthèse, en silence, à chaque changement d'écran. Sur huit
+      // actes, plusieurs secondes de vide, et toujours au pire moment.
+      if (steps[i + 1]) precharger(steps[i + 1].say);
       await awaitSpeech(est(st.say), () => {
         setHead({ n: i + 1, total, title: st.title });
         setCaption(st.say);
@@ -840,6 +904,10 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
 
   return (
     <>
+      {/* Les styles de la carte du Direct voyagent AVEC elle : c'est ce qui
+          permet au fil de la ville de servir exactement la même carte, sans
+          recopier des règles qui divergeraient au premier ajustement. */}
+      <StylesDirect />
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -886,7 +954,11 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             --exp:cubic-bezier(.16,1,.3,1);
             --in:cubic-bezier(.7,0,.84,0);
             --spring:cubic-bezier(.34,1.4,.64,1);
-            --pas:70ms;
+            /* LE PAS DE LA CASCADE. Passé de 70 à 55 ms : sur une liste de
+               quatre, ça retire un tiers de seconde d'attente avant la dernière
+               ligne — et l'attente, dans une démonstration d'une minute
+               quarante, est le seul défaut qu'on ne rattrape pas. */
+            --pas:55ms;
           }
           /* Les quatre entrées de la démonstration. Tout le reste s'en sert. */
           @keyframes dtFade{from{opacity:0}to{opacity:1}}
@@ -912,7 +984,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
              Le conteneur passe de 0fr à 1fr : sa hauteur s'anime au lieu de
              sauter. Rien ne bouge brutalement, et on n'a rien eu à mesurer en
              JavaScript. */
-          .dt-ouvre{display:grid;grid-template-rows:0fr;transition:grid-template-rows .65s var(--exp);}
+          .dt-ouvre{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s var(--exp);}
           .dt-ouvre.on{grid-template-rows:1fr;}
           .dt-ouvre>*{overflow:hidden;min-height:0;}
           /* L'ÉCART AU-DESSUS DU BLOC EST UN RETRAIT, PAS UNE MARGE. En marge,
@@ -927,7 +999,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             padding:36px 26px calc(34px + env(safe-area-inset-bottom));color:#EDF0FA;
             background:radial-gradient(120% 90% at 50% -10%,#1B2340 0%,#0C1020 55%,#07090F 100%);
             font-family:'Inter',system-ui,-apple-system,sans-serif;animation:dtFade .4s var(--exp);}
-          .dtour-launch>*{animation:dtRise .7s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
+          .dtour-launch>*{animation:dtRise .4s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-mark{width:78px;height:78px;border-radius:24px;display:flex;align-items:center;justify-content:center;position:relative;
             background:linear-gradient(140deg,#8B79FF,#5B3FA6);
             box-shadow:0 20px 50px -12px rgba(109,74,224,.7),inset 0 1px 0 rgba(255,255,255,.3);}
@@ -960,7 +1032,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             background:rgba(14,17,32,.94);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);color:#EDF0FA;
             padding:14px 15px calc(16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;
             border-top:1px solid rgba(255,255,255,.09);box-shadow:0 -18px 44px -18px rgba(0,0,0,.8);
-            animation:dtUp .55s var(--exp);font-family:'Inter',system-ui,sans-serif;}
+            animation:dtUp .42s var(--exp);font-family:'Inter',system-ui,sans-serif;}
           @keyframes dtUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
           /* LA PASTILLE QUI PARLE. Elle grossissait et rétrécissait toutes les
              0,6 s : le mouvement le plus daté de toute la démonstration, et le
@@ -976,14 +1048,14 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
              span (clé React) : la phrase précédente ne disparaît pas d'un coup
              au milieu d'une lecture. */
           .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;color:#DDE1F2;
-            animation:dtCap .42s var(--exp);}
+            animation:dtCap .32s var(--exp);}
           @keyframes dtCap{from{opacity:0;transform:translateY(5px);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
 
           /* ── LE BANDEAU D'ÉTAPE ──────────────────────────────────────── */
           .dtour-top{position:fixed;left:0;right:0;top:0;z-index:91;max-width:520px;margin:0 auto;
             padding:calc(14px + env(safe-area-inset-top)) 18px 13px;color:#EDF0FA;text-align:center;
             background:linear-gradient(180deg,rgba(11,14,25,.97),rgba(11,14,25,.74) 76%,transparent);
-            font-family:'Inter',system-ui,sans-serif;animation:dtTopIn .6s var(--exp);}
+            font-family:'Inter',system-ui,sans-serif;animation:dtTopIn .45s var(--exp);}
           @keyframes dtTopIn{from{opacity:0;transform:translateY(-10px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
           .dtour-top .dt-step{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;font-weight:700;}
           .dtour-top .dt-title{font-size:16px;font-weight:800;letter-spacing:-.015em;margin-top:3px;line-height:1.2;}
@@ -1000,7 +1072,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           /* ── LE CALQUE DES SCÈNES ────────────────────────────────────── */
           .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:84px 20px 158px;
             background:rgba(8,10,18,.5);pointer-events:none;
-            animation:dtVoile .55s var(--exp) both;}
+            animation:dtVoile .4s var(--exp) both;}
           /* Le fond se ferme PROGRESSIVEMENT au lieu d'apparaître flouté d'un
              coup : c'est la scène qui prend la main sur la page, et ça se
              regarde. */
@@ -1019,27 +1091,27 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .dtour-ov.dt-noir{background:radial-gradient(120% 80% at 50% 42%,#0D1712 0%,#060907 70%);
             flex-direction:column;text-align:center;padding:30px 26px;gap:0;}
           .cp-1{font-size:22px;line-height:1.15;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;
-            animation:dtWipe .9s var(--exp) .1s both;}
-          .bo-0{font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;animation:dtRise .7s var(--exp) both;}
+            animation:dtWipe .62s var(--exp) .1s both;}
+          .bo-0{font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;animation:dtRise .4s var(--exp) both;}
           .bo-0b{padding-top:8px;font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;}
-          .dt-ouvre.on .bo-0b{animation:dtRise .7s var(--exp) .1s both;}
+          .dt-ouvre.on .bo-0b{animation:dtRise .4s var(--exp) .1s both;}
           .bo-fin{padding-top:22px;}
           .bo-1{font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;}
-          .dt-ouvre.on .bo-1{animation:dtWipe .85s var(--exp) .15s both;}
+          .dt-ouvre.on .bo-1{animation:dtWipe .6s var(--exp) .15s both;}
           /* LE DÉGRADÉ NE PEUT PAS ÊTRE FLOUTÉ — filter sur un texte en
              background-clip:text efface le remplissage sur certains moteurs.
              Cette ligne-là a donc son propre volet, sans flou. */
           .bo-2{margin-top:6px;font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.035em;text-wrap:balance;
             background:linear-gradient(115deg,#12B981 10%,#0EA5A5 55%,#7C5CFC);-webkit-background-clip:text;
             background-clip:text;color:transparent;}
-          .dt-ouvre.on .bo-2{animation:dtWipe .85s var(--exp) .5s both;}
+          .dt-ouvre.on .bo-2{animation:dtWipe .6s var(--exp) .5s both;}
           @media(min-width:520px){.cp-1{font-size:27px;}.bo-1,.bo-2{font-size:31px;}}
 
           /* ── LA CARTE, SUPPORT DE TROIS ACTES ────────────────────────── */
           .dtour-card{background:#fff;border-radius:24px;padding:22px 22px 20px;max-width:360px;width:100%;
             max-height:calc(100dvh - 258px);overflow-y:auto;-webkit-overflow-scrolling:touch;
             box-shadow:0 48px 100px -28px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.06);
-            font-family:'Inter',system-ui,sans-serif;animation:dtLift .72s var(--exp);pointer-events:auto;}
+            font-family:'Inter',system-ui,sans-serif;animation:dtLift .52s var(--exp);pointer-events:auto;}
 
           /* ── ACTE 3 · CE MIDI, DANS SA VILLE ─────────────────────────── */
           .dtour-ov.qi{gap:0;}
@@ -1051,50 +1123,84 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
              en z-index:-1 passe DERRIÈRE le fond de la scène et ne se voit pas. */
           .qi-n{position:relative;isolation:isolate;font-family:'Inter',system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
             letter-spacing:-.055em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;
-            animation:dtPop .8s var(--exp) both;}
+            animation:dtPop .55s var(--exp) both;}
           .qi-n::before{content:"";position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);
             background:radial-gradient(circle,rgba(18,185,129,.28),transparent 62%);pointer-events:none;z-index:-1;
             animation:dtSouffle 4s ease-in-out infinite;}
           @keyframes dtSouffle{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.9)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
-          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;animation:dtRise .7s var(--exp) .22s both;}
+          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;animation:dtRise .4s var(--exp) .22s both;}
           .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:#fff;}
 
-          /* LE DIRECT, DANS LA MAIN D'UN HABITANT.
-             C'est un téléphone, et il faut que ça se voie : une carte de la
-             ville avec des points ne disait pas ce qu'il fallait comprendre —
-             Le Direct n'est pas un annuaire qu'on consulte chez soi la veille,
-             c'est un écran qu'on ouvre dans la rue au moment où l'on choisit.
-             Il se redresse en arrivant (rotateX), comme un objet qu'on lève. */
-          .qi-tel{position:relative;transform-origin:50% 0;width:min(250px,68vw);border-radius:26px;padding:12px 12px 15px;text-align:left;
-            background:linear-gradient(168deg,#16261E,#080F0C);
-            border:1px solid rgba(126,230,192,.2);box-shadow:0 34px 70px -26px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06);
-            }
-          .dt-ouvre.on .qi-tel{animation:dtTel .85s var(--exp) .1s both;}
+          /* LE CATALOGUE DU DIRECT, dans la main d'un habitant.
+             Un encadré stylisé à trois lignes ne disait pas ce qu'il fallait
+             comprendre. C'est maintenant la VRAIE carte du fil (composant
+             partagé), empilée comme un paquet qu'on feuillette au pouce. */
+          .qi-app{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+            animation:dtTel .55s var(--exp) both;}
           @keyframes dtTel{
-            from{opacity:0;transform:perspective(900px) rotateX(16deg) translate3d(0,30px,0) scale(.93);filter:blur(14px)}
+            from{opacity:0;transform:perspective(900px) rotateX(14deg) translate3d(0,26px,0) scale(.94);filter:blur(12px)}
             to{opacity:1;transform:perspective(900px) rotateX(0) translate3d(0,0,0) scale(1);filter:blur(0)}
           }
-          /* L'encoche : trois pixels qui font basculer la lecture de « encart »
-             à « téléphone ». */
-          .qi-tel::before{content:"";display:block;width:52px;height:4px;border-radius:3px;margin:0 auto 11px;background:rgba(255,255,255,.16);}
-          .qi-tb{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;letter-spacing:-.015em;color:#fff;}
-          .qi-tb span{font-size:12px;line-height:1;}
-          .qi-tn{margin-top:3px;font-size:11.5px;color:#8FA79A;}
-          .qi-tl{padding-top:12px;display:flex;flex-direction:column;gap:7px;}
-          .qi-ti{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:650;color:#EAF3EE;
-            background:rgba(255,255,255,.05);border-radius:13px;padding:9px 11px;opacity:0;}
-          .qi-ti.on{animation:dtGlide .6s var(--exp) both;animation-delay:calc(.18s + var(--i,0) * var(--pas));}
-          .qi-ti span{font-size:15px;line-height:1;flex:none;}
-
+          /* LA PILE — UNE SEULE CARTE LISIBLE, DEUX TRANCHES DERRIÈRE.
+             Les trois étaient rendues l'une SUR l'autre dans la même case de
+             grille : leurs textes se superposaient, et l'écran le plus
+             important de la démonstration devenait illisible. Une pile ne se
+             lit pas par transparence — on voit celle du dessus, on devine les
+             autres. Les tranches sont deux barres, pas deux cartes : rien à
+             lire, donc rien à confondre. */
+          .qi-pile{position:relative;width:100%;padding-top:14px;}
+          .qi-dos{position:absolute;left:50%;top:0;height:14px;border-radius:16px 16px 0 0;
+            background:linear-gradient(180deg,rgba(126,230,192,.22),rgba(12,19,16,.9));
+            border:1px solid rgba(255,255,255,.07);border-bottom:0;transform:translateX(-50%);}
+          .qi-dos.d1{width:86%;top:6px;}
+          .qi-dos.d2{width:72%;top:0;}
+          .qi-c{position:relative;margin:0 auto;animation:dtCarteEntre .5s var(--exp);}
+          /* Le remontage (clé React) rejoue cette entrée à chaque rotation :
+             une carte qui se remplace sans bouger se lit comme un texte qui
+             change, pas comme une carte qu'on fait défiler. */
+          @keyframes dtCarteEntre{
+            from{opacity:0;transform:translate3d(0,10px,0) scale(.97);filter:blur(6px)}
+            to{opacity:1;transform:none;filter:blur(0)}
+          }
+          .qi-aide{text-align:center;font-size:11.5px;color:#7E938A;}
+          /* LA CARTE EST BRIDÉE ICI, et pas au composant. Le nombre, la
+             question, la barre, la carte, les trois gestes et la légende
+             doivent tenir ENSEMBLE entre le bandeau d'étape et la barre de
+             voix. À sa largeur naturelle, la carte débordait de 10 px sur un
+             grand téléphone et de 68 px sur un petit — mesuré au navigateur.
+             C'est la seule scène qui empile autant de choses ; c'est donc à
+             elle de se contraindre, pas au composant partagé. */
+          .qi-app .cd-carte{max-width:226px;}
+          .qi-app .cd-nom{font-size:20px;}
+          .qi-app .cd-gestes{margin-top:12px;gap:20px;}
+          .qi-app .cd-g i{width:40px;height:40px;font-size:16px;}
+          .qi-app .cd-g.grand i{width:52px;height:52px;font-size:20px;}
+          @media (max-height:800px){
+            .qi-app .cd-carte{max-width:178px;}
+            .qi-app .cd-nom{font-size:17px;}
+            .qi-app .cd-gestes{margin-top:9px;gap:16px;}
+            .qi-app .cd-g i{width:34px;height:34px;font-size:14px;}
+            .qi-app .cd-g.grand i{width:44px;height:44px;font-size:17px;}
+            .qi-app .cd-g em{font-size:10px;}
+            .qi.serre .qi-n{font-size:clamp(32px,9vw,42px);}
+            .qi-aide{font-size:10.5px;}
+          }
+          /* LE NOMBRE SE RESSERRE QUAND LE CATALOGUE S'OUVRE. À taille pleine,
+             les deux ne tiennent pas ensemble : mesuré au navigateur, le nombre
+             passait sous le bandeau d'étape. */
+          .qi .qi-n,.qi .qi-q{transition:font-size .6s var(--exp),margin .6s var(--exp);}
+          .qi.serre .qi-n{font-size:clamp(38px,11vw,54px);}
+          .qi.serre .qi-q{margin-top:2px;font-size:14px;}
+          .qi.serre .qi-q b{margin-top:1px;font-size:17px;}
           /* ── ACTE 4 · ET VOUS ? ──────────────────────────────────────── */
           .dtour-card.iv{text-align:center;}
           .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#141A2E;text-wrap:balance;
-            animation:dtRise .6s var(--exp) .12s both;}
+            animation:dtRise .45s var(--exp) .12s both;}
           /* L'ardoise se pose de travers puis se redresse : elle a l'air posée
              devant la porte, pas collée dans une maquette. */
           .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#1F2A24;color:#EBE7D9;
             display:flex;flex-direction:column;gap:5px;font-family:Georgia,serif;
-            box-shadow:0 20px 40px -22px rgba(20,30,25,.9);animation:dtArd .8s var(--exp) .22s both;}
+            box-shadow:0 20px 40px -22px rgba(20,30,25,.9);animation:dtArd .58s var(--exp) .22s both;}
           @keyframes dtArd{
             from{opacity:0;transform:translate3d(0,16px,0) rotate(-2.2deg) scale(.96);filter:blur(10px)}
             to{opacity:1;transform:none;filter:blur(0)}
@@ -1113,62 +1219,90 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .iv-x{padding-top:16px;margin-top:15px;border-top:1px solid #F0EFF7;
             font-size:clamp(16px,3.6vw,19px);font-weight:800;line-height:1.28;
             color:#141A2E;text-wrap:balance;}
-          .dt-ouvre.on .iv-x{animation:dtSerre .8s var(--exp) .12s both;}
+          .dt-ouvre.on .iv-x{animation:dtSerre .58s var(--exp) .12s both;}
           @keyframes dtSerre{
             from{opacity:0;letter-spacing:.04em;clip-path:inset(0 0 104% 0);transform:translate3d(0,8px,0)}
             to{opacity:1;letter-spacing:-.02em;clip-path:inset(0 0 -8% 0);transform:none}
           }
 
           /* ── ACTE 5 · LE GESTE ───────────────────────────────────────── */
-          .dtour-card.ph{text-align:center;}
-          .ph-h{font-size:21px;font-weight:850;letter-spacing:-.03em;color:#141A2E;animation:dtRise .6s var(--exp) both;}
-          .ph-h em{display:block;margin-top:3px;font-style:normal;font-size:14px;font-weight:600;color:#6E7290;}
-          /* LE CADRE DE PRISE DE VUE. L'ancien envoyait un aplat BLANC en plein
-             écran — le flash d'appareil photo de 2010, éblouissant sur un
-             téléphone tenu à trente centimètres. C'est maintenant une visée :
-             quatre coins qui se resserrent, et une ligne qui balaie l'image.
-             Le geste se lit, et il ne fait mal à personne. */
-          .ph-shot{position:relative;margin:14px auto 0;width:100%;height:96px;border-radius:16px;overflow:hidden;
-            display:flex;align-items:center;justify-content:center;background:#F4F3FB;
-            transition:background .5s var(--exp);}
-          .ph-shot.lu{background:#E4F7EE;}
-          .ph-ic{font-size:34px;animation:dtPop .6s var(--spring) both;}
-          /* QUATRE COINS, PAS DEUX. Un cadre entier serait une bordure ; deux
-             coins en diagonale, un accident. Le masque ne garde que les angles
-             d'un cadre complet — et ils se resserrent depuis les bords, comme
-             une visée qu'on ajuste. */
-          .ph-shot::before{content:"";position:absolute;border:2px solid rgba(91,63,166,.45);border-radius:7px;
-            -webkit-mask:linear-gradient(#000,#000) top left/24px 24px no-repeat,linear-gradient(#000,#000) top right/24px 24px no-repeat,
-              linear-gradient(#000,#000) bottom left/24px 24px no-repeat,linear-gradient(#000,#000) bottom right/24px 24px no-repeat;
-            mask:linear-gradient(#000,#000) top left/24px 24px no-repeat,linear-gradient(#000,#000) top right/24px 24px no-repeat,
-              linear-gradient(#000,#000) bottom left/24px 24px no-repeat,linear-gradient(#000,#000) bottom right/24px 24px no-repeat;
-            animation:dtVise 1.1s var(--exp) both;}
-          @keyframes dtVise{from{opacity:0;inset:1px}to{opacity:1;inset:11px}}
-          .ph-flash{position:absolute;left:0;right:0;height:34%;
-            background:linear-gradient(180deg,transparent,rgba(124,106,232,.28),transparent);
-            animation:dtScan 1.5s var(--exp) .35s;}
-          @keyframes dtScan{from{transform:translateY(-120%)}to{transform:translateY(320%)}}
-          .ph-out{border:1px solid #E7E4FB;border-radius:15px;padding:13px;text-align:left;
-            background:linear-gradient(160deg,#FBFAFF,#fff);}
-          .ph-k{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#4B3A9E;}
-          .ph-l{margin-top:7px;display:flex;align-items:baseline;gap:8px;font-size:14.5px;color:#141A2E;}
-          .dt-ouvre.on .ph-l{animation:dtGlide .55s var(--exp) both;animation-delay:calc(.15s + var(--i,0) * var(--pas));}
-          .ph-l i{font-style:normal;color:#0E7C5A;font-size:12px;}
-          .ph-p{margin-top:9px;font-size:22px;font-weight:850;letter-spacing:-.03em;color:#141A2E;}
-          .dt-ouvre.on .ph-p{animation:dtPop .6s var(--spring) both;animation-delay:calc(.15s + var(--i,0) * var(--pas));}
-          .ph-ou{padding-top:13px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;color:#0E7C5A;}
-          .dt-ouvre.on .ph-ou span{animation:dtGlide .55s var(--exp) .12s both;}
-          .dt-ouvre.on .ph-ou span:nth-child(2){animation-delay:.24s;}
+          /* Plus de carte blanche : cet acte doit montrer un OBJET (l'ardoise)
+             puis un ÉCRAN (la carte du Direct). Une carte de démonstration
+             autour des deux les aurait mis au même plan. */
+          .dtour-ov.ph-ov{align-items:flex-start;padding-top:90px;padding-bottom:150px;}
+          .ph-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px;pointer-events:auto;}
+          .ph-h{text-align:center;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;
+            text-shadow:0 2px 20px rgba(0,0,0,.8);animation:dtRise .4s var(--exp) both;}
+          .ph-h em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:#9FB3A8;}
 
+          /* LE CADRE DE VISÉE SE POSE SUR SON ARDOISE. Vide, il ne montrait
+             rien — on voyait un appareil photo et du texte, jamais l'objet
+             qu'il est censé photographier. */
+          .ph-shot{position:relative;border-radius:18px;overflow:hidden;padding:14px 14px;
+            background:linear-gradient(160deg,#243029,#141C18);border:1px solid rgba(255,255,255,.08);
+            box-shadow:0 30px 60px -28px rgba(0,0,0,.9);transition:box-shadow .6s var(--exp);
+            animation:dtRise .45s var(--exp) .1s both;}
+          .ph-shot.lu{box-shadow:0 30px 60px -26px rgba(18,185,129,.55),0 0 0 1px rgba(126,230,192,.35);}
+          .ph-ard{display:flex;flex-direction:column;gap:3px;text-align:center;font-family:Georgia,serif;color:#EBE7D9;}
+          .ph-ard span{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#9FB3A8;}
+          .ph-ard i{font-style:normal;font-size:13.5px;}
+          .ph-ard b{margin-top:3px;font-size:19px;font-weight:700;color:#fff;}
+          /* Quatre coins, pas un cadre entier : un cadre serait une bordure. */
+          .ph-shot::before{content:"";position:absolute;border:2px solid rgba(126,230,192,.55);border-radius:9px;
+            -webkit-mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
+              linear-gradient(#000,#000) bottom left/26px 26px no-repeat,linear-gradient(#000,#000) bottom right/26px 26px no-repeat;
+            mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
+              linear-gradient(#000,#000) bottom left/26px 26px no-repeat,linear-gradient(#000,#000) bottom right/26px 26px no-repeat;
+            animation:dtVise .75s var(--exp) both;pointer-events:none;}
+          @keyframes dtVise{from{opacity:0;inset:1px}to{opacity:1;inset:9px}}
+          /* Une ligne qui BALAIE l'ardoise, au lieu d'un aplat blanc en plein
+             écran — le flash de 2010, éblouissant sur un téléphone tenu à
+             trente centimètres. */
+          .ph-flash{position:absolute;left:0;right:0;height:38%;
+            background:linear-gradient(180deg,transparent,rgba(126,230,192,.3),transparent);
+            animation:dtScan 1.4s var(--exp) .3s;pointer-events:none;}
+          @keyframes dtScan{from{transform:translateY(-120%)}to{transform:translateY(320%)}}
+
+          .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
+            font-size:12px;font-weight:800;color:#8FE9C4;}
+          .ph-vers i{font-style:normal;font-size:14px;line-height:1;}
+          .ph-mini{margin-top:8px;display:flex;flex-direction:column;align-items:center;}
+          /* La carte est réduite : l'ardoise est au-dessus, et les deux
+             doivent tenir ensemble à l'écran — c'est la comparaison qui
+             démontre, pas chacune prise à part. */
+          .ph-carte{max-width:196px;}
+          .ph-mini .cd-gestes{margin-top:9px;gap:16px;}
+          .ph-mini .cd-g i{width:34px;height:34px;font-size:14px;}
+          .ph-mini .cd-g.grand i{width:44px;height:44px;font-size:17px;}
+          .ph-mini .cd-g em{font-size:10px;}
+          @media (max-height:800px){
+            .dtour-ov.ph-ov{padding-top:78px;}
+            .ph-wrap{gap:6px;}
+            .ph-h{font-size:17px;}
+            .ph-h em{font-size:12px;}
+            .ph-shot{padding:11px 12px;}
+            .ph-ard{gap:2px;}
+            .ph-ard span{font-size:10.5px;}
+            .ph-ard i{font-size:12px;}
+            .ph-ard b{font-size:16px;}
+            .ph-vers{padding-top:6px;font-size:11px;}
+            .ph-mini{margin-top:5px;}
+            .ph-carte{max-width:148px;}
+            .ph-mini .cd-nom{font-size:15px;}
+            .ph-mini .cd-gestes{margin-top:6px;gap:13px;}
+            .ph-mini .cd-g i{width:30px;height:30px;font-size:12px;}
+            .ph-mini .cd-g.grand i{width:38px;height:38px;font-size:15px;}
+            .ph-mini .cd-g em{font-size:9.5px;}
+          }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
           /* CES CHIFFRES SONT INVENTÉS, et le bandeau le dit sans détour. Il
              est ROUGE et il est en haut : « maquette » en gris sous le titre se
              lisait comme une mention légale, c'est-à-dire pas du tout. */
           .rt-k{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
-            color:#B23A17;background:#FDEEE8;border-radius:7px;padding:5px 9px;animation:dtRise .5s var(--exp) both;}
+            color:#B23A17;background:#FDEEE8;border-radius:7px;padding:5px 9px;animation:dtRise .4s var(--exp) both;}
           .rt-h{margin-top:12px;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#141A2E;text-wrap:balance;
-            animation:dtWipe .8s var(--exp) .1s both;}
+            animation:dtWipe .58s var(--exp) .1s both;}
           .rt-l{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
           /* Chaque ligne arrive quand la voix la prononce (retourN), et le
              chiffre se pose une fraction après le reste : c'est lui qu'on doit
@@ -1189,69 +1323,44 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .rt-i.fin .rt-t{font-size:16px;font-weight:800;letter-spacing:-.02em;}
 
           /* ── ACTE 7 · LA JOURNÉE, TEMPS PAR TEMPS ────────────────────── */
-          .dtour-ov.mt-ov{background:rgba(7,10,20,.9);}
-          .mt-wrap{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:13px;pointer-events:auto;}
+          .dtour-ov.mt-ov{background:rgba(6,10,8,.92);align-items:flex-start;padding-top:92px;}
+          .mt-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:11px;pointer-events:auto;}
           .mt-dots{display:flex;gap:6px;}
           .mt-dots i{width:22px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);
             transition:background .45s var(--exp),width .45s var(--spring);}
-          .mt-dots i.done{background:rgba(165,148,255,.6);}
-          .mt-dots i.on{width:30px;background:#fff;box-shadow:0 0 14px rgba(165,148,255,.95);}
-          /* LA CARTE AVANCE, elle ne clignote pas. Chaque temps est une carte
-             qui vient de la droite pendant que la précédente est retirée par le
-             remontage React : on lit une journée qui défile, pas un texte qui
-             se rafraîchit sur place. */
-          .mt-card{width:100%;min-height:302px;background:#fff;border-radius:24px;padding:18px 18px 16px;
-            display:flex;flex-direction:column;box-shadow:0 44px 90px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.05);
-            animation:dtCarte .7s var(--exp);}
+          .mt-dots i.done{background:rgba(126,230,192,.55);}
+          .mt-dots i.on{width:30px;background:#fff;box-shadow:0 0 14px rgba(126,230,192,.9);}
+          /* Chaque temps arrive par la droite : on lit une journée qui défile,
+             pas un texte qui se rafraîchit sur place. */
+          .mt-temps{width:100%;display:flex;flex-direction:column;align-items:center;gap:7px;
+            animation:dtCarte .45s var(--exp);}
           @keyframes dtCarte{
-            from{opacity:0;transform:translate3d(34px,0,0) scale(.96);filter:blur(12px)}
+            from{opacity:0;transform:translate3d(30px,0,0) scale(.97);filter:blur(10px)}
             to{opacity:1;transform:none;filter:blur(0)}
           }
-          /* L'HEURE DU TEMPS. Sans elle, les cartes se lisaient comme les
-             entrées d'un menu ; avec elle, c'est une journée qui avance — et
-             c'est exactement ce que cet acte doit faire comprendre. */
-          .mt-hh{align-self:flex-start;margin-bottom:9px;font-family:'Inter',system-ui,sans-serif;
-            font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#9A9FC0;font-variant-numeric:tabular-nums;
-            animation:dtGlide .5s var(--exp) .08s both;}
-          .mt-chip{align-self:flex-start;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;
-            color:#4B3A9E;background:#F0EDFF;border-radius:999px;padding:6px 11px;letter-spacing:-.01em;
-            animation:dtGlide .5s var(--exp) .14s both;}
-          .mt-chip span{font-size:13px;line-height:1;}
-          .mt-dis{margin-top:14px;display:flex;gap:8px;font-size:15.5px;line-height:1.4;font-weight:750;
-            color:#141A2E;text-align:left;animation:dtRise .55s var(--exp) .22s both;}
-          .mt-dis i{font-style:normal;font-size:15px;line-height:1.3;flex:none;opacity:.7;}
-          /* LA FLÈCHE SE TRACE, elle n'apparaît pas : c'est le seul endroit de
-             la carte qui montre une TRANSFORMATION, et un trait qui se dessine
-             la raconte mieux qu'un fondu. */
-          .mt-arrow{margin:11px 0 1px;height:18px;display:flex;justify-content:center;}
-          .mt-arrow i{display:block;width:2px;height:18px;border-radius:2px;transform-origin:top;
-            background:linear-gradient(180deg,rgba(124,106,232,0),#7C6AE8);
-            animation:dtTrace .5s var(--exp) .42s both;}
+          /* L'HEURE ET LE TITRE. Sans eux, les quatre écrans se lisaient comme
+             quatre fonctions d'un menu ; avec eux, comme quatre moments de SA
+             journée — et il sait ce qu'il pourrait y faire. */
+          .mt-hh{font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:850;letter-spacing:.18em;
+            color:#8FE9C4;font-variant-numeric:tabular-nums;}
+          .mt-titre{font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;text-align:center;text-wrap:balance;
+            text-shadow:0 2px 18px rgba(0,0,0,.75);}
+          /* CE QU'IL DIT. C'est toujours lui qui apporte le fait : l'assistante
+             ne sait pas combien il lui reste de tables, et ne le saura jamais. */
+          .mt-dis{display:flex;align-items:flex-start;gap:7px;max-width:320px;text-align:left;
+            font-size:13.5px;line-height:1.4;font-weight:650;color:#D3E0D8;}
+          .mt-dis i{font-style:normal;font-size:13px;line-height:1.35;flex:none;opacity:.75;}
+          .mt-fleche{height:14px;display:flex;justify-content:center;}
+          .mt-fleche i{display:block;width:2px;height:14px;border-radius:2px;transform-origin:top;
+            background:linear-gradient(180deg,rgba(126,230,192,0),#3DE2A6);
+            animation:dtTrace .4s var(--exp) .3s both;}
           @keyframes dtTrace{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
-          .mt-out{position:relative;border-radius:17px;padding:13px 14px 13px 40px;color:#fff;font-size:14px;line-height:1.45;
-            text-align:left;background:linear-gradient(150deg,#241C52,#120E2C);
-            box-shadow:0 20px 40px -24px rgba(36,28,82,.9);animation:dtRise .6s var(--exp) .62s both;}
-          .mt-av{position:absolute;left:12px;top:13px;width:20px;height:20px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-            font-size:11px;background:linear-gradient(140deg,#A594FF,#5B3FA6);}
-          /* Le bas de carte est un PIED, pas un blanc : la hauteur est la même
-             pour tous les temps (sinon les points de progression sautent), donc
-             les cartes courtes laissent du vide. Un filet le transforme en pied
-             de page au lieu d'un trou. */
-          .mt-pro{margin-top:auto;border-top:1px solid #F0EFF7;padding-top:12px;font-size:11.5px;line-height:1.45;color:#6E7290;
-            text-align:left;animation:dtFade .6s var(--exp) 1s both;}
-          /* LA DEMANDE INVERSÉE : ce ne sont plus ses mots qui ouvrent la
-             carte, ce sont ceux des habitants. La puce change donc de couleur —
-             c'est le seul temps où quelque chose arrive vers lui. */
-          .mt-chip.dem{color:#0E7C5A;background:#E4F7EE;}
-          .mt-dem{margin-top:14px;border-radius:15px;padding:13px 14px;background:#F1FBF6;border:1px solid #CDEEDF;
-            font-size:15.5px;line-height:1.4;font-weight:750;color:#0B3D2C;text-align:left;
-            animation:dtRise .6s var(--exp) .22s both;}
-          @media (max-width:380px){
-            .mt-card{min-height:290px;padding:16px 15px 14px;}
-            .mt-dis,.mt-dem{font-size:14.5px;}
-            .mt-out{font-size:13px;}
+          .mt-carte{max-width:250px;}
+          @media (max-height:780px){
+            .dtour-ov.mt-ov{padding-top:84px;}
+            .mt-titre{font-size:17px;}
+            .mt-carte{max-width:214px;}
           }
-
           /* ── L'ASSISTANTE, AVANT QU'ELLE NE PARLE ─────────────────────
              Entre le tap et le premier mot il s'écoule une à deux secondes. Le
              commerçant voyait son site immobile, essayait de le faire défiler
@@ -1264,7 +1373,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .dtour-alive .al-av{position:relative;z-index:3;width:120px;height:120px;border-radius:38px;display:flex;align-items:center;justify-content:center;
             font-size:54px;color:#fff;background:linear-gradient(140deg,#8B79FF,#5B3FA6);
             box-shadow:0 26px 60px -14px rgba(109,74,224,.75),inset 0 1px 0 rgba(255,255,255,.28);
-            animation:dtPop .8s var(--exp) both;}
+            animation:dtPop .55s var(--exp) both;}
           /* LES ANNEAUX PARTENT VITE ET FINISSENT LENTEMENT. En linéaire, ils
              donnaient trois cercles qui grandissaient à vitesse constante —
              l'écran de veille d'un routeur. En expo, c'est une onde. */
@@ -1285,7 +1394,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .dtour-end{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
             padding:34px 24px calc(32px + env(safe-area-inset-bottom));color:#EDF0FA;font-family:'Inter',system-ui,sans-serif;
             background:radial-gradient(120% 90% at 50% -10%,#1B2340 0%,#0C1020 55%,#07090F 100%);animation:dtFade .45s var(--exp);}
-          .dtour-end>*{animation:dtRise .7s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
+          .dtour-end>*{animation:dtRise .4s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-mark.sm{width:56px;height:56px;border-radius:18px;}
           .dtour-mark.sm span{font-size:24px;}
           .dtour-end .et{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.15;max-width:440px;}
@@ -1294,7 +1403,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .dtour-end .end-list{display:flex;flex-direction:column;gap:8px;width:100%;max-width:330px;margin-top:4px;}
           .dtour-end .end-i{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:#EDF0FA;
             background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
-            animation:dtGlide .6s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
+            animation:dtGlide .45s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-end .end-cta{display:flex;flex-direction:column;gap:11px;width:100%;max-width:360px;margin-top:8px;}
           /* Le bouton porte un reflet qui passe une fois : il attire l'œil au
              moment où l'on attend une décision, sans clignoter ensuite. */
@@ -1367,13 +1476,8 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
              fichier. */
           @media (prefers-reduced-motion:reduce){
             .dtour-launch>*,.dtour-end>*,.dtour-card,.dtour-ov,.dtour-top,.dtour-bar,.dtour-bar .cap,
-            .cp-1,.bo-0,.bo-0b,.bo-1,.bo-2,.qi-n,.qi-q,.qi-tel,.qi-ti.on,
-            .iv-h,.iv-ard,.iv-ok,.iv-x,.ph-h,.ph-ic,.ph-out,.ph-l,.ph-p,.ph-ou span,
-            .rt-k,.rt-h,.mt-card,.mt-hh,.mt-chip,.mt-dis,.mt-arrow i,.mt-out,.mt-pro,.mt-dem,
-            .dtour-alive .al-av,.dtour-alive .al-halo,.dtour-end .end-i{
-              animation:dtFade .25s linear both;transform:none;filter:none;clip-path:none;letter-spacing:normal;}
             .dtour-bar .mini::before,.dtour-top .dt-prog i::after,.dtour-end .end-go::after,
-            .ph-shot::before,.ph-flash,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
+            .ph-shot::before,.ph-flash,.ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
             .al-fly{display:none;}
             .rt-i,.rt-t b{transition:opacity .2s linear;transform:none;filter:none;}
             .dt-ouvre{transition:none;}
@@ -1439,47 +1543,44 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
               de petites fenêtres de sites, le fil s'y duplique, et des
               habitants apparaissent autour — on voit QUI découvre l'annonce. */}
           {/* ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ────────────────────
-              La démo montrait UNE annonce, une seule fois : le commerçant en
-              concluait ce qu'il conclut toujours, « c'est un truc à
-              promotions ». Chaque temps porte donc son HEURE — c'est elle qui
-              transforme une liste de fonctions en une journée qui avance. */}
-          {scene === "metier" && tempsCourant && (
+              QUATRE MOMENTS DE SA JOURNÉE, ET CE QUE CHACUN DONNE DANS LE
+              DIRECT.
+
+              L'acte montrait une carte blanche par temps : une puce, sa phrase,
+              une flèche, l'annonce. Quatre écrans de produit à la suite, et le
+              commerçant décrochait exactement là où on voulait qu'il se
+              reconnaisse. Trois choses le corrigent :
+
+               · L'HEURE ET UN TITRE, en haut. « 14 h — Il vous en reste ? » : il
+                 sait en une seconde de quel moment de SA journée on parle, et
+                 ce qu'il pourrait y faire. Sans ce titre, les quatre cartes se
+                 lisaient comme quatre fonctions d'un menu.
+               · CE QU'IL DIT, entre guillemets. C'est toujours lui qui apporte
+                 le fait — l'assistante ne sait pas combien il lui reste de
+                 tables et ne le saura jamais.
+               · LA CARTE DU DIRECT, en dessous. C'est-à-dire ce que ses clients
+                 reçoivent réellement. C'est la seule ligne de l'acte qui
+                 réponde à « et alors ? ». */}
+          {scene === "metier" && tempsCourant && tempsCartes[metierN] && (
             <div className="dtour-ov mt-ov">
               <div className="mt-wrap">
                 <div className="mt-dots" aria-hidden="true">
-                  {actesListe.map((t, i) => (
-                    <i key={t.genre === "geste" ? t.cle : "demande"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
+                  {actesListe.map((t2, i) => (
+                    <i key={t2.genre === "geste" ? t2.cle : "demande"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
                   ))}
                 </div>
-                {/* La clé force le remontage : sans elle, React réutiliserait la
-                    carte précédente et le texte changerait sans animation — on
+                {/* La clé force le remontage : sans elle, React réutiliserait
+                    l'écran précédent et le texte changerait sans mouvement — on
                     lirait un rafraîchissement, pas un temps qui succède. */}
-                <div className="mt-card" key={metierN}>
-                  <div className="mt-hh">{tempsCourant.heure}</div>
-                  {tempsCourant.genre === "geste" ? (
-                    <>
-                      <div className="mt-chip"><span>{tempsCourant.emoji}</span>{tempsCourant.label}</div>
-                      <div className="mt-dis"><i aria-hidden="true">{tempsCourant.via === "photo" ? "📷" : "🎙️"}</i>«&nbsp;{tempsCourant.dis}&nbsp;»</div>
-                      <div className="mt-arrow" aria-hidden="true"><i /></div>
-                      <div className="mt-out"><span className="mt-av" aria-hidden="true">✦</span>{tempsCourant.annonce}</div>
-                      <div className="mt-pro">{tempsCourant.promesse}</div>
-                    </>
-                  ) : (
-                    <>
-                      {/* LA DEMANDE INVERSÉE, ET AUCUNE ÉTIQUETTE DESSUS.
-                          Un bandeau « bientôt » a été proposé trois fois et
-                          refusé trois fois : il transformait le seul moment
-                          inspirant de l'acte en aveu que ça ne marche pas
-                          encore, juste avant l'écran de décision. Le sens de
-                          la scène le dit d'ailleurs tout seul — c'est la seule
-                          où ce n'est pas lui qui commence. */}
-                      <div className="mt-chip dem"><span>🔎</span>Les habitants cherchent quelque chose</div>
-                      <div className="mt-dem">{tempsCourant.question}</div>
-                      <div className="mt-arrow" aria-hidden="true"><i /></div>
-                      <div className="mt-out"><span className="mt-av" aria-hidden="true">✦</span>{tempsCourant.proposition}</div>
-                      <div className="mt-pro">Cette fois, ce sont eux qui viennent vers vous.</div>
-                    </>
-                  )}
+                <div className="mt-temps" key={metierN}>
+                  <div className="mt-hh">{tempsCartes[metierN].heure}</div>
+                  <div className="mt-titre">{tempsCartes[metierN].titre}</div>
+                  <div className="mt-dis">
+                    <i aria-hidden="true">{tempsCourant.genre === "geste" && tempsCourant.via === "photo" ? "📷" : tempsCourant.genre === "demande" ? "🔎" : "🎙️"}</i>
+                    {tempsCourant.genre === "demande" ? tempsCartes[metierN].dit : `« ${tempsCartes[metierN].dit} »`}
+                  </div>
+                  <div className="mt-fleche" aria-hidden="true"><i /></div>
+                  <CarteSwipe carte={tempsCartes[metierN].carte} className="mt-carte" />
                 </div>
               </div>
             </div>
@@ -1499,46 +1600,56 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           )}
 
           {/* ── ACTE 3 · CE MIDI, DANS SA VILLE ───────────────────────────
-              L'ÉCRAN QUI MANQUAIT À TOUTE LA DÉMONSTRATION. Le Direct n'y
-              était jamais montré : le commerçant entendait « votre annonce
-              circule » sans jamais voir OÙ. Il le voit ici, avant même qu'on
-              lui parle de lui — un téléphone qu'on ouvre dans la rue, et trois
-              lignes qui disent ce qu'on y trouve.
+              L'ÉCRAN QUI MANQUAIT À TOUTE LA DÉMONSTRATION, et il ne suffisait
+              pas de le NOMMER.
+
+              Le Direct y était décrit par trois lignes dans un encadré stylisé,
+              qui ne ressemblait à rien de ce que ses clients verront. Or c'est
+              le mode swipe qui fait comprendre le système d'un seul coup d'œil :
+              une carte plein écran, une photo, un prix, trois gestes. C'est donc
+              la VRAIE carte qui s'affiche ici — le même composant que le fil de
+              la ville, pour qu'il soit impossible de promettre un écran qui
+              n'existe pas.
+
+              AUCUN COMMERCE N'EST NOMMÉ SUR CES TROIS CARTES. Elles décrivent ce
+              que les habitants voient — donc d'AUTRES commerces. Leur inventer
+              un nom, ce serait fabriquer trois faux voisins ; mettre le sien, ce
+              serait lui faire croire qu'il y est déjà, et détruire l'acte 4.
 
               Le nombre parle de la VILLE, pas de nous : « mille personnes
               cherchent » se lisait « ClikMe a mille utilisateurs ici », et le
               jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
-            <div className="dtour-ov dt-noir qi">
+            <div className={`dtour-ov dt-noir qi${quiN >= 1 ? " serre" : ""}`}>
               <div className="qi-n">{compte}</div>
               <div className="qi-q">
                 {gentile} vont {G.verbe}<br />
                 <b>{G.cherchent}</b>
               </div>
-              {/* LE TÉLÉPHONE AUSSI S'OUVRE. Monté d'un coup, c'est LUI qui
+              {/* LE CATALOGUE AUSSI S'OUVRE. Monté d'un coup, c'est LUI qui
                   faisait le plus gros saut de la démonstration — 69 pixels
                   mesurés en une seule image, en plein milieu de la phrase la
                   plus importante de l'acte. */}
               <div className={`dt-ouvre${quiN >= 1 ? " on" : ""}`}>
-                <div className="dt-ec24"><div className="qi-tel">
-                  <div className="qi-tb"><span aria-hidden="true">📍</span>Le Direct de {laVille}</div>
-                  <div className="qi-tn">ce qui se passe autour d&apos;eux, maintenant</div>
-                  {/* LE TÉLÉPHONE S'OUVRE, il ne grandit pas d'un coup.
-                      Gardées à opacité zéro, ces trois lignes laissaient un
-                      écran vide aux deux tiers pendant deux secondes — et un
-                      écran vide, à cet endroit précis, dit le contraire de ce
-                      que l'acte raconte. Montées d'un coup, elles faisaient
-                      sauter tout le bloc. */}
-                  <div className={`dt-ouvre${quiN >= 2 ? " on" : ""}`}>
-                    <div className="qi-tl">
-                      {LE_DIRECT_MONTRE.map((l, i) => (
-                        <div className={`qi-ti${quiN >= 2 ? " on" : ""}`} key={l.quoi} style={{ ["--i" as string]: i }}>
-                          <span aria-hidden="true">{l.icone}</span>{l.quoi}
-                        </div>
-                      ))}
+                <div className="dt-ec24">
+                  <div className="qi-app">
+                    <BarreDirect marque={MARQUE} ville={laVille} agenda={2} gardees={1} />
+                    {/* UNE SEULE CARTE À LA FOIS, et deux tranches derrière.
+                        Les trois étaient rendues empilées dans la même case :
+                        leurs textes se superposaient et l'écran devenait
+                        illisible — mesuré au navigateur, trois noms de commerce
+                        l'un par-dessus l'autre. Une pile, ça ne se lit pas par
+                        transparence : on voit la carte du dessus, et on DEVINE
+                        les autres. Elle change toute seule toutes les 1,7 s. */}
+                    <div className="qi-pile">
+                      <span className="qi-dos d2" aria-hidden="true" />
+                      <span className="qi-dos d1" aria-hidden="true" />
+                      <CarteSwipe key={cartesVille[carteVille]?.quoi} carte={cartesVille[carteVille]} className="qi-c" />
                     </div>
+                    <GestesDirect action={actionHabitant} actif={quiN >= 2 ? "veux" : undefined} />
+                    <div className="qi-aide">swipe pour décider · ↑ pour voir le commerce</div>
                   </div>
-                </div></div>
+                </div>
               </div>
             </div>
           )}
@@ -1571,36 +1682,48 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           )}
 
           {/* ── ACTE 5 · LE GESTE ─────────────────────────────────────────
-              Trois secondes, et rien d'autre à faire. L'assistante lit, écrit,
-              publie — c'est la fonction telle qu'elle existe aujourd'hui, et
-              les deux destinations s'affichent quand elle les nomme. */}
-          {scene === "photo" && G && (
-            <div className="dtour-ov">
-              <div className="dtour-card ph">
+              CE QU'IL FALLAIT MONTRER, ET QUI N'ÉTAIT PAS MONTRÉ.
+
+              L'écran disait « photographiez » avec un cadre de visée vide, puis
+              affichait un encadré de texte. On voyait donc un appareil photo, et
+              du texte. Il manquait les deux choses qui comptent : CE QU'IL
+              PHOTOGRAPHIE, et CE QUE ÇA DEVIENT chez ses clients.
+
+              Trois temps, et chacun montre une chose :
+                1. son ardoise, sous le cadre de visée — l'objet réel ;
+                2. ce que l'assistante en a tiré, ligne par ligne ;
+                3. la carte du Direct, celle que ses clients reçoivent.
+
+              Le troisième temps est le seul qui vend quoi que ce soit. Il
+              n'existait pas. */}
+          {scene === "photo" && G && maCarte && (
+            <div className="dtour-ov ph-ov">
+              <div className="ph-wrap">
                 <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
-                <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`} aria-hidden="true">
-                  <span className="ph-ic">{G.parPhoto ? "📷" : "🎙️"}</span>
-                  {photoN < 1 && <span className="ph-flash" />}
+
+                {/* LE CADRE DE VISÉE SE POSE SUR L'ARDOISE. Vide, il ne
+                    montrait rien ; posé sur ce qu'il vient d'écrire à la craie,
+                    il dit le geste en une image. */}
+                <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
+                  <div className="ph-ard" aria-hidden="true">
+                    <span>{G.extrait.titre}</span>
+                    {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
+                    {G.extrait.prix && <b>{G.extrait.prix}</b>}
+                  </div>
+                  {photoN < 1 && <span className="ph-flash" aria-hidden="true" />}
+                  {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ lu</span>}
                 </div>
-                <div className={`dt-ouvre${photoN >= 1 ? " on" : ""}`}>
-                  <div className="dt-ec"><div className="ph-out">
-                    <div className="ph-k">{G.extrait.titre}</div>
-                    {G.extrait.lignes.map((l, i) => (
-                      <div className="ph-l" key={l} style={{ ["--i" as string]: i }}>
-                        <i aria-hidden="true">✓</i>{l}
-                      </div>
-                    ))}
-                    {G.extrait.prix && (
-                      <div className="ph-p" style={{ ["--i" as string]: G.extrait.lignes.length }}>
-                        {G.extrait.prix}
-                      </div>
-                    )}
-                  </div></div>
-                </div>
+
+                {/* CE QUE ÇA DEVIENT — et c'est le moment de bascule de toute
+                    la démonstration : le même contenu, mais dans l'écran de ses
+                    clients, avec son nom et sa photo. */}
                 <div className={`dt-ouvre${photoN >= 2 ? " on" : ""}`}>
-                  <div className="ph-ou">
-                    <span>✓ Sur votre site</span>
-                    <span>✓ Dans Le Direct de {laVille}</span>
+                  <div className="dt-ec">
+                    <div className="ph-vers"><i aria-hidden="true">↓</i>Dans Le Direct de {laVille}, à l&apos;instant</div>
+                    <div className="ph-mini">
+                      <CarteSwipe carte={maCarte} className="ph-carte" />
+                      <GestesDirect action={actionHabitant} actif="veux" />
+                    </div>
                   </div>
                 </div>
               </div>
