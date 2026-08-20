@@ -125,19 +125,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, etat: String(l?.statut ?? "annule") });
     } catch (e) {
       const msg = String(e);
-      // La fonction n'existe pas encore : on annule quand même la
-      // participation. Le compteur du groupe sera d'un trop haut jusqu'à la
-      // migration — mieux vaut ça que quelqu'un prisonnier de sa réservation.
-      if (/does not exist|schema cache|Could not find|PGRST202/i.test(msg)) {
-        const { error } = await supabase
-          .from("clik_participation")
-          .update({ statut: "annule", resolu_le: new Date().toISOString() })
-          .eq("campagne_id", campagneId)
-          .eq("habitant_id", habitant.id);
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        return NextResponse.json({ ok: true, etat: "annule", partiel: true });
-      }
-      return NextResponse.json({ error: msg }, { status: 500 });
+      // LE REPLI NE REGARDE PLUS POURQUOI LA FONCTION A ÉCHOUÉ.
+      //
+      // Il ne se déclenchait que sur « la fonction n'existe pas ». La fonction
+      // existait — et refusait de s'exécuter : « column reference "statut" is
+      // ambiguous », un défaut de la fonction elle-même. Ce message ne
+      // ressemblait à rien de connu, donc rien ne se repliait, et l'habitant
+      // recevait l'erreur SQL en pleine figure sur sa page.
+      //
+      // La raison de l'échec ne change rien à ce qu'il faut faire : quelqu'un
+      // veut rendre sa place, et le laisser prisonnier de sa réservation est
+      // toujours le pire des résultats. On annule sa participation, on note que
+      // c'est partiel — le compteur du groupe sera d'un trop haut jusqu'à ce
+      // que la fonction remarche — et on le journalise pour nous.
+      console.error("[clik] clik_quitter a échoué, repli sur l'annulation simple :", msg);
+      const { error } = await supabase
+        .from("clik_participation")
+        .update({ statut: "annule", resolu_le: new Date().toISOString() })
+        .eq("campagne_id", campagneId)
+        .eq("habitant_id", habitant.id)
+        .in("statut", ["engage", "liste_attente", "confirme"]);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true, etat: "annule", partiel: true });
     }
   }
 
