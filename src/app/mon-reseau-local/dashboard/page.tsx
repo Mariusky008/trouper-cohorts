@@ -7,6 +7,9 @@ import { getFlashQuestions } from "@/lib/actions/network-flash"; // Import flash
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { CafeWidget } from "@/components/dashboard/cafe-widget"; // Import widget
 import { PlanningDialog } from "@/components/dashboard/planning-dialog";
+// PlanningDialog lit `useSearchParams()` : il lui faut une frontière de Suspense
+// au-dessus de lui. Voir `frontiere-suspense.tsx`.
+import { FrontiereSuspense } from "@/components/frontiere-suspense";
 import { ReputationDialog } from "@/components/dashboard/reputation-dialog";
 import { Sparkles, Users, Calendar, Target, ShieldCheck, Zap, Percent, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -104,7 +107,7 @@ export default async function DashboardHome() {
 
       {/* 4. QUICK ACTIONS GRID (Planning & Reputation) */}
       <div className="hidden lg:grid grid-cols-2 gap-4 md:gap-6 mt-8">
-         <PlanningDialog settings={settings} potentialCount={potentialCount} />
+         <FrontiereSuspense><PlanningDialog settings={settings} potentialCount={potentialCount} /></FrontiereSuspense>
          <ReputationDialog scoreData={trustScore} />
       </div>
 

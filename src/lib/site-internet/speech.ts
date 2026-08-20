@@ -165,6 +165,30 @@ function emitSpeaking(v: boolean) {
     try { f(v); } catch { /* best-effort */ }
   });
 }
+/**
+ * LA DURÉE RÉELLE DE LA PHRASE EN COURS, en millisecondes. 0 si on ne sait pas.
+ *
+ * POURQUOI ELLE EXISTE. La démonstration cale ses animations sur le texte : la
+ * carte d'un temps doit arriver pendant que la voix prononce SA phrase. Faute
+ * de savoir combien de temps dure une phrase, elle l'estimait — 55 ms par
+ * caractère. C'est trop rapide pour le français de synthèse (plutôt 70), et
+ * l'erreur s'accumule sur une réplique longue : au quatrième temps de l'acte
+ * métier, les cartes avaient une phrase entière d'avance sur la voix. Défaut
+ * signalé tel quel : « ça va vite par rapport à la voix ».
+ *
+ * L'élément audio, lui, CONNAÎT la durée dès que le fichier est décodé — donc
+ * dès `onplay`, qui est précisément le moment où la démo déclenche sa scène. On
+ * la lui donne : elle n'a plus à deviner, et le minutage suit n'importe quelle
+ * voix, à n'importe quel débit, sans qu'on ait à retoucher une constante.
+ *
+ * Renvoie 0 quand la voix du NAVIGATEUR prend le relais : celle-là ne publie
+ * aucune durée, et l'appelant retombe alors sur son estimation.
+ */
+export function dureeVoixMs(): number {
+  const d = audioEl?.duration;
+  return typeof d === "number" && Number.isFinite(d) && d > 0 ? Math.round(d * 1000) : 0;
+}
+
 export function onSpeakingChange(cb: (v: boolean) => void): () => void {
   speakingListeners.add(cb);
   return () => { speakingListeners.delete(cb); };

@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ScoutQuickAccessClient } from "./_components/scout-quick-access-client";
+// Ce composant lit `useSearchParams()` : il lui faut une frontière de Suspense
+// au-dessus de lui. Voir `frontiere-suspense.tsx`.
+import { FrontiereSuspense } from "@/components/frontiere-suspense";
 
 const SCOUT_LAST_ACCESS_COOKIE = "popey_human_scout_last_access";
 
@@ -21,7 +24,7 @@ export default async function ScoutQuickAccessPage({
     redirect(`/popey-human/eclaireur/${fromCookie}`);
   }
 
-  return <ScoutQuickAccessClient />;
+  return <FrontiereSuspense><ScoutQuickAccessClient /></FrontiereSuspense>;
 }
 
 function normalizePortalKey(value: string) {

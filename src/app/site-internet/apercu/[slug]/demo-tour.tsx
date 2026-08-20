@@ -12,7 +12,7 @@
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
 import { useEffect, useRef, useState } from "react";
-import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
+import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs } from "@/lib/site-internet/speech";
 import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
 import { direRetours, habitantsDe, LE_DIRECT_MONTRE, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 
@@ -89,16 +89,33 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
    * pas — mais elle place l'animation à la bonne SECONDE au lieu de la bonne
    * minute.
    */
-  const MS_PAR_CARACTERE = 55;
-  /** L'instant où la voix ATTAQUE l'extrait — et non celui où elle le finit.
+  const MS_PAR_CARACTERE = 70;
+  /**
+   * OÙ, DANS LA PHRASE, LA VOIX ATTAQUE CET EXTRAIT — exprimé en FRACTION.
    *
-   *  Un premier repère calait les animations sur la FIN du mot prononcé : la
-   *  carte d'un temps arrivait donc quand la phrase qui la décrit était déjà
-   *  dite, et n'illustrait plus que ce qu'on avait compris. Elle doit être à
-   *  l'écran PENDANT. Il n'y a plus qu'un repère, et c'est celui-là. */
-  const auDebut = (phrase: string, extrait: string): number => {
+   * DEUX CORRECTIFS EN UN SEUL CHANGEMENT.
+   *
+   * 1. On repère le DÉBUT de l'extrait, pas sa fin. La carte d'un temps doit
+   *    être à l'écran PENDANT que la phrase qui la décrit se dit ; arrivée
+   *    après, elle n'illustre plus que ce qu'on a déjà compris.
+   *
+   * 2. Ce repère est une PROPORTION (0 à 1), plus un nombre de millisecondes.
+   *    L'ancien multipliait la position par 55 ms/caractère — trop rapide pour
+   *    le français de synthèse, et l'erreur s'accumule le long d'une réplique :
+   *    au quatrième temps de l'acte métier, les cartes avaient une phrase
+   *    entière d'avance. Défaut signalé tel quel : « ça va vite par rapport à
+   *    la voix ».
+   *
+   *    Une proportion, elle, se convertit au dernier moment avec la durée VRAIE
+   *    de la phrase, que l'élément audio connaît dès qu'il démarre
+   *    (`dureeVoixMs`). Le minutage suit alors n'importe quelle voix à
+   *    n'importe quel débit. `MS_PAR_CARACTERE` ne sert plus que de repli quand
+   *    c'est la voix du navigateur qui parle — elle, ne publie pas de durée.
+   */
+  const partAu = (phrase: string, extrait: string): number => {
+    if (!phrase) return 0;
     const i = phrase.indexOf(extrait);
-    return i < 0 ? 0 : Math.round(i * MS_PAR_CARACTERE);
+    return i <= 0 ? 0 : i / phrase.length;
   };
 
   /* ══════════ LE RÉCIT, EN HUIT ACTES ═══════════════════════════════════
@@ -149,7 +166,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       ]
     : [];
   const SAY_QUI = QUI_DIT.join(" ");
-  const QUI_AT = QUI_DIT.map((p) => auDebut(SAY_QUI, p));
+  const QUI_AT = QUI_DIT.map((p) => partAu(SAY_QUI, p));
 
   // ── ACTE 4 · ET VOUS ? ─────────────────────────────────────────────────
   //    Trois temps : où dort son information, le compliment, le retournement.
@@ -164,7 +181,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       ].filter(Boolean)
     : [];
   const SAY_INVISIBLE = INVISIBLE_DIT.join(" ");
-  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => auDebut(SAY_INVISIBLE, p));
+  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => partAu(SAY_INVISIBLE, p));
 
   // ── ACTE 5 · LE GESTE ──────────────────────────────────────────────────
   //    Trois secondes, et rien d'autre à faire. Le verbe de lecture suit le
@@ -178,10 +195,10 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       ]
     : [];
   const SAY_PHOTO = PHOTO_DIT.join(" ");
-  const PHOTO_AT = PHOTO_DIT.map((p) => auDebut(SAY_PHOTO, p));
+  const PHOTO_AT = PHOTO_DIT.map((p) => partAu(SAY_PHOTO, p));
   /** L'instant où elle nomme les deux destinations : la carte les affiche là,
    *  et pas trois secondes avant qu'elle en parle. */
-  const PHOTO_OU = auDebut(SAY_PHOTO, "sur votre site");
+  const PHOTO_OU = partAu(SAY_PHOTO, "sur votre site");
 
   // ── ACTE 6 · CE QUI VOUS REVIENT ───────────────────────────────────────
   //    Le seul moment de toute la démonstration où quelque chose revient VERS
@@ -192,13 +209,13 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
   //    d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
   const retourDit = G ? direRetours(G) : { say: "", phrases: [] as string[] };
   const SAY_RETOUR = retourDit.say;
-  const RETOUR_AT = retourDit.phrases.map((ph) => auDebut(SAY_RETOUR, ph));
+  const RETOUR_AT = retourDit.phrases.map((ph) => partAu(SAY_RETOUR, ph));
 
   // ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ─────────────────────────────
   //    La suite de sa journée, dans ses mots, heure par heure.
   const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
   const SAY_METIER = direActe(actesListe);
-  const METIER_AT = actesListe.map((t) => auDebut(SAY_METIER, t.dit));
+  const METIER_AT = actesListe.map((t) => partAu(SAY_METIER, t.dit));
 
   // ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ───────────────────────────
   //    Deux actes n'en font plus qu'un : la phrase de clôture et l'écran de
@@ -211,7 +228,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     `Votre commerce, en direct dans votre ville.`,
   ];
   const SAY_BOUCLE = BOUCLE_DIT.join(" ");
-  const BOUCLE_AT = BOUCLE_DIT.map((p) => auDebut(SAY_BOUCLE, p));
+  const BOUCLE_AT = BOUCLE_DIT.map((p) => partAu(SAY_BOUCLE, p));
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
@@ -564,6 +581,19 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     }
 
     /**
+     * COMBIEN DE TEMPS DURE LA PHRASE QU'ON EST EN TRAIN D'ENTENDRE.
+     *
+     * Appelé depuis `enter()`, c'est-à-dire au démarrage RÉEL de la voix :
+     * l'élément audio a déjà décodé le fichier et connaît sa durée. On ne
+     * devine donc plus rien. Quand c'est la voix du navigateur qui parle (elle
+     * ne publie aucune durée), on retombe sur l'estimation par caractère.
+     */
+    const dureeDe = (phrase: string) => dureeVoixMs() || phrase.length * MS_PAR_CARACTERE;
+
+    /** Un repère en fraction de phrase → un délai en millisecondes. */
+    const quand = (phrase: string, part: number) => Math.round(part * dureeDe(phrase));
+
+    /**
      * LA LÉGENDE SUIT LA VOIX, TEMPS PAR TEMPS.
      *
      * Posée d'un bloc — ce que faisait la boucle principale — elle affichait
@@ -571,16 +601,19 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
      * on lisait la conclusion avant d'avoir vu la démonstration. Le même défaut
      * a été corrigé deux fois sur deux actes ; il est ici une seule fois, pour
      * tous.
+     *
+     * `parts` sont des fractions de la réplique, converties ici seulement —
+     * quand la durée vraie est enfin connue.
      */
-    const suivre = (dits: string[], ats: number[], setN: (n: number) => void) => {
+    const suivre = (phrase: string, dits: string[], parts: number[], setN: (n: number) => void) => {
       setN(0);
       setCaption(dits[0] ?? "");
-      ats.forEach((ms, i) => {
+      parts.forEach((part, i) => {
         if (i === 0) return;
         window.setTimeout(() => {
           setN(i);
           setCaption(dits[i]);
-        }, ms);
+        }, quand(phrase, part));
       });
     };
 
@@ -600,7 +633,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           chime();
           setScene("qui");
           compter(G.combien);
-          suivre(QUI_DIT, QUI_AT, setQuiN);
+          suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
         },
       });
 
@@ -614,7 +647,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
         say: SAY_INVISIBLE,
         enter: () => {
           setScene("invisible");
-          suivre(INVISIBLE_DIT, INVISIBLE_AT, setInvN);
+          suivre(SAY_INVISIBLE, INVISIBLE_DIT, INVISIBLE_AT, setInvN);
         },
       });
 
@@ -629,8 +662,8 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
         enter: () => {
           chime();
           setScene("photo");
-          suivre(PHOTO_DIT, PHOTO_AT, setPhotoN);
-          window.setTimeout(() => setPhotoN(2), PHOTO_OU);
+          suivre(SAY_PHOTO, PHOTO_DIT, PHOTO_AT, setPhotoN);
+          window.setTimeout(() => setPhotoN(2), quand(SAY_PHOTO, PHOTO_OU));
         },
       });
 
@@ -652,11 +685,11 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           // Chaque ligne tombe quand la voix l'attaque — plus sur un minuteur
           // qui dérivait dès qu'on retouchait une phrase.
           setCaption("Et voilà ce qui se passera ensuite.");
-          RETOUR_AT.forEach((ms, i) => {
+          RETOUR_AT.forEach((part, i) => {
             window.setTimeout(() => {
               setRetourN(i);
               setCaption(retourDit.phrases[i]);
-            }, ms);
+            }, quand(SAY_RETOUR, part));
           });
         },
       });
@@ -676,11 +709,11 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             setMetierN(0);
             setScene("metier");
             setCaption(INTRO_ACTE);
-            METIER_AT.forEach((ms, i) => {
+            METIER_AT.forEach((part, i) => {
               window.setTimeout(() => {
                 if (i > 0) setMetierN(i);
                 setCaption(actesListe[i].dit);
-              }, ms);
+              }, quand(SAY_METIER, part));
             });
           },
         });
@@ -700,7 +733,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
         enter: () => {
           chime();
           setScene("boucle");
-          suivre(BOUCLE_DIT, BOUCLE_AT, setBoucleN);
+          suivre(SAY_BOUCLE, BOUCLE_DIT, BOUCLE_AT, setBoucleN);
         },
       });
     }
