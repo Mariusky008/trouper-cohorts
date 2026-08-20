@@ -16,12 +16,40 @@
 // vérité, c'est la réponse du commerçant — dans WhatsApp.
 import { useState } from "react";
 
-export function Prevenir({ lien, commerce }: { lien: string; commerce: string }) {
+export function Prevenir({
+  lien,
+  commerce,
+  appel,
+}: {
+  lien: string;
+  commerce: string;
+  /** Le numéro à composer quand WhatsApp n'est pas possible — un fixe, le plus
+   *  souvent, et c'est justement le cas d'un restaurant. */
+  appel: string;
+}) {
   const [ouvert, setOuvert] = useState(false);
 
-  // Sans numéro, pas de bouton : mieux vaut ne rien proposer que d'ouvrir
-  // WhatsApp sur le vide.
-  if (!lien) return null;
+  // PAS DE WHATSAPP MAIS UN TÉLÉPHONE : on appelle.
+  //
+  // LE DÉFAUT : ce composant rendait `null` dès qu'il manquait un mobile, et
+  // l'écran affichait alors « C'est confirmé » — le mot le plus fort du
+  // parcours, exactement là où personne ne pouvait prévenir qui que ce soit.
+  // Un restaurant publie presque toujours un fixe : le cas le plus fréquent
+  // était donc celui qui ne marchait pas.
+  if (!lien) {
+    if (!appel) return null;
+    return (
+      <div className="ck-wa">
+        <a className="ck-wa-b tel" href={`tel:${appel}`}>
+          <span aria-hidden="true">📞</span>
+          Appeler {commerce || "le commerce"}
+        </a>
+        <p className="ck-wa-s">
+          Donnez votre code au téléphone. C&apos;est ce qui garantit qu&apos;on vous attend.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="ck-wa">

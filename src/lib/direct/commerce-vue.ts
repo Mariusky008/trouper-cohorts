@@ -10,7 +10,7 @@
 // sur chaque Clik serait figée au moment du déménagement, et c'est l'ancienne
 // adresse qui resterait affichée.
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
-import { numeroReservations } from "@/lib/site-internet/pro-phone";
+import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -37,6 +37,11 @@ export type CommerceVue = {
    *  quand on n'en a aucun : le bouton ne s'affiche alors pas, plutôt que
    *  d'ouvrir WhatsApp sur le vide. */
   telephone: string;
+  /** Le numéro à APPELER, fixe compris. Un restaurant publie presque toujours
+   *  un fixe, et un fixe ne fait pas de WhatsApp : sans ce second numéro, le
+   *  client repartait avec « c'est confirmé » et aucun moyen de prévenir
+   *  personne. */
+  telephoneAppel: string;
 };
 
 /** Le jour d'aujourd'hui, à la convention JavaScript (0 = dimanche) — la même
@@ -137,6 +142,7 @@ export async function commerceDuClik(supabase: unknown, siteId: string): Promise
     // Elle connaît aussi les deux endroits où le numéro du commerçant peut
     // être — la colonne du canal « vitrines », et le formulaire de rappel des
     // sites issus d'une lettre.
-    telephone: numeroReservations(row as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
+    telephone: numeroReservations(row as { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown }),
+    telephoneAppel: numeroAppel(row as { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown }),
   };
 }

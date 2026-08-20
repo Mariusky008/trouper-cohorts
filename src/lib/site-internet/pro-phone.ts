@@ -20,7 +20,10 @@
 import { toE164 } from "./phone";
 import { jourParis } from "@/lib/jour-paris";
 
-type MaybeRow = { whatsapp_phone_e164?: unknown; metadata?: unknown } | null | undefined;
+type MaybeRow = { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown } | null | undefined;
+
+/** Tout numéro français plausible — fixe compris. */
+const FIXE_OU_MOBILE_FR = /^\+33[1-9]\d{8}$/;
 
 /** Mobile français, seul format joignable par SMS (et seul accepté par la colonne). */
 export const MOBILE_FR = /^\+33[67]\d{8}$/;
@@ -67,6 +70,13 @@ export function relaisActif(row: MaybeRow, jour = jourParis()): Relais | null {
   return jour <= r.jusquau ? r : null;
 }
 
+/** Le numéro que le commerce PUBLIE sur Google, normalisé. C'est celui qu'il a
+ *  mis lui-même à disposition de ses clients — sa destination naturelle. */
+function numeroGoogle(row: MaybeRow): string {
+  const d = (row?.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  return toE164(String(d.phone ?? "").trim());
+}
+
 /** Numéro E.164 du COMMERÇANT lui-même, ou "" si on n'en a aucun. */
 export function proPhoneFrom(row: MaybeRow): string {
   const direct = toE164(String(row?.whatsapp_phone_e164 ?? "").trim());
@@ -93,5 +103,34 @@ export function proPhoneFrom(row: MaybeRow): string {
  * personne ne comprendrait pourquoi.
  */
 export function numeroReservations(row: MaybeRow, jour = jourParis()): string {
-  return relaisActif(row, jour)?.numero || proPhoneFrom(row);
+  // LE NUMÉRO GOOGLE COMPTE AUSSI, quand c'est un mobile.
+  //
+  // LE DÉFAUT QUE ÇA CORRIGE : `whatsapp_phone_e164` n'est renseigné que si le
+  // commerçant a ouvert son espace et l'a saisi. Tant qu'il ne l'a pas fait,
+  // cette fonction rendait "" — et tout le parcours WhatsApp disparaissait de
+  // l'écran de l'habitant, en silence. Il lisait « C'est confirmé » alors que
+  // personne, nulle part, n'avait été prévenu.
+  //
+  // Beaucoup de petits commerces publient un mobile sur Google, précisément
+  // pour qu'on les joigne. S'en servir n'est pas une intrusion : c'est
+  // l'usage pour lequel ils l'ont mis là.
+  const google = numeroGoogle(row);
+  return relaisActif(row, jour)?.numero || proPhoneFrom(row) || (MOBILE_FR.test(google) ? google : "");
+}
+
+/**
+ * LE NUMÉRO À APPELER, quand WhatsApp n'est pas possible.
+ *
+ * Un restaurant publie presque toujours un FIXE — et un fixe ne fait pas de
+ * WhatsApp. Le jeter entièrement, comme on le faisait, revenait à dire à
+ * l'habitant « c'est confirmé » sans lui donner le moindre moyen de prévenir
+ * qui que ce soit. Un appel n'a pas de message pré-écrit, mais il arrive.
+ */
+export function numeroAppel(row: MaybeRow, jour = jourParis()): string {
+  const wa = numeroReservations(row, jour);
+  if (wa) return wa;
+  const google = numeroGoogle(row);
+  if (FIXE_OU_MOBILE_FR.test(google)) return google;
+  const direct = toE164(String(row?.whatsapp_phone_e164 ?? "").trim());
+  return FIXE_OU_MOBILE_FR.test(direct) ? direct : "";
 }

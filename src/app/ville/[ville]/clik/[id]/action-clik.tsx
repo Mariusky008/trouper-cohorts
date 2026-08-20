@@ -109,7 +109,12 @@ export function ActionClik({
         {/* « C'EST CONFIRMÉ » ÉTAIT UN MENSONGE tant que le commerçant n'avait
             rien vu. On dit ce qui est vrai : c'est noté chez nous, et il reste
             à le prévenir. Sa réponse fait foi. */}
-        <div className="ck-fait-k">{attente ? "En liste d'attente" : lien ? "C'est noté" : "C'est confirmé"}</div>
+        {/* « C'EST CONFIRMÉ » ÉTAIT DIT AU PIRE MOMENT POSSIBLE : quand nous
+            n'avions AUCUN moyen de joindre le commerce. Le mot le plus fort du
+            parcours tombait exactement là où la promesse ne pouvait pas être
+            tenue. Il n'est plus employé nulle part : « c'est noté » dit la
+            vérité — c'est noté chez nous, et la réponse du commerce fait foi. */}
+        <div className="ck-fait-k">{attente ? "En liste d'attente" : "C'est noté"}</div>
         <div className="ck-fait-t">
           {attente ? "Vous êtes en liste d'attente" : gagne ? "C'est à vous" : "Vous en êtes"}
         </div>
@@ -126,7 +131,7 @@ export function ActionClik({
           {attente
             ? "Le groupe est complet. Si quelqu'un se désiste, la place est pour vous et vous serez prévenu."
             : type === "collectif"
-              ? lien
+              ? lien || commerce?.telephoneAppel
                 ? "Prévenez le commerce ci-dessous : il saura où en est le groupe."
                 : "Vous serez prévenu dès que le groupe est au complet."
               : type === "express"
@@ -149,7 +154,7 @@ export function ActionClik({
         {/* PRÉVENIR LE COMMERCE, EN HAUT DE CE QUI RESTE À FAIRE. C'est le
             geste qui rend la réservation réelle : il arrive sur un téléphone
             que le commerçant regarde déjà, sans qu'il ait rien à ouvrir. */}
-        <Prevenir lien={lien} commerce={commerce?.nom ?? ""} />
+        <Prevenir lien={lien} commerce={commerce?.nom ?? ""} appel={commerce?.telephoneAppel ?? ""} />
         {/* OÙ SE RENDRE. Le code s'adresse au commerçant ; ces quatre lignes
             s'adressent à celui qui vient. Sans elles, on repartait d'ici avec
             une confirmation et aucune idée d'où aller.

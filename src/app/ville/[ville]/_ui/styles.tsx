@@ -529,6 +529,10 @@ export function StylesDirect() {
   font-family:var(--fd),Georgia,serif;font-size:17px;font-weight:700;text-decoration:none;
   box-shadow:0 10px 24px -12px rgba(37,211,102,.8);}
 .dir .ck-wa-b span{font-size:19px;line-height:1;}
+/* L'APPEL N'EST PAS WHATSAPP, et il ne doit pas s'y déguiser : le vert de
+   WhatsApp sur un bouton qui compose un numéro promet une conversation écrite
+   et ouvre le clavier téléphonique. Même forme, encre de la marque. */
+.dir .ck-wa-b.tel{background:var(--ink);color:var(--paper);box-shadow:0 10px 24px -12px rgba(20,26,43,.7);}
 .dir .ck-wa-s{font-size:12.5px;color:var(--soft);line-height:1.5;margin:9px 0 0;}
 
 /* « Prendre celle-ci à la place » : un second bouton, plus sobre que le
