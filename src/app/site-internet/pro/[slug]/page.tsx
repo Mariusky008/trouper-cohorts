@@ -28,6 +28,7 @@ import { ProApproche } from "./pro-approche";
 import { ProFaq } from "./pro-faq";
 import { ProCollectif } from "./pro-collectif";
 import { ProClik } from "./pro-clik";
+import { ProDiagnostic } from "./pro-diagnostic";
 import { ProCatalogue } from "./pro-catalogue";
 import { ProDiffusion } from "./pro-diffusion";
 import { ProRequests } from "./pro-requests";
@@ -390,6 +391,13 @@ export default async function EspacePro({
           L'outil reste : `action: "diagnostic"` sur /api/site-internet/pro/clik
           répond toujours, et `ProDiagnostic` est toujours là si j'en ai besoin
           un jour. Ce qui disparaît, c'est sa présence dans son espace. */}
+      {/* CE QUI L'EMPÊCHE DE PUBLIER, et rien d'autre. Le panneau complet reste
+          hors de son espace pour les raisons dites juste au-dessus ; celui-ci
+          ne s'affiche que si la base refuse d'enregistrer ses annonces. Sans
+          lui, il publie, l'écran confirme, et il cherche pendant deux jours
+          une annonce qui n'a jamais été écrite. */}
+      <ProDiagnostic slug={slug} token={token} seulementBloquant />
+
       {soliciter && villeUrl && (
         <ProCatalogue
           ville={ville}

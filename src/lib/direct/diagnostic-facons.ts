@@ -42,9 +42,34 @@ export type VerdictAnnonce = {
   cause: string;
 };
 
+/**
+ * CE QUE LA BASE FAIT QUAND ON LUI ÉCRIT VRAIMENT.
+ *
+ * POURQUOI UN VRAI TEST D'ÉCRITURE, et pas seulement des colonnes lues. Le
+ * diagnostic savait dire pourquoi une annonce ENREGISTRÉE n'était pas visible.
+ * Il ne savait rien dire du cas où AUCUNE ligne n'a jamais été écrite — et
+ * c'est précisément le cas qui laissait un restaurateur devant « Aucune annonce
+ * en ce moment » après avoir publié deux fois. Une contrainte CHECK, un NOT
+ * NULL, une politique d'accès : rien de tout ça ne se lit dans un `select`.
+ *
+ * La ligne d'essai naît RETIRÉE et déjà expirée : même si l'effacement échoue,
+ * elle ne peut apparaître ni dans le fil de la ville, ni chez le commerçant.
+ */
+export type EssaiEcriture = {
+  ok: boolean;
+  /** Ce que la base répond, en clair. */
+  cause: string;
+  /** Les colonnes que `publier` écrit et que la base ne connaît pas. */
+  absentes: string[];
+  /** La famille « menu » — celle de la carte du jour — passe-t-elle ? */
+  menuAccepte: boolean;
+};
+
 export type Diagnostic = {
   /** Les colonnes récentes que la base connaît. */
   colonnes: { ordre: boolean; nom_facon: boolean; reste: boolean; ardoise: boolean };
+  /** Le test d'écriture — la seule chose qui explique « rien n'a été écrit ». */
+  ecriture: EssaiEcriture;
   /** Les types que la contrainte de la base accepte réellement. */
   typesAcceptes: { simple: boolean; express: boolean };
   villeDuFil: string;
@@ -84,6 +109,68 @@ async function typeDejaVu(sb: Supabase, type: string): Promise<boolean> {
   }
 }
 
+/** Les colonnes que `publier` écrit et qui sont venues par migration. */
+const COLONNES_ECRITES = ["video", "lien", "reste", "ardoise", "prix"];
+
+/**
+ * On écrit pour de vrai, puis on efface. C'est la seule façon de savoir.
+ */
+async function essayerEcriture(sb: Supabase, siteId: string, villeSlugAttendu: string): Promise<EssaiEcriture> {
+  const absentes: string[] = [];
+  for (const c of COLONNES_ECRITES) {
+    if (!(await colonneExiste(sb, "human_publications", c))) absentes.push(c);
+  }
+
+  const jadis = new Date(Date.now() - 3600 * 1000).toISOString();
+  const ligne: Record<string, unknown> = {
+    ville: "Vérification",
+    ville_slug: villeSlugAttendu || "verification",
+    site_id: siteId,
+    auteur_nom: "",
+    auteur_metier: "",
+    auteur_slug: "",
+    famille: "menu",
+    texte: "· vérification technique, effacée aussitôt ·",
+    // NÉE RETIRÉE ET DÉJÀ EXPIRÉE : deux verrous, parce qu'un effacement peut
+    // échouer et qu'une ligne d'essai visible dans le fil d'une ville serait un
+    // défaut bien pire que celui qu'on cherche.
+    retire_le: jadis,
+    expire_le: jadis,
+  };
+  for (const c of COLONNES_ECRITES) if (!absentes.includes(c)) ligne[c] = null;
+
+  const ecrire = async (l: Record<string, unknown>) => {
+    try {
+      const { data, error } = await sb.from("human_publications").insert(l).select("id").maybeSingle();
+      return { id: str((data as Record<string, unknown> | null)?.id), message: error ? String((error as { message?: string }).message ?? error) : "" };
+    } catch (e) {
+      return { id: "", message: String(e) };
+    }
+  };
+  const effacer = async (id: string) => {
+    if (!id) return;
+    try {
+      await sb.from("human_publications").delete().eq("id", id);
+    } catch {
+      /* elle est déjà retirée et expirée : invisible de toute façon */
+    }
+  };
+
+  let r = await ecrire(ligne);
+  if (r.id) {
+    await effacer(r.id);
+    return { ok: true, cause: "", absentes, menuAccepte: true };
+  }
+  // La famille de la carte du jour est-elle la seule chose qui bloque ?
+  const premier = r.message;
+  r = await ecrire({ ...ligne, famille: "offre" });
+  if (r.id) {
+    await effacer(r.id);
+    return { ok: true, cause: premier, absentes, menuAccepte: false };
+  }
+  return { ok: false, cause: r.message || premier || "Écriture refusée, sans message.", absentes, menuAccepte: false };
+}
+
 export async function diagnostiquerFacons(
   supabase: unknown,
   siteId: string,
@@ -101,6 +188,7 @@ export async function diagnostiquerFacons(
 
   const colonnes = { ordre, nom_facon: nomFacon, reste, ardoise };
   const typesAcceptes = { simple: vuSimple, express: vuExpress };
+  const ecriture = await essayerEcriture(sb, siteId, villeSlugAttendu);
 
   // Ses campagnes, avec le même repli que la lecture du fil.
   const champs = "id, publication_id, ville_slug, type, titre, statut, echeance, created_at";
@@ -224,7 +312,11 @@ export async function diagnostiquerFacons(
   const manquantes = Object.entries(colonnes)
     .filter(([, ok]) => !ok)
     .map(([c]) => c);
-  const resume = manquantes.length
+  const resume = !ecriture.ok
+    ? `La base refuse d'enregistrer vos annonces : ${ecriture.cause}`
+    : !ecriture.menuAccepte
+      ? "Votre carte du jour est publiée dans « Offres » : la base ne connaît pas encore la famille « menu »."
+      : manquantes.length
     ? `Colonnes absentes de la base : ${manquantes.join(", ")}. Migration à appliquer.`
     : facons.length === 0
       ? "Aucune façon enregistrée pour ce commerce."
@@ -232,5 +324,5 @@ export async function diagnostiquerFacons(
         ? `${visibles} façon${visibles > 1 ? "s" : ""} visible${visibles > 1 ? "s" : ""} dans le fil.`
         : `${visibles} visible${visibles > 1 ? "s" : ""} sur ${facons.length}.`;
 
-  return { colonnes, typesAcceptes, villeDuFil: villeSlugAttendu, annonces, facons, resume };
+  return { colonnes, ecriture, typesAcceptes, villeDuFil: villeSlugAttendu, annonces, facons, resume };
 }

@@ -11,21 +11,36 @@
 // permanent sur l'accueil d'un commerçant transforme son espace en console
 // d'administration. Tant que tout va bien, ce bloc n'existe pas.
 import { useEffect, useState } from "react";
-
-type Verdict = { campagneId: string; type: string; titre: string; visible: boolean; cause: string; detail: string };
-type VerdictAnnonce = { id: string; texte: string; visible: boolean; cause: string };
-type Diagnostic = {
-  colonnes: { ordre: boolean; nom_facon: boolean; reste: boolean; ardoise: boolean };
-  typesAcceptes: { simple: boolean; express: boolean };
-  villeDuFil: string;
-  annonces: VerdictAnnonce[];
-  facons: Verdict[];
-  resume: string;
-};
+// LE TYPE VIENT DE LA LIB, il n'est plus recopié ici. Il l'était — et la copie
+// a dérivé : le diagnostic renvoyait déjà un champ que cet écran ne connaissait
+// pas, donc n'affichait pas. Un `import type` disparaît à la compilation, il
+// n'emporte rien du module dans le paquet du navigateur.
+import type { Diagnostic } from "@/lib/direct/diagnostic-facons";
 
 const ICONE: Record<string, string> = { simple: "🕐", cadeau: "🎁", express: "⚡", collectif: "👥" };
 
-export function ProDiagnostic({ slug, token }: { slug: string; token: string }) {
+export function ProDiagnostic({
+  slug,
+  token,
+  seulementBloquant = false,
+}: {
+  slug: string;
+  token: string;
+  /**
+   * N'AFFICHER QUE CE QUI EMPÊCHE DE PUBLIER.
+   *
+   * Ce panneau avait été retiré de l'espace du commerçant, et à raison : il
+   * comptait comme « défauts » des façons devenues invisibles parce que leur
+   * échéance était passée — c'est-à-dire le système qui fonctionne. Il lui
+   * annonçait ça en dix-neuf lignes de journal technique en haut de son accueil.
+   *
+   * Restent deux cas qui ne sont jamais « le système qui fonctionne » : la base
+   * refuse d'écrire ses annonces, ou elle ne connaît pas encore la famille de sa
+   * carte du jour. Dans les deux cas il publie, l'écran confirme, et rien
+   * n'arrive nulle part. C'est le seul moment où il a besoin de nous lire.
+   */
+  seulementBloquant?: boolean;
+}) {
   const [d, setD] = useState<Diagnostic | null>(null);
   const [ouvert, setOuvert] = useState(false);
 
@@ -53,8 +68,20 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
   const annoncesKo = (d.annonces ?? []).filter((a) => !a.visible);
   const annoncesOk = (d.annonces ?? []).filter((a) => a.visible).length;
   const colonnesManquantes = Object.entries(d.colonnes).filter(([, ok]) => !ok).map(([c]) => c);
+  // LE TEST D'ÉCRITURE PASSE DEVANT TOUT LE RESTE.
+  //
+  // Quand la base refuse d'enregistrer, il n'y a RIEN à diagnostiquer d'autre :
+  // ni annonce invisible, ni façon bloquée, puisque rien n'a jamais été écrit.
+  // C'est exactement le cas qui laissait un restaurateur devant « Aucune annonce
+  // en ce moment » après avoir publié deux fois — et l'ancien bloc, qui ne
+  // parlait que de lignes existantes, se cachait au lieu de le dire.
+  const ecriture = d.ecriture ?? { ok: true, cause: "", absentes: [], menuAccepte: true };
+  const ecritureKo = !ecriture.ok;
   // Tout va bien : le bloc n'existe pas.
-  if (!bloquees.length && !colonnesManquantes.length && !annoncesKo.length) return null;
+  if (seulementBloquant && !ecritureKo && ecriture.menuAccepte) return null;
+  if (!ecritureKo && ecriture.menuAccepte && !bloquees.length && !colonnesManquantes.length && !annoncesKo.length) {
+    return null;
+  }
 
   return (
     <>
@@ -80,7 +107,11 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
       <div className="pdiag">
         <div className="k">À vérifier</div>
         <div className="t">
-          {colonnesManquantes.length
+          {ecritureKo
+            ? "Vos annonces ne peuvent pas être enregistrées"
+            : !ecriture.menuAccepte
+              ? "Votre carte du jour n'arrive pas dans « Déjeuner »"
+              : colonnesManquantes.length
             ? "Votre base n'est pas tout à fait à jour"
             : bloquees.length
               ? `${bloquees.length} de vos façons ne s'affiche${bloquees.length > 1 ? "nt" : ""} pas dans Le Direct`
@@ -88,7 +119,44 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
         </div>
         <div className="s">{d.resume}</div>
 
-        {colonnesManquantes.length > 0 && (
+        {/* LA RAISON, TELLE QUE LA BASE LA DONNE. Recopiable : c'est elle
+            qu'on colle dans un message pour être aidé, et la reformuler en
+            « une erreur est survenue » ferait perdre la seule information
+            utile. */}
+        {ecritureKo && (
+          <div className="l">
+            <div className="e">
+              <div className="h">🗄 La base refuse l&apos;écriture</div>
+              <div className="c">{ecriture.cause}</div>
+              <div className="d">
+                Vos annonces s&apos;affichent sur votre site, mais elles n&apos;entrent ni dans «&nbsp;Mes annonces
+                en cours&nbsp;», ni dans le fil de votre ville. Rien n&apos;est perdu de votre côté : c&apos;est une
+                migration de base de données à appliquer.
+                {ecriture.absentes.length > 0 && (
+                  <>
+                    {" "}Colonnes absentes&nbsp;: {ecriture.absentes.map((c: string) => (<code key={c}>{c}</code>))}.
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!ecritureKo && !ecriture.menuAccepte && (
+          <div className="l">
+            <div className="e">
+              <div className="h">🍽 La famille «&nbsp;menu&nbsp;» n&apos;existe pas encore</div>
+              <div className="c">Votre carte du jour est publiée, mais rangée dans «&nbsp;Offres&nbsp;».</div>
+              <div className="d">
+                Elle apparaît bien dans le fil de votre ville et sur votre site — seul l&apos;onglet
+                «&nbsp;Déjeuner&nbsp;» lui échappe. La migration{" "}
+                <code>20260812120000_famille_menu</code> le corrige.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!seulementBloquant && colonnesManquantes.length > 0 && (
           <div className="l">
             <div className="e">
               <div className="h">🗄 Colonnes absentes</div>
@@ -110,7 +178,7 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
             publiée le matin même : trois causes possibles — retirée, échéance
             passée, ou plus de trois jours sans date de fin — et aucune n'était
             visible depuis son écran. */}
-        {annoncesKo.length > 0 && (
+        {!seulementBloquant && annoncesKo.length > 0 && (
           <div className="l">
             {annoncesKo.slice(0, 4).map((a) => (
               <div className="e" key={a.id}>
@@ -127,7 +195,7 @@ export function ProDiagnostic({ slug, token }: { slug: string; token: string }) 
           </div>
         )}
 
-        {bloquees.length > 0 && (
+        {!seulementBloquant && bloquees.length > 0 && (
           <>
             <div className="l">
               {(ouvert ? bloquees : bloquees.slice(0, 3)).map((f) => (
