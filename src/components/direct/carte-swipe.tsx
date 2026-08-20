@@ -23,6 +23,19 @@ import type { CSSProperties } from "react";
 export type CarteDirect = {
   /** La photo, plein cadre. Sans elle, un fond dégradé et l'emoji du métier. */
   photo?: string;
+  /**
+   * OÙ REGARDER DANS LA PHOTO — la valeur verticale de `background-position`.
+   *
+   * Le bas de la carte est recouvert par le voile qui porte le nom et le prix :
+   * un sujet centré s'y fait avaler à moitié. Quand la photo est plus haute que
+   * le cadre, on peut choisir la tranche qu'on garde. « 50% » (le défaut) prend
+   * le milieu ; une valeur plus grande descend dans l'image, une plus petite
+   * remonte.
+   *
+   * Utile surtout pour les photos des commerçants, dont on ne maîtrise pas le
+   * cadrage : c'est le seul réglage qui rattrape une image sans la retoucher.
+   */
+  cadrage?: string;
   /** Le nom du commerce, tel qu'il l'écrit. */
   nom: string;
   /** « Restaurant », « Boulangerie »… */
@@ -132,7 +145,10 @@ export function CarteSwipe({
         className={`cd-photo${c.photo ? "" : " sans"}`}
         style={
           c.photo
-            ? { backgroundImage: `url("${encodeURI(c.photo)}"), linear-gradient(155deg,#22463A,#0D1A15 70%)` }
+            ? {
+                backgroundImage: `url("${encodeURI(c.photo)}"), linear-gradient(155deg,#22463A,#0D1A15 70%)`,
+                backgroundPosition: `center ${c.cadrage || "50%"}`,
+              }
             : undefined
         }
       >
@@ -199,7 +215,7 @@ export function StylesDirect() {
           background:linear-gradient(155deg,#22463A,#0D1A15 70%);}
         .cd-ph{font-size:74px;opacity:.5;}
         .cd-voile{position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.42) 0%,rgba(4,8,6,0) 26%,rgba(4,8,6,.72) 58%,rgba(4,8,6,.95) 100%);}
+          background:linear-gradient(180deg,rgba(4,8,6,.3) 0%,rgba(4,8,6,0) 24%,rgba(4,8,6,.68) 56%,rgba(4,8,6,.96) 100%);}
         .cd-reste{position:absolute;left:14px;top:14px;display:flex;align-items:center;gap:6px;
           font-size:12px;font-weight:800;color:#fff;background:rgba(8,12,10,.62);
           -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);

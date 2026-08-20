@@ -44,6 +44,25 @@ const PHOTOS = {
   four: "/direct/sortie-du-four.jpg",
   vitrine: "/direct/vitrine-du-soir.jpg",
 } as const;
+
+/**
+ * OÙ REGARDER DANS CHACUNE — vérifié en les posant dans le vrai cadre.
+ *
+ * Le sujet de trois d'entre elles est dans la moitié BASSE, c'est-à-dire sous
+ * le voile qui porte le nom et le prix : les tables vides et les viennoiseries
+ * disparaissaient presque entièrement. On descend donc le point de visée pour
+ * remonter le sujet dans la zone lisible.
+ *
+ * La marge de manœuvre est limitée — ces images ne dépassent le cadre que de
+ * 8 % en hauteur, on ne peut pas les recadrer beaucoup depuis ici. Un tirage
+ * avec le sujet plus haut ferait mieux ; celui-ci fait déjà la différence.
+ */
+const CADRAGE: Record<string, string> = {
+  [PHOTOS.plat]: "68%",
+  [PHOTOS.tables]: "100%",
+  [PHOTOS.four]: "100%",
+  [PHOTOS.vitrine]: "72%",
+};
 import type { GesteDuJour } from "@/lib/direct/geste-du-jour";
 import type { TempsMetier } from "@/lib/direct/acte-metier";
 
@@ -80,6 +99,7 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
   return [
     {
       photo: PHOTOS.plat,
+      cadrage: CADRAGE[PHOTOS.plat],
       nom: "Un restaurant du centre",
       metier: "Restaurant",
       ville,
@@ -92,6 +112,7 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
     },
     {
       photo: PHOTOS.tables,
+      cadrage: CADRAGE[PHOTOS.tables],
       nom: "Une table à deux rues",
       metier: "Restaurant",
       ville,
@@ -103,6 +124,7 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
     },
     {
       photo: PHOTOS.four,
+      cadrage: CADRAGE[PHOTOS.four],
       nom: "Une boulangerie",
       metier: "Boulangerie",
       ville,
@@ -129,10 +151,18 @@ export function saCarte(
   photo?: string
 ): CarteDirect {
   // Sa photo d'abord. Sans elle, une illustration qui correspond à ce qu'il
-  // vient de photographier — jamais la photo d'un autre commerce.
-  const repli = g.cherchent === "où manger" ? PHOTOS.plat : PHOTOS.vitrine;
+  // vient de photographier — et hors restauration, la vitrine, qui ne montre le
+  // métier de personne en particulier.
+  const repli = g.cherchent === "où manger"
+    ? PHOTOS.plat
+    : /boulanger|pâtissier|patissier/i.test(metierLabel)
+      ? PHOTOS.four
+      : PHOTOS.vitrine;
   return {
     photo: photo || repli,
+    // Le cadrage n'est connu que pour NOS illustrations : celles du commerçant
+    // gardent le centre, faute de savoir ce qu'elles montrent.
+    cadrage: photo ? undefined : CADRAGE[repli],
     nom,
     metier: metierLabel,
     ville,
@@ -164,21 +194,30 @@ const VU_PAR_HABITANT: Record<string, string> = {
 };
 
 /**
- * L'IMAGE DE REPLI DE CHAQUE GESTE, quand le commerçant n'a pas de photo.
+ * L'IMAGE DE REPLI, quand le commerçant n'a aucune photo sur sa fiche Google.
  *
- * Elle doit dire ce dont on PARLE : montrer une vitrine pendant qu'on annonce
- * un menu, c'est exactement le genre d'écart qui fait décrocher. Le choix suit
- * donc le geste, pas le métier.
+ * ELLE SUIT LE GESTE **ET** LE MÉTIER, et il a fallu les deux. La première
+ * version ne regardait que le geste : un coiffeur qui annonçait ses créneaux
+ * libres recevait la photo d'une SALLE DE RESTAURANT, parce que c'est l'image
+ * rangée sous « des places restent libres ». C'est exactement le défaut qu'on
+ * traque depuis le début de cette démonstration — montrer au commerçant le
+ * commerce d'à côté — et il était réintroduit par la porte de derrière.
+ *
+ * Les quatre illustrations disponibles parlent toutes de restauration ou de
+ * boulangerie, sauf la vitrine. Hors de ces deux métiers, c'est donc la vitrine
+ * qui sert, systématiquement : elle n'est jamais juste, mais elle n'est jamais
+ * FAUSSE. Une image approximative se pardonne ; une image qui montre un autre
+ * métier détruit l'argument.
  */
-const PHOTO_TEMPS: Record<string, string> = {
-  carte: PHOTOS.plat,
-  arrivage: PHOTOS.four,
-  reste: PHOTOS.plat,
-  creneau: PHOTOS.tables,
-  fideles: PHOTOS.vitrine,
-  realisation: PHOTOS.vitrine,
-  venir: PHOTOS.vitrine,
-};
+function photoDeRepli(cle: string, resto: boolean, boulangerie: boolean): string {
+  if (resto) {
+    if (cle === "carte" || cle === "reste") return PHOTOS.plat;
+    if (cle === "creneau") return PHOTOS.tables;
+    return PHOTOS.vitrine;
+  }
+  if (boulangerie && (cle === "arrivage" || cle === "carte" || cle === "reste")) return PHOTOS.four;
+  return PHOTOS.vitrine;
+}
 
 /** L'emoji d'ambiance de chaque geste, quand il n'y a pas de photo à mettre. */
 const ICONE_TEMPS: Record<string, string> = {
@@ -225,13 +264,19 @@ export function tempsIllustres(
   photos: string[]
 ): TempsIllustre[] {
   const action = motDAction(g);
+  const resto = g.cherchent === "où manger";
+  // Le pain sort d'un four ; les fleurs, non. Faute de savoir distinguer les
+  // deux depuis ici, on ne sert la photo du four qu'à ceux dont le métier le
+  // dit en toutes lettres.
+  const boulangerie = /boulanger|pâtissier|patissier|viennoiserie/i.test(metierLabel);
   return temps.map((t, i) => {
     // Chaque temps prend une photo différente quand il y en a plusieurs : la
     // même image quatre fois de suite donne l'impression que rien ne se passe.
     // SES photos d'abord ; l'illustration seulement s'il n'en a aucune.
     const sienne = photos.length ? photos[i % photos.length] : undefined;
-    const repli = t.genre === "demande" ? PHOTOS.tables : PHOTO_TEMPS[t.cle];
+    const repli = photoDeRepli(t.genre === "demande" ? "" : t.cle, resto, boulangerie);
     const photo = sienne || repli;
+    const cadrage = sienne ? undefined : CADRAGE[repli];
 
     if (t.genre === "demande") {
       return {
@@ -241,6 +286,7 @@ export function tempsIllustres(
         action,
         carte: {
           photo,
+          cadrage,
           nom,
           metier: metierLabel,
           ville,
@@ -259,6 +305,7 @@ export function tempsIllustres(
       action,
       carte: {
         photo,
+        cadrage,
         nom,
         metier: metierLabel,
         ville,
