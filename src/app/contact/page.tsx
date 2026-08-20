@@ -1,6 +1,19 @@
+import type { Metadata } from "next";
 import { Mail, MessageCircle, MapPin, ArrowRight, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { MARQUE } from "@/lib/marque";
+
+// SANS TITRE PROPRE, CETTE PAGE ÉTAIT UN DOUBLON DE L'ACCUEIL. Elle est liée
+// depuis toutes les pages légales, donc Google l'a trouvée — et il l'a trouvée
+// avec le titre de l'accueil, sa description et sa canonique absente. Voir
+// `legal/mentions/page.tsx` : c'est le même défaut, et il touchait les quatre
+// pages fixes du site.
+export const metadata: Metadata = {
+  title: "Nous contacter",
+  description: `Une question sur ${MARQUE} ? Écrivez-nous, ou passez par WhatsApp — on répond dans la journée.`,
+  alternates: { canonical: "/contact" },
+};
 
 export default function ContactPage() {
   return (

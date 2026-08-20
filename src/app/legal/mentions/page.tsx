@@ -1,5 +1,26 @@
+import type { Metadata } from "next";
 import { MARQUE } from "@/lib/marque";
 import { SITE_HOST } from "@/lib/site-url";
+
+// LES TROIS PAGES LÉGALES AVAIENT LE MÊME TITRE, LA MÊME DESCRIPTION ET AUCUNE
+// CANONIQUE — celui de la racine, hérité faute de `metadata` propre.
+//
+// Ce sont les SEULES pages fixes que le sitemap annonce à Google en dehors de
+// l'accueil. Il en recevait donc trois qui, vues de son côté, portaient le titre
+// de l'accueil, sa description, et un gabarit identique à 90 % (en-tête,
+// sommaire latéral, encadré « Une question ? »). Search Console le dit
+// littéralement : « Page en double sans URL canonique sélectionnée par
+// l'utilisateur ». Trois des quatre pages proposées se neutralisaient entre
+// elles, et c'est une des raisons pour lesquelles une seule page est indexée.
+//
+// La canonique est écrite en toutes lettres et non déduite de l'URL visitée :
+// c'est ce qui empêche `?utm_source=…`, `/legal/mentions/` avec barre finale et
+// une éventuelle variante `www` d'exister comme trois pages distinctes.
+export const metadata: Metadata = {
+  title: "Mentions légales",
+  description: `Éditeur, hébergeur et directeur de la publication du site ${MARQUE}.`,
+  alternates: { canonical: "/legal/mentions" },
+};
 
 export default function MentionsPage() {
   return (

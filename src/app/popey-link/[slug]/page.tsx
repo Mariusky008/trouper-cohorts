@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+// Page nominative de l'ancien produit : une par personne, aucune valeur de
+// recherche, et un nom propre qui n'a rien à faire dans un index public.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 type PageProps = {
   params: Promise<{ slug: string }>;

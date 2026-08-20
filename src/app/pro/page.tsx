@@ -21,6 +21,12 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   }
   const qs = q.toString();
   return {
+    // L'ESPACE PRO NE S'INDEXE PAS, et il faut le dire ICI. Il était protégé
+    // par une interdiction dans `robots.txt`, qui a été retirée : une
+    // interdiction d'explorer empêche Google de lire l'instruction qui compte,
+    // et laisse l'adresse traîner dans l'index sans titre. La consigne vit
+    // maintenant dans la page, là où elle est lisible.
+    robots: { index: false, follow: false },
     manifest: `/pro/manifest.webmanifest${qs ? `?${qs}` : ""}`,
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Popey Pro" },
   };

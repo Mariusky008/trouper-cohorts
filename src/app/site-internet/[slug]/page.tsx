@@ -1,6 +1,9 @@
 // Landing publique de prise de contact (cible du QR de la lettre "Site internet").
 // Décision D2 : contact direct (appel / WhatsApp / rappel), pas de démo de site.
 // On enregistre le scan (contact_scanned_at) au premier affichage.
+import { cache } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MARQUE } from "@/lib/marque";
 import { LeadForm } from "./lead-form";
@@ -8,12 +11,24 @@ import { LeadForm } from "./lead-form";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function SiteInternetLanding({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
+// CETTE PAGE N'A RIEN À FAIRE DANS UN MOTEUR DE RECHERCHE, et rien ne le disait.
+//
+// C'est la cible du QR code imprimé sur la lettre : une adresse par commerçant,
+// toutes bâties sur le même gabarit, adressées à UNE personne qui a le papier en
+// main. Elle n'avait ni titre, ni description, ni consigne d'indexation — elle
+// héritait donc du titre et de la description de l'accueil, en autant
+// d'exemplaires qu'il y a eu de lettres envoyées. Vues de Google : des dizaines
+// de doublons de la page d'accueil, ce qui alimente à la fois « Page en double
+// sans URL canonique » et « Explorée, actuellement non indexée ».
+
+/**
+ * LE COMMERCE DU LIEN, cherché UNE fois pour les deux passages.
+ *
+ * `cache()` de React déduplique l'appel à l'intérieur d'un même rendu : la
+ * recherche est écrite une fois, faite une fois, et sert autant à décider du
+ * code HTTP qu'à remplir la page.
+ */
+const commerceDuLien = cache(async (slug: string) => {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
@@ -22,16 +37,53 @@ export default async function SiteInternetLanding({
     .eq("channel", "letter")
     .maybeSingle();
 
-  const row = (data as Record<string, unknown> | null) ?? null;
+  // « PAS TROUVÉ » ARRIVE ICI SOUS TROIS FORMES : `null`, `{}` ou `[]` selon ce
+  // que renvoie la couche de données — et les deux dernières sont VRAIES en
+  // JavaScript. Un `?? null` laissait donc passer la garde, et la page se
+  // rendait avec « votre commerce » à la place du nom. C'est l'identifiant qui
+  // décide : son absence ne peut pas s'expliquer autrement.
+  const brut = data as unknown;
+  return brut && !Array.isArray(brut) && typeof brut === "object" && (brut as { id?: unknown }).id
+    ? (brut as Record<string, unknown>)
+    : null;
+});
 
-  if (!row) {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-black text-slate-900">Lien introuvable</h1>
-        <p className="mt-2 text-slate-600">Ce lien n&apos;est plus valide. Contactez-nous directement.</p>
-      </main>
-    );
-  }
+/**
+ * LE LIEN MORT DOIT RÉPONDRE 404, ET LA VÉRIFICATION DOIT SE FAIRE ICI.
+ *
+ * C'est le point le plus contre-intuitif de ce fichier, et il vaut pour tout le
+ * site. `src/app/loading.tsx` est un écran d'attente posé À LA RACINE : il met
+ * donc CHAQUE route derrière une frontière de Suspense. Next envoie alors
+ * l'enveloppe HTML — et avec elle le code 200 — AVANT que le composant de page
+ * n'ait fini de s'exécuter. Un `notFound()` appelé dans le corps de la page
+ * arrive trop tard : il remplace bien l'affichage, mais l'en-tête est parti.
+ *
+ * Mesuré : la page rendait l'écran « introuvable » avec un HTTP 200. Pour un
+ * visiteur, aucune différence ; pour Google, c'est un « soft 404 » — une page
+ * valide de plus, identique à toutes les autres adresses mortes. Il les met en
+ * concurrence, finit par comprendre qu'on lui ment, et se méfie du reste.
+ *
+ * `generateMetadata` s'exécute AVANT l'enveloppe. Le `notFound()` qui s'y
+ * trouve produit un vrai 404, en-tête compris.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const row = await commerceDuLien(slug);
+  if (!row) notFound();
+  const nom = String(row.business_name || "votre commerce");
+  return { title: `${nom} — votre site internet`, robots: { index: false, follow: false } };
+}
+
+export default async function SiteInternetLanding({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const supabase = createAdminClient();
+  const row = await commerceDuLien(slug);
+
+  if (!row) notFound();
 
   // Enregistre le scan (uniquement la 1re fois).
   try {

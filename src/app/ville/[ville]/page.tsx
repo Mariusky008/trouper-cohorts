@@ -39,7 +39,21 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   return {
     title,
     description,
-    openGraph: { title, description, type: "website" },
+    // LA CANONIQUE DÉSIGNE LE FIL SANS SON ONGLET, et c'est un correctif.
+    //
+    // Les onglets vivent dans l'adresse (`?f=table`, `?f=offre`, `?f=cadeau`…).
+    // Chacune de ces adresses est une PAGE DISTINCTE pour Google, avec le même
+    // titre, la même description et un fil largement commun. Sans canonique, il
+    // ne sait pas laquelle est la vraie : il les met toutes en concurrence puis
+    // n'en garde aucune. C'est mot pour mot ce que Search Console rapporte —
+    // « Page en double sans URL canonique sélectionnée par l'utilisateur ».
+    //
+    // Toutes désignent donc `/ville/<slug>`. Les onglets restent partageables et
+    // fonctionnels ; ils cessent seulement d'exister comme pages séparées dans
+    // l'index. Même effet sur les `?utm_*` d'une campagne, qui multipliaient le
+    // problème par le nombre de sources.
+    alternates: { canonical: `/ville/${ville}` },
+    openGraph: { title, description, type: "website", url: `/ville/${ville}` },
     manifest: `/ville/${ville}/manifest.webmanifest`,
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: `Direct ${cfg.nom}` },
   };

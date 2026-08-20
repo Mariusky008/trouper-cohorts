@@ -1,3 +1,14 @@
+import type { Metadata } from "next";
+import { MARQUE } from "@/lib/marque";
+
+// Voir `mentions/page.tsx` : sans titre propre, ces trois pages étaient trois
+// doublons de l'accueil aux yeux de Google.
+export const metadata: Metadata = {
+  title: "Politique de confidentialité",
+  description: `Quelles données ${MARQUE} collecte, pourquoi, combien de temps elles sont conservées et comment les faire supprimer.`,
+  alternates: { canonical: "/legal/privacy" },
+};
+
 export default function PrivacyPage() {
   return (
     <article className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-li:text-slate-600">

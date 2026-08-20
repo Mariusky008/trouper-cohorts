@@ -71,6 +71,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // contradiction qui fait perdre confiance à un moteur.
   const fixes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, changeFrequency: "weekly", priority: 1 },
+    // `/contact` manquait alors qu'elle est liée depuis toutes les pages
+    // légales : Google la trouvait par les liens, sans jamais qu'on la lui
+    // annonce, et sans titre propre elle passait pour un doublon de l'accueil.
+    { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE_URL}/legal/mentions`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE_URL}/legal/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE_URL}/legal/terms`, changeFrequency: "yearly", priority: 0.2 },

@@ -17,6 +17,14 @@ export async function generateMetadata({ params }: ShortLinkProps): Promise<Meta
   return {
     title,
     description,
+    // EXPLORABLE MAIS PAS INDEXABLE, et l'ordre des mots compte. Cette page
+    // n'existe que pour donner un aperçu aux robots de WhatsApp et des réseaux :
+    // l'interdire dans `robots.txt` ferait disparaître l'aperçu, qui est sa
+    // seule raison d'être. En revanche il y a autant de ces pages que de
+    // commerçants, toutes bâties sur le même gabarit — c'est un doublon par
+    // commerce dans l'index de Google, et zéro visiteur en provenance de la
+    // recherche. `noindex` règle les deux sans toucher au partage.
+    robots: { index: false, follow: false },
     openGraph: { title, description, siteName: "Popey", locale: "fr_FR", type: "website" },
     twitter: { card: "summary_large_image", title, description },
   };
