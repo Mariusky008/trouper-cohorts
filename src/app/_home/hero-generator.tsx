@@ -5,6 +5,7 @@
 // Google via Apify), montre une construction animée pendant l'attente, puis
 // redirige vers la maquette (qui lance la Démo Vivante).
 import { useEffect, useRef, useState } from "react";
+import { vocabulaire } from "@/lib/site-internet/actions-flash";
 
 const WA_HREF = "https://wa.me/33768233347?text=" +
   encodeURIComponent("Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.");
@@ -60,6 +61,11 @@ export function HeroGenerator() {
     timers.current.forEach((t) => clearInterval(t));
     timers.current = [];
   };
+
+  // LES MOTS DU MÉTIER QU'IL VIENT DE TAPER. Même fonction que l'espace pro :
+  // un aperçu qui demande « une table » à un coiffeur montre le site de
+  // quelqu'un d'autre. Calculé pendant le rendu — c'est une fonction pure.
+  const v = vocabulaire(activite.trim() || "commerce", "reserve", "flux");
 
   const submit = async () => {
     if (!ready || building) return;
@@ -133,11 +139,32 @@ export function HeroGenerator() {
                 </div>
                 <div className="bp-body">
                   <div className={`bp-thumbs${step >= 3 ? " on" : ""}`}><i /><i /><i /></div>
-                  <div className={`bp-chat${step >= 4 ? " on" : ""}`}>
-                    <div className="bp-bub them">Bonjour, vous avez de la place&nbsp;?</div>
-                    <div className="bp-bub me">Bonjour 😊 Oui&nbsp;! Je vous réserve ça&nbsp;?</div>
+                  {/* LE BANDEAU D'ACTUALITÉ — la zone qui n'existe sur aucun
+                      autre site, et donc la première à montrer. Il reste VIDE :
+                      écrire une annonce à la place du commerçant, sur un site
+                      qui porte son nom, serait parler pour lui avant même
+                      qu'il ait cliqué. Il montre l'emplacement, pas le texte. */}
+                  <div className={`bp-annonce${step >= 4 ? " on" : ""}`}>
+                    <span className="bp-a-k">✦ Aujourd&apos;hui</span>
+                    <span className="bp-a-t">votre actualité s&apos;affiche ici</span>
                   </div>
-                  <div className={`bp-cta${step >= 5 ? " on" : ""}`}>Prendre rendez-vous</div>
+                  {/* CE QU'ELLE FAIT VRAIMENT. Elle répondait « Oui ! Je vous
+                      réserve ça ? » : elle ne connaît ni le cahier de
+                      réservations ni les disponibilités, et ne réserve rien.
+                      Elle recueille et transmet — c'est ce que dit le reste du
+                      produit, et l'aperçu le contredisait sur le premier écran
+                      que voit un prospect. */}
+                  <div className={`bp-chat${step >= 4 ? " on" : ""}`}>
+                    <div className="bp-bub them">Bonsoir, il vous reste {v.un}&nbsp;{v.place} samedi&nbsp;?</div>
+                    <div className="bp-bub me">Bonsoir 😊 Je note votre demande et je la transmets tout de suite.</div>
+                  </div>
+                  {/* LE DIRECT — la promesse du titre de la page, tenue dans
+                      l'aperçu. Sans lui, on montrait un site vitrine avec un
+                      robot de réservation : le produit d'il y a un an. */}
+                  <div className={`bp-direct${step >= 5 ? " on" : ""}`}>
+                    <span className="bp-d-k">📍 Le Direct de {ville.trim() || "votre ville"}</span>
+                    <span className="bp-d-t">Votre actualité y paraît aussi, à côté des autres commerces.</span>
+                  </div>
                 </div>
               </div>
             </div>

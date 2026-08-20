@@ -98,7 +98,12 @@ export async function POST(request: Request) {
     expireLe: echeance(str(p?.expireLe)),
     site: null,
   });
-  if (!res) return NextResponse.json({ error: "Publication impossible." }, { status: 500 });
+  // `publier` dit maintenant POURQUOI il a échoué au lieu de renvoyer null. On
+  // relaie la raison : « Publication impossible » tout court laissait chercher
+  // dans les journaux une ligne qui n'y était pas.
+  if (!res?.id) {
+    return NextResponse.json({ error: res?.erreur || "Publication impossible." }, { status: 500 });
+  }
 
   // L'auteur d'une publication de ville n'est pas dénormalisé par `publier`
   // (qui attend un commerce) : on le pose ici, sinon le fil afficherait

@@ -674,7 +674,11 @@ export function ProRelance({
       if (r.ok && j.offer) {
         const publie = String((j.offer as { text?: unknown })?.text ?? "");
         recommencer();
-        setConfirme({ texte: publie, avertissement: "" });
+        // L'AVERTISSEMENT ÉTAIT JETÉ ICI. La route sait dire qu'une annonce
+        // n'a pas rejoint le fil de la ville ; cet écran affichait « publié »
+        // par-dessus. Le seul écran qui pouvait l'apprendre au restaurateur
+        // était celui qui l'ignorait.
+        setConfirme({ texte: publie, avertissement: typeof j.avertissement === "string" ? j.avertissement : "" });
       } else {
         setCarteErr(typeof j.error === "string" ? j.error : "Publication impossible.");
       }

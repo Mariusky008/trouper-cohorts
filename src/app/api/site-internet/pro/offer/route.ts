@@ -375,6 +375,27 @@ export async function POST(request: Request) {
       // Un échec ici ne doit PAS annuler l'annonce : elle est déjà publiée et
       // elle est utile telle quelle. On l'écrit dans la réponse pour que
       // l'écran puisse le dire, plutôt que de faire croire au silence.
+      // L'ANNONCE N'A PAS REJOINT LE FIL, ET ÇA SE DIT.
+      //
+      // LE DÉFAUT : `publier` renvoyait `null` sur n'importe quelle erreur de
+      // base, et cette ligne l'ignorait. Le commerçant voyait son écran de
+      // confirmation, son bandeau apparaissait sur son site — et son annonce
+      // n'existait ni dans « Mes annonces en cours », ni dans le fil de sa
+      // ville. Rien, nulle part, ne le disait : ni lui ni nous ne pouvions
+      // savoir qu'une colonne manquait en base.
+      //
+      // Son bandeau reste en ligne : refuser toute la publication parce que le
+      // fil n'a pas voulu d'elle lui retirerait aussi ce qui a marché.
+      if (!pub?.id) {
+        console.error("[offer] publication refusée par la base :", pub?.erreur ?? "raison inconnue");
+        avertissementFacons =
+          `Votre annonce est en ligne sur votre site, mais elle n'a pas rejoint le fil de ${ville}. ` +
+          `Elle n'apparaîtra pas dans « Mes annonces en cours ».`;
+      } else if (pub.erreur) {
+        // Publiée, mais amputée : le prix ou l'onglet « Déjeuner » manquent.
+        console.warn("[offer] publication incomplète :", pub.erreur);
+      }
+
       let faconsErr = "";
       if (pub?.id && (p?.simple || p?.cadeau || p?.express || p?.partage || p?.portion)) {
         const prep = preparerFacons(p ?? {}, { finGenerale: until ?? new Date(Date.now() + 24 * 3600 * 1000).toISOString() });
@@ -394,7 +415,7 @@ export async function POST(request: Request) {
           }
         }
       }
-      if (faconsErr) avertissementFacons = faconsErr;
+      if (faconsErr) avertissementFacons = [avertissementFacons, faconsErr].filter(Boolean).join(" ");
 
       // L'ALERTE PART ICI, pas dans un cron. Une place qui se libère à 16 h et
       // annoncée à 17 h n'est plus une place qui se libère. `after()` : le

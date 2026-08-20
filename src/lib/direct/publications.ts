@@ -102,6 +102,23 @@ function colonneAbsente(e: unknown): boolean {
   return /does not exist|schema cache|Could not find|42703|PGRST204/i.test(String(e));
 }
 
+/** Les colonnes sans lesquelles une publication ne veut plus rien dire. On ne
+ *  les sacrifie jamais pour faire passer une écriture : une annonce sans texte
+ *  ni ville serait une ligne muette dans le fil de quelqu'un. */
+const INDISPENSABLES = new Set(["ville", "ville_slug", "famille", "texte"]);
+
+/**
+ * Le nom de la colonne que la base dit ne pas connaître.
+ *
+ * Les deux formulations rencontrées, et elles ne se ressemblent pas :
+ *   PostgREST — « Could not find the 'video' column of 'human_publications'… »
+ *   Postgres  — « column "video" of relation "human_publications" does not exist »
+ */
+function colonneNommee(e: unknown): string | null {
+  const m = /'([a-z_]+)' column|column "([a-z_]+)"/i.exec(String(e));
+  return m ? m[1] || m[2] : null;
+}
+
 /**
  * Lance `construire(champs)` avec les colonnes récentes, puis sans elles si la
  * base ne les connaît pas encore.
@@ -268,9 +285,9 @@ export async function publier(
     prix?: number | null;
     site?: { id: string; slug: string; nom: string; activite: string } | null;
   }
-): Promise<{ id: string } | null> {
+): Promise<{ id?: string; erreur?: string } | null> {
   const texte = p.texte.trim();
-  if (!texte || !p.villeSlug.trim()) return null;
+  if (!texte || !p.villeSlug.trim()) return { erreur: "Annonce vide ou ville inconnue." };
   const metier = p.site ? resolveMetier(p.site.activite).entry?.label ?? p.site.activite : "";
   const base = {
     ville: p.ville,
@@ -293,18 +310,50 @@ export async function publier(
   };
   const inserer = (ligne: Record<string, unknown>) =>
     supabase.from("human_publications").insert(ligne).select("id").maybeSingle();
-  try {
-    // MIGRATION NON APPLIQUÉE : on republie SANS les deux colonnes récentes.
-    // Refuser l'annonce entière parce qu'un détail facultatif ne peut pas être
-    // écrit serait la pire réponse possible — l'annonce, elle, est le sujet.
-    let { data, error } = await inserer({ ...base, ...recents });
-    if (error && colonneAbsente(error.message)) ({ data, error } = await inserer(base));
-    if (error) throw new Error(error.message);
-    const id = str((data as Row | null)?.id);
-    return id ? { id } : null;
-  } catch {
-    return null;
+
+  // ON LAISSE TOMBER LA COLONNE QUE LA BASE NOMME, ET ON RECOMMENCE.
+  //
+  // L'ancien repli retirait un lot FIXE (`reste`, `ardoise`, `prix`) et
+  // réessayait une seule fois. Une base en retard d'une autre migration — `video`,
+  // par exemple — faisait donc échouer les DEUX tentatives, et plus aucune
+  // annonce n'atteignait le fil de la ville. Sans un mot : voir plus bas.
+  //
+  // On lit maintenant le nom de la colonne dans le message, on l'enlève, on
+  // recommence. Une annonce qui perd son prix reste une annonce ; une annonce
+  // refusée n'existe pas.
+  const ligne: Record<string, unknown> = { ...base, ...recents };
+  const perdues: string[] = [];
+  let dernier = "";
+  for (let essai = 0; essai < 6; essai++) {
+    const { data, error } = await inserer(ligne);
+    if (!error) {
+      const id = str((data as Row | null)?.id);
+      return id
+        ? { id, erreur: perdues.length ? `Colonnes absentes en base : ${perdues.join(", ")}.` : undefined }
+        : { erreur: "La base n'a rien renvoyé après l'écriture." };
+    }
+    dernier = String((error as { message?: string })?.message ?? error);
+    const nom = colonneNommee(dernier);
+    if (nom && nom in ligne && !INDISPENSABLES.has(nom)) {
+      delete ligne[nom];
+      perdues.push(nom);
+      continue;
+    }
+    // LA FAMILLE REFUSÉE : on publie quand même, dans la famille par défaut.
+    //
+    // `menu` demande la migration `20260812120000_famille_menu`. Sans elle, la
+    // contrainte rejetait la ligne entière — et la carte du jour d'un
+    // restaurateur disparaissait au lieu de simplement manquer son onglet.
+    // Perdre l'onglet « Déjeuner » est un défaut ; perdre l'annonce en est un
+    // autre, bien pire.
+    if (/famille/.test(dernier) && /check constraint|violates/i.test(dernier) && ligne.famille !== "offre") {
+      ligne.famille = "offre";
+      perdues.push(`famille « ${p.famille} » refusée`);
+      continue;
+    }
+    break;
   }
+  return { erreur: dernier || "Écriture refusée par la base." };
 }
 
 /**

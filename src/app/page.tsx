@@ -334,8 +334,22 @@ export default function HomePage() {
           .pop-home .bp-bub{max-width:82%;padding:8px 11px;border-radius:12px;font-size:11.5px;line-height:1.35;}
           .pop-home .bp-bub.them{background:#EDEFEA;color:#2A2E27;border-top-left-radius:4px;align-self:flex-start;}
           .pop-home .bp-bub.me{background:linear-gradient(120deg,var(--a1),var(--a2));color:#fff;border-top-right-radius:4px;align-self:flex-end;}
-          .pop-home .bp-cta{margin-top:2px;text-align:center;background:#123B2E;color:#fff;border-radius:11px;padding:11px;font-size:12.5px;font-weight:700;opacity:0;transform:translateY(10px) scale(.98);transition:opacity .5s ease,transform .5s ease;}
-          .pop-home .bp-cta.on{opacity:1;transform:none;}
+          /* LE BANDEAU D'ACTUALITÉ, en haut du corps : c'est la zone propre à
+             ClikMe, et l'aperçu doit la faire remarquer avant tout le reste. */
+          .pop-home .bp-annonce{display:flex;flex-direction:column;gap:3px;border-radius:11px;padding:9px 11px;
+            background:linear-gradient(120deg,var(--a1),var(--a2));color:#fff;
+            opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease;}
+          .pop-home .bp-annonce.on{opacity:1;transform:none;}
+          .pop-home .bp-a-k{font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.82;}
+          .pop-home .bp-a-t{font-size:11.5px;font-weight:600;opacity:.95;}
+          /* LE DIRECT, en pied d'aperçu : la promesse du titre de la page,
+             tenue dans la maquette qu'on lui montre. */
+          .pop-home .bp-direct{margin-top:2px;display:flex;flex-direction:column;gap:3px;text-align:center;
+            background:#123B2E;color:#fff;border-radius:11px;padding:10px 11px;
+            opacity:0;transform:translateY(10px) scale(.98);transition:opacity .5s ease,transform .5s ease;}
+          .pop-home .bp-direct.on{opacity:1;transform:none;}
+          .pop-home .bp-d-k{font-size:12px;font-weight:800;letter-spacing:-.01em;}
+          .pop-home .bp-d-t{font-size:10.5px;line-height:1.35;opacity:.78;}
           /* Statut sous l'aperçu */
           .pop-home .genov-status{width:100%;text-align:center;}
           .pop-home .genov-title{font-size:16.5px;font-weight:800;letter-spacing:-.01em;color:#fff;}
