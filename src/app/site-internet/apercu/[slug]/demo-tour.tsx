@@ -13,9 +13,8 @@
 // Non publié uniquement. Entièrement « passable ».
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange } from "@/lib/site-internet/speech";
-import { MARQUE } from "@/lib/marque";
 import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
-import { direRetours, habitantsDe, VITRINES, type GesteDuJour } from "@/lib/direct/geste-du-jour";
+import { direRetours, habitantsDe, LE_DIRECT_MONTRE, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 
 type Props = {
   slug: string;
@@ -58,7 +57,12 @@ type Props = {
  *  Onze scènes ont disparu avec l'ancien récit — le pivot, la coupure, le
  *  réseau, l'annonce d'exemple, le Clik collectif. Elles ne racontaient pas ce
  *  que ClikMe rapporte au commerçant, et laisser leur code derrière un `Scene`
- *  qui ne les nomme plus aurait fait croire qu'elles pouvaient revenir seules. */
+ *  qui ne les nomme plus aurait fait croire qu'elles pouvaient revenir seules.
+ *
+ *  `final` a disparu à son tour : l'écran de décision se jouait une fois en
+ *  scène et une fois après, à l'identique, pour couvrir une phrase de clôture
+ *  qui répétait ce qu'il affiche déjà. La boucle EST la fin, et le bouton
+ *  arrive quand elle se tait. */
 type Scene =
   | ""
   | "bascule"
@@ -67,119 +71,147 @@ type Scene =
   | "photo"
   | "retour"
   | "metier"
-  | "boucle"
-  | "final";
+  | "boucle";
 
 export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flashExample, actes, geste, keepHref }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);
-  /* ─────────────────── LES SIX RÉPLIQUES, ET LEUR MINUTAGE ───────────────────
+  /* ─────────────────── LES RÉPLIQUES, ET LEUR MINUTAGE ───────────────────
    *
    * Règle de cette section : la LÉGENDE du bas est mot pour mot ce que la voix
-   * dit (setCaption(st.say)), et chaque animation se déclenche au MOMENT où la
-   * phrase la nomme. Des délais choisis à la main désynchronisaient tout dès
-   * qu'un mot changeait.
+   * dit, et chaque animation se déclenche au MOMENT où la phrase la nomme. Des
+   * délais choisis à la main désynchronisaient tout dès qu'un mot changeait.
    *
-   * `auMot` donne l'instant approximatif où la voix finit de prononcer un
-   * extrait. Le français de synthèse lit ~55 ms par caractère ; c'est une
-   * approximation assumée — à défaut d'un minutage mot à mot que le moteur de
-   * voix ne fournit pas — mais elle place l'animation à la bonne SECONDE au
-   * lieu de la bonne minute.
+   * Le français de synthèse lit ~55 ms par caractère. C'est une approximation
+   * assumée — à défaut d'un minutage mot à mot que le moteur de voix ne fournit
+   * pas — mais elle place l'animation à la bonne SECONDE au lieu de la bonne
+   * minute.
    */
   const MS_PAR_CARACTERE = 55;
-  const auMot = (phrase: string, extrait: string): number => {
-    const i = phrase.indexOf(extrait);
-    return i < 0 ? 0 : Math.round((i + extrait.length) * MS_PAR_CARACTERE);
-  };
   /** L'instant où la voix ATTAQUE l'extrait — et non celui où elle le finit.
    *
-   *  `auMot` place une animation sur un mot qu'on vient d'entendre ; ici on a
-   *  besoin de l'inverse : la carte d'un temps doit être à l'écran PENDANT que
-   *  la phrase qui la décrit se dit. Arrivée à la fin, elle ne serait plus
-   *  qu'une illustration de ce qu'on a déjà compris. */
+   *  Un premier repère calait les animations sur la FIN du mot prononcé : la
+   *  carte d'un temps arrivait donc quand la phrase qui la décrit était déjà
+   *  dite, et n'illustrait plus que ce qu'on avait compris. Elle doit être à
+   *  l'écran PENDANT. Il n'y a plus qu'un repère, et c'est celui-là. */
   const auDebut = (phrase: string, extrait: string): number => {
     const i = phrase.indexOf(extrait);
     return i < 0 ? 0 : Math.round(i * MS_PAR_CARACTERE);
   };
 
-  // 8 — LA BOUCLE. La première phrase de la page d'accueil, rendue à la fin.
-  const SAY_BOUCLE =
-    `Votre commerce, en direct dans votre ville. Votre site, votre assistante, votre actualité, votre ville.`;
-
-  /* ══════════ LE NOUVEAU RÉCIT ══════════════════════════════════════════
+  /* ══════════ LE RÉCIT, EN HUIT ACTES ═══════════════════════════════════
    *
    * L'ancien déroulé ouvrait sur le site et énumérait onze capacités en deux
    * minutes dix. Un restaurateur en coup de feu décrochait au quatrième acte,
    * et rien, nulle part, ne lui montrait ce que ça lui RAPPORTE.
    *
-   * Le nouveau part de son client, pas de notre outil : cinq cents habitants
-   * cherchent où manger, son menu est sur une ardoise que personne ne voit, il
-   * la photographie, et quelque chose lui revient. Le site n'est pas renié — il
-   * est montré cinq secondes, comme preuve, puis déclassé d'une phrase.
+   * DEUX DÉFAUTS ONT DÉCIDÉ DE CETTE VERSION, et ils viennent du terrain :
+   *
+   *  1. LE DIRECT N'ÉTAIT JAMAIS NOMMÉ. On lui disait « votre annonce
+   *     circule » sans jamais lui montrer OÙ — alors que c'est toute la
+   *     nouveauté : un écran que les habitants ouvrent DANS la rue, au moment
+   *     où ils choisissent. Il a donc son acte à lui, le troisième, et il
+   *     revient dans trois autres.
+   *
+   *  2. « À 11 h, votre menu est sur votre ardoise. Mais qui la voit ?
+   *     Google, Instagram, votre vitrine… » — deux plateformes et un bout de
+   *     verre dans la même liste, et un pronom qui ne renvoyait à rien. Ça
+   *     ouvrait un débat sur le référencement au lieu de fermer une évidence.
+   *     Trois phrases courtes le remplacent, et elles ne parlent que de lui.
+   *
+   * CHAQUE ACTE EST DÉCOUPÉ EN TEMPS, et chaque temps porte SA phrase. La
+   * légende du bas suit la voix temps par temps : posée d'un bloc, elle donnait
+   * la conclusion de l'acte avant que sa première image ne soit apparue.
    */
   const G = geste;
   // `habitants` est déjà pris dans ce composant (les silhouettes du réseau) :
   // deux choses sans rapport ne partagent pas un nom.
   const gentile = habitantsDe(villeAff);
+  const laVille = villeAff || "votre ville";
 
-  // 0 bis — LA BASCULE. La phrase qui fait tenir tout le reste.
-  const SAY_BASCULE =
-    `Mais le plus important n'est pas votre site. C'est ce qu'il peut vous rapporter.`;
+  // ── ACTE 2 · LA BASCULE ────────────────────────────────────────────────
+  //    La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle
+  //    garde le cadeau et le déclasse en une ligne.
+  const SAY_BASCULE = `Mais le plus important n'est pas votre site. C'est ce qu'il peut vous rapporter.`;
 
-  // 1 — LA QUESTION DES HABITANTS. On ne dit pas « 500 personnes » : ça se lit
-  //     « ClikMe a 500 utilisateurs ici », et le jour où il ouvre le fil et le
-  //     trouve calme, il se sent trompé. On parle de SA ville.
-  const SAY_QUI = G
-    ? `Ce midi, ${G.combien} ${gentile} se demandent ${G.cherchent}. ` +
-      `Votre commerce est peut-être à quatre cents mètres. Mais ils ne le savent pas.`
-    : "";
-  const QUI_AT = {
-    ville: auDebut(SAY_QUI, "Votre commerce est peut-être"),
-    ignore: auDebut(SAY_QUI, "Mais ils ne le savent pas"),
-  };
+  // ── ACTE 3 · CE MIDI, DANS SA VILLE ────────────────────────────────────
+  //    On ne dit pas « mille personnes » : ça se lit « ClikMe a mille
+  //    utilisateurs ici », et le jour où il ouvre le fil et le trouve calme,
+  //    il se sent trompé. On parle des Dacquois — une affirmation sur la
+  //    ville, pas sur notre audience.
+  const QUI_DIT = G
+    ? [
+        `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
+        `Beaucoup ouvriront Le Direct de ${laVille} : ce qui se passe autour d'eux, maintenant.`,
+        `Les menus du jour, les tables qui restent, ce qui vient de sortir du four.`,
+      ]
+    : [];
+  const SAY_QUI = QUI_DIT.join(" ");
+  const QUI_AT = QUI_DIT.map((p) => auDebut(SAY_QUI, p));
 
-  // 2 — CE QUE LES AUTRES MONTRENT DÉJÀ, et ce qu'ils ne montrent pas.
-  const SAY_INVISIBLE = G
-    ? `${G.ouDort} Mais qui la voit ? ` +
-      `Google, Instagram, votre vitrine : tout le monde montre votre commerce. ` +
-      `Personne ne montre ${G.pasVu}.`
-    : "";
-  const INVISIBLE_AT = {
-    autres: auDebut(SAY_INVISIBLE, "Google, Instagram"),
-    verdict: auDebut(SAY_INVISIBLE, "Personne ne montre"),
-  };
+  // ── ACTE 4 · ET VOUS ? ─────────────────────────────────────────────────
+  //    Trois temps : où dort son information, le compliment, le retournement.
+  //    Le compliment n'est pas de la politesse — sans lui, la phrase suivante
+  //    se lit comme un reproche sur son ardoise, et il se ferme.
+  const iEux = G ? G.pasVu.indexOf("Et eux") : -1;
+  const INVISIBLE_DIT = G
+    ? [
+        G.ouDort,
+        iEux > 0 ? G.pasVu.slice(0, iEux).trim() : G.pasVu,
+        iEux > 0 ? G.pasVu.slice(iEux).trim() : "",
+      ].filter(Boolean)
+    : [];
+  const SAY_INVISIBLE = INVISIBLE_DIT.join(" ");
+  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => auDebut(SAY_INVISIBLE, p));
 
-  // 3 — LE GESTE. Trois secondes, et rien d'autre à faire.
-  const SAY_PHOTO = G
-    ? `${G.geste} C'est tout. Je lis, j'écris, je publie — sur votre site et dans Le Direct de ${villeAff || "votre ville"}.`
-    : "";
-  const PHOTO_AT = {
-    lit: auMot(SAY_PHOTO, "C'est tout"),
-    publie: auDebut(SAY_PHOTO, "sur votre site"),
-  };
+  // ── ACTE 5 · LE GESTE ──────────────────────────────────────────────────
+  //    Trois secondes, et rien d'autre à faire. Le verbe de lecture suit le
+  //    geste (on ne « lit » pas ce qui est dicté), et ce qui part vient de
+  //    `geste-du-jour` avec son accord déjà fait : « votre menu part », mais
+  //    « vos créneaux libres partent ».
+  const PHOTO_DIT = G
+    ? [
+        `${G.geste} C'est tout.`,
+        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre site et dans Le Direct — à l'heure où on le cherche.`,
+      ]
+    : [];
+  const SAY_PHOTO = PHOTO_DIT.join(" ");
+  const PHOTO_AT = PHOTO_DIT.map((p) => auDebut(SAY_PHOTO, p));
+  /** L'instant où elle nomme les deux destinations : la carte les affiche là,
+   *  et pas trois secondes avant qu'elle en parle. */
+  const PHOTO_OU = auDebut(SAY_PHOTO, "sur votre site");
 
-  // 4 — CE QUI REVIENT. Le seul moment de toute la démonstration où quelque
-  //     chose revient VERS lui — et celui qui décide.
+  // ── ACTE 6 · CE QUI VOUS REVIENT ───────────────────────────────────────
+  //    Le seul moment de toute la démonstration où quelque chose revient VERS
+  //    lui — et celui qui décide.
   //
-  //     ELLE LIT LES LIGNES. La réplique tenait en six mots pendant que quatre
-  //     lignes mettaient six secondes à s'afficher : l'acte se terminait avant
-  //     d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
+  //    ELLE LIT LES LIGNES. La réplique tenait en six mots pendant que quatre
+  //    lignes mettaient six secondes à s'afficher : l'acte se terminait avant
+  //    d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
   const retourDit = G ? direRetours(G) : { say: "", phrases: [] as string[] };
   const SAY_RETOUR = retourDit.say;
   const RETOUR_AT = retourDit.phrases.map((ph) => auDebut(SAY_RETOUR, ph));
 
-  // 5 — L'ACTE MÉTIER : la suite de sa journée, dans ses mots.
+  // ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ─────────────────────────────
+  //    La suite de sa journée, dans ses mots, heure par heure.
   const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
   const SAY_METIER = direActe(actesListe);
   const METIER_AT = actesListe.map((t) => auDebut(SAY_METIER, t.dit));
 
-  // 6 — À vous. Elle s'efface, le site reste.
-  const SAY_FIN =
-    `Voilà : votre site répond, et votre actualité apparaît au moment où elle est utile. ` +
-    `Des habitants qui ne vous connaissent pas encore peuvent vous découvrir. ` +
-    `Si vous souhaitez le garder, cliquez simplement sur « Garder mon site gratuitement ».`;
+  // ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ───────────────────────────
+  //    Deux actes n'en font plus qu'un : la phrase de clôture et l'écran de
+  //    décision disaient la même chose à la suite, et la démonstration
+  //    retombait entre les deux. Elle boucle sur l'acte 2 — le site était le
+  //    point de départ, voilà ce qu'il rapporte — puis le bouton arrive.
+  const BOUCLE_DIT = [
+    `Voilà. Votre site est prêt.`,
+    `Votre actualité peut maintenant vivre dans Le Direct de ${laVille}.`,
+    `Votre commerce, en direct dans votre ville.`,
+  ];
+  const SAY_BOUCLE = BOUCLE_DIT.join(" ");
+  const BOUCLE_AT = BOUCLE_DIT.map((p) => auDebut(SAY_BOUCLE, p));
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
@@ -204,6 +236,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
   const [retourN, setRetourN] = useState(0);
+  const [boucleN, setBoucleN] = useState(0);
   const [scene, setScene] = useState<Scene>("");
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   const cancelled = useRef(false);
@@ -420,19 +453,6 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     }
   };
 
-  /** Elle quitte le centre et va se poser sur son emplacement de la barre. */
-  // La barre de légende fait deux à cinq lignes selon la phrase : l'écran de
-  // décision doit lui réserver SA hauteur, pas une valeur fixe.
-  useEffect(() => {
-    if (scene !== "final") return;
-    const maj = () => {
-      const b = document.querySelector<HTMLElement>(".dtour-bar");
-      if (b) document.documentElement.style.setProperty("--dtbar", `${b.offsetHeight + 14}px`);
-    };
-    const t = window.setTimeout(maj, 30);
-    window.addEventListener("resize", maj);
-    return () => { window.clearTimeout(t); window.removeEventListener("resize", maj); };
-  }, [scene, caption]);
 
   const envol = () => {
     try {
@@ -490,59 +510,103 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
-    // ── 0 bis. LA BASCULE ──────────────────────────────────────────────────
+    // ── ACTE 2. LA BASCULE ─────────────────────────────────────────────────
     //
     // La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle garde
     // le cadeau et le déclasse en une ligne : le site est le point de départ,
     // pas la finalité.
-    steps.push({
-      title: "Le plus important n'est pas votre site",
-      say: SAY_BASCULE,
-      enter: () => { chime(); setScene("bascule"); },
-    });
+    //
+    // ELLE N'EST DITE QU'À CEUX À QUI LA SUITE EST JOUÉE. Un cabinet de santé
+    // ne voit ni offre ni annonce : chez lui, « ce que ça peut vous rapporter »
+    // ouvrait une promesse que les six actes suivants n'allaient jamais tenir,
+    // puisqu'ils ne se jouaient pas.
+    if (avisAllowed) {
+      steps.push({
+        title: "Le plus important n'est pas votre site",
+        say: SAY_BASCULE,
+        enter: () => { chime(); setScene("bascule"); },
+      });
+    } else {
+      steps.push({
+        title: "À vous",
+        say:
+          `Il est à vous, gratuitement, et votre assistante répond aux questions à votre place. ` +
+          `Si vous souhaitez le garder, cliquez simplement sur « Garder mon site gratuitement ».`,
+        enter: () => { setScene(""); },
+      });
+    }
+
+    /**
+     * LA LÉGENDE SUIT LA VOIX, TEMPS PAR TEMPS.
+     *
+     * Posée d'un bloc — ce que faisait la boucle principale — elle affichait
+     * les trois phrases de l'acte au bas de l'écran dès la première seconde :
+     * on lisait la conclusion avant d'avoir vu la démonstration. Le même défaut
+     * a été corrigé deux fois sur deux actes ; il est ici une seule fois, pour
+     * tous.
+     */
+    const suivre = (dits: string[], ats: number[], setN: (n: number) => void) => {
+      setN(0);
+      setCaption(dits[0] ?? "");
+      ats.forEach((ms, i) => {
+        if (i === 0) return;
+        window.setTimeout(() => {
+          setN(i);
+          setCaption(dits[i]);
+        }, ms);
+      });
+    };
 
     // Le récit « on vous fait connaître » n'existe qu'en déonto ouverte : on ne
     // montre ni offre ni annonce à un cabinet de santé ou de droit.
     if (avisAllowed && G) {
-      // ── 1. CE QUE CHERCHENT LES HABITANTS ────────────────────────────────
+      // ── ACTE 3. CE MIDI, DANS SA VILLE ───────────────────────────────────
+      //
+      // L'ACTE QUI MANQUAIT LE PLUS. Le Direct n'était jamais nommé de toute
+      // la démonstration : le commerçant entendait « votre annonce circule »
+      // sans jamais voir OÙ. Ici il voit l'écran que les habitants ouvrent
+      // dans la rue, avant même qu'on lui parle de lui.
       steps.push({
-        title: `Ce midi, à ${villeAff || "votre ville"}`,
+        title: `${G.quand}, à ${laVille}`,
         say: SAY_QUI,
         enter: () => {
           chime();
-          setQuiN(0);
           setScene("qui");
-          window.setTimeout(() => setQuiN(1), QUI_AT.ville);
-          window.setTimeout(() => setQuiN(2), QUI_AT.ignore);
+          suivre(QUI_DIT, QUI_AT, setQuiN);
         },
       });
 
-      // ── 2. CE QUE PERSONNE NE MONTRE ─────────────────────────────────────
+      // ── ACTE 4. ET VOUS ? ────────────────────────────────────────────────
+      //
+      // On vient de montrer la ville ; on montre maintenant qu'il n'y est pas.
+      // Sans le compliment du deuxième temps, la phrase se lit comme un
+      // reproche sur son ardoise — et il se ferme au lieu d'écouter.
       steps.push({
-        title: "Mais qui la voit ?",
+        title: "Et vous ?",
         say: SAY_INVISIBLE,
         enter: () => {
-          setInvN(0);
           setScene("invisible");
-          window.setTimeout(() => setInvN(1), INVISIBLE_AT.autres);
-          window.setTimeout(() => setInvN(2), INVISIBLE_AT.verdict);
+          suivre(INVISIBLE_DIT, INVISIBLE_AT, setInvN);
         },
       });
 
-      // ── 3. LE GESTE ──────────────────────────────────────────────────────
+      // ── ACTE 5. LE GESTE ─────────────────────────────────────────────────
+      //
+      // Trois temps : la photo, ce qu'elle en tire, et où ça part. Le
+      // troisième n'a pas sa phrase à lui — il tombe sur les deux mots qui le
+      // nomment, au milieu de la seconde.
       steps.push({
         title: G.geste,
         say: SAY_PHOTO,
         enter: () => {
           chime();
-          setPhotoN(0);
           setScene("photo");
-          window.setTimeout(() => setPhotoN(1), PHOTO_AT.lit);
-          window.setTimeout(() => setPhotoN(2), PHOTO_AT.publie);
+          suivre(PHOTO_DIT, PHOTO_AT, setPhotoN);
+          window.setTimeout(() => setPhotoN(2), PHOTO_OU);
         },
       });
 
-      // ── 4. CE QUI LUI REVIENT ────────────────────────────────────────────
+      // ── ACTE 6. CE QUI LUI REVIENT ───────────────────────────────────────
       //
       // L'acte qui manquait, et le seul où quelque chose revient VERS lui.
       // Tout le reste de la démonstration décrit ce que ClikMe fait ; celui-ci
@@ -551,7 +615,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
       // Les lignes tombent une par une, avec un temps de silence entre elles :
       // affichées d'un bloc, elles se lisent comme un tableau de bord de plus.
       steps.push({
-        title: "Et voilà ce qui se passera ensuite",
+        title: "Ce qui vous revient",
         say: SAY_RETOUR,
         enter: () => {
           chime();
@@ -559,10 +623,6 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           setScene("retour");
           // Chaque ligne tombe quand la voix l'attaque — plus sur un minuteur
           // qui dérivait dès qu'on retouchait une phrase.
-          //
-          // LA LÉGENDE SUIT, ELLE AUSSI. Affichée d'un bloc, elle donnait les
-          // quatre chiffres au bas de l'écran avant que la première ligne ne
-          // soit apparue : on lisait la conclusion avant la démonstration.
           setCaption("Et voilà ce qui se passera ensuite.");
           RETOUR_AT.forEach((ms, i) => {
             window.setTimeout(() => {
@@ -575,22 +635,18 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     }
 
     if (avisAllowed) {
-      // ── 5. LE RESTE DE LA JOURNÉE ────────────────────────────────────────
-      //     L'acte métier, resserré : trois gestes et la mémoire. Il arrive
-      //     APRÈS le retour économique, parce qu'il ne vaut que si l'on a
-      //     d'abord compris à quoi sert de dire ce qui se passe.
+      // ── ACTE 7. ET CE N'EST PAS QUE POUR MIDI ────────────────────────────
+      //     L'acte métier, resserré : trois gestes et la demande inversée. Il
+      //     arrive APRÈS le retour économique, parce qu'il ne vaut que si l'on
+      //     a d'abord compris à quoi sert de dire ce qui se passe.
       if (actesListe.length) {
         steps.push({
-          title: "Et quand les choses changent",
+          title: "Et ce n'est pas que pour midi",
           say: SAY_METIER,
           enter: () => {
             chime();
             setMetierN(0);
             setScene("metier");
-            // LA LÉGENDE SUIT LES TEMPS, ELLE AUSSI. Affichée d'un bloc, elle
-            // posait toutes les phrases au bas de l'écran dès la première
-            // seconde — c'est-à-dire exactement ce que cet acte cherche à
-            // éviter : tout en même temps, rien de compris.
             setCaption(INTRO_ACTE);
             METIER_AT.forEach((ms, i) => {
               window.setTimeout(() => {
@@ -602,23 +658,24 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
         });
       }
 
-      // ── 6. LA BOUCLE ─────────────────────────────────────────────────────
-      //     La première phrase de la page d'accueil, rendue à la fin.
+      // ── ACTE 8. LA BOUCLE, QUI EST AUSSI LA FIN ──────────────────────────
+      //     La première phrase de la page d'accueil, rendue à la fin — et le
+      //     rappel de l'acte 2 : le site n'était que le point de départ.
+      //
+      //     IL N'Y A PLUS D'ACTE « À VOUS ». Il redisait ce que l'écran de
+      //     décision affiche déjà, deux fois de suite et avec les mêmes mots ;
+      //     la démonstration retombait entre les deux. Le bouton arrive quand
+      //     elle se tait.
       steps.push({
         title: "Votre commerce, en direct",
         say: SAY_BOUCLE,
-        enter: () => { setScene("boucle"); },
+        enter: () => {
+          chime();
+          setScene("boucle");
+          suivre(BOUCLE_DIT, BOUCLE_AT, setBoucleN);
+        },
       });
     }
-
-    // 6 — À VOUS : elle s'efface, le site reste entier sous les yeux du pro.
-    //     L'écran de décision arrive à la fin de sa phrase, quand elle nomme
-    //     le bouton — il est là au moment où elle le désigne.
-    steps.push({
-      title: "À vous",
-      say: SAY_FIN,
-      enter: () => { setScene("final"); },
-    });
 
     const total = steps.length;
     // Durée de repli, utilisée UNIQUEMENT si l'audio est bloqué : c'est alors le
@@ -631,14 +688,23 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
-      // Le titre d'étape s'affiche tout de suite (repère de progression). La SCÈNE
-      // (et ses animations) démarre PILE quand la voix commence — plus quand la voix
-      // arrive après une animation déjà terminée. onReveal() est appelé au démarrage
-      // réel de la voix (ou en repli si l'audio est bloqué).
-      setHead({ n: i + 1, total, title: st.title });
-      setCaption(st.say);
+      // TOUT L'ACTE BASCULE EN MÊME TEMPS QUE LA VOIX — titre, légende et scène.
+      //
+      // Entre `speak()` et le premier mot il s'écoule une à deux secondes. Le
+      // titre et la légende étaient posés AVANT cet appel : pendant ce délai,
+      // le bandeau annonçait « Et vous ? » et le bas de l'écran donnait la
+      // réplique entière du prochain acte, par-dessus l'image du précédent.
+      // C'est exactement ce qui rendait la démonstration confuse — trois
+      // sources qui ne racontaient pas la même seconde.
+      //
+      // `onReveal` est appelé au démarrage RÉEL de la voix (ou en repli si
+      // l'audio est bloqué), donc rien ne peut rester en arrière.
       speak(st.say);
-      await awaitSpeech(est(st.say), () => st.enter());
+      await awaitSpeech(est(st.say), () => {
+        setHead({ n: i + 1, total, title: st.title });
+        setCaption(st.say);
+        st.enter();
+      });
       if (cancelled.current) return;
     }
     if (cancelled.current) return;
@@ -662,13 +728,15 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
   const explore = () => { cancelled.current = true; stopSpeaking(); unbuild(); setPhase("done"); };
 
   /**
-   * L'écran de décision. Il s'affiche DEUX fois de suite, à l'identique : une
-   * fois pendant que l'assistante prononce sa dernière phrase (`enScene`), une
-   * fois quand elle a fini. Le commerçant ne voit donc pas de bascule — l'écran
-   * était déjà là quand elle a nommé le bouton.
+   * L'écran de décision, et il ne s'affiche plus qu'UNE fois.
+   *
+   * Il se jouait deux fois de suite à l'identique — une pendant que
+   * l'assistante prononçait une dernière réplique qui décrivait ce qu'il
+   * affiche déjà, une après. Cette réplique a disparu avec l'acte « À vous » :
+   * la boucle est la fin, et le bouton arrive quand elle se tait.
    */
-  const ecranFinal = (enScene: boolean) => (
-    <div className={`dtour-end${enScene ? " enscene" : ""}`}>
+  const ecranFinal = () => (
+    <div className="dtour-end">
             <div className="dtour-mark sm"><span>✦</span></div>
             {/* Le bénéfice, pas l'offre. « Sans engagement » occupait l'une des
                 trois grandes cases alors que ce n'est pas un bénéfice produit :
@@ -681,13 +749,17 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
               <div className="end-i"><span>📍</span>Relié au Direct de {villeAff || "votre ville"}</div>
             </div>
             <div className="end-cta">
-              <button className="end-go" onClick={keep}>✓ Garder gratuitement</button>
+              {/* « Garder mon site gratuitement » : c'est le libellé que la
+                  démonstration a promis, et c'est celui que le commerçant
+                  cherche des yeux. Raccourci en « Garder gratuitement », il
+                  l'obligeait à vérifier de quoi on parle. */}
+              <button className="end-go" onClick={keep}>✓ Garder mon site gratuitement</button>
               <button className="end-sec" onClick={explore}>Explorer mon site</button>
-              {avisAllowed && !enScene && (
+              {avisAllowed && (
                 <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
               )}
             </div>
-            {!enScene && <div className="end-fine">Sans engagement · options activables plus tard</div>}
+            <div className="end-fine">Sans engagement · options activables plus tard</div>
           </div>
   );
 
@@ -784,6 +856,14 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             opacity:0;animation:dtPiv .55s cubic-bezier(.22,1,.36,1) .15s forwards;}
           .cp-2{margin-top:18px;font-size:15px;line-height:1.55;color:#8FA79A;
             opacity:0;animation:dtPiv .55s ease 1.25s forwards;}
+          /* LA BOUCLE S'OUVRE EN PARLANT, pas en criant. Les deux premières
+             phrases rappellent l'acte 2 — le site n'était que le point de
+             départ — et seule la troisième mérite les capitales. Écrite en
+             gros dès le premier mot, la clôture n'avait plus de progression. */
+          .bo-0{font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;
+            opacity:0;animation:dtPiv .5s ease forwards;}
+          .bo-0b{margin-top:8px;font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;
+            opacity:0;animation:dtPiv .5s ease forwards;}
           .bo-1{font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.03em;color:#fff;text-wrap:balance;
             opacity:0;animation:dtPiv .55s cubic-bezier(.22,1,.36,1) .1s forwards;}
           .bo-2{margin-top:6px;font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.03em;text-wrap:balance;
@@ -798,7 +878,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .bo-3 span:nth-child(4){animation-delay:1.75s}
           @media(min-width:520px){.cp-1{font-size:27px;}.bo-1,.bo-2{font-size:31px;}}
           @media(prefers-reduced-motion:reduce){
-            .piv-2,.piv-3,.cp-1,.cp-2,.bo-1,.bo-2,.bo-3 span{animation:none;opacity:1;}
+            .piv-2,.piv-3,.cp-1,.cp-2,.bo-0,.bo-0b,.bo-1,.bo-2,.bo-3 span{animation:none;opacity:1;}
           }
           .dtour-card{background:#fff;border-radius:22px;padding:22px 22px 20px;max-width:360px;width:100%;max-height:calc(100dvh - 258px);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 40px 90px -24px rgba(0,0,0,.7);font-family:'Inter',system-ui,sans-serif;animation:dtCardIn .42s cubic-bezier(.22,1,.36,1);pointer-events:auto;}
           @keyframes dtCardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
@@ -1203,42 +1283,43 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;
             opacity:0;animation:dtPiv .5s ease .45s forwards;}
           .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;}
-          /* La carte : des points, pas une vraie carte. Une vue de la ville
-             serait fausse pour toutes les villes sauf une. */
-          .qi-carte{position:relative;width:min(280px,74vw);height:150px;margin:26px 0 0;opacity:0;
-            transition:opacity .6s ease;}
-          .qi-carte.on{opacity:1;}
-          .qi-carte i{position:absolute;width:7px;height:7px;border-radius:50%;background:#4E6A5C;
-            opacity:0;animation:dtPiv .4s ease forwards;}
-          .qi-carte i:nth-child(6n+1){left:8%;}   .qi-carte i:nth-child(6n+2){left:26%;}
-          .qi-carte i:nth-child(6n+3){left:44%;}  .qi-carte i:nth-child(6n+4){left:62%;}
-          .qi-carte i:nth-child(6n+5){left:80%;}  .qi-carte i:nth-child(6n){left:93%;}
-          .qi-carte i:nth-child(-n+6){top:8%;}
-          .qi-carte i:nth-child(n+7):nth-child(-n+12){top:70%;}
-          .qi-carte i:nth-child(n+13){top:40%;}
-          .qi-vous{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-            background:linear-gradient(115deg,#12B981,#0EA5A5);color:#04120C;border-radius:999px;
-            padding:8px 15px;font-size:13px;font-weight:800;white-space:nowrap;max-width:80%;
-            overflow:hidden;text-overflow:ellipsis;box-shadow:0 0 0 6px rgba(18,185,129,.16);}
-          .qi-d{margin-top:20px;font-size:14.5px;color:#8FA79A;opacity:0;animation:dtPiv .5s ease forwards;}
-          .qi-x{margin-top:14px;font-size:clamp(19px,4.4vw,25px);font-weight:850;letter-spacing:-.03em;
-            color:#fff;text-wrap:balance;opacity:0;animation:dtPiv .5s cubic-bezier(.22,1,.36,1) forwards;}
 
-          /* ── CE QUE PERSONNE NE MONTRE ──────────────────────────────── */
+          /* LE DIRECT, DANS LA MAIN D'UN HABITANT. Une carte de la ville avec
+             des points ne disait pas ce qu'il fallait comprendre : ce n'est pas
+             un annuaire qu'on consulte chez soi la veille, c'est un écran qu'on
+             ouvre dans la rue au moment où l'on choisit. */
+          .qi-tel{margin-top:22px;width:min(268px,72vw);border-radius:20px;padding:14px 14px 15px;text-align:left;
+            background:linear-gradient(168deg,#122019,#0A1310);border:1px solid rgba(126,230,192,.22);
+            box-shadow:0 26px 60px -22px rgba(0,0,0,.85);opacity:0;
+            animation:dtPiv .5s cubic-bezier(.22,1,.36,1) forwards;}
+          .qi-tb{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;letter-spacing:-.01em;color:#fff;}
+          .qi-tb span{font-size:12px;line-height:1;}
+          .qi-tn{margin-top:3px;font-size:11.5px;color:#8FA79A;}
+          .qi-tl{margin-top:12px;display:flex;flex-direction:column;gap:7px;}
+          .qi-ti{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:650;color:#EAF3EE;
+            background:rgba(255,255,255,.05);border-radius:12px;padding:9px 11px;opacity:0;}
+          .qi-ti.on{animation:dtBub .42s cubic-bezier(.22,1,.36,1) forwards;}
+          .qi-ti span{font-size:15px;line-height:1;flex:none;}
+
+          /* ── ET VOUS ? ──────────────────────────────────────────────── */
           .dtour-card.iv{text-align:center;}
           .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#141A2E;text-wrap:balance;}
           .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#1F2A24;color:#EBE7D9;
             display:flex;flex-direction:column;gap:5px;font-family:Georgia,serif;}
           .iv-ard span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9FB3A8;}
           .iv-ard i{font-style:normal;font-size:14.5px;}
-          .iv-q{margin-top:16px;font-size:17px;font-weight:800;color:#141A2E;letter-spacing:-.01em;}
-          .iv-ch{margin-top:11px;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;}
-          .iv-ch span{font-size:12.5px;font-weight:700;color:#6E7290;background:#F1F1F6;border-radius:999px;
-            padding:7px 12px;opacity:0;}
-          .iv-ch.on span{animation:dtBub .4s ease forwards;}
-          .iv-x{margin-top:18px;padding-top:14px;border-top:1px solid #F0EFF7;
-            font-size:clamp(15px,3.4vw,18px);font-weight:850;letter-spacing:-.02em;line-height:1.2;
-            color:#B23A17;text-wrap:balance;opacity:0;animation:dtPiv .45s cubic-bezier(.22,1,.36,1) forwards;}
+          /* LE COMPLIMENT. Il n'est pas de la politesse : sans lui, la phrase
+             suivante se lit comme un reproche sur son ardoise, et il se ferme
+             au lieu d'écouter. Il est donc écrit en petit et en gris — un
+             constat, pas une accusation. */
+          .iv-ok{margin-top:15px;font-size:14.5px;line-height:1.45;color:#6E7290;text-wrap:balance;
+            opacity:0;animation:dtPiv .45s ease forwards;}
+          /* LE RETOURNEMENT. Il n'est plus crié en capitales : « ET EUX SONT À
+             QUATRE CENTS MÈTRES » hurlait sur une carte blanche. Une phrase
+             posée, en gros, suffit — c'est le sens qui porte. */
+          .iv-x{margin-top:16px;padding-top:15px;border-top:1px solid #F0EFF7;
+            font-size:clamp(16px,3.6vw,19px);font-weight:800;letter-spacing:-.02em;line-height:1.28;
+            color:#141A2E;text-wrap:balance;opacity:0;animation:dtPiv .45s cubic-bezier(.22,1,.36,1) forwards;}
 
           /* ── LE GESTE ───────────────────────────────────────────────── */
           .dtour-card.ph{text-align:center;}
@@ -1285,7 +1366,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .rt-i.fin{margin-top:4px;padding-top:12px;border-top:1px solid #E7E4FB;}
           .rt-i.fin .rt-t{font-size:16px;font-weight:800;letter-spacing:-.015em;}
           @media (prefers-reduced-motion:reduce){
-            .qi-n,.qi-q,.qi-d,.qi-x,.iv-ch span,.iv-x,.ph-l,.ph-p,.ph-ou,.rt-i{animation:none;opacity:1;transform:none;}
+            .qi-n,.qi-q,.qi-tel,.qi-ti,.iv-ok,.iv-x,.ph-l,.ph-p,.ph-ou,.rt-i{animation:none;opacity:1;transform:none;}
             .ph-flash{display:none;}
           }
 
@@ -1311,7 +1392,6 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           .mt-chip{align-self:flex-start;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;
             letter-spacing:.01em;color:#4B3A9E;background:#EFEBFF;border-radius:999px;padding:6px 12px;}
           .mt-chip span{font-size:13px;line-height:1;}
-          .mt-chip.mem{color:#0E7C5A;background:#E4F7EE;}
           /* CE QUE LE COMMERÇANT DIT. En gros, en premier, et entre guillemets :
              c'est lui qui apporte le fait, toujours. L'assistante ne sait pas
              combien il lui reste de tables et cet écran ne doit jamais laisser
@@ -1332,24 +1412,25 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
              pied de page au lieu d'un trou. */
           .mt-pro{margin-top:auto;border-top:1px solid #F0EFF7;padding-top:12px;font-size:11.5px;line-height:1.45;color:#6E7290;
             opacity:0;animation:dtBub .5s ease 1.2s forwards;}
-          /* LA MÉMOIRE : ses propres gestes, reclassés par ce qu'ils rapportent.
-             Aucune fonctionnalité nouvelle à l'écran — les mêmes intitulés que
-             les cartes précédentes, avec un résultat à droite. */
-          .mt-mem{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
-          .mt-ml{display:flex;align-items:center;gap:9px;background:#F5F4FF;border:1px solid #E7E4FB;border-radius:13px;padding:10px 12px;
-            opacity:0;transform:translateY(9px);animation:dtBub .45s cubic-bezier(.22,1,.36,1) forwards;}
-          .mt-mle{font-size:16px;line-height:1;flex:none;}
-          .mt-ml b{flex:1;min-width:0;font-size:12.5px;font-weight:800;color:#141A2E;letter-spacing:-.01em;line-height:1.25;}
-          .mt-ml em{flex:none;font-style:normal;padding-left:8px;font-size:11.5px;font-weight:800;color:#0E7C5A;text-align:right;line-height:1.3;max-width:54%;}
+          /* L'HEURE DU TEMPS. Sans elle, les trois cartes se lisaient comme
+             trois fonctions d'un menu ; avec elle, c'est une journée qui
+             avance, et c'est exactement ce que l'acte doit faire comprendre. */
+          .mt-hh{align-self:flex-start;margin-bottom:9px;font-family:'Inter',system-ui,sans-serif;
+            font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#9A9FC0;}
+          /* LA DEMANDE INVERSÉE : ce ne sont plus ses mots qui ouvrent la
+             carte, ce sont ceux des habitants. La puce change donc de couleur —
+             c'est le seul temps où quelque chose arrive vers lui. */
+          .mt-chip.dem{color:#0E7C5A;background:#E4F7EE;}
+          .mt-dem{margin-top:14px;border-radius:14px;padding:13px 14px;background:#F1FBF6;border:1px solid #CDEEDF;
+            font-size:15.5px;line-height:1.4;font-weight:750;color:#0B3D2C;text-align:left;
+            opacity:0;transform:translateY(9px);animation:dtBub .45s cubic-bezier(.22,1,.36,1) .2s forwards;}
           @media (max-width:380px){
             .mt-card{min-height:290px;padding:16px 15px 14px;}
-            .mt-dis{font-size:14.5px;}
+            .mt-dis,.mt-dem{font-size:14.5px;}
             .mt-out{font-size:13px;}
-            .mt-ml b{font-size:11.5px;}
-            .mt-ml em{font-size:11px;}
           }
           @media (prefers-reduced-motion:reduce){
-            .mt-card,.mt-arrow,.mt-out,.mt-pro,.mt-ml{animation:none;opacity:1;transform:none;}
+            .mt-card,.mt-arrow,.mt-out,.mt-pro,.mt-dem{animation:none;opacity:1;transform:none;}
           }
 
           /* ── L'icône rejoint son emplacement (le bouton « Action Flash ») ── */
@@ -1508,8 +1589,6 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
           /* Écran de passation (fin) — les grandes suggestions */
           /* Pendant l'étape 6, l'écran laisse la place à la barre de légende :
              elle doit rester lisible sous lui, et cliquable au-dessus. */
-          .dtour-end.enscene{z-index:88;padding-bottom:var(--dtbar,140px);}
-          @media (max-height:720px){.dtour-end.enscene{gap:9px;}.dtour-end.enscene .es{font-size:12.5px;}}
           .dtour-end{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
             padding:34px 24px calc(32px + env(safe-area-inset-bottom));color:#EDF0FA;font-family:'Inter',system-ui,sans-serif;
             background:linear-gradient(165deg,#141A2E 0%,#0C1020 60%,#080A14 100%);animation:dtFade .3s ease;}
@@ -1588,18 +1667,24 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
               le fil » : l'inverse de ce qui se passe. Ce sont maintenant
               de petites fenêtres de sites, le fil s'y duplique, et des
               habitants apparaissent autour — on voit QUI découvre l'annonce. */}
+          {/* ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ────────────────────
+              La démo montrait UNE annonce, une seule fois : le commerçant en
+              concluait ce qu'il conclut toujours, « c'est un truc à
+              promotions ». Chaque temps porte donc son HEURE — c'est elle qui
+              transforme une liste de fonctions en une journée qui avance. */}
           {scene === "metier" && tempsCourant && (
             <div className="dtour-ov mt-ov">
               <div className="mt-wrap">
                 <div className="mt-dots" aria-hidden="true">
                   {actesListe.map((t, i) => (
-                    <i key={t.genre === "geste" ? t.cle : "memoire"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
+                    <i key={t.genre === "geste" ? t.cle : "demande"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
                   ))}
                 </div>
                 {/* La clé force le remontage : sans elle, React réutiliserait la
                     carte précédente et le texte changerait sans animation — on
                     lirait un rafraîchissement, pas un temps qui succède. */}
                 <div className="mt-card" key={metierN}>
+                  <div className="mt-hh">{tempsCourant.heure}</div>
                   {tempsCourant.genre === "geste" ? (
                     <>
                       <div className="mt-chip"><span>{tempsCourant.emoji}</span>{tempsCourant.label}</div>
@@ -1610,17 +1695,18 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
                     </>
                   ) : (
                     <>
-                      <div className="mt-chip mem"><span>📈</span>{MARQUE} apprend ce qui marche</div>
-                      <div className="mt-mem">
-                        {tempsCourant.lignes.map((l, i) => (
-                          <div className="mt-ml" key={l.label} style={{ animationDelay: `${420 + i * 320}ms` }}>
-                            <span className="mt-mle">{l.emoji}</span>
-                            <b>{l.label}</b>
-                            <em>{l.resultat}</em>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-pro">Vous ne recommencez pas de zéro chaque semaine.</div>
+                      {/* LA DEMANDE INVERSÉE, ET AUCUNE ÉTIQUETTE DESSUS.
+                          Un bandeau « bientôt » a été proposé trois fois et
+                          refusé trois fois : il transformait le seul moment
+                          inspirant de l'acte en aveu que ça ne marche pas
+                          encore, juste avant l'écran de décision. Le sens de
+                          la scène le dit d'ailleurs tout seul — c'est la seule
+                          où ce n'est pas lui qui commence. */}
+                      <div className="mt-chip dem"><span>🔎</span>Les habitants cherchent quelque chose</div>
+                      <div className="mt-dem">{tempsCourant.question}</div>
+                      <div className="mt-arrow" aria-hidden="true"><i /></div>
+                      <div className="mt-out"><span className="mt-av" aria-hidden="true">✦</span>{tempsCourant.proposition}</div>
+                      <div className="mt-pro">Cette fois, ce sont eux qui viennent vers vous.</div>
                     </>
                   )}
                 </div>
@@ -1628,7 +1714,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             </div>
           )}
 
-          {/* ── LA BASCULE ────────────────────────────────────────────────
+          {/* ── ACTE 2 · LA BASCULE ───────────────────────────────────────
               Le site vient d'être montré. Cette phrase le garde et le
               déclasse : il est le point de départ, pas la finalité. Sans elle,
               la démonstration entière parlait d'un site web. */}
@@ -1641,34 +1727,52 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             </div>
           )}
 
-          {/* ── CE QUE CHERCHENT LES HABITANTS ────────────────────────────
-              On n'ouvre plus sur l'outil. On ouvre sur des gens qui cherchent
-              quelque chose, à quatre cents mètres, et qui ne le trouvent pas.
-              Le nombre parle de la VILLE — « 500 personnes cherchent » se
-              lisait « ClikMe a 500 utilisateurs ici ». */}
+          {/* ── ACTE 3 · CE MIDI, DANS SA VILLE ───────────────────────────
+              L'ÉCRAN QUI MANQUAIT À TOUTE LA DÉMONSTRATION. Le Direct n'y
+              était jamais montré : le commerçant entendait « votre annonce
+              circule » sans jamais voir OÙ. Il le voit ici, avant même qu'on
+              lui parle de lui — un téléphone qu'on ouvre dans la rue, et trois
+              lignes qui disent ce qu'on y trouve.
+
+              Le nombre parle de la VILLE, pas de nous : « mille personnes
+              cherchent » se lisait « ClikMe a mille utilisateurs ici », et le
+              jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
             <div className="dtour-ov dt-noir qi">
               <div className="qi-n">{G.combien}</div>
               <div className="qi-q">
-                {habitantsDe(villeAff)} se demandent<br />
+                {gentile} vont {G.verbe}<br />
                 <b>{G.cherchent}</b>
               </div>
-              <div className={`qi-carte${quiN >= 1 ? " on" : ""}`} aria-hidden="true">
-                {[...Array(18)].map((_, i) => (
-                  <i key={i} style={{ animationDelay: `${i * 60}ms` }} />
-                ))}
-                <span className="qi-vous">{nom}</span>
-              </div>
-              {quiN >= 1 && <div className="qi-d">Votre commerce est peut-être à 400 m.</div>}
-              {quiN >= 2 && <div className="qi-x">MAIS ILS NE LE SAVENT PAS.</div>}
+              {quiN >= 1 && (
+                <div className="qi-tel">
+                  <div className="qi-tb"><span aria-hidden="true">📍</span>Le Direct de {laVille}</div>
+                  <div className="qi-tn">ce qui se passe autour d&apos;eux, maintenant</div>
+                  <div className="qi-tl">
+                    {LE_DIRECT_MONTRE.map((l, i) => (
+                      <div
+                        className={`qi-ti${quiN >= 2 ? " on" : ""}`}
+                        key={l.quoi}
+                        style={{ animationDelay: `${i * 170}ms` }}
+                      >
+                        <span aria-hidden="true">{l.icone}</span>{l.quoi}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── CE QUE PERSONNE NE MONTRE ─────────────────────────────────
-              Google, Instagram, la vitrine : tout le monde montre son commerce.
-              Personne ne montre ce qu'il sert AUJOURD'HUI. C'est vrai, c'est
-              vérifiable, et c'est le seul argument qui lui fait dire
-              « effectivement ». */}
+          {/* ── ACTE 4 · ET VOUS ? ────────────────────────────────────────
+              « Mais qui la voit ? Google, Instagram, votre vitrine… » a été
+              retiré : deux plateformes et un bout de verre dans la même liste,
+              et un pronom qui ne renvoyait à rien. Ça ouvrait un débat sur le
+              référencement au lieu de fermer une évidence.
+
+              Trois temps le remplacent, et le deuxième est un compliment. Ce
+              n'est pas de la politesse : sans lui, la phrase d'après se lit
+              comme un reproche sur son ardoise, et il se ferme. */}
           {scene === "invisible" && G && (
             <div className="dtour-ov">
               <div className="dtour-card iv">
@@ -1677,24 +1781,16 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
                   <span>{G.extrait.titre}</span>
                   {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
                 </div>
-                <div className="iv-q">Mais qui la voit&nbsp;?</div>
-                <div className={`iv-ch${invN >= 1 ? " on" : ""}`}>
-                  {VITRINES.map((t, i) => (
-                    <span key={t} style={{ animationDelay: `${i * 160}ms` }}>{t}</span>
-                  ))}
-                </div>
-                {invN >= 2 && (
-                  <div className="iv-x">
-                    PERSONNE NE MONTRE<br />{G.pasVu.toUpperCase()}.
-                  </div>
-                )}
+                {invN >= 1 && INVISIBLE_DIT[1] && <div className="iv-ok">{INVISIBLE_DIT[1]}</div>}
+                {invN >= 2 && INVISIBLE_DIT[2] && <div className="iv-x">{INVISIBLE_DIT[2]}</div>}
               </div>
             </div>
           )}
 
-          {/* ── LE GESTE ──────────────────────────────────────────────────
+          {/* ── ACTE 5 · LE GESTE ─────────────────────────────────────────
               Trois secondes, et rien d'autre à faire. L'assistante lit, écrit,
-              publie — c'est la fonction telle qu'elle existe aujourd'hui. */}
+              publie — c'est la fonction telle qu'elle existe aujourd'hui, et
+              les deux destinations s'affichent quand elle les nomme. */}
           {scene === "photo" && G && (
             <div className="dtour-ov">
               <div className="dtour-card ph">
@@ -1721,25 +1817,27 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
                 {photoN >= 2 && (
                   <div className="ph-ou">
                     <span>✓ Sur votre site</span>
-                    <span>✓ Dans Le Direct de {villeAff || "votre ville"}</span>
+                    <span>✓ Dans Le Direct de {laVille}</span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* ── CE QUI LUI REVIENT ────────────────────────────────────────
-              L'ACTE QUI MANQUAIT À TOUTE LA DÉMONSTRATION. Partout ailleurs on
-              décrit ce que ClikMe fait ; ici, et seulement ici, quelque chose
-              revient VERS lui. C'est l'écran qui décide.
+          {/* ── ACTE 6 · CE QUI LUI REVIENT ───────────────────────────────
+              L'ACTE QUI MANQUAIT. Partout ailleurs on décrit ce que ClikMe
+              fait ; ici, et seulement ici, quelque chose revient VERS lui.
+              C'est l'écran qui décide.
 
-              LES CHIFFRES SONT UNE PROJECTION, et l'étiquette le dit avant
-              qu'on ait à le demander. Le titre est au FUTUR pour la même
-              raison : « voilà ce qui se passe » aurait été un relevé. */}
+              CES CHIFFRES SONT INVENTÉS, et le bandeau le dit sans détour.
+              « Maquette — ce que vous verrez » promettait ces chiffres-là ;
+              il annonce maintenant l'inverse — ce ne sont PAS ses chiffres.
+              Le titre reste au futur pour la même raison : « voilà ce qui se
+              passe » aurait été un relevé. */}
           {scene === "retour" && G && (
             <div className="dtour-ov">
               <div className="dtour-card rt">
-                <div className="rt-k">Maquette — ce que vous verrez</div>
+                <div className="rt-k">Exemple · pas encore vos chiffres</div>
                 <div className="rt-h">Et voilà ce qui se passera ensuite.</div>
                 <div className="rt-l">
                   {G.retours.map((r, i) => (
@@ -1760,18 +1858,23 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
             </div>
           )}
 
+          {/* ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ──────────────────
+              Elle revient sur l'acte 2 — le site n'était que le point de
+              départ — puis rend la première phrase de la page d'accueil.
+              L'écran de décision arrive quand elle se tait : il n'y a plus
+              d'acte « À vous » pour redire ce qu'il affiche déjà. */}
           {scene === "boucle" && (
             <div className="dtour-ov dt-noir">
-              <div className="bo-1">VOTRE COMMERCE.</div>
-              <div className="bo-2">EN DIRECT DANS VOTRE VILLE.</div>
-              <div className="bo-3">
-                <span>Votre site.</span><span>Votre assistante.</span>
-                <span>Votre actualité.</span><span>Votre ville.</span>
-              </div>
+              <div className="bo-0">{BOUCLE_DIT[0]}</div>
+              {boucleN >= 1 && <div className="bo-0b">{BOUCLE_DIT[1]}</div>}
+              {boucleN >= 2 && (
+                <>
+                  <div className="bo-1" style={{ marginTop: 22 }}>VOTRE COMMERCE.</div>
+                  <div className="bo-2">EN DIRECT DANS VOTRE VILLE.</div>
+                </>
+              )}
             </div>
           )}
-
-          {scene === "final" && ecranFinal(true)}
 
           <div className="dtour-bar">
             <span className="mini" />
@@ -1780,7 +1883,7 @@ export function DemoTour({ slug, nom, villeAff, reviewsCount, avisAllowed, flash
         </>
       )}
 
-      {phase === "end" && ecranFinal(false)}
+      {phase === "end" && ecranFinal()}
 
       {/* BONUS (à la demande) : aller plus loin. WhatsApp / réseaux sociaux sont
           des options payantes ; la diffusion chez les commerces partenaires est

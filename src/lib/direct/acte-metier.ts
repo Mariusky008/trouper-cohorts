@@ -40,6 +40,9 @@ export type TempsMetier =
       emoji: string;
       /** L'intitulé du bouton, tel qu'il existe dans l'espace pro. */
       label: string;
+      /** L'heure où ce geste se fait. C'est elle qui transforme une liste de
+       *  fonctions en une journée qui avance. */
+      heure: string;
       /** Ce que l'assistante dit pour amener ce temps — une seule idée. */
       dit: string;
       /** Ce que le COMMERÇANT dit. C'est toujours lui qui apporte le fait. */
@@ -52,10 +55,16 @@ export type TempsMetier =
       promesse: string;
     }
   | {
-      genre: "memoire";
+      /** LA DEMANDE INVERSÉE — ce que les habitants cherchent, retourné vers
+       *  le commerçant. C'est la seule chose de cette démonstration qui n'est
+       *  pas encore construite ; elle ferme l'acte parce qu'elle dit où va le
+       *  produit, pas ce qu'il fait aujourd'hui. */
+      genre: "demande";
       dit: string;
-      /** Les gestes déjà montrés, reclassés par ce qu'ils rapportent. */
-      lignes: Array<{ emoji: string; label: string; resultat: string }>;
+      heure: string;
+      /** La demande, telle qu'elle lui arriverait. */
+      question: string;
+      proposition: string;
     };
 
 /**
@@ -73,6 +82,8 @@ export type TempsMetier =
  */
 type Narration = {
   rang: number;
+  /** L'heure de la journée où ce geste se fait. */
+  heure: string;
   dit: (v: Vocab) => string;
   dis: (x: Record<string, string>, v: Vocab) => string;
   /** La carte du jour se PHOTOGRAPHIE — un micro à cet endroit décrirait un
@@ -80,12 +91,12 @@ type Narration = {
   via?: "photo";
   /** Le scénario de démonstration, par-dessus celui de l'intention. */
   valeurs?: (now: Date, resto: boolean) => Record<string, string>;
-  resultat: string;
 };
 
 const NARRATION: Record<string, Narration> = {
   carte: {
     rang: 1,
+    heure: "11 h",
     // IL MONTRE, ELLE LIT. C'est la fonction telle qu'elle existe : il
     // photographie son ardoise, l'assistante la déchiffre et l'écrit. Faire
     // dire au commerçant le menu déjà rédigé donnait deux fois la même phrase
@@ -94,10 +105,10 @@ const NARRATION: Record<string, Narration> = {
     dit: () => "Le matin, vous me montrez votre ardoise : je la lis, je l'écris.",
     dis: () => "Voilà l'ardoise d'aujourd'hui.",
     via: "photo",
-    resultat: "3× plus vue le matin",
   },
   arrivage: {
     rang: 2,
+    heure: "7 h",
     dit: () => "À la livraison, vous me dites ce qui vient d'arriver.",
     dis: () => "Ma livraison du matin vient d'arriver.",
     // AUCUN PRODUIT NOMMÉ, et c'est voulu : cette même intention sert un
@@ -105,10 +116,10 @@ const NARRATION: Record<string, Narration> = {
     // en désigne un et donne aux deux autres une démonstration qui parle du
     // commerce d'à côté.
     valeurs: () => ({ quoi: "tout ce qui est arrivé ce matin", combien: "" }),
-    resultat: "parti avant midi 4 fois sur 5",
   },
   reste: {
     rang: 3,
+    heure: "14 h",
     // « EN FIN DE SERVICE » NE VEUT RIEN DIRE CHEZ UN FLEURISTE. Le même geste
     // se dit dans les mots du métier, sinon le commerçant comprend que la démo
     // parle d'un autre commerce que le sien.
@@ -124,10 +135,10 @@ const NARRATION: Record<string, Narration> = {
     // maison »). Servi à un fleuriste, il donnait une démonstration qui
     // parlait du commerce d'à côté.
     valeurs: (_now, resto): Record<string, string> => (resto ? {} : { combien: "6", quoi: "pièces du jour" }),
-    resultat: "3× plus de réponses le jeudi",
   },
   creneau: {
     rang: 4,
+    heure: "17 h 30",
     // C'EST LE COMMERÇANT QUI COMPTE SES TABLES. L'assistante n'a pas son
     // cahier de réservations et n'en aura jamais : elle ne peut pas savoir
     // qu'il en reste quatre. Elle demande, il répond, elle écrit.
@@ -147,34 +158,30 @@ const NARRATION: Record<string, Narration> = {
       fin: "",
       quoi: "",
     }),
-    resultat: "rempli en 40 min",
   },
   fideles: {
     rang: 5,
+    heure: "18 h",
     dit: () => "Un geste pour vos habitués ? Ils l'apprennent en premier.",
     dis: (x) => `Je voudrais leur offrir ${x.quoi}.`,
-    resultat: "1 client sur 4 revient",
   },
   realisation: {
     rang: 6,
+    heure: "16 h",
     dit: () => "Vous terminez un beau travail : une photo, et je l'écris.",
     dis: (x) => `Je viens de terminer ${x.quoi}.`,
-    resultat: "1 rendez-vous sur 5 vient de là",
   },
   venir: {
     rang: 7,
+    heure: "10 h",
     dit: () => "Une raison de passer aujourd'hui, qui s'arrête toute seule.",
     dis: (x) => `Aujourd'hui, ${x.quoi}, de ${heureLisible(x.de)} à ${heureLisible(x.a)}.`,
-    resultat: "2× plus de passages le matin",
   },
 };
 
-/** Combien de gestes avant la mémoire, par défaut.
- *
- *  L'acte est passé à TROIS dans la démonstration : il n'y est plus le sujet
- *  principal mais la suite de la journée, après le retour économique. Quatre
- *  cartes à cet endroit rallongeaient sans rien ajouter. */
-const GESTES_MAX = 4;
+/** Combien de gestes avant la demande inversée. Trois : au-delà, la journée
+ *  devient une liste. */
+const GESTES_MAX = 3;
 
 /**
  * Les temps de l'acte, pour ce métier-là.
@@ -205,6 +212,7 @@ export function acteMetier(
         cle: it.cle,
         emoji: it.emoji,
         label: it.action,
+        heure: n.heure,
         dit: n.dit(v),
         dis: n.dis(x, v),
         via: n.via === "photo" ? ("photo" as const) : ("voix" as const),
@@ -220,16 +228,11 @@ export function acteMetier(
   return [
     ...gestes,
     {
-      genre: "memoire",
-      dit: "Et je retiens ce qui marche chez vous : le jour, l'heure, ce qui fait revenir.",
-      // Les gestes qu'il vient de voir, reclassés. C'est ce rappel qui fait
-      // comprendre la mémoire sans l'expliquer : ce sont SES annonces, avec ce
-      // qu'elles ont donné — pas une fonctionnalité de plus à écouter.
-      lignes: gestes.slice(0, 3).map((g) => ({
-        emoji: g.emoji,
-        label: g.label,
-        resultat: NARRATION[g.cle].resultat,
-      })),
+      genre: "demande",
+      heure: "18 h",
+      dit: "Et un jour, ce sont eux qui vous diront ce qu'ils cherchent.",
+      question: "37 personnes cherchent un italien demain midi.",
+      proposition: "Voulez-vous leur proposer votre menu ?",
     },
   ];
 }
