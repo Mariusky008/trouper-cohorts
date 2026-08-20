@@ -92,6 +92,35 @@ export function messageReservation(r: Reservation): string {
 }
 
 /**
+ * LE MESSAGE QUI REND LA PLACE.
+ *
+ * CE QU'IL RÉPARE, et c'était le pire trou du parcours : le client prévenait le
+ * commerce en réservant — « Je réserve, mon code UM-7194 » — puis se désistait
+ * dans l'application, et PERSONNE ne le disait au commerçant. Il gardait une
+ * table pour quelqu'un qui ne viendrait pas. C'est exactement le no-show que ce
+ * produit existe pour éviter, et nous le fabriquions nous-mêmes.
+ *
+ * LE CODE EST LA CLÉ, et c'est pour ça qu'il est en tête : c'est la seule
+ * chose que le commerçant peut retrouver dans sa conversation. Sans lui, un
+ * « finalement je ne viens pas » au milieu d'un service ne désigne rien.
+ *
+ * COURT, ET SANS EXCUSE. « Je suis vraiment désolé, un imprévu… » invite à se
+ * justifier — et quelqu'un qui doit se justifier préfère ne rien envoyer. Or
+ * l'annulation prévenue vaut infiniment mieux que l'annulation silencieuse.
+ */
+export function messageDesistement(r: Pick<Reservation, "commerce" | "facon" | "titre" | "code" | "prenom">): string {
+  const lignes: string[] = [];
+  lignes.push(`Bonjour${r.commerce ? ` ${r.commerce}` : ""} !`);
+  if (r.code) lignes.push(`Je me désiste — code ${r.code}.`);
+  else lignes.push("Je me désiste.");
+  lignes.push(`Il s'agissait de « ${r.facon} »${r.titre ? ` — ${r.titre}` : ""}.`);
+  lignes.push("La place est de nouveau libre.");
+  if (r.prenom) lignes.push(`— ${r.prenom}`);
+  lignes.push("(envoyé depuis Le Direct)");
+  return lignes.join("\n");
+}
+
+/**
  * Le lien qui ouvre WhatsApp avec le message prêt.
  *
  * Chaîne vide si on n'a pas de numéro : l'écran n'affiche alors pas le bouton

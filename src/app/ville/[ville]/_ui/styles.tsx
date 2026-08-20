@@ -608,6 +608,23 @@ export function StylesDirect() {
   font-family:var(--fd),Georgia,serif;font-size:15.5px;font-weight:700;}
 .dir .clic-r{display:flex;gap:14px;margin-top:12px;align-items:center;flex-wrap:wrap;}
 .dir .clic-r a{font-size:13px;font-weight:800;color:var(--gd);text-decoration:none;}
+/* LA PLACE RENDUE — et le commerce qui ne le sait pas encore.
+   Ce bloc remplace la ligne le temps d'envoyer le message : sans lui, la
+   ligne disparaissait dans la seconde et le commerçant gardait une table
+   pour quelqu'un qui ne viendrait pas. */
+.dir .clic-rendu{display:flex;flex-direction:column;gap:9px;width:100%;margin-top:4px;
+  border:1px solid var(--hair);border-radius:15px;padding:13px;background:var(--paper);}
+.dir .clic-rendu-k{font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--ok,#0E7C5A);}
+.dir .clic-rendu-b{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  background:#25D366;color:#08140E;border-radius:999px;padding:12px;text-decoration:none;
+  font-family:var(--fd),Georgia,serif;font-size:15.5px;font-weight:700;}
+.dir .clic-rendu-b span{font-size:17px;line-height:1;}
+/* Appeler n'est pas WhatsApp : même forme, encre de la marque. */
+.dir .clic-rendu-b.tel{background:var(--ink);color:var(--paper);}
+.dir .clic-rendu-s{margin:0;font-size:12px;line-height:1.45;color:var(--soft);}
+.dir .clic-rendu-x{align-self:flex-end;border:none;background:none;padding:2px 4px;cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:700;color:var(--soft);text-decoration:underline;}
+
 /* Se désister est DISCRET, à droite et en gris : c'est une sortie, pas une
    action qu'on met en avant. Il ne devient rouge qu'à la confirmation. */
 .dir .clic-fin{margin-left:auto;}

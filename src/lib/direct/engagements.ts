@@ -18,7 +18,7 @@
 // incomplet à remplir.
 import { codeDe } from "@/lib/direct/code-bon";
 import { FACON_LABEL, estTypeClik } from "@/lib/direct/cliks";
-import { numeroReservations } from "@/lib/site-internet/pro-phone";
+import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -196,6 +196,9 @@ export type MonClic = {
   /** Son WhatsApp : c'est ici qu'on revient quand on a fermé l'application sans
    *  envoyer le message. Chaîne vide s'il n'en a pas. */
   telephone: string;
+  /** Le numéro à appeler quand il n'a pas de mobile — un fixe, le plus souvent
+   *  chez un restaurant. Sans lui, se désister ne prévient personne. */
+  telephoneAppel: string;
   /** Où en est le groupe, pour composer le message d'un collectif. */
   groupe: { participants: number; objectif: number } | null;
 };
@@ -250,13 +253,13 @@ export async function mesClics(supabase: unknown, habitantId: string, max = 30):
   }
 
   // Chez qui. Une seule lecture pour tous les commerces concernés.
-  const sites = new Map<string, { nom: string; slug: string; telephone: string }>();
+  const sites = new Map<string, { nom: string; slug: string; telephone: string; telephoneAppel: string }>();
   const siteIds = Array.from(new Set([...camp.values()].map((c) => str(c.site_id)).filter(Boolean)));
   if (siteIds.length) {
     try {
       const { data } = await sb
         .from("human_vitrine_sites")
-        .select("id, business_name, slug, whatsapp_phone_e164, metadata")
+        .select("id, business_name, slug, whatsapp_phone_e164, metadata, diagnostic")
         .in("id", siteIds);
       for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) {
         sites.set(str(r.id), {
@@ -264,7 +267,8 @@ export async function mesClics(supabase: unknown, habitantId: string, max = 30):
           slug: str(r.slug),
           // Le numéro que l'habitant recontacte depuis « Mes Clics » : celui de
           // garde pendant les congés, celui du patron le reste du temps.
-          telephone: numeroReservations(r as { whatsapp_phone_e164?: unknown; metadata?: unknown }),
+          telephone: numeroReservations(r as { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown }),
+          telephoneAppel: numeroAppel(r as { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown }),
         });
       }
     } catch {
@@ -299,6 +303,7 @@ export async function mesClics(supabase: unknown, habitantId: string, max = 30):
       slug: s?.slug ?? "",
       echeance: str(c?.echeance),
       telephone: s?.telephone ?? "",
+      telephoneAppel: s?.telephoneAppel ?? "",
       groupe:
         str(c?.type) === "collectif" && Number(c?.objectif) > 0
           ? { participants: Number(c?.participants) || 0, objectif: Number(c?.objectif) }

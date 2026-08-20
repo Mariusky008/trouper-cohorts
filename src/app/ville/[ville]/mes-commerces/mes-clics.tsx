@@ -134,7 +134,17 @@ export function MesClics({
             {/* SE DÉSISTER, ICI ET NULLE PART AILLEURS. C'est l'écran où l'on
                 voit ce qu'on a pris : c'est donc celui où l'on doit pouvoir le
                 rendre. Et une place rendue repart au premier qui attend. */}
-            <span className="clic-fin"><Desister campagneId={c.campagneId} ville={ville} /></span>
+            <span className="clic-fin"><Desister
+                campagneId={c.campagneId}
+                ville={ville}
+                commerce={c.commerce}
+                facon={c.facon}
+                titre={c.titre}
+                code={c.code}
+                prenom={prenom}
+                telephone={c.telephone}
+                telephoneAppel={c.telephoneAppel}
+              /></span>
           </div>
         </div>
       ))}
