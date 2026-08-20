@@ -408,6 +408,13 @@ export async function limiterVivantes(supabase: Supabase, siteId: string, garder
   }
 }
 
+/* LE `catch` QUI RENVOYAIT UNE LISTE VIDE A DISPARU D'ICI. Une lecture qui
+   échoue et « ce commerce n'a rien publié » produisaient exactement le même
+   écran — « Aucune annonce en ce moment » — et c'est ce qui a fait chercher
+   pendant deux jours une annonce dont personne ne savait dire si elle
+   existait. L'appelant décide maintenant quoi en faire ; il sait, lui, s'il
+   peut se permettre une liste vide. */
+
 /**
  * SES ANNONCES PASSÉES — celles qui sont terminées ou qu'il a retirées.
  *
@@ -461,24 +468,20 @@ export async function siennesPassees(supabase: Supabase, siteId: string, max = 1
  */
 export async function siennesVivantes(supabase: Supabase, siteId: string): Promise<Publication[]> {
   if (!siteId) return [];
-  try {
-    const rows = await avecRepli((champs) =>
-      supabase
-        .from("human_publications")
-        .select(champs)
-        .eq("site_id", siteId)
-        .is("retire_le", null)
-        .order("publie_le", { ascending: false })
-        .limit(20)
-    );
-    const maintenant = Date.now();
-    return rows
-      .map((r) => lirePublication(r))
-      .filter((p): p is Publication => p !== null)
-      .filter((p) => estVivante(p, maintenant));
-  } catch {
-    return [];
-  }
+  const rows = await avecRepli((champs) =>
+    supabase
+      .from("human_publications")
+      .select(champs)
+      .eq("site_id", siteId)
+      .is("retire_le", null)
+      .order("publie_le", { ascending: false })
+      .limit(20)
+  );
+  const maintenant = Date.now();
+  return rows
+    .map((r) => lirePublication(r))
+    .filter((p): p is Publication => p !== null)
+    .filter((p) => estVivante(p, maintenant));
 }
 
 /**

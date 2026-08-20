@@ -171,16 +171,29 @@ export async function POST(request: Request) {
 
   // Ses annonces vivantes — celles du FIL, pas le bandeau. Il peut en avoir
   // trois ; sans cette liste, il ne savait même pas lesquelles tournaient.
-  const mesAnnonces = async () =>
-    (await siennesVivantes(supabase, id)).map((a) => ({
-      id: a.id,
-      texte: a.texte,
-      photo: a.photo,
-      video: a.video,
-      famille: a.famille,
-      publieLe: a.publieLe,
-      expireLe: a.expireLe,
-    }));
+  /** Renseigné quand la LECTURE a échoué — pas quand la liste est vide. */
+  let lectureKo = "";
+  const mesAnnonces = async () => {
+    try {
+      return (await siennesVivantes(supabase, id)).map((a) => ({
+        id: a.id,
+        texte: a.texte,
+        photo: a.photo,
+        video: a.video,
+        famille: a.famille,
+        publieLe: a.publieLe,
+        expireLe: a.expireLe,
+      }));
+    } catch (e) {
+      // « AUCUNE ANNONCE » ET « JE N'AI PAS PU LIRE » NE SONT PAS LA MÊME
+      // CHOSE, et l'écran les affichait pareil. C'est ce qui a fait chercher
+      // pendant deux jours une annonce dont personne ne pouvait dire si elle
+      // existait.
+      lectureKo = String((e as { message?: string })?.message ?? e);
+      console.error("[offer] lecture des annonces impossible :", lectureKo);
+      return [];
+    }
+  };
 
   // SES ANNONCES PASSÉES. Il republie souvent la même chose — le plat du
   // jeudi, la fournée du samedi — et retaper le texte à chaque fois est la
@@ -195,7 +208,8 @@ export async function POST(request: Request) {
     }));
 
   if (action === "annonces") {
-    return NextResponse.json({ ok: true, annonces: await mesAnnonces(), historique: await monHistorique() });
+    const annonces = await mesAnnonces();
+    return NextResponse.json({ ok: true, annonces, historique: await monHistorique(), lectureKo: lectureKo || undefined });
   }
 
   if (action === "historique") {
@@ -444,5 +458,6 @@ export async function POST(request: Request) {
     photos: galerie,
     annonces: await mesAnnonces(),
     historique: await monHistorique(),
+    lectureKo: lectureKo || undefined,
   });
 }

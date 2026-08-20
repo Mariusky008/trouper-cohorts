@@ -53,6 +53,9 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [historique, setHistorique] = useState<Passee[]>([]);
   const [charge, setCharge] = useState(false);
+  /** La liste n'a pas pu être lue — ce n'est pas la même chose qu'une liste
+   *  vide, et l'écran disait pourtant la même phrase dans les deux cas. */
+  const [lectureKo, setLectureKo] = useState("");
   const [occupe, setOccupe] = useState("");
   const [err, setErr] = useState("");
 
@@ -63,7 +66,9 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug, token, ...body }),
       });
-      const j = (await r.json().catch(() => ({}))) as { annonces?: Annonce[]; historique?: Passee[]; error?: string };
+      const j = (await r.json().catch(() => ({}))) as {
+        annonces?: Annonce[]; historique?: Passee[]; error?: string; lectureKo?: string;
+      };
       if (!r.ok) throw new Error(j.error || "Action impossible.");
       return j;
     },
@@ -73,18 +78,17 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
   /** Ranger ce que la route a renvoyé. Séparé de l'appel : un `appeler` qui
    *  poserait lui-même l'état se lirait comme un `setState` synchrone depuis
    *  un effet, et déclencherait des rendus en cascade. */
-  const ranger = useCallback((j: { annonces?: Annonce[]; historique?: Passee[] }) => {
+  const ranger = useCallback((j: { annonces?: Annonce[]; historique?: Passee[]; lectureKo?: string }) => {
     if (Array.isArray(j.annonces)) setAnnonces(j.annonces);
     if (Array.isArray(j.historique)) setHistorique(j.historique);
+    setLectureKo(typeof j.lectureKo === "string" ? j.lectureKo : "");
   }, []);
 
   const relire = useCallback(
     () =>
       appeler({ action: "annonces" })
         .then(ranger)
-        .catch(() => {
-          /* la liste reste telle quelle, l'écran le dit */
-        })
+        .catch((e: unknown) => setLectureKo(String((e as { message?: string })?.message ?? e)))
         .then(() => setCharge(true)),
     [appeler, ranger]
   );
@@ -95,8 +99,8 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
       .then((j) => {
         if (vivant) ranger(j);
       })
-      .catch(() => {
-        /* la liste reste vide, l'écran le dit */
+      .catch((e: unknown) => {
+        if (vivant) setLectureKo(String((e as { message?: string })?.message ?? e));
       })
       .then(() => {
         if (vivant) setCharge(true);
@@ -160,6 +164,12 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
           .pro .pann .a button:disabled{opacity:.55;cursor:default;}
           .pro .pann .vide{margin-top:12px;border:1px dashed var(--hair);border-radius:15px;padding:20px;
             text-align:center;font-size:13px;color:var(--soft);line-height:1.6;}
+          /* L'état « je n'ai pas pu lire » se distingue à l'œil de l'état
+             « vous n'avez rien publié » : c'est tout le propos. */
+          .pro .pann .vide.ko{border-style:solid;border-color:#F3CDBF;background:#FDF3EF;color:#8A3D26;text-align:left;}
+          .pro .pann .vide.ko b{display:block;margin-bottom:5px;font-size:13.5px;color:#8A3D26;}
+          .pro .pann .vide.ko code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
+            background:#F7EDE8;border-radius:5px;padding:1px 5px;word-break:break-word;}
           .pro .pann .err{margin-top:10px;background:#FBE9E4;color:#C0442A;border-radius:11px;padding:10px 12px;font-size:12.5px;font-weight:700;}
           /* Aller voir le résultat pour de vrai, aux deux endroits où il paraît. */
           .pro .pann .a .voir{display:flex;gap:12px;margin-top:9px;flex-wrap:wrap;}
@@ -239,11 +249,27 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
         );
       })}
 
-      {charge && annonces.length === 0 && (
+      {/* DEUX ÉTATS QUI N'ONT RIEN À VOIR, et qui affichaient la même phrase.
+          « Aucune annonce » veut dire « vous n'avez rien publié » ; il n'est
+          juste que si on a VRAIMENT pu regarder. Quand la lecture échoue, le
+          dire est la seule réponse honnête — sinon le commerçant republie
+          trois fois la même annonce en cherchant ce qu'il fait de travers. */}
+      {charge && annonces.length === 0 && lectureKo && (
+        <div className="vide ko">
+          <b>Je n&apos;ai pas pu vérifier vos annonces.</b>
+          <br />
+          Elles sont peut-être en ligne&nbsp;: ne les republiez pas. Le détail technique&nbsp;:{" "}
+          <code>{lectureKo}</code>
+        </div>
+      )}
+      {charge && annonces.length === 0 && !lectureKo && (
         <div className="vide">
           Aucune annonce en ce moment.
           <br />
-          Publiez-en une depuis « Remplir un créneau » ou « Annoncer une offre » — elle apparaîtra ici.
+          {/* Les noms des gestes, tels qu'ils existent aujourd'hui : cette
+              phrase envoyait encore vers « Remplir un créneau » et « Annoncer
+              une offre », deux boutons qui n'existent plus sous ces noms. */}
+          Publiez-en une depuis «&nbsp;Faire une annonce&nbsp;» — elle apparaîtra ici.
         </div>
       )}
 
