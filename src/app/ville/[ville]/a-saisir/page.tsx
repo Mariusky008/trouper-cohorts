@@ -27,6 +27,8 @@ import { faconsVue } from "@/lib/direct/facons-vue";
 import { reactionsDesPublications } from "@/lib/direct/reactions";
 import { histoiresDuJour } from "@/lib/direct/histoire";
 import { boutonLien } from "@/lib/direct/mots-metier";
+import { fichesDeSites } from "@/lib/direct/fiche-pro";
+import { telephonesDeSites } from "@/lib/direct/menus-du-jour";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
@@ -117,6 +119,17 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
   );
 
 
+  // LA FICHE ET LE NUMÉRO DE CHAQUE COMMERCE AFFICHÉ, en deux lectures pour
+  // tout l'écran. Sans le numéro, le panneau « je réserve » n'a personne à
+  // prévenir et se tait ; sans la fiche, celui du pro n'a rien à montrer. Les
+  // charger carte par carte multiplierait les allers-retours par le nombre
+  // d'annonces, pour des panneaux qu'on n'ouvrira peut-être jamais.
+  const siteIds = choisies.map((p) => p.siteId ?? "").filter(Boolean);
+  const [fichesParSite, telsParSite] = await Promise.all([
+    fichesDeSites(supabase, siteIds),
+    telephonesDeSites(supabase, siteIds),
+  ]);
+
   const cartes: CarteVue[] = choisies.map((p) => ({
     id: p.id,
     famille: p.famille,
@@ -141,6 +154,7 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     reste: p.reste,
     ardoise: p.ardoise,
     ardoiseLabel: boutonLien(p.auteurMetier),
+    telephone: (p.siteId && telsParSite.get(p.siteId)) || "",
     histoire: (p.siteId && histoires.get(p.siteId)) || null,
     reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
   }));
@@ -154,6 +168,15 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
           ville={ville}
           villeNom={cfg.nom}
           gardeesInitiales={cartes.filter((c) => mesGardees.has(c.id)).map((c) => c.id)}
+          // Rangées par identifiant d'ANNONCE et non de commerce : le composant
+          // ne connaît que ses cartes, et deux annonces du même commerçant
+          // doivent trouver la même fiche sans avoir à faire la conversion.
+          fiches={Object.fromEntries(
+            choisies
+              .map((p) => [p.id, p.siteId ? fichesParSite.get(p.siteId) : null] as const)
+              .filter((e): e is readonly [string, NonNullable<(typeof e)[1]>] => Boolean(e[1]))
+          )}
+          prenom={habitant?.prenom ?? ""}
         />
       ) : (
         <div className="asx-fin">

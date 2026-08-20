@@ -12,9 +12,12 @@
 // seules ne sont pas évidentes, la troisième surtout ; mais une légende
 // permanente sous trois boutons ronds transforme un geste en formulaire.
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CarteVue } from "../_ui/carte";
 import { teinte, initiales } from "../_ui/teinte";
+import type { FichePro } from "@/lib/direct/fiche-pro";
+import { PanneauPro, PanneauReserve, StylesPanneaux, type ChoixReserve } from "./panneaux";
 
 const CLE_USAGES = "clikme_asaisir_usages";
 const USAGES_AVEC_LEGENDE = 3;
@@ -29,11 +32,17 @@ export function SelectionSwipe({
   ville,
   villeNom,
   gardeesInitiales,
+  fiches,
+  prenom = "",
 }: {
   cartes: CarteVue[];
   ville: string;
   villeNom: string;
   gardeesInitiales: string[];
+  /** La fiche du commerce de chaque carte, par identifiant d'annonce. */
+  fiches: Record<string, FichePro>;
+  /** Le prénom laissé par l'habitant, pour signer le message de réservation. */
+  prenom?: string;
 }) {
   const router = useRouter();
   const [i, setI] = useState(0);
@@ -47,6 +56,10 @@ export function SelectionSwipe({
    *  doigt se déclencherait à chaque geste raté. Au-delà de quelques pixels, le
    *  doigt glissait — l'appui n'en est pas un. */
   const amplitude = useRef(0);
+  /** LE PANNEAU OUVERT, s'il y en a un. Deux, jamais en même temps : « je
+   *  réserve » vient après un choix, « le pro » avant. */
+  const [aReserver, setAReserver] = useState<ChoixReserve | null>(null);
+  const [proOuvert, setProOuvert] = useState<CarteVue | null>(null);
 
   // Le compteur d'usages est local à l'appareil : il ne concerne que
   // l'apprentissage du geste, il n'a rien à faire sur un serveur.
@@ -102,19 +115,52 @@ export function SelectionSwipe({
     [ville]
   );
 
+  /**
+   * CE QUE CHAQUE GESTE FAIT VRAIMENT — et deux d'entre eux ne faisaient rien.
+   *
+   * « réserver » (le glissement vers le haut) rangeait la carte dans les
+   * gardées et passait à la suivante : exactement l'effet du glissement vers la
+   * DROITE. Deux gestes distincts, un seul résultat, et le plus engageant des
+   * deux ne menait nulle part.
+   *
+   * « boutique » envoyait sur le site du commerçant, c'est-à-dire qu'il faisait
+   * QUITTER l'écran en perdant la sélection en cours.
+   *
+   * Désormais :
+   *   · GAUCHE  → on passe.
+   *   · DROITE  → c'est gardé DANS Ma carte, et le panneau propose aussitôt de
+   *               prévenir le commerce. C'est le seul endroit où l'on s'engage.
+   *   · HAUT    → la fiche du commerce, sans quitter la pile.
+   */
   const agir = useCallback(
     (g: Geste) => {
       if (!carte) return;
-      if (g === "garder" || g === "reserver") void garder(carte.id);
-      if (g === "boutique" && carte.auteurSlug) {
-        router.push(`/site-internet/apercu/${carte.auteurSlug}?via=direct&pub=${carte.id}`);
+      if (g === "boutique") {
+        setDrag(null);
+        setProOuvert(carte);
+        return;
+      }
+      if (g === "garder" || g === "reserver") {
+        void garder(carte.id);
+        setDrag(null);
+        // La façon la mieux placée est celle que le serveur a mise en tête —
+        // du prix le plus haut au plus bas. Sans façon, on réserve l'annonce.
+        setAReserver({ carte, facon: carte.facons.find((f) => f.etat !== "epuise") ?? null });
         return;
       }
       setDrag(null);
       setI((n) => n + 1);
     },
-    [carte, garder, router]
+    [carte, garder]
   );
+
+  /** On ferme le panneau ET on avance : la carte est traitée, la garder à
+   *  l'écran obligerait à la repasser une seconde fois. */
+  const suivante = useCallback(() => {
+    setAReserver(null);
+    setProOuvert(null);
+    setI((n) => n + 1);
+  }, []);
 
   /**
    * Ouvrir une façon depuis la carte.
@@ -151,7 +197,7 @@ export function SelectionSwipe({
     depart.current = null;
     // Le vertical prime : « réserver » est le geste le plus engageant, il ne doit
     // pas être avalé par un mouvement horizontal approximatif.
-    if (drag.y < -SEUIL_PX && Math.abs(drag.y) > Math.abs(drag.x)) agir("reserver");
+    if (drag.y < -SEUIL_PX && Math.abs(drag.y) > Math.abs(drag.x)) agir("boutique");
     else if (drag.x > SEUIL_PX) agir("garder");
     else if (drag.x < -SEUIL_PX) agir("passer");
     else setDrag(null);
@@ -161,13 +207,19 @@ export function SelectionSwipe({
   // pour qui ne peut pas glisser.
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      // Un panneau ouvert prend la main : sans ce garde-fou, une flèche tapée
+      // en lisant la fiche faisait défiler la pile derrière.
+      if (aReserver || proOuvert) {
+        if (e.key === "Escape") { setAReserver(null); setProOuvert(null); }
+        return;
+      }
       if (e.key === "ArrowLeft") agir("passer");
       else if (e.key === "ArrowRight") agir("garder");
-      else if (e.key === "ArrowUp") agir("reserver");
+      else if (e.key === "ArrowUp") agir("boutique");
     };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
-  }, [agir]);
+  }, [agir, aReserver, proOuvert]);
 
   if (!carte) {
     return (
@@ -184,19 +236,29 @@ export function SelectionSwipe({
     );
   }
 
+  // On ne « veut » pas une table, on la réserve ; on ne « réserve » pas une
+  // fournée, on la veut. Le mot suit la famille de l'annonce.
+  const action = carte.famille === "menu" || carte.famille === "place" ? "Je réserve" : "Je veux";
   const rot = drag ? Math.max(-9, Math.min(9, drag.x / 14)) : 0;
-  const tampon = drag && drag.y < -SEUIL_PX ? "RÉSERVER" : drag && drag.x > SEUIL_PX ? "GARDÉ" : drag && drag.x < -SEUIL_PX ? "PASSÉ" : "";
+  const tampon = drag && drag.y < -SEUIL_PX ? "LE PRO" : drag && drag.x > SEUIL_PX ? "JE RÉSERVE" : drag && drag.x < -SEUIL_PX ? "PASSÉ" : "";
 
   return (
     <div className="asx">
+      <StylesPanneaux />
+      {/* MA CARTE EST EN HAUT À DROITE, et elle est CLIQUABLE.
+          Le compte des gardées vivait dans une ligne de texte sous le titre :
+          on gardait des annonces sans jamais voir où elles allaient, et sans
+          pouvoir y aller. Une pastille en haut à droite, c'est la place que
+          tout le monde cherche des yeux. */}
       <div className="asx-top">
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="t">Sélectionné pour vous</div>
-          <div className="s">
-            {i + 1} sur {cartes.length} · les plus proches, les plus urgents
-            {gardees.size > 0 ? ` · ${gardees.size} gardée${gardees.size > 1 ? "s" : ""}` : ""}
-          </div>
+          <div className="s">{i + 1} sur {cartes.length} · les plus proches, les plus urgents</div>
         </div>
+        <Link href={`/ville/${ville}/mes-commerces`} prefetch={false} className={`asx-carte-a${gardees.size ? " on" : ""}`}>
+          <span aria-hidden="true">💚</span>Ma carte
+          {gardees.size > 0 ? <b>{gardees.size}</b> : null}
+        </Link>
       </div>
       {/* UNE BARRE PAR CARTE, pas une jauge continue. Une jauge dit « vous
           avancez » ; des segments disent « il en reste trois », qui est la
@@ -278,19 +340,46 @@ export function SelectionSwipe({
        </div>
       </div>
 
+      {/* LES TROIS GESTES SONT MAINTENANT NOMMÉS EN PERMANENCE.
+          Les icônes seules ne sont pas évidentes — la troisième surtout — et la
+          légende ne s'affichait qu'aux trois premiers usages. Or ce sont trois
+          engagements très différents : passer, réserver, se renseigner. On les
+          écrit, tout le temps. */}
       <div className="asx-boutons">
-        <button type="button" className="b s" onClick={() => agir("passer")} aria-label="Passer">✕</button>
-        <button type="button" className="b g" onClick={() => agir("garder")} aria-label="Garder">♥</button>
-        <button type="button" className="b s" onClick={() => agir("boutique")} aria-label="Voir la boutique">◔</button>
+        <button type="button" className="b s" onClick={() => agir("passer")}>
+          <i aria-hidden="true">✕</i><em>Passer</em>
+        </button>
+        <button type="button" className="b g" onClick={() => agir("garder")}>
+          <i aria-hidden="true">♥</i><em>{action}</em>
+        </button>
+        <button type="button" className="b s" onClick={() => agir("boutique")}>
+          <i aria-hidden="true">↑</i><em>Le pro</em>
+        </button>
       </div>
-      {legende && (
-        <div className="asx-leg">
-          <span>Passer</span>
-          <span>Garder</span>
-          <span>La boutique</span>
-        </div>
+      {legende && <div className="asx-aide">Glissez la carte pour décider · ↑ pour voir le commerce</div>}
+
+      {aReserver && (
+        <PanneauReserve
+          choix={aReserver}
+          fiche={fiches[aReserver.carte.id] ?? null}
+          prenom={prenom}
+          ville={ville}
+          onFermer={suivante}
+        />
       )}
-      <div className="asx-aide">Glissez vers le haut pour réserver ↑</div>
+      {proOuvert && (
+        <PanneauPro
+          carte={proOuvert}
+          fiche={fiches[proOuvert.id] ?? null}
+          onFermer={() => setProOuvert(null)}
+          onReserver={() => {
+            const c = proOuvert;
+            setProOuvert(null);
+            void garder(c.id);
+            setAReserver({ carte: c, facon: c.facons.find((f) => f.etat !== "epuise") ?? null });
+          }}
+        />
+      )}
     </div>
   );
 }

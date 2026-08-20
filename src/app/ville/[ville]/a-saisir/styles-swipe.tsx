@@ -99,16 +99,35 @@ export function StylesSwipe() {
 .asx-fac-l.f-collectif{border-color:#CFC8F2;background:#EEEBFB;}
 .asx-fac-l.f-collectif .asx-fac-ic{background:#DFDAF7;} .asx-fac-l.f-collectif .asx-fac-nm{color:#6B5BD4;}
 
-.asx-boutons{flex:none;display:flex;justify-content:center;gap:16px;padding:16px 0 6px;}
-.asx-boutons .b{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.22);color:#fff;font-size:21px;display:flex;align-items:center;
-  justify-content:center;cursor:pointer;font-family:inherit;}
-/* Le geste principal est le SEUL en lime : trois boutons identiques ne disent
-   pas lequel fait avancer. */
-.asx-boutons .g{background:rgba(147,208,44,.16);border-color:rgba(147,208,44,.4);color:var(--gl);}
-.asx-leg{flex:none;display:flex;justify-content:center;gap:16px;}
-.asx-leg span{width:56px;text-align:center;font-size:9.5px;color:#7E9A8D;font-weight:700;white-space:nowrap;}
+/* MA CARTE, EN HAUT À DROITE. Le compte des gardées vivait dans une ligne de
+   texte sous le titre : on gardait des annonces sans jamais voir où elles
+   allaient, ni pouvoir y aller. */
+.asx-carte-a{flex:none;display:flex;align-items:center;gap:6px;text-decoration:none;
+  font-size:11.5px;font-weight:800;color:#B9CBC1;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 11px;}
+.asx-carte-a.on{color:#8FE9C4;border-color:rgba(126,230,192,.34);background:rgba(18,185,129,.14);}
+.asx-carte-a b{font-weight:850;color:#fff;}
+
+/* LES TROIS GESTES SONT NOMMÉS EN PERMANENCE. Les icônes seules ne sont pas
+   évidentes — la troisième surtout — et la légende ne s'affichait qu'aux trois
+   premiers usages. Or ce sont trois engagements très différents : passer,
+   réserver, se renseigner. */
+.asx-boutons{flex:none;display:flex;justify-content:center;align-items:flex-start;gap:26px;padding:14px 0 4px;}
+.asx-boutons .b{display:flex;flex-direction:column;align-items:center;gap:6px;
+  border:0;background:none;padding:0;cursor:pointer;font-family:inherit;}
+.asx-boutons .b i{display:flex;align-items:center;justify-content:center;width:52px;height:52px;
+  border-radius:50%;font-style:normal;font-size:20px;color:#fff;background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.18);
+  transition:transform .22s cubic-bezier(.34,1.4,.64,1),box-shadow .25s ease;}
+.asx-boutons .b em{font-style:normal;font-size:10.5px;font-weight:750;color:#7E9A8D;white-space:nowrap;}
+.asx-boutons .b:active i{transform:scale(.92);}
+/* Le geste principal est le SEUL plein : trois boutons identiques ne disent pas
+   lequel fait avancer. */
+.asx-boutons .g i{width:64px;height:64px;font-size:25px;color:#04150E;border:0;
+  background:linear-gradient(140deg,#3DE2A6,#0BA97B);box-shadow:0 14px 30px -12px rgba(18,185,129,.8);}
+.asx-boutons .g em{color:#8FE9C4;}
 .asx-aide{text-align:center;font-size:10.5px;color:#7E9A8D;margin:6px 0 0;}
+@media (prefers-reduced-motion:reduce){.asx-boutons .b i{transition:none;}}
 
 .asx-fin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;padding:40px 28px 120px;color:#7E9A8D;}
