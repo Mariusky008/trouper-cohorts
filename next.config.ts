@@ -62,8 +62,21 @@ const config: NextConfig = {
   async redirects() {
     // Anciens produits (réseau local, cohortes, dashboard/audit, club, privilège…) :
     // on redirige tout vers l'accueil pour aligner le domaine sur le concept actuel
-    // (site + assistante pour commerçants). Temporaire (307) → réversible.
-    const toHome = (source: string) => ({ source, destination: "/", permanent: false });
+    // (site + assistante pour commerçants).
+    //
+    // 301 ET NON PLUS 307, ET C'EST UN CORRECTIF DE RÉFÉRENCEMENT. La
+    // redirection était temporaire « pour rester réversible ». Traduction pour
+    // Google : « repasse plus tard, cette page va revenir ». Il gardait donc ces
+    // adresses en attente indéfiniment, et Search Console les comptait
+    // indéfiniment sous « Page avec redirection » — sept sur un domaine, quatre
+    // sur l'autre. Un 301 lui dit que c'est fini : il les retire, et transfère
+    // l'ancienneté au nouvel emplacement au lieu de la laisser dormir.
+    //
+    // CE QUE ÇA COÛTE, ET C'EST ASSUMÉ : un navigateur met un 301 en cache très
+    // durablement. Ressusciter une de ces adresses demanderait de vider le cache
+    // de chaque visiteur qui l'a connue — autant dire que c'est définitif. Ces
+    // produits ne reviennent pas.
+    const toHome = (source: string) => ({ source, destination: "/", permanent: true });
     const OLD = [
       "dashboard", "mon-reseau-local", "privilege", "cohorts-demo",
       "programme-commando", "quiz-statut-business", "marketplace", "entrepreneur",

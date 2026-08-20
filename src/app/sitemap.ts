@@ -80,13 +80,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/legal/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
+  // TROIS PAGES PAR VILLE, ET PLUS UNE SEULE.
+  //
+  // On n'annonçait que le fil. Or les deux autres répondent à des recherches
+  // que le fil ne couvre pas — « les menus du jour à Dax » est même la requête
+  // la plus commerciale à laquelle ce produit sache répondre, et elle était
+  // cachée derrière un `noindex`. Les deux pages restent en `noindex` les jours
+  // où elles n'ont rien à montrer : un sitemap qui annonce une page vide coûte
+  // plus cher que le silence.
   const villes = await villesCouvertes();
-  const filsDeVille: MetadataRoute.Sitemap = villes.map((v) => ({
-    url: `${SITE_URL}/ville/${v}`,
-    // Le fil d'une ville change tous les jours — c'est même tout son propos.
-    changeFrequency: "daily",
-    priority: 0.8,
-  }));
+  const filsDeVille: MetadataRoute.Sitemap = villes.flatMap((v) => [
+    {
+      url: `${SITE_URL}/ville/${v}`,
+      // Le fil d'une ville change tous les jours — c'est même tout son propos.
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
+    { url: `${SITE_URL}/ville/${v}/menus`, changeFrequency: "daily" as const, priority: 0.9 },
+    { url: `${SITE_URL}/ville/${v}/a-saisir`, changeFrequency: "daily" as const, priority: 0.7 },
+  ]);
 
   return [...fixes, ...filsDeVille];
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MARQUE } from "@/lib/marque";
+import { SITE_HOST } from "@/lib/site-url";
 
 // Voir `mentions/page.tsx` : sans titre propre, ces trois pages étaient trois
 // doublons de l'accueil aux yeux de Google.
@@ -19,7 +20,7 @@ export default function TermsPage() {
       
       <h2>1. Préambule</h2>
       <p>
-        Les présentes Conditions Générales d'Utilisation et de Vente (ci-après « CGU/CGV ») régissent l'utilisation du site web <strong>www.popey.academy</strong> (le « Site ») ainsi que l'inscription et la participation aux formations et cohortes proposées par <strong>Ibrelisle</strong> (« Nous »), opérant sous la marque Popey Academy.
+        Les présentes Conditions Générales d'Utilisation et de Vente (ci-après « CGU/CGV ») régissent l'utilisation du site web <strong>{SITE_HOST}</strong> (le « Site ») ainsi que l'inscription et la participation aux formations et cohortes proposées par <strong>Ibrelisle</strong> (« Nous »), opérant sous la marque {MARQUE}.
       </p>
       <p>
         En accédant au Site et en s'inscrivant à nos services, l'utilisateur (« Vous », le « Membre ») accepte sans réserve les présentes CGU/CGV.
@@ -45,7 +46,7 @@ export default function TermsPage() {
       <h2>4. Conditions Financières</h2>
       <h3>4.1. Prix</h3>
       <p>
-        Les prix des formations sont indiqués en euros (€) et s'entendent toutes taxes comprises (TTC). Popey Academy se réserve le droit de modifier ses prix à tout moment, mais le service sera facturé sur la base des tarifs en vigueur au moment de la validation de la commande.
+        Les prix des formations sont indiqués en euros (€) et s'entendent toutes taxes comprises (TTC). {MARQUE} se réserve le droit de modifier ses prix à tout moment, mais le service sera facturé sur la base des tarifs en vigueur au moment de la validation de la commande.
       </p>
       <h3>4.2. Modalités de paiement</h3>
       <p>
@@ -60,19 +61,19 @@ export default function TermsPage() {
         Toutefois, conformément à l'article L.221-28 du Code de la consommation, ce droit ne peut être exercé pour la fourniture d'un contenu numérique non fourni sur un support matériel dont l'exécution a commencé après accord préalable exprès du consommateur et renoncement exprès à son droit de rétractation (accès immédiat à la formation).
       </p>
       <p>
-        Pour exercer ce droit (si applicable), veuillez nous contacter à : <a href="mailto:contact@popey.academy">contact@popey.academy</a>.
+        Pour exercer ce droit (si applicable), veuillez nous contacter à : <a href="mailto:contact@clikme.fr">contact@clikme.fr</a>.
       </p>
 
       <h2>6. Propriété Intellectuelle</h2>
       <p>
-        Tous les contenus pédagogiques (vidéos, textes, supports, méthodes) mis à disposition sur la plateforme sont la propriété exclusive de Popey Academy.
+        Tous les contenus pédagogiques (vidéos, textes, supports, méthodes) mis à disposition sur la plateforme sont la propriété exclusive d’Ibrelisle.
         Toute reproduction, diffusion ou exploitation non autorisée de ces contenus est strictement interdite et pourra faire l'objet de poursuites judiciaires.
         L'utilisateur s'engage à utiliser ces contenus uniquement pour ses besoins personnels de formation.
       </p>
 
       <h2>7. Code de Conduite</h2>
       <p>
-        La bienveillance et le respect sont les piliers de la communauté Popey Academy. En rejoignant une cohorte, vous vous engagez à :
+        La bienveillance et le respect sont les piliers de la communauté {MARQUE}. En rejoignant une cohorte, vous vous engagez à :
       </p>
       <ul>
         <li>Respecter les autres membres, les formateurs et l'équipe.</li>
@@ -86,7 +87,7 @@ export default function TermsPage() {
 
       <h2>8. Responsabilité</h2>
       <p>
-        Popey Academy s'engage à fournir ses services avec diligence et selon les règles de l'art (obligation de moyens).
+        {MARQUE} s’engage à fournir ses services avec diligence et selon les règles de l'art (obligation de moyens).
         Cependant, nous ne saurions être tenus responsables des résultats individuels des participants, qui dépendent de leur investissement personnel et de facteurs extérieurs.
         Nous ne sommes pas responsables des interruptions de service liées à des problèmes techniques d'internet ou de maintenance.
       </p>
@@ -104,7 +105,7 @@ export default function TermsPage() {
       <h2>11. Contact</h2>
       <p>
         Pour toute question relative aux présentes conditions, vous pouvez nous contacter :
-        <br/>Email : <a href="mailto:contact@popey.academy">contact@popey.academy</a>
+        <br/>Email : <a href="mailto:contact@clikme.fr">contact@clikme.fr</a>
       </p>
     </article>
   );

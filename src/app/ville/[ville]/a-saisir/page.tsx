@@ -34,10 +34,40 @@ import { StylesSwipe } from "./styles-swipe";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/**
+ * CETTE PAGE S'INDEXE — ET AVEC UNE RÉSERVE QU'IL FAUT ÉCRIRE ICI.
+ *
+ * Elle portait `noindex`. On l'ouvre parce qu'elle répond à une intention que
+ * le fil ne couvre pas : « ce qui part aujourd'hui », pas « ce qui se passe ».
+ *
+ * LA RÉSERVE : elle montre LES MÊMES publications que `/ville/<slug>`, dans une
+ * autre forme. Deux adresses qui montrent le même contenu, c'est exactement ce
+ * qui produit « Page en double » — le défaut qu'on vient de corriger ailleurs.
+ * Trois choses l'en préservent, et il faut les garder ensemble :
+ *   · un titre et une description qui décrivent une INTENTION différente, pas
+ *     le même contenu autrement présenté ;
+ *   · une canonique qui la désigne elle-même, assumée comme telle ;
+ *   · et surtout `noindex` les jours où il n'y a rien à saisir — une page vide
+ *     au titre alléchant est la meilleure façon d'apprendre à Google que nos
+ *     titres ne tiennent pas leurs promesses.
+ *
+ * Si Search Console la range malgré tout en doublon du fil, c'est le fil qui
+ * doit gagner : il faudra alors pointer la canonique d'ici vers `/ville/<slug>`.
+ */
 export async function generateMetadata({ params }: { params: Promise<{ ville: string }> }): Promise<Metadata> {
   const { ville } = await params;
-  const cfg = await configVille(createAdminClient(), ville);
-  return { title: `À saisir — ${cfg.nom}`, robots: { index: false } };
+  const supabase = createAdminClient();
+  const cfg = await configVille(supabase, ville);
+  const duJour = await filDeVille(supabase, cfg.slug);
+  const title = `À saisir aujourd'hui à ${cfg.nom}`;
+  const description = `Les places, offres et cartes du jour qui partent aujourd'hui à ${cfg.nom} — et qui auront disparu demain.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/ville/${ville}/a-saisir` },
+    openGraph: { title, description, type: "website" },
+    robots: duJour.length ? undefined : { index: false },
+  };
 }
 
 export default async function ASaisirPage({ params }: { params: Promise<{ ville: string }> }) {
