@@ -67,8 +67,17 @@ export type GesteDuJour = {
   ouDort: string;
   /** Ce que les autres montrent déjà de lui — et ce qu'ils ne montrent pas. */
   pasVu: string;
-  /** Le geste, à l'impératif : « Photographiez-la. » */
+  /** Le geste, à l'impératif : « Photographiez-la. » — c'est le titre de l'acte. */
   geste: string;
+  /**
+   * LA PHRASE QUI OUVRE L'ACTE DU GESTE, et elle dit à quoi ça sert.
+   *
+   * « Photographiez-la. C'est tout. » énonçait un ordre sans destination : on
+   * ne savait pas ce qu'on rejoignait en le faisant. La phrase nomme donc Le
+   * Direct — celui qu'on vient de lui montrer pendant deux actes — avant de
+   * demander le geste.
+   */
+  gesteDit: string;
   /** Vrai quand le geste est une PHOTO — un coiffeur, lui, dicte. */
   parPhoto: boolean;
   /** CE QUI PART, avec son verbe déjà accordé : « votre menu part », « vos
@@ -156,6 +165,7 @@ export function gesteDuJour(
       ouDort: "Vous, à cette heure-là, votre ardoise est devant votre porte.",
       pasVu: "Elle est très bien. Mais elle ne se lit que de la rue. Et eux sont à quatre cents mètres, en train de choisir.",
       geste: "Photographiez-la.",
+      gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre ardoise.",
       parPhoto: true,
       envoi: "votre menu part",
       extrait: {
@@ -167,9 +177,12 @@ export function gesteDuJour(
       // Les j'aime et les réservations, si. Un seul élément faux au milieu de
       // deux vrais suffit à rendre les deux autres suspects.
       retours: [
-        { heure: "11 h 17", icone: "❤️", nombre: "34", quoi: "personnes auront aimé votre menu" },
+        // « AIMÉ » EST LE MOT DU CODE, « LIKÉ » EST CELUI DU GESTE. L'habitant
+        // appuie sur un cœur : c'est ce mot-là qu'il emploie, et c'est celui
+        // qui fait le lien avec ce qu'on vient de lui montrer à l'acte 3.
+        { heure: "11 h 17", icone: "❤️", nombre: "34", quoi: "personnes auront liké votre menu" },
         { heure: "11 h 32", icone: "📅", nombre: "3", quoi: "tables réservées" },
-        { heure: "12 h 00", icone: "📊", nombre: "", quoi: "Vous saurez si votre menu prend." },
+        { heure: "12 h 00", icone: "📊", nombre: "", quoi: "En un midi, vous saurez si votre menu plaît." },
       ],
     };
   }
@@ -186,6 +199,7 @@ export function gesteDuJour(
       ouDort: "Vous, à cette heure-là, tout est déjà en vitrine.",
       pasVu: "Elle est magnifique. Mais elle s'arrête à votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
       geste: "Photographiez-la.",
+      gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre vitrine.",
       parPhoto: true,
       envoi: "ce que vous avez ce matin part",
       // AUCUN MOT DE BOULANGER : cette branche sert aussi un fleuriste, un
@@ -200,7 +214,7 @@ export function gesteDuJour(
       retours: [
         { heure: "7 h 40", icone: "❤️", nombre: "28", quoi: `${gentile} l'auront vu passer` },
         { heure: "8 h 15", icone: "🧺", nombre: "6", quoi: "pièces mises de côté" },
-        { heure: "9 h 00", icone: "📊", nombre: "", quoi: "Vous saurez ce qui plaît aujourd'hui." },
+        { heure: "9 h 00", icone: "📊", nombre: "", quoi: "En une matinée, vous saurez ce qui plaît." },
       ],
     };
   }
@@ -217,6 +231,7 @@ export function gesteDuJour(
       ouDort: `Vous, à cette heure-là, vos ${v.places} libres sont dans votre carnet.`,
       pasVu: `Vous êtes le seul à les voir. Et eux cherchent, maintenant, à quatre cents mètres de chez vous.`,
       geste: "Dites-le-moi.",
+      gesteDit: `Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qu'il vous reste de ${v.places} libres.`,
       parPhoto: false,
       envoi: `vos ${v.places} libres partent`,
       extrait: {
@@ -245,6 +260,7 @@ export function gesteDuJour(
     ouDort: "Ce que vous pouvez prendre cette semaine, vous êtes seul à le savoir.",
     pasVu: "Personne d'autre ne peut le deviner. Et eux cherchent, maintenant, à quelques rues de chez vous.",
     geste: "Dites-le-moi.",
+    gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quand vous êtes disponible.",
     parPhoto: false,
     envoi: "votre disponibilité part",
     extrait: { titre: "Cette semaine", lignes: ["Disponible à partir de jeudi"], prix: "" },
@@ -272,5 +288,11 @@ export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } 
   const phrases = g.retours.map((r) =>
     r.nombre ? `À ${r.heure}, ${r.nombre} ${r.quoi}.` : r.quoi
   );
-  return { say: ["Et voilà ce qui se passera ensuite.", ...phrases].join(" "), phrases };
+  // « ET VOILÀ CE QUI SE PASSERA ENSUITE » PROMETTAIT. Les chiffres qui suivent
+  // sont une projection — l'écran le dit, la phrase doit le dire aussi. Et elle
+  // rappelle d'où ça part : de son menu, publié une minute plus tôt.
+  return {
+    say: ["Une fois votre menu dans Le Direct, voilà ce qui pourrait se passer.", ...phrases].join(" "),
+    phrases,
+  };
 }

@@ -98,6 +98,24 @@ export type TempsIllustre = {
   teinte: string;
 };
 
+/**
+ * JUSQU'À QUAND CETTE CARTE VAUT — ce que le sablier affiche.
+ *
+ * Ce ne sont pas des échéances calculées : l'acte 7 est une journée illustrée,
+ * pas une publication réelle. Ce sont les limites que le produit pose lui-même
+ * sur ces gestes (une carte du jour s'efface le soir, un invendu ne survit pas
+ * à la nuit), écrites dans les mots de la carte. Un geste sans limite claire
+ * n'affiche pas de sablier.
+ */
+const ECHEANCE_TEMPS: Record<string, string> = {
+  carte: "Jusqu'à 14 h",
+  arrivage: "Ce matin",
+  reste: "Jusqu'à ce soir",
+  creneau: "Ce soir",
+  venir: "Jusqu'à midi",
+  evenement: "",
+};
+
 /** La couleur de chaque geste — voir `teinte`. */
 const TEINTE: Record<string, string> = {
   carte: "#F0B429",
@@ -106,9 +124,13 @@ const TEINTE: Record<string, string> = {
   creneau: "#4EA8DE",
   fideles: "#E86AA6",
   realisation: "#7C5CFC",
-  venir: "#3DE2A6",
+  // Pas le vert du produit : c'est la couleur de tout le reste de l'écran, et
+  // un temps qui la prend a l'air de ne pas en avoir.
+  venir: "#38BDF8",
+  evenement: "#9B7BFF",
+  nouveaute: "#4ED2C0",
+  horaires: "#8AA0B4",
 };
-const TEINTE_DEMANDE = "#9B7BFF";
 
 /** Le mot d'action de l'habitant, dans les termes du métier. On ne « veut » pas
  *  une table, on la réserve ; on ne « réserve » pas une fournée, on la veut. */
@@ -124,6 +146,25 @@ export function motDAction(g: GesteDuJour): string {
  * exactement ce qui rend l'acte suivant douloureux : il n'y est pas.
  */
 export function cartesDeLaVille(ville: string): CarteDirect[] {
+  // CE QU'UN HABITANT A BESOIN DE SAVOIR POUR CHOISIR, et rien d'autre.
+  //
+  // LE DÉFAUT. Les trois cartes disaient « Le menu du jour · Servi jusqu'à
+  // 14 h » et « Ce qui vient de sortir du four · Depuis 7 h ». C'est joli et
+  // ça ne décide rien : on ne sait pas ce qu'il y a dans l'assiette, ni
+  // combien ça coûte, ni surtout si c'est à deux rues ou à l'autre bout de la
+  // ville. À midi, la distance décide plus souvent que le prix — on ne
+  // choisit pas un restaurant, on choisit un restaurant où on a le temps
+  // d'aller. Chaque carte porte donc les PLATS, le PRIX, la DISTANCE et le
+  // bouton qui y emmène.
+  //
+  // ET LES TROIS PARLENT DU MÊME BESOIN : on cherche où manger. La boulangerie
+  // y a sa place — mais par sa formule du midi, pas par sa fournée de 7 h, qui
+  // répondait à une question que personne ne se pose à midi.
+  //
+  // AUCUN COMMERCE N'EST NOMMÉ (règle 1 en tête de fichier) : ce sont les
+  // voisins de celui qui regarde, et leur inventer une enseigne reviendrait à
+  // fabriquer trois faux concurrents.
+  const yAller = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ville);
   return [
     {
       photo: PHOTOS.plat,
@@ -131,10 +172,12 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       nom: "Un restaurant du centre",
       metier: "Restaurant",
       ville,
+      distance: "400 m",
+      itineraire: yAller,
       reste: "Jusqu'à 14 h",
       icone: "🍽️",
-      quoi: "Le menu du jour",
-      lignes: ["Servi jusqu'à 14 h"],
+      quoi: "Menu du jour",
+      lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
       prix: "19 €",
       social: "4 ont réservé",
     },
@@ -144,10 +187,13 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       nom: "Une table à deux rues",
       metier: "Restaurant",
       ville,
+      distance: "250 m",
+      itineraire: yAller,
       reste: "Ce midi",
       icone: "🕐",
       quoi: "Il reste 3 tables",
-      lignes: ["Pour 12 h 30"],
+      lignes: ["Plat + dessert", "Service jusqu'à 13 h 45"],
+      prix: "16 €",
       social: "1 a réservé",
     },
     {
@@ -156,10 +202,13 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       nom: "Une boulangerie",
       metier: "Boulangerie",
       ville,
-      reste: "Ce matin",
-      icone: "🥐",
-      quoi: "Ce qui vient de sortir du four",
-      lignes: ["Depuis 7 h"],
+      distance: "600 m",
+      itineraire: yAller,
+      reste: "Jusqu'à 14 h",
+      icone: "🥪",
+      quoi: "Formule du midi",
+      lignes: ["Sandwich au choix", "Boisson + dessert"],
+      prix: "8,50 €",
       social: "9 l'ont vu passer",
     },
   ];
@@ -283,7 +332,10 @@ const TITRE_TEMPS: Record<string, string> = {
   creneau: "Vous avez des places vides ?",
   fideles: "Un geste pour vos habitués ?",
   realisation: "Vous venez de terminer un beau travail ?",
-  venir: "Une raison de passer aujourd'hui ?",
+  venir: "Une demi-heure à remplir ?",
+  evenement: "Un événement à annoncer ?",
+  nouveaute: "Une nouveauté à montrer ?",
+  horaires: "Un horaire qui change ?",
 };
 
 /**
@@ -416,32 +468,14 @@ export function tempsIllustres(
   return temps.map((t, i) => {
     // SES photos d'abord ; l'illustration seulement s'il n'en a pas assez.
     const sienne = photos.length ? photos[i % photos.length] : undefined;
-    const photo = servir(imagePour(t.genre === "demande" ? "" : t.cle, sienne));
+    const photo = servir(imagePour(t.cle, sienne));
     // Le cadrage n'est connu que pour NOS illustrations : les siennes gardent
     // le centre, faute de savoir ce qu'elles montrent.
     const cadrage = photo === sienne ? undefined : CADRAGE[photo];
 
-    if (t.genre === "demande") {
-      return {
-        heure: t.heure,
-        titre: "Les habitants cherchent quelque chose",
-        dit: t.question,
-        action,
-        teinte: TEINTE_DEMANDE,
-        carte: {
-          photo,
-          cadrage,
-          nom,
-          metier: metierLabel,
-          ville,
-          reste: "Demain midi",
-          icone: "🔎",
-          quoi: t.proposition,
-          lignes: [t.question],
-        },
-      };
-    }
-
+    // LE TEMPS « DEMANDE INVERSÉE » A DISPARU avec la fonction qu'il décrivait
+    // (voir `acte-metier.ts`) : c'était le seul écran de la démonstration à
+    // montrer quelque chose qui n'existe pas dans le produit.
     return {
       heure: t.heure,
       titre: TITRE_TEMPS[t.cle] || t.label,
@@ -454,7 +488,12 @@ export function tempsIllustres(
         nom,
         metier: metierLabel,
         ville,
-        reste: t.heure,
+        // LE SABLIER DIT COMBIEN DE TEMPS IL RESTE, pas quelle heure il est.
+        // On y posait l'heure du geste : la carte publiée à 10 h affichait
+        // « ⏳ 10 h », c'est-à-dire, pour qui la lit, « ça se termine à 10 h ».
+        // L'heure du geste est déjà écrite en grand au-dessus de la carte ;
+        // ici, ou bien on connaît l'échéance, ou bien on ne met rien.
+        reste: ECHEANCE_TEMPS[t.cle] || "",
         icone: ICONE_TEMPS[t.cle] || t.emoji,
         quoi: VU_PAR_HABITANT[t.cle] || t.label,
         lignes: [t.annonce],

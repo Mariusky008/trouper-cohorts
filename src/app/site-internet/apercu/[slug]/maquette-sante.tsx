@@ -173,9 +173,11 @@ export function MaquetteSante(p: MaquetteSanteProps) {
   // La seconde : les deux dépendent de l'HEURE, et un `new Date()` pris des
   // deux côtés donnerait deux journées différentes à l'hydratation.
   const maintenant = new Date();
-  // TROIS GESTES, PAS QUATRE : dans le nouveau déroulé, cet acte n'est plus le
-  // sujet mais la suite de la journée, après le retour économique.
-  const acteDuMetier = modeDemo ? acteMetier(metierLabel, confirmation, secteur, maintenant, 3) : [];
+  // QUATRE TEMPS, ET LE COMPTE EST TENU AILLEURS. Ce « 3 » écrit ici écrasait
+  // silencieusement la valeur par défaut de `acteMetier` : la journée devait en
+  // montrer quatre, l'écran n'en affichait que trois, et personne ne voyait le
+  // quatrième puisque rien ne signalait qu'il manquait.
+  const acteDuMetier = modeDemo ? acteMetier(metierLabel, confirmation, secteur, maintenant) : [];
   // LA COLONNE VERTÉBRALE DE LA DÉMONSTRATION, dans les mots de ce métier :
   // ce que les habitants cherchent, où dort son information, le geste, et ce
   // qui lui revient. Voir `geste-du-jour.ts`.

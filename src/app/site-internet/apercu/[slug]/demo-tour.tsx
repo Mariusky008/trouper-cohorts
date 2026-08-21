@@ -199,11 +199,15 @@ export function DemoTour({
   const QUI_DIT = G
     ? [
         `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
-        `Beaucoup ouvriront Le Direct de ${laVille} : ce qui se passe autour d'eux, maintenant.`,
-        `Les menus du jour, les tables qui restent, ce qui vient de sortir du four.`,
-        `Ce qui ne leur dit rien, ils le passent. La suivante arrive.`,
-        `Ce qui leur plaît, ils le gardent : le commerce tombe dans leur carte.`,
-        `Et quand c'est le bon, ils réservent. Le message part au commerce, tout de suite.`,
+        `Beaucoup ouvriront Le Direct de ${laVille} pour voir ce qui se passe autour d'eux.`,
+        `Ils y verront les menus du jour, les tables qui restent, les prix, la distance.`,
+        `Ce qui ne leur dit rien, ils le passent.`,
+        `Ce qui leur plaît, ils le likent pour le garder en mémoire.`,
+        // « Une table » n'a de sens que dans la restauration : ailleurs on
+        // réserve un créneau, une pièce, une place. Le mot suit le métier,
+        // comme partout dans cette démonstration.
+        `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""}.`,
+        `La réservation est alors envoyée directement au commerçant.`,
       ]
     : [];
   const SAY_QUI = QUI_DIT.join(" ");
@@ -231,8 +235,8 @@ export function DemoTour({
   //    « vos créneaux libres partent ».
   const PHOTO_DIT = G
     ? [
-        `${G.geste} C'est tout.`,
-        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre site et dans Le Direct — à l'heure où on le cherche.`,
+        `${G.gesteDit} C'est tout.`,
+        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre site et dans Le Direct — à l'heure où les ${gentile} cherchent ${G.cherchent}.`,
       ]
     : [];
   const SAY_PHOTO = PHOTO_DIT.join(" ");
@@ -249,6 +253,11 @@ export function DemoTour({
   //    lignes mettaient six secondes à s'afficher : l'acte se terminait avant
   //    d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
   const retourDit = G ? direRetours(G) : { say: "", phrases: [] as string[] };
+  /** LA PHRASE QUI OUVRE L'ACTE 6, ÉCRITE UNE FOIS.
+   *  Elle l'était à trois endroits — la réplique, la légende de départ et le
+   *  titre de la carte — et la corriger n'en changeait qu'un : la voix disait
+   *  la nouvelle version pendant que l'écran affichait l'ancienne. */
+  const OUVERTURE_RETOUR = retourDit.say.split(". ")[0] + ".";
   const SAY_RETOUR = retourDit.say;
   const RETOUR_AT = retourDit.phrases.map((ph) => partAu(SAY_RETOUR, ph));
 
@@ -340,6 +349,8 @@ export function DemoTour({
   const [gardees, setGardees] = useState(1);
   const [coeurVole, setCoeurVole] = useState(false);
   const [resaQui, setResaQui] = useState(false);
+  /** VRAI quand le message est parti — le dernier temps de l'acte 3. */
+  const [resaEnvoyee, setResaEnvoyee] = useState(false);
   /** Les minuteries de ces trois gestes, pour les couper en quittant l'acte. */
   const gestes3 = useRef<number[]>([]);
   /**
@@ -648,7 +659,16 @@ export function DemoTour({
     // Démo COURTE, alignée sur le positionnement : site GRATUIT → assistante incluse
     // → Action Flash (créer & faire connaître, vous validez) → clôture gratuit/options.
     // HONNÊTETÉ : on prépare et on diffuse, on ne « remplit » pas à sa place.
-    const steps: Array<{ title: string; say: string; enter: () => void }> = [];
+    /**
+     * `respire` : le silence qu'on laisse APRÈS cet acte, avant le suivant.
+     *
+     * Les actes s'enchaînaient bord à bord : la dernière image de l'un était
+     * remplacée à la milliseconde près par le premier mot de l'autre. Sur les
+     * actes qui portent une émotion — le Direct qui se referme, puis « et
+     * vous ? » qui retourne la situation contre lui — il faut le temps de la
+     * recevoir. Une seconde et demie de noir vaut mieux qu'une transition.
+     */
+    const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
 
     // ── 0. LE SITE, CINQ SECONDES, COMME PREUVE ────────────────────────────
     //
@@ -748,6 +768,7 @@ export function DemoTour({
           setGardees(1);
           setCoeurVole(false);
           setResaQui(false);
+          setResaEnvoyee(false);
           gestes3.current.forEach(clearTimeout);
           gestes3.current = [];
           const dans = (ms: number, f: () => void) => { gestes3.current.push(window.setTimeout(f, ms)); };
@@ -785,10 +806,24 @@ export function DemoTour({
           dans(t(4) + 1200, () => { setCoeurVole(false); setGesteQui(""); });
 
           // ③ LA RÉSERVATION. Le panneau du produit s'ouvre par-dessus la
-          //    carte, avec le message déjà écrit. Il reste jusqu'à la fin de
-          //    l'acte : c'est la dernière image, celle qu'on emporte.
-          dans(t(5), () => { setGesteQui("resa"); setResaQui(true); });
+          //    carte, avec le message déjà écrit.
+          // LA CARTE QUI SE RÉSERVE EST CELLE D'UN RESTAURANT, et ce n'est pas
+          // un détail : la voix dit « ils réservent une table » pendant que le
+          // paquet, lui, s'était arrêté là où la rotation l'avait laissé — on
+          // a vu le panneau de réservation s'ouvrir sur une formule sandwich.
+          dans(t(5), () => { setCarteVille(0); setGesteQui("resa"); setResaQui(true); });
+          // ④ ET LE MESSAGE PART. Le panneau s'arrêtait sur un bouton qu'on ne
+          //    voyait jamais appuyer : la démonstration montrait une intention,
+          //    pas une réservation. Le bouton bascule donc en accusé de
+          //    réception, et c'est la dernière image de l'acte — celle qu'on
+          //    emporte. Rien de plus que ce qui se passe vraiment : le message
+          //    arrive sur le WhatsApp du commerce, et sa réponse fait foi.
+          dans(t(6), () => { chime(); setResaEnvoyee(true); });
         },
+        // Le message vient de partir chez un autre commerce que le sien ;
+        // l'acte suivant s'ouvre sur « et vous ? ». Enchaîné sans silence, le
+        // retournement passait inaperçu.
+        respire: 1500,
       });
 
       // ── ACTE 4. ET VOUS ? ────────────────────────────────────────────────
@@ -838,7 +873,7 @@ export function DemoTour({
           setScene("retour");
           // Chaque ligne tombe quand la voix l'attaque — plus sur un minuteur
           // qui dérivait dès qu'on retouchait une phrase.
-          setCaption("Et voilà ce qui se passera ensuite.");
+          setCaption(OUVERTURE_RETOUR);
           RETOUR_AT.forEach((part, i) => {
             window.setTimeout(() => {
               setRetourN(i);
@@ -935,6 +970,10 @@ export function DemoTour({
         setCaption(st.say);
         st.enter();
       });
+      if (cancelled.current) return;
+      // LA RESPIRATION. La scène reste à l'écran, la voix se tait : c'est le
+      // silence qui fait qu'on a le temps de comprendre ce qu'on vient de voir.
+      if (st.respire) await new Promise((r) => window.setTimeout(r, st.respire));
       if (cancelled.current) return;
     }
     if (cancelled.current) return;
@@ -1226,12 +1265,21 @@ export function DemoTour({
              se dilate en même temps. */
           /* isolation:isolate ouvre un contexte d'empilement : sans lui, le halo
              en z-index:-1 passe DERRIÈRE le fond de la scène et ne se voit pas. */
-          .qi-n{position:relative;isolation:isolate;font-family:'Inter',system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
+          .qi-n{font-family:'Inter',system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
             letter-spacing:-.055em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;
             animation:dtPop .55s var(--exp) both;}
-          .qi-n::before{content:"";position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);
-            background:radial-gradient(circle,rgba(18,185,129,.28),transparent 62%);pointer-events:none;z-index:-1;
-            animation:dtSouffle 4s ease-in-out infinite;}
+          /* LE HALO EST PORTÉ PAR LA SCÈNE, PAS PAR LE NOMBRE.
+             Posé sur le nombre, il se retrouvait à l'intérieur du bloc qui se
+             replie — et ce bloc doit rogner ce qui dépasse pour que le repli
+             0fr → 1fr fonctionne. Résultat : un dégradé circulaire découpé au
+             carré, c'est-à-dire un rectangle vert sombre derrière le chiffre.
+             Mesuré au navigateur. Ici il est libre, et il s'éteint quand le
+             nombre s'en va. */
+          .dtour-ov.qi::before{content:"";position:absolute;left:50%;top:34%;width:min(150%,560px);aspect-ratio:1;
+            transform:translate(-50%,-50%);pointer-events:none;
+            background:radial-gradient(circle,rgba(18,185,129,.26),transparent 62%);
+            animation:dtSouffle 4s ease-in-out infinite;transition:opacity .45s ease;}
+          .dtour-ov.qi.serre::before{opacity:0;}
           @keyframes dtSouffle{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.9)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
           .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;animation:dtRise .4s var(--exp) .22s both;}
           .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:#fff;}
@@ -1367,6 +1415,12 @@ export function DemoTour({
           .qi-resa-b{margin-top:11px;border-radius:13px;padding:11px;text-align:center;
             font-size:13.5px;font-weight:850;color:#04150E;background:linear-gradient(140deg,#3DE2A6,#0BA97B);
             box-shadow:0 14px 30px -12px rgba(18,185,129,.85);}
+          /* L'accusé de réception n'est pas le bouton repeint : c'est un état
+             qui ne se clique plus. D'où le fond plein, le contour, et aucun
+             relief — on ne propose plus rien, on constate. */
+          .qi-resa-b.envoye{color:#8FE9C4;background:rgba(18,185,129,.16);
+            border:1px solid rgba(126,230,192,.42);box-shadow:none;font-size:12.5px;
+            animation:dtRecu .55s cubic-bezier(.34,1.45,.64,1);}
 
           @media (prefers-reduced-motion:reduce){
             .qi-dessus.part,.qi-dessus.aime,.qi-c.dessous.monte,.qi-vol,.qi-tampon,.qi-resa,.qi-app.recu .cd-puce.vert{animation-duration:.01ms;}
@@ -1454,11 +1508,13 @@ export function DemoTour({
           /* La carte est réduite : l'ardoise est au-dessus, et les deux
              doivent tenir ensemble à l'écran — c'est la comparaison qui
              démontre, pas chacune prise à part. */
-          .ph-carte{max-width:196px;}
-          .ph-mini .cd-gestes{margin-top:9px;gap:16px;}
-          .ph-mini .cd-g i{width:34px;height:34px;font-size:14px;}
-          .ph-mini .cd-g.grand i{width:44px;height:44px;font-size:17px;}
-          .ph-mini .cd-g em{font-size:10px;}
+          /* LA CARTE EST RÉDUITE EN ENTIER, pas rétrécie en largeur.
+             Bridée à 196 px, elle gardait un nom de commerce écrit en 20 px :
+             « Boulangerie du Sablar » passait sur deux lignes et recouvrait le
+             compte à rebours. Le zoom met tout à l'échelle — c'est la même
+             carte, vue de plus loin, et c'est bien ce qu'on veut dire ici. */
+          .ph-mini{zoom:.58;}
+          .ph-mini .cd-gestes{margin-top:14px;}
           @media (max-height:800px){
             .dtour-ov.ph-ov{padding-top:78px;}
             .ph-wrap{gap:6px;}
@@ -1471,12 +1527,7 @@ export function DemoTour({
             .ph-ard b{font-size:16px;}
             .ph-vers{padding-top:6px;font-size:11px;}
             .ph-mini{margin-top:5px;}
-            .ph-carte{max-width:148px;}
-            .ph-mini .cd-nom{font-size:15px;}
-            .ph-mini .cd-gestes{margin-top:6px;gap:13px;}
-            .ph-mini .cd-g i{width:30px;height:30px;font-size:12px;}
-            .ph-mini .cd-g.grand i{width:38px;height:38px;font-size:15px;}
-            .ph-mini .cd-g em{font-size:9.5px;}
+            .ph-mini{zoom:.44;}
           }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
@@ -1549,14 +1600,14 @@ export function DemoTour({
           @keyframes dtTrace{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
           /* La carte est cerclée de la couleur du moment. Sans ce liseré, quatre
              cartes du même composant se suivaient sans qu'on voie la coupure. */
-          .mt-carte{max-width:250px;
+          .cd-carte.mt-carte{max-width:288px;
             box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
               0 28px 60px -24px color-mix(in srgb,var(--teinte,#3DE2A6) 60%,transparent),
               0 40px 80px -30px rgba(0,0,0,.9);}
           @media (max-height:780px){
             .dtour-ov.mt-ov{padding-top:84px;}
             .mt-titre{font-size:17px;}
-            .mt-carte{max-width:214px;}
+            .cd-carte.mt-carte{max-width:214px;}
           }
 
           /* ── LA JOURNÉE ENTIÈRE, à la fin de l'acte ─────────────────────
@@ -1592,7 +1643,7 @@ export function DemoTour({
           }
           .mt-jour-c .h{font-size:11.5px;font-weight:850;letter-spacing:.08em;color:var(--teinte,#8FE9C4);
             font-variant-numeric:tabular-nums;white-space:nowrap;}
-          .mt-mini{max-width:100%;border-radius:13px;
+          .cd-carte.mt-mini{max-width:100%;border-radius:13px;
             box-shadow:0 0 0 2px var(--teinte,#3DE2A6),
               0 16px 32px -14px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
               0 20px 40px -18px rgba(0,0,0,.9);}
@@ -1750,7 +1801,7 @@ export function DemoTour({
           <div className="kick" style={{ ["--i" as string]: 1 }}>✨ Votre site est prêt</div>
           <div className="t" style={{ ["--i" as string]: 2 }}>{nom}</div>
           {/* LA DURÉE ANNONCÉE EST CELLE QU'ON MET. Elle disait « un peu plus
-              d'une minute » et « ≈ 1 min 40 » ; la visite en fait 2 min 14
+              d'une minute » et « ≈ 1 min 40 » ; la visite en fait 2 min 25
               depuis que l'acte 3 joue les trois gestes et que l'acte 7
               rassemble la journée — mesuré au navigateur, bout en bout. Un
               commerçant qui a accepté une minute et en passe deux se sent
@@ -1758,7 +1809,7 @@ export function DemoTour({
           <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous le présente à voix haute, en un peu plus de deux minutes.</div>
           <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir mon site</button>
           <button className="skip" style={{ ["--i" as string]: 5 }} onClick={() => setPhase("done")}>Voir le site directement</button>
-          <div className="trust" style={{ ["--i" as string]: 6 }}>⏱️ ≈ 2 min 15 · montez le son 🔊</div>
+          <div className="trust" style={{ ["--i" as string]: 6 }}>⏱️ ≈ 2 min 25 · montez le son 🔊</div>
         </div>
       )}
 
@@ -1838,7 +1889,7 @@ export function DemoTour({
               <div className="mt-wrap">
                 <div className="mt-dots" aria-hidden="true">
                   {actesListe.map((t2, i) => (
-                    <i key={t2.genre === "geste" ? t2.cle : "demande"} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
+                    <i key={t2.cle} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
                   ))}
                 </div>
                 {/* La clé force le remontage : sans elle, React réutiliserait
@@ -1848,8 +1899,8 @@ export function DemoTour({
                   <div className="mt-hh">{tempsCartes[metierN].heure}</div>
                   <div className="mt-titre">{tempsCartes[metierN].titre}</div>
                   <div className="mt-dis">
-                    <i aria-hidden="true">{tempsCourant.genre === "geste" && tempsCourant.via === "photo" ? "📷" : tempsCourant.genre === "demande" ? "🔎" : "🎙️"}</i>
-                    {tempsCourant.genre === "demande" ? tempsCartes[metierN].dit : `« ${tempsCartes[metierN].dit} »`}
+                    <i aria-hidden="true">{tempsCourant.via === "photo" ? "📷" : "🎙️"}</i>
+                    {`« ${tempsCartes[metierN].dit} »`}
                   </div>
                   <div className="mt-fleche" aria-hidden="true"><i /></div>
                   <CarteSwipe carte={tempsCartes[metierN].carte} className="mt-carte" />
@@ -1995,7 +2046,13 @@ export function DemoTour({
                             <span className="k">Message prêt à envoyer</span>
                             Bonjour, je viens de voir votre annonce sur Le Direct de {laVille}. Je passe la prendre&nbsp;?
                           </div>
-                          <div className="qi-resa-b"><span aria-hidden="true">💬</span> Réserver via WhatsApp</div>
+                          {resaEnvoyee ? (
+                            <div className="qi-resa-b envoye">
+                              <span aria-hidden="true">✓</span> Envoyé sur le WhatsApp du commerce
+                            </div>
+                          ) : (
+                            <div className="qi-resa-b"><span aria-hidden="true">💬</span> Réserver via WhatsApp</div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2107,7 +2164,7 @@ export function DemoTour({
             <div className="dtour-ov">
               <div className="dtour-card rt">
                 <div className="rt-k">Exemple · pas encore vos chiffres</div>
-                <div className="rt-h">Et voilà ce qui se passera ensuite.</div>
+                <div className="rt-h">{OUVERTURE_RETOUR}</div>
                 <div className="rt-l">
                   {G.retours.map((r, i) => (
                     <div

@@ -55,6 +55,27 @@ export type CarteDirect = {
   etiquette?: string;
   /** Ce que d'autres ont déjà fait : « 3 ont réservé ». Jamais inventé. */
   social?: string;
+  /**
+   * À QUELLE DISTANCE C'EST — « 400 m », « 1,2 km ».
+   *
+   * C'est l'information qui manquait le plus à la carte, et elle décide plus
+   * souvent que le prix : à midi, on ne choisit pas un restaurant, on choisit
+   * un restaurant OÙ ON A LE TEMPS D'ALLER. Sans elle, l'habitant lisait une
+   * belle photo sans savoir si c'était à deux rues ou à l'autre bout de Dax.
+   *
+   * Elle vient de `repereSpatial` (voir `degradation.ts`), qui la calcule
+   * quand l'habitant a autorisé sa position et retombe sinon sur le quartier
+   * puis sur la ville. Vide, la ligne se contente du métier et de la ville —
+   * on n'affiche jamais une distance qu'on n'a pas.
+   */
+  distance?: string;
+  /**
+   * L'ITINÉRAIRE, quand on sait où c'est. Voir `lienItineraire`.
+   *
+   * Absent, le bouton n'existe pas : un « Y aller » qui ouvre une carte vide
+   * coûte plus cher que son absence.
+   */
+  itineraire?: string;
 };
 
 /**
@@ -159,10 +180,21 @@ export function CarteSwipe({
       <div className="cd-voile" aria-hidden="true" />
 
       {c.reste && <span className="cd-reste"><i aria-hidden="true">⏳</i>{c.reste}</span>}
+      {/* « Y ALLER » EN HAUT À DROITE, à l'opposé du compte à rebours : c'est
+          la seule action de la carte qui ne concerne pas le swipe, et la mettre
+          en bas la ferait confondre avec les trois gestes. */}
+      {c.itineraire && (
+        <a className="cd-aller" href={c.itineraire} target="_blank" rel="noreferrer noopener">
+          <i aria-hidden="true">↗</i>Y aller
+        </a>
+      )}
 
       <div className="cd-bas">
         <div className="cd-nom">{c.nom}</div>
-        <div className="cd-ou"><i aria-hidden="true">📍</i>{c.metier} · {c.ville}</div>
+        <div className="cd-ou">
+          <i aria-hidden="true">📍</i>{c.metier} · {c.ville}
+          {c.distance && <b>{c.distance}</b>}
+        </div>
         {c.social && <div className="cd-social"><i aria-hidden="true">💚</i>{c.social}</div>}
 
         <div className="cd-quoi"><i aria-hidden="true">{c.icone}</i>{c.quoi}</div>
@@ -210,9 +242,10 @@ export function carteDirectHtml(c: CarteDirect): string {
       `<span class="cd-photo${c.photo ? "" : " sans"}"${fond}>${c.photo ? "" : `<span class="cd-ph">${esc(c.icone)}</span>`}</span>` +
       `<span class="cd-voile"></span>` +
       (c.reste ? `<span class="cd-reste"><i>⏳</i>${esc(c.reste)}</span>` : "") +
+      (c.itineraire ? `<span class="cd-aller"><i>↗</i>Y aller</span>` : "") +
       `<span class="cd-bas">` +
         `<span class="cd-nom">${esc(c.nom)}</span>` +
-        `<span class="cd-ou"><i>📍</i>${esc(c.metier)} · ${esc(c.ville)}</span>` +
+        `<span class="cd-ou"><i>📍</i>${esc(c.metier)} · ${esc(c.ville)}${c.distance ? `<b>${esc(c.distance)}</b>` : ""}</span>` +
         (c.social ? `<span class="cd-social"><i>💚</i>${esc(c.social)}</span>` : "") +
         `<span class="cd-quoi"><i>${esc(c.icone)}</i>${esc(c.quoi)}</span>` +
         (c.lignes?.length
@@ -252,6 +285,18 @@ function esc(s: string): string {
 export function StylesDirect() {
   return (
     <style
+      /* UNE SEULE FOIS DANS LA PAGE, ET TOUJOURS AVANT LES SCÈNES.
+         La page d'aperçu monte ce composant à deux endroits — la visite guidée
+         et l'assistante — et les deux feuilles se retrouvaient dans le corps du
+         document, la seconde APRÈS les styles de la visite. À spécificité
+         égale, c'est la dernière qui gagne : `.cd-carte{max-width:340px}`
+         écrasait le `.ph-carte{max-width:196px}` de l'acte 5, et la carte
+         sortait de l'écran par le bas. Mesuré au navigateur : 340 px partout.
+         `href` + `precedence` demandent à React de la remonter dans l'en-tête
+         et de n'en garder qu'une. Les scènes gardent en plus une spécificité
+         supérieure — l'ordre ne doit jamais être le seul garde-fou. */
+      href="direct-carte-swipe"
+      precedence="default"
       dangerouslySetInnerHTML={{
         __html: `
         .cd-barre{display:flex;align-items:center;gap:7px;width:100%;max-width:340px;margin:0 auto;
@@ -265,7 +310,13 @@ export function StylesDirect() {
 
         /* LA CARTE. Format portrait, comme un écran de téléphone tenu à la
            main : c'est la forme qui dit « ça se regarde en marchant ». */
+        /* text-align:left EST INDISPENSABLE, pas cosmétique : la carte est
+           servie dans des scènes qui centrent tout leur contenu (l'acte 3 de la
+           visite guidée, par exemple). Sans elle, le menu s'affichait centré
+           dans la démonstration et à gauche dans le vrai fil — deux cartes
+           différentes, ce que ce fichier existe précisément pour empêcher. */
         .cd-carte{position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
+          text-align:left;
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
           font-family:'Inter',system-ui,sans-serif;isolation:isolate;}
         .cd-photo{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;}
@@ -288,6 +339,15 @@ export function StylesDirect() {
           text-shadow:0 2px 18px rgba(0,0,0,.7);}
         .cd-ou{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#CBD7D0;}
         .cd-ou i{font-style:normal;font-size:11px;line-height:1;}
+        /* La distance est le seul chiffre de cette ligne : elle a droit au
+           blanc, le reste est en gris. */
+        .cd-ou b{font-weight:850;color:#fff;font-variant-numeric:tabular-nums;}
+        .cd-ou b::before{content:"·";margin-right:5px;color:#7E938A;font-weight:600;}
+        .cd-aller{position:absolute;right:14px;top:14px;z-index:3;display:flex;align-items:center;gap:5px;
+          font-size:12px;font-weight:850;color:#04150E;text-decoration:none;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;padding:7px 12px;
+          box-shadow:0 10px 24px -10px rgba(18,185,129,.9);}
+        .cd-aller i{font-style:normal;font-size:11px;line-height:1;}
         .cd-social{align-self:flex-start;display:flex;align-items:center;gap:6px;margin-top:3px;
           font-size:12px;font-weight:800;color:#8FE9C4;background:rgba(18,185,129,.16);
           border:1px solid rgba(126,230,192,.3);border-radius:999px;padding:5px 11px;}

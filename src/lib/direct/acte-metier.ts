@@ -1,4 +1,4 @@
-// L'ACTE MÉTIER DE LA DÉMONSTRATION — « et ce n'est pas que pour les offres ».
+// L'ACTE MÉTIER DE LA DÉMONSTRATION — « et ce n'est pas tout ».
 //
 // CE QU'IL RÉSOUT. La démo montrait UNE annonce, une seule fois. Le commerçant
 // en concluait ce qu'il conclut toujours : « c'est un truc à promotions ». Or
@@ -32,9 +32,16 @@ import {
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 import { estRestauration } from "@/lib/direct/mots-metier";
 
-/** Un temps de l'acte : soit un geste du métier, soit la mémoire, à la fin. */
-export type TempsMetier =
-  | {
+/**
+ * Un temps de l'acte : un geste du métier, à son heure.
+ *
+ * C'ÉTAIT UNE UNION À DEUX BRANCHES. La seconde, « demande », portait la
+ * demande inversée — ce que les habitants cherchent, retourné vers le
+ * commerçant. Elle a été retirée : c'était la seule chose de toute la
+ * démonstration qui n'existe pas encore dans le produit, et un écran sur
+ * quatre qui décrit une fonction qu'on n'a pas rend les trois autres suspects.
+ */
+export type TempsMetier = {
       genre: "geste";
       cle: string;
       emoji: string;
@@ -53,19 +60,7 @@ export type TempsMetier =
       annonce: string;
       /** Ce que ça peut lui rapporter, au conditionnel. */
       promesse: string;
-    }
-  | {
-      /** LA DEMANDE INVERSÉE — ce que les habitants cherchent, retourné vers
-       *  le commerçant. C'est la seule chose de cette démonstration qui n'est
-       *  pas encore construite ; elle ferme l'acte parce qu'elle dit où va le
-       *  produit, pas ce qu'il fait aujourd'hui. */
-      genre: "demande";
-      dit: string;
-      heure: string;
-      /** La demande, telle qu'elle lui arriverait. */
-      question: string;
-      proposition: string;
-    };
+};
 
 /**
  * LA NARRATION, GESTE PAR GESTE.
@@ -84,7 +79,10 @@ type Narration = {
   rang: number;
   /** L'heure de la journée où ce geste se fait. */
   heure: string;
-  dit: (v: Vocab) => string;
+  /** `resto` en second : `v.boutique` est VRAI pour un restaurant (c'est un
+   *  commerce de passage), et une condition écrite dessus donnait au
+   *  restaurateur la formulation prévue pour les boutiques. */
+  dit: (v: Vocab, resto: boolean) => string;
   dis: (x: Record<string, string>, v: Vocab) => string;
   /** La carte du jour se PHOTOGRAPHIE — un micro à cet endroit décrirait un
    *  geste que le commerçant ne fait pas. Partout ailleurs, il parle. */
@@ -95,21 +93,25 @@ type Narration = {
 
 const NARRATION: Record<string, Narration> = {
   carte: {
-    rang: 1,
-    heure: "11 h",
+    rang: 8,
+    heure: "10 h",
     // IL MONTRE, ELLE LIT. C'est la fonction telle qu'elle existe : il
     // photographie son ardoise, l'assistante la déchiffre et l'écrit. Faire
     // dire au commerçant le menu déjà rédigé donnait deux fois la même phrase
     // de part et d'autre de la flèche — la transformation avait l'air nulle,
     // et l'assistante inutile.
-    dit: () => "Le matin, vous me montrez votre ardoise : je la lis, je l'écris.",
+    // CHAQUE TEMPS S'OUVRE SUR SON HEURE. Les phrases commençaient par « le
+    // matin », « en fin de service », « un jour » : quatre repères flous qui
+    // ne dessinaient pas une journée. L'heure dite à voix haute, en même temps
+    // qu'elle s'affiche, fait le contraire — on suit une journée qui avance.
+    dit: () => "10 h, vous me montrez votre ardoise. Je la lis, je publie.",
     dis: () => "Voilà l'ardoise d'aujourd'hui.",
     via: "photo",
   },
   arrivage: {
-    rang: 2,
+    rang: 1,
     heure: "7 h",
-    dit: () => "À la livraison, vous me dites ce qui vient d'arriver.",
+    dit: () => "7 h, vous me dites ce qui vient d'arriver. Je publie.",
     dis: () => "Ma livraison du matin vient d'arriver.",
     // AUCUN PRODUIT NOMMÉ, et c'est voulu : cette même intention sert un
     // boulanger, un fleuriste et un poissonnier. « Des fraises de Dordogne »
@@ -118,12 +120,12 @@ const NARRATION: Record<string, Narration> = {
     valeurs: () => ({ quoi: "tout ce qui est arrivé ce matin", combien: "" }),
   },
   reste: {
-    rang: 3,
+    rang: 4,
     heure: "14 h",
     // « EN FIN DE SERVICE » NE VEUT RIEN DIRE CHEZ UN FLEURISTE. Le même geste
     // se dit dans les mots du métier, sinon le commerçant comprend que la démo
     // parle d'un autre commerce que le sien.
-    dit: (v) => `En fin de ${v.boutique ? "journée" : "service"}, vous me dites ce qu'il vous reste.`,
+    dit: (v) => `14 h, vous me dites ce qu'il vous ${v.boutique ? "reste en boutique" : "reste"}. Je publie.`,
     // SA PHRASE N'EST PAS L'ANNONCE, et c'est tout l'intérêt de la montrer.
     // Écrite à l'identique des deux côtés de la flèche, la transformation
     // avait l'air de ne rien faire — et l'assistante, d'être décorative.
@@ -137,12 +139,12 @@ const NARRATION: Record<string, Narration> = {
     valeurs: (_now, resto): Record<string, string> => (resto ? {} : { combien: "6", quoi: "pièces du jour" }),
   },
   creneau: {
-    rang: 4,
+    rang: 2,
     heure: "17 h 30",
     // C'EST LE COMMERÇANT QUI COMPTE SES TABLES. L'assistante n'a pas son
     // cahier de réservations et n'en aura jamais : elle ne peut pas savoir
     // qu'il en reste quatre. Elle demande, il répond, elle écrit.
-    dit: (v) => `Des ${v.places} restent vides aujourd'hui ? Dites-le-moi, j'écris.`,
+    dit: (v) => `17 h 30, des ${v.places} restent vides ? Dites-le-moi, je publie.`,
     // Pas « il me reste », qui vient d'être dit au temps précédent : deux
     // cartes de suite ouvertes par les mêmes mots se lisent comme une seule.
     //
@@ -160,28 +162,79 @@ const NARRATION: Record<string, Narration> = {
     }),
   },
   fideles: {
-    rang: 5,
+    rang: 6,
     heure: "18 h",
-    dit: () => "Un geste pour vos habitués ? Ils l'apprennent en premier.",
+    dit: () => "Un geste pour vos habitués ? Dites-le-moi, je publie — ils l'apprennent en premier.",
     dis: (x) => `Je voudrais leur offrir ${x.quoi}.`,
   },
   realisation: {
-    rang: 6,
+    rang: 7,
     heure: "16 h",
-    dit: () => "Vous terminez un beau travail : une photo, et je l'écris.",
+    dit: () => "Vous terminez un beau travail : une photo, et je publie.",
     dis: (x) => `Je viens de terminer ${x.quoi}.`,
   },
   venir: {
-    rang: 7,
-    heure: "10 h",
-    dit: () => "Une raison de passer aujourd'hui, qui s'arrête toute seule.",
+    // LA DEMI-HEURE CREUSE, ET C'EST LE TEMPS QUI CONVAINC LE PLUS.
+    // « Une raison de passer aujourd'hui » décrivait une fonction ; « 11 h 30,
+    // une demi-heure que vous voulez remplir ? » décrit un moment que le
+    // commerçant vient de vivre.
+    rang: 3,
+    heure: "11 h 30",
+    dit: (_v, resto) =>
+      resto
+        ? "11 h 30 à midi, une demi-heure que vous voulez remplir ? Offrez le café, je publie."
+        : "11 h 30, un creux que vous voulez remplir ? Une raison de passer, je publie.",
     dis: (x) => `Aujourd'hui, ${x.quoi}, de ${heureLisible(x.de)} à ${heureLisible(x.a)}.`,
+    // Le scénario par défaut va de 10 h à 12 h ; on le cale sur le creux dont
+    // parle la phrase, sinon l'écran annonce une heure et la voix une autre.
+    valeurs: () => ({ quoi: "le café offert", combien: "", de: "11:30", a: "12:00" }),
+  },
+  evenement: {
+    // LE SOIR, ET IL FERME L'ACTE. Il remplaçait « et un jour, ce sont eux qui
+    // vous diront ce qu'ils cherchent » — la demande inversée, seule chose de
+    // toute la démonstration qui n'existait pas encore dans le produit. Un
+    // écran sur quatre décrivait une fonction qu'on n'a pas ; c'est le genre
+    // de détail qui rend les trois autres suspects.
+    rang: 5,
+    heure: "18 h",
+    dit: () => "Le soir, un événement à annoncer ? Je publie.",
+    dis: (x) => `J'organise ${x.quoi}.`,
+    // L'HEURE DOIT SUIVRE L'ÉVÉNEMENT. Le scénario de l'intention est celui
+    // d'une journée portes ouvertes, à 10 h : servi tel quel, il annonçait une
+    // soirée dégustation « à partir de 10 h ».
+    valeurs: (_now, resto) =>
+      resto
+        ? { quoi: "une soirée dégustation", heure: "19:00" }
+        : { quoi: "une journée portes ouvertes", heure: "10:00" },
   },
 };
 
-/** Combien de gestes avant la demande inversée. Trois : au-delà, la journée
- *  devient une liste. */
-const GESTES_MAX = 3;
+/** Combien de temps montre l'acte. Quatre : au-delà, la journée devient une
+ *  liste, et le commerçant décroche là où on voulait qu'il se reconnaisse. */
+const GESTES_MAX = 4;
+
+/**
+ * L'ORDRE DE PASSAGE N'EST PAS LE MÊME PARTOUT, et un seul rang ne peut pas
+ * décrire deux métiers.
+ *
+ * Chez un coiffeur, le créneau qui se libère EST le geste du métier : il passe
+ * en tête. Chez un restaurant, la journée commence par l'ardoise, se poursuit
+ * par le creux de midi et les invendus, et se termine sur un événement — le
+ * créneau y est bon, mais il est cinquième, et l'acte n'en montre que quatre.
+ */
+const RANG_RESTAURATION: Record<string, number> = {
+  carte: 1,
+  venir: 2,
+  reste: 3,
+  evenement: 4,
+  creneau: 5,
+};
+
+/** « 17 h 30 » → 1050. Sert à remettre les temps retenus dans l'ordre du jour. */
+const enMinutes = (heure: string): number => {
+  const m = /^(\d{1,2})\s*h(?:\s*(\d{1,2}))?/.exec(heure.trim());
+  return m ? Number(m[1]) * 60 + Number(m[2] || 0) : 0;
+};
 
 /**
  * Les temps de l'acte, pour ce métier-là.
@@ -200,10 +253,18 @@ export function acteMetier(
   const v = vocabulaire(metier, confirmation, secteur);
   const resto = estRestauration(metier);
 
+  const rangDe = (cle: string) =>
+    (resto ? RANG_RESTAURATION[cle] : undefined) ?? NARRATION[cle].rang;
+
   const gestes = intentionsPour(metier, confirmation, secteur)
     .filter((it) => NARRATION[it.cle])
-    .sort((a, b) => NARRATION[a.cle].rang - NARRATION[b.cle].rang)
+    // D'abord CE QU'ON GARDE (le rang décide de ce qui passe à la trappe),
+    // ensuite L'ORDRE DU JOUR. Trier une seule fois par rang donnait des
+    // journées qui remontaient le temps — 17 h 30 avant 11 h 30 — alors que
+    // tout l'acte repose sur l'idée qu'une journée avance.
+    .sort((a, b) => rangDe(a.cle) - rangDe(b.cle))
     .slice(0, Math.max(1, combien))
+    .sort((a, b) => enMinutes(NARRATION[a.cle].heure) - enMinutes(NARRATION[b.cle].heure))
     .map((it) => {
       const n = NARRATION[it.cle];
       const x = { ...it.demo(now), ...(n.valeurs ? n.valeurs(now, resto) : {}) };
@@ -213,7 +274,7 @@ export function acteMetier(
         emoji: it.emoji,
         label: it.action,
         heure: n.heure,
-        dit: n.dit(v),
+        dit: n.dit(v, resto),
         dis: n.dis(x, v),
         via: n.via === "photo" ? ("photo" as const) : ("voix" as const),
         // L'ANNONCE VIENT DU PRODUIT, pas d'ici. C'est ce qui garantit que ce
@@ -223,18 +284,13 @@ export function acteMetier(
       };
     });
 
-  if (!gestes.length) return [];
-
-  return [
-    ...gestes,
-    {
-      genre: "demande",
-      heure: "18 h",
-      dit: "Et un jour, ce sont eux qui vous diront ce qu'ils cherchent.",
-      question: "37 personnes cherchent un italien demain midi.",
-      proposition: "Voulez-vous leur proposer votre menu ?",
-    },
-  ];
+  // LA DEMANDE INVERSÉE A ÉTÉ RETIRÉE. Elle fermait l'acte sur « et un jour,
+  // ce sont eux qui vous diront ce qu'ils cherchent » — la seule chose de
+  // toute la démonstration qui n'existe pas encore dans le produit. Un écran
+  // sur quatre décrivait une fonction qu'on n'a pas, et c'est exactement ce
+  // qui rend les trois autres suspects. Le soir est maintenant tenu par
+  // l'événement, qui, lui, se publie vraiment.
+  return gestes;
 }
 
 /**
@@ -251,7 +307,7 @@ export function direActe(temps: TempsMetier[]): string {
 }
 
 /** Le démenti qui ouvre l'acte — et lui donne son titre. */
-export const INTRO_ACTE = "Et ce n'est pas que pour les offres.";
+export const INTRO_ACTE = "Et ce n'est pas tout.";
 
 /**
  * LA PHRASE QUI FERME L'ACTE — et le seul moment où on voit la journée entière.
