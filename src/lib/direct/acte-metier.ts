@@ -247,8 +247,20 @@ export function acteMetier(
  * était le but — sans que la démonstration ait l'air de s'allonger.
  */
 export function direActe(temps: TempsMetier[]): string {
-  return [INTRO_ACTE, ...temps.map((t) => t.dit)].join(" ");
+  return [INTRO_ACTE, ...temps.map((t) => t.dit), FIN_ACTE].join(" ");
 }
 
 /** Le démenti qui ouvre l'acte — et lui donne son titre. */
 export const INTRO_ACTE = "Et ce n'est pas que pour les offres.";
+
+/**
+ * LA PHRASE QUI FERME L'ACTE — et le seul moment où on voit la journée entière.
+ *
+ * L'acte passait quatre écrans en quatre secondes chacun et s'arrêtait net sur
+ * le dernier. On avait vu quatre choses ; on n'avait pas vu QU'ELLES FONT UNE
+ * JOURNÉE, ce qui est précisément l'argument. Cette réplique donne le temps de
+ * les rassembler à l'écran, et elle ne promet rien que le produit ne fasse :
+ * elle constate qu'à chaque fois, il reparaît.
+ */
+export const FIN_ACTE =
+  "Quatre gestes, une journée. Et à chaque fois, votre commerce revient dans leur écran.";

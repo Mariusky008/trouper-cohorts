@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
-import { direActe, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
+import { direActe, FIN_ACTE, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
 import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, motDAction, saCarte, tempsIllustres } from "@/lib/direct/cartes-demo";
@@ -275,6 +275,8 @@ export function DemoTour({
   const tempsCartes = G ? tempsIllustres(actesListe, G, nom, metierLabel, laVille, mesPhotos) : [];
   const SAY_METIER = direActe(actesListe);
   const METIER_AT = actesListe.map((t) => partAu(SAY_METIER, t.dit));
+  /** Où, dans la réplique, l'acte rassemble la journée entière (voir FIN_ACTE). */
+  const METIER_FIN = partAu(SAY_METIER, FIN_ACTE);
 
   // ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ───────────────────────────
   //    Deux actes n'en font plus qu'un : la phrase de clôture et l'écran de
@@ -308,6 +310,8 @@ export function DemoTour({
    * pas — on le survole, et rien n'en reste. C'est vrai de l'acte métier comme
    * des quatre écrans du récit. */
   const [metierN, setMetierN] = useState(0);
+  /** VRAI sur le dernier temps de l'acte 7 : les quatre cartes se rassemblent. */
+  const [journee, setJournee] = useState(false);
   const [quiN, setQuiN] = useState(0);
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
@@ -857,6 +861,7 @@ export function DemoTour({
           enter: () => {
             chime();
             setMetierN(0);
+            setJournee(false);
             setScene("metier");
             setCaption(INTRO_ACTE);
             METIER_AT.forEach((part, i) => {
@@ -865,6 +870,15 @@ export function DemoTour({
                 setCaption(actesListe[i].dit);
               }, quand(SAY_METIER, part));
             });
+            // LA JOURNÉE ENTIÈRE, À LA FIN. Les quatre temps défilaient et
+            // l'acte s'arrêtait net sur le dernier : on avait vu quatre
+            // choses, jamais qu'elles faisaient une journée — ce qui est
+            // pourtant tout l'argument.
+            window.setTimeout(() => {
+              chime();
+              setJournee(true);
+              setCaption(FIN_ACTE);
+            }, quand(SAY_METIER, METIER_FIN));
           },
         });
       }
@@ -1493,7 +1507,11 @@ export function DemoTour({
           .rt-i.fin .rt-t{font-size:16px;font-weight:800;letter-spacing:-.02em;}
 
           /* ── ACTE 7 · LA JOURNÉE, TEMPS PAR TEMPS ────────────────────── */
-          .dtour-ov.mt-ov{background:rgba(6,10,8,.92);align-items:flex-start;padding-top:92px;}
+          /* Le fond prend la teinte du moment, très bas : c'est ce qui fait
+             qu'on SENT le changement d'écran avant même d'avoir lu l'heure. */
+          .dtour-ov.mt-ov{align-items:flex-start;padding-top:92px;
+            background:radial-gradient(115% 62% at 50% 8%,color-mix(in srgb,var(--teinte,#3DE2A6) 17%,transparent) 0%,rgba(6,10,8,.94) 62%),rgba(6,10,8,.94);
+            transition:background .6s var(--exp);}
           .mt-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:11px;pointer-events:auto;}
           .mt-dots{display:flex;gap:6px;}
           .mt-dots i{width:22px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);
@@ -1511,8 +1529,12 @@ export function DemoTour({
           /* L'HEURE ET LE TITRE. Sans eux, les quatre écrans se lisaient comme
              quatre fonctions d'un menu ; avec eux, comme quatre moments de SA
              journée — et il sait ce qu'il pourrait y faire. */
+          /* L'heure porte la couleur du moment, dans une pastille : posée en
+             texte nu elle se confondait avec le reste et ne signalait rien. */
           .mt-hh{font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:850;letter-spacing:.18em;
-            color:#8FE9C4;font-variant-numeric:tabular-nums;}
+            color:var(--teinte,#8FE9C4);font-variant-numeric:tabular-nums;
+            border:1px solid color-mix(in srgb,var(--teinte,#3DE2A6) 45%,transparent);border-radius:999px;
+            background:color-mix(in srgb,var(--teinte,#3DE2A6) 13%,transparent);padding:5px 12px;}
           .mt-titre{font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;text-align:center;text-wrap:balance;
             text-shadow:0 2px 18px rgba(0,0,0,.75);}
           /* CE QU'IL DIT. C'est toujours lui qui apporte le fait : l'assistante
@@ -1522,14 +1544,76 @@ export function DemoTour({
           .mt-dis i{font-style:normal;font-size:13px;line-height:1.35;flex:none;opacity:.75;}
           .mt-fleche{height:14px;display:flex;justify-content:center;}
           .mt-fleche i{display:block;width:2px;height:14px;border-radius:2px;transform-origin:top;
-            background:linear-gradient(180deg,rgba(126,230,192,0),#3DE2A6);
+            background:linear-gradient(180deg,transparent,var(--teinte,#3DE2A6));
             animation:dtTrace .4s var(--exp) .3s both;}
           @keyframes dtTrace{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
-          .mt-carte{max-width:250px;}
+          /* La carte est cerclée de la couleur du moment. Sans ce liseré, quatre
+             cartes du même composant se suivaient sans qu'on voie la coupure. */
+          .mt-carte{max-width:250px;
+            box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
+              0 28px 60px -24px color-mix(in srgb,var(--teinte,#3DE2A6) 60%,transparent),
+              0 40px 80px -30px rgba(0,0,0,.9);}
           @media (max-height:780px){
             .dtour-ov.mt-ov{padding-top:84px;}
             .mt-titre{font-size:17px;}
             .mt-carte{max-width:214px;}
+          }
+
+          /* ── LA JOURNÉE ENTIÈRE, à la fin de l'acte ─────────────────────
+             Elle se pose PAR-DESSUS le dernier temps, qui s'efface dessous :
+             les faire cohabiter demanderait une hauteur qu'aucun téléphone
+             n'a, et le rassemblement perdrait son effet de bascule. */
+          .dtour-ov.mt-ov.jour .mt-wrap{opacity:0;transform:scale(.96);transition:opacity .45s ease,transform .5s var(--exp);}
+          .mt-jour{position:absolute;inset:78px 16px 150px;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:14px;text-align:center;overflow:hidden;
+            animation:dtRise .5s var(--exp) .12s both;}
+          .mt-jour-h{font-size:21px;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;}
+          /* DEUX PAR DEUX, PAS QUATRE DE FRONT. En une seule rangée, chaque
+             carte tombait à 85 px de large — quatre vignettes illisibles au
+             milieu d'un écran aux trois quarts vide. En carré, elles font le
+             double et remplissent la place : c'est l'image qui doit rester. */
+          /* LA LARGEUR EST PLAFONNÉE PAR LA HAUTEUR DISPONIBLE, et il le faut :
+             ces cartes sont au format 3/4,15, donc leur hauteur suit leur
+             largeur. Laissées à 380 px sur un écran de 720, les deux rangées
+             débordaient par le haut et le titre passait à travers le bandeau
+             d'étape — mesuré au navigateur. La formule renvoie la largeur de
+             grille qui fait tenir deux rangées, leurs heures et le titre entre
+             le bandeau et la barre de voix. */
+          .mt-jour-r{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:12px;width:100%;max-width:min(380px,calc(72dvh - 220px));}
+          /* Chacune arrive à son tour, de bas en haut : quatre cartes posées
+             d'un coup se lisent comme une image ; posées l'une après l'autre,
+             comme une journée qui s'est remplie. */
+          .mt-jour-c{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;
+            animation:dtCompte .55s var(--exp) both;animation-delay:calc(.2s + var(--i,0) * .13s);}
+          @keyframes dtCompte{
+            from{opacity:0;transform:translate3d(0,22px,0) scale(.9);filter:blur(8px)}
+            to{opacity:1;transform:none;filter:blur(0)}
+          }
+          .mt-jour-c .h{font-size:11.5px;font-weight:850;letter-spacing:.08em;color:var(--teinte,#8FE9C4);
+            font-variant-numeric:tabular-nums;white-space:nowrap;}
+          .mt-mini{max-width:100%;border-radius:13px;
+            box-shadow:0 0 0 2px var(--teinte,#3DE2A6),
+              0 16px 32px -14px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
+              0 20px 40px -18px rgba(0,0,0,.9);}
+          /* CE QU'ON GARDE À CETTE TAILLE : le geste, et rien d'autre.
+             La carte complète s'y compressait en colonnes de trois lettres, et
+             son nom — le même sur les quatre — mangeait deux lignes pour ne rien
+             distinguer. Ce qu'on montre ici, c'est que les quatre écrans DISENT
+             quatre choses différentes ; le nom, le lieu et le détail ont déjà
+             été lus en grand juste avant. */
+          .mt-mini .cd-bas{padding:8px 8px 9px;gap:0;}
+          .mt-mini .cd-nom,.mt-mini .cd-ou,.mt-mini .cd-social,
+          .mt-mini .cd-lignes,.mt-mini .cd-reste{display:none;}
+          .mt-mini .cd-quoi{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+            overflow:hidden;margin-top:0;font-size:12.5px;line-height:1.25;font-weight:800;}
+          .mt-mini .cd-quoi i{display:none;}
+          .mt-mini .cd-prix{margin-top:4px;}
+          .mt-mini .cd-prix b{font-size:14px;}
+          .mt-mini .cd-prix s,.mt-mini .cd-prix em{display:none;}
+          @media (max-height:780px){
+            .mt-jour{inset:70px 12px 140px;gap:11px;}
+            .mt-jour-h{font-size:18px;}
           }
           /* ── L'ASSISTANTE, AVANT QU'ELLE NE PARLE ─────────────────────
              Entre le tap et le premier mot il s'écoule une à deux secondes. Le
@@ -1665,10 +1749,16 @@ export function DemoTour({
           <div className="dtour-mark" style={{ ["--i" as string]: 0 }}><span>✦</span></div>
           <div className="kick" style={{ ["--i" as string]: 1 }}>✨ Votre site est prêt</div>
           <div className="t" style={{ ["--i" as string]: 2 }}>{nom}</div>
-          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous le présente à voix haute, en un peu plus d&apos;une minute.</div>
+          {/* LA DURÉE ANNONCÉE EST CELLE QU'ON MET. Elle disait « un peu plus
+              d'une minute » et « ≈ 1 min 40 » ; la visite en fait 2 min 14
+              depuis que l'acte 3 joue les trois gestes et que l'acte 7
+              rassemble la journée — mesuré au navigateur, bout en bout. Un
+              commerçant qui a accepté une minute et en passe deux se sent
+              retenu, et c'est le pire moment pour ça. */}
+          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous le présente à voix haute, en un peu plus de deux minutes.</div>
           <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir mon site</button>
           <button className="skip" style={{ ["--i" as string]: 5 }} onClick={() => setPhase("done")}>Voir le site directement</button>
-          <div className="trust" style={{ ["--i" as string]: 6 }}>⏱️ ≈ 1 min 40 · montez le son 🔊</div>
+          <div className="trust" style={{ ["--i" as string]: 6 }}>⏱️ ≈ 2 min 15 · montez le son 🔊</div>
         </div>
       )}
 
@@ -1732,7 +1822,19 @@ export function DemoTour({
                  reçoivent réellement. C'est la seule ligne de l'acte qui
                  réponde à « et alors ? ». */}
           {scene === "metier" && tempsCourant && tempsCartes[metierN] && (
-            <div className="dtour-ov mt-ov">
+            /* CHAQUE MOMENT A SA COULEUR, et ce n'est pas de la décoration.
+               Les quatre temps s'enchaînaient dans la même livrée — même vert,
+               même cadre, même composition — et seul le texte changeait. En
+               quatre secondes chacun, on ne lit pas quatre textes : on voit
+               quatre fois le même écran, et on en conclut que le produit ne
+               fait qu'une chose. La teinte suit le SENS du geste (l'ambre de
+               l'ardoise, la brique de ce qui allait à la poubelle, le bleu des
+               places libres) et se pose sur l'heure, le titre, le trait et le
+               halo derrière la carte. */
+            <div
+              className={`dtour-ov mt-ov${journee ? " jour" : ""}`}
+              style={{ ["--teinte" as string]: tempsCartes[metierN].teinte }}
+            >
               <div className="mt-wrap">
                 <div className="mt-dots" aria-hidden="true">
                   {actesListe.map((t2, i) => (
@@ -1753,6 +1855,31 @@ export function DemoTour({
                   <CarteSwipe carte={tempsCartes[metierN].carte} className="mt-carte" />
                 </div>
               </div>
+
+              {/* LA JOURNÉE ENTIÈRE, en un seul écran, à la fin.
+                  L'acte montrait quatre moments et s'arrêtait sur le dernier :
+                  on avait vu quatre choses, jamais qu'elles font UNE journée —
+                  ce qui est pourtant tout l'argument. Les quatre cartes se
+                  posent ici côte à côte, chacune sous son heure et sa couleur.
+                  C'est la seule image de la démonstration qui répond à « et au
+                  bout d'une journée, ça donne quoi ? ». */}
+              {journee && (
+                <div className="mt-jour">
+                  <div className="mt-jour-h">Votre journée dans Le Direct</div>
+                  <div className="mt-jour-r">
+                    {tempsCartes.map((tc, i) => (
+                      <div
+                        className="mt-jour-c"
+                        key={tc.heure + tc.titre}
+                        style={{ ["--teinte" as string]: tc.teinte, ["--i" as string]: i }}
+                      >
+                        <span className="h">{tc.heure}</span>
+                        <CarteSwipe carte={tc.carte} className="mt-mini" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -81,7 +81,34 @@ export type TempsIllustre = {
   carte: CarteDirect;
   /** L'intitulé du geste attendu de l'habitant sur cette carte. */
   action: string;
+  /**
+   * LA COULEUR DE CE MOMENT DE LA JOURNÉE.
+   *
+   * LE DÉFAUT QU'ELLE CORRIGE. Les quatre temps s'enchaînaient dans exactement
+   * la même livrée — même vert, même cadre, même composition — et seul le texte
+   * changeait. En quatre secondes chacun, on ne lit pas quatre textes : on voit
+   * quatre fois le même écran, et on conclut que le produit fait une seule
+   * chose. La couleur n'est pas une décoration ici, c'est ce qui dit « on a
+   * changé de moment ».
+   *
+   * Elle suit le SENS du geste, pas un cycle : l'ambre de l'ardoise, la brique
+   * de ce qui allait à la poubelle, le bleu des places libres, le violet de la
+   * demande qui vient vers lui.
+   */
+  teinte: string;
 };
+
+/** La couleur de chaque geste — voir `teinte`. */
+const TEINTE: Record<string, string> = {
+  carte: "#F0B429",
+  arrivage: "#F08A29",
+  reste: "#D2604A",
+  creneau: "#4EA8DE",
+  fideles: "#E86AA6",
+  realisation: "#7C5CFC",
+  venir: "#3DE2A6",
+};
+const TEINTE_DEMANDE = "#9B7BFF";
 
 /** Le mot d'action de l'habitant, dans les termes du métier. On ne « veut » pas
  *  une table, on la réserve ; on ne « réserve » pas une fournée, on la veut. */
@@ -342,14 +369,57 @@ export function tempsIllustres(
   // deux depuis ici, on ne sert la photo du four qu'à ceux dont le métier le
   // dit en toutes lettres.
   const boulangerie = /boulanger|pâtissier|patissier|viennoiserie/i.test(metierLabel);
+  // AUCUN TEMPS NE REPREND L'IMAGE DU PRÉCÉDENT.
+  //
+  // L'intention était déjà écrite ici — « la même image quatre fois de suite
+  // donne l'impression que rien ne se passe » — mais elle ne tenait que pour
+  // SES photos. Sur le repli, elle tombait : le geste « carte du jour » et le
+  // geste « il m'en reste » sont tous deux rangés sous la photo du plat, donc
+  // deux des quatre écrans étaient rigoureusement identiques. Mesuré au
+  // navigateur sur un restaurant sans photo : 11 h et 14 h, même image.
+  //
+  // On tient donc un registre. Quand l'image juste est déjà prise, on descend
+  // dans les autres illustrations. Une image approximative se pardonne ; deux
+  // fois la même fait croire que le produit ne fait qu'une chose.
+  //
+  // MAIS LE MÉTIER PASSE AVANT LA VARIÉTÉ, et la première version l'avait
+  // oublié : en cherchant une image inédite, un restaurant qui annonçait ses
+  // tables libres recevait la photo d'un four à viennoiseries. C'est le défaut
+  // qu'on traque depuis le début — montrer au commerçant le commerce d'à côté —
+  // et il rentrait par la porte de derrière une deuxième fois. La substitution
+  // ne sort donc JAMAIS des images de son métier.
+  //
+  // Quand le vivier est épuisé (quatre temps, trois images pour la
+  // restauration), on reprend la PLUS ANCIENNE : une image revient, mais jamais
+  // deux fois de suite. Une répétition à trois écrans d'écart ne se remarque
+  // pas ; deux écrans identiques à la suite, si.
+  const vivier = resto
+    ? [PHOTOS.plat, PHOTOS.tables, PHOTOS.vitrine]
+    : boulangerie
+      ? [PHOTOS.four, PHOTOS.vitrine]
+      : [PHOTOS.vitrine];
+  // Les images déjà servies, de la plus ancienne à la plus récente.
+  const servies: string[] = [];
+  const servir = (img: string) => {
+    const deja = servies.indexOf(img);
+    if (deja >= 0) servies.splice(deja, 1);
+    servies.push(img);
+    return img;
+  };
+  /** L'image de ce temps : la sienne, sinon l'illustration la moins vue. */
+  const imagePour = (cle: string, sienne?: string): string => {
+    if (sienne && !servies.includes(sienne)) return sienne;
+    const voulue = photoDeRepli(cle, resto, boulangerie);
+    if (!servies.includes(voulue)) return voulue;
+    return vivier.find((p) => !servies.includes(p)) ?? servies[0];
+  };
   return temps.map((t, i) => {
-    // Chaque temps prend une photo différente quand il y en a plusieurs : la
-    // même image quatre fois de suite donne l'impression que rien ne se passe.
-    // SES photos d'abord ; l'illustration seulement s'il n'en a aucune.
+    // SES photos d'abord ; l'illustration seulement s'il n'en a pas assez.
     const sienne = photos.length ? photos[i % photos.length] : undefined;
-    const repli = photoDeRepli(t.genre === "demande" ? "" : t.cle, resto, boulangerie);
-    const photo = sienne || repli;
-    const cadrage = sienne ? undefined : CADRAGE[repli];
+    const photo = servir(imagePour(t.genre === "demande" ? "" : t.cle, sienne));
+    // Le cadrage n'est connu que pour NOS illustrations : les siennes gardent
+    // le centre, faute de savoir ce qu'elles montrent.
+    const cadrage = photo === sienne ? undefined : CADRAGE[photo];
 
     if (t.genre === "demande") {
       return {
@@ -357,6 +427,7 @@ export function tempsIllustres(
         titre: "Les habitants cherchent quelque chose",
         dit: t.question,
         action,
+        teinte: TEINTE_DEMANDE,
         carte: {
           photo,
           cadrage,
@@ -376,6 +447,7 @@ export function tempsIllustres(
       titre: TITRE_TEMPS[t.cle] || t.label,
       dit: t.dis,
       action,
+      teinte: TEINTE[t.cle] || "#3DE2A6",
       carte: {
         photo,
         cadrage,
