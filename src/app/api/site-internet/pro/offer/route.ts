@@ -311,6 +311,26 @@ export async function POST(request: Request) {
     // à faire jouer, dans le fil de toute une ville, une vidéo hébergée
     // ailleurs — dont le contenu peut changer après validation.
     const video = videoAcceptee(str(p?.video));
+
+    // UNE ANNONCE SANS IMAGE N'EST PAS PUBLIÉE, ET C'EST LA ROUTE QUI LE TIENT.
+    //
+    // Trois écrans publient par ici, et deux d'entre eux ne demandaient aucune
+    // image : « il me reste 8 lasagnes » arrivait dans le fil de la ville en
+    // rectangle de couleur avec deux initiales dessus, au milieu de cartes qui
+    // ont toutes une photo. Une carte vide ne dessert pas seulement celui qui
+    // l'a publiée — elle abîme l'écran entier, qui est le produit.
+    //
+    // La règle est ici et pas seulement dans l'écran parce qu'un quatrième
+    // chemin de publication sera écrit un jour, et qu'il repassera par cette
+    // fonction. Chaque écran a de quoi la satisfaire sans effort : à défaut de
+    // photo, il fabrique l'image avec les mots de l'annonce.
+    if (!photo && !video) {
+      return NextResponse.json(
+        { error: "Une annonce a besoin d'une image : ajoutez une photo, ou laissez-moi en créer une avec votre texte." },
+        { status: 400 }
+      );
+    }
+
     const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
     /** Renseigné si les façons ont échoué APRÈS la publication de l'annonce. */
     let avertissementFacons = "";

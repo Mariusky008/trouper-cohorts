@@ -453,20 +453,38 @@ export function ProRelance({
    * honnêtement, c'est une carte portant ses mots, son nom et sa ville. Elle
    * rejoint sa galerie comme une image ordinaire — il peut la retirer.
    */
-  const creerVisuel = async () => {
-    if (envoiPhoto || !msg.trim()) return;
-    setEnvoiPhoto(true);
-    setPhotoErr("");
+  /**
+   * LE VISUEL FABRIQUÉ AVEC SES MOTS — et il sert maintenant à TOUS les
+   * chemins de publication, pas seulement à l'écran d'annonce libre.
+   *
+   * POURQUOI IL EST DEVENU UN FILET AUTOMATIQUE. Trois écrans publient dans ce
+   * fichier — la carte du jour, « il m'en reste », et l'annonce rédigée — et
+   * deux d'entre eux ne demandaient aucune image : « il m'en reste 8 lasagnes »
+   * partait dans le fil en rectangle de couleur avec deux initiales dessus.
+   *
+   * On aurait pu bloquer la publication partout. On ne l'a pas fait pour un
+   * écran précis : « il m'en reste » est le geste le plus rentable du produit
+   * et le seul qui tienne en dix secondes. Lui ajouter une étape obligatoire,
+   * c'est le faire disparaître. On demande donc une photo — visiblement, dans
+   * chaque écran — et si le commerçant passe outre, on fabrique l'image avec
+   * SES mots au moment de publier. Jamais de carte vide, jamais de geste
+   * ralenti.
+   *
+   * Retourne l'adresse de l'image, ou `null` si même ça a échoué.
+   */
+  const visuelDepuis = async (texte: string): Promise<string | null> => {
+    const t = texte.trim();
+    if (!t) return null;
     try {
       const canvas = document.createElement("canvas");
       canvas.width = VISUEL_SIZE;
       canvas.height = VISUEL_SIZE;
       const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("canvas");
+      if (!ctx) return null;
       // Le TITRE, pas le message WhatsApp entier : la formule d'adresse et la
       // signature n'ont rien à faire sur une image, et les faire tenir écrasait
       // le texte utile jusqu'à l'illisible.
-      drawVisuel(ctx, VISUEL_STYLES[0], { annonce: resumeBandeau(msg, 120), nom, metier, ville });
+      drawVisuel(ctx, VISUEL_STYLES[0], { annonce: resumeBandeau(t, 120), nom, metier, ville });
       const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
       const r = await fetch("/api/site-internet/pro/gallery", {
         method: "POST",
@@ -474,18 +492,81 @@ export function ProRelance({
         body: JSON.stringify({ slug, token, action: "add", photo: dataUrl }),
       });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && Array.isArray(j.photos)) {
-        setPhotos((j.photos as unknown[]).map(String).filter(Boolean));
-        setPhoto(dataUrl);
-      } else {
-        setPhotoErr(typeof j.error === "string" ? j.error : "Création impossible.");
-      }
+      if (r.ok && Array.isArray(j.photos)) setPhotos((j.photos as unknown[]).map(String).filter(Boolean));
+      // Même si la galerie a refusé, l'image existe : on la publie. Une carte
+      // illustrée qui n'est pas rangée vaut mieux qu'une carte vide.
+      return dataUrl;
     } catch {
-      setPhotoErr("Création impossible.");
-    } finally {
-      setEnvoiPhoto(false);
+      return null;
     }
   };
+
+  const creerVisuel = async () => {
+    if (envoiPhoto || !msg.trim()) return;
+    setEnvoiPhoto(true);
+    setPhotoErr("");
+    const url = await visuelDepuis(msg);
+    if (url) setPhoto(url);
+    else setPhotoErr("Création impossible.");
+    setEnvoiPhoto(false);
+  };
+
+  /**
+   * L'IMAGE DE L'ANNONCE, EN TROIS LIGNES — le même bloc pour tous les écrans.
+   *
+   * Le sélecteur complet (galerie, changement, vidéo) vit dans l'écran
+   * d'annonce rédigée, où l'on a la place. Les écrans courts — « il m'en
+   * reste », les places libres — n'en avaient aucun : on y publiait sans que
+   * la question soit seulement posée. Celui-ci tient en une ligne et ne
+   * bloque rien : sans réponse, le visuel se fabrique à la publication.
+   */
+  const blocImage = (texteDeSecours: string) => (
+    <div className={`imgl${photo ? " ok" : ""}`}>
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo} alt="" />
+      ) : (
+        <span className="imgl-v" aria-hidden="true">🖼️</span>
+      )}
+      <span className="imgl-t">
+        <b>{photo ? "L'image de votre annonce" : "Ajoutez une photo"}</b>
+        <i>
+          {photo
+            ? "C'est elle qu'on verra en premier dans Le Direct."
+            : "C'est elle qu'on voit en premier. Sans photo, je fabrique une image avec vos mots."}
+        </i>
+      </span>
+      <span className="imgl-b">
+        <button type="button" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
+          {envoiPhoto ? "…" : photo ? "Changer" : "📷 Photo"}
+        </button>
+        {!photo && texteDeSecours.trim() ? (
+          <button
+            type="button"
+            onClick={async () => {
+              setEnvoiPhoto(true);
+              const u = await visuelDepuis(texteDeSecours);
+              if (u) setPhoto(u);
+              setEnvoiPhoto(false);
+            }}
+            disabled={envoiPhoto}
+          >
+            🎨 Visuel
+          </button>
+        ) : null}
+      </span>
+    </div>
+  );
+
+  /**
+   * L'IMAGE À ENVOYER AVEC L'ANNONCE — jamais rien.
+   *
+   * Celle qu'il a choisie, sinon celle qu'on fabrique avec le texte qu'il vient
+   * d'écrire. C'est le dernier filet : peu importe par quel écran il est passé,
+   * sa carte arrive illustrée dans le fil.
+   */
+  const imagePourPublier = async (texte: string): Promise<string> =>
+    photo || (await visuelDepuis(texte)) || "";
 
   const saveOffer = async () => {
     const t = offerText.trim();
@@ -503,7 +584,9 @@ export function ProRelance({
           action: "set",
           text: t.slice(0, 140),
           until: fin ? fin.toISOString() : null,
-          photo,
+          // Jamais vide : à défaut de photo choisie, l'image est fabriquée avec
+          // le texte de l'annonce (voir `imagePourPublier`).
+          photo: video ? photo : await imagePourPublier(t),
           video,
           // Ce qu'il reste et la carte du jour : ils s'affichent sur la carte du
           // fil, sous le titre de l'annonce.
@@ -674,7 +757,10 @@ export function ProRelance({
           text: texte || "Notre carte du jour",
           famille: "menu",
           until: soir.toISOString(),
-          photo: cartePhoto ?? "",
+          // La photo de l'ardoise s'il l'a prise, sinon une image fabriquée
+          // avec le menu qu'il vient de taper. Une carte du jour sans rien à
+          // regarder est la dernière chose qu'on veut dans un fil de midi.
+          photo: cartePhoto ?? (await visuelDepuis(texte)) ?? "",
           // Envoyé tel qu'il l'a tapé — virgule française comprise. C'est la
           // route qui tranche ce qu'est un prix : deux écrans qui interprètent
           // « 18,50 » chacun de leur côté finiraient par ne pas l'interpréter
@@ -731,6 +817,10 @@ export function ProRelance({
     try {
       const soir = new Date();
       soir.setHours(23, 59, 0, 0);
+      const texte = `Il me reste ${combien} ${quoi}.`;
+      // L'IMAGE PART AVEC L'ANNONCE. Ce chemin n'en envoyait aucune : la carte
+      // arrivait dans le fil sans rien à regarder.
+      const image = await imagePourPublier(texte);
       const r = await fetch("/api/site-internet/pro/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -738,7 +828,8 @@ export function ProRelance({
           slug,
           token,
           action: "set",
-          text: `Il me reste ${combien} ${quoi}.`,
+          text: texte,
+          photo: image,
           // « offre » : c'est bien une offre du moment. La famille est imposée
           // parce que « il me reste 8 lasagnes » ne contient aucun mot qui la
           // trahisse — déduite du texte, elle serait rangée au hasard.
@@ -1252,6 +1343,24 @@ export function ProRelance({
           .pro .relance .phot .ph-add:disabled{opacity:.55;cursor:not-allowed;}
           .pro .relance .phot .ph-err{margin-top:8px;font-size:11.5px;color:#B4453C;line-height:1.4;}
           .pro .relance .phot .ph-add + .ph-add{margin-top:7px;}
+          /* LE BLOC IMAGE DES ÉCRANS COURTS. Une seule ligne : une vignette, ce
+             qu'on attend, et les boutons. Le sélecteur complet vit dans l'écran
+             d'annonce rédigée, où il y a la place ; ici, la question doit être
+             posée sans rallonger le geste le plus rapide du produit. */
+          .pro .relance .imgl{display:flex;align-items:center;gap:11px;margin-top:13px;padding:10px 11px;
+            border:1px dashed #EBD9AE;background:#FFF9EC;border-radius:13px;}
+          .pro .relance .imgl.ok{border-style:solid;border-color:var(--hair);background:#fff;}
+          .pro .relance .imgl img,.pro .relance .imgl .imgl-v{flex:none;width:46px;height:46px;border-radius:10px;
+            object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:20px;
+            background:#F3EFE4;color:#B4A98C;}
+          .pro .relance .imgl-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+          .pro .relance .imgl-t b{font-size:13px;font-weight:800;color:var(--ink);}
+          .pro .relance .imgl-t i{font-style:normal;font-size:11.5px;line-height:1.35;color:var(--soft);}
+          .pro .relance .imgl-b{flex:none;display:flex;flex-direction:column;gap:5px;}
+          .pro .relance .imgl-b button{border:1px solid var(--hair);background:#fff;border-radius:9px;
+            padding:6px 10px;font-family:inherit;font-size:11.5px;font-weight:800;color:var(--ink);cursor:pointer;
+            white-space:nowrap;}
+          .pro .relance .imgl-b button:disabled{opacity:.5;}
           /* Les deux destinations, nommées. */
           .pro .relance .ofl{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
             color:var(--faint);margin-bottom:6px;}
@@ -1745,6 +1854,13 @@ export function ProRelance({
                     Chaque habitant peut en réserver une&nbsp;; le compteur descend tout seul et l&apos;annonce s&apos;arrête
                     à la dernière. Elle s&apos;efface ce soir&nbsp;: ce qui reste aujourd&apos;hui ne reste pas demain.
                   </div>
+                  {/* L'IMAGE, DEMANDÉE ICI AUSSI. Cet écran publiait sans que
+                      la question soit posée : « il me reste 8 lasagnes » partait
+                      dans le fil en rectangle de couleur avec deux initiales.
+                      Le bloc ne bloque pas — c'est le geste le plus rapide du
+                      produit et il doit le rester — mais la photo est proposée,
+                      et à défaut le visuel se fabrique à la publication. */}
+                  {blocImage(`Il me reste ${resteQ || ""} ${resteQuoi}`.trim())}
                   {resteErr && <div className="aierr">{resteErr}</div>}
                   <button
                     type="button"
@@ -1779,6 +1895,18 @@ export function ProRelance({
                     Il manque une information. Elle part à vos client·es en votre nom — on ne l&apos;invente pas à votre place.
                   </div>
                 )}
+                {/* L'IMAGE EST DEMANDÉE ICI, pas seulement à l'écran suivant.
+                    Cet écran — celui des places libres, de l'événement, de la
+                    raison de passer — ne posait jamais la question : le
+                    sélecteur de photo n'existait qu'après « Rédiger », plus bas
+                    et sur un autre écran. On y arrivait sans l'avoir vu, et
+                    l'annonce partait avec l'image que le commerce avait déjà
+                    en galerie, ou sans rien.
+                    Le bouton « 🎨 Visuel » ne paraît pas encore : le texte de
+                    l'annonce n'existe pas à cette seconde. Il n'en a pas besoin
+                    — s'il ne choisit rien, l'image se fabrique à la publication
+                    avec l'annonce rédigée. */}
+                {blocImage("")}
                 <button className="aibtn" onClick={redigerDepuisAction} disabled={gening}>
                   {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Réécrire" : "✨ Rédiger mon annonce"}
                 </button>
@@ -2409,18 +2537,22 @@ export function ProRelance({
                         hidden
                         onChange={(e) => ajouterPhoto(e.target.files)}
                       />
-                      {/* Le bouton attend l'image. Le message dit CE QUI
-                          MANQUE : un bouton grisé sans explication se lit comme
-                          une panne. */}
+                      {/* LE BOUTON N'ATTEND PLUS L'IMAGE, il la fabrique.
+                          Il était grisé tant qu'aucune image n'était choisie.
+                          C'était honnête et c'était trop dur : un commerçant
+                          sans photo se retrouvait devant un bouton mort, et la
+                          sortie — « créer un visuel » — était un troisième
+                          bouton parmi d'autres. On publie, et à défaut d'image
+                          choisie on en fabrique une avec ses mots. */}
                       {sansImage && (
-                        <div className="oerr" style={{ marginTop: 10 }}>
-                          Ajoutez une photo — ou créez le visuel avec votre texte, juste au-dessus.
+                        <div className="ph-avis" style={{ marginTop: 10 }}>
+                          Sans photo, je publierai une image fabriquée avec votre texte.
                         </div>
                       )}
                       <button
                         className="obtn"
                         onClick={saveOffer}
-                        disabled={offerBusy || !offerText.trim() || sansImage}
+                        disabled={offerBusy || !offerText.trim()}
                       >
                         {/* Plus de « Remplacer » : depuis qu'un commerce peut
                             avoir trois annonces vivantes, ce mot annonçait une
