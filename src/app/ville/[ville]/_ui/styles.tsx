@@ -572,6 +572,13 @@ export function StylesDirect() {
   border-radius:999px;font-size:19px;line-height:1;transition:background .16s,color .16s;}
 .dir .nav a.on{color:var(--ink);font-weight:800;}
 .dir .nav a.on .i{background:var(--gl);color:#0E2A1C;}
+/* EN ROUTE : l'onglet est allumé mais la page n'est pas encore là. Sans cet
+   état, le doigt appuyait et rien ne bougeait pendant une à deux secondes —
+   on appuyait une deuxième fois en croyant que c'était bloqué. La pastille
+   respire tant que la page charge ; elle s'arrête toute seule à l'arrivée. */
+.dir .nav a.on.va .i{animation:navVa 1s ease-in-out infinite;}
+@keyframes navVa{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.dir .nav a.on.va .i{animation:none;opacity:.7;}}
 /* « À saisir » est plein écran et sombre : la barre s'y accorde, sinon elle
    découpe un bandeau clair au bas d'une image. */
 .dir .nav.dark{background:rgba(10,19,16,.97);border-top-color:rgba(255,255,255,.1);}

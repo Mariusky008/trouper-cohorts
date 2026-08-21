@@ -25,7 +25,19 @@ const SYMBOLE =
       `</svg>`,
   ).toString("base64");
 
-export function clikmeOgImage(subtitle: string): ImageResponse {
+/**
+ * LES TROIS PASTILLES DE L'IMAGE DE PARTAGE.
+ *
+ * Elles disaient « Site gratuit · Assistante incluse · Catalogue de votre
+ * ville » — le produit tel qu'il était vendu quand le site était le sujet.
+ * Depuis, le sujet est Le Direct : ce qu'un commerçant dit à midi et que les
+ * habitants voient tout de suite. L'aperçu qui part dans un WhatsApp est
+ * souvent la PREMIÈRE phrase que quelqu'un lit de Clikme ; elle ne peut pas
+ * décrire une version précédente du produit.
+ */
+const PASTILLES = ["Le Direct de votre ville", "Vos clients ce midi", "Site offert"] as const;
+
+export function clikmeOgImage(subtitle: string, pastilles: readonly string[] = PASTILLES): ImageResponse {
   return new ImageResponse(
     (
       <div
@@ -52,7 +64,7 @@ export function clikmeOgImage(subtitle: string): ImageResponse {
         </div>
         <div style={{ display: "flex", fontSize: 48, marginTop: 26, color: "#E6F2EC", maxWidth: 1000 }}>{subtitle}</div>
         <div style={{ display: "flex", marginTop: 44 }}>
-          {["Site gratuit", "Assistante incluse", "Catalogue de votre ville"].map((c) => (
+          {pastilles.map((c) => (
             <div
               key={c}
               style={{

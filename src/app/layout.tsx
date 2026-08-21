@@ -25,22 +25,28 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // LE TITRE ET LA DESCRIPTION DÉCRIVENT LE PRODUIT D'AUJOURD'HUI.
+  // Ils annonçaient « votre site web gratuit + une assistante qui répond à vos
+  // clients » : le produit de l'époque où le site était le sujet. Le site est
+  // toujours offert — il reste dans la description, en second — mais ce qu'on
+  // vend est Le Direct. Ces deux lignes sont ce que Google affiche et ce qu'un
+  // WhatsApp montre : c'est souvent la première phrase qu'on lit de nous.
   title: {
-    default: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
+    default: `${MARQUE} — votre commerce en direct dans votre ville`,
     template: `%s · ${MARQUE}`,
   },
-  description: `${MARQUE} crée gratuitement le site de votre commerce à partir de votre fiche Google, avec une assistante qui présente votre activité et répond à vos clients. En un clic, annoncez vos offres, événements et disponibilités.`,
+  description: "Votre carte du jour, vos places libres, ce qu'il vous reste : dites-le, et les habitants de votre ville le voient tout de suite. Votre site est créé gratuitement à partir de votre fiche Google.",
   openGraph: {
-    title: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
-    description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
+    title: `${MARQUE} — votre commerce en direct dans votre ville`,
+    description: "Votre carte du jour, vos places libres, ce qu'il vous reste : dites-le, et les habitants de votre ville le voient tout de suite. Votre site est créé gratuitement à partir de votre fiche Google.",
     siteName: MARQUE,
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${MARQUE} — votre site web gratuit + une assistante qui répond à vos clients`,
-    description: "Un site moderne créé gratuitement à partir de votre fiche Google, avec une assistante IA qui répond à vos clients. Annoncez vos offres en un clic.",
+    title: `${MARQUE} — votre commerce en direct dans votre ville`,
+    description: "Votre carte du jour, vos places libres, ce qu'il vous reste : dites-le, et les habitants de votre ville le voient tout de suite. Votre site est créé gratuitement à partir de votre fiche Google.",
   },
   manifest: "/manifest.json",
   appleWebApp: {

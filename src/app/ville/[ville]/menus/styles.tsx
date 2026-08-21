@@ -50,8 +50,19 @@ export function StylesMenus() {
    le chercher à chaque fois. */
 .menus .mn-qui .mn-prix{margin-left:auto;font-size:16px;font-weight:800;color:#0A1310;
   background:#93D02C;border-radius:999px;padding:4px 12px;letter-spacing:-.01em;}
-.menus .mn-img{display:block;width:100%;height:auto;border-radius:11px;background:#1B241F;}
-.menus .mn-txt{white-space:pre-wrap;font-size:16px;line-height:1.62;color:#EAF2EC;padding:6px 6px 14px;
+/* LA PHOTO TIENT DANS LE VOLET. Rendue à sa hauteur naturelle, une photo en
+   portrait faisait deux fois la hauteur de l'écran : il fallait la faire
+   défiler pour la voir, sur une page faite pour comparer six menus d'un coup
+   d'œil. En « contain » et non « cover » — une ardoise photographiée rognée
+   est un menu qu'on ne peut plus lire. L'appui l'ouvre en entier.
+   (Pas d'accent grave dans ces commentaires : ils sont DANS un gabarit de
+    chaîne, et un seul y met fin au milieu de la feuille.) */
+.menus .mn-shot{display:block;width:100%;position:relative;border:0;padding:0;background:none;cursor:zoom-in;}
+.menus .mn-img{display:block;width:100%;height:auto;max-height:44vh;object-fit:contain;object-position:center top;
+  border-radius:11px;background:#1B241F;}
+.menus .mn-loupe{position:absolute;right:9px;bottom:9px;font-size:11px;font-weight:800;color:#0A1310;
+  background:rgba(255,255,255,.92);border-radius:999px;padding:5px 10px;pointer-events:none;}
+.menus .mn-txt{white-space:pre-wrap;font-size:16px;line-height:1.62;color:#EAF2EC;padding:12px 6px 14px;
   font-family:var(--fd),Georgia,serif;}
 
 /* DEUX RANGS, ET C'EST UNE MESURE QUI L'A DÉCIDÉ.

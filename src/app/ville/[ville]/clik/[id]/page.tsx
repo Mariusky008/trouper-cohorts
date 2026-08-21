@@ -43,6 +43,18 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   const { ville, id } = await params;
   const supabase = createAdminClient();
   const [cfg, c] = await Promise.all([configVille(supabase, ville), campagneParId(supabase, id)]);
+  // LE 404 SE DÉCIDE ICI, ET C'EST LA SEULE PLACE OÙ IL TIENT.
+  //
+  // `generateMetadata` s'exécute AVANT que la coque HTML soit envoyée : un
+  // `notFound()` posé ici produit un vrai 404. Posé dans la page, il produit
+  // un 404 « mou » — HTTP 200 avec la page d'erreur dedans — dès qu'une
+  // frontière Suspense existe au-dessus. Or on vient d'en poser une pour la
+  // ville entière (`ville/[ville]/loading.tsx`), sans laquelle changer
+  // d'onglet reste plusieurs secondes sans le moindre retour visuel.
+  //
+  // Celui de la page reste, en second rideau : si un jour cette fonction
+  // n'est plus appelée, la page ne servira pas un écran vide.
+  if (!c) notFound();
   const title = c?.titre ? `${c.titre} · ${cfg.nom}` : `Le Direct de ${cfg.nom}`;
   return { title, description: c?.titre || "", openGraph: { title, type: "website" } };
 }

@@ -18,6 +18,10 @@ import type { CarteVue } from "../_ui/carte";
 import { teinte, initiales } from "../_ui/teinte";
 import type { FichePro } from "@/lib/direct/fiche-pro";
 import { PanneauPro, PanneauReserve, StylesPanneaux, type ChoixReserve } from "./panneaux";
+import { usePosition } from "@/lib/direct/position";
+import { distanceCourte, metresEntre } from "@/lib/direct/degradation";
+import { lienItineraire } from "@/lib/direct/fiche-pro";
+import { prixCourt } from "@/lib/direct/prix";
 
 const CLE_USAGES = "clikme_asaisir_usages";
 const USAGES_AVEC_LEGENDE = 3;
@@ -94,6 +98,43 @@ export function SelectionSwipe({
 
   const carte = cartes[i];
   const reste = cartes.length - i;
+  /**
+   * LA DISTANCE, LA VRAIE — la même que dans le fil.
+   *
+   * Cet écran affichait le repère calculé au serveur, c'est-à-dire « Dax » :
+   * dans Le Direct de Dax, c'est le badge le plus inutile de la carte. Le fil
+   * remplace ce repli par une distance dès que l'habitant a accordé sa
+   * position (`usePosition`) ; cet écran-ci ne le faisait pas, alors qu'il
+   * montre les MÊMES annonces. Sans permission, l'affichage est identique à
+   * avant — on ne demande rien au chargement.
+   */
+  const moi = usePosition();
+  const repereDe = (c: CarteVue) => {
+    if (moi && c.lat != null && c.lng != null) {
+      return distanceCourte(metresEntre(moi.lat, moi.lng, c.lat, c.lng));
+    }
+    // « DAX » DANS LE DIRECT DE DAX NE DIT RIEN. C'est le dernier repli de
+    // `repereSpatial`, et il est légitime là-bas — une carte a toujours un
+    // repère. À l'écran, ce badge occupait le coin le plus visible pour
+    // répéter le nom de la ville qu'on est en train de consulter. Il ne
+    // paraît donc que s'il apporte quelque chose : une distance, un quartier.
+    return c.repere && c.repere !== villeNom ? c.repere : "";
+  };
+  /**
+   * L'ITINÉRAIRE, ET SEULEMENT QUAND ON SAIT OÙ C'EST.
+   *
+   * Les coordonnées d'abord — une adresse mal orthographiée envoie à l'autre
+   * bout de la ville, un point ne se trompe jamais —, l'adresse de la fiche
+   * ensuite. Ni l'une ni l'autre : pas de bouton. Un « Y aller » qui ouvre une
+   * carte vide coûte plus cher que son absence.
+   */
+  const itineraireDe = (c: CarteVue) => {
+    const f = fiches[c.id];
+    if (c.lat != null && c.lng != null) {
+      return lienItineraire({ nom: c.auteurNom, adresse: f?.adresse ?? "", ville: villeNom }, c.lat, c.lng);
+    }
+    return f?.adresse ? lienItineraire(f) : "";
+  };
 
   const garder = useCallback(
     async (id: string) => {
@@ -298,7 +339,15 @@ export function SelectionSwipe({
           >
             {carte.photo ? null : <span className="asx-mono" aria-hidden="true">{initiales(carte.auteurNom)}</span>}
             {carte.echeance ? <span className="asx-ech">{carte.echeance}</span> : null}
-            {carte.repere ? <span className="asx-dist">{carte.repere}</span> : null}
+            {repereDe(carte) ? <span className="asx-dist">{repereDe(carte)}</span> : null}
+            {/* Le prix se cale sous le repère quand il y en a un, en haut
+                sinon : posé à une hauteur fixe, il chevauchait le badge. */}
+            {/* LE PRIX, SUR LA PHOTO. C'est la première question qu'on se pose
+                devant une carte du jour, et elle n'avait aucune réponse sur cet
+                écran : le fil l'affiche depuis le début, pas celui-ci. */}
+            {carte.famille === "menu" && prixCourt(carte.prix ?? null) ? (
+              <span className={`asx-prix${repereDe(carte) ? " sous" : ""}`}>{prixCourt(carte.prix ?? null)}</span>
+            ) : null}
             <span className="asx-voile" />
             <span className="asx-qui">
               {carte.auteurMetier ? <em>{carte.auteurMetier}</em> : null}
@@ -308,6 +357,29 @@ export function SelectionSwipe({
           </div>
           <div className="asx-corps">
             <p className="asx-texte">{carte.texte}</p>
+            {/* CE QU'IL RESTE, ET COMMENT Y ALLER.
+                Deux faits que le fil montre et que cet écran taisait. « 2
+                tables » est ce que le commerçant a saisi lui-même ; « Y aller »
+                n'existe que si l'on sait où c'est, sinon un bouton ouvrirait
+                une carte vide. Le geste ↑ mène toujours à la fiche complète —
+                mais devoir l'ouvrir pour savoir où c'est, c'est un écran de
+                trop au moment où l'on choisit. */}
+            {(carte.reste || itineraireDe(carte)) && (
+              <div className="asx-plus">
+                {carte.reste ? <span className="asx-reste">{carte.reste}</span> : <span />}
+                {itineraireDe(carte) ? (
+                  <a
+                    className="asx-aller"
+                    href={itineraireDe(carte)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <span aria-hidden="true">↗</span> Y aller
+                  </a>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {/* L'ÉCHELLE DES PRIX, DANS LA CARTE. Sans elle, on glisse sur des

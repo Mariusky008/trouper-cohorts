@@ -160,10 +160,15 @@ export function Carte({
   const prix = p.famille === "menu" ? prixCourt(p.prix ?? null) : "";
 
   // La distance ne remplace le repli que si les deux positions existent.
+  // Et « Dax » dans Le Direct de Dax ne dit rien : c'est le dernier repli de
+  // `repereSpatial`, légitime là-bas — une carte a toujours un repère — mais à
+  // l'écran il ne servait qu'à répéter le nom de la ville qu'on consulte.
   const repere =
     moi && p.lat != null && p.lng != null
       ? distanceCourte(metresEntre(moi.lat, moi.lng, p.lat, p.lng))
-      : p.repere;
+      : p.repere && p.repere !== villeNom
+        ? p.repere
+        : "";
 
   const basculer = async () => {
     const vise = !on;

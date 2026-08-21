@@ -19,6 +19,7 @@
 // restaurant, glisser à la verticale descend dans le menu.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Loupe } from "../_ui/loupe";
 import type { MenuDuJour } from "@/lib/direct/menus-du-jour";
 import { lienReserverTable } from "@/lib/direct/reserver";
 import { prixCourt } from "@/lib/direct/prix";
@@ -38,6 +39,8 @@ export function MenusDefile({
 }) {
   const depart = Math.max(0, menus.findIndex((m) => m.id === vise));
   const [actif, setActif] = useState(depart);
+  /** La carte qu'on regarde en entier. `null` : aucune. */
+  const [loupe, setLoupe] = useState<string | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
 
   // QUEL MENU EST DEVANT LES YEUX. Le compteur « 2 / 6 » est la seule chose qui
@@ -80,6 +83,7 @@ export function MenusDefile({
 
   return (
     <>
+      {loupe && <Loupe src={loupe} alt="Carte du jour" onFermer={() => setLoupe(null)} />}
       <div className="mn-compte" aria-live="polite">
         {actif + 1} / {menus.length}
       </div>
@@ -99,16 +103,33 @@ export function MenusDefile({
                       l'ardoise jusqu'en bas. */}
                   {prixCourt(m.prix) ? <b className="mn-prix">{prixCourt(m.prix)}</b> : null}
                 </div>
+                {/* LA PHOTO TIENT DANS L'ÉCRAN, ET LE TEXTE EST TOUJOURS LÀ.
+                    Deux défauts corrigés d'un coup :
+                    · l'image était rendue à sa hauteur naturelle. Une photo de
+                      plat en portrait faisait deux fois la hauteur du volet :
+                      il fallait faire défiler pour la voir, sur une page dont
+                      tout l'intérêt est de comparer six menus d'un coup d'œil.
+                      Elle est bornée, sans rognage — une ardoise photographiée
+                      ne doit surtout pas être rognée — et un appui l'ouvre en
+                      entier pour la lire ;
+                    · le texte n'apparaissait QUE s'il n'y avait pas de photo.
+                      Or un restaurateur qui photographie son assiette écrit
+                      quand même son menu : on affichait la photo, et le menu
+                      lui-même — les plats, ce qu'il y a dedans — restait
+                      invisible. Les deux se complètent, ils ne s'excluent pas. */}
                 {m.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="mn-img" src={m.photo} alt={`Carte du jour de ${m.commerce}`} />
-                ) : (
-                  /* SANS PHOTO, LE TEXTE EST LA CARTE. Un restaurateur qui a
-                     tapé son menu au clavier ne doit pas être absent d'un écran
-                     qui s'appelle « les cartes du jour ». Les retours à la ligne
-                     sont préservés : c'est la mise en page qu'il a choisie. */
-                  <div className="mn-txt">{m.texte}</div>
-                )}
+                  <button
+                    type="button"
+                    className="mn-shot"
+                    onClick={() => setLoupe(m.photo)}
+                    aria-label={`Voir la carte du jour de ${m.commerce} en entier`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="mn-img" src={m.photo} alt={`Carte du jour de ${m.commerce}`} />
+                    <span className="mn-loupe" aria-hidden="true">🔍 Voir en entier</span>
+                  </button>
+                ) : null}
+                {m.texte ? <div className="mn-txt">{m.texte}</div> : null}
               </div>
 
               {/* LES DEUX SORTIES, sur toutes les cartes et à la même place :

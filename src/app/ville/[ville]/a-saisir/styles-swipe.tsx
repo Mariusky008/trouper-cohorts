@@ -57,8 +57,21 @@ export function StylesSwipe() {
   font-weight:800;padding:8px 14px;border-radius:999px;}
 .asx-dist{position:absolute;top:13px;right:13px;background:rgba(14,42,28,.8);backdrop-filter:blur(8px);
   color:#fff;font-size:13.5px;font-weight:600;padding:8px 15px;border-radius:999px;}
-.asx-voile{position:absolute;left:0;right:0;bottom:0;height:120px;
-  background:linear-gradient(180deg,transparent,rgba(14,42,28,.95));}
+/* LE PRIX DU MENU, GROS, SOUS LA DISTANCE. C'est la première question qu'on se
+   pose devant une carte du jour, et cet écran n'y répondait pas — il fallait
+   revenir au fil pour le lire. */
+.asx-prix{position:absolute;top:13px;right:13px;background:#0E2A1C;color:#3DE2A6;
+  font-size:19px;font-weight:850;letter-spacing:-.02em;padding:7px 14px;border-radius:999px;
+  box-shadow:0 10px 24px -12px rgba(0,0,0,.8);}
+.asx-prix.sous{top:58px;}
+/* LE VOILE PORTE LE NOM, IL NE DÉCORE PAS. Sur une carte du jour, la photo est
+   souvent l'ARDOISE elle-même : le nom du commerce, posé sur un dégradé de
+   120 px à peine marqué, se superposait aux derniers plats du menu — mesuré au
+   navigateur, « Chez Bergeron » par-dessus « Crème brûlée ». Il monte plus
+   haut et se ferme plus tôt : le nom se lit, et ce qu'il cache du menu se
+   retrouve d'un geste vers le haut. */
+.asx-voile{position:absolute;left:0;right:0;bottom:0;height:170px;
+  background:linear-gradient(180deg,transparent,rgba(14,42,28,.5) 34%,rgba(14,42,28,.94) 72%,#0E2A1C);}
 .asx-qui{position:absolute;bottom:14px;left:16px;right:16px;color:#fff;text-shadow:0 1px 3px rgba(8,20,14,.6);}
 .asx-qui em{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;font-style:normal;}
 .asx-qui b{display:block;font-family:var(--fd),Georgia,serif;font-size:21px;font-weight:700;line-height:1.15;margin-top:4px;}
@@ -69,6 +82,16 @@ export function StylesSwipe() {
 .asx-corps{padding:13px 14px 10px;flex:none;}
 .asx-texte{font-family:var(--fd),Georgia,serif;font-size:16px;font-weight:700;color:#14201A;line-height:1.3;margin:0;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+/* CE QU'IL RESTE, ET COMMENT Y ALLER — deux faits que le fil montrait et que
+   cet écran taisait. « Y aller » est un lien : il doit stopper la propagation
+   du geste, sinon l'appui commence un glissement de carte. */
+.asx-plus{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;}
+.asx-reste{font-family:var(--f),system-ui,sans-serif;font-size:12.5px;font-weight:800;color:#0E2A1C;
+  background:#E4F4EC;border:1px solid #BFE4D2;border-radius:999px;padding:5px 11px;}
+.asx-aller{flex:none;display:inline-flex;align-items:center;gap:5px;text-decoration:none;
+  font-family:var(--f),system-ui,sans-serif;font-size:12.5px;font-weight:850;color:#04150E;
+  background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;padding:6px 13px;
+  box-shadow:0 8px 18px -9px rgba(18,185,129,.9);}
 
 /* L'ÉCHELLE DES PRIX, DANS LA CARTE. Sans elle, on glisse sur des annonces
    sans savoir ce qu'elles proposent — c'est-à-dire qu'on glisse au hasard.

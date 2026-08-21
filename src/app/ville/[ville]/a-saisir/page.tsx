@@ -143,6 +143,12 @@ export default async function ASaisirPage({ params }: { params: Promise<{ ville:
     repere: repereSpatial(p, ctx),
     lat: p.lat,
     lng: p.lng,
+    // LE PRIX DU MENU MANQUAIT ICI, et nulle part ailleurs. Le fil le passe
+    // depuis le début ; cet écran ne le passait pas, donc la carte du jour la
+    // plus alléchante y arrivait sans son prix — c'est-à-dire sans ce qui
+    // décide. Les deux écrans montrent les mêmes annonces : ils doivent en
+    // montrer les mêmes faits.
+    prix: p.prix,
     fraicheur: ilYA(p.publieLe),
     echeance: echeanceCourte(p.expireLe),
     urgent: presse(p.expireLe),

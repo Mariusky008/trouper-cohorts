@@ -283,6 +283,18 @@ export function ProRelance({
   // qui affiche déjà `photo` — le résumé par e-mail, l'aperçu d'un lien — continue
   // de fonctionner sans rien savoir de la vidéo.
   const [video, setVideo] = useState<string | null>(null);
+  /**
+   * L'ANNONCE N'A PAS D'IMAGE — et c'est bloquant depuis qu'on l'a mesuré à
+   * l'usage : une carte sans image est un rectangle de couleur avec deux
+   * initiales, au milieu d'un fil où toutes les autres ont une photo.
+   *
+   * On teste l'image DE CETTE ANNONCE, pas la galerie du commerce : avec des
+   * photos en galerie mais aucune retenue, ni le sélecteur ni l'avertissement
+   * ne s'affichaient, et on publiait une carte vide sans l'avoir vu venir.
+   *
+   * La vidéo compte : son affiche devient la photo (voir `EnvoiVideo`).
+   */
+  const sansImage = !photo && !video;
   const [touchePhoto, setTouchePhoto] = useState(false);
   const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
@@ -2346,15 +2358,26 @@ export function ProRelance({
                         </div>
                       )}
 
-                      {/* Sans photo, la carte du fil est un aplat de
-                          couleur. On le DIT, au lieu de laisser la découverte
-                          se faire sur la page publique. */}
-                      {photos.length === 0 && (
+                      {/* UNE IMAGE EST MAINTENANT OBLIGATOIRE, et ce n'est pas
+                          une exigence esthétique.
+                          Sans elle, la carte du fil est un aplat de couleur
+                          avec deux initiales dessus. On l'annonçait — « votre
+                          annonce paraîtra sur un fond de couleur » — et on la
+                          publiait quand même : le commerçant découvrait le
+                          résultat en ouvrant Le Direct, au milieu des cartes
+                          des autres qui, elles, ont une photo. Une carte vide
+                          ne dessert pas seulement celui qui l'a publiée : elle
+                          abîme l'écran entier.
+                          Le blocage n'est acceptable que parce qu'il y a une
+                          sortie en un geste juste en dessous — le visuel
+                          fabriqué avec SES mots, qui ne dépend d'aucune photo. */}
+                      {sansImage && (
                         <div className="phot vide">
-                          <div className="ph-h">Aucune photo</div>
+                          <div className="ph-h">Il manque l&apos;image</div>
                           <div className="ph-s">
-                            Votre annonce paraîtra dans le catalogue de {ville} sur un fond de couleur.
-                            Une photo de votre travail change beaucoup ce qu&apos;on en voit.
+                            C&apos;est elle qu&apos;on voit en premier dans Le Direct de {ville} — avant votre nom et
+                            avant votre texte. Sans elle, votre carte est un rectangle de couleur à côté de celles
+                            des autres commerces.
                           </div>
                           <button type="button" className="ph-add" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
                             {envoiPhoto ? "…" : "📷 Prendre une photo maintenant"}
@@ -2386,7 +2409,19 @@ export function ProRelance({
                         hidden
                         onChange={(e) => ajouterPhoto(e.target.files)}
                       />
-                      <button className="obtn" onClick={saveOffer} disabled={offerBusy || !offerText.trim()}>
+                      {/* Le bouton attend l'image. Le message dit CE QUI
+                          MANQUE : un bouton grisé sans explication se lit comme
+                          une panne. */}
+                      {sansImage && (
+                        <div className="oerr" style={{ marginTop: 10 }}>
+                          Ajoutez une photo — ou créez le visuel avec votre texte, juste au-dessus.
+                        </div>
+                      )}
+                      <button
+                        className="obtn"
+                        onClick={saveOffer}
+                        disabled={offerBusy || !offerText.trim() || sansImage}
+                      >
                         {/* Plus de « Remplacer » : depuis qu'un commerce peut
                             avoir trois annonces vivantes, ce mot annonçait une
                             perte qui n'a plus lieu. On publie, c'est tout. */}
