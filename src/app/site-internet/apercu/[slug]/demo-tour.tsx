@@ -106,6 +106,22 @@ export function DemoTour({
    */
   const MS_PAR_CARACTERE = 70;
   /**
+   * COMBIEN DE TEMPS DURE UNE RÉPLIQUE, QUAND LA VOIX NE LE DIT PAS.
+   *
+   * UNE SEULE FORMULE, PARTOUT — et il en existait deux. La boucle des actes
+   * attendait `min(21 s, max(2,4 s, longueur × 60 ms))` ; les temps internes
+   * d'un acte se plaçaient sur `longueur × 70 ms`. Tant que les répliques
+   * étaient courtes, les deux tombaient à peu près ensemble. En rallongeant
+   * l'acte 3 pour montrer les trois gestes, l'écart est devenu visible :
+   * l'acte s'arrêtait à 21 s pendant que la réservation était planifiée à 24 s.
+   * Elle n'a jamais été jouée. Mesuré au navigateur — l'acte terminait à 23,8 s.
+   *
+   * Le plafond de 21 s est parti avec : il coupait la parole aux actes longs
+   * au lieu de les laisser finir. Le garde-fou dur d'`awaitSpeech` reste, lui,
+   * pour le cas où la voix ne rendrait jamais la main.
+   */
+  const estimeMs = (phrase: string) => Math.max(2400, phrase.length * MS_PAR_CARACTERE);
+  /**
    * OÙ, DANS LA PHRASE, LA VOIX ATTAQUE CET EXTRAIT — exprimé en FRACTION.
    *
    * DEUX CORRECTIFS EN UN SEUL CHANGEMENT.
@@ -173,11 +189,21 @@ export function DemoTour({
   //    utilisateurs ici », et le jour où il ouvre le fil et le trouve calme,
   //    il se sent trompé. On parle des Dacquois — une affirmation sur la
   //    ville, pas sur notre audience.
+  //
+  //    TROIS TEMPS DE PLUS, ET C'EST LE CŒUR DE L'ACTE. Les trois premiers
+  //    disaient qu'un fil existe ; on voyait des cartes défiler toutes seules
+  //    et trois boutons inertes en dessous. Un mode swipe ne se comprend pas
+  //    en le décrivant : il se comprend en voyant ce qu'un geste PRODUIT.
+  //    Chacune de ces trois phrases porte donc son effet à l'écran — la carte
+  //    qui part, le cœur qui monte se ranger, le message qui s'ouvre.
   const QUI_DIT = G
     ? [
         `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
         `Beaucoup ouvriront Le Direct de ${laVille} : ce qui se passe autour d'eux, maintenant.`,
         `Les menus du jour, les tables qui restent, ce qui vient de sortir du four.`,
+        `Ce qui ne leur dit rien, ils le passent. La suivante arrive.`,
+        `Ce qui leur plaît, ils le gardent : le commerce tombe dans leur carte.`,
+        `Et quand c'est le bon, ils réservent. Le message part au commerce, tout de suite.`,
       ]
     : [];
   const SAY_QUI = QUI_DIT.join(" ");
@@ -293,6 +319,26 @@ export function DemoTour({
   const [carteVille, setCarteVille] = useState(0);
   const rotation = useRef<number | null>(null);
   /**
+   * LES TROIS GESTES DU DIRECT, JOUÉS UN PAR UN — acte 3.
+   *
+   * LE DÉFAUT. La pile tournait toute seule et les trois boutons restaient
+   * sous la carte, inertes. On voyait DES cartes ; on ne voyait pas ce qu'un
+   * geste PRODUIT. Or c'est là tout le mode swipe : le refus fait venir la
+   * suivante, le cœur range le commerce dans « Ma carte », et la réservation
+   * ouvre le message. Sans ces trois effets, l'acte le plus important de la
+   * démonstration se regarde comme un diaporama.
+   *
+   * `gesteQui` dit lequel des trois est en cours ; les trois autres états sont
+   * ses conséquences visibles, parce qu'elles ne tombent pas au même instant
+   * que le geste (le cœur met presque une seconde à arriver en haut).
+   */
+  const [gesteQui, setGesteQui] = useState<"" | "passer" | "veux" | "resa">("");
+  const [gardees, setGardees] = useState(1);
+  const [coeurVole, setCoeurVole] = useState(false);
+  const [resaQui, setResaQui] = useState(false);
+  /** Les minuteries de ces trois gestes, pour les couper en quittant l'acte. */
+  const gestes3 = useRef<number[]>([]);
+  /**
    * LE NOMBRE DE LA VILLE, COMPTÉ À L'ÉCRAN.
    *
    * Posés d'un coup, mille Dacquois se lisent comme un chiffre de plaquette :
@@ -323,6 +369,7 @@ export function DemoTour({
     () => () => {
       if (compteur.current) cancelAnimationFrame(compteur.current);
       if (rotation.current) window.clearInterval(rotation.current);
+      gestes3.current.forEach(clearTimeout);
     },
     []
   );
@@ -334,6 +381,12 @@ export function DemoTour({
     if (scene !== "qui" && rotation.current) {
       window.clearInterval(rotation.current);
       rotation.current = null;
+    }
+    // Les gestes de l'acte 3 non plus : une carte qui part vers la gauche
+    // pendant l'acte 5 serait un mouvement sans phrase pour le porter.
+    if (scene !== "qui" && gestes3.current.length) {
+      gestes3.current.forEach(clearTimeout);
+      gestes3.current = [];
     }
   }, [scene]);
   const cancelled = useRef(false);
@@ -641,7 +694,7 @@ export function DemoTour({
      * devine donc plus rien. Quand c'est la voix du navigateur qui parle (elle
      * ne publie aucune durée), on retombe sur l'estimation par caractère.
      */
-    const dureeDe = (phrase: string) => dureeVoixMs() || phrase.length * MS_PAR_CARACTERE;
+    const dureeDe = (phrase: string) => dureeVoixMs() || estimeMs(phrase);
 
     /** Un repère en fraction de phrase → un délai en millisecondes. */
     const quand = (phrase: string, part: number) => Math.round(part * dureeDe(phrase));
@@ -687,12 +740,50 @@ export function DemoTour({
           setScene("qui");
           compter(G.combien);
           setCarteVille(0);
+          setGesteQui("");
+          setGardees(1);
+          setCoeurVole(false);
+          setResaQui(false);
+          gestes3.current.forEach(clearTimeout);
+          gestes3.current = [];
+          const dans = (ms: number, f: () => void) => { gestes3.current.push(window.setTimeout(f, ms)); };
+          const suivante = () => setCarteVille((n) => (n + 1) % Math.max(1, cartesVille.length));
+
+          // LA PILE NE TOURNE PLUS TOUTE SEULE PENDANT TOUT L'ACTE. Elle
+          // tournait de bout en bout, toutes les 1,7 s : la carte changeait
+          // pendant qu'on parlait du geste, et on ne savait plus si c'était
+          // le geste ou le minuteur qui l'avait fait partir. Elle tourne
+          // seulement le temps du troisième temps — celui qui énumère ce
+          // qu'on y trouve — puis les gestes prennent la main.
           if (rotation.current) window.clearInterval(rotation.current);
-          rotation.current = window.setInterval(
-            () => setCarteVille((n) => (n + 1) % Math.max(1, cartesVille.length)),
-            1700
-          );
+          rotation.current = window.setInterval(suivante, 1900);
           suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
+
+          // Chaque geste tombe SUR sa phrase, en fraction de la durée réelle
+          // de la voix — comme les légendes. Les décalages internes (la carte
+          // met 600 ms à sortir, le cœur 950 ms à monter) sont les durées des
+          // animations elles-mêmes, pas des réglages au jugé.
+          const t = (i: number) => quand(SAY_QUI, QUI_AT[i] ?? 0);
+
+          // ① LE REFUS. La carte part vers la gauche, la suivante monte.
+          dans(t(3), () => {
+            if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
+            setGesteQui("passer");
+          });
+          dans(t(3) + 620, () => { suivante(); setGesteQui(""); });
+
+          // ② LE CŒUR. Il grossit sur la carte, s'envole vers « Ma carte »,
+          //    et le compteur du bandeau passe de 1 à 2 À SON ARRIVÉE — pas
+          //    au départ, sinon le chiffre change avant que le cœur parte et
+          //    le trajet ne veut plus rien dire.
+          dans(t(4), () => { setGesteQui("veux"); setCoeurVole(true); });
+          dans(t(4) + 900, () => setGardees(2));
+          dans(t(4) + 1200, () => { setCoeurVole(false); setGesteQui(""); });
+
+          // ③ LA RÉSERVATION. Le panneau du produit s'ouvre par-dessus la
+          //    carte, avec le message déjà écrit. Il reste jusqu'à la fin de
+          //    l'acte : c'est la dernière image, celle qu'on emporte.
+          dans(t(5), () => { setGesteQui("resa"); setResaQui(true); });
         },
       });
 
@@ -804,7 +895,7 @@ export function DemoTour({
     // Le plafond suit la réplique la plus longue — désormais l'acte métier, qui
     // enchaîne cinq temps. Laissé à 17 s, il coupait la parole à sa dernière
     // carte : elle apparaissait, et l'étape changeait dans la seconde.
-    const est = (s: string) => Math.min(21000, Math.max(2400, s.length * 60));
+    const est = estimeMs;
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
       const st = steps[i];
@@ -1162,36 +1253,115 @@ export function DemoTour({
             from{opacity:0;transform:translate3d(0,10px,0) scale(.97);filter:blur(6px)}
             to{opacity:1;transform:none;filter:blur(0)}
           }
-          .qi-aide{text-align:center;font-size:11.5px;color:#7E938A;}
-          /* LA CARTE EST BRIDÉE ICI, et pas au composant. Le nombre, la
-             question, la barre, la carte, les trois gestes et la légende
-             doivent tenir ENSEMBLE entre le bandeau d'étape et la barre de
-             voix. À sa largeur naturelle, la carte débordait de 10 px sur un
-             grand téléphone et de 68 px sur un petit — mesuré au navigateur.
-             C'est la seule scène qui empile autant de choses ; c'est donc à
-             elle de se contraindre, pas au composant partagé. */
-          .qi-app .cd-carte{max-width:226px;}
-          .qi-app .cd-nom{font-size:20px;}
-          .qi-app .cd-gestes{margin-top:12px;gap:20px;}
-          .qi-app .cd-g i{width:40px;height:40px;font-size:16px;}
-          .qi-app .cd-g.grand i{width:52px;height:52px;font-size:20px;}
-          @media (max-height:800px){
-            .qi-app .cd-carte{max-width:178px;}
-            .qi-app .cd-nom{font-size:17px;}
-            .qi-app .cd-gestes{margin-top:9px;gap:16px;}
-            .qi-app .cd-g i{width:34px;height:34px;font-size:14px;}
-            .qi-app .cd-g.grand i{width:44px;height:44px;font-size:17px;}
-            .qi-app .cd-g em{font-size:10px;}
-            .qi.serre .qi-n{font-size:clamp(32px,9vw,42px);}
-            .qi-aide{font-size:10.5px;}
+          /* LE NOMBRE S'EFFACE, IL NE RÉTRÉCIT PLUS. Il restait affiché en
+             petit avec sa question pendant tout l'acte, et la carte était
+             bridée à 226 px (178 sur un petit écran) pour lui laisser la
+             place : la vedette de la démonstration tenait dans un timbre.
+             Le bloc se replie sur zéro par la même mécanique que l'ouverture
+             du fil (0fr → 1fr), donc sans saut. */
+          .qi-tete{display:grid;grid-template-rows:1fr;opacity:1;
+            transition:grid-template-rows .55s var(--exp),opacity .3s ease;}
+          .qi-tete>div{overflow:hidden;min-height:0;}
+          .qi.serre .qi-tete{grid-template-rows:0fr;opacity:0;}
+
+          /* LA CARTE PREND CE QUE LE NOMBRE A RENDU. Posée à sa largeur de
+             dessin, puis mise à l'échelle en entier selon la hauteur libre —
+             jamais étranglée en largeur, sinon le nom du commerce reste écrit
+             en 25 px sur une carte de 180 et passe par-dessus le compte à
+             rebours. Mêmes paliers que l'aperçu de l'espace commerçant. */
+          .qi-app .cd-carte{max-width:300px;}
+          @media (max-height:860px){.qi-app{zoom:.90;}}
+          @media (max-height:790px){.qi-app{zoom:.80;}}
+          @media (max-height:720px){.qi-app{zoom:.70;}}
+          @media (max-height:650px){.qi-app{zoom:.60;}}
+
+          /* ── LES TROIS GESTES, JOUÉS ─────────────────────────────────
+             Un mode swipe ne se décrit pas, il se voit faire. Ces trois
+             effets sont l'acte lui-même, pas sa décoration. */
+
+          /* LE PAQUET : la suivante dessous, celle qu'on manipule dessus. */
+          .qi-c.dessous{position:absolute;left:0;right:0;top:14px;margin-inline:auto;z-index:0;
+            transform:scale(.945) translateY(9px);opacity:.5;filter:saturate(.55);animation:none;}
+          .qi-c.dessous.monte{animation:dtMonte .62s var(--exp) forwards;}
+          @keyframes dtMonte{to{transform:none;opacity:1;filter:none}}
+          .qi-dessus{position:relative;z-index:2;}
+
+          /* ① LE REFUS — la carte s'en va, la suivante prend sa place. */
+          .qi-dessus.part{animation:dtPart .62s var(--exp) forwards;}
+          @keyframes dtPart{
+            from{opacity:1;transform:none}
+            to{opacity:0;transform:translate3d(-128%,18px,0) rotate(-15deg)}
           }
-          /* LE NOMBRE SE RESSERRE QUAND LE CATALOGUE S'OUVRE. À taille pleine,
-             les deux ne tiennent pas ensemble : mesuré au navigateur, le nombre
-             passait sous le bandeau d'étape. */
-          .qi .qi-n,.qi .qi-q{transition:font-size .6s var(--exp),margin .6s var(--exp);}
-          .qi.serre .qi-n{font-size:clamp(38px,11vw,54px);}
-          .qi.serre .qi-q{margin-top:2px;font-size:14px;}
-          .qi.serre .qi-q b{margin-top:1px;font-size:17px;}
+          /* ② LE CŒUR — la carte accuse le coup avant que le cœur parte. */
+          .qi-dessus.aime{animation:dtAime .5s cubic-bezier(.34,1.4,.64,1);}
+          @keyframes dtAime{0%{transform:none}40%{transform:scale(1.035) rotate(1.2deg)}100%{transform:none}}
+          /* Le tampon dit CE QUI VIENT D'ÊTRE FAIT, pendant que l'effet court. */
+          .qi-tampon{position:absolute;left:50%;top:46%;z-index:5;pointer-events:none;
+            display:flex;align-items:center;justify-content:center;width:74px;height:74px;border-radius:50%;
+            font-size:32px;line-height:1;transform:translate(-50%,-50%);
+            -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+            animation:dtTampon .55s var(--exp) both;}
+          .qi-tampon.non{color:#FFD9D2;background:rgba(210,96,74,.34);border:2px solid rgba(255,217,210,.6);}
+          .qi-tampon.oui{color:#0A2018;background:rgba(61,226,166,.9);border:2px solid rgba(255,255,255,.55);}
+          @keyframes dtTampon{
+            from{opacity:0;transform:translate(-50%,-50%) scale(.5)}
+            60%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}
+            to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+          }
+          /* LE TRAJET DU CŒUR. C'est lui qui explique « Ma carte » : sans le
+             voir monter s'y ranger, le compteur du bandeau passerait de 1 à 2
+             dans un coin et personne ne ferait le lien. */
+          .qi-vol{position:absolute;left:50%;top:46%;z-index:7;pointer-events:none;
+            font-size:38px;line-height:1;color:#3DE2A6;text-shadow:0 6px 24px rgba(18,185,129,.7);
+            transform:translate(-50%,-50%);animation:dtVole .95s cubic-bezier(.42,0,.18,1) forwards;}
+          @keyframes dtVole{
+            0%{opacity:0;left:50%;top:46%;transform:translate(-50%,-50%) scale(.4)}
+            22%{opacity:1;left:50%;top:44%;transform:translate(-50%,-50%) scale(1.4)}
+            42%{opacity:1;left:52%;top:34%;transform:translate(-50%,-50%) scale(1)}
+            100%{opacity:0;left:82%;top:-14%;transform:translate(-50%,-50%) scale(.35)}
+          }
+          /* Le bandeau accuse réception : le chiffre change au MOMENT où le
+             cœur arrive, pas au moment du geste. */
+          .qi-app.recu .cd-puce.vert{animation:dtRecu .6s cubic-bezier(.34,1.45,.64,1);}
+          @keyframes dtRecu{
+            0%{transform:none;box-shadow:0 0 0 0 rgba(61,226,166,.55)}
+            45%{transform:scale(1.16);box-shadow:0 0 0 9px rgba(61,226,166,0)}
+            100%{transform:none}
+          }
+          /* ③ LA RÉSERVATION — le panneau du produit, par-dessus la carte. */
+          /* Il se cale sur la LARGEUR DE LA CARTE, pas sur celle de la pile :
+             la pile est plus large (elle porte les tranches), et un panneau
+             qui déborde de la carte se lit comme un autre écran. */
+          .qi-resa{position:absolute;left:0;right:0;bottom:0;z-index:8;max-width:300px;margin-inline:auto;
+            border-radius:20px 20px 26px 26px;padding:15px 15px 16px;text-align:left;
+            background:linear-gradient(180deg,rgba(10,17,14,.97),#070D0B);
+            border:1px solid rgba(126,230,192,.22);box-shadow:0 -20px 50px -20px rgba(0,0,0,.95);
+            animation:dtFeuille .5s var(--exp) both;}
+          @keyframes dtFeuille{
+            from{opacity:0;transform:translate3d(0,26px,0);filter:blur(8px)}
+            to{opacity:1;transform:none;filter:blur(0)}
+          }
+          .qi-resa-t{font-size:16px;font-weight:850;letter-spacing:-.02em;color:#fff;}
+          .qi-resa-o{display:flex;flex-direction:column;gap:1px;margin-top:9px;padding:9px 11px;border-radius:12px;
+            background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+          .qi-resa-o b{font-size:13px;font-weight:800;color:#fff;}
+          .qi-resa-o i{font-style:normal;font-size:11px;color:#9FB3A8;}
+          .qi-resa-m{margin-top:9px;padding:9px 11px;border-radius:12px;font-size:11.5px;line-height:1.4;color:#D3E2DA;
+            background:rgba(18,185,129,.09);border:1px solid rgba(126,230,192,.2);}
+          .qi-resa-m .k{display:block;font-size:8.5px;font-weight:850;letter-spacing:.13em;text-transform:uppercase;
+            color:#8FE9C4;margin-bottom:4px;}
+          .qi-resa-b{margin-top:11px;border-radius:13px;padding:11px;text-align:center;
+            font-size:13.5px;font-weight:850;color:#04150E;background:linear-gradient(140deg,#3DE2A6,#0BA97B);
+            box-shadow:0 14px 30px -12px rgba(18,185,129,.85);}
+
+          @media (prefers-reduced-motion:reduce){
+            .qi-dessus.part,.qi-dessus.aime,.qi-c.dessous.monte,.qi-vol,.qi-tampon,.qi-resa,.qi-app.recu .cd-puce.vert{animation-duration:.01ms;}
+            .qi-tete{transition:none;}
+          }
+          /* Le nombre ne « se resserre » plus quand le fil s'ouvre : il s'en
+             va (voir .qi-tete). Il partageait l'écran avec la carte, et les
+             deux y perdaient — un nombre trop petit pour frapper, une carte
+             trop petite pour se lire. */
           /* ── ACTE 4 · ET VOUS ? ──────────────────────────────────────── */
           .dtour-card.iv{text-align:center;}
           .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#141A2E;text-wrap:balance;
@@ -1621,10 +1791,21 @@ export function DemoTour({
               jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
             <div className={`dtour-ov dt-noir qi${quiN >= 1 ? " serre" : ""}`}>
-              <div className="qi-n">{compte}</div>
-              <div className="qi-q">
-                {gentile} vont {G.verbe}<br />
-                <b>{G.cherchent}</b>
+              {/* LE NOMBRE S'EFFACE QUAND LE DIRECT S'OUVRE, il ne rétrécit
+                  plus. Il restait à l'écran, réduit, avec sa question et une
+                  ligne d'aide sous les boutons : quatre bandeaux de texte
+                  autour de la seule chose qu'on est venu montrer, et une carte
+                  bridée à 226 px pour leur faire de la place. Le Direct est la
+                  vedette de cette démonstration ; à cet instant, il a l'écran
+                  entier. Le nombre a déjà été dit — il n'a plus à être lu. */}
+              <div className="qi-tete">
+                <div>
+                  <div className="qi-n">{compte}</div>
+                  <div className="qi-q">
+                    {gentile} vont {G.verbe}<br />
+                    <b>{G.cherchent}</b>
+                  </div>
+                </div>
               </div>
               {/* LE CATALOGUE AUSSI S'OUVRE. Monté d'un coup, c'est LUI qui
                   faisait le plus gros saut de la démonstration — 69 pixels
@@ -1632,22 +1813,77 @@ export function DemoTour({
                   plus importante de l'acte. */}
               <div className={`dt-ouvre${quiN >= 1 ? " on" : ""}`}>
                 <div className="dt-ec24">
-                  <div className="qi-app">
-                    <BarreDirect marque={MARQUE} ville={laVille} agenda={2} gardees={1} />
+                  <div className={`qi-app${gardees > 1 ? " recu" : ""}`}>
+                    <BarreDirect marque={MARQUE} ville={laVille} agenda={2} gardees={gardees} />
                     {/* UNE SEULE CARTE À LA FOIS, et deux tranches derrière.
                         Les trois étaient rendues empilées dans la même case :
                         leurs textes se superposaient et l'écran devenait
                         illisible — mesuré au navigateur, trois noms de commerce
                         l'un par-dessus l'autre. Une pile, ça ne se lit pas par
                         transparence : on voit la carte du dessus, et on DEVINE
-                        les autres. Elle change toute seule toutes les 1,7 s. */}
+                        les autres. */}
                     <div className="qi-pile">
                       <span className="qi-dos d2" aria-hidden="true" />
                       <span className="qi-dos d1" aria-hidden="true" />
-                      <CarteSwipe key={cartesVille[carteVille]?.quoi} carte={cartesVille[carteVille]} className="qi-c" />
+                      {/* LA CARTE SUIVANTE EST DÉJÀ LÀ, DERRIÈRE.
+                          Sans elle, le refus faisait un trou : la carte partait
+                          vers la gauche et l'écran restait vide une demi-seconde
+                          — mesuré au navigateur, le tampon flottait seul au
+                          milieu du noir. Or c'est ÇA, la promesse du geste :
+                          « la suivante arrive ». Elle doit donc être visible
+                          avant, et monter en même temps que l'autre sort. */}
+                      <CarteSwipe
+                        key={`dessous-${carteVille}`}
+                        carte={cartesVille[(carteVille + 1) % Math.max(1, cartesVille.length)]}
+                        className={`qi-c dessous${gesteQui === "passer" ? " monte" : ""}`}
+                      />
+                      {/* La carte du dessus et son tampon partent ENSEMBLE :
+                          le tampon posé dans la pile restait à l'écran après le
+                          départ de la carte qu'il marquait. */}
+                      <div
+                        className={`qi-dessus${gesteQui === "passer" ? " part" : ""}${gesteQui === "veux" ? " aime" : ""}`}
+                      >
+                        <CarteSwipe key={cartesVille[carteVille]?.quoi} carte={cartesVille[carteVille]} className="qi-c" />
+                        {/* LE TAMPON dit CE QUI VIENT D'ÊTRE FAIT pendant que
+                            l'effet court : un geste dont la conséquence arrive
+                            une demi-seconde plus tard laisse sinon un temps mort. */}
+                        {gesteQui === "passer" && <span className="qi-tampon non" aria-hidden="true">✕</span>}
+                        {gesteQui === "veux" && <span className="qi-tampon oui" aria-hidden="true">♥</span>}
+                      </div>
+                      {/* LE CŒUR VA SE RANGER. C'est le trajet qui explique la
+                          fonction : sans lui, « Ma carte » passerait de 1 à 2
+                          dans un coin, et personne ne ferait le lien. */}
+                      {coeurVole && <span className="qi-vol" aria-hidden="true">♥</span>}
+                      {/* LE PANNEAU DU PRODUIT, pas une pop-up de démo : mêmes
+                          blocs que `PanneauReserve` du fil — ce qu'on prend, le
+                          message déjà écrit, le bouton WhatsApp. */}
+                      {resaQui && (
+                        <div className="qi-resa">
+                          <div className="qi-resa-t">C&apos;est à vous <span aria-hidden="true">✨</span></div>
+                          <div className="qi-resa-o">
+                            <b>{cartesVille[carteVille]?.quoi}</b>
+                            <i>{cartesVille[carteVille]?.nom} · {cartesVille[carteVille]?.metier}</i>
+                          </div>
+                          <div className="qi-resa-m">
+                            <span className="k">Message prêt à envoyer</span>
+                            Bonjour, je viens de voir votre annonce sur Le Direct de {laVille}. Je passe la prendre&nbsp;?
+                          </div>
+                          <div className="qi-resa-b"><span aria-hidden="true">💬</span> Réserver via WhatsApp</div>
+                        </div>
+                      )}
                     </div>
-                    <GestesDirect action={actionHabitant} actif={quiN >= 2 ? "veux" : undefined} />
-                    <div className="qi-aide">swipe pour décider · ↑ pour voir le commerce</div>
+                    {/* LE BOUTON QUI S'ALLUME EST CELUI QU'ON JOUE. Il
+                        s'allumait sur « Je réserve » dès la deuxième phrase et
+                        n'en bougeait plus : le seul repère visuel de l'écran
+                        désignait un geste dont on ne parlait pas encore. La
+                        ligne d'aide (« swipe pour décider · ↑ pour voir le
+                        commerce ») a disparu avec lui — trois gestes qui se
+                        JOUENT n'ont plus besoin d'être légendés, et c'était
+                        autant de hauteur reprise à la carte. */}
+                    <GestesDirect
+                      action={actionHabitant}
+                      actif={gesteQui === "passer" ? "passer" : gesteQui ? "veux" : undefined}
+                    />
                   </div>
                 </div>
               </div>
