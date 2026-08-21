@@ -284,6 +284,28 @@ export function ProRelance({
   // de fonctionner sans rien savoir de la vidéo.
   const [video, setVideo] = useState<string | null>(null);
   /**
+   * L'IMAGE RETENUE EST-ELLE UN VISUEL FABRIQUÉ, ou une vraie photo ?
+   *
+   * La distinction ne sert qu'à deux familles d'annonces : la carte du jour et
+   * les invendus. Partout ailleurs, un visuel avec ses mots remplit
+   * honnêtement la carte. Sur un menu ou une portion, il ne remplit rien : il
+   * répète en image le texte écrit trois lignes plus bas, et on choisit
+   * précisément un plat sur ce qu'on en voit. Pour ces deux-là, seule une
+   * photographie fait le travail.
+   */
+  const [photoFabriquee, setPhotoFabriquee] = useState(false);
+  /**
+   * LE CHAMP FICHIER DU BLOC IMAGE, ET IL LUI APPARTIENT.
+   *
+   * Le bloc visait d'abord `fichierRef`, le champ de l'écran d'annonce
+   * rédigée. Or cet écran n'est pas monté quand on est dans « il m'en reste »
+   * ou dans la carte du jour : la référence était nulle, et « 📷 Photo » ne
+   * faisait rien du tout — un bouton mort, sur l'écran où l'on vient de rendre
+   * la photo obligatoire. Vérifié au navigateur : aucun sélecteur ne s'ouvrait
+   * sur les trois écrans.
+   */
+  const imgRef = useRef<HTMLInputElement | null>(null);
+  /**
    * L'ANNONCE N'A PAS D'IMAGE — et c'est bloquant depuis qu'on l'a mesuré à
    * l'usage : une carte sans image est un rectangle de couleur avec deux
    * initiales, au milieu d'un fil où toutes les autres ont une photo.
@@ -433,6 +455,7 @@ export function ProRelance({
         const g = (j.photos as unknown[]).map(String).filter(Boolean);
         setPhotos(g);
         setPhoto(dataUrl); // celle qu'il vient d'ajouter : c'est celle qu'il veut
+        setPhotoFabriquee(false);
         setTouchePhoto(false);
       } else {
         setPhotoErr(typeof j.error === "string" ? j.error : "Ajout impossible.");
@@ -506,7 +529,7 @@ export function ProRelance({
     setEnvoiPhoto(true);
     setPhotoErr("");
     const url = await visuelDepuis(msg);
-    if (url) setPhoto(url);
+    if (url) { setPhoto(url); setPhotoFabriquee(true); }
     else setPhotoErr("Création impossible.");
     setEnvoiPhoto(false);
   };
@@ -520,43 +543,81 @@ export function ProRelance({
    * la question soit seulement posée. Celui-ci tient en une ligne et ne
    * bloque rien : sans réponse, le visuel se fabrique à la publication.
    */
-  const blocImage = (texteDeSecours: string) => (
-    <div className={`imgl${photo ? " ok" : ""}`}>
-      {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt="" />
-      ) : (
-        <span className="imgl-v" aria-hidden="true">🖼️</span>
-      )}
-      <span className="imgl-t">
-        <b>{photo ? "L'image de votre annonce" : "Ajoutez une photo"}</b>
-        <i>
-          {photo
-            ? "C'est elle qu'on verra en premier dans Le Direct."
-            : "C'est elle qu'on voit en premier. Sans photo, je fabrique une image avec vos mots."}
-        </i>
-      </span>
-      <span className="imgl-b">
-        <button type="button" onClick={() => fichierRef.current?.click()} disabled={envoiPhoto}>
-          {envoiPhoto ? "…" : photo ? "Changer" : "📷 Photo"}
-        </button>
-        {!photo && texteDeSecours.trim() ? (
-          <button
-            type="button"
-            onClick={async () => {
-              setEnvoiPhoto(true);
-              const u = await visuelDepuis(texteDeSecours);
-              if (u) setPhoto(u);
-              setEnvoiPhoto(false);
-            }}
-            disabled={envoiPhoto}
-          >
-            🎨 Visuel
+  const blocImage = (texteDeSecours: string, exigee = false) => {
+    // Une image fabriquée ne satisfait pas un écran qui exige une photo : elle
+    // est là, mais elle ne montre rien. On le dit, et on propose de la changer.
+    const manque = exigee ? !photo || photoFabriquee : !photo;
+    return (
+      <div className={`imgl${manque ? "" : " ok"}${manque && exigee ? " dur" : ""}`}>
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt="" />
+        ) : (
+          <span className="imgl-v" aria-hidden="true">📷</span>
+        )}
+        <span className="imgl-t">
+          {/* Deux titres, parce que ce sont deux choses différentes : ici on
+              EXIGE, là on propose. Le même mot pour les deux ferait passer une
+              suggestion pour un blocage — et un blocage pour une suggestion. */}
+          <b>{!manque ? "L'image de votre annonce" : exigee ? "Il faut une photo" : "Ajoutez une photo"}</b>
+          <i>
+            {!manque
+              ? "C'est elle qu'on verra en premier dans Le Direct."
+              : exigee
+                ? "Une image de texte ne montre pas ce que vous vendez : ici, c'est la photo qui donne envie."
+                : "C'est elle qu'on voit en premier. Sans photo, je fabrique une image avec vos mots."}
+          </i>
+        </span>
+        <span className="imgl-b">
+          <button type="button" onClick={() => imgRef.current?.click()} disabled={envoiPhoto}>
+            {envoiPhoto ? "…" : photo && !manque ? "Changer" : "📷 Photo"}
           </button>
-        ) : null}
-      </span>
-    </div>
-  );
+          {/* Le visuel fabriqué n'est PAS proposé quand la photo est exigée :
+              l'offrir reviendrait à ouvrir la porte qu'on vient de fermer. */}
+          {!exigee && !photo && texteDeSecours.trim() ? (
+            <button
+              type="button"
+              onClick={async () => {
+                setEnvoiPhoto(true);
+                const u = await visuelDepuis(texteDeSecours);
+                if (u) { setPhoto(u); setPhotoFabriquee(true); }
+                setEnvoiPhoto(false);
+              }}
+              disabled={envoiPhoto}
+            >
+              🎨 Visuel
+            </button>
+          ) : null}
+        </span>
+        {/* Le champ vit DANS le bloc : c'est le seul endroit où l'on est sûr
+            qu'il est monté en même temps que le bouton qui l'ouvre. Sans
+            `capture` : le téléphone propose l'appareil OU la pellicule, alors
+            que `capture` imposerait l'appareil et interdirait de reprendre une
+            photo faite ce matin. */}
+        <input
+          ref={imgRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => ajouterPhoto(e.target.files)}
+        />
+      </div>
+    );
+  };
+
+  /**
+   * LA PHOTO EST-ELLE EXIGÉE SUR CETTE ANNONCE ?
+   *
+   * Sur la carte du jour et sur les invendus, oui : ce sont les deux seules
+   * familles où l'image EST le produit. On ne choisit pas un plat sur une
+   * image de texte, et un visuel fabriqué y répéterait en gros ce qui est
+   * déjà écrit juste en dessous. Partout ailleurs — un événement, un créneau
+   * libre, une raison de passer — le visuel remplit honnêtement la carte, et
+   * exiger une photo bloquerait des annonces qui n'en ont pas besoin.
+   */
+  const photoExigee = intention?.cle === "carte" || intention?.cle === "reste";
+  /** Vrai quand cet écran exige une photo et qu'il n'en a pas de vraie. */
+  const photoManque = photoExigee && (!photo || photoFabriquee);
 
   /**
    * L'IMAGE À ENVOYER AVEC L'ANNONCE — jamais rien.
@@ -587,6 +648,13 @@ export function ProRelance({
           // Jamais vide : à défaut de photo choisie, l'image est fabriquée avec
           // le texte de l'annonce (voir `imagePourPublier`).
           photo: video ? photo : await imagePourPublier(t),
+          // LA ROUTE DOIT SAVOIR CE QU'ELLE REÇOIT. Une image de texte est
+          // acceptable sur une annonce ordinaire, jamais sur une carte du jour
+          // ni sur des invendus — et elle ne peut pas le deviner en regardant
+          // les octets.
+          // Sans photo choisie, `imagePourPublier` en fabrique une : le cas est
+          // donc « fabriquée » par construction.
+          visuel: photo ? photoFabriquee : true,
           video,
           // Ce qu'il reste et la carte du jour : ils s'affichent sur la carte du
           // fil, sous le titre de l'annonce.
@@ -742,6 +810,10 @@ export function ProRelance({
       setCarteErr("Photographiez votre ardoise, ou écrivez votre carte.");
       return;
     }
+    if (!cartePhoto && !photo) {
+      setCarteErr("Ajoutez une photo : à midi, c'est elle qu'on regarde d'abord.");
+      return;
+    }
     setCarteEnvoi(true);
     setCarteErr("");
     try {
@@ -757,10 +829,10 @@ export function ProRelance({
           text: texte || "Notre carte du jour",
           famille: "menu",
           until: soir.toISOString(),
-          // La photo de l'ardoise s'il l'a prise, sinon une image fabriquée
-          // avec le menu qu'il vient de taper. Une carte du jour sans rien à
-          // regarder est la dernière chose qu'on veut dans un fil de midi.
-          photo: cartePhoto ?? (await visuelDepuis(texte)) ?? "",
+          // La photo de l'ardoise s'il l'a prise, sinon celle qu'il a choisie
+          // dans sa galerie. Jamais un visuel fabriqué : une carte du jour se
+          // choisit sur ce qu'on voit, et une image de texte ne montre rien.
+          photo: cartePhoto ?? photo ?? "",
           // Envoyé tel qu'il l'a tapé — virgule française comprise. C'est la
           // route qui tranche ce qu'est un prix : deux écrans qui interprètent
           // « 18,50 » chacun de leur côté finiraient par ne pas l'interpréter
@@ -818,9 +890,10 @@ export function ProRelance({
       const soir = new Date();
       soir.setHours(23, 59, 0, 0);
       const texte = `Il me reste ${combien} ${quoi}.`;
-      // L'IMAGE PART AVEC L'ANNONCE. Ce chemin n'en envoyait aucune : la carte
-      // arrivait dans le fil sans rien à regarder.
-      const image = await imagePourPublier(texte);
+      // LA PHOTO EST EXIGÉE ICI : pas de repli fabriqué. On ne choisit pas
+      // huit parts de tarte sur une image de texte — c'est la photo qui vend,
+      // et le bouton ne s'ouvre pas sans elle.
+      const image = photo ?? "";
       const r = await fetch("/api/site-internet/pro/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1350,6 +1423,11 @@ export function ProRelance({
           .pro .relance .imgl{display:flex;align-items:center;gap:11px;margin-top:13px;padding:10px 11px;
             border:1px dashed #EBD9AE;background:#FFF9EC;border-radius:13px;}
           .pro .relance .imgl.ok{border-style:solid;border-color:var(--hair);background:#fff;}
+          /* Quand la photo est EXIGÉE et manquante, le bloc n'est plus une
+             suggestion : il porte la même teinte que les messages qui arrêtent
+             une publication, parce que c'est ce qu'il fait. */
+          .pro .relance .imgl.dur{border-style:solid;border-color:#E8C4B4;background:#FDF3EE;}
+          .pro .relance .imgl.dur .imgl-t b{color:#9A4B25;}
           .pro .relance .imgl img,.pro .relance .imgl .imgl-v{flex:none;width:46px;height:46px;border-radius:10px;
             object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:20px;
             background:#F3EFE4;color:#B4A98C;}
@@ -1688,6 +1766,15 @@ export function ProRelance({
                       remplit tout seul sans un mot inquiète plus qu'il n'aide,
                       et surtout on ne devine pas qu'on a le droit de le
                       corriger. On le dit donc, et on dit d'où ça vient. */}
+                  {/* PAS D'ARDOISE PHOTOGRAPHIÉE ? IL FAUT QUAND MÊME UNE PHOTO.
+                      Le restaurateur peut taper son menu au lieu de le
+                      photographier — c'est légitime, tous les menus ne sont pas
+                      sur une ardoise. Mais la carte partait alors sans image, ou
+                      avec un visuel qui répétait le menu en gros. Sur l'écran
+                      des cartes du jour, à midi, c'est la photo qui décide : on
+                      lui demande donc celle d'un plat, prise ou choisie dans sa
+                      galerie. */}
+                  {!cartePhoto && blocImage("", true)}
                   {carteLecture && <div className="carte-lit">🔍 Je lis votre ardoise…</div>}
                   {!carteLecture && carteLue && (
                     <div className="carte-lu">
@@ -1735,7 +1822,9 @@ export function ProRelance({
                     type="button"
                     className="aibtn"
                     onClick={publierCarte}
-                    disabled={carteEnvoi || (!cartePhoto && !carteTexte.trim())}
+                    // L'ardoise photographiée suffit — c'est une photo. Sinon,
+                    // il faut le menu ET une photo de plat.
+                    disabled={carteEnvoi || (!cartePhoto && (!carteTexte.trim() || photoManque))}
                   >
                     {carteEnvoi ? "Publication…" : "Publier ma carte du jour"}
                   </button>
@@ -1860,13 +1949,13 @@ export function ProRelance({
                       Le bloc ne bloque pas — c'est le geste le plus rapide du
                       produit et il doit le rester — mais la photo est proposée,
                       et à défaut le visuel se fabrique à la publication. */}
-                  {blocImage(`Il me reste ${resteQ || ""} ${resteQuoi}`.trim())}
+                  {blocImage("", true)}
                   {resteErr && <div className="aierr">{resteErr}</div>}
                   <button
                     type="button"
                     className="aibtn"
                     onClick={publierReste}
-                    disabled={resteEnvoi || !resteQ || !resteQuoi.trim()}
+                    disabled={resteEnvoi || !resteQ || !resteQuoi.trim() || photoManque}
                   >
                     {resteEnvoi ? "Publication…" : "Le dire maintenant"}
                   </button>
@@ -2445,7 +2534,7 @@ export function ProRelance({
                                   key={u}
                                   type="button"
                                   className={u === photo ? "on" : ""}
-                                  onClick={() => { setPhoto(u); setTouchePhoto(false); }}
+                                  onClick={() => { setPhoto(u); setPhotoFabriquee(false); setTouchePhoto(false); }}
                                   aria-label="Choisir cette photo"
                                 >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2478,7 +2567,7 @@ export function ProRelance({
                                   // L'affiche de la vidéo devient la photo, sauf
                                   // s'il en avait déjà choisi une : son choix
                                   // délibéré passe avant une image extraite.
-                                  if (poster && !photo) setPhoto(poster);
+                                  if (poster && !photo) { setPhoto(poster); setPhotoFabriquee(false); }
                                 }}
                               />
                             )}

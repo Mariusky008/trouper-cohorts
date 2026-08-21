@@ -331,6 +331,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // ET SUR DEUX FAMILLES, IL FAUT UNE VRAIE PHOTO.
+    //
+    // La carte du jour et les invendus se choisissent sur ce qu'on VOIT. Une
+    // image fabriquée avec le texte de l'annonce y répète en gros ce qui est
+    // écrit juste en dessous : elle remplit la carte sans rien montrer, et
+    // elle occupe la place de la seule chose qui donne faim. Partout ailleurs
+    // — un événement, un créneau libre, une raison de passer — elle fait
+    // honnêtement le travail, et l'exigence serait un blocage gratuit.
+    //
+    // LA ROUTE NE PEUT PAS LE DEVINER en regardant les octets : c'est l'écran
+    // qui déclare avoir fabriqué l'image. Un client qui mentirait sur ce
+    // champ ne gagnerait rien qu'une carte terne sur son propre commerce.
+    const familleVoulue = estFamille(str(p?.famille)) ? (str(p?.famille) as Famille) : familleDuTexte(text);
+    const imageMontreQuelqueChose = !(p?.visuel === true) || Boolean(video);
+    if ((familleVoulue === "menu" || p?.portion === true) && !imageMontreQuelqueChose) {
+      return NextResponse.json(
+        {
+          error:
+            "Ici, c'est la photo qui donne envie : ajoutez une vraie photo. Une image fabriquée avec votre texte répéterait ce qui est déjà écrit.",
+        },
+        { status: 400 }
+      );
+    }
+
     const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
     /** Renseigné si les façons ont échoué APRÈS la publication de l'annonce. */
     let avertissementFacons = "";
@@ -379,7 +403,7 @@ export async function POST(request: Request) {
         // ville, qui est pourtant sa seule raison d'exister. On accepte donc
         // une famille imposée, mais seulement une VRAIE : un mot inconnu
         // retomberait sur la déduction plutôt que d'inventer une catégorie.
-        famille: estFamille(str(p?.famille)) ? (str(p?.famille) as Famille) : familleDuTexte(text),
+        famille: familleVoulue,
         texte: text,
         photo,
         video,
