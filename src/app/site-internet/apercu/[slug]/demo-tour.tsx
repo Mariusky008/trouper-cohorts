@@ -303,6 +303,15 @@ export function DemoTour({
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
   /**
+   * La sortie de secours de la visite — voir `.dtour-quit`.
+   *
+   * Elle n'existe qu'après le premier acte : offerte d'emblée, elle
+   * remplacerait le « Voir le site directement » qu'on vient de retirer du
+   * lanceur, et pour la même raison — deux portes au même moment, c'est la
+   * plus facile qui gagne.
+   */
+  const [sortieVisible, setSortieVisible] = useState(false);
+  /**
    * L'assistante à l'écran avant qu'elle ne parle.
    *
    * Entre le tap et le premier mot, il peut s'écouler une à deux secondes : le
@@ -634,6 +643,10 @@ export function DemoTour({
 
   const start = () => {
     cancelled.current = false;
+    setSortieVisible(false);
+    // 18 s : le temps du premier acte. Après, la personne a vu de quoi il
+    // s'agit — la laisser partir n'est plus lui faire rater la démonstration.
+    window.setTimeout(() => setSortieVisible(true), 18000);
     try {
       initCloudTts({ slug, scope: "apercu" });
       unlockAudio();
@@ -1159,10 +1172,25 @@ export function DemoTour({
             padding:16px 32px;border-radius:16px;cursor:pointer;font-family:inherit;
             box-shadow:0 18px 40px -12px rgba(255,255,255,.32);transition:transform .18s var(--spring),box-shadow .3s ease;}
           .dtour-launch .go:active{transform:scale(.96);box-shadow:0 8px 20px -10px rgba(255,255,255,.3);}
-          .dtour-launch .skip{background:none;border:none;color:#7A7F9E;font-size:13.5px;cursor:pointer;font-family:inherit;margin-top:2px;}
+          /* Le second bouton du lanceur a disparu — voir le commentaire du
+             composant. Il reste ici en mémoire : le jour où l'on retente une
+             sortie sur cet écran, elle ne doit pas revenir sous cette forme,
+             c'est-à-dire au même endroit et à la même seconde que l'invitation. */
           .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#666B88;display:flex;align-items:center;gap:7px;}
 
           .dtour-lock{position:fixed;inset:0;z-index:88;touch-action:none;background:transparent;}
+          /* LA SORTIE, PENDANT LA VISITE. Elle existe pour qui la cherche, et
+             pour personne d'autre : posée en haut à droite dans une pastille
+             lisible, elle recouvrait le titre de l'étape et devenait le
+             deuxième élément le plus visible de l'écran — exactement ce qu'on
+             venait de retirer du lanceur. Elle passe SOUS le bandeau, en petit
+             et sans fond. Au-dessus du verrou (z-index 88), sinon elle serait
+             affichée mais pas cliquable. */
+          .dtour-quit{position:fixed;top:calc(env(safe-area-inset-top,0px) + 74px);right:14px;z-index:95;
+            border:0;background:none;color:#6E7391;font-family:inherit;font-size:10.5px;font-weight:700;
+            letter-spacing:.04em;padding:6px 4px;cursor:pointer;
+            animation:dtRise .45s var(--exp) both;}
+          .dtour-quit:hover{color:#C9CFE6;}
           /* Pendant la visite guidée, le site ne doit porter QU'UN message :
              celui de l'étape. La barre « côté pro » et le bandeau d'exemple se
              superposaient au titre. Et le bouton du commerçant n'existe qu'À LA
@@ -1807,15 +1835,40 @@ export function DemoTour({
               commerçant qui a accepté une minute et en passe deux se sent
               retenu, et c'est le pire moment pour ça. */}
           <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous le présente à voix haute, en un peu plus de deux minutes.</div>
+          {/* UNE SEULE PORTE.
+              « Voir le site directement » était posé juste sous « Découvrir mon
+              site », dans la même taille : deux propositions côte à côte, et
+              celle qui demande le moins d'effort gagne toujours. Or le site
+              seul ne dit rien de ce qu'on vend — c'est la visite qui montre Le
+              Direct, et sans elle le commerçant repart en pensant qu'on lui a
+              fait un site web de plus.
+              Personne n'est enfermé pour autant : la sortie existe, mais
+              pendant la visite (voir `.dtour-quit`), et pas au moment où l'on
+              demande deux minutes d'attention. */}
           <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir mon site</button>
-          <button className="skip" style={{ ["--i" as string]: 5 }} onClick={() => setPhase("done")}>Voir le site directement</button>
-          <div className="trust" style={{ ["--i" as string]: 6 }}>⏱️ ≈ 2 min 25 · montez le son 🔊</div>
+          <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 2 min 25 · montez le son 🔊</div>
         </div>
       )}
 
       {phase === "playing" && (
         <>
           <div className="dtour-lock" />
+          {/* LA SORTIE DE SECOURS, ET ELLE ARRIVE APRÈS LE PREMIER ACTE.
+              La visite bloque la page pendant deux minutes vingt-cinq et il
+              n'existait aucun moyen de l'arrêter : quelqu'un qui ne peut pas
+              écouter — en salle, dans le bruit, pressé — ne pouvait que fermer
+              l'onglet, et on le perdait entièrement. Elle ne paraît pas tout de
+              suite : à la seconde zéro, elle redeviendrait le « Voir le site
+              directement » qu'on vient de retirer, c'est-à-dire une porte de
+              sortie offerte avant d'avoir rien montré. */}
+          {sortieVisible && (
+            <button
+              className="dtour-quit"
+              onClick={() => { cancelled.current = true; stopSpeaking(); unbuild(); setScene(""); setPhase("done"); }}
+            >
+              Passer ✕
+            </button>
+          )}
 
           {/* Elle est là dès la première seconde, avant même de parler. */}
           {orbe === "attente" && (
