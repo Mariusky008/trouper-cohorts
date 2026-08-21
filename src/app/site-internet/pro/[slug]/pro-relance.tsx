@@ -284,16 +284,27 @@ export function ProRelance({
   // de fonctionner sans rien savoir de la vidéo.
   const [video, setVideo] = useState<string | null>(null);
   /**
-   * L'IMAGE RETENUE EST-ELLE UN VISUEL FABRIQUÉ, ou une vraie photo ?
+   * D'OÙ VIENT L'IMAGE RETENUE — et c'est plus qu'une nuance.
    *
-   * La distinction ne sert qu'à deux familles d'annonces : la carte du jour et
-   * les invendus. Partout ailleurs, un visuel avec ses mots remplit
-   * honnêtement la carte. Sur un menu ou une portion, il ne remplit rien : il
-   * répète en image le texte écrit trois lignes plus bas, et on choisit
-   * précisément un plat sur ce qu'on en voit. Pour ces deux-là, seule une
-   * photographie fait le travail.
+   *   "site"      la photo de sa fiche Google, déjà là, pré-sélectionnée ;
+   *   "choisie"   celle qu'il vient d'ajouter POUR CETTE ANNONCE ;
+   *   "fabriquee" le visuel construit avec le texte de l'annonce.
+   *
+   * Le drapeau était binaire — fabriquée ou non — et ça ne suffisait pas. Sur
+   * la carte du jour et les invendus, la photo de la devanture importée de
+   * Google passait le contrôle : le restaurateur annonçait huit parts de tarte
+   * sous une image de sa façade prise il y a deux ans. Ce n'est pas une carte
+   * vide, mais ça ne montre pas davantage ce qu'il vend.
+   *
+   * Sur ces deux familles, seule "choisie" compte. Ailleurs, les trois vont.
+   *
+   * CE QU'ON GARANTIT VRAIMENT, ET IL FAUT L'ÉCRIRE : que l'image a été
+   * retenue POUR CETTE ANNONCE, pas qu'elle a été prise dans l'heure. Le champ
+   * fichier laisse volontairement le choix entre l'appareil et la pellicule —
+   * une photo du plat faite ce matin est parfaitement légitime, et imposer
+   * `capture` l'interdirait.
    */
-  const [photoFabriquee, setPhotoFabriquee] = useState(false);
+  const [origineImage, setOrigineImage] = useState<"" | "site" | "choisie" | "fabriquee">("");
   /**
    * LE CHAMP FICHIER DU BLOC IMAGE, ET IL LUI APPARTIENT.
    *
@@ -455,7 +466,7 @@ export function ProRelance({
         const g = (j.photos as unknown[]).map(String).filter(Boolean);
         setPhotos(g);
         setPhoto(dataUrl); // celle qu'il vient d'ajouter : c'est celle qu'il veut
-        setPhotoFabriquee(false);
+        setOrigineImage("choisie");
         setTouchePhoto(false);
       } else {
         setPhotoErr(typeof j.error === "string" ? j.error : "Ajout impossible.");
@@ -529,7 +540,7 @@ export function ProRelance({
     setEnvoiPhoto(true);
     setPhotoErr("");
     const url = await visuelDepuis(msg);
-    if (url) { setPhoto(url); setPhotoFabriquee(true); }
+    if (url) { setPhoto(url); setOrigineImage("fabriquee"); }
     else setPhotoErr("Création impossible.");
     setEnvoiPhoto(false);
   };
@@ -546,7 +557,7 @@ export function ProRelance({
   const blocImage = (texteDeSecours: string, exigee = false) => {
     // Une image fabriquée ne satisfait pas un écran qui exige une photo : elle
     // est là, mais elle ne montre rien. On le dit, et on propose de la changer.
-    const manque = exigee ? !photo || photoFabriquee : !photo;
+    const manque = exigee ? origineImage !== "choisie" : !photo;
     return (
       <div className={`imgl${manque ? "" : " ok"}${manque && exigee ? " dur" : ""}`}>
         {photo ? (
@@ -559,12 +570,22 @@ export function ProRelance({
           {/* Deux titres, parce que ce sont deux choses différentes : ici on
               EXIGE, là on propose. Le même mot pour les deux ferait passer une
               suggestion pour un blocage — et un blocage pour une suggestion. */}
-          <b>{!manque ? "L'image de votre annonce" : exigee ? "Il faut une photo" : "Ajoutez une photo"}</b>
+          <b>
+            {!manque
+              ? "L'image de votre annonce"
+              : exigee
+                ? origineImage === "site"
+                  ? "Une photo d'aujourd'hui"
+                  : "Il faut une photo"
+                : "Ajoutez une photo"}
+          </b>
           <i>
             {!manque
               ? "C'est elle qu'on verra en premier dans Le Direct."
               : exigee
-                ? "Une image de texte ne montre pas ce que vous vendez : ici, c'est la photo qui donne envie."
+                ? origineImage === "site"
+                  ? "Celle-ci vient de votre fiche : elle montre votre commerce, pas ce que vous proposez aujourd'hui. Prenez-en une."
+                  : "Ici, c'est la photo qui donne envie : montrez ce que vous proposez aujourd'hui."
                 : "C'est elle qu'on voit en premier. Sans photo, je fabrique une image avec vos mots."}
           </i>
         </span>
@@ -580,7 +601,7 @@ export function ProRelance({
               onClick={async () => {
                 setEnvoiPhoto(true);
                 const u = await visuelDepuis(texteDeSecours);
-                if (u) { setPhoto(u); setPhotoFabriquee(true); }
+                if (u) { setPhoto(u); setOrigineImage("fabriquee"); }
                 setEnvoiPhoto(false);
               }}
               disabled={envoiPhoto}
@@ -616,8 +637,9 @@ export function ProRelance({
    * exiger une photo bloquerait des annonces qui n'en ont pas besoin.
    */
   const photoExigee = intention?.cle === "carte" || intention?.cle === "reste";
-  /** Vrai quand cet écran exige une photo et qu'il n'en a pas de vraie. */
-  const photoManque = photoExigee && (!photo || photoFabriquee);
+  /** Vrai quand cet écran exige une photo prise pour CETTE annonce, et qu'il
+   *  n'en a pas — ni photo du tout, ni celle de sa fiche, ni un visuel. */
+  const photoManque = photoExigee && origineImage !== "choisie";
 
   /**
    * L'IMAGE À ENVOYER AVEC L'ANNONCE — jamais rien.
@@ -654,7 +676,10 @@ export function ProRelance({
           // les octets.
           // Sans photo choisie, `imagePourPublier` en fabrique une : le cas est
           // donc « fabriquée » par construction.
-          visuel: photo ? photoFabriquee : true,
+          visuel: photo ? origineImage === "fabriquee" : true,
+          // « Elle vient de sa fiche » : la route en a besoin pour les deux
+          // familles où l'image doit montrer ce qui est proposé aujourd'hui.
+          imageDuSite: origineImage === "site",
           video,
           // Ce qu'il reste et la carte du jour : ils s'affichent sur la carte du
           // fil, sous le titre de l'annonce.
@@ -810,8 +835,8 @@ export function ProRelance({
       setCarteErr("Photographiez votre ardoise, ou écrivez votre carte.");
       return;
     }
-    if (!cartePhoto && !photo) {
-      setCarteErr("Ajoutez une photo : à midi, c'est elle qu'on regarde d'abord.");
+    if (!cartePhoto && origineImage !== "choisie") {
+      setCarteErr("Ajoutez une photo d'aujourd'hui : à midi, c'est elle qu'on regarde d'abord.");
       return;
     }
     setCarteEnvoi(true);
@@ -829,10 +854,13 @@ export function ProRelance({
           text: texte || "Notre carte du jour",
           famille: "menu",
           until: soir.toISOString(),
-          // La photo de l'ardoise s'il l'a prise, sinon celle qu'il a choisie
-          // dans sa galerie. Jamais un visuel fabriqué : une carte du jour se
-          // choisit sur ce qu'on voit, et une image de texte ne montre rien.
-          photo: cartePhoto ?? photo ?? "",
+          // La photo de l'ardoise s'il l'a prise, sinon celle qu'il vient
+          // d'ajouter pour cette carte. Jamais un visuel fabriqué ni la photo
+          // de sa fiche : une carte du jour se choisit sur ce qu'on voit, et
+          // ni une image de texte ni une façade ne montrent le plat.
+          photo: cartePhoto ?? (origineImage === "choisie" ? photo : null) ?? "",
+          visuel: false,
+          imageDuSite: false,
           // Envoyé tel qu'il l'a tapé — virgule française comprise. C'est la
           // route qui tranche ce qu'est un prix : deux écrans qui interprètent
           // « 18,50 » chacun de leur côté finiraient par ne pas l'interpréter
@@ -890,10 +918,10 @@ export function ProRelance({
       const soir = new Date();
       soir.setHours(23, 59, 0, 0);
       const texte = `Il me reste ${combien} ${quoi}.`;
-      // LA PHOTO EST EXIGÉE ICI : pas de repli fabriqué. On ne choisit pas
-      // huit parts de tarte sur une image de texte — c'est la photo qui vend,
-      // et le bouton ne s'ouvre pas sans elle.
-      const image = photo ?? "";
+      // LA PHOTO EST EXIGÉE ICI, et elle doit avoir été choisie pour CETTE
+      // annonce : pas de repli fabriqué, pas la devanture importée de Google.
+      // On ne choisit pas huit parts de tarte sur une image de façade.
+      const image = origineImage === "choisie" ? photo ?? "" : "";
       const r = await fetch("/api/site-internet/pro/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -912,6 +940,9 @@ export function ProRelance({
           // stock : deux endroits, une seule vérité, écrite au même instant.
           reste: `${combien} ${quoi}`,
           prixNormal: restePrixN,
+          // La route revérifie : cet écran n'est pas le seul garde-fou.
+          visuel: false,
+          imageDuSite: false,
           portion: true,
           portionQuantite: combien,
           portionLibelle: quoi,
@@ -1228,6 +1259,9 @@ export function ProRelance({
         // Pré-choix : la photo déjà associée à l'annonce en cours, sinon la
         // première du commerce. Le pro n'a rien à faire s'il est d'accord.
         setPhoto((prev) => prev ?? (j.offer?.photo as string | undefined) ?? g[0] ?? null);
+        // Pré-choisie, donc venue du site : elle dépanne une annonce ordinaire,
+        // elle ne vaut pas pour une carte du jour ni pour des invendus.
+        setOrigineImage((o) => o || "site");
       } catch {
         /* colonne non migrée → pas d'offre */
       }
@@ -2534,7 +2568,10 @@ export function ProRelance({
                                   key={u}
                                   type="button"
                                   className={u === photo ? "on" : ""}
-                                  onClick={() => { setPhoto(u); setPhotoFabriquee(false); setTouchePhoto(false); }}
+                                  // Une image de la galerie est une photo DU COMMERCE, pas
+                                  // de cette annonce : elle ne satisfait pas les deux familles
+                                  // où l'image est le produit.
+                                  onClick={() => { setPhoto(u); setOrigineImage("site"); setTouchePhoto(false); }}
                                   aria-label="Choisir cette photo"
                                 >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2567,7 +2604,7 @@ export function ProRelance({
                                   // L'affiche de la vidéo devient la photo, sauf
                                   // s'il en avait déjà choisi une : son choix
                                   // délibéré passe avant une image extraite.
-                                  if (poster && !photo) { setPhoto(poster); setPhotoFabriquee(false); }
+                                  if (poster && !photo) { setPhoto(poster); setOrigineImage("choisie"); }
                                 }}
                               />
                             )}

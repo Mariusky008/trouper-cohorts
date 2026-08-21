@@ -331,25 +331,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // ET SUR DEUX FAMILLES, IL FAUT UNE VRAIE PHOTO.
+    // ET SUR DEUX FAMILLES, IL FAUT UNE PHOTO DE CE QU'ON PROPOSE AUJOURD'HUI.
     //
-    // La carte du jour et les invendus se choisissent sur ce qu'on VOIT. Une
-    // image fabriquée avec le texte de l'annonce y répète en gros ce qui est
-    // écrit juste en dessous : elle remplit la carte sans rien montrer, et
-    // elle occupe la place de la seule chose qui donne faim. Partout ailleurs
-    // — un événement, un créneau libre, une raison de passer — elle fait
-    // honnêtement le travail, et l'exigence serait un blocage gratuit.
+    // La carte du jour et les invendus se choisissent sur ce qu'on VOIT. Deux
+    // images y échouent pour la même raison :
+    //   · celle qu'on fabrique avec le texte de l'annonce, qui répète en gros
+    //     ce qui est écrit trois lignes plus bas ;
+    //   · celle de sa fiche Google, importée une fois pour toutes, qui montre
+    //     sa devanture — pas les huit parts de tarte dont il parle.
+    // Ni l'une ni l'autre ne remplit la carte : elles occupent la place de la
+    // seule chose qui donne faim.
+    //
+    // Partout ailleurs — un événement, un créneau libre, une raison de passer
+    // — les deux font honnêtement le travail, et l'exigence serait un blocage
+    // gratuit.
     //
     // LA ROUTE NE PEUT PAS LE DEVINER en regardant les octets : c'est l'écran
-    // qui déclare avoir fabriqué l'image. Un client qui mentirait sur ce
-    // champ ne gagnerait rien qu'une carte terne sur son propre commerce.
+    // qui déclare d'où vient l'image. Un client qui mentirait sur ces champs
+    // ne gagnerait rien qu'une carte terne sur son propre commerce.
     const familleVoulue = estFamille(str(p?.famille)) ? (str(p?.famille) as Famille) : familleDuTexte(text);
-    const imageMontreQuelqueChose = !(p?.visuel === true) || Boolean(video);
-    if ((familleVoulue === "menu" || p?.portion === true) && !imageMontreQuelqueChose) {
+    // La vidéo montre forcément quelque chose : elle vient d'être tournée.
+    const montreLOffre = Boolean(video) || (p?.visuel !== true && p?.imageDuSite !== true);
+    if ((familleVoulue === "menu" || p?.portion === true) && !montreLOffre) {
       return NextResponse.json(
         {
           error:
-            "Ici, c'est la photo qui donne envie : ajoutez une vraie photo. Une image fabriquée avec votre texte répéterait ce qui est déjà écrit.",
+            p?.imageDuSite === true
+              ? "Cette photo vient de votre fiche : elle montre votre commerce, pas ce que vous proposez aujourd'hui. Prenez-en une."
+              : "Ici, c'est la photo qui donne envie : ajoutez une photo. Une image fabriquée avec votre texte répéterait ce qui est déjà écrit.",
         },
         { status: 400 }
       );
