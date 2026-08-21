@@ -19,6 +19,19 @@ import { campagneFallback, type Campagne } from "@/lib/site-internet/campagne";
 import { intentionsPour, joursProches, manquants, recommandees, type Champ, type Intention } from "@/lib/site-internet/actions-flash";
 import { echeanceCourte } from "@/lib/site-internet/echeance";
 import { MARQUE } from "@/lib/marque";
+// La carte du Direct — LE MÊME composant que la démonstration et que le fil de
+// la ville. Le parcours d'annonce d'essai dessinait la sienne ; le commerçant
+// voyait donc un objet qui n'existe nulle part ailleurs, juste au moment où on
+// lui promettait ce que ses clients allaient recevoir.
+import {
+  BarreDirect,
+  CarteSwipe,
+  GestesDirect,
+  StylesDirect,
+  carteDirectHtml,
+  gestesDirectHtml,
+} from "@/components/direct/carte-swipe";
+import { carteDAnnonce, motDActionMetier } from "@/lib/direct/cartes-demo";
 import type { Confirmation, Secteur } from "@/lib/site-internet/metier-profiles";
 
 export type MaquetteAssistantData = {
@@ -318,36 +331,40 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
     `</div>`;
 
   /**
-   * La carte telle qu'elle paraît dans le catalogue de la ville — avec SA photo.
+   * L'ANNONCE EN COURS, SOUS LA FORME OÙ SES CLIENTS LA RECEVRONT.
    *
-   * La démo n'en montrait que le texte, alors que le catalogue est visuel et que
-   * l'espace pro fait de la photo une étape à part entière. Le commerçant ne
-   * pouvait pas comprendre ce qu'il allait vraiment obtenir.
-   *
-   * Pas de bouton d'action ici, contrairement au bandeau : la carte du catalogue
-   * (l'onglet « À saisir » du Direct) se glisse — passer, garder, ouvrir le site — et n'a
-   * aucune pastille de réservation. En dessiner une montrerait un objet qui
-   * n'existe pas. Le bouton, le visiteur le trouve sur le site, dans le bandeau.
+   * Un seul objet, construit une fois, servi aux deux écrans qui la montrent :
+   * l'aperçu avant publication et la scène « où elle sera diffusée ». Ils
+   * dessinaient chacun leur propre carte, et aucune des deux ne ressemblait à
+   * celle du Direct.
    */
-  const carteCatalogue = (msg: string) => {
-    const jusqua = echeanceDemo();
-    const avis = n0 > 0
-      ? `<span class="asx-krate">⭐ ${n0} avis</span>`
-      : `<span class="asx-krate neuf">✨ Nouveau sur ${esc(MARQUE)}</span>`;
-    return (
-      `<div class="asx-kcard"${data.photo ? ` style="background-image:url(&quot;${esc(data.photo)}&quot;)"` : ""}>` +
-        `<span class="asx-kveil"></span>` +
-        `<span class="asx-ktop"><span class="asx-kmet">${esc(data.metier || "Commerce")}</span></span>` +
-        (jusqua ? `<span class="asx-kcd">⏳ ${esc(jusqua)}</span>` : "") +
-        `<span class="asx-kbody">` +
-          `<span class="asx-knom">${esc(nom)}</span>` +
-          `<span class="asx-kmeta">📍 ${esc(data.metier || "Commerce")} · ${esc(villeNom)}</span>` +
-          avis +
-          `<span class="asx-koffer"><span class="asx-kk">✦ En ce moment</span>${esc(msg)}</span>` +
-        `</span>` +
-      `</div>`
-    );
-  };
+  const carteAnnonce = (msg: string) =>
+    carteDAnnonce({
+      // Sans intention (annonce dictée librement), pas de clé : la carte tombe
+      // sur « En ce moment », qui n'affirme rien qu'on n'ait pas vérifié.
+      cle: intention?.cle || "",
+      emoji: intention?.emoji || "✦",
+      annonce: msg,
+      nom,
+      metierLabel: data.metier || "Commerce",
+      ville: villeNom,
+      photo: data.photo,
+      reste: echeanceDemo(),
+    });
+
+  /**
+   * La carte telle qu'elle paraît dans Le Direct de la ville — avec SA photo.
+   *
+   * Elle était dessinée ici, en classes `asx-k*` : un rectangle à coins arrondis
+   * avec le nom, le métier, le nombre d'avis et l'annonce dans un cadre. Ce
+   * n'est pas la carte du Direct, et le commerçant l'aurait découvert le jour
+   * où il aurait ouvert le vrai fil. On sert donc le VRAI objet — même balisage,
+   * même feuille de styles, mêmes proportions.
+   *
+   * Pas de bouton d'action DANS la carte, contrairement au bandeau du site : la
+   * carte du Direct se glisse, et les trois gestes vivent sous elle.
+   */
+  const carteCatalogue = (msg: string) => carteDirectHtml(carteAnnonce(msg));
 
   /** L'échéance du scénario de démonstration, telle que le catalogue l'affiche. */
   const echeanceDemo = (): string => {
@@ -407,17 +424,15 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       `<div class="asx-mini-bar"><span class="b1">📞 Appeler</span><span class="b2">💬 Mon assistante</span></div>` +
     `</div>`;
 
-  /** 2/2 — la carte du catalogue, presque plein écran, qui se laisse glisser. */
+  /** 2/2 — la carte du Direct, presque plein écran, qui se laisse glisser. */
   const revCatalogue = (msg: string) =>
-    `<div class="asx-rev">2/2 — Dans Le Direct de ${villeNom}</div>` +
+    `<div class="asx-rev">2/2 — Dans Le Direct de ${esc(villeNom)}</div>` +
     `<div class="asx-swipe">${carteCatalogue(msg)}</div>` +
-    // La barre de gestes du vrai swipe (a-saisir/selection-swipe.tsx) : sans elle,
-    // on montre une belle carte mais pas l'objet que les habitants manipulent.
-    `<div class="asx-kbar">` +
-      `<span class="asx-kact"><i>✕</i>Passer</span>` +
-      `<span class="asx-kact want"><i>♥</i>Garder</span>` +
-      `<span class="asx-kact"><i>↑</i>Le site</span>` +
-    `</div>` +
+    // Les trois gestes du vrai swipe : sans eux, on montre une belle carte mais
+    // pas l'objet que les habitants manipulent. Ils viennent du composant, comme
+    // la carte — les libellés maison disaient « Le site » là où le produit dit
+    // « Le pro », et « Garder » là où un restaurant dit « Je réserve ».
+    gestesDirectHtml(motDActionMetier(data.metier || "")) +
     `<div class="asx-revs bas">Visible aussi chez les commerces partenaires.</div>`;
 
   /**
@@ -980,8 +995,13 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
       return (
         <>
           <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
-          <div className="asx-kick">✨ Prête en un clic</div>
-          <div className="asx-h1">Votre annonce<br />est déjà prête.</div>
+          {/* LE TITRE DIT CE QU'ON MONTRE, et c'est tout le sujet de cet écran.
+              « Votre annonce est déjà prête » parlait de l'objet fabriqué ; ce
+              que le commerçant a besoin de voir, c'est l'écran de ses clients.
+              La pastille « ✨ Prête en un clic » qui le précédait a sauté : la
+              carte est haute, et chaque bandeau posé au-dessus repoussait le
+              bouton d'un cran sous le pli. Mesuré à 402×860 — il y était. */}
+          <div className="asx-h1">Voilà ce que verront<br />les habitants.</div>
           {/* D'où sortent le jour et l'heure : d'un scénario de démonstration
               choisi au clic précédent, pas d'une devinette de l'assistante. En
               vrai usage, elle POSE la question. */}
@@ -991,37 +1011,41 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
             </div>
           )}
 
-          {/* L'annonce sur la photo du commerce : c'est l'objet spectaculaire de
-              l'écran, pas un champ de formulaire encadré de gris. */}
-          <div
-            className={`asx-hero${data.photo ? " ph" : ""}`}
-            style={data.photo ? { backgroundImage: `url("${data.photo}")` } : undefined}
-          >
-            <span className="asx-hero-v" />
-            {editing ? (
-              <textarea
-                className="asx-hero-ed"
-                value={fn}
-                onChange={(e) => setFn(e.target.value)}
-                rows={4}
-                aria-label="Votre annonce"
-              />
-            ) : (
-              <span className="asx-hero-t">{fn}</span>
-            )}
+          {/* LA VRAIE CARTE DU DIRECT — celle du fil de la ville, pas une
+              représentation. Un encadré maison tenait cette place : sa photo,
+              son texte par-dessus, deux pastilles de destination. Il cliquait
+              sur une proposition et n'apprenait rien de ce qu'il obtiendrait. */}
+          <div className="asx-live">
+            <BarreDirect marque={MARQUE} ville={villeNom} />
+            <CarteSwipe carte={carteAnnonce(fn)} />
+            <GestesDirect action={motDActionMetier(data.metier || "")} />
           </div>
+
+          {/* LE CHAMP EST SOUS LA CARTE, pas dedans : on écrit à gauche et on
+              voit le résultat au-dessus, en direct. Éditer À L'INTÉRIEUR de
+              l'aperçu remplaçait justement l'aperçu par un formulaire — au
+              moment précis où il servait à quelque chose. */}
+          {editing && (
+            <textarea
+              className="asx-said"
+              value={fn}
+              onChange={(e) => setFn(e.target.value)}
+              rows={3}
+              aria-label="Votre annonce"
+            />
+          )}
 
           <div className="asx-dests">
             <span className="asx-dest"><b>🌐</b>Votre site</span>
             <span className="asx-dlink" aria-hidden="true" />
-            <span className="asx-dest"><b>📍</b>Catalogue de {villeNom}</span>
+            <span className="asx-dest"><b>📍</b>Le Direct de {villeNom}</span>
           </div>
 
           <button className="asx-send big pulse" onClick={() => playCreneau(fn, false, false, false)}>
             Voir où elle sera diffusée ✨
           </button>
           <button type="button" className="asx-link sm" onClick={() => setEditing((v) => !v)}>
-            {editing ? "✓ Terminé" : "Modifier"}
+            {editing ? "✓ Terminé" : "Modifier le texte"}
           </button>
           <div className="asx-tiny2">Démonstration — rien ne sera publié ni envoyé.</div>
         </>
@@ -1101,6 +1125,11 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
   return (
     <>
       <style>{styles(accent)}</style>
+      {/* Posés à la racine, pas dans l'écran d'aperçu : la scène de diffusion
+          (`asx-stage`) sert la même carte en `innerHTML` APRÈS que l'écran
+          d'aperçu a été démonté. Montés plus bas, les styles partaient avec lui
+          et la carte s'affichait nue au moment le plus visible. */}
+      <StylesDirect />
 
       {/* Ce bouton est posé sur un site que le commerçant croit voir « comme un
           client ». Sans le dire, il pense que ses client·es le verront aussi, ou
@@ -1315,21 +1344,41 @@ function styles(accent: string): string {
   .asx-link.sm{margin-top:8px;font-size:12.5px;font-weight:600;text-decoration:none;}
   .asx-link.sm:hover{text-decoration:underline;}
 
-  /* ── ÉCRAN 2 : l'annonce, sur la photo du commerce. ── */
+  /* ── ÉCRAN 2 : l'annonce, DANS L'ÉCRAN DE SES CLIENTS. ── */
   /* D'où viennent le jour et l'heure : dit avant l'annonce, en petit. */
-  .asx-prov{margin-bottom:13px;font-size:12.5px;line-height:1.45;font-weight:700;color:#5F6358;}
+  .asx-prov{margin-bottom:10px;font-size:12.5px;line-height:1.45;font-weight:700;color:#5F6358;}
   .asx-prov i{display:block;font-style:normal;font-weight:500;color:#8A8577;}
-  .asx-hero{position:relative;display:flex;align-items:flex-end;min-height:196px;border-radius:20px;overflow:hidden;
-    padding:20px 18px;background:linear-gradient(150deg,#2C3A5E,#141A2E);background-size:cover;background-position:center;
-    box-shadow:0 22px 44px -24px rgba(0,0,0,.7);}
-  @media (max-height:700px){.asx-hero{min-height:150px;padding:16px;}.asx-hero-t{font-size:18px;}}
-  .asx-hero-v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.25),rgba(8,9,13,.86));}
-  .asx-hero-t{position:relative;font-family:Georgia,serif;font-size:20px;line-height:1.32;font-weight:700;color:#fff;text-align:left;}
-  .asx-hero-ed{position:relative;width:100%;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:15px;
-    line-height:1.45;color:#16160F;background:rgba(255,255,255,.96);resize:vertical;box-sizing:border-box;}
-  .asx-hero-ed:focus{outline:2px solid #8A63D9;}
+  /* La vraie carte du Direct, sur son fond à elle. Le panneau de l'assistante
+     est clair ; la carte vient d'un écran sombre et perdrait la moitié de sa
+     force posée sur du blanc — on lui rend sa nuit. */
+  .asx-live{margin:0 0 2px;padding:12px 12px 14px;border-radius:22px;
+    background:linear-gradient(168deg,#101A16,#060B09);box-shadow:0 26px 50px -28px rgba(0,0,0,.75);
+    display:flex;flex-direction:column;align-items:center;gap:11px;}
+  /* LA CARTE GARDE SA TAILLE ; C'EST L'OBJET ENTIER QUI RÉTRÉCIT.
+     Premier essai : on lui donnait une hauteur et on laissait la largeur suivre
+     le format 3/4.15. Sur un écran de 720 de haut ça donnait une carte de 182 px
+     de large — mais le nom reste écrit en 22 px, le rembourrage en 16 px, et le
+     nom du commerce passait par-dessus le compte à rebours. Une carte dessinée
+     pour un téléphone ne se laisse pas étrangler à la moitié de sa largeur.
+     On la pose donc à sa largeur de dessin et on rapetisse le TOUT au zoom,
+     qui met à l'échelle aussi la place qu'elle prend dans la page. Les
+     proportions internes ne bougent jamais : c'est le même écran, vu de plus
+     loin. */
+  .asx-live .cd-carte{width:min(100%,268px);height:auto;}
+  .asx-live .cd-gestes{margin-top:0;}
+  /* Les paliers sont mesurés sur le chemin le plus haut des deux — celui d'une
+     proposition, qui ajoute deux lignes de provenance sous le titre. Le repère :
+     le bouton « Voir où elle sera diffusée » reste au-dessus du pli. */
+  @media (max-height:900px){.asx-live{zoom:.93;}}
+  @media (max-height:830px){.asx-live{zoom:.87;}}
+  @media (max-height:780px){.asx-live{zoom:.80;}}
+  @media (max-height:730px){
+    .asx-live{zoom:.72;padding:10px 10px 12px;gap:9px;}
+    .asx-h1{font-size:23px;margin:0 0 10px;}
+    .asx-prov{margin-bottom:8px;}
+  }
   /* Les deux vitrines, reliées : une seule annonce, deux endroits. */
-  .asx-dests{display:flex;align-items:center;justify-content:center;gap:0;margin-top:16px;}
+  .asx-dests{display:flex;align-items:center;justify-content:center;gap:0;margin-top:12px;}
   .asx-dest{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#3A3A32;
     background:#F4F2EC;border:1px solid #E7E4DC;border-radius:999px;padding:9px 14px;white-space:nowrap;}
   .asx-dest b{font-size:15px;font-weight:400;line-height:1;}
@@ -1408,12 +1457,11 @@ function styles(accent: string): string {
   .asx-mini-bar .b1{color:${accent};background:${accent}1F;box-shadow:inset 0 0 0 1px ${accent};}
   .asx-mini-bar .b2{color:#FBFAF7;background:${accent};}
 
-  /* ── ÉCRAN 5 : la carte du catalogue, presque plein écran, qui se glisse. ── */
-  /* Presque plein écran : la carte du catalogue EST l'écran, pas une vignette. */
-  .asx-swipe{animation:asxSwipe 2.6s ease-in-out .5s;}
-  .asx-swipe .asx-kcard{height:min(56vh,430px);margin-top:0;}
-  .asx-swipe .asx-knom{font-size:22px;}
-  .asx-swipe .asx-koffer{font-size:14.5px;}
+  /* ── ÉCRAN 5 : la carte du Direct, presque plein écran, qui se glisse. ── */
+  /* Presque plein écran : la carte du Direct EST l'écran, pas une vignette.
+     Dimensionnée par sa hauteur — c'est elle qui manque, jamais la largeur. */
+  .asx-swipe{animation:asxSwipe 2.6s ease-in-out .5s;display:flex;justify-content:center;margin-top:12px;}
+  .asx-swipe .cd-carte{width:auto;height:min(56vh,430px);max-width:100%;}
   @keyframes asxSwipe{0%,55%,100%{transform:none}68%{transform:translateX(-16px) rotate(-2.4deg)}82%{transform:translateX(7px) rotate(1deg)}}
   @media (prefers-reduced-motion:reduce){.asx-page,.asx-swipe{animation:none;}}
 
@@ -1520,31 +1568,14 @@ function styles(accent: string): string {
   .asx-pro-k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#6B4BC7;background:#F0EBFF;border:1px solid #E0D8F5;border-radius:999px;padding:5px 12px;}
   .asx-done-h{font-family:Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;color:#16160F;margin-top:13px;}
   .asx-done-s{font-size:13.5px;line-height:1.55;color:#5F6358;margin-top:9px;}
-  /* La carte du catalogue, à la maille de /ville : pleine photo, voile, texte en bas. */
-  .asx-kcard{position:relative;display:block;height:210px;margin-top:11px;border-radius:16px;overflow:hidden;
-    background-size:cover;background-position:center;background-color:#141A2E;
-    background-image:linear-gradient(150deg,#2C3A5E,#141A2E);}
-  .asx-kveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,13,.05),rgba(8,9,13,.78) 58%,rgba(8,9,13,.96));}
-  .asx-ktop{position:absolute;top:10px;left:10px;}
-  .asx-kmet{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#06231A;
-    background:#00E0A0;border-radius:6px;padding:4px 8px;}
-  .asx-kbody{position:absolute;left:13px;right:13px;bottom:12px;display:flex;flex-direction:column;text-align:left;}
-  .asx-knom{font-family:Georgia,serif;font-size:17px;font-weight:700;color:#fff;line-height:1.15;}
-  /* Mêmes blocs que la vraie carte (.vdec .meta / .offer-k / .offer-t). */
-  .asx-kmeta{font-size:11.5px;color:#CFD2D6;margin-top:5px;}
-  .asx-kcd{position:absolute;top:10px;right:10px;font-size:10.5px;font-weight:800;color:#0B0D14;
-    background:rgba(255,255,255,.92);border-radius:999px;padding:5px 10px;}
-  .asx-krate{align-self:flex-start;margin-top:7px;font-size:11.5px;font-weight:700;color:#FFD84D;
-    background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.35);border-radius:999px;padding:4px 10px;}
-  .asx-krate.neuf{color:#00E0A0;background:rgba(0,224,160,.1);border-color:rgba(0,224,160,.35);}
-  /* La barre de gestes du catalogue : passer · garder · le site. */
-  .asx-kbar{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:14px;}
-  .asx-kact{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#B4B0A5;}
-  .asx-kact i{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
-    font-style:normal;font-size:18px;color:#EDEAE2;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);}
-  .asx-kact.want i{color:#06231A;background:#00E0A0;border-color:#00E0A0;}
-  .asx-koffer{margin-top:9px;font-size:12.5px;font-weight:600;line-height:1.35;color:#E9EBED;}
-  .asx-kk{display:block;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#00E0A0;margin-bottom:4px;}
+  /* La carte du Direct n'est plus dessinée ici. Elle vivait dans une famille de
+     classes asx-k* — un rectangle de 210 px avec le nom, le nombre d'avis et
+     l'annonce dans un cadre — qui ne ressemblait à aucun écran du produit. Elle
+     vient maintenant de components/direct/carte-swipe avec sa feuille de
+     styles : voir carteCatalogue(). Vingt-cinq règles supprimées, et une
+     divergence de moins entre ce qu'on promet et ce qu'on livre.
+     (Pas d'accent grave dans ces commentaires : ils sont DANS un gabarit de
+      chaîne, et un seul y met fin au milieu de la feuille de styles.) */
   /* Copie conforme de .mqc .offer-band (maquette-sante.tsx) : même dégradé
      d'accent, même icône, même pastille translucide. Ce qu'on montre dans
      l'assistante doit être ce que le pro retrouve en haut de sa page. */

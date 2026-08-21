@@ -58,7 +58,11 @@ export function PanneauReserve({
     code: "",
     quand: facon?.quand || carte.echeance || "",
     gain: "",
-    groupe: "",
+    // Le fil « À saisir » ne connaît pas l'état d'un collectif : il montre des
+    // annonces, pas des compteurs de participants. `null` — pas une chaîne
+    // vide, qui laissait passer le typage nulle part ailleurs et n'aurait rien
+    // voulu dire dans le message.
+    groupe: null,
     prenom,
   });
   const lien = lienWhatsapp(tel, message);

@@ -26,6 +26,7 @@
 //     l'écran de ses clients. Quand il n'en a aucune, la carte tombe sur un
 //     fond dégradé et l'emoji du métier — jamais sur la photo d'un autre.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
+import { estRestauration } from "@/lib/direct/mots-metier";
 
 /**
  * LES QUATRE PHOTOS D'ILLUSTRATION — et le périmètre étroit de leur emploi.
@@ -191,6 +192,14 @@ const VU_PAR_HABITANT: Record<string, string> = {
   fideles: "Pour les habitués",
   realisation: "Vient d'être terminé",
   venir: "Aujourd'hui seulement",
+  // Les trois gestes occasionnels manquaient : ils ne sont jamais montrés dans
+  // l'acte 7 (qui ne raconte qu'une journée ordinaire), mais ils sont bel et
+  // bien proposés dans « Créer une annonce d'essai ». Sans eux, la carte
+  // reprenait l'intitulé du bouton du commerçant — « Annoncer un événement » —
+  // sur l'écran de son client.
+  nouveaute: "Nouveau ici",
+  evenement: "À ne pas manquer",
+  horaires: "Bon à savoir",
 };
 
 /**
@@ -228,6 +237,9 @@ const ICONE_TEMPS: Record<string, string> = {
   fideles: "❤️",
   realisation: "📸",
   venir: "🎉",
+  nouveaute: "✨",
+  evenement: "🎪",
+  horaires: "🕘",
 };
 
 /**
@@ -246,6 +258,67 @@ const TITRE_TEMPS: Record<string, string> = {
   realisation: "Vous venez de terminer un beau travail ?",
   venir: "Une raison de passer aujourd'hui ?",
 };
+
+/**
+ * « CRÉER UNE ANNONCE D'ESSAI » — l'annonce qu'il vient de composer, DANS LE DIRECT.
+ *
+ * LE DÉFAUT QUE ÇA CORRIGE. Le parcours d'essai se terminait sur un encadré
+ * maison : sa photo en fond, son texte par-dessus, deux pastilles « Votre
+ * site » et « Catalogue ». Joli, et sans rapport avec ce que ses clients
+ * verront réellement — c'est-à-dire la carte du mode swipe, la même que dans
+ * la démonstration, la même que dans le fil de la ville. Il cliquait sur une
+ * proposition et n'apprenait pas ce qu'il obtiendrait.
+ *
+ * On lui montre donc l'objet, pas une représentation de l'objet. Et comme il
+ * n'existe qu'un seul composant de carte, la promesse ne peut plus diverger du
+ * produit : le jour où la carte change, elle change ici aussi.
+ *
+ * CE QUI EST ÉCRIT DESSUS reste ce que le moteur a produit — `brief()`, mot
+ * pour mot. Rien n'est reformulé ici.
+ */
+export function carteDAnnonce(opts: {
+  /** La clé de l'intention choisie (`carte`, `reste`, `creneau`…). */
+  cle: string;
+  /** L'emoji de l'intention — le secours quand la clé n'a pas d'icône à elle. */
+  emoji: string;
+  /** L'annonce construite, telle qu'elle sera diffusée. */
+  annonce: string;
+  nom: string;
+  metierLabel: string;
+  ville: string;
+  /** SA photo. Sans elle, une illustration cohérente avec le geste et le métier. */
+  photo?: string;
+  /** L'échéance déjà mise en forme (« jusqu'à 14 h »), si le moteur en calcule une. */
+  reste?: string;
+}): CarteDirect {
+  const resto = estRestauration(opts.metierLabel);
+  const boulangerie = /boulanger|pâtissier|patissier|viennoiserie/i.test(opts.metierLabel);
+  const repli = photoDeRepli(opts.cle, resto, boulangerie);
+  return {
+    photo: opts.photo || repli,
+    cadrage: opts.photo ? undefined : CADRAGE[repli],
+    nom: opts.nom,
+    metier: opts.metierLabel,
+    ville: opts.ville,
+    reste: opts.reste || undefined,
+    icone: ICONE_TEMPS[opts.cle] || opts.emoji,
+    // Jamais `intention.action` : « Montrer ma carte du jour » est ce que LE
+    // COMMERÇANT appuie. Sur l'écran de son client, ça se lit comme un ordre.
+    quoi: VU_PAR_HABITANT[opts.cle] || "En ce moment",
+    lignes: opts.annonce ? [opts.annonce] : undefined,
+  };
+}
+
+/**
+ * LE MOT D'ACTION, déduit du seul métier.
+ *
+ * `motDAction` a besoin du geste du jour, que le parcours d'annonce d'essai n'a
+ * pas : il part d'une intention, pas d'une journée. Le métier suffit — c'est
+ * déjà lui qui décide dans l'autre fonction.
+ */
+export function motDActionMetier(metierLabel: string): string {
+  return estRestauration(metierLabel) ? "Je réserve" : "Je veux";
+}
 
 /**
  * ACTE 7 — LA JOURNÉE, HEURE PAR HEURE, ILLUSTRÉE DANS LE DIRECT.

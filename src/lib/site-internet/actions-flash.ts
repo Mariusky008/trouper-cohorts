@@ -35,6 +35,22 @@ export type Champ = {
 export type Intention = {
   cle: string;
   emoji: string;
+  /**
+   * VRAI QUAND CE GESTE REVIENT TOUS LES JOURS DANS CE MÉTIER.
+   *
+   * LE DÉFAUT QUE ÇA CORRIGE. Les trois propositions de l'écran de départ
+   * étaient classées par un score horaire, et rien ne garantissait qu'elles
+   * parlent du métier. Passé 19 h, un restaurateur se voyait proposer
+   * « annoncer un événement » et « montrer une nouveauté » — deux gestes qu'il
+   * ne fera pas trois fois dans l'année — pendant que « il m'en reste » et
+   * « remplir une table » attendaient derrière « Voir 6 autres idées ».
+   *
+   * Le podium se compose donc d'abord des gestes QUOTIDIENS du métier ; les
+   * occasionnels ne montent que s'il n'y en a pas trois. Le score horaire garde
+   * son rôle — il ordonne les quotidiens entre eux — mais il ne décide plus
+   * QUELS gestes sont proposés.
+   */
+  quotidien?: boolean;
   /** Toujours interrogatif : le commerçant confirme, il ne se voit pas imposer un fait. */
   titre: string;
   /**
@@ -275,6 +291,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (estRestauration(metier)) {
     liste.push({
       cle: "carte",
+      quotidien: true,
       exempleDemo: "la photo de l'ardoise",
       promesse: "Vos plats du jour paraissent dans « Déjeuner », à côté de ceux des autres restaurants.",
       emoji: "🍽️",
@@ -307,6 +324,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (estRestauration(metier) || v.boutique) {
     liste.push({
       cle: "reste",
+      quotidien: true,
       exempleDemo: "ce qu'il vous reste",
       promesse: "Ce qu'il vous reste part maintenant, au lieu d'être jeté.",
       emoji: "🥘",
@@ -346,6 +364,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (v.surRdv) {
     liste.push({
       cle: "creneau",
+      quotidien: true,
       exempleDemo: "demain à 16 h",
       promesse: `Vos ${v.places} peuvent maintenant trouver leurs clients.`,
       emoji: "🕐",
@@ -459,6 +478,7 @@ export function intentionsPour(metier: string, confirmation: Confirmation, secte
   if (v.boutique) {
     liste.push({
       cle: "arrivage",
+      quotidien: true,
       exempleDemo: "un arrivage tout frais de ce matin",
       promesse: "Votre arrivage peut maintenant trouver preneur.",
       emoji: "🧺",
@@ -620,7 +640,14 @@ export function recommandees(liste: Intention[], now: Date, n = 3): Intention[] 
     }
   };
 
-  return [...liste].sort((a, b) => score(b.cle) - score(a.cle) || a.cle.localeCompare(b.cle)).slice(0, n);
+  const parScore = (a: Intention, b: Intention) => score(b.cle) - score(a.cle) || a.cle.localeCompare(b.cle);
+  // LES GESTES DU MÉTIER D'ABORD, les occasionnels seulement pour compléter.
+  // Voir `quotidien` sur le type `Intention` : c'est ce qui évite de proposer
+  // un événement à un restaurateur à 20 h pendant que sa carte du lendemain et
+  // ses invendus attendent derrière un lien.
+  const quotidiens = liste.filter((i) => i.quotidien).sort(parScore);
+  const autres = liste.filter((i) => !i.quotidien).sort(parScore);
+  return [...quotidiens, ...autres].slice(0, n);
 }
 
 /** Les champs obligatoires encore vides — le garde-fou contre l'annonce à trous. */

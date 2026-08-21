@@ -184,6 +184,64 @@ export function CarteSwipe({
 }
 
 /**
+ * LA MÊME CARTE, EN CHAÎNE DE CARACTÈRES.
+ *
+ * POURQUOI CETTE SECONDE ÉCRITURE EXISTE. La démonstration du site joue ses
+ * séquences dans une scène qu'elle remplit par `innerHTML` : une minuterie
+ * remplace le contenu toutes les deux secondes, sans repasser par React. On ne
+ * peut donc pas y monter `<CarteSwipe>`.
+ *
+ * Elle vit ICI, collée à la version JSX et à la feuille de styles, parce que
+ * l'alternative — un dessin de carte écrit dans le fichier de la démo — est
+ * exactement ce qu'on vient de supprimer : deux cartes différentes, celle qu'on
+ * promet et celle qu'on livre. Deux rendus, UN seul jeu de classes et UN seul
+ * type de données : le style ne peut plus diverger, seul l'ordre des blocs
+ * pourrait, et il tient sur un écran.
+ *
+ * Tout ce qui vient du commerçant passe par `esc` — cette chaîne finit dans un
+ * `innerHTML`, et un nom de commerce est une donnée, pas du balisage.
+ */
+export function carteDirectHtml(c: CarteDirect): string {
+  const fond = c.photo
+    ? ` style="background-image:url(&quot;${esc(encodeURI(c.photo))}&quot;),linear-gradient(155deg,#22463A,#0D1A15 70%);background-position:center ${esc(c.cadrage || "50%")}"`
+    : "";
+  return (
+    `<div class="cd-carte">` +
+      `<span class="cd-photo${c.photo ? "" : " sans"}"${fond}>${c.photo ? "" : `<span class="cd-ph">${esc(c.icone)}</span>`}</span>` +
+      `<span class="cd-voile"></span>` +
+      (c.reste ? `<span class="cd-reste"><i>⏳</i>${esc(c.reste)}</span>` : "") +
+      `<span class="cd-bas">` +
+        `<span class="cd-nom">${esc(c.nom)}</span>` +
+        `<span class="cd-ou"><i>📍</i>${esc(c.metier)} · ${esc(c.ville)}</span>` +
+        (c.social ? `<span class="cd-social"><i>💚</i>${esc(c.social)}</span>` : "") +
+        `<span class="cd-quoi"><i>${esc(c.icone)}</i>${esc(c.quoi)}</span>` +
+        (c.lignes?.length
+          ? `<span class="cd-lignes">${c.lignes.map((l) => `<span>${esc(l)}</span>`).join("")}</span>`
+          : "") +
+        (c.prix || c.etiquette
+          ? `<span class="cd-prix">${c.prix ? `<b>${esc(c.prix)}</b>` : ""}${c.prixBarre ? `<s>${esc(c.prixBarre)}</s>` : ""}${c.etiquette ? `<em>${esc(c.etiquette)}</em>` : ""}</span>`
+          : "") +
+      `</span>` +
+    `</div>`
+  );
+}
+
+/** Les trois gestes, en chaîne — même raison, même contrat que ci-dessus. */
+export function gestesDirectHtml(action = "Je veux"): string {
+  return (
+    `<div class="cd-gestes">` +
+      `<span class="cd-g"><i>✕</i><em>Passer</em></span>` +
+      `<span class="cd-g grand"><i>♥</i><em>${esc(action)}</em></span>` +
+      `<span class="cd-g"><i>↑</i><em>Le pro</em></span>` +
+    `</div>`
+  );
+}
+
+function esc(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
  * LES STYLES DE LA CARTE, posés une seule fois par écran.
  *
  * Ils voyagent avec le composant plutôt que de vivre dans la feuille de la
