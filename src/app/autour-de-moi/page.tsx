@@ -23,10 +23,14 @@ export const metadata: Metadata = {
 
 const WA_DIGITS = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "") || "33768233347";
 // Le lien est construit ici, côté serveur, parce que le numéro vient de
-// l'environnement : la page cliente reçoit une adresse déjà prête, à laquelle
-// elle n'ajoute que la fin de la phrase.
-const CONTACT = `https://wa.me/${WA_DIGITS}?text=`;
+// l'environnement.
+const CONTACT = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
+  "Mon avis sur l'application : ",
+)}`;
+
+/** La ville affichée dans le bandeau. Celle où le produit tourne vraiment. */
+const VILLE = "Dax";
 
 export default function AutourDeMoiPage() {
-  return <ApercuHabitant contact={CONTACT} />;
+  return <ApercuHabitant contact={CONTACT} ville={VILLE} />;
 }

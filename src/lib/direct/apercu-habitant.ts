@@ -1,8 +1,13 @@
 // ⚠️ MAQUETTE DE CONCEPT — CE FICHIER NE DÉCRIT PAS LE PRODUIT.
 //
-// Il alimente UNE seule page, `/autour-de-moi`, faite pour être montrée à
-// quelques habitants et savoir si l'idée leur parle. Elle met en scène des
-// fonctions qui N'EXISTENT PAS :
+// Il alimente UNE seule page, `/autour-de-moi`, faite pour être montrée de la
+// main à la main à quelques habitants et savoir si l'idée leur parle. Elle se
+// joue comme si tout existait — c'est le seul moyen d'obtenir une réaction
+// utile, et les gens à qui on la montre savent déjà que c'est un essai. Ce qui
+// n'existe pas n'est donc écrit NULLE PART à l'écran ; c'est écrit ici, et la
+// page est en `noindex` pour que personne ne tombe dessus par hasard.
+//
+// LES FONCTIONS MISES EN SCÈNE ET QUI N'EXISTENT PAS :
 //
 //   · chercher par envie (« j'ai envie d'italien ») — il n'y a aucun typage de
 //     cuisine sur les commerces ;
@@ -18,8 +23,7 @@
 // absolue : on ne leur montre jamais un écran qui n'existe pas, parce que celui
 // qui signe dessus le réclame la semaine suivante. Mélanger les deux fichiers,
 // c'est laisser une fonction imaginaire fuir un jour dans un argumentaire de
-// vente. Elles restent séparées, et la page qui utilise celui-ci porte un
-// bandeau qui dit ce qu'elle est.
+// vente. Elles restent séparées.
 //
 // EN REVANCHE, DEUX RÈGLES TIENNENT ENCORE ICI :
 //   · aucun commerce inventé n'est nommé — ce sont des voisins anonymes, pas de
@@ -54,7 +58,7 @@ export type CarteAutour = CarteDirect & {
 export const HEURE_MIN = 11;
 export const HEURE_MAX = 22;
 
-const VILLE = "votre ville";
+const VILLE = "Dax";
 
 // SEPT CARTES POUR SIX PHOTOS. Le plat du jour sert deux fois — à midi et le
 // soir — mais ses deux créneaux ne se chevauchent jamais, donc les deux ne sont
@@ -215,23 +219,4 @@ export function autourDeMoi(heure: number): CarteAutour[] {
 export function selonEnvies(cartes: CarteAutour[], envies: CleEnvie[]): CarteAutour[] {
   if (!envies.length) return cartes;
   return cartes.filter((c) => envies.every((e) => c.envies.includes(e)));
-}
-
-/**
- * CE QUE LA VILLE PROPOSE À CETTE HEURE-LÀ, en trois mots.
- *
- * C'est la ligne qui fait comprendre que le contenu SUIT L'HEURE. Sans elle, on
- * lit des commerces ; avec elle, on lit une ville qui change.
- */
-export function rubriqueDe(heure: number): string {
-  if (heure < 13) return "Les menus du jour";
-  if (heure < 16) return "Ce qui reste du service";
-  if (heure < 18) return "Avant la fermeture";
-  if (heure < 20) return "Les tables de ce soir";
-  return "Les tables à partager";
-}
-
-/** L'heure telle qu'on l'écrit : 12 → « 12 h ». */
-export function heureLisible(h: number): string {
-  return `${h} h`;
 }
