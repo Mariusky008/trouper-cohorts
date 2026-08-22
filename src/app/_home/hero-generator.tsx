@@ -110,7 +110,7 @@ export function HeroGenerator() {
           <input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Votre ville" aria-label="Votre ville" onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
         </div>
         <button className="genbtn" onClick={submit} disabled={!ready}>
-          ✨ Construire mon site — gratuitement
+          ✨ Créer mon site gratuitement
         </button>
         {err && (
           <div className="generr">

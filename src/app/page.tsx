@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import { HeroGenerator } from "./_home/hero-generator";
 import { VilleVivante, VilleEtat } from "./_home/ville-vivante";
 import { ScrollReveal } from "./_home/scroll-reveal";
+import { Journee } from "./_home/journee";
 
 // LE TITRE SUIT LA PAGE. Il promettait « votre site web gratuit » quand la page
 // promet maintenant « votre commerce en direct dans votre ville » : un résultat
@@ -129,12 +130,18 @@ export default function HomePage() {
              Uniquement sur grand écran : sur téléphone, deux lignes sont
              impossibles et le repli naturel est le bon. */
           @media(min-width:960px){.pop-home h1.caps{max-width:940px;}}
-          /* Les exemples : ce qu'on aurait à dire, avant qu'on explique à qui.
-             Volontairement plus discret que la promesse qui suit — c'est une
-             liste, pas un argument. */
+          /* LA SECONDE LIGNE DU TITRE EST LA PROMESSE, et elle a sa propre
+             ligne : « Quelque chose se passe chez vous ? » pose la question,
+             « Vous le dites, Clikme le fait savoir » y répond. Écrites à la
+             suite dans le même bloc, la question se perdait dans la réponse. */
+          .pop-home h1.caps .hl{display:block;margin-top:10px;}
+          /* Les règles .cases et .freekick n'ont plus d'emploi dans le hero : la liste
+             d'exemples et la ligne « Gratuit. À partir de vos informations
+             Google » ont été retirées — la première parce que le titre pose
+             maintenant la question à sa place, la seconde parce qu'elle disait
+             sous le formulaire ce que la ligne du dessous dit déjà. Les règles
+             restent : d'autres écrans de cette feuille s'en servent. */
           .pop-home .cases{font-size:15.5px;line-height:1.55;color:var(--soft);max-width:520px;margin:16px auto 0;position:relative;z-index:2;}
-          /* Le prix et la source, en petites capitales, collés au formulaire :
-             c'est la dernière chose lue avant de taper son nom. */
           .pop-home .freekick{margin:16px auto 0;font-size:11.5px;font-weight:800;letter-spacing:.11em;
             text-transform:uppercase;color:var(--faint);position:relative;z-index:2;}
 
@@ -163,7 +170,13 @@ export default function HomePage() {
           }
           /* La phrase « pourquoi le produit existe » — juste sous le titre. */
           .pop-home .why{font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:18px auto 0;font-weight:600;letter-spacing:-.01em;position:relative;z-index:2;}
-          .pop-home .why b{font-weight:850;background:linear-gradient(120deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+          /* LA SECONDE PHRASE N'EST PLUS UN SECOND TITRE. En dégradé et en 850,
+             elle pesait autant que le h1 juste au-dessus : deux accroches
+             empilées, et l'œil ne savait plus laquelle lire. C'est un
+             paragraphe — il explique ce que le titre vient de promettre. Seuls
+             les quatre mots qui portent la promesse gardent l'encre pleine. */
+          .pop-home .why{font-weight:500;color:var(--soft);}
+          .pop-home .why b{font-weight:750;color:var(--ink);background:none;-webkit-text-fill-color:currentColor;}
           .pop-home .sub{font-size:16px;line-height:1.5;color:var(--soft);max-width:500px;margin:12px auto 0;}
           /* « Une fois créée » : le seul bloc explicatif de la page. Il vient APRÈS
              le formulaire — on montre d'abord, on explique ensuite. */
@@ -171,20 +184,23 @@ export default function HomePage() {
           .pop-home .works-k{text-align:center;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
           .pop-home .works-h{text-align:center;font-size:27px;font-weight:850;letter-spacing:-.02em;line-height:1.14;margin:10px auto 0;max-width:460px;}
           .pop-home .works-p{text-align:center;font-size:16px;line-height:1.55;color:var(--soft);max-width:480px;margin:12px auto 0;}
+          /* LE PIVOT. Ce qui précède décrit un site ; ce qui suit décrit
+             Clikme. La phrase est donc plus grosse que le paragraphe au-dessus
+             et en encre pleine : elle doit se lire comme un changement de
+             sujet, pas comme un argument de plus. */
+          .pop-home .works-mais{text-align:center;font-size:19px;line-height:1.45;color:var(--ink);
+            max-width:520px;margin:20px auto 0;letter-spacing:-.01em;}
+          .pop-home .works-mais b{font-weight:850;}
           .pop-home .works-box{max-width:520px;margin:26px auto 0;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:22px 20px;}
           .pop-home .works-q{font-size:17px;font-weight:850;letter-spacing:-.01em;line-height:1.3;}
           .pop-home .works-a{font-size:15px;line-height:1.5;color:var(--soft);margin-top:14px;}
           .pop-home .works-a b{color:var(--ink);font-weight:800;}
           .pop-home .works-say{margin-top:14px;border-left:3px solid var(--a1);border-radius:0 12px 12px 0;background:var(--bg);padding:13px 15px;font-size:15.5px;line-height:1.45;font-style:italic;color:var(--ink);}
-          /* Les deux destinations. Puces DISCRÈTES : ce bloc avait déjà été
-             allégé une fois pour cause de trop de zones de lecture, et des
-             puces marquées le redécouperaient en sections. */
-          .pop-home .works-ou{list-style:none;margin:8px 0 0;padding:0;}
-          .pop-home .works-ou li{position:relative;padding-left:16px;font-size:15px;line-height:1.5;color:var(--soft);margin-top:5px;}
-          .pop-home .works-ou li::before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--a1);}
-          .pop-home .works-ou b{color:var(--ink);font-weight:800;}
-          .pop-home .works-end{text-align:center;font-size:18px;line-height:1.5;color:var(--soft);margin:26px auto 0;max-width:420px;}
-          .pop-home .works-end b{color:var(--ink);font-weight:850;}
+          /* Les deux destinations et la chute de section ont été retirées du
+             balisage : la liste « sur votre site ; et dans le catalogue »
+             énumérait ce que la section suivante MONTRE maintenant, heure par
+             heure, et la chute concurrençait la conclusion de cette
+             section-là. Leurs règles partent avec elles. */
           @media(min-width:820px){.pop-home .works-h{font-size:32px;} .pop-home .works-box{padding:26px 24px;}}
 
           /* Générateur (verre) + tags flottants */
@@ -570,21 +586,27 @@ export default function HomePage() {
               répéter ici userait le mot avant qu'il ne serve. Reste ce que le
               titre ne dit pas : à qui cette page s'adresse. */}
           <span className="eyebrow">✦ Commerçants, artisans &amp; pros</span>
-          {/* LE TITRE DIT MAINTENANT LE PRODUIT, plus le délai.
-              « Dans 1 minute, votre site sera prêt » promettait un site — or ce
-              qui distingue Clikme d'un créateur de site, c'est la seconde ligne :
-              le commerce paraît EN DIRECT dans sa ville. Le délai n'a pas
-              disparu, il est descendu là où il est une preuve et non une
-              promesse (« votre site intelligent est créé en 1 minute »). */}
-          <h1 className="caps">Votre commerce.<br /><span className="hl">En direct dans votre ville.</span></h1>
-          {/* LES EXEMPLES AVANT LA PROMESSE. « Une place qui se libère » se
-              comprend sans effort ; « faire savoir aux habitants » ne veut rien
-              dire tant qu'on n'a pas en tête ce qu'on aurait à dire. */}
-          <p className="cases">
-            Une nouveauté, une offre, une place qui se libère, un produit disponible, quelques portions
-            restantes…
+          {/* LE TITRE EST UNE QUESTION, et c'est ce qui change tout.
+              « Votre commerce. En direct dans votre ville. » décrivait une
+              offre : le lecteur devait fournir lui-même l'exemple qui le
+              concerne. « Quelque chose se passe chez vous ? » le lui fait
+              chercher — et à cette seconde-là il en a toujours un en tête. La
+              réponse arrive dans la ligne suivante, et c'est la promesse. */}
+          <h1 className="caps">
+            Quelque chose se passe<br />chez vous&nbsp;?
+            <span className="hl">Vous le dites. {MARQUE} le fait savoir.</span>
+          </h1>
+          {/* L'ORDRE DES DEUX PHRASES EST L'ORDRE DE CE QUI SE PASSE : le site
+              d'abord parce qu'il est immédiat et gratuit, ce qu'il rapporte
+              ensuite. Écrite dans l'autre sens, la page promettait une audience
+              à quelqu'un qui n'a encore rien. */}
+          <p className="why">
+            Votre site est créé en 1 minute.<br />
+            <b>
+              Puis {MARQUE} fait découvrir votre actualité aux habitants autour de vous, au moment où
+              elle devient utile.
+            </b>
           </p>
-          <p className="why">Vous le dites. <b>{MARQUE} le fait savoir aux habitants autour de vous.</b></p>
           {/* LE PARAGRAPHE SUR LE SITE A ÉTÉ RETIRÉ.
               Il disait « Et votre site intelligent est créé en 1 minute. Il
               répond à vos clients, présente votre activité et vous connecte au
@@ -600,7 +622,7 @@ export default function HomePage() {
               deux seules objections qui subsistent une seconde avant de taper
               son nom : combien ça coûte, et d'où viennent les informations. Les
               retirer ferait du champ un formulaire sans réponse. */}
-          <p className="freekick">Gratuit. À partir de vos informations Google.</p>
+
           {/* LA VILLE, AUTOUR DU FORMULAIRE.
               Elle enveloppe la zone de saisie plutôt que de la précéder : sur
               un téléphone il n'y a plus un pixel disponible au-dessus du champ
@@ -618,10 +640,15 @@ export default function HomePage() {
               le formulaire : c'est une réponse à ce qu'il vient d'écrire, pas
               une accroche. */}
           <VilleEtat />
-          {/* « Gratuit » est retiré de cette ligne : il est dit au-dessus du
-              formulaire. Trois fois le même mot dans un seul écran, et il ne
-              veut plus rien dire. */}
-          <div className="alt">✓ 60 secondes · ✓ Sans inscription</div>
+          {/* LES TROIS RÉPONSES, SUR UNE SEULE LIGNE, sous le bouton.
+              « Gratuit. À partir de vos informations Google. » vivait au-dessus
+              du formulaire et « 60 secondes · sans inscription » en dessous :
+              deux lignes de réassurance qui encadraient le champ et disaient la
+              même chose. Elles répondent aux trois seules objections qui
+              restent une seconde avant de taper son nom — combien de temps,
+              faut-il un compte, d'où viennent les informations — et leur place
+              est là, juste après le geste. */}
+          <div className="alt">60 secondes · Sans inscription · À partir de vos informations Google</div>
         </div>
       </header>
 
@@ -641,37 +668,34 @@ export default function HomePage() {
           <div className="works-k reveal">Une fois créé</div>
           <h2 className="works-h reveal">Votre site travaille pour vous.</h2>
           <p className="works-p reveal">
-            Il répond aux questions de vos clients, prend les rendez-vous et vous aide à recueillir
-            de nouveaux avis Google.
+            Il répond à vos clients, présente votre activité et reste disponible 24&nbsp;h/24.
+          </p>
+          {/* LE « MAIS SURTOUT » EST LE PIVOT DE LA PAGE. Ce qui précède est ce
+              que fait n'importe quel créateur de site ; ce qui suit est la
+              raison d'être de Clikme. La phrase qui les sépare doit se lire
+              comme un changement de sujet, pas comme un argument de plus. */}
+          <p className="works-mais reveal">
+            Mais surtout, il vous permet de <b>faire savoir ce qui se passe chez vous</b>, au moment où
+            cela devient utile.
           </p>
 
           <div className="works-box reveal">
-            <div className="works-q">Et quand il se passe quelque chose chez vous, dites-le simplement.</div>
-            <div className="works-say">« Il me reste 1 place demain à 8 h. Quelqu&apos;un la prend&nbsp;?&nbsp;»</div>
+            <div className="works-q">Vous dites ce qui se passe.</div>
+            <div className="works-say">« Il me reste 8 lasagnes maison. »</div>
             <p className="works-a">
-              Votre assistante transforme votre phrase en annonce, choisit la photo et la diffuse
-              automatiquement&nbsp;:
+              {MARQUE} transforme votre phrase en annonce et la diffuse dans <b>Le Direct de votre
+              ville</b>, auprès des habitants autour de vous.
             </p>
-            {/* LES DEUX DESTINATIONS, SUR DEUX LIGNES. C'est le seul endroit de
-                la page où une énumération vaut mieux qu'une phrase : ce sont
-                deux endroits distincts, et le second — les autres commerces —
-                est précisément ce que personne n'attend d'un créateur de site.
-                Noyé dans une phrase, il se lit comme une incise. */}
-            <ul className="works-ou">
-              <li>sur votre site&nbsp;;</li>
-              <li>
-                et dans <b>le catalogue de votre ville</b>, affiché également par les autres commerces
-                du réseau.
-              </li>
-            </ul>
-          </div>
-
-          <div className="works-end reveal">
-            Vous vous occupez de votre commerce.<br />
-            <b>{MARQUE} s&apos;occupe de vous faire connaître.</b>
           </div>
         </div>
       </section>
+
+      {/* ── LA JOURNÉE, ET C'EST LA RUPTURE ──
+          Tout ce qui précède explique un mécanisme. Ici on passe de l'autre
+          côté — fond sombre, écran des habitants — et on montre ce que le
+          mécanisme produit, heure par heure, avec les VRAIES cartes du
+          produit. Voir `_home/journee.tsx`. */}
+      <Journee />
 
       {/* ── FOOTER ── */}
       <footer className="foot">
