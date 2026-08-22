@@ -21,16 +21,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const WA_DIGITS = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "") || "33768233347";
-// Le lien est construit ici, côté serveur, parce que le numéro vient de
-// l'environnement.
-const CONTACT = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(
-  "Mon avis sur l'application : ",
-)}`;
-
-/** La ville affichée dans le bandeau. Celle où le produit tourne vraiment. */
-const VILLE = "Dax";
-
+// LA PASTILLE DU BANDEAU NE PORTE PLUS LA VILLE MAIS LE MÉTIER : on y choisit
+// la branche qu'on regarde. Et le lien de retour d'avis a disparu de l'écran —
+// il ajoutait une sortie hors de l'application dans une maquette qui doit se
+// jouer, pas se commenter. Le retour se demande de vive voix, en montrant.
 export default function AutourDeMoiPage() {
-  return <ApercuHabitant contact={CONTACT} ville={VILLE} />;
+  return <ApercuHabitant />;
 }
