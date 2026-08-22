@@ -29,12 +29,20 @@ import type { CarteDirect } from "@/components/direct/carte-swipe";
 import { estRestauration } from "@/lib/direct/mots-metier";
 
 /**
- * LES QUATRE PHOTOS D'ILLUSTRATION — et le périmètre étroit de leur emploi.
+ * LES SIX PHOTOS D'ILLUSTRATION — et le périmètre étroit de leur emploi.
  *
  * Elles ne servent qu'à deux choses : les cartes de la VILLE (qui décrivent
  * d'autres commerces que celui qui regarde), et le repli quand un commerçant
  * n'a aucune photo sur sa fiche Google. Partout ailleurs ce sont les SIENNES —
  * voir la règle 3 en tête de fichier.
+ *
+ * ELLES ÉTAIENT QUATRE, ET ÇA SE VOYAIT. Avec quatre images pour trois cartes
+ * de ville et quatre temps de journée, les mêmes revenaient sans arrêt : « c'est
+ * toujours les mêmes 3 photos qu'on voit ». Pire, deux moments manquaient
+ * d'image JUSTE et tombaient sur une approximation — un invendu à emporter
+ * montrait un magret à l'assiette, une table à partager montrait une vitrine
+ * vide. Les deux nouvelles ne sont pas de la variété pour la variété : elles
+ * disent ce que les deux autres ne savaient pas dire.
  *
  * Un fichier absent n'est pas une panne : la carte empile l'image sur un
  * dégradé, et c'est le dégradé qui reste. Voir `carte-swipe.tsx`.
@@ -44,6 +52,10 @@ const PHOTOS = {
   tables: "/direct/tables-libres.jpg",
   four: "/direct/sortie-du-four.jpg",
   vitrine: "/direct/vitrine-du-soir.jpg",
+  /** Une part soulevée d'un plat entamé : l'image de « il m'en reste ». */
+  portion: "/direct/portion-a-emporter.jpg",
+  /** Une tablée du soir : l'image d'une place qu'on partage, pas d'une salle vide. */
+  tablee: "/direct/tablee-du-soir.jpg",
 } as const;
 
 /**
@@ -63,6 +75,16 @@ const CADRAGE: Record<string, string> = {
   [PHOTOS.tables]: "100%",
   [PHOTOS.four]: "100%",
   [PHOTOS.vitrine]: "72%",
+  // CES DEUX-LÀ SONT DÉJÀ RECADRÉES AU FORMAT DU CADRE, et c'est pour ça
+  // qu'elles ne demandent rien. Les tirages d'origine avaient leur sujet au
+  // milieu — la part soulevée à 60 % de la hauteur, les visages de la tablée
+  // sous un tiers de ciel vide — donc sous le voile qui porte le nom et le
+  // prix. `object-position` ne pouvait pas les sauver : quand l'image et le
+  // cadre ont presque le même rapport, il ne reste que 8 % de course, mesuré.
+  // On a donc recadré les fichiers eux-mêmes autour du sujet. 50 % ici veut
+  // dire « rien à corriger ».
+  [PHOTOS.portion]: "50%",
+  [PHOTOS.tablee]: "50%",
 };
 import type { GesteDuJour } from "@/lib/direct/geste-du-jour";
 import type { TempsMetier } from "@/lib/direct/acte-metier";
@@ -142,7 +164,7 @@ export function motDAction(g: GesteDuJour): string {
 /**
  * ACTE 3 — CE QUE LES HABITANTS VOIENT EN OUVRANT LE DIRECT.
  *
- * Trois cartes, aucun nom. Elles disent la VILLE, pas lui — et c'est
+ * Cinq cartes, aucun nom. Elles disent la VILLE, pas lui — et c'est
  * exactement ce qui rend l'acte suivant douloureux : il n'y est pas.
  */
 export function cartesDeLaVille(ville: string): CarteDirect[] {
@@ -157,9 +179,18 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
   // d'aller. Chaque carte porte donc les PLATS, le PRIX, la DISTANCE et le
   // bouton qui y emmène.
   //
-  // ET LES TROIS PARLENT DU MÊME BESOIN : on cherche où manger. La boulangerie
+  // ET TOUTES PARLENT DU MÊME BESOIN : on cherche où manger. La boulangerie
   // y a sa place — mais par sa formule du midi, pas par sa fournée de 7 h, qui
   // répondait à une question que personne ne se pose à midi.
+  //
+  // ELLES ÉTAIENT TROIS, ELLES SONT CINQ. Le paquet tournait en boucle sur les
+  // mêmes trois images pendant tout l'acte : au troisième geste on avait déjà
+  // fait le tour, et Le Direct avait l'air d'une ville où il se passe trois
+  // choses. Les deux ajoutées ne sont pas là pour meubler — elles montrent les
+  // deux formes que les trois premières ne savaient pas montrer : ce qui reste
+  // d'un service (à emporter, tout de suite, moins cher) et une place à une
+  // table déjà occupée. Et la dernière est datée de CE SOIR, volontairement :
+  // Le Direct n'est pas un déjeuner, c'est une journée.
   //
   // AUCUN COMMERCE N'EST NOMMÉ (règle 1 en tête de fichier) : ce sont les
   // voisins de celui qui regarde, et leur inventer une enseigne reviendrait à
@@ -210,6 +241,38 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
       lignes: ["Sandwich au choix", "Boisson + dessert"],
       prix: "8,50 €",
       social: "9 l'ont vu passer",
+    },
+    {
+      photo: PHOTOS.portion,
+      cadrage: CADRAGE[PHOTOS.portion],
+      nom: "Une cuisine à emporter",
+      metier: "Restaurant",
+      ville,
+      distance: "180 m",
+      itineraire: yAller,
+      // Pas une heure : une quantité. C'est ce qui distingue un invendu d'un
+      // menu — il ne finit pas à 14 h, il finit quand il n'y en a plus.
+      reste: "Jusqu'à épuisement",
+      icone: "🔥",
+      quoi: "Dernières portions",
+      lignes: ["Lasagnes maison", "À emporter, prêtes tout de suite"],
+      prix: "8 €",
+      social: "3 en ont pris",
+    },
+    {
+      photo: PHOTOS.tablee,
+      cadrage: CADRAGE[PHOTOS.tablee],
+      nom: "Une grande table ce soir",
+      metier: "Restaurant",
+      ville,
+      distance: "320 m",
+      itineraire: yAller,
+      reste: "Ce soir, 20 h",
+      icone: "👥",
+      quoi: "Table à partager",
+      lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
+      prix: "17 €",
+      social: "4 places déjà prises",
     },
   ];
 }
@@ -296,8 +359,19 @@ const VU_PAR_HABITANT: Record<string, string> = {
  */
 function photoDeRepli(cle: string, resto: boolean, boulangerie: boolean): string {
   if (resto) {
-    if (cle === "carte" || cle === "reste") return PHOTOS.plat;
+    if (cle === "carte") return PHOTOS.plat;
+    // « IL M'EN RESTE » A ENFIN SON IMAGE. Ce geste tombait sur la photo du
+    // plat du jour — un magret dressé à l'assiette — pour dire « dernières
+    // portions de lasagnes à emporter ». L'image contredisait le texte juste
+    // au-dessus d'elle, et c'est l'image qu'on croit. Une part soulevée d'un
+    // plat déjà entamé dit la même chose que le texte : il en reste, et on
+    // l'emporte.
+    if (cle === "reste") return PHOTOS.portion;
+    // Une salle vide pour des places libres, une tablée pour un moment qu'on
+    // partage : ce n'est pas la même promesse, et ce n'était pas la même photo
+    // qui manquait.
     if (cle === "creneau") return PHOTOS.tables;
+    if (cle === "evenement" || cle === "venir" || cle === "fideles") return PHOTOS.tablee;
     return PHOTOS.vitrine;
   }
   if (boulangerie && (cle === "arrivage" || cle === "carte" || cle === "reste")) return PHOTOS.four;
@@ -441,12 +515,17 @@ export function tempsIllustres(
   // et il rentrait par la porte de derrière une deuxième fois. La substitution
   // ne sort donc JAMAIS des images de son métier.
   //
-  // Quand le vivier est épuisé (quatre temps, trois images pour la
-  // restauration), on reprend la PLUS ANCIENNE : une image revient, mais jamais
-  // deux fois de suite. Une répétition à trois écrans d'écart ne se remarque
-  // pas ; deux écrans identiques à la suite, si.
+  // Quand le vivier est épuisé, on reprend la PLUS ANCIENNE : une image
+  // revient, mais jamais deux fois de suite. Une répétition à trois écrans
+  // d'écart ne se remarque pas ; deux écrans identiques à la suite, si.
+  //
+  // POUR LA RESTAURATION, LE VIVIER NE SE VIDE PLUS. Il tenait trois images
+  // pour quatre temps : la quatrième était forcément une reprise. Avec la part
+  // à emporter et la tablée du soir il en tient cinq, et les quatre écrans de
+  // la journée sont désormais quatre images différentes — vérifié au
+  // navigateur sur un restaurant sans photo Google.
   const vivier = resto
-    ? [PHOTOS.plat, PHOTOS.tables, PHOTOS.vitrine]
+    ? [PHOTOS.plat, PHOTOS.portion, PHOTOS.tablee, PHOTOS.tables, PHOTOS.vitrine]
     : boulangerie
       ? [PHOTOS.four, PHOTOS.vitrine]
       : [PHOTOS.vitrine];

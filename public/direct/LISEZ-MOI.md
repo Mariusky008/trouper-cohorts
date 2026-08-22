@@ -1,6 +1,6 @@
 # Les photos d'illustration du Direct
 
-Quatre photos, et elles ne servent qu'à DEUX cas :
+Six photos, et elles ne servent qu'à DEUX cas :
 
 1. **Les cartes de la ville** montrées à l'acte 3 de la démonstration. Elles
    décrivent d'autres commerces que celui qui regarde — on ne peut donc pas y
@@ -23,6 +23,14 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `tables-libres.jpg`    | Une salle de restaurant, tables vides             |
 | `sortie-du-four.jpg`   | Des viennoiseries qui sortent du four             |
 | `vitrine-du-soir.jpg`  | Une vitrine de commerce éclairée, le soir         |
+| `portion-a-emporter.jpg` | Une part soulevée d'un plat entamé              |
+| `tablee-du-soir.jpg`   | Une tablée conviviale, le soir                    |
+
+Les deux dernières ont été ajoutées parce que deux moments n'avaient AUCUNE
+image juste : « il m'en reste » tombait sur l'assiette du menu du jour (une
+image qui contredit son texte), et « une table à partager » sur une devanture
+vide. Elles ne sont pas là pour varier — elles sont là parce que la carte ment
+sans elles.
 
 ## Le format, et pourquoi il n'est pas négociable
 

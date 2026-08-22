@@ -87,14 +87,14 @@ const MOMENTS: Moment[] = [
     teinte: "#D2604A",
     action: "J'en prends une",
     carte: {
-      // LA MÊME PHOTO QU'À 11 H 30, ET C'EST ASSUMÉ. Les quatre illustrations
-      // disponibles ne couvrent que deux moments d'un restaurant — l'assiette
-      // et la salle ; les deux autres montrent une boulangerie et une devanture
-      // de nuit. Une part de lasagnes se montre par une assiette, pas par une
-      // façade. La règle qu'on s'est donnée ailleurs tient ici aussi : le
-      // métier passe avant la variété, et jamais deux fois DE SUITE.
-      photo: "/direct/plat-du-jour.jpg",
-      cadrage: "68%",
+      // ON Y VOYAIT UN MAGRET POUR ANNONCER DES LASAGNES. C'était la photo du
+      // menu de 11 h 30, reprise faute d'en avoir une autre — l'image
+      // contredisait le texte posé dessus, et sur une carte c'est l'image qu'on
+      // lit en premier. Une part soulevée d'un plat déjà entamé dit exactement
+      // ce que dit le texte : il en reste, et ça s'emporte.
+      photo: "/direct/portion-a-emporter.jpg",
+      // Le fichier est recadré au format du cadre : rien à corriger ici.
+      cadrage: "50%",
       nom: NOM,
       metier: "Restaurant",
       ville: VILLE,
@@ -113,10 +113,12 @@ const MOMENTS: Moment[] = [
     teinte: "#9B7BFF",
     action: "Réserver",
     carte: {
-      // La devanture éclairée du soir : c'est le moment, et c'est la seule des
-      // quatre images qui ne montre le métier de personne en particulier.
-      photo: "/direct/vitrine-du-soir.jpg",
-      cadrage: "72%",
+      // UNE TABLE À PARTAGER SE MONTRE PAR DES GENS AUTOUR D'ELLE. On avait mis
+      // une devanture éclairée : la bonne heure, mais la rue vide, alors que ce
+      // qui se vend ici c'est de s'asseoir avec cinq autres. La tablée du soir
+      // montre les six places dont parle le texte.
+      photo: "/direct/tablee-du-soir.jpg",
+      cadrage: "50%",
       nom: NOM,
       metier: "Restaurant",
       ville: VILLE,
