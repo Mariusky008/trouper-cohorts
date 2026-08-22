@@ -301,7 +301,13 @@ export function StylesDirect() {
         __html: `
         .cd-barre{display:flex;align-items:center;gap:7px;width:100%;max-width:340px;margin:0 auto;
           font-family:'Inter',system-ui,sans-serif;}
-        .cd-marque{flex:1;min-width:0;font-size:17px;font-weight:850;letter-spacing:-.03em;color:#fff;}
+        /* LE NOM SE COUPE PLUTÔT QUE DE PASSER PAR-DESSUS LES PASTILLES.
+           Il portait un min-width nul sans rien pour retenir son texte : dans un
+           cadre plus étroit que 340 px, « Clikme » débordait de sa case et
+           s'imprimait SUR « votre ville » — vu sur la page d'accueil, où
+           l'écran fait 280 px. */
+        .cd-marque{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          font-size:17px;font-weight:850;letter-spacing:-.03em;color:#fff;}
         .cd-puce{display:flex;align-items:center;gap:5px;flex:none;font-size:11.5px;font-weight:700;color:#D6DEE4;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 10px;}
         .cd-puce i{font-style:normal;font-size:11px;line-height:1;}

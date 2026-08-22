@@ -277,6 +277,137 @@ export function cartesDeLaVille(ville: string): CarteDirect[] {
   ];
 }
 
+/** Un moment de la journée vu du trottoir : l'heure, la rubrique, la carte. */
+export type MomentHabitant = {
+  /** L'heure qu'il est. C'est elle qui raconte, pas la carte. */
+  heure: string;
+  /** CE QUE LA VILLE PROPOSE À CETTE HEURE-LÀ, en trois mots.
+   *  Sans cette ligne, on lit quatre commerces ; avec elle, on lit une ville
+   *  qui change de contenu au fil de la journée. */
+  rubrique: string;
+  /** La couleur du moment — la même grammaire que partout ailleurs. */
+  teinte: string;
+  carte: CarteDirect;
+};
+// PAS DE LIBELLÉ DE BOUTON ICI, et c'est voulu. L'écran montré rend les VRAIS
+// gestes du produit (`GestesDirect`), dont le mot du milieu suit le métier —
+// « Je réserve » en restauration. Écrire « J'en prends une » ferait plus vivant
+// et montrerait un bouton qui n'existe pas.
+
+/**
+ * LA JOURNÉE VUE DU TROTTOIR — ce qu'un habitant trouve dans Le Direct, heure
+ * par heure.
+ *
+ * POURQUOI CE DEUXIÈME POINT DE VUE EXISTE. Toute la démonstration, et toute la
+ * page d'accueil, sont écrites du côté du commerçant : ce qu'il dit, ce que ça
+ * devient. Ça explique le mécanisme et ça laisse entière la seule question
+ * qu'il se pose vraiment — « est-ce que quelqu'un regarde ? ». Personne n'y
+ * répond en l'affirmant. On y répond en montrant l'autre bout du fil : un
+ * téléphone, dans la rue, à midi.
+ *
+ * ET C'EST LE MÊME TÉLÉPHONE QUI CHANGE, pas quatre écrans différents. C'est
+ * tout l'argument : un annuaire ne peut pas faire ça, par construction. Google
+ * sait qui existe ; il ne sait pas qu'il reste huit parts de lasagnes à 14 h.
+ * La démonstration ne le dit pas, elle le fait voir — d'où les quatre heures,
+ * dans l'ordre, sur un seul appareil.
+ *
+ * CE QU'ON NE MONTRE PAS, ET C'EST DÉLIBÉRÉ. Pas de recherche par envie
+ * (« j'ai envie d'italien »), pas de filtre par prix, pas de « 37 personnes
+ * cherchent italien demain midi », pas d'alerte quand un commerce publie. Rien
+ * de tout ça n'existe dans le produit : il n'y a ni typage de cuisine, ni
+ * recherche en langage naturel, ni demande d'habitant enregistrée. C'est la
+ * règle qui gouverne toute la démonstration — on ne montre jamais un écran qui
+ * n'existe pas, parce que le commerçant qui signe dessus le réclame la semaine
+ * suivante.
+ *
+ * AUCUN COMMERCE N'EST NOMMÉ, comme à l'acte 3 : ce sont les voisins de celui
+ * qui lit, et leur inventer une enseigne reviendrait à fabriquer des
+ * concurrents.
+ */
+export function momentsDeLaJournee(ville: string): MomentHabitant[] {
+  const yAller = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ville);
+  const socle = { metier: "Restaurant", ville, itineraire: yAller };
+  return [
+    {
+      heure: "12 h 05",
+      rubrique: "Les menus du jour",
+      teinte: "#F0B429",
+      carte: {
+        ...socle,
+        photo: PHOTOS.plat,
+        cadrage: CADRAGE[PHOTOS.plat],
+        nom: "Un restaurant du centre",
+        distance: "400 m",
+        reste: "Servi jusqu'à 14 h",
+        icone: "🍽️",
+        quoi: "Menu du jour",
+        lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
+        prix: "19 €",
+        social: "4 ont réservé",
+      },
+    },
+    {
+      // L'HEURE CHARNIÈRE DE TOUTE LA PAGE. C'est ici que la phrase du
+      // restaurateur, montrée plus haut — « Il me reste 8 lasagnes maison. » —
+      // réapparaît dans le téléphone de quelqu'un d'autre. Les deux moitiés de
+      // la boucle se rejoignent sur cette carte, et sur aucune autre.
+      heure: "14 h 10",
+      rubrique: "Ce qui reste du service",
+      teinte: "#D2604A",
+      carte: {
+        ...socle,
+        photo: PHOTOS.portion,
+        cadrage: CADRAGE[PHOTOS.portion],
+        nom: "Une cuisine à emporter",
+        distance: "180 m",
+        reste: "Jusqu'à épuisement",
+        icone: "🔥",
+        quoi: "Dernières portions",
+        lignes: ["Lasagnes maison", "À emporter, prêtes tout de suite"],
+        prix: "8 €",
+        etiquette: "IL EN RESTE 8",
+        social: "3 en ont pris",
+      },
+    },
+    {
+      heure: "18 h 50",
+      rubrique: "Les tables encore libres",
+      teinte: "#4EA8DE",
+      carte: {
+        ...socle,
+        photo: PHOTOS.tables,
+        cadrage: CADRAGE[PHOTOS.tables],
+        nom: "Une table à deux rues",
+        distance: "250 m",
+        reste: "Ce soir",
+        icone: "🕐",
+        quoi: "Il reste 4 tables",
+        lignes: ["Service de 19 h à 22 h", "Plat + dessert"],
+        prix: "24 €",
+        social: "2 ont réservé",
+      },
+    },
+    {
+      heure: "19 h 30",
+      rubrique: "Les tables à partager",
+      teinte: "#9B7BFF",
+      carte: {
+        ...socle,
+        photo: PHOTOS.tablee,
+        cadrage: CADRAGE[PHOTOS.tablee],
+        nom: "Une grande table ce soir",
+        distance: "320 m",
+        reste: "Ce soir, 20 h",
+        icone: "👥",
+        quoi: "Table à partager",
+        lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
+        prix: "17 €",
+        social: "4 places déjà prises",
+      },
+    },
+  ];
+}
+
 /**
  * ACTE 5 — SA CARTE À LUI, telle qu'elle apparaît une fois la photo prise.
  *

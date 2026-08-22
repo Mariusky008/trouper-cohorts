@@ -136,20 +136,18 @@ export function Journee() {
     <section className="jrn">
       <StylesDirect />
       <div className="wrap">
-        {/* CE QUI SE PASSE DE L'AUTRE CÔTÉ. La page n'a parlé que de lui
-            jusqu'ici ; ces trois lignes montrent la demande qui existe déjà,
-            sans lui et sans nous. C'est ce qui rend la suite nécessaire. */}
+        {/* CETTE OUVERTURE A CHANGÉ DE RÔLE. Elle posait la demande — « des
+            habitants cherchent, ils ne savent pas ce qui se passe chez vous »,
+            les deux questions entre guillemets, et la promesse. La section qui
+            précède désormais (`habitant.tsx`) ne le pose plus : elle le MONTRE,
+            questions comprises, dans un vrai téléphone. Le répéter ici ferait
+            lire deux fois la même chose à trois lignes d'écart.
+            Il ne reste donc que ce que la journée ajoute : ce n'était qu'une
+            heure, il y en a quatre. */}
         <div className="jrn-avant reveal">
-          <p className="jrn-a1">
-            Chaque jour, des habitants autour de vous cherchent quoi faire, quoi acheter ou où aller.
-          </p>
-          <p className="jrn-a2">Mais ils ne savent pas forcément ce qui se passe chez vous.</p>
-          <div className="jrn-q">
-            <span>«&nbsp;Où manger&nbsp;?&nbsp;»</span>
-            <span>«&nbsp;Qu&apos;est-ce qu&apos;on mange aujourd&apos;hui&nbsp;?&nbsp;»</span>
-          </div>
+          <p className="jrn-a1">Et ce n&apos;était qu&apos;une heure de la journée.</p>
           <p className="jrn-a3">
-            <b>{MARQUE} leur montre ce qui se passe maintenant autour d&apos;eux.</b>
+            <b>Chaque moment de la vôtre peut faire venir quelqu&apos;un.</b>
           </p>
         </div>
 
@@ -206,21 +204,21 @@ export function Journee() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* LE FOND SOMBRE EST LA RUPTURE. Le reste de la page est clair et parle
-           du commerçant ; ici on passe de l'autre côté, dans l'écran de ses
-           clients. Sans ce changement de monde, la section se lirait comme une
-           quatrième liste d'arguments. */
+        /* LE FOND SOMBRE PROLONGE CELUI DE LA SECTION PRÉCÉDENTE. C'était ici
+           que commençait la rupture ; elle commence maintenant un cran plus
+           haut, avec le téléphone de l'habitant. Les deux fonds partagent le
+           même noir de base (#080D0B) pour que la jointure ne se voie pas, et
+           chacun garde sa propre lueur en haut — c'est elle qui dit qu'on
+           change de sujet sans qu'on change de monde. */
         .jrn{background:radial-gradient(120% 60% at 50% 0%,#12241D 0%,#080D0B 62%),#080D0B;
           color:#EAF2EC;padding:74px 0 78px;}
         .jrn .wrap{max-width:760px;margin:0 auto;padding:0 20px;}
 
         .jrn-avant{text-align:center;max-width:560px;margin:0 auto 46px;}
-        .jrn-a1{font-size:19px;line-height:1.5;color:#C7D8CE;margin:0;text-wrap:balance;}
-        .jrn-a2{font-size:19px;line-height:1.5;color:#7F988B;margin:8px 0 0;text-wrap:balance;}
-        .jrn-q{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:20px 0 22px;}
-        .jrn-q span{font-family:Georgia,serif;font-size:16px;color:#fff;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-          border-radius:999px;padding:9px 16px;}
+        .jrn-a1{font-size:19px;line-height:1.5;color:#7F988B;margin:0 0 8px;text-wrap:balance;}
+        /* .jrn-a2 et .jrn-q sont partis avec les lignes qu'ils habillaient :
+           les deux questions entre guillemets sont maintenant dans la section
+           qui precede. */
         .jrn-a3{font-size:21px;line-height:1.35;margin:0;text-wrap:balance;}
         .jrn-a3 b{font-weight:850;letter-spacing:-.02em;color:#fff;}
 

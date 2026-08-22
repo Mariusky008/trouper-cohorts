@@ -12,6 +12,7 @@ import { HeroGenerator } from "./_home/hero-generator";
 import { VilleVivante, VilleEtat } from "./_home/ville-vivante";
 import { ScrollReveal } from "./_home/scroll-reveal";
 import { Journee } from "./_home/journee";
+import { Habitant } from "./_home/habitant";
 
 // LE TITRE SUIT LA PAGE. Il promettait « votre site web gratuit » quand la page
 // promet maintenant « votre commerce en direct dans votre ville » : un résultat
@@ -690,11 +691,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── LA JOURNÉE, ET C'EST LA RUPTURE ──
-          Tout ce qui précède explique un mécanisme. Ici on passe de l'autre
-          côté — fond sombre, écran des habitants — et on montre ce que le
-          mécanisme produit, heure par heure, avec les VRAIES cartes du
-          produit. Voir `_home/journee.tsx`. */}
+      {/* ── L'AUTRE BOUT DU FIL, ET C'EST LA RUPTURE ──
+          Tout ce qui précède explique un mécanisme, du point de vue du
+          commerçant. Ici on passe de l'autre côté — fond sombre, téléphone
+          d'un habitant dans la rue — et on répond à la seule question qu'il se
+          pose vraiment : est-ce que quelqu'un regarde ?
+
+          L'ORDRE DES DEUX SECTIONS N'EST PAS INDIFFÉRENT. La phrase « Il me
+          reste 8 lasagnes maison. » vient d'être dite juste au-dessus ; elle
+          réapparaît à 14 h 10 dans le téléphone de quelqu'un d'autre. Mise
+          après la journée, cette section aurait répété des cartes déjà vues ;
+          mise ici, elle referme la boucle avant qu'on élargisse à la journée
+          entière. Voir `_home/habitant.tsx`. */}
+      <Habitant />
+
+      {/* ── ET CE N'EST PAS QU'À MIDI ──
+          On vient de voir UN moment vu du trottoir. Celle-ci élargit : quatre
+          moments d'une journée ordinaire, côté commerçant, avec les VRAIES
+          cartes du produit. Voir `_home/journee.tsx`. */}
       <Journee />
 
       {/* ── FOOTER ── */}
