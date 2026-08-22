@@ -18,7 +18,7 @@
 //
 // Composant PRÉSENTATIONNEL : il ne fait que rendre ce qu'on lui donne, aucun
 // geste, aucun état. Les gestes appartiennent à l'écran qui l'utilise.
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export type CarteDirect = {
   /** La photo, plein cadre. Sans elle, un fond dégradé et l'emoji du métier. */
@@ -148,10 +148,26 @@ export function CarteSwipe({
   carte,
   style,
   className = "",
+  children,
 }: {
   carte: CarteDirect;
   style?: CSSProperties;
   className?: string;
+  /**
+   * CE QUE L'ÉCRAN QUI L'UTILISE AJOUTE AU BAS DE LA CARTE.
+   *
+   * POURQUOI UN POINT D'EXTENSION PLUTÔT QU'UN CHAMP DE PLUS. La maquette
+   * habitant a besoin d'une ligne « les avis sur le plat » sous le prix. La
+   * ranger dans `CarteDirect` reviendrait à embarquer, dans la carte du VRAI
+   * produit et dans son type, un bloc qui n'existe nulle part ailleurs — du
+   * code mort partout sauf à un endroit, et une promesse de plus dans le type
+   * que lit quiconque veut comprendre ce qu'une carte affiche.
+   *
+   * Ici, la carte ne sait rien de ce qu'on lui glisse : elle réserve une place,
+   * en bas, après le prix. Le jour où les avis deviennent un vrai morceau du
+   * produit, ils remonteront dans le type — pas avant.
+   */
+  children?: ReactNode;
 }) {
   const c = carte;
   return (
@@ -210,6 +226,7 @@ export function CarteSwipe({
             {c.etiquette && <em>{c.etiquette}</em>}
           </div>
         )}
+        {children}
       </div>
     </div>
   );

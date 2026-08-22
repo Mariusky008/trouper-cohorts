@@ -43,6 +43,31 @@ export const ENVIES = [
 
 export type CleEnvie = (typeof ENVIES)[number]["cle"];
 
+/**
+ * UN AVIS SUR LE PLAT — pas sur le restaurant.
+ *
+ * C'EST TOUTE L'IDÉE, ET ELLE NE RESSEMBLE À AUCUN SITE D'AVIS. Ailleurs, on
+ * note un établissement : une moyenne unique, tirée sur des années, qui ne dit
+ * rien de ce qu'il y a dans l'assiette aujourd'hui. Ici l'avis est attaché AU
+ * PLAT. Quand le restaurateur remet sa lasagne à la carte — même plat, même
+ * photo — les avis d'il y a trois semaines reviennent avec elle. Sa carte du
+ * jour se bonifie à chaque fois qu'il la ressert, et l'habitant qui hésite lit
+ * ce qu'on a pensé de CE plat, pas de la maison en général.
+ *
+ * C'est aussi ce qui donne un intérêt au commerçant à reprendre la même photo :
+ * elle devient le porte-avis du plat.
+ */
+export type AvisPlat = {
+  /** De 1 à 5. */
+  note: number;
+  /** Une phrase, jamais plus. Un avis long ne se lit pas sur une carte. */
+  texte: string;
+  /** Un prénom. */
+  qui: string;
+  /** Quand — écrit tel quel, la maquette ne calcule pas de dates. */
+  quand: string;
+};
+
 export type CarteAutour = CarteDirect & {
   id: string;
   /** La distance en mètres — c'est elle qui trie, pas le texte affiché. */
@@ -52,6 +77,14 @@ export type CarteAutour = CarteDirect & {
   a: number;
   /** Les envies auxquelles elle répond. */
   envies: CleEnvie[];
+  /**
+   * LES AVIS DÉJÀ LAISSÉS SUR CE PLAT, des plus récents aux plus anciens.
+   *
+   * Absents sur ce qui n'est pas un plat — une table libre, une place à
+   * partager. On ne note pas une table : la ligne d'avis n'apparaît donc pas
+   * sur ces cartes-là, et c'est voulu.
+   */
+  avis?: AvisPlat[];
 };
 
 /** L'heure la plus tôt et la plus tard que la page laisse explorer. */
@@ -83,6 +116,11 @@ const CARTES: CarteAutour[] = [
     lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
     prix: "19 €",
     social: "4 ont réservé",
+    avis: [
+      { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière" },
+      { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines" },
+      { note: 4, texte: "Bon rapport qualité-prix le midi.", qui: "Sofia", quand: "en février" },
+    ],
   },
   {
     id: "midi-formule",
@@ -102,6 +140,10 @@ const CARTES: CarteAutour[] = [
     lignes: ["Sandwich au choix", "Boisson + dessert"],
     prix: "8,50 €",
     social: "9 l'ont vu passer",
+    avis: [
+      { note: 4, texte: "Pain frais, ça change tout.", qui: "Thomas", quand: "hier" },
+      { note: 3, texte: "Correct, un peu petit pour moi.", qui: "Léa", quand: "il y a 2 semaines" },
+    ],
   },
   {
     id: "reste-lasagnes",
@@ -122,6 +164,15 @@ const CARTES: CarteAutour[] = [
     prix: "8 €",
     etiquette: "IL EN RESTE 8",
     social: "3 en ont pris",
+    // LE PLAT LE PLUS COMMENTÉ DU LOT, et c'est le sujet de la démonstration :
+    // ces avis ont été laissés les fois PRÉCÉDENTES où la lasagne est sortie.
+    // Ils reviennent avec elle.
+    avis: [
+      { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier" },
+      { note: 5, texte: "Généreux, et encore chaud à la maison.", qui: "Bastien", quand: "il y a 2 semaines" },
+      { note: 4, texte: "Très bon. J'aurais pris deux parts.", qui: "Nadia", quand: "il y a 1 mois" },
+      { note: 4, texte: "Bien fondant, pas gras du tout.", qui: "Pierre", quand: "en mars" },
+    ],
   },
   {
     id: "tables",
@@ -163,6 +214,10 @@ const CARTES: CarteAutour[] = [
     prix: "6 €",
     etiquette: "-50 %",
     social: "5 en ont pris",
+    avis: [
+      { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier" },
+      { note: 5, texte: "J'y passe tous les vendredis soir.", qui: "Marc", quand: "il y a 3 semaines" },
+    ],
   },
   {
     id: "soir-menu",
@@ -182,6 +237,11 @@ const CARTES: CarteAutour[] = [
     lignes: ["Entrée + plat + dessert", "Service jusqu'à 22 h"],
     prix: "26 €",
     social: "6 ont réservé",
+    avis: [
+      { note: 5, texte: "Belle assiette, service attentionné.", qui: "Inès", quand: "samedi" },
+      { note: 4, texte: "Un peu d'attente, mais ça valait le coup.", qui: "Damien", quand: "il y a 10 jours" },
+      { note: 5, texte: "Le dessert, surtout.", qui: "Claire", quand: "en février" },
+    ],
   },
   {
     id: "tablee",
@@ -219,4 +279,10 @@ export function autourDeMoi(heure: number): CarteAutour[] {
 export function selonEnvies(cartes: CarteAutour[], envies: CleEnvie[]): CarteAutour[] {
   if (!envies.length) return cartes;
   return cartes.filter((c) => envies.every((e) => c.envies.includes(e)));
+}
+
+/** La moyenne, arrondie au dixième. Zéro avis : rien à afficher. */
+export function moyenneAvis(avis: AvisPlat[]): number {
+  if (!avis.length) return 0;
+  return Math.round((avis.reduce((t, a) => t + a.note, 0) / avis.length) * 10) / 10;
 }

@@ -37,7 +37,10 @@ import {
   HEURE_MAX,
   HEURE_MIN,
   autourDeMoi,
+  moyenneAvis,
   selonEnvies,
+  type AvisPlat,
+  type CarteAutour,
   type CleEnvie,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
@@ -48,6 +51,59 @@ const SEUIL = 84;
 const VOL_MS = 420;
 /** L'heure que montre l'onglet « Ce soir ». */
 const HEURE_SOIR = 20;
+
+// ── LES AVIS QUE LE VISITEUR LAISSE, GARDÉS DANS SON NAVIGATEUR ────────────
+//
+// C'est ce qui rend la démonstration crédible : il note un plat, il ferme, il
+// revient — son avis est toujours là, au-dessus de ceux des autres. Sans ça,
+// « les avis sont mémorisés » reste une phrase.
+//
+// `useSyncExternalStore` plutôt qu'un effet : le stockage local n'existe pas
+// côté serveur, et lire pendant le rendu casserait l'hydratation. L'instantané
+// serveur est vide, le client charge une fois, et les écritures préviennent les
+// abonnés. La lecture comme l'écriture sont sous `try` — un navigateur en
+// navigation privée peut refuser les deux, et la page doit continuer.
+const CLE_LOCALE = "clikme-avis-plat-v1";
+const VIDE: Record<string, AvisPlat[]> = {};
+let memoire: Record<string, AvisPlat[]> | null = null;
+const abonnes = new Set<() => void>();
+
+function chargerAvis(): Record<string, AvisPlat[]> {
+  if (memoire) return memoire;
+  try {
+    memoire = JSON.parse(window.localStorage.getItem(CLE_LOCALE) || "{}");
+  } catch {
+    memoire = {};
+  }
+  return memoire ?? VIDE;
+}
+function abonnerAvis(f: () => void) {
+  abonnes.add(f);
+  return () => void abonnes.delete(f);
+}
+function ajouterAvis(id: string, avis: AvisPlat) {
+  const avant = chargerAvis();
+  memoire = { ...avant, [id]: [avis, ...(avant[id] ?? [])] };
+  try {
+    window.localStorage.setItem(CLE_LOCALE, JSON.stringify(memoire));
+  } catch {
+    /* Refusé : l'avis vit quand même le temps de la visite. */
+  }
+  abonnes.forEach((f) => f());
+}
+
+/** Les étoiles, en lecture seule. */
+function Etoiles({ note }: { note: number }) {
+  return (
+    <span className="ap-et" aria-label={`${note} sur 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <i key={n} className={n <= Math.round(note) ? "on" : ""} aria-hidden="true">
+          ★
+        </i>
+      ))}
+    </span>
+  );
+}
 
 export function ApercuHabitant({ contact, ville }: { contact: string; ville: string }) {
   // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION. Le serveur ne connaît pas
@@ -70,8 +126,16 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
   const [aJoue, setAJoue] = useState(false);
   const [alerte, setAlerte] = useState(false);
+  /** Le plat dont on lit les avis. Rien : la feuille est fermée. */
+  const [ouvert, setOuvert] = useState<CarteAutour | null>(null);
+  const [maNote, setMaNote] = useState(0);
+  const [monMot, setMonMot] = useState("");
   const prise = useRef<{ x0: number } | null>(null);
   const minuteries = useRef<number[]>([]);
+
+  const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
+  /** Les avis d'un plat : les siens d'abord, puis ceux déjà là. */
+  const avisDe = (c: CarteAutour): AvisPlat[] => [...(miens[c.id] ?? []), ...(c.avis ?? [])];
 
   const heure = quand === "soir" ? HEURE_SOIR : maintenant;
   const dispo = selonEnvies(autourDeMoi(heure), envies);
@@ -214,7 +278,32 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
                     setDx(0);
                   }}
                 >
-                  <CarteSwipe key={dessus.id} carte={dessus} className="ap-carte" />
+                  <CarteSwipe key={dessus.id} carte={dessus} className="ap-carte">
+                    {/* LES AVIS SUR LE PLAT, sur la carte elle-même.
+                        Ils ne sont posés que sur la carte du DESSUS : sur celle
+                        de derrière, à moitié cachée, ce serait un deuxième
+                        bouton invisible et pourtant cliquable.
+                        `stopPropagation` sur le pointeur est indispensable —
+                        sans lui, le doigt qui appuie sur la ligne commence un
+                        balayage, et on ne peut jamais l'ouvrir au toucher. */}
+                    {!!dessus.avis?.length && (
+                      <button
+                        type="button"
+                        className="ap-avis-l"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                          setOuvert(dessus);
+                          setMaNote(0);
+                          setMonMot("");
+                        }}
+                      >
+                        <Etoiles note={moyenneAvis(avisDe(dessus))} />
+                        <b>{moyenneAvis(avisDe(dessus)).toString().replace(".", ",")}</b>
+                        <span>· {avisDe(dessus).length} avis sur le plat</span>
+                        <i aria-hidden="true">›</i>
+                      </button>
+                    )}
+                  </CarteSwipe>
                   <span
                     className="ap-tampon non"
                     style={{ opacity: Math.min(1, Math.max(0, -dx / SEUIL)) }}
@@ -298,6 +387,105 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
               <em>Le pro</em>
             </button>
           </div>
+
+          {/* ── LES AVIS DU PLAT ──
+              Une feuille qui monte par-dessus l'application, pas une autre
+              page : on lit trois avis et on revient à sa carte. Elle est DANS
+              le cadre du téléphone (position absolue sur `.ap-app`), donc sur
+              ordinateur elle monte dans l'appareil et pas sur le bureau. */}
+          {ouvert && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer les avis"
+                onClick={() => setOuvert(null)}
+              />
+              <div className="ap-feuille" role="dialog" aria-label={`Avis sur ${ouvert.quoi}`}>
+                <span className="ap-poignee" aria-hidden="true" />
+                {/* UNE CROIX, MÊME AVEC LE FOND CLIQUABLE. Le fond ferme la
+                    feuille, mais il n'est visible qu'au-dessus d'elle : celui
+                    qui a le pouce en bas de l'écran n'a rien à toucher. */}
+                <button
+                  type="button"
+                  className="ap-f-x"
+                  aria-label="Fermer"
+                  onClick={() => setOuvert(null)}
+                >
+                  ✕
+                </button>
+                <div className="ap-f-tete">
+                  <b>{ouvert.lignes?.[0] ?? ouvert.quoi}</b>
+                  <span>
+                    <Etoiles note={moyenneAvis(avisDe(ouvert))} />
+                    {moyenneAvis(avisDe(ouvert)).toString().replace(".", ",")} ·{" "}
+                    {avisDe(ouvert).length} avis
+                  </span>
+                  {/* LA LIGNE QUI PORTE TOUTE L'IDÉE. Les avis ne suivent pas
+                      l'annonce du jour, ils suivent LE PLAT : quand il revient
+                      à la carte, ils reviennent avec lui. Six mots suffisent à
+                      le faire comprendre, une explication n'aurait pas sa
+                      place ici. */}
+                  <i>Sur ce plat, à chaque fois qu&apos;il revient.</i>
+                </div>
+
+                <ul className="ap-f-liste">
+                  {avisDe(ouvert).map((a, n) => (
+                    <li key={`${a.qui}-${a.quand}-${n}`}>
+                      <div className="ap-f-h">
+                        <Etoiles note={a.note} />
+                        <b>{a.qui}</b>
+                        <span>{a.quand}</span>
+                      </div>
+                      {a.texte && <p>{a.texte}</p>}
+                    </li>
+                  ))}
+                </ul>
+
+                <form
+                  className="ap-f-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!maNote) return;
+                    ajouterAvis(ouvert.id, {
+                      note: maNote,
+                      texte: monMot.trim(),
+                      qui: "Vous",
+                      quand: "à l'instant",
+                    });
+                    setMaNote(0);
+                    setMonMot("");
+                  }}
+                >
+                  <div className="ap-f-notes">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`ap-f-n${n <= maNote ? " on" : ""}`}
+                        aria-label={`${n} sur 5`}
+                        onClick={() => setMaNote(n)}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <div className="ap-f-saisie">
+                    <input
+                      value={monMot}
+                      onChange={(e) => setMonMot(e.target.value)}
+                      maxLength={90}
+                      placeholder="Un mot ?"
+                      aria-label="Votre avis en une phrase"
+                    />
+                    <button type="submit" disabled={!maNote}>
+                      Envoyer
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -314,7 +502,7 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
           font-family:'Inter',system-ui,-apple-system,sans-serif;color:#EAF2EC;
           display:flex;align-items:center;justify-content:center;}
         .ap-tel{width:100%;height:100%;}
-        .ap-app{height:100%;display:flex;flex-direction:column;
+        .ap-app{position:relative;height:100%;display:flex;flex-direction:column;
           background:radial-gradient(120% 40% at 50% 0%,#13202C 0%,#080D0B 62%),#080D0B;
           /* La hauteur prise par le haut et par les gestes, MESUREE au
              navigateur (232 px + 98 px), pas estimee : sous-evaluee, la carte
@@ -422,6 +610,83 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
         .ap-avis{font-size:12.5px;color:#7F988B;text-decoration:underline;
           text-underline-offset:3px;}
 
+        /* ── LES AVIS SUR LE PLAT ── */
+
+        /* La ligne vit DANS la carte, sous le prix. Elle a l'air d'un bouton
+           parce qu'elle en est un : sans le chevron et le fond, personne
+           n'essaie d'appuyer sur une note. */
+        .ap-avis-l{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font:inherit;
+          font-size:12px;color:#D6DEE4;cursor:pointer;text-align:left;
+          background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.16);
+          border-radius:999px;padding:7px 12px;
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          transition:transform .15s ease,border-color .25s ease;}
+        .ap-avis-l:active{transform:scale(.96);}
+        .ap-avis-l b{font-weight:850;color:#fff;}
+        .ap-avis-l span{color:#B9C6CE;}
+        .ap-avis-l i{font-style:normal;font-size:15px;color:#8FA3B0;margin-left:1px;}
+
+        .ap-et{display:inline-flex;gap:1px;font-size:11px;line-height:1;}
+        .ap-et i{font-style:normal;color:rgba(255,255,255,.25);}
+        .ap-et i.on{color:#F0B429;}
+
+        .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;
+          background:rgba(3,7,6,.7);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+          animation:apFond .25s ease;}
+        @keyframes apFond{from{opacity:0;}to{opacity:1;}}
+
+        /* La feuille est POSEE SUR L'APPLICATION, pas sur la page : dans le
+           cadre de telephone du bureau, elle monte dans l'appareil. */
+        .ap-feuille{position:absolute;left:0;right:0;bottom:0;z-index:9;
+          max-height:82%;display:flex;flex-direction:column;
+          background:#0E1714;border-top:1px solid rgba(255,255,255,.13);
+          border-radius:22px 22px 0 0;padding:8px 16px max(16px, env(safe-area-inset-bottom));
+          box-shadow:0 -24px 60px -20px rgba(0,0,0,.9);
+          animation:apMonte .32s cubic-bezier(.16,1,.3,1);}
+        @keyframes apMonte{from{transform:translate3d(0,100%,0);}to{transform:none;}}
+        .ap-poignee{align-self:center;width:38px;height:4px;border-radius:999px;
+          background:rgba(255,255,255,.22);margin-bottom:12px;}
+
+        .ap-f-x{position:absolute;top:14px;right:12px;width:32px;height:32px;font:inherit;
+          font-size:15px;line-height:1;cursor:pointer;color:#B9C6CE;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+          border-radius:50%;}
+        .ap-f-x:active{transform:scale(.92);}
+
+        .ap-f-tete{flex:none;margin-bottom:12px;padding-right:40px;}
+        .ap-f-tete b{display:block;font-size:19px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;}
+        .ap-f-tete span{display:flex;align-items:center;gap:7px;margin-top:5px;
+          font-size:13px;font-weight:750;color:#C7D8CE;}
+        .ap-f-tete i{display:block;margin-top:6px;font-style:normal;font-size:11.5px;
+          color:#7F988B;}
+
+        .ap-f-liste{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:0;
+          display:flex;flex-direction:column;gap:1px;}
+        .ap-f-liste li{padding:11px 0;border-top:1px solid rgba(255,255,255,.08);}
+        .ap-f-h{display:flex;align-items:center;gap:8px;}
+        .ap-f-h b{font-size:13px;font-weight:850;color:#fff;}
+        .ap-f-h span{font-size:11.5px;color:#7F988B;}
+        .ap-f-liste p{margin:5px 0 0;font-size:14px;line-height:1.4;color:#C7D8CE;}
+
+        .ap-f-form{flex:none;margin-top:12px;padding-top:12px;
+          border-top:1px solid rgba(255,255,255,.1);}
+        .ap-f-notes{display:flex;gap:4px;margin-bottom:9px;}
+        .ap-f-n{font:inherit;font-size:26px;line-height:1;cursor:pointer;background:none;
+          border:0;padding:0 2px;color:rgba(255,255,255,.22);
+          transition:color .18s ease,transform .18s cubic-bezier(.34,1.4,.64,1);}
+        .ap-f-n.on{color:#F0B429;transform:scale(1.08);}
+        .ap-f-saisie{display:flex;gap:8px;}
+        .ap-f-saisie input{flex:1;min-width:0;font:inherit;font-size:14px;color:#EAF2EC;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+          border-radius:12px;padding:11px 13px;}
+        .ap-f-saisie input::placeholder{color:#6C8078;}
+        .ap-f-saisie input:focus{outline:2px solid rgba(61,226,166,.5);outline-offset:0;}
+        .ap-f-saisie button{flex:none;font:inherit;font-size:14px;font-weight:850;color:#04150E;
+          border:0;border-radius:12px;padding:11px 18px;cursor:pointer;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-f-saisie button:disabled{opacity:.3;cursor:default;}
+
         .ap-gestes{flex:none;margin:0 0 max(14px, env(safe-area-inset-bottom));}
         .ap-gestes .cd-g{font:inherit;background:none;border:0;padding:0;cursor:pointer;}
         .ap-gestes .cd-g:active i{transform:scale(.92);}
@@ -443,6 +708,7 @@ export function ApercuHabitant({ contact, ville }: { contact: string; ville: str
         }
         @media (prefers-reduced-motion:reduce){
           .ap-doigt{animation:none;}
+          .ap-feuille,.ap-fond{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-vide{animation:none;}
         }
