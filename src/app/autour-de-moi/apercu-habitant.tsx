@@ -46,11 +46,10 @@ import {
   HEURE_MAX,
   HEURE_MIN,
   METIERS,
-  QUANDS,
   SORTIES,
   autourDeMoi,
+  brancheDeLaDemande,
   carteAffichee,
-  carteDeReponse,
   comptesParMetier,
   momentsRestants,
   moyenneAvis,
@@ -72,8 +71,12 @@ const VERROU = 8;
 const VOL_MS = 420;
 /** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
 const COEUR_MS = 900;
-/** Le temps que dure l'écran « envoyé aux commerces » avant la première réponse. */
-const ENVOI_MS = 3400;
+/** Combien de temps un commerce « écrit » avant que sa réponse apparaisse.
+ *  Assez long pour que les trois points apparaissent presque tout de suite —
+ *  mesuré : à 1,5 s, l'écran restait deux secondes sans rien, et deux secondes
+ *  sans rien après avoir appuyé sur « envoyer », c'est un bug pour celui qui
+ *  regarde. */
+const ECRIT_MS = 2600;
 /** LA MAQUETTE COMPRESSE LES MINUTES EN SECONDES. Dans la vraie vie une réponse
  *  arrive en une à trois minutes ; ici on multiplie par ça, sinon on montre un
  *  écran d'attente à quelqu'un qui a le téléphone dans la main. L'ordre et
@@ -129,6 +132,99 @@ function Etoiles({ note }: { note: number }) {
   );
 }
 
+/**
+ * LA CONVERSATION AVEC LA VILLE — ce que remplace le paquet pendant une demande.
+ *
+ * POURQUOI CE N'EST PAS DES CARTES. Testée sur de vraies personnes, la première
+ * version renvoyait des `CarteSwipe` cerclées de vert : personne n'a senti de
+ * différence avec le mode normal, et ils avaient raison — la carte est le
+ * langage de l'annonce PUBLIÉE, adressée à tout le monde. Une réponse doit
+ * ressembler à ce qu'elle est : un message, d'un commerce, à vous, avec l'heure
+ * et une bulle. Aucun liseré ne remplace un changement de langage.
+ *
+ * Votre demande est en haut, à droite, comme dans n'importe quelle messagerie.
+ * En dessous, les commerces prévenus : ceux qui écrivent, puis ceux qui ont
+ * répondu. On n'a rien à expliquer, tout le monde a déjà vu cet écran.
+ */
+function Conversation({
+  demande,
+  sollicites,
+  recues,
+  ecrivent,
+  dejaVenu,
+  onJyVais,
+}: {
+  demande: string;
+  sollicites: CarteAutour[];
+  recues: CarteAutour[];
+  ecrivent: string[];
+  dejaVenu: string[];
+  onJyVais: (c: CarteAutour) => void;
+}) {
+  const muets = sollicites.filter(
+    (c) => !recues.some((r) => r.id === c.id) && !ecrivent.includes(c.id),
+  );
+  return (
+    <div className="ap-conv">
+      <div className="ap-moi">
+        <span className="ap-bulle-moi">{demande}</span>
+        <span className="ap-envoye">
+          Envoyé à {sollicites.length} commerces à moins de 500 m
+        </span>
+      </div>
+
+      {ecrivent.map((id) => {
+        const c = sollicites.find((x) => x.id === id);
+        if (!c) return null;
+        return (
+          <div className="ap-msg ecrit" key={`e-${id}`}>
+            <div className="ap-msg-h">
+              <b>{c.nom}</b>
+              <span>{c.distance}</span>
+            </div>
+            <span className="ap-bulle ap-trois" aria-label="écrit…">
+              <i /><i /><i />
+            </span>
+          </div>
+        );
+      })}
+
+      {recues.map((c) => (
+        <div className="ap-msg" key={c.id}>
+          <div className="ap-msg-h">
+            <b>{c.nom}</b>
+            <span>{c.distance} · à l&apos;instant</span>
+          </div>
+          <span className="ap-bulle">{c.reponse?.texte}</span>
+          <div className="ap-msg-b">
+            {dejaVenu.includes(`vais|${c.id}`) ? (
+              <span className="ap-msg-ok">✓ Il vous attend</span>
+            ) : (
+              <button type="button" className="ap-msg-y" onClick={() => onJyVais(c)}>
+                🚶 J&apos;y vais
+              </button>
+            )}
+            <span className="ap-msg-t">⏳ {c.reponse?.tenu}</span>
+          </div>
+        </div>
+      ))}
+
+      {/* CEUX QUI N'ONT PAS RÉPONDU SONT MONTRÉS AUSSI, en gris et sans bulle.
+          Les cacher ferait croire que tout le monde répond ; les montrer dit la
+          vérité — la demande est partie à six, trois ont répondu — et c'est ce
+          qui rend les trois réponses crédibles. */}
+      {muets.length > 0 && (
+        <div className="ap-muets">
+          {muets.map((c) => (
+            <span key={c.id}>{c.nom}</span>
+          ))}
+          <i>prévenus, pas encore de réponse</i>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ApercuHabitant() {
   // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION : le serveur ne connaît pas
   // son fuseau. Instantané serveur à midi, instantané client réel.
@@ -150,14 +246,17 @@ export function ApercuHabitant() {
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
   const [feuille, setFeuille] = useState<"" | "metier" | "resa" | "sortie" | "jyvais">("");
-  /** La sortie annoncée : ce pour quoi on sort, et quand. Rien : on regarde. */
-  const [sortie, setSortie] = useState<{ quoi: CleMetier; quand: string } | null>(null);
-  const [phase, setPhase] = useState<"" | "envoi" | "reponses">("");
-  /** Les commerces qui ont répondu, DANS L'ORDRE D'ARRIVÉE — c'est cet ordre
-   *  qui décide de la pile, pas la distance. */
+  /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
+  const [sortie, setSortie] = useState<{ texte: string; quoi: CleMetier } | null>(null);
+  /** Les commerces qui ont répondu, dans l'ordre d'arrivée. */
   const [arrivees, setArrivees] = useState<string[]>([]);
-  /** L'étape en cours dans la feuille « je sors » : le quoi, puis le quand. */
-  const [sortiePour, setSortiePour] = useState<CleMetier | "">("");
+  /** Ceux qui sont en train d'écrire — les trois points. C'est le seul signal
+   *  qui dise « un humain est en face », et tout le monde le connaît. */
+  const [ecrivent, setEcrivent] = useState<string[]>([]);
+  /** Le brouillon dans le champ de la feuille. */
+  const [brouillon, setBrouillon] = useState("");
+  /** La réponse sur laquelle on a appuyé « j'y vais ». */
+  const [ouvertReponse, setOuvertReponse] = useState<CarteAutour | null>(null);
   const [notes, setNotes] = useState<Record<string, number>>({});
   const [creneau, setCreneau] = useState("");
   const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
@@ -166,20 +265,17 @@ export function ApercuHabitant() {
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
 
-  const dispoBrut = selonEnvies(autourDeMoi(heure, branche), envies, heure);
-  /** UNE RÉPONSE PASSE DEVANT TOUT LE RESTE, et dans l'ordre où elle est
-   *  arrivée. Triée par distance comme les autres, elle se noierait au milieu
-   *  du paquet et on ne verrait pas qu'elle vient de tomber. */
-  const rang = (c: CarteAutour) => {
-    const i = arrivees.indexOf(c.id);
-    return i < 0 ? 999 : i;
-  };
-  const dispo = sortie
-    ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
-    : dispoBrut;
+  const dispo = selonEnvies(autourDeMoi(heure, branche), envies, heure);
   const pile = dispo.filter((c) => !passees.includes(c.id));
-  const estReponse = (c: CarteAutour) => !!sortie && arrivees.includes(c.id);
-  const combienSollicites = sortie ? autourDeMoi(heure, sortie.quoi).length : 0;
+  /** À qui la demande est partie, du plus près au plus loin. */
+  const sollicites = sortie ? autourDeMoi(heure, sortie.quoi) : [];
+  /** Les réponses reçues, la dernière arrivée en premier. */
+  const recues = sortie
+    ? arrivees
+        .map((id) => sollicites.find((c) => c.id === id))
+        .filter((c): c is CarteAutour => !!c)
+        .reverse()
+    : [];
   const dessus = pile[0];
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
@@ -227,39 +323,52 @@ export function ApercuHabitant() {
   }
 
   /**
-   * ANNONCER SA SORTIE — et c'est l'inversion du produit.
+   * ENVOYER SA DEMANDE À LA VILLE.
    *
-   * Jusqu'ici l'habitant regardait ce que les commerces avaient publié. Là il
-   * dit qu'il sort, et ce sont les commerces qui viennent à lui. Rien n'existe
-   * avant qu'il demande : ce ne sont pas des résultats filtrés, ce sont des
-   * réponses, et elles arrivent une par une.
+   * C'EST UNE INVERSION, PAS UN FILTRE — et la première version l'avait ratée
+   * précisément là-dessus. Testée sur de vraies personnes : personne n'a vu la
+   * différence avec le mode normal, parce que deux appuis sur des options
+   * pré-écrites ne sont pas une demande, et parce que ce qui revenait était la
+   * même carte avec un liseré vert.
+   *
+   * Trois choses ont changé, et ce sont les trois qui produisent la différence :
+   *
+   *  1. ON ÉCRIT SA PHRASE. Même quatre mots. C'est la sienne, elle s'affiche en
+   *     haut, et c'est à elle qu'on répond.
+   *  2. LES RÉPONSES NE SONT PLUS DES CARTES, ce sont des MESSAGES. La carte est
+   *     le langage de l'annonce publiée ; la bulle est celui de la réponse. Tant
+   *     qu'on réutilisait la carte, aucun liseré ne pouvait faire la différence.
+   *  3. ON VOIT LES COMMERCES ÊTRE PRÉVENUS, PUIS ÉCRIRE. Les trois points sont
+   *     le seul signal universel qui dise « un humain est en face ».
    */
-  function lancerSortie(quoi: CleMetier, quand: string) {
+  function lancerSortie(texte: string) {
+    const propre = texte.trim();
+    if (!propre) return;
+    const quoi = brancheDeLaDemande(propre);
     minuteries.current.forEach(clearTimeout);
     minuteries.current = [];
     setBranche(quoi);
     setEnvies([]);
-    setPassees([]);
-    setDx(0);
-    setSortant("");
-    setDescendu(false);
-    setSortie({ quoi, quand });
+    setSortie({ texte: propre, quoi });
     setArrivees([]);
-    setPhase("envoi");
+    setEcrivent([]);
     setFeuille("");
-    setSortiePour("");
-    defilement.current?.scrollTo({ top: 0 });
-    // L'ÉCRAN D'ENVOI DURE LE TEMPS QU'IL FAUT POUR Y CROIRE, puis la première
-    // réponse tombe. Trop court, on ne voit rien partir ; trop long, on repose
-    // le téléphone.
-    minuteries.current.push(window.setTimeout(() => setPhase("reponses"), ENVOI_MS));
+    setBrouillon("");
     for (const c of repondeurs(heure, quoi)) {
-      const quandArrive = Math.max(ENVOI_MS + 200, (c.reponse?.apres ?? 0) * RYTHME);
+      const arrive = Math.max(1600, (c.reponse?.apres ?? 0) * RYTHME);
+      // Il « écrit » un peu avant de répondre : sans ce délai, la bulle
+      // apparaît d'un coup et on croit à un résultat de recherche.
       minuteries.current.push(
         window.setTimeout(
-          () => setArrivees((a) => (a.includes(c.id) ? a : [...a, c.id])),
-          quandArrive,
+          () => setEcrivent((e) => (e.includes(c.id) ? e : [...e, c.id])),
+          Math.max(600, arrive - ECRIT_MS),
         ),
+      );
+      minuteries.current.push(
+        window.setTimeout(() => {
+          setEcrivent((e) => e.filter((x) => x !== c.id));
+          setArrivees((a) => (a.includes(c.id) ? a : [...a, c.id]));
+        }, arrive),
       );
     }
   }
@@ -268,8 +377,8 @@ export function ApercuHabitant() {
     minuteries.current.forEach(clearTimeout);
     minuteries.current = [];
     setSortie(null);
-    setPhase("");
     setArrivees([]);
+    setEcrivent([]);
     setPassees([]);
     setDx(0);
     setSortant("");
@@ -316,109 +425,101 @@ export function ApercuHabitant() {
               </span>
             </div>
 
-            {/* LA BANDE DU HAUT CHANGE DE NATURE PENDANT UNE SORTIE. Les envies
-                servent à trier ce qui existe ; quand on a annoncé qu'on sort,
-                ce qui compte n'est plus le tri mais l'attente — combien ont été
-                prévenus, combien ont répondu. Les deux ne peuvent pas cohabiter
-                sur une seule ligne sans que l'écran redevienne illisible. */}
+            {/* LA PORTE D'ENTRÉE RESSEMBLE À UNE RECHERCHE, ET C'EST VOULU.
+                La version d'avant proposait une pastille « Je sors » au milieu
+                des filtres : personne n'a appuyé dessus. Un champ pleine
+                largeur avec une loupe, tout le monde sait ce que c'est et tout
+                le monde le touche — et c'est justement parce qu'on attend une
+                liste de résultats que recevoir des réponses fait quelque
+                chose. */}
             {sortie ? (
               <div className="ap-sortie">
+                {/* LA BANDE NE RÉPÈTE PAS LA DEMANDE — elle est déjà en toutes
+                    lettres dans la bulle verte trente pixels plus bas. Elle dit
+                    ce qu'on ne voit pas d'un coup d'œil : combien ont répondu,
+                    et par où on annule. */}
                 <span className="ap-s-quoi">
-                  <i aria-hidden="true">
-                    {SORTIES.find((x) => x.cle === sortie.quoi)?.emoji}
-                  </i>
-                  {SORTIES.find((x) => x.cle === sortie.quoi)?.label} ·{" "}
-                  {sortie.quand.toLowerCase()}
+                  <i aria-hidden="true">⚡</i>
+                  Votre demande
                 </span>
-                <span className="ap-s-etat" aria-live="polite">
-                  {phase === "envoi"
-                    ? `Envoyé à ${combienSollicites}`
-                    : `${arrivees.length} réponse${arrivees.length > 1 ? "s" : ""}`}
+                <span className="ap-s-etat">
+                  {arrivees.length} réponse{arrivees.length > 1 ? "s" : ""}
                 </span>
                 <button
                   type="button"
                   className="ap-s-x"
-                  aria-label="Annuler ma sortie"
+                  aria-label="Annuler ma demande"
                   onClick={annulerSortie}
                 >
                   ✕
                 </button>
               </div>
             ) : (
-            <div className="ap-envies">
-              {/* LE GESTE PRINCIPAL EST LA PREMIÈRE PASTILLE, pas un bouton de
-                  plus sous les filtres : il est dans la zone du pouce, il ne
-                  coûte pas une ligne de hauteur, et sa couleur le distingue de
-                  tout ce qui trie. */}
-              <button
-                type="button"
-                className="ap-e ap-sors"
-                onClick={() => {
-                  setSortiePour("");
-                  setFeuille("sortie");
-                }}
-              >
-                <i aria-hidden="true">⚡</i>Je sors
-              </button>
-              {listeEnvies.map((e) => {
-                const on = envies.includes(e.cle);
-                return (
-                  <button
-                    key={e.cle}
-                    type="button"
-                    aria-pressed={on}
-                    className={`ap-e${on ? " on" : ""}`}
-                    onClick={() => {
-                      setEnvies((v) =>
-                        v.includes(e.cle) ? v.filter((x) => x !== e.cle) : [...v, e.cle],
-                      );
-                      remettre();
-                    }}
-                  >
-                    <i aria-hidden="true">{e.emoji}</i>
-                    {e.label}
-                  </button>
-                );
-              })}
-            </div>
+              <>
+                <button
+                  type="button"
+                  className="ap-champ"
+                  onClick={() => {
+                    setBrouillon("");
+                    setFeuille("sortie");
+                  }}
+                >
+                  <i aria-hidden="true">🔍</i>
+                  Qu&apos;est-ce que vous cherchez&nbsp;?
+                </button>
+
+                <div className="ap-envies">
+                  {listeEnvies.map((e) => {
+                    const on = envies.includes(e.cle);
+                    return (
+                      <button
+                        key={e.cle}
+                        type="button"
+                        aria-pressed={on}
+                        className={`ap-e${on ? " on" : ""}`}
+                        onClick={() => {
+                          setEnvies((v) =>
+                            v.includes(e.cle) ? v.filter((x) => x !== e.cle) : [...v, e.cle],
+                          );
+                          remettre();
+                        }}
+                      >
+                        <i aria-hidden="true">{e.emoji}</i>
+                        {e.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
 
           <div className="ap-vue">
-            {phase === "envoi" ? (
-              /* L'ATTENTE EST L'ÉMOTION, PAS UN DÉFAUT. C'est le moment où l'on
-                 comprend que quelque chose part vers de vraies personnes, et
-                 c'est ce que ne procure aucune recherche. Une liste qui
-                 apparaît instantanément, on sait que c'est une base de données ;
-                 des réponses qui tombent une par une, on sait que ce sont des
-                 gens. */
-              <div className="ap-envoi">
-                <span className="ap-envoi-e" aria-hidden="true">⚡</span>
-                <b>Envoyé à {combienSollicites} commerces</b>
-                <i>à moins de 500 m, ouverts maintenant</i>
-                <div className="ap-points" aria-hidden="true">
-                  {Array.from({ length: combienSollicites }).map((_, i) => (
-                    <span key={i} style={{ animationDelay: `${i * 0.13}s` }} />
-                  ))}
-                </div>
-              </div>
-            ) : dessus ? (
+            {sortie ? (
+              <Conversation
+                demande={sortie.texte}
+                sollicites={sollicites}
+                recues={recues}
+                ecrivent={ecrivent}
+                dejaVenu={reserves}
+                onJyVais={(c) => {
+                  setOuvertReponse(c);
+                  setFeuille("jyvais");
+                }}
+              />
+            ) : (
+              <>
+            {dessus ? (
               <div className="ap-pile">
                 {dessous && (
                   <CarteSwipe
                     key={`d-${dessous.id}`}
-                    carte={
-                      estReponse(dessous)
-                        ? carteDeReponse(dessous)
-                        : carteAffichee(dessous, heure)
-                    }
+                    carte={carteAffichee(dessous, heure)}
                     className="ap-carte dessous"
                   />
                 )}
                 <div
-                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
-                    estReponse(dessus) ? " pour-vous" : ""
-                  }`}
+                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -467,26 +568,8 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe
-                        carte={
-                          estReponse(dessus)
-                            ? carteDeReponse(dessus)
-                            : carteAffichee(dessus, heure)
-                        }
-                        className="ap-carte"
-                      >
-                        {/* LA PASTILLE NE RÉPÈTE PAS « il vous répond » — c'est
-                            déjà écrit deux lignes plus haut. Elle dit ce qu'on
-                            ne sait pas encore : que d'autres ont répondu aussi,
-                            et qu'il faut balayer pour les voir. */}
-                        {estReponse(dessus) && arrivees.length > 1 && (
-                          <span className="ap-badge-vous">
-                            <i aria-hidden="true">⚡</i>
-                            {arrivees.length - 1} autre
-                            {arrivees.length > 2 ? "s" : ""} ont répondu aussi
-                          </span>
-                        )}
-                        {!estReponse(dessus) && restants.length > 1 && (
+                      <CarteSwipe carte={carteAffichee(dessus, heure)} className="ap-carte">
+                        {restants.length > 1 && (
                           <button
                             type="button"
                             className="ap-vers-bas"
@@ -659,10 +742,16 @@ export function ApercuHabitant() {
                 </button>
               </div>
             )}
+              </>
+            )}
           </div>
 
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
 
+          {/* LES GESTES APPARTIENNENT AU PAQUET. Pendant une demande on lit une
+              conversation, et un « passer / je garde » sous des messages ne veut
+              rien dire — chaque réponse porte son propre bouton. */}
+          {!sortie && (
           <div className="cd-gestes ap-gestes">
             <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!dessus}>
               <i aria-hidden="true">✕</i>
@@ -677,30 +766,24 @@ export function ApercuHabitant() {
               <i aria-hidden="true">♥</i>
               <em>Je garde</em>
             </button>
-            {/* SUR UNE RÉPONSE, LE BOUTON CHANGE DE SENS. On ne « réserve » pas
-                une proposition qu'on vient de recevoir : on y va, et le
-                commerçant qui l'a faite doit le savoir tout de suite. */}
             <button
               type="button"
               className="cd-g ambre"
               onClick={() => {
-                if (dessus && estReponse(dessus)) {
-                  setFeuille("jyvais");
-                  return;
-                }
                 setCreneau("");
                 setFeuille("resa");
               }}
-              disabled={dessus && estReponse(dessus) ? false : !aReserver.length}
+              disabled={!aReserver.length}
             >
-              <i aria-hidden="true">{dessus && estReponse(dessus) ? "🚶" : "📅"}</i>
-              <em>{dessus && estReponse(dessus) ? "J'y vais" : "Réserver"}</em>
+              <i aria-hidden="true">📅</i>
+              <em>Réserver</em>
             </button>
             <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
               <i aria-hidden="true">↓</i>
               <em>Détails</em>
             </button>
           </div>
+          )}
 
           {feuille && (
             <>
@@ -752,51 +835,64 @@ export function ApercuHabitant() {
                 {feuille === "sortie" && (
                   <>
                     <div className="ap-f-tete">
-                      <b>{sortiePour ? "C'est pour quand ?" : "Vous sortez pour quoi ?"}</b>
+                      <b>Qu&apos;est-ce que vous cherchez&nbsp;?</b>
+                      <span className="simple">
+                        Ça part aux commerces ouverts autour de vous. Ils vous répondent.
+                      </span>
                     </div>
-                    <ul className="ap-f-liste">
-                      {!sortiePour
-                        ? SORTIES.map((x) => (
-                            <li key={x.cle}>
-                              <button
-                                type="button"
-                                className="ap-m"
-                                onClick={() => setSortiePour(x.cle)}
-                              >
-                                <i aria-hidden="true">{x.emoji}</i>
-                                <span>{x.label}</span>
-                                <b>{autourDeMoi(heure, x.cle).length}</b>
-                              </button>
-                            </li>
-                          ))
-                        : QUANDS.map((q) => (
-                            <li key={q}>
-                              <button
-                                type="button"
-                                className="ap-m"
-                                onClick={() => lancerSortie(sortiePour, q)}
-                              >
-                                <i aria-hidden="true">🕐</i>
-                                <span>{q}</span>
-                              </button>
-                            </li>
-                          ))}
-                    </ul>
+                    <form
+                      className="ap-dem"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        lancerSortie(brouillon);
+                      }}
+                    >
+                      <textarea
+                        className="ap-dem-t"
+                        value={brouillon}
+                        onChange={(e) => setBrouillon(e.target.value)}
+                        maxLength={120}
+                        rows={2}
+                        autoFocus
+                        placeholder="Un truc rapide et pas cher, je suis à pied…"
+                        aria-label="Votre demande"
+                      />
+                      {/* LES SUGGESTIONS REMPLISSENT LE CHAMP, elles ne le
+                          remplacent pas : un appui pour qui n'a pas envie
+                          d'écrire, le clavier pour les autres. C'est le mot de
+                          la personne qui fait qu'une réponse lui est adressée. */}
+                      <div className="ap-dem-s">
+                        {SORTIES.map((x) => (
+                          <button
+                            key={x.label}
+                            type="button"
+                            className="ap-e"
+                            onClick={() => setBrouillon(x.label)}
+                          >
+                            <i aria-hidden="true">{x.emoji}</i>
+                            {x.label}
+                          </button>
+                        ))}
+                      </div>
+                      <button type="submit" className="ap-b2 plein" disabled={!brouillon.trim()}>
+                        Envoyer aux commerces autour de moi
+                      </button>
+                    </form>
                   </>
                 )}
 
-                {feuille === "jyvais" && dessus && (
+                {feuille === "jyvais" && ouvertReponse && (
                   <>
-                    {reserves.includes(`vais|${dessus.id}`) ? (
+                    {reserves.includes(`vais|${ouvertReponse.id}`) ? (
                       <div className="ap-r-ok">
                         <span aria-hidden="true">✓</span>
                         <b>Il vous attend.</b>
                         <i>
-                          {dessus.nom} · {dessus.distance}
+                          {ouvertReponse.nom} · {ouvertReponse.distance}
                         </i>
                         <a
                           className="ap-cta"
-                          href={dessus.itineraire}
+                          href={ouvertReponse.itineraire}
                           target="_blank"
                           rel="noreferrer noopener"
                         >
@@ -806,14 +902,16 @@ export function ApercuHabitant() {
                     ) : (
                       <>
                         <div className="ap-f-tete">
-                          <b>{dessus.nom}</b>
-                          <span className="simple">{dessus.metier} · {dessus.distance}</span>
+                          <b>{ouvertReponse.nom}</b>
+                          <span className="simple">
+                            {ouvertReponse.metier} · {ouvertReponse.distance}
+                          </span>
                         </div>
                         <div className="ap-f-corps">
-                          <p className="ap-mot">« {dessus.reponse?.texte} »</p>
+                          <p className="ap-mot">« {ouvertReponse.reponse?.texte} »</p>
                           <div className="ap-l">
                             <i aria-hidden="true">⏳</i>
-                            Tenu jusqu&apos;à {dessus.reponse?.tenu}
+                            Tenu jusqu&apos;à {ouvertReponse.reponse?.tenu}
                           </div>
                         </div>
                         <div className="ap-f-deux">
@@ -822,7 +920,7 @@ export function ApercuHabitant() {
                             className="ap-b2 plein"
                             onClick={() =>
                               setReserves((r) => {
-                                const cle = `vais|${dessus.id}`;
+                                const cle = `vais|${ouvertReponse.id}`;
                                 return r.includes(cle) ? r : [...r, cle];
                               })
                             }
@@ -920,7 +1018,78 @@ export function ApercuHabitant() {
         .ap-fav{transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
         .ap-fav.pop{transform:scale(1.18);}
 
-        /* ── ANNONCER SA SORTIE ── */
+        /* ── LA CONVERSATION AVEC LA VILLE ── */
+
+        /* Ce n'est pas un paquet de cartes, c'est une messagerie — et c'est le
+           seul moyen qu'une reponse ne se confonde pas avec une annonce. */
+        .ap-conv{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+          scrollbar-width:none;display:flex;flex-direction:column;gap:16px;
+          padding:4px 2px 20px;}
+        .ap-conv::-webkit-scrollbar{display:none;}
+
+        .ap-moi{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+        .ap-bulle-moi{max-width:88%;font-size:15.5px;line-height:1.4;color:#04150E;
+          font-weight:650;background:linear-gradient(140deg,#3DE2A6,#0BA97B);
+          border-radius:18px 18px 4px 18px;padding:12px 15px;}
+        .ap-envoye{font-size:11px;color:#7F988B;}
+
+        .ap-msg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+          animation:apMsg .4s cubic-bezier(.16,1,.3,1);}
+        @keyframes apMsg{from{opacity:0;transform:translate3d(0,10px,0);}to{opacity:1;transform:none;}}
+        .ap-msg-h{display:flex;align-items:baseline;gap:8px;padding-left:3px;}
+        .ap-msg-h b{font-size:13.5px;font-weight:850;color:#fff;}
+        .ap-msg-h span{font-size:11px;color:#7F988B;}
+        .ap-bulle{max-width:90%;font-size:15.5px;line-height:1.45;color:#EAF2EC;
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+          border-radius:18px 18px 18px 4px;padding:12px 15px;}
+        .ap-msg-b{display:flex;align-items:center;gap:11px;padding-left:3px;}
+        .ap-msg-y{font:inherit;font-size:14px;font-weight:850;color:#0A1410;border:0;
+          border-radius:12px;padding:11px 18px;cursor:pointer;
+          background:linear-gradient(140deg,#F7C948,#E09B18);}
+        .ap-msg-y:active{transform:scale(.97);}
+        .ap-msg-ok{font-size:13.5px;font-weight:850;color:#8FE9C4;}
+        .ap-msg-t{font-size:11.5px;color:#7F988B;}
+
+        /* LES TROIS POINTS SONT LE SEUL SIGNAL UNIVERSEL qui dise qu'un humain
+           est en face. C'est lui, et pas le liseré vert, qui fait la difference
+           avec une recherche. */
+        .ap-trois{display:inline-flex;align-items:center;gap:5px;padding:15px 17px;}
+        .ap-trois i{width:7px;height:7px;border-radius:50%;background:#7F988B;
+          animation:apTrois 1.3s ease-in-out infinite;}
+        .ap-trois i:nth-child(2){animation-delay:.18s;}
+        .ap-trois i:nth-child(3){animation-delay:.36s;}
+        @keyframes apTrois{0%,60%,100%{opacity:.3;transform:translateY(0);}
+          30%{opacity:1;transform:translateY(-3px);}}
+
+        .ap-muets{display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+          padding:12px 3px 0;border-top:1px solid rgba(255,255,255,.07);}
+        .ap-muets span{font-size:11.5px;color:#5E706A;background:rgba(255,255,255,.04);
+          border-radius:999px;padding:5px 10px;}
+        .ap-muets i{font-style:normal;font-size:11px;color:#5E706A;}
+
+        /* ── LA PORTE D'ENTRÉE ── */
+
+        /* Une barre de recherche, parce que tout le monde sait ce que c'est et
+           que tout le monde la touche. La pastille « Je sors » posee au milieu
+           des filtres n'a ete cliquee par personne. */
+        .ap-champ{display:flex;align-items:center;gap:10px;width:100%;font:inherit;
+          font-size:15px;color:#93A8A0;cursor:pointer;text-align:left;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+          border-radius:14px;padding:13px 15px;
+          transition:border-color .25s ease,background .25s ease;}
+        .ap-champ i{font-style:normal;font-size:15px;}
+        .ap-champ:active{transform:scale(.99);}
+
+        .ap-dem{display:flex;flex-direction:column;gap:11px;}
+        .ap-dem-t{font:inherit;font-size:16px;line-height:1.4;color:#EAF2EC;resize:none;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+          border-radius:14px;padding:13px 15px;}
+        .ap-dem-t::placeholder{color:#5E706A;}
+        .ap-dem-t:focus{outline:2px solid rgba(61,226,166,.5);}
+        .ap-dem-s{display:flex;flex-wrap:wrap;gap:7px;}
+        .ap-dem .ap-b2{margin-top:2px;}
+
+        /* ── LA DEMANDE EN COURS ── */
 
         /* La pastille du geste principal ne se confond avec aucun filtre : elle
            est pleine, ambre, et toujours la premiere de la rangee. */

@@ -784,21 +784,47 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
 }
 
 /**
- * CE POUR QUOI ON SORT — la première des deux questions, et il n'y en a que deux.
+ * LES SUGGESTIONS SOUS LE CHAMP — pas des choix, des amorces.
  *
- * Un formulaire tuerait le geste : on annonce qu'on sort en deux appuis, ou on
- * ne l'annonce pas. Pas de budget, pas de nombre de personnes — on les ajoutera
- * le jour où leur absence se fera sentir, pas avant.
+ * LE DÉFAUT QU'ELLES CORRIGENT, ET IL A ÉTÉ MESURÉ SUR DE VRAIES PERSONNES. La
+ * première version posait deux questions à choix multiples : « vous sortez pour
+ * quoi » puis « quand ». Personne n'a vu la différence avec le mode normal — et
+ * ils avaient raison : deux appuis sur des options pré-écrites, c'est un filtre.
+ * Rien de la personne ne partait, donc rien ne pouvait revenir qui lui soit
+ * adressé.
+ *
+ * On demande donc une PHRASE. Même quatre mots. C'est elle qui s'affiche en haut
+ * de la conversation, c'est à elle que les commerces répondent, et c'est ce qui
+ * fait la différence entre une liste de résultats et une réponse.
+ *
+ * Les suggestions ne remplacent pas le champ : elles le remplissent. Un appui
+ * pour ceux qui n'ont pas envie d'écrire, le clavier pour les autres.
  */
 export const SORTIES = [
-  { cle: "restaurant", label: "Déjeuner", emoji: "🍽️" },
-  { cle: "bar", label: "Boire un verre", emoji: "🍸" },
+  { cle: "restaurant", label: "Déjeuner, rapide et pas cher", emoji: "🍽️" },
+  { cle: "restaurant", label: "Une bonne table ce midi", emoji: "🍷" },
+  { cle: "bar", label: "Boire un verre en terrasse", emoji: "☀️" },
   { cle: "coiffeur", label: "Me faire couper les cheveux", emoji: "💇" },
-  { cle: "mode", label: "Faire les boutiques", emoji: "👗" },
+  { cle: "mode", label: "Trouver une veste", emoji: "👗" },
 ] as const satisfies readonly { cle: CleMetier; label: string; emoji: string }[];
 
-/** Et pour quand. Trois choix, jamais un sélecteur d'heure. */
-export const QUANDS = ["Maintenant", "Dans 30 min", "Ce soir"] as const;
+/**
+ * À QUI LA DEMANDE PART, D'APRÈS CE QUI EST ÉCRIT.
+ *
+ * Reconnaissance de mots, pas de compréhension : c'est une maquette, et une
+ * poignée de mots-clés suffit à ce que la démonstration ne se trompe pas de
+ * métier devant quelqu'un. Le vrai produit ferait autrement ; ce qu'on teste
+ * ici, c'est l'effet, pas le moteur.
+ */
+export function brancheDeLaDemande(texte: string): CleMetier {
+  const t = texte.toLowerCase();
+  if (/coiff|cheveu|coupe|brushing|couleur/.test(t)) return "coiffeur";
+  if (/ongle|manucure|vernis/.test(t)) return "ongles";
+  if (/fleur|bouquet|plante/.test(t)) return "fleuriste";
+  if (/verre|bar|bière|biere|apéro|apero|terrasse|vin/.test(t)) return "bar";
+  if (/veste|robe|vêtement|vetement|fringue|boutique|jean|pull|chaussure/.test(t)) return "mode";
+  return "restaurant";
+}
 
 /** Les commerces d'une branche qui ont armé quelque chose, dans l'ordre où
  *  leurs réponses arrivent. Les autres ne répondent pas, et c'est normal. */
