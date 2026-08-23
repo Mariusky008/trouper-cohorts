@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   description:
     "Ce qui se passe maintenant à deux cents mètres de vous, et ce que vous pourriez demander. Une idée en test.",
   robots: { index: false, follow: false },
+  // SON PROPRE MANIFESTE, sinon « ajouter à l'écran d'accueil » posait l'icône
+  // et ouvrait clikme.fr : le manifeste racine porte `start_url: "/"`, et c'est
+  // lui que le téléphone suit, pas la page depuis laquelle on installe.
+  manifest: "/autour-de-moi/manifest.webmanifest",
+  // Sur iPhone, ces deux-là décident du nom sous l'icône et du fait que la
+  // barre du navigateur disparaisse. Sans eux, on ouvre un onglet Safari.
+  appleWebApp: { capable: true, title: "Autour de moi", statusBarStyle: "black-translucent" },
 };
 
 // LA PASTILLE DU BANDEAU NE PORTE PLUS LA VILLE MAIS LE MÉTIER : on y choisit
