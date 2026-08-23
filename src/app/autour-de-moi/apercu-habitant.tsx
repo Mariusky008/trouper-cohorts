@@ -46,11 +46,15 @@ import {
   HEURE_MAX,
   HEURE_MIN,
   METIERS,
+  QUANDS,
+  SORTIES,
   autourDeMoi,
   carteAffichee,
+  carteDeReponse,
   comptesParMetier,
   momentsRestants,
   moyenneAvis,
+  repondeurs,
   seJoueMaintenant,
   selonEnvies,
   type AvisPlat,
@@ -68,6 +72,14 @@ const VERROU = 8;
 const VOL_MS = 420;
 /** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
 const COEUR_MS = 900;
+/** Le temps que dure l'écran « envoyé aux commerces » avant la première réponse. */
+const ENVOI_MS = 3400;
+/** LA MAQUETTE COMPRESSE LES MINUTES EN SECONDES. Dans la vraie vie une réponse
+ *  arrive en une à trois minutes ; ici on multiplie par ça, sinon on montre un
+ *  écran d'attente à quelqu'un qui a le téléphone dans la main. L'ordre et
+ *  l'échelonnement sont conservés — c'est eux qui font sentir que les réponses
+ *  VIENNENT de commerces différents. */
+const RYTHME = 700;
 
 // ── LES AVIS QUE LE VISITEUR LAISSE, GARDÉS DANS SON NAVIGATEUR ────────────
 //
@@ -137,7 +149,15 @@ export function ApercuHabitant() {
   const [aJoue, setAJoue] = useState(false);
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
-  const [feuille, setFeuille] = useState<"" | "metier" | "resa">("");
+  const [feuille, setFeuille] = useState<"" | "metier" | "resa" | "sortie" | "jyvais">("");
+  /** La sortie annoncée : ce pour quoi on sort, et quand. Rien : on regarde. */
+  const [sortie, setSortie] = useState<{ quoi: CleMetier; quand: string } | null>(null);
+  const [phase, setPhase] = useState<"" | "envoi" | "reponses">("");
+  /** Les commerces qui ont répondu, DANS L'ORDRE D'ARRIVÉE — c'est cet ordre
+   *  qui décide de la pile, pas la distance. */
+  const [arrivees, setArrivees] = useState<string[]>([]);
+  /** L'étape en cours dans la feuille « je sors » : le quoi, puis le quand. */
+  const [sortiePour, setSortiePour] = useState<CleMetier | "">("");
   const [notes, setNotes] = useState<Record<string, number>>({});
   const [creneau, setCreneau] = useState("");
   const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
@@ -146,8 +166,20 @@ export function ApercuHabitant() {
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
 
-  const dispo = selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  const dispoBrut = selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  /** UNE RÉPONSE PASSE DEVANT TOUT LE RESTE, et dans l'ordre où elle est
+   *  arrivée. Triée par distance comme les autres, elle se noierait au milieu
+   *  du paquet et on ne verrait pas qu'elle vient de tomber. */
+  const rang = (c: CarteAutour) => {
+    const i = arrivees.indexOf(c.id);
+    return i < 0 ? 999 : i;
+  };
+  const dispo = sortie
+    ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
+    : dispoBrut;
   const pile = dispo.filter((c) => !passees.includes(c.id));
+  const estReponse = (c: CarteAutour) => !!sortie && arrivees.includes(c.id);
+  const combienSollicites = sortie ? autourDeMoi(heure, sortie.quoi).length : 0;
   const dessus = pile[0];
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
@@ -194,6 +226,55 @@ export function ApercuHabitant() {
     }
   }
 
+  /**
+   * ANNONCER SA SORTIE — et c'est l'inversion du produit.
+   *
+   * Jusqu'ici l'habitant regardait ce que les commerces avaient publié. Là il
+   * dit qu'il sort, et ce sont les commerces qui viennent à lui. Rien n'existe
+   * avant qu'il demande : ce ne sont pas des résultats filtrés, ce sont des
+   * réponses, et elles arrivent une par une.
+   */
+  function lancerSortie(quoi: CleMetier, quand: string) {
+    minuteries.current.forEach(clearTimeout);
+    minuteries.current = [];
+    setBranche(quoi);
+    setEnvies([]);
+    setPassees([]);
+    setDx(0);
+    setSortant("");
+    setDescendu(false);
+    setSortie({ quoi, quand });
+    setArrivees([]);
+    setPhase("envoi");
+    setFeuille("");
+    setSortiePour("");
+    defilement.current?.scrollTo({ top: 0 });
+    // L'ÉCRAN D'ENVOI DURE LE TEMPS QU'IL FAUT POUR Y CROIRE, puis la première
+    // réponse tombe. Trop court, on ne voit rien partir ; trop long, on repose
+    // le téléphone.
+    minuteries.current.push(window.setTimeout(() => setPhase("reponses"), ENVOI_MS));
+    for (const c of repondeurs(heure, quoi)) {
+      const quandArrive = Math.max(ENVOI_MS + 200, (c.reponse?.apres ?? 0) * RYTHME);
+      minuteries.current.push(
+        window.setTimeout(
+          () => setArrivees((a) => (a.includes(c.id) ? a : [...a, c.id])),
+          quandArrive,
+        ),
+      );
+    }
+  }
+
+  function annulerSortie() {
+    minuteries.current.forEach(clearTimeout);
+    minuteries.current = [];
+    setSortie(null);
+    setPhase("");
+    setArrivees([]);
+    setPassees([]);
+    setDx(0);
+    setSortant("");
+  }
+
   /** Le bouton « Détails » et l'indice sous la photo font la même chose. */
   function versLeBas() {
     const el = defilement.current;
@@ -235,7 +316,50 @@ export function ApercuHabitant() {
               </span>
             </div>
 
+            {/* LA BANDE DU HAUT CHANGE DE NATURE PENDANT UNE SORTIE. Les envies
+                servent à trier ce qui existe ; quand on a annoncé qu'on sort,
+                ce qui compte n'est plus le tri mais l'attente — combien ont été
+                prévenus, combien ont répondu. Les deux ne peuvent pas cohabiter
+                sur une seule ligne sans que l'écran redevienne illisible. */}
+            {sortie ? (
+              <div className="ap-sortie">
+                <span className="ap-s-quoi">
+                  <i aria-hidden="true">
+                    {SORTIES.find((x) => x.cle === sortie.quoi)?.emoji}
+                  </i>
+                  {SORTIES.find((x) => x.cle === sortie.quoi)?.label} ·{" "}
+                  {sortie.quand.toLowerCase()}
+                </span>
+                <span className="ap-s-etat" aria-live="polite">
+                  {phase === "envoi"
+                    ? `Envoyé à ${combienSollicites}`
+                    : `${arrivees.length} réponse${arrivees.length > 1 ? "s" : ""}`}
+                </span>
+                <button
+                  type="button"
+                  className="ap-s-x"
+                  aria-label="Annuler ma sortie"
+                  onClick={annulerSortie}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
             <div className="ap-envies">
+              {/* LE GESTE PRINCIPAL EST LA PREMIÈRE PASTILLE, pas un bouton de
+                  plus sous les filtres : il est dans la zone du pouce, il ne
+                  coûte pas une ligne de hauteur, et sa couleur le distingue de
+                  tout ce qui trie. */}
+              <button
+                type="button"
+                className="ap-e ap-sors"
+                onClick={() => {
+                  setSortiePour("");
+                  setFeuille("sortie");
+                }}
+              >
+                <i aria-hidden="true">⚡</i>Je sors
+              </button>
               {listeEnvies.map((e) => {
                 const on = envies.includes(e.cle);
                 return (
@@ -257,20 +381,44 @@ export function ApercuHabitant() {
                 );
               })}
             </div>
+            )}
           </div>
 
           <div className="ap-vue">
-            {dessus ? (
+            {phase === "envoi" ? (
+              /* L'ATTENTE EST L'ÉMOTION, PAS UN DÉFAUT. C'est le moment où l'on
+                 comprend que quelque chose part vers de vraies personnes, et
+                 c'est ce que ne procure aucune recherche. Une liste qui
+                 apparaît instantanément, on sait que c'est une base de données ;
+                 des réponses qui tombent une par une, on sait que ce sont des
+                 gens. */
+              <div className="ap-envoi">
+                <span className="ap-envoi-e" aria-hidden="true">⚡</span>
+                <b>Envoyé à {combienSollicites} commerces</b>
+                <i>à moins de 500 m, ouverts maintenant</i>
+                <div className="ap-points" aria-hidden="true">
+                  {Array.from({ length: combienSollicites }).map((_, i) => (
+                    <span key={i} style={{ animationDelay: `${i * 0.13}s` }} />
+                  ))}
+                </div>
+              </div>
+            ) : dessus ? (
               <div className="ap-pile">
                 {dessous && (
                   <CarteSwipe
                     key={`d-${dessous.id}`}
-                    carte={carteAffichee(dessous, heure)}
+                    carte={
+                      estReponse(dessous)
+                        ? carteDeReponse(dessous)
+                        : carteAffichee(dessous, heure)
+                    }
                     className="ap-carte dessous"
                   />
                 )}
                 <div
-                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}`}
+                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
+                    estReponse(dessus) ? " pour-vous" : ""
+                  }`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -319,8 +467,26 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe carte={carteAffichee(dessus, heure)} className="ap-carte">
-                        {restants.length > 1 && (
+                      <CarteSwipe
+                        carte={
+                          estReponse(dessus)
+                            ? carteDeReponse(dessus)
+                            : carteAffichee(dessus, heure)
+                        }
+                        className="ap-carte"
+                      >
+                        {/* LA PASTILLE NE RÉPÈTE PAS « il vous répond » — c'est
+                            déjà écrit deux lignes plus haut. Elle dit ce qu'on
+                            ne sait pas encore : que d'autres ont répondu aussi,
+                            et qu'il faut balayer pour les voir. */}
+                        {estReponse(dessus) && arrivees.length > 1 && (
+                          <span className="ap-badge-vous">
+                            <i aria-hidden="true">⚡</i>
+                            {arrivees.length - 1} autre
+                            {arrivees.length > 2 ? "s" : ""} ont répondu aussi
+                          </span>
+                        )}
+                        {!estReponse(dessus) && restants.length > 1 && (
                           <button
                             type="button"
                             className="ap-vers-bas"
@@ -511,17 +677,24 @@ export function ApercuHabitant() {
               <i aria-hidden="true">♥</i>
               <em>Je garde</em>
             </button>
+            {/* SUR UNE RÉPONSE, LE BOUTON CHANGE DE SENS. On ne « réserve » pas
+                une proposition qu'on vient de recevoir : on y va, et le
+                commerçant qui l'a faite doit le savoir tout de suite. */}
             <button
               type="button"
               className="cd-g ambre"
               onClick={() => {
+                if (dessus && estReponse(dessus)) {
+                  setFeuille("jyvais");
+                  return;
+                }
                 setCreneau("");
                 setFeuille("resa");
               }}
-              disabled={!aReserver.length}
+              disabled={dessus && estReponse(dessus) ? false : !aReserver.length}
             >
-              <i aria-hidden="true">📅</i>
-              <em>Réserver</em>
+              <i aria-hidden="true">{dessus && estReponse(dessus) ? "🚶" : "📅"}</i>
+              <em>{dessus && estReponse(dessus) ? "J'y vais" : "Réserver"}</em>
             </button>
             <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
               <i aria-hidden="true">↓</i>
@@ -573,6 +746,92 @@ export function ApercuHabitant() {
                         </li>
                       ))}
                     </ul>
+                  </>
+                )}
+
+                {feuille === "sortie" && (
+                  <>
+                    <div className="ap-f-tete">
+                      <b>{sortiePour ? "C'est pour quand ?" : "Vous sortez pour quoi ?"}</b>
+                    </div>
+                    <ul className="ap-f-liste">
+                      {!sortiePour
+                        ? SORTIES.map((x) => (
+                            <li key={x.cle}>
+                              <button
+                                type="button"
+                                className="ap-m"
+                                onClick={() => setSortiePour(x.cle)}
+                              >
+                                <i aria-hidden="true">{x.emoji}</i>
+                                <span>{x.label}</span>
+                                <b>{autourDeMoi(heure, x.cle).length}</b>
+                              </button>
+                            </li>
+                          ))
+                        : QUANDS.map((q) => (
+                            <li key={q}>
+                              <button
+                                type="button"
+                                className="ap-m"
+                                onClick={() => lancerSortie(sortiePour, q)}
+                              >
+                                <i aria-hidden="true">🕐</i>
+                                <span>{q}</span>
+                              </button>
+                            </li>
+                          ))}
+                    </ul>
+                  </>
+                )}
+
+                {feuille === "jyvais" && dessus && (
+                  <>
+                    {reserves.includes(`vais|${dessus.id}`) ? (
+                      <div className="ap-r-ok">
+                        <span aria-hidden="true">✓</span>
+                        <b>Il vous attend.</b>
+                        <i>
+                          {dessus.nom} · {dessus.distance}
+                        </i>
+                        <a
+                          className="ap-cta"
+                          href={dessus.itineraire}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          🧭 Y aller
+                        </a>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="ap-f-tete">
+                          <b>{dessus.nom}</b>
+                          <span className="simple">{dessus.metier} · {dessus.distance}</span>
+                        </div>
+                        <div className="ap-f-corps">
+                          <p className="ap-mot">« {dessus.reponse?.texte} »</p>
+                          <div className="ap-l">
+                            <i aria-hidden="true">⏳</i>
+                            Tenu jusqu&apos;à {dessus.reponse?.tenu}
+                          </div>
+                        </div>
+                        <div className="ap-f-deux">
+                          <button
+                            type="button"
+                            className="ap-b2 plein"
+                            onClick={() =>
+                              setReserves((r) => {
+                                const cle = `vais|${dessus.id}`;
+                                return r.includes(cle) ? r : [...r, cle];
+                              })
+                            }
+                          >
+                            Je viens
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
@@ -660,6 +919,53 @@ export function ApercuHabitant() {
         .ap-metier:active{transform:scale(.95);}
         .ap-fav{transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
         .ap-fav.pop{transform:scale(1.18);}
+
+        /* ── ANNONCER SA SORTIE ── */
+
+        /* La pastille du geste principal ne se confond avec aucun filtre : elle
+           est pleine, ambre, et toujours la premiere de la rangee. */
+        .ap-sors{color:#0A1410!important;font-weight:850!important;border-color:transparent!important;
+          background:linear-gradient(140deg,#F7C948,#E09B18)!important;
+          box-shadow:0 10px 22px -12px rgba(240,180,41,.9);}
+
+        .ap-sortie{display:flex;align-items:center;gap:9px;padding:9px 12px;
+          background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.32);
+          border-radius:999px;}
+        .ap-s-quoi{display:flex;align-items:center;gap:7px;flex:1;min-width:0;
+          font-size:12.5px;font-weight:800;color:#F7C948;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-s-quoi i{font-style:normal;font-size:14px;}
+        .ap-s-etat{flex:none;font-size:11.5px;font-weight:850;color:#0A1410;
+          background:#F7C948;border-radius:999px;padding:3px 9px;}
+        .ap-s-x{flex:none;font:inherit;font-size:13px;line-height:1;cursor:pointer;
+          color:#F0C05A;background:none;border:0;padding:2px 4px;}
+
+        /* L'ecran d'envoi : ce qu'on regarde pendant que ca part. Les points
+           s'allument un par un — un par commerce prevenu. */
+        .ap-envoi{flex:1;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:10px;text-align:center;padding:0 26px;
+          border:1px dashed rgba(240,180,41,.3);border-radius:26px;
+          background:rgba(240,180,41,.04);}
+        .ap-envoi-e{font-size:40px;line-height:1;animation:apPulse 1.4s ease-in-out infinite;}
+        @keyframes apPulse{0%,100%{transform:scale(1);opacity:.85;}50%{transform:scale(1.12);opacity:1;}}
+        .ap-envoi b{font-size:20px;font-weight:850;color:#fff;letter-spacing:-.02em;}
+        .ap-envoi i{font-style:normal;font-size:14px;color:#93A8A0;}
+        .ap-points{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:8px;
+          max-width:220px;}
+        .ap-points span{width:9px;height:9px;border-radius:50%;background:rgba(240,180,41,.2);
+          animation:apPoint 1.6s ease-in-out infinite;}
+        @keyframes apPoint{0%,100%{background:rgba(240,180,41,.18);}50%{background:#F7C948;}}
+
+        /* Une reponse ne ressemble pas a une annonce : elle est cerclee de vert
+           et porte son propre bandeau. Sans ca, on la balaie sans voir qu'elle
+           s'adressait a nous. */
+        .ap-dessus.pour-vous .cd-carte{box-shadow:inset 0 0 0 2px #3DE2A6,
+          0 0 40px -12px rgba(61,226,166,.55);}
+        .ap-badge-vous{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
+          font-size:12px;font-weight:850;letter-spacing:.02em;color:#04150E;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;
+          padding:8px 14px;}
+        .ap-badge-vous i{font-style:normal;font-size:13px;}
 
         .ap-envies{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
           margin:0 -12px;padding:1px 12px 2px;}
@@ -888,7 +1194,7 @@ export function ApercuHabitant() {
           .ap-app{border-radius:34px;overflow:hidden;}
         }
         @media (prefers-reduced-motion:reduce){
-          .ap-doigt,.ap-vers-bas{animation:none;}
+          .ap-doigt,.ap-vers-bas,.ap-envoi-e,.ap-points span{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}
           .ap-coeur{display:none;}

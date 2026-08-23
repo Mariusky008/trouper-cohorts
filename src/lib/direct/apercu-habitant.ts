@@ -153,6 +153,38 @@ export type MomentJour = {
   avis?: AvisPlat[];
 };
 
+/**
+ * CE QU'UN COMMERCE RÉPOND QUAND QUELQU'UN ANNONCE QU'IL SORT.
+ *
+ * C'EST L'INVERSION DE TOUT LE PRODUIT, ET ELLE VIENT D'UN CONSTAT DE TERRAIN :
+ * à Dax, aucun restaurant n'est complet. La capacité est abondante, donc elle
+ * ne vaut rien — et une table qui se libère dans une salle à moitié vide
+ * n'intéresse personne. Ce qui est rare dans cette ville, ce que tout le monde
+ * s'arrache sans pouvoir l'attraper, c'est QUELQU'UN QUI A DÉCIDÉ DE SORTIR
+ * DÉPENSER ET QUI N'A PAS ENCORE CHOISI OÙ.
+ *
+ * Quand l'offre dépasse la demande, on ne joue pas sur la rareté : on joue sur
+ * la courtisation. L'habitant dit qu'il sort ; les commerces qui veulent le
+ * recevoir se manifestent. Ce n'est pas une recherche filtrée — RIEN N'EXISTE
+ * avant qu'il demande. Les cartes arrivent une par une, adressées à lui.
+ *
+ * ET CE N'EST PAS FORCÉMENT UNE REMISE. Dans une ville où tout le monde est à
+ * moitié vide, l'attention vaut plus que 10 % : « je vous garde la table près
+ * de la fenêtre » a plus d'effet qu'un prix barré, et ne coûte rien.
+ *
+ * LE COMMERÇANT NE RÉPOND PAS PENDANT LE SERVICE — il a armé son offre le
+ * matin, avec la même ardoise que ses moments. Ça se déclenche tout seul.
+ */
+export type Reponse = {
+  /** Sa proposition, écrite pour la personne qui sort. */
+  texte: string;
+  /** Jusqu'à quand il la tient. Une proposition sans échéance ne fait pas bouger. */
+  tenu: string;
+  /** Dans combien de secondes elle arrive. La maquette échelonne les réponses :
+   *  toutes en même temps, on ne verrait pas qu'elles VIENNENT de commerces. */
+  apres: number;
+};
+
 export type CarteAutour = {
   id: string;
   branche: CleMetier;
@@ -169,6 +201,9 @@ export type CarteAutour = {
   moments: MomentJour[];
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
+  /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
+   *  n'a rien armé, il ne répond pas — et c'est le cas le plus fréquent. */
+  reponse?: Reponse;
 };
 
 export const HEURE_MIN = 8;
@@ -195,6 +230,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h",
       mot: "Cuisine du marché, carte changée chaque matin. Terrasse à l'ombre le midi.",
     },
+    reponse: { texte: "Je vous garde la table près de la fenêtre, et le café est offert.", tenu: "12 h 40", apres: 5 },
     moments: [
       {
         de: 11, a: 11.5, quand: "11 h", icone: "👨‍🍳",
@@ -250,6 +286,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 11 h – 14 h 30",
       mot: "Deux plats par jour, cuisinés le matin. Quand c'est fini, c'est fini.",
     },
+    reponse: { texte: "Il me reste de la lasagne, je vous en mets une part de côté.", tenu: "13 h 15", apres: 9 },
     moments: [
       {
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
@@ -288,6 +325,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h 30",
       mot: "Salle de trente couverts, cuisine ouverte. On peut venir sans réserver.",
     },
+    reponse: { texte: "Deux tables au calme sous les arcades. Dessert offert si vous venez avant 13 h.", tenu: "13 h", apres: 16 },
     moments: [
       {
         de: 11, a: 14, quand: "ce midi", icone: "🕐",
@@ -426,6 +464,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 10 h – 19 h",
       mot: "Petites séries, marques françaises. On peut faire mettre de côté.",
     },
+    reponse: { texte: "Je vous sors les nouveautés à votre taille avant que vous arriviez.", tenu: "19 h", apres: 7 },
     moments: [
       {
         de: 10, a: 13, quand: "ce matin", icone: "✨",
@@ -487,6 +526,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 17 h – 1 h",
       mot: "Une quarantaine de références au verre, planches de la région.",
     },
+    reponse: { texte: "Le premier verre est pour moi si vous poussez la porte avant 19 h.", tenu: "19 h", apres: 6 },
     moments: [
       {
         de: 17, a: 20, quand: "18 h – 20 h", icone: "🍷",
@@ -545,6 +585,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 9 h – 19 h",
       mot: "Quatre fauteuils, sans rendez-vous quand il reste de la place.",
     },
+    reponse: { texte: "Le fauteuil du fond est libre, je vous prends dès que vous arrivez.", tenu: "dans 40 min", apres: 5 },
     moments: [
       {
         de: 8, a: 19, quand: "dans 20 min", icone: "💇",
@@ -574,6 +615,7 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 10 h – 18 h",
       mot: "Salon ouvert ce mois-ci. Colorations végétales, sur rendez-vous.",
     },
+    reponse: { texte: "Première visite : je vous fais le brushing en plus, sans supplément.", tenu: "18 h", apres: 12 },
     moments: [
       {
         de: 8, a: 18, quand: "cette semaine", icone: "🎨",
@@ -738,5 +780,56 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // première fois, et la pastille de défilement le répétait dix pixels plus
     // bas, avec en prime le cœur vert qui veut dire « gardé » partout ailleurs
     // dans le produit. Une seule fois, au seul endroit sur lequel on appuie.
+  };
+}
+
+/**
+ * CE POUR QUOI ON SORT — la première des deux questions, et il n'y en a que deux.
+ *
+ * Un formulaire tuerait le geste : on annonce qu'on sort en deux appuis, ou on
+ * ne l'annonce pas. Pas de budget, pas de nombre de personnes — on les ajoutera
+ * le jour où leur absence se fera sentir, pas avant.
+ */
+export const SORTIES = [
+  { cle: "restaurant", label: "Déjeuner", emoji: "🍽️" },
+  { cle: "bar", label: "Boire un verre", emoji: "🍸" },
+  { cle: "coiffeur", label: "Me faire couper les cheveux", emoji: "💇" },
+  { cle: "mode", label: "Faire les boutiques", emoji: "👗" },
+] as const satisfies readonly { cle: CleMetier; label: string; emoji: string }[];
+
+/** Et pour quand. Trois choix, jamais un sélecteur d'heure. */
+export const QUANDS = ["Maintenant", "Dans 30 min", "Ce soir"] as const;
+
+/** Les commerces d'une branche qui ont armé quelque chose, dans l'ordre où
+ *  leurs réponses arrivent. Les autres ne répondent pas, et c'est normal. */
+export function repondeurs(heure: number, branche: CleMetier): CarteAutour[] {
+  return autourDeMoi(heure, branche)
+    .filter((c) => c.reponse)
+    .sort((a, b) => (a.reponse?.apres ?? 0) - (b.reponse?.apres ?? 0));
+}
+
+/**
+ * LA CARTE D'UNE RÉPONSE — celle qui arrive dans le paquet, adressée à vous.
+ *
+ * Elle ne montre PAS le moment du jour du commerce : elle montre ce qu'il vous
+ * répond. C'est toute la différence entre une annonce qu'on trouve et une
+ * proposition qu'on reçoit.
+ */
+export function carteDeReponse(c: CarteAutour): CarteDirect {
+  return {
+    photo: c.photo,
+    cadrage: c.cadrage,
+    nom: c.nom,
+    metier: c.metier,
+    ville: c.ville,
+    distance: c.distance,
+    itineraire: c.itineraire,
+    reste: c.reponse ? `Tenu jusqu'à ${c.reponse.tenu}` : "",
+    icone: "⚡",
+    quoi: "Il vous répond",
+    lignes: c.reponse ? [c.reponse.texte] : undefined,
+    // PAS DE PRIX SUR UNE RÉPONSE. Celui du moment en cours n'est pas ce qu'il
+    // propose — afficher « 12 € » sous « je vous garde la table près de la
+    // fenêtre » fait lire une offre à douze euros qui n'existe pas.
   };
 }
