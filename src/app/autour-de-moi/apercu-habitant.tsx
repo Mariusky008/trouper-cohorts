@@ -48,8 +48,10 @@ import {
   METIERS,
   SORTIES,
   autourDeMoi,
+  avisDuMoment,
   brancheDeLaDemande,
   carteAffichee,
+  carteDeReponse,
   comptesParMetier,
   momentsRestants,
   moyenneAvis,
@@ -133,7 +135,7 @@ function Etoiles({ note }: { note: number }) {
 }
 
 /**
- * LA CONVERSATION AVEC LA VILLE — ce que remplace le paquet pendant une demande.
+ * L'ÉCRAN D'ATTENTE — ce qu'on regarde entre l'envoi et la première réponse.
  *
  * POURQUOI CE N'EST PAS DES CARTES. Testée sur de vraies personnes, la première
  * version renvoyait des `CarteSwipe` cerclées de vert : personne n'a senti de
@@ -146,24 +148,16 @@ function Etoiles({ note }: { note: number }) {
  * En dessous, les commerces prévenus : ceux qui écrivent, puis ceux qui ont
  * répondu. On n'a rien à expliquer, tout le monde a déjà vu cet écran.
  */
-function Conversation({
+function Attente({
   demande,
   sollicites,
-  recues,
   ecrivent,
-  dejaVenu,
-  onJyVais,
 }: {
   demande: string;
   sollicites: CarteAutour[];
-  recues: CarteAutour[];
   ecrivent: string[];
-  dejaVenu: string[];
-  onJyVais: (c: CarteAutour) => void;
 }) {
-  const muets = sollicites.filter(
-    (c) => !recues.some((r) => r.id === c.id) && !ecrivent.includes(c.id),
-  );
+  const muets = sollicites.filter((c) => !ecrivent.includes(c.id));
   return (
     <div className="ap-conv">
       <div className="ap-moi">
@@ -189,36 +183,16 @@ function Conversation({
         );
       })}
 
-      {recues.map((c) => (
-        <div className="ap-msg" key={c.id}>
-          <div className="ap-msg-h">
-            <b>{c.nom}</b>
-            <span>{c.distance} · à l&apos;instant</span>
-          </div>
-          <span className="ap-bulle">{c.reponse?.texte}</span>
-          <div className="ap-msg-b">
-            {dejaVenu.includes(`vais|${c.id}`) ? (
-              <span className="ap-msg-ok">✓ Il vous attend</span>
-            ) : (
-              <button type="button" className="ap-msg-y" onClick={() => onJyVais(c)}>
-                🚶 J&apos;y vais
-              </button>
-            )}
-            <span className="ap-msg-t">⏳ {c.reponse?.tenu}</span>
-          </div>
-        </div>
-      ))}
-
-      {/* CEUX QUI N'ONT PAS RÉPONDU SONT MONTRÉS AUSSI, en gris et sans bulle.
-          Les cacher ferait croire que tout le monde répond ; les montrer dit la
-          vérité — la demande est partie à six, trois ont répondu — et c'est ce
-          qui rend les trois réponses crédibles. */}
+      {/* CEUX QUI N'ONT PAS ENCORE RÉPONDU SONT MONTRÉS AUSSI, en gris. Les
+          cacher ferait croire que tout le monde répond ; les montrer dit la
+          vérité — la demande est partie à six — et c'est ce qui rendra les
+          réponses crédibles quand elles arriveront. */}
       {muets.length > 0 && (
         <div className="ap-muets">
           {muets.map((c) => (
             <span key={c.id}>{c.nom}</span>
           ))}
-          <i>prévenus, pas encore de réponse</i>
+          <i>prévenus</i>
         </div>
       )}
     </div>
@@ -265,17 +239,21 @@ export function ApercuHabitant() {
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
 
-  const dispo = selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  const dispoBrut = selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  /** UNE INVITATION PASSE DEVANT TOUT LE RESTE, dans l'ordre d'arrivée : triée
+   *  par distance comme les autres, elle se noierait dans le paquet et on ne
+   *  verrait pas qu'elle vient de tomber. */
+  const rang = (c: CarteAutour) => {
+    const i = arrivees.indexOf(c.id);
+    return i < 0 ? 999 : i;
+  };
+  const dispo = sortie
+    ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
+    : dispoBrut;
   const pile = dispo.filter((c) => !passees.includes(c.id));
+  const estInvitation = (c: CarteAutour) => !!sortie && arrivees.includes(c.id);
   /** À qui la demande est partie, du plus près au plus loin. */
   const sollicites = sortie ? autourDeMoi(heure, sortie.quoi) : [];
-  /** Les réponses reçues, la dernière arrivée en premier. */
-  const recues = sortie
-    ? arrivees
-        .map((id) => sollicites.find((c) => c.id === id))
-        .filter((c): c is CarteAutour => !!c)
-        .reverse()
-    : [];
   const dessus = pile[0];
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
@@ -442,8 +420,13 @@ export function ApercuHabitant() {
                   <i aria-hidden="true">⚡</i>
                   Votre demande
                 </span>
+                {/* « 0 réponse » AVANT LA PREMIÈRE, C'EST UN ÉCHEC AFFICHÉ.
+                    Pendant les deux secondes d'attente, la bande doit dire que
+                    ça travaille, pas compter ce qui manque. */}
                 <span className="ap-s-etat">
-                  {arrivees.length} réponse{arrivees.length > 1 ? "s" : ""}
+                  {arrivees.length === 0
+                    ? "On demande…"
+                    : `${arrivees.length} invitation${arrivees.length > 1 ? "s" : ""}`}
                 </span>
                 <button
                   type="button"
@@ -495,18 +478,14 @@ export function ApercuHabitant() {
           </div>
 
           <div className="ap-vue">
-            {sortie ? (
-              <Conversation
-                demande={sortie.texte}
-                sollicites={sollicites}
-                recues={recues}
-                ecrivent={ecrivent}
-                dejaVenu={reserves}
-                onJyVais={(c) => {
-                  setOuvertReponse(c);
-                  setFeuille("jyvais");
-                }}
-              />
+            {/* L'ATTENTE NE DURE QUE JUSQU'À LA PREMIÈRE RÉPONSE. Elle sert à
+                faire sentir que quelque chose part vers de vraies personnes —
+                les commerces prévenus, puis les trois points de celui qui écrit.
+                Dès qu'une invitation arrive, on rend la main au paquet : c'est
+                lui qu'on sait manipuler, et une réponse sans photo, sans prix et
+                sans balayage « ne donne pas du tout envie », mesuré. */}
+            {sortie && arrivees.length === 0 ? (
+              <Attente demande={sortie.texte} sollicites={sollicites} ecrivent={ecrivent} />
             ) : (
               <>
             {dessus ? (
@@ -514,12 +493,18 @@ export function ApercuHabitant() {
                 {dessous && (
                   <CarteSwipe
                     key={`d-${dessous.id}`}
-                    carte={carteAffichee(dessous, heure)}
+                    carte={
+                      estInvitation(dessous)
+                        ? carteDeReponse(dessous, heure)
+                        : carteAffichee(dessous, heure)
+                    }
                     className="ap-carte dessous"
                   />
                 )}
                 <div
-                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}`}
+                  className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
+                    estInvitation(dessus) ? " invit" : ""
+                  }`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -568,8 +553,30 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe carte={carteAffichee(dessus, heure)} className="ap-carte">
-                        {restants.length > 1 && (
+                      <CarteSwipe
+                        carte={
+                          estInvitation(dessus)
+                            ? carteDeReponse(dessus, heure)
+                            : carteAffichee(dessus, heure)
+                        }
+                        className="ap-carte"
+                      >
+                        {/* SUR UNE INVITATION, LA LIGNE DU BAS PORTE LES AVIS —
+                            c'est ce qui manquait pour donner envie : on ne se
+                            déplace pas sur une jolie phrase, on se déplace sur
+                            une jolie phrase ET quatre étoiles et demie. */}
+                        {estInvitation(dessus) && avisDuMoment(dessus, heure).length > 0 && (
+                          <span className="ap-invit-avis">
+                            <Etoiles note={moyenneAvis(avisDuMoment(dessus, heure))} />
+                            <b>
+                              {moyenneAvis(avisDuMoment(dessus, heure))
+                                .toString()
+                                .replace(".", ",")}
+                            </b>
+                            <span>· {avisDuMoment(dessus, heure).length} avis</span>
+                          </span>
+                        )}
+                        {!estInvitation(dessus) && restants.length > 1 && (
                           <button
                             type="button"
                             className="ap-vers-bas"
@@ -748,10 +755,10 @@ export function ApercuHabitant() {
 
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
 
-          {/* LES GESTES APPARTIENNENT AU PAQUET. Pendant une demande on lit une
-              conversation, et un « passer / je garde » sous des messages ne veut
-              rien dire — chaque réponse porte son propre bouton. */}
-          {!sortie && (
+          {/* LES GESTES RESTENT PENDANT UNE DEMANDE : une invitation se balaie
+              comme une carte, et on la garde ou on la passe comme les autres.
+              Ils ne disparaissent que le temps de l'attente. */}
+          {!(sortie && arrivees.length === 0) && (
           <div className="cd-gestes ap-gestes">
             <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!dessus}>
               <i aria-hidden="true">✕</i>
@@ -766,17 +773,25 @@ export function ApercuHabitant() {
               <i aria-hidden="true">♥</i>
               <em>Je garde</em>
             </button>
+            {/* SUR UNE INVITATION, ON NE RÉSERVE PAS : ON Y VA. C'est une
+                proposition qu'on vient de recevoir, et celui qui l'a faite doit
+                le savoir tout de suite. */}
             <button
               type="button"
               className="cd-g ambre"
               onClick={() => {
+                if (dessus && estInvitation(dessus)) {
+                  setOuvertReponse(dessus);
+                  setFeuille("jyvais");
+                  return;
+                }
                 setCreneau("");
                 setFeuille("resa");
               }}
-              disabled={!aReserver.length}
+              disabled={dessus && estInvitation(dessus) ? false : !aReserver.length}
             >
-              <i aria-hidden="true">📅</i>
-              <em>Réserver</em>
+              <i aria-hidden="true">{dessus && estInvitation(dessus) ? "🚶" : "📅"}</i>
+              <em>{dessus && estInvitation(dessus) ? "J'y vais" : "Réserver"}</em>
             </button>
             <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
               <i aria-hidden="true">↓</i>
@@ -889,6 +904,7 @@ export function ApercuHabitant() {
                         <b>Il vous attend.</b>
                         <i>
                           {ouvertReponse.nom} · {ouvertReponse.distance}
+                          {ouvertReponse.reponse && ` · ${ouvertReponse.reponse.cadeau.toLowerCase()}`}
                         </i>
                         <a
                           className="ap-cta"
@@ -908,7 +924,19 @@ export function ApercuHabitant() {
                           </span>
                         </div>
                         <div className="ap-f-corps">
-                          <p className="ap-mot">« {ouvertReponse.reponse?.texte} »</p>
+                          {/* LE CADEAU D'ABORD, ET EN GROS. C'est lui qui fait
+                              se lever de sa chaise ; le mot du commerçant le
+                              rend humain, mais personne ne traverse la ville
+                              pour une phrase. Il est répété ici parce que la
+                              carte est derrière la feuille : sans lui, on
+                              confirme sans plus savoir ce qu'on gagne. */}
+                          <p className="ap-cadeau">
+                            <i aria-hidden="true">🎁</i>
+                            {ouvertReponse.reponse?.cadeau}
+                          </p>
+                          {/* Espaces insécables : sans elles le guillemet
+                              fermant tombait seul sur une ligne. */}
+                          <p className="ap-mot">{`« ${ouvertReponse.reponse?.texte ?? ""} »`}</p>
                           <div className="ap-l">
                             <i aria-hidden="true">⏳</i>
                             Tenu jusqu&apos;à {ouvertReponse.reponse?.tenu}
@@ -1109,32 +1137,43 @@ export function ApercuHabitant() {
         .ap-s-x{flex:none;font:inherit;font-size:13px;line-height:1;cursor:pointer;
           color:#F0C05A;background:none;border:0;padding:2px 4px;}
 
-        /* L'ecran d'envoi : ce qu'on regarde pendant que ca part. Les points
-           s'allument un par un — un par commerce prevenu. */
-        .ap-envoi{flex:1;display:flex;flex-direction:column;align-items:center;
-          justify-content:center;gap:10px;text-align:center;padding:0 26px;
-          border:1px dashed rgba(240,180,41,.3);border-radius:26px;
-          background:rgba(240,180,41,.04);}
-        .ap-envoi-e{font-size:40px;line-height:1;animation:apPulse 1.4s ease-in-out infinite;}
-        @keyframes apPulse{0%,100%{transform:scale(1);opacity:.85;}50%{transform:scale(1.12);opacity:1;}}
-        .ap-envoi b{font-size:20px;font-weight:850;color:#fff;letter-spacing:-.02em;}
-        .ap-envoi i{font-style:normal;font-size:14px;color:#93A8A0;}
-        .ap-points{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:8px;
-          max-width:220px;}
-        .ap-points span{width:9px;height:9px;border-radius:50%;background:rgba(240,180,41,.2);
-          animation:apPoint 1.6s ease-in-out infinite;}
-        @keyframes apPoint{0%,100%{background:rgba(240,180,41,.18);}50%{background:#F7C948;}}
+        /* L'INVITATION.
+           LE DEFAUT MESURE : « les 3 reponses ne donnent pas du tout envie,
+           aucune photo, pas d'avis, pas de detail, pas de prix, le mode swipe a
+           disparu ». Une reponse est redevenue une carte pleine — donc il faut
+           qu'on voie, en une demi-seconde, qu'elle n'est pas une annonce
+           publique mais un mot adresse a soi. C'est le role de l'or : le vert
+           est la couleur de tout le reste de l'application, l'or ne sert qu'ici.
+           Le halo bat doucement, une fois, comme une enveloppe qu'on tend. */
+        .ap-dessus.invit .cd-carte{box-shadow:inset 0 0 0 2px #F7C948,
+          0 0 44px -10px rgba(240,180,41,.6);animation:apInvit .9s ease-out 1;}
+        @keyframes apInvit{
+          0%{box-shadow:inset 0 0 0 2px rgba(247,201,72,.2),0 0 0 0 rgba(240,180,41,0);}
+          45%{box-shadow:inset 0 0 0 3px #F7C948,0 0 66px 0 rgba(240,180,41,.75);}
+          100%{box-shadow:inset 0 0 0 2px #F7C948,0 0 44px -10px rgba(240,180,41,.6);}}
+        /* Le cadeau est la plus grosse ligne de la carte : c'est lui qu'on
+           raconte le soir, pas le nom du plat. */
+        .ap-dessus.invit .cd-quoi{font-size:17.5px;font-weight:850;letter-spacing:-.02em;
+          color:#FFE39A;}
+        .ap-dessus.invit .cd-quoi i{font-size:17px;}
+        /* La pastille partage sa ligne avec « Y aller » : sans plafond, elle
+           passe dessous et l'heure se coupe en deux (mesuré a 360 et 402 px). */
+        .ap-dessus.invit .cd-reste{max-width:calc(100% - 132px);color:#04150E;font-weight:850;
+          background:linear-gradient(140deg,#F7C948,#E09B12);border-color:transparent;
+          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
+          line-height:1.35;}
+        /* En bloc plutot qu'en flex : text-overflow ne s'applique pas a un
+           noeud de texte nu dans un conteneur flex. L'ecart se refait a la main. */
+        .ap-dessus.invit .cd-reste i{margin-right:6px;}
 
-        /* Une reponse ne ressemble pas a une annonce : elle est cerclee de vert
-           et porte son propre bandeau. Sans ca, on la balaie sans voir qu'elle
-           s'adressait a nous. */
-        .ap-dessus.pour-vous .cd-carte{box-shadow:inset 0 0 0 2px #3DE2A6,
-          0 0 40px -12px rgba(61,226,166,.55);}
-        .ap-badge-vous{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
-          font-size:12px;font-weight:850;letter-spacing:.02em;color:#04150E;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;
-          padding:8px 14px;}
-        .ap-badge-vous i{font-style:normal;font-size:13px;}
+        /* LES ETOILES SUR L'INVITATION. « pas d'avis » : sans elles on demande
+           de se deplacer sur une jolie phrase. Avec, on se deplace sur une jolie
+           phrase ET quatre etoiles et demie. */
+        .ap-invit-avis{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
+          font-size:12.5px;color:#DCE7DF;background:rgba(240,180,41,.14);
+          border:1px solid rgba(240,180,41,.34);border-radius:999px;padding:7px 13px;}
+        .ap-invit-avis b{font-size:13.5px;font-weight:850;color:#F7C948;}
+        .ap-invit-avis span{color:#A9BBB1;}
 
         .ap-envies{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
           margin:0 -12px;padding:1px 12px 2px;}
@@ -1238,6 +1277,13 @@ export function ApercuHabitant() {
           background:linear-gradient(140deg,#F7C948,#E09B18);}
         .ap-prog-b:active{transform:scale(.97);}
 
+        /* Le cadeau dans la feuille : meme or que le liseré de l'invitation,
+           pour qu'on reconnaisse la meme promesse d'un ecran a l'autre. */
+        .ap-cadeau{display:flex;align-items:center;gap:9px;margin:0 0 10px;
+          font-size:17px;font-weight:850;letter-spacing:-.02em;color:#FFE39A;
+          background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.3);
+          border-radius:14px;padding:12px 14px;}
+        .ap-cadeau i{font-style:normal;font-size:18px;line-height:1;flex:none;}
         .ap-mot{margin:0 0 12px;font-size:14.5px;line-height:1.5;color:#C7D8CE;}
         .ap-l{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.45;
           color:#B9C6CE;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
@@ -1363,7 +1409,8 @@ export function ApercuHabitant() {
           .ap-app{border-radius:34px;overflow:hidden;}
         }
         @media (prefers-reduced-motion:reduce){
-          .ap-doigt,.ap-vers-bas,.ap-envoi-e,.ap-points span{animation:none;}
+          .ap-doigt,.ap-vers-bas,.ap-trois i{animation:none;}
+          .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}
           .ap-coeur{display:none;}

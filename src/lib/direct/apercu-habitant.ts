@@ -176,7 +176,21 @@ export type MomentJour = {
  * matin, avec la même ardoise que ses moments. Ça se déclenche tout seul.
  */
 export type Reponse = {
-  /** Sa proposition, écrite pour la personne qui sort. */
+  /**
+   * CE QU'IL OFFRE — et c'est ça qu'on lit en premier sur la carte.
+   *
+   * LE DÉFAUT QUE ÇA CORRIGE, MESURÉ SUR DE VRAIES PERSONNES. Les premières
+   * réponses ne donnaient « pas du tout envie » : une phrase aimable, sans
+   * photo, sans prix, sans avis, et rien à gagner. Une attention seule ne fait
+   * pas se lever quelqu'un — il faut qu'il se sente PRIVILÉGIÉ.
+   *
+   * Le cadeau n'est pas une remise, et la différence n'est pas cosmétique : un
+   * digestif offert coûte deux euros au restaurateur et se raconte, « −10 % »
+   * lui coûte deux euros aussi et ne se raconte pas. Ce qui engage, c'est qu'on
+   * vous donne quelque chose, pas qu'on vous fasse un prix.
+   */
+  cadeau: string;
+  /** Le mot du commerçant, court et adressé. Il vient SOUS le cadeau. */
   texte: string;
   /** Jusqu'à quand il la tient. Une proposition sans échéance ne fait pas bouger. */
   tenu: string;
@@ -230,7 +244,12 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h",
       mot: "Cuisine du marché, carte changée chaque matin. Terrasse à l'ombre le midi.",
     },
-    reponse: { texte: "Je vous garde la table près de la fenêtre, et le café est offert.", tenu: "12 h 40", apres: 5 },
+    reponse: {
+      cadeau: "Le digestif maison offert",
+      texte: "Venez, je vous garde la table près de la fenêtre.",
+      tenu: "12 h 40",
+      apres: 5,
+    },
     moments: [
       {
         de: 11, a: 11.5, quand: "11 h", icone: "👨‍🍳",
@@ -286,7 +305,12 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 11 h – 14 h 30",
       mot: "Deux plats par jour, cuisinés le matin. Quand c'est fini, c'est fini.",
     },
-    reponse: { texte: "Il me reste de la lasagne, je vous en mets une part de côté.", tenu: "13 h 15", apres: 9 },
+    reponse: {
+      cadeau: "Une part de dessert en plus",
+      texte: "Il me reste de la lasagne, je vous la mets de côté.",
+      tenu: "13 h 15",
+      apres: 9,
+    },
     moments: [
       {
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
@@ -325,13 +349,22 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h 30",
       mot: "Salle de trente couverts, cuisine ouverte. On peut venir sans réserver.",
     },
-    reponse: { texte: "Deux tables au calme sous les arcades. Dessert offert si vous venez avant 13 h.", tenu: "13 h", apres: 16 },
+    reponse: {
+      cadeau: "L'apéritif maison offert",
+      texte: "Deux tables au calme sous les arcades, à vous de choisir.",
+      tenu: "13 h",
+      apres: 16,
+    },
     moments: [
       {
         de: 11, a: 14, quand: "ce midi", icone: "🕐",
         titre: "Il reste 4 tables",
         lignes: ["Plat + dessert", "Sans attendre"],
         prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
+        avis: [
+          { note: 5, texte: "Servi en dix minutes, et c'était bon.", qui: "Bruno", quand: "mardi dernier" },
+          { note: 4, texte: "Les arcades à l'ombre, parfait l'été.", qui: "Nadia", quand: "il y a 2 semaines" },
+        ],
       },
       {
         de: 19, a: 22.5, quand: "20 h", icone: "👥",
@@ -464,13 +497,22 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 10 h – 19 h",
       mot: "Petites séries, marques françaises. On peut faire mettre de côté.",
     },
-    reponse: { texte: "Je vous sors les nouveautés à votre taille avant que vous arriviez.", tenu: "19 h", apres: 7 },
+    reponse: {
+      cadeau: "Une retouche offerte sur votre achat",
+      texte: "Je vous sors les nouveautés à votre taille avant que vous arriviez.",
+      tenu: "19 h",
+      apres: 7,
+    },
     moments: [
       {
         de: 10, a: 13, quand: "ce matin", icone: "✨",
         titre: "L'arrivage est en vitrine",
         lignes: ["La collection d'automne", "Déballée ce matin"],
         places: 30, envies: ["arrivage", "maintenant"],
+        avis: [
+          { note: 5, texte: "Des marques qu'on ne trouve pas ailleurs ici.", qui: "Élodie", quand: "le mois dernier" },
+          { note: 4, texte: "Conseil honnête, on ne m'a rien poussé.", qui: "Thomas", quand: "en juin" },
+        ],
       },
       {
         de: 15, a: 17, quand: "15 h", icone: "🪞",
@@ -526,7 +568,12 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 17 h – 1 h",
       mot: "Une quarantaine de références au verre, planches de la région.",
     },
-    reponse: { texte: "Le premier verre est pour moi si vous poussez la porte avant 19 h.", tenu: "19 h", apres: 6 },
+    reponse: {
+      cadeau: "Le premier verre offert",
+      texte: "Poussez la porte, je vous installe au comptoir.",
+      tenu: "19 h",
+      apres: 6,
+    },
     moments: [
       {
         de: 17, a: 20, quand: "18 h – 20 h", icone: "🍷",
@@ -585,13 +632,23 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 9 h – 19 h",
       mot: "Quatre fauteuils, sans rendez-vous quand il reste de la place.",
     },
-    reponse: { texte: "Le fauteuil du fond est libre, je vous prends dès que vous arrivez.", tenu: "dans 40 min", apres: 5 },
+    reponse: {
+      cadeau: "Le café et le brushing offerts",
+      texte: "Le fauteuil du fond est libre, je vous prends dès votre arrivée.",
+      tenu: "dans 40 min",
+      apres: 5,
+    },
     moments: [
       {
         de: 8, a: 19, quand: "dans 20 min", icone: "💇",
         titre: "Une place vient de se libérer",
         lignes: ["Coupe + brushing", "45 minutes"],
         prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
+        avis: [
+          { note: 5, texte: "Elle écoute avant de couper, ça change tout.", qui: "Camille", quand: "il y a 3 semaines" },
+          { note: 5, texte: "Pris sans rendez-vous, sorti une heure après.", qui: "Yann", quand: "en juillet" },
+          { note: 4, texte: "Brushing impeccable, tenue trois jours.", qui: "Fatou", quand: "le mois dernier" },
+        ],
       },
       {
         de: 8, a: 19, quand: "16 h 30", icone: "✂️",
@@ -615,7 +672,12 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 10 h – 18 h",
       mot: "Salon ouvert ce mois-ci. Colorations végétales, sur rendez-vous.",
     },
-    reponse: { texte: "Première visite : je vous fais le brushing en plus, sans supplément.", tenu: "18 h", apres: 12 },
+    reponse: {
+      cadeau: "Le diagnostic et le brushing offerts",
+      texte: "Première visite : venez, on prend le temps.",
+      tenu: "18 h",
+      apres: 12,
+    },
     moments: [
       {
         de: 8, a: 18, quand: "cette semaine", icone: "🎨",
@@ -623,6 +685,13 @@ const CARTES: CarteAutour[] = [
         lignes: ["Végétale ou classique", "1 h 30"],
         prix: "55 €", prixBarre: "69 €", etiquette: "OUVERTURE", places: 6,
         action: "Réserver", envies: ["couleur"],
+        // UN SALON QUI VIENT D'OUVRIR A PEU D'AVIS, et c'est la vérité : deux,
+        // pas trente. Lui en inventer une pleine page le rendrait moins
+        // crédible que son propre « on vient d'ouvrir ».
+        avis: [
+          { note: 5, texte: "Végétale sur cheveux blancs, très réussi.", qui: "Martine", quand: "il y a 10 jours" },
+          { note: 4, texte: "Salon tout neuf, accueil au top.", qui: "Léa", quand: "ce mois-ci" },
+        ],
       },
     ],
   },
@@ -835,13 +904,22 @@ export function repondeurs(heure: number, branche: CleMetier): CarteAutour[] {
 }
 
 /**
- * LA CARTE D'UNE RÉPONSE — celle qui arrive dans le paquet, adressée à vous.
+ * LA CARTE D'UNE INVITATION — riche, désirable, et balayable comme les autres.
  *
- * Elle ne montre PAS le moment du jour du commerce : elle montre ce qu'il vous
- * répond. C'est toute la différence entre une annonce qu'on trouve et une
- * proposition qu'on reçoit.
+ * DEUX ERREURS CORRIGÉES ICI, TOUTES DEUX VUES SUR DE VRAIES PERSONNES.
+ *
+ * La première version renvoyait la carte du jour avec un liseré vert : personne
+ * ne sentait qu'on s'adressait à lui. La deuxième a remplacé la carte par une
+ * bulle de messagerie : on sentait bien la réponse, mais « ça ne donne pas du
+ * tout envie » — plus de photo, plus de prix, plus d'avis, plus de swipe.
+ *
+ * Une invitation a besoin des deux : le ton personnel ET tout ce qui fait
+ * saliver. Donc la vraie carte du produit, avec sa photo plein cadre, son prix
+ * et ses avis — mais dont l'accroche n'est plus le plat, c'est LE CADEAU, et
+ * dont la ligne en dessous est le mot du commerçant, entre guillemets.
  */
-export function carteDeReponse(c: CarteAutour): CarteDirect {
+export function carteDeReponse(c: CarteAutour, heure: number): CarteDirect {
+  const m = momentEnCours(c, heure);
   return {
     photo: c.photo,
     cadrage: c.cadrage,
@@ -850,12 +928,38 @@ export function carteDeReponse(c: CarteAutour): CarteDirect {
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
-    reste: c.reponse ? `Tenu jusqu'à ${c.reponse.tenu}` : "",
-    icone: "⚡",
-    quoi: "Il vous répond",
-    lignes: c.reponse ? [c.reponse.texte] : undefined,
-    // PAS DE PRIX SUR UNE RÉPONSE. Celui du moment en cours n'est pas ce qu'il
-    // propose — afficher « 12 € » sous « je vous garde la table près de la
-    // fenêtre » fait lire une offre à douze euros qui n'existe pas.
+    // COURT, PARCE QUE LA PASTILLE PARTAGE SA LIGNE AVEC « Y ALLER ». Mesuré au
+    // navigateur : « Rien que pour vous · jusqu'à 12 h 40 » passait sous le
+    // bouton dès 402 px de large, et se coupait au milieu de l'heure à 360 px.
+    reste: c.reponse ? `Pour vous · ${c.reponse.tenu}` : "",
+    // LE CADEAU EST L'ACCROCHE, pas le plat : c'est la seule ligne qui fasse se
+    // lever quelqu'un, et elle doit être la plus grosse de la carte.
+    icone: "🎁",
+    quoi: c.reponse?.cadeau ?? "",
+    lignes: c.reponse ? [`« ${c.reponse.texte} »`, ...(m?.lignes?.slice(0, 1) ?? [])] : undefined,
+    prix: m?.prix,
+    prixBarre: m?.prixBarre,
+    etiquette: "INVITATION",
   };
+}
+
+/**
+ * LES AVIS À MONTRER SUR UNE INVITATION.
+ *
+ * Ceux du moment en cours d'abord — c'est ce qu'on va manger ou essayer tout à
+ * l'heure, donc c'est ce qui compte. Mais un moment n'en porte pas toujours : à
+ * 11 h le restaurant du centre propose la table du personnel, qui n'a pas
+ * d'avis, et l'invitation partait sans une étoile. C'est exactement le défaut
+ * mesuré (« pas d'avis »), et le pire moment pour l'avoir : une invitation sans
+ * note demande de se déplacer sur une promesse et rien d'autre.
+ *
+ * Alors on retombe sur les avis d'un autre moment de la même journée. Ce n'est
+ * pas un mensonge : ce sont bien les clients de cette maison, sur autre chose
+ * qu'elle sert. C'est ce que fait n'importe quel guide, sauf qu'ici la
+ * précision revient dès que le moment noté est celui qui se joue.
+ */
+export function avisDuMoment(c: CarteAutour, heure: number): AvisPlat[] {
+  const m = momentEnCours(c, heure);
+  if (m?.avis?.length) return m.avis;
+  return c.moments.find((x) => x.avis?.length)?.avis ?? [];
 }
