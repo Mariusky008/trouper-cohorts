@@ -9,46 +9,36 @@
 //
 // LES FONCTIONS MISES EN SCÈNE ET QUI N'EXISTENT PAS :
 //
-//   · choisir un métier et voir ce que ses commerces proposent maintenant — le
-//     fil réel est une ville entière, sans rayon par branche ;
-//   · chercher par envie (« j'ai envie d'italien ») — il n'y a aucun typage de
-//     cuisine ni de prestation sur les commerces ;
-//   · filtrer par prix ou par disponibilité immédiate — le fil est trié par
-//     distance et par fraîcheur, rien d'autre ;
-//   · les avis attachés à un plat, et rappelés quand il revient à la carte ;
-//   · demander à être prévenu quand quelqu'un propose ce qu'on cherche — aucune
-//     demande d'habitant n'est enregistrée nulle part.
+//   · l'annonce unique du jour avec ses moments horodatés (voir plus bas) ;
+//   · choisir un métier et voir ce que ses commerces proposent maintenant ;
+//   · chercher par envie, filtrer par prix ou par disponibilité immédiate ;
+//   · les avis attachés à un plat, rappelés quand il revient à la carte.
 //
-// C'EST POURQUOI CES DONNÉES SONT ICI ET PAS DANS `cartes-demo.ts`. Ce
-// dernier alimente la démonstration montrée aux COMMERÇANTS, et la règle y est
-// absolue : on ne leur montre jamais un écran qui n'existe pas, parce que celui
-// qui signe dessus le réclame la semaine suivante. Mélanger les deux fichiers,
-// c'est laisser une fonction imaginaire fuir un jour dans un argumentaire de
-// vente. Elles restent séparées.
+// C'EST POURQUOI CES DONNÉES SONT ICI ET PAS DANS `cartes-demo.ts`. Ce dernier
+// alimente la démonstration montrée aux COMMERÇANTS, et la règle y est absolue :
+// on ne leur montre jamais un écran qui n'existe pas. Les deux fichiers restent
+// séparés pour qu'une fonction imaginaire ne fuie jamais dans un argumentaire
+// de vente.
 //
-// EN REVANCHE, DEUX RÈGLES TIENNENT ENCORE ICI :
-//   · aucun commerce inventé n'est nommé — ce sont des voisins anonymes, pas de
-//     fausses enseignes ;
-//   · les cartes sont le VRAI composant du produit (`CarteSwipe`), pas un
-//     dessin : ce qu'on teste doit ressembler à ce qu'on livrerait.
+// DEUX RÈGLES TIENNENT ENCORE ICI :
+//   · aucun commerce inventé n'est nommé — ce sont des voisins anonymes ;
+//   · les cartes sont le VRAI composant du produit (`CarteSwipe`).
 //
-// IL MANQUE DES PHOTOS, ET ÇA SE VOIT. `public/direct/` n'en contient que six,
-// toutes alimentaires. Les cartes des autres métiers tombent donc sur le repli
-// du composant — dégradé plus emoji — qui est propre mais muet. La branche
-// « Restaurants » est la seule à montrer ce que le produit fait vraiment.
+// IL MANQUE DES PHOTOS. `public/direct/` n'en contient que six, toutes
+// alimentaires. Les autres métiers tombent sur le repli du composant — dégradé
+// et emoji — qui est propre et muet.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
 
 /**
  * LES MÉTIERS, TELS QU'ON LES CHOISIT DANS LE BANDEAU.
  *
- * C'est la pastille en haut de l'écran : on appuie, on choisit une branche, et
- * le paquet devient celui de ses commerces. Le fil réel ne fonctionne pas comme
- * ça — il montre la ville entière — mais c'est précisément la question qu'on
- * pose ici : est-ce qu'un habitant cherche « ce qui se passe », ou « ce qui se
- * passe chez les coiffeurs » ?
+ * La mode est là pour une raison précise : c'est le métier qui n'avait rien à
+ * dire tant qu'une annonce était une « carte du jour ». Avec la journée
+ * horodatée, il a enfin un programme comme les autres.
  */
 export const METIERS = [
   { cle: "restaurant", label: "Restaurants", emoji: "🍽️" },
+  { cle: "mode", label: "Mode", emoji: "👗" },
   { cle: "bar", label: "Bars", emoji: "🍸" },
   { cle: "coiffeur", label: "Coiffeurs", emoji: "💇" },
   { cle: "fleuriste", label: "Fleuristes", emoji: "💐" },
@@ -57,8 +47,7 @@ export const METIERS = [
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
 
-/** Une envie cochable. Les libellés changent avec le métier : on ne cherche pas
- *  « à emporter » chez un coiffeur, ni « une couleur » au restaurant. */
+/** Une envie cochable. Les libellés changent avec le métier. */
 export type Envie = { cle: string; label: string; emoji: string };
 
 export const ENVIES: Record<CleMetier, Envie[]> = {
@@ -67,7 +56,12 @@ export const ENVIES: Record<CleMetier, Envie[]> = {
     { cle: "moins15", label: "Moins de 15 €", emoji: "💶" },
     { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
     { cle: "emporter", label: "À emporter", emoji: "🥡" },
-    { cle: "partager", label: "Une table à partager", emoji: "👥" },
+    { cle: "partager", label: "Table à partager", emoji: "👥" },
+  ],
+  mode: [
+    { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
+    { cle: "solde", label: "En promo", emoji: "🏷️" },
+    { cle: "arrivage", label: "Nouveautés", emoji: "✨" },
   ],
   bar: [
     { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
@@ -96,74 +90,97 @@ export const ENVIES: Record<CleMetier, Envie[]> = {
 /**
  * UN AVIS SUR CE QU'ON CONSOMME — pas sur l'établissement.
  *
- * C'EST TOUTE L'IDÉE, ET ELLE NE RESSEMBLE À AUCUN SITE D'AVIS. Ailleurs, on
- * note une maison : une moyenne unique, tirée sur des années, qui ne dit rien
- * de ce qu'il y a dans l'assiette aujourd'hui. Ici l'avis est attaché AU PLAT.
- * Quand le restaurateur remet sa lasagne à la carte — même plat, même photo —
- * les avis d'il y a trois semaines reviennent avec elle. Sa carte du jour se
- * bonifie à chaque fois qu'il la ressert, et l'habitant qui hésite lit ce qu'on
- * a pensé de CE plat, pas de la maison en général.
- *
- * C'est aussi ce qui donne un intérêt au commerçant à reprendre la même photo :
- * elle devient le porte-avis du plat.
+ * Ailleurs on note une maison : une moyenne tirée sur des années, qui ne dit
+ * rien de ce qu'il y a dans l'assiette aujourd'hui. Ici l'avis est attaché au
+ * PLAT : quand le restaurateur remet sa lasagne à la carte, les avis d'il y a
+ * trois semaines reviennent avec elle.
  */
 export type AvisPlat = {
-  /** De 1 à 5. */
   note: number;
-  /** Une phrase, jamais plus. Un avis long ne se lit pas sur une carte. */
   texte: string;
-  /** Un prénom. */
   qui: string;
-  /** Quand — écrit tel quel, la maquette ne calcule pas de dates. */
   quand: string;
 };
 
-export type CarteAutour = CarteDirect & {
-  id: string;
-  /** La branche à laquelle ce commerce appartient. */
-  branche: CleMetier;
-  /** La distance en mètres — c'est elle qui trie, pas le texte affiché. */
-  metres: number;
-  /** De quelle heure à quelle heure cette carte est en ligne. */
+/**
+ * UN MOMENT DE LA JOURNÉE D'UN COMMERCE.
+ *
+ * C'EST LE CŒUR DU CHANGEMENT, ET IL VIENT D'UN CONSTAT SUR LE TERRAIN. Le
+ * produit demandait au commerçant cinq gestes répartis dans la journée : sa
+ * carte à 11 h, ce qu'il lui reste à 14 h, ses places libres à 17 h 30. C'est
+ * irréaliste — un restaurateur en plein service ne répond pas à 14 h, il est en
+ * cuisine. Le produit lui demandait d'être joignable précisément aux heures où
+ * il ne l'est jamais.
+ *
+ * À 10 h, en revanche, il connaît sa journée. Il pose UNE annonce et il y range
+ * ses moments : le service de midi, les trois places à −20 %, la table
+ * découverte du soir, les restes à venir chercher. Un seul geste, au seul
+ * moment où il est disponible.
+ *
+ * DEUX CONSÉQUENCES, ET ELLES SONT LE VRAI GAIN :
+ *
+ *  1. LA CARTE VIT AVEC L'HEURE. Une seule annonce, mais elle n'affiche pas la
+ *     même chose à 11 h et à 14 h : elle montre CE QUI VIENT. Le commerçant n'a
+ *     rien retouché. C'est la promesse « ce qui se passe maintenant » tenue par
+ *     la mécanique, et plus par sa bonne volonté.
+ *  2. LES MÉTIERS SANS CARTE DU JOUR EXISTENT ENFIN. Un magasin de vêtements
+ *     n'a pas de plat du jour, donc n'avait rien à dire, donc ne venait pas.
+ *     Mais il a une journée : arrivage ce matin, essayage privé à 15 h, dernier
+ *     jour des soldes à 18 h.
+ */
+export type MomentJour = {
+  /** Début et fin en heures décimales — 11.5 vaut 11 h 30. */
   de: number;
   a: number;
-  /** Les envies auxquelles elle répond, par leur clé. */
+  /** L'heure telle qu'on l'écrit. */
+  quand: string;
+  /** Ce que c'est, en trois mots. */
+  titre: string;
+  /** Le détail, une ou deux lignes. */
+  lignes?: string[];
+  prix?: string;
+  prixBarre?: string;
+  etiquette?: string;
+  /** Combien il en reste. Zéro : c'est complet. */
+  places?: number;
+  /** L'emoji du moment. */
+  icone: string;
+  /** Le libellé du bouton. Vide : rien à réserver, on passe, c'est tout. */
+  action?: string;
+  /** Les envies auxquelles CE moment répond. */
   envies: string[];
-  /**
-   * LES AVIS DÉJÀ LAISSÉS, des plus récents aux plus anciens.
-   *
-   * Absents sur ce qui ne se goûte ni ne s'essaie — une table libre, une place
-   * à partager, un créneau. On ne note pas une table : la ligne d'avis
-   * n'apparaît donc pas sur ces cartes-là, et c'est voulu.
-   */
+  /** Les avis, quand le moment porte sur quelque chose qui se goûte ou s'essaie. */
   avis?: AvisPlat[];
-  /** Ce que la fiche du commerce ajoute quand on appuie sur « Le pro ». */
-  fiche?: {
-    /** Où c'est, en clair. Jamais une adresse : le commerce est anonyme. */
-    ou: string;
-    /** Quand c'est ouvert aujourd'hui. */
-    horaires: string;
-    /** Deux ou trois lignes sur la maison. */
-    mot: string;
-  };
-  /** Les créneaux proposés à la réservation. Vide : pas de bouton Réserver. */
-  creneaux?: string[];
 };
 
-/** L'heure la plus tôt et la plus tard où la maquette a du contenu. */
-export const HEURE_MIN = 11;
-export const HEURE_MAX = 22;
+export type CarteAutour = {
+  id: string;
+  branche: CleMetier;
+  photo?: string;
+  cadrage?: string;
+  /** Anonyme : ce sont les voisins de celui qui lit. */
+  nom: string;
+  metier: string;
+  ville: string;
+  itineraire: string;
+  metres: number;
+  distance: string;
+  /** LA JOURNÉE, dans l'ordre. C'est l'annonce unique posée le matin. */
+  moments: MomentJour[];
+  /** Ce que la fiche ajoute quand on descend. */
+  fiche: { ou: string; horaires: string; mot: string };
+};
+
+export const HEURE_MIN = 8;
+export const HEURE_MAX = 23;
 
 const VILLE = "Dax";
 const YALLER = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(VILLE);
 
-// SEPT CARTES POUR SIX PHOTOS, côté restauration. Le plat du jour sert deux
-// fois — à midi et le soir — mais ses deux créneaux ne se chevauchent jamais.
-// Les autres métiers n'ont pas d'image du tout : voir l'avertissement en tête.
 const CARTES: CarteAutour[] = [
   // ── RESTAURANTS ──────────────────────────────────────────────────────────
   {
-    id: "midi-menu",
+    id: "centre",
     branche: "restaurant",
     photo: "/direct/plat-du-jour.jpg",
     cadrage: "68%",
@@ -173,59 +190,52 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 400,
     distance: "400 m",
-    de: 11,
-    a: 15,
-    envies: [],
-    reste: "Servi jusqu'à 14 h",
-    icone: "🍽️",
-    quoi: "Menu du jour",
-    lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
-    prix: "19 €",
-    social: "4 ont réservé",
-    creneaux: ["12 h", "12 h 30", "13 h", "13 h 30"],
     fiche: {
       ou: "Rue piétonne, à côté de la halle",
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h",
       mot: "Cuisine du marché, carte changée chaque matin. Terrasse à l'ombre le midi.",
     },
-    avis: [
-      { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière" },
-      { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines" },
-      { note: 4, texte: "Bon rapport qualité-prix le midi.", qui: "Sofia", quand: "en février" },
+    moments: [
+      {
+        de: 11, a: 11.5, quand: "11 h", icone: "👨‍🍳",
+        titre: "Manger avec le service",
+        lignes: ["À la table du personnel, avant l'ouverture", "4 places"],
+        prix: "12 €", places: 2, action: "Réserver", envies: ["moins15"],
+      },
+      {
+        de: 11.5, a: 12, quand: "11 h 30", icone: "🎟️",
+        titre: "3 places à −20 %",
+        lignes: ["Menu du jour complet", "Service à 11 h 45"],
+        prix: "15,20 €", prixBarre: "19 €", etiquette: "−20 %", places: 3,
+        action: "Réserver", envies: ["moins15", "maintenant"],
+      },
+      {
+        de: 12, a: 14, quand: "12 h – 14 h", icone: "🍽️",
+        titre: "Menu du jour",
+        lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
+        prix: "19 €", places: 8, action: "Réserver", envies: [],
+        avis: [
+          { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière" },
+          { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines" },
+          { note: 4, texte: "Bon rapport qualité-prix le midi.", qui: "Sofia", quand: "en février" },
+        ],
+      },
+      {
+        de: 14, a: 15, quand: "14 h", icone: "🥡",
+        titre: "Les restes, à emporter",
+        lignes: ["Ce qui n'est pas parti du service", "Sur place, tant qu'il y en a"],
+        prix: "7 €", places: 5, action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
+      },
+      {
+        de: 19, a: 22, quand: "19 h – 22 h", icone: "🌙",
+        titre: "Service du soir",
+        lignes: ["Entrée + plat + dessert", "Dernière commande à 21 h 30"],
+        prix: "26 €", places: 6, action: "Réserver", envies: [],
+      },
     ],
   },
   {
-    id: "midi-formule",
-    branche: "restaurant",
-    photo: "/direct/sortie-du-four.jpg",
-    cadrage: "100%",
-    nom: "Une boulangerie",
-    metier: "Boulangerie",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 600,
-    distance: "600 m",
-    de: 11,
-    a: 15,
-    envies: ["moins15", "maintenant", "emporter"],
-    reste: "Jusqu'à 14 h",
-    icone: "🥪",
-    quoi: "Formule du midi",
-    lignes: ["Sandwich au choix", "Boisson + dessert"],
-    prix: "8,50 €",
-    social: "9 l'ont vu passer",
-    fiche: {
-      ou: "Avenue principale, en face de l'arrêt de bus",
-      horaires: "Aujourd'hui, 6 h 30 – 19 h 30",
-      mot: "Pains au levain, tout est fait sur place. Formule à emporter servie en deux minutes.",
-    },
-    avis: [
-      { note: 4, texte: "Pain frais, ça change tout.", qui: "Thomas", quand: "hier" },
-      { note: 3, texte: "Correct, un peu petit pour moi.", qui: "Léa", quand: "il y a 2 semaines" },
-    ],
-  },
-  {
-    id: "reste-lasagnes",
+    id: "emporter",
     branche: "restaurant",
     photo: "/direct/portion-a-emporter.jpg",
     cadrage: "50%",
@@ -235,33 +245,35 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 180,
     distance: "180 m",
-    de: 11,
-    a: 17,
-    envies: ["italien", "moins15", "maintenant", "emporter"],
-    reste: "Jusqu'à épuisement",
-    icone: "🔥",
-    quoi: "Dernières portions",
-    lignes: ["Lasagnes maison", "Prêtes tout de suite"],
-    prix: "8 €",
-    etiquette: "IL EN RESTE 8",
-    social: "3 en ont pris",
     fiche: {
       ou: "Petite rue derrière l'église",
       horaires: "Aujourd'hui, 11 h – 14 h 30",
       mot: "Deux plats par jour, cuisinés le matin. Quand c'est fini, c'est fini.",
     },
-    // LE PLAT LE PLUS COMMENTÉ DU LOT, et c'est le sujet de la démonstration :
-    // ces avis ont été laissés les fois PRÉCÉDENTES où la lasagne est sortie.
-    // Ils reviennent avec elle.
-    avis: [
-      { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier" },
-      { note: 5, texte: "Généreux, et encore chaud à la maison.", qui: "Bastien", quand: "il y a 2 semaines" },
-      { note: 4, texte: "Très bon. J'aurais pris deux parts.", qui: "Nadia", quand: "il y a 1 mois" },
-      { note: 4, texte: "Bien fondant, pas gras du tout.", qui: "Pierre", quand: "en mars" },
+    moments: [
+      {
+        de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
+        titre: "Les deux plats du jour",
+        lignes: ["Lasagnes maison", "Curry de légumes"],
+        prix: "11 €", places: 14, action: "J'en prends", envies: ["italien", "moins15", "maintenant", "emporter"],
+      },
+      {
+        de: 13, a: 17, quand: "à partir de 13 h", icone: "🔥",
+        titre: "Dernières portions",
+        lignes: ["Lasagnes maison", "Prêtes tout de suite"],
+        prix: "8 €", etiquette: "IL EN RESTE 8", places: 8,
+        action: "J'en prends", envies: ["italien", "moins15", "maintenant", "emporter"],
+        avis: [
+          { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier" },
+          { note: 5, texte: "Généreux, et encore chaud à la maison.", qui: "Bastien", quand: "il y a 2 semaines" },
+          { note: 4, texte: "Très bon. J'aurais pris deux parts.", qui: "Nadia", quand: "il y a 1 mois" },
+          { note: 4, texte: "Bien fondant, pas gras du tout.", qui: "Pierre", quand: "en mars" },
+        ],
+      },
     ],
   },
   {
-    id: "tables",
+    id: "deux-rues",
     branche: "restaurant",
     photo: "/direct/tables-libres.jpg",
     cadrage: "100%",
@@ -271,83 +283,67 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 250,
     distance: "250 m",
-    de: 11,
-    a: 22,
-    envies: ["maintenant"],
-    reste: "Aujourd'hui",
-    icone: "🕐",
-    quoi: "Il reste 4 tables",
-    lignes: ["Plat + dessert", "Sans attendre"],
-    prix: "16 €",
-    social: "2 ont réservé",
-    creneaux: ["Maintenant", "Dans 30 min", "13 h", "20 h"],
     fiche: {
       ou: "Place du marché, sous les arcades",
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h 30",
       mot: "Salle de trente couverts, cuisine ouverte. On peut venir sans réserver.",
     },
-  },
-  {
-    id: "avant-fermeture",
-    branche: "restaurant",
-    photo: "/direct/vitrine-du-soir.jpg",
-    cadrage: "72%",
-    nom: "Un traiteur, avant de fermer",
-    metier: "Traiteur",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 350,
-    distance: "350 m",
-    de: 11,
-    a: 20,
-    envies: ["moins15", "maintenant", "emporter"],
-    reste: "Jusqu'à 19 h 30",
-    icone: "🥡",
-    quoi: "Ce qui reste de la journée",
-    lignes: ["Barquettes du jour", "À emporter"],
-    prix: "6 €",
-    etiquette: "-50 %",
-    social: "5 en ont pris",
-    fiche: {
-      ou: "Rue du port, à l'angle",
-      horaires: "Aujourd'hui, 9 h – 19 h 30",
-      mot: "Ce qui n'est pas parti dans la journée passe à moitié prix la dernière heure.",
-    },
-    avis: [
-      { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier" },
-      { note: 5, texte: "J'y passe tous les vendredis soir.", qui: "Marc", quand: "il y a 3 semaines" },
+    moments: [
+      {
+        de: 11, a: 14, quand: "ce midi", icone: "🕐",
+        titre: "Il reste 4 tables",
+        lignes: ["Plat + dessert", "Sans attendre"],
+        prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
+      },
+      {
+        de: 19, a: 22.5, quand: "20 h", icone: "👥",
+        titre: "Table découverte entre inconnus",
+        lignes: ["4 places, on s'assoit ensemble", "Plat + verre compris"],
+        prix: "22 €", places: 2, action: "Réserver", envies: ["partager"],
+      },
     ],
   },
   {
-    id: "soir-menu",
+    id: "boulange",
     branche: "restaurant",
-    photo: "/direct/plat-du-jour.jpg",
-    cadrage: "68%",
-    nom: "Une adresse du vieux centre",
-    metier: "Restaurant",
+    photo: "/direct/sortie-du-four.jpg",
+    cadrage: "100%",
+    nom: "Une boulangerie",
+    metier: "Boulangerie",
     ville: VILLE,
     itineraire: YALLER,
-    metres: 480,
-    distance: "480 m",
-    de: 17,
-    a: 22,
-    envies: [],
-    reste: "Ce soir",
-    icone: "🍽️",
-    quoi: "Menu du soir",
-    lignes: ["Entrée + plat + dessert", "Service jusqu'à 22 h"],
-    prix: "26 €",
-    social: "6 ont réservé",
-    creneaux: ["19 h", "19 h 30", "20 h", "21 h"],
+    metres: 600,
+    distance: "600 m",
     fiche: {
-      ou: "Vieille ville, ruelle pavée",
-      horaires: "Ce soir, 19 h – 22 h",
-      mot: "Douze tables, une carte courte. Réservation conseillée le week-end.",
+      ou: "Avenue principale, en face de l'arrêt de bus",
+      horaires: "Aujourd'hui, 6 h 30 – 19 h 30",
+      mot: "Pains au levain, tout est fait sur place.",
     },
-    avis: [
-      { note: 5, texte: "Belle assiette, service attentionné.", qui: "Inès", quand: "samedi" },
-      { note: 4, texte: "Un peu d'attente, mais ça valait le coup.", qui: "Damien", quand: "il y a 10 jours" },
-      { note: 5, texte: "Le dessert, surtout.", qui: "Claire", quand: "en février" },
+    moments: [
+      {
+        de: 8, a: 11, quand: "ce matin", icone: "🥐",
+        titre: "La fournée de 7 h",
+        lignes: ["Pains au levain", "Viennoiseries encore tièdes"],
+        prix: "1,30 €", places: 40, envies: ["moins15", "maintenant", "emporter"],
+      },
+      {
+        de: 11, a: 14, quand: "11 h – 14 h", icone: "🥪",
+        titre: "Formule du midi",
+        lignes: ["Sandwich au choix", "Boisson + dessert"],
+        prix: "8,50 €", places: 20, action: "J'en prends",
+        envies: ["moins15", "maintenant", "emporter"],
+        avis: [
+          { note: 4, texte: "Pain frais, ça change tout.", qui: "Thomas", quand: "hier" },
+          { note: 3, texte: "Correct, un peu petit pour moi.", qui: "Léa", quand: "il y a 2 semaines" },
+        ],
+      },
+      {
+        de: 18, a: 19.5, quand: "18 h", icone: "🏷️",
+        titre: "Ce qui reste, à moitié prix",
+        lignes: ["Pains et viennoiseries du jour", "Jusqu'à la fermeture"],
+        prix: "0,65 €", prixBarre: "1,30 €", etiquette: "−50 %", places: 12,
+        envies: ["moins15", "maintenant", "emporter"],
+      },
     ],
   },
   {
@@ -361,26 +357,124 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 320,
     distance: "320 m",
-    de: 17,
-    a: 22,
-    envies: ["partager"],
-    reste: "Ce soir, 20 h",
-    icone: "👥",
-    quoi: "Table à partager",
-    lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
-    prix: "17 €",
-    social: "4 places déjà prises",
-    creneaux: ["20 h"],
     fiche: {
       ou: "Quai, au bord de l'eau",
       horaires: "Ce soir, à partir de 19 h 30",
       mot: "Une grande table commune une fois par semaine. On s'assoit avec qui vient.",
     },
+    moments: [
+      {
+        de: 17, a: 23, quand: "20 h", icone: "👥",
+        titre: "Table à partager",
+        lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
+        prix: "17 €", places: 2, action: "Réserver", envies: ["partager"],
+      },
+    ],
+  },
+  {
+    id: "traiteur",
+    branche: "restaurant",
+    photo: "/direct/vitrine-du-soir.jpg",
+    cadrage: "72%",
+    nom: "Un traiteur, avant de fermer",
+    metier: "Traiteur",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 350,
+    distance: "350 m",
+    fiche: {
+      ou: "Rue du port, à l'angle",
+      horaires: "Aujourd'hui, 9 h – 19 h 30",
+      mot: "Ce qui n'est pas parti dans la journée passe à moitié prix la dernière heure.",
+    },
+    moments: [
+      {
+        de: 10, a: 18, quand: "toute la journée", icone: "🍱",
+        titre: "Les barquettes du jour",
+        lignes: ["Six plats au choix", "À emporter"],
+        prix: "12 €", places: 25, action: "J'en prends",
+        envies: ["maintenant", "emporter"],
+      },
+      {
+        de: 18, a: 19.5, quand: "18 h", icone: "🥡",
+        titre: "Ce qui reste de la journée",
+        lignes: ["Barquettes du jour", "Moitié prix jusqu'à 19 h 30"],
+        prix: "6 €", prixBarre: "12 €", etiquette: "−50 %", places: 7,
+        action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
+        avis: [
+          { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier" },
+          { note: 5, texte: "J'y passe tous les vendredis soir.", qui: "Marc", quand: "il y a 3 semaines" },
+        ],
+      },
+    ],
+  },
+
+  // ── MODE ─────────────────────────────────────────────────────────────────
+  // Le métier qui n'existait pas dans le produit tant qu'une annonce était une
+  // carte du jour. Avec la journée horodatée, il a un programme comme les autres.
+  {
+    id: "mode-centre",
+    branche: "mode",
+    nom: "Une boutique de la rue piétonne",
+    metier: "Prêt-à-porter",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 210,
+    distance: "210 m",
+    fiche: {
+      ou: "Rue piétonne, à côté du kiosque",
+      horaires: "Aujourd'hui, 10 h – 19 h",
+      mot: "Petites séries, marques françaises. On peut faire mettre de côté.",
+    },
+    moments: [
+      {
+        de: 10, a: 13, quand: "ce matin", icone: "✨",
+        titre: "L'arrivage est en vitrine",
+        lignes: ["La collection d'automne", "Déballée ce matin"],
+        places: 30, envies: ["arrivage", "maintenant"],
+      },
+      {
+        de: 15, a: 17, quand: "15 h", icone: "🪞",
+        titre: "Essayage privé",
+        lignes: ["La boutique pour vous seule, 30 min", "Sur rendez-vous"],
+        places: 2, action: "Réserver", envies: [],
+      },
+      {
+        de: 17, a: 19, quand: "18 h", icone: "🏷️",
+        titre: "Dernier jour des soldes",
+        lignes: ["Tout le rayon d'été", "Jusqu'à la fermeture"],
+        prix: "−40 %", etiquette: "DERNIER JOUR", places: 60,
+        envies: ["solde", "maintenant"],
+      },
+    ],
+  },
+  {
+    id: "mode-friperie",
+    branche: "mode",
+    nom: "Une friperie du vieux centre",
+    metier: "Friperie",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 470,
+    distance: "470 m",
+    fiche: {
+      ou: "Vieille ville, ruelle pavée",
+      horaires: "Aujourd'hui, 11 h – 19 h",
+      mot: "Pièces chinées une par une. Ce qui part le matin ne revient pas.",
+    },
+    moments: [
+      {
+        de: 11, a: 19, quand: "aujourd'hui", icone: "🧥",
+        titre: "40 pièces sorties ce matin",
+        lignes: ["Manteaux et vestes d'hiver", "Une seule de chaque"],
+        prix: "à partir de 12 €", places: 40, envies: ["arrivage", "maintenant"],
+      },
+    ],
   },
 
   // ── BARS ─────────────────────────────────────────────────────────────────
   {
-    id: "bar-happy",
+    id: "bar-vins",
     branche: "bar",
     nom: "Un bar à vins",
     metier: "Bar à vins",
@@ -388,24 +482,28 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 190,
     distance: "190 m",
-    de: 11,
-    a: 22,
-    envies: ["maintenant", "happy"],
-    reste: "Happy hour jusqu'à 20 h",
-    icone: "🍷",
-    quoi: "Deux verres pour un",
-    lignes: ["Verre de vin + planche", "De 18 h à 20 h"],
-    prix: "9 €",
-    social: "7 y sont passés",
-    creneaux: ["18 h", "18 h 30", "19 h"],
     fiche: {
       ou: "Rue piétonne, première à droite",
       horaires: "Aujourd'hui, 17 h – 1 h",
       mot: "Une quarantaine de références au verre, planches de la région.",
     },
-    avis: [
-      { note: 5, texte: "La planche est généreuse.", qui: "Anaïs", quand: "vendredi" },
-      { note: 4, texte: "Bon choix de vins nature.", qui: "Vincent", quand: "il y a 2 semaines" },
+    moments: [
+      {
+        de: 17, a: 20, quand: "18 h – 20 h", icone: "🍷",
+        titre: "Deux verres pour un",
+        lignes: ["Verre de vin + planche"],
+        prix: "9 €", places: 20, action: "Réserver", envies: ["maintenant", "happy"],
+        avis: [
+          { note: 5, texte: "La planche est généreuse.", qui: "Anaïs", quand: "vendredi" },
+          { note: 4, texte: "Bon choix de vins nature.", qui: "Vincent", quand: "il y a 2 semaines" },
+        ],
+      },
+      {
+        de: 20, a: 23, quand: "21 h", icone: "🎶",
+        titre: "Concert acoustique",
+        lignes: ["Duo guitare-voix", "Entrée libre"],
+        etiquette: "GRATUIT", places: 35, envies: ["musique"],
+      },
     ],
   },
   {
@@ -417,49 +515,24 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 310,
     distance: "310 m",
-    de: 11,
-    a: 20,
-    envies: ["maintenant", "terrasse"],
-    reste: "Cet après-midi",
-    icone: "☀️",
-    quoi: "Il reste 3 tables dehors",
-    lignes: ["En terrasse, plein sud", "Sans réserver"],
-    social: "3 y sont",
-    creneaux: ["Maintenant", "Dans 30 min"],
     fiche: {
       ou: "Sur la place, côté fontaine",
       horaires: "Aujourd'hui, 10 h – 21 h",
-      mot: "Terrasse au soleil jusqu'en fin d'après-midi. Cafés, bières locales, limonades maison.",
+      mot: "Terrasse au soleil jusqu'en fin d'après-midi. Bières locales, limonades maison.",
     },
-  },
-  {
-    id: "bar-concert",
-    branche: "bar",
-    nom: "Un bar de quartier",
-    metier: "Bar",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 450,
-    distance: "450 m",
-    de: 11,
-    a: 22,
-    envies: ["musique"],
-    reste: "Ce soir, 21 h",
-    icone: "🎶",
-    quoi: "Concert acoustique",
-    lignes: ["Duo guitare-voix", "Entrée libre"],
-    etiquette: "GRATUIT",
-    social: "12 ont dit qu'ils venaient",
-    fiche: {
-      ou: "Derrière la gare, rue calme",
-      horaires: "Aujourd'hui, 17 h – 2 h",
-      mot: "Concerts le jeudi et le samedi. Petite salle, on entend vraiment les musiciens.",
-    },
+    moments: [
+      {
+        de: 8, a: 20, quand: "toute la journée", icone: "☀️",
+        titre: "Il reste 3 tables dehors",
+        lignes: ["En terrasse, plein sud", "Sans réserver"],
+        places: 3, envies: ["maintenant", "terrasse"],
+      },
+    ],
   },
 
   // ── COIFFEURS ────────────────────────────────────────────────────────────
   {
-    id: "coif-maintenant",
+    id: "coif-centre",
     branche: "coiffeur",
     nom: "Un salon du centre",
     metier: "Coiffeur",
@@ -467,49 +540,28 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 220,
     distance: "220 m",
-    de: 11,
-    a: 19,
-    envies: ["maintenant", "moins30"],
-    reste: "Créneau libre dans 20 min",
-    icone: "💇",
-    quoi: "Une place vient de se libérer",
-    lignes: ["Coupe + brushing", "45 minutes"],
-    prix: "28 €",
-    social: "1 a réservé",
-    creneaux: ["Dans 20 min", "15 h", "16 h 30"],
     fiche: {
       ou: "Rue piétonne, au-dessus de la pharmacie",
       horaires: "Aujourd'hui, 9 h – 19 h",
       mot: "Quatre fauteuils, sans rendez-vous quand il reste de la place.",
     },
+    moments: [
+      {
+        de: 8, a: 19, quand: "dans 20 min", icone: "💇",
+        titre: "Une place vient de se libérer",
+        lignes: ["Coupe + brushing", "45 minutes"],
+        prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
+      },
+      {
+        de: 8, a: 19, quand: "16 h 30", icone: "✂️",
+        titre: "Coupe homme",
+        lignes: ["Tondeuse + ciseaux", "20 minutes"],
+        prix: "18 €", places: 3, action: "Réserver", envies: ["moins30", "homme"],
+      },
+    ],
   },
   {
-    id: "coif-homme",
-    branche: "coiffeur",
-    nom: "Un coiffeur, rue piétonne",
-    metier: "Coiffeur",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 380,
-    distance: "380 m",
-    de: 11,
-    a: 19,
-    envies: ["maintenant", "moins30", "homme"],
-    reste: "Place à 16 h 30",
-    icone: "✂️",
-    quoi: "Coupe homme",
-    lignes: ["Tondeuse + ciseaux", "20 minutes"],
-    prix: "18 €",
-    social: "4 y sont passés aujourd'hui",
-    creneaux: ["16 h 30", "17 h", "17 h 30"],
-    fiche: {
-      ou: "Rue piétonne, en face du kiosque",
-      horaires: "Aujourd'hui, 8 h 30 – 19 h",
-      mot: "Coupe homme et barbe, sans rendez-vous. Rarement plus de dix minutes d'attente.",
-    },
-  },
-  {
-    id: "coif-couleur",
+    id: "coif-nouveau",
     branche: "coiffeur",
     nom: "Un salon qui vient d'ouvrir",
     metier: "Coiffeur",
@@ -517,28 +569,25 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 500,
     distance: "500 m",
-    de: 11,
-    a: 19,
-    envies: ["couleur"],
-    reste: "Cette semaine",
-    icone: "🎨",
-    quoi: "Couleur + coupe",
-    lignes: ["Végétale ou classique", "1 h 30"],
-    prix: "55 €",
-    prixBarre: "69 €",
-    etiquette: "OUVERTURE",
-    social: "6 l'ont gardé",
-    creneaux: ["Demain 10 h", "Demain 14 h", "Jeudi 11 h"],
     fiche: {
       ou: "Quartier des écoles",
       horaires: "Aujourd'hui, 10 h – 18 h",
       mot: "Salon ouvert ce mois-ci. Colorations végétales, sur rendez-vous.",
     },
+    moments: [
+      {
+        de: 8, a: 18, quand: "cette semaine", icone: "🎨",
+        titre: "Couleur + coupe",
+        lignes: ["Végétale ou classique", "1 h 30"],
+        prix: "55 €", prixBarre: "69 €", etiquette: "OUVERTURE", places: 6,
+        action: "Réserver", envies: ["couleur"],
+      },
+    ],
   },
 
   // ── FLEURISTES ───────────────────────────────────────────────────────────
   {
-    id: "fleur-jour",
+    id: "fleur-marche",
     branche: "fleuriste",
     nom: "Une fleuriste du marché",
     metier: "Fleuriste",
@@ -546,51 +595,32 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 150,
     distance: "150 m",
-    de: 11,
-    a: 19,
-    envies: ["maintenant", "moins20", "saison"],
-    reste: "Jusqu'à 19 h",
-    icone: "💐",
-    quoi: "Bouquet du jour",
-    lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
-    prix: "15 €",
-    social: "8 en ont pris",
     fiche: {
       ou: "Sous la halle du marché",
       horaires: "Aujourd'hui, 8 h – 19 h",
       mot: "Un bouquet composé chaque matin avec ce qui est arrivé. Producteurs des Landes.",
     },
-  },
-  {
-    id: "fleur-reste",
-    branche: "fleuriste",
-    nom: "Un atelier floral",
-    metier: "Fleuriste",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 420,
-    distance: "420 m",
-    de: 11,
-    a: 19,
-    envies: ["maintenant", "moins20"],
-    reste: "Avant la fermeture",
-    icone: "🌿",
-    quoi: "Il reste 4 bouquets",
-    lignes: ["Composés ce matin", "À emporter"],
-    prix: "12 €",
-    prixBarre: "18 €",
-    etiquette: "-30 %",
-    social: "2 en ont pris",
-    fiche: {
-      ou: "Avenue des thermes",
-      horaires: "Aujourd'hui, 9 h 30 – 19 h",
-      mot: "Ce qui reste en fin de journée part à prix réduit plutôt qu'à la poubelle.",
-    },
+    moments: [
+      {
+        de: 8, a: 19, quand: "jusqu'à 19 h", icone: "💐",
+        titre: "Bouquet du jour",
+        lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
+        prix: "15 €", places: 12, action: "J'en prends",
+        envies: ["maintenant", "moins20", "saison"],
+      },
+      {
+        de: 17, a: 19, quand: "18 h", icone: "🌿",
+        titre: "Il reste 4 bouquets",
+        lignes: ["Composés ce matin", "À emporter"],
+        prix: "12 €", prixBarre: "18 €", etiquette: "−30 %", places: 4,
+        action: "J'en prends", envies: ["maintenant", "moins20"],
+      },
+    ],
   },
 
   // ── ONGLERIES ────────────────────────────────────────────────────────────
   {
-    id: "ongle-libre",
+    id: "ongle-institut",
     branche: "ongles",
     nom: "Une prothésiste ongulaire",
     metier: "Prothésiste ongulaire",
@@ -598,76 +628,115 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 340,
     distance: "340 m",
-    de: 11,
-    a: 19,
-    envies: ["maintenant", "moins35"],
-    reste: "Place libre maintenant",
-    icone: "💅",
-    quoi: "Un désistement",
-    lignes: ["Remplissage", "45 minutes"],
-    prix: "30 €",
-    social: "1 a réservé",
-    creneaux: ["Maintenant", "Dans 1 h"],
     fiche: {
       ou: "Rue commerçante, au premier étage",
       horaires: "Aujourd'hui, 10 h – 19 h",
       mot: "Sur rendez-vous. Les désistements sont annoncés ici plutôt que perdus.",
     },
-  },
-  {
-    id: "ongle-pose",
-    branche: "ongles",
-    nom: "Un institut à deux rues",
-    metier: "Institut",
-    ville: VILLE,
-    itineraire: YALLER,
-    metres: 260,
-    distance: "260 m",
-    de: 11,
-    a: 19,
-    envies: ["pose"],
-    reste: "Créneau à 17 h",
-    icone: "✨",
-    quoi: "Pose complète",
-    lignes: ["Gel ou semi-permanent", "1 h 15"],
-    prix: "45 €",
-    social: "3 l'ont gardé",
-    creneaux: ["17 h", "18 h 15", "Demain 11 h"],
-    fiche: {
-      ou: "Petite place, à côté du fleuriste",
-      horaires: "Aujourd'hui, 9 h 30 – 19 h 30",
-      mot: "Ongles et cils. Deux postes, rendez-vous conseillé.",
-    },
+    moments: [
+      {
+        de: 8, a: 19, quand: "maintenant", icone: "💅",
+        titre: "Un désistement",
+        lignes: ["Remplissage", "45 minutes"],
+        prix: "30 €", places: 1, action: "Réserver", envies: ["maintenant", "moins35"],
+      },
+      {
+        de: 8, a: 19, quand: "17 h", icone: "✨",
+        titre: "Pose complète",
+        lignes: ["Gel ou semi-permanent", "1 h 15"],
+        prix: "45 €", places: 2, action: "Réserver", envies: ["pose"],
+      },
+    ],
   },
 ];
 
+/** Les moments encore d'actualité — en cours, ou à venir dans la journée. */
+export function momentsRestants(c: CarteAutour, heure: number): MomentJour[] {
+  return c.moments.filter((m) => heure < m.a);
+}
+
 /**
- * CE QUI EST EN LIGNE MAINTENANT, DANS CE MÉTIER, DU PLUS PRÈS AU PLUS LOIN.
+ * LE MOMENT QUE LA CARTE AFFICHE — celui qui se passe, sinon le prochain.
  *
- * Le tri par distance n'est pas cosmétique : c'est l'argument entier. On ne
- * choisit pas un commerce, on choisit un commerce où on a le temps d'aller.
+ * C'est ce qui fait qu'une seule annonce ne montre pas la même chose à 11 h et
+ * à 14 h, sans que le commerçant ait retouché quoi que ce soit.
+ */
+export function momentEnCours(c: CarteAutour, heure: number): MomentJour | null {
+  return c.moments.find((m) => heure >= m.de && heure < m.a) ?? momentsRestants(c, heure)[0] ?? null;
+}
+
+/** Vrai si le moment se passe en ce moment même, faux s'il est à venir. */
+export function seJoueMaintenant(m: MomentJour, heure: number): boolean {
+  return heure >= m.de && heure < m.a;
+}
+
+/**
+ * CE QUI EST OUVERT MAINTENANT, DANS CE MÉTIER, DU PLUS PRÈS AU PLUS LOIN.
+ *
+ * Un commerce n'apparaît que s'il lui reste au moins un moment dans la journée.
+ * Le tri par distance n'est pas cosmétique : on ne choisit pas un commerce, on
+ * choisit un commerce où on a le temps d'aller.
  */
 export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
-  return CARTES.filter((c) => c.branche === branche && heure >= c.de && heure <= c.a).sort(
+  return CARTES.filter((c) => c.branche === branche && momentsRestants(c, heure).length > 0).sort(
     (a, b) => a.metres - b.metres,
   );
 }
 
-/** Combien de cartes chaque métier a en ligne à cette heure-là. */
+/** Combien de commerces chaque métier a en ligne à cette heure-là. */
 export function comptesParMetier(heure: number): Record<CleMetier, number> {
   const n = {} as Record<CleMetier, number>;
   for (const m of METIERS) n[m.cle] = autourDeMoi(heure, m.cle).length;
   return n;
 }
 
-/** Celles qui répondent à TOUTES les envies cochées. Aucune envie : tout passe. */
-export function selonEnvies(cartes: CarteAutour[], envies: string[]): CarteAutour[] {
+/** Ceux dont AU MOINS UN moment restant répond à toutes les envies cochées. */
+export function selonEnvies(
+  cartes: CarteAutour[],
+  envies: string[],
+  heure: number,
+): CarteAutour[] {
   if (!envies.length) return cartes;
-  return cartes.filter((c) => envies.every((e) => c.envies.includes(e)));
+  return cartes.filter((c) =>
+    momentsRestants(c, heure).some((m) => envies.every((e) => m.envies.includes(e))),
+  );
 }
 
 /** La moyenne, arrondie au dixième. Zéro avis : rien à afficher. */
 export function moyenneAvis(avis: AvisPlat[]): number {
   if (!avis.length) return 0;
   return Math.round((avis.reduce((t, a) => t + a.note, 0) / avis.length) * 10) / 10;
+}
+
+/**
+ * LA CARTE TELLE QU'ELLE S'AFFICHE À CETTE HEURE-LÀ.
+ *
+ * Le commerce et le moment en cours fusionnent en un seul objet, celui que le
+ * composant du produit sait dessiner. C'est ici, et nulle part ailleurs, que
+ * « une annonce qui vit avec l'heure » devient concret.
+ */
+export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
+  const m = momentEnCours(c, heure);
+  return {
+    photo: c.photo,
+    cadrage: c.cadrage,
+    nom: c.nom,
+    metier: c.metier,
+    ville: c.ville,
+    distance: c.distance,
+    itineraire: c.itineraire,
+    // Le badge du haut ne dit plus une échéance mais QUAND ça se passe : c'est
+    // devenu l'information principale de la carte.
+    reste: m ? (seJoueMaintenant(m, heure) ? `Maintenant · ${m.quand}` : m.quand) : "",
+    icone: m?.icone ?? "📍",
+    quoi: m?.titre ?? "",
+    lignes: m?.lignes,
+    prix: m?.prix,
+    prixBarre: m?.prixBarre,
+    etiquette: m?.etiquette,
+    // PAS DE LIGNE « SOCIAL » ICI. Le nombre de moments y était écrit une
+    // première fois, et la pastille de défilement le répétait dix pixels plus
+    // bas, avec en prime le cœur vert qui veut dire « gardé » partout ailleurs
+    // dans le produit. Une seule fois, au seul endroit sur lequel on appuie.
+  };
 }

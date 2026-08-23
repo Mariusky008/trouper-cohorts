@@ -1,29 +1,44 @@
 "use client";
 
-// L'APPLICATION, TELLE QU'ELLE SERAIT — un seul écran, rien à lire.
+// L'APPLICATION, TELLE QU'ELLE SERAIT — une grande photo, et tout le reste au
+// scroll.
 //
-// CE QUE C'EST. Une maquette jouable de ce que verrait un habitant. Elle sert à
+// CE QUE C'EST. Une maquette jouable de ce que verrait un habitant, faite pour
 // savoir si l'idée lui parle avant qu'on la construise. Ce qu'elle met en scène
-// et qui n'existe pas encore est listé en tête de `lib/direct/apercu-habitant.ts`
-// — et NULLE PART à l'écran : les gens à qui on la montre savent déjà que c'est
-// un essai, le leur répéter dans un bandeau ne fait que les mettre en position
-// de juger une démonstration au lieu d'essayer une application.
+// et qui n'existe pas est listé en tête de `lib/direct/apercu-habitant.ts` — et
+// NULLE PART à l'écran : les gens à qui on la montre savent déjà que c'est un
+// essai, et le leur répéter les met en position de juger une démonstration au
+// lieu d'essayer une application.
 //
-// TROIS RÈGLES :
+// ── CE QUI CHANGE DANS CETTE VERSION, ET POURQUOI ──────────────────────────
 //
-//  1. UN ÉCRAN, PLEIN CADRE, QUI NE DÉFILE PAS. Tout tient dans la hauteur du
-//     téléphone. On ne fait jamais défiler une application de swipe.
-//  2. TOUT SE PASSE DANS L'APPLICATION. Le choix du métier est une pastille du
-//     bandeau, les envies une rangée sous elle, les détails et la réservation
-//     des feuilles qui montent par-dessus. Rien ne vit « dans la page ».
-//  3. AUCUNE PHRASE EXPLICATIVE. Le seul texte hors carte : le métier choisi,
-//     les pastilles d'envie, une ligne de comptage, quatre gestes.
+// 1. LA CARTE ÉTAIT PETITE ET CHARGÉE. Elle était bridée à son rapport 3/4,15 —
+//    la proportion d'un encart dans une page — et elle empilait le nom, le
+//    métier, la ville, la distance, le social, l'offre, trois lignes, le prix,
+//    l'étiquette et les avis. Sur un téléphone, ça fait dix informations à
+//    lire avant de pouvoir décider quoi que ce soit.
 //
-// CE QUI A ÉTÉ RETIRÉ POUR GAGNER DE LA PLACE. Les onglets « Maintenant / Ce
-// soir » prenaient une rangée entière pour dire ce qu'une application dit
-// gratuitement : ce qu'on voit, c'est ce qui se passe MAINTENANT. L'heure
-// vient de l'horloge du visiteur, et les cinquante pixels sont passés à la
-// carte.
+//    Happn et Tinder ont résolu ça il y a longtemps : UNE GRANDE PHOTO,
+//    presque rien dessus, et on descend si ça nous plaît. On reprend
+//    exactement ce modèle. La carte occupe désormais toute la hauteur
+//    disponible, elle porte le strict nécessaire, et le détail vit sous le
+//    pli — le programme de la journée, les avis, la fiche du commerce.
+//
+// 2. LES FEUILLES « AVIS » ET « LE PRO » DISPARAISSENT. Elles montaient
+//    par-dessus l'application pour dire ce que le scroll dit mieux : dans le
+//    même geste, sans quitter la carte, sans rien à refermer. Il ne reste que
+//    deux feuilles — choisir son métier, et réserver — c'est-à-dire les deux
+//    seuls moments où l'on fait autre chose que regarder.
+//
+// 3. UNE ANNONCE PAR COMMERCE ET PAR JOUR, avec ses moments horodatés. Le
+//    raisonnement complet est en tête de `MomentJour` : le produit demandait
+//    cinq gestes au commerçant, aux heures précises où il est en service. Il
+//    en pose un seul le matin, et la carte affiche toute seule CE QUI VIENT.
+//
+// LE GESTE HORIZONTAL ET LE GESTE VERTICAL COHABITENT, et c'est le seul endroit
+// délicat : on verrouille la direction au premier mouvement, et le balayage est
+// désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
+// partir la carte.
 import { useRef, useState, useSyncExternalStore } from "react";
 import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 import {
@@ -32,17 +47,23 @@ import {
   HEURE_MIN,
   METIERS,
   autourDeMoi,
+  carteAffichee,
   comptesParMetier,
+  momentsRestants,
   moyenneAvis,
+  seJoueMaintenant,
   selonEnvies,
   type AvisPlat,
   type CarteAutour,
   type CleMetier,
+  type MomentJour,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 const SEUIL = 84;
+/** Le déplacement à partir duquel on sait si le geste est horizontal ou vertical. */
+const VERROU = 8;
 /** La durée de l'envol, la même qu'en CSS. */
 const VOL_MS = 420;
 /** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
@@ -50,15 +71,11 @@ const COEUR_MS = 900;
 
 // ── LES AVIS QUE LE VISITEUR LAISSE, GARDÉS DANS SON NAVIGATEUR ────────────
 //
-// C'est ce qui rend la démonstration crédible : il note un plat, il ferme, il
-// revient — son avis est toujours là, au-dessus de ceux des autres. Sans ça,
-// « les avis sont mémorisés » reste une phrase.
-//
-// `useSyncExternalStore` plutôt qu'un effet : le stockage local n'existe pas
-// côté serveur, et lire pendant le rendu casserait l'hydratation. L'instantané
-// serveur est vide, le client charge une fois, et les écritures préviennent les
-// abonnés. Lecture et écriture sous `try` — la navigation privée refuse les
-// deux, et la page doit continuer.
+// Il note, il ferme, il revient : son avis est toujours là. Sans ça, « les avis
+// sont mémorisés » reste une phrase. `useSyncExternalStore` plutôt qu'un effet :
+// le stockage local n'existe pas côté serveur et lire pendant le rendu casserait
+// l'hydratation. Lecture et écriture sous `try` — la navigation privée refuse
+// les deux, et la page doit continuer.
 const CLE_LOCALE = "clikme-avis-plat-v1";
 const VIDE: Record<string, AvisPlat[]> = {};
 let memoire: Record<string, AvisPlat[]> | null = null;
@@ -77,9 +94,9 @@ function abonnerAvis(f: () => void) {
   abonnes.add(f);
   return () => void abonnes.delete(f);
 }
-function ajouterAvis(id: string, avis: AvisPlat) {
+function ajouterAvis(cle: string, avis: AvisPlat) {
   const avant = chargerAvis();
-  memoire = { ...avant, [id]: [avis, ...(avant[id] ?? [])] };
+  memoire = { ...avant, [cle]: [avis, ...(avant[cle] ?? [])] };
   try {
     window.localStorage.setItem(CLE_LOCALE, JSON.stringify(memoire));
   } catch {
@@ -88,7 +105,6 @@ function ajouterAvis(id: string, avis: AvisPlat) {
   abonnes.forEach((f) => f());
 }
 
-/** Les étoiles, en lecture seule. */
 function Etoiles({ note }: { note: number }) {
   return (
     <span className="ap-et" aria-label={`${note} sur 5`}>
@@ -101,20 +117,12 @@ function Etoiles({ note }: { note: number }) {
   );
 }
 
-/** Le nom de ce qu'on note, selon le métier — un plat se goûte, pas une coupe. */
-function motAvis(c: CarteAutour): string {
-  return c.branche === "restaurant" || c.branche === "bar" ? "avis sur le plat" : "avis";
-}
-
-type Feuille = "" | "metier" | "avis" | "pro" | "resa";
-
 export function ApercuHabitant() {
-  // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION. Le serveur ne connaît pas
-  // son fuseau : rendre `new Date().getHours()` des deux côtés produit deux
-  // HTML différents. Instantané serveur à midi, instantané client réel.
+  // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION : le serveur ne connaît pas
+  // son fuseau. Instantané serveur à midi, instantané client réel.
   const heureVraie = useSyncExternalStore(
     () => () => {},
-    () => new Date().getHours(),
+    () => new Date().getHours() + new Date().getMinutes() / 60,
     () => 12,
   );
   const heure = heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX ? heureVraie : 12;
@@ -127,35 +135,41 @@ export function ApercuHabitant() {
   const [dx, setDx] = useState(0);
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
   const [aJoue, setAJoue] = useState(false);
-  const [alerte, setAlerte] = useState(false);
+  const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
-  const [feuille, setFeuille] = useState<Feuille>("");
-  const [maNote, setMaNote] = useState(0);
-  const [monMot, setMonMot] = useState("");
+  const [feuille, setFeuille] = useState<"" | "metier" | "resa">("");
+  const [notes, setNotes] = useState<Record<string, number>>({});
   const [creneau, setCreneau] = useState("");
-  const prise = useRef<{ x0: number } | null>(null);
+  const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
   const minuteries = useRef<number[]>([]);
+  const defilement = useRef<HTMLDivElement | null>(null);
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
-  /** Les avis d'un plat : les siens d'abord, puis ceux déjà là. */
-  const avisDe = (c: CarteAutour): AvisPlat[] => [...(miens[c.id] ?? []), ...(c.avis ?? [])];
 
-  const dispo = selonEnvies(autourDeMoi(heure, branche), envies);
+  const dispo = selonEnvies(autourDeMoi(heure, branche), envies, heure);
   const pile = dispo.filter((c) => !passees.includes(c.id));
   const dessus = pile[0];
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
   const metier = METIERS.find((m) => m.cle === branche) ?? METIERS[0];
+  const restants = dessus ? momentsRestants(dessus, heure) : [];
 
-  /** Remet le paquet à zéro. Tout changement de filtre est un nouveau paquet. */
+  /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
+  const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
+  const avisDe = (c: CarteAutour, m: MomentJour): AvisPlat[] => [
+    ...(miens[cleMoment(c, m)] ?? []),
+    ...(m.avis ?? []),
+  ];
+
   function remettre() {
     minuteries.current.forEach(clearTimeout);
     minuteries.current = [];
     setPassees([]);
     setDx(0);
     setSortant("");
-    setAlerte(false);
     setCoeurVole(false);
+    setDescendu(false);
+    defilement.current?.scrollTo({ top: 0 });
   }
 
   function partir(sens: "gauche" | "droite") {
@@ -164,9 +178,6 @@ export function ApercuHabitant() {
     setSortant(sens);
     setDx(sens === "droite" ? 420 : -420);
     const id = dessus.id;
-    // LE CŒUR PART AVANT LA CARTE, pas après : c'est ce qui fait comprendre que
-    // le geste RANGE quelque chose quelque part. Sans le trajet, le compteur
-    // en haut à droite change tout seul et personne ne fait le lien.
     if (sens === "droite") setCoeurVole(true);
     minuteries.current.push(
       window.setTimeout(() => {
@@ -174,6 +185,8 @@ export function ApercuHabitant() {
         setPassees((p) => [...p, id]);
         setDx(0);
         setSortant("");
+        setDescendu(false);
+        defilement.current?.scrollTo({ top: 0 });
       }, VOL_MS),
     );
     if (sens === "droite") {
@@ -181,15 +194,14 @@ export function ApercuHabitant() {
     }
   }
 
-  function ouvrir(f: Feuille) {
-    setFeuille(f);
-    setMaNote(0);
-    setMonMot("");
-    setCreneau("");
+  /** Le bouton « Détails » et l'indice sous la photo font la même chose. */
+  function versLeBas() {
+    const el = defilement.current;
+    if (el) el.scrollTo({ top: el.clientHeight - 90, behavior: "smooth" });
   }
 
-  const plusProche = dispo.length ? Math.min(...dispo.map((c) => c.metres)) : 0;
   const listeEnvies = ENVIES[branche];
+  const aReserver = restants.filter((m) => m.action && (m.places ?? 1) > 0);
 
   return (
     <div className="ap">
@@ -197,16 +209,14 @@ export function ApercuHabitant() {
       <div className="ap-tel">
         <div className="ap-app">
           <div className="ap-haut">
-            {/* LE BANDEAU EST CELUI DU PRODUIT — mêmes classes, donc même
-                allure — mais ses pastilles sont ici de vrais boutons. On ne
-                monte donc pas `BarreDirect`, qui ne rend que du texte : le
-                choix du métier et les favoris doivent réagir au doigt. */}
+            {/* Le bandeau du produit — mêmes classes, donc même allure — mais
+                ses pastilles sont ici de vrais boutons. */}
             <div className="cd-barre">
               <span className="cd-marque">{MARQUE}</span>
               <button
                 type="button"
                 className="cd-puce ap-metier"
-                onClick={() => ouvrir("metier")}
+                onClick={() => setFeuille("metier")}
                 aria-label="Changer de métier"
               >
                 <i aria-hidden="true">{metier.emoji}</i>
@@ -219,19 +229,12 @@ export function ApercuHabitant() {
                   <b>{reserves.length}</b>
                 </span>
               )}
-              <span
-                className={`cd-puce vert ap-fav${coeurVole ? " pop" : ""}`}
-                id="ap-favoris"
-              >
+              <span className={`cd-puce vert ap-fav${coeurVole ? " pop" : ""}`}>
                 <i aria-hidden="true">💚</i>
                 <b>{gardees.length}</b>
               </span>
             </div>
 
-            {/* LES ENVIES SONT DANS L'APPLICATION, et elles CHANGENT AVEC LE
-                MÉTIER : on ne cherche pas « à emporter » chez un coiffeur. La
-                rangée déborde volontairement du bord droit, c'est ce qui dit
-                qu'il y en a d'autres sans avoir à l'écrire. */}
             <div className="ap-envies">
               {listeEnvies.map((e) => {
                 const on = envies.includes(e.cle);
@@ -254,40 +257,47 @@ export function ApercuHabitant() {
                 );
               })}
             </div>
-
-            <div className="ap-compte" aria-live="polite">
-              {dispo.length > 0 ? (
-                <>
-                  <b>{dispo.length}</b> autour de vous · la plus proche à {plusProche} m
-                </>
-              ) : (
-                <>Rien qui corresponde</>
-              )}
-            </div>
           </div>
 
           <div className="ap-vue">
             {dessus ? (
               <div className="ap-pile">
                 {dessous && (
-                  <CarteSwipe key={`d-${dessous.id}`} carte={dessous} className="ap-carte dessous" />
+                  <CarteSwipe
+                    key={`d-${dessous.id}`}
+                    carte={carteAffichee(dessous, heure)}
+                    className="ap-carte dessous"
+                  />
                 )}
-                {!aJoue && <span className="ap-doigt" aria-hidden="true">👆</span>}
                 <div
                   className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}`}
-                  style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.045}deg)` }}
+                  style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
-                    prise.current = { x0: e.clientX };
-                    e.currentTarget.setPointerCapture(e.pointerId);
+                    // PAS DE CAPTURE ICI. La capture au premier contact volerait
+                    // le défilement au navigateur : on ne la prend qu'une fois
+                    // sûr que le geste est horizontal.
+                    prise.current = { x0: e.clientX, y0: e.clientY, axe: "" };
                   }}
                   onPointerMove={(e) => {
-                    if (!prise.current) return;
-                    setDx(e.clientX - prise.current.x0);
+                    const p = prise.current;
+                    if (!p) return;
+                    const ddx = e.clientX - p.x0;
+                    const ddy = e.clientY - p.y0;
+                    if (!p.axe) {
+                      if (Math.abs(ddx) < VERROU && Math.abs(ddy) < VERROU) return;
+                      // Le premier mouvement décide, et il décide pour tout le
+                      // geste : sinon un doigt qui dérive fait partir la carte
+                      // au milieu d'une lecture.
+                      p.axe = Math.abs(ddx) > Math.abs(ddy) && !descendu ? "x" : "y";
+                      if (p.axe === "x") e.currentTarget.setPointerCapture(e.pointerId);
+                    }
+                    if (p.axe === "x") setDx(ddx);
                   }}
                   onPointerUp={() => {
-                    if (!prise.current) return;
+                    const p = prise.current;
                     prise.current = null;
+                    if (!p || p.axe !== "x") return;
                     if (dx > SEUIL) partir("droite");
                     else if (dx < -SEUIL) partir("gauche");
                     else setDx(0);
@@ -297,29 +307,158 @@ export function ApercuHabitant() {
                     setDx(0);
                   }}
                 >
-                  <CarteSwipe key={dessus.id} carte={dessus} className="ap-carte">
-                    {/* LES AVIS, sur la carte elle-même. `stopPropagation` sur
-                        le pointeur est indispensable : sans lui, le doigt qui
-                        appuie commence un balayage et on ne peut jamais
-                        l'ouvrir au toucher. La ligne n'est posée que sur la
-                        carte du DESSUS — sur celle de derrière, à moitié
-                        cachée, ce serait un bouton invisible et cliquable. */}
-                    {!!dessus.avis?.length && (
-                      <button
-                        type="button"
-                        className="ap-avis-l"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={() => ouvrir("avis")}
-                      >
-                        <Etoiles note={moyenneAvis(avisDe(dessus))} />
-                        <b>{moyenneAvis(avisDe(dessus)).toString().replace(".", ",")}</b>
-                        <span>
-                          · {avisDe(dessus).length} {motAvis(dessus)}
-                        </span>
-                        <i aria-hidden="true">›</i>
-                      </button>
-                    )}
-                  </CarteSwipe>
+                  {/* LE DÉFILEMENT EST DANS LA CARTE, pas dans la page. La
+                      première hauteur d'écran est la photo ; tout ce qui suit
+                      est le détail, et on y va d'un pouce. */}
+                  <div
+                    className="ap-scroll"
+                    ref={defilement}
+                    onScroll={(e) => {
+                      const y = (e.target as HTMLDivElement).scrollTop;
+                      setDescendu(y > 24);
+                    }}
+                  >
+                    <div className="ap-un">
+                      <CarteSwipe carte={carteAffichee(dessus, heure)} className="ap-carte">
+                        {restants.length > 1 && (
+                          <button
+                            type="button"
+                            className="ap-vers-bas"
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={versLeBas}
+                          >
+                            {restants.length} moments aujourd&apos;hui
+                            <i aria-hidden="true">⌄</i>
+                          </button>
+                        )}
+                      </CarteSwipe>
+                    </div>
+
+                    {/* ── SOUS LE PLI ── */}
+                    <div className="ap-plus">
+                      <div className="ap-bloc">
+                        <h3>La journée</h3>
+                        <ol className="ap-prog">
+                          {restants.map((m) => {
+                            const av = avisDe(dessus, m);
+                            const maNote = notes[cleMoment(dessus, m)] ?? 0;
+                            return (
+                              <li
+                                key={m.titre}
+                                className={seJoueMaintenant(m, heure) ? "on" : ""}
+                              >
+                                <div className="ap-prog-h">
+                                  <b>{m.quand}</b>
+                                  {seJoueMaintenant(m, heure) && <span className="ap-live">en cours</span>}
+                                </div>
+                                <div className="ap-prog-t">
+                                  <i aria-hidden="true">{m.icone}</i>
+                                  {m.titre}
+                                </div>
+                                {!!m.lignes?.length && (
+                                  <div className="ap-prog-l">
+                                    {m.lignes.map((l) => (
+                                      <span key={l}>{l}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="ap-prog-p">
+                                  {m.prix && <b>{m.prix}</b>}
+                                  {m.prixBarre && <s>{m.prixBarre}</s>}
+                                  {m.etiquette && <em>{m.etiquette}</em>}
+                                  {m.places != null && <span>{m.places} restantes</span>}
+                                </div>
+
+                                {/* LES AVIS SONT SOUS LE MOMENT QU'ILS CONCERNENT,
+                                    pas sous le commerce : c'est le plat qu'on
+                                    note, et c'est lui qui les remporte quand il
+                                    revient à la carte. */}
+                                {av.length > 0 && (
+                                  <div className="ap-prog-av">
+                                    <div className="ap-prog-av-h">
+                                      <Etoiles note={moyenneAvis(av)} />
+                                      <b>{moyenneAvis(av).toString().replace(".", ",")}</b>
+                                      <span>· {av.length} avis</span>
+                                    </div>
+                                    {av.slice(0, 2).map((a, n) => (
+                                      <p key={`${a.qui}-${n}`}>
+                                        <b>{a.qui}</b> {a.texte}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* LE GESTE DE RETOUR TIENT EN UN APPUI. Une
+                                    vidéo ou un texte demandés à chaque fois ne
+                                    seraient jamais donnés ; cinq étoiles, si. */}
+                                <div className="ap-noter">
+                                  {[1, 2, 3, 4, 5].map((n) => (
+                                    <button
+                                      key={n}
+                                      type="button"
+                                      className={`ap-n${n <= maNote ? " on" : ""}`}
+                                      aria-label={`Noter ${n} sur 5`}
+                                      onPointerDown={(ev) => ev.stopPropagation()}
+                                      onClick={() => {
+                                        const cle = cleMoment(dessus, m);
+                                        setNotes((v) => ({ ...v, [cle]: n }));
+                                        ajouterAvis(cle, {
+                                          note: n,
+                                          texte: "",
+                                          qui: "Vous",
+                                          quand: "à l'instant",
+                                        });
+                                      }}
+                                    >
+                                      ★
+                                    </button>
+                                  ))}
+                                  <span>{maNote ? "Noté" : "J'y suis allé"}</span>
+                                </div>
+
+                                {m.action && (m.places ?? 1) > 0 && (
+                                  <button
+                                    type="button"
+                                    className="ap-prog-b"
+                                    onPointerDown={(ev) => ev.stopPropagation()}
+                                    onClick={() => {
+                                      setCreneau(m.titre);
+                                      setFeuille("resa");
+                                    }}
+                                  >
+                                    {m.action}
+                                  </button>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </div>
+
+                      <div className="ap-bloc">
+                        <h3>Le commerce</h3>
+                        <p className="ap-mot">{dessus.fiche.mot}</p>
+                        <div className="ap-l">
+                          <i aria-hidden="true">📍</i>
+                          {dessus.fiche.ou} · {dessus.distance}
+                        </div>
+                        <div className="ap-l">
+                          <i aria-hidden="true">🕘</i>
+                          {dessus.fiche.horaires}
+                        </div>
+                        <a
+                          className="ap-yaller"
+                          href={dessus.itineraire}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                        >
+                          🧭 Y aller
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
                   <span
                     className="ap-tampon non"
                     style={{ opacity: Math.min(1, Math.max(0, -dx / SEUIL)) }}
@@ -334,57 +473,30 @@ export function ApercuHabitant() {
                   >
                     ♥
                   </span>
+                  {!aJoue && !descendu && <span className="ap-doigt" aria-hidden="true">👆</span>}
                 </div>
               </div>
             ) : (
-              /* DEUX ÉCRANS VIDES, PAS UN. « Aucun résultat » et « vous avez
-                 tout vu » ne demandent pas la même chose : le premier appelle
-                 une alerte, le second un retour en arrière. */
               <div className="ap-vide">
-                {dispo.length === 0 ? (
-                  alerte ? (
-                    <>
-                      <span className="ap-vide-e" aria-hidden="true">✓</span>
-                      <b>On vous préviendra.</b>
-                      <i>Dès que quelqu&apos;un le propose autour de vous.</i>
-                    </>
-                  ) : (
-                    <>
-                      <span className="ap-vide-e" aria-hidden="true">🔎</span>
-                      <b>Personne ne le propose là.</b>
-                      <button type="button" className="ap-cta" onClick={() => setAlerte(true)}>
-                        🔔 Prévenez-moi
-                      </button>
-                    </>
-                  )
-                ) : (
-                  <>
-                    <span className="ap-vide-e" aria-hidden="true">✨</span>
-                    <b>
-                      {gardees.length > 0
-                        ? `${gardees.length} ${gardees.length > 1 ? "gardées" : "gardée"}`
-                        : "Vous avez tout vu"}
-                    </b>
-                    <button type="button" className="ap-cta" onClick={remettre}>
-                      ↻ Revoir
-                    </button>
-                  </>
-                )}
+                <span className="ap-vide-e" aria-hidden="true">
+                  {dispo.length === 0 ? "🔎" : "✨"}
+                </span>
+                <b>
+                  {dispo.length === 0
+                    ? "Personne ne le propose là."
+                    : gardees.length > 0
+                      ? `${gardees.length} ${gardees.length > 1 ? "gardés" : "gardé"}`
+                      : "Vous avez tout vu"}
+                </b>
+                <button type="button" className="ap-cta" onClick={remettre}>
+                  ↻ Revoir
+                </button>
               </div>
             )}
           </div>
 
-          {/* LE CŒUR QUI PART SE RANGER. C'est le trajet qui explique la
-              fonction : sans lui, le compteur du bandeau passerait de 1 à 2
-              dans un coin et personne ne ferait le lien. */}
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
 
-          {/* QUATRE GESTES. Le grand du milieu reste « Je garde » : c'est lui
-              que le balayage vers la droite déclenche, et déplacer cette
-              correspondance rendrait le geste illisible. « Réserver » prend la
-              place suivante, en ambre, parce que c'est la seule action qui
-              engage vraiment — et « Le pro » ouvre la fiche au lieu de ne rien
-              faire. */}
           <div className="cd-gestes ap-gestes">
             <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!dessus}>
               <i aria-hidden="true">✕</i>
@@ -402,22 +514,21 @@ export function ApercuHabitant() {
             <button
               type="button"
               className="cd-g ambre"
-              onClick={() => ouvrir("resa")}
-              disabled={!dessus?.creneaux?.length}
+              onClick={() => {
+                setCreneau("");
+                setFeuille("resa");
+              }}
+              disabled={!aReserver.length}
             >
               <i aria-hidden="true">📅</i>
               <em>Réserver</em>
             </button>
-            <button type="button" className="cd-g" onClick={() => ouvrir("pro")} disabled={!dessus}>
-              <i aria-hidden="true">↑</i>
-              <em>Le pro</em>
+            <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
+              <i aria-hidden="true">↓</i>
+              <em>Détails</em>
             </button>
           </div>
 
-          {/* ── LES FEUILLES ──
-              Elles montent par-dessus l'application, DANS le cadre du
-              téléphone : sur ordinateur elles restent dans l'appareil. Une
-              seule à la fois, une seule variable d'état. */}
           {feuille && (
             <>
               <button
@@ -442,7 +553,7 @@ export function ApercuHabitant() {
                     <div className="ap-f-tete">
                       <b>Autour de vous</b>
                     </div>
-                    <ul className="ap-f-liste sans-trait">
+                    <ul className="ap-f-liste">
                       {METIERS.map((m) => (
                         <li key={m.cle}>
                           <button
@@ -465,141 +576,14 @@ export function ApercuHabitant() {
                   </>
                 )}
 
-                {feuille === "avis" && dessus && (
-                  <>
-                    <div className="ap-f-tete">
-                      <b>{dessus.lignes?.[0] ?? dessus.quoi}</b>
-                      <span>
-                        <Etoiles note={moyenneAvis(avisDe(dessus))} />
-                        {moyenneAvis(avisDe(dessus)).toString().replace(".", ",")} ·{" "}
-                        {avisDe(dessus).length} avis
-                      </span>
-                      {/* LA LIGNE QUI PORTE TOUTE L'IDÉE : les avis suivent le
-                          plat, pas l'annonce du jour. Six mots, pas une
-                          explication. */}
-                      <i>Sur ce plat, à chaque fois qu&apos;il revient.</i>
-                    </div>
-                    <ul className="ap-f-liste">
-                      {avisDe(dessus).map((a, n) => (
-                        <li key={`${a.qui}-${a.quand}-${n}`}>
-                          <div className="ap-f-h">
-                            <Etoiles note={a.note} />
-                            <b>{a.qui}</b>
-                            <span>{a.quand}</span>
-                          </div>
-                          {a.texte && <p>{a.texte}</p>}
-                        </li>
-                      ))}
-                    </ul>
-                    <form
-                      className="ap-f-form"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (!maNote) return;
-                        ajouterAvis(dessus.id, {
-                          note: maNote,
-                          texte: monMot.trim(),
-                          qui: "Vous",
-                          quand: "à l'instant",
-                        });
-                        setMaNote(0);
-                        setMonMot("");
-                      }}
-                    >
-                      <div className="ap-f-notes">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <button
-                            key={n}
-                            type="button"
-                            className={`ap-f-n${n <= maNote ? " on" : ""}`}
-                            aria-label={`${n} sur 5`}
-                            onClick={() => setMaNote(n)}
-                          >
-                            ★
-                          </button>
-                        ))}
-                      </div>
-                      <div className="ap-f-saisie">
-                        <input
-                          value={monMot}
-                          onChange={(e) => setMonMot(e.target.value)}
-                          maxLength={90}
-                          placeholder="Un mot ?"
-                          aria-label="Votre avis en une phrase"
-                        />
-                        <button type="submit" disabled={!maNote}>
-                          Envoyer
-                        </button>
-                      </div>
-                    </form>
-                  </>
-                )}
-
-                {feuille === "pro" && dessus && (
-                  <>
-                    <div className="ap-f-tete">
-                      <b>{dessus.nom}</b>
-                      <span className="simple">
-                        {dessus.metier} · {dessus.distance}
-                      </span>
-                    </div>
-                    <div className="ap-f-corps">
-                      {dessus.fiche && (
-                        <>
-                          <p className="ap-p-mot">{dessus.fiche.mot}</p>
-                          <div className="ap-p-l">
-                            <i aria-hidden="true">📍</i>
-                            {dessus.fiche.ou}
-                          </div>
-                          <div className="ap-p-l">
-                            <i aria-hidden="true">🕘</i>
-                            {dessus.fiche.horaires}
-                          </div>
-                        </>
-                      )}
-                      <div className="ap-p-l">
-                        <i aria-hidden="true">{dessus.icone}</i>
-                        {dessus.quoi}
-                        {dessus.prix ? ` · ${dessus.prix}` : ""}
-                      </div>
-                      {!!avisDe(dessus).length && (
-                        <button type="button" className="ap-p-avis" onClick={() => ouvrir("avis")}>
-                          <Etoiles note={moyenneAvis(avisDe(dessus))} />
-                          {moyenneAvis(avisDe(dessus)).toString().replace(".", ",")} ·{" "}
-                          {avisDe(dessus).length} {motAvis(dessus)}
-                          <i aria-hidden="true">›</i>
-                        </button>
-                      )}
-                    </div>
-                    <div className="ap-f-deux">
-                      <a
-                        className="ap-b2"
-                        href={dessus.itineraire}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        🧭 Y aller
-                      </a>
-                      <button
-                        type="button"
-                        className="ap-b2 plein"
-                        onClick={() => ouvrir("resa")}
-                        disabled={!dessus.creneaux?.length}
-                      >
-                        📅 Réserver
-                      </button>
-                    </div>
-                  </>
-                )}
-
                 {feuille === "resa" && dessus && (
                   <>
-                    {reserves.includes(dessus.id) ? (
+                    {reserves.includes(`${dessus.id}|${creneau}`) ? (
                       <div className="ap-r-ok">
                         <span aria-hidden="true">✓</span>
                         <b>C&apos;est réservé.</b>
                         <i>
-                          {dessus.nom} · {creneau || dessus.creneaux?.[0]}
+                          {dessus.nom} · {creneau}
                         </i>
                         <button type="button" className="ap-cta" onClick={() => setFeuille("")}>
                           Revenir
@@ -608,36 +592,37 @@ export function ApercuHabitant() {
                     ) : (
                       <>
                         <div className="ap-f-tete">
-                          <b>{dessus.quoi}</b>
-                          <span className="simple">
-                            {dessus.nom} · {dessus.distance}
-                            {dessus.prix ? ` · ${dessus.prix}` : ""}
-                          </span>
+                          <b>{dessus.nom}</b>
+                          <span className="simple">Quel moment&nbsp;?</span>
                         </div>
-                        <div className="ap-f-corps">
-                          <div className="ap-r-cren">
-                            {dessus.creneaux?.map((h) => (
+                        <ul className="ap-f-liste">
+                          {aReserver.map((m) => (
+                            <li key={m.titre}>
                               <button
-                                key={h}
                                 type="button"
-                                aria-pressed={creneau === h}
-                                className={`ap-r-c${creneau === h ? " on" : ""}`}
-                                onClick={() => setCreneau(h)}
+                                className={`ap-m${creneau === m.titre ? " on" : ""}`}
+                                onClick={() => setCreneau(m.titre)}
                               >
-                                {h}
+                                <i aria-hidden="true">{m.icone}</i>
+                                <span>
+                                  {m.quand} — {m.titre}
+                                  {m.prix ? ` · ${m.prix}` : ""}
+                                </span>
+                                <b>{m.places}</b>
                               </button>
-                            ))}
-                          </div>
-                        </div>
+                            </li>
+                          ))}
+                        </ul>
                         <div className="ap-f-deux">
                           <button
                             type="button"
-                            className="ap-b2 plein seul"
+                            className="ap-b2 plein"
                             disabled={!creneau}
                             onClick={() =>
-                              setReserves((r) =>
-                                r.includes(dessus.id) ? r : [...r, dessus.id],
-                              )
+                              setReserves((r) => {
+                                const cle = `${dessus.id}|${creneau}`;
+                                return r.includes(cle) ? r : [...r, cle];
+                              })
                             }
                           >
                             Confirmer
@@ -659,8 +644,6 @@ export function ApercuHabitant() {
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
            litteral de gabarit et un seul terminerait la chaine. */
 
-        /* L'ECRAN NE DEFILE PAS. Une application de swipe qui defile n'en est
-           pas une : le doigt ne sait plus s'il tire la carte ou la page. */
         .ap{height:100dvh;overflow:hidden;background:#05090C;
           font-family:'Inter',system-ui,-apple-system,sans-serif;color:#EAF2EC;
           display:flex;align-items:center;justify-content:center;}
@@ -671,13 +654,10 @@ export function ApercuHabitant() {
         .ap-haut{flex:none;padding:10px 12px 0;display:flex;flex-direction:column;gap:8px;}
         .ap-haut .cd-barre{max-width:none;}
 
-        /* La pastille du metier est un bouton : c'est par elle qu'on change de
-           branche, et le chevron est ce qui le dit. */
         .ap-metier{font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
-          transition:transform .12s ease,border-color .25s ease;}
+          transition:transform .12s ease;}
         .ap-metier em{font-style:normal;font-size:10px;opacity:.65;margin-left:1px;}
         .ap-metier:active{transform:scale(.95);}
-        /* La pastille des favoris grossit quand le coeur y arrive. */
         .ap-fav{transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
         .ap-fav.pop{transform:scale(1.18);}
 
@@ -688,45 +668,116 @@ export function ApercuHabitant() {
           font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;color:#B9C6CE;
           background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);
           border-radius:999px;padding:8px 13px;
-          transition:transform .12s ease,background .25s ease,border-color .25s ease,color .25s ease;}
+          transition:transform .12s ease,background .25s ease,color .25s ease;}
         .ap-e i{font-style:normal;font-size:13px;}
         .ap-e:active{transform:scale(.94);}
         .ap-e.on{color:#04150E;font-weight:850;border-color:transparent;
           background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
 
-        .ap-compte{font-size:11.5px;color:#7F988B;font-variant-numeric:tabular-nums;}
-        .ap-compte b{color:#EAF2EC;font-weight:850;}
-
-        /* LA CARTE PREND TOUTE LA PLACE QUI RESTE, en gardant ses proportions.
-           La place restante se MESURE (requete de conteneur) au lieu de se
-           deviner : une constante juste sur un ecran de 860 px en sur-reservait
-           48 sur un 640. Le calcul en dur reste comme repli. */
-        .ap-vue{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
-          padding:8px 14px;--dispo:calc(100dvh - 300px);}
-        .ap-pile,.ap-vide{position:relative;
-          width:min(100%, calc(var(--dispo) * 3 / 4.15));
-          aspect-ratio:3/4.15;}
-        @supports (container-type:size){
-          .ap-vue{container-type:size;}
-          .ap-pile,.ap-vide{width:min(100cqw, calc(100cqh * 3 / 4.15));}
-        }
-        .ap-pile{overflow:hidden;border-radius:26px;}
-        .ap-carte{position:absolute;left:0;right:0;top:0;margin-inline:auto;}
-        .ap-pile .ap-carte{max-width:none;}
-        .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.72);}
-        .ap-dessus{position:absolute;inset:0;touch-action:pan-y;cursor:grab;will-change:transform;}
+        /* LA CARTE PREND TOUTE LA PLACE. Plus de rapport 3/4,15 impose : c'est
+           la proportion d'un encart dans une page, pas celle d'un ecran. */
+        .ap-vue{flex:1;min-height:0;display:flex;padding:8px 12px 0;}
+        .ap-pile{position:relative;flex:1;min-height:0;}
+        .ap-carte{position:absolute;inset:0;max-width:none;}
+        .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.7);}
+        .ap-dessus{position:absolute;inset:0;touch-action:pan-y;cursor:grab;
+          will-change:transform;}
         .ap-dessus:active{cursor:grabbing;}
         .ap-dessus.vole{transition:transform ${VOL_MS}ms cubic-bezier(.4,0,.6,1),opacity ${VOL_MS}ms ease;
           opacity:0;}
-        .ap-dessus.vole.droite{transform:translate3d(420px,-30px,0) rotate(19deg)!important;}
-        .ap-dessus.vole.gauche{transform:translate3d(-420px,-30px,0) rotate(-19deg)!important;}
+        .ap-dessus.vole.droite{transform:translate3d(420px,-30px,0) rotate(17deg)!important;}
+        .ap-dessus.vole.gauche{transform:translate3d(-420px,-30px,0) rotate(-17deg)!important;}
+
+        /* LE DEFILEMENT EST DANS LA CARTE. overscroll-behavior empeche le
+           mouvement de se propager a la page quand on arrive au bout. */
+        .ap-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;
+          border-radius:26px;scrollbar-width:none;}
+        .ap-scroll::-webkit-scrollbar{display:none;}
+        .ap-un{height:100%;position:relative;}
+        .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;}
+
+        /* L'INDICE DE DEFILEMENT. Sans lui, personne ne devine que la carte
+           continue : Happn a la meme pastille, au meme endroit. */
+        .ap-vers-bas{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
+          font:inherit;font-size:12.5px;font-weight:750;color:#EAF2EC;cursor:pointer;
+          background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);
+          border-radius:999px;padding:8px 14px;
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          animation:apRespire 2.6s ease-in-out infinite;}
+        .ap-vers-bas i{font-style:normal;font-size:14px;line-height:1;}
+        @keyframes apRespire{
+          0%,100%{transform:translateY(0);}
+          50%{transform:translateY(3px);}
+        }
+
+        /* ── SOUS LE PLI ── */
+        /* LE PANNEAU EST OPAQUE, et ce n'est pas cosmetique : sans fond, la
+           carte SUIVANTE — posee derriere celle qu'on lit — transparaissait a
+           travers le programme, et deux commerces se superposaient. */
+        .ap-plus{position:relative;background:#0A1210;padding:14px 0 24px;
+          display:flex;flex-direction:column;gap:12px;}
+        .ap-bloc{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);
+          border-radius:20px;padding:16px;}
+        .ap-bloc h3{margin:0 0 12px;font-size:11px;font-weight:850;letter-spacing:.14em;
+          text-transform:uppercase;color:#7F988B;}
+
+        .ap-prog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
+        .ap-prog li{padding:13px 0;border-top:1px solid rgba(255,255,255,.08);}
+        .ap-prog li:first-child{border-top:0;padding-top:0;}
+        /* Le moment en cours se distingue par une barre, pas par une couleur de
+           fond : la liste doit rester lisible d'un coup d'oeil. */
+        .ap-prog li.on{border-left:3px solid #3DE2A6;padding-left:12px;margin-left:-15px;}
+        .ap-prog-h{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+        .ap-prog-h b{font-size:12px;font-weight:850;letter-spacing:.08em;color:#F0B429;
+          font-variant-numeric:tabular-nums;}
+        .ap-live{font-size:9.5px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;
+          color:#04150E;background:#3DE2A6;border-radius:5px;padding:2px 6px;}
+        .ap-prog-t{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:850;
+          letter-spacing:-.02em;color:#fff;}
+        .ap-prog-t i{font-style:normal;font-size:16px;}
+        .ap-prog-l{display:flex;flex-direction:column;margin-top:4px;font-size:14px;
+          line-height:1.45;color:#93A8A0;}
+        .ap-prog-p{display:flex;align-items:baseline;flex-wrap:wrap;gap:9px;margin-top:7px;}
+        .ap-prog-p b{font-size:20px;font-weight:850;color:#3DE2A6;letter-spacing:-.02em;}
+        .ap-prog-p s{font-size:13px;color:#6C8078;}
+        .ap-prog-p em{font-style:normal;font-size:10.5px;font-weight:850;letter-spacing:.08em;
+          color:#0A1410;background:#F0B429;border-radius:5px;padding:3px 7px;}
+        .ap-prog-p span{font-size:12px;color:#7F988B;}
+
+        .ap-prog-av{margin-top:10px;padding:9px 11px;border-radius:12px;
+          background:rgba(255,255,255,.05);}
+        .ap-prog-av-h{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#B9C6CE;}
+        .ap-prog-av-h b{font-weight:850;color:#fff;}
+        .ap-prog-av p{margin:6px 0 0;font-size:13px;line-height:1.4;color:#93A8A0;}
+        .ap-prog-av p b{color:#C7D8CE;font-weight:800;margin-right:4px;}
+
+        .ap-noter{display:flex;align-items:center;gap:2px;margin-top:9px;}
+        .ap-n{font:inherit;font-size:20px;line-height:1;cursor:pointer;background:none;
+          border:0;padding:0 1px;color:rgba(255,255,255,.2);
+          transition:color .18s ease,transform .18s cubic-bezier(.34,1.4,.64,1);}
+        .ap-n.on{color:#F0B429;transform:scale(1.06);}
+        .ap-noter span{margin-left:8px;font-size:11.5px;color:#6C8078;}
+
+        .ap-prog-b{margin-top:11px;font:inherit;font-size:14px;font-weight:850;color:#0A1410;
+          border:0;border-radius:12px;padding:12px 20px;cursor:pointer;
+          background:linear-gradient(140deg,#F7C948,#E09B18);}
+        .ap-prog-b:active{transform:scale(.97);}
+
+        .ap-mot{margin:0 0 12px;font-size:14.5px;line-height:1.5;color:#C7D8CE;}
+        .ap-l{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.45;
+          color:#B9C6CE;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
+        .ap-l i{font-style:normal;font-size:14px;flex:none;}
+        .ap-yaller{display:inline-flex;align-items:center;gap:7px;margin-top:12px;
+          font-size:14px;font-weight:850;color:#EAF2EC;text-decoration:none;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+          border-radius:12px;padding:12px 18px;}
 
         .ap-tampon{position:absolute;top:26px;font-size:34px;font-weight:900;line-height:1;
           border:4px solid currentColor;border-radius:14px;padding:8px 16px;pointer-events:none;}
         .ap-tampon.non{right:20px;color:#FF6B6B;transform:rotate(15deg);}
         .ap-tampon.oui{left:20px;color:#3DE2A6;transform:rotate(-15deg);}
 
-        .ap-doigt{position:absolute;left:50%;margin-left:-16px;top:30%;z-index:3;font-size:32px;
+        .ap-doigt{position:absolute;left:50%;margin-left:-16px;top:26%;z-index:3;font-size:32px;
           pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));
           animation:apDoigt 2.4s ease-in-out infinite;}
         @keyframes apDoigt{
@@ -736,18 +787,9 @@ export function ApercuHabitant() {
           80%{transform:translate3d(0,0,0);opacity:.35;}
         }
 
-        /* LE COEUR VA SE RANGER EN HAUT A DROITE. Il part du milieu de la carte
-           et finit sur la pastille verte du bandeau : c'est le trajet, pas le
-           chiffre, qui fait comprendre ou va ce qu'on garde. */
-        /* IL VISE LA PASTILLE, PAS UN POINT CALCULE. La premiere version
-           deplacait le coeur d'un nombre de pixels deduit de la taille de la
-           fenetre : juste sur un telephone, court de cent pixels dans le cadre
-           du bureau, et faux sur un petit ecran. En animant la position
-           plutot qu'une translation, l'arrivee est ecrite en clair — le coin
-           haut droit de l'application — et elle tombe juste partout.
-           (Et pas d'accent grave ici : ce bloc est un litteral de gabarit,
-           un seul terminerait la chaine — c'est ce qui vient de casser la
-           compilation.) */
+        /* Le coeur vise la pastille des favoris : on anime la position, pas une
+           translation en pixels, pour que l'arrivee tombe juste sur tous les
+           formats. */
         .ap-coeur{position:absolute;left:50%;top:55%;z-index:7;font-size:44px;color:#3DE2A6;
           pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
           animation:apCoeur ${COEUR_MS}ms cubic-bezier(.5,0,.35,1) forwards;}
@@ -757,52 +799,33 @@ export function ApercuHabitant() {
           100%{left:calc(100% - 30px);top:34px;transform:translate(-50%,-50%) scale(.3);opacity:.1;}
         }
 
-        .ap-vide{display:flex;flex-direction:column;align-items:center;justify-content:center;
-          gap:11px;text-align:center;padding:0 24px;
-          border:1px dashed rgba(255,255,255,.15);border-radius:26px;
-          animation:apVide .45s cubic-bezier(.16,1,.3,1);}
-        @keyframes apVide{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:none;}}
+        .ap-vide{flex:1;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:11px;text-align:center;padding:0 24px;
+          border:1px dashed rgba(255,255,255,.15);border-radius:26px;}
         .ap-vide-e{font-size:34px;line-height:1;}
         .ap-vide b{font-size:20px;font-weight:850;color:#fff;letter-spacing:-.02em;}
-        .ap-vide i{font-style:normal;font-size:14px;color:#93A8A0;line-height:1.45;}
         .ap-cta{font:inherit;font-size:15px;font-weight:850;color:#04150E;border:0;
           background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;
-          padding:13px 24px;cursor:pointer;box-shadow:0 14px 30px -14px rgba(18,185,129,.9);
-          transition:transform .15s ease;}
-        .ap-cta:active{transform:scale(.96);}
-
-        /* ── LA LIGNE D'AVIS, SUR LA CARTE ── */
-        .ap-avis-l{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font:inherit;
-          font-size:12px;color:#D6DEE4;cursor:pointer;text-align:left;
-          background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.16);
-          border-radius:999px;padding:7px 12px;
-          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-          transition:transform .15s ease,border-color .25s ease;}
-        .ap-avis-l:active{transform:scale(.96);}
-        .ap-avis-l b{font-weight:850;color:#fff;}
-        .ap-avis-l span{color:#B9C6CE;}
-        .ap-avis-l i{font-style:normal;font-size:15px;color:#8FA3B0;margin-left:1px;}
+          padding:13px 24px;cursor:pointer;box-shadow:0 14px 30px -14px rgba(18,185,129,.9);}
 
         .ap-et{display:inline-flex;gap:1px;font-size:11px;line-height:1;}
         .ap-et i{font-style:normal;color:rgba(255,255,255,.25);}
         .ap-et i.on{color:#F0B429;}
 
-        /* ── LES QUATRE GESTES ── */
-        .ap-gestes{flex:none;gap:14px;margin:0 0 max(14px, env(safe-area-inset-bottom));}
+        .ap-gestes{flex:none;gap:14px;margin:6px 0 max(12px, env(safe-area-inset-bottom));}
         .ap-gestes .cd-g{font:inherit;background:none;border:0;padding:0;cursor:pointer;}
         .ap-gestes .cd-g:active i{transform:scale(.92);}
         .ap-gestes .cd-g:disabled{cursor:default;opacity:.32;}
         .ap-gestes .cd-g:disabled:active i{transform:none;}
         .ap-gestes .cd-g:focus-visible{outline:2px solid #3DE2A6;outline-offset:4px;border-radius:12px;}
-        /* Reserver est la seule action qui engage : elle ne peut pas avoir la
-           meme couleur que « passer ». Ambre, pas vert — le vert est deja pris
-           par le geste du balayage, et deux boutons verts se confondent. */
+        /* Reserver est la seule action qui engage : ambre, parce que le vert est
+           deja celui du balayage et que deux boutons verts se confondent. */
         .ap-gestes .cd-g.ambre i{color:#0A1410;border:0;
           background:linear-gradient(140deg,#F7C948,#E09B18);
           box-shadow:0 12px 26px -14px rgba(240,180,41,.9);}
         .ap-gestes .cd-g.ambre em{color:#F0C05A;}
 
-        /* ── LES FEUILLES ── */
+        /* ── LES DEUX FEUILLES QUI RESTENT ── */
         .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;
           background:rgba(3,7,6,.7);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
           animation:apFond .25s ease;}
@@ -820,74 +843,34 @@ export function ApercuHabitant() {
           font-size:15px;line-height:1;cursor:pointer;color:#B9C6CE;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
           border-radius:50%;}
-        .ap-f-x:active{transform:scale(.92);}
-
         .ap-f-tete{flex:none;margin-bottom:12px;padding-right:40px;}
         .ap-f-tete b{display:block;font-size:19px;font-weight:850;color:#fff;
           letter-spacing:-.02em;}
-        .ap-f-tete span{display:flex;align-items:center;gap:7px;margin-top:5px;
-          font-size:13px;font-weight:750;color:#C7D8CE;}
-        .ap-f-tete span.simple{font-weight:600;color:#93A8A0;}
-        .ap-f-tete i{display:block;margin-top:6px;font-style:normal;font-size:11.5px;
-          color:#7F988B;}
+        .ap-f-tete span.simple{display:block;margin-top:4px;font-size:13px;color:#93A8A0;}
+        .ap-f-liste{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:0;}
 
-        .ap-f-liste{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:0;
-          display:flex;flex-direction:column;gap:1px;}
-        .ap-f-liste li{padding:11px 0;border-top:1px solid rgba(255,255,255,.08);}
-        .ap-f-liste.sans-trait li{padding:0;border:0;}
-        .ap-f-h{display:flex;align-items:center;gap:8px;}
-        .ap-f-h b{font-size:13px;font-weight:850;color:#fff;}
-        .ap-f-h span{font-size:11.5px;color:#7F988B;}
-        .ap-f-liste p{margin:5px 0 0;font-size:14px;line-height:1.4;color:#C7D8CE;}
-
-        .ap-f-corps{flex:1;min-height:0;overflow-y:auto;}
-
-        /* Le choix du metier : une ligne par branche, avec ce qu'elle a en
-           ligne maintenant. Le chiffre est la moitie de l'information. */
-        .ap-m{width:100%;display:flex;align-items:center;gap:12px;font:inherit;font-size:16px;
+        .ap-m{width:100%;display:flex;align-items:center;gap:12px;font:inherit;font-size:15px;
           font-weight:750;color:#EAF2EC;cursor:pointer;text-align:left;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
           border-radius:14px;padding:13px 14px;margin-bottom:8px;
           transition:transform .12s ease,border-color .25s ease,background .25s ease;}
-        .ap-m i{font-style:normal;font-size:20px;line-height:1;}
+        .ap-m i{font-style:normal;font-size:19px;line-height:1;}
         .ap-m span{flex:1;min-width:0;}
         .ap-m b{font-size:13px;font-weight:850;color:#7F988B;font-variant-numeric:tabular-nums;}
         .ap-m:active{transform:scale(.98);}
         .ap-m.on{border-color:rgba(61,226,166,.45);background:rgba(61,226,166,.12);}
         .ap-m.on b{color:#8FE9C4;}
 
-        /* La fiche du pro. */
-        .ap-p-mot{margin:0 0 12px;font-size:14.5px;line-height:1.5;color:#C7D8CE;}
-        .ap-p-l{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.45;
-          color:#B9C6CE;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
-        .ap-p-l i{font-style:normal;font-size:14px;flex:none;}
-        .ap-p-avis{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font:inherit;
-          font-size:12.5px;color:#D6DEE4;cursor:pointer;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-          border-radius:999px;padding:8px 13px;}
-        .ap-p-avis i{font-style:normal;font-size:15px;color:#8FA3B0;}
-
-        .ap-f-deux{flex:none;display:flex;gap:9px;margin-top:14px;padding-top:12px;
+        .ap-f-deux{flex:none;display:flex;gap:9px;margin-top:10px;padding-top:12px;
           border-top:1px solid rgba(255,255,255,.1);}
         .ap-b2{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
-          font:inherit;font-size:15px;font-weight:850;cursor:pointer;text-decoration:none;
+          font:inherit;font-size:15px;font-weight:850;cursor:pointer;
           color:#EAF2EC;background:rgba(255,255,255,.07);
-          border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:14px 10px;
-          transition:transform .15s ease;}
-        .ap-b2:active{transform:scale(.97);}
+          border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:14px 10px;}
         .ap-b2.plein{color:#0A1410;border-color:transparent;
           background:linear-gradient(140deg,#F7C948,#E09B18);}
         .ap-b2.plein:disabled{opacity:.35;cursor:default;}
 
-        /* La reservation : des creneaux, et rien d'autre a remplir. */
-        .ap-r-cren{display:flex;flex-wrap:wrap;gap:8px;}
-        .ap-r-c{font:inherit;font-size:14px;font-weight:800;cursor:pointer;color:#C7D8CE;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
-          border-radius:12px;padding:12px 16px;
-          transition:transform .12s ease,background .25s ease,color .25s ease,border-color .25s ease;}
-        .ap-r-c:active{transform:scale(.95);}
-        .ap-r-c.on{color:#0A1410;border-color:transparent;
-          background:linear-gradient(140deg,#F7C948,#E09B18);}
         .ap-r-ok{display:flex;flex-direction:column;align-items:center;justify-content:center;
           gap:9px;text-align:center;padding:22px 10px 10px;
           animation:apOk .4s cubic-bezier(.16,1,.3,1);}
@@ -896,26 +879,6 @@ export function ApercuHabitant() {
         .ap-r-ok b{font-size:21px;font-weight:850;color:#fff;letter-spacing:-.02em;}
         .ap-r-ok i{font-style:normal;font-size:14px;color:#93A8A0;}
 
-        .ap-f-form{flex:none;margin-top:12px;padding-top:12px;
-          border-top:1px solid rgba(255,255,255,.1);}
-        .ap-f-notes{display:flex;gap:4px;margin-bottom:9px;}
-        .ap-f-n{font:inherit;font-size:26px;line-height:1;cursor:pointer;background:none;
-          border:0;padding:0 2px;color:rgba(255,255,255,.22);
-          transition:color .18s ease,transform .18s cubic-bezier(.34,1.4,.64,1);}
-        .ap-f-n.on{color:#F0B429;transform:scale(1.08);}
-        .ap-f-saisie{display:flex;gap:8px;}
-        .ap-f-saisie input{flex:1;min-width:0;font:inherit;font-size:14px;color:#EAF2EC;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
-          border-radius:12px;padding:11px 13px;}
-        .ap-f-saisie input::placeholder{color:#6C8078;}
-        .ap-f-saisie input:focus{outline:2px solid rgba(61,226,166,.5);outline-offset:0;}
-        .ap-f-saisie button{flex:none;font:inherit;font-size:14px;font-weight:850;color:#04150E;
-          border:0;border-radius:12px;padding:11px 18px;cursor:pointer;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
-        .ap-f-saisie button:disabled{opacity:.3;cursor:default;}
-
-        /* SUR ORDINATEUR, L'APPLICATION EST DANS UN TELEPHONE. Etalee sur
-           1280 px de large, elle n'a plus l'air de rien. */
         @media (min-width:720px){
           .ap{padding:24px;background:radial-gradient(90% 60% at 50% 0%,#101A22,#05090C 70%),#05090C;}
           .ap-tel{width:390px;height:min(844px, calc(100dvh - 48px));
@@ -923,12 +886,11 @@ export function ApercuHabitant() {
             background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));
             box-shadow:0 0 0 1px rgba(0,0,0,.6),0 50px 90px -40px rgba(0,0,0,.95);}
           .ap-app{border-radius:34px;overflow:hidden;}
-          .ap-vue{--dispo:calc(min(844px, 100dvh - 48px) - 300px);}
         }
         @media (prefers-reduced-motion:reduce){
-          .ap-doigt{animation:none;}
+          .ap-doigt,.ap-vers-bas{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
-          .ap-vide,.ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}
+          .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}
           .ap-coeur{display:none;}
         }
       `,
