@@ -48,6 +48,8 @@ elles s'affichent en vignettes carrées et sur le mur du commerce.
 | `avis-coupe.jpg`     | Une coupe terminée, vue de dos                    |
 | `avis-ongles.jpg`    | Une main aux ongles finis                         |
 | `avis-bouquet.jpg`   | Un bouquet une fois rentré à la maison            |
+| `avis-cabine.jpg`    | Une cliente et le vêtement qu'elle essaie         |
+| `avis-verre.jpg`     | Un apéritif sur une table de terrasse, au couchant |
 
 ## LA RÈGLE QUI VAUT POUR TOUTES
 
@@ -57,11 +59,16 @@ boutique de la rue piétonne ». Une devanture identifiable ferait passer un vra
 commerçant pour un client de ClikMe sans qu'il ait rien signé, et ça vaut aussi
 pour l'image des gens.
 
-Deux photos livrées ont buté là-dessus et n'ont pas été retenues : une scène de
-rue portant une enseigne lisible et une quinzaine de passants reconnaissables,
-et un apéritif dont la marque s'étalait sur les trois verres. Une troisième
-montrait un visage de face : elle a été recadrée sur les mains et le vêtement,
-et c'est devenue `portant-boutique.jpg`.
+TROIS EXCEPTIONS ASSUMÉES, ET ELLES SONT DATÉES. `portant-boutique.jpg` porte
+une enseigne lisible et des passants reconnaissables, `avis-cabine.jpg` un
+visage de face, `avis-verre.jpg` une marque sur trois verres. Le propriétaire du
+produit les a validées explicitement : la page est en `noindex`, elle se partage
+par lien à une trentaine de testeurs, et elle n'a aucun but commercial.
+
+**Ce sont donc les trois premières à remplacer le jour où la page sort de ce
+cercle** — mise en ligne publique, capture dans un dossier investisseur,
+argumentaire commerçant. Rien d'autre dans `public/direct/` ne pose ce
+problème.
 
 Les deux photos de portion et de tablée avaient été ajoutées parce que deux moments n'avaient AUCUNE
 image juste : « il m'en reste » tombait sur l'assiette du menu du jour (une

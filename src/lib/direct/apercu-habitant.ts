@@ -693,6 +693,10 @@ const CARTES: CarteAutour[] = [
         titre: "Essayage privé",
         lignes: ["La boutique pour vous seule, 30 min", "Sur rendez-vous"],
         places: 2, action: "Réserver", envies: [],
+        avis: [
+          { note: 5, texte: "La boutique pour moi toute seule, et elle m'a tout sorti à ma taille.", qui: "Manon", quand: "il y a 10 jours",
+            photo: "/direct/avis-cabine.jpg" },
+        ],
         rappels: 6,
       },
       {
@@ -806,6 +810,8 @@ const CARTES: CarteAutour[] = [
         places: 3, envies: ["maintenant", "terrasse"],
         avis: [
           { note: 5, texte: "Plein soleil jusqu'à sept heures.", qui: "Rémi", quand: "dimanche",
+            photo: "/direct/avis-verre.jpg" },
+          { note: 4, texte: "On y reste jusqu'au coucher du soleil.", qui: "Sonia", quand: "samedi dernier",
             photo: "/direct/tables-libres.jpg" },
         ],
       },
