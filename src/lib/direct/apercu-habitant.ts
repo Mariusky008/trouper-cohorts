@@ -24,9 +24,12 @@
 //   · aucun commerce inventé n'est nommé — ce sont des voisins anonymes ;
 //   · les cartes sont le VRAI composant du produit (`CarteSwipe`).
 //
-// IL MANQUE DES PHOTOS. `public/direct/` n'en contient que six, toutes
-// alimentaires. Les autres métiers tombent sur le repli du composant — dégradé
-// et emoji — qui est propre et muet.
+// LES QUATORZE COMMERCES ONT ENFIN UNE PHOTO. Pendant des semaines, le
+// coiffeur, la fleuriste, l'onglerie et la mode tombaient sur le repli du
+// composant — dégradé et emoji — parce que `public/direct/` ne contenait que
+// six images, toutes alimentaires. Ce sont pourtant les métiers que l'annonce
+// horodatée a débloqués, donc ceux qu'on montre le plus. Voir
+// `public/direct/LISEZ-MOI.md` pour le cadrage et la règle d'anonymat.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
 
 /**
@@ -646,6 +649,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "mode-centre",
     branche: "mode",
+    photo: "/direct/portant-boutique.jpg",
+    cadrage: "50%",
     nom: "Une boutique de la rue piétonne",
     metier: "Prêt-à-porter",
     ville: VILLE,
@@ -702,6 +707,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "mode-friperie",
     branche: "mode",
+    photo: "/direct/friperie-rayon.jpg",
+    cadrage: "50%",
     nom: "Une friperie du vieux centre",
     metier: "Friperie",
     ville: VILLE,
@@ -727,6 +734,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "bar-vins",
     branche: "bar",
+    photo: "/direct/verre-au-comptoir.jpg",
+    cadrage: "50%",
     nom: "Un bar à vins",
     metier: "Bar à vins",
     ville: VILLE,
@@ -767,6 +776,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "bar-terrasse",
     branche: "bar",
+    photo: "/direct/terrasse-au-soleil.jpg",
+    cadrage: "50%",
     nom: "Une terrasse au soleil",
     metier: "Bar",
     ville: VILLE,
@@ -805,6 +816,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "coif-centre",
     branche: "coiffeur",
+    photo: "/direct/fauteuil-coiffeur.jpg",
+    cadrage: "50%",
     nom: "Un salon du centre",
     metier: "Coiffeur",
     ville: VILLE,
@@ -829,7 +842,8 @@ const CARTES: CarteAutour[] = [
         lignes: ["Coupe + brushing", "45 minutes"],
         prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
         avis: [
-          { note: 5, texte: "Elle écoute avant de couper, ça change tout.", qui: "Camille", quand: "il y a 3 semaines" },
+          { note: 5, texte: "Elle écoute avant de couper, ça change tout.", qui: "Camille", quand: "il y a 3 semaines",
+            photo: "/direct/avis-coupe.jpg" },
           { note: 5, texte: "Pris sans rendez-vous, sorti une heure après.", qui: "Yann", quand: "en juillet" },
           { note: 4, texte: "Brushing impeccable, tenue trois jours.", qui: "Fatou", quand: "le mois dernier" },
         ],
@@ -845,6 +859,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "coif-nouveau",
     branche: "coiffeur",
+    photo: "/direct/salon-neuf.jpg",
+    cadrage: "50%",
     nom: "Un salon qui vient d'ouvrir",
     metier: "Coiffeur",
     ville: VILLE,
@@ -893,6 +909,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "fleur-marche",
     branche: "fleuriste",
+    photo: "/direct/bouquet-du-jour.jpg",
+    cadrage: "50%",
     nom: "Une fleuriste du marché",
     metier: "Fleuriste",
     ville: VILLE,
@@ -911,6 +929,10 @@ const CARTES: CarteAutour[] = [
         lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
         prix: "15 €", places: 12, action: "J'en prends",
         envies: ["maintenant", "moins20", "saison"],
+        avis: [
+          { note: 5, texte: "Il a tenu dix jours sur ma table.", qui: "Maryse", quand: "il y a une semaine",
+            photo: "/direct/avis-bouquet.jpg" },
+        ],
       },
       {
         de: 17, a: 19, quand: "18 h", icone: "🌿",
@@ -926,6 +948,8 @@ const CARTES: CarteAutour[] = [
   {
     id: "ongle-institut",
     branche: "ongles",
+    photo: "/direct/pose-ongles.jpg",
+    cadrage: "50%",
     nom: "Une prothésiste ongulaire",
     metier: "Prothésiste ongulaire",
     ville: VILLE,
@@ -949,6 +973,10 @@ const CARTES: CarteAutour[] = [
         titre: "Pose complète",
         lignes: ["Gel ou semi-permanent", "1 h 15"],
         prix: "45 €", places: 2, action: "Réserver", envies: ["pose"],
+        avis: [
+          { note: 5, texte: "Elle a tenu trois semaines sans un éclat.", qui: "Sarah", quand: "le mois dernier",
+            photo: "/direct/avis-ongles.jpg" },
+        ],
       },
     ],
   },
