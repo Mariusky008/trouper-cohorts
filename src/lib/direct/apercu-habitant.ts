@@ -199,6 +199,61 @@ export type Reponse = {
   apres: number;
 };
 
+/**
+ * CE QU'UN COMMERCE CHERCHE — DES BRAS, PAS DES CLIENTS.
+ *
+ * POURQUOI CETTE SECONDE NATURE D'ANNONCE EXISTE. Jusqu'ici la page ne portait
+ * que l'actualité COMMERCIALE d'un commerce : ce qu'il propose à manger, à
+ * essayer, à réserver. Or ce n'est pas toute son actualité, et ce n'est même pas
+ * celle qui lui fait le plus mal. À Dax, première station thermale de France, la
+ * saison décide de l'année, et le mur de mars c'est de trouver deux personnes.
+ *
+ * TROIS RAISONS QUE ÇA VIVE ICI ET PAS SUR UN SITE D'EMPLOI :
+ *
+ *  1. C'EST LE MÊME LECTEUR. Dans une ville de vingt mille habitants, celui qui
+ *     regarde où déjeuner, son fils, sa voisine, c'est le vivier de saisonniers.
+ *     À Paris ce seraient deux audiences ; ici c'est la même personne.
+ *  2. C'EST CE QUI SE PAIE DÉJÀ. Un commerçant ne paiera jamais pour publier son
+ *     plat du jour — il croit que Facebook est gratuit. Il paie déjà pour
+ *     recruter, et il reçoit des candidatures de Bordeaux qui ne viendront pas.
+ *  3. UN SITE D'EMPLOI A DES CANDIDATS ; ICI IL Y A DES VOISINS QUI OUVRENT
+ *     L'APPLICATION POUR AUTRE CHOSE. Ce n'est pas une offre d'emploi, c'est
+ *     « le bar à deux cents mètres de chez toi cherche quelqu'un ».
+ *
+ * ET SURTOUT : PAS DE CV, PAS DE FORMULAIRE. On reprend exactement la mécanique
+ * de l'invitation — « passez me voir jeudi entre 15 h et 17 h ». C'est déjà
+ * comme ça qu'on embauche un saisonnier dans une ville de cette taille. Le
+ * produit n'ajoute pas un site d'emploi : il enlève le site d'emploi.
+ *
+ * CE N'EST PAS UN MOMENT DE LA JOURNÉE, C'EST UN ÉTAT DU COMMERÇANT. Une
+ * recherche dure trois semaines, elle ne dépend pas de l'heure, et elle ne
+ * s'affiche donc jamais entre deux plats dans le paquet : elle a son entrée à
+ * elle, et elle vit sur la fiche du commerce.
+ */
+export type Recrutement = {
+  /** Le poste, tel qu'on le dirait à quelqu'un. */
+  poste: string;
+  /** La période. Le mot « saison » décide de tout dans cette ville. */
+  quand: string;
+  /** Le contrat en une ligne, horaires compris — c'est la vraie question. */
+  contrat: string;
+  /**
+   * LA PAYE, ÉCRITE. Une annonce locale sans salaire ne fait venir personne, et
+   * le commerçant qui le cache passe pour celui qui a quelque chose à cacher.
+   */
+  paye: string;
+  /** Le mot du patron, court. C'est lui qui fait la différence avec Indeed. */
+  qui: string;
+  /** QUAND ON PASSE. Le cœur du truc : on ne postule pas, on pousse la porte. */
+  passez: string;
+  /**
+   * Depuis combien de temps c'est en ligne. COURT : cette chaîne finit dans la
+   * pastille du haut de la carte, qui partage sa ligne avec « Y aller » —
+   * « en ligne depuis 12 jours » s'y coupait au milieu (mesuré à 402 px).
+   */
+  depuis: string;
+};
+
 export type CarteAutour = {
   id: string;
   branche: CleMetier;
@@ -218,6 +273,9 @@ export type CarteAutour = {
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
    *  n'a rien armé, il ne répond pas — et c'est le cas le plus fréquent. */
   reponse?: Reponse;
+  /** Ce qu'il cherche comme bras. Absent : il ne recrute pas, et c'est le cas
+   *  de la plupart des commerces la plupart du temps. */
+  recrute?: Recrutement;
 };
 
 export const HEURE_MIN = 8;
@@ -243,6 +301,15 @@ const CARTES: CarteAutour[] = [
       ou: "Rue piétonne, à côté de la halle",
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h",
       mot: "Cuisine du marché, carte changée chaque matin. Terrasse à l'ombre le midi.",
+    },
+    recrute: {
+      poste: "Un serveur ou une serveuse",
+      quand: "Pour la saison, d'avril à octobre",
+      contrat: "CDD saisonnier · 35 h · deux jours de repos consécutifs",
+      paye: "1 750 € net + les pourboires",
+      qui: "On est cinq en salle, on mange ensemble avant le service. L'expérience n'est pas obligatoire, l'envie si.",
+      passez: "mardi ou mercredi, entre 15 h et 17 h",
+      depuis: "il y a 2 jours",
     },
     reponse: {
       cadeau: "Le digestif maison offert",
@@ -390,6 +457,15 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 6 h 30 – 19 h 30",
       mot: "Pains au levain, tout est fait sur place.",
     },
+    recrute: {
+      poste: "Quelqu'un pour la vente, le matin",
+      quand: "Toute l'année, à partir de maintenant",
+      contrat: "CDI · 25 h · 6 h 30 – 12 h 30, dimanche de repos",
+      paye: "1 350 € net pour 25 h",
+      qui: "Le matin, c'est le meilleur moment de la boutique. Il faut aimer se lever, le reste s'apprend en trois jours.",
+      passez: "n'importe quel matin, après 10 h",
+      depuis: "il y a une semaine",
+    },
     moments: [
       {
         de: 8, a: 11, quand: "ce matin", icone: "🥐",
@@ -458,6 +534,15 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 9 h – 19 h 30",
       mot: "Ce qui n'est pas parti dans la journée passe à moitié prix la dernière heure.",
     },
+    recrute: {
+      poste: "Un commis, en extra le week-end",
+      quand: "Les samedis et quelques dimanches, jusqu'en septembre",
+      contrat: "Extra déclaré · 8 h à 14 h · payé à la journée",
+      paye: "95 € net la journée",
+      qui: "Pour les gros week-ends, on est débordés à deux. Étudiant bienvenu, on forme sur place.",
+      passez: "le jeudi, entre 15 h et 18 h",
+      depuis: "il y a 4 jours",
+    },
     moments: [
       {
         de: 10, a: 18, quand: "toute la journée", icone: "🍱",
@@ -496,6 +581,15 @@ const CARTES: CarteAutour[] = [
       ou: "Rue piétonne, à côté du kiosque",
       horaires: "Aujourd'hui, 10 h – 19 h",
       mot: "Petites séries, marques françaises. On peut faire mettre de côté.",
+    },
+    recrute: {
+      poste: "Quelqu'un le samedi",
+      quand: "Toute l'année, tous les samedis",
+      contrat: "CDI · 8 h le samedi · idéal étudiant",
+      paye: "480 € net par mois",
+      qui: "Le samedi je suis seule et je ne peux pas m'occuper de trois personnes en cabine. Pas besoin de connaître la mode, il faut aimer parler aux gens.",
+      passez: "un mardi ou un mercredi après-midi",
+      depuis: "il y a 12 jours",
     },
     reponse: {
       cadeau: "Une retouche offerte sur votre achat",
@@ -607,6 +701,15 @@ const CARTES: CarteAutour[] = [
       horaires: "Aujourd'hui, 10 h – 21 h",
       mot: "Terrasse au soleil jusqu'en fin d'après-midi. Bières locales, limonades maison.",
     },
+    recrute: {
+      poste: "Deux personnes en terrasse",
+      quand: "De juin à septembre, la grosse saison",
+      contrat: "CDD saisonnier · 35 h · services du soir, coupure possible",
+      paye: "1 800 € net + le partage du pot",
+      qui: "L'été, la terrasse fait le double du dedans. On cherche deux personnes, pas une : c'est plus facile à deux quand on débute.",
+      passez: "tous les jours, entre 15 h et 17 h",
+      depuis: "il y a 3 jours",
+    },
     moments: [
       {
         de: 8, a: 20, quand: "toute la journée", icone: "☀️",
@@ -671,6 +774,15 @@ const CARTES: CarteAutour[] = [
       ou: "Quartier des écoles",
       horaires: "Aujourd'hui, 10 h – 18 h",
       mot: "Salon ouvert ce mois-ci. Colorations végétales, sur rendez-vous.",
+    },
+    recrute: {
+      poste: "Un coiffeur ou une coiffeuse",
+      quand: "Dès que possible, sur le long terme",
+      contrat: "CDI · 35 h sur 4 jours · samedi travaillé",
+      paye: "1 900 € net, évolutif au bout d'un an",
+      qui: "Le salon a deux mois et le carnet se remplit plus vite que prévu. Le deuxième fauteuil vous attend, avec votre façon de travailler.",
+      passez: "le lundi, quand le salon est fermé, ou après 18 h",
+      depuis: "il y a 5 jours",
     },
     reponse: {
       cadeau: "Le diagnostic et le brushing offerts",
@@ -792,6 +904,52 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
   return CARTES.filter((c) => c.branche === branche && momentsRestants(c, heure).length > 0).sort(
     (a, b) => a.metres - b.metres,
   );
+}
+
+/**
+ * CEUX QUI CHERCHENT DES BRAS, TOUS MÉTIERS CONFONDUS.
+ *
+ * PAS DE FILTRE SUR L'HEURE, ET C'EST LA DIFFÉRENCE DE NATURE. Une annonce
+ * commerciale n'existe que pendant son moment ; une recherche d'employé dure
+ * trois semaines et se lit aussi bien à 22 h qu'à midi. Un salon fermé le lundi
+ * recrute quand même le lundi.
+ *
+ * PAS DE FILTRE SUR LE MÉTIER NON PLUS : quelqu'un qui cherche du travail dans
+ * sa ville ne cherche pas « dans la coiffure », il cherche à côté de chez lui.
+ * Le tri par distance est donc le seul qui compte.
+ */
+export function ceuxQuiRecrutent(): CarteAutour[] {
+  return CARTES.filter((c) => c.recrute).sort((a, b) => a.metres - b.metres);
+}
+
+/**
+ * LA CARTE D'UNE RECHERCHE D'EMPLOI, dans le même composant que les autres.
+ *
+ * Même dessin, même geste, même photo du commerce — c'est ce qui fait qu'on ne
+ * change pas d'application pour passer de « où je déjeune » à « qui embauche ».
+ * Seule l'accroche change : le poste remplace le plat, la paye remplace le prix.
+ *
+ * LA PAYE EST À LA PLACE DU PRIX, et ce n'est pas un détail de mise en page :
+ * c'est le chiffre qu'on cherche des yeux, et le cacher est la première raison
+ * pour laquelle on ne répond pas à une annonce.
+ */
+export function carteDeRecrutement(c: CarteAutour): CarteDirect {
+  const r = c.recrute;
+  return {
+    photo: c.photo,
+    cadrage: c.cadrage,
+    nom: c.nom,
+    metier: c.metier,
+    ville: c.ville,
+    distance: c.distance,
+    itineraire: c.itineraire,
+    reste: r ? `On recrute · ${r.depuis}` : "",
+    icone: "🙋",
+    quoi: r?.poste ?? "",
+    lignes: r ? [r.quand, r.contrat] : undefined,
+    prix: r?.paye,
+    etiquette: "SANS CV",
+  };
 }
 
 /** Combien de commerces chaque métier a en ligne à cette heure-là. */

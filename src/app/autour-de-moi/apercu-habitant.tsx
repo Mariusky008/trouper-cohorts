@@ -51,7 +51,9 @@ import {
   avisDuMoment,
   brancheDeLaDemande,
   carteAffichee,
+  carteDeRecrutement,
   carteDeReponse,
+  ceuxQuiRecrutent,
   comptesParMetier,
   momentsRestants,
   moyenneAvis,
@@ -219,7 +221,19 @@ export function ApercuHabitant() {
   const [aJoue, setAJoue] = useState(false);
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
-  const [feuille, setFeuille] = useState<"" | "metier" | "resa" | "sortie" | "jyvais">("");
+  const [feuille, setFeuille] = useState<
+    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche"
+  >("");
+  /**
+   * LE PAQUET REGARDE LES EMBAUCHES, PAS LES MÉTIERS.
+   *
+   * Un booléen à côté de `branche` plutôt qu'un septième métier : « ils
+   * recrutent » n'est pas une branche, c'est une autre NATURE d'annonce, qui
+   * traverse tous les métiers et qui ne dépend pas de l'heure. L'ajouter à
+   * `CleMetier` aurait obligé à lui inventer une liste d'envies et un compte
+   * horaire qui n'ont aucun sens ici.
+   */
+  const [embauches, setEmbauches] = useState(false);
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
   const [sortie, setSortie] = useState<{ texte: string; quoi: CleMetier } | null>(null);
   /** Les commerces qui ont répondu, dans l'ordre d'arrivée. */
@@ -239,7 +253,12 @@ export function ApercuHabitant() {
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
 
-  const dispoBrut = selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  const embauchent = ceuxQuiRecrutent();
+  // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
+  // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
+  const dispoBrut = embauches
+    ? embauchent
+    : selonEnvies(autourDeMoi(heure, branche), envies, heure);
   /** UNE INVITATION PASSE DEVANT TOUT LE RESTE, dans l'ordre d'arrivée : triée
    *  par distance comme les autres, elle se noierait dans le paquet et on ne
    *  verrait pas qu'elle vient de tomber. */
@@ -258,7 +277,17 @@ export function ApercuHabitant() {
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
   const metier = METIERS.find((m) => m.cle === branche) ?? METIERS[0];
-  const restants = dessus ? momentsRestants(dessus, heure) : [];
+  // EN MODE EMBAUCHE, LA JOURNÉE DU COMMERCE N'EST PLUS LE SUJET : on ne lit pas
+  // le menu de midi quand on regarde un poste. Les moments restent accessibles
+  // depuis la fiche, mais ils ne pilotent plus ni le pli ni les gestes.
+  const restants = dessus && !embauches ? momentsRestants(dessus, heure) : [];
+  /** La carte à dessiner : un poste, une invitation, ou l'annonce du moment. */
+  const carteDe = (c: CarteAutour) =>
+    embauches
+      ? carteDeRecrutement(c)
+      : estInvitation(c)
+        ? carteDeReponse(c, heure)
+        : carteAffichee(c, heure);
 
   /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
@@ -383,12 +412,12 @@ export function ApercuHabitant() {
               <span className="cd-marque">{MARQUE}</span>
               <button
                 type="button"
-                className="cd-puce ap-metier"
+                className={`cd-puce ap-metier${embauches ? " embauche" : ""}`}
                 onClick={() => setFeuille("metier")}
                 aria-label="Changer de métier"
               >
-                <i aria-hidden="true">{metier.emoji}</i>
-                {metier.label}
+                <i aria-hidden="true">{embauches ? "🙋" : metier.emoji}</i>
+                {embauches ? "Ils recrutent" : metier.label}
                 <em aria-hidden="true">▾</em>
               </button>
               {reserves.length > 0 && (
@@ -410,7 +439,33 @@ export function ApercuHabitant() {
                 le monde le touche — et c'est justement parce qu'on attend une
                 liste de résultats que recevoir des réponses fait quelque
                 chose. */}
-            {sortie ? (
+            {embauches ? (
+              /* EN MODE EMBAUCHE, NI CHAMP NI ENVIES. « Qu'est-ce que vous
+                 cherchez ? » y promettrait qu'on peut demander un poste à la
+                 ville, ce que la maquette ne sait pas jouer ; et « moins de
+                 15 € » n'a aucun sens sur une offre. Une seule ligne qui dit ce
+                 qu'on regarde, et de quoi en sortir. */
+              <div className="ap-sortie embauche">
+                {/* COURT : la bande est une seule ligne et « Les commerces qui
+                    cherchent quelqu'un » s'y coupait à 402 px. */}
+                <span className="ap-s-quoi">
+                  <i aria-hidden="true">🙋</i>
+                  Ils cherchent quelqu&apos;un
+                </span>
+                <span className="ap-s-etat">{embauchent.length} à pied</span>
+                <button
+                  type="button"
+                  className="ap-s-x"
+                  aria-label="Revenir aux commerces"
+                  onClick={() => {
+                    setEmbauches(false);
+                    remettre();
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : sortie ? (
               <div className="ap-sortie">
                 {/* LA BANDE NE RÉPÈTE PAS LA DEMANDE — elle est déjà en toutes
                     lettres dans la bulle verte trente pixels plus bas. Elle dit
@@ -493,18 +548,14 @@ export function ApercuHabitant() {
                 {dessous && (
                   <CarteSwipe
                     key={`d-${dessous.id}`}
-                    carte={
-                      estInvitation(dessous)
-                        ? carteDeReponse(dessous, heure)
-                        : carteAffichee(dessous, heure)
-                    }
+                    carte={carteDe(dessous)}
                     className="ap-carte dessous"
                   />
                 )}
                 <div
                   className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
                     estInvitation(dessus) ? " invit" : ""
-                  }`}
+                  }${embauches ? " emb" : ""}`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -553,19 +604,21 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe
-                        carte={
-                          estInvitation(dessus)
-                            ? carteDeReponse(dessus, heure)
-                            : carteAffichee(dessus, heure)
-                        }
-                        className="ap-carte"
-                      >
+                      <CarteSwipe carte={carteDe(dessus)} className="ap-carte">
+                        {/* SUR UN POSTE, LA LIGNE DU BAS DIT COMMENT ON POSTULE,
+                            et c'est toute la différence avec un site d'emploi :
+                            il n'y a rien à envoyer, on pousse la porte. */}
+                        {embauches && dessus.recrute && (
+                          <span className="ap-emb-passez">
+                            <i aria-hidden="true">👋</i>
+                            Passez {dessus.recrute.passez}
+                          </span>
+                        )}
                         {/* SUR UNE INVITATION, LA LIGNE DU BAS PORTE LES AVIS —
                             c'est ce qui manquait pour donner envie : on ne se
                             déplace pas sur une jolie phrase, on se déplace sur
                             une jolie phrase ET quatre étoiles et demie. */}
-                        {estInvitation(dessus) && avisDuMoment(dessus, heure).length > 0 && (
+                        {!embauches && estInvitation(dessus) && avisDuMoment(dessus, heure).length > 0 && (
                           <span className="ap-invit-avis">
                             <Etoiles note={moyenneAvis(avisDuMoment(dessus, heure))} />
                             <b>
@@ -592,6 +645,50 @@ export function ApercuHabitant() {
 
                     {/* ── SOUS LE PLI ── */}
                     <div className="ap-plus">
+                      {/* EN MODE EMBAUCHE, LE PLI PORTE LE POSTE. On ne descend
+                          pas pour lire le menu de midi quand on regarde un
+                          travail : les horaires, la paye, le mot du patron, et
+                          comment on se présente. Rien d'autre. */}
+                      {embauches && dessus.recrute && (
+                        <div className="ap-bloc">
+                          <h3>Le poste</h3>
+                          <p className="ap-mot">
+                            {`« ${dessus.recrute.qui} »`}
+                          </p>
+                          <div className="ap-l">
+                            <i aria-hidden="true">📅</i>
+                            {dessus.recrute.quand}
+                          </div>
+                          <div className="ap-l">
+                            <i aria-hidden="true">📄</i>
+                            {dessus.recrute.contrat}
+                          </div>
+                          <div className="ap-l">
+                            <i aria-hidden="true">💶</i>
+                            {dessus.recrute.paye}
+                          </div>
+                          {/* LE BLOC QUI REMPLACE LE FORMULAIRE. C'est la seule
+                              chose à retenir de tout l'écran, donc c'est le
+                              seul encadré. */}
+                          <div className="ap-passez">
+                            <b>Pas de CV, pas de lettre.</b>
+                            <span>Passez {dessus.recrute.passez}.</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="ap-prog-b"
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={() => {
+                              setOuvertReponse(dessus);
+                              setFeuille("embauche");
+                            }}
+                          >
+                            Je passe
+                          </button>
+                        </div>
+                      )}
+
+                      {!embauches && (
                       <div className="ap-bloc">
                         <h3>La journée</h3>
                         <ol className="ap-prog">
@@ -690,6 +787,7 @@ export function ApercuHabitant() {
                           })}
                         </ol>
                       </div>
+                      )}
 
                       <div className="ap-bloc">
                         <h3>Le commerce</h3>
@@ -702,6 +800,36 @@ export function ApercuHabitant() {
                           <i aria-hidden="true">🕘</i>
                           {dessus.fiche.horaires}
                         </div>
+
+                        {/* « IL RECRUTE » VIT SUR LA FICHE DU COMMERCE, et c'est
+                            là que ça devait aller depuis le début : une
+                            recherche d'employé n'est pas un moment de la
+                            journée, c'est un état du commerçant qui dure trois
+                            semaines. Donc on la trouve en lisant sa fiche,
+                            même quand on était venu pour le menu — et c'est
+                            comme ça qu'on tombe dessus sans la chercher. */}
+                        {!embauches && dessus.recrute && (
+                          <button
+                            type="button"
+                            className="ap-recrute-l"
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={() => {
+                              setEmbauches(true);
+                              setEnvies([]);
+                              annulerSortie();
+                              remettre();
+                            }}
+                          >
+                            <i aria-hidden="true">🙋</i>
+                            <span>
+                              <b>Il recrute</b>
+                              {dessus.recrute.poste.toLowerCase()} ·{" "}
+                              {dessus.recrute.paye}
+                            </span>
+                            <em aria-hidden="true">›</em>
+                          </button>
+                        )}
+
                         <a
                           className="ap-yaller"
                           href={dessus.itineraire}
@@ -739,7 +867,9 @@ export function ApercuHabitant() {
                 </span>
                 <b>
                   {dispo.length === 0
-                    ? "Personne ne le propose là."
+                    ? embauches
+                      ? "Personne ne cherche là, maintenant."
+                      : "Personne ne le propose là."
                     : gardees.length > 0
                       ? `${gardees.length} ${gardees.length > 1 ? "gardés" : "gardé"}`
                       : "Vous avez tout vu"}
@@ -773,13 +903,20 @@ export function ApercuHabitant() {
               <i aria-hidden="true">♥</i>
               <em>Je garde</em>
             </button>
-            {/* SUR UNE INVITATION, ON NE RÉSERVE PAS : ON Y VA. C'est une
-                proposition qu'on vient de recevoir, et celui qui l'a faite doit
-                le savoir tout de suite. */}
+            {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
+                nature avec ce qu'on regarde. Sur une invitation on ne réserve
+                pas : on y va. Sur un poste on ne postule pas : on passe. C'est
+                la même main qui fait les trois, et c'est ce qui fait qu'on
+                n'apprend qu'un seul geste pour toute l'application. */}
             <button
               type="button"
               className="cd-g ambre"
               onClick={() => {
+                if (embauches && dessus?.recrute) {
+                  setOuvertReponse(dessus);
+                  setFeuille("embauche");
+                  return;
+                }
                 if (dessus && estInvitation(dessus)) {
                   setOuvertReponse(dessus);
                   setFeuille("jyvais");
@@ -788,10 +925,20 @@ export function ApercuHabitant() {
                 setCreneau("");
                 setFeuille("resa");
               }}
-              disabled={dessus && estInvitation(dessus) ? false : !aReserver.length}
+              disabled={
+                embauches
+                  ? !dessus?.recrute
+                  : dessus && estInvitation(dessus)
+                    ? false
+                    : !aReserver.length
+              }
             >
-              <i aria-hidden="true">{dessus && estInvitation(dessus) ? "🚶" : "📅"}</i>
-              <em>{dessus && estInvitation(dessus) ? "J'y vais" : "Réserver"}</em>
+              <i aria-hidden="true">
+                {embauches ? "👋" : dessus && estInvitation(dessus) ? "🚶" : "📅"}
+              </i>
+              <em>
+                {embauches ? "Je passe" : dessus && estInvitation(dessus) ? "J'y vais" : "Réserver"}
+              </em>
             </button>
             <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
               <i aria-hidden="true">↓</i>
@@ -829,9 +976,10 @@ export function ApercuHabitant() {
                         <li key={m.cle}>
                           <button
                             type="button"
-                            className={`ap-m${m.cle === branche ? " on" : ""}`}
+                            className={`ap-m${m.cle === branche && !embauches ? " on" : ""}`}
                             onClick={() => {
                               setBranche(m.cle);
+                              setEmbauches(false);
                               setEnvies([]);
                               remettre();
                               setFeuille("");
@@ -843,6 +991,32 @@ export function ApercuHabitant() {
                           </button>
                         </li>
                       ))}
+                      {/* L'AUTRE ACTUALITÉ DU COMMERCE, ET ELLE EST SÉPARÉE.
+                          Ce n'est pas un septième métier : c'est ce que TOUS
+                          les commerces cherchent, et ça ne se glisse jamais
+                          entre deux plats dans le paquet — un poste au milieu
+                          des photos de nourriture casse les deux. Une entrée à
+                          part, qu'on prend quand on la cherche. */}
+                      <li className="ap-f-sep">
+                        <button
+                          type="button"
+                          className={`ap-m recrute${embauches ? " on" : ""}`}
+                          onClick={() => {
+                            setEmbauches(true);
+                            setEnvies([]);
+                            annulerSortie();
+                            remettre();
+                            setFeuille("");
+                          }}
+                        >
+                          <i aria-hidden="true">🙋</i>
+                          <span>
+                            Ils recrutent
+                            <em>Saisonniers, samedis, extras — sans CV</em>
+                          </span>
+                          <b>{embauchent.length}</b>
+                        </button>
+                      </li>
                     </ul>
                   </>
                 )}
@@ -893,6 +1067,78 @@ export function ApercuHabitant() {
                         Envoyer aux commerces autour de moi
                       </button>
                     </form>
+                  </>
+                )}
+
+                {/* SE PRÉSENTER, ET RIEN D'AUTRE.
+                    C'est le cœur de la différence avec un site d'emploi, et il
+                    fallait que ça se voie dans la feuille : pas de champ, pas
+                    de pièce jointe, pas de compte à créer. On lit quand on peut
+                    passer, on dit qu'on vient, c'est fini. Un saisonnier se
+                    recrute déjà comme ça dans une ville de cette taille — le
+                    produit n'ajoute pas un formulaire, il en enlève un. */}
+                {feuille === "embauche" && ouvertReponse?.recrute && (
+                  <>
+                    {reserves.includes(`emb|${ouvertReponse.id}`) ? (
+                      <div className="ap-r-ok">
+                        <span aria-hidden="true">✓</span>
+                        <b>C&apos;est noté, passez.</b>
+                        <i>
+                          {ouvertReponse.nom} · {ouvertReponse.distance} ·{" "}
+                          {ouvertReponse.recrute.passez}
+                        </i>
+                        <a
+                          className="ap-cta"
+                          href={ouvertReponse.itineraire}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          🧭 Y aller
+                        </a>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="ap-f-tete">
+                          <b>{ouvertReponse.recrute.poste}</b>
+                          <span className="simple">
+                            {ouvertReponse.nom} · {ouvertReponse.distance}
+                          </span>
+                        </div>
+                        <div className="ap-f-corps">
+                          {/* MÊME ENCADRÉ QUE LE CADEAU D'UNE INVITATION, en
+                              bleu : c'est la même place dans la feuille et le
+                              même rôle — la seule chose à retenir — mais on ne
+                              doit pas confondre un cadeau avec un rendez-vous. */}
+                          <p className="ap-cadeau emb">
+                            <i aria-hidden="true">👋</i>
+                            Passez {ouvertReponse.recrute.passez}
+                          </p>
+                          <p className="ap-mot">{`« ${ouvertReponse.recrute.qui} »`}</p>
+                          <div className="ap-l">
+                            <i aria-hidden="true">💶</i>
+                            {ouvertReponse.recrute.paye}
+                          </div>
+                          <div className="ap-l">
+                            <i aria-hidden="true">📄</i>
+                            {ouvertReponse.recrute.contrat}
+                          </div>
+                        </div>
+                        <div className="ap-f-deux">
+                          <button
+                            type="button"
+                            className="ap-b2 plein"
+                            onClick={() =>
+                              setReserves((r) => {
+                                const cle = `emb|${ouvertReponse.id}`;
+                                return r.includes(cle) ? r : [...r, cle];
+                              })
+                            }
+                          >
+                            Je passe le voir
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
@@ -1137,6 +1383,60 @@ export function ApercuHabitant() {
         .ap-s-x{flex:none;font:inherit;font-size:13px;line-height:1;cursor:pointer;
           color:#F0C05A;background:none;border:0;padding:2px 4px;}
 
+        /* L'EMBAUCHE EST BLEUE, PARTOUT ET SEULEMENT LA.
+           Le vert est la couleur de l'application, l'or celle de l'invitation
+           personnelle. Une recherche d'employe n'est ni l'un ni l'autre : c'est
+           l'autre actualite du commerce, celle qui ne s'adresse pas au client.
+           Une teinte a elle suffit a ce qu'on ne confonde jamais un poste avec
+           une offre, y compris en balayant vite. */
+        .ap-sortie.embauche{background:rgba(125,168,255,.1);
+          border-color:rgba(125,168,255,.34);}
+        .ap-sortie.embauche .ap-s-quoi{color:#B8CEFF;}
+        .ap-sortie.embauche .ap-s-etat{background:#7DA8FF;color:#06121F;}
+        .ap-sortie.embauche .ap-s-x{color:#9FBEFF;}
+        .ap-metier.embauche{color:#06121F;background:#7DA8FF;border-color:transparent;}
+        .ap-dessus.emb .cd-carte{box-shadow:inset 0 0 0 2px #7DA8FF,
+          0 0 40px -14px rgba(125,168,255,.55);}
+        .ap-dessus.emb .cd-quoi{font-size:17.5px;font-weight:850;letter-spacing:-.02em;
+          color:#D9E6FF;}
+        .ap-dessus.emb .cd-quoi i{font-size:17px;}
+        .ap-dessus.emb .cd-prix b{color:#B8CEFF;}
+        .ap-dessus.emb .cd-prix em{background:#7DA8FF;color:#06121F;}
+        .ap-dessus.emb .cd-reste{max-width:calc(100% - 132px);color:#06121F;font-weight:850;
+          background:linear-gradient(140deg,#9FBEFF,#5C8FF0);border-color:transparent;
+          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
+          line-height:1.35;}
+        /* Le composant prefixe cette pastille d'un sablier : juste pour une
+           echeance, faux pour un poste — « On recrute » ne s'epuise pas a midi.
+           Le sablier saute, le texte parle seul. */
+        .ap-dessus.emb .cd-reste i{display:none;}
+        /* La ligne du bas d'une carte de poste : comment on se presente. C'est
+           la seule chose a retenir, donc c'est la seule pastille. */
+        .ap-emb-passez{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
+          font-size:12.5px;font-weight:750;color:#DCE7FF;background:rgba(125,168,255,.16);
+          border:1px solid rgba(125,168,255,.36);border-radius:999px;padding:7px 13px;}
+        .ap-emb-passez i{font-style:normal;font-size:13px;line-height:1;}
+
+        /* Sous le pli : l'encadre qui remplace le formulaire. */
+        .ap-passez{margin-top:12px;padding:12px 14px;border-radius:14px;
+          background:rgba(125,168,255,.12);border:1px solid rgba(125,168,255,.3);}
+        .ap-passez b{display:block;font-size:14.5px;font-weight:850;color:#D9E6FF;
+          letter-spacing:-.01em;}
+        .ap-passez span{display:block;margin-top:3px;font-size:13.5px;color:#A9BBD4;}
+
+        /* « IL RECRUTE » SUR LA FICHE DU COMMERCE, en mode normal : c'est la
+           qu'on tombe dessus sans l'avoir cherche, en lisant le menu. */
+        .ap-recrute-l{width:100%;display:flex;align-items:center;gap:10px;margin-top:12px;
+          font:inherit;font-size:13.5px;color:#C7D8CE;cursor:pointer;text-align:left;
+          background:rgba(125,168,255,.1);border:1px solid rgba(125,168,255,.28);
+          border-radius:14px;padding:11px 13px;transition:transform .12s ease;}
+        .ap-recrute-l:active{transform:scale(.98);}
+        .ap-recrute-l i{font-style:normal;font-size:17px;line-height:1;flex:none;}
+        .ap-recrute-l span{flex:1;min-width:0;}
+        .ap-recrute-l b{display:block;font-size:13px;font-weight:850;color:#B8CEFF;
+          letter-spacing:.01em;}
+        .ap-recrute-l em{flex:none;font-style:normal;font-size:17px;color:#7DA8FF;}
+
         /* L'INVITATION.
            LE DEFAUT MESURE : « les 3 reponses ne donnent pas du tout envie,
            aucune photo, pas d'avis, pas de detail, pas de prix, le mode swipe a
@@ -1192,7 +1492,14 @@ export function ApercuHabitant() {
            la proportion d'un encart dans une page, pas celle d'un ecran. */
         .ap-vue{flex:1;min-height:0;display:flex;padding:8px 12px 0;}
         .ap-pile{position:relative;flex:1;min-height:0;}
-        .ap-carte{position:absolute;inset:0;max-width:none;}
+        /* LE RAPPORT D'ASPECT SE RETIRE ICI, PAS SEULEMENT SUR LA CARTE DU
+           DESSUS. LE DEFAUT, MESURE A 360x640 : la carte du DESSOUS gardait le
+           rapport du composant, donc 444 px de haut dans une pile qui n'en fait
+           que 387. Elle depassait jusqu'a 619 px, c'est-a-dire par-dessus les
+           quatre gestes qui commencent a 550 — et plus AUCUN bouton n'etait
+           cliquable sur un ecran court. Poser inset:0 ne suffit pas a
+           contraindre une boite qui porte un rapport d'aspect. */
+        .ap-carte{position:absolute;inset:0;max-width:none;aspect-ratio:auto;}
         .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.7);}
         .ap-dessus{position:absolute;inset:0;touch-action:pan-y;cursor:grab;
           will-change:transform;}
@@ -1284,6 +1591,8 @@ export function ApercuHabitant() {
           background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.3);
           border-radius:14px;padding:12px 14px;}
         .ap-cadeau i{font-style:normal;font-size:18px;line-height:1;flex:none;}
+        .ap-cadeau.emb{color:#D9E6FF;background:rgba(125,168,255,.13);
+          border-color:rgba(125,168,255,.32);}
         .ap-mot{margin:0 0 12px;font-size:14.5px;line-height:1.5;color:#C7D8CE;}
         .ap-l{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.45;
           color:#B9C6CE;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
@@ -1381,6 +1690,14 @@ export function ApercuHabitant() {
         .ap-m:active{transform:scale(.98);}
         .ap-m.on{border-color:rgba(61,226,166,.45);background:rgba(61,226,166,.12);}
         .ap-m.on b{color:#8FE9C4;}
+        /* « ILS RECRUTENT » N'EST PAS UN SEPTIEME METIER, donc il ne se range
+           pas avec eux : un trait, un peu d'air, et sa propre couleur. */
+        .ap-f-sep{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+        .ap-m.recrute{align-items:flex-start;}
+        .ap-m.recrute em{display:block;margin-top:3px;font-style:normal;font-size:12px;
+          font-weight:650;color:#8FA3AC;}
+        .ap-m.recrute.on{border-color:rgba(125,168,255,.5);background:rgba(125,168,255,.13);}
+        .ap-m.recrute.on b{color:#B8CEFF;}
 
         .ap-f-deux{flex:none;display:flex;gap:9px;margin-top:10px;padding-top:12px;
           border-top:1px solid rgba(255,255,255,.1);}
