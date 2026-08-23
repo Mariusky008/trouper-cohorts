@@ -100,6 +100,33 @@ export type AvisPlat = {
   texte: string;
   qui: string;
   quand: string;
+  /**
+   * LA PHOTO PRISE PAR CELUI QUI Y ÉTAIT.
+   *
+   * POURQUOI C'EST LA PIÈCE LA PLUS UTILE DE TOUT LE PRODUIT. Les gens
+   * photographient déjà leur assiette, leurs ongles, leur bouquet, leur coupe.
+   * C'est massif, quotidien, et aujourd'hui totalement invisible pour le
+   * commerçant. On n'invente aucun geste : on rend visible celui qui existe.
+   *
+   * ET ÇA A LA BONNE ASYMÉTRIE — celle qui manquait à toutes les idées
+   * « sociales » écartées avant. Le fil des habitants, l'appariement des
+   * réservations : il fallait que tout le monde publie. Ici UNE photo suffit à
+   * cinquante lecteurs. Cinq personnes motivées dans la ville remplissent
+   * l'application.
+   *
+   * ELLE EST ATTACHÉE AU MOMENT, PAS À L'ÉTABLISSEMENT, et c'est ce qui la
+   * distingue du mur de photos de Google : quand le restaurateur remet sa
+   * garbure à la carte, son annonce ressort AVEC les photos que ses clients en
+   * ont prises l'an dernier. Son annonce s'améliore toute seule à chaque fois
+   * qu'il la republie, fabriquée par ses clients, sans qu'il touche à rien.
+   *
+   * ET ÇA RÈGLE LE MANQUE DE PHOTOS DES AUTRES MÉTIERS. `public/direct/` n'en
+   * contient que six, toutes alimentaires ; le coiffeur, la fleuriste et
+   * l'onglerie tombent sur un emoji. Or ce sont précisément les métiers où le
+   * client photographie le plus — on ne photographie pas une coupe de cheveux
+   * moins souvent qu'un plat.
+   */
+  photo?: string;
 };
 
 /**
@@ -359,8 +386,14 @@ const CARTES: CarteAutour[] = [
         prix: "19 €", places: 8, action: "Réserver", envies: [],
         rappels: 5,
         avis: [
-          { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière" },
-          { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines" },
+          { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière",
+            // LES PHOTOS SEMÉES SONT CELLES DE `public/direct/`, RÉEMPLOYÉES.
+            // Elles ne sont pas là pour décorer : sans une seule photo de
+            // client à l'ouverture, on ne voit pas que l'annonce se remplit
+            // toute seule, et c'est tout l'intérêt du mécanisme.
+            photo: "/direct/plat-du-jour.jpg" },
+          { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines",
+            photo: "/direct/tablee-du-soir.jpg" },
           { note: 4, texte: "Bon rapport qualité-prix le midi.", qui: "Sofia", quand: "en février" },
         ],
       },
@@ -376,6 +409,11 @@ const CARTES: CarteAutour[] = [
         titre: "Service du soir",
         lignes: ["Entrée + plat + dessert", "Dernière commande à 21 h 30"],
         prix: "26 €", places: 6, action: "Réserver", envies: [],
+        avis: [
+          { note: 5, texte: "On a fini à onze heures sans voir le temps passer.", qui: "Paul", quand: "samedi dernier",
+            photo: "/direct/tablee-du-soir.jpg" },
+          { note: 4, texte: "Service du soir plus calme, on en profite.", qui: "Inès", quand: "le mois dernier" },
+        ],
       },
     ],
   },
@@ -415,7 +453,8 @@ const CARTES: CarteAutour[] = [
         prix: "8 €", etiquette: "IL EN RESTE 8", places: 8,
         action: "J'en prends", envies: ["italien", "moins15", "maintenant", "emporter"],
         avis: [
-          { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier" },
+          { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier",
+            photo: "/direct/portion-a-emporter.jpg" },
           { note: 5, texte: "Généreux, et encore chaud à la maison.", qui: "Bastien", quand: "il y a 2 semaines" },
           { note: 4, texte: "Très bon. J'aurais pris deux parts.", qui: "Nadia", quand: "il y a 1 mois" },
           { note: 4, texte: "Bien fondant, pas gras du tout.", qui: "Pierre", quand: "en mars" },
@@ -452,7 +491,10 @@ const CARTES: CarteAutour[] = [
         lignes: ["Plat + dessert", "Sans attendre"],
         prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
         avis: [
-          { note: 5, texte: "Servi en dix minutes, et c'était bon.", qui: "Bruno", quand: "mardi dernier" },
+          { note: 5, texte: "Servi en dix minutes, et c'était bon.", qui: "Bruno", quand: "mardi dernier",
+            photo: "/direct/tables-libres.jpg" },
+          { note: 5, texte: "Sous les arcades, la lumière est belle.", qui: "Ana", quand: "il y a 10 jours",
+            photo: "/direct/tablee-du-soir.jpg" },
           { note: 4, texte: "Les arcades à l'ombre, parfait l'été.", qui: "Nadia", quand: "il y a 2 semaines" },
         ],
       },
@@ -543,6 +585,10 @@ const CARTES: CarteAutour[] = [
         titre: "Table à partager",
         lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
         prix: "17 €", places: 2, action: "Réserver", envies: ["partager"],
+        avis: [
+          { note: 5, texte: "Une table de six, on ne se connaissait pas.", qui: "Chloé", quand: "il y a 15 jours",
+            photo: "/direct/tablee-du-soir.jpg" },
+        ],
       },
     ],
   },
@@ -586,7 +632,8 @@ const CARTES: CarteAutour[] = [
         prix: "6 €", prixBarre: "12 €", etiquette: "−50 %", places: 7,
         action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
         avis: [
-          { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier" },
+          { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier",
+            photo: "/direct/vitrine-du-soir.jpg" },
           { note: 5, texte: "J'y passe tous les vendredis soir.", qui: "Marc", quand: "il y a 3 semaines" },
         ],
       },
@@ -746,6 +793,10 @@ const CARTES: CarteAutour[] = [
         titre: "Il reste 3 tables dehors",
         lignes: ["En terrasse, plein sud", "Sans réserver"],
         places: 3, envies: ["maintenant", "terrasse"],
+        avis: [
+          { note: 5, texte: "Plein soleil jusqu'à sept heures.", qui: "Rémi", quand: "dimanche",
+            photo: "/direct/tables-libres.jpg" },
+        ],
       },
     ],
   },
@@ -1001,10 +1052,24 @@ export function selonEnvies(
   );
 }
 
-/** La moyenne, arrondie au dixième. Zéro avis : rien à afficher. */
+/**
+ * LA MOYENNE, ARRONDIE AU DIXIÈME. Zéro avis noté : rien à afficher.
+ *
+ * LES AVIS SANS NOTE NE COMPTENT PAS, et ce n'est pas un détail : depuis qu'on
+ * peut ajouter une photo sans mettre d'étoiles, un avis peut n'être QU'une
+ * photo. Mesuré : une photo posée sur un plat noté 4,5 le faisait tomber à 3,6,
+ * parce qu'elle entrait dans le calcul comme un zéro. Photographier un plat
+ * qu'on aime ne doit jamais lui coûter une étoile.
+ */
 export function moyenneAvis(avis: AvisPlat[]): number {
-  if (!avis.length) return 0;
-  return Math.round((avis.reduce((t, a) => t + a.note, 0) / avis.length) * 10) / 10;
+  const notes = avis.filter((a) => a.note > 0);
+  if (!notes.length) return 0;
+  return Math.round((notes.reduce((t, a) => t + a.note, 0) / notes.length) * 10) / 10;
+}
+
+/** Ceux qui portent une note — les seuls qu'on compte quand on dit « N avis ». */
+export function avisNotes(avis: AvisPlat[]): AvisPlat[] {
+  return avis.filter((a) => a.note > 0);
 }
 
 /**

@@ -39,7 +39,8 @@
 // délicat : on verrouille la direction au premier mouvement, et le balayage est
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { noter, noterUneFois } from "@/lib/direct/parcours";
 import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 import {
   ENVIES,
@@ -56,6 +57,7 @@ import {
   ceuxQuiRecrutent,
   comptesParMetier,
   momentsRestants,
+  avisNotes,
   moyenneAvis,
   repondeurs,
   seJoueMaintenant,
@@ -119,9 +121,66 @@ function ajouterAvis(cle: string, avis: AvisPlat) {
   try {
     window.localStorage.setItem(CLE_LOCALE, JSON.stringify(memoire));
   } catch {
-    /* Refusé : l'avis vit quand même le temps de la visite. */
+    // QUOTA PLEIN : ON SACRIFIE LES PHOTOS, JAMAIS LES AVIS.
+    //
+    // Les photos pèsent mille fois une note. Quand le stockage sature, tout
+    // écrire échoue — y compris les étoiles déjà données, qui disparaîtraient
+    // au rechargement. On réessaie donc sans les images : les avis survivent,
+    // les photos restent visibles le temps de la visite, et la note de
+    // quelqu'un n'est jamais perdue à cause de la photo d'un autre.
+    try {
+      const sansPhotos = Object.fromEntries(
+        Object.entries(memoire).map(([k, v]) => [
+          k,
+          v.map((a) => ({ ...a, photo: undefined })),
+        ]),
+      );
+      window.localStorage.setItem(CLE_LOCALE, JSON.stringify(sansPhotos));
+    } catch {
+      /* Refusé aussi : l'avis vit quand même le temps de la visite. */
+    }
   }
   abonnes.forEach((f) => f());
+}
+
+/**
+ * RÉDUIRE LA PHOTO AVANT DE LA GARDER — ET CE N'EST PAS UNE OPTIMISATION.
+ *
+ * LE DÉFAUT QU'ON ÉVITE : une photo de téléphone pèse trois à cinq mégaoctets,
+ * et `localStorage` en accepte cinq en tout. La première photo remplirait le
+ * quota, la deuxième lèverait une exception, et l'avis déjà écrit serait perdu
+ * avec elle. Sans cette fonction, la fonctionnalité casse au deuxième usage.
+ *
+ * 720 px de côté et une qualité de 0,72 donnent 60 à 90 Ko : une cinquantaine
+ * de photos tiennent, largement de quoi jouer la maquette, et c'est bien assez
+ * fin pour une vignette de carte comme pour le mur du commerce.
+ *
+ * On repasse par un canevas plutôt que de garder le fichier tel quel, ce qui a
+ * un effet secondaire heureux : les métadonnées EXIF de l'appareil sautent, et
+ * avec elles les coordonnées GPS que les téléphones y écrivent. Une photo prise
+ * chez un commerçant ne doit pas emporter la position de celui qui l'a prise.
+ */
+async function reduirePhoto(fichier: File): Promise<string> {
+  const COTE = 720;
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise<HTMLImageElement>((ok, ko) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = () => ko(new Error("illisible"));
+      i.src = url;
+    });
+    const ech = Math.min(1, COTE / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * ech));
+    c.height = Math.max(1, Math.round(img.height * ech));
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("pas de canevas");
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.72);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 // ── « FAITES-LE REVENIR » — LES RAPPELS DEMANDÉS PAR LE VISITEUR ───────────
@@ -168,6 +227,108 @@ function basculerRappel(cle: string) {
     /* Refusé : la demande vit quand même le temps de la visite. */
   }
   abonnesR.forEach((f) => f());
+}
+
+// ── LA FLAMME DE SOUTIEN ───────────────────────────────────────────────────
+//
+// CE QU'ELLE EST, ET SURTOUT CE QU'ELLE N'EST PAS. Deux versions précédentes
+// ont été écartées, et à raison : elles promettaient une récompense — cinq
+// flammes, un repas offert. Une économie de points se fait toujours jouer, il
+// faut la financer, et elle transforme un geste d'attachement en calcul.
+//
+// Ici RIEN N'EST PROMIS, JAMAIS. La flamme ne dit qu'une chose : « je soutiens
+// ce commerce ». C'est un motif réel — dans une ville de vingt mille habitants,
+// partager un commerce qu'on aime dit quelque chose de soi. Le jour où une
+// contrepartie devient attendue, on est retombé dans l'économie de points, et
+// il faudra le refuser.
+//
+// SOIS LUCIDE SUR QUI ELLE SERT. Elle ne fait pas revenir celui qui partage —
+// on ne partage pas tous les jours. Elle fait deux autres choses, qui valent
+// plus : elle amène quelqu'un de NOUVEAU sur ClikMe (c'est la seule boucle
+// d'acquisition du produit), et elle retient le COMMERÇANT, à qui elle dit
+// qu'il est vu, par quelqu'un, avec un nom.
+//
+// LE COMPTE EST VISIBLE PAR CELUI QUI PARTAGE. Montrer au commerçant qui
+// soutient, dans une ville où tout le monde se reconnaît, n'est acceptable que
+// si l'intéressé voit exactement le même chiffre. Pas de compteur secret sur
+// les gens.
+const CLE_FLAMMES = "clikme-flammes-v1";
+const AUCUNE: Record<string, number> = {};
+let flammes: Record<string, number> | null = null;
+const abonnesF = new Set<() => void>();
+
+function chargerFlammes(): Record<string, number> {
+  if (flammes) return flammes;
+  try {
+    flammes = JSON.parse(window.localStorage.getItem(CLE_FLAMMES) || "{}");
+  } catch {
+    flammes = {};
+  }
+  return flammes ?? AUCUNE;
+}
+function abonnerFlammes(f: () => void) {
+  abonnesF.add(f);
+  return () => void abonnesF.delete(f);
+}
+function ajouterFlamme(id: string) {
+  const avant = chargerFlammes();
+  flammes = { ...avant, [id]: (avant[id] ?? 0) + 1 };
+  try {
+    window.localStorage.setItem(CLE_FLAMMES, JSON.stringify(flammes));
+  } catch {
+    /* Refusé : la flamme vit quand même le temps de la visite. */
+  }
+  abonnesF.forEach((f) => f());
+}
+
+/**
+ * DEMANDER LA PERMISSION D'AVERTIR — AU SEUL MOMENT OÙ ELLE SE JUSTIFIE.
+ *
+ * LE PROBLÈME QU'ON TRAITE : cent personnes sont venues et ne sont pas
+ * revenues. Une des deux raisons structurelles est qu'ON N'AVAIT AUCUN MOYEN DE
+ * LES RAPPELER — pas de compte, pas d'adresse, pas de notification. Aucune
+ * application locale ne retient par la seule envie d'ouvrir : Too Good To Go ne
+ * retient pas, sa notification retient. Chez nous, rien n'a jamais sonné.
+ *
+ * ON NE LA DEMANDE PAS À L'OUVERTURE, et c'est tout l'enjeu. Une demande de
+ * permission posée à l'arrivée est refusée par réflexe, et un refus est
+ * définitif : le navigateur ne redemandera plus jamais. On brûlerait la seule
+ * cartouche qu'on a. On attend donc « Faites-le revenir » — le seul instant où
+ * il y a quelque chose de concret à annoncer, et où la phrase « on vous
+ * préviendra quand il revient » est vraie.
+ *
+ * CE QUE ÇA MESURE, ET C'EST LE VRAI LIVRABLE : le taux d'acceptation. S'il est
+ * de 15 %, la stratégie du rappel par notification est morte et il faut le
+ * savoir AVANT de construire un serveur de push. S'il est de 60 %, la
+ * tuyauterie vaut le coup. Ce chiffre-là décide d'un mois de travail.
+ *
+ * CE QUE ÇA NE FAIT PAS : envoyer une notification depuis un serveur, trois
+ * jours plus tard, application fermée. Ça demande des clés VAPID, une table
+ * d'abonnements et un émetteur. Ici la notification est locale — elle prouve la
+ * boucle et montre le message exact qui arriverait, rien de plus.
+ */
+async function demanderAvertissement(): Promise<NotificationPermission> {
+  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  if (Notification.permission !== "default") return Notification.permission;
+  try {
+    const reponse = await Notification.requestPermission();
+    if (reponse !== "granted") return reponse;
+    // Sur Android, `new Notification()` lève : il FAUT passer par le service
+    // worker. On l'enregistre donc avant d'essayer d'afficher quoi que ce soit.
+    if ("serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.register("/autour-de-moi/sw.js", {
+        scope: "/autour-de-moi/",
+      });
+      await reg.showNotification("Clikme", {
+        body: "C'est noté. On vous préviendra le jour où il revient.",
+        icon: "/icon-512.png",
+        badge: "/icon.svg",
+      });
+    }
+    return "granted";
+  } catch {
+    return "denied";
+  }
 }
 
 function Etoiles({ note }: { note: number }) {
@@ -299,6 +460,36 @@ export function ApercuHabitant() {
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
+  const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
+
+  /**
+   * PARTAGER UNE ANNONCE.
+   *
+   * `navigator.share` ouvre le partage natif du téléphone — WhatsApp, SMS, ce
+   * que la personne utilise déjà. C'est là que part le lien, et c'est très bien :
+   * il ramène quelqu'un qui n'était pas sur ClikMe. Sur ordinateur, où le
+   * partage natif n'existe pas, on copie le lien, ce qui revient au même geste.
+   *
+   * On ne compte QUE les partages réellement aboutis. Une annulation en cours de
+   * route ne doit pas allumer une flamme : le commerçant lirait un soutien qui
+   * n'a pas eu lieu.
+   */
+  async function partager(c: CarteAutour) {
+    const lien =
+      typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    const texte = `${c.nom} · ${c.metier} à ${c.ville}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Clikme", text: texte, url: lien });
+      } else {
+        await navigator.clipboard.writeText(`${texte} — ${lien}`);
+      }
+      ajouterFlamme(c.id);
+      noter("partage", 0, c.branche);
+    } catch {
+      /* Partage annulé : aucune flamme, rien ne s'est passé. */
+    }
+  }
 
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
@@ -342,12 +533,44 @@ export function ApercuHabitant() {
     ...(miens[cleMoment(c, m)] ?? []),
     ...(m.avis ?? []),
   ];
+  /** Les photos d'une liste d'avis, dans l'ordre, sans les avis muets. */
+  const photosDe = (avis: AvisPlat[]) =>
+    avis.map((a) => a.photo).filter((p): p is string => !!p);
+  /**
+   * LE MUR DU COMMERCE : toutes les photos de tous ses moments, mises en commun.
+   *
+   * C'est ce que le mur de Google ne sait pas faire — les siennes sont collées à
+   * l'établissement et datent de trois ans. Ici chaque photo reste attachée à ce
+   * qu'elle montre, et le mur n'est qu'une VUE par-dessus : on peut à la fois
+   * voir tout ce qui a été photographié chez lui, et voir revenir les bonnes
+   * photos avec le bon plat.
+   */
+  const murDe = (c: CarteAutour) =>
+    c.moments.flatMap((m) => photosDe(avisDe(c, m)));
   /** Est-ce que J'AI demandé que ça revienne ? Gardé dans son navigateur. */
   const jeDemande = (c: CarteAutour, m: MomentJour) => mesRappels.includes(cleMoment(c, m));
   /** Le compte affiché : les voisins, plus moi si j'ai appuyé. Le mien doit se
    *  voir tout de suite dans le nombre, sinon l'appui n'a rien fait. */
   const combienDemandent = (c: CarteAutour, m: MomentJour) =>
     (m.rappels ?? 0) + (jeDemande(c, m) ? 1 : 0);
+
+  // OUVERTURE ET CARTES VUES.
+  //
+  // Dans un effet et pas au rendu : compter est un effet de bord, et le faire
+  // pendant le rendu le déclencherait deux fois en mode strict — on croirait
+  // que les gens voient deux fois plus de cartes qu'en réalité.
+  //
+  // `carte-vue` porte le RANG, et c'est le chiffre qui décide de tout : croisé
+  // avec `balayage`, il donne la courbe d'abandon carte par carte. C'est elle
+  // qu'on est venu chercher.
+  useEffect(() => {
+    noter("ouverture");
+  }, []);
+  const vueId = dessus?.id;
+  const rangVu = passees.length + 1;
+  useEffect(() => {
+    if (vueId) noter("carte-vue", rangVu);
+  }, [vueId, rangVu]);
 
   function remettre() {
     minuteries.current.forEach(clearTimeout);
@@ -362,6 +585,11 @@ export function ApercuHabitant() {
 
   function partir(sens: "gauche" | "droite") {
     if (!dessus || sortant) return;
+    // LE RANG DE LA CARTE EST LA MESURE QUI COMPTE. « Combien de gens ferment
+    // après deux cartes » et « combien vont au bout » ne demandent pas les
+    // mêmes travaux, et c'est ce chiffre-là qui les sépare.
+    noter("balayage", passees.length + 1, sens === "droite" ? "garde" : "passe");
+    if (sens === "droite") noter("garde", passees.length + 1);
     setAJoue(true);
     setSortant(sens);
     setDx(sens === "droite" ? 420 : -420);
@@ -405,6 +633,11 @@ export function ApercuHabitant() {
     const propre = texte.trim();
     if (!propre) return;
     const quoi = brancheDeLaDemande(propre);
+    // ON COMPTE QUE LA DEMANDE EST PARTIE, ET SA LONGUEUR. Jamais son texte :
+    // c'est la phrase de quelqu'un, elle ne quitte pas son téléphone. La
+    // longueur suffit à savoir s'ils écrivent vraiment ou s'ils se contentent
+    // d'appuyer sur une suggestion.
+    noter("demande-envoyee", propre.length, quoi);
     minuteries.current.forEach(clearTimeout);
     minuteries.current = [];
     setBranche(quoi);
@@ -428,6 +661,10 @@ export function ApercuHabitant() {
         window.setTimeout(() => {
           setEcrivent((e) => e.filter((x) => x !== c.id));
           setArrivees((a) => (a.includes(c.id) ? a : [...a, c.id]));
+          // Une invitation n'est REÇUE que si la personne est encore là :
+          // l'écart entre « demande envoyée » et « invitation reçue » dit
+          // combien abandonnent pendant les secondes d'attente.
+          noterUneFois("invit", "invitation-recue", 0, quoi);
         }, arrive),
       );
     }
@@ -551,6 +788,10 @@ export function ApercuHabitant() {
                   type="button"
                   className="ap-champ"
                   onClick={() => {
+                    // Personne n'avait appuyé sur l'ancien bouton « Je sors ».
+                    // Savoir combien touchent CE champ-ci, sans qu'on le leur
+                    // dise, est la mesure qui juge le changement.
+                    noter("champ-touche");
                     setBrouillon("");
                     setFeuille("sortie");
                   }}
@@ -653,6 +894,10 @@ export function ApercuHabitant() {
                     ref={defilement}
                     onScroll={(e) => {
                       const y = (e.target as HTMLDivElement).scrollTop;
+                      // LE PLI EST LE SEUIL LE PLUS PARLANT DE L'ÉCRAN : c'est
+                      // là que sont le prix, les avis et la journée. Qui ne
+                      // descend jamais n'a vu qu'une photo.
+                      if (y > 24) noterUneFois("pli", "pli-ouvert", passees.length + 1);
                       setDescendu(y > 24);
                     }}
                   >
@@ -671,7 +916,9 @@ export function ApercuHabitant() {
                             c'est ce qui manquait pour donner envie : on ne se
                             déplace pas sur une jolie phrase, on se déplace sur
                             une jolie phrase ET quatre étoiles et demie. */}
-                        {!embauches && estInvitation(dessus) && avisDuMoment(dessus, heure).length > 0 && (
+                        {!embauches &&
+                          estInvitation(dessus) &&
+                          avisNotes(avisDuMoment(dessus, heure)).length > 0 && (
                           <span className="ap-invit-avis">
                             <Etoiles note={moyenneAvis(avisDuMoment(dessus, heure))} />
                             <b>
@@ -679,7 +926,7 @@ export function ApercuHabitant() {
                                 .toString()
                                 .replace(".", ",")}
                             </b>
-                            <span>· {avisDuMoment(dessus, heure).length} avis</span>
+                            <span>· {avisNotes(avisDuMoment(dessus, heure)).length} avis</span>
                           </span>
                         )}
                         {!estInvitation(dessus) && restants.length > 1 && (
@@ -779,18 +1026,48 @@ export function ApercuHabitant() {
                                     pas sous le commerce : c'est le plat qu'on
                                     note, et c'est lui qui les remporte quand il
                                     revient à la carte. */}
-                                {av.length > 0 && (
+                                {(avisNotes(av).length > 0 || photosDe(av).length > 0) && (
                                   <div className="ap-prog-av">
-                                    <div className="ap-prog-av-h">
-                                      <Etoiles note={moyenneAvis(av)} />
-                                      <b>{moyenneAvis(av).toString().replace(".", ",")}</b>
-                                      <span>· {av.length} avis</span>
-                                    </div>
-                                    {av.slice(0, 2).map((a, n) => (
-                                      <p key={`${a.qui}-${n}`}>
-                                        <b>{a.qui}</b> {a.texte}
-                                      </p>
-                                    ))}
+                                    {/* La ligne d'étoiles ne s'affiche que si
+                                        quelqu'un a noté : un « 0 » et cinq
+                                        étoiles éteintes sous une belle photo
+                                        diraient le contraire de la vérité. */}
+                                    {avisNotes(av).length > 0 && (
+                                      <div className="ap-prog-av-h">
+                                        <Etoiles note={moyenneAvis(av)} />
+                                        <b>{moyenneAvis(av).toString().replace(".", ",")}</b>
+                                        <span>· {avisNotes(av).length} avis</span>
+                                      </div>
+                                    )}
+                                    {/* Un avis sans texte n'a rien à dire : une
+                                        photo seule s'affiche plus bas, elle n'a
+                                        pas besoin d'une ligne vide au-dessus. */}
+                                    {av
+                                      .filter((a) => a.texte)
+                                      .slice(0, 2)
+                                      .map((a, n) => (
+                                        <p key={`${a.qui}-${n}`}>
+                                          <b>{a.qui}</b> {a.texte}
+                                        </p>
+                                      ))}
+                                    {/* LES PHOTOS DU MOMENT, prises par ceux
+                                        qui y étaient. Elles sont attachées au
+                                        moment, donc elles reviendront avec lui
+                                        la prochaine fois qu'il sera à la carte
+                                        — l'annonce s'enrichit toute seule. */}
+                                    {photosDe(av).length > 0 && (
+                                      <div className="ap-photos">
+                                        {photosDe(av).map((src, n) => (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img
+                                            key={n}
+                                            src={src}
+                                            alt={`${m.titre}, photo d'un client`}
+                                            loading="lazy"
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
@@ -807,6 +1084,7 @@ export function ApercuHabitant() {
                                       onPointerDown={(ev) => ev.stopPropagation()}
                                       onClick={() => {
                                         const cle = cleMoment(dessus, m);
+                                        noter("note-donnee", n);
                                         setNotes((v) => ({ ...v, [cle]: n }));
                                         ajouterAvis(cle, {
                                           note: n,
@@ -820,6 +1098,43 @@ export function ApercuHabitant() {
                                     </button>
                                   ))}
                                   <span>{maNote ? "Noté" : "J'y suis allé"}</span>
+
+                                  {/* AJOUTER SA PHOTO EST À CÔTÉ DES ÉTOILES,
+                                      pas dans un écran à part : c'est le même
+                                      instant et le même élan. Un appareil photo
+                                      derrière un menu n'est jamais trouvé.
+                                      `capture` ouvre directement l'appareil sur
+                                      téléphone, la galerie reste accessible. */}
+                                  <label
+                                    className="ap-photo-plus"
+                                    onPointerDown={(ev) => ev.stopPropagation()}
+                                  >
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      capture="environment"
+                                      onChange={async (ev) => {
+                                        const f = ev.target.files?.[0];
+                                        ev.target.value = "";
+                                        if (!f) return;
+                                        try {
+                                          const photo = await reduirePhoto(f);
+                                          noter("photo-ajoutee");
+                                          ajouterAvis(cleMoment(dessus, m), {
+                                            note: notes[cleMoment(dessus, m)] ?? 0,
+                                            texte: "",
+                                            qui: "Vous",
+                                            quand: "à l'instant",
+                                            photo,
+                                          });
+                                        } catch {
+                                          /* Image illisible : on ne casse rien. */
+                                        }
+                                      }}
+                                    />
+                                    <i aria-hidden="true">📷</i>
+                                    Ma photo
+                                  </label>
                                 </div>
 
                                 {/* « FAITES-LE REVENIR ».
@@ -847,7 +1162,23 @@ export function ApercuHabitant() {
                                     className={`ap-revient${jeDemande(dessus, m) ? " on" : ""}`}
                                     aria-pressed={jeDemande(dessus, m)}
                                     onPointerDown={(ev) => ev.stopPropagation()}
-                                    onClick={() => basculerRappel(cleMoment(dessus, m))}
+                                    onClick={() => {
+                                      const cle = cleMoment(dessus, m);
+                                      const nouveau = !jeDemande(dessus, m);
+                                      basculerRappel(cle);
+                                      if (!nouveau) return;
+                                      noter("rappel-demande");
+                                      // LA PERMISSION SE DEMANDE ICI ET NULLE
+                                      // PART AILLEURS : c'est le seul instant du
+                                      // produit où « on vous préviendra » est
+                                      // une phrase vraie. Ailleurs, ce serait
+                                      // une demande à l'aveugle, refusée par
+                                      // réflexe et définitivement.
+                                      noter("notif-proposee");
+                                      void demanderAvertissement().then((r) =>
+                                        noter(r === "granted" ? "notif-acceptee" : "notif-refusee"),
+                                      );
+                                    }}
                                   >
                                     <i aria-hidden="true">🔁</i>
                                     <span>
@@ -891,6 +1222,40 @@ export function ApercuHabitant() {
                           {dessus.fiche.horaires}
                         </div>
 
+                        {/* LE MUR DU COMMERCE. Toutes les photos prises chez
+                            lui, tous moments confondus. Le commerçant n'en a
+                            pris aucune — et pour les métiers qui n'ont pas de
+                            photo du tout (coiffeur, fleuriste, onglerie), c'est
+                            la seule façon réaliste qu'il en existe un jour. */}
+                        {murDe(dessus).length > 0 ? (
+                          <div className="ap-mur">
+                            <h4>
+                              Photos des clients
+                              <b>{murDe(dessus).length}</b>
+                            </h4>
+                            <div className="ap-photos">
+                              {murDe(dessus).map((src, n) => (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  key={n}
+                                  src={src}
+                                  alt={`Chez ${dessus.nom}, photo d'un client`}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          // LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à
+                          // froid : tant que personne n'a photographié, il n'y
+                          // a rien — et l'écrire est ce qui donne envie d'être
+                          // le premier.
+                          <div className="ap-mur vide">
+                            <i aria-hidden="true">📷</i>
+                            Personne n&apos;a encore photographié ce commerce.
+                          </div>
+                        )}
+
                         {/* « IL RECRUTE » VIT SUR LA FICHE DU COMMERCE, et c'est
                             là que ça devait aller depuis le début : une
                             recherche d'employé n'est pas un moment de la
@@ -904,6 +1269,7 @@ export function ApercuHabitant() {
                             className="ap-recrute-l"
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={() => {
+                              noter("embauches-vues", 0, "fiche");
                               setEmbauches(true);
                               setEnvies([]);
                               annulerSortie();
@@ -920,15 +1286,32 @@ export function ApercuHabitant() {
                           </button>
                         )}
 
-                        <a
-                          className="ap-yaller"
-                          href={dessus.itineraire}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          onPointerDown={(ev) => ev.stopPropagation()}
-                        >
-                          🧭 Y aller
-                        </a>
+                        <div className="ap-deux-b">
+                          <a
+                            className="ap-yaller"
+                            href={dessus.itineraire}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                          >
+                            🧭 Y aller
+                          </a>
+                          {/* LE PARTAGE DIT « JE LE SOUTIENS », ET RIEN D'AUTRE.
+                              Aucune récompense n'est promise ici, et il ne faut
+                              jamais en promettre : le jour où elle est attendue,
+                              c'est redevenu une économie de points. */}
+                          <button
+                            type="button"
+                            className={`ap-flamme${mesFlammes[dessus.id] ? " on" : ""}`}
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={() => void partager(dessus)}
+                          >
+                            <i aria-hidden="true">🔥</i>
+                            {mesFlammes[dessus.id]
+                              ? `Soutenu ${mesFlammes[dessus.id]}×`
+                              : "Le soutenir"}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1003,15 +1386,18 @@ export function ApercuHabitant() {
               className="cd-g ambre"
               onClick={() => {
                 if (embauches && dessus?.recrute) {
+                  noter("je-passe");
                   setOuvertReponse(dessus);
                   setFeuille("embauche");
                   return;
                 }
                 if (dessus && estInvitation(dessus)) {
+                  noter("jy-vais");
                   setOuvertReponse(dessus);
                   setFeuille("jyvais");
                   return;
                 }
+                noter("reserve");
                 setCreneau("");
                 setFeuille("resa");
               }}
@@ -1068,6 +1454,7 @@ export function ApercuHabitant() {
                             type="button"
                             className={`ap-m${m.cle === branche && !embauches ? " on" : ""}`}
                             onClick={() => {
+                              noter("metier-change", 0, m.cle);
                               setBranche(m.cle);
                               setEmbauches(false);
                               setEnvies([]);
@@ -1092,6 +1479,7 @@ export function ApercuHabitant() {
                           type="button"
                           className={`ap-m recrute${embauches ? " on" : ""}`}
                           onClick={() => {
+                            noter("embauches-vues", 0, "selecteur");
                             setEmbauches(true);
                             setEnvies([]);
                             annulerSortie();
@@ -1669,6 +2057,35 @@ export function ApercuHabitant() {
         .ap-n.on{color:#F0B429;transform:scale(1.06);}
         .ap-noter span{margin-left:8px;font-size:11.5px;color:#6C8078;}
 
+        /* LES PHOTOS DES CLIENTS. Une bande qui defile plutot qu'une grille :
+           la carte est deja etroite, et une grille de vignettes ecrase les
+           photos jusqu'a ce qu'on n'y voie plus rien. */
+        .ap-photos{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
+          margin-top:9px;padding-bottom:2px;}
+        .ap-photos::-webkit-scrollbar{display:none;}
+        .ap-photos img{flex:none;width:88px;height:88px;object-fit:cover;
+          border-radius:11px;border:1px solid rgba(255,255,255,.12);background:#0D1512;}
+        /* AJOUTER SA PHOTO EST UN LABEL, PAS UN BOUTON : le champ fichier est
+           dedans et invisible, sinon le navigateur impose son « Choisir un
+           fichier » qu'on ne peut ni traduire ni habiller. */
+        .ap-photo-plus{margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+          font-size:12px;font-weight:800;color:#B9C6CE;cursor:pointer;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+          border-radius:999px;padding:6px 11px;}
+        .ap-photo-plus input{position:absolute;width:1px;height:1px;opacity:0;
+          pointer-events:none;}
+        .ap-photo-plus i{font-style:normal;font-size:13px;line-height:1;}
+        .ap-photo-plus:active{transform:scale(.96);}
+
+        /* LE MUR DU COMMERCE, sur sa fiche. */
+        .ap-mur{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);}
+        .ap-mur h4{margin:0;display:flex;align-items:center;gap:8px;font-size:12px;
+          font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#7F988B;}
+        .ap-mur h4 b{font-size:11px;font-weight:850;color:#04150E;background:#3DE2A6;
+          border-radius:999px;padding:2px 8px;letter-spacing:0;}
+        .ap-mur.vide{display:flex;align-items:center;gap:9px;font-size:13px;color:#6C8078;}
+        .ap-mur.vide i{font-style:normal;font-size:15px;}
+
         /* « FAITES-LE REVENIR » : un bouton discret tant qu'il n'est pas
            appuye, une ligne affirmee une fois que le commercant a repondu.
            Le violet ne sert qu'a ca — le vert est l'application, l'or
@@ -1716,6 +2133,20 @@ export function ApercuHabitant() {
           font-size:14px;font-weight:850;color:#EAF2EC;text-decoration:none;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
           border-radius:12px;padding:12px 18px;}
+
+        /* « Y aller » et « le soutenir » sur la meme ligne : deux actions de
+           meme poids, l'une pour soi, l'autre pour le commercant. */
+        .ap-deux-b{display:flex;flex-wrap:wrap;gap:9px;align-items:center;}
+        .ap-deux-b .ap-yaller{flex:1;justify-content:center;min-width:130px;}
+        .ap-flamme{flex:1;min-width:130px;display:inline-flex;align-items:center;
+          justify-content:center;gap:7px;margin-top:12px;font:inherit;font-size:14px;
+          font-weight:850;color:#F3C6A8;cursor:pointer;
+          background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.32);
+          border-radius:12px;padding:12px 18px;transition:transform .12s ease;}
+        .ap-flamme:active{transform:scale(.97);}
+        .ap-flamme i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-flamme.on{color:#FFD9BE;background:rgba(249,115,22,.22);
+          border-color:rgba(249,115,22,.6);}
 
         .ap-tampon{position:absolute;top:26px;font-size:34px;font-weight:900;line-height:1;
           border:4px solid currentColor;border-radius:14px;padding:8px 16px;pointer-events:none;}
