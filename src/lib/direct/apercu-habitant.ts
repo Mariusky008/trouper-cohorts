@@ -151,6 +151,27 @@ export type MomentJour = {
   envies: string[];
   /** Les avis, quand le moment porte sur quelque chose qui se goûte ou s'essaie. */
   avis?: AvisPlat[];
+  /**
+   * COMBIEN DE VOISINS ONT DÉJÀ DEMANDÉ QUE ÇA REVIENNE.
+   *
+   * C'est le seul chiffre du produit qui vienne des habitants et pas du
+   * commerçant, et c'est ce qui le rend intéressant pour les deux : celui qui
+   * lit voit qu'il n'est pas seul à vouloir, celui qui cuisine apprend quoi
+   * mettre à la carte jeudi — une information qu'il n'a nulle part ailleurs.
+   *
+   * Absent : personne ne l'a encore demandé, et on n'affiche donc aucun compte.
+   * Un « 0 » affiché est un échec affiché ; le bouton se suffit à lui-même.
+   */
+  rappels?: number;
+  /**
+   * CE QUE LE COMMERÇANT A RÉPONDU. Quand il remet la chose à la carte, il pose
+   * le jour, et ceux qui l'avaient demandée sont prévenus.
+   *
+   * C'EST LA MOITIÉ QUI COMPTE. Un bouton qui envoie une demande dans le vide
+   * est une boîte à idées, et personne n'appuie deux fois sur une boîte à
+   * idées. Ce qui fait revenir, c'est d'avoir vu une fois que ça marchait.
+   */
+  revient?: string;
 };
 
 /**
@@ -336,6 +357,7 @@ const CARTES: CarteAutour[] = [
         titre: "Menu du jour",
         lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
         prix: "19 €", places: 8, action: "Réserver", envies: [],
+        rappels: 5,
         avis: [
           { note: 5, texte: "La garbure vaut le détour.", qui: "Hélène", quand: "la semaine dernière" },
           { note: 4, texte: "Magret cuit pile comme il faut.", qui: "Karim", quand: "il y a 3 semaines" },
@@ -347,6 +369,7 @@ const CARTES: CarteAutour[] = [
         titre: "Les restes, à emporter",
         lignes: ["Ce qui n'est pas parti du service", "Sur place, tant qu'il y en a"],
         prix: "7 €", places: 5, action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
+        rappels: 3,
       },
       {
         de: 19, a: 22, quand: "19 h – 22 h", icone: "🌙",
@@ -438,6 +461,10 @@ const CARTES: CarteAutour[] = [
         titre: "Table découverte entre inconnus",
         lignes: ["4 places, on s'assoit ensemble", "Plat + verre compris"],
         prix: "22 €", places: 2, action: "Réserver", envies: ["partager"],
+        // LA PREUVE QUE LE BOUTON SERT A QUELQUE CHOSE. Sans un cas deja
+        // exauce a l'ecran, « faites-le revenir » est une boite a idees, et
+        // personne n'appuie deux fois sur une boite a idees.
+        rappels: 7, revient: "jeudi",
       },
     ],
   },
@@ -490,6 +517,7 @@ const CARTES: CarteAutour[] = [
         lignes: ["Pains et viennoiseries du jour", "Jusqu'à la fermeture"],
         prix: "0,65 €", prixBarre: "1,30 €", etiquette: "−50 %", places: 12,
         envies: ["moins15", "maintenant", "emporter"],
+        rappels: 4,
       },
     ],
   },
@@ -613,6 +641,7 @@ const CARTES: CarteAutour[] = [
         titre: "Essayage privé",
         lignes: ["La boutique pour vous seule, 30 min", "Sur rendez-vous"],
         places: 2, action: "Réserver", envies: [],
+        rappels: 6,
       },
       {
         de: 17, a: 19, quand: "18 h", icone: "🏷️",
@@ -684,6 +713,7 @@ const CARTES: CarteAutour[] = [
         titre: "Concert acoustique",
         lignes: ["Duo guitare-voix", "Entrée libre"],
         etiquette: "GRATUIT", places: 35, envies: ["musique"],
+        rappels: 9,
       },
     ],
   },

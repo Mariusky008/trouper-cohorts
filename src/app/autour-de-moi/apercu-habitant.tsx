@@ -124,6 +124,52 @@ function ajouterAvis(cle: string, avis: AvisPlat) {
   abonnes.forEach((f) => f());
 }
 
+// ── « FAITES-LE REVENIR » — LES RAPPELS DEMANDÉS PAR LE VISITEUR ───────────
+//
+// CE QUE ÇA RÉSOUT, ET CE QUE ÇA NE RÉSOUT PAS. On cherche de quoi valoriser
+// celui qui lit. Pas avec un badge : avec un effet vérifiable dans sa ville. Il
+// appuie une fois sur un plat, un arrivage, une prestation ; le commerçant voit
+// le compte ; quand il le remet, ceux qui l'ont demandé sont prévenus. La carte
+// du quartier a changé à cause d'eux, et ils sont plusieurs à lire la même
+// phrase.
+//
+// CE N'EST PAS LE SEUIL COLLECTIF ÉCARTÉ PLUS TÔT. Là, un palier débloquait une
+// remise — donc on attendait à plusieurs pour payer moins, et personne n'attend.
+// Ici le seuil ne débloque aucun prix : il fait EXISTER une chose. Personne ne
+// paie moins, le commerçant apprend quoi cuisiner jeudi, et le rendez-vous
+// remplace l'habitude quotidienne qu'on n'a jamais réussi à installer.
+//
+// Même stockage que les avis, même raison : il appuie, il ferme, il revient, et
+// sa demande est toujours là. Un compteur qui se remet à zéro ne prouve rien.
+const CLE_RAPPELS = "clikme-rappels-v1";
+const RIEN: string[] = [];
+let rappels: string[] | null = null;
+const abonnesR = new Set<() => void>();
+
+function chargerRappels(): string[] {
+  if (rappels) return rappels;
+  try {
+    rappels = JSON.parse(window.localStorage.getItem(CLE_RAPPELS) || "[]");
+  } catch {
+    rappels = [];
+  }
+  return rappels ?? RIEN;
+}
+function abonnerRappels(f: () => void) {
+  abonnesR.add(f);
+  return () => void abonnesR.delete(f);
+}
+function basculerRappel(cle: string) {
+  const avant = chargerRappels();
+  rappels = avant.includes(cle) ? avant.filter((x) => x !== cle) : [...avant, cle];
+  try {
+    window.localStorage.setItem(CLE_RAPPELS, JSON.stringify(rappels));
+  } catch {
+    /* Refusé : la demande vit quand même le temps de la visite. */
+  }
+  abonnesR.forEach((f) => f());
+}
+
 function Etoiles({ note }: { note: number }) {
   return (
     <span className="ap-et" aria-label={`${note} sur 5`}>
@@ -252,6 +298,7 @@ export function ApercuHabitant() {
   const defilement = useRef<HTMLDivElement | null>(null);
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
+  const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
 
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
@@ -295,6 +342,12 @@ export function ApercuHabitant() {
     ...(miens[cleMoment(c, m)] ?? []),
     ...(m.avis ?? []),
   ];
+  /** Est-ce que J'AI demandé que ça revienne ? Gardé dans son navigateur. */
+  const jeDemande = (c: CarteAutour, m: MomentJour) => mesRappels.includes(cleMoment(c, m));
+  /** Le compte affiché : les voisins, plus moi si j'ai appuyé. Le mien doit se
+   *  voir tout de suite dans le nombre, sinon l'appui n'a rien fait. */
+  const combienDemandent = (c: CarteAutour, m: MomentJour) =>
+    (m.rappels ?? 0) + (jeDemande(c, m) ? 1 : 0);
 
   function remettre() {
     minuteries.current.forEach(clearTimeout);
@@ -768,6 +821,43 @@ export function ApercuHabitant() {
                                   ))}
                                   <span>{maNote ? "Noté" : "J'y suis allé"}</span>
                                 </div>
+
+                                {/* « FAITES-LE REVENIR ».
+                                    Un appui, aucune page blanche, et un effet
+                                    qu'on peut vérifier dans sa ville. Deux
+                                    états, et le second est celui qui compte :
+                                    quand le commerçant a répondu, la ligne ne
+                                    dit plus « demandez », elle dit « il revient
+                                    jeudi, vous étiez sept ». Sans ce cas-là à
+                                    l'écran, le bouton n'est qu'une boîte à
+                                    idées, et personne n'appuie deux fois sur
+                                    une boîte à idées. */}
+                                {m.revient ? (
+                                  <div className="ap-revient exauce">
+                                    <i aria-hidden="true">🔁</i>
+                                    <span>
+                                      <b>Il revient {m.revient}.</b>
+                                      Vous étiez {(m.rappels ?? 0) + (jeDemande(dessus, m) ? 1 : 0)}{" "}
+                                      à le demander.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className={`ap-revient${jeDemande(dessus, m) ? " on" : ""}`}
+                                    aria-pressed={jeDemande(dessus, m)}
+                                    onPointerDown={(ev) => ev.stopPropagation()}
+                                    onClick={() => basculerRappel(cleMoment(dessus, m))}
+                                  >
+                                    <i aria-hidden="true">🔁</i>
+                                    <span>
+                                      {jeDemande(dessus, m) ? "Demandé" : "Faites-le revenir"}
+                                    </span>
+                                    {combienDemandent(dessus, m) > 0 && (
+                                      <b>{combienDemandent(dessus, m)}</b>
+                                    )}
+                                  </button>
+                                )}
 
                                 {m.action && (m.places ?? 1) > 0 && (
                                   <button
@@ -1578,6 +1668,31 @@ export function ApercuHabitant() {
           transition:color .18s ease,transform .18s cubic-bezier(.34,1.4,.64,1);}
         .ap-n.on{color:#F0B429;transform:scale(1.06);}
         .ap-noter span{margin-left:8px;font-size:11.5px;color:#6C8078;}
+
+        /* « FAITES-LE REVENIR » : un bouton discret tant qu'il n'est pas
+           appuye, une ligne affirmee une fois que le commercant a repondu.
+           Le violet ne sert qu'a ca — le vert est l'application, l'or
+           l'invitation, le bleu l'embauche. */
+        .ap-revient{width:100%;display:flex;align-items:center;gap:9px;margin-top:10px;
+          font:inherit;font-size:13.5px;font-weight:700;color:#C0B6E8;cursor:pointer;
+          text-align:left;background:rgba(167,139,250,.08);
+          border:1px solid rgba(167,139,250,.26);border-radius:12px;padding:10px 12px;
+          transition:transform .12s ease,background .25s ease,border-color .25s ease;}
+        .ap-revient:active{transform:scale(.98);}
+        .ap-revient i{font-style:normal;font-size:15px;line-height:1;flex:none;}
+        .ap-revient span{flex:1;min-width:0;}
+        .ap-revient b{flex:none;font-size:12px;font-weight:850;color:#0A0715;
+          background:#A78BFA;border-radius:999px;padding:3px 9px;
+          font-variant-numeric:tabular-nums;}
+        .ap-revient.on{color:#E4DBFF;background:rgba(167,139,250,.2);
+          border-color:rgba(167,139,250,.55);}
+        /* L'ETAT QUI FAIT REVENIR : le commercant a repondu, et on le dit en
+           entier. C'est la seule phrase du produit ou l'habitant a change
+           quelque chose dans sa ville. */
+        .ap-revient.exauce{cursor:default;color:#C7BCF0;
+          background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.45);}
+        .ap-revient.exauce b{display:block;margin-bottom:2px;padding:0;
+          font-size:14.5px;color:#E4DBFF;background:none;letter-spacing:-.01em;}
 
         .ap-prog-b{margin-top:11px;font:inherit;font-size:14px;font-weight:850;color:#0A1410;
           border:0;border-radius:12px;padding:12px 20px;cursor:pointer;
