@@ -1,7 +1,7 @@
 # Les photos d'illustration du Direct
 
-Quatorze photos de commerce et trois photos « de client », et elles ne servent
-qu'à DEUX cas :
+Vingt-quatre photos : quatorze commerces, six plats du jour, quatre événements
+de la ville, et trois photos « de client ». Elles ne servent qu'à DEUX cas :
 
 1. **Les cartes de la ville** montrées à l'acte 3 de la démonstration. Elles
    décrivent d'autres commerces que celui qui regarde — on ne peut donc pas y
@@ -34,6 +34,33 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `salon-neuf.jpg`       | Un salon de coiffure qui vient d'ouvrir           |
 | `bouquet-du-jour.jpg`  | Un bouquet devant une fenêtre                     |
 | `pose-ongles.jpg`      | Une main aux ongles posés                         |
+
+## Les six plats du jour
+
+C'est la photo qui décide qu'on y va — pas celle de la salle. Chaque restaurant
+montre SON plat : trois cartes partageant la même assiette se voyait
+immédiatement.
+
+| Fichier                  | Le plat                                         |
+|--------------------------|-------------------------------------------------|
+| `plat-garbure.jpg`       | Garbure landaise dans sa marmite                |
+| `plat-lasagnes.jpg`      | Lasagnes maison au plat                         |
+| `plat-axoa.jpg`          | Axoa de veau en cocotte                         |
+| `plat-basquaise.jpg`     | Poulet basquaise à la poêle                     |
+| `plat-parmentier.jpg`    | Parmentier de canard entamé                     |
+| `plat-formule.jpg`       | Sandwich, boisson et chips                      |
+
+## Les quatre événements de la ville
+
+Publiés par la mairie, l'office de tourisme, un musée, une association. Même
+cadre que les cartes de commerce.
+
+| Fichier                     | Ce qu'il montre                              |
+|-----------------------------|----------------------------------------------|
+| `concert-kiosque.jpg`       | Un concert, guitares et fumigènes             |
+| `marche-producteurs.jpg`    | Un étal de producteur                         |
+| `nocturne-musee.jpg`        | Un grand hall de musée                        |
+| `vide-grenier.jpg`          | Un étal de brocante                           |
 
 ## Les trois photos « de client »
 

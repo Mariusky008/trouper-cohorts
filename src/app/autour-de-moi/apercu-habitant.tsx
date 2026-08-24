@@ -2352,10 +2352,8 @@ export function ApercuHabitant() {
         .ap-dessus.emb .cd-quoi i{font-size:17px;}
         .ap-dessus.emb .cd-prix b{color:#B8CEFF;}
         .ap-dessus.emb .cd-prix em{background:#7DA8FF;color:#06121F;}
-        .ap-dessus.emb .cd-reste{max-width:calc(100% - 132px);color:#06121F;font-weight:850;
-          background:linear-gradient(140deg,#9FBEFF,#5C8FF0);border-color:transparent;
-          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
-          line-height:1.35;}
+        .ap-dessus.emb .cd-reste{color:#06121F;font-weight:850;
+          background:linear-gradient(140deg,#9FBEFF,#5C8FF0);border-color:transparent;}
         /* Le composant prefixe cette pastille d'un sablier : juste pour une
            echeance, faux pour un poste — « On recrute » ne s'epuise pas a midi.
            Le sablier saute, le texte parle seul. */
@@ -2387,6 +2385,15 @@ export function ApercuHabitant() {
           letter-spacing:.01em;}
         .ap-recrute-l em{flex:none;font-style:normal;font-size:17px;color:#7DA8FF;}
 
+        /* LA PASTILLE DU HAUT PARTAGE SA LIGNE AVEC « Y ALLER ».
+           Sans plafond elle passe dessous et se coupe au milieu d'un mot —
+           constate sur l'invitation, puis sur l'embauche, puis sur le menu du
+           jour dont le titre de moment est long. Une regle pour toutes plutot
+           qu'une copie par couleur : le defaut est le meme partout. */
+        .ap-dessus .cd-reste{max-width:calc(100% - 132px);overflow:hidden;
+          white-space:nowrap;text-overflow:ellipsis;display:block;line-height:1.35;}
+        .ap-dessus .cd-reste i{margin-right:6px;}
+
         /* L'INVITATION.
            LE DEFAUT MESURE : « les 3 reponses ne donnent pas du tout envie,
            aucune photo, pas d'avis, pas de detail, pas de prix, le mode swipe a
@@ -2406,12 +2413,8 @@ export function ApercuHabitant() {
         .ap-dessus.invit .cd-quoi{font-size:17.5px;font-weight:850;letter-spacing:-.02em;
           color:#FFE39A;}
         .ap-dessus.invit .cd-quoi i{font-size:17px;}
-        /* La pastille partage sa ligne avec « Y aller » : sans plafond, elle
-           passe dessous et l'heure se coupe en deux (mesuré a 360 et 402 px). */
-        .ap-dessus.invit .cd-reste{max-width:calc(100% - 132px);color:#04150E;font-weight:850;
-          background:linear-gradient(140deg,#F7C948,#E09B12);border-color:transparent;
-          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
-          line-height:1.35;}
+        .ap-dessus.invit .cd-reste{color:#04150E;font-weight:850;
+          background:linear-gradient(140deg,#F7C948,#E09B12);border-color:transparent;}
         /* En bloc plutot qu'en flex : text-overflow ne s'applique pas a un
            noeud de texte nu dans un conteneur flex. L'ecart se refait a la main. */
         .ap-dessus.invit .cd-reste i{margin-right:6px;}
@@ -2614,10 +2617,8 @@ export function ApercuHabitant() {
         .ap-dessus.ev .cd-quoi{color:#F9C0DC;}
         .ap-dessus.ev .cd-prix b{color:#F9C0DC;}
         .ap-dessus.ev .cd-prix em{background:#F472B6;color:#2A0716;}
-        .ap-dessus.ev .cd-reste{max-width:calc(100% - 132px);color:#2A0716;font-weight:850;
-          background:linear-gradient(140deg,#F9A8D4,#EC4899);border-color:transparent;
-          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
-          line-height:1.35;}
+        .ap-dessus.ev .cd-reste{color:#2A0716;font-weight:850;
+          background:linear-gradient(140deg,#F9A8D4,#EC4899);border-color:transparent;}
         .ap-dessus.ev .cd-reste i{display:none;}
         .ap-metier.evenement{color:#2A0716;background:#F472B6;border-color:transparent;}
         .ap-metier.tout{color:#04150E;background:#3DE2A6;border-color:transparent;}

@@ -613,8 +613,8 @@ const CARTES: CarteAutour[] = [
       plat: "Garbure landaise, magret grillé",
       description: "Pommes sarladaises · Pastis landais en dessert",
       prix: "19 €",
-      photo: "/direct/plat-du-jour.jpg",
-      cadrage: "68%",
+      photo: "/direct/plat-garbure.jpg",
+      cadrage: "50%",
     },
     moments: [
       {
@@ -700,7 +700,7 @@ const CARTES: CarteAutour[] = [
       plat: "Lasagnes maison",
       description: "Salade de saison · Prêtes tout de suite, à emporter",
       prix: "11 €",
-      photo: "/direct/portion-a-emporter.jpg",
+      photo: "/direct/plat-lasagnes.jpg",
       cadrage: "50%",
     },
     moments: [
@@ -752,8 +752,8 @@ const CARTES: CarteAutour[] = [
       plat: "Axoa de veau",
       description: "Riz de pays · Gâteau basque · Sous les arcades",
       prix: "16 €",
-      photo: "/direct/plat-du-jour.jpg",
-      cadrage: "68%",
+      photo: "/direct/plat-axoa.jpg",
+      cadrage: "50%",
     },
     moments: [
       {
@@ -813,8 +813,8 @@ const CARTES: CarteAutour[] = [
       plat: "La formule du midi",
       description: "Sandwich pain de campagne · Part de tarte · Boisson",
       prix: "8,50 €",
-      photo: "/direct/sortie-du-four.jpg",
-      cadrage: "100%",
+      photo: "/direct/plat-formule.jpg",
+      cadrage: "50%",
     },
     moments: [
       {
@@ -864,7 +864,7 @@ const CARTES: CarteAutour[] = [
       plat: "Poulet basquaise",
       description: "Riz · Fromage de brebis · Servi à la grande table",
       prix: "17 €",
-      photo: "/direct/tablee-du-soir.jpg",
+      photo: "/direct/plat-basquaise.jpg",
       cadrage: "50%",
     },
     moments: [
@@ -909,8 +909,8 @@ const CARTES: CarteAutour[] = [
       plat: "Parmentier de canard",
       description: "En barquette · Salade · À réchauffer ou à manger sur place",
       prix: "12 €",
-      photo: "/direct/vitrine-du-soir.jpg",
-      cadrage: "72%",
+      photo: "/direct/plat-parmentier.jpg",
+      cadrage: "50%",
     },
     moments: [
       {
@@ -1431,6 +1431,9 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
+      // COURT, PARCE QUE LA PASTILLE PARTAGE SA LIGNE AVEC « Y ALLER ». Le
+      // titre du moment porte l'information ; l'heure seule ne dit rien, et
+      // les deux ensemble ne tiennent pas.
       reste: m
         ? seJoueMaintenant(m, heure)
           ? `${m.icone} ${m.titre}`
