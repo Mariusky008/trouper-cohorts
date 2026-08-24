@@ -55,6 +55,7 @@ import {
   carteDeRecrutement,
   carteDeReponse,
   ceuxQuiRecrutent,
+  toutesLesCartes,
   comptesParMetier,
   momentsRestants,
   avisNotes,
@@ -432,7 +433,7 @@ export function ApercuHabitant() {
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
   const [feuille, setFeuille] = useState<
-    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche"
+    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche" | "moi"
   >("");
   /**
    * LE PAQUET REGARDE LES EMBAUCHES, PAS LES MÉTIERS.
@@ -494,6 +495,7 @@ export function ApercuHabitant() {
     }
   }
 
+  const toutes = toutesLesCartes();
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
@@ -693,6 +695,77 @@ export function ApercuHabitant() {
   const listeEnvies = ENVIES[branche];
   const aReserver = restants.filter((m) => m.action && (m.places ?? 1) > 0);
 
+  // ── CE QUE MON ESPACE AFFICHE ────────────────────────────────────────────
+  // Les trois listes se reconstruisent depuis les identifiants gardés : rien
+  // n'est dupliqué, donc rien ne peut se désynchroniser de ce qui est à l'écran.
+  const mesGardes = toutes.filter((c) => gardees.includes(c.id));
+  const mesReserves = reserves.flatMap((cle) => {
+    const [a, b] = cle.split("|");
+    if (a === "vais" || a === "emb") {
+      const c = toutes.find((x) => x.id === b);
+      if (!c) return [];
+      return [
+        {
+          cle,
+          nom: c.nom,
+          icone: a === "emb" ? "👋" : "🚶",
+          quoi: a === "emb" ? `Passer se présenter · ${c.recrute?.passez ?? ""}` : "Il vous attend",
+        },
+      ];
+    }
+    const c = toutes.find((x) => x.id === a);
+    if (!c) return [];
+    return [{ cle, nom: c.nom, icone: "📅", quoi: b }];
+  });
+  const mesDemandes = mesRappels.flatMap((cle) => {
+    const [id, titre] = cle.split("|");
+    const c = toutes.find((x) => x.id === id);
+    const m = c?.moments.find((x) => x.titre === titre);
+    if (!c || !m) return [];
+    return [{ cle, nom: c.nom, titre: m.titre, revient: m.revient }];
+  });
+
+  /**
+   * ENVOYER LE MESSAGE SUR WHATSAPP — le canal réel, pas un formulaire de plus.
+   *
+   * C'EST CE QUI ÉTAIT PRÉVU DEPUIS LE DÉBUT, et c'est la bonne décision : un
+   * commerçant de Dax ne va pas surveiller une boîte de réception dans une
+   * application de plus. Il a WhatsApp ouvert toute la journée, il y répond en
+   * trente secondes entre deux services, et l'habitant garde une trace de son
+   * échange dans un fil qu'il relira. On ne construit pas une messagerie — on
+   * pose le message dans celle que les deux utilisent déjà.
+   *
+   * LE MESSAGE EST PRÉ-ÉCRIT, ET C'EST LA MOITIÉ DU TRAVAIL. « Bonjour, je
+   * viens pour… » : la personne n'a plus qu'à appuyer sur envoyer. Sans ça, on
+   * lui laisse la page blanche au moment précis où elle s'engage.
+   *
+   * PAS DE NUMÉRO DANS LA MAQUETTE, ET C'EST DÉLIBÉRÉ. Les commerces d'ici sont
+   * inventés ; leur inventer un numéro à huit chiffres, c'est prendre le risque
+   * qu'un testeur écrive vraiment à un inconnu. `wa.me` sans destinataire ouvre
+   * WhatsApp avec le message prêt et laisse choisir le contact : la mécanique se
+   * joue en entier, sans qu'un téléphone réel puisse sonner. Le vrai produit
+   * portera le numéro du commerçant.
+   */
+  function surWhatsApp(texte: string) {
+    noter("reserve", 0, "whatsapp");
+    const url = `https://wa.me/?text=${encodeURIComponent(texte)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  /** Ouvrir un commerce gardé depuis mon espace : on le remet en tête du paquet. */
+  function allerA(c: CarteAutour) {
+    setFeuille("");
+    setEmbauches(false);
+    setBranche(c.branche);
+    setEnvies([]);
+    annulerSortie();
+    remettre();
+    // On rouvre le paquet de SON métier, remis à zéro. On ne le force pas en
+    // tête : le tri par distance est ce qui rend le paquet lisible, et le
+    // bousculer pour une carte gardée ferait mentir « du plus près au plus
+    // loin » sur toutes les autres.
+  }
+
   return (
     <div className="ap">
       <StylesDirect />
@@ -714,15 +787,30 @@ export function ApercuHabitant() {
                 <em aria-hidden="true">▾</em>
               </button>
               {reserves.length > 0 && (
-                <span className="cd-puce">
+                <button
+                  type="button"
+                  className="cd-puce ap-perso"
+                  onClick={() => setFeuille("moi")}
+                  aria-label="Mon espace"
+                >
                   <i aria-hidden="true">📅</i>
                   <b>{reserves.length}</b>
-                </span>
+                </button>
               )}
-              <span className={`cd-puce vert ap-fav${coeurVole ? " pop" : ""}`}>
+              {/* LA PASTILLE DES FAVORIS EST LA PORTE DE L'ESPACE PERSO.
+                  Il en manquait un, et lui ajouter une icône de plus dans un
+                  bandeau qui en porte déjà trois aurait chargé l'écran pour
+                  rien : le cœur COMPTE déjà ce qu'on a gardé, donc c'est là
+                  qu'on va naturellement chercher où ça a été rangé. */}
+              <button
+                type="button"
+                className={`cd-puce vert ap-fav ap-perso${coeurVole ? " pop" : ""}`}
+                onClick={() => setFeuille("moi")}
+                aria-label="Mon espace"
+              >
                 <i aria-hidden="true">💚</i>
                 <b>{gardees.length}</b>
-              </span>
+              </button>
             </div>
 
             {/* LA PORTE D'ENTRÉE RESSEMBLE À UNE RECHERCHE, ET C'EST VOULU.
@@ -913,6 +1001,22 @@ export function ApercuHabitant() {
                   >
                     <div className="ap-un">
                       <CarteSwipe carte={carteDe(dessus)} className="ap-carte">
+                        {/* LA FLAMME EST SUR LA PHOTO, PAS SEULEMENT SOUS LE
+                            PLI. Soutenir un commerce est un geste d'humeur : il
+                            se fait dans la seconde où la carte plaît, pas après
+                            avoir déroulé une fiche. Enterrée sous le pli, elle
+                            n'était atteinte que par ceux qui descendaient. */}
+                        <button
+                          type="button"
+                          className={`ap-flamme-photo${mesFlammes[dessus.id] ? " on" : ""}`}
+                          aria-label="Soutenir ce commerce"
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => void partager(dessus)}
+                        >
+                          <i aria-hidden="true">🔥</i>
+                          {mesFlammes[dessus.id] ? <b>{mesFlammes[dessus.id]}</b> : null}
+                        </button>
+
                         {/* SUR UN POSTE, LA LIGNE DU BAS DIT COMMENT ON POSTULE,
                             et c'est toute la différence avec un site d'emploi :
                             il n'y a rien à envoyer, on pousse la porte. */}
@@ -1162,8 +1266,8 @@ export function ApercuHabitant() {
                                     <i aria-hidden="true">🔁</i>
                                     <span>
                                       <b>Il revient {m.revient}.</b>
-                                      Vous étiez {(m.rappels ?? 0) + (jeDemande(dessus, m) ? 1 : 0)}{" "}
-                                      à le demander.
+                                      Vous étiez {(m.rappels ?? 0) + (jeDemande(dessus, m) ? 1 : 0)} à
+                                      le demander — il l&apos;a remis pour vous.
                                     </span>
                                   </div>
                                 ) : (
@@ -1190,12 +1294,28 @@ export function ApercuHabitant() {
                                       );
                                     }}
                                   >
-                                    <i aria-hidden="true">🔁</i>
+                                    <i aria-hidden="true">{jeDemande(dessus, m) ? "✓" : "🔁"}</i>
                                     <span>
-                                      {jeDemande(dessus, m) ? "Demandé" : "Faites-le revenir"}
+                                      {/* LE LIBELLE SEUL NE SE COMPRENAIT PAS —
+                                          « le bouton le plus mystérieux », dit
+                                          en test. Il dit maintenant l'action
+                                          À LA PREMIÈRE PERSONNE, et la ligne du
+                                          dessous dit ce qui se passe ensuite :
+                                          c'est la promesse, pas le geste, qui
+                                          donne envie d'appuyer. */}
+                                      <b>
+                                        {jeDemande(dessus, m)
+                                          ? "Vous l'avez demandé"
+                                          : "Je veux que ça revienne"}
+                                      </b>
+                                      {jeDemande(dessus, m)
+                                        ? "On vous préviendra le jour où il revient."
+                                        : combienDemandent(dessus, m) > 0
+                                          ? `${combienDemandent(dessus, m)} personnes l'ont déjà demandé au commerçant.`
+                                          : "Le commerçant voit combien vous êtes à le vouloir."}
                                     </span>
                                     {combienDemandent(dessus, m) > 0 && (
-                                      <b>{combienDemandent(dessus, m)}</b>
+                                      <b className="ap-revient-n">{combienDemandent(dessus, m)}</b>
                                     )}
                                   </button>
                                 )}
@@ -1452,6 +1572,106 @@ export function ApercuHabitant() {
                   ✕
                 </button>
 
+                {/* MON ESPACE — ce que la visite a laissé.
+                    Il manquait un endroit où retrouver ce qu'on a gardé,
+                    réservé, demandé et photographié. Sans lui, tous les gestes
+                    de l'application tombent dans un trou : on garde une carte
+                    et on ne la revoit jamais, ce qui apprend en deux essais à
+                    ne plus rien garder. */}
+                {feuille === "moi" && (
+                  <>
+                    <div className="ap-f-tete">
+                      <b>Mon espace</b>
+                      <span className="simple">
+                        Ce que vous avez gardé, réservé et demandé.
+                      </span>
+                    </div>
+                    <div className="ap-f-liste">
+                      {mesGardes.length > 0 && (
+                        <div className="ap-moi-bloc">
+                          <h4>
+                            Gardés<b>{mesGardes.length}</b>
+                          </h4>
+                          <ul>
+                            {mesGardes.map((c) => (
+                              <li key={c.id}>
+                                <button
+                                  type="button"
+                                  className="ap-moi-l"
+                                  onClick={() => allerA(c)}
+                                >
+                                  <i aria-hidden="true">💚</i>
+                                  <span>
+                                    <b>{c.nom}</b>
+                                    {c.metier} · {c.distance}
+                                  </span>
+                                  <em aria-hidden="true">›</em>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {mesReserves.length > 0 && (
+                        <div className="ap-moi-bloc">
+                          <h4>
+                            Prévu<b>{mesReserves.length}</b>
+                          </h4>
+                          <ul>
+                            {mesReserves.map((r) => (
+                              <li key={r.cle}>
+                                <div className="ap-moi-l fixe">
+                                  <i aria-hidden="true">{r.icone}</i>
+                                  <span>
+                                    <b>{r.nom}</b>
+                                    {r.quoi}
+                                  </span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {mesDemandes.length > 0 && (
+                        <div className="ap-moi-bloc">
+                          <h4>
+                            À faire revenir<b>{mesDemandes.length}</b>
+                          </h4>
+                          <ul>
+                            {mesDemandes.map((d) => (
+                              <li key={d.cle}>
+                                <div className="ap-moi-l fixe">
+                                  <i aria-hidden="true">🔁</i>
+                                  <span>
+                                    <b>{d.titre}</b>
+                                    {d.nom}
+                                    {d.revient ? ` · revient ${d.revient}` : ""}
+                                  </span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {mesGardes.length === 0 &&
+                        mesReserves.length === 0 &&
+                        mesDemandes.length === 0 && (
+                          <div className="ap-moi-vide">
+                            <span aria-hidden="true">💚</span>
+                            <b>Rien pour l&apos;instant.</b>
+                            <i>
+                              Balayez vers la droite pour garder un commerce, il
+                              se rangera ici.
+                            </i>
+                          </div>
+                        )}
+                    </div>
+                  </>
+                )}
+
                 {feuille === "metier" && (
                   <>
                     <div className="ap-f-tete">
@@ -1570,7 +1790,7 @@ export function ApercuHabitant() {
                     {reserves.includes(`emb|${ouvertReponse.id}`) ? (
                       <div className="ap-r-ok">
                         <span aria-hidden="true">✓</span>
-                        <b>C&apos;est noté, passez.</b>
+                        <b>Message prêt.</b>
                         <i>
                           {ouvertReponse.nom} · {ouvertReponse.distance} ·{" "}
                           {ouvertReponse.recrute.passez}
@@ -1615,14 +1835,18 @@ export function ApercuHabitant() {
                           <button
                             type="button"
                             className="ap-b2 plein"
-                            onClick={() =>
+                            onClick={() => {
+                              surWhatsApp(
+                                `Bonjour, j'ai vu sur Clikme que vous cherchiez ${ouvertReponse.recrute?.poste.toLowerCase()}. Je peux passer ${ouvertReponse.recrute?.passez}. À tout à l'heure !`,
+                              );
                               setReserves((r) => {
                                 const cle = `emb|${ouvertReponse.id}`;
                                 return r.includes(cle) ? r : [...r, cle];
-                              })
-                            }
+                              });
+                            }}
                           >
-                            Je passe le voir
+                            <i aria-hidden="true">💬</i>
+                            Le prévenir sur WhatsApp
                           </button>
                         </div>
                       </>
@@ -1635,7 +1859,7 @@ export function ApercuHabitant() {
                     {reserves.includes(`vais|${ouvertReponse.id}`) ? (
                       <div className="ap-r-ok">
                         <span aria-hidden="true">✓</span>
-                        <b>Il vous attend.</b>
+                        <b>Message prêt.</b>
                         <i>
                           {ouvertReponse.nom} · {ouvertReponse.distance}
                           {ouvertReponse.reponse && ` · ${ouvertReponse.reponse.cadeau.toLowerCase()}`}
@@ -1680,14 +1904,18 @@ export function ApercuHabitant() {
                           <button
                             type="button"
                             className="ap-b2 plein"
-                            onClick={() =>
+                            onClick={() => {
+                              surWhatsApp(
+                                `Bonjour, je viens de recevoir votre invitation sur Clikme (${ouvertReponse.reponse?.cadeau.toLowerCase()}). J'arrive !`,
+                              );
                               setReserves((r) => {
                                 const cle = `vais|${ouvertReponse.id}`;
                                 return r.includes(cle) ? r : [...r, cle];
-                              })
-                            }
+                              });
+                            }}
                           >
-                            Je viens
+                            <i aria-hidden="true">💬</i>
+                            Je viens — le prévenir
                           </button>
                         </div>
                       </>
@@ -1700,7 +1928,7 @@ export function ApercuHabitant() {
                     {reserves.includes(`${dessus.id}|${creneau}`) ? (
                       <div className="ap-r-ok">
                         <span aria-hidden="true">✓</span>
-                        <b>C&apos;est réservé.</b>
+                        <b>Message prêt.</b>
                         <i>
                           {dessus.nom} · {creneau}
                         </i>
@@ -1737,14 +1965,18 @@ export function ApercuHabitant() {
                             type="button"
                             className="ap-b2 plein"
                             disabled={!creneau}
-                            onClick={() =>
+                            onClick={() => {
+                              surWhatsApp(
+                                `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce qu'il reste de la place ? Merci !`,
+                              );
                               setReserves((r) => {
                                 const cle = `${dessus.id}|${creneau}`;
                                 return r.includes(cle) ? r : [...r, cle];
-                              })
-                            }
+                              });
+                            }}
                           >
-                            Confirmer
+                            <i aria-hidden="true">💬</i>
+                            Demander sur WhatsApp
                           </button>
                         </div>
                       </>
@@ -2118,6 +2350,49 @@ export function ApercuHabitant() {
         .ap-mur.vide{display:flex;align-items:center;gap:9px;font-size:13px;color:#6C8078;}
         .ap-mur.vide i{font-style:normal;font-size:15px;}
 
+        /* LA FLAMME SUR LA PHOTO, sous « Y aller » et dans la meme colonne :
+           deux gestes qui regardent le commerce, au meme endroit. */
+        .ap-flamme-photo{position:absolute;right:14px;top:56px;z-index:3;
+          display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:15px;
+          line-height:1;cursor:pointer;color:#F3C6A8;
+          background:rgba(8,12,10,.62);-webkit-backdrop-filter:blur(10px);
+          backdrop-filter:blur(10px);border:1px solid rgba(249,115,22,.4);
+          border-radius:999px;padding:8px 11px;transition:transform .12s ease;}
+        .ap-flamme-photo:active{transform:scale(.92);}
+        .ap-flamme-photo i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-flamme-photo b{font-size:12px;font-weight:850;color:#FFD9BE;
+          font-variant-numeric:tabular-nums;}
+        .ap-flamme-photo.on{background:rgba(249,115,22,.28);
+          border-color:rgba(249,115,22,.75);}
+
+        /* MON ESPACE. */
+        .ap-perso{font:inherit;cursor:pointer;}
+        .ap-moi-bloc{margin-bottom:16px;}
+        .ap-moi-bloc h4{margin:0 0 8px;display:flex;align-items:center;gap:8px;
+          font-size:12px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;
+          color:#7F988B;}
+        .ap-moi-bloc h4 b{font-size:11px;font-weight:850;color:#04150E;background:#3DE2A6;
+          border-radius:999px;padding:2px 8px;letter-spacing:0;}
+        .ap-moi-bloc ul{list-style:none;margin:0;padding:0;}
+        .ap-moi-l{width:100%;display:flex;align-items:center;gap:11px;font:inherit;
+          font-size:13.5px;color:#B9C6CE;cursor:pointer;text-align:left;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:13px;padding:11px 13px;margin-bottom:7px;
+          transition:transform .12s ease;}
+        .ap-moi-l.fixe{cursor:default;}
+        .ap-moi-l:active{transform:scale(.99);}
+        .ap-moi-l i{font-style:normal;font-size:16px;line-height:1;flex:none;}
+        .ap-moi-l span{flex:1;min-width:0;}
+        .ap-moi-l b{display:block;font-size:14.5px;font-weight:850;color:#fff;
+          letter-spacing:-.01em;margin-bottom:1px;}
+        .ap-moi-l em{flex:none;font-style:normal;font-size:17px;color:#5E706A;}
+        .ap-moi-vide{display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:8px;text-align:center;padding:36px 20px;}
+        .ap-moi-vide span{font-size:34px;line-height:1;opacity:.7;}
+        .ap-moi-vide b{font-size:17px;font-weight:850;color:#fff;}
+        .ap-moi-vide i{font-style:normal;font-size:13.5px;line-height:1.5;color:#7F988B;
+          max-width:250px;}
+
         /* « FAITES-LE REVENIR » : un bouton discret tant qu'il n'est pas
            appuye, une ligne affirmee une fois que le commercant a repondu.
            Le violet ne sert qu'a ca — le vert est l'application, l'or
@@ -2130,8 +2405,12 @@ export function ApercuHabitant() {
         .ap-revient:active{transform:scale(.98);}
         .ap-revient i{font-style:normal;font-size:15px;line-height:1;flex:none;}
         .ap-revient span{flex:1;min-width:0;}
-        .ap-revient b{flex:none;font-size:12px;font-weight:850;color:#0A0715;
-          background:#A78BFA;border-radius:999px;padding:3px 9px;
+        .ap-revient{align-items:flex-start;}
+        .ap-revient span b{display:block;font-size:14.5px;font-weight:850;color:#E4DBFF;
+          letter-spacing:-.01em;margin-bottom:2px;background:none;padding:0;}
+        .ap-revient span{font-size:12.5px;font-weight:600;line-height:1.4;color:#9E93C4;}
+        .ap-revient b.ap-revient-n{flex:none;font-size:12px;font-weight:850;color:#0A0715;
+          background:#A78BFA;border-radius:999px;padding:3px 9px;margin-top:2px;
           font-variant-numeric:tabular-nums;}
         .ap-revient.on{color:#E4DBFF;background:rgba(167,139,250,.2);
           border-color:rgba(167,139,250,.55);}

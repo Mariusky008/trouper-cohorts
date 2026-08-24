@@ -1033,6 +1033,18 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
  * sa ville ne cherche pas « dans la coiffure », il cherche à côté de chez lui.
  * Le tri par distance est donc le seul qui compte.
  */
+/**
+ * TOUS LES COMMERCES, SANS FILTRE.
+ *
+ * Sert à « mon espace », qui doit retrouver un commerce gardé même si son métier
+ * n'est plus celui qu'on regarde et même s'il n'a plus de moment aujourd'hui.
+ * Ailleurs on filtre toujours : ici on rend ce qu'on a gardé, pas ce qui est
+ * ouvert.
+ */
+export function toutesLesCartes(): CarteAutour[] {
+  return CARTES;
+}
+
 export function ceuxQuiRecrutent(): CarteAutour[] {
   return CARTES.filter((c) => c.recrute).sort((a, b) => a.metres - b.metres);
 }
