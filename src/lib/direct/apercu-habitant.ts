@@ -305,6 +305,36 @@ export type Recrutement = {
   depuis: string;
 };
 
+/**
+ * LE MENU DU JOUR — CE QU'ON VIENT VOIR, ET RIEN D'AUTRE.
+ *
+ * LE DÉFAUT QU'IL CORRIGE. La carte d'un restaurant affichait le MOMENT en
+ * cours : à 11 h « manger avec le service », à 14 h « les restes ». C'était la
+ * démonstration d'une mécanique — une annonce qui vit avec l'heure — mais du
+ * point de vue de celui qui regarde, c'était une carte qui ne répond jamais à
+ * la seule question qu'il se pose : QU'EST-CE QU'ON MANGE. Et la photo suivait
+ * le moment, donc on tombait sur une salle vide ou une devanture au lieu d'une
+ * assiette.
+ *
+ * Le menu du jour devient donc l'ancre : la même en haut de la carte à toute
+ * heure, avec sa description, son prix et LA PHOTO DU PLAT. Les moments
+ * horodatés n'ont pas disparu — ils sont descendus sous le pli, à leur vraie
+ * place : le programme de la journée, qu'on déroule si le plat donne envie.
+ *
+ * Le commerçant n'a pas plus de travail : il pose son plat du jour le matin,
+ * comme il l'écrit déjà sur son ardoise, et il coche ce qu'il propose autour.
+ */
+export type MenuDuJour = {
+  /** Le plat, écrit comme sur l'ardoise. */
+  plat: string;
+  /** Ce qu'il y a autour : entrée, dessert, ce qui l'accompagne. */
+  description: string;
+  prix: string;
+  /** LA PHOTO DU PLAT, pas celle de la salle. C'est elle qui fait venir. */
+  photo: string;
+  cadrage?: string;
+};
+
 export type CarteAutour = {
   id: string;
   branche: CleMetier;
@@ -327,6 +357,9 @@ export type CarteAutour = {
   /** Ce qu'il cherche comme bras. Absent : il ne recrute pas, et c'est le cas
    *  de la plupart des commerces la plupart du temps. */
   recrute?: Recrutement;
+  /** Ce qu'on mange aujourd'hui. Les métiers de bouche en ont un ; les autres
+   *  n'en ont pas, et leur carte continue de montrer le moment en cours. */
+  menu?: MenuDuJour;
 };
 
 export const HEURE_MIN = 8;
@@ -342,7 +375,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/plat-du-jour.jpg",
     cadrage: "68%",
-    nom: "Un restaurant du centre",
+    nom: "Chez Bergine",
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -368,24 +401,37 @@ const CARTES: CarteAutour[] = [
       tenu: "12 h 40",
       apres: 5,
     },
+    menu: {
+      plat: "Garbure landaise, magret grillé",
+      description: "Pommes sarladaises · Pastis landais en dessert",
+      prix: "19 €",
+      photo: "/direct/plat-du-jour.jpg",
+      cadrage: "68%",
+    },
     moments: [
       {
         de: 11, a: 11.5, quand: "11 h", icone: "👨‍🍳",
-        titre: "Manger avec le service",
-        lignes: ["À la table du personnel, avant l'ouverture", "4 places"],
+        titre: "Manger avec l'équipe",
+        lignes: [
+          "À la table du personnel, avant l'ouverture",
+          "Apéritif et café offerts",
+        ],
         prix: "12 €", places: 2, action: "Réserver", envies: ["moins15"],
       },
       {
-        de: 11.5, a: 12, quand: "11 h 30", icone: "🎟️",
-        titre: "3 places à −20 %",
-        lignes: ["Menu du jour complet", "Service à 11 h 45"],
-        prix: "15,20 €", prixBarre: "19 €", etiquette: "−20 %", places: 3,
-        action: "Réserver", envies: ["moins15", "maintenant"],
+        de: 11.5, a: 12, quand: "11 h 30 – 12 h", icone: "☕",
+        titre: "Le café gourmand offert",
+        lignes: [
+          "Pour tous ceux qui s'assoient avant midi",
+          "Le menu reste au même prix",
+        ],
+        prix: "19 €", etiquette: "CAFÉ OFFERT", places: 12,
+        action: "Réserver", envies: ["maintenant"],
       },
       {
         de: 12, a: 14, quand: "12 h – 14 h", icone: "🍽️",
-        titre: "Menu du jour",
-        lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
+        titre: "Le service du midi",
+        lignes: ["Le menu du jour, en salle ou en terrasse", "Dernière commande à 13 h 45"],
         prix: "19 €", places: 8, action: "Réserver", envies: [],
         rappels: 5,
         avis: [
@@ -425,7 +471,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/portion-a-emporter.jpg",
     cadrage: "50%",
-    nom: "Une cuisine à emporter",
+    nom: "Le Bocal de Margot",
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -441,6 +487,13 @@ const CARTES: CarteAutour[] = [
       texte: "Il me reste de la lasagne, je vous la mets de côté.",
       tenu: "13 h 15",
       apres: 9,
+    },
+    menu: {
+      plat: "Lasagnes maison",
+      description: "Salade de saison · Prêtes tout de suite, à emporter",
+      prix: "11 €",
+      photo: "/direct/portion-a-emporter.jpg",
+      cadrage: "50%",
     },
     moments: [
       {
@@ -470,7 +523,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/tables-libres.jpg",
     cadrage: "100%",
-    nom: "Une table à deux rues",
+    nom: "L'Ardoise Landaise",
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -487,6 +540,13 @@ const CARTES: CarteAutour[] = [
       tenu: "13 h",
       apres: 16,
     },
+    menu: {
+      plat: "Axoa de veau",
+      description: "Riz de pays · Gâteau basque · Sous les arcades",
+      prix: "16 €",
+      photo: "/direct/plat-du-jour.jpg",
+      cadrage: "68%",
+    },
     moments: [
       {
         de: 11, a: 14, quand: "ce midi", icone: "🕐",
@@ -502,10 +562,13 @@ const CARTES: CarteAutour[] = [
         ],
       },
       {
-        de: 19, a: 22.5, quand: "20 h", icone: "👥",
-        titre: "Table découverte entre inconnus",
-        lignes: ["4 places, on s'assoit ensemble", "Plat + verre compris"],
-        prix: "22 €", places: 2, action: "Réserver", envies: ["partager"],
+        de: 19, a: 22.5, quand: "20 h", icone: "🎲",
+        titre: "La table des 6 inconnus",
+        lignes: [
+          "Six couverts, six personnes qui ne se connaissent pas",
+          "Plat + verre compris · On mélange, on verra bien",
+        ],
+        prix: "22 €", places: 2, action: "Je prends une place", envies: ["partager"],
         // LA PREUVE QUE LE BOUTON SERT A QUELQUE CHOSE. Sans un cas deja
         // exauce a l'ecran, « faites-le revenir » est une boite a idees, et
         // personne n'appuie deux fois sur une boite a idees.
@@ -518,7 +581,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/sortie-du-four.jpg",
     cadrage: "100%",
-    nom: "Une boulangerie",
+    nom: "Le Pétrin d'Amanieu",
     metier: "Boulangerie",
     ville: VILLE,
     itineraire: YALLER,
@@ -537,6 +600,13 @@ const CARTES: CarteAutour[] = [
       qui: "Le matin, c'est le meilleur moment de la boutique. Il faut aimer se lever, le reste s'apprend en trois jours.",
       passez: "n'importe quel matin, après 10 h",
       depuis: "il y a une semaine",
+    },
+    menu: {
+      plat: "La formule du midi",
+      description: "Sandwich pain de campagne · Part de tarte · Boisson",
+      prix: "8,50 €",
+      photo: "/direct/sortie-du-four.jpg",
+      cadrage: "100%",
     },
     moments: [
       {
@@ -571,7 +641,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/tablee-du-soir.jpg",
     cadrage: "50%",
-    nom: "Une grande table ce soir",
+    nom: "La Grande Tablée",
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -582,10 +652,17 @@ const CARTES: CarteAutour[] = [
       horaires: "Ce soir, à partir de 19 h 30",
       mot: "Une grande table commune une fois par semaine. On s'assoit avec qui vient.",
     },
+    menu: {
+      plat: "Poulet basquaise",
+      description: "Riz · Fromage de brebis · Servi à la grande table",
+      prix: "17 €",
+      photo: "/direct/tablee-du-soir.jpg",
+      cadrage: "50%",
+    },
     moments: [
       {
-        de: 17, a: 23, quand: "20 h", icone: "👥",
-        titre: "Table à partager",
+        de: 17, a: 23, quand: "20 h", icone: "🎲",
+        titre: "La grande table des inconnus",
         lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
         prix: "17 €", places: 2, action: "Réserver", envies: ["partager"],
         avis: [
@@ -600,7 +677,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/vitrine-du-soir.jpg",
     cadrage: "72%",
-    nom: "Un traiteur, avant de fermer",
+    nom: "Maison Lartigue",
     metier: "Traiteur",
     ville: VILLE,
     itineraire: YALLER,
@@ -619,6 +696,13 @@ const CARTES: CarteAutour[] = [
       qui: "Pour les gros week-ends, on est débordés à deux. Étudiant bienvenu, on forme sur place.",
       passez: "le jeudi, entre 15 h et 18 h",
       depuis: "il y a 4 jours",
+    },
+    menu: {
+      plat: "Parmentier de canard",
+      description: "En barquette · Salade · À réchauffer ou à manger sur place",
+      prix: "12 €",
+      photo: "/direct/vitrine-du-soir.jpg",
+      cadrage: "72%",
     },
     moments: [
       {
@@ -1127,6 +1211,30 @@ export function avisNotes(avis: AvisPlat[]): AvisPlat[] {
  */
 export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
   const m = momentEnCours(c, heure);
+  // QUAND IL Y A UN MENU DU JOUR, C'EST LUI QU'ON MONTRE — photo comprise. Le
+  // moment en cours ne disparaît pas : il passe dans la pastille du haut, qui
+  // dit ce qui se joue en ce moment, et le programme complet attend sous le pli.
+  if (c.menu) {
+    return {
+      photo: c.menu.photo,
+      cadrage: c.menu.cadrage ?? c.cadrage,
+      nom: c.nom,
+      metier: c.metier,
+      ville: c.ville,
+      distance: c.distance,
+      itineraire: c.itineraire,
+      reste: m
+        ? seJoueMaintenant(m, heure)
+          ? `${m.icone} ${m.titre}`
+          : `${m.quand} · ${m.titre}`
+        : "",
+      icone: "🍽️",
+      quoi: c.menu.plat,
+      lignes: [c.menu.description],
+      prix: c.menu.prix,
+      etiquette: "MENU DU JOUR",
+    };
+  }
   return {
     photo: c.photo,
     cadrage: c.cadrage,
