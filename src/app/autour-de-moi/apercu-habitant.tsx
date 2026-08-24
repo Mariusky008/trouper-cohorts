@@ -71,6 +71,9 @@ import { MARQUE } from "@/lib/marque";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 const SEUIL = 84;
+/** À partir de cette descente dans la carte, on considère qu'on LIT — et le
+ *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
+const SEUIL_PLI = 90;
 /** Le déplacement à partir duquel on sait si le geste est horizontal ou vertical. */
 const VERROU = 8;
 /** La durée de l'envol, la même qu'en CSS. */
@@ -898,7 +901,14 @@ export function ApercuHabitant() {
                       // là que sont le prix, les avis et la journée. Qui ne
                       // descend jamais n'a vu qu'une photo.
                       if (y > 24) noterUneFois("pli", "pli-ouvert", passees.length + 1);
-                      setDescendu(y > 24);
+                      // MAIS COUPER LE BALAYAGE DEMANDE PLUS QUE 24 PIXELS.
+                      // Ce booléen désarme le geste horizontal pour qu'un doigt
+                      // qui dérive pendant une lecture ne fasse pas partir la
+                      // carte. À 24 px, un frôlement suffisait à tuer le
+                      // balayage jusqu'à ce qu'on remonte — mesuré, et
+                      // indétectable pour celui qui le subit. Il faut une
+                      // descente franche.
+                      setDescendu(y > SEUIL_PLI);
                     }}
                   >
                     <div className="ap-un">
@@ -1988,9 +1998,28 @@ export function ApercuHabitant() {
         .ap-dessus.vole.gauche{transform:translate3d(-420px,-30px,0) rotate(-17deg)!important;}
 
         /* LE DEFILEMENT EST DANS LA CARTE. overscroll-behavior empeche le
-           mouvement de se propager a la page quand on arrive au bout. */
+           mouvement de se propager a la page quand on arrive au bout.
+
+           touch-action:pan-y N'EST PAS UNE PRECAUTION, C'EST LE CORRECTIF D'UN
+           DEFAUT QUI TUAIT LE PRODUIT. Le balayage etait MORT sur tous les
+           telephones — donc sur tout le monde — et vivant a la souris, ce qui
+           l'a rendu invisible pendant des semaines de tests automatises.
+
+           Mesure au navigateur, evenements reels du doigt sur la carte :
+             pointerdown:touch → pointermove:touch → POINTERCANCEL → plus rien.
+           Un seul deplacement recu, sous le verrou de 8 px : le code n'avait
+           jamais de quoi decider que le geste etait horizontal, et la carte ne
+           partait jamais.
+
+           La raison : pan-y etait pose sur .ap-dessus, mais CET element-ci,
+           qui porte le defilement, retombait a auto. Le touch-action effectif
+           se calcule depuis l'element touche en remontant ; un auto en
+           chemin rend au navigateur le droit de tout revendiquer, y compris le
+           mouvement horizontal — et quand il le revendique, il annule notre
+           pointeur. Il faut donc le dire ICI, sur le conteneur de defilement,
+           pas seulement sur son parent. */
         .ap-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;
-          border-radius:26px;scrollbar-width:none;}
+          touch-action:pan-y;border-radius:26px;scrollbar-width:none;}
         .ap-scroll::-webkit-scrollbar{display:none;}
         .ap-un{height:100%;position:relative;}
         .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;}
@@ -2057,12 +2086,15 @@ export function ApercuHabitant() {
         .ap-n.on{color:#F0B429;transform:scale(1.06);}
         .ap-noter span{margin-left:8px;font-size:11.5px;color:#6C8078;}
 
-        /* LES PHOTOS DES CLIENTS. Une bande qui defile plutot qu'une grille :
-           la carte est deja etroite, et une grille de vignettes ecrase les
-           photos jusqu'a ce qu'on n'y voie plus rien. */
-        .ap-photos{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
-          margin-top:9px;padding-bottom:2px;}
-        .ap-photos::-webkit-scrollbar{display:none;}
+        /* LES PHOTOS DES CLIENTS, EN GRILLE QUI REVIENT A LA LIGNE — et plus en
+           bande qui defile. Ce n'est pas un choix d'esthetique : une bande
+           horizontale a l'interieur d'une carte qu'on balaie horizontalement
+           met les deux gestes en concurrence, et c'est le navigateur qui
+           tranche, en annulant le notre. Depuis que le conteneur de defilement
+           est en pan-y, une bande horizontale ne serait de toute facon plus
+           manipulable au doigt. Trois vignettes par ligne tiennent dans la
+           carte, et on les voit toutes sans rien faire. */
+        .ap-photos{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px;}
         .ap-photos img{flex:none;width:88px;height:88px;object-fit:cover;
           border-radius:11px;border:1px solid rgba(255,255,255,.12);background:#0D1512;}
         /* AJOUTER SA PHOTO EST UN LABEL, PAS UN BOUTON : le champ fichier est
