@@ -78,6 +78,27 @@ elles s'affichent en vignettes carrées et sur le mur du commerce.
 | `avis-cabine.jpg`    | Une cliente et le vêtement qu'elle essaie         |
 | `avis-verre.jpg`     | Un apéritif sur une table de terrasse, au couchant |
 
+## La vidéo
+
+Une seule, sous le pli, sur « Le service du midi » de Chez Bergine.
+
+| Fichier                | Ce que c'est                                        |
+|------------------------|-----------------------------------------------------|
+| `service-cuisine.mp4`  | 10 s, H.264, 502 Ko — téléphones et Safari          |
+| `service-cuisine.webm` | La même en VP9, 562 Ko — navigateurs sans H.264     |
+| `service-cuisine.jpg`  | L'affiche, 28 Ko — la SEULE chose téléchargée avant qu'on lance |
+
+**Elle n'est jamais sur la face de la carte**, et ce n'est pas négociable : une
+vidéo dans un paquet qu'on balaie rend l'application lourde, coûte de la donnée
+à quelqu'un debout dans la rue, et retarde le geste. Sous le pli, elle a un vrai
+rôle : on a vu le plat, il donne envie, on descend, on voit la cuisine.
+
+Muette, en boucle, dix secondes, `preload="none"`. Jamais de son qui démarre
+tout seul. Deux sources parce qu'un navigateur livré sans codec propriétaire
+resterait sinon sur l'affiche sans rien dire.
+
+Format attendu pour les suivantes : vertical, 10 s maximum, sans musique.
+
 ## LA RÈGLE QUI VAUT POUR TOUTES
 
 Aucune enseigne lisible, aucun logo, aucun visage reconnaissable. Les commerces

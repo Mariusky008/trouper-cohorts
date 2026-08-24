@@ -182,6 +182,23 @@ export type MomentJour = {
   /** Les avis, quand le moment porte sur quelque chose qui se goûte ou s'essaie. */
   avis?: AvisPlat[];
   /**
+   * DIX SECONDES DE CE QUI SE PASSE VRAIMENT — et pas sur la face de la carte.
+   *
+   * OÙ ELLE VA, ET POURQUOI PAS AILLEURS. Une vidéo qui se lance dans un paquet
+   * qu'on balaie rend l'application lourde, coûte de la donnée à quelqu'un
+   * debout dans la rue, et retarde le geste. Sous le pli, elle a un vrai rôle :
+   * on a vu le plat, il donne envie, on descend, et on voit la cuisine.
+   *
+   * ELLE PASSE LE FILTRE DU PRODUIT — celui qui a fait survivre les moments
+   * horodatés, le digestif offert et le recrutement : beaucoup de commerçants
+   * FILMENT DÉJÀ leur service pour leur story. Ce n'est pas un geste nouveau à
+   * leur apprendre, c'est un fichier qu'ils ont déjà. C'est la seule raison pour
+   * laquelle elle est ici.
+   *
+   * Muette, en boucle, dix secondes. Jamais de son qui démarre tout seul.
+   */
+  video?: { mp4: string; webm: string; affiche: string; mot: string };
+  /**
    * COMBIEN DE VOISINS ONT DÉJÀ DEMANDÉ QUE ÇA REVIENNE.
    *
    * C'est le seul chiffre du produit qui vienne des habitants et pas du
@@ -673,6 +690,12 @@ const CARTES: CarteAutour[] = [
       {
         de: 12, a: 14, quand: "12 h – 14 h", icone: "🍽️",
         titre: "Le service du midi",
+        video: {
+          mp4: "/direct/service-cuisine.mp4",
+          webm: "/direct/service-cuisine.webm",
+          affiche: "/direct/service-cuisine.jpg",
+          mot: "En cuisine, pendant le service",
+        },
         lignes: ["Le menu du jour, en salle ou en terrasse", "Dernière commande à 13 h 45"],
         prix: "19 €", places: 8, action: "Réserver", envies: [],
         rappels: 5,

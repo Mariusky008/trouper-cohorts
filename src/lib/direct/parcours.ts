@@ -43,6 +43,7 @@ export type Evenement =
   | "note-donnee"
   | "rappel-demande"
   | "photo-ajoutee"
+  | "video-vue"
   | "partage"
   | "notif-proposee"
   | "notif-acceptee"

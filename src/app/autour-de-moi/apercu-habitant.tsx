@@ -1415,6 +1415,41 @@ export function ApercuHabitant() {
                                     pas sous le commerce : c'est le plat qu'on
                                     note, et c'est lui qui les remporte quand il
                                     revient à la carte. */}
+                                {/* LA VIDÉO DU MOMENT. Muette et en boucle : le
+                                    son qui démarre tout seul dans la rue est la
+                                    façon la plus rapide de faire fermer une
+                                    application. `preload="none"` pour qu'elle ne
+                                    coûte rien tant qu'on ne l'a pas atteinte —
+                                    l'affiche suffit à savoir qu'elle est là. */}
+                                {!passe && m.video && (
+                                  <div className="ap-video">
+                                    {/* DEUX SOURCES, ET CE N'EST PAS DU LUXE.
+                                        Le H.264 couvre les téléphones et Safari ;
+                                        le VP9 couvre les navigateurs livrés sans
+                                        codec propriétaire, où le lecteur reste
+                                        autrement sur son affiche sans rien dire.
+                                        Le navigateur prend la première qu'il
+                                        sait lire et ne télécharge que celle-là. */}
+                                    <video
+                                      poster={m.video.affiche}
+                                      muted
+                                      loop
+                                      playsInline
+                                      controls
+                                      preload="none"
+                                      onPointerDown={(ev) => ev.stopPropagation()}
+                                      onPlay={() => noterUneFois("video", "video-vue")}
+                                    >
+                                      <source src={m.video.webm} type="video/webm" />
+                                      <source src={m.video.mp4} type="video/mp4" />
+                                    </video>
+                                    <span>
+                                      <i aria-hidden="true">🎬</i>
+                                      {m.video.mot}
+                                    </span>
+                                  </div>
+                                )}
+
                                 {!passe && (avisNotes(av).length > 0 || photosDe(av).length > 0) && (
                                   <div className="ap-prog-av">
                                     {/* La ligne d'étoiles ne s'affiche que si
@@ -2799,6 +2834,16 @@ export function ApercuHabitant() {
            est en pan-y, une bande horizontale ne serait de toute facon plus
            manipulable au doigt. Trois vignettes par ligne tiennent dans la
            carte, et on les voit toutes sans rien faire. */
+        /* LA VIDÉO SOUS LE PLI. Même largeur que le bloc, coins arrondis, et
+           une légende qui dit ce qu'on regarde — sans elle, dix secondes de
+           cuisine sans contexte ressemblent à une publicité. */
+        .ap-video{margin-top:11px;}
+        .ap-video video{display:block;width:100%;max-height:340px;object-fit:cover;
+          border-radius:14px;background:#0A1210;border:1px solid rgba(255,255,255,.1);}
+        .ap-video span{display:flex;align-items:center;gap:7px;margin-top:7px;
+          font-size:12px;font-weight:700;color:#7F988B;}
+        .ap-video i{font-style:normal;font-size:13px;line-height:1;}
+
         .ap-photos{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px;}
         .ap-photos img{flex:none;width:88px;height:88px;object-fit:cover;
           border-radius:11px;border:1px solid rgba(255,255,255,.12);background:#0D1512;}

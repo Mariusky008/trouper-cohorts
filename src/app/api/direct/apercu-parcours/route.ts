@@ -38,6 +38,7 @@ const EVENEMENTS = new Set([
   "note-donnee",
   "rappel-demande",
   "photo-ajoutee",
+  "video-vue",
   "partage",
   "notif-proposee",
   "notif-acceptee",
