@@ -54,7 +54,11 @@ import {
   carteAffichee,
   carteDeRecrutement,
   carteDeReponse,
+  ORGANISATEURS,
+  carteDEvenement,
   ceuxQuiRecrutent,
+  estEvenement,
+  evenementsDeLaVille,
   toutesLesCartes,
   comptesParMetier,
   momentsRestants,
@@ -66,6 +70,8 @@ import {
   type AvisPlat,
   type CarteAutour,
   type CleMetier,
+  type EvenementVille,
+  type ItemPaquet,
   type MomentJour,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
@@ -436,15 +442,28 @@ export function ApercuHabitant() {
     "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche" | "moi"
   >("");
   /**
-   * LE PAQUET REGARDE LES EMBAUCHES, PAS LES MÉTIERS.
+   * CE QUE LE PAQUET REGARDE.
    *
-   * Un booléen à côté de `branche` plutôt qu'un septième métier : « ils
-   * recrutent » n'est pas une branche, c'est une autre NATURE d'annonce, qui
-   * traverse tous les métiers et qui ne dépend pas de l'heure. L'ajouter à
-   * `CleMetier` aurait obligé à lui inventer une liste d'envies et un compte
-   * horaire qui n'ont aucun sens ici.
+   * Quatre états à côté de `branche`, et pas quatre métiers de plus : « ils
+   * recrutent » et « ce qui se passe » ne sont pas des branches, ce sont
+   * d'autres NATURES d'annonce. Elles traversent tous les métiers, elles ne
+   * dépendent pas de l'heure de la même façon, et les ajouter à `CleMetier`
+   * aurait obligé à leur inventer une liste d'envies qui n'a aucun sens.
+   *
+   *   · "metiers"    — les commerces de la branche choisie (le défaut) ;
+   *   · "recrute"    — ceux qui cherchent quelqu'un, tous métiers ;
+   *   · "evenements" — ce que la ville organise, publié par la mairie, un
+   *                    musée, une association… ;
+   *   · "tout"       — les trois mélangés, du plus près au plus loin.
+   *
+   * « TOUT » EST LE MODE QUI DIT CE QU'EST LE PRODUIT. Tant qu'on doit choisir
+   * un métier avant de voir quoi que ce soit, l'application est un annuaire ;
+   * quand elle répond d'abord « voilà ce qui se passe autour de vous », c'est
+   * autre chose, et on n'a plus besoin d'avoir envie d'acheter pour l'ouvrir.
    */
-  const [embauches, setEmbauches] = useState(false);
+  const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "tout">("metiers");
+  const embauches = vue === "recrute";
+  const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
   const [sortie, setSortie] = useState<{ texte: string; quoi: CleMetier } | null>(null);
   /** Les commerces qui ont répondu, dans l'ordre d'arrivée. */
@@ -499,13 +518,26 @@ export function ApercuHabitant() {
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
-  const dispoBrut = embauches
-    ? embauchent
-    : selonEnvies(autourDeMoi(heure, branche), envies, heure);
+  const evenements = evenementsDeLaVille();
+  const dispoBrut: ItemPaquet[] =
+    vue === "recrute"
+      ? embauchent
+      : vue === "evenements"
+        ? evenements
+        // « TOUT » MÉLANGE LES TROIS, DU PLUS PRÈS AU PLUS LOIN. Pas de
+        // regroupement par nature : ranger les événements après les commerces
+        // recréerait deux écrans dans un seul, et c'est précisément ce qu'on
+        // vient d'enlever. La distance est le seul tri qui ait du sens quand on
+        // demande « qu'est-ce qui se passe autour de moi ».
+        : vue === "tout"
+          ? [...toutes, ...embauchent.filter((c) => !toutes.includes(c)), ...evenements].sort(
+              (a, b) => a.metres - b.metres,
+            )
+          : selonEnvies(autourDeMoi(heure, branche), envies, heure);
   /** UNE INVITATION PASSE DEVANT TOUT LE RESTE, dans l'ordre d'arrivée : triée
    *  par distance comme les autres, elle se noierait dans le paquet et on ne
    *  verrait pas qu'elle vient de tomber. */
-  const rang = (c: CarteAutour) => {
+  const rang = (c: ItemPaquet) => {
     const i = arrivees.indexOf(c.id);
     return i < 0 ? 999 : i;
   };
@@ -513,10 +545,16 @@ export function ApercuHabitant() {
     ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
     : dispoBrut;
   const pile = dispo.filter((c) => !passees.includes(c.id));
-  const estInvitation = (c: CarteAutour) => !!sortie && arrivees.includes(c.id);
+  const estInvitation = (c: ItemPaquet) => !!sortie && arrivees.includes(c.id);
   /** À qui la demande est partie, du plus près au plus loin. */
   const sollicites = sortie ? autourDeMoi(heure, sortie.quoi) : [];
-  const dessus = pile[0];
+  // LE HAUT DU PAQUET, SÉPARÉ EN DEUX PAR NATURE. Tout ce qui est commun — le
+  // balayage, garder, partager — travaille sur `sommet` ; tout ce qui diffère,
+  // c'est-à-dire le contenu sous le pli, lit l'un ou l'autre. Un seul `if` à
+  // l'endroit où la différence existe vraiment.
+  const sommet: ItemPaquet | undefined = pile[0];
+  const dessus = sommet && !estEvenement(sommet) ? sommet : undefined;
+  const dessusEv = sommet && estEvenement(sommet) ? sommet : undefined;
   const dessous = pile[1];
   const comptes = comptesParMetier(heure);
   const metier = METIERS.find((m) => m.cle === branche) ?? METIERS[0];
@@ -524,13 +562,13 @@ export function ApercuHabitant() {
   // le menu de midi quand on regarde un poste. Les moments restent accessibles
   // depuis la fiche, mais ils ne pilotent plus ni le pli ni les gestes.
   const restants = dessus && !embauches ? momentsRestants(dessus, heure) : [];
-  /** La carte à dessiner : un poste, une invitation, ou l'annonce du moment. */
-  const carteDe = (c: CarteAutour) =>
-    embauches
-      ? carteDeRecrutement(c)
-      : estInvitation(c)
-        ? carteDeReponse(c, heure)
-        : carteAffichee(c, heure);
+  /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
+  const carteDe = (x: ItemPaquet) => {
+    if (estEvenement(x)) return carteDEvenement(x, heure);
+    if (vue === "recrute" || (vue === "tout" && x.recrute && !toutes.includes(x)))
+      return carteDeRecrutement(x);
+    return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
+  };
 
   /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
@@ -589,7 +627,7 @@ export function ApercuHabitant() {
   }
 
   function partir(sens: "gauche" | "droite") {
-    if (!dessus || sortant) return;
+    if (!sommet || sortant) return;
     // LE RANG DE LA CARTE EST LA MESURE QUI COMPTE. « Combien de gens ferment
     // après deux cartes » et « combien vont au bout » ne demandent pas les
     // mêmes travaux, et c'est ce chiffre-là qui les sépare.
@@ -598,7 +636,7 @@ export function ApercuHabitant() {
     setAJoue(true);
     setSortant(sens);
     setDx(sens === "droite" ? 420 : -420);
-    const id = dessus.id;
+    const id = sommet.id;
     if (sens === "droite") setCoeurVole(true);
     minuteries.current.push(
       window.setTimeout(() => {
@@ -725,6 +763,24 @@ export function ApercuHabitant() {
     return [{ cle, nom: c.nom, titre: m.titre, revient: m.revient }];
   });
 
+  /** Partager un événement : même geste, même flamme, autre phrase. */
+  async function partagerEv(e: EvenementVille) {
+    const lien =
+      typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    const texte = `${e.quoi} · ${e.jour} ${e.heure} · ${e.lieu}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Clikme", text: texte, url: lien });
+      } else {
+        await navigator.clipboard.writeText(`${texte} — ${lien}`);
+      }
+      ajouterFlamme(e.id);
+      noter("partage", 0, "evenement");
+    } catch {
+      /* Partage annulé : aucune flamme, rien ne s'est passé. */
+    }
+  }
+
   /**
    * ENVOYER LE MESSAGE SUR WHATSAPP — le canal réel, pas un formulaire de plus.
    *
@@ -778,12 +834,28 @@ export function ApercuHabitant() {
               <span className="cd-marque">{MARQUE}</span>
               <button
                 type="button"
-                className={`cd-puce ap-metier${embauches ? " embauche" : ""}`}
+                className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
+                  vue === "evenements" ? " evenement" : ""
+                }${vue === "tout" ? " tout" : ""}`}
                 onClick={() => setFeuille("metier")}
                 aria-label="Changer de métier"
               >
-                <i aria-hidden="true">{embauches ? "🙋" : metier.emoji}</i>
-                {embauches ? "Ils recrutent" : metier.label}
+                <i aria-hidden="true">
+                  {vue === "recrute"
+                    ? "🙋"
+                    : vue === "evenements"
+                      ? "🎪"
+                      : vue === "tout"
+                        ? "✨"
+                        : metier.emoji}
+                </i>
+                {vue === "recrute"
+                  ? "Ils recrutent"
+                  : vue === "evenements"
+                    ? "En ville"
+                    : vue === "tout"
+                      ? "Tout"
+                      : metier.label}
                 <em aria-hidden="true">▾</em>
               </button>
               {reserves.length > 0 && (
@@ -820,7 +892,26 @@ export function ApercuHabitant() {
                 le monde le touche — et c'est justement parce qu'on attend une
                 liste de résultats que recevoir des réponses fait quelque
                 chose. */}
-            {embauches ? (
+            {vue === "evenements" || vue === "tout" ? (
+              <div className={`ap-sortie ${vue === "tout" ? "tout" : "evenement"}`}>
+                <span className="ap-s-quoi">
+                  <i aria-hidden="true">{vue === "tout" ? "✨" : "🎪"}</i>
+                  {vue === "tout" ? "Tout ce qui se passe autour de vous" : "Ce qui se passe en ville"}
+                </span>
+                <span className="ap-s-etat">{dispoBrut.length}</span>
+                <button
+                  type="button"
+                  className="ap-s-x"
+                  aria-label="Revenir aux commerces"
+                  onClick={() => {
+                    setVue("metiers");
+                    remettre();
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : embauches ? (
               /* EN MODE EMBAUCHE, NI CHAMP NI ENVIES. « Qu'est-ce que vous
                  cherchez ? » y promettrait qu'on peut demander un poste à la
                  ville, ce que la maquette ne sait pas jouer ; et « moins de
@@ -928,7 +1019,7 @@ export function ApercuHabitant() {
               <Attente demande={sortie.texte} sollicites={sollicites} ecrivent={ecrivent} />
             ) : (
               <>
-            {dessus ? (
+            {sommet ? (
               <div className="ap-pile">
                 {dessous && (
                   <CarteSwipe
@@ -939,8 +1030,8 @@ export function ApercuHabitant() {
                 )}
                 <div
                   className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
-                    estInvitation(dessus) ? " invit" : ""
-                  }${embauches ? " emb" : ""}`}
+                    estInvitation(sommet) ? " invit" : ""
+                  }${embauches ? " emb" : ""}${dessusEv ? " ev" : ""}`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -1000,7 +1091,7 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe carte={carteDe(dessus)} className="ap-carte">
+                      <CarteSwipe carte={carteDe(sommet)} className="ap-carte">
                         {/* LA FLAMME EST SUR LA PHOTO, PAS SEULEMENT SOUS LE
                             PLI. Soutenir un commerce est un geste d'humeur : il
                             se fait dans la seconde où la carte plaît, pas après
@@ -1008,19 +1099,21 @@ export function ApercuHabitant() {
                             n'était atteinte que par ceux qui descendaient. */}
                         <button
                           type="button"
-                          className={`ap-flamme-photo${mesFlammes[dessus.id] ? " on" : ""}`}
-                          aria-label="Soutenir ce commerce"
+                          className={`ap-flamme-photo${mesFlammes[sommet.id] ? " on" : ""}`}
+                          aria-label={dessusEv ? "Faire savoir" : "Soutenir ce commerce"}
                           onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={() => void partager(dessus)}
+                          onClick={() =>
+                            void (dessusEv ? partagerEv(dessusEv) : dessus && partager(dessus))
+                          }
                         >
                           <i aria-hidden="true">🔥</i>
-                          {mesFlammes[dessus.id] ? <b>{mesFlammes[dessus.id]}</b> : null}
+                          {mesFlammes[sommet.id] ? <b>{mesFlammes[sommet.id]}</b> : null}
                         </button>
 
                         {/* SUR UN POSTE, LA LIGNE DU BAS DIT COMMENT ON POSTULE,
                             et c'est toute la différence avec un site d'emploi :
                             il n'y a rien à envoyer, on pousse la porte. */}
-                        {embauches && dessus.recrute && (
+                        {embauches && dessus?.recrute && (
                           <span className="ap-emb-passez">
                             <i aria-hidden="true">👋</i>
                             Passez {dessus.recrute.passez}
@@ -1030,7 +1123,7 @@ export function ApercuHabitant() {
                             c'est ce qui manquait pour donner envie : on ne se
                             déplace pas sur une jolie phrase, on se déplace sur
                             une jolie phrase ET quatre étoiles et demie. */}
-                        {!embauches &&
+                        {!embauches && dessus &&
                           estInvitation(dessus) &&
                           avisNotes(avisDuMoment(dessus, heure)).length > 0 && (
                           <span className="ap-invit-avis">
@@ -1043,7 +1136,7 @@ export function ApercuHabitant() {
                             <span>· {avisNotes(avisDuMoment(dessus, heure)).length} avis</span>
                           </span>
                         )}
-                        {!estInvitation(dessus) && restants.length > 1 && (
+                        {dessus && !estInvitation(dessus) && restants.length > 1 && (
                           <button
                             type="button"
                             className="ap-vers-bas"
@@ -1059,11 +1152,74 @@ export function ApercuHabitant() {
 
                     {/* ── SOUS LE PLI ── */}
                     <div className="ap-plus">
+                      {/* CE QUI SE PASSE DANS LA VILLE N'A PAS DE JOURNÉE NI DE
+                          FICHE : il a un organisateur, un lieu, un mot et ce
+                          qu'il faut savoir avant d'y aller. C'est le seul
+                          endroit du produit où les deux natures divergent. */}
+                      {dessusEv && (
+                        <>
+                          <div className="ap-bloc">
+                            <h3>{dessusEv.quoi}</h3>
+                            <div className="ap-orga">
+                              <i aria-hidden="true">{ORGANISATEURS[dessusEv.typeQui].emoji}</i>
+                              {/* Le nom d'abord, la nature ensuite — sauf
+                                  quand les deux disent la même chose : « La
+                                  mairie / La mairie » se lisait comme un bug. */}
+                              <span>
+                                <b>{dessusEv.qui}</b>
+                                {ORGANISATEURS[dessusEv.typeQui].label !== dessusEv.qui
+                                  ? ORGANISATEURS[dessusEv.typeQui].label
+                                  : "Publié par la ville"}
+                              </span>
+                            </div>
+                            <p className="ap-mot">{`« ${dessusEv.mot} »`}</p>
+                            <div className="ap-l">
+                              <i aria-hidden="true">📅</i>
+                              {dessusEv.jour} · {dessusEv.heure}
+                            </div>
+                            <div className="ap-l">
+                              <i aria-hidden="true">📍</i>
+                              {dessusEv.lieu} · {dessusEv.distance}
+                            </div>
+                            {dessusEv.pratique.map((x) => (
+                              <div className="ap-l" key={x}>
+                                <i aria-hidden="true">·</i>
+                                {x}
+                              </div>
+                            ))}
+                            <div className="ap-deux-b">
+                              <a
+                                className="ap-yaller"
+                                href={dessusEv.itineraire}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                onPointerDown={(ev) => ev.stopPropagation()}
+                              >
+                                🧭 Y aller
+                              </a>
+                              <button
+                                type="button"
+                                className={`ap-flamme${mesFlammes[dessusEv.id] ? " on" : ""}`}
+                                onPointerDown={(ev) => ev.stopPropagation()}
+                                onClick={() => void partagerEv(dessusEv)}
+                              >
+                                <i aria-hidden="true">🔥</i>
+                                {mesFlammes[dessusEv.id]
+                                  ? `Partagé ${mesFlammes[dessusEv.id]}×`
+                                  : "Le faire savoir"}
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {dessus && (
+                        <>
                       {/* EN MODE EMBAUCHE, LE PLI PORTE LE POSTE. On ne descend
                           pas pour lire le menu de midi quand on regarde un
                           travail : les horaires, la paye, le mot du patron, et
                           comment on se présente. Rien d'autre. */}
-                      {embauches && dessus.recrute && (
+                      {embauches && dessus?.recrute && (
                         <div className="ap-bloc">
                           <h3>Le poste</h3>
                           <p className="ap-mot">
@@ -1443,6 +1599,8 @@ export function ApercuHabitant() {
                           </button>
                         </div>
                       </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -1472,7 +1630,9 @@ export function ApercuHabitant() {
                   {dispo.length === 0
                     ? embauches
                       ? "Personne ne cherche là, maintenant."
-                      : "Personne ne le propose là."
+                      : vue === "evenements"
+                        ? "Rien d'annoncé en ville pour l'instant."
+                        : "Personne ne le propose là."
                     : gardees.length > 0
                       ? `${gardees.length} ${gardees.length > 1 ? "gardés" : "gardé"}`
                       : "Vous avez tout vu"}
@@ -1493,7 +1653,7 @@ export function ApercuHabitant() {
               Ils ne disparaissent que le temps de l'attente. */}
           {!(sortie && arrivees.length === 0) && (
           <div className="cd-gestes ap-gestes">
-            <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!dessus}>
+            <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!sommet}>
               <i aria-hidden="true">✕</i>
               <em>Passer</em>
             </button>
@@ -1501,7 +1661,7 @@ export function ApercuHabitant() {
               type="button"
               className="cd-g grand"
               onClick={() => partir("droite")}
-              disabled={!dessus}
+              disabled={!sommet}
             >
               <i aria-hidden="true">♥</i>
               <em>Je garde</em>
@@ -1515,6 +1675,14 @@ export function ApercuHabitant() {
               type="button"
               className="cd-g ambre"
               onClick={() => {
+                // SUR UN ÉVÉNEMENT, IL N'Y A RIEN À RÉSERVER — on y va, ou on
+                // n'y va pas. Le troisième geste ouvre donc l'itinéraire, qui
+                // est la seule chose utile à ce moment-là.
+                if (dessusEv) {
+                  noter("jy-vais", 0, "evenement");
+                  window.open(dessusEv.itineraire, "_blank", "noopener,noreferrer");
+                  return;
+                }
                 if (embauches && dessus?.recrute) {
                   noter("je-passe");
                   setOuvertReponse(dessus);
@@ -1532,21 +1700,35 @@ export function ApercuHabitant() {
                 setFeuille("resa");
               }}
               disabled={
-                embauches
-                  ? !dessus?.recrute
-                  : dessus && estInvitation(dessus)
-                    ? false
-                    : !aReserver.length
+                dessusEv
+                  ? false
+                  : embauches
+                    ? !dessus?.recrute
+                    : dessus && estInvitation(dessus)
+                      ? false
+                      : !aReserver.length
               }
             >
               <i aria-hidden="true">
-                {embauches ? "👋" : dessus && estInvitation(dessus) ? "🚶" : "📅"}
+                {dessusEv
+                  ? "🧭"
+                  : embauches
+                    ? "👋"
+                    : dessus && estInvitation(dessus)
+                      ? "🚶"
+                      : "📅"}
               </i>
               <em>
-                {embauches ? "Je passe" : dessus && estInvitation(dessus) ? "J'y vais" : "Réserver"}
+                {dessusEv
+                  ? "Y aller"
+                  : embauches
+                    ? "Je passe"
+                    : dessus && estInvitation(dessus)
+                      ? "J'y vais"
+                      : "Réserver"}
               </em>
             </button>
-            <button type="button" className="cd-g" onClick={versLeBas} disabled={!dessus}>
+            <button type="button" className="cd-g" onClick={versLeBas} disabled={!sommet}>
               <i aria-hidden="true">↓</i>
               <em>Détails</em>
             </button>
@@ -1678,6 +1860,33 @@ export function ApercuHabitant() {
                       <b>Autour de vous</b>
                     </div>
                     <ul className="ap-f-liste">
+                      {/* « VOIR TOUT » EST EN PREMIER, ET CE N'EST PAS UN DÉTAIL
+                          DE RANGEMENT. Tant qu'il faut choisir un métier avant
+                          de voir quoi que ce soit, l'application est un
+                          annuaire. Quand elle répond d'abord « voilà ce qui se
+                          passe autour de vous », c'est autre chose — et on n'a
+                          plus besoin d'avoir envie d'acheter pour l'ouvrir. */}
+                      <li className="ap-f-sep bas">
+                        <button
+                          type="button"
+                          className={`ap-m tout${vue === "tout" ? " on" : ""}`}
+                          onClick={() => {
+                            noter("metier-change", 0, "tout");
+                            setVue("tout");
+                            setEnvies([]);
+                            annulerSortie();
+                            remettre();
+                            setFeuille("");
+                          }}
+                        >
+                          <i aria-hidden="true">✨</i>
+                          <span>
+                            Tout ce qui se passe
+                            <em>Commerces, événements et embauches, mélangés</em>
+                          </span>
+                          <b>{toutes.length + evenements.length}</b>
+                        </button>
+                      </li>
                       {METIERS.map((m) => (
                         <li key={m.cle}>
                           <button
@@ -1705,6 +1914,27 @@ export function ApercuHabitant() {
                           des photos de nourriture casse les deux. Une entrée à
                           part, qu'on prend quand on la cherche. */}
                       <li className="ap-f-sep">
+                        <button
+                          type="button"
+                          className={`ap-m evenement${vue === "evenements" ? " on" : ""}`}
+                          onClick={() => {
+                            noter("metier-change", 0, "evenements");
+                            setVue("evenements");
+                            setEnvies([]);
+                            annulerSortie();
+                            remettre();
+                            setFeuille("");
+                          }}
+                        >
+                          <i aria-hidden="true">🎪</i>
+                          <span>
+                            Ce qui se passe en ville
+                            <em>Mairie, musée, associations, salles</em>
+                          </span>
+                          <b>{evenements.length}</b>
+                        </button>
+                      </li>
+                      <li>
                         <button
                           type="button"
                           className={`ap-m recrute${embauches ? " on" : ""}`}
@@ -2364,6 +2594,52 @@ export function ApercuHabitant() {
           font-variant-numeric:tabular-nums;}
         .ap-flamme-photo.on{background:rgba(249,115,22,.28);
           border-color:rgba(249,115,22,.75);}
+
+        /* LES ÉVÉNEMENTS SONT ROSES, et rien d'autre ne l'est. Le vert est
+           l'application, l'or l'invitation, le bleu l'embauche, le violet le
+           rappel, l'orange le soutien. Une septieme teinte parce qu'une
+           septieme nature : on doit voir en balayant vite que cette carte n'est
+           pas un commerce. */
+        .ap-sortie.evenement{background:rgba(244,114,182,.1);
+          border-color:rgba(244,114,182,.34);}
+        .ap-sortie.evenement .ap-s-quoi{color:#F9C0DC;}
+        .ap-sortie.evenement .ap-s-etat{background:#F472B6;color:#2A0716;}
+        .ap-sortie.evenement .ap-s-x{color:#F9A8D4;}
+        .ap-sortie.tout{background:rgba(61,226,166,.1);border-color:rgba(61,226,166,.34);}
+        .ap-sortie.tout .ap-s-quoi{color:#8FE9C4;}
+        .ap-sortie.tout .ap-s-etat{background:#3DE2A6;color:#04150E;}
+        .ap-sortie.tout .ap-s-x{color:#8FE9C4;}
+        .ap-dessus.ev .cd-carte{box-shadow:inset 0 0 0 2px #F472B6,
+          0 0 40px -14px rgba(244,114,182,.5);}
+        .ap-dessus.ev .cd-quoi{color:#F9C0DC;}
+        .ap-dessus.ev .cd-prix b{color:#F9C0DC;}
+        .ap-dessus.ev .cd-prix em{background:#F472B6;color:#2A0716;}
+        .ap-dessus.ev .cd-reste{max-width:calc(100% - 132px);color:#2A0716;font-weight:850;
+          background:linear-gradient(140deg,#F9A8D4,#EC4899);border-color:transparent;
+          overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;
+          line-height:1.35;}
+        .ap-dessus.ev .cd-reste i{display:none;}
+        .ap-metier.evenement{color:#2A0716;background:#F472B6;border-color:transparent;}
+        .ap-metier.tout{color:#04150E;background:#3DE2A6;border-color:transparent;}
+        .ap-m.evenement em{display:block;margin-top:3px;font-style:normal;font-size:12px;
+          font-weight:650;color:#8FA3AC;}
+        .ap-m.evenement{align-items:flex-start;}
+        .ap-m.evenement.on{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.13);}
+        .ap-m.evenement.on b{color:#F9C0DC;}
+        .ap-m.tout{align-items:flex-start;}
+        .ap-m.tout em{display:block;margin-top:3px;font-style:normal;font-size:12px;
+          font-weight:650;color:#8FA3AC;}
+        .ap-f-sep.bas{margin-top:0;padding-top:0;border-top:0;margin-bottom:14px;
+          padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1);}
+
+        /* L'organisateur, sous le pli : c'est lui qui fait la promesse. */
+        .ap-orga{display:flex;align-items:center;gap:10px;margin-bottom:12px;
+          padding:10px 12px;border-radius:12px;
+          background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.28);}
+        .ap-orga i{font-style:normal;font-size:18px;line-height:1;flex:none;}
+        .ap-orga span{flex:1;min-width:0;font-size:12px;color:#C79BB2;}
+        .ap-orga b{display:block;font-size:14.5px;font-weight:850;color:#F9C0DC;
+          letter-spacing:-.01em;margin-bottom:1px;}
 
         /* MON ESPACE. */
         .ap-perso{font:inherit;cursor:pointer;}

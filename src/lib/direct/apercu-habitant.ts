@@ -362,11 +362,219 @@ export type CarteAutour = {
   menu?: MenuDuJour;
 };
 
+const VILLE = "Dax";
+const YALLER = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(VILLE);
+const YALLER_VILLE = YALLER;
+
+/**
+ * CE QUI SE PASSE DANS LA VILLE — publié par quelqu'un qui n'est pas un commerce.
+ *
+ * POURQUOI ÇA CHANGE LA NATURE DU PRODUIT, ET PAS SEULEMENT SON CATALOGUE.
+ * Jusqu'ici ClikMe demandait « qu'est-ce qui se passe dans votre
+ * ÉTABLISSEMENT », et n'avait donc de réponse que pour les jours où l'on veut
+ * consommer. C'est peu : on ne cherche pas un restaurant tous les jours, et
+ * c'est la raison la plus simple pour laquelle personne n'ouvrait l'application
+ * spontanément.
+ *
+ * La mairie, l'office de tourisme, une association, un musée, une salle de
+ * spectacle publient exactement la même chose — quelque chose qui a lieu, à un
+ * endroit, à une heure. Le moteur ne change pas ; seul le publicateur change, et
+ * les cartes se rangent toutes seules. L'habitant, lui, n'a plus besoin d'avoir
+ * envie d'acheter pour avoir une raison d'ouvrir.
+ *
+ * ET LA CARTE DOIT ÊTRE DIFFÉRENTE, sinon on ne gagne rien. Un concert n'est pas
+ * un plat du jour : il a une date plutôt qu'une heure de service, il est souvent
+ * gratuit, et ce qui décide n'est pas le prix mais l'envie d'y être. Elle a donc
+ * sa couleur, son grand cartouche de date, et elle dit qui l'organise — parce
+ * que « la mairie » et « une association de quartier » ne promettent pas la même
+ * soirée.
+ */
+export type TypeOrganisateur =
+  | "mairie"
+  | "office"
+  | "association"
+  | "musee"
+  | "salle"
+  | "organisateur";
+
+export const ORGANISATEURS: Record<TypeOrganisateur, { label: string; emoji: string }> = {
+  mairie: { label: "La mairie", emoji: "🏛️" },
+  office: { label: "Office de tourisme", emoji: "🗺️" },
+  association: { label: "Association", emoji: "🤝" },
+  musee: { label: "Musée", emoji: "🖼️" },
+  salle: { label: "Salle de spectacle", emoji: "🎭" },
+  organisateur: { label: "Organisateur", emoji: "🎪" },
+};
+
+export type EvenementVille = {
+  id: string;
+  /** Ce que c'est, en quatre mots. C'est la plus grosse ligne de la carte. */
+  quoi: string;
+  /** Le détail, deux lignes au plus. */
+  lignes: string[];
+  qui: string;
+  typeQui: TypeOrganisateur;
+  photo?: string;
+  cadrage?: string;
+  /** Le jour tel qu'on le dit. « Ce soir » vaut mieux qu'une date. */
+  jour: string;
+  heure: string;
+  /** Bornes en heures décimales, pour savoir si ça se joue maintenant. */
+  de: number;
+  a: number;
+  /** Vrai si c'est aujourd'hui — sinon la pastille annonce le jour. */
+  aujourdhui: boolean;
+  lieu: string;
+  metres: number;
+  distance: string;
+  itineraire: string;
+  /** Absent : c'est gratuit, et c'est écrit en toutes lettres. */
+  prix?: string;
+  /** Le mot de l'organisateur, sous le pli. */
+  mot: string;
+  /** Ce qu'il faut savoir avant d'y aller. */
+  pratique: string[];
+};
+
+const EVENEMENTS: EvenementVille[] = [
+  {
+    id: "kiosque",
+    quoi: "Concert au kiosque",
+    lignes: ["Trio de jazz landais", "Sortez vos chaises, on reste jusqu'à la nuit"],
+    qui: "La mairie",
+    typeQui: "mairie",
+    photo: "/direct/concert-kiosque.jpg",
+    cadrage: "50%",
+    jour: "Ce soir",
+    heure: "19 h",
+    de: 19,
+    a: 22,
+    aujourdhui: true,
+    lieu: "Kiosque du parc Théodore-Denis",
+    metres: 450,
+    distance: "450 m",
+    itineraire: YALLER_VILLE,
+    mot: "On installe le kiosque à 18 h. Il n'y a pas de chaises : les gens apportent les leurs, s'assoient dans l'herbe, et ça marche très bien comme ça depuis quatre ans.",
+    pratique: ["Gratuit, sans réservation", "Annulé s'il pleut, on prévient ici"],
+  },
+  {
+    id: "marche-nuit",
+    quoi: "Marché de producteurs, le soir",
+    lignes: ["Vingt producteurs du département", "On achète, on s'assoit, on mange sur place"],
+    qui: "Office de tourisme",
+    typeQui: "office",
+    photo: "/direct/marche-producteurs.jpg",
+    cadrage: "50%",
+    jour: "Jeudi",
+    heure: "18 h – 22 h",
+    de: 18,
+    a: 22,
+    aujourdhui: false,
+    lieu: "Sous les halles",
+    metres: 300,
+    distance: "300 m",
+    itineraire: YALLER_VILLE,
+    prix: "Entrée libre",
+    mot: "Chaque producteur fait goûter. Prévoyez de dîner sur place plutôt qu'avant : il y a des tables et c'est fait pour.",
+    pratique: ["Entrée libre", "Paiement en espèces chez la plupart"],
+  },
+  {
+    id: "expo",
+    quoi: "Nocturne au musée",
+    lignes: ["L'expo sur les bains romains", "Visite guidée à 19 h et à 20 h 30"],
+    qui: "Musée de Borda",
+    typeQui: "musee",
+    photo: "/direct/nocturne-musee.jpg",
+    cadrage: "50%",
+    jour: "Vendredi",
+    heure: "18 h – 22 h",
+    de: 18,
+    a: 22,
+    aujourdhui: false,
+    lieu: "Rue des Carmes",
+    metres: 380,
+    distance: "380 m",
+    itineraire: YALLER_VILLE,
+    prix: "5 €",
+    mot: "Le vendredi soir, on ouvre jusqu'à 22 h et l'entrée passe à 5 €. C'est le moment où il y a le moins de monde dans les salles.",
+    pratique: ["5 €, gratuit pour les moins de 18 ans", "Deux visites guidées, 45 min"],
+  },
+  {
+    id: "vide-grenier",
+    quoi: "Vide-grenier du quartier",
+    lignes: ["Quatre-vingts exposants", "Buvette tenue par l'association"],
+    qui: "Les Amis du Sablar",
+    typeQui: "association",
+    photo: "/direct/vide-grenier.jpg",
+    cadrage: "50%",
+    jour: "Dimanche",
+    heure: "8 h – 17 h",
+    de: 8,
+    a: 17,
+    aujourdhui: false,
+    lieu: "Quartier du Sablar",
+    metres: 700,
+    distance: "700 m",
+    itineraire: YALLER_VILLE,
+    mot: "On tient la buvette toute la journée, et ce qu'elle rapporte finance les sorties des enfants du quartier. Venez tôt, les bonnes affaires partent avant 10 h.",
+    pratique: ["Gratuit pour les visiteurs", "Emplacement exposant : 8 € les 3 mètres"],
+  },
+];
+
+/**
+ * CE QUE LE PAQUET PEUT CONTENIR — un commerce ou un événement.
+ *
+ * Les deux se balaient pareil, se gardent pareil et se partagent pareil : c'est
+ * exactement ce qu'on veut, et c'est pour ça qu'ils partagent le même paquet
+ * plutôt que de vivre dans deux écrans. Ce qui les sépare est SOUS le pli, là où
+ * un commerce déroule sa journée et où un événement dit qui l'organise.
+ */
+export type ItemPaquet = CarteAutour | EvenementVille;
+
+/** Le seul endroit où l'on distingue les deux. Ailleurs, on les traite pareil. */
+export function estEvenement(x: ItemPaquet): x is EvenementVille {
+  return "typeQui" in x;
+}
+
+/** Les événements, du plus proche au plus loin. Aujourd'hui d'abord. */
+export function evenementsDeLaVille(): EvenementVille[] {
+  return [...EVENEMENTS].sort(
+    (a, b) => Number(b.aujourdhui) - Number(a.aujourdhui) || a.metres - b.metres,
+  );
+}
+
+/**
+ * LA CARTE D'UN ÉVÉNEMENT, dans le composant du produit.
+ *
+ * Même dessin, même geste — c'est ce qui fait qu'on ne change pas
+ * d'application entre « où je déjeune » et « qu'est-ce qui se passe ce soir ».
+ * Ce qui change : la pastille du haut porte le JOUR et non une échéance, et le
+ * prix dit « Gratuit » en toutes lettres quand il n'y en a pas. Un prix absent
+ * laisse croire qu'on ne sait pas ; écrire « gratuit » est la moitié de
+ * l'argument.
+ */
+export function carteDEvenement(e: EvenementVille, heure: number): CarteDirect {
+  const enCours = e.aujourdhui && heure >= e.de && heure < e.a;
+  return {
+    photo: e.photo,
+    cadrage: e.cadrage,
+    nom: e.quoi,
+    metier: e.qui,
+    ville: VILLE,
+    distance: e.distance,
+    itineraire: e.itineraire,
+    reste: enCours ? `● En ce moment · jusqu'à ${e.a} h` : `${e.jour} · ${e.heure}`,
+    icone: ORGANISATEURS[e.typeQui].emoji,
+    quoi: e.lieu,
+    lignes: e.lignes,
+    prix: e.prix ?? "Gratuit",
+    etiquette: e.aujourdhui ? "AUJOURD'HUI" : e.jour.toUpperCase(),
+  };
+}
+
 export const HEURE_MIN = 8;
 export const HEURE_MAX = 23;
 
-const VILLE = "Dax";
-const YALLER = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(VILLE);
 
 const CARTES: CarteAutour[] = [
   // ── RESTAURANTS ──────────────────────────────────────────────────────────
