@@ -360,6 +360,34 @@ export type CarteAutour = {
   /** Ce qu'on mange aujourd'hui. Les métiers de bouche en ont un ; les autres
    *  n'en ont pas, et leur carte continue de montrer le moment en cours. */
   menu?: MenuDuJour;
+  /**
+   * SES HABITUÉS — CEUX QUI LE FONT CONNAÎTRE.
+   *
+   * POURQUOI CETTE LISTE EXISTE, ET POURQUOI ELLE EST PAR COMMERCE. « Le
+   * soutenir » ne se comprenait pas : on ne voyait ni à quoi sert le geste, ni
+   * ce qu'il produit. Un compteur privé ne répond à rien — un chiffre que
+   * personne ne regarde n'est pas une récompense.
+   *
+   * Ce qui rend le geste lisible, c'est de voir qu'il ARRIVE QUELQUE PART. Le
+   * commerçant voit qui le fait connaître, et cette liste est ce qu'il voit.
+   * Dans une ville de vingt mille habitants, être dans les habitués de sa
+   * boulangerie a une valeur réelle, et elle ne coûte rien à personne.
+   *
+   * ELLE EST PAR COMMERCE, JAMAIS GLOBALE, et c'est délibéré. Un classement de
+   * ville désignerait des derniers, se ferait jouer, et transformerait un geste
+   * d'attachement en compétition. Chez un commerçant, il n'y a pas de perdant :
+   * il y a ceux qui viennent souvent et les autres.
+   *
+   * PRÉNOM ET INITIALE, JAMAIS PLUS. Ce sont des voisins, pas des comptes.
+   */
+  pouces?: { qui: string; combien: number }[];
+  /**
+   * SON SITE, QUAND IL EN A UN. Affiché, pas cliquable dans la maquette : les
+   * commerces d'ici sont inventés, et un domaine inventé qui existerait vraiment
+   * enverrait un testeur chez un inconnu. Le vrai produit porte l'adresse
+   * déclarée par le commerçant.
+   */
+  site?: string;
 };
 
 const VILLE = "Dax";
@@ -589,6 +617,12 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 400,
     distance: "400 m",
+    pouces: [
+      { qui: "Hélène M.", combien: 14 },
+      { qui: "Karim B.", combien: 9 },
+      { qui: "Sofia R.", combien: 6 },
+    ],
+    site: "chezbergine.fr",
     fiche: {
       ou: "Rue piétonne, à côté de la halle",
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h",
@@ -685,6 +719,11 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 180,
     distance: "180 m",
+    pouces: [
+      { qui: "Camille D.", combien: 11 },
+      { qui: "Bastien L.", combien: 5 },
+    ],
+    site: "lebocaldemargot.fr",
     fiche: {
       ou: "Petite rue derrière l'église",
       horaires: "Aujourd'hui, 11 h – 14 h 30",
@@ -737,6 +776,12 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 250,
     distance: "250 m",
+    pouces: [
+      { qui: "Bruno P.", combien: 8 },
+      { qui: "Ana T.", combien: 7 },
+      { qui: "Nadia S.", combien: 3 },
+    ],
+    site: "ardoise-landaise.fr",
     fiche: {
       ou: "Place du marché, sous les arcades",
       horaires: "Aujourd'hui, 12 h – 14 h et 19 h – 22 h 30",
@@ -795,6 +840,7 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 600,
     distance: "600 m",
+    pouces: [{ qui: "Martine G.", combien: 6 }],
     fiche: {
       ou: "Avenue principale, en face de l'arrêt de bus",
       horaires: "Aujourd'hui, 6 h 30 – 19 h 30",
@@ -855,6 +901,8 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 320,
     distance: "320 m",
+    pouces: [{ qui: "Chloé V.", combien: 4 }],
+    site: "lagrandetablee.fr",
     fiche: {
       ou: "Quai, au bord de l'eau",
       horaires: "Ce soir, à partir de 19 h 30",
@@ -891,6 +939,11 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 350,
     distance: "350 m",
+    pouces: [
+      { qui: "Julie A.", combien: 12 },
+      { qui: "Marc E.", combien: 10 },
+    ],
+    site: "maison-lartigue.fr",
     fiche: {
       ou: "Rue du port, à l'angle",
       horaires: "Aujourd'hui, 9 h – 19 h 30",
@@ -949,6 +1002,11 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 210,
     distance: "210 m",
+    pouces: [
+      { qui: "Élodie N.", combien: 5 },
+      { qui: "Thomas W.", combien: 3 },
+    ],
+    site: "boutique-rue-pietonne.fr",
     fiche: {
       ou: "Rue piétonne, à côté du kiosque",
       horaires: "Aujourd'hui, 10 h – 19 h",
@@ -1038,6 +1096,7 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 190,
     distance: "190 m",
+    pouces: [{ qui: "Rémi H.", combien: 8 }],
     fiche: {
       ou: "Rue piétonne, première à droite",
       horaires: "Aujourd'hui, 17 h – 1 h",
@@ -1122,6 +1181,11 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 220,
     distance: "220 m",
+    pouces: [
+      { qui: "Camille D.", combien: 7 },
+      { qui: "Yann F.", combien: 4 },
+    ],
+    site: "salon-du-centre-dax.fr",
     fiche: {
       ou: "Rue piétonne, au-dessus de la pharmacie",
       horaires: "Aujourd'hui, 9 h – 19 h",
@@ -1215,6 +1279,7 @@ const CARTES: CarteAutour[] = [
     itineraire: YALLER,
     metres: 150,
     distance: "150 m",
+    pouces: [{ qui: "Maryse C.", combien: 9 }],
     fiche: {
       ou: "Sous la halle du marché",
       horaires: "Aujourd'hui, 8 h – 19 h",

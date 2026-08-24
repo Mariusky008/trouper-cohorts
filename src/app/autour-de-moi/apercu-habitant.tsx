@@ -515,6 +515,8 @@ export function ApercuHabitant() {
   const [ouvertReponse, setOuvertReponse] = useState<CarteAutour | null>(null);
   const [notes, setNotes] = useState<Record<string, number>>({});
   const [creneau, setCreneau] = useState("");
+  /** Le mot qui confirme qu'un coup de pouce est arrivé. Vide : rien à dire. */
+  const [echo, setEcho] = useState("");
   const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
   const minuteries = useRef<number[]>([]);
   const defilement = useRef<HTMLDivElement | null>(null);
@@ -576,6 +578,11 @@ export function ApercuHabitant() {
       }
       ajouterFlamme(c.id);
       noter("partage", 0, c.branche);
+      // LE GESTE DOIT DIRE CE QU'IL A PRODUIT. Sans ce retour, on appuie, il ne
+      // se passe rien de visible, et on n'appuie plus jamais. C'est la moitié
+      // manquante de « le soutenir » : ce n'est pas le partage qui récompense,
+      // c'est de savoir qu'il est ARRIVÉ QUELQUE PART.
+      setEcho(`${c.nom} vient d'être prévenu que ça vient de vous.`);
     } catch {
       /* Partage annulé : aucune flamme, rien ne s'est passé. */
     }
@@ -657,6 +664,23 @@ export function ApercuHabitant() {
    */
   const murDe = (c: CarteAutour) =>
     c.moments.flatMap((m) => photosDe(avisDe(c, m)));
+  /**
+   * SES HABITUÉS, MOI COMPRIS, DU PLUS ASSIDU AU MOINS.
+   *
+   * On se glisse dans la liste dès le premier coup de pouce : se voir dedans est
+   * exactement ce qui donne envie d'en donner un deuxième, et c'est honnête —
+   * le commerçant verrait la même chose de son côté. Quatre lignes au plus : au
+   * delà, ce n'est plus « ses habitués », c'est un annuaire.
+   */
+  const habituesDe = (c: CarteAutour) => {
+    const miens = mesFlammes[c.id] ?? 0;
+    const liste = [
+      ...(c.pouces ?? []).map((x) => ({ ...x, moi: false })),
+      ...(miens ? [{ qui: "Vous", combien: miens, moi: true }] : []),
+    ];
+    return liste.sort((a, b) => b.combien - a.combien).slice(0, 4);
+  };
+
   /** Est-ce que J'AI demandé que ça revienne ? Gardé dans son navigateur. */
   const jeDemande = (c: CarteAutour, m: MomentJour) => mesRappels.includes(cleMoment(c, m));
   /** Le compte affiché : les voisins, plus moi si j'ai appuyé. Le mien doit se
@@ -676,6 +700,12 @@ export function ApercuHabitant() {
   useEffect(() => {
     noter("ouverture");
   }, []);
+  // Le mot s'efface tout seul : une confirmation qui reste devient un décor.
+  useEffect(() => {
+    if (!echo) return;
+    const t = setTimeout(() => setEcho(""), 4200);
+    return () => clearTimeout(t);
+  }, [echo]);
   const vueId = dessus?.id;
   const rangVu = passees.length + 1;
   useEffect(() => {
@@ -843,6 +873,7 @@ export function ApercuHabitant() {
       }
       ajouterFlamme(e.id);
       noter("partage", 0, "evenement");
+      setEcho(`C'est parti. ${e.qui} saura que ça vient de vous.`);
     } catch {
       /* Partage annulé : aucune flamme, rien ne s'est passé. */
     }
@@ -1662,32 +1693,85 @@ export function ApercuHabitant() {
                           </button>
                         )}
 
-                        <div className="ap-deux-b">
-                          <a
-                            className="ap-yaller"
-                            href={dessus.itineraire}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            onPointerDown={(ev) => ev.stopPropagation()}
-                          >
-                            🧭 Y aller
-                          </a>
-                          {/* LE PARTAGE DIT « JE LE SOUTIENS », ET RIEN D'AUTRE.
-                              Aucune récompense n'est promise ici, et il ne faut
-                              jamais en promettre : le jour où elle est attendue,
-                              c'est redevenu une économie de points. */}
-                          <button
-                            type="button"
-                            className={`ap-flamme${mesFlammes[dessus.id] ? " on" : ""}`}
-                            onPointerDown={(ev) => ev.stopPropagation()}
-                            onClick={() => void partager(dessus)}
-                          >
-                            <i aria-hidden="true">🔥</i>
+                        {/* SON SITE. Affiché et pas cliquable, délibérément :
+                            les commerces d'ici sont inventés, et un domaine
+                            inventé qui existerait vraiment enverrait un testeur
+                            chez un inconnu. Le vrai produit porte l'adresse que
+                            le commerçant a déclarée. */}
+                        {dessus.site && (
+                          <div className="ap-l">
+                            <i aria-hidden="true">🌐</i>
+                            {dessus.site}
+                          </div>
+                        )}
+
+                        <a
+                          className="ap-yaller plein"
+                          href={dessus.itineraire}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                        >
+                          🧭 Y aller
+                        </a>
+                      </div>
+
+                      {/* ── LE FAIRE CONNAÎTRE ──
+                          « Le soutenir » ne se comprenait pas : on ne voyait ni
+                          à quoi sert le geste, ni ce qu'il produit. Un compteur
+                          privé ne répond à rien — un chiffre que personne ne
+                          regarde n'est pas une récompense.
+                          Ce qui rend le geste lisible, c'est de voir qu'il
+                          ARRIVE QUELQUE PART : le commerçant est prévenu, et il
+                          sait de qui ça vient. Le bloc dit donc la phrase
+                          entière, montre à qui on se joint, et n'a plus besoin
+                          de promettre quoi que ce soit. */}
+                      <div className="ap-bloc">
+                        <h3>Le faire connaître</h3>
+                        <p className="ap-pouce-quoi">
+                          Vous partagez son annonce à quelqu&apos;un qui ne le
+                          connaît pas. <b>{dessus.nom} est prévenu que ça vient
+                          de vous.</b>
+                        </p>
+
+                        <button
+                          type="button"
+                          className={`ap-pouce${mesFlammes[dessus.id] ? " on" : ""}`}
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => void partager(dessus)}
+                        >
+                          <i aria-hidden="true">🔥</i>
+                          <span>
+                            <b>
+                              {mesFlammes[dessus.id]
+                                ? "Encore un coup de pouce"
+                                : "Donner un coup de pouce"}
+                            </b>
                             {mesFlammes[dessus.id]
-                              ? `Soutenu ${mesFlammes[dessus.id]}×`
-                              : "Le soutenir"}
-                          </button>
-                        </div>
+                              ? `Vous lui en avez donné ${mesFlammes[dessus.id]}`
+                              : "Un partage, à qui vous voulez"}
+                          </span>
+                        </button>
+
+                        {/* LES HABITUÉS. Par commerce, jamais en classement de
+                            ville : un palmarès municipal désignerait des
+                            derniers, se ferait jouer, et transformerait un geste
+                            d'attachement en compétition. Chez un commerçant, il
+                            n'y a pas de perdant. */}
+                        {(dessus.pouces?.length || mesFlammes[dessus.id]) && (
+                          <div className="ap-habitues">
+                            <h4>Ses habitués</h4>
+                            <ol>
+                              {habituesDe(dessus).map((h) => (
+                                <li key={h.qui} className={h.moi ? "moi" : ""}>
+                                  <i aria-hidden="true">{h.moi ? "🔥" : "·"}</i>
+                                  <span>{h.qui}</span>
+                                  <b>{h.combien}</b>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
                       </div>
                         </>
                       )}
@@ -1737,6 +1821,13 @@ export function ApercuHabitant() {
           </div>
 
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
+
+          {echo && (
+            <div className="ap-echo" role="status">
+              <i aria-hidden="true">🔥</i>
+              {echo}
+            </div>
+          )}
 
           {/* LES GESTES RESTENT PENDANT UNE DEMANDE : une invitation se balaie
               comme une carte, et on la garde ou on la passe comme les autres.
@@ -2791,6 +2882,53 @@ export function ApercuHabitant() {
         .ap-orga b{display:block;font-size:14.5px;font-weight:850;color:#F9C0DC;
           letter-spacing:-.01em;margin-bottom:1px;}
 
+        /* ── LE COUP DE POUCE ──
+           Le mot compte autant que le bouton : « soutenir » est vague, « un
+           coup de pouce » se comprend sans explication et dit la bonne taille
+           du geste — petit, gratuit, offert. */
+        .ap-pouce-quoi{margin:0 0 12px;font-size:13.5px;line-height:1.5;color:#93A8A0;}
+        .ap-pouce-quoi b{color:#F3C6A8;font-weight:800;}
+        .ap-pouce{width:100%;display:flex;align-items:center;gap:11px;font:inherit;
+          text-align:left;cursor:pointer;color:#F3C6A8;
+          background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.32);
+          border-radius:14px;padding:12px 14px;transition:transform .12s ease;}
+        .ap-pouce:active{transform:scale(.98);}
+        .ap-pouce i{font-style:normal;font-size:20px;line-height:1;flex:none;}
+        .ap-pouce span{flex:1;min-width:0;font-size:12.5px;color:#C79B84;}
+        .ap-pouce b{display:block;font-size:14.5px;font-weight:850;color:#FFD9BE;
+          letter-spacing:-.01em;margin-bottom:1px;}
+        .ap-pouce.on{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.6);}
+
+        .ap-habitues{margin-top:14px;padding-top:12px;
+          border-top:1px solid rgba(255,255,255,.08);}
+        .ap-habitues h4{margin:0 0 8px;font-size:11px;font-weight:850;
+          letter-spacing:.12em;text-transform:uppercase;color:#7F988B;}
+        .ap-habitues ol{list-style:none;margin:0;padding:0;}
+        .ap-habitues li{display:flex;align-items:center;gap:9px;padding:6px 0;
+          font-size:13.5px;color:#B9C6CE;}
+        .ap-habitues li i{font-style:normal;font-size:12px;width:14px;flex:none;
+          text-align:center;color:#5E706A;}
+        .ap-habitues li span{flex:1;min-width:0;}
+        .ap-habitues li b{flex:none;font-size:12px;font-weight:850;color:#7F988B;
+          font-variant-numeric:tabular-nums;}
+        /* Se voir dans la liste est ce qui donne envie d'en donner un deuxième. */
+        .ap-habitues li.moi{color:#FFD9BE;font-weight:800;}
+        .ap-habitues li.moi b{color:#F3C6A8;}
+
+        /* LE MOT QUI CONFIRME QUE LE COUP DE POUCE EST ARRIVÉ. Sans lui on
+           appuie, rien ne bouge, et on n'appuie plus jamais. Il s'efface seul :
+           une confirmation qui reste devient un décor. */
+        .ap-echo{position:absolute;left:12px;right:12px;bottom:92px;z-index:6;
+          display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750;
+          color:#FFD9BE;background:rgba(28,14,6,.92);
+          -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+          border:1px solid rgba(249,115,22,.45);border-radius:14px;padding:11px 13px;
+          animation:apEcho .3s ease-out;}
+        .ap-echo i{font-style:normal;font-size:16px;line-height:1;flex:none;}
+        @keyframes apEcho{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+        .ap-yaller.plein{width:100%;justify-content:center;}
+
         /* MON ESPACE. */
         .ap-perso{font:inherit;cursor:pointer;}
         .ap-moi-bloc{margin-bottom:16px;}
@@ -3013,7 +3151,7 @@ export function ApercuHabitant() {
           .ap-jour i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
-          .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}
+          .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}
           .ap-coeur{display:none;}
         }
       `,
