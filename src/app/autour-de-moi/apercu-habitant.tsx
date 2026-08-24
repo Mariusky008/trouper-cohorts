@@ -341,6 +341,44 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
   }
 }
 
+// ── L'HORLOGE, EN CACHE ────────────────────────────────────────────────────
+//
+// `getSnapshot` DOIT RENDRE LA MÊME VALEUR TANT QUE RIEN N'A CHANGÉ. Une
+// première version rendait `Date.now()` directement : React compare l'ancien et
+// le nouvel instantané pour savoir s'il doit redessiner, deux appels
+// consécutifs donnaient deux nombres différents, et il redessinait en boucle —
+// la page restait vide, sans la moindre erreur dans la console.
+//
+// On garde donc l'instant dans une variable qui ne bouge QUE sur le battement,
+// et on ne prévient les abonnés que si la minute a changé : une horloge à la
+// minute n'a aucune raison de réveiller le rendu toutes les vingt secondes.
+let pendule = 0;
+const abonnesP = new Set<() => void>();
+let battement: ReturnType<typeof setInterval> | null = null;
+
+function lirePendule() {
+  if (!pendule) pendule = Date.now();
+  return pendule;
+}
+function abonnerPendule(f: () => void) {
+  abonnesP.add(f);
+  if (!battement) {
+    battement = setInterval(() => {
+      const n = Date.now();
+      if (Math.floor(n / 60_000) === Math.floor(pendule / 60_000)) return;
+      pendule = n;
+      abonnesP.forEach((g) => g());
+    }, 15_000);
+  }
+  return () => {
+    abonnesP.delete(f);
+    if (!abonnesP.size && battement) {
+      clearInterval(battement);
+      battement = null;
+    }
+  };
+}
+
 function Etoiles({ note }: { note: number }) {
   return (
     <span className="ap-et" aria-label={`${note} sur 5`}>
@@ -480,6 +518,35 @@ export function ApercuHabitant() {
   const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
   const minuteries = useRef<number[]>([]);
   const defilement = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * LA DATE ET L'HEURE DU VISITEUR, QUI AVANCENT.
+   *
+   * TOUTE LA PROMESSE DU PRODUIT EST « CE QUI SE PASSE MAINTENANT », et rien à
+   * l'écran ne disait quel jour on est. Les cartes annoncent « ce soir »,
+   * « jeudi », « dimanche » sans que le lecteur ait de point d'ancrage : il ne
+   * peut pas savoir si ce qu'il lit est d'aujourd'hui ou d'un vieux fil.
+   *
+   * L'heure qui avance vaut mieux qu'une date seule : une date est une
+   * information, une horloge qui bouge est une preuve. C'est elle qui fait
+   * comprendre en une seconde que le paquet se recompose tout seul.
+   *
+   * `useSyncExternalStore` parce que le serveur ne connaît ni le fuseau ni la
+   * minute du visiteur : le rendre au rendu casserait l'hydratation.
+   */
+  const horloge = useSyncExternalStore(abonnerPendule, lirePendule, () => 0);
+  const maintenant = horloge
+    ? new Intl.DateTimeFormat("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }).format(new Date(horloge))
+    : "";
+  const pendule = horloge
+    ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" })
+        .format(new Date(horloge))
+        .replace(":", " h ")
+    : "";
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
@@ -892,6 +959,19 @@ export function ApercuHabitant() {
                 le monde le touche — et c'est justement parce qu'on attend une
                 liste de résultats que recevoir des réponses fait quelque
                 chose. */}
+            {/* On ne l'affiche qu'une fois monté : côté serveur la date est
+                vide, et un jour faux qui se corrige sous les yeux est pire
+                qu'un jour absent une demi-seconde. */}
+            {maintenant && (
+              <div className="ap-jour">
+                <b>{maintenant}</b>
+                <span>
+                  <i aria-hidden="true">●</i>
+                  {pendule}
+                </span>
+              </div>
+            )}
+
             {vue === "evenements" || vue === "tout" ? (
               <div className={`ap-sortie ${vue === "tout" ? "tout" : "evenement"}`}>
                 <span className="ap-s-quoi">
@@ -1262,41 +1342,49 @@ export function ApercuHabitant() {
                       <div className="ap-bloc">
                         <h3>La journée</h3>
                         <ol className="ap-prog">
-                          {restants.map((m) => {
+                          {dessus.moments.map((m) => {
+                            const passe = heure >= m.a;
                             const av = avisDe(dessus, m);
                             const maNote = notes[cleMoment(dessus, m)] ?? 0;
                             return (
                               <li
                                 key={m.titre}
-                                className={seJoueMaintenant(m, heure) ? "on" : ""}
+                                className={
+                                  seJoueMaintenant(m, heure) ? "on" : passe ? "passe" : ""
+                                }
                               >
                                 <div className="ap-prog-h">
                                   <b>{m.quand}</b>
-                                  {seJoueMaintenant(m, heure) && <span className="ap-live">en cours</span>}
+                                  {seJoueMaintenant(m, heure) && (
+                                    <span className="ap-live">en cours</span>
+                                  )}
+                                  {passe && <span className="ap-fini">c&apos;est passé</span>}
                                 </div>
                                 <div className="ap-prog-t">
                                   <i aria-hidden="true">{m.icone}</i>
                                   {m.titre}
                                 </div>
-                                {!!m.lignes?.length && (
+                                {!passe && !!m.lignes?.length && (
                                   <div className="ap-prog-l">
                                     {m.lignes.map((l) => (
                                       <span key={l}>{l}</span>
                                     ))}
                                   </div>
                                 )}
+                                {!passe && (
                                 <div className="ap-prog-p">
                                   {m.prix && <b>{m.prix}</b>}
                                   {m.prixBarre && <s>{m.prixBarre}</s>}
                                   {m.etiquette && <em>{m.etiquette}</em>}
                                   {m.places != null && <span>{m.places} restantes</span>}
                                 </div>
+                                )}
 
                                 {/* LES AVIS SONT SOUS LE MOMENT QU'ILS CONCERNENT,
                                     pas sous le commerce : c'est le plat qu'on
                                     note, et c'est lui qui les remporte quand il
                                     revient à la carte. */}
-                                {(avisNotes(av).length > 0 || photosDe(av).length > 0) && (
+                                {!passe && (avisNotes(av).length > 0 || photosDe(av).length > 0) && (
                                   <div className="ap-prog-av">
                                     {/* La ligne d'étoiles ne s'affiche que si
                                         quelqu'un a noté : un « 0 » et cinq
@@ -1344,6 +1432,7 @@ export function ApercuHabitant() {
                                 {/* LE GESTE DE RETOUR TIENT EN UN APPUI. Une
                                     vidéo ou un texte demandés à chaque fois ne
                                     seraient jamais donnés ; cinq étoiles, si. */}
+                                {!passe && (
                                 <div className="ap-noter">
                                   {[1, 2, 3, 4, 5].map((n) => (
                                     <button
@@ -1406,6 +1495,7 @@ export function ApercuHabitant() {
                                     Ma photo
                                   </label>
                                 </div>
+                                )}
 
                                 {/* « FAITES-LE REVENIR ».
                                     Un appui, aucune page blanche, et un effet
@@ -1476,7 +1566,7 @@ export function ApercuHabitant() {
                                   </button>
                                 )}
 
-                                {m.action && (m.places ?? 1) > 0 && (
+                                {!passe && m.action && (m.places ?? 1) > 0 && (
                                   <button
                                     type="button"
                                     className="ap-prog-b"
@@ -2197,7 +2287,9 @@ export function ApercuHabitant() {
                             disabled={!creneau}
                             onClick={() => {
                               surWhatsApp(
-                                `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce qu'il reste de la place ? Merci !`,
+                                aReserver.find((m) => m.titre === creneau)?.action === "Réserver"
+                                  ? `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce qu'il reste de la place ? Merci !`
+                                  : `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce que vous pouvez m'en garder ? Merci !`,
                               );
                               setReserves((r) => {
                                 const cle = `${dessus.id}|${creneau}`;
@@ -2514,12 +2606,69 @@ export function ApercuHabitant() {
         .ap-bloc h3{margin:0 0 12px;font-size:11px;font-weight:850;letter-spacing:.14em;
           text-transform:uppercase;color:#7F988B;}
 
-        .ap-prog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
-        .ap-prog li{padding:13px 0;border-top:1px solid rgba(255,255,255,.08);}
+        /* LA DATE ET L'HEURE. Discrètes : elles répondent à une question qu'on
+           ne pose qu'une fois — quel jour on est — et ne doivent pas prendre la
+           place de ce qu'on est venu voir. Le point vert bat comme un voyant
+           d'antenne : c'est lui qui dit « en direct », pas le texte. */
+        .ap-jour{display:flex;align-items:baseline;gap:9px;margin:-2px 2px 2px;}
+        .ap-jour b{font-size:12.5px;font-weight:800;color:#93A8A0;
+          letter-spacing:.01em;text-transform:capitalize;}
+        .ap-jour span{display:inline-flex;align-items:center;gap:5px;font-size:12px;
+          font-weight:800;color:#3DE2A6;font-variant-numeric:tabular-nums;}
+        .ap-jour i{font-style:normal;font-size:8px;line-height:1;
+          animation:apVoyant 2.4s ease-in-out infinite;}
+        @keyframes apVoyant{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+        /* LE FIL DE LA JOURNÉE — UNE LIGNE DE TEMPS, PAS SIX COULEURS.
+           Il a été proposé de donner une couleur à chaque proposition pour
+           marquer le fil. On s'y refuse, et pour une raison de systeme : le vert
+           dit « application », l'or « invitation », le bleu « embauche », le
+           violet « rappel », l'orange « soutien », le rose « evenement ». Six
+           sens deja attribues. Une septieme famille de couleurs qui signifierait
+           seulement « c'est le creneau de 11 h » ferait perdre leur sens aux six
+           autres — un code couleur ne tient que tant que chaque teinte veut dire
+           UNE chose.
+           Ce qui manquait n'etait pas de la couleur, c'etait une FORME. Un rail
+           vertical, une pastille par moment, celle du moment en cours pleine et
+           qui bat : voila ce qui fait lire une suite comme une suite. */
+        .ap-prog{list-style:none;margin:0;padding:0 0 0 22px;position:relative;
+          display:flex;flex-direction:column;gap:2px;}
+        .ap-prog::before{content:"";position:absolute;left:5px;top:6px;bottom:14px;
+          width:2px;border-radius:2px;background:rgba(255,255,255,.1);}
+        .ap-prog li{position:relative;padding:13px 0;
+          border-top:1px solid rgba(255,255,255,.08);}
         .ap-prog li:first-child{border-top:0;padding-top:0;}
-        /* Le moment en cours se distingue par une barre, pas par une couleur de
-           fond : la liste doit rester lisible d'un coup d'oeil. */
-        .ap-prog li.on{border-left:3px solid #3DE2A6;padding-left:12px;margin-left:-15px;}
+        .ap-prog li::before{content:"";position:absolute;left:-21px;top:16px;
+          width:12px;height:12px;border-radius:50%;background:#0F1A16;
+          border:2px solid rgba(255,255,255,.22);}
+        .ap-prog li:first-child::before{top:3px;}
+        /* Le moment en cours : pastille pleine, halo qui bat. C'est le seul
+           endroit de la liste ou quelque chose bouge. */
+        .ap-prog li.on::before{background:#3DE2A6;border-color:#3DE2A6;
+          box-shadow:0 0 0 4px rgba(61,226,166,.2);animation:apPouls 2s ease-in-out infinite;}
+        @keyframes apPouls{
+          0%,100%{box-shadow:0 0 0 4px rgba(61,226,166,.18);}
+          50%{box-shadow:0 0 0 8px rgba(61,226,166,.06);}}
+        /* Ce qui est passe reste visible mais s'efface : un fil a besoin d'un
+           avant, sinon « la journee » n'est qu'une liste de ce qui reste. */
+        /* UN MOMENT PASSÉ TIENT SUR UNE LIGNE, et c'est la moitié du travail.
+           Déplié, il occupait tout le haut du programme — prix, étoiles, bouton
+           photo, bouton de rappel — et il fallait faire défiler deux moments
+           morts avant d'atteindre celui qui se joue. Le fil a besoin d'un
+           avant ; il n'a pas besoin que l'avant crie aussi fort. */
+        .ap-prog li.passe{opacity:.5;padding:9px 0;}
+        .ap-prog li.passe .ap-prog-t{font-size:14px;font-weight:750;color:#93A8A0;}
+        .ap-prog li.passe .ap-prog-t i{font-size:13px;}
+        .ap-prog li.passe .ap-prog-h{margin-bottom:2px;}
+        .ap-prog li.passe .ap-prog-h b{font-size:11px;}
+        .ap-prog li.passe .ap-revient{margin-top:7px;padding:7px 10px;}
+        .ap-prog li.passe .ap-revient span b{font-size:13px;}
+        .ap-prog li.passe .ap-revient span{font-size:11.5px;}
+        .ap-prog li.passe::before{background:rgba(255,255,255,.22);
+          border-color:rgba(255,255,255,.22);}
+        .ap-fini{flex:none;font-size:10px;font-weight:850;letter-spacing:.08em;
+          text-transform:uppercase;color:#8B9A94;background:rgba(255,255,255,.07);
+          border-radius:999px;padding:3px 8px;}
         .ap-prog-h{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
         .ap-prog-h b{font-size:12px;font-weight:850;letter-spacing:.08em;color:#F0B429;
           font-variant-numeric:tabular-nums;}
@@ -2860,7 +3009,8 @@ export function ApercuHabitant() {
           .ap-app{border-radius:34px;overflow:hidden;}
         }
         @media (prefers-reduced-motion:reduce){
-          .ap-doigt,.ap-vers-bas,.ap-trois i{animation:none;}
+          .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
+          .ap-jour i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok{animation:none;}

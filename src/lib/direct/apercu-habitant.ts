@@ -658,7 +658,7 @@ const CARTES: CarteAutour[] = [
         de: 14, a: 15, quand: "14 h", icone: "🥡",
         titre: "Les restes, à emporter",
         lignes: ["Ce qui n'est pas parti du service", "Sur place, tant qu'il y en a"],
-        prix: "7 €", places: 5, action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
+        prix: "7 €", places: 5, action: "Gardez-m'en une part", envies: ["moins15", "maintenant", "emporter"],
         rappels: 3,
       },
       {
@@ -708,14 +708,14 @@ const CARTES: CarteAutour[] = [
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
         titre: "Les deux plats du jour",
         lignes: ["Lasagnes maison", "Curry de légumes"],
-        prix: "11 €", places: 14, action: "J'en prends", envies: ["italien", "moins15", "maintenant", "emporter"],
+        prix: "11 €", places: 14, action: "Gardez-m'en une part", envies: ["italien", "moins15", "maintenant", "emporter"],
       },
       {
         de: 13, a: 17, quand: "à partir de 13 h", icone: "🔥",
         titre: "Dernières portions",
         lignes: ["Lasagnes maison", "Prêtes tout de suite"],
         prix: "8 €", etiquette: "IL EN RESTE 8", places: 8,
-        action: "J'en prends", envies: ["italien", "moins15", "maintenant", "emporter"],
+        action: "Gardez-m'en une part", envies: ["italien", "moins15", "maintenant", "emporter"],
         avis: [
           { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier",
             photo: "/direct/portion-a-emporter.jpg" },
@@ -827,7 +827,7 @@ const CARTES: CarteAutour[] = [
         de: 11, a: 14, quand: "11 h – 14 h", icone: "🥪",
         titre: "Formule du midi",
         lignes: ["Sandwich au choix", "Boisson + dessert"],
-        prix: "8,50 €", places: 20, action: "J'en prends",
+        prix: "8,50 €", places: 20, action: "Gardez-m'en une",
         envies: ["moins15", "maintenant", "emporter"],
         avis: [
           { note: 4, texte: "Pain frais, ça change tout.", qui: "Thomas", quand: "hier" },
@@ -917,7 +917,7 @@ const CARTES: CarteAutour[] = [
         de: 10, a: 18, quand: "toute la journée", icone: "🍱",
         titre: "Les barquettes du jour",
         lignes: ["Six plats au choix", "À emporter"],
-        prix: "12 €", places: 25, action: "J'en prends",
+        prix: "12 €", places: 25, action: "Gardez-m'en une",
         envies: ["maintenant", "emporter"],
       },
       {
@@ -925,7 +925,7 @@ const CARTES: CarteAutour[] = [
         titre: "Ce qui reste de la journée",
         lignes: ["Barquettes du jour", "Moitié prix jusqu'à 19 h 30"],
         prix: "6 €", prixBarre: "12 €", etiquette: "−50 %", places: 7,
-        action: "J'en prends", envies: ["moins15", "maintenant", "emporter"],
+        action: "Gardez-m'en une", envies: ["moins15", "maintenant", "emporter"],
         avis: [
           { note: 4, texte: "Pour 6 €, franchement rien à dire.", qui: "Julie", quand: "avant-hier",
             photo: "/direct/vitrine-du-soir.jpg" },
@@ -1225,7 +1225,7 @@ const CARTES: CarteAutour[] = [
         de: 8, a: 19, quand: "jusqu'à 19 h", icone: "💐",
         titre: "Bouquet du jour",
         lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
-        prix: "15 €", places: 12, action: "J'en prends",
+        prix: "15 €", places: 12, action: "Mettez-m'en un de côté",
         envies: ["maintenant", "moins20", "saison"],
         avis: [
           { note: 5, texte: "Il a tenu dix jours sur ma table.", qui: "Maryse", quand: "il y a une semaine",
@@ -1237,7 +1237,7 @@ const CARTES: CarteAutour[] = [
         titre: "Il reste 4 bouquets",
         lignes: ["Composés ce matin", "À emporter"],
         prix: "12 €", prixBarre: "18 €", etiquette: "−30 %", places: 4,
-        action: "J'en prends", envies: ["maintenant", "moins20"],
+        action: "Mettez-m'en un de côté", envies: ["maintenant", "moins20"],
       },
     ],
   },
