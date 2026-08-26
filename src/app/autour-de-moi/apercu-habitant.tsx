@@ -492,7 +492,7 @@ export function ApercuHabitant() {
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
   const [feuille, setFeuille] = useState<
-    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche" | "moi" | "salon"
+    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche" | "moi"
   >("");
   /**
    * CE QUE LE PAQUET REGARDE.
@@ -572,6 +572,17 @@ export function ApercuHabitant() {
   const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
   /** La clé du salon ouvert à l'écran. Vide : on n'est dans aucun. */
   const [salonOuvert, setSalonOuvert] = useState("");
+  /**
+   * LE SALON EST UNE PAGE, PAS UNE FENÊTRE QUI SE POSE PAR-DESSUS.
+   *
+   * Il était une feuille remontant du bas, comme une confirmation. Défaut
+   * relevé au test : « quand on arrive sur le salon c'est SA page, pas une
+   * pop-up ». Une pop-up dit « tu es toujours dans le paquet, ceci est un
+   * détail » ; or c'est l'inverse — le paquet sert à trouver la sortie, le
+   * salon EST la sortie. Il prend donc tout l'écran, avec son en-tête, son
+   * corps qui défile et sa barre d'actions.
+   */
+  const [salonPage, setSalonPage] = useState(false);
   /** Ce qu'on est en train d'écrire dans le salon. */
   const [motSalon, setMotSalon] = useState("");
   /** Les amis en train de répondre — les trois points, comme partout ailleurs. */
@@ -614,7 +625,8 @@ export function ApercuHabitant() {
     noter("partage", 0, "salon");
     const existe = salons[cle];
     setSalonOuvert(cle);
-    setFeuille("salon");
+    setSalonPage(true);
+    setFeuille("");
     setMotSalon("");
     if (existe) return;
     ouvrirSalon({
@@ -853,16 +865,32 @@ export function ApercuHabitant() {
     // LE RANG DE LA CARTE EST LA MESURE QUI COMPTE. « Combien de gens ferment
     // après deux cartes » et « combien vont au bout » ne demandent pas les
     // mêmes travaux, et c'est ce chiffre-là qui les sépare.
-    noter("balayage", passees.length + 1, sens === "droite" ? "garde" : "passe");
-    if (sens === "droite") noter("garde", passees.length + 1);
+    noter("balayage", passees.length + 1, sens === "droite" ? "parler" : "passe");
+    // LE BALAYAGE DROIT OUVRE LE SALON.
+    //
+    // Il gardait la carte dans les favoris. L'objection qui retenait ce
+    // changement — « un geste rapide ne doit pas quitter l'application » — est
+    // tombée le jour où le salon est devenu une PAGE : on ne sort plus de
+    // ClikMe, on entre dedans. Le geste le plus facile de l'écran mène donc
+    // désormais à la seule chose que le produit sait faire et que personne
+    // d'autre ne fait. Garder, qui est un geste tranquille, a pris la place de
+    // la flamme sur la photo.
     setAJoue(true);
     setSortant(sens);
     setDx(sens === "droite" ? 420 : -420);
     const id = sommet.id;
-    if (sens === "droite") setCoeurVole(true);
+
+    // L'OUVERTURE SE FAIT ICI, PAS DANS LE BOUTON. Elle était accrochée au
+    // seul bouton « En parler » : au doigt, la carte partait vers la droite et
+    // rien ne s'ouvrait — le geste principal de l'écran ne menait nulle part.
+    // On l'attend la fin du vol : ouvrir pendant donnerait deux animations
+    // concurrentes.
+    if (sens === "droite") {
+      minuteries.current.push(window.setTimeout(ouvrirLeSalonDuSommet, VOL_MS + 30));
+    }
+
     minuteries.current.push(
       window.setTimeout(() => {
-        if (sens === "droite") setGardees((g) => (g.includes(id) ? g : [...g, id]));
         setPassees((p) => [...p, id]);
         setDx(0);
         setSortant("");
@@ -870,9 +898,6 @@ export function ApercuHabitant() {
         defilement.current?.scrollTo({ top: 0 });
       }, VOL_MS),
     );
-    if (sens === "droite") {
-      minuteries.current.push(window.setTimeout(() => setCoeurVole(false), COEUR_MS));
-    }
   }
 
   /**
@@ -1061,6 +1086,384 @@ export function ApercuHabitant() {
       <StylesDirect />
       <div className="ap-tel">
         <div className="ap-app">
+          {/* ─── LE SALON, EN PAGE PLEINE ───
+              Il vivait dans une feuille qui remonte par-dessus le paquet. Une
+              feuille dit « ceci est un aparté, tu vas revenir » ; or le salon
+              n'est pas un aparté, c'est l'endroit où se passe la seule chose
+              que le produit fait et que personne d'autre ne fait. Il prend donc
+              l'écran entier, avec sa propre barre en haut et ses actions en bas,
+              et le paquet attend derrière. */}
+          {salonPage && salon ? (
+            <div className="ap-page">
+              <div className="ap-page-h">
+                <button
+                  type="button"
+                  className="ap-page-r"
+                  aria-label="Revenir"
+                  onClick={() => {
+                    setSalonPage(false);
+                    setSalonOuvert("");
+                  }}
+                >
+                  ←
+                </button>
+                <span className="ap-page-t">
+                  <b>{salon.ou}</b>
+                  <em>
+                    {salon.presents.length}{" "}
+                    {salon.presents.length > 1 ? "personnes" : "personne"} ·{" "}
+                    <u>{salon.quand}</u>
+                  </em>
+                </span>
+                {/* Le point vert n'est pas une décoration : il dit que le salon
+                    est encore ouvert. Ils meurent le soir même. */}
+                <span className="ap-page-vif" aria-label="Salon ouvert">
+                  ● ouvert
+                </span>
+              </div>
+
+              <div className="ap-sal-corps" ref={filSalon}>
+                {/* ─── CE DONT ON PARLE, EN GRAND ET EN PREMIER ───
+                    Une photo de vignette en haut à droite ne dit rien : elle
+                    décore une conversation. Ici l'annonce EST l'écran d'accueil
+                    du salon — la photo pleine largeur, le nom du plat, le prix,
+                    ce qu'il en reste — parce que c'est la seule raison pour
+                    laquelle quatre personnes se parlent à cet endroit. Le texte
+                    est posé SUR la photo, comme sur la carte du paquet, pour
+                    que la page reste la même chose que celle qu'on vient de
+                    balayer et pas un nouvel écran à comprendre. */}
+                <div className="ap-page-objet">
+                  {salon.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={salon.photo} alt="" />
+                  )}
+                  <div className="ap-page-objet-t">
+                    <b>{salon.annonce ?? salon.sujet}</b>
+                    <span>
+                      {salon.prix && <em>{salon.prix}</em>}
+                      {salon.reste && <s>{salon.reste}</s>}
+                      {salon.distance && <u>📍 {salon.distance}</u>}
+                    </span>
+                  </div>
+                </div>
+
+                  {/* ─── QUI VIENT ? ───
+                      Trois états, pas plus : l'hôte, ceux qui viennent, ceux
+                      que ça intéresse sans qu'ils s'engagent. Le troisième est
+                      le plus utile — sans lui, celui qui hésite n'a que « je
+                      viens » ou le silence, et il choisit le silence.
+                      Les avatars sont des initiales : inventer des visages
+                      dans une maquette de voisins anonymes serait la seule
+                      chose de tout l'écran qui mentirait. */}
+                  <div className="ap-sal-bloc">
+                    <div className="ap-sal-titre">
+                      <b>Qui vient&nbsp;?</b>
+                      <span>
+                        {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
+                        {salon.presents.length - salon.viennent.length > 0
+                          ? ` · ${salon.presents.length - salon.viennent.length} intéressés`
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="ap-sal-gens">
+                      {salon.presents.map((q) => {
+                        const st =
+                          salon.statuts?.[q] ??
+                          (salon.viennent.includes(q) ? "vient" : "interesse");
+                        return (
+                          <span className="ap-sal-tete" key={q}>
+                            <i className={`ap-av a${q.charCodeAt(0) % 5}`} aria-hidden="true">
+                              {q.slice(0, 1).toUpperCase()}
+                            </i>
+                            <em className={`ap-sal-pt ${st}`} aria-hidden="true">
+                              {st === "hote" ? "♥" : st === "vient" ? "✓" : "?"}
+                            </em>
+                            <b>{q}</b>
+                            <s>
+                              {st === "hote" ? "Hôte" : st === "vient" ? "Vient" : "Intéressé"}
+                            </s>
+                          </span>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        className="ap-sal-tete plus"
+                        onClick={() => void inviterAuSalon(salon)}
+                      >
+                        <i className="ap-av vide" aria-hidden="true">＋</i>
+                        <b>Inviter</b>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className={`ap-sal-jeviens${salon.viennent.includes("Vous") ? " on" : ""}`}
+                      onClick={() => {
+                        basculerVenue(salon.cle);
+                        noter("jy-vais", 0, "salon");
+                      }}
+                    >
+                      <i aria-hidden="true">🙋</i>
+                      {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
+                    </button>
+                  </div>
+
+                  {/* LA PROXIMITÉ EST OMNIPRÉSENTE, et c'est la seule chose
+                      qu'une messagerie ne saura jamais dire. */}
+                  {salon.distance && (
+                    <div className="ap-sal-pres">
+                      {/* La distance est déjà sur la photo, en haut : on ne la
+                          répète pas ici, on ne garde que ce qu'elle permet. */}
+                      <span className="vert">
+                        <i aria-hidden="true">●</i>
+                        Ouvert maintenant
+                      </span>
+                      <a
+                        href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        🚶 Y aller ensemble
+                      </a>
+                    </div>
+                  )}
+
+                  {/* ─── QUELQU'UN Y EST, MAINTENANT ───
+                      WhatsApp dit « Pauline m'envoie une photo ». Ici on dit
+                      où elle est, depuis quand, à quelle distance, et combien
+                      de minutes il faut pour la rejoindre. C'est une autre
+                      proposition, et c'est la seule que le lieu rende
+                      possible. */}
+                  {salon.enDirect && (
+                    <div className="ap-direct">
+                      <span className="ap-direct-h">
+                        <i aria-hidden="true">●</i>
+                        En direct
+                      </span>
+                      <b>
+                        {salon.enDirect.qui} y est depuis {salon.enDirect.depuis}
+                      </b>
+                      <span className="ap-direct-l">
+                        {salon.enDirect.distance} de vous · {salon.enDirect.aPied} à pied
+                      </span>
+                      <div className="ap-direct-b">
+                        <a
+                          href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          🚶 La rejoindre
+                        </a>
+                        <button type="button" onClick={() => setFeuille("resa")}>
+                          📅 Prendre le même
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── LE VOTE ───
+                      Le geste qui justifie tout le reste : elle est dans le
+                      fauteuil, elle photographie deux nuances, elle demande
+                      laquelle. Ça se fait déjà par SMS, tous les jours, et
+                      c'est invisible. */}
+                  {salon.vote && (
+                    <div className="ap-vote">
+                      <b>{salon.vote.question}</b>
+                      {salon.vote.options.map((o) => {
+                        const total = salon.vote!.options.reduce((t, x) => t + x.voix, 0) || 1;
+                        const pc = Math.round((o.voix / total) * 100);
+                        return (
+                          <button
+                            key={o.cle}
+                            type="button"
+                            className={`ap-vote-o${salon.vote!.monVote === o.cle ? " on" : ""}`}
+                            onClick={() => {
+                              voter(salon.cle, o.cle);
+                              noter("note-donnee", pc, "vote");
+                            }}
+                          >
+                            <span className="ap-vote-j" style={{ width: `${pc}%` }} />
+                            <span className="ap-vote-t">{o.label}</span>
+                            <span className="ap-vote-p">{pc}&nbsp;%</span>
+                          </button>
+                        );
+                      })}
+                      <span className="ap-vote-n">
+                        {salon.vote.options.reduce((t, x) => t + x.voix, 0)} voix ·{" "}
+                        {salon.enDirect?.qui ?? salon.parQui} voit le résultat tout de suite
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="ap-sal-fil">
+                    {salon.messages.map((m) =>
+                      m.carte ? (
+                        <div className="ap-sal-carte" key={m.id}>
+                          <i aria-hidden="true">📅</i>
+                          <span>
+                            <b>{m.carte.titre}</b>
+                            <em>{m.carte.detail}</em>
+                            {m.carte.tampon && <s>✓ {m.carte.tampon}</s>}
+                          </span>
+                          <u>{m.quand}</u>
+                        </div>
+                      ) : (
+                        <div key={m.id} className={`ap-sal-m ${m.voix}`}>
+                          {m.voix !== "moi" && (
+                            <b>
+                              <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
+                                {m.qui.slice(0, 1).toUpperCase()}
+                              </i>
+                              {m.qui}
+                            </b>
+                          )}
+                          {m.texte && <span>{m.texte}</span>}
+                          {m.photo && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
+                          )}
+                          <i>{m.quand}</i>
+                          {/* UN CŒUR COÛTE UN APPUI et dit ce qu'une réponse
+                              écrite ne dirait pas mieux. On montre le COMPTE,
+                              jamais qui a réagi : dans un groupe de quatre,
+                              savoir qui n'a PAS réagi est une information
+                              qu'on ne veut donner à personne. */}
+                          <button
+                            type="button"
+                            className={`ap-reac${m.maReaction ? " on" : ""}`}
+                            aria-label="J'aime"
+                            onClick={() => reagir(salon.cle, m.id, "❤️")}
+                          >
+                            ❤️
+                            {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
+                          </button>
+                        </div>
+                      ),
+                    )}
+                    {amisEcrivent.map((q) => (
+                      <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
+                        <b>{q}</b>
+                        <span className="ap-trois" aria-label="écrit…">
+                          <i /><i /><i />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  </div>
+
+              {/* LA BARRE D'ACTIONS. Cinq, pas trente : ce qu'on fait vraiment
+                  quand on décide de sortir à plusieurs. « Proposer » est la
+                  seule qui ne soit pas évidente — c'est le geste de celui qui
+                  n'est pas sur place et qui veut peser sur ce qui s'y passe :
+                  suggérer une heure, un plat, une couleur. */}
+              <div className="ap-page-actions">
+                <button type="button" onClick={() => void inviterAuSalon(salon)}>
+                  <i aria-hidden="true">👥</i>
+                  Inviter
+                </button>
+                <button type="button" onClick={() => setFeuille("resa")}>
+                  <i aria-hidden="true">📅</i>
+                  Réserver
+                </button>
+                <label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (ev) => {
+                      const f = ev.target.files?.[0];
+                      ev.target.value = "";
+                      if (!f) return;
+                      try {
+                        const photo = await reduirePhoto(f);
+                        noter("photo-ajoutee", 0, "salon");
+                        ecrireDansSalon(salon.cle, {
+                          qui: "Vous",
+                          voix: "moi",
+                          texte: "",
+                          quand: heureCourte(),
+                          photo,
+                        });
+                      } catch {
+                        /* Image illisible : on ne casse rien. */
+                      }
+                    }}
+                  />
+                  <i aria-hidden="true">📷</i>
+                  Photo
+                </label>
+                <label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={(ev) => {
+                      const f = ev.target.files?.[0];
+                      ev.target.value = "";
+                      if (!f) return;
+                      // LA VIDÉO N'EST PAS GARDÉE DANS LA MAQUETTE, et il vaut
+                      // mieux le dire que le faire à moitié : dix secondes
+                      // pèsent des mégaoctets, le stockage du navigateur en
+                      // accepte cinq en tout, et la première tuerait les avis,
+                      // les photos et les salons déjà écrits.
+                      noter("video-vue", 0, "salon");
+                      ecrireDansSalon(salon.cle, {
+                        qui: "Vous",
+                        voix: "moi",
+                        texte: "🎬 Vidéo envoyée au groupe",
+                        quand: heureCourte(),
+                      });
+                    }}
+                  />
+                  <i aria-hidden="true">🎬</i>
+                  Vidéo
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const q = window.prompt("Qu'est-ce que vous proposez au groupe ?");
+                    if (!q?.trim()) return;
+                    ecrireDansSalon(salon.cle, {
+                      qui: "Vous",
+                      voix: "moi",
+                      texte: `💡 ${q.trim()}`,
+                      quand: heureCourte(),
+                    });
+                  }}
+                >
+                  <i aria-hidden="true">💡</i>
+                  Proposer
+                </button>
+              </div>
+
+              <form
+                className="ap-page-champ"
+                onSubmit={(ev) => {
+                  ev.preventDefault();
+                  const t = motSalon.trim();
+                  if (!t) return;
+                  ecrireDansSalon(salon.cle, {
+                    qui: "Vous",
+                    voix: "moi",
+                    texte: t,
+                    quand: heureCourte(),
+                  });
+                  setMotSalon("");
+                }}
+              >
+                <input
+                  value={motSalon}
+                  onChange={(ev) => setMotSalon(ev.target.value)}
+                  maxLength={200}
+                  placeholder="Écrire un message…"
+                  aria-label="Votre message"
+                />
+                <button type="submit" disabled={!motSalon.trim()} aria-label="Envoyer">
+                  ↑
+                </button>
+              </form>
+            </div>
+          ) : (
+          <>
           <div className="ap-haut">
             {/* Le bandeau du produit — mêmes classes, donc même allure — mais
                 ses pastilles sont ici de vrais boutons. */}
@@ -1351,15 +1754,30 @@ export function ApercuHabitant() {
                             défaut, pas une fonction. Celui-ci ouvre le salon de
                             l'annonce — et c'est ce qui le distingue d'un
                             partage : il en revient quelque chose. */}
+                        {/* GARDER EST DEVENU LE GESTE TRANQUILLE, donc il a pris
+                            la place de la flamme sur la photo : un appui, sans
+                            rien ouvrir. Le balayage, lui, sert désormais à la
+                            seule chose que le produit fait et que personne
+                            d'autre ne fait. */}
                         <button
                           type="button"
-                          className={`ap-parler-photo${salonDuSommet ? " on" : ""}`}
-                          aria-label="En parler avec mes amis"
+                          className={`ap-garder-photo${gardees.includes(sommet.id) ? " on" : ""}`}
+                          aria-label="Garder"
                           onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={ouvrirLeSalonDuSommet}
+                          onClick={() => {
+                            noter("garde", passees.length + 1, "photo");
+                            setGardees((g) =>
+                              g.includes(sommet.id)
+                                ? g.filter((x) => x !== sommet.id)
+                                : [...g, sommet.id],
+                            );
+                            setCoeurVole(true);
+                            minuteries.current.push(
+                              window.setTimeout(() => setCoeurVole(false), COEUR_MS),
+                            );
+                          }}
                         >
-                          <i aria-hidden="true">💬</i>
-                          {salonDuSommet ? <b>{salonDuSommet.presents.length}</b> : null}
+                          <i aria-hidden="true">{gardees.includes(sommet.id) ? "💚" : "♡"}</i>
                         </button>
 
                         {/* CE QUI EST EN TRAIN DE SE PASSER SUR CETTE ANNONCE.
@@ -1954,7 +2372,11 @@ export function ApercuHabitant() {
                           <span>
                             <b>{salonDuSommet ? "Voir la conversation" : "En parler avec mes amis"}</b>
                             {salonDuSommet
-                              ? `${salonDuSommet.presents.length} personnes · ${salonDuSommet.viennent.length} viennent`
+                              ? `${salonDuSommet.presents.length} ${
+                                  salonDuSommet.presents.length > 1 ? "personnes" : "personne"
+                                } · ${salonDuSommet.viennent.length} ${
+                                  salonDuSommet.viennent.length > 1 ? "viennent" : "vient"
+                                }`
                               : "« J'ai trouvé ça, qui vient ? »"}
                           </span>
                         </button>
@@ -1991,12 +2413,19 @@ export function ApercuHabitant() {
                   >
                     ✕
                   </span>
+                  {/* LE TAMPON DE DROITE ANNONCE CE QUI VA S'OUVRIR. C'était
+                      un cœur, du temps où le balayage droit gardait la carte ;
+                      il aurait promis un favori et livré un salon. Il porte
+                      donc la phrase entière — « j'emmène mes amis » — parce que
+                      c'est le seul endroit de l'écran où elle tient en grand et
+                      où on la lit AVANT de lâcher le doigt. */}
                   <span
                     className="ap-tampon oui"
                     style={{ opacity: Math.min(1, Math.max(0, dx / SEUIL)) }}
                     aria-hidden="true"
                   >
-                    ♥
+                    💬
+                    <b>J&rsquo;emmène mes amis</b>
                   </span>
                   {!aJoue && !descendu && <span className="ap-doigt" aria-hidden="true">👆</span>}
                 </div>
@@ -2050,8 +2479,8 @@ export function ApercuHabitant() {
               onClick={() => partir("droite")}
               disabled={!sommet}
             >
-              <i aria-hidden="true">♥</i>
-              <em>Je garde</em>
+              <i aria-hidden="true">💬</i>
+              <em>En parler</em>
             </button>
             {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
                 nature avec ce qu'on regarde. Sur une invitation on ne réserve
@@ -2122,6 +2551,9 @@ export function ApercuHabitant() {
           </div>
           )}
 
+          </>
+          )}
+
           {feuille && (
             <>
               <button
@@ -2147,329 +2579,6 @@ export function ApercuHabitant() {
                     de l'application tombent dans un trou : on garde une carte
                     et on ne la revoit jamais, ce qui apprend en deux essais à
                     ne plus rien garder. */}
-                {/* ─── LE SALON ───
-                    Une conversation attachée à L'ANNONCE, pas au commerçant :
-                    « le service du midi du 25 août », jamais « discussion avec
-                    Chez Bergine ». Elle naît avec l'annonce et meurt avec elle,
-                    et c'est ce qui empêche le produit de dériver vers un réseau
-                    social où l'on discute de tout.
-                    L'objection qui l'avait fait écarter — « tes amis ne sont pas
-                    sur ClikMe » — supposait qu'il faille un compte. LE LIEN EST
-                    L'APPLICATION : celui qui le reçoit dans WhatsApp l'ouvre
-                    dans le navigateur qu'il a déjà. Voir `lib/direct/salons.ts`. */}
-                {feuille === "salon" && salon && (
-                  <>
-                    <div className="ap-f-tete">
-                      <b>{salon.sujet}</b>
-                      <span className="simple">
-                        {salon.ou} · {salon.quand}
-                      </span>
-                    </div>
-
-                    <div className="ap-sal-corps" ref={filSalon}>
-                    {/* CE DONT ON PARLE, EN HAUT ET TOUJOURS VISIBLE. Sans
-                        l'objet sous les yeux, un salon redevient une
-                        conversation comme une autre — et c'est précisément ce
-                        qu'on ne veut pas construire. */}
-                    <div className="ap-sal-objet">
-                      {salon.photo && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={salon.photo} alt="" />
-                      )}
-                      <div>
-                        <b>{salon.annonce ?? salon.sujet}</b>
-                        {salon.prix && <em>{salon.prix}</em>}
-                        {salon.reste && <span className="reste">{salon.reste}</span>}
-                      </div>
-                    </div>
-
-                    {/* ─── QUI VIENT ? ───
-                        Trois états, pas plus : l'hôte, ceux qui viennent, ceux
-                        que ça intéresse sans qu'ils s'engagent. Le troisième est
-                        le plus utile — sans lui, celui qui hésite n'a que « je
-                        viens » ou le silence, et il choisit le silence.
-                        Les avatars sont des initiales : inventer des visages
-                        dans une maquette de voisins anonymes serait la seule
-                        chose de tout l'écran qui mentirait. */}
-                    <div className="ap-sal-bloc">
-                      <div className="ap-sal-titre">
-                        <b>Qui vient&nbsp;?</b>
-                        <span>
-                          {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
-                          {salon.presents.length - salon.viennent.length > 0
-                            ? ` · ${salon.presents.length - salon.viennent.length} intéressés`
-                            : ""}
-                        </span>
-                      </div>
-                      <div className="ap-sal-gens">
-                        {salon.presents.map((q) => {
-                          const st =
-                            salon.statuts?.[q] ??
-                            (salon.viennent.includes(q) ? "vient" : "interesse");
-                          return (
-                            <span className="ap-sal-tete" key={q}>
-                              <i className={`ap-av a${q.charCodeAt(0) % 5}`} aria-hidden="true">
-                                {q.slice(0, 1).toUpperCase()}
-                              </i>
-                              <em className={`ap-sal-pt ${st}`} aria-hidden="true">
-                                {st === "hote" ? "♥" : st === "vient" ? "✓" : "?"}
-                              </em>
-                              <b>{q}</b>
-                              <s>
-                                {st === "hote" ? "Hôte" : st === "vient" ? "Vient" : "Intéressé"}
-                              </s>
-                            </span>
-                          );
-                        })}
-                        <button
-                          type="button"
-                          className="ap-sal-tete plus"
-                          onClick={() => void inviterAuSalon(salon)}
-                        >
-                          <i className="ap-av vide" aria-hidden="true">＋</i>
-                          <b>Inviter</b>
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        className={`ap-sal-jeviens${salon.viennent.includes("Vous") ? " on" : ""}`}
-                        onClick={() => {
-                          basculerVenue(salon.cle);
-                          noter("jy-vais", 0, "salon");
-                        }}
-                      >
-                        <i aria-hidden="true">🙋</i>
-                        {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
-                      </button>
-                    </div>
-
-                    {/* LA PROXIMITÉ EST OMNIPRÉSENTE, et c'est la seule chose
-                        qu'une messagerie ne saura jamais dire. */}
-                    {salon.distance && (
-                      <div className="ap-sal-pres">
-                        <span>
-                          <i aria-hidden="true">📍</i>
-                          {salon.distance}
-                        </span>
-                        <span className="vert">
-                          <i aria-hidden="true">●</i>
-                          Ouvert maintenant
-                        </span>
-                        <a
-                          href="https://www.google.com/maps/dir/?api=1&destination=Dax"
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
-                          🚶 Y aller ensemble
-                        </a>
-                      </div>
-                    )}
-
-                    {/* ─── QUELQU'UN Y EST, MAINTENANT ───
-                        WhatsApp dit « Pauline m'envoie une photo ». Ici on dit
-                        où elle est, depuis quand, à quelle distance, et combien
-                        de minutes il faut pour la rejoindre. C'est une autre
-                        proposition, et c'est la seule que le lieu rende
-                        possible. */}
-                    {salon.enDirect && (
-                      <div className="ap-direct">
-                        <span className="ap-direct-h">
-                          <i aria-hidden="true">●</i>
-                          En direct
-                        </span>
-                        <b>
-                          {salon.enDirect.qui} y est depuis {salon.enDirect.depuis}
-                        </b>
-                        <span className="ap-direct-l">
-                          {salon.enDirect.distance} de vous · {salon.enDirect.aPied} à pied
-                        </span>
-                        <div className="ap-direct-b">
-                          <a
-                            href="https://www.google.com/maps/dir/?api=1&destination=Dax"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                          >
-                            🚶 La rejoindre
-                          </a>
-                          <button type="button" onClick={() => setFeuille("resa")}>
-                            📅 Prendre le même
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ─── LE VOTE ───
-                        Le geste qui justifie tout le reste : elle est dans le
-                        fauteuil, elle photographie deux nuances, elle demande
-                        laquelle. Ça se fait déjà par SMS, tous les jours, et
-                        c'est invisible. */}
-                    {salon.vote && (
-                      <div className="ap-vote">
-                        <b>{salon.vote.question}</b>
-                        {salon.vote.options.map((o) => {
-                          const total = salon.vote!.options.reduce((t, x) => t + x.voix, 0) || 1;
-                          const pc = Math.round((o.voix / total) * 100);
-                          return (
-                            <button
-                              key={o.cle}
-                              type="button"
-                              className={`ap-vote-o${salon.vote!.monVote === o.cle ? " on" : ""}`}
-                              onClick={() => {
-                                voter(salon.cle, o.cle);
-                                noter("note-donnee", pc, "vote");
-                              }}
-                            >
-                              <span className="ap-vote-j" style={{ width: `${pc}%` }} />
-                              <span className="ap-vote-t">{o.label}</span>
-                              <span className="ap-vote-p">{pc}&nbsp;%</span>
-                            </button>
-                          );
-                        })}
-                        <span className="ap-vote-n">
-                          {salon.vote.options.reduce((t, x) => t + x.voix, 0)} voix ·{" "}
-                          {salon.enDirect?.qui ?? salon.parQui} voit le résultat tout de suite
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="ap-sal-fil">
-                      {salon.messages.map((m) =>
-                        m.carte ? (
-                          <div className="ap-sal-carte" key={m.id}>
-                            <i aria-hidden="true">📅</i>
-                            <span>
-                              <b>{m.carte.titre}</b>
-                              <em>{m.carte.detail}</em>
-                              {m.carte.tampon && <s>✓ {m.carte.tampon}</s>}
-                            </span>
-                            <u>{m.quand}</u>
-                          </div>
-                        ) : (
-                          <div key={m.id} className={`ap-sal-m ${m.voix}`}>
-                            {m.voix !== "moi" && (
-                              <b>
-                                <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
-                                  {m.qui.slice(0, 1).toUpperCase()}
-                                </i>
-                                {m.qui}
-                              </b>
-                            )}
-                            {m.texte && <span>{m.texte}</span>}
-                            {m.photo && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
-                            )}
-                            <i>{m.quand}</i>
-                            {/* UN CŒUR COÛTE UN APPUI et dit ce qu'une réponse
-                                écrite ne dirait pas mieux. On montre le COMPTE,
-                                jamais qui a réagi : dans un groupe de quatre,
-                                savoir qui n'a PAS réagi est une information
-                                qu'on ne veut donner à personne. */}
-                            <button
-                              type="button"
-                              className={`ap-reac${m.maReaction ? " on" : ""}`}
-                              aria-label="J'aime"
-                              onClick={() => reagir(salon.cle, m.id, "❤️")}
-                            >
-                              ❤️
-                              {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
-                            </button>
-                          </div>
-                        ),
-                      )}
-                      {amisEcrivent.map((q) => (
-                        <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
-                          <b>{q}</b>
-                          <span className="ap-trois" aria-label="écrit…">
-                            <i /><i /><i />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    </div>
-
-                    {/* ÉCRIRE, DIRE QU'ON VIENT, INVITER. Trois choses, pas
-                        trente : un salon qui ferait tout redeviendrait une
-                        messagerie, et on aurait perdu ce qui le distingue. */}
-                    <form
-                      className="ap-sal-bas"
-                      onSubmit={(ev) => {
-                        ev.preventDefault();
-                        const t = motSalon.trim();
-                        if (!t) return;
-                        ecrireDansSalon(salon.cle, {
-                          qui: "Vous",
-                          voix: "moi",
-                          texte: t,
-                          quand: heureCourte(),
-                        });
-                        setMotSalon("");
-                      }}
-                    >
-                      <div className="ap-sal-actions">
-                        <button
-                          type="button"
-                          className={`ap-sal-b${salon.viennent.includes("Vous") ? " on" : ""}`}
-                          onClick={() => {
-                            basculerVenue(salon.cle);
-                            noter("jy-vais", 0, "salon");
-                          }}
-                        >
-                          <i aria-hidden="true">🙋</i>
-                          {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
-                        </button>
-                        <label className="ap-sal-b">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={async (ev) => {
-                              const f = ev.target.files?.[0];
-                              ev.target.value = "";
-                              if (!f) return;
-                              try {
-                                const photo = await reduirePhoto(f);
-                                noter("photo-ajoutee", 0, "salon");
-                                ecrireDansSalon(salon.cle, {
-                                  qui: "Vous",
-                                  voix: "moi",
-                                  texte: "",
-                                  quand: heureCourte(),
-                                  photo,
-                                });
-                              } catch {
-                                /* Image illisible : on ne casse rien. */
-                              }
-                            }}
-                          />
-                          <i aria-hidden="true">📷</i>
-                          Photo
-                        </label>
-                        <button
-                          type="button"
-                          className="ap-sal-b"
-                          onClick={() => void inviterAuSalon(salon)}
-                        >
-                          <i aria-hidden="true">＋</i>
-                          Inviter
-                        </button>
-                      </div>
-                      <div className="ap-sal-champ">
-                        <input
-                          value={motSalon}
-                          onChange={(ev) => setMotSalon(ev.target.value)}
-                          maxLength={200}
-                          placeholder="Écrire au groupe…"
-                          aria-label="Votre message"
-                        />
-                        <button type="submit" disabled={!motSalon.trim()} aria-label="Envoyer">
-                          ↑
-                        </button>
-                      </div>
-                    </form>
-                  </>
-                )}
-
                 {feuille === "moi" && (
                   <>
                     <div className="ap-f-tete">
@@ -2539,14 +2648,17 @@ export function ApercuHabitant() {
                                   className="ap-moi-l"
                                   onClick={() => {
                                     setSalonOuvert(x.cle);
-                                    setFeuille("salon");
+                                    setSalonPage(true);
+                                    setFeuille("");
                                   }}
                                 >
                                   <i aria-hidden="true">💬</i>
                                   <span>
                                     <b>{x.sujet}</b>
-                                    {x.ou} · {x.presents.length} personnes ·{" "}
-                                    {x.messages.length} messages
+                                    {x.ou} · {x.presents.length}{" "}
+                                    {x.presents.length > 1 ? "personnes" : "personne"} ·{" "}
+                                    {x.messages.length}{" "}
+                                    {x.messages.length > 1 ? "messages" : "message"}
                                   </span>
                                   <em aria-hidden="true">›</em>
                                 </button>
@@ -3499,21 +3611,23 @@ export function ApercuHabitant() {
 
         .ap-yaller.plein{width:100%;justify-content:center;}
 
-        /* ─── LE SALON ───
-           Le vert de l'application, et pas une septieme teinte : le salon n'est
-           pas une nature d'objet de plus, c'est ce qu'on FAIT avec les objets
-           qui existent deja. */
-        .ap-parler-photo{position:absolute;right:14px;top:56px;z-index:3;
+        /* ─── GARDER, SUR LA PHOTO ───
+           C'etait la flamme du partage. Defaut releve au test : « le soutenir »
+           et « en parler » ouvraient tous les deux WhatsApp avec un texte, donc
+           deux boutons faisaient la meme chose. Le balayage droit ouvre
+           maintenant le salon, et cette pastille garde l'annonce — un appui,
+           sans rien ouvrir. Le vert de l'application, pas une septieme teinte. */
+        .ap-garder-photo{position:absolute;right:14px;top:56px;z-index:3;
           display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:15px;
           line-height:1;cursor:pointer;color:#8FE9C4;
           background:rgba(8,12,10,.62);-webkit-backdrop-filter:blur(10px);
           backdrop-filter:blur(10px);border:1px solid rgba(61,226,166,.4);
           border-radius:999px;padding:8px 11px;transition:transform .12s ease;}
-        .ap-parler-photo:active{transform:scale(.92);}
-        .ap-parler-photo i{font-style:normal;font-size:15px;line-height:1;}
-        .ap-parler-photo b{font-size:12px;font-weight:850;color:#CFF7E6;
+        .ap-garder-photo:active{transform:scale(.92);}
+        .ap-garder-photo i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-garder-photo b{font-size:12px;font-weight:850;color:#CFF7E6;
           font-variant-numeric:tabular-nums;}
-        .ap-parler-photo.on{background:rgba(61,226,166,.26);
+        .ap-garder-photo.on{background:rgba(61,226,166,.26);
           border-color:rgba(61,226,166,.75);}
 
         /* CE QUI EST EN TRAIN DE SE PASSER, sur la face de la carte. Le compte
@@ -3527,18 +3641,28 @@ export function ApercuHabitant() {
         .ap-vie b{display:block;font-size:13.5px;font-weight:850;color:#CFF7E6;
           letter-spacing:-.01em;margin-bottom:1px;}
 
-        /* CE DONT ON PARLE, EN TETE ET TOUJOURS VISIBLE. */
-        .ap-sal-objet{flex:none;display:flex;gap:12px;align-items:center;
+        /* CE DONT ON PARLE, EN GRAND ET EN PREMIER. La vignette de 74 pixels
+           decorait une conversation ; la photo pleine largeur dit que la page
+           est la meme chose que la carte qu'on vient de balayer. Le texte est
+           pose SUR l'image, avec un voile en bas pour qu'il reste lisible quel
+           que soit le plat photographie. */
+        .ap-page-objet{position:relative;flex:none;border-radius:18px;overflow:hidden;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-          border-radius:16px;padding:10px;margin-bottom:12px;}
-        .ap-sal-objet img{width:74px;height:74px;flex:none;object-fit:cover;
-          border-radius:12px;}
-        .ap-sal-objet div{flex:1;min-width:0;}
-        .ap-sal-objet b{display:block;font-size:16px;font-weight:850;color:#fff;
-          letter-spacing:-.02em;margin-bottom:3px;}
-        .ap-sal-objet em{font-style:normal;font-size:16px;font-weight:850;color:#3DE2A6;
-          margin-right:9px;}
-        .ap-sal-objet .reste{font-size:12.5px;font-weight:750;color:#F0B429;}
+          margin-bottom:12px;}
+        .ap-page-objet img{display:block;width:100%;height:176px;object-fit:cover;}
+        .ap-page-objet-t{position:absolute;left:0;right:0;bottom:0;padding:26px 13px 11px;
+          background:linear-gradient(180deg,rgba(4,10,8,0),rgba(4,10,8,.86) 62%);}
+        .ap-page-objet:not(:has(img)) .ap-page-objet-t{position:static;padding:13px;
+          background:none;}
+        .ap-page-objet-t b{display:block;font-size:17px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;line-height:1.2;margin-bottom:5px;
+          text-shadow:0 1px 8px rgba(0,0,0,.5);}
+        .ap-page-objet-t span{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;}
+        .ap-page-objet-t em{font-style:normal;font-size:16px;font-weight:850;color:#3DE2A6;}
+        .ap-page-objet-t s{text-decoration:none;font-size:12.5px;font-weight:800;
+          color:#F0B429;}
+        .ap-page-objet-t u{text-decoration:none;font-size:12.5px;font-weight:700;
+          color:#A9BBB1;}
 
         /* QUI VIENT. Les avatars sont des INITIALES : inventer des visages dans
            une maquette de voisins anonymes serait la seule chose de tout
@@ -3547,8 +3671,12 @@ export function ApercuHabitant() {
           border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px;
           margin-bottom:10px;}
         .ap-sal-titre{display:flex;align-items:baseline;gap:9px;margin-bottom:11px;}
+        /* VERT, PAS ROSE. Une couleur = une chose : le rose est celle des
+           evenements de la ville, et deux titres roses sur deux ecrans qui ne
+           parlent pas de la meme chose est exactement le defaut qu'on evite
+           partout ailleurs. Le salon appartient a l'application, donc au vert. */
         .ap-sal-titre b{flex:1;font-size:11px;font-weight:850;letter-spacing:.12em;
-          text-transform:uppercase;color:#F472B6;}
+          text-transform:uppercase;color:#8FE9C4;}
         .ap-sal-titre span{font-size:11.5px;color:#7F988B;}
         .ap-sal-gens{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;
           padding-bottom:2px;margin-bottom:11px;}
@@ -3577,13 +3705,20 @@ export function ApercuHabitant() {
         .ap-sal-tete b{font-size:11.5px;font-weight:800;color:#EAF2EC;max-width:58px;
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         .ap-sal-tete s{font-size:9.5px;text-decoration:none;color:#7F988B;}
+        /* VERT, PAS ROSE. Le rose est la couleur des evenements de la ville ;
+           « Je viens » n'est pas un evenement, c'est le geste de l'application.
+           Il etait rose plein et « Vous venez » vert : deux couleurs pour les
+           deux etats d'un meme bouton, donc on lisait un changement de nature
+           la ou il n'y a qu'un interrupteur. Une seule teinte, deux intensites. */
         .ap-sal-jeviens{width:100%;display:flex;align-items:center;justify-content:center;
           gap:8px;font:inherit;font-size:15px;font-weight:850;cursor:pointer;
-          color:#fff;background:linear-gradient(140deg,#F472B6,#B4348A);border:0;
+          color:#CFF7E6;background:rgba(61,226,166,.16);
+          border:1px solid rgba(61,226,166,.5);
           border-radius:14px;padding:13px;transition:transform .12s ease;}
         .ap-sal-jeviens:active{transform:scale(.98);}
         .ap-sal-jeviens i{font-style:normal;font-size:17px;line-height:1;}
-        .ap-sal-jeviens.on{color:#04150E;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-sal-jeviens.on{color:#04150E;border-color:transparent;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
 
         /* LA PROXIMITE, OMNIPRESENTE : la seule chose qu'une messagerie ne
            saura jamais dire. */
@@ -3594,28 +3729,35 @@ export function ApercuHabitant() {
         .ap-sal-pres span{display:inline-flex;align-items:center;gap:6px;}
         .ap-sal-pres .vert{color:#8FE9C4;}
         .ap-sal-pres i{font-style:normal;font-size:11px;line-height:1;}
-        .ap-sal-pres a{margin-left:auto;color:#F9C0DC;font-weight:850;
+        .ap-sal-pres a{margin-left:auto;color:#8FE9C4;font-weight:850;
           text-decoration:none;}
 
-        /* QUELQU'UN Y EST MAINTENANT. */
-        .ap-direct{flex:none;background:rgba(244,114,182,.11);
-          border:1px solid rgba(244,114,182,.4);border-radius:16px;padding:12px;
+        /* ─── QUELQU'UN Y EST MAINTENANT ───
+           IL FALLAIT UNE SEPTIEME COULEUR, et il valait mieux l'assumer que la
+           voler. Le bloc etait rose : la teinte des evenements de la ville, sur
+           un bloc qui ne parle pas d'un evenement. Le direct est le ROUGE du
+           voyant d'enregistrement — la seule convention que tout le monde lit
+           sans l'apprendre. Le vocabulaire complet est donc : vert
+           l'application, or l'invitation, bleu l'embauche, violet le rappel,
+           orange le coup de pouce, rose les evenements, rouge le direct. */
+        .ap-direct{flex:none;background:rgba(239,68,68,.1);
+          border:1px solid rgba(239,68,68,.38);border-radius:16px;padding:12px;
           margin-bottom:10px;}
         .ap-direct-h{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;
           font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#fff;
-          background:#EC4899;border-radius:999px;padding:3px 9px;margin-bottom:8px;}
+          background:#E23D4E;border-radius:999px;padding:3px 9px;margin-bottom:8px;}
         .ap-direct-h i{font-style:normal;font-size:8px;
           animation:apVoyant 2.4s ease-in-out infinite;}
-        .ap-direct b{display:block;font-size:15.5px;font-weight:850;color:#F9C0DC;
+        .ap-direct b{display:block;font-size:15.5px;font-weight:850;color:#FFC9C9;
           letter-spacing:-.01em;}
-        .ap-direct-l{display:block;font-size:12.5px;color:#C79BB2;margin-top:2px;}
+        .ap-direct-l{display:block;font-size:12.5px;color:#D3A0A0;margin-top:2px;}
         .ap-direct-b{display:flex;gap:8px;margin-top:11px;}
         .ap-direct-b a,.ap-direct-b button{flex:1;display:inline-flex;align-items:center;
           justify-content:center;gap:6px;font:inherit;font-size:13px;font-weight:850;
-          cursor:pointer;text-decoration:none;color:#2A0716;background:#F9A8D4;
+          cursor:pointer;text-decoration:none;color:#2A0709;background:#FBA5A5;
           border:0;border-radius:12px;padding:10px;}
-        .ap-direct-b button{color:#F9C0DC;background:rgba(244,114,182,.18);
-          border:1px solid rgba(244,114,182,.42);}
+        .ap-direct-b button{color:#FFC9C9;background:rgba(239,68,68,.17);
+          border:1px solid rgba(239,68,68,.4);}
 
         /* LE VOTE. */
         .ap-vote{flex:none;background:rgba(167,139,250,.1);
@@ -3663,9 +3805,20 @@ export function ApercuHabitant() {
         .ap-sal-corps{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
           scrollbar-width:none;padding-right:2px;}
         .ap-sal-corps::-webkit-scrollbar{display:none;}
-        .ap-sal-corps>.ap-sal-objet,.ap-sal-corps>.ap-sal-bloc,
-        .ap-sal-corps>.ap-sal-pres,.ap-sal-corps>.ap-direct,
-        .ap-sal-corps>.ap-vote{flex:initial;}
+        .ap-sal-corps{display:flex;flex-direction:column;padding-top:12px;}
+        /* LE FIL EST POUSSE EN BAS quand il est court. Un salon qui vient de
+           naitre n'a qu'un message : colle en haut, il laissait trois cents
+           pixels de vide au-dessus de la barre d'ecriture, et un ecran vide
+           dit « il ne se passe rien ici ». La marge automatique disparait
+           d'elle-meme des que la conversation deborde. */
+        .ap-sal-fil{margin-top:auto;flex:none;}
+        /* PAS DE flex:initial ICI (jamais d'accent grave dans ces commentaires,
+           il fermerait le gabarit de chaine qui porte toute la feuille de
+           style). Cette regle datait du temps ou le corps n'etait pas une
+           colonne flex ; depuis qu'il l'est, elle rendait tous les blocs
+           compressibles et la photo de l'annonce passait de 178 a 128 pixels
+           sur un ecran de 360. Chaque bloc garde son flex:none, et c'est le
+           corps qui defile. */
         .ap-sal-fil{display:flex;flex-direction:column;gap:9px;padding:12px 2px 2px;}
         .ap-sal-m{position:relative;max-width:84%;display:flex;flex-direction:column;
           gap:3px;border-radius:16px;padding:9px 12px;margin-bottom:9px;}
@@ -3683,25 +3836,67 @@ export function ApercuHabitant() {
         .ap-sal-m.ecrit{padding:6px 10px;}
         .ap-sal-m .ap-trois i{color:inherit;align-self:auto;}
 
-        .ap-sal-bas{flex:none;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);}
-        .ap-sal-actions{display:flex;gap:7px;margin-bottom:9px;}
-        .ap-sal-b{flex:1;position:relative;display:inline-flex;align-items:center;
-          justify-content:center;gap:6px;font:inherit;font-size:12.5px;font-weight:800;
-          cursor:pointer;color:#B9C6CE;background:rgba(255,255,255,.06);
-          border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 8px;}
-        .ap-sal-b i{font-style:normal;font-size:14px;line-height:1;}
-        .ap-sal-b input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
-        .ap-sal-b:active{transform:scale(.97);}
-        .ap-sal-b.on{color:#04150E;background:#3DE2A6;border-color:transparent;}
-        .ap-sal-champ{display:flex;gap:8px;align-items:center;}
-        .ap-sal-champ input{flex:1;min-width:0;font:inherit;font-size:15px;color:#EAF2EC;
+        /* ================= LE SALON EN PAGE PLEINE =================
+           Defaut releve au test : le salon remontait du bas comme une feuille,
+           et une feuille dit « ceci est un aparte ». Il occupe maintenant tout
+           l'ecran de l'appareil, en position absolue par-dessus le paquet, avec
+           trois zones fixes et une seule qui defile.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS, ils
+           fermeraient le gabarit de chaine qui porte toute la feuille. */
+        .ap-page{position:absolute;inset:0;z-index:6;display:flex;
+          flex-direction:column;min-height:0;padding:14px 14px 0;
+          background:#0A0F0D;animation:apPage .22s ease both;}
+        @keyframes apPage{from{opacity:0;transform:translateX(16px);}
+          to{opacity:1;transform:none;}}
+
+        /* L'EN-TETE. La fleche de retour est a gauche parce que c'est la ou le
+           pouce la cherche, et elle ramene au paquet, jamais a un ecran
+           intermediaire. */
+        .ap-page-h{flex:none;display:flex;align-items:center;gap:10px;
+          padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.09);}
+        .ap-page-r{flex:none;width:36px;height:36px;border-radius:50%;font:inherit;
+          font-size:19px;line-height:1;cursor:pointer;color:#EAF2EC;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);}
+        .ap-page-r:active{transform:scale(.92);}
+        .ap-page-t{flex:1;min-width:0;}
+        .ap-page-t b{display:block;font-size:15.5px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-page-t em{display:block;font-style:normal;font-size:11.5px;color:#8C9C94;
+          margin-top:1px;}
+        .ap-page-t u{text-decoration:none;color:#8FE9C4;font-weight:750;}
+        .ap-page-vif{flex:none;font-size:10.5px;font-weight:850;color:#3DE2A6;
+          background:rgba(61,226,166,.14);border:1px solid rgba(61,226,166,.32);
+          border-radius:999px;padding:5px 9px;}
+
+        /* LA BARRE D'ACTIONS. Cinq colonnes egales : au-dela, les libelles se
+           coupent sur un ecran de 360 pixels et on retombe sur des icones
+           muettes que personne ne sait lire. */
+        .ap-page-actions{flex:none;display:grid;grid-template-columns:repeat(5,1fr);
+          gap:6px;padding:10px 0 9px;
+          border-top:1px solid rgba(255,255,255,.09);}
+        .ap-page-actions>*{position:relative;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:4px;font:inherit;font-size:10.5px;
+          font-weight:800;text-align:center;cursor:pointer;color:#B9C6CE;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+          border-radius:13px;padding:8px 3px;}
+        .ap-page-actions i{font-style:normal;font-size:16px;line-height:1;}
+        .ap-page-actions input{position:absolute;width:1px;height:1px;opacity:0;
+          pointer-events:none;}
+        .ap-page-actions>*:active{transform:scale(.96);}
+
+        /* LE CHAMP. Colle en bas, avec la marge de securite du bas d'ecran :
+           sans elle, la barre gestuelle d'Android mange le bouton d'envoi. */
+        .ap-page-champ{flex:none;display:flex;gap:8px;align-items:center;
+          padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+        .ap-page-champ input{flex:1;min-width:0;font:inherit;font-size:15px;color:#EAF2EC;
           background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
           border-radius:999px;padding:12px 16px;}
-        .ap-sal-champ input::placeholder{color:#6C8078;}
-        .ap-sal-champ button{flex:none;width:44px;height:44px;border-radius:50%;
+        .ap-page-champ input::placeholder{color:#6C8078;}
+        .ap-page-champ button{flex:none;width:44px;height:44px;border-radius:50%;
           font:inherit;font-size:19px;font-weight:850;cursor:pointer;color:#04150E;
           background:#3DE2A6;border:0;}
-        .ap-sal-champ button:disabled{opacity:.35;cursor:default;}
+        .ap-page-champ button:disabled{opacity:.35;cursor:default;}
 
         /* MON ESPACE. */
         .ap-perso{font:inherit;cursor:pointer;}
@@ -3800,7 +3995,11 @@ export function ApercuHabitant() {
         .ap-tampon{position:absolute;top:26px;font-size:34px;font-weight:900;line-height:1;
           border:4px solid currentColor;border-radius:14px;padding:8px 16px;pointer-events:none;}
         .ap-tampon.non{right:20px;color:#FF6B6B;transform:rotate(15deg);}
-        .ap-tampon.oui{left:20px;color:#3DE2A6;transform:rotate(-15deg);}
+        .ap-tampon.oui{left:20px;color:#3DE2A6;transform:rotate(-15deg);
+          display:flex;flex-direction:column;align-items:center;gap:2px;
+          max-width:60%;}
+        .ap-tampon.oui b{font-size:11.5px;font-weight:850;line-height:1.15;
+          letter-spacing:0;text-align:center;}
 
         .ap-doigt{position:absolute;left:50%;margin-left:-16px;top:26%;z-index:3;font-size:32px;
           pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));
