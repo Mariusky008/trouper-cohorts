@@ -40,6 +40,7 @@ const EVENEMENTS = new Set([
   "photo-ajoutee",
   "video-vue",
   "partage",
+  "onglet",
   "notif-proposee",
   "notif-acceptee",
   "notif-refusee",

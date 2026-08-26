@@ -492,7 +492,7 @@ export function ApercuHabitant() {
   const [descendu, setDescendu] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
   const [feuille, setFeuille] = useState<
-    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche" | "moi"
+    "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche"
   >("");
   /**
    * CE QUE LE PAQUET REGARDE.
@@ -583,6 +583,28 @@ export function ApercuHabitant() {
    * corps qui défile et sa barre d'actions.
    */
   const [salonPage, setSalonPage] = useState(false);
+  /**
+   * LES TROIS ONGLETS — l'ossature qui manquait.
+   *
+   * Défaut relevé au test : « il faut qu'on puisse voir les anciens salons ou
+   * ceux encore ouverts ». Ils n'étaient atteignables qu'au fond d'une feuille
+   * appelée « Mon espace », c'est-à-dire nulle part : ce qu'on ne voit pas
+   * depuis l'écran d'accueil n'existe pas.
+   *
+   * TROIS, ET PAS QUATRE. « Le direct » est ce qui se passe maintenant,
+   * « Mes salons » est ce qu'on a déclenché — ouvert ce soir ou refermé depuis
+   * samedi — et « Profil » est ce qu'on a gardé, réservé et demandé. Un
+   * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
+   * et on n'a pas de réponse.
+   */
+  const [onglet, setOnglet] = useState<"direct" | "salons" | "profil">("direct");
+
+  function allerA_onglet(o: "direct" | "salons" | "profil") {
+    if (o === onglet) return;
+    noter("onglet", 0, o);
+    setOnglet(o);
+    setFeuille("");
+  }
   /** Ce qu'on est en train d'écrire dans le salon. */
   const [motSalon, setMotSalon] = useState("");
   /** Les amis en train de répondre — les trois points, comme partout ailleurs. */
@@ -1012,6 +1034,17 @@ export function ApercuHabitant() {
   const mesSorties = Object.values(salons).filter(
     (x) => x.presents.includes("Vous") || x.parQui === "Vous",
   );
+  /**
+   * OUVERTS D'ABORD, PASSÉS ENSUITE — et jamais mélangés.
+   *
+   * Un salon ouvert demande quelque chose (répondre, dire si on vient) ; un
+   * salon passé ne demande rien, il se relit. Les mettre dans la même liste
+   * ferait chercher l'action au milieu du souvenir. Les salons où l'on n'est
+   * pas entré restent visibles tant qu'ils sont vivants : c'est là qu'on voit
+   * qu'il se passe quelque chose sans y avoir été invité.
+   */
+  const salonsOuverts = Object.values(salons).filter((x) => x.ouvert);
+  const salonsPasses = Object.values(salons).filter((x) => !x.ouvert);
 
   const mesDemandes = mesRappels.flatMap((cle) => {
     const [id, titre] = cle.split("|");
@@ -1020,6 +1053,95 @@ export function ApercuHabitant() {
     if (!c || !m) return [];
     return [{ cle, nom: c.nom, titre: m.titre, revient: m.revient }];
   });
+
+
+  /**
+   * MON ESPACE — le contenu de l'onglet « Profil ».
+   *
+   * C'était une feuille qui remontait du bas. Elle porte trois listes qui ne
+   * demandent rien et qu'on relit : ce qu'on a gardé, ce qui est prévu, ce
+   * qu'on a demandé de faire revenir. « Mes sorties » n'y est plus : les
+   * salons ont leur propre onglet, et la même liste à deux endroits est un
+   * défaut — on ne sait jamais lequel des deux dit vrai.
+   */
+  const monEspace = (
+    <div className="ap-f-liste">
+      {mesGardes.length > 0 && (
+        <div className="ap-moi-bloc">
+          <h4>
+            Gardés<b>{mesGardes.length}</b>
+          </h4>
+          <ul>
+            {mesGardes.map((c) => (
+              <li key={c.id}>
+                <button type="button" className="ap-moi-l" onClick={() => allerA(c)}>
+                  <i aria-hidden="true">💚</i>
+                  <span>
+                    <b>{c.nom}</b>
+                    {c.metier} · {c.distance}
+                  </span>
+                  <em aria-hidden="true">›</em>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {mesReserves.length > 0 && (
+        <div className="ap-moi-bloc">
+          <h4>
+            Prévu<b>{mesReserves.length}</b>
+          </h4>
+          <ul>
+            {mesReserves.map((r) => (
+              <li key={r.cle}>
+                <div className="ap-moi-l fixe">
+                  <i aria-hidden="true">{r.icone}</i>
+                  <span>
+                    <b>{r.nom}</b>
+                    {r.quoi}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {mesDemandes.length > 0 && (
+        <div className="ap-moi-bloc">
+          <h4>
+            À faire revenir<b>{mesDemandes.length}</b>
+          </h4>
+          <ul>
+            {mesDemandes.map((d) => (
+              <li key={d.cle}>
+                <div className="ap-moi-l fixe">
+                  <i aria-hidden="true">🔁</i>
+                  <span>
+                    <b>{d.titre}</b>
+                    {d.nom}
+                    {d.revient ? ` · revient ${d.revient}` : ""}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {mesGardes.length === 0 && mesReserves.length === 0 && mesDemandes.length === 0 && (
+        <div className="ap-moi-vide">
+          <span aria-hidden="true">💚</span>
+          <b>Rien pour l&apos;instant.</b>
+          <i>
+            Gardez une annonce avec le cœur sur la photo : elle se rangera ici.
+          </i>
+        </div>
+      )}
+    </div>
+  );
 
   /** Partager un événement : même geste, même flamme, autre phrase. */
   async function partagerEv(e: EvenementVille) {
@@ -1464,6 +1586,8 @@ export function ApercuHabitant() {
             </div>
           ) : (
           <>
+          {onglet === "direct" && (
+          <>
           <div className="ap-haut">
             {/* Le bandeau du produit — mêmes classes, donc même allure — mais
                 ses pastilles sont ici de vrais boutons. */}
@@ -1499,7 +1623,7 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="cd-puce ap-perso"
-                  onClick={() => setFeuille("moi")}
+                  onClick={() => allerA_onglet("profil")}
                   aria-label="Mon espace"
                 >
                   <i aria-hidden="true">📅</i>
@@ -1514,7 +1638,7 @@ export function ApercuHabitant() {
               <button
                 type="button"
                 className={`cd-puce vert ap-fav ap-perso${coeurVole ? " pop" : ""}`}
-                onClick={() => setFeuille("moi")}
+                onClick={() => allerA_onglet("profil")}
                 aria-label="Mon espace"
               >
                 <i aria-hidden="true">💚</i>
@@ -2554,6 +2678,208 @@ export function ApercuHabitant() {
           </>
           )}
 
+          {/* ─── MES SALONS ───
+              Ce que j'ai déclenché ou rejoint : ouverts en haut, passés en
+              dessous. C'est le seul écran de l'application qui regarde en
+              arrière, et c'est voulu — tout le reste ne parle que de
+              maintenant. */}
+          {onglet === "salons" && (
+            <div className="ap-page ap-vue">
+              <div className="ap-page-h">
+                <span className="ap-page-t">
+                  <b>Mes salons</b>
+                  <em>
+                    {salonsOuverts.length}{" "}
+                    {salonsOuverts.length > 1 ? "ouverts" : "ouvert"} ·{" "}
+                    {salonsPasses.length}{" "}
+                    {salonsPasses.length > 1 ? "passés" : "passé"}
+                  </em>
+                </span>
+              </div>
+
+              <div className="ap-sal-corps">
+                {salonsOuverts.length > 0 && (
+                  <div className="ap-liste">
+                    <h4>
+                      <i className="vif" aria-hidden="true">
+                        ●
+                      </i>
+                      Ouverts maintenant<b>{salonsOuverts.length}</b>
+                    </h4>
+                    {salonsOuverts.map((x) => (
+                      <button
+                        key={x.cle}
+                        type="button"
+                        className="ap-l"
+                        onClick={() => {
+                          setSalonOuvert(x.cle);
+                          setSalonPage(true);
+                        }}
+                      >
+                        {x.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={x.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💬</i>
+                        )}
+                        <span>
+                          <b>{x.annonce ?? x.sujet}</b>
+                          <u>{x.ou}</u>
+                          <em>
+                            {x.quand} · {x.presents.length}{" "}
+                            {x.presents.length > 1 ? "personnes" : "personne"}
+                            {x.viennent.length > 0 ? ` · ${x.viennent.length} viennent` : ""}
+                          </em>
+                        </span>
+                        {/* CE QUI EST NEUF SE VOIT DE LA LISTE, sinon il faut
+                            ouvrir les quatre pour savoir lequel a bougé. */}
+                        {x.enDirect ? (
+                          <s className="direct">EN DIRECT</s>
+                        ) : (
+                          <s>{x.messages.length}</s>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {salonsPasses.length > 0 && (
+                  <div className="ap-liste passe">
+                    <h4>
+                      <i aria-hidden="true">🕘</i>
+                      Passés<b>{salonsPasses.length}</b>
+                    </h4>
+                    {salonsPasses.map((x) => (
+                      <button
+                        key={x.cle}
+                        type="button"
+                        className="ap-l"
+                        onClick={() => {
+                          setSalonOuvert(x.cle);
+                          setSalonPage(true);
+                        }}
+                      >
+                        {x.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={x.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💬</i>
+                        )}
+                        <span>
+                          <b>{x.annonce ?? x.sujet}</b>
+                          <u>{x.ou}</u>
+                          {/* LE DÉNOUEMENT PLUTÔT QUE LE COMPTE DE MESSAGES.
+                              « 4 messages » ne dit rien d'un souvenir ; « vous
+                              y êtes allés à 4 » est la seule ligne pour
+                              laquelle on rouvre cette liste. */}
+                          <em>
+                            {x.jour ?? x.quand}
+                            {x.denouement ? ` · ${x.denouement}` : ""}
+                          </em>
+                        </span>
+                        <s>›</s>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {salonsOuverts.length === 0 && salonsPasses.length === 0 && (
+                  <div className="ap-moi-vide">
+                    <span aria-hidden="true">💬</span>
+                    <b>Aucun salon pour l&apos;instant.</b>
+                    <i>
+                      Balayez une annonce vers la droite : elle ouvre un salon,
+                      et il se range ici.
+                    </i>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── PROFIL ───
+              L'ancienne feuille « Mon espace », montée d'un étage. Elle ne
+              porte plus « Mes sorties » : les salons ont leur onglet, et deux
+              endroits pour la même chose est un défaut, pas un raccourci. */}
+          {onglet === "profil" && (
+            <div className="ap-page ap-vue">
+              <div className="ap-page-h">
+                <span className="ap-page-t">
+                  <b>Mon espace</b>
+                  <em>Ce que vous avez gardé, réservé et demandé.</em>
+                </span>
+              </div>
+              <div className="ap-sal-corps">
+                {/* ─── VOUS, SANS COMPTE ───
+                    Un onglet « Profil » vide au premier passage ne dit rien, et
+                    la tentation serait de le remplir de réglages. Or il y a une
+                    chose vraie à y mettre, et c'est celle sur laquelle repose
+                    tout le reste : on n'a rien demandé. Pas de compte, pas de
+                    numéro, rien qui parte du téléphone. C'est l'argument qui
+                    fait qu'une amie peut ouvrir un salon depuis un lien sans
+                    s'inscrire — autant l'écrire là où on vient chercher « qui
+                    suis-je ici ». */}
+                <div className="ap-moi-qui">
+                  <i aria-hidden="true">🙂</i>
+                  <b>Vous, sans compte</b>
+                  <em>
+                    Aucun nom, aucun numéro, aucune adresse. Ce que vous gardez
+                    et ce que vous écrivez reste sur ce téléphone.
+                  </em>
+                  <div className="ap-moi-chif">
+                    <span>
+                      <b>{gardees.length}</b>gardés
+                    </span>
+                    <span>
+                      <b>{mesSorties.length}</b>
+                      {mesSorties.length > 1 ? "sorties" : "sortie"}
+                    </span>
+                    <span>
+                      <b>{reserves.length}</b>
+                      {reserves.length > 1 ? "réservés" : "réservé"}
+                    </span>
+                  </div>
+                </div>
+                {monEspace}
+              </div>
+            </div>
+          )}
+
+          {/* ─── LA BARRE DES TROIS ONGLETS ───
+              En bas, sous les gestes : c'est là que le pouce est déjà. Elle est
+              masquée dans un salon ouvert, qui a sa propre barre d'actions —
+              deux barres l'une sur l'autre ne se lisent pas. */}
+          <nav className="ap-onglets" aria-label="Sections">
+            <button
+              type="button"
+              className={onglet === "direct" ? "on" : ""}
+              onClick={() => allerA_onglet("direct")}
+            >
+              <i aria-hidden="true">⚡</i>
+              Le direct
+            </button>
+            <button
+              type="button"
+              className={onglet === "salons" ? "on" : ""}
+              onClick={() => allerA_onglet("salons")}
+            >
+              <i aria-hidden="true">💬</i>
+              Mes salons
+              {salonsOuverts.length > 0 && <b>{salonsOuverts.length}</b>}
+            </button>
+            <button
+              type="button"
+              className={onglet === "profil" ? "on" : ""}
+              onClick={() => allerA_onglet("profil")}
+            >
+              <i aria-hidden="true">🙂</i>
+              Profil
+              {gardees.length > 0 && <b>{gardees.length}</b>}
+            </button>
+          </nav>
+          </>
+          )}
+
           {feuille && (
             <>
               <button
@@ -2579,134 +2905,6 @@ export function ApercuHabitant() {
                     de l'application tombent dans un trou : on garde une carte
                     et on ne la revoit jamais, ce qui apprend en deux essais à
                     ne plus rien garder. */}
-                {feuille === "moi" && (
-                  <>
-                    <div className="ap-f-tete">
-                      <b>Mon espace</b>
-                      <span className="simple">
-                        Ce que vous avez gardé, réservé et demandé.
-                      </span>
-                    </div>
-                    <div className="ap-f-liste">
-                      {mesGardes.length > 0 && (
-                        <div className="ap-moi-bloc">
-                          <h4>
-                            Gardés<b>{mesGardes.length}</b>
-                          </h4>
-                          <ul>
-                            {mesGardes.map((c) => (
-                              <li key={c.id}>
-                                <button
-                                  type="button"
-                                  className="ap-moi-l"
-                                  onClick={() => allerA(c)}
-                                >
-                                  <i aria-hidden="true">💚</i>
-                                  <span>
-                                    <b>{c.nom}</b>
-                                    {c.metier} · {c.distance}
-                                  </span>
-                                  <em aria-hidden="true">›</em>
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {mesReserves.length > 0 && (
-                        <div className="ap-moi-bloc">
-                          <h4>
-                            Prévu<b>{mesReserves.length}</b>
-                          </h4>
-                          <ul>
-                            {mesReserves.map((r) => (
-                              <li key={r.cle}>
-                                <div className="ap-moi-l fixe">
-                                  <i aria-hidden="true">{r.icone}</i>
-                                  <span>
-                                    <b>{r.nom}</b>
-                                    {r.quoi}
-                                  </span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {mesSorties.length > 0 && (
-                        <div className="ap-moi-bloc">
-                          <h4>
-                            Mes sorties<b>{mesSorties.length}</b>
-                          </h4>
-                          <ul>
-                            {mesSorties.map((x) => (
-                              <li key={x.cle}>
-                                <button
-                                  type="button"
-                                  className="ap-moi-l"
-                                  onClick={() => {
-                                    setSalonOuvert(x.cle);
-                                    setSalonPage(true);
-                                    setFeuille("");
-                                  }}
-                                >
-                                  <i aria-hidden="true">💬</i>
-                                  <span>
-                                    <b>{x.sujet}</b>
-                                    {x.ou} · {x.presents.length}{" "}
-                                    {x.presents.length > 1 ? "personnes" : "personne"} ·{" "}
-                                    {x.messages.length}{" "}
-                                    {x.messages.length > 1 ? "messages" : "message"}
-                                  </span>
-                                  <em aria-hidden="true">›</em>
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {mesDemandes.length > 0 && (
-                        <div className="ap-moi-bloc">
-                          <h4>
-                            À faire revenir<b>{mesDemandes.length}</b>
-                          </h4>
-                          <ul>
-                            {mesDemandes.map((d) => (
-                              <li key={d.cle}>
-                                <div className="ap-moi-l fixe">
-                                  <i aria-hidden="true">🔁</i>
-                                  <span>
-                                    <b>{d.titre}</b>
-                                    {d.nom}
-                                    {d.revient ? ` · revient ${d.revient}` : ""}
-                                  </span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {mesGardes.length === 0 &&
-                        mesReserves.length === 0 &&
-                        mesSorties.length === 0 &&
-                        mesDemandes.length === 0 && (
-                          <div className="ap-moi-vide">
-                            <span aria-hidden="true">💚</span>
-                            <b>Rien pour l&apos;instant.</b>
-                            <i>
-                              Balayez vers la droite pour garder un commerce, il
-                              se rangera ici.
-                            </i>
-                          </div>
-                        )}
-                    </div>
-                  </>
-                )}
-
                 {feuille === "metier" && (
                   <>
                     <div className="ap-f-tete">
@@ -3848,6 +4046,11 @@ export function ApercuHabitant() {
           background:#0A0F0D;animation:apPage .22s ease both;}
         @keyframes apPage{from{opacity:0;transform:translateX(16px);}
           to{opacity:1;transform:none;}}
+        /* UN ONGLET N'EST PAS UNE PAGE PAR-DESSUS : il vit DANS la colonne, au
+           dessus de la barre des trois onglets. Sans ce retour au flux, le
+           panneau absolu recouvrait la barre et on ne pouvait plus en sortir. */
+        .ap-vue{position:static;inset:auto;flex:1;min-height:0;z-index:auto;
+          padding-bottom:0;background:none;}
 
         /* L'EN-TETE. La fleche de retour est a gauche parce que c'est la ou le
            pouce la cherche, et elle ramene au paquet, jamais a un ecran
@@ -3884,6 +4087,87 @@ export function ApercuHabitant() {
         .ap-page-actions input{position:absolute;width:1px;height:1px;opacity:0;
           pointer-events:none;}
         .ap-page-actions>*:active{transform:scale(.96);}
+
+        /* ─── LA BARRE DES TROIS ONGLETS ───
+           Defaut releve au test : on ne pouvait voir ni les salons encore
+           ouverts ni les anciens, parce qu'ils vivaient au fond d'une feuille.
+           Une application sans ossature visible n'a pas de deuxieme visite.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(3,1fr);
+          gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+          border-top:1px solid rgba(255,255,255,.09);
+          background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
+          backdrop-filter:blur(12px);}
+        .ap-onglets button{position:relative;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:3px;font:inherit;
+          font-size:10.5px;font-weight:800;cursor:pointer;color:#6C8078;
+          background:none;border:0;border-radius:12px;padding:6px 2px;
+          transition:color .14s ease,background .14s ease;}
+        .ap-onglets button i{font-style:normal;font-size:17px;line-height:1;
+          filter:grayscale(1) opacity(.55);transition:filter .14s ease;}
+        /* L'ONGLET COURANT SE VOIT A LA COULEUR ET AU FOND, pas seulement a
+           l'opacite : sur un ecran au soleil, un gris un peu plus clair ne se
+           distingue pas d'un gris un peu plus fonce. */
+        .ap-onglets button.on{color:#CFF7E6;background:rgba(61,226,166,.13);}
+        .ap-onglets button.on i{filter:none;}
+        .ap-onglets button b{position:absolute;top:2px;right:calc(50% - 24px);
+          min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;
+          text-align:center;color:#04150E;background:#3DE2A6;border-radius:999px;
+          padding:0 4px;}
+
+        /* VOUS, SANS COMPTE. */
+        .ap-moi-qui{flex:none;text-align:center;
+          background:rgba(61,226,166,.08);border:1px solid rgba(61,226,166,.24);
+          border-radius:18px;padding:16px 14px 13px;margin-bottom:16px;}
+        .ap-moi-qui>i{font-style:normal;font-size:30px;line-height:1;}
+        .ap-moi-qui>b{display:block;font-size:16px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;margin:7px 0 4px;}
+        .ap-moi-qui>em{display:block;font-style:normal;font-size:12px;
+          line-height:1.45;color:#8C9C94;max-width:30ch;margin:0 auto;}
+        .ap-moi-chif{display:flex;justify-content:center;gap:22px;margin-top:13px;
+          padding-top:12px;border-top:1px solid rgba(255,255,255,.09);}
+        .ap-moi-chif span{display:flex;flex-direction:column;align-items:center;
+          gap:1px;font-size:10.5px;font-weight:750;color:#7F988B;}
+        .ap-moi-chif b{font-size:18px;font-weight:850;color:#3DE2A6;
+          font-variant-numeric:tabular-nums;}
+
+        /* LES LISTES DE SALONS. Une vignette, trois lignes, un chiffre. */
+        .ap-liste{flex:none;margin-bottom:16px;}
+        .ap-liste h4{display:flex;align-items:center;gap:7px;font-size:11px;
+          font-weight:850;letter-spacing:.11em;text-transform:uppercase;
+          color:#8FE9C4;margin:0 2px 9px;}
+        .ap-liste h4 i{font-style:normal;font-size:11px;line-height:1;}
+        .ap-liste h4 i.vif{font-size:9px;color:#3DE2A6;
+          animation:apVoyant 2.4s ease-in-out infinite;}
+        .ap-liste h4 b{font-size:10px;color:#7F988B;}
+        .ap-liste.passe h4{color:#8C9C94;}
+        .ap-l{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
+          text-align:left;cursor:pointer;color:#A9BBB1;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:15px;padding:9px 11px 9px 9px;margin-bottom:8px;}
+        .ap-l:active{transform:scale(.99);}
+        .ap-l img{width:52px;height:52px;flex:none;object-fit:cover;
+          border-radius:11px;}
+        .ap-l>i{width:52px;height:52px;flex:none;display:flex;align-items:center;
+          justify-content:center;font-style:normal;font-size:21px;
+          background:rgba(255,255,255,.06);border-radius:11px;}
+        .ap-l span{flex:1;min-width:0;display:block;}
+        .ap-l b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
+          letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-l u{display:block;text-decoration:none;font-size:11.5px;
+          font-weight:750;color:#8FE9C4;margin-top:1px;}
+        .ap-l em{display:block;font-style:normal;font-size:11px;color:#7F988B;
+          margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-l s{flex:none;text-decoration:none;font-size:11px;font-weight:850;
+          color:#7F988B;}
+        /* Un salon passe garde sa photo, mais en retrait : c'est un souvenir,
+           pas une chose a faire. */
+        .ap-liste.passe .ap-l img{filter:grayscale(.55) brightness(.8);}
+        .ap-liste.passe .ap-l u{color:#8C9C94;}
+        .ap-l s.direct{color:#FFC9C9;background:rgba(239,68,68,.2);
+          border:1px solid rgba(239,68,68,.42);border-radius:999px;
+          font-size:8.5px;letter-spacing:.08em;padding:4px 7px;}
 
         /* LE CHAMP. Colle en bas, avec la marge de securite du bas d'ecran :
            sans elle, la barre gestuelle d'Android mange le bouton d'envoi. */

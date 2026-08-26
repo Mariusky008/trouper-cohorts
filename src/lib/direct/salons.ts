@@ -159,6 +159,22 @@ export type Salon = {
   /** Ce qui reste : « 8 portions », « 1 place ». */
   reste?: string;
   distance?: string;
+  /**
+   * LE JOUR, POUR CEUX QUI SONT PASSÉS — « Hier », « Samedi », « La semaine
+   * dernière ». Écrit comme on le dirait, pas une date machine : dans une liste
+   * de souvenirs, « 23/08 » ne dit rien et « samedi dernier » dit tout.
+   * Absent sur un salon encore ouvert : c'est aujourd'hui.
+   */
+  jour?: string;
+  /**
+   * CE QUI EN EST SORTI. C'est la seule raison de garder un salon fermé.
+   *
+   * Une conversation morte ne vaut rien ; « on y est allés à quatre » est un
+   * souvenir, et c'est ce qui fait qu'on rouvre la liste. Le salon ne s'efface
+   * donc pas quand il se ferme — il change de statut, il perd le droit
+   * d'écrire, et il garde sa fin.
+   */
+  denouement?: string;
 };
 
 /**
@@ -326,6 +342,71 @@ export const SALONS_SEMES: Salon[] = [
       },
     ],
     ouvert: true,
+  },
+
+  // ─── CEUX QUI SONT PASSÉS ───
+  //
+  // POURQUOI DEUX SALONS MORTS DANS LA MAQUETTE. Un onglet « Mes salons » qui
+  // ne montre que ce qui est ouvert aujourd'hui n'est qu'une boîte de
+  // réception : il se vide chaque soir, et rien ne dit à quoi il aura servi.
+  // Ce qui donne envie de rouvrir la liste, c'est ce qu'on y a VÉCU. Il faut
+  // donc en voir au moins deux déjà refermés, avec leur fin — dont un qui ne
+  // s'est pas fait, parce qu'une archive où tout réussit ne ressemble à rien.
+  {
+    cle: "passe|halles",
+    sujet: "Le marché du samedi",
+    ou: "Sous les halles",
+    parQui: "Vous",
+    quand: "Samedi · 11 h",
+    jour: "Samedi dernier",
+    denouement: "Vous y êtes allés à 4",
+    viennent: ["Vous", "Sophie", "Paul", "Nadia"],
+    presents: ["Vous", "Sophie", "Paul", "Nadia"],
+    statuts: { Vous: "hote", Sophie: "vient", Paul: "vient", Nadia: "vient" },
+    photo: "/direct/marche-producteurs.jpg",
+    annonce: "Les producteurs, sous les halles",
+    prix: "Entrée libre",
+    distance: "300 m",
+    messages: [
+      { id: "h1", qui: "Vous", voix: "moi", texte: "J'ai trouvé ça, qui vient ?", quand: "09 h 40" },
+      { id: "h2", qui: "Sophie", voix: "ami", texte: "Oui !", quand: "09 h 46", reactions: { "❤️": 2 } },
+      { id: "h3", qui: "Paul", voix: "ami", texte: "Je passe vous prendre à 10 h 45.", quand: "09 h 58" },
+      {
+        id: "h4",
+        qui: "Nadia",
+        voix: "ami",
+        texte: "On était bien. À refaire le mois prochain.",
+        quand: "13 h 12",
+        reactions: { "❤️": 3 },
+      },
+    ],
+    ouvert: false,
+  },
+  {
+    cle: "passe|nocturne",
+    sujet: "La nocturne du musée",
+    ou: "Musée de Borda",
+    parQui: "Inès",
+    quand: "Vendredi · 18 h",
+    jour: "Vendredi",
+    // UNE SORTIE QUI NE S'EST PAS FAITE RESTE UNE SORTIE. L'effacer donnerait
+    // une archive où tout réussit, c'est-à-dire une archive à laquelle on ne
+    // croit pas — et on perdrait l'information la plus utile du lot : ce
+    // soir-là, personne ne pouvait.
+    denouement: "Personne ne pouvait — reporté",
+    viennent: [],
+    presents: ["Inès", "Vous", "Thomas"],
+    statuts: { "Inès": "hote", Vous: "interesse", Thomas: "interesse" },
+    photo: "/direct/nocturne-musee.jpg",
+    annonce: "Nocturne au musée · Visite aux lampes",
+    prix: "5 €",
+    distance: "380 m",
+    messages: [
+      { id: "n1", qui: "Inès", voix: "ami", texte: "Ça tente quelqu'un vendredi ?", quand: "14 h 20" },
+      { id: "n2", qui: "Vous", voix: "moi", texte: "Envie, mais je finis à 19 h 30.", quand: "14 h 51" },
+      { id: "n3", qui: "Thomas", voix: "ami", texte: "Pareil. On le refait quand ils remettent ça ?", quand: "15 h 06", reactions: { "❤️": 2 } },
+    ],
+    ouvert: false,
   },
 ];
 
