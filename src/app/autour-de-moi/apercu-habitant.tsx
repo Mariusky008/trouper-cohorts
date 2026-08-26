@@ -47,6 +47,8 @@ import {
   abonnerSalons,
   basculerVenue,
   chargerSalons,
+  reagir,
+  voter,
   ecrireDansSalon,
   entrerDansSalon,
   heureCourte,
@@ -598,14 +600,34 @@ export function ApercuHabitant() {
    * l'a déclenché, et les amis répondent — dans la maquette seulement, et c'est
    * le seul moyen de montrer l'effet à quelqu'un qui tient le téléphone seul.
    */
-  function enParler(cle: string, sujet: string, ou: string, quand: string, amorce: string) {
+  function enParler(
+    cle: string,
+    sujet: string,
+    ou: string,
+    quand: string,
+    amorce: string,
+    illustration?: string,
+    annonce?: string,
+    prix?: string,
+    distance?: string,
+  ) {
     noter("partage", 0, "salon");
     const existe = salons[cle];
     setSalonOuvert(cle);
     setFeuille("salon");
     setMotSalon("");
     if (existe) return;
-    ouvrirSalon({ cle, sujet, ou, parQui: "Vous", quand });
+    ouvrirSalon({
+      cle,
+      sujet,
+      ou,
+      parQui: "Vous",
+      quand,
+      photo: illustration,
+      annonce,
+      prix,
+      distance,
+    });
     ecrireDansSalon(cle, { qui: "Vous", voix: "moi", texte: amorce, quand: heureCourte() });
     minuteries.current.forEach(clearTimeout);
     minuteries.current = [];
@@ -713,6 +735,10 @@ export function ApercuHabitant() {
         dessusEv.qui,
         `${dessusEv.jour} · ${dessusEv.heure}`,
         "Qui vient avec moi ?",
+        dessusEv.photo,
+        dessusEv.quoi,
+        dessusEv.prix ?? "Gratuit",
+        dessusEv.distance,
       );
       return;
     }
@@ -723,6 +749,10 @@ export function ApercuHabitant() {
       dessus.nom,
       momentDuSommet.quand,
       "J'ai trouvé ça, qui vient ?",
+      dessus.menu?.photo ?? dessus.photo,
+      dessus.menu ? dessus.menu.plat : momentDuSommet.titre,
+      dessus.menu?.prix ?? momentDuSommet.prix,
+      dessus.distance,
     );
   }
   /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
@@ -2136,32 +2166,217 @@ export function ApercuHabitant() {
                       </span>
                     </div>
 
-                    <div className="ap-sal-qui">
-                      <span className="ap-sal-pastille">
-                        <i aria-hidden="true">👥</i>
-                        {salon.presents.length}
-                      </span>
-                      {salon.viennent.length > 0 && (
-                        <span className="ap-sal-pastille vient">
-                          <i aria-hidden="true">🙋</i>
-                          {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
-                        </span>
+                    <div className="ap-sal-corps" ref={filSalon}>
+                    {/* CE DONT ON PARLE, EN HAUT ET TOUJOURS VISIBLE. Sans
+                        l'objet sous les yeux, un salon redevient une
+                        conversation comme une autre — et c'est précisément ce
+                        qu'on ne veut pas construire. */}
+                    <div className="ap-sal-objet">
+                      {salon.photo && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={salon.photo} alt="" />
                       )}
-                      <span className="ap-sal-noms">{salon.presents.join(", ")}</span>
+                      <div>
+                        <b>{salon.annonce ?? salon.sujet}</b>
+                        {salon.prix && <em>{salon.prix}</em>}
+                        {salon.reste && <span className="reste">{salon.reste}</span>}
+                      </div>
                     </div>
 
-                    <div className="ap-sal-fil" ref={filSalon}>
-                      {salon.messages.map((m) => (
-                        <div key={m.id} className={`ap-sal-m ${m.voix}`}>
-                          {m.voix !== "moi" && <b>{m.qui}</b>}
-                          {m.texte && <span>{m.texte}</span>}
-                          {m.photo && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
-                          )}
-                          <i>{m.quand}</i>
+                    {/* ─── QUI VIENT ? ───
+                        Trois états, pas plus : l'hôte, ceux qui viennent, ceux
+                        que ça intéresse sans qu'ils s'engagent. Le troisième est
+                        le plus utile — sans lui, celui qui hésite n'a que « je
+                        viens » ou le silence, et il choisit le silence.
+                        Les avatars sont des initiales : inventer des visages
+                        dans une maquette de voisins anonymes serait la seule
+                        chose de tout l'écran qui mentirait. */}
+                    <div className="ap-sal-bloc">
+                      <div className="ap-sal-titre">
+                        <b>Qui vient&nbsp;?</b>
+                        <span>
+                          {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
+                          {salon.presents.length - salon.viennent.length > 0
+                            ? ` · ${salon.presents.length - salon.viennent.length} intéressés`
+                            : ""}
+                        </span>
+                      </div>
+                      <div className="ap-sal-gens">
+                        {salon.presents.map((q) => {
+                          const st =
+                            salon.statuts?.[q] ??
+                            (salon.viennent.includes(q) ? "vient" : "interesse");
+                          return (
+                            <span className="ap-sal-tete" key={q}>
+                              <i className={`ap-av a${q.charCodeAt(0) % 5}`} aria-hidden="true">
+                                {q.slice(0, 1).toUpperCase()}
+                              </i>
+                              <em className={`ap-sal-pt ${st}`} aria-hidden="true">
+                                {st === "hote" ? "♥" : st === "vient" ? "✓" : "?"}
+                              </em>
+                              <b>{q}</b>
+                              <s>
+                                {st === "hote" ? "Hôte" : st === "vient" ? "Vient" : "Intéressé"}
+                              </s>
+                            </span>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          className="ap-sal-tete plus"
+                          onClick={() => void inviterAuSalon(salon)}
+                        >
+                          <i className="ap-av vide" aria-hidden="true">＋</i>
+                          <b>Inviter</b>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className={`ap-sal-jeviens${salon.viennent.includes("Vous") ? " on" : ""}`}
+                        onClick={() => {
+                          basculerVenue(salon.cle);
+                          noter("jy-vais", 0, "salon");
+                        }}
+                      >
+                        <i aria-hidden="true">🙋</i>
+                        {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
+                      </button>
+                    </div>
+
+                    {/* LA PROXIMITÉ EST OMNIPRÉSENTE, et c'est la seule chose
+                        qu'une messagerie ne saura jamais dire. */}
+                    {salon.distance && (
+                      <div className="ap-sal-pres">
+                        <span>
+                          <i aria-hidden="true">📍</i>
+                          {salon.distance}
+                        </span>
+                        <span className="vert">
+                          <i aria-hidden="true">●</i>
+                          Ouvert maintenant
+                        </span>
+                        <a
+                          href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          🚶 Y aller ensemble
+                        </a>
+                      </div>
+                    )}
+
+                    {/* ─── QUELQU'UN Y EST, MAINTENANT ───
+                        WhatsApp dit « Pauline m'envoie une photo ». Ici on dit
+                        où elle est, depuis quand, à quelle distance, et combien
+                        de minutes il faut pour la rejoindre. C'est une autre
+                        proposition, et c'est la seule que le lieu rende
+                        possible. */}
+                    {salon.enDirect && (
+                      <div className="ap-direct">
+                        <span className="ap-direct-h">
+                          <i aria-hidden="true">●</i>
+                          En direct
+                        </span>
+                        <b>
+                          {salon.enDirect.qui} y est depuis {salon.enDirect.depuis}
+                        </b>
+                        <span className="ap-direct-l">
+                          {salon.enDirect.distance} de vous · {salon.enDirect.aPied} à pied
+                        </span>
+                        <div className="ap-direct-b">
+                          <a
+                            href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            🚶 La rejoindre
+                          </a>
+                          <button type="button" onClick={() => setFeuille("resa")}>
+                            📅 Prendre le même
+                          </button>
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    {/* ─── LE VOTE ───
+                        Le geste qui justifie tout le reste : elle est dans le
+                        fauteuil, elle photographie deux nuances, elle demande
+                        laquelle. Ça se fait déjà par SMS, tous les jours, et
+                        c'est invisible. */}
+                    {salon.vote && (
+                      <div className="ap-vote">
+                        <b>{salon.vote.question}</b>
+                        {salon.vote.options.map((o) => {
+                          const total = salon.vote!.options.reduce((t, x) => t + x.voix, 0) || 1;
+                          const pc = Math.round((o.voix / total) * 100);
+                          return (
+                            <button
+                              key={o.cle}
+                              type="button"
+                              className={`ap-vote-o${salon.vote!.monVote === o.cle ? " on" : ""}`}
+                              onClick={() => {
+                                voter(salon.cle, o.cle);
+                                noter("note-donnee", pc, "vote");
+                              }}
+                            >
+                              <span className="ap-vote-j" style={{ width: `${pc}%` }} />
+                              <span className="ap-vote-t">{o.label}</span>
+                              <span className="ap-vote-p">{pc}&nbsp;%</span>
+                            </button>
+                          );
+                        })}
+                        <span className="ap-vote-n">
+                          {salon.vote.options.reduce((t, x) => t + x.voix, 0)} voix ·{" "}
+                          {salon.enDirect?.qui ?? salon.parQui} voit le résultat tout de suite
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="ap-sal-fil">
+                      {salon.messages.map((m) =>
+                        m.carte ? (
+                          <div className="ap-sal-carte" key={m.id}>
+                            <i aria-hidden="true">📅</i>
+                            <span>
+                              <b>{m.carte.titre}</b>
+                              <em>{m.carte.detail}</em>
+                              {m.carte.tampon && <s>✓ {m.carte.tampon}</s>}
+                            </span>
+                            <u>{m.quand}</u>
+                          </div>
+                        ) : (
+                          <div key={m.id} className={`ap-sal-m ${m.voix}`}>
+                            {m.voix !== "moi" && (
+                              <b>
+                                <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
+                                  {m.qui.slice(0, 1).toUpperCase()}
+                                </i>
+                                {m.qui}
+                              </b>
+                            )}
+                            {m.texte && <span>{m.texte}</span>}
+                            {m.photo && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
+                            )}
+                            <i>{m.quand}</i>
+                            {/* UN CŒUR COÛTE UN APPUI et dit ce qu'une réponse
+                                écrite ne dirait pas mieux. On montre le COMPTE,
+                                jamais qui a réagi : dans un groupe de quatre,
+                                savoir qui n'a PAS réagi est une information
+                                qu'on ne veut donner à personne. */}
+                            <button
+                              type="button"
+                              className={`ap-reac${m.maReaction ? " on" : ""}`}
+                              aria-label="J'aime"
+                              onClick={() => reagir(salon.cle, m.id, "❤️")}
+                            >
+                              ❤️
+                              {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
+                            </button>
+                          </div>
+                        ),
+                      )}
                       {amisEcrivent.map((q) => (
                         <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
                           <b>{q}</b>
@@ -2170,6 +2385,7 @@ export function ApercuHabitant() {
                           </span>
                         </div>
                       ))}
+                    </div>
                     </div>
 
                     {/* ÉCRIRE, DIRE QU'ON VIENT, INVITER. Trois choses, pas
@@ -3311,22 +3527,150 @@ export function ApercuHabitant() {
         .ap-vie b{display:block;font-size:13.5px;font-weight:850;color:#CFF7E6;
           letter-spacing:-.01em;margin-bottom:1px;}
 
-        .ap-sal-qui{flex:none;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-          padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);}
-        .ap-sal-pastille{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;
-          font-weight:850;color:#B9C6CE;background:rgba(255,255,255,.07);
-          border-radius:999px;padding:4px 10px;}
-        .ap-sal-pastille.vient{color:#04150E;background:#3DE2A6;}
-        .ap-sal-pastille i{font-style:normal;font-size:12px;}
-        .ap-sal-noms{flex:1;min-width:0;font-size:11.5px;color:#6C8078;
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* CE DONT ON PARLE, EN TETE ET TOUJOURS VISIBLE. */
+        .ap-sal-objet{flex:none;display:flex;gap:12px;align-items:center;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:16px;padding:10px;margin-bottom:12px;}
+        .ap-sal-objet img{width:74px;height:74px;flex:none;object-fit:cover;
+          border-radius:12px;}
+        .ap-sal-objet div{flex:1;min-width:0;}
+        .ap-sal-objet b{display:block;font-size:16px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;margin-bottom:3px;}
+        .ap-sal-objet em{font-style:normal;font-size:16px;font-weight:850;color:#3DE2A6;
+          margin-right:9px;}
+        .ap-sal-objet .reste{font-size:12.5px;font-weight:750;color:#F0B429;}
 
-        .ap-sal-fil{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-          display:flex;flex-direction:column;gap:9px;padding:12px 2px;
-          scrollbar-width:none;}
-        .ap-sal-fil::-webkit-scrollbar{display:none;}
-        .ap-sal-m{max-width:84%;display:flex;flex-direction:column;gap:3px;
-          border-radius:16px;padding:9px 12px;}
+        /* QUI VIENT. Les avatars sont des INITIALES : inventer des visages dans
+           une maquette de voisins anonymes serait la seule chose de tout
+           l'ecran qui mentirait. */
+        .ap-sal-bloc{flex:none;background:rgba(255,255,255,.04);
+          border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px;
+          margin-bottom:10px;}
+        .ap-sal-titre{display:flex;align-items:baseline;gap:9px;margin-bottom:11px;}
+        .ap-sal-titre b{flex:1;font-size:11px;font-weight:850;letter-spacing:.12em;
+          text-transform:uppercase;color:#F472B6;}
+        .ap-sal-titre span{font-size:11.5px;color:#7F988B;}
+        .ap-sal-gens{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;
+          padding-bottom:2px;margin-bottom:11px;}
+        .ap-sal-gens::-webkit-scrollbar{display:none;}
+        .ap-sal-tete{flex:none;position:relative;width:58px;display:flex;
+          flex-direction:column;align-items:center;gap:3px;font:inherit;
+          background:none;border:0;padding:0;cursor:default;}
+        .ap-sal-tete.plus{cursor:pointer;}
+        .ap-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+          justify-content:center;font-style:normal;font-size:17px;font-weight:850;
+          color:#04150E;}
+        .ap-av.a0{background:#3DE2A6;}
+        .ap-av.a1{background:#F7C948;}
+        .ap-av.a2{background:#7DA8FF;}
+        .ap-av.a3{background:#F472B6;}
+        .ap-av.a4{background:#A78BFA;}
+        .ap-av.vide{color:#8FA3AC;background:rgba(255,255,255,.07);
+          border:1px dashed rgba(255,255,255,.24);font-size:20px;}
+        .ap-sal-pt{position:absolute;top:30px;right:5px;width:17px;height:17px;
+          border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-style:normal;font-size:9px;font-weight:850;color:#04150E;
+          border:2px solid #0F1A16;}
+        .ap-sal-pt.hote{background:#F472B6;}
+        .ap-sal-pt.vient{background:#3DE2A6;}
+        .ap-sal-pt.interesse{background:#F0B429;}
+        .ap-sal-tete b{font-size:11.5px;font-weight:800;color:#EAF2EC;max-width:58px;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-sal-tete s{font-size:9.5px;text-decoration:none;color:#7F988B;}
+        .ap-sal-jeviens{width:100%;display:flex;align-items:center;justify-content:center;
+          gap:8px;font:inherit;font-size:15px;font-weight:850;cursor:pointer;
+          color:#fff;background:linear-gradient(140deg,#F472B6,#B4348A);border:0;
+          border-radius:14px;padding:13px;transition:transform .12s ease;}
+        .ap-sal-jeviens:active{transform:scale(.98);}
+        .ap-sal-jeviens i{font-style:normal;font-size:17px;line-height:1;}
+        .ap-sal-jeviens.on{color:#04150E;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+
+        /* LA PROXIMITE, OMNIPRESENTE : la seule chose qu'une messagerie ne
+           saura jamais dire. */
+        .ap-sal-pres{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+          font-size:12.5px;font-weight:750;color:#B9C6CE;
+          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+          border-radius:13px;padding:10px 12px;margin-bottom:10px;}
+        .ap-sal-pres span{display:inline-flex;align-items:center;gap:6px;}
+        .ap-sal-pres .vert{color:#8FE9C4;}
+        .ap-sal-pres i{font-style:normal;font-size:11px;line-height:1;}
+        .ap-sal-pres a{margin-left:auto;color:#F9C0DC;font-weight:850;
+          text-decoration:none;}
+
+        /* QUELQU'UN Y EST MAINTENANT. */
+        .ap-direct{flex:none;background:rgba(244,114,182,.11);
+          border:1px solid rgba(244,114,182,.4);border-radius:16px;padding:12px;
+          margin-bottom:10px;}
+        .ap-direct-h{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;
+          font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+          background:#EC4899;border-radius:999px;padding:3px 9px;margin-bottom:8px;}
+        .ap-direct-h i{font-style:normal;font-size:8px;
+          animation:apVoyant 2.4s ease-in-out infinite;}
+        .ap-direct b{display:block;font-size:15.5px;font-weight:850;color:#F9C0DC;
+          letter-spacing:-.01em;}
+        .ap-direct-l{display:block;font-size:12.5px;color:#C79BB2;margin-top:2px;}
+        .ap-direct-b{display:flex;gap:8px;margin-top:11px;}
+        .ap-direct-b a,.ap-direct-b button{flex:1;display:inline-flex;align-items:center;
+          justify-content:center;gap:6px;font:inherit;font-size:13px;font-weight:850;
+          cursor:pointer;text-decoration:none;color:#2A0716;background:#F9A8D4;
+          border:0;border-radius:12px;padding:10px;}
+        .ap-direct-b button{color:#F9C0DC;background:rgba(244,114,182,.18);
+          border:1px solid rgba(244,114,182,.42);}
+
+        /* LE VOTE. */
+        .ap-vote{flex:none;background:rgba(167,139,250,.1);
+          border:1px solid rgba(167,139,250,.35);border-radius:16px;padding:12px;
+          margin-bottom:10px;}
+        .ap-vote>b{display:block;font-size:14.5px;font-weight:850;color:#E4DBFF;
+          margin-bottom:9px;}
+        .ap-vote-o{position:relative;width:100%;display:flex;align-items:center;
+          gap:9px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;
+          color:#EAF2EC;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);border-radius:12px;
+          padding:11px 13px;margin-bottom:7px;overflow:hidden;}
+        .ap-vote-j{position:absolute;left:0;top:0;bottom:0;
+          background:rgba(167,139,250,.28);transition:width .35s ease;}
+        .ap-vote-t{position:relative;flex:1;min-width:0;text-align:left;}
+        .ap-vote-p{position:relative;font-size:13px;font-weight:850;color:#C0B6E8;
+          font-variant-numeric:tabular-nums;}
+        .ap-vote-o.on{border-color:#A78BFA;color:#fff;}
+        .ap-vote-n{display:block;font-size:11.5px;color:#9E93C4;margin-top:2px;}
+
+        .ap-sal-carte{align-self:stretch;display:flex;align-items:flex-start;gap:11px;
+          background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.34);
+          border-radius:16px;padding:11px 12px;}
+        .ap-sal-carte i{font-style:normal;font-size:18px;line-height:1;flex:none;}
+        .ap-sal-carte span{flex:1;min-width:0;}
+        .ap-sal-carte b{display:block;font-size:14px;font-weight:850;color:#E4DBFF;}
+        .ap-sal-carte em{display:block;font-style:normal;font-size:12.5px;color:#9E93C4;
+          margin-top:1px;}
+        .ap-sal-carte s{display:block;text-decoration:none;font-size:11.5px;
+          font-weight:800;color:#8FE9C4;margin-top:4px;}
+        .ap-sal-carte u{text-decoration:none;font-size:10px;color:#6C8078;flex:none;}
+
+        .ap-reac{position:absolute;left:10px;bottom:-11px;display:inline-flex;
+          align-items:center;gap:4px;font:inherit;font-size:11px;line-height:1;
+          cursor:pointer;background:#16211D;border:1px solid rgba(255,255,255,.14);
+          border-radius:999px;padding:3px 7px;opacity:.55;}
+        .ap-reac b{font-size:10.5px;font-weight:850;color:#B9C6CE;}
+        .ap-reac.on{opacity:1;border-color:rgba(244,114,182,.6);
+          background:rgba(244,114,182,.2);}
+
+        /* TOUT LE HAUT DEFILE AVEC LES MESSAGES. En hauteur fixe, l'objet, les
+           gens, la proximite, le direct et le vote empilaient quatre cents
+           pixels et ecrasaient le fil jusqu'a le rendre illisible. Seule la
+           barre d'ecriture reste posee en bas. */
+        .ap-sal-corps{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+          scrollbar-width:none;padding-right:2px;}
+        .ap-sal-corps::-webkit-scrollbar{display:none;}
+        .ap-sal-corps>.ap-sal-objet,.ap-sal-corps>.ap-sal-bloc,
+        .ap-sal-corps>.ap-sal-pres,.ap-sal-corps>.ap-direct,
+        .ap-sal-corps>.ap-vote{flex:initial;}
+        .ap-sal-fil{display:flex;flex-direction:column;gap:9px;padding:12px 2px 2px;}
+        .ap-sal-m{position:relative;max-width:84%;display:flex;flex-direction:column;
+          gap:3px;border-radius:16px;padding:9px 12px;margin-bottom:9px;}
+        .ap-sal-m b{display:flex;align-items:center;gap:6px;}
+        .ap-sal-m b .ap-av{width:20px;height:20px;font-size:10px;}
         .ap-sal-m.ami{align-self:flex-start;background:rgba(255,255,255,.07);}
         .ap-sal-m.moi{align-self:flex-end;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
         .ap-sal-m b{font-size:11.5px;font-weight:850;color:#8FE9C4;}
@@ -3578,7 +3922,7 @@ export function ApercuHabitant() {
         }
         @media (prefers-reduced-motion:reduce){
           .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
-          .ap-jour i{animation:none;}
+          .ap-jour i,.ap-direct-h i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}

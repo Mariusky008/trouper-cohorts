@@ -55,6 +55,70 @@ export type MessageSalon = {
   quand: string;
   /** Une photo envoyée dans le salon, en data-URL ou en chemin public. */
   photo?: string;
+  /**
+   * LES RÉACTIONS. Un cœur sous un message coûte un appui et dit ce qu'une
+   * réponse écrite ne dirait pas mieux — c'est la moitié des échanges d'un
+   * groupe. Un compte par emoji, jamais la liste de qui a réagi : dans un
+   * groupe de quatre, savoir qui n'a PAS réagi est une information qu'on ne
+   * veut donner à personne.
+   */
+  reactions?: Record<string, number>;
+  /** Ce que J'ai mis, pour pouvoir le retirer. */
+  maReaction?: string;
+  /** Une carte de service : réservation, arrivée. Pas une bulle. */
+  carte?: { titre: string; detail: string; tampon?: string };
+};
+
+/**
+ * CE QU'UNE PERSONNE EST DANS LE SALON.
+ *
+ * Trois états, pas plus : celui qui a ouvert, ceux qui viennent, ceux que ça
+ * intéresse sans qu'ils s'engagent. Le troisième est le plus utile — sans lui,
+ * quelqu'un qui hésite n'a que « je viens » ou le silence, et il choisit le
+ * silence.
+ */
+export type Statut = "hote" | "vient" | "interesse";
+
+/**
+ * QUAND QUELQU'UN Y EST, MAINTENANT.
+ *
+ * C'EST LA SEULE CHOSE QUE WHATSAPP NE PEUT PAS FAIRE, et donc ce qui doit
+ * être le plus soigné. WhatsApp dit « Pauline m'envoie une photo » ; ici on dit
+ * « Pauline est chez Sophie, à 280 m, depuis 42 minutes — vous voulez la
+ * rejoindre ? ». C'est une autre proposition.
+ *
+ * ELLE NE S'ALLUME JAMAIS TOUTE SEULE. Diffuser « je suis ici, en ce moment »
+ * est une information de position ET d'activité en temps réel. Même entre amis,
+ * même dans un salon fermé, ça se choisit et ça s'arrête en un appui — et dans
+ * une petite ville où tout le monde se reconnaît, ça compte plus, pas moins.
+ */
+export type EnDirect = {
+  qui: string;
+  depuis: string;
+  distance: string;
+  aPied: string;
+};
+
+/**
+ * FAIRE CHOISIR SES AMIS — le geste qui justifie tout le reste.
+ *
+ * Une femme dans le fauteuil qui photographie deux nuances et demande
+ * « laquelle ? » : ça se fait déjà tous les jours, par SMS, et c'est invisible.
+ * On n'invente rien, on lui donne l'endroit.
+ *
+ * IL SE DÉCLENCHE DEPUIS UNE PHOTO, JAMAIS DEPUIS UNE « ÉTAPE ». Une frise
+ * d'étapes — arrivée, couleur, séchage, résultat — supposerait que quelqu'un la
+ * saisisse : celle qui a des papillotes sur la tête a les mains prises, et la
+ * coiffeuse a les mains dans les cheveux. La seule saisie réaliste est une
+ * photo, et tout doit en découler.
+ */
+export type Vote = {
+  question: string;
+  options: { cle: string; label: string; voix: number }[];
+  /** Ce que j'ai voté. Vide : je n'ai pas encore tranché. */
+  monVote?: string;
+  /** Ce que la personne sur place a finalement choisi. */
+  choisi?: string;
 };
 
 export type Salon = {
@@ -75,6 +139,26 @@ export type Salon = {
   messages: MessageSalon[];
   /** Faux quand le moment est passé : on lit, on n'écrit plus. */
   ouvert: boolean;
+  /** Ce que chacun est. Absent : présent, sans s'être prononcé. */
+  statuts?: Record<string, Statut>;
+  /** Quelqu'un y est en ce moment, et l'a choisi. */
+  enDirect?: EnDirect;
+  /** La question posée à ceux qui ne sont pas là. */
+  vote?: Vote;
+  /** La photo de l'annonce, pour la carte en tête du salon. */
+  photo?: string;
+  /**
+   * CE QUE DIT L'ANNONCE — et non ce que dit celui qui a ouvert le salon.
+   * Les deux étaient confondus, donc le titre s'affichait deux fois de suite :
+   * « Je suis chez elle, aidez-moi à choisir » n'est pas le nom de la
+   * prestation, c'est la phrase de Camille.
+   */
+  annonce?: string;
+  /** Le prix et ce qu'il reste, repris de l'annonce. */
+  prix?: string;
+  /** Ce qui reste : « 8 portions », « 1 place ». */
+  reste?: string;
+  distance?: string;
 };
 
 /**
@@ -97,6 +181,12 @@ export const SALONS_SEMES: Salon[] = [
     quand: "Aujourd'hui · 12 h 30",
     viennent: ["Pauline", "Sarah", "Julie"],
     presents: ["Pauline", "Sarah", "Julie", "Marc"],
+    statuts: { Pauline: "hote", Sarah: "vient", Julie: "vient", Marc: "interesse" },
+    photo: "/direct/plat-garbure.jpg",
+    annonce: "Garbure landaise, magret grillé",
+    prix: "19 €",
+    reste: "8 portions restantes",
+    distance: "400 m",
     messages: [
       {
         id: "s1",
@@ -127,17 +217,56 @@ export const SALONS_SEMES: Salon[] = [
         texte: "Je ne peux pas ce midi, mais gardez-moi ça pour jeudi.",
         quand: "12 h 04",
       },
+      // UNE CARTE DE SERVICE, PAS UNE BULLE. Ce que fait le groupe — réserver,
+      // arriver — n'est pas dit par quelqu'un : c'est arrivé. Le montrer comme
+      // un message de plus le noierait dans la conversation.
+      {
+        id: "s6",
+        qui: "",
+        voix: "systeme",
+        texte: "",
+        quand: "11 h 47",
+        carte: {
+          titre: "Pauline a réservé pour 4 personnes",
+          detail: "Aujourd'hui à 12 h 30",
+          tampon: "Confirmé par Chez Bergine",
+        },
+      },
+      {
+        id: "s7",
+        qui: "Pauline",
+        voix: "ami",
+        texte: "On se retrouve là-bas alors !",
+        quand: "11 h 48",
+        reactions: { "❤️": 2 },
+      },
     ],
     ouvert: true,
   },
   {
     cle: "coif-centre|Une place vient de se libérer",
-    sujet: "Ma coupe, vous en pensez quoi ?",
+    sujet: "Je suis chez elle, aidez-moi à choisir",
     ou: "Un salon du centre",
     parQui: "Camille",
-    quand: "Aujourd'hui · 10 h 15",
+    quand: "Maintenant",
     viennent: [],
     presents: ["Camille", "Léa", "Fatou"],
+    statuts: { Camille: "hote", "Léa": "interesse", Fatou: "interesse" },
+    photo: "/direct/fauteuil-coiffeur.jpg",
+    annonce: "Coupe + brushing, une place libre",
+    prix: "28 €",
+    reste: "1 place cet après-midi",
+    distance: "220 m",
+    // ELLE Y EST, ET ELLE L'A CHOISI. C'est la seule chose que WhatsApp ne sait
+    // pas faire : « Camille est là-bas, à 220 m, depuis 42 minutes ».
+    enDirect: { qui: "Camille", depuis: "42 min", distance: "220 m", aPied: "3 min" },
+    vote: {
+      question: "Laquelle je fais ?",
+      options: [
+        { cle: "naturel", label: "🟤 Naturel", voix: 3 },
+        { cle: "clair", label: "✨ Plus clair", voix: 8 },
+      ],
+    },
     messages: [
       {
         id: "c1",
@@ -147,7 +276,14 @@ export const SALONS_SEMES: Salon[] = [
         quand: "10 h 15",
         photo: "/direct/avis-coupe.jpg",
       },
-      { id: "c2", qui: "Léa", voix: "ami", texte: "Ça te va super bien !", quand: "10 h 19" },
+      {
+        id: "c2",
+        qui: "Léa",
+        voix: "ami",
+        texte: "Ça te va super bien !",
+        quand: "10 h 19",
+        reactions: { "❤️": 2 },
+      },
       {
         id: "c3",
         qui: "Fatou",
@@ -173,6 +309,11 @@ export const SALONS_SEMES: Salon[] = [
     quand: "Ce soir · 19 h",
     viennent: ["Thomas", "Inès", "Paul", "Sonia"],
     presents: ["Thomas", "Inès", "Paul", "Sonia"],
+    statuts: { Thomas: "hote", "Inès": "vient", Paul: "vient", Sonia: "vient" },
+    photo: "/direct/concert-kiosque.jpg",
+    annonce: "Concert au kiosque · Trio de jazz",
+    prix: "Gratuit",
+    distance: "450 m",
     messages: [
       { id: "k1", qui: "Thomas", voix: "ami", texte: "Qui vient ce soir ?", quand: "09 h 30" },
       { id: "k2", qui: "Inès", voix: "ami", texte: "Nous deux on y sera.", quand: "09 h 41" },
@@ -298,6 +439,50 @@ export function basculerVenue(cle: string, qui = "Vous") {
       ...s,
       viennent: dedans ? s.viennent.filter((x) => x !== qui) : [...s.viennent, qui],
       presents: s.presents.includes(qui) ? s.presents : [...s.presents, qui],
+    },
+  });
+}
+
+/** Un cœur sous un message, ou le retirer. Un appui, jamais plus. */
+export function reagir(cle: string, idMessage: string, emoji: string) {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!s) return;
+  garder({
+    ...avant,
+    [cle]: {
+      ...s,
+      messages: s.messages.map((m) => {
+        if (m.id !== idMessage) return m;
+        const avait = m.maReaction === emoji;
+        const n = { ...(m.reactions ?? {}) };
+        n[emoji] = Math.max(0, (n[emoji] ?? 0) + (avait ? -1 : 1));
+        if (!n[emoji]) delete n[emoji];
+        return { ...m, reactions: n, maReaction: avait ? undefined : emoji };
+      }),
+    },
+  });
+}
+
+/** Voter pour celle qui est sur place. Revoter change la voix, n'en ajoute pas. */
+export function voter(cle: string, option: string) {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!s?.vote) return;
+  const ancien = s.vote.monVote;
+  if (ancien === option) return;
+  garder({
+    ...avant,
+    [cle]: {
+      ...s,
+      vote: {
+        ...s.vote,
+        monVote: option,
+        options: s.vote.options.map((o) => ({
+          ...o,
+          voix: o.voix + (o.cle === option ? 1 : o.cle === ancien ? -1 : 0),
+        })),
+      },
     },
   });
 }
