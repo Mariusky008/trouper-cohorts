@@ -36,10 +36,21 @@ export async function GET() {
     background_color: "#05090C",
     theme_color: "#05090C",
     orientation: "portrait",
+    // LE SIGNE RECENTRÉ, ET UNE VERSION « MASQUABLE ».
+    //
+    // L'icône racine pose le signe à (231, 202) sur une tuile de 512 au lieu du
+    // centre, et ne lui donne qu'un quart de la largeur : sur un écran
+    // d'accueil il n'en reste qu'une petite marque en haut à gauche. Celles-ci
+    // le recentrent.
+    //
+    // `maskable` n'est pas un doublon : Android rogne jusqu'à 20 % de chaque
+    // bord pour couler l'icône dans la forme du système. Sans une image prévue
+    // pour, il rogne dans le signe. Le fichier masquable porte donc le même
+    // signe en plus petit, à l'abri dans le cercle central.
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/apple-touch-icon.png", sizes: "360x360", type: "image/png", purpose: "any" },
+      { src: "/direct/icone-autour.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/direct/icone-autour-masquable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
   return NextResponse.json(manifest, {

@@ -50,6 +50,33 @@ export const metadata: Metadata = {
   // Sur iPhone, ces deux-là décident du nom sous l'icône et du fait que la
   // barre du navigateur disparaisse. Sans eux, on ouvre un onglet Safari.
   appleWebApp: { capable: true, title: "Autour de moi", statusBarStyle: "black-translucent" },
+  /**
+   * SON PROPRE JEU D'ICÔNES, ET DEUX RAISONS.
+   *
+   * 1. LE SIGNE ÉTAIT DÉCENTRÉ. Défaut rapporté : « le logo sur l'écran
+   *    d'accueil est étrange, c'est un petit K ». Mesuré dans `icon.svg` : le
+   *    signe occupe 86 × 128 points sur une tuile de 512 et son centre tombe à
+   *    (231, 202) au lieu de (256, 256) — décalé de 25 points à gauche et de
+   *    54 vers le haut, et couvrant à peine un quart de la largeur. À 60
+   *    points sur un écran d'accueil, il ne reste qu'une marque perdue en haut
+   *    à gauche. Le signe est le même, recentré et porté à 285 points de haut.
+   * 2. DEUX INSTALLATIONS, DEUX ICÔNES. Le site commerçant et « Autour de moi »
+   *    peuvent coexister sur le même téléphone — `id` et `start_url` les
+   *    séparent déjà. Leur donner la même image annulait cette séparation là
+   *    où elle se voit : sur l'écran d'accueil.
+   *
+   * L'icône racine garde exactement le même défaut de cadrage ; on ne la
+   * touche pas ici parce qu'elle sert aussi au logo animé du site, où la
+   * composition actuelle est peut-être voulue.
+   */
+  icons: {
+    icon: [
+      { url: "/direct/icone-autour.svg", type: "image/svg+xml" },
+      { url: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/direct/icone-autour-512.png",
+    apple: "/direct/icone-autour-180.png",
+  },
 };
 
 // LA PASTILLE DU BANDEAU NE PORTE PLUS LA VILLE MAIS LE MÉTIER : on y choisit

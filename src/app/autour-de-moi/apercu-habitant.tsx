@@ -2873,7 +2873,7 @@ export function ApercuHabitant() {
               arrière, et c'est voulu — tout le reste ne parle que de
               maintenant. */}
           {onglet === "salons" && (
-            <div className="ap-page ap-vue">
+            <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
                 <span className="ap-page-t">
                   <b>Mes salons</b>
@@ -2991,7 +2991,7 @@ export function ApercuHabitant() {
               porte plus « Mes sorties » : les salons ont leur onglet, et deux
               endroits pour la même chose est un défaut, pas un raccourci. */}
           {onglet === "profil" && (
-            <div className="ap-page ap-vue">
+            <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
                 <span className="ap-page-t">
                   <b>Mon espace</b>
@@ -3737,7 +3737,14 @@ export function ApercuHabitant() {
 
         /* LA CARTE PREND TOUTE LA PLACE. Plus de rapport 3/4,15 impose : c'est
            la proportion d'un encart dans une page, pas celle d'un ecran. */
-        .ap-vue{flex:1;min-height:0;display:flex;padding:8px 12px 0;}
+        /* MOINS DE MARGE AUTOUR DE LA CARTE. Releve au test : « j'ai
+           l'impression que l'annonce est encapsulee dans un rectangle long au
+           lieu de prendre vraiment tout l'ecran ». Douze points de chaque cote
+           etaient une valeur arbitraire ; sept suffisent a laisser voir la
+           carte du dessous, qui est la seule raison d'avoir une marge. On ne
+           descend pas a zero : sans bord, une carte ne se lit plus comme une
+           carte qu'on balaie, et on perdrait le geste avec le cadre. */
+        .ap-vue{flex:1;min-height:0;display:flex;padding:6px 7px 0;}
         .ap-pile{position:relative;flex:1;min-height:0;}
         /* LE RAPPORT D'ASPECT SE RETIRE ICI, PAS SEULEMENT SUR LA CARTE DU
            DESSUS. LE DEFAUT, MESURE A 360x640 : la carte du DESSOUS gardait le
@@ -4290,8 +4297,12 @@ export function ApercuHabitant() {
           to{opacity:1;transform:none;}}
         /* UN ONGLET N'EST PAS UNE PAGE PAR-DESSUS : il vit DANS la colonne, au
            dessus de la barre des trois onglets. Sans ce retour au flux, le
-           panneau absolu recouvrait la barre et on ne pouvait plus en sortir. */
-        .ap-vue{position:static;inset:auto;flex:1;min-height:0;z-index:auto;
+           panneau absolu recouvrait la barre et on ne pouvait plus en sortir.
+           LE NOM A CHANGE : cette regle s'appelait .ap-vue, qui designait deja
+           la zone de la carte dans le paquet. Deux elements differents sous le
+           meme nom, donc deux jeux de marges qui se disputaient selon l'ordre
+           d'ecriture — une seule verite par sujet, y compris pour les noms. */
+        .ap-onglet-vue{position:static;inset:auto;flex:1;min-height:0;z-index:auto;
           padding-bottom:0;background:none;}
 
         /* L'EN-TETE. La fleche de retour est a gauche parce que c'est la ou le
