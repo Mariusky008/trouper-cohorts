@@ -806,11 +806,22 @@ export function donnerSaVoix(cleSalon: string, clePropo: string, qui: string) {
  * Public ou privé. Réservé à celui qui a ouvert le salon : les autres n'ont pas
  * à décider de la visibilité d'une sortie qu'ils n'ont pas proposée.
  */
-export function basculerVisibilite(cle: string) {
+/**
+ * Rend l'état APRÈS le geste : vrai si le salon vient de passer en privé.
+ *
+ * LE GARDE-FOU CHERCHAIT « Vous », ET C'EST LE MÊME DÉFAUT QUE LES AUTRES.
+ * On s'appelle « Vous » avant de s'être présenté, et Camille après — si bien
+ * qu'une fois son prénom donné, celui qui avait ouvert le salon n'en était plus
+ * reconnu comme l'hôte : l'interrupteur ne faisait plus rien, sans un mot.
+ */
+export function basculerVisibilite(cle: string): boolean {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s || s.parQui !== "Vous") return;
-  garder({ ...avant, [cle]: { ...s, prive: !s.prive } });
+  const moi = monPrenom() || "Vous";
+  if (!s || (s.parQui !== "Vous" && s.parQui !== moi)) return !!s?.prive;
+  const prive = !s.prive;
+  garder({ ...avant, [cle]: { ...s, prive } });
+  return prive;
 }
 
 /** Entre ou sort de la liste de ceux qui viennent. */

@@ -64,6 +64,55 @@ function blocsDeStyle(source) {
  */
 const APRES_ATTENDU = /^\s*[,}]/;
 
+/**
+ * LE MÊME NOM POUR DEUX CHOSES — trois fois payé sur ce projet.
+ *
+ * `.ap-vue` désignait la zone de la carte du paquet ET la vue d'un onglet.
+ * `.ap-l` désignait les lignes de la liste des salons ET celles de la fiche
+ * d'un commerce. `.ap-plus` désignait le panneau de La Ville ET le bouton qui
+ * déplie les outils du champ d'écriture. Les trois fois, le symptôme est le
+ * même : un élément hérite de propriétés venues d'un autre écran, et selon
+ * l'ordre d'écriture. La dernière fois, un bouton de 38 points s'étirait en
+ * ellipse verte de 118.
+ *
+ * CE QU'ON MESURE : une classe déclarée SEULE (`.machin{`) à deux endroits
+ * éloignés de la feuille. Deux règles voisines sont une continuation
+ * légitime — on les écrit comme ça partout ici ; deux règles à trois cents
+ * lignes d'écart sont deux personnes qui ne se savaient pas voisines.
+ */
+const ECART_SUSPECT = 60;
+
+function nomsRepris(css, ligneDebut) {
+  const vus = new Map();
+  const lignes = css.split("\n");
+  // LA PROFONDEUR EST INDISPENSABLE. Sans elle, la garde criait sur chaque
+  // surcharge d'un `@media` — c'est-à-dire sur la façon normale d'écrire du
+  // CSS adaptatif, et une garde qui crie sur du code juste finit désarmée.
+  // Seules les déclarations de PREMIER NIVEAU nomment un objet.
+  let creux = 0;
+  for (let i = 0; i < lignes.length; i++) {
+    const ligne = lignes[i];
+    const m = /^\s*(\.[A-Za-z][\w-]*)\s*\{/.exec(ligne);
+    if (m && creux === 0) {
+      const liste = vus.get(m[1]) ?? [];
+      liste.push(ligneDebut + i);
+      vus.set(m[1], liste);
+    }
+    // Les commentaires CSS peuvent porter des accolades : on les enlève avant
+    // de compter, sinon un exemple entre parenthèses fausse toute la suite.
+    const net = ligne.replace(/\/\*.*?\*\//g, "");
+    creux += (net.match(/\{/g) ?? []).length - (net.match(/\}/g) ?? []).length;
+    if (creux < 0) creux = 0;
+  }
+  const repris = [];
+  for (const [nom, ou] of vus) {
+    for (let k = 1; k < ou.length; k++) {
+      if (ou[k] - ou[k - 1] > ECART_SUSPECT) repris.push({ nom, ou });
+    }
+  }
+  return repris;
+}
+
 let fautes = 0;
 for (const rel of FICHIERS) {
   const source = readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -91,7 +140,19 @@ for (const rel of FICHIERS) {
     );
     fautes++;
   }
-  if (!fautes) console.log(`✓ ${rel} — ${blocs.length} bloc(s), refermé(s) au bon endroit.`);
+  for (const b of blocs) {
+    for (const { nom, ou } of nomsRepris(b.texte, b.ligne)) {
+      console.error(
+        `✗ ${rel} — « ${nom} » est déclaré seul à deux endroits éloignés : ` +
+          `lignes ${ou.join(", ")}.\n` +
+          `    Deux objets sans rapport sous le même nom héritent l'un de l'autre,\n` +
+          `    et le résultat dépend de l'ordre d'écriture. Déjà payé trois fois\n` +
+          `    (.ap-vue, .ap-l, .ap-plus). Renommez le plus récent.`,
+      );
+      fautes++;
+    }
+  }
+  if (!fautes) console.log(`✓ ${rel} — ${blocs.length} bloc(s), refermé(s) au bon endroit, aucun nom repris.`);
 }
 
 if (fautes) {

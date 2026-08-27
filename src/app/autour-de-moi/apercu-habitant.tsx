@@ -792,6 +792,18 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
+   * LES FAÇONS DE PARLER, REPLIÉES.
+   *
+   * La barre du bas portait CINQ boutons de poids égal — Inviter, Réserver,
+   * Photo, Vidéo, Direct — soit cinq pavés encadrés sous une page déjà pleine
+   * de pavés encadrés. Or ils ne font pas la même chose : inviter et réserver
+   * font AVANCER la sortie ; photo, vidéo et direct sont des manières de dire
+   * quelque chose, et leur place est à côté du champ d'écriture, pas au même
+   * rang que la réservation. Ils se déplient d'un « ＋ », et se replient dès
+   * qu'on s'en est servi.
+   */
+  const [outils, setOutils] = useState(false);
+  /**
    * ─── PROPOSER AUTRE CHOSE ───
    *
    * CE QUI FAIT QU'UN SALON N'EST PAS UNE CONVERSATION DE PLUS. Sur WhatsApp,
@@ -2011,28 +2023,58 @@ export function ApercuHabitant() {
                     pendant que le groupe discute d'un autre restaurant fait
                     mentir l'en-tête ; le nom du lieu vit dans le bandeau, qui
                     suit ce qui mène. */}
+                {/* UNE SEULE LIGNE SOUS LE TITRE, ET RIEN D'AUTRE.
+                    Elle portait « 2 propositions · 2 voix · 18 h – 20 h », et à
+                    côté une pastille « ● ouvert » : quatre informations dans un
+                    en-tête, dont trois qu'on relit sans jamais s'en servir. Le
+                    point vert reste — il dit que le salon est encore vivant, et
+                    ils meurent le soir même — mais il rejoint l'heure au lieu
+                    d'occuper un objet à lui. */}
                 <span className="ap-page-t">
                   <b>{(salon.propositions?.length ?? 0) > 1 ? "Où on va ?" : salon.ou}</b>
                   <em>
-                    {(salon.propositions?.length ?? 0) > 1 ? (
-                      <>
-                        {salon.propositions!.length} propositions · {voixExprimees}{" "}
-                        {voixExprimees > 1 ? "voix" : "voix"} · <u>{salon.quand}</u>
-                      </>
-                    ) : (
-                      <>
-                        {salon.presents.length}{" "}
-                        {salon.presents.length > 1 ? "personnes" : "personne"} ·{" "}
-                        <u>{salon.quand}</u>
-                      </>
-                    )}
+                    <u>
+                      <i aria-hidden="true">●</i>
+                      {salon.quand}
+                    </u>
+                    {" · "}
+                    {salon.presents.length}{" "}
+                    {salon.presents.length > 1 ? "personnes" : "personne"}
                   </em>
                 </span>
-                {/* Le point vert n'est pas une décoration : il dit que le salon
-                    est encore ouvert. Ils meurent le soir même. */}
-                <span className="ap-page-vif" aria-label="Salon ouvert">
-                  ● ouvert
-                </span>
+                {/* ─── PUBLIC OU PRIVÉ, DANS L'EN-TÊTE ───
+                    C'était un bloc pleine largeur au milieu de la page, avec un
+                    titre, une phrase d'explication et un interrupteur : un
+                    sixième de l'écran pour un RÉGLAGE, entre deux choses qu'on
+                    vient y faire. Un réglage se range là où on range les
+                    réglages — près du titre de ce qu'il règle. La phrase, elle,
+                    n'est pas perdue : elle est dite au moment d'inviter, qui est
+                    le seul moment où l'on se demande qui verra.
+                    Public par défaut, et c'est le seul défaut qui rende le
+                    produit possible : un salon privé ne sert que ceux qui
+                    étaient déjà d'accord pour sortir, c'est-à-dire WhatsApp. */}
+                {cestMoi(salon.parQui) ? (
+                  <button
+                    type="button"
+                    className={`ap-page-vu${salon.prive ? " prive" : ""}`}
+                    aria-label={
+                      salon.prive
+                        ? "Salon privé — le rendre public"
+                        : "Salon public — le rendre privé"
+                    }
+                    onClick={() => {
+                      const prive = basculerVisibilite(salon.cle);
+                      setEchoIcone(prive ? "🔒" : "🌍");
+                      setEcho(
+                        prive
+                          ? "Salon privé : seuls ceux que vous invitez le voient."
+                          : "Salon public : ceux qui sont autour peuvent le découvrir.",
+                      );
+                    }}
+                  >
+                    {salon.prive ? "🔒" : "🌍"}
+                  </button>
+                ) : null}
               </div>
 
               <div className="ap-sal-corps" ref={filSalon}>
@@ -2056,11 +2098,47 @@ export function ApercuHabitant() {
                     LANCÉ LE SALON. C'est tout le sujet : quand une autre
                     proposition passe devant, le haut du salon change — et avec
                     lui la réservation. */}
+                {/* ─── UN SEUL OBJET, ET PAS QUATRE BLOCS EMPILÉS ───
+                    DÉFAUT RELEVÉ AU TEST : « c'est très lourd, beaucoup de
+                    choses les unes sous les autres, ça ne marche pas ». Il y
+                    avait raison : le bandeau, les propositions, « proposer autre
+                    chose » et « voir l'annonce complète » étaient QUATRE objets
+                    encadrés, du même poids visuel, qui parlaient tous de la même
+                    question — où on va. L'œil ne trouvait aucune hiérarchie,
+                    donc il n'en trouvait aucune.
+                    Ils n'en font plus qu'un : la photo, ce qui mène, ce qui est
+                    sur la table, et le moyen d'en ajouter. Un cadre, un sujet. */}
                 {(() => {
                   const p = tete;
                   const photo = p?.photo ?? salon.photo;
+                  const a = annonceDuSalon(salon);
+                  const ouvrable = !!(a.carte || a.evenement);
                   return (
-                    <div className={`ap-page-objet${photo ? "" : " nu"}`}>
+                    <div className="ap-obj">
+                    {/* LA PHOTO EST LE BOUTON. « Voir l'annonce complète » était
+                        une ligne encadrée de plus, sous les propositions, alors
+                        que l'image dont elle parle est juste au-dessus. On
+                        appuie sur ce qu'on regarde.
+                        Pas de bouton quand l'annonce n'existe plus : un salon de
+                        samedi dernier renvoie à un menu qui n'est plus servi, et
+                        un bouton qui ne mène nulle part est pire qu'une
+                        absence. */}
+                    <div
+                      className={`ap-page-objet${photo ? "" : " nu"}${ouvrable ? " ouvrable" : ""}`}
+                      role={ouvrable ? "button" : undefined}
+                      tabIndex={ouvrable ? 0 : undefined}
+                      onClick={ouvrable ? () => voirLAnnonce(salon) : undefined}
+                      onKeyDown={
+                        ouvrable
+                          ? (ev) => {
+                              if (ev.key === "Enter" || ev.key === " ") {
+                                ev.preventDefault();
+                                voirLAnnonce(salon);
+                              }
+                            }
+                          : undefined
+                      }
+                    >
                       {photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={photo} alt="" />
@@ -2068,6 +2146,12 @@ export function ApercuHabitant() {
                         <i className="ap-page-nu" aria-hidden="true">
                           💬
                         </i>
+                      )}
+                      {ouvrable && (
+                        <span className="ap-obj-voir">
+                          <i aria-hidden="true">🔎</i>
+                          L&apos;annonce
+                        </span>
                       )}
                       <div className="ap-page-objet-t">
                         {(salon.propositions?.length ?? 0) > 1 && (
@@ -2093,62 +2177,61 @@ export function ApercuHabitant() {
                         </span>
                       </div>
                     </div>
+
+                    {/* ─── CE QUI EST SUR LA TABLE ───
+                        DES LIGNES, PLUS DES CARTES. Chaque proposition était une
+                        carte encadrée avec vignette, nom, plat, prix et « proposé
+                        par » sur trois niveaux — trois cartes du même poids que
+                        le bandeau au-dessus, pour dire une chose que le bandeau
+                        disait déjà. Une ligne suffit : qui, quoi, combien de
+                        voix. Celle qui mène porte un filet vert à gauche, la
+                        vôtre un point ; le reste est du gris.
+                        UNE VOIX PAR PERSONNE, QU'ON DÉPLACE. Pas de pouce en bas :
+                        un « 👎 1 » public contre le choix de quelqu'un est une
+                        petite humiliation devant le groupe, et c'est précisément
+                        ce que les gens évitent — ce qui explique la bouillie
+                        WhatsApp, où personne ne veut être celui qui dit non. */}
+                    {(salon.propositions?.length ?? 0) > 1 && (
+                      <div className="ap-propos-l">
+                        {salon.propositions!.map((x) => {
+                          const moi = x.voix.includes(prenom || "Vous");
+                          const gagne = x.cle === tete?.cle;
+                          return (
+                            <button
+                              key={x.cle}
+                              type="button"
+                              className={`ap-propo${gagne ? " tete" : ""}${moi ? " moi" : ""}`}
+                              onClick={() => avecMonPrenom(() => voterPour(x.cle))}
+                            >
+                              <span>
+                                <b>{x.ou}</b>
+                                <em>
+                                  {x.quoi}
+                                  {x.prix ? ` · ${x.prix}` : ""}
+                                </em>
+                              </span>
+                              <s>{x.voix.length || "—"}</s>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="ap-propo-plus"
+                      onClick={() => {
+                        noter("champ-touche", 0, "proposition");
+                        setProposeOuvert(true);
+                      }}
+                    >
+                      ＋ Proposer autre chose
+                      {alternatives.length > 0 && (
+                        <em>{alternatives.length} autour de vous</em>
+                      )}
+                    </button>
+                    </div>
                   );
                 })()}
-
-                {/* ─── CE QUI EST SUR LA TABLE ───
-                    Une voix par personne, qu'on DÉPLACE. Pas de pouce en bas :
-                    un « 👎 1 » public contre le choix de quelqu'un est une
-                    petite humiliation devant le groupe, et c'est précisément ce
-                    que les gens évitent — ce qui explique la bouillie WhatsApp,
-                    où personne ne veut être celui qui dit non. */}
-                <div className="ap-propos">
-                  {(salon.propositions?.length ?? 0) > 1 && (
-                    <div className="ap-propos-l">
-                      {salon.propositions!.map((p) => {
-                        const moi = p.voix.includes(prenom || "Vous");
-                        const gagne = p.cle === tete?.cle;
-                        return (
-                          <button
-                            key={p.cle}
-                            type="button"
-                            className={`ap-propo${gagne ? " tete" : ""}${moi ? " moi" : ""}`}
-                            onClick={() => avecMonPrenom(() => voterPour(p.cle))}
-                          >
-                            {p.photo && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.photo} alt="" loading="lazy" />
-                            )}
-                            <span>
-                              <b>{p.ou}</b>
-                              <em>
-                                {p.quoi}
-                                {p.prix ? ` · ${p.prix}` : ""}
-                              </em>
-                              <u>proposé par {p.par}</u>
-                            </span>
-                            <s>
-                              {p.voix.length > 0 && <i aria-hidden="true">👤</i>}
-                              {p.voix.length || "—"}
-                            </s>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    className="ap-propo-plus"
-                    onClick={() => {
-                      noter("champ-touche", 0, "proposition");
-                      setProposeOuvert(true);
-                    }}
-                  >
-                    <i aria-hidden="true">＋</i>
-                    Proposer autre chose
-                    <em>{alternatives.length} autour de vous</em>
-                  </button>
-                </div>
 
                   {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
                     Défaut relevé au test : « les gens pensaient que c'était
@@ -2208,60 +2291,15 @@ export function ApercuHabitant() {
                   </div>
                 )}
 
-                {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE. Il arrive
-                    par un lien, tombe dans une conversation, et n'a aucun moyen
-                    de savoir ce qu'est ce commerce : ses horaires, les autres
-                    moments de sa journée, ses avis, son menu. C'est le cas
-                    central du produit, pas un cas limite — c'est exactement
-                    l'argument qui a fait construire le salon : « si j'ai pas
-                    besoin de m'inscrire, alors je regarde le salon ». */}
-                {/* Pas de bouton quand l'annonce n'existe plus — un salon de
-                    samedi dernier renvoie à un menu qui n'est plus servi. Un
-                    bouton qui ne mène nulle part est pire qu'une absence. */}
-                {(() => {
-                  const a = annonceDuSalon(salon);
-                  if (!a.carte && !a.evenement) return null;
-                  return (
-                    <button
-                      type="button"
-                      className="ap-voir-annonce"
-                      onClick={() => voirLAnnonce(salon)}
-                    >
-                      <i aria-hidden="true">🔎</i>
-                      Voir l&apos;annonce complète
-                      <em aria-hidden="true">›</em>
-                    </button>
-                  );
-                })()}
-
-                {/* ─── PUBLIC OU PRIVÉ ───
-                    Public par défaut, et c'est le seul défaut qui rende le
-                    produit possible : un salon privé ne sert que ceux qui
-                    étaient déjà d'accord pour sortir, c'est-à-dire WhatsApp.
-                    Mais le choix doit exister, et il n'appartient qu'à celui
-                    qui a ouvert : « je réserve pour l'anniversaire de ma mère »
-                    n'a rien à faire sur la place publique, et quelqu'un qui le
-                    découvre après coup n'ouvrira plus jamais de salon. */}
-                {cestMoi(salon.parQui) && (
-                  <div className="ap-visi">
-                    <span>
-                      <b>{salon.prive ? "🔒 Salon privé" : "🌍 Salon public"}</b>
-                      {salon.prive
-                        ? "Seuls ceux que vous invitez le voient."
-                        : "Ceux qui sont autour peuvent le découvrir et s'y joindre."}
-                    </span>
-                    <button
-                      type="button"
-                      className={`ap-bascule${salon.prive ? "" : " on"}`}
-                      role="switch"
-                      aria-checked={!salon.prive}
-                      aria-label="Salon public"
-                      onClick={() => basculerVisibilite(salon.cle)}
-                    >
-                      <i aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
+                {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE, et c'est le
+                    cas CENTRAL du produit : il arrive par un lien, tombe dans une
+                    conversation, et doit pouvoir savoir ce qu'est ce commerce —
+                    ses horaires, sa journée, ses avis, son menu. Le chemin n'a
+                    pas disparu, il a changé de place : c'est la photo elle-même
+                    qui ouvre l'annonce, juste au-dessus. On appuie sur ce qu'on
+                    regarde, et l'écran perd une ligne encadrée.
+                    Le réglage public/privé a lui aussi remonté, dans l'en-tête :
+                    voir le commentaire qui l'accompagne. */}
 
                   {/* ─── QUI VIENT ? ───
                       Trois états, pas plus : l'hôte, ceux qui viennent, ceux
@@ -2271,50 +2309,58 @@ export function ApercuHabitant() {
                       Les avatars sont des initiales : inventer des visages
                       dans une maquette de voisins anonymes serait la seule
                       chose de tout l'écran qui mentirait. */}
-                  <div className="ap-sal-bloc">
-                    <div className="ap-sal-titre">
-                      <b>Qui vient&nbsp;?</b>
-                      <span>
-                        {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
-                        {(() => {
-                          // Un seul curieux n'est pas « 1 intéressés ».
-                          const n = salon.presents.length - salon.viennent.length;
-                          return n > 0 ? ` · ${n} intéressé${n > 1 ? "s" : ""}` : "";
-                        })()}
-                      </span>
-                    </div>
-                    <div className="ap-sal-gens">
-                      {salon.presents.map((q) => {
+                  {/* UNE LIGNE, PLUS UN BLOC. C'était un cadre avec un titre en
+                      capitales, une colonne de vignettes de 58 points avec nom ET
+                      statut écrits sous chacune, un bouton vert pleine largeur, et
+                      juste dessous un second cadre pour « ouvert maintenant · y
+                      aller ensemble ». Deux cadres, quatre niveaux de texte, pour
+                      dire qui vient. Les initiales se chevauchent maintenant en
+                      une seule rangée — la forme qu'on lit sans l'apprendre — le
+                      compte est écrit une fois, et le geste tient dans une
+                      pastille. L'itinéraire, qui est la seule chose qu'une
+                      messagerie ne saura jamais dire, se replie au bout. */}
+                  <div className="ap-gens">
+                    <div className="ap-gens-t">
+                      {salon.presents.slice(0, 5).map((q) => {
                         const st =
                           salon.statuts?.[q] ??
                           (salon.viennent.includes(q) ? "vient" : "interesse");
                         return (
-                          <span className="ap-sal-tete" key={q}>
-                            <i className={`ap-av a${q.charCodeAt(0) % 5}`} aria-hidden="true">
-                              {q.slice(0, 1).toUpperCase()}
-                            </i>
-                            <em className={`ap-sal-pt ${st}`} aria-hidden="true">
-                              {st === "hote" ? "♥" : st === "vient" ? "✓" : "?"}
-                            </em>
-                            <b>{q}</b>
-                            <s>
-                              {st === "hote" ? "Hôte" : st === "vient" ? "Vient" : "Intéressé"}
-                            </s>
-                          </span>
+                          <i
+                            key={q}
+                            className={`ap-av a${q.charCodeAt(0) % 5} ${st}`}
+                            title={`${q} — ${
+                              st === "hote" ? "hôte" : st === "vient" ? "vient" : "intéressé"
+                            }`}
+                          >
+                            {q.slice(0, 1).toUpperCase()}
+                          </i>
                         );
                       })}
-                      <button
-                        type="button"
-                        className="ap-sal-tete plus"
-                        onClick={() => void inviterAuSalon(salon)}
-                      >
-                        <i className="ap-av vide" aria-hidden="true">＋</i>
-                        <b>Inviter</b>
-                      </button>
+                      {salon.presents.length > 5 && (
+                        <i className="ap-av reste">+{salon.presents.length - 5}</i>
+                      )}
                     </div>
+                    <span className="ap-gens-d">
+                      <b>
+                        {salon.viennent.length}{" "}
+                        {salon.viennent.length > 1 ? "viennent" : "vient"}
+                      </b>
+                      {(() => {
+                        // Un seul curieux n'est pas « 1 intéressés ».
+                        const n = salon.presents.length - salon.viennent.length;
+                        return n > 0 ? `${n} intéressé${n > 1 ? "s" : ""}` : "";
+                      })()}
+                    </span>
+                    {/* LE GESTE ET L'ITINÉRAIRE VONT ENSEMBLE, dans un même
+                        groupe : sinon, quand la ligne passe à deux rangs sur un
+                        petit écran, le petit bouton de marche se retrouve seul
+                        sur une ligne à lui, et un objet orphelin se lit comme
+                        une erreur de mise en page. */}
+                    <span className="ap-gens-a">
                     <button
                       type="button"
-                      className={`ap-sal-jeviens${jySuis(salon.viennent) ? " on" : ""}`}
+                      className={`ap-gens-b${jySuis(salon.viennent) ? " on" : ""}`}
                       onClick={() =>
                         avecMonPrenom(() => {
                           // ON VIENT SOUS SON PRÉNOM. Laisser la valeur par
@@ -2326,30 +2372,21 @@ export function ApercuHabitant() {
                         })
                       }
                     >
-                      <i aria-hidden="true">🙋</i>
-                      {jySuis(salon.viennent) ? "Vous venez" : "Je viens"}
+                      {jySuis(salon.viennent) ? "✓ Vous venez" : "Je viens"}
                     </button>
-                  </div>
-
-                  {/* LA PROXIMITÉ EST OMNIPRÉSENTE, et c'est la seule chose
-                      qu'une messagerie ne saura jamais dire. */}
-                  {salon.distance && (
-                    <div className="ap-sal-pres">
-                      {/* La distance est déjà sur la photo, en haut : on ne la
-                          répète pas ici, on ne garde que ce qu'elle permet. */}
-                      <span className="vert">
-                        <i aria-hidden="true">●</i>
-                        Ouvert maintenant
-                      </span>
+                    {salon.distance && (
                       <a
+                        className="ap-gens-y"
                         href="https://www.google.com/maps/dir/?api=1&destination=Dax"
                         target="_blank"
                         rel="noreferrer noopener"
+                        aria-label="Y aller ensemble"
                       >
-                        🚶 Y aller ensemble
+                        🚶
                       </a>
-                    </div>
-                  )}
+                    )}
+                    </span>
+                  </div>
 
                   {/* ─── QUELQU'UN Y EST, MAINTENANT ───
                       WhatsApp dit « Pauline m'envoie une photo ». Ici on dit
@@ -2480,13 +2517,20 @@ export function ApercuHabitant() {
                   </div>
                   </div>
 
-              {/* LA BARRE D'ACTIONS. Cinq, pas trente : ce qu'on fait vraiment
-                  quand on décide de sortir à plusieurs. « Proposer » est la
-                  seule qui ne soit pas évidente — c'est le geste de celui qui
-                  n'est pas sur place et qui veut peser sur ce qui s'y passe :
-                  suggérer une heure, un plat, une couleur. */}
+              {/* ─── DEUX ACTIONS, PAS CINQ ───
+                  La barre en portait cinq de poids égal : Inviter, Réserver,
+                  Photo, Vidéo, Direct. Or elles ne font pas la même chose.
+                  Inviter et réserver font AVANCER la sortie — ce sont les deux
+                  seules qui la changent. Photo, vidéo et direct sont des façons
+                  de DIRE quelque chose : leur place est au bord du champ
+                  d'écriture, dépliées d'un « ＋ », et pas au même rang que la
+                  réservation. */}
               <div className="ap-page-actions">
-                <button type="button" onClick={() => void inviterAuSalon(salon)}>
+                <button
+                  type="button"
+                  className="ap-act"
+                  onClick={() => void inviterAuSalon(salon)}
+                >
                   <i aria-hidden="true">👥</i>
                   Inviter
                 </button>
@@ -2495,80 +2539,88 @@ export function ApercuHabitant() {
                     bouton. */}
                 <button
                   type="button"
+                  className="ap-act fort"
                   onClick={() => avecMonPrenom(reserverPourLeSalon)}
                 >
                   <i aria-hidden="true">📅</i>
                   Réserver
                   {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
                 </button>
-                <label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={async (ev) => {
-                      const f = ev.target.files?.[0];
-                      ev.target.value = "";
-                      if (!f) return;
-                      try {
-                        const photo = await reduirePhoto(f);
-                        noter("photo-ajoutee", 0, "salon");
+              </div>
+
+              {/* LES FAÇONS DE DIRE, DÉPLIÉES SEULEMENT SI ON LES DEMANDE. */}
+              {outils && (
+                <div className="ap-outils">
+                  <label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={async (ev) => {
+                        const f = ev.target.files?.[0];
+                        ev.target.value = "";
+                        if (!f) return;
+                        setOutils(false);
+                        try {
+                          const photo = await reduirePhoto(f);
+                          noter("photo-ajoutee", 0, "salon");
+                          ecrireDansSalon(salon.cle, {
+                            qui: monPrenom() || "Vous",
+                            voix: "moi",
+                            texte: "",
+                            quand: heureCourte(),
+                            photo,
+                          });
+                        } catch {
+                          /* Image illisible : on ne casse rien. */
+                        }
+                      }}
+                    />
+                    <i aria-hidden="true">📷</i>
+                    Photo
+                  </label>
+                  <label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      capture="environment"
+                      onChange={(ev) => {
+                        const f = ev.target.files?.[0];
+                        ev.target.value = "";
+                        if (!f) return;
+                        setOutils(false);
+                        // LA VIDÉO N'EST PAS GARDÉE DANS LA MAQUETTE, et il vaut
+                        // mieux le dire que le faire à moitié : dix secondes
+                        // pèsent des mégaoctets, le stockage du navigateur en
+                        // accepte cinq en tout, et la première tuerait les avis,
+                        // les photos et les salons déjà écrits.
+                        noter("video-vue", 0, "salon");
                         ecrireDansSalon(salon.cle, {
                           qui: monPrenom() || "Vous",
                           voix: "moi",
-                          texte: "",
+                          texte: "🎬 Vidéo envoyée au groupe",
                           quand: heureCourte(),
-                          photo,
                         });
-                      } catch {
-                        /* Image illisible : on ne casse rien. */
-                      }
+                      }}
+                    />
+                    <i aria-hidden="true">🎬</i>
+                    Vidéo
+                  </label>
+                  {/* Le direct ne se fait nulle part ailleurs : c'est la seule
+                      de ces trois qui n'a pas d'équivalent dans une messagerie. */}
+                  <button
+                    type="button"
+                    className={enLigne ? "ap-en-direct" : ""}
+                    onClick={() => {
+                      setOutils(false);
+                      avecMonPrenom(() => void lancerLeDirect(salon.cle));
                     }}
-                  />
-                  <i aria-hidden="true">📷</i>
-                  Photo
-                </label>
-                <label>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    capture="environment"
-                    onChange={(ev) => {
-                      const f = ev.target.files?.[0];
-                      ev.target.value = "";
-                      if (!f) return;
-                      // LA VIDÉO N'EST PAS GARDÉE DANS LA MAQUETTE, et il vaut
-                      // mieux le dire que le faire à moitié : dix secondes
-                      // pèsent des mégaoctets, le stockage du navigateur en
-                      // accepte cinq en tout, et la première tuerait les avis,
-                      // les photos et les salons déjà écrits.
-                      noter("video-vue", 0, "salon");
-                      ecrireDansSalon(salon.cle, {
-                        qui: monPrenom() || "Vous",
-                        voix: "moi",
-                        texte: "🎬 Vidéo envoyée au groupe",
-                        quand: heureCourte(),
-                      });
-                    }}
-                  />
-                  <i aria-hidden="true">🎬</i>
-                  Vidéo
-                </label>
-                {/* ─── LE DIRECT PREND LA PLACE DE « PROPOSER » ───
-                    Six boutons ne tiennent pas sur 360 points, et il fallait
-                    choisir. « Proposer » ouvrait une invite du navigateur pour
-                    écrire une phrase — c'est-à-dire exactement ce que le champ
-                    juste en dessous fait déjà, en mieux. Le direct, lui, ne se
-                    fait nulle part ailleurs. */}
-                <button
-                  type="button"
-                  className={enLigne ? "ap-en-direct" : ""}
-                  onClick={() => avecMonPrenom(() => void lancerLeDirect(salon.cle))}
-                >
-                  <i aria-hidden="true">{enLigne ? "⏹️" : "🔴"}</i>
-                  {enLigne ? "Arrêter" : "Direct"}
-                </button>
-              </div>
+                  >
+                    <i aria-hidden="true">{enLigne ? "⏹️" : "🔴"}</i>
+                    {enLigne ? "Arrêter le direct" : "Direct"}
+                  </button>
+                </div>
+              )}
 
               <form
                 className="ap-page-champ"
@@ -2589,6 +2641,15 @@ export function ApercuHabitant() {
                   });
                 }}
               >
+                <button
+                  type="button"
+                  className={`ap-champ-plus${outils ? " on" : ""}`}
+                  aria-expanded={outils}
+                  aria-label={outils ? "Fermer" : "Photo, vidéo, direct"}
+                  onClick={() => setOutils((v) => !v)}
+                >
+                  ＋
+                </button>
                 <input
                   value={motSalon}
                   onChange={(ev) => setMotSalon(ev.target.value)}
@@ -5697,10 +5758,30 @@ export function ApercuHabitant() {
            est la meme chose que la carte qu'on vient de balayer. Le texte est
            pose SUR l'image, avec un voile en bas pour qu'il reste lisible quel
            que soit le plat photographie. */
-        .ap-page-objet{position:relative;flex:none;border-radius:18px;overflow:hidden;
-          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-          margin-bottom:12px;}
-        .ap-page-objet img{display:block;width:100%;height:176px;object-fit:cover;}
+        /* ── UN SEUL CADRE POUR TOUT LE SUJET ──────────────────────────
+           DEFAUT RELEVE AU TEST : « c'est tres lourd, beaucoup de choses les
+           unes sous les autres ». Le bandeau, les propositions, « proposer
+           autre chose » et « voir l'annonce » etaient quatre objets encadres du
+           MEME poids, qui repondaient tous a la meme question. L'oeil n'avait
+           aucune hierarchie a saisir, donc il n'en saisissait aucune.
+           Un cadre, un sujet : la photo en haut, les lignes en dessous. */
+        .ap-obj{flex:none;border-radius:20px;overflow:hidden;margin-bottom:18px;
+          background:rgba(255,255,255,.045);
+          border:1px solid rgba(255,255,255,.09);}
+        .ap-page-objet{position:relative;flex:none;}
+        .ap-page-objet.ouvrable{cursor:pointer;}
+        .ap-page-objet img{display:block;width:100%;height:min(172px,22vh);
+          min-height:118px;object-fit:cover;}
+        /* La photo EST le bouton qui ouvre l'annonce : une pastille discrete le
+           dit, plutot qu'une ligne encadree de plus sous les propositions. */
+        .ap-obj-voir{position:absolute;right:10px;top:10px;z-index:2;
+          display:inline-flex;align-items:center;gap:5px;font-size:10.5px;
+          font-weight:800;color:#EAF2EC;background:rgba(8,12,10,.6);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          border:1px solid rgba(255,255,255,.18);border-radius:999px;
+          padding:5px 10px;}
+        .ap-obj-voir i{font-style:normal;font-size:11px;line-height:1;}
+        .ap-page-objet.ouvrable:active{filter:brightness(.9);}
         .ap-page-objet-t{position:absolute;left:0;right:0;bottom:0;padding:26px 13px 11px;
           background:linear-gradient(180deg,rgba(4,10,8,0),rgba(4,10,8,.86) 62%);}
         .ap-page-objet:not(:has(img)) .ap-page-objet-t{position:static;padding:13px;
@@ -5714,28 +5795,6 @@ export function ApercuHabitant() {
           color:#F0B429;}
         .ap-page-objet-t u{text-decoration:none;font-size:12.5px;font-weight:700;
           color:#A9BBB1;}
-
-        /* QUI VIENT. Les avatars sont des INITIALES : inventer des visages dans
-           une maquette de voisins anonymes serait la seule chose de tout
-           l'ecran qui mentirait. */
-        .ap-sal-bloc{flex:none;background:rgba(255,255,255,.04);
-          border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px;
-          margin-bottom:10px;}
-        .ap-sal-titre{display:flex;align-items:baseline;gap:9px;margin-bottom:11px;}
-        /* VERT, PAS ROSE. Une couleur = une chose : le rose est celle des
-           evenements de la ville, et deux titres roses sur deux ecrans qui ne
-           parlent pas de la meme chose est exactement le defaut qu'on evite
-           partout ailleurs. Le salon appartient a l'application, donc au vert. */
-        .ap-sal-titre b{flex:1;font-size:11px;font-weight:850;letter-spacing:.12em;
-          text-transform:uppercase;color:#8FE9C4;}
-        .ap-sal-titre span{font-size:11.5px;color:#7F988B;}
-        .ap-sal-gens{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;
-          padding-bottom:2px;margin-bottom:11px;}
-        .ap-sal-gens::-webkit-scrollbar{display:none;}
-        .ap-sal-tete{flex:none;position:relative;width:58px;display:flex;
-          flex-direction:column;align-items:center;gap:3px;font:inherit;
-          background:none;border:0;padding:0;cursor:default;}
-        .ap-sal-tete.plus{cursor:pointer;}
         .ap-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
           justify-content:center;font-style:normal;font-size:17px;font-weight:850;
           color:#04150E;}
@@ -5746,42 +5805,6 @@ export function ApercuHabitant() {
         .ap-av.a4{background:#A78BFA;}
         .ap-av.vide{color:#8FA3AC;background:rgba(255,255,255,.07);
           border:1px dashed rgba(255,255,255,.24);font-size:20px;}
-        .ap-sal-pt{position:absolute;top:30px;right:5px;width:17px;height:17px;
-          border-radius:50%;display:flex;align-items:center;justify-content:center;
-          font-style:normal;font-size:9px;font-weight:850;color:#04150E;
-          border:2px solid #0F1A16;}
-        .ap-sal-pt.hote{background:#F472B6;}
-        .ap-sal-pt.vient{background:#3DE2A6;}
-        .ap-sal-pt.interesse{background:#F0B429;}
-        .ap-sal-tete b{font-size:11.5px;font-weight:800;color:#EAF2EC;max-width:58px;
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ap-sal-tete s{font-size:9.5px;text-decoration:none;color:#7F988B;}
-        /* VERT, PAS ROSE. Le rose est la couleur des evenements de la ville ;
-           « Je viens » n'est pas un evenement, c'est le geste de l'application.
-           Il etait rose plein et « Vous venez » vert : deux couleurs pour les
-           deux etats d'un meme bouton, donc on lisait un changement de nature
-           la ou il n'y a qu'un interrupteur. Une seule teinte, deux intensites. */
-        .ap-sal-jeviens{width:100%;display:flex;align-items:center;justify-content:center;
-          gap:8px;font:inherit;font-size:15px;font-weight:850;cursor:pointer;
-          color:#CFF7E6;background:rgba(61,226,166,.16);
-          border:1px solid rgba(61,226,166,.5);
-          border-radius:14px;padding:13px;transition:transform .12s ease;}
-        .ap-sal-jeviens:active{transform:scale(.98);}
-        .ap-sal-jeviens i{font-style:normal;font-size:17px;line-height:1;}
-        .ap-sal-jeviens.on{color:#04150E;border-color:transparent;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
-
-        /* LA PROXIMITE, OMNIPRESENTE : la seule chose qu'une messagerie ne
-           saura jamais dire. */
-        .ap-sal-pres{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-          font-size:12.5px;font-weight:750;color:#B9C6CE;
-          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
-          border-radius:13px;padding:10px 12px;margin-bottom:10px;}
-        .ap-sal-pres span{display:inline-flex;align-items:center;gap:6px;}
-        .ap-sal-pres .vert{color:#8FE9C4;}
-        .ap-sal-pres i{font-style:normal;font-size:11px;line-height:1;}
-        .ap-sal-pres a{margin-left:auto;color:#8FE9C4;font-weight:850;
-          text-decoration:none;}
 
         /* ─── QUELQU'UN Y EST MAINTENANT ───
            IL FALLAIT UNE SEPTIEME COULEUR, et il valait mieux l'assumer que la
@@ -5841,12 +5864,20 @@ export function ApercuHabitant() {
           font-weight:800;color:#8FE9C4;margin-top:4px;}
         .ap-sal-carte u{text-decoration:none;font-size:10px;color:#6C8078;flex:none;}
 
-        .ap-reac{position:absolute;left:10px;bottom:-11px;display:inline-flex;
-          align-items:center;gap:4px;font:inherit;font-size:11px;line-height:1;
-          cursor:pointer;background:#16211D;border:1px solid rgba(255,255,255,.14);
-          border-radius:999px;padding:3px 7px;opacity:.55;}
+        /* LA CIBLE FAIT LA TAILLE D'UN DOIGT, la pastille reste discrete.
+           MESURE : 30 sur 19 points, soit la moitie de ce qu'un pouce atteint
+           sans viser. On agrandit la zone touchable par du remplissage, sans
+           rien montrer de plus — le fond ne peint que la pastille. */
+        .ap-reac{position:absolute;left:3px;bottom:-20px;display:inline-flex;
+          align-items:center;justify-content:center;gap:4px;font:inherit;
+          font-size:11px;line-height:1;cursor:pointer;background:none;border:0;
+          padding:9px;min-width:34px;min-height:34px;opacity:.55;}
+        .ap-reac::before{content:"";position:absolute;inset:7px;z-index:-1;
+          border-radius:999px;background:#16211D;
+          border:1px solid rgba(255,255,255,.14);}
         .ap-reac b{font-size:10.5px;font-weight:850;color:#B9C6CE;}
-        .ap-reac.on{opacity:1;border-color:rgba(244,114,182,.6);
+        .ap-reac.on{opacity:1;}
+        .ap-reac.on::before{border-color:rgba(244,114,182,.6);
           background:rgba(244,114,182,.2);}
 
         /* TOUT LE HAUT DEFILE AVEC LES MESSAGES. En hauteur fixe, l'objet, les
@@ -5915,6 +5946,15 @@ export function ApercuHabitant() {
            intermediaire. */
         .ap-page-h{flex:none;display:flex;align-items:center;gap:10px;
           padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.09);}
+        /* Le reglage de visibilite a la forme d'un bouton, comme la fleche de
+           retour : un emoji pose au bord de l'ecran ne se lit pas comme
+           quelque chose qu'on touche. */
+        .ap-page-vu{flex:none;width:36px;height:36px;border-radius:50%;font:inherit;
+          font-size:16px;line-height:1;cursor:pointer;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);}
+        .ap-page-vu:active{transform:scale(.92);}
+        .ap-page-vu.prive{background:rgba(240,180,41,.14);
+          border-color:rgba(240,180,41,.4);}
         .ap-page-r{flex:none;width:36px;height:36px;border-radius:50%;font:inherit;
           font-size:19px;line-height:1;cursor:pointer;color:#EAF2EC;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);}
@@ -5926,30 +5966,64 @@ export function ApercuHabitant() {
         .ap-page-t em{display:block;font-style:normal;font-size:11.5px;color:#8C9C94;
           margin-top:1px;}
         .ap-page-t u{text-decoration:none;color:#8FE9C4;font-weight:750;}
-        .ap-page-vif{flex:none;font-size:10.5px;font-weight:850;color:#3DE2A6;
-          background:rgba(61,226,166,.14);border:1px solid rgba(61,226,166,.32);
-          border-radius:999px;padding:5px 9px;}
 
         /* LA BARRE D'ACTIONS. Cinq colonnes egales : au-dela, les libelles se
            coupent sur un ecran de 360 pixels et on retombe sur des icones
            muettes que personne ne sait lire. */
-        .ap-page-actions{flex:none;display:grid;grid-template-columns:repeat(5,1fr);
-          gap:6px;padding:10px 0 9px;
-          border-top:1px solid rgba(255,255,255,.09);}
-        .ap-page-actions>*{position:relative;display:flex;flex-direction:column;
-          align-items:center;justify-content:center;gap:4px;font:inherit;font-size:10.5px;
-          font-weight:800;text-align:center;cursor:pointer;color:#B9C6CE;
+        /* ── DEUX ACTIONS, PAS CINQ ────────────────────────────────────
+           La barre en portait cinq de poids egal — Inviter, Reserver, Photo,
+           Video, Direct — soit cinq paves encadres sous une page qui en etait
+           deja pleine. Elles ne font pourtant pas la meme chose : deux font
+           AVANCER la sortie, trois sont des facons de dire quelque chose. Les
+           trois-la sont parties au bord du champ d'ecriture, depliees d'un
+           « plus ». Ce qui reste tient sur une ligne, et « Reserver » est la
+           seule chose verte de tout le bas : c'est elle qui conclut. */
+        .ap-page-actions{flex:none;display:flex;gap:9px;padding:11px 0 3px;}
+        .ap-act{position:relative;flex:1;display:flex;align-items:center;
+          justify-content:center;gap:7px;font:inherit;font-size:13.5px;
+          font-weight:800;cursor:pointer;color:#C7D3CC;
           background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-          border-radius:13px;padding:8px 3px;}
-        .ap-page-actions i{font-style:normal;font-size:16px;line-height:1;}
-        .ap-page-actions input{position:absolute;width:1px;height:1px;opacity:0;
+          border-radius:13px;padding:11px 8px;}
+        .ap-act i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-act:active{transform:scale(.98);}
+        .ap-act.fort{color:#04150E;border-color:transparent;font-weight:850;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        /* Le nombre de convives sur le bouton : la difference entre « il reste
+           de la place ? » et « une table pour quatre ? ». */
+        .ap-act b{position:absolute;top:-6px;right:-4px;min-width:18px;
+          font-size:10px;font-weight:850;line-height:18px;text-align:center;
+          color:#2A1B00;background:#F0B429;border-radius:999px;padding:0 4px;
+          border:2px solid #0A0F0D;}
+
+        /* LES FACONS DE DIRE, DEPLIEES SEULEMENT SI ON LES DEMANDE. */
+        .ap-outils{flex:none;display:flex;gap:8px;padding:9px 0 0;
+          animation:apOutils .16s ease both;}
+        @keyframes apOutils{from{opacity:0;transform:translateY(6px);}
+          to{opacity:1;transform:none;}}
+        .ap-outils>*{position:relative;flex:1;display:flex;align-items:center;
+          justify-content:center;gap:6px;font:inherit;font-size:12px;
+          font-weight:800;cursor:pointer;color:#B9C6CE;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
+          border-radius:12px;padding:9px 6px;}
+        .ap-outils i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-outils input{position:absolute;width:1px;height:1px;opacity:0;
           pointer-events:none;}
-        .ap-page-actions>*:active{transform:scale(.96);}
-        /* Le nombre de convives sur le bouton : c'est la difference entre
-           « il reste de la place ? » et « une table pour quatre ? ». */
-        .ap-page-actions button b{position:absolute;top:3px;right:5px;min-width:15px;
-          font-size:9px;font-weight:850;line-height:15px;text-align:center;
-          color:#2A1B00;background:#F0B429;border-radius:999px;padding:0 3px;}
+        .ap-outils>*:active{transform:scale(.97);}
+
+        /* Le « plus » du champ d'ecriture : la porte des trois outils.
+           IL NE S'APPELLE PAS .ap-plus, ET C'EST DELIBERE : ce nom-la designe
+           deja le panneau de La Ville. Deux elements sans rapport sous le meme
+           nom, c'etait la troisieme fois sur ce projet apres .ap-vue et .ap-l —
+           et la troisieme fois le symptome etait le meme : des proprietes
+           venues d'ailleurs, ici une hauteur de 118 pixels qui etirait le
+           bouton en ellipse. Une seule verite par nom. */
+        .ap-page-champ .ap-champ-plus{flex:none;width:38px;height:38px;border-radius:50%;font:inherit;
+          font-size:19px;line-height:1;cursor:pointer;color:#C7D3CC;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+          transition:transform .16s ease,background .16s ease;}
+        .ap-page-champ .ap-champ-plus:active{transform:scale(.92);}
+        .ap-page-champ .ap-champ-plus.on{transform:rotate(45deg);color:#04150E;border-color:transparent;
+          background:#3DE2A6;}
 
         /* ─── LA BARRE DES TROIS ONGLETS ───
            Defaut releve au test : on ne pouvait voir ni les salons encore
@@ -6245,41 +6319,99 @@ export function ApercuHabitant() {
         .ap-page-objet-t u.ou{text-decoration:none;font-size:12.5px;font-weight:800;
           color:#CFF7E6;}
 
-        .ap-propos{flex:none;margin-bottom:12px;}
-        .ap-propos-l{display:flex;flex-direction:column;gap:7px;margin-bottom:8px;}
-        .ap-propo{display:flex;align-items:center;gap:10px;width:100%;font:inherit;
-          text-align:left;cursor:pointer;color:#A9BBB1;
-          background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);
-          border-radius:14px;padding:8px 11px 8px 8px;
-          transition:border-color .18s ease,background .18s ease;}
-        .ap-propo img{width:44px;height:44px;flex:none;object-fit:cover;border-radius:10px;}
+        /* ── DES LIGNES, PLUS DES CARTES ───────────────────────────────
+           Chaque proposition etait une carte encadree : vignette de 44 points,
+           nom, plat, prix, et « propose par » sur trois niveaux. Trois cartes du
+           meme poids que le bandeau juste au-dessus, pour redire ce que le
+           bandeau disait deja. Une ligne suffit — qui, quoi, combien de voix —
+           et elles vivent DANS le cadre du sujet, separees par un filet.
+           LA VIGNETTE A SAUTE, ET C'EST VOULU : la photo de ce qui mene est en
+           grand a trente pixels de la ; trois timbres-poste a cote ne montrent
+           rien et font du bruit.
+           « PROPOSE PAR » AUSSI. Dans un groupe de quatre, on sait qui a
+           propose quoi — c'est ecrit dans la conversation, une ligne plus bas. */
+        .ap-propos-l{display:flex;flex-direction:column;}
+        .ap-propo{display:flex;align-items:center;gap:12px;width:100%;font:inherit;
+          text-align:left;cursor:pointer;color:#A9BBB1;background:none;border:0;
+          border-top:1px solid rgba(255,255,255,.07);padding:13px 15px;
+          transition:background .18s ease;}
         .ap-propo span{flex:1;min-width:0;}
-        .ap-propo b{display:block;font-size:13.5px;font-weight:850;color:#EAF2EC;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .ap-propo em{display:block;font-style:normal;font-size:11.5px;color:#8C9C94;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .ap-propo u{display:block;text-decoration:none;font-size:10px;color:#6C8078;
-          margin-top:1px;}
-        .ap-propo s{flex:none;display:inline-flex;align-items:center;gap:4px;
-          text-decoration:none;font-size:13px;font-weight:850;color:#7F988B;
+        .ap-propo b{display:block;font-size:14px;font-weight:800;color:#EAF2EC;
+          letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-propo em{display:block;font-style:normal;font-size:12px;color:#7F988B;
+          margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        /* Le compte de voix est un CHIFFRE, pas un pictogramme suivi d'un
+           chiffre : le petit bonhomme se repetait a chaque ligne sans jamais
+           rien distinguer. */
+        .ap-propo s{flex:none;min-width:26px;text-align:right;text-decoration:none;
+          font-size:15px;font-weight:850;color:#6C8078;
           font-variant-numeric:tabular-nums;}
-        .ap-propo s i{font-style:normal;font-size:10px;}
-        /* CELLE QUI MENE PORTE LE VERT DE L'APPLICATION ; celle ou j'ai mis ma
-           voix porte un lisere, pas une couleur de plus. */
-        .ap-propo.tete{background:rgba(61,226,166,.11);border-color:rgba(61,226,166,.4);}
+        /* CELLE QUI MENE PORTE LE VERT ; celle ou j'ai mis ma voix porte un
+           filet a gauche. Deux signaux, une seule couleur. */
+        .ap-propo.tete{background:rgba(61,226,166,.07);}
         .ap-propo.tete b{color:#fff;}
         .ap-propo.tete s{color:#3DE2A6;}
         .ap-propo.moi{box-shadow:inset 3px 0 0 #3DE2A6;}
-        .ap-propo:active{transform:scale(.99);}
+        .ap-propo:active{background:rgba(255,255,255,.06);}
 
-        .ap-propo-plus{display:flex;align-items:center;gap:9px;width:100%;font:inherit;
-          font-size:13px;font-weight:800;text-align:left;cursor:pointer;color:#CFF7E6;
-          background:rgba(61,226,166,.1);border:1px dashed rgba(61,226,166,.42);
-          border-radius:14px;padding:11px 13px;}
-        .ap-propo-plus i{font-style:normal;font-size:15px;line-height:1;}
+        /* Un lien, pas un pave en pointilles. C'est une porte de sortie du
+           sujet, pas une action qu'on pousse. */
+        .ap-propo-plus{display:flex;align-items:center;gap:10px;width:100%;
+          font:inherit;font-size:12.5px;font-weight:800;text-align:left;
+          cursor:pointer;color:#8FE9C4;background:none;
+          border:0;border-top:1px solid rgba(255,255,255,.07);
+          padding:12px 15px;}
         .ap-propo-plus em{margin-left:auto;font-style:normal;font-size:10.5px;
-          font-weight:700;color:#7F988B;}
-        .ap-propo-plus:active{transform:scale(.99);}
+          font-weight:700;color:#6C8078;}
+        .ap-propo-plus:active{background:rgba(255,255,255,.05);}
+
+        /* ── QUI VIENT, EN UNE LIGNE ───────────────────────────────────
+           C'etait un cadre avec un titre en capitales, une rangee de vignettes
+           de 58 points portant chacune un prenom ET un statut ecrits dessous,
+           un bouton vert pleine largeur, puis un SECOND cadre pour « ouvert
+           maintenant · y aller ensemble ». Deux cadres et quatre niveaux de
+           texte pour dire qui vient.
+           Les initiales se chevauchent : c'est la forme qu'on lit sans
+           l'apprendre, et elle tient dans la hauteur d'une ligne. */
+        /* ELLE PASSE A LA LIGNE PLUTOT QUE DE SE CHEVAUCHER. Mesure a 360
+           points : « 3 viennent » ne tenait pas dans sa colonne, le mot
+           debordait de sa boite et s'ecrivait PAR-DESSUS la pastille « Vous
+           venez ». Un seul mot trop long suffit — il ne peut pas se couper. */
+        .ap-gens{flex:none;display:flex;align-items:center;gap:11px;
+          flex-wrap:wrap;margin-bottom:18px;}
+        .ap-gens-t{display:flex;flex:none;}
+        .ap-gens-t .ap-av{width:32px;height:32px;font-size:13px;
+          border:2px solid #0A0F0D;margin-right:-9px;}
+        .ap-gens-t .ap-av:last-child{margin-right:0;}
+        /* Ceux qui viennent sont pleins ; ceux que ca interesse sont en creux.
+           Un point de statut sur une pastille de 32 points serait illisible. */
+        .ap-gens-t .ap-av.interesse{color:#8FA3AC;background:#1B2A24;
+          box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);}
+        .ap-gens-t .ap-av.reste{color:#8FA3AC;background:#1B2A24;font-size:11px;}
+        .ap-gens-d{flex:1 1 96px;min-width:0;display:flex;flex-direction:column;
+          font-size:11px;color:#6C8078;line-height:1.3;white-space:nowrap;}
+        .ap-gens-d b{font-size:13px;font-weight:800;color:#EAF2EC;
+          overflow:hidden;text-overflow:ellipsis;}
+        .ap-gens-a{flex:none;display:flex;align-items:center;gap:8px;
+          margin-left:auto;}
+        .ap-gens-b{flex:none;font:inherit;font-size:12.5px;font-weight:850;
+          cursor:pointer;color:#04150E;border:1px solid transparent;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;
+          padding:8px 15px;transition:transform .12s ease;}
+        .ap-gens-b:active{transform:scale(.96);}
+        /* L'ETAT S'EFFACE, L'ACTION RESTE. « Je viens » appelle, donc il est
+           plein ; « Vous venez » est fait, donc il se tait. L'inverse mettait
+           deux verts pleins a l'ecran — celui-ci et « Reserver » — et quand
+           tout crie, plus rien ne se distingue. */
+        .ap-gens-b.on{color:#8FE9C4;background:none;
+          border-color:rgba(61,226,166,.34);font-weight:800;}
+        /* L'itineraire est la seule chose qu'une messagerie ne saura jamais
+           dire ; il n'a pas besoin d'un cadre a lui pour ca. */
+        .ap-gens-y{flex:none;display:flex;align-items:center;justify-content:center;
+          width:36px;height:36px;font-size:16px;text-decoration:none;
+          border-radius:50%;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);}
 
         /* UN SALON NEUF EST VIDE, ET LE DIT. */
         .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;
@@ -6301,6 +6433,7 @@ export function ApercuHabitant() {
            on doit voir que c'est voulu, pas que ca n'a pas charge. */
         .ap-page-objet.nu{display:flex;align-items:center;justify-content:center;
           min-height:104px;background:linear-gradient(150deg,#16302A,#0C1A16);}
+        .ap-obj:has(.ap-page-objet.nu){background:none;}
         .ap-page-nu{font-style:normal;font-size:34px;opacity:.5;
           margin:18px 0 46px;}
 
@@ -6312,34 +6445,6 @@ export function ApercuHabitant() {
         .ap-prenom::placeholder{color:#5E7268;font-weight:600;}
         .ap-prenom-note{margin:11px 0 0;font-size:11.5px;line-height:1.45;
           color:#7F988B;text-align:center;}
-
-        /* VOIR L'ANNONCE COMPLETE. Discret : c'est un secours pour celui qui
-           decouvre, pas l'action principale du salon. */
-        .ap-voir-annonce{flex:none;display:flex;align-items:center;gap:9px;
-          width:100%;font:inherit;font-size:13px;font-weight:800;text-align:left;
-          cursor:pointer;color:#CFF7E6;background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.11);border-radius:13px;
-          padding:11px 13px;margin-bottom:12px;}
-        .ap-voir-annonce i{font-style:normal;font-size:14px;line-height:1;}
-        .ap-voir-annonce em{margin-left:auto;font-style:normal;color:#7F988B;}
-        .ap-voir-annonce:active{transform:scale(.99);}
-
-        /* PUBLIC OU PRIVE. */
-        .ap-visi{flex:none;display:flex;align-items:center;gap:11px;
-          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
-          border-radius:14px;padding:10px 12px;margin-bottom:12px;}
-        .ap-visi span{flex:1;min-width:0;font-size:10.5px;line-height:1.3;
-          color:#8C9C94;}
-        .ap-visi b{display:block;font-size:12.5px;font-weight:850;color:#EAF2EC;
-          margin-bottom:2px;}
-        .ap-bascule{flex:none;width:44px;height:26px;border-radius:999px;
-          cursor:pointer;background:rgba(255,255,255,.14);
-          border:1px solid rgba(255,255,255,.16);padding:0;position:relative;
-          transition:background .18s ease;}
-        .ap-bascule i{position:absolute;top:2px;left:2px;width:20px;height:20px;
-          border-radius:50%;background:#8C9C94;transition:transform .18s ease,background .18s ease;}
-        .ap-bascule.on{background:rgba(61,226,166,.34);border-color:rgba(61,226,166,.6);}
-        .ap-bascule.on i{transform:translateX(18px);background:#3DE2A6;}
 
         .ap-ligne s.reste{color:#F0B429;}
 
