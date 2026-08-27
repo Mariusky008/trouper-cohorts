@@ -370,6 +370,33 @@ export type CarteAutour = {
    * images, celles qu'il a mises lui-même.
    */
   photos?: string[];
+  /**
+   * SES PHOTOS À LUI — la salle, la devanture, ses autres plats.
+   *
+   * LE DÉFAUT QU'ELLES RÈGLENT, RELEVÉ AU TEST : « à part une photo du menu, il
+   * n'y a pas grand-chose comme info dans l'annonce quand on scrolle ». C'était
+   * vrai. Sous le pli il y avait la journée, trois lignes de fiche, et le mur
+   * des clients — vide le premier jour. On demandait de choisir un endroit sur
+   * une seule image, cadrée sur une assiette.
+   *
+   * D'OÙ ELLES VIENNENT, ET C'EST TOUT L'INTÉRÊT : de sa fiche Google, reprises
+   * au moment où on lui fabrique son site. Le commerçant ne photographie rien
+   * de plus et ne remplit rien de plus — et son annonce n'est pas vide le
+   * premier jour. C'est la seule réponse honnête au démarrage à froid : on ne
+   * peut pas demander à un commerce qui n'a encore aucun client sur ClikMe
+   * d'attendre que ses clients photographient pour être présentable.
+   *
+   * ELLES SONT SÉPARÉES DU MUR DES CLIENTS, ET JAMAIS MÉLANGÉES. Les siennes
+   * sont choisies, les leurs sont vraies : les confondre ferait passer une
+   * vitrine pour un témoignage, et c'est exactement ce qui rend les avis
+   * illisibles ailleurs.
+   *
+   * ELLES SONT LÉGENDÉES, et ce n'est pas de la décoration. « La salle » et
+   * « un autre jour » ne disent pas la même chose qu'une bande d'images : sans
+   * légende, on ne sait pas si le plat qu'on voit est servi AUJOURD'HUI — et
+   * c'est précisément la confusion qu'une carte du jour existe pour éviter.
+   */
+  sesPhotos?: { src: string; quoi: string }[];
   cadrage?: string;
   /** Anonyme : ce sont les voisins de celui qui lit. */
   nom: string;
@@ -639,6 +666,15 @@ const CARTES: CarteAutour[] = [
   // ── RESTAURANTS ──────────────────────────────────────────────────────────
   {
     id: "centre",
+    // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
+    // faisant son site. Images d'illustration en attendant les siennes —
+    // et uniquement celles qui sont libres d'enseigne, de filigrane et de
+    // visage : voir public/direct/LISEZ-MOI.md, section « ses photos ».
+    sesPhotos: [
+      { src: "/direct/tables-libres.jpg", quoi: "La salle" },
+      { src: "/direct/terrasse-au-soleil.jpg", quoi: "La terrasse, à l'ombre le midi" },
+      { src: "/direct/plat-axoa.jpg", quoi: "Axoa de veau, un autre jour" },
+    ],
     branche: "restaurant",
     photo: "/direct/plat-du-jour.jpg",
     cadrage: "68%",
@@ -747,6 +783,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "emporter",
+    // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
+    // faisant son site. Images d'illustration en attendant les siennes —
+    // et uniquement celles qui sont libres d'enseigne, de filigrane et de
+    // visage : voir public/direct/LISEZ-MOI.md, section « ses photos ».
+    sesPhotos: [
+      { src: "/direct/plat-formule.jpg", quoi: "La formule, un autre jour" },
+      { src: "/direct/plat-basquaise.jpg", quoi: "Poulet basquaise, un autre jour" },
+    ],
     branche: "restaurant",
     photo: "/direct/portion-a-emporter.jpg",
     cadrage: "50%",
@@ -804,6 +848,15 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "deux-rues",
+    // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
+    // faisant son site. Images d'illustration en attendant les siennes —
+    // et uniquement celles qui sont libres d'enseigne, de filigrane et de
+    // visage : voir public/direct/LISEZ-MOI.md, section « ses photos ».
+    sesPhotos: [
+      { src: "/direct/terrasse-au-soleil.jpg", quoi: "La terrasse" },
+      { src: "/direct/plat-basquaise.jpg", quoi: "Poulet basquaise, un autre jour" },
+      { src: "/direct/plat-formule.jpg", quoi: "La formule du midi, un autre jour" },
+    ],
     branche: "restaurant",
     photo: "/direct/tables-libres.jpg",
     cadrage: "100%",
@@ -929,6 +982,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "tablee",
+    // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
+    // faisant son site. Images d'illustration en attendant les siennes —
+    // et uniquement celles qui sont libres d'enseigne, de filigrane et de
+    // visage : voir public/direct/LISEZ-MOI.md, section « ses photos ».
+    sesPhotos: [
+      { src: "/direct/tables-libres.jpg", quoi: "La grande table, avant le service" },
+      { src: "/direct/plat-axoa.jpg", quoi: "Axoa de veau, un autre soir" },
+    ],
     branche: "restaurant",
     photo: "/direct/tablee-du-soir.jpg",
     cadrage: "50%",

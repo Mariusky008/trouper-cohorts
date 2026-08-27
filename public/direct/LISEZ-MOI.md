@@ -179,3 +179,56 @@ piétonne, la friperie, la fleuriste, la prothésiste ongulaire, la boulangerie
 et le traiteur. Il leur faudrait **une ou deux photos chacun** — la devanture,
 un rayon, un produit — pour que leur annonce se raconte comme celle d'un
 restaurant.
+
+
+## Ses photos, au bas de l'annonce — et quatre fichiers à ne pas y mettre
+
+Sous le pli, l'annonce ne montrait presque rien après le menu : une photo de
+plat, trois lignes de fiche, et le mur des clients — vide le premier jour. On
+demandait de choisir un endroit sur une seule image, cadrée sur une assiette.
+
+`CarteAutour.sesPhotos` répond à ça. Ce sont **les photos du commerçant**, du
+genre de celles qu'on reprend de sa fiche Google en lui fabriquant son site :
+il ne photographie rien de plus, et son annonce n'est pas vide le premier jour.
+Elles sont **légendées** — « la salle », « un autre jour » — et **séparées du
+mur des clients**, qui suit : les siennes sont choisies, les leurs sont vraies.
+
+### La règle, et pourquoi elle est plus stricte ici qu'ailleurs
+
+Ce bloc AFFIRME que ces images appartiennent au commerce nommé juste au-dessus.
+Une photo qui porte l'enseigne d'un autre commerce, le filigrane d'un
+photographe, ou des visages reconnaissables, attribue donc à quelqu'un ce qui
+est à un autre — et le dit noir sur blanc, avec une légende. Une image
+d'illustration passe ailleurs ; ici elle ment.
+
+**Quatre fichiers sont écartés de `sesPhotos` pour cette raison :**
+
+| Fichier | Ce qu'on y voit vraiment | Pourquoi il ne peut pas servir ici |
+|---|---|---|
+| `vitrine-du-soir.jpg` | La devanture éclairée de **La Commanderie** | Enseigne d'un vrai commerce, parfaitement lisible |
+| `service-cuisine.jpg` | Un curry sur une table de terrasse, enseigne **ZAW** et carte des cocktails | Ce n'est pas une cuisine — le nom du fichier ment — et l'image est marquée |
+| `plat-parmentier.jpg` | Un parmentier, filigrane **« Photo MAMSOOK »** | Crédit d'un photographe incrusté dans l'image |
+| `tablee-du-soir.jpg` | Une tablée, le soir | Visages reconnaissables de personnes réelles |
+
+Ces quatre-là servent encore ailleurs (photo d'annonce, photo de menu, mur des
+clients) : **ils y posent le même problème**, en moins explicite. Les remplacer
+règle les deux d'un coup — c'est la première chose à faire avant de montrer la
+maquette à un commerçant qui reconnaîtrait La Commanderie.
+
+### Ce qui est renseigné aujourd'hui
+
+Quatre restaurants, avec les seules images vérifiées libres d'enseigne, de
+filigrane et de visage : `tables-libres`, `terrasse-au-soleil`, `plat-axoa`,
+`plat-basquaise`, `plat-formule`.
+
+| Fiche | Ses photos |
+|---|---|
+| Chez Bergine | la salle, la terrasse, un plat d'un autre jour |
+| Le Bocal de Margot | deux plats d'autres jours |
+| L'Ardoise Landaise | la terrasse, deux plats d'autres jours |
+| La Grande Tablée | la grande table, un plat d'un autre soir |
+
+**Ce qui manque :** le Pétrin d'Amanieu et Maison Lartigue n'ont rien, faute
+d'image juste — un fournil et un laboratoire ne se remplacent pas par une salle
+de restaurant. Et rien pour les métiers hors bouche. Il faudrait **deux ou trois
+photos par commerce** : le lieu, la devanture, un produit.

@@ -3537,6 +3537,36 @@ export function ApercuHabitant() {
                           {dessus.fiche.horaires}
                         </div>
 
+                        {/* ─── SES PHOTOS À LUI ────────────────────────────
+                            DÉFAUT RELEVÉ AU TEST : « à part une photo du menu,
+                            il n'y a pas grand-chose comme info dans l'annonce
+                            quand on scrolle ». C'était vrai — on demandait de
+                            choisir un endroit sur une seule image, cadrée sur
+                            une assiette.
+                            ELLES VIENNENT DE SA FICHE GOOGLE, reprises quand on
+                            lui fabrique son site : il ne photographie rien de
+                            plus, et son annonce n'est pas vide le premier jour.
+                            C'est la seule réponse honnête au démarrage à froid.
+                            LÉGENDÉES, ET SÉPARÉES DU MUR DES CLIENTS qui suit :
+                            les siennes sont choisies, les leurs sont vraies.
+                            Sans la légende, on ne saurait pas si le plat montré
+                            est servi AUJOURD'HUI — la confusion exacte qu'une
+                            carte du jour existe pour éviter. */}
+                        {dessus.sesPhotos && dessus.sesPhotos.length > 0 && (
+                          <div className="ap-sien">
+                            <h4>Ses photos</h4>
+                            <div className="ap-sien-bande">
+                              {dessus.sesPhotos.map((ph) => (
+                                <figure key={ph.src + ph.quoi}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={ph.src} alt={ph.quoi} loading="lazy" />
+                                  <figcaption>{ph.quoi}</figcaption>
+                                </figure>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* LE MUR DU COMMERCE. Toutes les photos prises chez
                             lui, tous moments confondus. Le commerçant n'en a
                             pris aucune — et pour les métiers qui n'ont pas de
@@ -5486,6 +5516,33 @@ export function ApercuHabitant() {
         .ap-photo-plus:active{transform:scale(.96);}
 
         /* LE MUR DU COMMERCE, sur sa fiche. */
+        /* ── SES PHOTOS A LUI ──────────────────────────────────────────
+           UNE BANDE QUI DEFILE, PAS UNE GRILLE. Une grille de vignettes
+           carrees range des images ; une bande horizontale se PARCOURT du
+           pouce, et c'est le geste qu'on fait deja partout ailleurs dans
+           l'application. Elle ne pousse jamais la page en largeur : le
+           debordement est dans la bande, jamais dans le corps.
+           LES VIGNETTES SONT PLUS LARGES QUE HAUTES parce qu'une salle et
+           une devanture sont des scenes ; le carre du mur des clients
+           convient a des assiettes, pas a des lieux. */
+        .ap-sien{margin-top:14px;padding-top:12px;
+          border-top:1px solid rgba(255,255,255,.08);}
+        .ap-sien h4{margin:0 0 9px;font-size:12px;font-weight:850;
+          letter-spacing:.1em;text-transform:uppercase;color:#7F988B;}
+        .ap-sien-bande{display:flex;gap:9px;overflow-x:auto;
+          scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+          scrollbar-width:none;padding-bottom:2px;
+          /* La bande sort des marges du bloc et y revient : les photos
+             touchent le bord de l'ecran, comme dans le reste du produit. */
+          margin:0 -14px;padding-left:14px;padding-right:14px;}
+        .ap-sien-bande::-webkit-scrollbar{display:none;}
+        .ap-sien figure{flex:none;margin:0;width:158px;scroll-snap-align:start;}
+        .ap-sien img{display:block;width:158px;height:106px;object-fit:cover;
+          border-radius:12px;background:#0E1815;
+          border:1px solid rgba(255,255,255,.09);}
+        .ap-sien figcaption{margin-top:6px;font-size:11.5px;line-height:1.35;
+          color:#8C9C94;}
+
         .ap-mur{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);}
         .ap-mur h4{margin:0;display:flex;align-items:center;gap:8px;font-size:12px;
           font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#7F988B;}
