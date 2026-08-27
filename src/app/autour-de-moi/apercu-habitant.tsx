@@ -55,6 +55,12 @@ import {
   ouvrirSalon,
   type Salon,
 } from "@/lib/direct/salons";
+import {
+  abonnerInstallation,
+  chargerInstallation,
+  poserSurLEcran,
+  RIEN_A_INSTALLER,
+} from "@/lib/direct/installer";
 import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 import {
   ENVIES,
@@ -570,6 +576,24 @@ export function ApercuHabitant() {
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
   const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  /**
+   * METTRE L'APPLICATION SUR L'ÉCRAN D'ACCUEIL.
+   *
+   * Le manifeste, le `start_url` et les réglages iPhone étaient déjà en place :
+   * ce qui manquait, c'est que personne ne savait que c'était possible. Sur un
+   * iPhone 14 Pro, les barres du navigateur mangent près de deux cents des 852
+   * points de l'écran — installée, la page les récupère. C'est le plus gros
+   * gain de place disponible, et il ne coûte pas une ligne de mise en page.
+   * Voir `lib/direct/installer.ts` pour pourquoi iPhone n'a droit qu'à une
+   * explication et Android à un vrai bouton.
+   */
+  const installation = useSyncExternalStore(
+    abonnerInstallation,
+    chargerInstallation,
+    () => RIEN_A_INSTALLER,
+  );
+  /** Fermée à la main : on ne repropose plus de la visite. */
+  const [inviteFermee, setInviteFermee] = useState(false);
   /** La clé du salon ouvert à l'écran. Vide : on n'est dans aucun. */
   const [salonOuvert, setSalonOuvert] = useState("");
   /**
@@ -1142,6 +1166,112 @@ export function ApercuHabitant() {
       )}
     </div>
   );
+
+
+  /**
+   * LE GESTE D'INSTALLATION, AU MÊME ENDROIT POUR LES DEUX MONDES.
+   *
+   * Android ouvre la vraie boîte du système ; iPhone n'a aucune API, donc on
+   * l'envoie vers l'explication plutôt que de lui donner un bouton qui ne
+   * ferait rien. Un bouton qui ment est pire qu'une absence de bouton.
+   */
+  async function installerMaintenant() {
+    noter("installation", 0, "propose");
+    if (installation.chemin === "invite") {
+      const r = await poserSurLEcran();
+      noter("installation", 0, r === "accepte" ? "accepte" : "refuse");
+      return;
+    }
+    allerA_onglet("profil");
+  }
+
+  /**
+   * LE BLOC DE L'ONGLET PROFIL — permanent, jamais insistant.
+   *
+   * C'est le seul endroit où l'on explique le geste iPhone en toutes lettres :
+   * Partager, puis « Sur l'écran d'accueil ». Apple ne laisse aucun site
+   * déclencher l'installation, et on ne fera pas semblant du contraire.
+   */
+  const blocInstaller =
+    installation.deja ? (
+      <div className="ap-poser deja">
+        <i aria-hidden="true">✓</i>
+        <span>
+          <b>C&apos;est posé sur votre écran d&apos;accueil.</b>
+          Plus de barre de navigateur : la carte a tout l&apos;écran.
+        </span>
+      </div>
+    ) : (
+      <div className="ap-poser">
+        <i aria-hidden="true">📲</i>
+        <b>Mettre {MARQUE} sur l&apos;écran d&apos;accueil</b>
+        <em>
+          L&apos;application prend alors tout l&apos;écran — la barre du
+          navigateur disparaît — et vous la retrouvez sans chercher le lien.
+        </em>
+        {installation.chemin === "invite" ? (
+          <button
+            type="button"
+            className="ap-poser-b"
+            onClick={() => void installerMaintenant()}
+          >
+            Installer
+          </button>
+        ) : installation.chemin === "aucune" ? (
+          /* NI BOUTON, NI IPHONE — et pourtant il faut dire quelque chose.
+             DÉFAUT TROUVÉ EN VÉRIFIANT : quand la personne referme la boîte du
+             système, le navigateur consomme son invitation et ne la redonne
+             pas ; ce bloc devenait vide, et elle n'avait plus AUCUN moyen
+             d'installer depuis l'application. Même chose sur les navigateurs
+             qui n'émettent jamais l'invitation. On retombe donc sur le chemin
+             manuel, qui existe partout. */
+          <ol className="ap-poser-pas">
+            <li>
+              <s>1</s>
+              Ouvrez le <u>menu</u> de votre navigateur
+            </li>
+            <li>
+              <s>2</s>
+              Puis <u>Installer l&apos;application</u> ou{" "}
+              <u>Ajouter à l&apos;écran d&apos;accueil</u>
+            </li>
+          </ol>
+        ) : (
+          /* SUR IPHONE, ON MONTRE LE GESTE. Deux étapes, dans l'ordre, avec
+             les mots exacts de Safari : « Partager » puis « Sur l'écran
+             d'accueil ». Sans les mots exacts, on cherche. */
+          <ol className="ap-poser-pas">
+            <li>
+              <s>1</s>
+              Touchez
+              <svg className="ap-partage" viewBox="0 0 16 20" aria-label="Partager">
+                <path
+                  d="M8 1.6v10M8 1.6 4.9 4.7M8 1.6l3.1 3.1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M4 7.4H2.6v10.4h10.8V7.4H12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <u>Partager</u> en bas de Safari
+            </li>
+            <li>
+              <s>2</s>
+              Puis <u>Sur l&apos;écran d&apos;accueil</u>
+            </li>
+          </ol>
+        )}
+      </div>
+    );
 
   /** Partager un événement : même geste, même flamme, autre phrase. */
   async function partagerEv(e: EvenementVille) {
@@ -2603,6 +2733,46 @@ export function ApercuHabitant() {
             </div>
           )}
 
+          {/* ─── LA PROPOSITION D'INSTALLER, UNE FOIS, AU BON MOMENT ───
+              PAS À L'ARRIVÉE. Une bannière d'installation sur le premier écran
+              demande un engagement avant d'avoir rien montré, et se fait
+              refuser par réflexe — exactement le raisonnement qui fait qu'on ne
+              demande la permission de notification qu'au seul instant où « on
+              vous préviendra » est une phrase vraie. On attend donc trois
+              cartes : à ce moment-là, la personne a vu ce que c'était.
+              UNE SEULE LIGNE, ET UNE CROIX. Elle coûte 34 pixels le temps
+              qu'elle est là, sur un écran dont on vient de gratter chaque
+              pixel — c'est payé par ce qu'elle rapporte : installée, la page
+              récupère les deux barres du navigateur, soit près de deux cents
+              points sur un iPhone. */}
+          {!inviteFermee &&
+            !installation.deja &&
+            installation.chemin !== "aucune" &&
+            passees.length >= 3 &&
+            !sortie && (
+              <div className="ap-poser-bande">
+                <i aria-hidden="true">📲</i>
+                <span>
+                  <b>Posez-la sur votre écran</b>
+                  Vous gagnez la place des barres.
+                </span>
+                <button type="button" onClick={() => void installerMaintenant()}>
+                  {installation.chemin === "invite" ? "Installer" : "Comment ?"}
+                </button>
+                <button
+                  type="button"
+                  className="ap-poser-x"
+                  aria-label="Ne plus proposer"
+                  onClick={() => {
+                    noter("installation", 0, "refuse");
+                    setInviteFermee(true);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
           {/* LES GESTES RESTENT PENDANT UNE DEMANDE : une invitation se balaie
               comme une carte, et on la garde ou on la passe comme les autres.
               Ils ne disparaissent que le temps de l'attente. */}
@@ -2855,6 +3025,7 @@ export function ApercuHabitant() {
                     </span>
                   </div>
                 </div>
+                {blocInstaller}
                 {monEspace}
               </div>
             </div>
@@ -4147,6 +4318,62 @@ export function ApercuHabitant() {
           min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;
           text-align:center;color:#04150E;background:#3DE2A6;border-radius:999px;
           padding:0 4px;}
+
+        /* ─── METTRE L'APPLICATION SUR L'ECRAN D'ACCUEIL ───
+           Le vert de l'application : c'est elle qu'on installe, ce n'est ni
+           une invitation, ni un evenement, ni une embauche.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        .ap-poser{flex:none;text-align:center;
+          background:rgba(61,226,166,.08);border:1px solid rgba(61,226,166,.24);
+          border-radius:18px;padding:15px 14px;margin-bottom:14px;}
+        .ap-poser>i{font-style:normal;font-size:26px;line-height:1;}
+        .ap-poser>b{display:block;font-size:15px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;margin:7px 0 5px;}
+        .ap-poser>em{display:block;font-style:normal;font-size:12px;
+          line-height:1.45;color:#8C9C94;max-width:32ch;margin:0 auto;}
+        .ap-poser-b{width:100%;margin-top:12px;font:inherit;font-size:14.5px;
+          font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:13px;
+          padding:12px;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-poser-b:active{transform:scale(.98);}
+        /* LES DEUX PAS DE L'IPHONE. Les mots sont ceux de Safari, a la lettre :
+           « Partager », « Sur l'ecran d'accueil ». Approximes, on cherche. */
+        .ap-poser-pas{display:flex;flex-direction:column;gap:8px;margin-top:13px;
+          padding-top:12px;border-top:1px solid rgba(61,226,166,.2);}
+        .ap-poser-pas li{display:flex;align-items:center;justify-content:center;
+          flex-wrap:wrap;gap:6px;font-size:12.5px;color:#B9C6CE;}
+        .ap-poser-pas s{flex:none;width:19px;height:19px;text-decoration:none;
+          font-size:10.5px;font-weight:850;line-height:19px;color:#04150E;
+          background:#3DE2A6;border-radius:50%;}
+        .ap-poser-pas u{text-decoration:none;font-weight:850;color:#CFF7E6;}
+        .ap-partage{width:13px;height:16px;color:#8FE9C4;vertical-align:-3px;}
+        .ap-poser.deja{display:flex;align-items:center;gap:11px;text-align:left;}
+        .ap-poser.deja>i{font-size:17px;color:#3DE2A6;}
+        .ap-poser.deja b{display:block;font-size:13.5px;font-weight:850;color:#CFF7E6;
+          margin-bottom:2px;}
+        .ap-poser.deja span{flex:1;min-width:0;font-size:11.5px;color:#8C9C94;}
+
+        /* LA BANDE, DANS LE PAQUET. Une seule ligne : elle passe apres trois
+           cartes, sur un ecran dont chaque pixel vient d'etre dispute. */
+        .ap-poser-bande{flex:none;display:flex;align-items:center;gap:9px;
+          margin:0 12px;padding:7px 8px 7px 11px;
+          background:rgba(61,226,166,.12);border:1px solid rgba(61,226,166,.3);
+          border-radius:13px;animation:apEcho .3s ease both;}
+        .ap-poser-bande>i{font-style:normal;font-size:16px;line-height:1;flex:none;}
+        /* DEUX LIGNES, JAMAIS TROIS. Mesure : « Mettez Clikme sur votre ecran »
+           se repliait en trois rangs et la bande passait de 44 a 120 pixels —
+           sur un ecran dont on venait de disputer chaque pixel, c'etait rendre
+           d'une main ce qu'on avait pris de l'autre. Chaque rang tient sur une
+           ligne, quitte a se couper. */
+        .ap-poser-bande span{flex:1;min-width:0;font-size:10px;color:#8C9C94;
+          line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-poser-bande span b{display:block;font-size:12px;font-weight:850;
+          color:#CFF7E6;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-poser-bande>button{flex:none;font:inherit;font-size:11.5px;
+          font-weight:850;cursor:pointer;color:#04150E;background:#3DE2A6;
+          border:0;border-radius:999px;padding:7px 12px;}
+        .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
+          color:#7F988B!important;background:none!important;}
 
         /* VOUS, SANS COMPTE. */
         .ap-moi-qui{flex:none;text-align:center;
