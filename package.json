@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "verifier:styles": "node scripts/verifier-styles-en-ligne.mjs",
     "voice:bridge": "ts-node --project voice-bridge/tsconfig.json voice-bridge/server.ts",
     "e2e:human-access": "node scripts/e2e-human-access.mjs",
     "e2e:human-alliances": "node scripts/e2e-human-alliances.mjs",

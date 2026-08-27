@@ -497,6 +497,21 @@ export function ApercuHabitant() {
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
   const [aJoue, setAJoue] = useState(false);
   const [descendu, setDescendu] = useState(false);
+  /**
+   * A-T-ON COMMENCÉ À DESCENDRE SOUS LA BARRE DU HAUT ?
+   *
+   * Le dégradé de la barre laisse voir la photo, et c'est voulu : l'annonce
+   * doit prendre tout le cadre. Mais dès qu'on descend, ce n'est plus une photo
+   * qui passe dessous — c'est du TEXTE, et un texte à demi effacé ne se lit pas
+   * comme « derrière une vitre », il se lit comme un bug. DÉFAUT VU EN CAPTURE :
+   * « LA JOURNÉE » et « Les deux plats du jour » s'écrivaient par-dessus le nom
+   * de l'application et la barre de recherche. C'est la même superposition que
+   * celle relevée sur iPhone, par l'autre bout.
+   *
+   * Seuil bas et distinct du pli : la collision commence au premier pixel, bien
+   * avant les 90 px qui désarment le balayage.
+   */
+  const [sousLaBarre, setSousLaBarre] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
   const [feuille, setFeuille] = useState<
     "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche"
@@ -830,6 +845,22 @@ export function ApercuHabitant() {
     setBrouillonPrenom("");
     setDemandePrenom(() => faire);
   }
+  /**
+   * EST-CE MOI ? — et pourquoi ça ne peut pas être une comparaison à « Vous ».
+   *
+   * On s'appelle « Vous » tant qu'on n'a pas dit son prénom, et Camille après ;
+   * `direSonPrenom` réécrit alors tout le passé pour qu'une même personne ne
+   * compte pas deux fois. Une comparaison au mot « Vous » devient donc fausse à
+   * la seconde où l'on se présente. DÉFAUT MESURÉ : après avoir donné son
+   * prénom, TOUS ses propres salons disparaissaient de « Mes salons » — la
+   * liste cherchait encore « Vous » dans les présents, et ne trouvait plus
+   * personne. Même cause pour « Vous venez », pour le bouton de visibilité du
+   * salon et pour « ça m'intéresse ».
+   */
+  const cestMoi = (qui: string) => qui === "Vous" || (!!prenom && qui === prenom);
+  /** Le même test, sur une liste de prénoms. */
+  const jySuis = (l: string[] | undefined) => (l ?? []).some(cestMoi);
+
   const salon: Salon | undefined = salons[salonOuvert];
 
   /**
@@ -1303,7 +1334,7 @@ export function ApercuHabitant() {
    * plus tard, on doit pouvoir retrouver pourquoi on l'avait ouvert.
    */
   const mesSorties = Object.values(salons).filter(
-    (x) => x.presents.includes("Vous") || x.parQui === "Vous",
+    (x) => jySuis(x.presents) || cestMoi(x.parQui),
   );
   /**
    * OUVERTS D'ABORD, PASSÉS ENSUITE — et jamais mélangés.
@@ -1464,7 +1495,7 @@ export function ApercuHabitant() {
     }, 60);
   }
 
-  const dansLeSalon = (x: Salon) => x.presents.includes("Vous") || x.parQui === "Vous";
+  const dansLeSalon = (x: Salon) => jySuis(x.presents) || cestMoi(x.parQui);
   const salonsOuverts = Object.values(salons).filter((x) => x.ouvert && dansLeSalon(x));
   /**
    * CE QU'ON PEUT DÉCOUVRIR — les salons publics où l'on n'est pas encore.
@@ -2048,7 +2079,14 @@ export function ApercuHabitant() {
                         <span>
                           {p?.ou && <u className="ou">{p.ou}</u>}
                           {(p?.prix ?? salon.prix) && <em>{p?.prix ?? salon.prix}</em>}
-                          {salon.reste && <s>{salon.reste}</s>}
+                          {/* CE QUI RESTE N'APPARTIENT QU'À L'ANNONCE D'ORIGINE.
+                              DÉFAUT VU EN CAPTURE : quand une autre proposition
+                              passait en tête, le bandeau affichait le nouveau
+                              commerce, le nouveau prix, la nouvelle distance —
+                              et gardait « 8 portions restantes » de l'ancien.
+                              Le bandeau mentait sur le seul chiffre qui pousse
+                              à se décider vite. */}
+                          {salon.reste && (!p || p.cle === salon.cle) && <s>{salon.reste}</s>}
                           {(p?.distance ?? salon.distance) && (
                             <u>📍 {p?.distance ?? salon.distance}</u>
                           )}
@@ -2204,7 +2242,7 @@ export function ApercuHabitant() {
                     qui a ouvert : « je réserve pour l'anniversaire de ma mère »
                     n'a rien à faire sur la place publique, et quelqu'un qui le
                     découvre après coup n'ouvrira plus jamais de salon. */}
-                {salon.parQui === "Vous" && (
+                {cestMoi(salon.parQui) && (
                   <div className="ap-visi">
                     <span>
                       <b>{salon.prive ? "🔒 Salon privé" : "🌍 Salon public"}</b>
@@ -2238,9 +2276,11 @@ export function ApercuHabitant() {
                       <b>Qui vient&nbsp;?</b>
                       <span>
                         {salon.viennent.length} {salon.viennent.length > 1 ? "viennent" : "vient"}
-                        {salon.presents.length - salon.viennent.length > 0
-                          ? ` · ${salon.presents.length - salon.viennent.length} intéressés`
-                          : ""}
+                        {(() => {
+                          // Un seul curieux n'est pas « 1 intéressés ».
+                          const n = salon.presents.length - salon.viennent.length;
+                          return n > 0 ? ` · ${n} intéressé${n > 1 ? "s" : ""}` : "";
+                        })()}
                       </span>
                     </div>
                     <div className="ap-sal-gens">
@@ -2274,16 +2314,20 @@ export function ApercuHabitant() {
                     </div>
                     <button
                       type="button"
-                      className={`ap-sal-jeviens${salon.viennent.includes("Vous") ? " on" : ""}`}
+                      className={`ap-sal-jeviens${jySuis(salon.viennent) ? " on" : ""}`}
                       onClick={() =>
                         avecMonPrenom(() => {
-                          basculerVenue(salon.cle);
+                          // ON VIENT SOUS SON PRÉNOM. Laisser la valeur par
+                          // défaut ajoutait « Vous » À CÔTÉ de Camille : la
+                          // même personne comptée deux fois dans « qui vient »,
+                          // exactement le défaut déjà payé sur les voix.
+                          basculerVenue(salon.cle, monPrenom() || "Vous");
                           noter("jy-vais", 0, "salon");
                         })
                       }
                     >
                       <i aria-hidden="true">🙋</i>
-                      {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
+                      {jySuis(salon.viennent) ? "Vous venez" : "Je viens"}
                     </button>
                   </div>
 
@@ -2470,7 +2514,7 @@ export function ApercuHabitant() {
                         const photo = await reduirePhoto(f);
                         noter("photo-ajoutee", 0, "salon");
                         ecrireDansSalon(salon.cle, {
-                          qui: "Vous",
+                          qui: monPrenom() || "Vous",
                           voix: "moi",
                           texte: "",
                           quand: heureCourte(),
@@ -2500,7 +2544,7 @@ export function ApercuHabitant() {
                       // les photos et les salons déjà écrits.
                       noter("video-vue", 0, "salon");
                       ecrireDansSalon(salon.cle, {
-                        qui: "Vous",
+                        qui: monPrenom() || "Vous",
                         voix: "moi",
                         texte: "🎬 Vidéo envoyée au groupe",
                         quand: heureCourte(),
@@ -2561,7 +2605,7 @@ export function ApercuHabitant() {
           <>
           {onglet === "direct" && (
           <>
-          <div className="ap-haut" ref={barreHaute}>
+          <div className={`ap-haut${sousLaBarre ? " pose" : ""}`} ref={barreHaute}>
             {/* Le bandeau du produit — mêmes classes, donc même allure — mais
                 ses pastilles sont ici de vrais boutons. */}
             <div className="cd-barre">
@@ -2880,6 +2924,7 @@ export function ApercuHabitant() {
                       // indétectable pour celui qui le subit. Il faut une
                       // descente franche.
                       setDescendu(y > SEUIL_PLI);
+                      setSousLaBarre(y > 6);
                     }}
                   >
                     <div className="ap-un">
@@ -2987,7 +3032,7 @@ export function ApercuHabitant() {
                             <i aria-hidden="true">💬</i>
                             <span>
                               <b>
-                                {salonDuSommet.parQui === "Vous"
+                                {cestMoi(salonDuSommet.parQui)
                                   ? "Vous en parlez"
                                   : `${salonDuSommet.parQui} en parle`}
                                 {salonDuSommet.presents.length > 1
@@ -4981,7 +5026,15 @@ export function ApercuHabitant() {
         .ap-haut{position:absolute;top:0;left:0;right:0;z-index:4;
           padding:calc(8px + env(safe-area-inset-top)) 12px 10px;
           display:flex;flex-direction:column;gap:7px;pointer-events:none;
-          background:linear-gradient(180deg,rgba(4,8,6,.82) 0%,rgba(4,8,6,.62) 55%,rgba(4,8,6,0) 100%);}
+          background:linear-gradient(180deg,rgba(4,8,6,.82) 0%,rgba(4,8,6,.62) 55%,rgba(4,8,6,0) 100%);
+          transition:background .18s ease;}
+        /* DES QU'ON DESCEND, LA BARRE DEVIENT UN SOL. Sur la photo au repos le
+           degrade laisse tout passer ; sous du texte qui defile il faut que ce
+           texte DISPARAISSE, et pas qu'il s'affaiblisse. Un mot a 40 % par
+           dessus le nom de l'application se lit comme une panne. Le voile ne
+           s'ouvre qu'a la toute fin, pour que la bordure reste douce. */
+        .ap-haut.pose{background:linear-gradient(180deg,rgba(4,8,6,.985) 0%,
+          rgba(4,8,6,.982) 82%,rgba(4,8,6,.94) 95%,rgba(4,8,6,0) 100%);}
         /* Le degrade laisse passer le doigt ; ses enfants le reprennent. */
         .ap-haut>*{pointer-events:auto;}
         /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau

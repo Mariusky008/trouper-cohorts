@@ -683,10 +683,23 @@ function garder(suivant: Record<string, Salon>) {
 export function ouvrirSalon(salon: Omit<Salon, "messages" | "viennent" | "presents" | "ouvert">) {
   const avant = chargerSalons();
   if (avant[salon.cle]) return avant[salon.cle];
+  /**
+   * ON S'INSCRIT SOUS LE NOM QU'ON PORTE DÉJÀ, et pas sous « Vous ».
+   *
+   * `direSonPrenom` réécrit le passé, ce qui règle l'ordre « j'ouvre puis je me
+   * présente ». L'ORDRE INVERSE N'ÉTAIT PAS COUVERT : quand on s'était déjà
+   * présenté, ce salon-ci naissait quand même signé « Vous », et le premier
+   * vote de Camille créait une deuxième personne — le « 1 sur 2 » avec un seul
+   * habitant dans le salon, relevé au test, revenait par l'autre porte.
+   */
+  const moi = monPrenom() || "Vous";
   const neuf: Salon = {
     ...salon,
-    viennent: ["Vous"],
-    presents: ["Vous"],
+    // La page appelle avec « Vous » parce qu'elle ne sait pas encore qui vous
+    // etes ; ici on le sait, et c'est le dernier endroit avant l'ecriture.
+    parQui: salon.parQui === "Vous" ? moi : salon.parQui,
+    viennent: [moi],
+    presents: [moi],
     messages: [],
     ouvert: true,
     // CE QUI EST SUR LA TABLE DÈS L'OUVERTURE : l'annonce qui a déclenché le
@@ -695,13 +708,13 @@ export function ouvrirSalon(salon: Omit<Salon, "messages" | "viennent" | "presen
     propositions: [
       {
         cle: salon.cle,
-        par: "Vous",
+        par: moi,
         quoi: salon.annonce ?? salon.sujet,
         ou: salon.ou,
         prix: salon.prix,
         distance: salon.distance,
         photo: salon.photo,
-        voix: ["Vous"],
+        voix: [moi],
       },
     ],
   };
