@@ -58,6 +58,22 @@ import {
 } from "@/lib/direct/salons";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
 import {
+  abonnerVille,
+  caMInteresse,
+  chargerVille,
+  comprendre,
+  direQuelqueChose,
+  ilYA,
+  NATURES,
+  reagirVille,
+  repondreVille,
+  resteDit,
+  salonDepuisVille,
+  VILLE_VIDE,
+  type MessageVille,
+  type NatureVille,
+} from "@/lib/direct/la-ville";
+import {
   abonnerInstallation,
   chargerInstallation,
   poserSurLEcran,
@@ -513,6 +529,22 @@ export function ApercuHabitant() {
    * carte d'un autre.
    */
   const [iPhoto, setIPhoto] = useState(0);
+
+  /**
+   * LA VILLE — la troisième brique. Le Direct : les acteurs parlent. La Ville :
+   * les habitants parlent. Les Salons : on vit quelque chose ensemble.
+   * Voir `lib/direct/la-ville.ts` pour les trois choix qui l'empêchent de
+   * devenir un forum de quartier.
+   */
+  const ville = useSyncExternalStore(abonnerVille, chargerVille, () => VILLE_VIDE);
+  const [filtreVille, setFiltreVille] = useState<"" | NatureVille>("");
+  const [motVille, setMotVille] = useState("");
+  const [composeVille, setComposeVille] = useState(false);
+  /** Ce que l'application a compris, et qu'on peut corriger d'un appui. */
+  const [natureVille, setNatureVille] = useState<NatureVille>("question");
+  /** Le message dont on lit les réponses. Un seul ouvert à la fois. */
+  const [filVille, setFilVille] = useState("");
+  const [reponseVille, setReponseVille] = useState("");
   const embauches = vue === "recrute";
   const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
@@ -634,9 +666,9 @@ export function ApercuHabitant() {
    * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
    * et on n'a pas de réponse.
    */
-  const [onglet, setOnglet] = useState<"direct" | "salons" | "profil">("direct");
+  const [onglet, setOnglet] = useState<"direct" | "ville" | "salons" | "profil">("direct");
 
-  function allerA_onglet(o: "direct" | "salons" | "profil") {
+  function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
     if (o === onglet) return;
     noter("onglet", 0, o);
     setOnglet(o);
@@ -1136,6 +1168,47 @@ export function ApercuHabitant() {
    * pas entré restent visibles tant qu'ils sont vivants : c'est là qu'on voit
    * qu'il se passe quelque chose sans y avoir été invité.
    */
+  /**
+   * CE QUI EST À L'ÉCRAN DANS LA VILLE. Deux tris, dans cet ordre : le plus
+   * RÉCENT d'abord, parce que la promesse est « maintenant » ; à égalité de
+   * minute, le plus PROCHE. Jamais le plus populaire — un classement par
+   * réactions est la porte d'entrée du forum, et c'est précisément ce qu'on
+   * refuse d'être.
+   */
+  const messagesVille = ville
+    .filter((m) => !filtreVille || m.nature === filtreVille)
+    .slice()
+    .sort((a, b) => b.a - a.a || a.metres - b.metres);
+
+  /**
+   * D'UN MESSAGE À UNE SORTIE. Le « cherche » de La Ville et le salon des
+   * Salons sont la même envie à deux moments : « quelqu'un fait quelque chose
+   * ce soir ? » puis « on y va ». Ouvrir le salon depuis le message est ce qui
+   * fait que les deux briques n'en sont qu'une seule idée.
+   */
+  function ouvrirSalonDepuisVille(m: MessageVille) {
+    const cle = m.salon ?? `ville|${m.id}`;
+    if (!m.salon) {
+      noter("partage", 0, "ville-salon");
+      ouvrirSalon({
+        cle,
+        sujet: m.texte.slice(0, 70),
+        ou: m.ou,
+        parQui: "Vous",
+        quand: "Ce soir",
+        annonce: m.texte.slice(0, 70),
+        distance: m.distance,
+        photo: m.photo,
+      });
+      // Ceux que ça intéressait entrent avec nous : ils ont déjà dit oui, leur
+      // redemander serait leur faire refaire le geste.
+      for (const q of m.interesses ?? []) if (q !== "Vous") entrerDansSalon(cle, q, true);
+      salonDepuisVille(m.id, cle);
+    }
+    setSalonOuvert(cle);
+    setSalonPage(true);
+  }
+
   const dansLeSalon = (x: Salon) => x.presents.includes("Vous") || x.parQui === "Vous";
   const salonsOuverts = Object.values(salons).filter((x) => x.ouvert && dansLeSalon(x));
   /**
@@ -3108,6 +3181,229 @@ export function ApercuHabitant() {
           </>
           )}
 
+
+          {/* ─── LA VILLE ───
+              Ce que les habitants disent de ce qui se passe ici, maintenant.
+              Le Direct montre ce que les COMMERÇANTS et la MAIRIE annoncent ;
+              ici ce sont les voisins qui parlent. Trois choix l'empêchent de
+              devenir un forum de quartier, et ils sont dans le code : tout
+              disparaît au bout de quelques heures, on ne publie pas mais on
+              « dit quelque chose », et un message porte un lieu et une heure. */}
+          {onglet === "ville" && (
+            <div className="ap-page ap-onglet-vue">
+              <div className="ap-page-h">
+                <span className="ap-page-t">
+                  <b>La Ville</b>
+                  <em>
+                    Ce que les habitants disent · <u>{ville.length} en ce moment</u>
+                  </em>
+                </span>
+              </div>
+
+              {/* LES NATURES SONT DES FILTRES, PAS DES CASES À COCHER À
+                  L'ÉCRITURE. On range après coup ; on ne demande jamais à
+                  quelqu'un de se classer avant d'avoir parlé. */}
+              <div className="ap-envies ap-v-filtres">
+                <button
+                  type="button"
+                  className={`ap-e${filtreVille === "" ? " on" : ""}`}
+                  onClick={() => setFiltreVille("")}
+                >
+                  Tout
+                </button>
+                {(Object.keys(NATURES) as NatureVille[]).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`ap-e${filtreVille === n ? " on" : ""}`}
+                    onClick={() => setFiltreVille(filtreVille === n ? "" : n)}
+                  >
+                    <i aria-hidden="true">{NATURES[n].emoji}</i>
+                    {NATURES[n].label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="ap-sal-corps">
+                {messagesVille.length === 0 ? (
+                  <div className="ap-moi-vide">
+                    <span aria-hidden="true">🌤️</span>
+                    <b>Personne ne parle en ce moment.</b>
+                    <i>
+                      Tout ce qui se dit ici s&apos;efface au bout de quelques
+                      heures. Dites la première chose.
+                    </i>
+                  </div>
+                ) : (
+                  messagesVille.map((m) => {
+                    const n = NATURES[m.nature];
+                    const ouvert = filVille === m.id;
+                    return (
+                      <div className={`ap-v-m ${n.teinte}`} key={m.id}>
+                        <div className="ap-v-h">
+                          <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
+                            {m.qui.slice(0, 1).toUpperCase()}
+                          </i>
+                          <span>
+                            <b>
+                              {m.qui}
+                              <u>{ilYA(m)}</u>
+                            </b>
+                            <em>
+                              📍 {m.ou} · {m.distance}
+                            </em>
+                          </span>
+                          <s className="ap-v-nat">
+                            {n.emoji} {n.label}
+                          </s>
+                        </div>
+
+                        <p className="ap-v-t">{m.texte}</p>
+
+                        {m.photo && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img className="ap-v-ph" src={m.photo} alt="" loading="lazy" />
+                        )}
+
+                        {/* ─── LE PONT AVEC LES SALONS ───
+                            Un « cherche » qui rassemble du monde n'est plus un
+                            message : c'est une sortie. C'est là que les deux
+                            briques cessent d'être deux fonctions côte à côte. */}
+                        {m.nature === "cherche" && (
+                          <div className="ap-v-cherche">
+                            <span>
+                              <b>
+                                {(m.interesses?.length ?? 0)}{" "}
+                                {(m.interesses?.length ?? 0) > 1
+                                  ? "personnes intéressées"
+                                  : "personne intéressée"}
+                              </b>
+                              {(m.interesses?.length ?? 0) >= 2
+                                ? "Vous êtes assez pour en faire une sortie."
+                                : "Dites-le, et ça devient une sortie."}
+                            </span>
+                            <button
+                              type="button"
+                              className={`ap-v-int${m.interesses?.includes("Vous") ? " on" : ""}`}
+                              onClick={() => {
+                                noter("jy-vais", 0, "ville");
+                                caMInteresse(m.id);
+                              }}
+                            >
+                              {m.interesses?.includes("Vous") ? "✓ Ça m'intéresse" : "Ça m'intéresse"}
+                            </button>
+                          </div>
+                        )}
+                        {m.nature === "cherche" && (m.interesses?.length ?? 0) >= 2 && (
+                          <button
+                            type="button"
+                            className="ap-v-salon"
+                            onClick={() => ouvrirSalonDepuisVille(m)}
+                          >
+                            <i aria-hidden="true">💬</i>
+                            {m.salon ? "Voir le salon" : "En faire une sortie"}
+                            <em aria-hidden="true">›</em>
+                          </button>
+                        )}
+
+                        <div className="ap-v-bas">
+                          <button
+                            type="button"
+                            className={`ap-v-coeur${m.monCoeur ? " on" : ""}`}
+                            aria-label="J'aime"
+                            onClick={() => {
+                              noter("note-donnee", m.coeurs + 1, "ville");
+                              reagirVille(m.id);
+                            }}
+                          >
+                            ❤️{m.coeurs > 0 && <b>{m.coeurs}</b>}
+                          </button>
+                          <button
+                            type="button"
+                            className="ap-v-rep"
+                            onClick={() => {
+                              setFilVille(ouvert ? "" : m.id);
+                              setReponseVille("");
+                            }}
+                          >
+                            💬{" "}
+                            {m.reponses.length > 0
+                              ? `${m.reponses.length} ${m.reponses.length > 1 ? "réponses" : "réponse"}`
+                              : "Répondre"}
+                          </button>
+                          {/* LA DISPARITION EST ÉCRITE. Sans ça, on croit qu'on
+                              a été effacé ou censuré ; dit d'avance, c'est une
+                              promesse tenue. */}
+                          <s className="ap-v-reste">s&apos;efface dans {resteDit(m)}</s>
+                        </div>
+
+                        {ouvert && (
+                          <div className="ap-v-fil">
+                            {m.reponses.map((r) => (
+                              <div className="ap-v-r" key={r.id}>
+                                <b>
+                                  {r.qui}
+                                  {r.officiel && <s>{r.officiel}</s>}
+                                </b>
+                                <span>{r.texte}</span>
+                                <u>{r.quand}</u>
+                              </div>
+                            ))}
+                            <form
+                              className="ap-v-champ"
+                              onSubmit={(ev) => {
+                                ev.preventDefault();
+                                const t = reponseVille.trim();
+                                if (!t) return;
+                                noter("demande-envoyee", t.length, "ville-reponse");
+                                repondreVille(m.id, t);
+                                setReponseVille("");
+                              }}
+                            >
+                              <input
+                                value={reponseVille}
+                                onChange={(ev) => setReponseVille(ev.target.value)}
+                                maxLength={200}
+                                placeholder="Répondre…"
+                                aria-label="Votre réponse"
+                              />
+                              <button type="submit" disabled={!reponseVille.trim()} aria-label="Envoyer">
+                                ↑
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* ─── DIRE QUELQUE CHOSE ───
+                  Pas « Publier ». Un bouton qui dit « publier » demande d'avoir
+                  quelque chose à publier — un titre, une catégorie, une
+                  intention. « Dire quelque chose » ne demande qu'une phrase, et
+                  c'est l'application qui range. */}
+              <button
+                type="button"
+                className="ap-v-dire"
+                onClick={() => {
+                  noter("champ-touche", 0, "ville");
+                  setMotVille("");
+                  setNatureVille("question");
+                  setComposeVille(true);
+                }}
+              >
+                <i aria-hidden="true">💬</i>
+                <span>
+                  <b>Dire quelque chose</b>
+                  À Dax, maintenant
+                </span>
+                <em aria-hidden="true">✏️</em>
+              </button>
+            </div>
+          )}
+
           {/* ─── MES SALONS ───
               Ce que j'ai déclenché ou rejoint : ouverts en haut, passés en
               dessous. C'est le seul écran de l'application qui regarde en
@@ -3325,6 +3621,86 @@ export function ApercuHabitant() {
               En bas, sous les gestes : c'est là que le pouce est déjà. Elle est
               masquée dans un salon ouvert, qui a sa propre barre d'actions —
               deux barres l'une sur l'autre ne se lisent pas. */}
+          {/* ─── DIRE QUELQUE CHOSE ───
+              Un champ, et ce que l'application a compris, MONTRÉ et
+              CORRIGEABLE. Un rangement silencieux qui se trompe est pire qu'une
+              case à cocher : la personne ne comprend pas où son message est
+              parti, et n'écrit plus. */}
+          {composeVille && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setComposeVille(false)}
+              />
+              <div className="ap-feuille" role="dialog" aria-modal="true">
+                <div className="ap-f-tete">
+                  <b>Dire quelque chose</b>
+                  <span className="simple">
+                    À Dax, maintenant. Ça s&apos;effacera tout seul dans quelques
+                    heures.
+                  </span>
+                </div>
+                <div className="ap-dem">
+                  <textarea
+                    className="ap-dem-t"
+                    rows={3}
+                    maxLength={280}
+                    autoFocus
+                    value={motVille}
+                    placeholder="Il se passe quoi ce soir en ville ?"
+                    aria-label="Ce que vous voulez dire"
+                    onChange={(ev) => {
+                      const t = ev.target.value;
+                      setMotVille(t);
+                      // On range à mesure qu'on écrit, pour que le résultat
+                      // soit là AVANT d'appuyer, pas après.
+                      if (t.trim().length > 6) setNatureVille(comprendre(t));
+                    }}
+                  />
+
+                  <div className="ap-v-compris">
+                    <span>
+                      <i aria-hidden="true">✨</i>
+                      Rangé dans <b>{NATURES[natureVille].label}</b>
+                    </span>
+                    <em>Pas le bon endroit&nbsp;? Choisissez&nbsp;:</em>
+                    <div className="ap-envies">
+                      {(Object.keys(NATURES) as NatureVille[]).map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          className={`ap-e${natureVille === n ? " on" : ""}`}
+                          onClick={() => setNatureVille(n)}
+                        >
+                          <i aria-hidden="true">{NATURES[n].emoji}</i>
+                          {NATURES[n].label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ap-dem-b"
+                    disabled={motVille.trim().length < 3}
+                    onClick={() => {
+                      // LA LONGUEUR, JAMAIS LE TEXTE. Ce qui est écrit ici ne
+                      // quitte pas le téléphone, comme partout ailleurs.
+                      noter("demande-envoyee", motVille.trim().length, "ville");
+                      direQuelqueChose(motVille, natureVille);
+                      setComposeVille(false);
+                      setFiltreVille("");
+                    }}
+                  >
+                    Le dire à la ville
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
           <nav className="ap-onglets" aria-label="Sections" ref={barreOnglets}>
             <button
               type="button"
@@ -3333,6 +3709,15 @@ export function ApercuHabitant() {
             >
               <i aria-hidden="true">⚡</i>
               Le direct
+            </button>
+            <button
+              type="button"
+              className={onglet === "ville" ? "on" : ""}
+              onClick={() => allerA_onglet("ville")}
+            >
+              <i aria-hidden="true">🏛️</i>
+              La Ville
+              {ville.length > 0 && <b>{ville.length}</b>}
             </button>
             <button
               type="button"
@@ -4668,7 +5053,7 @@ export function ApercuHabitant() {
            ouverts ni les anciens, parce qu'ils vivaient au fond d'une feuille.
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
-        .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(3,1fr);
+        .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(4,1fr);
           gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
@@ -4760,6 +5145,130 @@ export function ApercuHabitant() {
         /* Les pastilles laissent la place aux points. */
         .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller{
           top:calc(var(--ap-haut-h, 100px) + 19px);}
+
+        /* ═══════════════ LA VILLE ═══════════════
+           Ce que les habitants disent de ce qui se passe ici, maintenant.
+           Pas de couleur propre a la brique : les messages sont des paroles de
+           voisins, pas une categorie d'objets. Seules deux natures prennent une
+           teinte, et parce qu'elle veut deja dire ca — le rose des evenements,
+           l'orange du coup de pouce.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        .ap-v-filtres{flex:none;padding:0 0 10px;}
+
+        .ap-v-m{flex:none;background:rgba(255,255,255,.045);
+          border:1px solid rgba(255,255,255,.09);border-radius:18px;
+          padding:12px 13px;margin-bottom:10px;}
+        .ap-v-m.rose{border-color:rgba(244,114,182,.28);}
+        .ap-v-m.orange{border-color:rgba(249,115,22,.28);}
+        .ap-v-m.verte{border-color:rgba(61,226,166,.3);}
+
+        .ap-v-h{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px;}
+        .ap-v-h .ap-av{width:34px;height:34px;font-size:14px;flex:none;}
+        .ap-v-h>span{flex:1;min-width:0;}
+        .ap-v-h b{display:flex;align-items:baseline;gap:7px;font-size:13.5px;
+          font-weight:850;color:#EAF2EC;}
+        .ap-v-h b u{text-decoration:none;font-size:11px;font-weight:700;color:#7F988B;}
+        .ap-v-h em{display:block;font-style:normal;font-size:11px;color:#7F988B;
+          margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-v-nat{flex:none;text-decoration:none;font-size:9.5px;font-weight:850;
+          color:#B9C6CE;background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 8px;}
+        .ap-v-m.rose .ap-v-nat{color:#F9C0DC;background:rgba(244,114,182,.16);
+          border-color:rgba(244,114,182,.36);}
+        .ap-v-m.orange .ap-v-nat{color:#FFD9BE;background:rgba(249,115,22,.16);
+          border-color:rgba(249,115,22,.4);}
+        .ap-v-m.verte .ap-v-nat{color:#CFF7E6;background:rgba(61,226,166,.16);
+          border-color:rgba(61,226,166,.4);}
+
+        /* LA PAROLE EST LA PLUS GROSSE CHOSE DE LA CARTE. C'est elle qu'on est
+           venu lire ; le reste — qui, quand, ou — la sert. */
+        .ap-v-t{margin:0;font-size:15px;line-height:1.42;color:#fff;
+          letter-spacing:-.01em;}
+        .ap-v-ph{display:block;width:100%;max-height:190px;object-fit:cover;
+          border-radius:13px;margin-top:10px;}
+
+        .ap-v-bas{display:flex;align-items:center;gap:8px;margin-top:11px;}
+        .ap-v-coeur,.ap-v-rep{font:inherit;font-size:12px;font-weight:800;
+          cursor:pointer;color:#B9C6CE;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);border-radius:999px;
+          padding:7px 11px;display:inline-flex;align-items:center;gap:6px;}
+        .ap-v-coeur b{font-size:11.5px;color:#EAF2EC;font-variant-numeric:tabular-nums;}
+        .ap-v-coeur.on{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.5);}
+        /* LA DISPARITION EST ECRITE. Sans elle, on croit avoir ete efface ou
+           censure ; dite d'avance, c'est une promesse tenue. */
+        .ap-v-reste{margin-left:auto;text-decoration:none;font-size:10px;
+          color:#6C8078;white-space:nowrap;}
+
+        /* LE PONT AVEC LES SALONS. */
+        .ap-v-cherche{display:flex;align-items:center;gap:10px;margin-top:11px;
+          background:rgba(61,226,166,.1);border:1px solid rgba(61,226,166,.26);
+          border-radius:13px;padding:9px 11px;}
+        .ap-v-cherche span{flex:1;min-width:0;font-size:10.5px;color:#8C9C94;
+          line-height:1.3;}
+        .ap-v-cherche b{display:block;font-size:12.5px;font-weight:850;
+          color:#CFF7E6;margin-bottom:1px;}
+        .ap-v-int{flex:none;font:inherit;font-size:11.5px;font-weight:850;
+          cursor:pointer;color:#CFF7E6;background:rgba(61,226,166,.16);
+          border:1px solid rgba(61,226,166,.5);border-radius:999px;padding:7px 11px;}
+        .ap-v-int.on{color:#04150E;background:#3DE2A6;border-color:transparent;}
+        .ap-v-salon{display:flex;align-items:center;gap:8px;width:100%;
+          margin-top:8px;font:inherit;font-size:13px;font-weight:850;
+          cursor:pointer;color:#04150E;border:0;border-radius:13px;padding:11px 13px;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-v-salon i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-v-salon em{margin-left:auto;font-style:normal;}
+
+        /* LES REPONSES. */
+        .ap-v-fil{margin-top:11px;padding-top:11px;
+          border-top:1px solid rgba(255,255,255,.09);
+          display:flex;flex-direction:column;gap:9px;}
+        .ap-v-r b{display:flex;align-items:center;gap:6px;font-size:11.5px;
+          font-weight:850;color:#8FE9C4;margin-bottom:2px;}
+        /* Le commercant ou l'organisateur qui repond chez lui se distingue :
+           sa parole n'a pas le meme poids qu'un avis de voisin. */
+        .ap-v-r b s{text-decoration:none;font-size:8.5px;letter-spacing:.06em;
+          text-transform:uppercase;color:#04150E;background:#3DE2A6;
+          border-radius:5px;padding:2px 5px;}
+        .ap-v-r span{display:block;font-size:13.5px;line-height:1.4;color:#EAF2EC;}
+        .ap-v-r u{text-decoration:none;font-size:10px;color:#6C8078;}
+        .ap-v-champ{display:flex;gap:8px;align-items:center;margin-top:2px;}
+        .ap-v-champ input{flex:1;min-width:0;font:inherit;font-size:14px;
+          color:#EAF2EC;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:10px 14px;}
+        .ap-v-champ input::placeholder{color:#6C8078;}
+        .ap-v-champ button{flex:none;width:38px;height:38px;border-radius:50%;
+          font:inherit;font-size:17px;font-weight:850;cursor:pointer;color:#04150E;
+          background:#3DE2A6;border:0;}
+        .ap-v-champ button:disabled{opacity:.35;cursor:default;}
+
+        /* DIRE QUELQUE CHOSE — et surtout pas « Publier ». Un bouton qui dit
+           publier demande d'avoir quelque chose a publier : un titre, une
+           categorie, une intention. Celui-ci ne demande qu'une phrase. */
+        .ap-v-dire{flex:none;display:flex;align-items:center;gap:12px;
+          margin:8px 0 10px;font:inherit;text-align:left;cursor:pointer;
+          color:#04150E;border:0;border-radius:16px;padding:12px 14px;
+          background:linear-gradient(120deg,#3DE2A6,#0BA97B);
+          box-shadow:0 12px 26px -14px rgba(18,185,129,.9);}
+        .ap-v-dire>i{font-style:normal;font-size:19px;line-height:1;}
+        .ap-v-dire span{flex:1;min-width:0;font-size:11px;
+          color:rgba(4,21,14,.66);}
+        .ap-v-dire b{display:block;font-size:15px;font-weight:850;color:#04150E;
+          letter-spacing:-.02em;}
+        .ap-v-dire em{flex:none;width:34px;height:34px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;font-style:normal;
+          font-size:15px;background:rgba(255,255,255,.85);}
+        .ap-v-dire:active{transform:scale(.99);}
+
+        /* CE QU'ON A COMPRIS, MONTRE ET CORRIGEABLE. */
+        .ap-v-compris{background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:11px 12px;}
+        .ap-v-compris>span{display:flex;align-items:center;gap:7px;font-size:13px;
+          color:#B9C6CE;}
+        .ap-v-compris>span i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-v-compris>span b{font-weight:850;color:#CFF7E6;}
+        .ap-v-compris>em{display:block;font-style:normal;font-size:11px;
+          color:#7F988B;margin:8px 0 7px;}
+        .ap-v-compris .ap-envies{margin:0;}
 
         /* VOIR L'ANNONCE COMPLETE. Discret : c'est un secours pour celui qui
            decouvre, pas l'action principale du salon. */
