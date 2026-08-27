@@ -10,9 +10,33 @@
 // commerçant, finirait par être le premier résultat pour « clikme » — et par
 // vendre à des commerçants des fonctions qui n'existent pas. Elle se partage
 // par un lien, à quelques personnes, et à personne d'autre.
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { ApercuHabitant } from "./apercu-habitant";
+
+/**
+ * `viewport-fit=cover` — SANS LUI, L'IPHONE LAISSE UNE BANDE.
+ *
+ * Défaut rapporté sur iPhone 16 Pro Max : « un énorme espace libre » sous
+ * l'application. Sans cette valeur, Safari encadre la page à l'intérieur des
+ * marges de sécurité et peint ces marges avec le fond du site — beige. Avec
+ * elle, la page occupe l'écran d'un bord à l'autre et `env(safe-area-inset-*)`
+ * rend enfin de vraies valeurs, dont la mise en page a besoin pour ne pas
+ * glisser sous l'encoche ni sous la barre gestuelle.
+ *
+ * Cet objet REMPLACE celui de `app/layout.tsx` : il faut donc y répéter la
+ * largeur et l'échelle, sinon on les perdrait.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  // La couleur des barres du système, pour que le noir de l'application ne
+  // s'arrête pas net au bord de l'écran.
+  themeColor: "#05090C",
+};
 
 export const metadata: Metadata = {
   title: { absolute: `Autour de moi — un aperçu de ${MARQUE}` },

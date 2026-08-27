@@ -2739,7 +2739,11 @@ export function ApercuHabitant() {
               refuser par réflexe — exactement le raisonnement qui fait qu'on ne
               demande la permission de notification qu'au seul instant où « on
               vous préviendra » est une phrase vraie. On attend donc trois
-              cartes : à ce moment-là, la personne a vu ce que c'était.
+              cartes — deux, depuis qu'on a constaté au test que la proposition
+              n'était jamais vue : « on ne me propose pas d'installer l'app, il
+              faut aller dans mon espace perso, personne ne le fera ». À la
+              deuxième carte, la personne a vu ce que c'était, et c'est encore
+              assez tôt pour qu'elle le voie tout court.
               UNE SEULE LIGNE, ET UNE CROIX. Elle coûte 34 pixels le temps
               qu'elle est là, sur un écran dont on vient de gratter chaque
               pixel — c'est payé par ce qu'elle rapporte : installée, la page
@@ -2748,7 +2752,7 @@ export function ApercuHabitant() {
           {!inviteFermee &&
             !installation.deja &&
             installation.chemin !== "aucune" &&
-            passees.length >= 3 &&
+            passees.length >= 2 &&
             !sortie && (
               <div className="ap-poser-bande">
                 <i aria-hidden="true">📲</i>
@@ -3464,14 +3468,47 @@ export function ApercuHabitant() {
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
            litteral de gabarit et un seul terminerait la chaine. */
 
-        .ap{height:100dvh;overflow:hidden;background:#05090C;
+        /* ─── LA PAGE NE DOIT PAS POUVOIR DEFILER ───
+           DEFAUT RAPPORTE SUR IPHONE 16 PRO MAX, capture a l'appui : « un
+           enorme espace libre » sous l'application, l'en-tete invisible, et
+           dans Profil « je suis coince, je ne peux pas revenir au direct ».
+           Les quatre symptomes n'en font qu'un.
+           LA CAUSE. Safari sur iPhone laisse TOUJOURS faire le geste qui
+           replie sa barre d'adresse, meme sur une page qui tient exactement
+           dans l'ecran. Le document glisse alors de la hauteur des barres :
+           l'en-tete de l'application sort par le haut, la barre des onglets
+           sort par le bas — d'ou l'impossibilite de revenir au Direct — et la
+           place liberee en dessous laisse voir le fond du site, beige.
+           overflow:hidden sur ce conteneur-ci n'y peut rien : ce n'est pas
+           lui qui defile, c'est le document.
+           LE REMEDE tient en trois points, et les trois sont necessaires :
+           html et body verrouilles, body en position fixe — le seul moyen
+           connu d'oter a Safari le geste de repli — et svh plutot que dvh,
+           parce que la hauteur ne doit plus dependre de l'etat des barres.
+           Le fond noir sur html et body est la ceinture : si un interstice
+           apparaissait malgre tout, il serait noir et non beige. */
+        html,body{height:100%;overflow:hidden;background:#05090C;}
+        body{position:fixed;inset:0;width:100%;overscroll-behavior:none;
+          margin:0;}
+
+        /* svh EST LA PLUS PETITE DES TROIS HAUTEURS — celle qu'on a quand les
+           barres du navigateur sont visibles. Avec le document verrouille, les
+           barres ne se replient plus, donc c'est exactement la hauteur reelle,
+           et elle ne bouge plus jamais. dvh suivait l'etat des barres et
+           faisait respirer toute la mise en page a chaque geste. */
+        .ap{height:100svh;overflow:hidden;background:#05090C;
           font-family:'Inter',system-ui,-apple-system,sans-serif;color:#EAF2EC;
           display:flex;align-items:center;justify-content:center;}
         .ap-tel{width:100%;height:100%;}
         .ap-app{position:relative;height:100%;display:flex;flex-direction:column;
           background:radial-gradient(120% 40% at 50% 0%,#13202C 0%,#080D0B 62%),#080D0B;}
 
-        .ap-haut{flex:none;padding:8px 12px 0;display:flex;flex-direction:column;gap:7px;}
+        /* L'ENCOCHE. Avec viewport-fit=cover, la page peint sous la barre
+           d'etat : sans cette marge, « Clikme » passerait dessous une fois
+           l'application posee sur l'ecran d'accueil. Dans Safari la valeur
+           vaut zero, la barre du navigateur occupant deja la place. */
+        .ap-haut{flex:none;padding:calc(8px + env(safe-area-inset-top)) 12px 0;
+          display:flex;flex-direction:column;gap:7px;}
         /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau
            ne grandit pas, la date ne prend plus de ligne a elle. */
         .ap-marque{display:flex;flex-direction:column;gap:1px;line-height:1.05;}
@@ -4246,7 +4283,8 @@ export function ApercuHabitant() {
            ATTENTION : jamais d'accent grave dans ces commentaires CSS, ils
            fermeraient le gabarit de chaine qui porte toute la feuille. */
         .ap-page{position:absolute;inset:0;z-index:6;display:flex;
-          flex-direction:column;min-height:0;padding:14px 14px 0;
+          flex-direction:column;min-height:0;
+          padding:calc(14px + env(safe-area-inset-top)) 14px 0;
           background:#0A0F0D;animation:apPage .22s ease both;}
         @keyframes apPage{from{opacity:0;transform:translateX(16px);}
           to{opacity:1;transform:none;}}
@@ -4687,7 +4725,7 @@ export function ApercuHabitant() {
 
         @media (min-width:720px){
           .ap{padding:24px;background:radial-gradient(90% 60% at 50% 0%,#101A22,#05090C 70%),#05090C;}
-          .ap-tel{width:390px;height:min(844px, calc(100dvh - 48px));
+          .ap-tel{width:390px;height:min(844px, calc(100svh - 48px));
             border:1px solid rgba(255,255,255,.14);border-radius:42px;padding:9px;
             background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));
             box-shadow:0 0 0 1px rgba(0,0,0,.6),0 50px 90px -40px rgba(0,0,0,.95);}
