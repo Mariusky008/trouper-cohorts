@@ -139,6 +139,20 @@ export type Salon = {
   messages: MessageSalon[];
   /** Faux quand le moment est passé : on lit, on n'écrit plus. */
   ouvert: boolean;
+  /**
+   * PRIVÉ, C'EST-À-DIRE INVISIBLE À CEUX QU'ON N'A PAS INVITÉS.
+   *
+   * PUBLIC PAR DÉFAUT, et c'est le seul choix qui rende le produit possible :
+   * un salon privé ne sert que ceux qui étaient déjà d'accord pour sortir —
+   * autrement dit WhatsApp. Ce qui n'existe nulle part ailleurs, c'est de voir
+   * que trois personnes vont quelque part ce soir et de pouvoir s'y joindre.
+   *
+   * MAIS LE CHOIX DOIT ÊTRE OFFERT, ET AVANT D'ÉCRIRE. « Je réserve pour
+   * l'anniversaire de ma mère » n'a rien à faire sur la place publique, et
+   * quelqu'un qui découvre ça après coup n'ouvrira plus jamais de salon. Seul
+   * celui qui l'a ouvert peut basculer.
+   */
+  prive?: boolean;
   /** Ce que chacun est. Absent : présent, sans s'être prononcé. */
   statuts?: Record<string, Statut>;
   /** Quelqu'un y est en ce moment, et l'a choisi. */
@@ -344,6 +358,52 @@ export const SALONS_SEMES: Salon[] = [
     ouvert: true,
   },
 
+  // ─── CEUX QU'ON PEUT DÉCOUVRIR ───
+  //
+  // DES SALONS PUBLICS OÙ L'ON N'EST PAS. Sans eux, « Mes salons » ne montre
+  // que ce qu'on a soi-même déclenché, et le mot « public » ne veut rien dire :
+  // on ne découvre jamais rien. Ce sont eux qui portent la seule chose que
+  // WhatsApp ne saura jamais faire — voir que trois personnes vont quelque part
+  // ce soir, et pouvoir s'y joindre sans connaître personne.
+  {
+    cle: "pub|tablee",
+    sujet: "La grande tablée de ce soir",
+    ou: "La Grande Tablée",
+    parQui: "Inès",
+    quand: "Ce soir · 20 h",
+    viennent: ["Inès", "Marc"],
+    presents: ["Inès", "Marc", "Chloé"],
+    statuts: { "Inès": "hote", Marc: "vient", "Chloé": "interesse" },
+    photo: "/direct/tablee-du-soir.jpg",
+    annonce: "La table des inconnus · Poulet basquaise",
+    prix: "17 €",
+    reste: "4 places",
+    distance: "320 m",
+    messages: [
+      { id: "t1", qui: "Inès", voix: "ami", texte: "J'y vais seule, il reste des places à la grande table.", quand: "17 h 40" },
+      { id: "t2", qui: "Marc", voix: "ami", texte: "Je viens, j'habite à côté.", quand: "17 h 52", reactions: { "❤️": 1 } },
+    ],
+    ouvert: true,
+  },
+  {
+    cle: "pub|halles-soir",
+    sujet: "Le marché du soir, sous les halles",
+    ou: "Sous les halles",
+    parQui: "Karim",
+    quand: "Jeudi · 18 h",
+    viennent: ["Karim"],
+    presents: ["Karim", "Léa"],
+    statuts: { Karim: "hote", "Léa": "interesse" },
+    photo: "/direct/marche-producteurs.jpg",
+    annonce: "Marché de producteurs, le soir",
+    prix: "Entrée libre",
+    distance: "300 m",
+    messages: [
+      { id: "ms1", qui: "Karim", voix: "ami", texte: "Quelqu'un y va jeudi ? On peut se retrouver à l'entrée.", quand: "12 h 10" },
+    ],
+    ouvert: true,
+  },
+
   // ─── CEUX QUI SONT PASSÉS ───
   //
   // POURQUOI DEUX SALONS MORTS DANS LA MAQUETTE. Un onglet « Mes salons » qui
@@ -506,6 +566,17 @@ export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   if (!s) return;
   const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
   garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }] } });
+}
+
+/**
+ * Public ou privé. Réservé à celui qui a ouvert le salon : les autres n'ont pas
+ * à décider de la visibilité d'une sortie qu'ils n'ont pas proposée.
+ */
+export function basculerVisibilite(cle: string) {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!s || s.parQui !== "Vous") return;
+  garder({ ...avant, [cle]: { ...s, prive: !s.prive } });
 }
 
 /** Entre ou sort de la liste de ceux qui viennent. */

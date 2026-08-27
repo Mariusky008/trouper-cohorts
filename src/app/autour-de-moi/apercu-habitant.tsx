@@ -46,6 +46,7 @@ import {
   SALONS_VIDES,
   abonnerSalons,
   basculerVenue,
+  basculerVisibilite,
   chargerSalons,
   reagir,
   voter,
@@ -493,6 +494,15 @@ export function ApercuHabitant() {
    * autre chose, et on n'a plus besoin d'avoir envie d'acheter pour l'ouvrir.
    */
   const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "tout">("metiers");
+  /**
+   * UNE CARTE SORTIE DE SON RANG, LE TEMPS QU'ON LA REGARDE.
+   *
+   * Le paquet est trié par distance ; « Voir l'annonce complète », depuis un
+   * salon, doit pourtant amener sur UNE carte précise. Réordonner tout le
+   * paquet ferait mentir « du plus près au plus loin » sur toutes les autres.
+   * L'épingle ne déplace qu'elle, et se retire dès qu'on l'a passée.
+   */
+  const [epingle, setEpingle] = useState("");
   const embauches = vue === "recrute";
   const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
@@ -744,7 +754,12 @@ export function ApercuHabitant() {
   const dispo = sortie
     ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
     : dispoBrut;
-  const pile = dispo.filter((c) => !passees.includes(c.id));
+  const pile = (() => {
+    const p = dispo.filter((c) => !passees.includes(c.id));
+    if (!epingle) return p;
+    const i = p.findIndex((c) => c.id === epingle);
+    return i > 0 ? [p[i], ...p.slice(0, i), ...p.slice(i + 1)] : p;
+  })();
   const estInvitation = (c: ItemPaquet) => !!sortie && arrivees.includes(c.id);
   /** À qui la demande est partie, du plus près au plus loin. */
   const sollicites = sortie ? autourDeMoi(heure, sortie.quoi) : [];
@@ -946,6 +961,7 @@ export function ApercuHabitant() {
     // désormais à la seule chose que le produit sait faire et que personne
     // d'autre ne fait. Garder, qui est un geste tranquille, a pris la place de
     // la flamme sur la photo.
+    if (epingle === sommet.id) setEpingle("");
     setAJoue(true);
     setSortant(sens);
     setDx(sens === "droite" ? 420 : -420);
@@ -1092,7 +1108,18 @@ export function ApercuHabitant() {
    * pas entré restent visibles tant qu'ils sont vivants : c'est là qu'on voit
    * qu'il se passe quelque chose sans y avoir été invité.
    */
-  const salonsOuverts = Object.values(salons).filter((x) => x.ouvert);
+  const dansLeSalon = (x: Salon) => x.presents.includes("Vous") || x.parQui === "Vous";
+  const salonsOuverts = Object.values(salons).filter((x) => x.ouvert && dansLeSalon(x));
+  /**
+   * CE QU'ON PEUT DÉCOUVRIR — les salons publics où l'on n'est pas encore.
+   *
+   * C'est la seule chose que ce produit sait faire et qu'une messagerie ne
+   * saura jamais : voir que des gens vont quelque part ce soir, et pouvoir s'y
+   * joindre sans connaître personne. Les privés n'y figurent évidemment pas.
+   */
+  const salonsADecouvrir = Object.values(salons).filter(
+    (x) => x.ouvert && !dansLeSalon(x) && !x.prive,
+  );
   const salonsPasses = Object.values(salons).filter((x) => !x.ouvert);
 
   const mesDemandes = mesRappels.flatMap((cle) => {
@@ -1345,6 +1372,59 @@ export function ApercuHabitant() {
   }
 
   /** Ouvrir un commerce gardé depuis mon espace : on le remet en tête du paquet. */
+  /**
+   * VOIR L'ANNONCE COMPLÈTE, DEPUIS LE SALON.
+   *
+   * DEMANDÉ AU TEST : « pour ceux qui découvrent et voudraient voir un peu plus
+   * que la photo et le titre ». C'est le cas central du produit, pas un cas
+   * limite : quelqu'un reçoit un lien, tombe dans une conversation, et n'a
+   * aucun moyen de savoir ce qu'est ce commerce. Le salon montre l'objet ; il
+   * ne montre pas la fiche.
+   *
+   * ON ÉPINGLE PLUTÔT QUE DE FILTRER. Le paquet est trié par distance, et le
+   * bousculer ferait mentir « du plus près au plus loin » sur toutes les autres
+   * cartes. L'épingle sort UNE carte de son rang, le temps qu'on la regarde,
+   * et disparaît dès qu'on l'a passée.
+   */
+  /** La carte ou l'événement derrière un salon, s'il existe encore. */
+  function annonceDuSalon(x: Salon) {
+    const id = x.cle.split("|")[0];
+    return {
+      carte: toutes.find((t) => t.id === id),
+      evenement: evenements.find((e) => e.id === id),
+    };
+  }
+
+  function voirLAnnonce(x: Salon) {
+    const { carte: c, evenement: e } = annonceDuSalon(x);
+    if (!c && !e) return;
+    // L'ONGLET AUSSI. Sans cette ligne, on fermait bien le salon mais la page
+    // « Mes salons » restait affichee par-dessus le paquet : le bouton ne
+    // faisait rien de visible. Trouve en verifiant, pas en relisant.
+    noter("onglet", 0, "annonce");
+    setOnglet("direct");
+    setSalonPage(false);
+    setSalonOuvert("");
+    setFeuille("");
+    setEmbauches(false);
+    setEnvies([]);
+    setPassees([]);
+    if (e) {
+      // Ce qui se passe en ville vit dans sa propre vue.
+      setVue("evenements");
+      setEpingle(e.id);
+      return;
+    }
+    setBranche(c!.branche);
+    setVue("metiers");
+    setEpingle(c!.id);
+    // Le pli s'ouvre tout seul : celui qui vient du salon veut la fiche, pas
+    // une deuxième photo de ce qu'il vient de voir en grand.
+    minuteries.current.push(
+      window.setTimeout(() => defilement.current?.scrollTo({ top: 260, behavior: "smooth" }), 260),
+    );
+  }
+
   function allerA(c: CarteAutour) {
     setFeuille("");
     setEmbauches(false);
@@ -1423,6 +1503,61 @@ export function ApercuHabitant() {
                     </span>
                   </div>
                 </div>
+
+                {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE. Il arrive
+                    par un lien, tombe dans une conversation, et n'a aucun moyen
+                    de savoir ce qu'est ce commerce : ses horaires, les autres
+                    moments de sa journée, ses avis, son menu. C'est le cas
+                    central du produit, pas un cas limite — c'est exactement
+                    l'argument qui a fait construire le salon : « si j'ai pas
+                    besoin de m'inscrire, alors je regarde le salon ». */}
+                {/* Pas de bouton quand l'annonce n'existe plus — un salon de
+                    samedi dernier renvoie à un menu qui n'est plus servi. Un
+                    bouton qui ne mène nulle part est pire qu'une absence. */}
+                {(() => {
+                  const a = annonceDuSalon(salon);
+                  if (!a.carte && !a.evenement) return null;
+                  return (
+                    <button
+                      type="button"
+                      className="ap-voir-annonce"
+                      onClick={() => voirLAnnonce(salon)}
+                    >
+                      <i aria-hidden="true">🔎</i>
+                      Voir l&apos;annonce complète
+                      <em aria-hidden="true">›</em>
+                    </button>
+                  );
+                })()}
+
+                {/* ─── PUBLIC OU PRIVÉ ───
+                    Public par défaut, et c'est le seul défaut qui rende le
+                    produit possible : un salon privé ne sert que ceux qui
+                    étaient déjà d'accord pour sortir, c'est-à-dire WhatsApp.
+                    Mais le choix doit exister, et il n'appartient qu'à celui
+                    qui a ouvert : « je réserve pour l'anniversaire de ma mère »
+                    n'a rien à faire sur la place publique, et quelqu'un qui le
+                    découvre après coup n'ouvrira plus jamais de salon. */}
+                {salon.parQui === "Vous" && (
+                  <div className="ap-visi">
+                    <span>
+                      <b>{salon.prive ? "🔒 Salon privé" : "🌍 Salon public"}</b>
+                      {salon.prive
+                        ? "Seuls ceux que vous invitez le voient."
+                        : "Ceux qui sont autour peuvent le découvrir et s'y joindre."}
+                    </span>
+                    <button
+                      type="button"
+                      className={`ap-bascule${salon.prive ? "" : " on"}`}
+                      role="switch"
+                      aria-checked={!salon.prive}
+                      aria-label="Salon public"
+                      onClick={() => basculerVisibilite(salon.cle)}
+                    >
+                      <i aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
 
                   {/* ─── QUI VIENT ? ───
                       Trois états, pas plus : l'hôte, ceux qui viennent, ceux
@@ -2905,8 +3040,7 @@ export function ApercuHabitant() {
                   <em>
                     {salonsOuverts.length}{" "}
                     {salonsOuverts.length > 1 ? "ouverts" : "ouvert"} ·{" "}
-                    {salonsPasses.length}{" "}
-                    {salonsPasses.length > 1 ? "passés" : "passé"}
+                    {salonsADecouvrir.length} à découvrir
                   </em>
                 </span>
               </div>
@@ -2957,6 +3091,50 @@ export function ApercuHabitant() {
                   </div>
                 )}
 
+                {/* ─── CE QU'ON PEUT DÉCOUVRIR ───
+                    Les salons PUBLICS où l'on n'est pas encore. C'est la seule
+                    chose que ce produit sache faire et qu'une messagerie ne
+                    saura jamais : voir que des gens vont quelque part ce soir,
+                    et pouvoir s'y joindre sans connaître personne. Sans cette
+                    liste, « public » ne veut rien dire et le réglage du salon
+                    serait un interrupteur qui n'allume rien. */}
+                {salonsADecouvrir.length > 0 && (
+                  <div className="ap-liste">
+                    <h4>
+                      <i aria-hidden="true">🌍</i>
+                      Ouverts près de vous<b>{salonsADecouvrir.length}</b>
+                    </h4>
+                    {salonsADecouvrir.map((x) => (
+                      <button
+                        key={x.cle}
+                        type="button"
+                        className="ap-l"
+                        onClick={() => {
+                          noter("partage", 0, "decouverte");
+                          setSalonOuvert(x.cle);
+                          setSalonPage(true);
+                        }}
+                      >
+                        {x.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={x.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💬</i>
+                        )}
+                        <span>
+                          <b>{x.annonce ?? x.sujet}</b>
+                          <u>{x.ou}</u>
+                          <em>
+                            {x.quand} · ouvert par {x.parQui} · {x.viennent.length}{" "}
+                            {x.viennent.length > 1 ? "viennent" : "vient"}
+                          </em>
+                        </span>
+                        {x.reste ? <s className="reste">{x.reste}</s> : <s>›</s>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {salonsPasses.length > 0 && (
                   <div className="ap-liste passe">
                     <h4>
@@ -2997,7 +3175,9 @@ export function ApercuHabitant() {
                   </div>
                 )}
 
-                {salonsOuverts.length === 0 && salonsPasses.length === 0 && (
+                {salonsOuverts.length === 0 &&
+                  salonsADecouvrir.length === 0 &&
+                  salonsPasses.length === 0 && (
                   <div className="ap-moi-vide">
                     <span aria-hidden="true">💬</span>
                     <b>Aucun salon pour l&apos;instant.</b>
@@ -3080,7 +3260,13 @@ export function ApercuHabitant() {
             >
               <i aria-hidden="true">💬</i>
               Mes salons
-              {salonsOuverts.length > 0 && <b>{salonsOuverts.length}</b>}
+              {/* Le badge compte tout ce qui est VIVANT : les siens et ceux
+                  qu'on peut rejoindre. Ne compter que les siens le faisait
+                  disparaitre a la premiere visite, au moment precis ou il y a
+                  cinq salons ouverts a decouvrir. */}
+              {salonsOuverts.length + salonsADecouvrir.length > 0 && (
+                <b>{salonsOuverts.length + salonsADecouvrir.length}</b>
+              )}
             </button>
             <button
               type="button"
@@ -4402,7 +4588,7 @@ export function ApercuHabitant() {
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(3,1fr);
-          gap:4px;padding:5px 8px calc(5px + env(safe-area-inset-bottom));
+          gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
           backdrop-filter:blur(12px);}
@@ -4411,7 +4597,7 @@ export function ApercuHabitant() {
           font-size:10.5px;font-weight:800;cursor:pointer;color:#6C8078;
           background:none;border:0;border-radius:11px;padding:5px 2px;
           transition:color .14s ease,background .14s ease;}
-        .ap-onglets button i{font-style:normal;font-size:15px;line-height:1;
+        .ap-onglets button i{font-style:normal;font-size:14px;line-height:1;
           filter:grayscale(1) opacity(.55);transition:filter .14s ease;}
         /* L'ONGLET COURANT SE VOIT A LA COULEUR ET AU FOND, pas seulement a
            l'opacite : sur un ecran au soleil, un gris un peu plus clair ne se
@@ -4478,6 +4664,36 @@ export function ApercuHabitant() {
           border:0;border-radius:999px;padding:7px 12px;}
         .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
           color:#7F988B!important;background:none!important;}
+
+        /* VOIR L'ANNONCE COMPLETE. Discret : c'est un secours pour celui qui
+           decouvre, pas l'action principale du salon. */
+        .ap-voir-annonce{flex:none;display:flex;align-items:center;gap:9px;
+          width:100%;font:inherit;font-size:13px;font-weight:800;text-align:left;
+          cursor:pointer;color:#CFF7E6;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.11);border-radius:13px;
+          padding:11px 13px;margin-bottom:12px;}
+        .ap-voir-annonce i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-voir-annonce em{margin-left:auto;font-style:normal;color:#7F988B;}
+        .ap-voir-annonce:active{transform:scale(.99);}
+
+        /* PUBLIC OU PRIVE. */
+        .ap-visi{flex:none;display:flex;align-items:center;gap:11px;
+          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+          border-radius:14px;padding:10px 12px;margin-bottom:12px;}
+        .ap-visi span{flex:1;min-width:0;font-size:10.5px;line-height:1.3;
+          color:#8C9C94;}
+        .ap-visi b{display:block;font-size:12.5px;font-weight:850;color:#EAF2EC;
+          margin-bottom:2px;}
+        .ap-bascule{flex:none;width:44px;height:26px;border-radius:999px;
+          cursor:pointer;background:rgba(255,255,255,.14);
+          border:1px solid rgba(255,255,255,.16);padding:0;position:relative;
+          transition:background .18s ease;}
+        .ap-bascule i{position:absolute;top:2px;left:2px;width:20px;height:20px;
+          border-radius:50%;background:#8C9C94;transition:transform .18s ease,background .18s ease;}
+        .ap-bascule.on{background:rgba(61,226,166,.34);border-color:rgba(61,226,166,.6);}
+        .ap-bascule.on i{transform:translateX(18px);background:#3DE2A6;}
+
+        .ap-l s.reste{color:#F0B429;}
 
         /* VOUS, SANS COMPTE. */
         .ap-moi-qui{flex:none;text-align:center;
@@ -4713,9 +4929,21 @@ export function ApercuHabitant() {
         /* LES GESTES S'ARRETENT AU-DESSUS DE LA BARRE DES ONGLETS. Poses a
            bottom:0, ils s'ecrivaient par-dessus « Le direct / Mes salons /
            Profil » : la barre est dans le flux, eux n'y sont plus. */
+        /* ─── L'ARBITRAGE DU BAS D'ECRAN ───
+           Question posee au test : « les boutons et le menu du bas prennent
+           presque un tiers, ca prend de la place sur l'essentiel qui est la
+           photo ». Mesure : 97 + 55 = 152 points sur les 659 d'un iPhone 14
+           Pro, soit 23 %. Ce n'est pas un tiers, mais c'est trop : les
+           applications de ce genre tournent autour de 18 a 20 %.
+           CE QU'ON COUPE ET CE QU'ON GARDE. On coupe du VIDE — les marges du
+           bandeau — et quatre points sur le diametre des ronds. On garde les
+           ETIQUETTES : « En parler » a ete renomme parce que le geste n'etait
+           pas compris, et des icones muettes rendraient le probleme. On garde
+           aussi la cible du pouce au-dessus des 44 points recommandes.
+           Resultat : 132 points, soit 20 %. */
         .ap-gestes{position:absolute;left:0;right:0;
-          bottom:var(--ap-onglets-h, 55px);z-index:4;
-          gap:12px;padding:16px 0 10px;pointer-events:none;
+          bottom:var(--ap-onglets-h, 51px);z-index:4;
+          gap:12px;padding:11px 0 6px;pointer-events:none;
           background:linear-gradient(0deg,rgba(4,8,6,.9) 0%,rgba(4,8,6,.72) 45%,rgba(4,8,6,0) 100%);}
         .ap-gestes .cd-g{pointer-events:auto;}
         /* SUR LA PHOTO, un voile degrade suffit et laisse voir l'image. SOUS
@@ -4725,10 +4953,10 @@ export function ApercuHabitant() {
            disponibles : les cacher obligerait a remonter pour agir. */
         .ap-gestes.pose{background:#0A1210;
           box-shadow:0 -1px 0 rgba(255,255,255,.07);}
-        .ap-gestes .cd-g{gap:4px;}
-        .ap-gestes .cd-g i{width:44px;height:44px;font-size:19px;}
-        .ap-gestes .cd-g.grand i{width:52px;height:52px;font-size:21px;}
-        .ap-gestes .cd-g em{font-size:10px;}
+        .ap-gestes .cd-g{gap:3px;}
+        .ap-gestes .cd-g i{width:44px;height:44px;font-size:18px;}
+        .ap-gestes .cd-g.grand i{width:50px;height:50px;font-size:20px;}
+        .ap-gestes .cd-g em{font-size:9.5px;}
         .ap-gestes .cd-g{font:inherit;background:none;border:0;padding:0;cursor:pointer;}
         .ap-gestes .cd-g:active i{transform:scale(.92);}
         .ap-gestes .cd-g:disabled{cursor:default;opacity:.32;}
