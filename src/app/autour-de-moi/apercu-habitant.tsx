@@ -839,10 +839,42 @@ export function ApercuHabitant() {
     noter("ouverture");
   }, []);
   const nbMessages = salon?.messages.length ?? 0;
+  /** Le salon dont la vue a déjà été posée en haut, pour ne le faire qu'une fois. */
+  const salonPose = useRef("");
+  /**
+   * ─── ON OUVRE EN HAUT, PUIS ON SUIT LA CONVERSATION ───
+   *
+   * DÉFAUT RELEVÉ AU TEST : « quand je balaie ou que je clique sur En parler,
+   * j'arrive sur la conversation au lieu d'arriver tout en haut et de voir la
+   * photo ; je veux d'abord voir le haut pour introduire le sujet ». La vue
+   * était collée en bas à chaque changement, ouverture comprise : on tombait
+   * sur des répliques sans savoir de quoi elles parlaient.
+   *
+   * MAIS OUVRIR EN HAUT NE SUFFIT PAS. Les amis de la maquette répondent au
+   * bout de deux secondes ; si l'on continuait à descendre à chaque message,
+   * la page arracherait la personne au haut juste après le lui avoir montré —
+   * le défaut reviendrait, avec deux secondes de retard.
+   *
+   * D'OÙ LA RÈGLE DES MESSAGERIES : on ne suit le fil QUE si l'on était déjà
+   * près du pied. Celui qui lit le haut n'est jamais déplacé ; celui qui suit
+   * la conversation voit arriver la suite. C'est la seule règle qui serve les
+   * deux moments sans les opposer.
+   */
   useEffect(() => {
     const el = filSalon.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [nbMessages, amisEcrivent.length]);
+    if (!salonPage || !salonOuvert || !el) {
+      // En quittant, on oublie : rouvrir le même salon doit remontrer le haut.
+      if (!salonPage) salonPose.current = "";
+      return;
+    }
+    if (salonPose.current !== salonOuvert) {
+      salonPose.current = salonOuvert;
+      el.scrollTop = 0;
+      return;
+    }
+    const restant = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (restant < 80) el.scrollTop = el.scrollHeight;
+  }, [salonPage, salonOuvert, nbMessages, amisEcrivent.length]);
 
   // Le mot s'efface tout seul : une confirmation qui reste devient un décor.
   useEffect(() => {
