@@ -39,7 +39,7 @@
 // délicat : on verrouille la direction au premier mouvement, et le balayage est
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect } from "react";
 import { noter, noterUneFois } from "@/lib/direct/parcours";
 import {
   AMIS_QUI_REPONDENT,
@@ -55,6 +55,7 @@ import {
   ouvrirSalon,
   type Salon,
 } from "@/lib/direct/salons";
+import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
 import {
   abonnerInstallation,
   chargerInstallation,
@@ -370,35 +371,6 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
 // consécutifs donnaient deux nombres différents, et il redessinait en boucle —
 // la page restait vide, sans la moindre erreur dans la console.
 //
-// On garde donc l'instant dans une variable qui ne bouge QUE sur le battement,
-// et on ne prévient les abonnés que si la minute a changé : une horloge à la
-// minute n'a aucune raison de réveiller le rendu toutes les vingt secondes.
-let pendule = 0;
-const abonnesP = new Set<() => void>();
-let battement: ReturnType<typeof setInterval> | null = null;
-
-function lirePendule() {
-  if (!pendule) pendule = Date.now();
-  return pendule;
-}
-function abonnerPendule(f: () => void) {
-  abonnesP.add(f);
-  if (!battement) {
-    battement = setInterval(() => {
-      const n = Date.now();
-      if (Math.floor(n / 60_000) === Math.floor(pendule / 60_000)) return;
-      pendule = n;
-      abonnesP.forEach((g) => g());
-    }, 15_000);
-  }
-  return () => {
-    abonnesP.delete(f);
-    if (!abonnesP.size && battement) {
-      clearInterval(battement);
-      battement = null;
-    }
-  };
-}
 
 function Etoiles({ note }: { note: number }) {
   return (
@@ -543,35 +515,6 @@ export function ApercuHabitant() {
   const defilement = useRef<HTMLDivElement | null>(null);
   const filSalon = useRef<HTMLDivElement | null>(null);
 
-  /**
-   * LA DATE ET L'HEURE DU VISITEUR, QUI AVANCENT.
-   *
-   * TOUTE LA PROMESSE DU PRODUIT EST « CE QUI SE PASSE MAINTENANT », et rien à
-   * l'écran ne disait quel jour on est. Les cartes annoncent « ce soir »,
-   * « jeudi », « dimanche » sans que le lecteur ait de point d'ancrage : il ne
-   * peut pas savoir si ce qu'il lit est d'aujourd'hui ou d'un vieux fil.
-   *
-   * L'heure qui avance vaut mieux qu'une date seule : une date est une
-   * information, une horloge qui bouge est une preuve. C'est elle qui fait
-   * comprendre en une seconde que le paquet se recompose tout seul.
-   *
-   * `useSyncExternalStore` parce que le serveur ne connaît ni le fuseau ni la
-   * minute du visiteur : le rendre au rendu casserait l'hydratation.
-   */
-  const horloge = useSyncExternalStore(abonnerPendule, lirePendule, () => 0);
-  const maintenant = horloge
-    ? new Intl.DateTimeFormat("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      }).format(new Date(horloge))
-    : "";
-  const pendule = horloge
-    ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" })
-        .format(new Date(horloge))
-        .replace(":", " h ")
-    : "";
-
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
@@ -594,6 +537,24 @@ export function ApercuHabitant() {
   );
   /** Fermée à la main : on ne repropose plus de la visite. */
   const [inviteFermee, setInviteFermee] = useState(false);
+
+  /**
+   * MESURER L'ÉCRAN PLUTÔT QUE LE DÉDUIRE.
+   *
+   * Défaut rapporté trois fois, et deux fois mal diagnostiqué par moi : sur
+   * iPhone, l'en-tête de l'application n'apparaissait pas et la barre des
+   * onglets tombait hors de l'écran. J'avais accusé le repli de la barre
+   * d'adresse de Safari ; le même défaut SUR CHROME a montré que c'était faux.
+   * On ne déduit donc plus la hauteur d'une unité CSS : on lit ce que la
+   * personne voit. Voir `lib/direct/hauteur-ecran.ts`.
+   *
+   * `useLayoutEffect` et non `useEffect` : la mesure doit être écrite avant que
+   * le navigateur ne peigne, sinon la première image est à la mauvaise taille
+   * et l'écran sursaute.
+   */
+  useLayoutEffect(() => {
+    suivreHauteurEcran();
+  }, []);
   /** La clé du salon ouvert à l'écran. Vide : on n'est dans aucun. */
   const [salonOuvert, setSalonOuvert] = useState("");
   /**
@@ -1728,17 +1689,14 @@ export function ApercuHabitant() {
                   haut et passait sous les pastilles. La date avait sa propre
                   ligne pour répondre à une question qu'on ne pose qu'une fois ;
                   elle se glisse sous le nom, où elle ne coûte pas un rang. */}
-              <span className="cd-marque ap-marque">
-                {MARQUE}
-                {maintenant && (
-                  <em>
-                    {/* La capitalisation ne vaut que pour le jour : appliquée à
-                        toute la ligne, elle écrivait « 05 H 01 ». */}
-                    <b>{maintenant}</b> · <i aria-hidden="true">●</i>
-                    {pendule}
-                  </em>
-                )}
-              </span>
+              {/* LA DATE ET L'HEURE SONT PARTIES. Demandées il y a deux
+                  semaines, jugées inutiles à l'usage, puis redemandées en
+                  suppression : « supprime la date, elle sert à rien ». Elles
+                  répondaient à une question que personne ne pose devant cet
+                  écran — le téléphone porte déjà l'heure en haut, deux
+                  centimètres plus haut. Ce qui reste vrai, c'est « maintenant »
+                  sur les cartes, et ça, c'est la carte qui le dit. */}
+              <span className="cd-marque">{MARQUE}</span>
               <button
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
@@ -3468,35 +3426,30 @@ export function ApercuHabitant() {
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
            litteral de gabarit et un seul terminerait la chaine. */
 
-        /* ─── LA PAGE NE DOIT PAS POUVOIR DEFILER ───
-           DEFAUT RAPPORTE SUR IPHONE 16 PRO MAX, capture a l'appui : « un
-           enorme espace libre » sous l'application, l'en-tete invisible, et
-           dans Profil « je suis coince, je ne peux pas revenir au direct ».
-           Les quatre symptomes n'en font qu'un.
-           LA CAUSE. Safari sur iPhone laisse TOUJOURS faire le geste qui
-           replie sa barre d'adresse, meme sur une page qui tient exactement
-           dans l'ecran. Le document glisse alors de la hauteur des barres :
-           l'en-tete de l'application sort par le haut, la barre des onglets
-           sort par le bas — d'ou l'impossibilite de revenir au Direct — et la
-           place liberee en dessous laisse voir le fond du site, beige.
-           overflow:hidden sur ce conteneur-ci n'y peut rien : ce n'est pas
-           lui qui defile, c'est le document.
-           LE REMEDE tient en trois points, et les trois sont necessaires :
-           html et body verrouilles, body en position fixe — le seul moyen
-           connu d'oter a Safari le geste de repli — et svh plutot que dvh,
-           parce que la hauteur ne doit plus dependre de l'etat des barres.
-           Le fond noir sur html et body est la ceinture : si un interstice
-           apparaissait malgre tout, il serait noir et non beige. */
-        html,body{height:100%;overflow:hidden;background:#05090C;}
-        body{position:fixed;inset:0;width:100%;overscroll-behavior:none;
-          margin:0;}
+        /* ─── LA HAUTEUR EST MESUREE, PLUS DEDUITE ───
+           DEFAUT RAPPORTE TROIS FOIS SUR IPHONE : l'en-tete de l'application
+           n'apparait pas, la barre des onglets tombe hors de l'ecran, et il
+           reste une bande vide en bas.
+           MES DEUX PREMIERS DIAGNOSTICS ETAIENT FAUX. J'ai d'abord cru a une
+           mise en page trop haute, puis au repli de la barre d'adresse de
+           Safari — d'ou un verrou du document et un passage de dvh a svh. Le
+           meme defaut, identique, SUR CHROME a montre que la cause n'etait pas
+           celle-la : aucune unite de fenetre ne dit la verite sur ces
+           navigateurs.
+           ON NE DEDUIT DONC PLUS. --ap-h et --ap-t sont ecrites par
+           lib/direct/hauteur-ecran.ts a partir de visualViewport, qui decrit
+           ce que la personne VOIT : hauteur reelle et decalage reel, clavier
+           ouvert compris. 100svh ne sert plus que de repli, entre le premier
+           rendu et la premiere mesure.
+           LE DOCUMENT RESTE VERROUILLE — cela n'a jamais fait de mal — mais
+           body n'est plus en position fixe : c'etait une ruse dont l'effet
+           dependait du navigateur, et elle ne reglait rien.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        html,body{height:100%;overflow:hidden;overscroll-behavior:none;
+          margin:0;background:#05090C;}
 
-        /* svh EST LA PLUS PETITE DES TROIS HAUTEURS — celle qu'on a quand les
-           barres du navigateur sont visibles. Avec le document verrouille, les
-           barres ne se replient plus, donc c'est exactement la hauteur reelle,
-           et elle ne bouge plus jamais. dvh suivait l'etat des barres et
-           faisait respirer toute la mise en page a chaque geste. */
-        .ap{height:100svh;overflow:hidden;background:#05090C;
+        .ap{position:fixed;left:0;right:0;top:var(--ap-t, 0px);
+          height:var(--ap-h, 100svh);overflow:hidden;background:#05090C;
           font-family:'Inter',system-ui,-apple-system,sans-serif;color:#EAF2EC;
           display:flex;align-items:center;justify-content:center;}
         .ap-tel{width:100%;height:100%;}
@@ -3511,13 +3464,6 @@ export function ApercuHabitant() {
           display:flex;flex-direction:column;gap:7px;}
         /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau
            ne grandit pas, la date ne prend plus de ligne a elle. */
-        .ap-marque{display:flex;flex-direction:column;gap:1px;line-height:1.05;}
-        .ap-marque em{font-style:normal;font-size:10.5px;font-weight:800;
-          letter-spacing:.01em;color:#8FE9C4;
-          font-variant-numeric:tabular-nums;}
-        .ap-marque em b{font-weight:inherit;text-transform:capitalize;}
-        .ap-marque em i{font-style:normal;font-size:7px;line-height:1;
-          margin-right:3px;animation:apVoyant 2.4s ease-in-out infinite;}
 
         /* LA PASTILLE QUI OUVRE LA DEMANDE A LA VILLE. Vert plein : c'est la
            seule de la rangee qui ne filtre pas ce qu'on voit mais qui DEMANDE
@@ -4736,7 +4682,7 @@ export function ApercuHabitant() {
 
         @media (min-width:720px){
           .ap{padding:24px;background:radial-gradient(90% 60% at 50% 0%,#101A22,#05090C 70%),#05090C;}
-          .ap-tel{width:390px;height:min(844px, calc(100svh - 48px));
+          .ap-tel{width:390px;height:min(844px, calc(var(--ap-h, 100svh) - 48px));
             border:1px solid rgba(255,255,255,.14);border-radius:42px;padding:9px;
             background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));
             box-shadow:0 0 0 1px rgba(0,0,0,.6),0 50px 90px -40px rgba(0,0,0,.95);}
@@ -4744,7 +4690,7 @@ export function ApercuHabitant() {
         }
         @media (prefers-reduced-motion:reduce){
           .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
-          .ap-marque em i,.ap-direct-h i{animation:none;}
+          .ap-direct-h i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}
