@@ -46,6 +46,9 @@ import {
   abonnerSalons,
   basculerVenue,
   basculerVisibilite,
+  donnerSaVoix,
+  enTete,
+  proposer,
   abonnerPrenom,
   direSonPrenom,
   monPrenom,
@@ -774,6 +777,17 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
+   * ─── PROPOSER AUTRE CHOSE ───
+   *
+   * CE QUI FAIT QU'UN SALON N'EST PAS UNE CONVERSATION DE PLUS. Sur WhatsApp,
+   * « vous préférez où ? » se termine par « attends je regarde Google — il est
+   * ouvert ? — je sais pas », et la décision meurt de fatigue. Ici, proposer
+   * n'est pas écrire une phrase : c'est poser une ANNONCE RÉELLE, avec son menu
+   * du jour, son prix et sa distance, que l'application connaît déjà. C'est la
+   * seule chose qu'une messagerie ne saura jamais faire.
+   */
+  const [proposeOuvert, setProposeOuvert] = useState(false);
+  /**
    * SUIVRE UN COMMERÇANT — et la différence avec garder est tout le sujet.
    * Garder range une annonce pour la retrouver : geste tourné vers soi. Suivre
    * crée une obligation — être prévenu — donc une raison de revenir demain, et
@@ -1341,6 +1355,115 @@ export function ApercuHabitant() {
     setSalonPage(true);
   }
 
+  /**
+   * LA PROPOSITION EN TÊTE — c'est elle que le bandeau du salon montre.
+   * Pas de seuil de majorité : le bandeau suit ce qui mène, en direct, et
+   * c'est réserver qui tranche. Voir `salons.ts` pour pourquoi « la majorité »
+   * ne se définit pas proprement dans un salon où les gens arrivent au fil de
+   * l'eau.
+   */
+  const tete = salon ? enTete(salon) : undefined;
+  /** Combien se sont prononcés : le dénominateur honnête, celui des votants. */
+  const voixExprimees = (salon?.propositions ?? []).reduce((n, p) => n + p.voix.length, 0);
+
+  /**
+   * CE QU'ON PEUT PROPOSER À LA PLACE — de vraies annonces, autour, maintenant.
+   *
+   * Même métier que ce qui est déjà sur la table : dans un salon ouvert sur un
+   * déjeuner, proposer un coiffeur n'aide personne. Pour un événement, on
+   * propose d'autres événements. Ce qui est déjà proposé n'y figure plus.
+   */
+  const alternatives = (() => {
+    if (!salon) return [];
+    const dejaLa = new Set((salon.propositions ?? []).map((p) => p.cle));
+    const id = salon.cle.split("|")[0];
+    const evenement = evenements.find((e) => e.id === id);
+    if (evenement) {
+      return evenements
+        .filter((e) => !dejaLa.has(cleSalonEv(e)))
+        .map((e) => ({
+          cle: cleSalonEv(e),
+          quoi: e.quoi,
+          ou: e.qui,
+          prix: e.prix ?? "Gratuit",
+          distance: e.distance,
+          photo: e.photo,
+          metres: e.metres,
+        }));
+    }
+    const dedans = toutes.find((c) => c.id === id);
+    const branche = dedans?.branche ?? "restaurant";
+    return autourDeMoi(heure, branche)
+      .map((c) => {
+        const m = momentEnCours(c, heure) ?? c.moments[0];
+        return {
+          cle: c.menu ? `${c.id}|menu` : m ? cleSalonMoment(c, m) : `${c.id}|`,
+          quoi: c.menu ? c.menu.plat : (m?.titre ?? c.nom),
+          ou: c.nom,
+          prix: c.menu?.prix ?? m?.prix,
+          distance: c.distance,
+          photo: c.menu?.photo ?? c.photo,
+          metres: c.metres,
+        };
+      })
+      .filter((x) => !dejaLa.has(x.cle));
+  })();
+
+  /**
+   * POSER UNE ALTERNATIVE, ET ANNONCER CE QUI CHANGE.
+   *
+   * LE CHANGEMENT DE TÊTE EST ÉCRIT DANS LA CONVERSATION, pas seulement dans le
+   * bandeau. Un bandeau qui change tout seul pendant qu'on regarde ailleurs
+   * passe inaperçu ; une ligne dans le fil est ce qu'un groupe relit.
+   */
+  function proposerDansLeSalon(x: (typeof alternatives)[number]) {
+    if (!salon) return;
+    const avant = tete?.cle;
+    const moi = monPrenom() || "Vous";
+    proposer(salon.cle, { cle: x.cle, par: moi, quoi: x.quoi, ou: x.ou, prix: x.prix, distance: x.distance, photo: x.photo }, moi);
+    noter("note-donnee", 0, "proposition");
+    ecrireDansSalon(salon.cle, {
+      qui: moi,
+      voix: "systeme",
+      texte: `🗳️ ${moi} propose ${x.ou} — ${x.quoi}${x.prix ? ` · ${x.prix}` : ""}`,
+      quand: heureCourte(),
+    });
+    setProposeOuvert(false);
+    // Si cette proposition prend la tête, on le dit.
+    window.setTimeout(() => {
+      const s2 = chargerSalons()[salon.cle];
+      const t2 = s2 ? enTete(s2) : undefined;
+      if (t2 && t2.cle !== avant) {
+        ecrireDansSalon(salon.cle, {
+          qui: "Clikme",
+          voix: "systeme",
+          texte: `🏆 ${t2.ou} passe en tête.`,
+          quand: heureCourte(),
+        });
+      }
+    }, 60);
+  }
+
+  /** Déplacer sa voix, et dire si ça change ce qui mène. */
+  function voterPour(clePropo: string) {
+    if (!salon) return;
+    const avant = tete?.cle;
+    donnerSaVoix(salon.cle, clePropo, monPrenom() || "Vous");
+    noter("note-donnee", 0, "voix");
+    window.setTimeout(() => {
+      const s2 = chargerSalons()[salon.cle];
+      const t2 = s2 ? enTete(s2) : undefined;
+      if (t2 && t2.cle !== avant) {
+        ecrireDansSalon(salon.cle, {
+          qui: "Clikme",
+          voix: "systeme",
+          texte: `🏆 ${t2.ou} passe en tête.`,
+          quand: heureCourte(),
+        });
+      }
+    }, 60);
+  }
+
   const dansLeSalon = (x: Salon) => x.presents.includes("Vous") || x.parQui === "Vous";
   const salonsOuverts = Object.values(salons).filter((x) => x.ouvert && dansLeSalon(x));
   /**
@@ -1806,12 +1929,26 @@ export function ApercuHabitant() {
                 >
                   ←
                 </button>
+                {/* DÈS QU'IL Y A DEUX PROPOSITIONS, LE SALON N'EST PLUS
+                    CELUI D'UN COMMERCE. Garder « Le Bocal de Margot » en titre
+                    pendant que le groupe discute d'un autre restaurant fait
+                    mentir l'en-tête ; le nom du lieu vit dans le bandeau, qui
+                    suit ce qui mène. */}
                 <span className="ap-page-t">
-                  <b>{salon.ou}</b>
+                  <b>{(salon.propositions?.length ?? 0) > 1 ? "Où on va ?" : salon.ou}</b>
                   <em>
-                    {salon.presents.length}{" "}
-                    {salon.presents.length > 1 ? "personnes" : "personne"} ·{" "}
-                    <u>{salon.quand}</u>
+                    {(salon.propositions?.length ?? 0) > 1 ? (
+                      <>
+                        {salon.propositions!.length} propositions · {voixExprimees}{" "}
+                        {voixExprimees > 1 ? "voix" : "voix"} · <u>{salon.quand}</u>
+                      </>
+                    ) : (
+                      <>
+                        {salon.presents.length}{" "}
+                        {salon.presents.length > 1 ? "personnes" : "personne"} ·{" "}
+                        <u>{salon.quand}</u>
+                      </>
+                    )}
                   </em>
                 </span>
                 {/* Le point vert n'est pas une décoration : il dit que le salon
@@ -1838,23 +1975,95 @@ export function ApercuHabitant() {
                     d'image, et le bloc tombait de 178 à 113 pixels sans qu'on
                     sache si ça chargeait ou si c'était cassé. Un fond franc et
                     un grand signe disent que c'est voulu. */}
-                <div className={`ap-page-objet${salon.photo ? "" : " nu"}`}>
-                  {salon.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={salon.photo} alt="" />
-                  ) : (
-                    <i className="ap-page-nu" aria-hidden="true">
-                      💬
-                    </i>
+                {/* LE BANDEAU MONTRE CE QUI EST EN TÊTE, PAS CE QUI A
+                    LANCÉ LE SALON. C'est tout le sujet : quand une autre
+                    proposition passe devant, le haut du salon change — et avec
+                    lui la réservation. */}
+                {(() => {
+                  const p = tete;
+                  const photo = p?.photo ?? salon.photo;
+                  return (
+                    <div className={`ap-page-objet${photo ? "" : " nu"}`}>
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photo} alt="" />
+                      ) : (
+                        <i className="ap-page-nu" aria-hidden="true">
+                          💬
+                        </i>
+                      )}
+                      <div className="ap-page-objet-t">
+                        {(salon.propositions?.length ?? 0) > 1 && (
+                          <s className="ap-tete-dit">
+                            🏆 en tête · {p?.voix.length ?? 0} sur {voixExprimees}
+                          </s>
+                        )}
+                        <b>{p?.quoi ?? salon.annonce ?? salon.sujet}</b>
+                        <span>
+                          {p?.ou && <u className="ou">{p.ou}</u>}
+                          {(p?.prix ?? salon.prix) && <em>{p?.prix ?? salon.prix}</em>}
+                          {salon.reste && <s>{salon.reste}</s>}
+                          {(p?.distance ?? salon.distance) && (
+                            <u>📍 {p?.distance ?? salon.distance}</u>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ─── CE QUI EST SUR LA TABLE ───
+                    Une voix par personne, qu'on DÉPLACE. Pas de pouce en bas :
+                    un « 👎 1 » public contre le choix de quelqu'un est une
+                    petite humiliation devant le groupe, et c'est précisément ce
+                    que les gens évitent — ce qui explique la bouillie WhatsApp,
+                    où personne ne veut être celui qui dit non. */}
+                <div className="ap-propos">
+                  {(salon.propositions?.length ?? 0) > 1 && (
+                    <div className="ap-propos-l">
+                      {salon.propositions!.map((p) => {
+                        const moi = p.voix.includes(prenom || "Vous");
+                        const gagne = p.cle === tete?.cle;
+                        return (
+                          <button
+                            key={p.cle}
+                            type="button"
+                            className={`ap-propo${gagne ? " tete" : ""}${moi ? " moi" : ""}`}
+                            onClick={() => avecMonPrenom(() => voterPour(p.cle))}
+                          >
+                            {p.photo && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.photo} alt="" loading="lazy" />
+                            )}
+                            <span>
+                              <b>{p.ou}</b>
+                              <em>
+                                {p.quoi}
+                                {p.prix ? ` · ${p.prix}` : ""}
+                              </em>
+                              <u>proposé par {p.par}</u>
+                            </span>
+                            <s>
+                              {p.voix.length > 0 && <i aria-hidden="true">👤</i>}
+                              {p.voix.length || "—"}
+                            </s>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
-                  <div className="ap-page-objet-t">
-                    <b>{salon.annonce ?? salon.sujet}</b>
-                    <span>
-                      {salon.prix && <em>{salon.prix}</em>}
-                      {salon.reste && <s>{salon.reste}</s>}
-                      {salon.distance && <u>📍 {salon.distance}</u>}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    className="ap-propo-plus"
+                    onClick={() => {
+                      noter("champ-touche", 0, "proposition");
+                      setProposeOuvert(true);
+                    }}
+                  >
+                    <i aria-hidden="true">＋</i>
+                    Proposer autre chose
+                    <em>{alternatives.length} autour de vous</em>
+                  </button>
                 </div>
 
                   {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
@@ -4143,6 +4352,67 @@ export function ApercuHabitant() {
               une invention silencieuse. On demande donc, une fois, au moment de
               prendre la parole. Un prénom, rien d'autre, et il ne quitte pas le
               téléphone. */}
+          {/* ─── PROPOSER AUTRE CHOSE ───
+              Ce ne sont pas des idées, ce sont des ANNONCES : le menu du jour,
+              le prix, la distance, ce qu'il en reste. C'est ce que ClikMe sait
+              et qu'une messagerie ignore — et c'est ce qui transforme
+              « vous préférez où ? » en une décision. */}
+          {proposeOuvert && salon && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setProposeOuvert(false)}
+              />
+              <div className="ap-feuille" role="dialog" aria-modal="true">
+                <div className="ap-f-tete">
+                  <b>Proposer autre chose</b>
+                  <span className="simple">
+                    Ce qui est ouvert autour de vous, maintenant. Votre voix
+                    part sur ce que vous choisissez.
+                  </span>
+                </div>
+                <div className="ap-f-liste">
+                  {alternatives.length === 0 ? (
+                    <div className="ap-moi-vide">
+                      <span aria-hidden="true">🤷</span>
+                      <b>Rien d&apos;autre d&apos;ouvert à cette heure-ci.</b>
+                      <i>Tout ce qui était autour est déjà sur la table.</i>
+                    </div>
+                  ) : (
+                    <div className="ap-liste">
+                      {alternatives.map((x) => (
+                        <button
+                          key={x.cle}
+                          type="button"
+                          className="ap-ligne"
+                          onClick={() => avecMonPrenom(() => proposerDansLeSalon(x))}
+                        >
+                          {x.photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={x.photo} alt="" loading="lazy" />
+                          ) : (
+                            <i aria-hidden="true">🍽️</i>
+                          )}
+                          <span>
+                            <b>{x.ou}</b>
+                            <u>{x.quoi}</u>
+                            <em>
+                              {x.prix ? `${x.prix} · ` : ""}
+                              {x.distance}
+                            </em>
+                          </span>
+                          <s>＋</s>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {demandePrenom && (
             <>
               <button
@@ -5780,6 +6050,56 @@ export function ApercuHabitant() {
           line-height:1.3;}
         .ap-suivi-vu b{display:block;font-size:12.5px;font-weight:850;
           color:#EDE7FF;letter-spacing:-.01em;}
+
+        /* ─── CE QUI EST SUR LA TABLE ───
+           Le salon cesse d'etre une conversation pour devenir une petite salle
+           de decision. Une voix par personne, qu'on DEPLACE — jamais de pouce
+           en bas : un « moins un » public contre le choix de quelqu'un est une
+           humiliation devant le groupe, et c'est ce que les gens evitent. */
+        /* La regle generique .ap-page-objet-t s peint l'ambre de « ce qu'il
+           reste » : ce badge-ci est un autre objet, il reprend donc la main
+           avec une specificite superieure plutot qu'avec un !important. */
+        .ap-page-objet-t s.ap-tete-dit{display:inline-block;text-decoration:none;
+          font-size:9.5px;font-weight:850;letter-spacing:.06em;color:#04150E;
+          background:#3DE2A6;border-radius:6px;padding:3px 7px;margin-bottom:6px;}
+        .ap-page-objet-t u.ou{text-decoration:none;font-size:12.5px;font-weight:800;
+          color:#CFF7E6;}
+
+        .ap-propos{flex:none;margin-bottom:12px;}
+        .ap-propos-l{display:flex;flex-direction:column;gap:7px;margin-bottom:8px;}
+        .ap-propo{display:flex;align-items:center;gap:10px;width:100%;font:inherit;
+          text-align:left;cursor:pointer;color:#A9BBB1;
+          background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);
+          border-radius:14px;padding:8px 11px 8px 8px;
+          transition:border-color .18s ease,background .18s ease;}
+        .ap-propo img{width:44px;height:44px;flex:none;object-fit:cover;border-radius:10px;}
+        .ap-propo span{flex:1;min-width:0;}
+        .ap-propo b{display:block;font-size:13.5px;font-weight:850;color:#EAF2EC;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-propo em{display:block;font-style:normal;font-size:11.5px;color:#8C9C94;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-propo u{display:block;text-decoration:none;font-size:10px;color:#6C8078;
+          margin-top:1px;}
+        .ap-propo s{flex:none;display:inline-flex;align-items:center;gap:4px;
+          text-decoration:none;font-size:13px;font-weight:850;color:#7F988B;
+          font-variant-numeric:tabular-nums;}
+        .ap-propo s i{font-style:normal;font-size:10px;}
+        /* CELLE QUI MENE PORTE LE VERT DE L'APPLICATION ; celle ou j'ai mis ma
+           voix porte un lisere, pas une couleur de plus. */
+        .ap-propo.tete{background:rgba(61,226,166,.11);border-color:rgba(61,226,166,.4);}
+        .ap-propo.tete b{color:#fff;}
+        .ap-propo.tete s{color:#3DE2A6;}
+        .ap-propo.moi{box-shadow:inset 3px 0 0 #3DE2A6;}
+        .ap-propo:active{transform:scale(.99);}
+
+        .ap-propo-plus{display:flex;align-items:center;gap:9px;width:100%;font:inherit;
+          font-size:13px;font-weight:800;text-align:left;cursor:pointer;color:#CFF7E6;
+          background:rgba(61,226,166,.1);border:1px dashed rgba(61,226,166,.42);
+          border-radius:14px;padding:11px 13px;}
+        .ap-propo-plus i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-propo-plus em{margin-left:auto;font-style:normal;font-size:10.5px;
+          font-weight:700;color:#7F988B;}
+        .ap-propo-plus:active{transform:scale(.99);}
 
         /* UN SALON NEUF EST VIDE, ET LE DIT. */
         .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;

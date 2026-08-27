@@ -121,6 +121,42 @@ export type Vote = {
   choisi?: string;
 };
 
+/**
+ * ─── UNE PROPOSITION : « ET SI ON ALLAIT PLUTÔT LÀ ? » ───
+ *
+ * C'EST CE QUI FAIT QU'UN SALON N'EST PAS UNE CONVERSATION DE PLUS. Sur
+ * WhatsApp : « vous préférez où ? — moi Gaïa — moi pizza — attends je regarde
+ * Google — il est ouvert ? — je sais pas ». Personne ne décide, et la décision
+ * meurt de fatigue. Ici, proposer une alternative n'est pas écrire une phrase :
+ * c'est poser une annonce RÉELLE — son menu du jour, son prix, sa distance,
+ * ce qu'il en reste — que ClikMe connaît déjà. C'est la seule chose qu'une
+ * messagerie ne pourra jamais faire, parce qu'elle ne sait pas ce qui est
+ * ouvert à trois cents mètres.
+ */
+export type Proposition = {
+  /** La clé de l'annonce proposée : commerce + moment. */
+  cle: string;
+  /** Qui l'a mise sur la table. */
+  par: string;
+  /** Ce qu'on y mange, y fait, y voit. */
+  quoi: string;
+  /** Chez qui. */
+  ou: string;
+  prix?: string;
+  distance?: string;
+  photo?: string;
+  /**
+   * LES VOIX, ET UNE SEULE PAR PERSONNE.
+   *
+   * PAS DE POUCE EN BAS, ET C'EST UN CHOIX DE FOND. Un « 👎 1 » public contre
+   * le choix de Paul est une petite humiliation devant le groupe — et c'est
+   * exactement ce que les gens évitent, ce qui explique la bouillie WhatsApp :
+   * personne ne veut être celui qui dit non. On DÉPLACE sa voix vers ce qu'on
+   * préfère ; on ne raye jamais le choix de quelqu'un.
+   */
+  voix: string[];
+};
+
 export type Salon = {
   /** L'identifiant de l'annonce : commerce + moment, ou événement. */
   cle: string;
@@ -173,6 +209,11 @@ export type Salon = {
   /** Ce qui reste : « 8 portions », « 1 place ». */
   reste?: string;
   distance?: string;
+  /**
+   * CE QUI EST SUR LA TABLE. Absent ou à un seul élément : personne n'a encore
+   * proposé autre chose, et il n'y a rien à départager.
+   */
+  propositions?: Proposition[];
   /**
    * LE JOUR, POUR CEUX QUI SONT PASSÉS — « Hier », « Samedi », « La semaine
    * dernière ». Écrit comme on le dirait, pas une date machine : dans une liste
@@ -529,7 +570,15 @@ export function abonnerPrenom(f: () => void) {
   };
 }
 
-/** Un prénom, rien d'autre : pas de nom, pas d'adresse, pas de photo. */
+/**
+ * Un prénom, rien d'autre : pas de nom, pas d'adresse, pas de photo.
+ *
+ * ET ON RÉÉCRIT LE PASSÉ, PARCE QU'IL LE FAUT. On peut ouvrir un salon, poser
+ * une proposition et donner sa voix AVANT d'avoir dit son prénom : tout cela
+ * est alors signé « Vous ». Sans cette reprise, la même personne existe deux
+ * fois — défaut mesuré : « 1 sur 2 » de voix exprimées avec une seule personne
+ * dans le salon, parce que « Vous » et « Camille » comptaient chacun pour un.
+ */
 export function direSonPrenom(p: string) {
   const net = p.trim().slice(0, 24);
   if (!net) return;
@@ -539,7 +588,39 @@ export function direSonPrenom(p: string) {
   } catch {
     /* La session continue en mémoire. */
   }
+  renommerVous(net);
   abonnesPrenom.forEach((f) => f());
+}
+
+/** Tout ce qui était signé « Vous » prend le prénom, partout, d'un coup. */
+function renommerVous(nom: string) {
+  const avant = chargerSalons();
+  const remplace = (l: string[]) => {
+    const n = l.map((x) => (x === "Vous" ? nom : x));
+    return [...new Set(n)];
+  };
+  const apres: Record<string, Salon> = {};
+  for (const [cle, s] of Object.entries(avant)) {
+    const statuts = s.statuts
+      ? Object.fromEntries(
+          Object.entries(s.statuts).map(([q, v]) => [q === "Vous" ? nom : q, v]),
+        )
+      : undefined;
+    apres[cle] = {
+      ...s,
+      parQui: s.parQui === "Vous" ? nom : s.parQui,
+      presents: remplace(s.presents),
+      viennent: remplace(s.viennent),
+      statuts,
+      messages: s.messages.map((m) => (m.qui === "Vous" ? { ...m, qui: nom } : m)),
+      propositions: s.propositions?.map((p) => ({
+        ...p,
+        par: p.par === "Vous" ? nom : p.par,
+        voix: remplace(p.voix),
+      })),
+    };
+  }
+  garder(apres);
 }
 
 /** L'heure telle qu'on l'écrit dans une conversation. */
@@ -608,6 +689,21 @@ export function ouvrirSalon(salon: Omit<Salon, "messages" | "viennent" | "presen
     presents: ["Vous"],
     messages: [],
     ouvert: true,
+    // CE QUI EST SUR LA TABLE DÈS L'OUVERTURE : l'annonce qui a déclenché le
+    // salon, portée par celui qui l'a ouvert. Sans elle, la première
+    // alternative proposée n'aurait rien à départager.
+    propositions: [
+      {
+        cle: salon.cle,
+        par: "Vous",
+        quoi: salon.annonce ?? salon.sujet,
+        ou: salon.ou,
+        prix: salon.prix,
+        distance: salon.distance,
+        photo: salon.photo,
+        voix: ["Vous"],
+      },
+    ],
   };
   garder({ ...avant, [salon.cle]: neuf });
   return neuf;
@@ -619,6 +715,78 @@ export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   if (!s) return;
   const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
   garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }] } });
+}
+
+// ─── CE QUI EST EN TÊTE, ET COMMENT ON Y ARRIVE ────────────────────────────
+//
+// PAS DE SEUIL DE MAJORITÉ, ET C'EST DÉLIBÉRÉ. « Quand la majorité est
+// atteinte » ne se définit pas proprement : majorité des présents, ou des
+// votants ? Dans un salon où les gens arrivent au fil de l'eau, le
+// dénominateur bouge, et un bandeau qui bascule puis rebascule à chaque
+// arrivée est pire qu'un bandeau qui ne bouge pas.
+//
+// ON PREND DONC LE PLUS SIMPLE ET LE PLUS VRAI : le bandeau suit ce qui est EN
+// TÊTE, en direct. À égalité, la plus ancienne reste — celle qui a lancé le
+// salon ne se fait pas doubler par un ex æquo. Et c'est RÉSERVER qui tranche
+// pour de bon : tant que personne n'a réservé, rien n'est décidé, ce qui est
+// exactement la vérité d'un groupe qui hésite.
+
+/** La proposition qui mène. Rend l'annonce d'origine s'il n'y en a pas. */
+export function enTete(s: Salon): Proposition | undefined {
+  const p = s.propositions ?? [];
+  if (!p.length) return undefined;
+  return p.reduce((m, x) => (x.voix.length > m.voix.length ? x : m), p[0]);
+}
+
+/**
+ * Poser une alternative sur la table. Celui qui propose donne sa voix du même
+ * geste : proposer sans voter pour soi n'aurait aucun sens.
+ */
+export function proposer(cleSalon: string, p: Omit<Proposition, "voix">, qui: string) {
+  const avant = chargerSalons();
+  const s = avant[cleSalon];
+  if (!s) return;
+  const liste = s.propositions ?? [];
+  if (liste.some((x) => x.cle === p.cle)) {
+    // Déjà sur la table : on n'en fait pas un doublon, on y met sa voix.
+    donnerSaVoix(cleSalon, p.cle, qui);
+    return;
+  }
+  const avecMaVoix = liste.map((x) => ({ ...x, voix: x.voix.filter((v) => v !== qui) }));
+  garder({
+    ...avant,
+    [cleSalon]: { ...s, propositions: [...avecMaVoix, { ...p, voix: [qui] }] },
+  });
+}
+
+/**
+ * Déplacer sa voix. UNE SEULE PAR PERSONNE : on ne cumule pas, on choisit.
+ *
+ * ON NE PEUT PAS SE RETIRER, ET C'EST VOULU. La première version faisait qu'un
+ * deuxième appui sur la même proposition ôtait la voix — mesuré : deux
+ * propositions à zéro voix, un bandeau qui retombe sur la première venue et
+ * un décompte « 0 sur 0 » qui ressemble à une panne. Surtout, ce n'est pas le
+ * geste que les gens ont en tête : on appuie pour dire « je préfère
+ * celle-ci », jamais pour dire « je n'ai plus d'avis ». Qui n'a pas d'avis ne
+ * vote pas — c'est déjà possible, et ça se lit dans le décompte.
+ */
+export function donnerSaVoix(cleSalon: string, clePropo: string, qui: string) {
+  const avant = chargerSalons();
+  const s = avant[cleSalon];
+  if (!s?.propositions) return;
+  garder({
+    ...avant,
+    [cleSalon]: {
+      ...s,
+      propositions: s.propositions.map((p) => ({
+        ...p,
+        voix:
+          p.cle === clePropo
+            ? [...p.voix.filter((v) => v !== qui), qui]
+            : p.voix.filter((v) => v !== qui),
+      })),
+    },
+  });
 }
 
 /**
