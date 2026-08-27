@@ -489,6 +489,59 @@ export const AMIS_QUI_REPONDENT: {
   { qui: "Nadia", texte: "Pas ce soir, la prochaine fois sans faute.", apres: 8400, vient: false },
 ];
 
+// ─── COMMENT SAIT-ON COMMENT S'APPELLENT LES GENS ? ────────────────────────
+//
+// QUESTION POSÉE AU TEST, ET ELLE TOUCHE UN TROU RÉEL : « comment connaît-on
+// les initiales des gens qui interagissent dans le salon si on ne leur demande
+// pas ? » On ne les connaît pas. On ne peut pas les connaître : il n'y a pas de
+// compte, pas de carnet d'adresses, pas de numéro. C'était donc une invention
+// silencieuse.
+//
+// LA SEULE RÉPONSE HONNÊTE EST DE DEMANDER. Un prénom, une fois, au moment où
+// la personne prend la parole — pas à l'arrivée : quelqu'un qui vient de
+// cliquer sur un lien doit pouvoir LIRE sans rien donner. C'est la même règle
+// que pour la permission de notification : on demande au seul instant où la
+// demande est justifiée.
+//
+// CE PRÉNOM NE QUITTE PAS LE TÉLÉPHONE. Il vit à côté des avis et des salons,
+// dans le même stockage local, et il ne part sur aucun serveur. Il sert à deux
+// choses : signer ce qu'on écrit, et faire une initiale dans un rond.
+
+const CLE_PRENOM = "clikme-prenom";
+const abonnesPrenom = new Set<() => void>();
+let prenomCache: string | null = null;
+
+export function monPrenom(): string {
+  if (prenomCache !== null) return prenomCache;
+  if (typeof window === "undefined") return "";
+  try {
+    prenomCache = window.localStorage.getItem(CLE_PRENOM) ?? "";
+  } catch {
+    prenomCache = "";
+  }
+  return prenomCache;
+}
+
+export function abonnerPrenom(f: () => void) {
+  abonnesPrenom.add(f);
+  return () => {
+    abonnesPrenom.delete(f);
+  };
+}
+
+/** Un prénom, rien d'autre : pas de nom, pas d'adresse, pas de photo. */
+export function direSonPrenom(p: string) {
+  const net = p.trim().slice(0, 24);
+  if (!net) return;
+  prenomCache = net;
+  try {
+    window.localStorage.setItem(CLE_PRENOM, net);
+  } catch {
+    /* La session continue en mémoire. */
+  }
+  abonnesPrenom.forEach((f) => f());
+}
+
 /** L'heure telle qu'on l'écrit dans une conversation. */
 export function heureCourte(d = new Date()): string {
   return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" })

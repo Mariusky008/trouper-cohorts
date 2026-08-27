@@ -42,11 +42,13 @@
 import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect } from "react";
 import { noter, noterUneFois } from "@/lib/direct/parcours";
 import {
-  AMIS_QUI_REPONDENT,
   SALONS_VIDES,
   abonnerSalons,
   basculerVenue,
   basculerVisibilite,
+  abonnerPrenom,
+  direSonPrenom,
+  monPrenom,
   chargerSalons,
   reagir,
   voter,
@@ -678,6 +680,29 @@ export function ApercuHabitant() {
   const [motSalon, setMotSalon] = useState("");
   /** Les amis en train de répondre — les trois points, comme partout ailleurs. */
   const [amisEcrivent, setAmisEcrivent] = useState<string[]>([]);
+  /**
+   * COMMENT SAIT-ON COMMENT ILS S'APPELLENT ? On ne le sait pas — on demande.
+   * Question posée au test, et elle touchait une invention silencieuse : les
+   * prénoms sortaient de nulle part. Voir `salons.ts`. Le prénom est demandé au
+   * moment de PRENDRE LA PAROLE, jamais à l'arrivée : quelqu'un qui vient de
+   * cliquer sur un lien doit pouvoir lire sans rien donner.
+   */
+  const prenom = useSyncExternalStore(abonnerPrenom, monPrenom, () => "");
+  const [demandePrenom, setDemandePrenom] = useState<null | (() => void)>(null);
+  const [brouillonPrenom, setBrouillonPrenom] = useState("");
+
+  /**
+   * Fait le geste si on sait qui vous êtes, demande le prénom sinon. Une seule
+   * porte pour toutes les prises de parole : écrire, dire qu'on vient, réagir.
+   */
+  function avecMonPrenom(faire: () => void) {
+    if (prenom) {
+      faire();
+      return;
+    }
+    setBrouillonPrenom("");
+    setDemandePrenom(() => faire);
+  }
   const salon: Salon | undefined = salons[salonOuvert];
 
   /**
@@ -698,16 +723,14 @@ export function ApercuHabitant() {
   /**
    * OUVRIR LA CONVERSATION SUR UNE ANNONCE.
    *
-   * Le salon existe déjà : on entre. Sinon on le crée, on y pose la question qui
-   * l'a déclenché, et les amis répondent — dans la maquette seulement, et c'est
-   * le seul moyen de montrer l'effet à quelqu'un qui tient le téléphone seul.
+   * Le salon existe déjà : on entre. Sinon on le crée, VIDE — voir plus bas
+   * pourquoi on n'y écrit plus rien à la place de personne.
    */
   function enParler(
     cle: string,
     sujet: string,
     ou: string,
     quand: string,
-    amorce: string,
     illustration?: string,
     annonce?: string,
     prix?: string,
@@ -731,24 +754,18 @@ export function ApercuHabitant() {
       prix,
       distance,
     });
-    ecrireDansSalon(cle, { qui: "Vous", voix: "moi", texte: amorce, quand: heureCourte() });
-    minuteries.current.forEach(clearTimeout);
-    minuteries.current = [];
-    for (const a of AMIS_QUI_REPONDENT) {
-      minuteries.current.push(
-        window.setTimeout(
-          () => setAmisEcrivent((v) => (v.includes(a.qui) ? v : [...v, a.qui])),
-          Math.max(400, a.apres - 1400),
-        ),
-      );
-      minuteries.current.push(
-        window.setTimeout(() => {
-          setAmisEcrivent((v) => v.filter((x) => x !== a.qui));
-          entrerDansSalon(cle, a.qui, a.vient);
-          ecrireDansSalon(cle, { qui: a.qui, voix: "ami", texte: a.texte, quand: heureCourte() });
-        }, a.apres),
-      );
-    }
+    // ─── LE SALON NEUF EST VIDE, ET C'EST UNE CORRECTION ───
+    //
+    // DÉFAUT RELEVÉ AU TEST, ET IL EST GRAVE : « les gens qui ont essayé
+    // pensaient que c'était des gens qui parlaient avec des INCONNUS ». Trois
+    // amis répondaient tout seuls dans les secondes qui suivaient l'ouverture ;
+    // pour celui qui découvrait, ce n'étaient pas SES amis — c'étaient des
+    // voisins qu'il ne connaissait pas, en train de discuter chez lui. La
+    // démonstration prouvait le contraire de ce qu'elle voulait montrer.
+    //
+    // On n'écrit donc plus rien à sa place, et personne ne répond. Le salon
+    // s'ouvre vide, avec une seule chose à faire : inviter. C'est la vérité du
+    // produit — un salon ne contient que les gens qu'on y a mis.
   }
 
   /** Inviter : le lien part dans WhatsApp, la conversation reste ici. */
@@ -842,7 +859,6 @@ export function ApercuHabitant() {
         dessusEv.quoi,
         dessusEv.qui,
         `${dessusEv.jour} · ${dessusEv.heure}`,
-        "Qui vient avec moi ?",
         dessusEv.photo,
         dessusEv.quoi,
         dessusEv.prix ?? "Gratuit",
@@ -856,7 +872,6 @@ export function ApercuHabitant() {
       dessus.menu ? dessus.menu.plat : momentDuSommet.titre,
       dessus.nom,
       momentDuSommet.quand,
-      "J'ai trouvé ça, qui vient ?",
       dessus.menu?.photo ?? dessus.photo,
       dessus.menu ? dessus.menu.plat : momentDuSommet.titre,
       dessus.menu?.prix ?? momentDuSommet.prix,
@@ -1590,10 +1605,21 @@ export function ApercuHabitant() {
                     est posé SUR la photo, comme sur la carte du paquet, pour
                     que la page reste la même chose que celle qu'on vient de
                     balayer et pas un nouvel écran à comprendre. */}
-                <div className="ap-page-objet">
-                  {salon.photo && (
+                {/* SANS PHOTO, ON NE LAISSE PAS UN BLOC À MOITIÉ VIDE.
+                    Défaut relevé : « les photos dans les salons de l'annonce
+                    n'apparaissent pas toujours ». C'est vrai des salons ouverts
+                    depuis La Ville : un message d'habitant n'a pas forcément
+                    d'image, et le bloc tombait de 178 à 113 pixels sans qu'on
+                    sache si ça chargeait ou si c'était cassé. Un fond franc et
+                    un grand signe disent que c'est voulu. */}
+                <div className={`ap-page-objet${salon.photo ? "" : " nu"}`}>
+                  {salon.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={salon.photo} alt="" />
+                  ) : (
+                    <i className="ap-page-nu" aria-hidden="true">
+                      💬
+                    </i>
                   )}
                   <div className="ap-page-objet-t">
                     <b>{salon.annonce ?? salon.sujet}</b>
@@ -1604,6 +1630,37 @@ export function ApercuHabitant() {
                     </span>
                   </div>
                 </div>
+
+                  {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
+                    Défaut relevé au test : « les gens pensaient que c'était
+                    des gens qui parlaient avec des inconnus ». Trois amis
+                    répondaient tout seuls à l'ouverture ; pour celui qui
+                    découvrait, c'étaient des voisins inconnus en train de
+                    discuter chez lui — la démonstration prouvait le contraire
+                    de ce qu'elle voulait montrer. Il n'y a donc plus rien, et
+                    une seule chose à faire. */}
+                {salon.messages.length === 0 && (
+                  <div className="ap-sal-neuf">
+                    <span aria-hidden="true">👋</span>
+                    <b>Il n&apos;y a personne d&apos;autre, pour l&apos;instant.</b>
+                    <i>
+                      Un salon ne contient que les gens que vous y mettez.
+                      Invitez ceux avec qui vous voulez y aller — ils
+                      n&apos;ont rien à installer pour répondre.
+                    </i>
+                    <button type="button" onClick={() => void inviterAuSalon(salon)}>
+                      👥 Inviter mes amis
+                    </button>
+                    {/* LA NOTE SUR LA VISIBILITÉ EST ICI, pas dans un
+                        réglage qu'on ne trouve pas : c'est au moment
+                        d'inviter qu'on se demande qui verra. */}
+                    <s>
+                      {salon.prive
+                        ? "🔒 Ce salon est privé : seuls ceux que vous invitez le voient."
+                        : "🌍 Ce salon est public : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le passer en privé juste au-dessus."}
+                    </s>
+                  </div>
+                )}
 
                 {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE. Il arrive
                     par un lien, tombe dans une conversation, et n'a aucun moyen
@@ -1710,10 +1767,12 @@ export function ApercuHabitant() {
                     <button
                       type="button"
                       className={`ap-sal-jeviens${salon.viennent.includes("Vous") ? " on" : ""}`}
-                      onClick={() => {
-                        basculerVenue(salon.cle);
-                        noter("jy-vais", 0, "salon");
-                      }}
+                      onClick={() =>
+                        avecMonPrenom(() => {
+                          basculerVenue(salon.cle);
+                          noter("jy-vais", 0, "salon");
+                        })
+                      }
                     >
                       <i aria-hidden="true">🙋</i>
                       {salon.viennent.includes("Vous") ? "Vous venez" : "Je viens"}
@@ -1954,13 +2013,17 @@ export function ApercuHabitant() {
                   ev.preventDefault();
                   const t = motSalon.trim();
                   if (!t) return;
-                  ecrireDansSalon(salon.cle, {
-                    qui: "Vous",
-                    voix: "moi",
-                    texte: t,
-                    quand: heureCourte(),
+                  // ON DEMANDE LE PRÉNOM AU MOMENT DE PRENDRE LA PAROLE, jamais
+                  // à l'arrivée : on peut lire un salon sans rien donner.
+                  avecMonPrenom(() => {
+                    ecrireDansSalon(salon.cle, {
+                      qui: monPrenom() || "Vous",
+                      voix: "moi",
+                      texte: t,
+                      quand: heureCourte(),
+                    });
+                    setMotSalon("");
                   });
-                  setMotSalon("");
                 }}
               >
                 <input
@@ -3747,6 +3810,67 @@ export function ApercuHabitant() {
           </>
           )}
 
+          {/* ─── COMMENT VOUS APPELEZ-VOUS ? ───
+              Question posée au test : « comment connaît-on les initiales des
+              gens si on ne leur demande pas ? » On ne les connaît pas — c'était
+              une invention silencieuse. On demande donc, une fois, au moment de
+              prendre la parole. Un prénom, rien d'autre, et il ne quitte pas le
+              téléphone. */}
+          {demandePrenom && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setDemandePrenom(null)}
+              />
+              <div className="ap-feuille" role="dialog" aria-modal="true">
+                <div className="ap-f-tete">
+                  <b>Comment vous appelez-vous&nbsp;?</b>
+                  <span className="simple">
+                    Juste un prénom, pour que les autres sachent qui parle.
+                  </span>
+                </div>
+                <form
+                  className="ap-dem"
+                  onSubmit={(ev) => {
+                    ev.preventDefault();
+                    const n = brouillonPrenom.trim();
+                    if (!n) return;
+                    noter("demande-envoyee", n.length, "prenom");
+                    direSonPrenom(n);
+                    const suite = demandePrenom;
+                    setDemandePrenom(null);
+                    suite();
+                  }}
+                >
+                  <input
+                    className="ap-prenom"
+                    value={brouillonPrenom}
+                    onChange={(ev) => setBrouillonPrenom(ev.target.value)}
+                    maxLength={24}
+                    autoFocus
+                    placeholder="Camille"
+                    aria-label="Votre prénom"
+                  />
+                  {/* CE QU'ON NE DEMANDE PAS EST AUSSI IMPORTANT QUE CE QU'ON
+                      DEMANDE, et c'est le seul endroit où on peut le dire. */}
+                  <p className="ap-prenom-note">
+                    Pas de nom de famille, pas de numéro, pas de compte. Ce
+                    prénom reste sur ce téléphone.
+                  </p>
+                  <button
+                    type="submit"
+                    className="ap-dem-b"
+                    disabled={!brouillonPrenom.trim()}
+                  >
+                    Continuer
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+
           {feuille && (
             <>
               <button
@@ -5269,6 +5393,38 @@ export function ApercuHabitant() {
         .ap-v-compris>em{display:block;font-style:normal;font-size:11px;
           color:#7F988B;margin:8px 0 7px;}
         .ap-v-compris .ap-envies{margin:0;}
+
+        /* UN SALON NEUF EST VIDE, ET LE DIT. */
+        .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;
+          background:rgba(61,226,166,.07);border:1px solid rgba(61,226,166,.22);
+          border-radius:18px;margin-bottom:12px;}
+        .ap-sal-neuf>span{font-size:30px;line-height:1;}
+        .ap-sal-neuf b{display:block;font-size:15.5px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;margin:9px 0 6px;}
+        .ap-sal-neuf i{display:block;font-style:normal;font-size:12.5px;
+          line-height:1.45;color:#8C9C94;max-width:34ch;margin:0 auto;}
+        .ap-sal-neuf button{width:100%;margin-top:14px;font:inherit;font-size:14.5px;
+          font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:13px;
+          padding:12px;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-sal-neuf s{display:block;text-decoration:none;font-size:11px;
+          line-height:1.4;color:#7F988B;margin-top:12px;padding-top:11px;
+          border-top:1px solid rgba(255,255,255,.09);}
+
+        /* LE HERO SANS PHOTO. Un fond franc plutot qu'un bloc a moitie vide :
+           on doit voir que c'est voulu, pas que ca n'a pas charge. */
+        .ap-page-objet.nu{display:flex;align-items:center;justify-content:center;
+          min-height:104px;background:linear-gradient(150deg,#16302A,#0C1A16);}
+        .ap-page-nu{font-style:normal;font-size:34px;opacity:.5;
+          margin:18px 0 46px;}
+
+        /* LE PRENOM. */
+        .ap-prenom{width:100%;font:inherit;font-size:19px;font-weight:800;
+          color:#EAF2EC;background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.16);border-radius:14px;
+          padding:14px 16px;text-align:center;}
+        .ap-prenom::placeholder{color:#5E7268;font-weight:600;}
+        .ap-prenom-note{margin:11px 0 0;font-size:11.5px;line-height:1.45;
+          color:#7F988B;text-align:center;}
 
         /* VOIR L'ANNONCE COMPLETE. Discret : c'est un secours pour celui qui
            decouvre, pas l'action principale du salon. */
