@@ -60,6 +60,12 @@ import {
 } from "@/lib/direct/salons";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
 import {
+  abonnerSuivis,
+  AUCUN_SUIVI,
+  basculerSuivi,
+  chargerSuivis,
+} from "@/lib/direct/suivis";
+import {
   abonnerVille,
   caMInteresse,
   chargerVille,
@@ -591,6 +597,119 @@ export function ApercuHabitant() {
   );
   /** Fermée à la main : on ne repropose plus de la visite. */
   const [inviteFermee, setInviteFermee] = useState(false);
+  /** Le signe qui accompagne le message d'écho. La flamme par défaut. */
+  const [echoIcone, setEchoIcone] = useState("🔥");
+
+  /**
+   * LES TROIS ONGLETS — l'ossature qui manquait.
+   *
+   * Défaut relevé au test : « il faut qu'on puisse voir les anciens salons ou
+   * ceux encore ouverts ». Ils n'étaient atteignables qu'au fond d'une feuille
+   * appelée « Mon espace », c'est-à-dire nulle part : ce qu'on ne voit pas
+   * depuis l'écran d'accueil n'existe pas.
+   *
+   * TROIS, ET PAS QUATRE. « Le direct » est ce qui se passe maintenant,
+   * « Mes salons » est ce qu'on a déclenché — ouvert ce soir ou refermé depuis
+   * samedi — et « Profil » est ce qu'on a gardé, réservé et demandé. Un
+   * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
+   * et on n'a pas de réponse.
+   */
+  const [onglet, setOnglet] = useState<"direct" | "ville" | "salons" | "profil">("direct");
+  /**
+   * LES FAVORIS SONT UNE PAGE, PAS L'ESPACE PERSO.
+   *
+   * DÉFAUT RELEVÉ AU TEST : « quand je mets un cœur, ça va sur mon profil au
+   * lieu d'avoir juste mes favoris ». C'était vrai : la pastille du bandeau
+   * ouvrait Mon espace, où les gardés étaient une liste parmi quatre. Quelqu'un
+   * qui vient de garder quelque chose veut voir CE qu'il a gardé, pas ses
+   * réservations et ses rappels.
+   *
+   * UNE PAGE ET NON UN CINQUIÈME ONGLET : les trois briques — Le Direct, La
+   * Ville, Les Salons — sont le produit. Les favoris sont un rangement
+   * personnel ; leur donner un onglet les mettrait au même rang que ce qui fait
+   * l'application.
+   */
+  const [favorisPage, setFavorisPage] = useState(false);
+
+  /**
+   * ─── LE DIRECT VIDÉO DANS LE SALON ───
+   *
+   * DEMANDÉ AU TEST : « il manque la possibilité de faire un live vidéo — je
+   * suis chez le coiffeur, je mets le live, et mes amis peuvent interagir ».
+   * C'est le geste qui va le plus loin dans ce que le salon promet : pas
+   * raconter ce qu'on vit, le montrer pendant qu'on le vit.
+   *
+   * CE QUI EST VRAI ICI ET CE QUI NE L'EST PAS, et il faut le dire. La caméra
+   * s'allume pour de bon — `getUserMedia`, avec la permission du téléphone — et
+   * l'image est celle de l'appareil. Mais RIEN N'EST TRANSMIS : cette maquette
+   * n'a pas de serveur de flux. Le salon annonce le direct, les autres voient
+   * qu'il a lieu, personne ne reçoit l'image. C'est écrit à l'écran plutôt que
+   * laissé croire — une démonstration qui fait semblant de diffuser serait la
+   * seule chose de toute l'application qui mentirait.
+   */
+  const flux = useRef<MediaStream | null>(null);
+  const video = useRef<HTMLVideoElement | null>(null);
+  const [enLigne, setEnLigne] = useState(false);
+
+  function arreterLeDirect(cle?: string) {
+    flux.current?.getTracks().forEach((t) => t.stop());
+    flux.current = null;
+    setEnLigne(false);
+    if (cle) {
+      ecrireDansSalon(cle, {
+        qui: monPrenom() || "Vous",
+        voix: "moi",
+        texte: "⏹️ Le direct est terminé.",
+        quand: heureCourte(),
+      });
+    }
+  }
+
+  async function lancerLeDirect(cle: string) {
+    if (enLigne) {
+      arreterLeDirect(cle);
+      return;
+    }
+    try {
+      const f = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      flux.current = f;
+      setEnLigne(true);
+      noter("video-vue", 0, "direct");
+      ecrireDansSalon(cle, {
+        qui: monPrenom() || "Vous",
+        voix: "moi",
+        texte: "🔴 En direct, maintenant.",
+        quand: heureCourte(),
+      });
+    } catch {
+      // Permission refusée ou pas de caméra : on le dit, on ne fait pas comme si.
+      setEchoIcone("📹");
+      setEcho("La caméra n'est pas accessible. Le direct n'a pas pu démarrer.");
+    }
+  }
+
+  // L'aperçu est branché après le rendu : la balise n'existe pas avant.
+  useEffect(() => {
+    if (enLigne && video.current && flux.current) {
+      video.current.srcObject = flux.current;
+    }
+  }, [enLigne]);
+
+  // ON N'OUBLIE JAMAIS LA CAMÉRA ALLUMÉE. Une pastille verte qui reste allumée
+  // sur un téléphone est la pire chose qu'on puisse laisser derrière soi.
+  //
+  // PAS D'EFFET SUR `salonPage` ICI, ET C'EST DÉLIBÉRÉ : ce bloc est écrit plus
+  // haut que la déclaration de cet état, et un tableau de dépendances est
+  // évalué PENDANT le rendu — la page restait blanche, zone morte temporelle.
+  // On éteint donc là où le salon se ferme, explicitement, et au démontage.
+  useEffect(() => {
+    return () => {
+      flux.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
 
   /**
    * MESURER L'ÉCRAN PLUTÔT QUE LE DÉDUIRE.
@@ -655,23 +774,17 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
-   * LES TROIS ONGLETS — l'ossature qui manquait.
-   *
-   * Défaut relevé au test : « il faut qu'on puisse voir les anciens salons ou
-   * ceux encore ouverts ». Ils n'étaient atteignables qu'au fond d'une feuille
-   * appelée « Mon espace », c'est-à-dire nulle part : ce qu'on ne voit pas
-   * depuis l'écran d'accueil n'existe pas.
-   *
-   * TROIS, ET PAS QUATRE. « Le direct » est ce qui se passe maintenant,
-   * « Mes salons » est ce qu'on a déclenché — ouvert ce soir ou refermé depuis
-   * samedi — et « Profil » est ce qu'on a gardé, réservé et demandé. Un
-   * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
-   * et on n'a pas de réponse.
+   * SUIVRE UN COMMERÇANT — et la différence avec garder est tout le sujet.
+   * Garder range une annonce pour la retrouver : geste tourné vers soi. Suivre
+   * crée une obligation — être prévenu — donc une raison de revenir demain, et
+   * une audience que le commerçant ne reconstruit pas chaque matin.
+   * Voir `lib/direct/suivis.ts`.
    */
-  const [onglet, setOnglet] = useState<"direct" | "ville" | "salons" | "profil">("direct");
+  const suivis = useSyncExternalStore(abonnerSuivis, chargerSuivis, () => AUCUN_SUIVI);
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
     if (o === onglet) return;
+    arreterLeDirect();
     noter("onglet", 0, o);
     setOnglet(o);
     setFeuille("");
@@ -996,7 +1109,10 @@ export function ApercuHabitant() {
   // Le mot s'efface tout seul : une confirmation qui reste devient un décor.
   useEffect(() => {
     if (!echo) return;
-    const t = setTimeout(() => setEcho(""), 4200);
+    const t = setTimeout(() => {
+      setEcho("");
+      setEchoIcone("🔥");
+    }, 4200);
     return () => clearTimeout(t);
   }, [echo]);
   const vueId = dessus?.id;
@@ -1146,6 +1262,7 @@ export function ApercuHabitant() {
   // Les trois listes se reconstruisent depuis les identifiants gardés : rien
   // n'est dupliqué, donc rien ne peut se désynchroniser de ce qui est à l'écran.
   const mesGardes = toutes.filter((c) => gardees.includes(c.id));
+  const mesSuivis = toutes.filter((c) => suivis.includes(c.id));
   const mesReserves = reserves.flatMap((cle) => {
     const [a, b] = cle.split("|");
     if (a === "vais" || a === "emb") {
@@ -1258,6 +1375,27 @@ export function ApercuHabitant() {
    */
   const monEspace = (
     <div className="ap-f-liste">
+      {mesSuivis.length > 0 && (
+        <div className="ap-moi-bloc">
+          <h4>
+            Suivis<b>{mesSuivis.length}</b>
+          </h4>
+          <ul>
+            {mesSuivis.map((c) => (
+              <li key={c.id}>
+                <div className="ap-moi-l fixe">
+                  <i aria-hidden="true">🔔</i>
+                  <span>
+                    <b>{c.nom}</b>
+                    Prévenu avant les autres · {c.metier}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {mesGardes.length > 0 && (
         <div className="ap-moi-bloc">
           <h4>
@@ -1323,7 +1461,10 @@ export function ApercuHabitant() {
         </div>
       )}
 
-      {mesGardes.length === 0 && mesReserves.length === 0 && mesDemandes.length === 0 && (
+      {mesGardes.length === 0 &&
+        mesSuivis.length === 0 &&
+        mesReserves.length === 0 &&
+        mesDemandes.length === 0 && (
         <div className="ap-moi-vide">
           <span aria-hidden="true">💚</span>
           <b>Rien pour l&apos;instant.</b>
@@ -1514,6 +1655,7 @@ export function ApercuHabitant() {
   function voirLAnnonce(x: Salon) {
     const { carte: c, evenement: e } = annonceDuSalon(x);
     if (!c && !e) return;
+    arreterLeDirect();
     // L'ONGLET AUSSI. Sans cette ligne, on fermait bien le salon mais la page
     // « Mes salons » restait affichee par-dessus le paquet : le bouton ne
     // faisait rien de visible. Trouve en verifiant, pas en relisant.
@@ -1566,7 +1708,90 @@ export function ApercuHabitant() {
               que le produit fait et que personne d'autre ne fait. Il prend donc
               l'écran entier, avec sa propre barre en haut et ses actions en bas,
               et le paquet attend derrière. */}
-          {salonPage && salon ? (
+          {favorisPage ? (
+            /* ─── MES FAVORIS ───
+               Une page à elle seule : quelqu'un qui vient de garder quelque
+               chose veut voir CE qu'il a gardé, pas ses réservations et ses
+               rappels au milieu. */
+            <div className="ap-page">
+              <div className="ap-page-h">
+                <button
+                  type="button"
+                  className="ap-page-r"
+                  aria-label="Revenir"
+                  onClick={() => setFavorisPage(false)}
+                >
+                  ←
+                </button>
+                <span className="ap-page-t">
+                  <b>Mes favoris</b>
+                  <em>
+                    {mesGardes.length}{" "}
+                    {mesGardes.length > 1 ? "commerces gardés" : "commerce gardé"}
+                  </em>
+                </span>
+              </div>
+              <div className="ap-sal-corps">
+                {mesGardes.length === 0 ? (
+                  <div className="ap-moi-vide">
+                    <span aria-hidden="true">💚</span>
+                    <b>Rien de gardé pour l&apos;instant.</b>
+                    <i>
+                      Le cœur sur la photo d&apos;une annonce la range ici, pour
+                      la retrouver plus tard.
+                    </i>
+                  </div>
+                ) : (
+                  <div className="ap-liste">
+                    {mesGardes.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="ap-ligne"
+                        onClick={() => {
+                          setFavorisPage(false);
+                          setEmbauches(false);
+                          setBranche(c.branche);
+                          setVue("metiers");
+                          setEnvies([]);
+                          setPassees([]);
+                          setEpingle(c.id);
+                        }}
+                      >
+                        {c.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💚</i>
+                        )}
+                        <span>
+                          <b>{c.nom}</b>
+                          <u>{c.metier}</u>
+                          <em>
+                            {c.ville} · {c.distance}
+                          </em>
+                        </span>
+                        {/* On peut retirer d'ici : c'est le seul endroit où
+                            l'on voit tout ce qu'on a gardé, donc le seul où
+                            faire le ménage a du sens. */}
+                        <s
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Retirer ${c.nom}`}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setGardees((g) => g.filter((x) => x !== c.id));
+                          }}
+                        >
+                          ✕
+                        </s>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : salonPage && salon ? (
             <div className="ap-page">
               <div className="ap-page-h">
                 <button
@@ -1574,6 +1799,7 @@ export function ApercuHabitant() {
                   className="ap-page-r"
                   aria-label="Revenir"
                   onClick={() => {
+                    arreterLeDirect();
                     setSalonPage(false);
                     setSalonOuvert("");
                   }}
@@ -1658,6 +1884,33 @@ export function ApercuHabitant() {
                       {salon.prive
                         ? "🔒 Ce salon est privé : seuls ceux que vous invitez le voient."
                         : "🌍 Ce salon est public : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le passer en privé juste au-dessus."}
+                    </s>
+                  </div>
+                )}
+
+                {/* ─── L'APERÇU DU DIRECT ───
+                    L'image est celle de la caméra, pour de bon. Ce qui n'est
+                    pas vrai, c'est la diffusion : la maquette n'a pas de
+                    serveur de flux. On l'écrit sous l'image plutôt que de le
+                    laisser croire. */}
+                {enLigne && (
+                  <div className="ap-live-boite">
+                    <video ref={video} autoPlay playsInline muted />
+                    <span className="ap-live-pt">
+                      <i aria-hidden="true">●</i>
+                      EN DIRECT
+                    </span>
+                    <button
+                      type="button"
+                      className="ap-live-stop"
+                      onClick={() => arreterLeDirect(salon.cle)}
+                    >
+                      Arrêter
+                    </button>
+                    <s>
+                      Dans cette maquette, l&apos;image ne quitte pas votre
+                      téléphone : il n&apos;y a pas encore de serveur de
+                      diffusion.
                     </s>
                   </div>
                 )}
@@ -1989,21 +2242,19 @@ export function ApercuHabitant() {
                   <i aria-hidden="true">🎬</i>
                   Vidéo
                 </label>
+                {/* ─── LE DIRECT PREND LA PLACE DE « PROPOSER » ───
+                    Six boutons ne tiennent pas sur 360 points, et il fallait
+                    choisir. « Proposer » ouvrait une invite du navigateur pour
+                    écrire une phrase — c'est-à-dire exactement ce que le champ
+                    juste en dessous fait déjà, en mieux. Le direct, lui, ne se
+                    fait nulle part ailleurs. */}
                 <button
                   type="button"
-                  onClick={() => {
-                    const q = window.prompt("Qu'est-ce que vous proposez au groupe ?");
-                    if (!q?.trim()) return;
-                    ecrireDansSalon(salon.cle, {
-                      qui: "Vous",
-                      voix: "moi",
-                      texte: `💡 ${q.trim()}`,
-                      quand: heureCourte(),
-                    });
-                  }}
+                  className={enLigne ? "ap-en-direct" : ""}
+                  onClick={() => avecMonPrenom(() => void lancerLeDirect(salon.cle))}
                 >
-                  <i aria-hidden="true">💡</i>
-                  Proposer
+                  <i aria-hidden="true">{enLigne ? "⏹️" : "🔴"}</i>
+                  {enLigne ? "Arrêter" : "Direct"}
                 </button>
               </div>
 
@@ -2091,6 +2342,7 @@ export function ApercuHabitant() {
                   type="button"
                   className="cd-puce ap-perso"
                   onClick={() => allerA_onglet("profil")}
+                  data-role="reserves"
                   aria-label="Mon espace"
                 >
                   <i aria-hidden="true">📅</i>
@@ -2105,8 +2357,11 @@ export function ApercuHabitant() {
               <button
                 type="button"
                 className={`cd-puce vert ap-fav ap-perso${coeurVole ? " pop" : ""}`}
-                onClick={() => allerA_onglet("profil")}
-                aria-label="Mon espace"
+                onClick={() => {
+                  noter("onglet", gardees.length, "favoris");
+                  setFavorisPage(true);
+                }}
+                aria-label="Mes favoris"
               >
                 <i aria-hidden="true">💚</i>
                 <b>{gardees.length}</b>
@@ -2420,8 +2675,33 @@ export function ApercuHabitant() {
                             );
                           }}
                         >
+                          {/* LE MOT, PAS SEULEMENT LE SIGNE. Défaut relevé au
+                              test : « le cœur est peut-être trop discret pour
+                              comprendre que c'est pour mettre en favori ». Un
+                              cœur seul, sur une photo, peut vouloir dire aimer,
+                              recommander, noter — trois choses qu'on fait
+                              ailleurs dans cette application. Le verbe tranche,
+                              et il change au deuxième état pour confirmer que
+                              c'est fait. */}
                           <i aria-hidden="true">{gardees.includes(sommet.id) ? "💚" : "♡"}</i>
+                          <b>{gardees.includes(sommet.id) ? "Gardé" : "Garder"}</b>
                         </button>
+
+                        {/* ─── LA CONTREPARTIE DU SUIVI, SUR LA PHOTO ───
+                            Suivre ne servirait à rien si rien n'arrivait. Sans
+                            serveur, la maquette ne peut pas envoyer d'avis ;
+                            elle peut au moins tenir la promesse à l'écran :
+                            l'annonce d'un commerce qu'on suit se signale
+                            d'elle-même quand on la croise. */}
+                        {suivis.includes(sommet.id) && (
+                          <div className="ap-suivi-vu">
+                            <i aria-hidden="true">🔔</i>
+                            <span>
+                              <b>{dessus?.nom ?? "Ce commerce"} vient de publier</b>
+                              Vous êtes parmi les premiers informés.
+                            </span>
+                          </div>
+                        )}
 
                         {/* CE QUI EST EN TRAIN DE SE PASSER SUR CETTE ANNONCE.
                             Le COMPTE est public, le CONTENU ne l'est jamais :
@@ -2891,6 +3171,50 @@ export function ApercuHabitant() {
                       <div className="ap-bloc">
                         <h3>Le commerce</h3>
                         <p className="ap-mot">{dessus.fiche.mot}</p>
+
+                        {/* ─── SUIVRE, AVEC UNE PROMESSE ET PAS UN VERBE ───
+                            « Suivre » tout seul promet un fil qu'on lira
+                            peut-être, et personne n'appuie pour ça. Ce qui
+                            décide, c'est l'AVANCE : savoir avant les autres
+                            qu'il reste quatre parts. C'est la leçon de « faites-
+                            le revenir », qui n'a commencé à servir que le jour
+                            où la ligne a dit ce qui se passait ensuite.
+                            La permission de notification se demande ICI, parce
+                            que c'est le seul endroit où « on vous préviendra »
+                            est une phrase vraie. */}
+                        <button
+                          type="button"
+                          className={`ap-suivre${suivis.includes(dessus.id) ? " on" : ""}`}
+                          aria-pressed={suivis.includes(dessus.id)}
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => {
+                            const suit = basculerSuivi(dessus.id);
+                            noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
+                            if (!suit) return;
+                            setEchoIcone("🔔");
+                            setEcho(
+                              `Vous suivez ${dessus.nom}. Vous serez prévenu avant les autres.`,
+                            );
+                            noter("notif-proposee", 0, "suivre");
+                            void demanderAvertissement().then((r) =>
+                              noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
+                            );
+                          }}
+                        >
+                          <i aria-hidden="true">
+                            {suivis.includes(dessus.id) ? "✓" : "🔔"}
+                          </i>
+                          <span>
+                            <b>
+                              {suivis.includes(dessus.id)
+                                ? `Vous suivez ${dessus.nom}`
+                                : `Suivre ${dessus.nom}`}
+                            </b>
+                            {suivis.includes(dessus.id)
+                              ? "Vous saurez ce qu'il propose avant les autres."
+                              : "Soyez prévenu avant les autres de ce qu'il propose."}
+                          </span>
+                        </button>
                         <div className="ap-l">
                           <i aria-hidden="true">📍</i>
                           {dessus.fiche.ou} · {dessus.distance}
@@ -3102,7 +3426,10 @@ export function ApercuHabitant() {
 
           {echo && (
             <div className="ap-echo" role="status">
-              <i aria-hidden="true">🔥</i>
+              {/* Le signe suit le message. La flamme est celle du coup de pouce ;
+                  elle annonçait aussi les abonnements, qui ne sont pas la même
+                  chose — une couleur, un signe, une idée. */}
+              <i aria-hidden="true">{echoIcone}</i>
               {echo}
             </div>
           )}
@@ -3498,7 +3825,7 @@ export function ApercuHabitant() {
                       <button
                         key={x.cle}
                         type="button"
-                        className="ap-l"
+                        className="ap-ligne"
                         onClick={() => {
                           setSalonOuvert(x.cle);
                           setSalonPage(true);
@@ -3548,7 +3875,7 @@ export function ApercuHabitant() {
                       <button
                         key={x.cle}
                         type="button"
-                        className="ap-l"
+                        className="ap-ligne"
                         onClick={() => {
                           noter("partage", 0, "decouverte");
                           setSalonOuvert(x.cle);
@@ -3585,7 +3912,7 @@ export function ApercuHabitant() {
                       <button
                         key={x.cle}
                         type="button"
-                        className="ap-l"
+                        className="ap-ligne"
                         onClick={() => {
                           setSalonOuvert(x.cle);
                           setSalonPage(true);
@@ -3669,8 +3996,8 @@ export function ApercuHabitant() {
                       {mesSorties.length > 1 ? "sorties" : "sortie"}
                     </span>
                     <span>
-                      <b>{reserves.length}</b>
-                      {reserves.length > 1 ? "réservés" : "réservé"}
+                      <b>{mesSuivis.length}</b>
+                      {mesSuivis.length > 1 ? "suivis" : "suivi"}
                     </span>
                   </div>
                 </div>
@@ -4894,6 +5221,8 @@ export function ApercuHabitant() {
         /* La pastille est positionnee par rapport a .cd-bas, pas a la carte :
            lui appliquer la hauteur du bandeau du haut l'aurait envoyee au
            milieu de la photo. Mesure, pas deduction. */
+        /* Le cercle est devenu une pastille : le verbe y tient, et c'est lui
+           qui dit ce que le geste fait. */
         .ap-garder-photo{position:absolute;right:14px;top:56px;z-index:3;
           display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:15px;
           line-height:1;cursor:pointer;color:#8FE9C4;
@@ -4903,7 +5232,7 @@ export function ApercuHabitant() {
         .ap-garder-photo:active{transform:scale(.92);}
         .ap-garder-photo i{font-style:normal;font-size:15px;line-height:1;}
         .ap-garder-photo b{font-size:12px;font-weight:850;color:#CFF7E6;
-          font-variant-numeric:tabular-nums;}
+          letter-spacing:-.01em;}
         .ap-garder-photo.on{background:rgba(61,226,166,.26);
           border-color:rgba(61,226,166,.75);}
 
@@ -5394,6 +5723,64 @@ export function ApercuHabitant() {
           color:#7F988B;margin:8px 0 7px;}
         .ap-v-compris .ap-envies{margin:0;}
 
+        /* ─── LE DIRECT VIDEO ───
+           Le rouge du voyant d'enregistrement, celui du bloc « en direct » :
+           c'est la meme chose, quelqu'un y est en ce moment. */
+        .ap-live-boite{position:relative;flex:none;border-radius:18px;
+          overflow:hidden;margin-bottom:12px;background:#000;
+          border:1px solid rgba(239,68,68,.45);}
+        .ap-live-boite video{display:block;width:100%;height:210px;
+          object-fit:cover;background:#000;}
+        .ap-live-pt{position:absolute;left:11px;top:11px;display:inline-flex;
+          align-items:center;gap:6px;font-size:10px;font-weight:850;
+          letter-spacing:.1em;color:#fff;background:#E23D4E;border-radius:999px;
+          padding:4px 9px;}
+        .ap-live-pt i{font-style:normal;font-size:8px;
+          animation:apVoyant 1.6s ease-in-out infinite;}
+        .ap-live-stop{position:absolute;right:11px;top:11px;font:inherit;
+          font-size:11.5px;font-weight:850;cursor:pointer;color:#2A0709;
+          background:rgba(255,255,255,.9);border:0;border-radius:999px;
+          padding:6px 12px;}
+        /* CE QUI N'EST PAS VRAI EST ECRIT SOUS L'IMAGE. Une demonstration qui
+           ferait semblant de diffuser serait la seule chose de toute
+           l'application qui mentirait. */
+        .ap-live-boite s{display:block;text-decoration:none;font-size:10.5px;
+          line-height:1.4;color:#8C9C94;background:rgba(0,0,0,.5);padding:8px 11px;}
+        .ap-page-actions .ap-en-direct{color:#FFC9C9;
+          background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.5);}
+
+        /* ─── SUIVRE UN COMMERCE ───
+           Ce n'est ni garder (un rangement pour soi) ni le coup de pouce (un
+           soutien qui se voit) : c'est un abonnement, donc le violet du rappel
+           — la seule couleur du vocabulaire qui veut dire « on vous
+           previendra ». */
+        .ap-suivre{display:flex;align-items:center;gap:11px;width:100%;
+          margin:0 0 13px;font:inherit;text-align:left;cursor:pointer;
+          color:#D7CBFF;background:rgba(167,139,250,.13);
+          border:1px solid rgba(167,139,250,.36);border-radius:14px;padding:11px 13px;}
+        .ap-suivre>i{font-style:normal;font-size:17px;line-height:1;flex:none;}
+        .ap-suivre span{flex:1;min-width:0;font-size:11px;line-height:1.35;
+          color:#A99BC9;}
+        .ap-suivre b{display:block;font-size:13.5px;font-weight:850;color:#EDE7FF;
+          letter-spacing:-.01em;margin-bottom:1px;}
+        .ap-suivre:active{transform:scale(.99);}
+        .ap-suivre.on{color:#CFF7E6;background:rgba(61,226,166,.14);
+          border-color:rgba(61,226,166,.4);}
+        .ap-suivre.on span{color:#8C9C94;}
+        .ap-suivre.on b{color:#CFF7E6;}
+
+        /* LA CONTREPARTIE, SUR LA PHOTO. Suivre ne servirait a rien si rien
+           n'arrivait : l'annonce d'un commerce suivi se signale d'elle-meme. */
+        .ap-suivi-vu{display:flex;align-items:center;gap:9px;width:100%;
+          margin-top:11px;padding:8px 11px;
+          background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.4);
+          border-radius:13px;}
+        .ap-suivi-vu i{font-style:normal;font-size:14px;line-height:1;flex:none;}
+        .ap-suivi-vu span{flex:1;min-width:0;font-size:10.5px;color:#B7A9D6;
+          line-height:1.3;}
+        .ap-suivi-vu b{display:block;font-size:12.5px;font-weight:850;
+          color:#EDE7FF;letter-spacing:-.01em;}
+
         /* UN SALON NEUF EST VIDE, ET LE DIT. */
         .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;
           background:rgba(61,226,166,.07);border:1px solid rgba(61,226,166,.22);
@@ -5454,7 +5841,7 @@ export function ApercuHabitant() {
         .ap-bascule.on{background:rgba(61,226,166,.34);border-color:rgba(61,226,166,.6);}
         .ap-bascule.on i{transform:translateX(18px);background:#3DE2A6;}
 
-        .ap-l s.reste{color:#F0B429;}
+        .ap-ligne s.reste{color:#F0B429;}
 
         /* VOUS, SANS COMPTE. */
         .ap-moi-qui{flex:none;text-align:center;
@@ -5472,7 +5859,14 @@ export function ApercuHabitant() {
         .ap-moi-chif b{font-size:18px;font-weight:850;color:#3DE2A6;
           font-variant-numeric:tabular-nums;}
 
-        /* LES LISTES DE SALONS. Une vignette, trois lignes, un chiffre. */
+        /* LES LISTES DE SALONS. Une vignette, trois lignes, un chiffre.
+           LE NOM A CHANGE : cette regle s'appelait .ap-l, nom que portaient
+           deja les lignes de la fiche du commerce sous le pli. Deux elements
+           differents sous le meme nom, donc chacun recevait la moitie des
+           proprietes de l'autre — les lignes de la fiche heritaient d'un fond,
+           d'une bordure et d'un curseur de bouton, et ces lignes-ci perdaient
+           leur alignement. Deuxieme collision de la semaine : une seule verite
+           par sujet vaut aussi pour les noms de classe. */
         .ap-liste{flex:none;margin-bottom:16px;}
         .ap-liste h4{display:flex;align-items:center;gap:7px;font-size:11px;
           font-weight:850;letter-spacing:.11em;text-transform:uppercase;
@@ -5482,31 +5876,31 @@ export function ApercuHabitant() {
           animation:apVoyant 2.4s ease-in-out infinite;}
         .ap-liste h4 b{font-size:10px;color:#7F988B;}
         .ap-liste.passe h4{color:#8C9C94;}
-        .ap-l{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
+        .ap-ligne{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
           text-align:left;cursor:pointer;color:#A9BBB1;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
           border-radius:15px;padding:9px 11px 9px 9px;margin-bottom:8px;}
         .ap-l:active{transform:scale(.99);}
-        .ap-l img{width:52px;height:52px;flex:none;object-fit:cover;
+        .ap-ligne img{width:52px;height:52px;flex:none;object-fit:cover;
           border-radius:11px;}
         .ap-l>i{width:52px;height:52px;flex:none;display:flex;align-items:center;
           justify-content:center;font-style:normal;font-size:21px;
           background:rgba(255,255,255,.06);border-radius:11px;}
-        .ap-l span{flex:1;min-width:0;display:block;}
-        .ap-l b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
+        .ap-ligne span{flex:1;min-width:0;display:block;}
+        .ap-ligne b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
           letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
           text-overflow:ellipsis;}
-        .ap-l u{display:block;text-decoration:none;font-size:11.5px;
+        .ap-ligne u{display:block;text-decoration:none;font-size:11.5px;
           font-weight:750;color:#8FE9C4;margin-top:1px;}
-        .ap-l em{display:block;font-style:normal;font-size:11px;color:#7F988B;
+        .ap-ligne em{display:block;font-style:normal;font-size:11px;color:#7F988B;
           margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .ap-l s{flex:none;text-decoration:none;font-size:11px;font-weight:850;
+        .ap-ligne s{flex:none;text-decoration:none;font-size:11px;font-weight:850;
           color:#7F988B;}
         /* Un salon passe garde sa photo, mais en retrait : c'est un souvenir,
            pas une chose a faire. */
-        .ap-liste.passe .ap-l img{filter:grayscale(.55) brightness(.8);}
-        .ap-liste.passe .ap-l u{color:#8C9C94;}
-        .ap-l s.direct{color:#FFC9C9;background:rgba(239,68,68,.2);
+        .ap-liste.passe .ap-ligne img{filter:grayscale(.55) brightness(.8);}
+        .ap-liste.passe .ap-ligne u{color:#8C9C94;}
+        .ap-ligne s.direct{color:#FFC9C9;background:rgba(239,68,68,.2);
           border:1px solid rgba(239,68,68,.42);border-radius:999px;
           font-size:8.5px;letter-spacing:.08em;padding:4px 7px;}
 
