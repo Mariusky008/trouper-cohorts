@@ -555,6 +555,38 @@ export function ApercuHabitant() {
   useLayoutEffect(() => {
     suivreHauteurEcran();
   }, []);
+
+  const barreHaute = useRef<HTMLDivElement | null>(null);
+  const barreGestes = useRef<HTMLDivElement | null>(null);
+  const barreOnglets = useRef<HTMLElement | null>(null);
+  /**
+   * LA HAUTEUR DES DEUX BANDEAUX QUI FLOTTENT SUR LA PHOTO.
+   *
+   * Depuis qu'ils ne sont plus dans le flux, plus rien ne réserve leur place :
+   * sans ces deux mesures, la pastille « Maintenant, dans 20 min » repasserait
+   * sous les filtres et le prix disparaîtrait sous les gestes — le défaut de
+   * superposition qu'on a déjà payé une fois.
+   *
+   * MESURÉES, PAS DEVINÉES : la rangée de filtres change de hauteur avec le
+   * métier affiché, et une valeur en dur se serait trompée un écran sur deux.
+   */
+  useLayoutEffect(() => {
+    const r = document.documentElement.style;
+    const lire = () => {
+      const h = barreHaute.current?.offsetHeight ?? 0;
+      const g = barreGestes.current?.offsetHeight ?? 0;
+      const b = barreOnglets.current?.offsetHeight ?? 0;
+      if (h) r.setProperty("--ap-haut-h", `${h}px`);
+      if (g) r.setProperty("--ap-gestes-h", `${g}px`);
+      if (b) r.setProperty("--ap-onglets-h", `${b}px`);
+    };
+    lire();
+    const o = new ResizeObserver(lire);
+    if (barreHaute.current) o.observe(barreHaute.current);
+    if (barreGestes.current) o.observe(barreGestes.current);
+    if (barreOnglets.current) o.observe(barreOnglets.current);
+    return () => o.disconnect();
+  });
   /** La clé du salon ouvert à l'écran. Vide : on n'est dans aucun. */
   const [salonOuvert, setSalonOuvert] = useState("");
   /**
@@ -1711,7 +1743,7 @@ export function ApercuHabitant() {
           <>
           {onglet === "direct" && (
           <>
-          <div className="ap-haut">
+          <div className="ap-haut" ref={barreHaute}>
             {/* Le bandeau du produit — mêmes classes, donc même allure — mais
                 ses pastilles sont ici de vrais boutons. */}
             <div className="cd-barre">
@@ -2771,7 +2803,10 @@ export function ApercuHabitant() {
               comme une carte, et on la garde ou on la passe comme les autres.
               Ils ne disparaissent que le temps de l'attente. */}
           {!(sortie && arrivees.length === 0) && (
-          <div className="cd-gestes ap-gestes">
+          <div
+            className={`cd-gestes ap-gestes${descendu ? " pose" : ""}`}
+            ref={barreGestes}
+          >
             <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!sommet}>
               <i aria-hidden="true">✕</i>
               <em>Passer</em>
@@ -3029,7 +3064,7 @@ export function ApercuHabitant() {
               En bas, sous les gestes : c'est là que le pouce est déjà. Elle est
               masquée dans un salon ouvert, qui a sa propre barre d'actions —
               deux barres l'une sur l'autre ne se lisent pas. */}
-          <nav className="ap-onglets" aria-label="Sections">
+          <nav className="ap-onglets" aria-label="Sections" ref={barreOnglets}>
             <button
               type="button"
               className={onglet === "direct" ? "on" : ""}
@@ -3492,8 +3527,25 @@ export function ApercuHabitant() {
            d'etat : sans cette marge, « Clikme » passerait dessous une fois
            l'application posee sur l'ecran d'accueil. Dans Safari la valeur
            vaut zero, la barre du navigateur occupant deja la place. */
-        .ap-haut{flex:none;padding:calc(8px + env(safe-area-inset-top)) 12px 0;
-          display:flex;flex-direction:column;gap:7px;}
+        /* ─── LA PHOTO EST L'ECRAN ───
+           RELEVE AU TEST, TINDER A L'APPUI : « l'image semble etre dans un
+           rectangle, et quand on scrolle on voit trop les bordures ; chez eux
+           la photo prend tout le cadre et c'est plus beau ». C'etait exact :
+           la carte vivait dans un cadre noir, avec ses marges, ses coins
+           arrondis, puis une bande de gestes et une bande d'onglets en dessous
+           — trois bordures entre l'image et le bord de l'ecran.
+           LES DEUX BANDEAUX SORTENT DONC DU FLUX et se posent SUR la photo, qui
+           occupe tout ce que la barre des onglets ne prend pas. Ils gardent
+           leur lisibilite par un voile degrade, pas par un fond plein : un fond
+           plein serait une bordure de plus.
+           La barre des onglets, elle, reste dans le flux — les pages Mes salons
+           et Profil ont besoin d'elle pour se poser dessus. */
+        .ap-haut{position:absolute;top:0;left:0;right:0;z-index:4;
+          padding:calc(8px + env(safe-area-inset-top)) 12px 10px;
+          display:flex;flex-direction:column;gap:7px;pointer-events:none;
+          background:linear-gradient(180deg,rgba(4,8,6,.82) 0%,rgba(4,8,6,.62) 55%,rgba(4,8,6,0) 100%);}
+        /* Le degrade laisse passer le doigt ; ses enfants le reprennent. */
+        .ap-haut>*{pointer-events:auto;}
         /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau
            ne grandit pas, la date ne prend plus de ligne a elle. */
 
@@ -3660,7 +3712,13 @@ export function ApercuHabitant() {
            haut, ou vivent la pastille et « Y aller ». C'est la garantie
            structurelle ; la reduction de corps ci-dessous fait que, dans les
            faits, on n'a pas besoin de couper. */
-        .ap-dessus .cd-bas{max-height:calc(100% - 52px);overflow:hidden;}
+        /* La face garde ses distances avec les deux bandeaux qui la survolent :
+           sans ces bornes, le nom repasserait sous les filtres et le prix
+           disparaitrait sous les gestes. */
+        .ap-dessus .cd-bas{max-height:calc(100% - var(--ap-haut-h, 100px) - 8px);
+          overflow:hidden;padding-bottom:calc(var(--ap-gestes-h, 80px) + 6px);}
+        .ap-dessus .cd-reste,.ap-dessus .cd-aller,.ap-dessus .ap-yaller-haut{
+          top:calc(var(--ap-haut-h, 100px) + 8px);}
 
         .ap-dessus .cd-reste{max-width:calc(100% - 132px);overflow:hidden;
           white-space:nowrap;text-overflow:ellipsis;display:block;line-height:1.35;}
@@ -3722,7 +3780,11 @@ export function ApercuHabitant() {
            carte du dessous, qui est la seule raison d'avoir une marge. On ne
            descend pas a zero : sans bord, une carte ne se lit plus comme une
            carte qu'on balaie, et on perdrait le geste avec le cadre. */
-        .ap-vue{flex:1;min-height:0;display:flex;padding:6px 7px 0;}
+        /* PLUS DE MARGE, PLUS DE COINS. La marge servait a laisser voir la
+           carte du dessous ; on la retrouve autrement, par le leger retrait et
+           l'assombrissement de .ap-carte.dessous, qui suffisent a dire qu'il y
+           en a une autre derriere. */
+        .ap-vue{flex:1;min-height:0;display:flex;padding:0;}
         .ap-pile{position:relative;flex:1;min-height:0;}
         /* LE RAPPORT D'ASPECT SE RETIRE ICI, PAS SEULEMENT SUR LA CARTE DU
            DESSUS. LE DEFAUT, MESURE A 360x640 : la carte du DESSOUS gardait le
@@ -3731,7 +3793,8 @@ export function ApercuHabitant() {
            quatre gestes qui commencent a 550 — et plus AUCUN bouton n'etait
            cliquable sur un ecran court. Poser inset:0 ne suffit pas a
            contraindre une boite qui porte un rapport d'aspect. */
-        .ap-carte{position:absolute;inset:0;max-width:none;aspect-ratio:auto;}
+        .ap-carte{position:absolute;inset:0;max-width:none;aspect-ratio:auto;
+          border-radius:0;box-shadow:none;}
         .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.7);}
         .ap-dessus{position:absolute;inset:0;touch-action:pan-y;cursor:grab;
           will-change:transform;}
@@ -3763,10 +3826,11 @@ export function ApercuHabitant() {
            pointeur. Il faut donc le dire ICI, sur le conteneur de defilement,
            pas seulement sur son parent. */
         .ap-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;
-          touch-action:pan-y;border-radius:26px;scrollbar-width:none;}
+          touch-action:pan-y;scrollbar-width:none;}
         .ap-scroll::-webkit-scrollbar{display:none;}
         .ap-un{height:100%;position:relative;}
-        .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;}
+        .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;
+          border-radius:0;}
 
         /* L'INDICE DE DEFILEMENT. Sans lui, personne ne devine que la carte
            continue : Happn a la meme pastille, au meme endroit. */
@@ -3786,7 +3850,17 @@ export function ApercuHabitant() {
         /* LE PANNEAU EST OPAQUE, et ce n'est pas cosmetique : sans fond, la
            carte SUIVANTE — posee derriere celle qu'on lit — transparaissait a
            travers le programme, et deux commerces se superposaient. */
-        .ap-plus{position:relative;background:#0A1210;padding:14px 0 24px;
+        /* Le panneau de details passe SOUS les deux bandeaux flottants : il
+           lui faut leur hauteur en marge, sinon son premier bloc naitrait
+           derriere les filtres et son dernier derriere les gestes. */
+        /* PAS DE MARGE EN HAUT — on avait mis la hauteur du bandeau, ce qui
+           creusait 250 pixels de vide entre la photo et le premier bloc pour
+           un probleme qui n'existe pas : on peut toujours continuer a
+           defiler. En bas, en revanche, la marge est indispensable : c'est la
+           fin du contenu, et sans elle le dernier bloc reste coince derriere
+           les gestes. */
+        .ap-plus{position:relative;background:#0A1210;
+          padding:14px 12px calc(var(--ap-gestes-h, 80px) + 20px);
           display:flex;flex-direction:column;gap:12px;}
         .ap-bloc{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);
           border-radius:20px;padding:16px;}
@@ -4041,6 +4115,9 @@ export function ApercuHabitant() {
            deux boutons faisaient la meme chose. Le balayage droit ouvre
            maintenant le salon, et cette pastille garde l'annonce — un appui,
            sans rien ouvrir. Le vert de l'application, pas une septieme teinte. */
+        /* La pastille est positionnee par rapport a .cd-bas, pas a la carte :
+           lui appliquer la hauteur du bandeau du haut l'aurait envoyee au
+           milieu de la photo. Mesure, pas deduction. */
         .ap-garder-photo{position:absolute;right:14px;top:56px;z-index:3;
           display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:15px;
           line-height:1;cursor:pointer;color:#8FE9C4;
@@ -4633,7 +4710,21 @@ export function ApercuHabitant() {
           .ap-vers-bas{margin-top:7px;padding:6px 12px;font-size:11.5px;}
         }
 
-        .ap-gestes{flex:none;gap:12px;margin:4px 0 max(8px, env(safe-area-inset-bottom));}
+        /* LES GESTES S'ARRETENT AU-DESSUS DE LA BARRE DES ONGLETS. Poses a
+           bottom:0, ils s'ecrivaient par-dessus « Le direct / Mes salons /
+           Profil » : la barre est dans le flux, eux n'y sont plus. */
+        .ap-gestes{position:absolute;left:0;right:0;
+          bottom:var(--ap-onglets-h, 55px);z-index:4;
+          gap:12px;padding:16px 0 10px;pointer-events:none;
+          background:linear-gradient(0deg,rgba(4,8,6,.9) 0%,rgba(4,8,6,.72) 45%,rgba(4,8,6,0) 100%);}
+        .ap-gestes .cd-g{pointer-events:auto;}
+        /* SUR LA PHOTO, un voile degrade suffit et laisse voir l'image. SOUS
+           LE PLI, non : les avis et le programme defilaient EN TRANSPARENCE
+           derriere les quatre boutons, illisibles. On pose donc un fond plein
+           — celui du panneau — des qu'on descend lire. Les gestes restent
+           disponibles : les cacher obligerait a remonter pour agir. */
+        .ap-gestes.pose{background:#0A1210;
+          box-shadow:0 -1px 0 rgba(255,255,255,.07);}
         .ap-gestes .cd-g{gap:4px;}
         .ap-gestes .cd-g i{width:44px;height:44px;font-size:19px;}
         .ap-gestes .cd-g.grand i{width:52px;height:52px;font-size:21px;}
