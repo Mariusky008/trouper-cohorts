@@ -1751,6 +1751,52 @@ export function ApercuHabitant() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  /**
+   * ─── RÉSERVER POUR LE SALON ───
+   *
+   * LE GESTE QUI CONCLUT LA DÉCISION, et il manquait. Le bouton « Réserver »
+   * du salon appelait la feuille du paquet, qui réserve chez `dessus` — le
+   * commerce en tête du PAQUET, pas celui que le groupe vient de choisir. On
+   * pouvait donc voter pour L'Ardoise Landaise et réserver chez un autre.
+   *
+   * IL SAIT DEUX CHOSES QUE LA FEUILLE NE SAVAIT PAS : ce qui a gagné, et
+   * combien ils sont. « Est-ce qu'il reste de la place ? » et « avez-vous une
+   * table pour quatre à 12 h 30 ? » ne sont pas la même demande, et c'est la
+   * seconde qui fait qu'un restaurateur répond.
+   *
+   * ET LA RÉSERVATION REVIENT DANS LA CONVERSATION. Une décision qui se conclut
+   * ailleurs n'a pas eu lieu pour le groupe : la carte posée dans le fil est ce
+   * qui transforme un vote en fait.
+   */
+  function reserverPourLeSalon(pourUnSeul = false) {
+    if (!salon) return;
+    const p = tete;
+    const ou = p?.ou ?? salon.ou;
+    const quoi = p?.quoi ?? salon.annonce ?? salon.sujet;
+    const combien = pourUnSeul ? 1 : Math.max(1, salon.viennent.length);
+    const moi = monPrenom() || "Vous";
+    noter("reserve", combien, "salon");
+    surWhatsApp(
+      `Bonjour, nous sommes ${combien} et nous avons vu « ${quoi} » chez ${ou} sur Clikme. ` +
+        // « ce soir · 19 h » est un libellé d'écran, pas une phrase : le point
+        // médian se lit comme une coquille dans un message qu'on envoie.
+        `Est-ce que vous avez de la place ${salon.quand.toLowerCase().replace(" · ", " à ")} ? Merci !`,
+    );
+    ecrireDansSalon(salon.cle, {
+      qui: moi,
+      voix: "systeme",
+      texte: "",
+      quand: heureCourte(),
+      carte: {
+        titre: `${moi} demande pour ${combien} ${combien > 1 ? "personnes" : "personne"}`,
+        detail: `${ou} · ${quoi}${p?.prix ? ` · ${p.prix}` : ""}`,
+        tampon: "Demande envoyée",
+      },
+    });
+    setEcho(`Votre demande est partie pour ${combien}.`);
+    setEchoIcone("📅");
+  }
+
   /** Ouvrir un commerce gardé depuis mon espace : on le remet en tête du paquet. */
   /**
    * VOIR L'ANNONCE COMPLÈTE, DEPUIS LE SALON.
@@ -2287,7 +2333,13 @@ export function ApercuHabitant() {
                         >
                           🚶 La rejoindre
                         </a>
-                        <button type="button" onClick={() => setFeuille("resa")}>
+                        {/* « Prendre le même » appelait lui aussi la feuille du
+                            paquet : on réservait chez le commerce en tête du
+                            PAQUET, pas chez celui où l'amie se trouve. */}
+                        <button
+                          type="button"
+                          onClick={() => avecMonPrenom(() => reserverPourLeSalon(true))}
+                        >
                           📅 Prendre le même
                         </button>
                       </div>
@@ -2394,9 +2446,16 @@ export function ApercuHabitant() {
                   <i aria-hidden="true">👥</i>
                   Inviter
                 </button>
-                <button type="button" onClick={() => setFeuille("resa")}>
+                {/* Il réserve CE QUI A GAGNÉ, pour CEUX QUI VIENNENT — et non
+                    chez le commerce en tête du paquet, ce que faisait l'ancien
+                    bouton. */}
+                <button
+                  type="button"
+                  onClick={() => avecMonPrenom(reserverPourLeSalon)}
+                >
                   <i aria-hidden="true">📅</i>
                   Réserver
+                  {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
                 </button>
                 <label>
                   <input
@@ -3633,15 +3692,7 @@ export function ApercuHabitant() {
 
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
 
-          {echo && (
-            <div className="ap-echo" role="status">
-              {/* Le signe suit le message. La flamme est celle du coup de pouce ;
-                  elle annonçait aussi les abonnements, qui ne sont pas la même
-                  chose — une couleur, un signe, une idée. */}
-              <i aria-hidden="true">{echoIcone}</i>
-              {echo}
-            </div>
-          )}
+
 
           {/* ─── LA PROPOSITION D'INSTALLER, UNE FOIS, AU BON MOMENT ───
               PAS À L'ARRIVÉE. Une bannière d'installation sur le premier écran
@@ -4357,6 +4408,20 @@ export function ApercuHabitant() {
               le prix, la distance, ce qu'il en reste. C'est ce que ClikMe sait
               et qu'une messagerie ignore — et c'est ce qui transforme
               « vous préférez où ? » en une décision. */}
+          {/* L'ÉCHO EST HORS DU PAQUET. Il vivait dans la branche du deck :
+              depuis un salon — c'est-à-dire là où l'on vient d'agir — la
+              confirmation ne s'affichait jamais. Même famille de défaut que la
+              feuille du prénom, et même correction. */}
+{echo && (
+            <div className="ap-echo" role="status">
+              {/* Le signe suit le message. La flamme est celle du coup de pouce ;
+                  elle annonçait aussi les abonnements, qui ne sont pas la même
+                  chose — une couleur, un signe, une idée. */}
+              <i aria-hidden="true">{echoIcone}</i>
+              {echo}
+            </div>
+          )}
+
           {proposeOuvert && salon && (
             <>
               <button
@@ -5770,6 +5835,11 @@ export function ApercuHabitant() {
         .ap-page-actions input{position:absolute;width:1px;height:1px;opacity:0;
           pointer-events:none;}
         .ap-page-actions>*:active{transform:scale(.96);}
+        /* Le nombre de convives sur le bouton : c'est la difference entre
+           « il reste de la place ? » et « une table pour quatre ? ». */
+        .ap-page-actions button b{position:absolute;top:3px;right:5px;min-width:15px;
+          font-size:9px;font-weight:850;line-height:15px;text-align:center;
+          color:#2A1B00;background:#F0B429;border-radius:999px;padding:0 3px;}
 
         /* ─── LA BARRE DES TROIS ONGLETS ───
            Defaut releve au test : on ne pouvait voir ni les salons encore
