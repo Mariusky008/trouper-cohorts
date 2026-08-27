@@ -1592,7 +1592,23 @@ export function ApercuHabitant() {
             {/* Le bandeau du produit — mêmes classes, donc même allure — mais
                 ses pastilles sont ici de vrais boutons. */}
             <div className="cd-barre">
-              <span className="cd-marque">{MARQUE}</span>
+              {/* LA MARQUE PORTE L'HEURE. Défaut mesuré sur iPhone 14 Pro :
+                  l'en-tête mangeait 183 des 659 pixels de l'écran et il n'en
+                  restait que 303 pour la carte — le contenu débordait par le
+                  haut et passait sous les pastilles. La date avait sa propre
+                  ligne pour répondre à une question qu'on ne pose qu'une fois ;
+                  elle se glisse sous le nom, où elle ne coûte pas un rang. */}
+              <span className="cd-marque ap-marque">
+                {MARQUE}
+                {maintenant && (
+                  <em>
+                    {/* La capitalisation ne vaut que pour le jour : appliquée à
+                        toute la ligne, elle écrivait « 05 H 01 ». */}
+                    <b>{maintenant}</b> · <i aria-hidden="true">●</i>
+                    {pendule}
+                  </em>
+                )}
+              </span>
               <button
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
@@ -1656,15 +1672,7 @@ export function ApercuHabitant() {
             {/* On ne l'affiche qu'une fois monté : côté serveur la date est
                 vide, et un jour faux qui se corrige sous les yeux est pire
                 qu'un jour absent une demi-seconde. */}
-            {maintenant && (
-              <div className="ap-jour">
-                <b>{maintenant}</b>
-                <span>
-                  <i aria-hidden="true">●</i>
-                  {pendule}
-                </span>
-              </div>
-            )}
+
 
             {vue === "evenements" || vue === "tout" ? (
               <div className={`ap-sortie ${vue === "tout" ? "tout" : "evenement"}`}>
@@ -1740,23 +1748,30 @@ export function ApercuHabitant() {
               </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  className="ap-champ"
-                  onClick={() => {
-                    // Personne n'avait appuyé sur l'ancien bouton « Je sors ».
-                    // Savoir combien touchent CE champ-ci, sans qu'on le leur
-                    // dise, est la mesure qui juge le changement.
-                    noter("champ-touche");
-                    setBrouillon("");
-                    setFeuille("sortie");
-                  }}
-                >
-                  <i aria-hidden="true">🔍</i>
-                  Qu&apos;est-ce que vous cherchez&nbsp;?
-                </button>
-
                 <div className="ap-envies">
+                  {/* ─── LA RECHERCHE PERD SA LIGNE, PAS SA FONCTION ───
+                      Elle occupait un champ pleine largeur — 70 pixels sur les
+                      659 d'un iPhone — pour une fonction dont on ne sait pas
+                      encore si elle sert : la mesure qui trancherait
+                      (`champ-touche`) n'écrit nulle part tant que la migration
+                      n'est pas appliquée. La supprimer emporterait avec elle
+                      toute la demande à la ville et les invitations qui en
+                      reviennent. Elle devient donc la première pastille de la
+                      rangée qui existe déjà : zéro pixel de plus, la fonction
+                      intacte, et une ligne à retirer le jour où les chiffres
+                      diront qu'elle ne sert pas. */}
+                  <button
+                    type="button"
+                    className="ap-e ap-e-cherche"
+                    onClick={() => {
+                      noter("champ-touche");
+                      setBrouillon("");
+                      setFeuille("sortie");
+                    }}
+                  >
+                    <i aria-hidden="true">🔍</i>
+                    Je cherche…
+                  </button>
                   {listeEnvies.map((e) => {
                     const on = envies.includes(e.cle);
                     return (
@@ -3285,7 +3300,22 @@ export function ApercuHabitant() {
         .ap-app{position:relative;height:100%;display:flex;flex-direction:column;
           background:radial-gradient(120% 40% at 50% 0%,#13202C 0%,#080D0B 62%),#080D0B;}
 
-        .ap-haut{flex:none;padding:10px 12px 0;display:flex;flex-direction:column;gap:8px;}
+        .ap-haut{flex:none;padding:8px 12px 0;display:flex;flex-direction:column;gap:7px;}
+        /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau
+           ne grandit pas, la date ne prend plus de ligne a elle. */
+        .ap-marque{display:flex;flex-direction:column;gap:1px;line-height:1.05;}
+        .ap-marque em{font-style:normal;font-size:10.5px;font-weight:800;
+          letter-spacing:.01em;color:#8FE9C4;
+          font-variant-numeric:tabular-nums;}
+        .ap-marque em b{font-weight:inherit;text-transform:capitalize;}
+        .ap-marque em i{font-style:normal;font-size:7px;line-height:1;
+          margin-right:3px;animation:apVoyant 2.4s ease-in-out infinite;}
+
+        /* LA PASTILLE QUI OUVRE LA DEMANDE A LA VILLE. Vert plein : c'est la
+           seule de la rangee qui ne filtre pas ce qu'on voit mais qui DEMANDE
+           quelque chose, et la confondre avec un filtre serait la perdre. */
+        .ap-e-cherche{color:#CFF7E6!important;background:rgba(61,226,166,.16)!important;
+          border-color:rgba(61,226,166,.5)!important;font-weight:850;}
         .ap-haut .cd-barre{max-width:none;}
 
         .ap-metier{font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
@@ -3345,17 +3375,6 @@ export function ApercuHabitant() {
         .ap-muets i{font-style:normal;font-size:11px;color:#5E706A;}
 
         /* ── LA PORTE D'ENTRÉE ── */
-
-        /* Une barre de recherche, parce que tout le monde sait ce que c'est et
-           que tout le monde la touche. La pastille « Je sors » posee au milieu
-           des filtres n'a ete cliquee par personne. */
-        .ap-champ{display:flex;align-items:center;gap:10px;width:100%;font:inherit;
-          font-size:15px;color:#93A8A0;cursor:pointer;text-align:left;
-          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
-          border-radius:14px;padding:13px 15px;
-          transition:border-color .25s ease,background .25s ease;}
-        .ap-champ i{font-style:normal;font-size:15px;}
-        .ap-champ:active{transform:scale(.99);}
 
         .ap-dem{display:flex;flex-direction:column;gap:11px;}
         .ap-dem-t{font:inherit;font-size:16px;line-height:1.4;color:#EAF2EC;resize:none;
@@ -3443,6 +3462,20 @@ export function ApercuHabitant() {
            constate sur l'invitation, puis sur l'embauche, puis sur le menu du
            jour dont le titre de moment est long. Une regle pour toutes plutot
            qu'une copie par couleur : le defaut est le meme partout. */
+        /* ─── LE CONTENU NE PEUT PLUS PASSER SOUS LA PASTILLE ───
+           DEFAUT MESURE SUR IPHONE 14 PRO, puis reproduit a 375x553 : la face
+           de la carte est ancree en bas (.cd-bas est en position absolue,
+           bottom:0) et grandit vers le haut SANS BORNE. Des que le contenu
+           depassait la hauteur de la carte, le nom du commerce sortait par le
+           haut et la pastille « Maintenant, dans 20 min », elle posee a
+           top:14px, s'ecrivait par-dessus la ligne « Coiffeur · Dax · 220 m ».
+           On lisait deux textes l'un sur l'autre.
+           On borne donc la face : elle ne peut plus mordre les 52 pixels du
+           haut, ou vivent la pastille et « Y aller ». C'est la garantie
+           structurelle ; la reduction de corps ci-dessous fait que, dans les
+           faits, on n'a pas besoin de couper. */
+        .ap-dessus .cd-bas{max-height:calc(100% - 52px);overflow:hidden;}
+
         .ap-dessus .cd-reste{max-width:calc(100% - 132px);overflow:hidden;
           white-space:nowrap;text-overflow:ellipsis;display:block;line-height:1.35;}
         .ap-dessus .cd-reste i{margin-right:6px;}
@@ -4094,16 +4127,16 @@ export function ApercuHabitant() {
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(3,1fr);
-          gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+          gap:4px;padding:5px 8px calc(5px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
           backdrop-filter:blur(12px);}
         .ap-onglets button{position:relative;display:flex;flex-direction:column;
           align-items:center;justify-content:center;gap:3px;font:inherit;
           font-size:10.5px;font-weight:800;cursor:pointer;color:#6C8078;
-          background:none;border:0;border-radius:12px;padding:6px 2px;
+          background:none;border:0;border-radius:11px;padding:5px 2px;
           transition:color .14s ease,background .14s ease;}
-        .ap-onglets button i{font-style:normal;font-size:17px;line-height:1;
+        .ap-onglets button i{font-style:normal;font-size:15px;line-height:1;
           filter:grayscale(1) opacity(.55);transition:filter .14s ease;}
         /* L'ONGLET COURANT SE VOIT A LA COULEUR ET AU FOND, pas seulement a
            l'opacite : sur un ecran au soleil, un gris un peu plus clair ne se
@@ -4320,7 +4353,37 @@ export function ApercuHabitant() {
         .ap-et i{font-style:normal;color:rgba(255,255,255,.25);}
         .ap-et i.on{color:#F0B429;}
 
-        .ap-gestes{flex:none;gap:14px;margin:6px 0 max(12px, env(safe-area-inset-bottom));}
+        /* LES GESTES SE RESSERRENT. Mesure sur iPhone 14 Pro : gestes 85 px
+           + onglets 63 px + en-tete 183 px sur 659, il restait 303 px de
+           carte. Les ronds passent de 62/48 a 50/40 et l'etiquette de 11 a
+           10 px : on garde la cible du pouce au-dessus des 44 px
+           recommandes, et la carte recupere une vingtaine de pixels. */
+        /* ─── LES ECRANS COURTS ───
+           A 553 pixels de haut (iPhone SE dans Safari) il ne reste que 314
+           pixels de carte, et la face n'y tient plus. Plutot que de la couper,
+           on reduit les corps : le nom, le titre du moment, ses lignes et le
+           prix. Rien ne disparait, tout retrecit — c'est le meme ecran, en
+           plus serre. La requete porte sur la HAUTEUR et non la largeur :
+           c'est la hauteur qui manque, et un telephone large mais court a
+           exactement le meme probleme. */
+        @media (max-height:620px){
+          .ap-dessus .cd-bas{padding:12px 14px 13px;gap:3px;}
+          .ap-dessus .cd-nom{font-size:20px;}
+          .ap-dessus .cd-quoi{margin-top:5px;font-size:13px;}
+          .ap-dessus .cd-lignes span{font-size:11.5px;}
+          .ap-dessus .cd-prix{margin-top:4px;}
+          .ap-dessus .cd-prix b{font-size:21px;}
+          .ap-dessus .ap-vie{margin-top:7px;padding:7px 10px;border-radius:11px;}
+          .ap-dessus .ap-vie b{font-size:12.5px;}
+          .ap-dessus .ap-vie span{font-size:10.5px;}
+          .ap-vers-bas{margin-top:7px;padding:6px 12px;font-size:11.5px;}
+        }
+
+        .ap-gestes{flex:none;gap:12px;margin:4px 0 max(8px, env(safe-area-inset-bottom));}
+        .ap-gestes .cd-g{gap:4px;}
+        .ap-gestes .cd-g i{width:44px;height:44px;font-size:19px;}
+        .ap-gestes .cd-g.grand i{width:52px;height:52px;font-size:21px;}
+        .ap-gestes .cd-g em{font-size:10px;}
         .ap-gestes .cd-g{font:inherit;background:none;border:0;padding:0;cursor:pointer;}
         .ap-gestes .cd-g:active i{transform:scale(.92);}
         .ap-gestes .cd-g:disabled{cursor:default;opacity:.32;}
@@ -4405,7 +4468,7 @@ export function ApercuHabitant() {
         }
         @media (prefers-reduced-motion:reduce){
           .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
-          .ap-jour i,.ap-direct-h i{animation:none;}
+          .ap-marque em i,.ap-direct-h i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}
