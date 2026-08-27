@@ -150,3 +150,32 @@ assiette parfaitement centrée disparaît à moitié sous le texte.
 
 Le recadrage est en `cover` centré : une image plus haute que 3:4 est rognée en
 haut ET en bas, symétriquement. Prévoir un peu d'air au-dessus du sujet.
+
+
+## Le carrousel de l'annonce — ce qui manque
+
+Depuis que l'annonce accepte plusieurs photos (`CarteAutour.photos`), il en
+faut deux ou trois par commerce. Quand rien n'est fourni, la galerie se déduit
+de ce qui existe déjà : la photo de l'annonce, celle du menu, celles de chaque
+moment de la journée. Ça suffit pour les **restaurants**, dont les moments
+portent chacun une photo de plat.
+
+**Partout ailleurs, il n'y avait qu'une seule image**, donc pas de carrousel.
+Pour que la fonction se voie à l'essai, quatre fiches se prêtent provisoirement
+leurs images :
+
+| Fiche | Photos aujourd'hui | À remplacer par |
+|---|---|---|
+| Un salon du centre | `fauteuil-coiffeur` + `salon-neuf` | deux vues de CE salon |
+| Un salon qui vient d'ouvrir | `salon-neuf` + `fauteuil-coiffeur` | deux vues de CE salon |
+| Un bar à vins | `verre-au-comptoir` + `terrasse-au-soleil` | deux vues de CE bar |
+| Une terrasse au soleil | `terrasse-au-soleil` + `verre-au-comptoir` | deux vues de CE bar |
+
+Deux salons ne partagent pas leur intérieur dans la vraie vie : c'est un
+emprunt de maquette, pas une intention.
+
+**Ce qui reste sans carrousel, faute d'images :** la boutique de la rue
+piétonne, la friperie, la fleuriste, la prothésiste ongulaire, la boulangerie
+et le traiteur. Il leur faudrait **une ou deux photos chacun** — la devanture,
+un rayon, un produit — pour que leur annonce se raconte comme celle d'un
+restaurant.

@@ -356,6 +356,20 @@ export type CarteAutour = {
   id: string;
   branche: CleMetier;
   photo?: string;
+  /**
+   * LES AUTRES PHOTOS DE L'ANNONCE — le carrousel du commerçant.
+   *
+   * DEMANDÉ PAR DE VRAIES PERSONNES : « on m'a demandé si on pouvait voir
+   * d'autres photos sur l'annonce ». Une seule image demande de décider sur un
+   * cadrage ; trois racontent l'endroit.
+   *
+   * FACULTATIF, ET C'EST VOULU. Quand il est absent, la galerie se DÉDUIT de ce
+   * que le commerçant a déjà publié aujourd'hui — la photo de l'annonce, celle
+   * du menu, celles de chaque moment de sa journée. On ne lui demande donc rien
+   * de plus pour que ça marche, et on n'invente rien à sa place : ce sont ses
+   * images, celles qu'il a mises lui-même.
+   */
+  photos?: string[];
   cadrage?: string;
   /** Anonyme : ce sont les voisins de celui qui lit. */
   nom: string;
@@ -1110,6 +1124,14 @@ const CARTES: CarteAutour[] = [
   // ── BARS ─────────────────────────────────────────────────────────────────
   {
     id: "bar-vins",
+    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
+    // restaurants, dont les moments portent deja une photo de plat ; partout
+    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
+    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
+    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
+    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
+    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
+    photos: ["/direct/verre-au-comptoir.jpg", "/direct/terrasse-au-soleil.jpg"],
     branche: "bar",
     photo: "/direct/verre-au-comptoir.jpg",
     cadrage: "50%",
@@ -1153,6 +1175,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "bar-terrasse",
+    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
+    // restaurants, dont les moments portent deja une photo de plat ; partout
+    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
+    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
+    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
+    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
+    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
+    photos: ["/direct/terrasse-au-soleil.jpg", "/direct/verre-au-comptoir.jpg"],
     branche: "bar",
     photo: "/direct/terrasse-au-soleil.jpg",
     cadrage: "50%",
@@ -1195,6 +1225,14 @@ const CARTES: CarteAutour[] = [
   // ── COIFFEURS ────────────────────────────────────────────────────────────
   {
     id: "coif-centre",
+    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
+    // restaurants, dont les moments portent deja une photo de plat ; partout
+    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
+    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
+    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
+    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
+    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
+    photos: ["/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
     branche: "coiffeur",
     photo: "/direct/fauteuil-coiffeur.jpg",
     cadrage: "50%",
@@ -1243,6 +1281,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "coif-nouveau",
+    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
+    // restaurants, dont les moments portent deja une photo de plat ; partout
+    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
+    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
+    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
+    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
+    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
+    photos: ["/direct/salon-neuf.jpg", "/direct/fauteuil-coiffeur.jpg"],
     branche: "coiffeur",
     photo: "/direct/salon-neuf.jpg",
     cadrage: "50%",
@@ -1505,6 +1551,29 @@ export function avisNotes(avis: AvisPlat[]): AvisPlat[] {
  * composant du produit sait dessiner. C'est ici, et nulle part ailleurs, que
  * « une annonce qui vit avec l'heure » devient concret.
  */
+/**
+ * LES PHOTOS DE L'ANNONCE, DANS L'ORDRE OÙ ON LES REGARDE.
+ *
+ * Celle qui est déjà à l'écran vient EN PREMIER : sans ça, le premier point du
+ * carrousel ne correspondrait pas à ce qu'on voit, et le deuxième appui
+ * ramènerait en arrière. Les doublons sautent — un commerce qui réutilise la
+ * même image pour deux moments ne doit pas donner deux fois le même point.
+ */
+export function photosDeLAnnonce(c: CarteAutour, heure: number): string[] {
+  const affichee = carteAffichee(c, heure).photo;
+  const brutes = c.photos?.length
+    ? c.photos
+    : [c.photo, c.menu?.photo, ...c.moments.map((m) => m.photo)];
+  const vues = new Set<string>();
+  const liste: string[] = [];
+  for (const p of [affichee, ...brutes]) {
+    if (!p || vues.has(p)) continue;
+    vues.add(p);
+    liste.push(p);
+  }
+  return liste;
+}
+
 export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
   const m = momentEnCours(c, heure);
   // QUAND IL Y A UN MENU DU JOUR, C'EST LUI QU'ON MONTRE — photo comprise. Le

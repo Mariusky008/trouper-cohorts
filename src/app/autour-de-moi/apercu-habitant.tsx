@@ -74,6 +74,7 @@ import {
   avisDuMoment,
   brancheDeLaDemande,
   carteAffichee,
+  photosDeLAnnonce,
   carteDeRecrutement,
   carteDeReponse,
   ORGANISATEURS,
@@ -503,6 +504,15 @@ export function ApercuHabitant() {
    * L'épingle ne déplace qu'elle, et se retire dès qu'on l'a passée.
    */
   const [epingle, setEpingle] = useState("");
+  /**
+   * LA PHOTO REGARDÉE DANS LE CARROUSEL DE L'ANNONCE.
+   *
+   * Demandé par de vraies personnes : « on m'a demandé si on pouvait voir
+   * d'autres photos sur l'annonce ». Un rang, pas une image : la liste change
+   * avec la carte, et garder l'URL laisserait la photo d'un commerce sur la
+   * carte d'un autre.
+   */
+  const [iPhoto, setIPhoto] = useState(0);
   const embauches = vue === "recrute";
   const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
@@ -829,6 +839,19 @@ export function ApercuHabitant() {
     return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
   };
 
+  /**
+   * LES PHOTOS DE LA CARTE DU DESSUS. Vide pour un événement ou une offre
+   * d'emploi : il n'y a qu'une image, et un carrousel d'une photo est un point
+   * qui ne mène nulle part.
+   */
+  const galerie =
+    dessus && !estInvitation(dessus) && !embauches && vue !== "recrute"
+      ? photosDeLAnnonce(dessus, heure)
+      : [];
+  const carrousel = galerie.length > 1;
+  /** Le rang est borné ici : la liste change avec la carte, pas l'index. */
+  const rangPhoto = carrousel ? Math.min(iPhoto, galerie.length - 1) : 0;
+
   /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
   const avisDe = (c: CarteAutour, m: MomentJour): AvisPlat[] => [
@@ -934,6 +957,11 @@ export function ApercuHabitant() {
   useEffect(() => {
     if (vueId) noter("carte-vue", rangVu);
   }, [vueId, rangVu]);
+  // On revient à la première photo en changeant de carte : rester au rang 3
+  // sur une annonce qui n'a qu'une image montrerait un point mort.
+  useEffect(() => {
+    setIPhoto(0);
+  }, [vueId]);
 
   function remettre() {
     minuteries.current.forEach(clearTimeout);
@@ -2107,7 +2135,9 @@ export function ApercuHabitant() {
                 <div
                   className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
                     estInvitation(sommet) ? " invit" : ""
-                  }${embauches ? " emb" : ""}${dessusEv ? " ev" : ""}`}
+                  }${embauches ? " emb" : ""}${dessusEv ? " ev" : ""}${
+                    carrousel ? " carrousel" : ""
+                  }`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
@@ -2131,13 +2161,40 @@ export function ApercuHabitant() {
                     }
                     if (p.axe === "x") setDx(ddx);
                   }}
-                  onPointerUp={() => {
+                  onPointerUp={(e) => {
                     const p = prise.current;
                     prise.current = null;
-                    if (!p || p.axe !== "x") return;
-                    if (dx > SEUIL) partir("droite");
-                    else if (dx < -SEUIL) partir("gauche");
-                    else setDx(0);
+                    if (p && p.axe === "x") {
+                      if (dx > SEUIL) partir("droite");
+                      else if (dx < -SEUIL) partir("gauche");
+                      else setDx(0);
+                      return;
+                    }
+                    /* ─── UN APPUI CHANGE DE PHOTO, UN GLISSEMENT BALAIE ───
+                       Le carrousel ne peut pas se faire au doigt horizontal :
+                       ce geste-là est déjà celui qui fait partir la carte, et
+                       les deux se disputeraient. On lit donc l'appui, comme le
+                       font toutes les applications qui empilent des photos :
+                       moitié gauche, on recule ; moitié droite, on avance.
+                       TROIS GARDE-FOUS, chacun pour un défaut évité :
+                        · `p.axe` vide seulement — un geste qui a bougé n'est
+                          pas un appui ;
+                        · pas sous le pli — en lisant la fiche, un appui sert à
+                          lire, pas à changer d'image ;
+                        · rien sur un bouton — « Y aller », le cœur, « voir la
+                          conversation » et le pli sont dans cette zone, et un
+                          appui dessus ne doit pas AUSSI tourner la photo. */
+                    if (!p || p.axe || !carrousel || descendu) return;
+                    const cible = e.target as HTMLElement;
+                    if (cible.closest("button, a, label, input")) return;
+                    const b = e.currentTarget.getBoundingClientRect();
+                    const versLaDroite = e.clientX - b.left > b.width / 2;
+                    noter("photo-ajoutee", rangPhoto + 1, "carrousel");
+                    setIPhoto((i) =>
+                      versLaDroite
+                        ? (i + 1) % galerie.length
+                        : (i - 1 + galerie.length) % galerie.length,
+                    );
                   }}
                   onPointerCancel={() => {
                     prise.current = null;
@@ -2167,7 +2224,31 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      <CarteSwipe carte={carteDe(sommet)} className="ap-carte">
+                      {/* LES POINTS DISENT COMBIEN IL Y EN A, et lesquelles
+                          restent. Sans eux, un appui qui change l'image passe
+                          pour un bug : on ne sait pas qu'il y a une suite, ni
+                          qu'on peut revenir. */}
+                      {carrousel && (
+                        <div className="ap-points" aria-hidden="true">
+                          {galerie.map((ph, i) => (
+                            <i key={ph} className={i === rangPhoto ? "on" : ""} />
+                          ))}
+                        </div>
+                      )}
+                      {/* LA PHOTO REGARDÉE REMPLACE CELLE DE L'ANNONCE. On
+                          passe par l'objet rendu à la carte plutôt que de
+                          toucher au composant partagé : `carte-swipe.tsx` sert
+                          aussi la démonstration commerçant, et une carte qui
+                          change de comportement selon l'écran serait
+                          exactement ce que ce fichier existe pour empêcher. */}
+                      <CarteSwipe
+                        carte={
+                          carrousel
+                            ? { ...carteDe(sommet), photo: galerie[rangPhoto] }
+                            : carteDe(sommet)
+                        }
+                        className="ap-carte"
+                      >
                         {/* LA FLAMME EST SUR LA PHOTO, PAS SEULEMENT SOUS LE
                             PLI. Soutenir un commerce est un geste d'humeur : il
                             se fait dans la seconde où la carte plaît, pas après
@@ -4664,6 +4745,21 @@ export function ApercuHabitant() {
           border:0;border-radius:999px;padding:7px 12px;}
         .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
           color:#7F988B!important;background:none!important;}
+
+        /* ─── LES POINTS DU CARROUSEL ───
+           Poses sous le bandeau flottant, au-dessus des deux pastilles, qui
+           descendent d'autant. Larges et fins : ils se lisent d'un coup d'oeil
+           et ne prennent pas la place de la photo. */
+        .ap-points{position:absolute;left:12px;right:12px;z-index:3;
+          top:calc(var(--ap-haut-h, 100px) + 6px);
+          display:flex;gap:4px;pointer-events:none;}
+        .ap-points i{flex:1;height:3px;border-radius:99px;
+          background:rgba(255,255,255,.32);
+          box-shadow:0 1px 3px rgba(0,0,0,.5);transition:background .2s ease;}
+        .ap-points i.on{background:#fff;}
+        /* Les pastilles laissent la place aux points. */
+        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller{
+          top:calc(var(--ap-haut-h, 100px) + 19px);}
 
         /* VOIR L'ANNONCE COMPLETE. Discret : c'est un secours pour celui qui
            decouvre, pas l'action principale du salon. */
