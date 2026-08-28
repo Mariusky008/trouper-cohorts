@@ -143,6 +143,9 @@ body{margin:0;background:#20262A;
 @media print{
   @page{size:A5;margin:0}
   body{background:#fff;display:block;padding:0;gap:0}
+  /* La face fait exactement la page. Le PDF à trois pages venait de l'outil
+     qui le fabriquait, pas d'ici : voir flyer-verif.mjs. Le nombre de pages
+     est vérifié à chaque construction. */
   .face{box-shadow:none;break-after:page;page-break-after:always}
   .face:last-child{break-after:auto;page-break-after:auto}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
