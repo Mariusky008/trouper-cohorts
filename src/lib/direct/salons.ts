@@ -353,18 +353,26 @@ export const SALONS_SEMES: Salon[] = [
     distance: "220 m",
     // ELLE Y EST, ET ELLE L'A CHOISI. C'est la seule chose que WhatsApp ne sait
     // pas faire : « Camille est là-bas, à 220 m, depuis 42 minutes ».
-    // L'IMAGE EST CELLE DU SALON, PAS CELLE DE SA COIFFURE, et c'est un choix
-    // qu'il faut savoir : personne n'a filmé de séance de coiffure pour cette
-    // maquette, et une photo de « résultat » présentée comme un direct dirait
-    // le contraire de ce qu'elle montre. Une vue de la pièce, prise d'une main
-    // en attendant, est ce qu'on obtient vraiment. Le jour où il y a dix
-    // secondes de vidéo, elles se posent ici et rien d'autre ne change.
+    // LE DIRECT EST UNE VRAIE VIDÉO. Quinze secondes filmées dans un salon,
+    // à la verticale, muettes et en boucle. C'est la seule chose de cet écran
+    // qui ne pouvait pas être dessinée : une image fixe dit « elle y est »,
+    // une vidéo le MONTRE, et c'est toute la différence entre une capture et
+    // un direct.
+    //
+    // CE QUI A ÉTÉ FAIT AU FICHIER REÇU, et il faut le savoir avant d'en
+    // remettre un autre : le .mov d'origine n'est lisible par aucun
+    // navigateur, il pesait 7,6 Mo, il portait des sous-titres incrustés
+    // d'un autre réseau et l'icône de son de son application. Le bas de
+    // l'image a donc été recadré — les deux visages restent entiers — et le
+    // tout ré-encodé en MP4 et WebM sans son : 314 Ko et 511 Ko. Voir
+    // `scripts/video-direct.sh`.
     enDirect: {
       qui: "Camille",
       depuis: "42 min",
       distance: "220 m",
       aPied: "3 min",
-      image: "/direct/salon-neuf.jpg",
+      image: "/direct/coiffure.jpg",
+      video: { mp4: "/direct/coiffure.mp4", webm: "/direct/coiffure.webm" },
     },
     vote: {
       question: "Laquelle je fais ?",

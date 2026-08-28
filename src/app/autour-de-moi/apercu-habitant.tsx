@@ -140,6 +140,43 @@ const SEUIL = 84;
  * plus long, on attend devant sa propre application.
  */
 const MONTRE_MS = 3400;
+
+/**
+ * LA DEMANDE À LA VILLE EST EN SOMMEIL, ET C'EST UN INTERRUPTEUR, PAS UNE
+ * SUPPRESSION.
+ *
+ * POURQUOI : « on va peut-être l'enlever pour le moment parce que ça fait trop
+ * d'options ». Le jugement est juste — la feuille du métier proposait de
+ * choisir ce qu'on regarde ET d'écrire une demande, deux gestes de nature
+ * différente au même endroit, et le second est celui qu'on comprend le moins
+ * vite.
+ *
+ * CE QUI S'ENDORT AVEC, ET IL FAUT LE SAVOIR : les INVITATIONS. Les cartes
+ * dorées — « rien que pour vous, la garbure à 9 € » — sont les réponses des
+ * commerces à une demande. Sans porte d'entrée vers la demande, il n'en arrive
+ * plus aucune, et c'est l'une des plus belles choses du produit qui disparaît
+ * de la démonstration. Tout le reste est intact : le champ, l'attente, les
+ * réponses, la carte en or et sa couleur.
+ *
+ * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
+ */
+const DEMANDE_A_LA_VILLE = false;
+
+/**
+ * LE NOM DE L'ONGLET, POUR LE BOUTON DE RETOUR.
+ *
+ * IL DIT OÙ L'ON RETOURNE, PAS « RETOUR ». Une flèche seule ne se voyait pas —
+ * mesuré sur de vraies personnes — et, vue, elle ne disait pas où elle menait.
+ * Mais écrire « Le direct » en dur serait un mensonge une fois sur deux : on
+ * entre aussi dans un salon depuis « Mes salons », et on y revient. Le libellé
+ * suit donc l'onglet sur lequel on va effectivement retomber.
+ */
+const NOM_ONGLET = {
+  direct: "Le direct",
+  ville: "La Ville",
+  salons: "Mes salons",
+  profil: "Profil",
+} as const;
 /** À partir de cette descente dans la carte, on considère qu'on LIT — et le
  *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
 const SEUIL_PLI = 90;
@@ -868,8 +905,20 @@ export function ApercuHabitant() {
   const suivis = useSyncExternalStore(abonnerSuivis, chargerSuivis, () => AUCUN_SUIVI);
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
-    if (o === onglet) return;
+    // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
+    // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
+    // « Le direct » depuis un salon changeait bien l'onglet — mais la page du
+    // salon, posée par-dessus, restait à l'écran : le bouton n'aurait RIEN
+    // fait de visible, ce qui est pire que de ne pas l'avoir.
+    // Le garde-fou « même onglet, on ne fait rien » vient donc APRÈS : depuis
+    // un salon ouvert sur l'onglet du direct, on est déjà sur « direct », et
+    // l'appui doit quand même ramener au paquet.
+    const parDessus = salonPage || favorisPage;
+    if (o === onglet && !parDessus) return;
     arreterLeDirect();
+    setSalonPage(false);
+    setSalonOuvert("");
+    setFavorisPage(false);
     noter("onglet", 0, o);
     setOnglet(o);
     setFeuille("");
@@ -2158,7 +2207,11 @@ export function ApercuHabitant() {
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
             une page de salon ou de profil se lit du haut vers le bas, et son
             dernier paragraphe ne doit pas finir sous les onglets. */}
-        <div className={`ap-app${onglet === "direct" ? " direct" : ""}`}>
+        <div
+          className={`ap-app${onglet === "direct" ? " direct" : ""}${
+            salonPage || favorisPage ? " sur-page" : ""
+          }`}
+        >
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
               feuille dit « ceci est un aparté, tu vas revenir » ; or le salon
@@ -2176,10 +2229,10 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="ap-page-r"
-                  aria-label="Revenir"
                   onClick={() => setFavorisPage(false)}
                 >
-                  ←
+                  <i aria-hidden="true">←</i>
+                  {NOM_ONGLET[onglet]}
                 </button>
                 <span className="ap-page-t">
                   <b>Mes favoris</b>
@@ -2255,14 +2308,14 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="ap-page-r"
-                  aria-label="Revenir"
                   onClick={() => {
                     arreterLeDirect();
                     setSalonPage(false);
                     setSalonOuvert("");
                   }}
                 >
-                  ←
+                  <i aria-hidden="true">←</i>
+                  {NOM_ONGLET[onglet]}
                 </button>
                 {/* DÈS QU'IL Y A DEUX PROPOSITIONS, LE SALON N'EST PLUS
                     CELUI D'UN COMMERCE. Garder « Le Bocal de Margot » en titre
@@ -4916,6 +4969,21 @@ export function ApercuHabitant() {
             </>
           )}
 
+          </>
+          )}
+
+          {/* ─── LA BARRE EST DEHORS, ET C'EST TOUT LE CORRECTIF ───
+              Elle vivait DANS la dernière branche du grand choix — celle du
+              paquet, de La Ville, des salons et du profil. Une page de salon
+              ou de favoris prenait une autre branche : la barre n'était alors
+              même pas rendue, et non pas seulement recouverte.
+              DÉFAUT MESURÉ SUR DE VRAIES PERSONNES : « dans un salon les gens
+              se sentent perdus parce que le menu du bas a disparu et qu'ils ne
+              savaient plus comment revenir au direct ; ils n'ont pas vu la
+              flèche en haut ». Leur réflexe était le bon — un salon est une
+              PIÈCE de l'application, pas une fenêtre par-dessus. Sortie du
+              choix, la barre est là partout, et « Le direct » fait exactement
+              ce qu'ils cherchaient. */}
           <nav className="ap-onglets" aria-label="Sections" ref={barreOnglets}>
             <button
               type="button"
@@ -4959,8 +5027,6 @@ export function ApercuHabitant() {
               {gardees.length > 0 && <b>{gardees.length}</b>}
             </button>
           </nav>
-          </>
-          )}
 
           {/* ─── COMMENT VOUS APPELEZ-VOUS ? ───
               Question posée au test : « comment connaît-on les initiales des
@@ -5345,6 +5411,7 @@ export function ApercuHabitant() {
                         rouvrir entre chaque coûterait plus que ce qu'on a
                         gagné. Le paquet se retrie derrière, on voit les
                         comptes bouger, et on ferme quand on a fini. */}
+                    {DEMANDE_A_LA_VILLE && (
                     <button
                       type="button"
                       className="ap-f-cherche"
@@ -5364,6 +5431,7 @@ export function ApercuHabitant() {
                       </span>
                       <s aria-hidden="true">→</s>
                     </button>
+                    )}
 
                     {/* Les envies n'ont de sens que sur un métier : « moins de
                         15 € » ne veut rien dire sur un poste, et un événement
@@ -6769,7 +6837,20 @@ export function ApercuHabitant() {
            trois zones fixes et une seule qui defile.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS, ils
            fermeraient le gabarit de chaine qui porte toute la feuille. */
-        .ap-page{position:absolute;inset:0;z-index:6;display:flex;
+        /* ─── ELLE S'ARRETE AU-DESSUS DES ONGLETS, ET C'EST UN CORRECTIF ───
+           DEFAUT MESURE SUR DE VRAIES PERSONNES : « quand on est dans un salon
+           les gens se sentent perdus parce que le menu du bas a disparu et
+           qu'ils ne savaient plus trop comment revenir au direct ; ils n'ont
+           pas vu la fleche en haut ».
+           LEUR REFLEXE ETAIT LE BON, c'est l'application qui avait tort. Un
+           salon n'est pas une fenetre par-dessus l'application : c'est une de
+           ses pieces — on y entre depuis l'onglet « Mes salons ». Une page ou
+           l'on entre par un onglet et qui efface les onglets ne laisse plus
+           qu'une sortie, en haut, minuscule et muette.
+           La page couvrait tout par inset:0. Elle laisse desormais la barre
+           depasser, et « Le direct » fait exactement ce qu'ils cherchaient. */
+        .ap-page{position:absolute;left:0;right:0;top:0;
+          bottom:var(--ap-onglets-h, 51px);z-index:6;display:flex;
           flex-direction:column;min-height:0;
           padding:calc(14px + env(safe-area-inset-top)) 14px 0;
           background:#0A0F0D;animation:apPage .22s ease both;}
@@ -6799,10 +6880,18 @@ export function ApercuHabitant() {
         .ap-page-vu:active{transform:scale(.92);}
         .ap-page-vu.prive{background:rgba(240,180,41,.14);
           border-color:rgba(240,180,41,.4);}
-        .ap-page-r{flex:none;width:36px;height:36px;border-radius:50%;font:inherit;
-          font-size:19px;line-height:1;cursor:pointer;color:#EAF2EC;
+        /* ELLE PORTE UN MOT, ET LE MOT EST L'ENDROIT OU L'ON RETOURNE.
+           Une fleche seule dans un rond de trente-six points ne se voyait pas
+           — mesure faite sur de vraies personnes — et, vue, elle ne disait
+           pas ou elle menait. Le rond devient une pastille, et la pastille dit
+           « Le direct ». Elle ne grandit que de la largeur d'un mot. */
+        .ap-page-r{flex:none;display:inline-flex;align-items:center;gap:6px;
+          height:36px;border-radius:999px;font:inherit;font-size:13px;
+          font-weight:800;line-height:1;cursor:pointer;color:#EAF2EC;
+          padding:0 14px 0 11px;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);}
-        .ap-page-r:active{transform:scale(.92);}
+        .ap-page-r i{font-style:normal;font-size:17px;line-height:1;}
+        .ap-page-r:active{transform:scale(.96);}
         .ap-page-t{flex:1;min-width:0;}
         .ap-page-t b{display:block;font-size:15.5px;font-weight:850;color:#fff;
           letter-spacing:-.02em;white-space:nowrap;overflow:hidden;
@@ -6903,6 +6992,17 @@ export function ApercuHabitant() {
         .ap-app.direct .ap-onglets{position:absolute;left:0;right:0;bottom:0;
           z-index:5;background:none;border-top-color:transparent;
           -webkit-backdrop-filter:none;backdrop-filter:none;}
+
+        /* ─── QUAND UNE PAGE EST POSEE PAR-DESSUS ───
+           DEFAUT MESURE : la barre s'est retrouvee EN HAUT de l'ecran. Une
+           page de salon ou de favoris est en position absolue, donc hors du
+           flux ; sortie du grand choix, la barre devenait le seul enfant
+           reste dans la colonne, et une colonne place son unique enfant en
+           haut. Mesure au navigateur : bord superieur a 0.
+           Elle reprend donc sa place au bas de l'ecran, au-dessus de la page,
+           qui s'arrete elle-meme a sa hauteur. */
+        .ap-app.sur-page .ap-onglets{position:absolute;left:0;right:0;bottom:0;
+          z-index:7;}
         /* Des qu'on descend lire, le trait revient : il separe alors deux
            surfaces pleines, et sans lui la barre flotterait au milieu du
            panneau de details. */
